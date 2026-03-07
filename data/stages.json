@@ -1,0 +1,601 @@
+{
+  "Stages": [
+    {
+      "StageNumber": 1,
+      "MapId": "city",
+      "MapName": "City Route",
+      "TerrainId": "urban",
+      "StageName": "Outskirts",
+      "Description": "Low density swarm near abandoned gas stations.\nRecommended squad: Brawler + Shooter.",
+      "RewardScrap": 40,
+      "MapX": 132.0,
+      "MapY": 356.0,
+      "PlayerBaseHealth": 300.0,
+      "EnemyBaseHealth": 280.0,
+      "EnemySpawnMin": 3.6,
+      "EnemySpawnMax": 5.0,
+      "EnemyHealthScale": 0.9,
+      "EnemyDamageScale": 0.95,
+      "WalkerWeight": 0.78,
+      "RunnerWeight": 0.22,
+      "BruteWeight": 0.0,
+      "SpitterWeight": 0.0,
+      "CrusherWeight": 0.0,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.0,
+      "Waves": [
+        {
+          "Label": "Scouts at the pumps",
+          "TriggerTime": 2.5,
+          "SpawnInterval": 0.55,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "First rush",
+          "TriggerTime": 10.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Gas station spill",
+          "TriggerTime": 22.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 4 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Route cleanup",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 4 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 2,
+      "MapId": "city",
+      "MapName": "City Route",
+      "TerrainId": "highway",
+      "StageName": "Highway",
+      "Description": "Faster infected and tighter lane pressure.\nRecommended squad: 2x Brawler, 1x Shooter.",
+      "RewardScrap": 68,
+      "MapX": 324.0,
+      "MapY": 248.0,
+      "PlayerBaseHealth": 315.0,
+      "EnemyBaseHealth": 330.0,
+      "EnemySpawnMin": 3.2,
+      "EnemySpawnMax": 4.6,
+      "EnemyHealthScale": 1.02,
+      "EnemyDamageScale": 1.1,
+      "WalkerWeight": 0.56,
+      "RunnerWeight": 0.34,
+      "BruteWeight": 0.0,
+      "SpitterWeight": 0.18,
+      "CrusherWeight": 0.08,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.05,
+      "Waves": [
+        {
+          "Label": "Frontage runners",
+          "TriggerTime": 2.5,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Overpass break",
+          "TriggerTime": 12.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Median spitters",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Pileup crush",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 3 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 3,
+      "MapId": "city",
+      "MapName": "City Route",
+      "TerrainId": "night",
+      "StageName": "Mall District",
+      "Description": "Dense mixed wave before the city boss siege. Keep your line stable.",
+      "RewardScrap": 95,
+      "MapX": 540.0,
+      "MapY": 314.0,
+      "PlayerBaseHealth": 335.0,
+      "EnemyBaseHealth": 380.0,
+      "EnemySpawnMin": 2.8,
+      "EnemySpawnMax": 4.0,
+      "EnemyHealthScale": 1.18,
+      "EnemyDamageScale": 1.22,
+      "WalkerWeight": 0.42,
+      "RunnerWeight": 0.24,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.16,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.08,
+      "Waves": [
+        {
+          "Label": "Mall doors",
+          "TriggerTime": 3.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 3 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Food court hold",
+          "TriggerTime": 14.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Escalator breach",
+          "TriggerTime": 28.0,
+          "SpawnInterval": 0.38,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Atrium crush",
+          "TriggerTime": 44.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Closing rush",
+          "TriggerTime": 60.0,
+          "SpawnInterval": 0.35,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 4,
+      "MapId": "city",
+      "MapName": "City Route",
+      "TerrainId": "night",
+      "StageName": "Metro Citadel",
+      "Description": "City boss stage. Overlord spawns begin toward the end of the battle.",
+      "RewardScrap": 130,
+      "MapX": 742.0,
+      "MapY": 226.0,
+      "PlayerBaseHealth": 355.0,
+      "EnemyBaseHealth": 440.0,
+      "EnemySpawnMin": 2.6,
+      "EnemySpawnMax": 3.8,
+      "EnemyHealthScale": 1.3,
+      "EnemyDamageScale": 1.32,
+      "WalkerWeight": 0.28,
+      "RunnerWeight": 0.16,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.24,
+      "BossWeight": 0.22,
+      "BossSpawnStartTime": 70.0,
+      "BonusWaveChance": 0.1,
+      "Waves": [
+        {
+          "Label": "Perimeter breach",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Tunnel pressure",
+          "TriggerTime": 15.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Citadel spill",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.36,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Pressure line",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Overlord arrival",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Final spill",
+          "TriggerTime": 84.0,
+          "SpawnInterval": 0.35,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 5,
+      "MapId": "harbor",
+      "MapName": "Harbor Front",
+      "TerrainId": "industrial",
+      "StageName": "Docks Perimeter",
+      "Description": "Second map unlocked. Rusted docks and container chokepoints.",
+      "RewardScrap": 150,
+      "MapX": 168.0,
+      "MapY": 496.0,
+      "PlayerBaseHealth": 365.0,
+      "EnemyBaseHealth": 430.0,
+      "EnemySpawnMin": 2.9,
+      "EnemySpawnMax": 4.1,
+      "EnemyHealthScale": 1.22,
+      "EnemyDamageScale": 1.25,
+      "WalkerWeight": 0.38,
+      "RunnerWeight": 0.2,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.2,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.08,
+      "Waves": [
+        {
+          "Label": "Dock scouts",
+          "TriggerTime": 3.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Container flank",
+          "TriggerTime": 16.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Forklift jam",
+          "TriggerTime": 31.0,
+          "SpawnInterval": 0.35,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Pier pressure",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Docks collapse",
+          "TriggerTime": 64.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 6,
+      "MapId": "harbor",
+      "MapName": "Harbor Front",
+      "TerrainId": "swamp",
+      "StageName": "Flooded Terminal",
+      "Description": "Waterlogged streets slow pushes. Spitters and heavy units dominate.",
+      "RewardScrap": 178,
+      "MapX": 346.0,
+      "MapY": 546.0,
+      "PlayerBaseHealth": 385.0,
+      "EnemyBaseHealth": 470.0,
+      "EnemySpawnMin": 2.6,
+      "EnemySpawnMax": 3.8,
+      "EnemyHealthScale": 1.3,
+      "EnemyDamageScale": 1.33,
+      "WalkerWeight": 0.24,
+      "RunnerWeight": 0.14,
+      "BruteWeight": 0.28,
+      "SpitterWeight": 0.34,
+      "CrusherWeight": 0.24,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.1,
+      "Waves": [
+        {
+          "Label": "Mudline feelers",
+          "TriggerTime": 3.5,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Flooded bridge",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.38,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Toxic spray",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Terminal crush",
+          "TriggerTime": 50.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Reedline swarm",
+          "TriggerTime": 66.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 7,
+      "MapId": "harbor",
+      "MapName": "Harbor Front",
+      "TerrainId": "shipyard",
+      "StageName": "Crane Gauntlet",
+      "Description": "Heavy armor waves push through wrecked cranes before the final harbor boss.",
+      "RewardScrap": 208,
+      "MapX": 556.0,
+      "MapY": 502.0,
+      "PlayerBaseHealth": 400.0,
+      "EnemyBaseHealth": 530.0,
+      "EnemySpawnMin": 2.5,
+      "EnemySpawnMax": 3.6,
+      "EnemyHealthScale": 1.38,
+      "EnemyDamageScale": 1.38,
+      "WalkerWeight": 0.18,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.3,
+      "SpitterWeight": 0.28,
+      "CrusherWeight": 0.34,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.12,
+      "Waves": [
+        {
+          "Label": "Crane shadows",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Winch collapse",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.36,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Hull break",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Steel rain",
+          "TriggerTime": 52.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Gauntlet close",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 8,
+      "MapId": "harbor",
+      "MapName": "Harbor Front",
+      "TerrainId": "shipyard",
+      "StageName": "Wreck Flagship",
+      "Description": "Harbor boss stage. Overlord spawns begin toward the end of the battle.",
+      "RewardScrap": 245,
+      "MapX": 742.0,
+      "MapY": 432.0,
+      "PlayerBaseHealth": 420.0,
+      "EnemyBaseHealth": 620.0,
+      "EnemySpawnMin": 2.4,
+      "EnemySpawnMax": 3.4,
+      "EnemyHealthScale": 1.48,
+      "EnemyDamageScale": 1.44,
+      "WalkerWeight": 0.12,
+      "RunnerWeight": 0.08,
+      "BruteWeight": 0.26,
+      "SpitterWeight": 0.22,
+      "CrusherWeight": 0.32,
+      "BossWeight": 0.26,
+      "BossSpawnStartTime": 72.0,
+      "BonusWaveChance": 0.14,
+      "Waves": [
+        {
+          "Label": "Advance screen",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Shipbreak pressure",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Deck flood",
+          "TriggerTime": 36.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Flagship breach",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Overlord on deck",
+          "TriggerTime": 72.0,
+          "SpawnInterval": 0.45,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Last stand",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}

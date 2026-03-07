@@ -1,0 +1,30 @@
+{
+  "Combat": {
+    "PlayerBaseX": 96.0,
+    "EnemyBaseX": 1184.0,
+    "PlayerSpawnX": 140.0,
+    "EnemySpawnX": 1140.0,
+
+    "BattlefieldLeft": 84.0,
+    "BattlefieldRight": 1196.0,
+    "BattlefieldTop": 96.0,
+    "BattlefieldBottom": 584.0,
+    "SpawnVerticalPadding": 12.0,
+
+    "BaseCoreRadius": 44.0,
+    "BaseApproachDistance": 170.0,
+
+    "CourageStart": 45.0,
+    "CourageMax": 100.0,
+    "CourageGainPerSecond": 4.5,
+
+    "InitialEnemySpawnDelay": 2.8,
+    "EnemySpawnPressureTimeScale": 180.0,
+    "EnemySpawnPressureMin": 1.0,
+    "EnemySpawnPressureMax": 1.25,
+    "EnemySpawnIntervalFloor": 1.4,
+
+    "MaxActiveEnemiesByStage": [5, 7, 8, 9, 10, 11, 12, 13],
+    "VictoryFuelReward": 2
+  }
+}

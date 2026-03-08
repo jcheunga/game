@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 public partial class Projectile : Node2D
@@ -8,13 +9,17 @@ public partial class Projectile : Node2D
     private Color _color = Colors.White;
     private float _radius = 5f;
     private bool _active;
+    private Vector2 _travelDirection = Vector2.Right;
+    private Action<Vector2, float, Color> _onHit = null!;
 
-    public void Setup(Unit target, float damage, float speed, Color color)
+    public void Setup(Unit target, float damage, float speed, Color color, Action<Vector2, float, Color> onHit = null)
     {
         _target = target;
         _damage = damage;
         _speed = speed;
         _color = color;
+        _radius = damage >= 18f ? 6f : 5f;
+        _onHit = onHit;
         _active = true;
     }
 
@@ -38,14 +43,17 @@ public partial class Projectile : Node2D
 
         if (distance <= step + _radius)
         {
-            _target.TakeDamage(_damage);
+            var appliedDamage = _target.TakeDamage(_damage);
+            _onHit?.Invoke(GlobalPosition, appliedDamage, _color);
+            SpawnImpactEffect();
             QueueFree();
             return;
         }
 
         if (distance > 0.001f)
         {
-            GlobalPosition += toTarget / distance * step;
+            _travelDirection = toTarget / distance;
+            GlobalPosition += _travelDirection * step;
         }
     }
 
@@ -56,6 +64,22 @@ public partial class Projectile : Node2D
 
     public override void _Draw()
     {
+        var tailEnd = -_travelDirection * (_radius * 2.2f);
+        DrawLine(Vector2.Zero, tailEnd, new Color(_color, 0.55f), _radius * 1.2f, true);
         DrawCircle(Vector2.Zero, _radius, _color);
+        DrawCircle(Vector2.Zero, _radius * 0.42f, _color.Lightened(0.4f));
+    }
+
+    private void SpawnImpactEffect()
+    {
+        if (GetParent() == null)
+        {
+            return;
+        }
+
+        var effect = new BattleEffect();
+        effect.GlobalPosition = GlobalPosition;
+        effect.Setup(_color.Lightened(0.15f), _radius * 0.7f, _radius * 3f, 0.16f, false);
+        GetParent().AddChild(effect);
     }
 }

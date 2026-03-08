@@ -16,6 +16,18 @@ public static class GameData
         PlayerMarksmanId
     };
 
+    public static readonly string[] EnemyRosterIds =
+    {
+        EnemyWalkerId,
+        EnemyRunnerId,
+        EnemyBloaterId,
+        EnemyBruteId,
+        EnemySpitterId,
+        EnemySplitterId,
+        EnemyCrusherId,
+        EnemyBossId
+    };
+
     public const string PlayerBrawlerId = "player_brawler";
     public const string PlayerShooterId = "player_shooter";
     public const string PlayerDefenderId = "player_defender";
@@ -24,8 +36,10 @@ public static class GameData
     public const string PlayerMarksmanId = "player_marksman";
     public const string EnemyWalkerId = "enemy_walker";
     public const string EnemyRunnerId = "enemy_runner";
+    public const string EnemyBloaterId = "enemy_bloater";
     public const string EnemyBruteId = "enemy_brute";
     public const string EnemySpitterId = "enemy_spitter";
+    public const string EnemySplitterId = "enemy_splitter";
     public const string EnemyCrusherId = "enemy_crusher";
     public const string EnemyBossId = "enemy_boss";
 
@@ -93,6 +107,14 @@ public static class GameData
             .ToArray();
     }
 
+    public static IReadOnlyList<UnitDefinition> GetEnemyUnits()
+    {
+        EnsureLoaded();
+        return EnemyRosterIds
+            .Select(GetUnit)
+            .ToArray();
+    }
+
     public static IReadOnlyList<UnitDefinition> GetUnitsByIds(IEnumerable<string> unitIds)
     {
         EnsureLoaded();
@@ -113,6 +135,24 @@ public static class GameData
 
         var index = Mathf.Clamp(stageNumber, 1, _stages.Length) - 1;
         return _stages[index];
+    }
+
+    public static IReadOnlyList<StageDefinition> GetStagesForMap(string mapId)
+    {
+        EnsureLoaded();
+        var normalizedMapId = NormalizeMapId(mapId);
+        return _stages
+            .Where(stage => NormalizeMapId(stage.MapId).Equals(normalizedMapId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+
+    public static StageDefinition GetLatestStageForMap(string mapId)
+    {
+        EnsureLoaded();
+        var normalizedMapId = NormalizeMapId(mapId);
+        var match = _stages
+            .LastOrDefault(stage => NormalizeMapId(stage.MapId).Equals(normalizedMapId, StringComparison.OrdinalIgnoreCase));
+        return match ?? GetStage(1);
     }
 
     public static UnitDefinition GetUnit(string unitId)
@@ -376,6 +416,27 @@ public static class GameData
                 }
             },
             {
+                EnemyBloaterId,
+                new UnitDefinition
+                {
+                    Id = EnemyBloaterId,
+                    DisplayName = "Bloater",
+                    Side = "Enemy",
+                    Cost = 0,
+                    MaxHealth = 88f,
+                    Speed = 42f,
+                    AttackDamage = 13f,
+                    AttackRange = 30f,
+                    AttackCooldown = 1.15f,
+                    AggroRangeX = 190f,
+                    AggroRangeY = 84f,
+                    BaseDamage = 18,
+                    DeathBurstDamage = 20f,
+                    DeathBurstRadius = 54f,
+                    ColorHex = "c77dff"
+                }
+            },
+            {
                 EnemyBruteId,
                 new UnitDefinition
                 {
@@ -405,8 +466,33 @@ public static class GameData
                     AttackDamage = 11f,
                     AttackRange = 170f,
                     AttackCooldown = 1.3f,
+                    UsesProjectile = true,
+                    ProjectileSpeed = 430f,
+                    AggroRangeX = 320f,
+                    AggroRangeY = 148f,
                     BaseDamage = 15,
                     ColorHex = "bdb2ff"
+                }
+            },
+            {
+                EnemySplitterId,
+                new UnitDefinition
+                {
+                    Id = EnemySplitterId,
+                    DisplayName = "Splitter",
+                    Side = "Enemy",
+                    Cost = 0,
+                    MaxHealth = 78f,
+                    Speed = 52f,
+                    AttackDamage = 10f,
+                    AttackRange = 28f,
+                    AttackCooldown = 0.95f,
+                    AggroRangeX = 205f,
+                    AggroRangeY = 90f,
+                    BaseDamage = 16,
+                    SpawnOnDeathUnitId = EnemyWalkerId,
+                    SpawnOnDeathCount = 2,
+                    ColorHex = "43aa8b"
                 }
             },
             {
@@ -423,6 +509,7 @@ public static class GameData
                     AttackRange = 36f,
                     AttackCooldown = 1.2f,
                     BaseDamage = 30,
+                    DamageTakenScale = 0.76f,
                     ColorHex = "7f5539"
                 }
             },
@@ -442,6 +529,7 @@ public static class GameData
                     AggroRangeX = 230f,
                     AggroRangeY = 110f,
                     BaseDamage = 55,
+                    DamageTakenScale = 0.82f,
                     ColorHex = "5a189a"
                 }
             }
@@ -658,5 +746,12 @@ public static class GameData
                 BonusWaveChance = 0.14f
             }
         };
+    }
+
+    private static string NormalizeMapId(string mapId)
+    {
+        return string.IsNullOrWhiteSpace(mapId)
+            ? "city"
+            : mapId.Trim().ToLowerInvariant();
     }
 }

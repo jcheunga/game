@@ -85,6 +85,11 @@
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.05,
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 6.0 },
+        { "Type": "clear_within", "Value": 72.0 }
+      ],
       "Waves": [
         {
           "Label": "Frontage runners",
@@ -149,6 +154,11 @@
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.08,
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.7 },
+        { "Type": "deploy_limit", "Value": 9.0 }
+      ],
       "Waves": [
         {
           "Label": "Mall doors",
@@ -185,6 +195,7 @@
           "SpawnInterval": 0.42,
           "Entries": [
             { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 },
             { "UnitId": "enemy_walker", "Count": 2 }
           ]
@@ -225,6 +236,11 @@
       "BossWeight": 0.22,
       "BossSpawnStartTime": 70.0,
       "BonusWaveChance": 0.1,
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "clear_within", "Value": 95.0 },
+        { "Type": "enemy_defeats", "Value": 12.0 }
+      ],
       "Waves": [
         {
           "Label": "Perimeter breach",
@@ -251,8 +267,10 @@
           "SpawnInterval": 0.36,
           "Entries": [
             { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 },
-            { "UnitId": "enemy_runner", "Count": 2 }
+            { "UnitId": "enemy_runner", "Count": 1 }
           ]
         },
         {
@@ -310,6 +328,15 @@
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.08,
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.12 },
+        { "Type": "armored_convoy", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 10.0 },
+        { "Type": "clear_within", "Value": 100.0 }
+      ],
       "Waves": [
         {
           "Label": "Dock scouts",
@@ -336,7 +363,8 @@
           "SpawnInterval": 0.35,
           "Entries": [
             { "UnitId": "enemy_runner", "Count": 2 },
-            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 }
           ]
         },
@@ -346,6 +374,7 @@
           "SpawnInterval": 0.34,
           "Entries": [
             { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 },
             { "UnitId": "enemy_walker", "Count": 2 }
           ]
@@ -386,6 +415,14 @@
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.1,
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.18 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "enemy_defeats", "Value": 14.0 },
+        { "Type": "bus_hull_ratio", "Value": 0.55 }
+      ],
       "Waves": [
         {
           "Label": "Mudline feelers",
@@ -402,7 +439,8 @@
           "SpawnInterval": 0.38,
           "Entries": [
             { "UnitId": "enemy_brute", "Count": 2 },
-            { "UnitId": "enemy_walker", "Count": 2 }
+            { "UnitId": "enemy_walker", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
           ]
         },
         {
@@ -419,6 +457,7 @@
           "TriggerTime": 50.0,
           "SpawnInterval": 0.32,
           "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 },
             { "UnitId": "enemy_brute", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 },
@@ -461,6 +500,14 @@
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.12,
+      "Modifiers": [
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 8.0 },
+        { "Type": "enemy_defeats", "Value": 16.0 }
+      ],
       "Waves": [
         {
           "Label": "Crane shadows",
@@ -485,9 +532,11 @@
           "TriggerTime": 34.0,
           "SpawnInterval": 0.32,
           "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 },
             { "UnitId": "enemy_brute", "Count": 2 },
-            { "UnitId": "enemy_walker", "Count": 2 }
+            { "UnitId": "enemy_walker", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
           ]
         },
         {
@@ -535,6 +584,16 @@
       "BossWeight": 0.26,
       "BossSpawnStartTime": 72.0,
       "BonusWaveChance": 0.14,
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.18 },
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "surging_courage", "Value": 1.1 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "clear_within", "Value": 105.0 },
+        { "Type": "enemy_defeats", "Value": 18.0 }
+      ],
       "Waves": [
         {
           "Label": "Advance screen",
@@ -552,7 +611,8 @@
           "Entries": [
             { "UnitId": "enemy_brute", "Count": 2 },
             { "UnitId": "enemy_spitter", "Count": 1 },
-            { "UnitId": "enemy_walker", "Count": 2 }
+            { "UnitId": "enemy_walker", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
           ]
         },
         {
@@ -561,6 +621,7 @@
           "SpawnInterval": 0.3,
           "Entries": [
             { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
             { "UnitId": "enemy_crusher", "Count": 1 }
           ]
@@ -592,7 +653,8 @@
             { "UnitId": "enemy_crusher", "Count": 2 },
             { "UnitId": "enemy_brute", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 },
-            { "UnitId": "enemy_runner", "Count": 2 }
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
           ]
         }
       ]

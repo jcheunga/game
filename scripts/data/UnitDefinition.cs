@@ -19,6 +19,13 @@ public sealed class UnitDefinition
     public float AggroRangeY { get; set; } = 96f;
     public int BaseDamage { get; set; } = 12;
     public float DeployCooldown { get; set; } = 8f;
+    public float DamageTakenScale { get; set; } = 1f;
+    public float DeathBurstDamage { get; set; }
+    public float DeathBurstRadius { get; set; }
+    public string SpawnOnDeathUnitId { get; set; } = "";
+    public int SpawnOnDeathCount { get; set; }
+    public string VisualClass { get; set; } = "";
+    public float VisualScale { get; set; }
     public string ColorHex { get; set; } = "ffffff";
 
     public bool IsPlayerSide => Side.Equals("Player", StringComparison.OrdinalIgnoreCase);

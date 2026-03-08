@@ -13,6 +13,11 @@ Current target:
 - stage-based zombie waves
 - persistent roster and upgrade progression
 
+Longer-term expansion targets:
+
+- endless roguelite mode built on top of the battle/meta systems
+- multiplayer built only after the combat loop and state model are stable
+
 ## What We Have Already Done
 
 The project already has a working vertical slice:
@@ -93,6 +98,26 @@ Objective: scale once the systems are trustworthy.
 - stage modifiers and challenge content
 - balance passes for courage economy, cooldowns, and wave pacing
 
+### Milestone 6: Endless Roguelite Mode
+
+Objective: add a replayable run-based mode that reuses the combat and progression systems without depending on the linear campaign.
+
+- endless or floor-based stage progression
+- draft choices, random modifiers, or route forks between battles
+- temporary run upgrades layered on top of permanent roster progression
+- escalating enemy wave generation and boss checkpoints
+- run rewards that feed back into the main progression economy
+
+### Milestone 7: Multiplayer
+
+Objective: support networked play only after combat/state flow is stable enough to stop rewriting core rules.
+
+- decide the actual mode first: co-op defense, async challenge, or head-to-head
+- refactor combat authority and game state to be deterministic/network-safe
+- replicate deployment, combat events, and mission results over the network
+- build lobby/session flow and disconnect handling
+- rebalance units/objectives around the chosen multiplayer mode
+
 ## Immediate Next Sprint
 
 This sprint should stay narrow and practical:
@@ -115,14 +140,34 @@ This sprint should stay narrow and practical:
 - added persistent stage star ratings and basic mission goals
 - added persistent unit upgrades funded by scrap and applied in battle
 - added roster unlock rules and expanded the player unit pool
+- added a pre-battle loadout screen between map and battle
+- split battle deck/spawn/objective logic out of `BattleController`
+- added early enemy trait expansion with armored heavies and bloater death bursts
+- replaced fixed star rules with stage-authored mission objectives
+- added basic deploy/death/base-hit combat feedback effects
+- expanded enemy behaviors with projectile spitters and splitter death-spawns
+- surfaced stage threat intel in loadout and live wave previews in battle HUD
+- added data-driven stage modifiers that affect hull values, courage gain, and swarm pressure
+- added live in-battle objective tracking instead of end-screen-only star feedback
+- started the presentation pass with differentiated unit silhouettes, hit flashes, and projectile trails
+- improved battlefield readability with base damage states, impact shake, base health bars, and stronger deploy cards
+- added floating combat text so damage events read clearly during melee, projectile, burst, and base hits
+- upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
+- upgraded the title screen from a placeholder launcher into a live convoy/progression briefing
+- started the endless-mode scaffold with a dedicated prep screen, persisted run records, and a survival battle ruleset with generated escalating waves
+- added the first roguelite hook to endless mode with temporary opening boon choices
+- added checkpoint draft upgrades inside endless runs so survival now includes mid-run decisions
+- added route-fork decisions on major endless checkpoints so later segments can trade pressure for payout
+- added fork-specific segment events so chosen route branches now alter the actual enemy packs inside each endless segment
 
 ## Recommended Build Order After This Commit
 
-1. split battle responsibilities into smaller systems inside `BattleController`
-2. add a pre-battle loadout screen or stronger squad management flow
-3. deepen mission objectives beyond the current basic star rules
-4. add more enemy abilities/archetypes to match the larger player roster
-5. replace placeholder combat visuals with authored assets and effects
+1. replace placeholder combat visuals with authored assets and richer effects
+2. keep balancing courage economy, cooldowns, unlock pacing, and objective targets
+3. expand campaign breadth with more maps and districts once the core loop is solid
+4. add audio and stronger menu/map presentation
+5. deepen the endless scaffold with run upgrades, modifier drafts, and route forks instead of only raw survival scaling
+6. start multiplayer only after combat authority/state sync requirements are clear
 
 ## Guardrails
 
@@ -130,3 +175,4 @@ This sprint should stay narrow and practical:
 - keep data-driven content wherever possible
 - avoid large rewrites until wave scripting lands
 - validate each milestone with a playable loop before expanding content
+- treat multiplayer as a later architecture project, not a bolt-on UI feature

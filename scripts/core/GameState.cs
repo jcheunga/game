@@ -11,6 +11,8 @@ public partial class GameState : Node
 	private const int MaxDeckSize = 3;
 	private const int DefaultUnitLevel = 1;
 	private const int MaxPlayerUnitLevel = 5;
+	private const string DefaultEndlessRouteId = "city";
+	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
 	private const bool DefaultShowDevUi = true;
 	private const bool DefaultShowFpsCounter = true;
@@ -27,14 +29,21 @@ public partial class GameState : Node
 	public int Fuel { get; private set; } = DefaultFuel;
 	public int HighestUnlockedStage { get; private set; } = DefaultUnlockedStage;
 	public int SelectedStage { get; private set; } = DefaultUnlockedStage;
+	public string SelectedEndlessRouteId { get; private set; } = DefaultEndlessRouteId;
+	public string SelectedEndlessBoonId { get; private set; } = DefaultEndlessBoonId;
 	public string LastResultMessage { get; private set; } = DefaultReport;
 	public bool ShowDevUi { get; private set; } = DefaultShowDevUi;
 	public bool ShowFpsCounter { get; private set; } = DefaultShowFpsCounter;
+	public BattleRunMode CurrentBattleMode { get; private set; } = BattleRunMode.Campaign;
 	public IReadOnlyList<string> ActiveDeckUnitIds => _activeDeckUnitIds;
+	public int BestEndlessWave { get; private set; }
+	public float BestEndlessTimeSeconds { get; private set; }
+	public int EndlessRuns { get; private set; }
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
+	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
 
 	private readonly List<string> _activeDeckUnitIds = new();
 	private readonly List<int> _stageStars = new();
@@ -71,6 +80,30 @@ public partial class GameState : Node
 		Persist();
 	}
 
+	public void SetSelectedEndlessRoute(string routeId)
+	{
+		SelectedEndlessRouteId = NormalizeRouteId(routeId);
+		Persist();
+	}
+
+	public void PrepareCampaignBattle()
+	{
+		CurrentBattleMode = BattleRunMode.Campaign;
+	}
+
+	public void PrepareEndlessBattle(string routeId)
+	{
+		CurrentBattleMode = BattleRunMode.Endless;
+		SelectedEndlessRouteId = NormalizeRouteId(routeId);
+		Persist();
+	}
+
+	public void SetSelectedEndlessBoon(string boonId)
+	{
+		SelectedEndlessBoonId = NormalizeEndlessBoonId(boonId);
+		Persist();
+	}
+
 	public void UnlockNextStage(int clearedStage)
 	{
 		UnlockNextStageInternal(clearedStage);
@@ -102,6 +135,23 @@ public partial class GameState : Node
 	public void ApplyRetreat(int stage)
 	{
 		LastResultMessage = $"Retreated from stage {stage}. No rewards earned.";
+		Persist();
+	}
+
+	public void ApplyEndlessResult(string routeId, int waveReached, float elapsedSeconds, int enemyDefeats, int rewardScrap, int rewardFuel, bool retreated)
+	{
+		SelectedEndlessRouteId = NormalizeRouteId(routeId);
+		Scrap += Math.Max(0, rewardScrap);
+		Fuel += Math.Max(0, rewardFuel);
+		BestEndlessWave = Math.Max(BestEndlessWave, Math.Max(0, waveReached));
+		BestEndlessTimeSeconds = Math.Max(BestEndlessTimeSeconds, Math.Max(0f, elapsedSeconds));
+		EndlessRuns++;
+
+		var routeLabel = GameData.GetLatestStageForMap(SelectedEndlessRouteId).MapName;
+		var outcome = retreated ? "withdrew" : "was overrun";
+		LastResultMessage =
+			$"Endless run {outcome} on {routeLabel}. Wave {Math.Max(0, waveReached)}, {elapsedSeconds:0.0}s, {enemyDefeats} defeats. " +
+			$"+{Math.Max(0, rewardScrap)} scrap, +{Math.Max(0, rewardFuel)} fuel.";
 		Persist();
 	}
 
@@ -218,12 +268,22 @@ public partial class GameState : Node
 
 	public UnitStats BuildPlayerUnitStats(UnitDefinition definition)
 	{
+		return BuildPlayerUnitStats(definition, 1f, 1f, 0f, 0);
+	}
+
+	public UnitStats BuildPlayerUnitStats(
+		UnitDefinition definition,
+		float bonusHealthScale,
+		float bonusDamageScale,
+		float bonusCooldownReduction,
+		int bonusBaseDamage)
+	{
 		var level = GetUnitLevel(definition.Id);
 		var bonusLevel = Math.Max(0, level - DefaultUnitLevel);
-		var healthScale = 1f + (bonusLevel * 0.12f);
-		var damageScale = 1f + (bonusLevel * 0.1f);
-		var cooldownReduction = bonusLevel * 0.03f;
-		var baseDamageBonus = bonusLevel * 2;
+		var healthScale = (1f + (bonusLevel * 0.12f)) * Math.Max(0.1f, bonusHealthScale);
+		var damageScale = (1f + (bonusLevel * 0.1f)) * Math.Max(0.1f, bonusDamageScale);
+		var cooldownReduction = (bonusLevel * 0.03f) + Math.Max(0f, bonusCooldownReduction);
+		var baseDamageBonus = (bonusLevel * 2) + Math.Max(0, bonusBaseDamage);
 
 		return new UnitStats(
 			definition,
@@ -236,6 +296,18 @@ public partial class GameState : Node
 	public bool IsUnitInActiveDeck(string unitId)
 	{
 		return _activeDeckUnitIds.Contains(unitId, StringComparer.OrdinalIgnoreCase);
+	}
+
+	public bool CanStartBattle(out string message)
+	{
+		if (_activeDeckUnitIds.Count < MaxDeckSize)
+		{
+			message = $"Fill all {MaxDeckSize} squad cards before deploying.";
+			return false;
+		}
+
+		message = "Squad ready for deployment.";
+		return true;
 	}
 
 	public bool ToggleDeckUnit(string unitId, out string message)
@@ -315,13 +387,19 @@ public partial class GameState : Node
 		Fuel = DefaultFuel;
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
+		SelectedEndlessRouteId = DefaultEndlessRouteId;
+		SelectedEndlessBoonId = DefaultEndlessBoonId;
 		LastResultMessage = DefaultReport;
 		ShowDevUi = DefaultShowDevUi;
 		ShowFpsCounter = DefaultShowFpsCounter;
+		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
 		_stageStars.Clear();
 		_unitUpgradeLevels.Clear();
+		BestEndlessWave = 0;
+		BestEndlessTimeSeconds = 0f;
+		EndlessRuns = 0;
 	}
 
 	private void ApplySavedData(GameSaveData saved)
@@ -330,9 +408,16 @@ public partial class GameState : Node
 		Fuel = saved.Fuel;
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		SelectedStage = saved.SelectedStage;
+		SelectedEndlessRouteId = saved.Version >= 6
+			? NormalizeRouteId(saved.SelectedEndlessRouteId)
+			: DefaultEndlessRouteId;
+		SelectedEndlessBoonId = saved.Version >= 7
+			? NormalizeEndlessBoonId(saved.SelectedEndlessBoonId)
+			: DefaultEndlessBoonId;
 		LastResultMessage = string.IsNullOrWhiteSpace(saved.LastResultMessage)
 			? DefaultReport
 			: saved.LastResultMessage;
+		CurrentBattleMode = BattleRunMode.Campaign;
 		if (saved.Version >= 2)
 		{
 			ShowDevUi = saved.ShowDevUi;
@@ -380,6 +465,19 @@ public partial class GameState : Node
 				_unitUpgradeLevels[pair.Key] = pair.Value;
 			}
 		}
+
+		if (saved.Version >= 6)
+		{
+			BestEndlessWave = Math.Max(0, saved.BestEndlessWave);
+			BestEndlessTimeSeconds = Math.Max(0f, saved.BestEndlessTimeSeconds);
+			EndlessRuns = Math.Max(0, saved.EndlessRuns);
+		}
+		else
+		{
+			BestEndlessWave = 0;
+			BestEndlessTimeSeconds = 0f;
+			EndlessRuns = 0;
+		}
 	}
 
 	private void ClampState()
@@ -412,6 +510,11 @@ public partial class GameState : Node
 		NormalizeDeck();
 		NormalizeStageStars();
 		NormalizeUnitLevels();
+		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
+		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
+		BestEndlessWave = Math.Max(0, BestEndlessWave);
+		BestEndlessTimeSeconds = Math.Max(0f, BestEndlessTimeSeconds);
+		EndlessRuns = Math.Max(0, EndlessRuns);
 	}
 
 	private void UnlockNextStageInternal(int clearedStage)
@@ -436,12 +539,17 @@ public partial class GameState : Node
 			Fuel = Fuel,
 			HighestUnlockedStage = HighestUnlockedStage,
 			SelectedStage = SelectedStage,
+			SelectedEndlessRouteId = SelectedEndlessRouteId,
+			SelectedEndlessBoonId = SelectedEndlessBoonId,
 			LastResultMessage = LastResultMessage,
 			ShowDevUi = ShowDevUi,
 			ShowFpsCounter = ShowFpsCounter,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
-			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels)
+			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
+			BestEndlessWave = BestEndlessWave,
+			BestEndlessTimeSeconds = BestEndlessTimeSeconds,
+			EndlessRuns = EndlessRuns
 		};
 	}
 
@@ -566,5 +674,20 @@ public partial class GameState : Node
 	private void Persist()
 	{
 		SaveSystem.Instance?.Save(BuildSaveData());
+	}
+
+	private static string NormalizeRouteId(string routeId)
+	{
+		if (string.IsNullOrWhiteSpace(routeId))
+		{
+			return DefaultEndlessRouteId;
+		}
+
+		return routeId.Trim().ToLowerInvariant();
+	}
+
+	private static string NormalizeEndlessBoonId(string boonId)
+	{
+		return EndlessBoonCatalog.Normalize(boonId);
 	}
 }

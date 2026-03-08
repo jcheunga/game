@@ -4,6 +4,22 @@ using Godot;
 
 public partial class MapMenu : Control
 {
+    private readonly struct RoutePresentation
+    {
+        public RoutePresentation(string title, string subtitle, Color accent, Color panelColor)
+        {
+            Title = title;
+            Subtitle = subtitle;
+            Accent = accent;
+            PanelColor = panelColor;
+        }
+
+        public string Title { get; }
+        public string Subtitle { get; }
+        public Color Accent { get; }
+        public Color PanelColor { get; }
+    }
+
     private readonly Dictionary<int, Button> _stageButtons = new();
     private readonly Dictionary<string, Button> _deckButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Button> _upgradeButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -14,8 +30,15 @@ public partial class MapMenu : Control
     private Label _deckStatusLabel = null!;
     private Label _stageNameLabel = null!;
     private Label _stageDescriptionLabel = null!;
+    private Label _stageStatusLabel = null!;
     private Label _stageRewardLabel = null!;
     private Label _stageObjectivesLabel = null!;
+    private Label _stageModifiersLabel = null!;
+    private Label _stageIntelLabel = null!;
+    private PanelContainer _routeBannerPanel = null!;
+    private Label _routeTitleLabel = null!;
+    private Label _routeSubtitleLabel = null!;
+    private Label _routeProgressLabel = null!;
     private Button _deployButton = null!;
     private MapPathCanvas _mapCanvas = null!;
 
@@ -54,7 +77,7 @@ public partial class MapMenu : Control
 
         var titleLabel = new Label
         {
-            Text = "Campaign Map",
+            Text = "Campaign Routes",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -90,6 +113,36 @@ public partial class MapMenu : Control
         _mapCanvas.SetAnchorsPreset(LayoutPreset.FullRect);
         mapArea.AddChild(_mapCanvas);
 
+        _routeBannerPanel = new PanelContainer
+        {
+            Position = new Vector2(18f, 18f),
+            Size = new Vector2(324f, 120f)
+        };
+        mapArea.AddChild(_routeBannerPanel);
+
+        var routeBannerPadding = new MarginContainer();
+        routeBannerPadding.AddThemeConstantOverride("margin_left", 16);
+        routeBannerPadding.AddThemeConstantOverride("margin_right", 16);
+        routeBannerPadding.AddThemeConstantOverride("margin_top", 14);
+        routeBannerPadding.AddThemeConstantOverride("margin_bottom", 14);
+        _routeBannerPanel.AddChild(routeBannerPadding);
+
+        var routeBannerStack = new VBoxContainer();
+        routeBannerStack.AddThemeConstantOverride("separation", 6);
+        routeBannerPadding.AddChild(routeBannerStack);
+
+        _routeTitleLabel = new Label();
+        routeBannerStack.AddChild(_routeTitleLabel);
+
+        _routeSubtitleLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        routeBannerStack.AddChild(_routeSubtitleLabel);
+
+        _routeProgressLabel = new Label();
+        routeBannerStack.AddChild(_routeProgressLabel);
+
         foreach (var stage in GameData.Stages)
         {
             var stageId = stage.StageNumber;
@@ -100,9 +153,13 @@ public partial class MapMenu : Control
             var stageButton = new Button
             {
                 Text = stageId.ToString(),
-                Position = point - new Vector2(40f, 24f),
-                Size = new Vector2(80f, 48f)
+                Position = point - new Vector2(34f, 34f),
+                Size = new Vector2(68f, 68f)
             };
+            stageButton.AddThemeColorOverride("font_color", Colors.White);
+            stageButton.AddThemeColorOverride("font_hover_color", Colors.White);
+            stageButton.AddThemeColorOverride("font_pressed_color", Colors.White);
+            stageButton.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.5f));
 
             stageButton.Pressed += () => SelectStage(stageId);
             mapArea.AddChild(stageButton);
@@ -145,6 +202,12 @@ public partial class MapMenu : Control
         };
         sideContent.AddChild(_stageDescriptionLabel);
 
+        _stageStatusLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        sideContent.AddChild(_stageStatusLabel);
+
         _stageRewardLabel = new Label();
         sideContent.AddChild(_stageRewardLabel);
 
@@ -153,6 +216,18 @@ public partial class MapMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         sideContent.AddChild(_stageObjectivesLabel);
+
+        _stageModifiersLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        sideContent.AddChild(_stageModifiersLabel);
+
+        _stageIntelLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        sideContent.AddChild(_stageIntelLabel);
 
         var deckTitle = new Label
         {
@@ -236,6 +311,7 @@ public partial class MapMenu : Control
 
         _resourcesLabel.Text = $"Scrap: {GameState.Instance.Scrap}  |  Fuel: {GameState.Instance.Fuel}";
         _resultLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
+        RefreshRouteBanner();
 
         _mapCanvas.ActiveMapId = _activeMapId;
         _mapCanvas.HighestUnlockedStage = GameState.Instance.HighestUnlockedStage;
@@ -248,28 +324,36 @@ public partial class MapMenu : Control
             var button = pair.Value;
             var onActiveMap = IsStageOnMap(stageId, _activeMapId);
             var stars = GameState.Instance.GetStageStars(stageId);
+            var stageDefinition = GameData.GetStage(stageId);
 
             button.Visible = onActiveMap;
             button.Disabled = stageId > GameState.Instance.HighestUnlockedStage;
-            var stageLabel = stars > 0 ? $"{stageId} ({stars}*)" : stageId.ToString();
-            button.Text = stageId == _selectedStage ? $"[{stageLabel}]" : stageLabel;
+            ApplyStageButtonStyle(button, stageDefinition, stars, stageId <= GameState.Instance.HighestUnlockedStage, stageId == _selectedStage);
         }
 
         var stage = GameData.GetStage(_selectedStage);
+        var stageUnlocked = _selectedStage <= GameState.Instance.HighestUnlockedStage;
         var bestStars = GameState.Instance.GetStageStars(_selectedStage);
         _stageNameLabel.Text = $"{stage.MapName} - Stage {_selectedStage}: {stage.StageName}";
         _stageDescriptionLabel.Text = stage.Description;
-        _stageRewardLabel.Text = $"Estimated reward: +{stage.RewardScrap} scrap   |   Terrain: {stage.TerrainId}";
-        _stageObjectivesLabel.Text =
-            $"Objectives:\n" +
-            $"1* Clear the route\n" +
-            $"2* Finish with bus hull >= {Mathf.RoundToInt(stage.TwoStarBusHullRatio * 100f)}%\n" +
-            $"3* Clear within {stage.ThreeStarTimeLimitSeconds:0}s\n" +
-            $"Best: {(bestStars > 0 ? $"{bestStars}/3" : "none")}";
+        _stageStatusLabel.Text = BuildStageStatusText(stage, bestStars, stageUnlocked);
+        _stageRewardLabel.Text =
+            $"Reward on clear: +{stage.RewardScrap} scrap, +{GameData.Combat.VictoryFuelReward} fuel   |   Terrain: {stage.TerrainId}";
+        _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
+        _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
+        _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
         _deckStatusLabel.Text =
             $"{_deckStatusMessage}\nActive cards: {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit}";
         _deployButton.Text = $"Deploy To Stage {_selectedStage}";
-        _deployButton.Disabled = _selectedStage > GameState.Instance.HighestUnlockedStage;
+        var canStartBattle = GameState.Instance.CanStartBattle(out var deployValidationMessage);
+        if (!canStartBattle)
+        {
+            _deckStatusLabel.Text += $"\n{deployValidationMessage}";
+        }
+
+        _deployButton.Disabled =
+            _selectedStage > GameState.Instance.HighestUnlockedStage ||
+            !canStartBattle;
 
         foreach (var pair in _deckButtons)
         {
@@ -277,12 +361,23 @@ public partial class MapMenu : Control
             var unlocked = GameState.Instance.IsUnitUnlocked(pair.Key);
             var inDeck = GameState.Instance.IsUnitInActiveDeck(pair.Key);
             var level = GameState.Instance.GetUnitLevel(pair.Key);
+            var unitTint = unit.GetTint();
             pair.Value.Text = !unlocked
                 ? $"LOCKED  S{unit.UnlockStage}  {unit.DisplayName}"
                 : inDeck
                     ? $"ACTIVE  Lv{level}  {unit.DisplayName}"
                     : $"RESERVE  Lv{level}  {unit.DisplayName}";
             pair.Value.Disabled = !unlocked;
+            pair.Value.SelfModulate = !unlocked
+                ? new Color("5c677d")
+                : inDeck
+                    ? unitTint.Lightened(0.25f)
+                    : unitTint.Darkened(0.1f);
+            pair.Value.TooltipText = BuildUnitTooltip(unit, level);
+            pair.Value.AddThemeColorOverride("font_color", Colors.White);
+            pair.Value.AddThemeColorOverride("font_hover_color", Colors.White);
+            pair.Value.AddThemeColorOverride("font_pressed_color", Colors.White);
+            pair.Value.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.5f));
 
             if (_upgradeButtons.TryGetValue(pair.Key, out var upgradeButton))
             {
@@ -294,6 +389,11 @@ public partial class MapMenu : Control
                         ? "MAX"
                         : $"Up {upgradeCost}";
                 upgradeButton.Disabled = !unlocked || isMaxLevel || GameState.Instance.Scrap < upgradeCost;
+                upgradeButton.SelfModulate = !unlocked
+                    ? new Color("4f5d75")
+                    : isMaxLevel
+                        ? new Color("588157")
+                        : unitTint.Lerp(Colors.White, 0.35f);
             }
         }
     }
@@ -305,8 +405,16 @@ public partial class MapMenu : Control
             return;
         }
 
+        if (!GameState.Instance.CanStartBattle(out var message))
+        {
+            _deckStatusMessage = message;
+            RefreshUi();
+            return;
+        }
+
         GameState.Instance.SetSelectedStage(_selectedStage);
-        SceneRouter.Instance.GoToBattle();
+        GameState.Instance.PrepareCampaignBattle();
+        SceneRouter.Instance.GoToLoadout();
     }
 
     private void BuildMapSelectorItems()
@@ -439,5 +547,120 @@ public partial class MapMenu : Control
     private static string NormalizeMapId(string mapId)
     {
         return string.IsNullOrWhiteSpace(mapId) ? "city" : mapId;
+    }
+
+    private void RefreshRouteBanner()
+    {
+        var route = ResolveRoutePresentation(_activeMapId);
+        var totalStages = 0;
+        var unlockedStages = 0;
+        var completedStages = 0;
+        var earnedStars = 0;
+
+        foreach (var stage in GameData.Stages)
+        {
+            if (!IsStageOnMap(stage.StageNumber, _activeMapId))
+            {
+                continue;
+            }
+
+            totalStages++;
+            if (stage.StageNumber <= GameState.Instance.HighestUnlockedStage)
+            {
+                unlockedStages++;
+            }
+
+            if (GameState.Instance.GetStageStars(stage.StageNumber) > 0)
+            {
+                completedStages++;
+            }
+
+            earnedStars += GameState.Instance.GetStageStars(stage.StageNumber);
+        }
+
+        _routeTitleLabel.Text = route.Title;
+        _routeTitleLabel.AddThemeColorOverride("font_color", Colors.White);
+        _routeSubtitleLabel.Text = route.Subtitle;
+        _routeSubtitleLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.82f));
+        _routeProgressLabel.Text =
+            $"Route progress: {completedStages}/{Mathf.Max(1, totalStages)} cleared   |   " +
+            $"{unlockedStages}/{Mathf.Max(1, totalStages)} unlocked   |   " +
+            $"Stars: {earnedStars}/{Mathf.Max(1, totalStages) * 3}";
+        _routeProgressLabel.AddThemeColorOverride("font_color", route.Accent);
+        _routeBannerPanel.SelfModulate = route.PanelColor;
+    }
+
+    private void ApplyStageButtonStyle(Button button, StageDefinition stage, int stars, bool unlocked, bool selected)
+    {
+        var route = ResolveRoutePresentation(stage.MapId);
+        var label = selected ? $"[{stage.StageNumber:00}]" : $"{stage.StageNumber:00}";
+        if (stars > 0)
+        {
+            label += $"\n{new string('*', stars)}";
+        }
+        else if (!unlocked)
+        {
+            label += "\nLOCK";
+        }
+        else
+        {
+            label += "\nDEPLOY";
+        }
+
+        button.Text = label;
+        button.TooltipText =
+            $"{stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
+            $"Threat: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Stars: {stars}/3\n" +
+            $"{stage.Description.Split('\n')[0]}";
+
+        button.SelfModulate = !unlocked
+            ? route.PanelColor.Darkened(0.35f)
+            : selected
+                ? route.Accent
+                : stars > 0
+                    ? route.Accent.Lerp(Colors.White, 0.22f)
+                    : route.PanelColor.Lightened(0.22f);
+    }
+
+    private string BuildStageStatusText(StageDefinition stage, int bestStars, bool unlocked)
+    {
+        var stageState = !unlocked
+            ? "Locked"
+            : bestStars > 0
+                ? "Cleared"
+                : "Ready";
+        var waveStatus = stage.HasScriptedWaves
+            ? $"{stage.Waves.Length} scripted waves"
+            : "dynamic pressure";
+
+        return
+            $"Stage status: {stageState}  |  Best stars: {bestStars}/3\n" +
+            $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}";
+    }
+
+    private string BuildUnitTooltip(UnitDefinition definition, int level)
+    {
+        var stats = GameState.Instance.BuildPlayerUnitStats(definition);
+        return
+            $"Lv{level} {definition.DisplayName}\n" +
+            $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}\n" +
+            $"Range {stats.AttackRange:0.#}  |  Deploy CD {definition.DeployCooldown:0.#}s";
+    }
+
+    private RoutePresentation ResolveRoutePresentation(string mapId)
+    {
+        return NormalizeMapId(mapId).ToLowerInvariant() switch
+        {
+            "harbor" => new RoutePresentation(
+                "Harbor Front",
+                "Flooded terminals, cranes, and shipbreak lanes. Heavier zombie density and late-battle pressure.",
+                new Color("80ed99"),
+                new Color("1d3557")),
+            _ => new RoutePresentation(
+                "City Route",
+                "Suburban highways and metro choke points. Faster pacing, mixed infected, and earlier ranged pressure.",
+                new Color("ffd166"),
+                new Color("243b53"))
+        };
     }
 }

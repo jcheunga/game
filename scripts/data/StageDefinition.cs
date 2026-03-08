@@ -28,6 +28,8 @@ public sealed class StageDefinition
     public float BonusWaveChance { get; set; }
     public float TwoStarBusHullRatio { get; set; } = 0.5f;
     public float ThreeStarTimeLimitSeconds { get; set; } = 90f;
+    public StageModifierDefinition[] Modifiers { get; set; } = Array.Empty<StageModifierDefinition>();
+    public StageObjectiveDefinition[] Objectives { get; set; } = Array.Empty<StageObjectiveDefinition>();
     public StageWaveDefinition[] Waves { get; set; } = Array.Empty<StageWaveDefinition>();
 
     public Vector2 MapPoint => new(MapX, MapY);

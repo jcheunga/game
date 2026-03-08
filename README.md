@@ -72,7 +72,7 @@ godot --headless --path . --build-solutions --quit
   - Deploys, deaths, death bursts, and base hits now emit simple combat feedback pulses
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
-  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, projected salvage, retreat-based cash-out, and a temporary opening boon
+  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, convoy support events, projected salvage, retreat-based cash-out, and a temporary opening boon
   - Higher stages can spawn the `Overlord` boss enemy
   - Units and enemies attack the opposing base core repeatedly until it is destroyed
   - Mission stars are evaluated from stage-authored objective rules

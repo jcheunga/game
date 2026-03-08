@@ -159,6 +159,7 @@ This sprint should stay narrow and practical:
 - added checkpoint draft upgrades inside endless runs so survival now includes mid-run decisions
 - added route-fork decisions on major endless checkpoints so later segments can trade pressure for payout
 - added fork-specific segment events so chosen route branches now alter the actual enemy packs inside each endless segment
+- added convoy support events tied to endless route forks so branch choices now affect both enemy pressure and player-side assistance
 
 ## Recommended Build Order After This Commit
 

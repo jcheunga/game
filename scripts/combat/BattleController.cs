@@ -92,6 +92,7 @@ public partial class BattleController : Node2D
 	private string _activeRouteId = "city";
 	private string _endlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
+	private string _endlessSupportEventLabel = "No convoy support event yet.";
 
 	private float _playerBaseHealth;
 	private float _playerBaseMaxHealth;
@@ -140,11 +141,11 @@ public partial class BattleController : Node2D
 		_battleMode = GameState.Instance.CurrentBattleMode;
 
 		if (IsEndlessMode)
-		{
-			_activeRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
-			_endlessBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
-			_endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
-			_stageData = GameData.GetLatestStageForMap(_activeRouteId);
+			{
+				_activeRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
+				_endlessBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
+				_endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
+				_stageData = GameData.GetLatestStageForMap(_activeRouteId);
 			_stage = _stageData.StageNumber;
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData) * 1.08f;
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
@@ -175,10 +176,13 @@ public partial class BattleController : Node2D
 		_endlessCheckpointActive = false;
 		_endlessUnitHealthScale = 1f;
 		_endlessUnitDamageScale = 1f;
-		_endlessScrapScale = 1f;
-		_endlessRunUpgrades.Clear();
-		_draftOptionIds = Array.Empty<string>();
-		_draftingRouteFork = false;
+			_endlessScrapScale = 1f;
+			_endlessRunUpgrades.Clear();
+			_draftOptionIds = Array.Empty<string>();
+			_draftingRouteFork = false;
+			_endlessSupportEventLabel = IsEndlessMode
+				? "Opening convoy package deployed."
+				: "No convoy support event yet.";
 
 		_deck.Initialize(GameState.Instance.GetActiveDeckUnits());
 		if (IsEndlessMode)
@@ -1235,7 +1239,8 @@ public partial class BattleController : Node2D
 				$"Endless intel: {ResolveRouteLabel(_activeRouteId)} surge route  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
 				$"Current wave: {_spawnDirector.EndlessWaveNumber}  |  Next surge in {endlessCountdown:0.0}s  |  Queued: {_spawnDirector.PendingSpawnCount}\n" +
 				$"Pressure profile: {BuildEndlessPressureText()}\n" +
-				$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}";
+				$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
+				$"Convoy support: {_endlessSupportEventLabel}";
 		}
 
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
@@ -1293,6 +1298,7 @@ public partial class BattleController : Node2D
 			$"Projected salvage: +{projectedScrap} scrap, +{projectedFuel} fuel  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}\n" +
 			$"Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Run upgrades: {_endlessRunUpgrades.Count}\n" +
 			$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
+			$"Convoy support: {_endlessSupportEventLabel}\n" +
 			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
 	}
 
@@ -1492,14 +1498,32 @@ public partial class BattleController : Node2D
 		_endlessRouteForkId = EndlessRouteForkCatalog.Normalize(optionId);
 		_spawnDirector.SetEndlessRouteFork(_endlessRouteForkId);
 
-		if (_endlessRouteForkId == EndlessRouteForkCatalog.FortifiedBlockId)
+		TriggerRouteForkSupportEvent(_endlessRouteForkId);
+	}
+
+	private void TriggerRouteForkSupportEvent(string routeForkId)
+	{
+		switch (routeForkId)
 		{
-			var repair = _playerBaseMaxHealth * 0.1f;
-			_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repair);
-		}
-		else if (_endlessRouteForkId == EndlessRouteForkCatalog.MainlinePushId)
-		{
-			_courage = Mathf.Min(_maxCourage, _courage + 12f);
+			case EndlessRouteForkCatalog.MainlinePushId:
+				_endlessSupportEventLabel = "Dispatch riders arrived: +20 courage and cooldown recovery across the squad.";
+				_courage = Mathf.Min(_maxCourage, _courage + 20f);
+				_deck.ReduceCooldowns(3f);
+				break;
+			case EndlessRouteForkCatalog.ScavengeDetourId:
+				_endlessSupportEventLabel = "Scavenger escort arrived: raider reinforcement deployed and convoy patched.";
+				RepairBusByRatio(0.1f);
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
+					? GameData.PlayerRaiderId
+					: GameData.PlayerBrawlerId);
+				break;
+			case EndlessRouteForkCatalog.FortifiedBlockId:
+				_endlessSupportEventLabel = "Safehouse militia joined: defender reinforcement and bus repairs secured the block.";
+				RepairBusByRatio(0.12f);
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
+					? GameData.PlayerDefenderId
+					: GameData.PlayerBrawlerId);
+				break;
 		}
 	}
 
@@ -1516,6 +1540,46 @@ public partial class BattleController : Node2D
 			_endlessUnitDamageScale,
 			0f,
 			0);
+	}
+
+	private void SpawnSupportUnit(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId))
+		{
+			return;
+		}
+
+		var definition = GameData.GetUnit(unitId);
+		if (!definition.IsPlayerSide)
+		{
+			return;
+		}
+
+		var spawnPosition = new Vector2(
+			PlayerSpawnX + _rng.RandfRange(-10f, 10f),
+			Mathf.Clamp(
+				BaseCenterY + _rng.RandfRange(-72f, 72f),
+				BattlefieldTop + SpawnVerticalPadding,
+				BattlefieldBottom - SpawnVerticalPadding));
+
+		var stats = BuildPlayerUnitStatsForBattle(definition);
+		SpawnUnit(Team.Player, stats, spawnPosition);
+		SpawnEffect(spawnPosition, stats.Color.Lightened(0.15f), 12f, 32f, 0.24f);
+		SpawnFloatText(spawnPosition + new Vector2(0f, -22f), $"+ {stats.Name}", stats.Color.Lightened(0.35f), 0.54f);
+	}
+
+	private void RepairBusByRatio(float ratio)
+	{
+		if (ratio <= 0f)
+		{
+			return;
+		}
+
+		var healAmount = _playerBaseMaxHealth * ratio;
+		_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + healAmount);
+		_playerBaseFlashTimer = 0.18f;
+		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
+		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
 	}
 
 	private bool IsRouteForkCheckpoint()

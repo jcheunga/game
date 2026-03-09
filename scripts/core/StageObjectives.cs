@@ -10,6 +10,7 @@ public sealed class StageBattleResult
     public float Elapsed { get; init; }
     public int PlayerDeployments { get; init; }
     public int EnemyDefeats { get; init; }
+    public int PlayerHazardHits { get; init; }
 }
 
 public sealed class StageObjectiveOutcome
@@ -164,6 +165,7 @@ public static class StageObjectives
             "clear_within" => result.Elapsed <= ResolveTimeLimit(stage, objective),
             "deploy_limit" => result.PlayerDeployments <= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),
             "enemy_defeats" => result.EnemyDefeats >= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),
+            "hazard_hits_limit" => result.PlayerHazardHits <= Mathf.RoundToInt(Mathf.Max(0f, objective.Value)),
             _ => false
         };
     }
@@ -183,6 +185,7 @@ public static class StageObjectives
             "clear_within" => $"Clear within {ResolveTimeLimit(stage, objective):0}s",
             "deploy_limit" => $"Deploy no more than {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} units",
             "enemy_defeats" => $"Defeat at least {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} enemies",
+            "hazard_hits_limit" => $"Take no more than {Mathf.RoundToInt(Mathf.Max(0f, objective.Value))} hazard hits",
             _ => objective.Type
         };
     }
@@ -206,6 +209,7 @@ public static class StageObjectives
             "clear_within" => BuildTimeLimitLiveStatus(stage, objective, result, label),
             "deploy_limit" => BuildDeployLimitLiveStatus(objective, result, label),
             "enemy_defeats" => BuildEnemyDefeatLiveStatus(objective, result, label),
+            "hazard_hits_limit" => BuildHazardHitLiveStatus(objective, result, label),
             _ => new StageObjectiveLiveStatus
             {
                 Label = label,
@@ -310,6 +314,24 @@ public static class StageObjectives
         {
             Label = label,
             Detail = $"{result.EnemyDefeats}/{target} defeated",
+            State = state
+        };
+    }
+
+    private static StageObjectiveLiveStatus BuildHazardHitLiveStatus(
+        StageObjectiveDefinition objective,
+        StageBattleResult result,
+        string label)
+    {
+        var limit = Mathf.RoundToInt(Mathf.Max(0f, objective.Value));
+        var state = result.PlayerHazardHits <= limit
+            ? StageObjectiveLiveState.Active
+            : StageObjectiveLiveState.Failed;
+
+        return new StageObjectiveLiveStatus
+        {
+            Label = label,
+            Detail = $"{result.PlayerHazardHits}/{limit} hazard hits",
             State = state
         };
     }

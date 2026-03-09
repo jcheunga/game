@@ -17,6 +17,8 @@ public partial class GameState : Node
 	private const string DefaultReport = "Pick a district and clear the route.";
 	private const bool DefaultShowDevUi = true;
 	private const bool DefaultShowFpsCounter = true;
+	private static readonly string DefaultAsyncChallengeCode =
+		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
 	{
 		GameData.PlayerBrawlerId,
@@ -32,6 +34,7 @@ public partial class GameState : Node
 	public int Fuel => Food;
 	public int HighestUnlockedStage { get; private set; } = DefaultUnlockedStage;
 	public int SelectedStage { get; private set; } = DefaultUnlockedStage;
+	public string SelectedAsyncChallengeCode { get; private set; } = DefaultAsyncChallengeCode;
 	public string SelectedEndlessRouteId { get; private set; } = DefaultEndlessRouteId;
 	public string SelectedEndlessBoonId { get; private set; } = DefaultEndlessBoonId;
 	public string LastResultMessage { get; private set; } = DefaultReport;
@@ -42,6 +45,7 @@ public partial class GameState : Node
 	public int BestEndlessWave { get; private set; }
 	public float BestEndlessTimeSeconds { get; private set; }
 	public int EndlessRuns { get; private set; }
+	public int ChallengeRuns { get; private set; }
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
@@ -54,6 +58,8 @@ public partial class GameState : Node
 	private readonly HashSet<string> _ownedPlayerUnitIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
+	private readonly List<ChallengeRunRecord> _challengeHistory = new();
 
 	public override void _EnterTree()
 	{
@@ -102,6 +108,79 @@ public partial class GameState : Node
 		CurrentBattleMode = BattleRunMode.Endless;
 		SelectedEndlessRouteId = NormalizeRouteId(routeId);
 		Persist();
+	}
+
+	public AsyncChallengeDefinition GetSelectedAsyncChallenge()
+	{
+		if (!AsyncChallengeCatalog.TryParse(SelectedAsyncChallengeCode, out var challenge, out _))
+		{
+			challenge = AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001);
+		}
+
+		return AsyncChallengeCatalog.Create(
+			Mathf.Clamp(challenge.Stage, 1, MaxStage),
+			challenge.MutatorId,
+			challenge.Seed);
+	}
+
+	public bool TrySetSelectedAsyncChallengeCode(string code, out string message)
+	{
+		if (!AsyncChallengeCatalog.TryParse(code, out var challenge, out message))
+		{
+			return false;
+		}
+
+		SelectedAsyncChallengeCode = AsyncChallengeCatalog.Create(
+			Mathf.Clamp(challenge.Stage, 1, MaxStage),
+			challenge.MutatorId,
+			challenge.Seed).Code;
+		Persist();
+		message = $"Loaded challenge {SelectedAsyncChallengeCode}.";
+		return true;
+	}
+
+	public void GenerateAsyncChallenge(int stage, string mutatorId)
+	{
+		var challenge = AsyncChallengeCatalog.Generate(Mathf.Clamp(stage, 1, MaxStage), mutatorId);
+		SelectedAsyncChallengeCode = challenge.Code;
+		Persist();
+	}
+
+	public bool CanStartAsyncChallenge(out string message)
+	{
+		if (!CanStartBattle(out message))
+		{
+			return false;
+		}
+
+		var challenge = GetSelectedAsyncChallenge();
+		if (challenge.Stage > HighestUnlockedStage)
+		{
+			message = $"Challenge stage {challenge.Stage} is not explored yet.";
+			return false;
+		}
+
+		message = $"Challenge {challenge.Code} ready on stage {challenge.Stage}.";
+		return true;
+	}
+
+	public bool PrepareAsyncChallenge(string code, out string message)
+	{
+		if (!TrySetSelectedAsyncChallengeCode(code, out message))
+		{
+			return false;
+		}
+
+		if (!CanStartAsyncChallenge(out message))
+		{
+			return false;
+		}
+
+		CurrentBattleMode = BattleRunMode.AsyncChallenge;
+		LastResultMessage = $"Challenge {SelectedAsyncChallengeCode} queued for deployment.";
+		Persist();
+		message = LastResultMessage;
+		return true;
 	}
 
 	public void SetSelectedEndlessBoon(string boonId)
@@ -155,6 +234,74 @@ public partial class GameState : Node
 		LastResultMessage =
 			$"Endless run {outcome} on {routeLabel}. Wave {Math.Max(0, waveReached)}, {elapsedSeconds:0.0}s, {enemyDefeats} defeats. " +
 			$"+{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food.";
+		Persist();
+	}
+
+	public int GetAsyncChallengeBestScore(string code)
+	{
+		var normalized = AsyncChallengeCatalog.NormalizeCode(code);
+		return _challengeBestScores.TryGetValue(normalized, out var score)
+			? Math.Max(0, score)
+			: 0;
+	}
+
+	public IReadOnlyList<ChallengeRunRecord> GetRecentChallengeHistory(int maxCount = 6, string codeFilter = "")
+	{
+		var normalizedCode = string.IsNullOrWhiteSpace(codeFilter)
+			? ""
+			: AsyncChallengeCatalog.NormalizeCode(codeFilter);
+		return _challengeHistory
+			.Where(entry =>
+				string.IsNullOrWhiteSpace(normalizedCode) ||
+				entry.Code.Equals(normalizedCode, StringComparison.OrdinalIgnoreCase))
+			.OrderByDescending(entry => entry.PlayedAtUnixSeconds)
+			.ThenByDescending(entry => entry.Score)
+			.Take(Math.Max(1, maxCount))
+			.Select(CloneChallengeHistoryRecord)
+			.ToArray();
+	}
+
+	public void ApplyAsyncChallengeResult(string code, int score, float elapsedSeconds, int enemyDefeats, int starsEarned, bool won, bool retreated)
+	{
+		AsyncChallengeCatalog.TryParse(code, out var challenge, out _);
+		var normalizedCode = AsyncChallengeCatalog.NormalizeCode(challenge.Code);
+		var previousBest = GetAsyncChallengeBestScore(normalizedCode);
+		var newBest = Math.Max(previousBest, Math.Max(0, score));
+		_challengeBestScores[normalizedCode] = newBest;
+		ChallengeRuns++;
+		_challengeHistory.Insert(0, new ChallengeRunRecord
+		{
+			Code = normalizedCode,
+			Stage = Mathf.Clamp(challenge.Stage, 1, MaxStage),
+			MutatorId = challenge.MutatorId,
+			Score = Math.Max(0, score),
+			Won = won,
+			Retreated = retreated,
+			ElapsedSeconds = Math.Max(0f, elapsedSeconds),
+			EnemyDefeats = Math.Max(0, enemyDefeats),
+			StarsEarned = Mathf.Clamp(starsEarned, 0, 3),
+			PlayedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+		});
+		NormalizeChallengeHistory();
+
+		if (retreated)
+		{
+			LastResultMessage =
+				$"Challenge {normalizedCode} was abandoned. Best score remains {newBest}.";
+		}
+		else if (won)
+		{
+			LastResultMessage =
+				$"Challenge {normalizedCode} cleared. Score {score}. Stars {starsEarned}/3. " +
+				(newBest > previousBest ? "New personal best recorded." : $"Best remains {newBest}.");
+		}
+		else
+		{
+			LastResultMessage =
+				$"Challenge {normalizedCode} failed after {elapsedSeconds:0.0}s and {enemyDefeats} defeats. " +
+				$"Score {score}. Best: {newBest}.";
+		}
+
 		Persist();
 	}
 
@@ -376,6 +523,7 @@ public partial class GameState : Node
 		{
 			BaseUpgradeCatalog.HullPlatingId => 90 + (level * 70),
 			BaseUpgradeCatalog.PantryId => 80 + (level * 65),
+			BaseUpgradeCatalog.DispatchConsoleId => 95 + (level * 75),
 			_ => 100 + (level * 60)
 		};
 	}
@@ -428,9 +576,19 @@ public partial class GameState : Node
 		return baseGain * GetPlayerCourageGainScale();
 	}
 
+	public float ApplyPlayerDeployCooldownUpgrade(float baseCooldown)
+	{
+		return Mathf.Max(1.5f, baseCooldown * GetPlayerDeployCooldownScale());
+	}
+
 	public UnitStats BuildPlayerUnitStats(UnitDefinition definition)
 	{
-		return BuildPlayerUnitStats(definition, 1f, 1f, 0f, 0);
+		return BuildPlayerUnitStatsForLevel(definition, GetUnitLevel(definition.Id), 1f, 1f, 0f, 0);
+	}
+
+	public UnitStats BuildPlayerUnitStatsAtLevel(UnitDefinition definition, int level)
+	{
+		return BuildPlayerUnitStatsForLevel(definition, level, 1f, 1f, 0f, 0);
 	}
 
 	public UnitStats BuildPlayerUnitStats(
@@ -440,7 +598,43 @@ public partial class GameState : Node
 		float bonusCooldownReduction,
 		int bonusBaseDamage)
 	{
-		var level = GetUnitLevel(definition.Id);
+		return BuildPlayerUnitStatsForLevel(
+			definition,
+			GetUnitLevel(definition.Id),
+			bonusHealthScale,
+			bonusDamageScale,
+			bonusCooldownReduction,
+			bonusBaseDamage);
+	}
+
+	public float GetPlayerBaseHealthScaleAtLevel(int level)
+	{
+		return 1f + (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.12f);
+	}
+
+	public float GetPlayerCourageMaxBonusAtLevel(int level)
+	{
+		return Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 6f;
+	}
+
+	public float GetPlayerCourageGainScaleAtLevel(int level)
+	{
+		return 1f + (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.06f);
+	}
+
+	public float GetPlayerDeployCooldownScaleAtLevel(int level)
+	{
+		return Mathf.Max(0.55f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.06f));
+	}
+
+	private UnitStats BuildPlayerUnitStatsForLevel(
+		UnitDefinition definition,
+		int level,
+		float bonusHealthScale,
+		float bonusDamageScale,
+		float bonusCooldownReduction,
+		int bonusBaseDamage)
+	{
 		var bonusLevel = Math.Max(0, level - DefaultUnitLevel);
 		var healthScale = (1f + (bonusLevel * 0.12f)) * Math.Max(0.1f, bonusHealthScale);
 		var damageScale = (1f + (bonusLevel * 0.1f)) * Math.Max(0.1f, bonusDamageScale);
@@ -464,7 +658,7 @@ public partial class GameState : Node
 	{
 		if (_activeDeckUnitIds.Count < MaxDeckSize)
 		{
-			message = $"Fill all {MaxDeckSize} squad cards before deploying.";
+			message = $"Fill all {MaxDeckSize} squad cards in Convoy Shop before deploying.";
 			return false;
 		}
 
@@ -633,17 +827,22 @@ public partial class GameState : Node
 
 	private float GetPlayerBaseHealthScale()
 	{
-		return 1f + (GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId) * 0.12f);
+		return GetPlayerBaseHealthScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId));
 	}
 
 	private float GetPlayerCourageMaxBonus()
 	{
-		return GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId) * 6f;
+		return GetPlayerCourageMaxBonusAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId));
 	}
 
 	private float GetPlayerCourageGainScale()
 	{
-		return 1f + (GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId) * 0.06f);
+		return GetPlayerCourageGainScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId));
+	}
+
+	private float GetPlayerDeployCooldownScale()
+	{
+		return GetPlayerDeployCooldownScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId));
 	}
 
 	private void LoadOrInitialize()
@@ -667,6 +866,7 @@ public partial class GameState : Node
 		Food = DefaultFood;
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
+		SelectedAsyncChallengeCode = DefaultAsyncChallengeCode;
 		SelectedEndlessRouteId = DefaultEndlessRouteId;
 		SelectedEndlessBoonId = DefaultEndlessBoonId;
 		LastResultMessage = DefaultReport;
@@ -684,9 +884,12 @@ public partial class GameState : Node
 		_stageStars.Clear();
 		_unitUpgradeLevels.Clear();
 		_baseUpgradeLevels.Clear();
+		_challengeBestScores.Clear();
+		_challengeHistory.Clear();
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
 		EndlessRuns = 0;
+		ChallengeRuns = 0;
 	}
 
 	private void ApplySavedData(GameSaveData saved)
@@ -695,6 +898,9 @@ public partial class GameState : Node
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		SelectedStage = saved.SelectedStage;
+		SelectedAsyncChallengeCode = saved.Version >= 9
+			? AsyncChallengeCatalog.NormalizeCode(saved.SelectedAsyncChallengeCode)
+			: DefaultAsyncChallengeCode;
 		SelectedEndlessRouteId = saved.Version >= 6
 			? NormalizeRouteId(saved.SelectedEndlessRouteId)
 			: DefaultEndlessRouteId;
@@ -799,6 +1005,36 @@ public partial class GameState : Node
 			BestEndlessTimeSeconds = 0f;
 			EndlessRuns = 0;
 		}
+
+		_challengeBestScores.Clear();
+		if (saved.Version >= 9 && saved.ChallengeBestScores != null)
+		{
+			foreach (var pair in saved.ChallengeBestScores)
+			{
+				if (!string.IsNullOrWhiteSpace(pair.Key))
+				{
+					_challengeBestScores[AsyncChallengeCatalog.NormalizeCode(pair.Key)] = Math.Max(0, pair.Value);
+				}
+			}
+		}
+
+		ChallengeRuns = saved.Version >= 9
+			? Math.Max(0, saved.ChallengeRuns)
+			: 0;
+
+		_challengeHistory.Clear();
+		if (saved.Version >= 10 && saved.ChallengeHistory != null)
+		{
+			foreach (var entry in saved.ChallengeHistory)
+			{
+				if (entry == null)
+				{
+					continue;
+				}
+
+				_challengeHistory.Add(CloneChallengeHistoryRecord(entry));
+			}
+		}
 	}
 
 	private void ClampState()
@@ -836,11 +1072,15 @@ public partial class GameState : Node
 		NormalizeStageStars();
 		NormalizeUnitLevels();
 		NormalizeBaseUpgrades();
+		NormalizeChallengeScores();
+		NormalizeChallengeHistory();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
+		SelectedAsyncChallengeCode = GetSelectedAsyncChallenge().Code;
 		BestEndlessWave = Math.Max(0, BestEndlessWave);
 		BestEndlessTimeSeconds = Math.Max(0f, BestEndlessTimeSeconds);
 		EndlessRuns = Math.Max(0, EndlessRuns);
+		ChallengeRuns = Math.Max(0, ChallengeRuns);
 	}
 
 	private void UnlockNextStageInternal(int clearedStage)
@@ -865,6 +1105,7 @@ public partial class GameState : Node
 			Food = Food,
 			HighestUnlockedStage = HighestUnlockedStage,
 			SelectedStage = SelectedStage,
+			SelectedAsyncChallengeCode = SelectedAsyncChallengeCode,
 			SelectedEndlessRouteId = SelectedEndlessRouteId,
 			SelectedEndlessBoonId = SelectedEndlessBoonId,
 			LastResultMessage = LastResultMessage,
@@ -877,7 +1118,12 @@ public partial class GameState : Node
 			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
 			BestEndlessWave = BestEndlessWave,
 			BestEndlessTimeSeconds = BestEndlessTimeSeconds,
-			EndlessRuns = EndlessRuns
+			EndlessRuns = EndlessRuns,
+			ChallengeBestScores = new Dictionary<string, int>(_challengeBestScores),
+			ChallengeRuns = ChallengeRuns,
+			ChallengeHistory = _challengeHistory
+				.Select(CloneChallengeHistoryRecord)
+				.ToList()
 		};
 	}
 
@@ -1034,6 +1280,76 @@ public partial class GameState : Node
 		}
 	}
 
+	private void NormalizeChallengeScores()
+	{
+		var invalidKeys = _challengeBestScores.Keys
+			.Where(key => string.IsNullOrWhiteSpace(key))
+			.ToArray();
+
+		foreach (var invalidKey in invalidKeys)
+		{
+			_challengeBestScores.Remove(invalidKey);
+		}
+
+		foreach (var key in _challengeBestScores.Keys.ToArray())
+		{
+			var normalized = AsyncChallengeCatalog.NormalizeCode(key);
+			var score = Math.Max(0, _challengeBestScores[key]);
+			if (!key.Equals(normalized, StringComparison.OrdinalIgnoreCase))
+			{
+				_challengeBestScores.Remove(key);
+			}
+
+			_challengeBestScores[normalized] = score;
+		}
+	}
+
+	private void NormalizeChallengeHistory()
+	{
+		_challengeHistory.RemoveAll(entry => entry == null);
+		for (var i = 0; i < _challengeHistory.Count; i++)
+		{
+			var entry = _challengeHistory[i];
+			entry.Code = AsyncChallengeCatalog.NormalizeCode(entry.Code);
+			entry.Stage = Mathf.Clamp(entry.Stage, 1, MaxStage);
+			entry.MutatorId = AsyncChallengeCatalog.NormalizeMutatorId(entry.MutatorId);
+			entry.Score = Math.Max(0, entry.Score);
+			entry.ElapsedSeconds = Math.Max(0f, entry.ElapsedSeconds);
+			entry.EnemyDefeats = Math.Max(0, entry.EnemyDefeats);
+			entry.StarsEarned = Mathf.Clamp(entry.StarsEarned, 0, 3);
+			entry.PlayedAtUnixSeconds = Math.Max(0L, entry.PlayedAtUnixSeconds);
+		}
+
+		_challengeHistory.Sort((left, right) =>
+		{
+			var playedComparison = right.PlayedAtUnixSeconds.CompareTo(left.PlayedAtUnixSeconds);
+			return playedComparison != 0 ? playedComparison : right.Score.CompareTo(left.Score);
+		});
+
+		const int maxEntries = 18;
+		if (_challengeHistory.Count > maxEntries)
+		{
+			_challengeHistory.RemoveRange(maxEntries, _challengeHistory.Count - maxEntries);
+		}
+	}
+
+	private static ChallengeRunRecord CloneChallengeHistoryRecord(ChallengeRunRecord record)
+	{
+		return new ChallengeRunRecord
+		{
+			Code = AsyncChallengeCatalog.NormalizeCode(record.Code),
+			Stage = Math.Max(1, record.Stage),
+			MutatorId = AsyncChallengeCatalog.NormalizeMutatorId(record.MutatorId),
+			Score = Math.Max(0, record.Score),
+			Won = record.Won,
+			Retreated = record.Retreated,
+			ElapsedSeconds = Math.Max(0f, record.ElapsedSeconds),
+			EnemyDefeats = Math.Max(0, record.EnemyDefeats),
+			StarsEarned = Mathf.Clamp(record.StarsEarned, 0, 3),
+			PlayedAtUnixSeconds = Math.Max(0L, record.PlayedAtUnixSeconds)
+		};
+	}
+
 	private IReadOnlyList<UnitDefinition> GetNewlyAvailablePlayerUnits(int previousHighestUnlockedStage)
 	{
 		return GameData.GetPlayerUnits()
@@ -1048,12 +1364,7 @@ public partial class GameState : Node
 
 	private static string NormalizeRouteId(string routeId)
 	{
-		if (string.IsNullOrWhiteSpace(routeId))
-		{
-			return DefaultEndlessRouteId;
-		}
-
-		return routeId.Trim().ToLowerInvariant();
+		return RouteCatalog.Normalize(routeId);
 	}
 
 	private static string NormalizeEndlessBoonId(string boonId)

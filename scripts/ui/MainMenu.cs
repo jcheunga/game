@@ -23,7 +23,7 @@ public partial class MainMenu : Control
 
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(560, 500)
+            CustomMinimumSize = new Vector2(560, 620)
         };
         center.AddChild(panel);
 
@@ -64,9 +64,17 @@ public partial class MainMenu : Control
         startButton.Pressed += () => SceneRouter.Instance.GoToMap();
         stack.AddChild(startButton);
 
+        var shopButton = BuildButton("Convoy Shop");
+        shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
+        stack.AddChild(shopButton);
+
         var endlessButton = BuildButton("Endless Run");
         endlessButton.Pressed += () => SceneRouter.Instance.GoToEndless();
         stack.AddChild(endlessButton);
+
+        var multiplayerButton = BuildButton("Multiplayer Challenge");
+        multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
+        stack.AddChild(multiplayerButton);
 
         var resetButton = BuildButton("Reset Progress");
         resetButton.Pressed += () =>
@@ -100,6 +108,14 @@ public partial class MainMenu : Control
             totalStars += GameState.Instance.GetStageStars(stage.StageNumber);
         }
 
+        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
+        var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
+        var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
+        var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextExploreStage, out _)
+            ? $"Next exploration: Stage {nextExploreStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextExploreStage.StageNumber)} food"
+            : "Route exploration complete";
+
         var squadSummary = GameState.Instance.GetActiveDeckUnits()
             .Select(unit => $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}");
         var squadLine = string.Join(", ", squadSummary);
@@ -108,12 +124,18 @@ public partial class MainMenu : Control
             squadLine = "No active squad configured.";
         }
 
+        var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
+        var bestChallengeScore = GameState.Instance.GetAsyncChallengeBestScore(selectedChallenge.Code);
+
         return
             "Convoy status:\n" +
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
-            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food\n" +
+            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
+            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
+            $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
+            $"{nextExploreLine}\n" +
             $"Active squad: {squadLine}";
     }
 }

@@ -33,38 +33,63 @@ godot --headless --path . --build-solutions --quit
 - Main menu:
   - Shows live convoy progress, unlocked-stage count, gold/food, next deployment, and active squad summary
   - `Start Campaign`: opens map
+  - `Convoy Shop`: opens the dedicated unit/base upgrade screen
   - `Endless Run`: opens the survival-mode prep screen
+  - `Multiplayer Challenge`: opens the async challenge prep screen
   - `Reset Progress`: restores stage unlock/resource defaults
+- Multiplayer challenge:
+  - Build or import a shareable challenge code like `CH-04-PRS-4821`
+  - Pick a stage and mutator, or roll a new seeded code
+  - Run the same seeded encounter locally and compare score on the same code
+  - Review recent local attempts for the current code and recent challenge queue history
+  - `Convoy Shop`: adjust the active squad and upgrades before posting a score
 - Endless prep:
-  - Choose `City Route` or `Harbor Front` for the survival run
+  - Choose `City Route`, `Harbor Front`, or `Foundry Line` for the survival run
   - Pick one temporary opening boon before the run starts
   - Review best endless wave/time, route pressure profile, and active squad stats
   - `Deploy Endless Convoy`: start the endless survival battle
-  - `Edit Squad On Map`: return to campaign squad management before the run
+  - `Convoy Shop`: buy upgrades and edit the active squad before the run
 - Campaign map:
-  - Switch between `City Route` and `Harbor Front` in the map selector
+  - Switch between `City Route`, `Harbor Front`, and `Foundry Line` in the map selector
   - Review route banner progress, earned stars, and route-specific stage styling on the map
   - Hover stage nodes for threat and star intel before selecting them
-  - Build a 3-card active squad, buy new units with gold, and upgrade units/base from the same screen
+  - Review convoy readiness, active squad summary, and route-specific exploration costs
   - Spend food to explore the next stage and to begin stage deployments
+  - `Open Convoy Shop`: jump into the dedicated shop screen
   - Select stage node (`1-8`) and press `Deploy`
+- Shop:
+  - Review owned units, shop-locked units, and active deck status
+  - Use the `Action Board` to follow stage-targeted buy/upgrade suggestions
+  - Buy new units with gold once their shop stage is explored
+  - Upgrade owned units with gold
+  - Preview unit stat gains before buying upgrades
+  - Upgrade `Hull Plating`, `Convoy Pantry`, and `Dispatch Console` bus systems
+  - Review route intel, next exploration costs, and upcoming unit unlocks while shopping
+  - Return to the title screen, campaign map, or endless prep from the same screen
+  - `Stage Briefing`: jump straight into the selected campaign loadout screen
   - `Back To Title`: return to menu
 - Loadout:
-  - Review stage objectives, active stage modifiers, scripted wave timing, enemy threat mix, and active squad stats
-  - Later stages can swap in custom goals like deploy caps or enemy defeat targets
+  - Review stage objectives, active stage modifiers, stage hazards, scripted wave timing, enemy threat mix, and active squad stats
+  - Later stages can swap in custom goals like deploy caps, enemy defeat targets, or hazard-hit limits
   - `Deploy Convoy`: spend food and start the battle
-  - `Back To Map`: adjust deck/upgrades before deploying
+  - `Convoy Shop`: adjust squad and upgrades before deploying
+  - `Back To Map`: return to route selection
 - Battle:
-  - Pick a unit card (`Brawler`, `Shooter`, `Defender`, `Ranger`, `Raider`, `Marksman`) when unlocked
+  - Pick a unit card (`Brawler`, `Shooter`, `Defender`, `Ranger`, `Raider`, `Mechanic`, `Marksman`, `Breacher`) when unlocked
   - Click anywhere on the battlefield to deploy at the clicked height
   - Card deploys consume courage and enter cooldown
   - Units aggro and fight when enemies enter their aggro box
   - `Shooter` and `Ranger` fire visible projectiles
+  - `Mechanic` can repair the bus during lulls instead of only pushing forward
+  - `Breacher` trades tempo for higher barricade/base damage on reinforced late-game stages
   - `Spitter` now uses the same projectile attack path from the enemy side
+  - `Saboteur` tries to slip past lane fights and cash in higher bus damage unless the convoy ties it up directly
   - `Crusher` and `Overlord` reduce incoming damage
   - `Bloater` explodes on death and damages nearby units
   - `Splitter` breaks into smaller walkers on death
   - Later stages can apply route modifiers like reinforced barricades, armored convoys, courage surges, and swarm density
+  - Foundry stages can also author timed battlefield hazards like rail surges, heat vents, cinder blasts, and furnace bursts
+  - The new `Foundry Line` district adds railyard/smelter/foundry battle palettes plus heavier splitter/crusher route pressure
   - Units now use differentiated silhouettes and size profiles instead of plain circles
   - Hits and attacks flash units, and projectiles now draw trails with impact pulses
   - The bus and barricade now show damage state, shake on impact, and expose clearer base health bars
@@ -73,6 +98,7 @@ godot --headless --path . --build-solutions --quit
   - Deploys, deaths, death bursts, and base hits now emit simple combat feedback pulses
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
+  - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
   - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, convoy support events, battlefield events, live segment directives, route-specific contact events, projected salvage, retreat-based cash-out, and a temporary opening boon
   - Endless contact events now render as visible relay, cache, and safehouse moments on the battlefield instead of only zone markers
   - Those endless contacts are now spawned battlefield actors with their own durability, contested state, and failure/survival feedback
@@ -100,7 +126,9 @@ godot --headless --path . --build-solutions --quit
 - `data/combat_config.json`: global combat/battlefield/economy tuning
 - `scenes/MainMenu.tscn`: title screen
 - `scenes/EndlessMenu.tscn`: endless-mode prep and route selection
+- `scenes/MultiplayerMenu.tscn`: async multiplayer challenge prep and code entry
 - `scenes/MapMenu.tscn`: stage map/menu
+- `scenes/ShopMenu.tscn`: dedicated unit/base shop screen
 - `scenes/LoadoutMenu.tscn`: pre-battle squad and mission briefing
 - `scenes/Battle.tscn`: freefield combat scene
 - `scenes/autoload/`: autoload root scenes

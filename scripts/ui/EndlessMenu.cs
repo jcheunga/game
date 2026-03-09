@@ -199,10 +199,10 @@ public partial class EndlessMenu : Control
 
         var editSquadButton = new Button
         {
-            Text = "Edit Squad On Map",
+            Text = "Convoy Shop",
             CustomMinimumSize = new Vector2(220f, 0f)
         };
-        editSquadButton.Pressed += () => SceneRouter.Instance.GoToMap();
+        editSquadButton.Pressed += () => SceneRouter.Instance.GoToShop();
         bottomRow.AddChild(editSquadButton);
 
         bottomRow.AddChild(new Control
@@ -242,6 +242,7 @@ public partial class EndlessMenu : Control
             $"Run rules:\n" +
             "- Waves scale up continuously.\n" +
             "- Pick one temporary opening boon before deploying.\n" +
+            "- Use Convoy Shop to change the active squad or buy upgrades.\n" +
             "- Retreat to cash out salvage.\n" +
             "- Gold and food rewards scale with wave reached, time alive, and kills.";
 
@@ -280,6 +281,7 @@ public partial class EndlessMenu : Control
     private Control BuildUnitPanel(UnitDefinition definition)
     {
         var stats = GameState.Instance.BuildPlayerUnitStats(definition);
+        var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(0f, 108f)
@@ -311,7 +313,8 @@ public partial class EndlessMenu : Control
         stack.AddChild(new Label
         {
             Text =
-                $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {definition.DeployCooldown:0.#}s",
+                $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
+                (stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : ""),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -396,17 +399,11 @@ public partial class EndlessMenu : Control
 
     private static string BuildRouteDescription(string routeId)
     {
-        return NormalizeRouteId(routeId) switch
-        {
-            "harbor" => "Harbor Front favors heavier infected, bloaters, and later boss pressure around the choke point.",
-            _ => "City Route favors faster infected, early spitters, and more frequent surge timing."
-        };
+        return RouteCatalog.Get(routeId).EndlessSummary;
     }
 
     private static string NormalizeRouteId(string routeId)
     {
-        return string.IsNullOrWhiteSpace(routeId)
-            ? "city"
-            : routeId.Trim().ToLowerInvariant();
+        return RouteCatalog.Normalize(routeId);
     }
 }

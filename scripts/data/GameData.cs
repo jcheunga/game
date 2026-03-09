@@ -13,7 +13,9 @@ public static class GameData
         PlayerDefenderId,
         PlayerRangerId,
         PlayerRaiderId,
-        PlayerMarksmanId
+        PlayerMechanicId,
+        PlayerMarksmanId,
+        PlayerBreacherId
     };
 
     public static readonly string[] EnemyRosterIds =
@@ -24,6 +26,7 @@ public static class GameData
         EnemyBruteId,
         EnemySpitterId,
         EnemySplitterId,
+        EnemySaboteurId,
         EnemyCrusherId,
         EnemyBossId
     };
@@ -33,13 +36,16 @@ public static class GameData
     public const string PlayerDefenderId = "player_defender";
     public const string PlayerRangerId = "player_ranger";
     public const string PlayerRaiderId = "player_raider";
+    public const string PlayerMechanicId = "player_mechanic";
     public const string PlayerMarksmanId = "player_marksman";
+    public const string PlayerBreacherId = "player_breacher";
     public const string EnemyWalkerId = "enemy_walker";
     public const string EnemyRunnerId = "enemy_runner";
     public const string EnemyBloaterId = "enemy_bloater";
     public const string EnemyBruteId = "enemy_brute";
     public const string EnemySpitterId = "enemy_spitter";
     public const string EnemySplitterId = "enemy_splitter";
+    public const string EnemySaboteurId = "enemy_saboteur";
     public const string EnemyCrusherId = "enemy_crusher";
     public const string EnemyBossId = "enemy_boss";
 
@@ -388,6 +394,56 @@ public static class GameData
                 }
             },
             {
+                PlayerBreacherId,
+                new UnitDefinition
+                {
+                    Id = PlayerBreacherId,
+                    DisplayName = "Breacher",
+                    Side = "Player",
+                    UnlockStage = 9,
+                    GoldCost = 420,
+                    Cost = 38,
+                    MaxHealth = 92f,
+                    Speed = 72f,
+                    AttackDamage = 19f,
+                    AttackRange = 30f,
+                    AttackCooldown = 1.02f,
+                    AggroRangeX = 225f,
+                    AggroRangeY = 88f,
+                    BaseDamage = 38,
+                    DeployCooldown = 12f,
+                    VisualClass = "fighter",
+                    VisualScale = 1.06f,
+                    ColorHex = "f3722c"
+                }
+            },
+            {
+                PlayerMechanicId,
+                new UnitDefinition
+                {
+                    Id = PlayerMechanicId,
+                    DisplayName = "Mechanic",
+                    Side = "Player",
+                    UnlockStage = 5,
+                    GoldCost = 260,
+                    Cost = 26,
+                    MaxHealth = 56f,
+                    Speed = 60f,
+                    AttackDamage = 8f,
+                    AttackRange = 132f,
+                    AttackCooldown = 1.08f,
+                    UsesProjectile = true,
+                    ProjectileSpeed = 470f,
+                    AggroRangeX = 280f,
+                    AggroRangeY = 120f,
+                    BaseDamage = 14,
+                    BusRepairAmount = 10f,
+                    DeployCooldown = 10f,
+                    VisualClass = "support",
+                    ColorHex = "90be6d"
+                }
+            },
+            {
                 EnemyWalkerId,
                 new UnitDefinition
                 {
@@ -502,6 +558,27 @@ public static class GameData
                 }
             },
             {
+                EnemySaboteurId,
+                new UnitDefinition
+                {
+                    Id = EnemySaboteurId,
+                    DisplayName = "Saboteur",
+                    Side = "Enemy",
+                    Cost = 0,
+                    MaxHealth = 52f,
+                    Speed = 116f,
+                    AttackDamage = 12f,
+                    AttackRange = 24f,
+                    AttackCooldown = 0.74f,
+                    AggroRangeX = 210f,
+                    AggroRangeY = 90f,
+                    BaseDamage = 32,
+                    VisualClass = "saboteur",
+                    VisualScale = 0.92f,
+                    ColorHex = "f94144"
+                }
+            },
+            {
                 EnemyCrusherId,
                 new UnitDefinition
                 {
@@ -551,7 +628,10 @@ public static class GameData
                 MapName = "City Route",
                 TerrainId = "urban",
                 Description = "Low density swarm near abandoned gas stations.\nRecommended squad: Brawler + Shooter.",
-                RewardScrap = 40,
+                RewardGold = 50,
+                RewardFood = 3,
+                EntryFoodCost = 1,
+                ExploreFoodCost = 1,
                 MapX = 132f,
                 MapY = 356f,
                 PlayerBaseHealth = 300f,
@@ -577,7 +657,10 @@ public static class GameData
                 MapName = "City Route",
                 TerrainId = "highway",
                 Description = "Faster infected and tighter lane pressure.\nRecommended squad: 2x Brawler, 1x Shooter.",
-                RewardScrap = 68,
+                RewardGold = 75,
+                RewardFood = 3,
+                EntryFoodCost = 1,
+                ExploreFoodCost = 1,
                 MapX = 324f,
                 MapY = 248f,
                 PlayerBaseHealth = 315f,
@@ -603,7 +686,10 @@ public static class GameData
                 MapName = "City Route",
                 TerrainId = "night",
                 Description = "Dense mixed wave before the city boss siege. Keep your line stable.",
-                RewardScrap = 95,
+                RewardGold = 105,
+                RewardFood = 3,
+                EntryFoodCost = 1,
+                ExploreFoodCost = 2,
                 MapX = 540f,
                 MapY = 314f,
                 PlayerBaseHealth = 335f,
@@ -629,7 +715,10 @@ public static class GameData
                 MapName = "City Route",
                 TerrainId = "night",
                 Description = "City boss stage. Overlord spawns begin toward the end of the battle.",
-                RewardScrap = 130,
+                RewardGold = 145,
+                RewardFood = 4,
+                EntryFoodCost = 1,
+                ExploreFoodCost = 2,
                 MapX = 742f,
                 MapY = 226f,
                 PlayerBaseHealth = 355f,
@@ -655,7 +744,10 @@ public static class GameData
                 MapName = "Harbor Front",
                 TerrainId = "industrial",
                 Description = "Second map unlocked. Rusted docks and container chokepoints.",
-                RewardScrap = 150,
+                RewardGold = 170,
+                RewardFood = 4,
+                EntryFoodCost = 2,
+                ExploreFoodCost = 3,
                 MapX = 168f,
                 MapY = 496f,
                 PlayerBaseHealth = 365f,
@@ -681,7 +773,10 @@ public static class GameData
                 MapName = "Harbor Front",
                 TerrainId = "swamp",
                 Description = "Waterlogged streets slow pushes. Spitters and heavy units dominate.",
-                RewardScrap = 178,
+                RewardGold = 200,
+                RewardFood = 4,
+                EntryFoodCost = 2,
+                ExploreFoodCost = 3,
                 MapX = 346f,
                 MapY = 546f,
                 PlayerBaseHealth = 385f,
@@ -707,7 +802,10 @@ public static class GameData
                 MapName = "Harbor Front",
                 TerrainId = "shipyard",
                 Description = "Heavy armor waves push through wrecked cranes before the final harbor boss.",
-                RewardScrap = 208,
+                RewardGold = 235,
+                RewardFood = 5,
+                EntryFoodCost = 2,
+                ExploreFoodCost = 4,
                 MapX = 556f,
                 MapY = 502f,
                 PlayerBaseHealth = 400f,
@@ -733,7 +831,10 @@ public static class GameData
                 MapName = "Harbor Front",
                 TerrainId = "shipyard",
                 Description = "Harbor boss stage. Overlord spawns begin toward the end of the battle.",
-                RewardScrap = 245,
+                RewardGold = 280,
+                RewardFood = 5,
+                EntryFoodCost = 3,
+                ExploreFoodCost = 4,
                 MapX = 742f,
                 MapY = 432f,
                 PlayerBaseHealth = 420f,
@@ -750,6 +851,122 @@ public static class GameData
                 BossWeight = 0.26f,
                 BossSpawnStartTime = 72f,
                 BonusWaveChance = 0.14f
+            },
+            new StageDefinition
+            {
+                StageNumber = 9,
+                StageName = "Freight Siding",
+                MapId = "foundry",
+                MapName = "Foundry Line",
+                TerrainId = "railyard",
+                Description = "Third route unlocked. Freight cuts favor splitters and brute pressure.",
+                RewardGold = 320,
+                RewardFood = 6,
+                EntryFoodCost = 3,
+                ExploreFoodCost = 5,
+                MapX = 148f,
+                MapY = 206f,
+                PlayerBaseHealth = 440f,
+                EnemyBaseHealth = 650f,
+                EnemySpawnMin = 2.35f,
+                EnemySpawnMax = 3.3f,
+                EnemyHealthScale = 1.54f,
+                EnemyDamageScale = 1.50f,
+                WalkerWeight = 0.12f,
+                RunnerWeight = 0.12f,
+                BruteWeight = 0.28f,
+                SpitterWeight = 0.14f,
+                CrusherWeight = 0.22f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.14f
+            },
+            new StageDefinition
+            {
+                StageNumber = 10,
+                StageName = "Smelter Row",
+                MapId = "foundry",
+                MapName = "Foundry Line",
+                TerrainId = "smelter",
+                Description = "Molten lanes and reinforced barricades reward higher bus damage and disciplined deployments.",
+                RewardGold = 360,
+                RewardFood = 6,
+                EntryFoodCost = 3,
+                ExploreFoodCost = 5,
+                MapX = 334f,
+                MapY = 154f,
+                PlayerBaseHealth = 455f,
+                EnemyBaseHealth = 700f,
+                EnemySpawnMin = 2.25f,
+                EnemySpawnMax = 3.15f,
+                EnemyHealthScale = 1.62f,
+                EnemyDamageScale = 1.58f,
+                WalkerWeight = 0.1f,
+                RunnerWeight = 0.08f,
+                BruteWeight = 0.30f,
+                SpitterWeight = 0.16f,
+                CrusherWeight = 0.26f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.16f
+            },
+            new StageDefinition
+            {
+                StageNumber = 11,
+                StageName = "Cinder Causeway",
+                MapId = "foundry",
+                MapName = "Foundry Line",
+                TerrainId = "foundry",
+                Description = "Steady heavy pushes and splitter screens test how well the convoy recovers between surges.",
+                RewardGold = 410,
+                RewardFood = 7,
+                EntryFoodCost = 4,
+                ExploreFoodCost = 5,
+                MapX = 548f,
+                MapY = 244f,
+                PlayerBaseHealth = 470f,
+                EnemyBaseHealth = 760f,
+                EnemySpawnMin = 2.15f,
+                EnemySpawnMax = 3.0f,
+                EnemyHealthScale = 1.68f,
+                EnemyDamageScale = 1.64f,
+                WalkerWeight = 0.08f,
+                RunnerWeight = 0.06f,
+                BruteWeight = 0.32f,
+                SpitterWeight = 0.14f,
+                CrusherWeight = 0.3f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.18f
+            },
+            new StageDefinition
+            {
+                StageNumber = 12,
+                StageName = "Furnace Crown",
+                MapId = "foundry",
+                MapName = "Foundry Line",
+                TerrainId = "foundry",
+                Description = "Foundry boss stage. Splitters and crushers hold the line until the Overlord joins the furnace push.",
+                RewardGold = 470,
+                RewardFood = 8,
+                EntryFoodCost = 4,
+                ExploreFoodCost = 6,
+                MapX = 728f,
+                MapY = 170f,
+                PlayerBaseHealth = 490f,
+                EnemyBaseHealth = 840f,
+                EnemySpawnMin = 2.1f,
+                EnemySpawnMax = 2.9f,
+                EnemyHealthScale = 1.78f,
+                EnemyDamageScale = 1.72f,
+                WalkerWeight = 0.06f,
+                RunnerWeight = 0.05f,
+                BruteWeight = 0.28f,
+                SpitterWeight = 0.16f,
+                CrusherWeight = 0.34f,
+                BossWeight = 0.3f,
+                BossSpawnStartTime = 76f,
+                BonusWaveChance = 0.2f
             }
         };
     }

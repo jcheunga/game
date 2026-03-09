@@ -4,31 +4,14 @@ using Godot;
 
 public partial class MapMenu : Control
 {
-    private readonly struct RoutePresentation
-    {
-        public RoutePresentation(string title, string subtitle, Color accent, Color panelColor)
-        {
-            Title = title;
-            Subtitle = subtitle;
-            Accent = accent;
-            PanelColor = panelColor;
-        }
-
-        public string Title { get; }
-        public string Subtitle { get; }
-        public Color Accent { get; }
-        public Color PanelColor { get; }
-    }
-
     private readonly Dictionary<int, Button> _stageButtons = new();
-    private readonly Dictionary<string, Button> _deckButtons = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Button> _upgradeButtons = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Button> _baseUpgradeButtons = new(StringComparer.OrdinalIgnoreCase);
 
     private OptionButton _mapSelector = null!;
     private Label _resourcesLabel = null!;
     private Label _resultLabel = null!;
-    private Label _deckStatusLabel = null!;
+    private Label _convoySummaryLabel = null!;
+    private Label _squadSummaryLabel = null!;
+    private Label _deployStatusLabel = null!;
     private Label _stageNameLabel = null!;
     private Label _stageDescriptionLabel = null!;
     private Label _stageStatusLabel = null!;
@@ -46,7 +29,7 @@ public partial class MapMenu : Control
 
     private int _selectedStage = 1;
     private string _activeMapId = "city";
-    private string _deckStatusMessage = "Choose the squad cards that enter battle.";
+    private string _convoyStatusMessage = "Use Convoy Shop to buy units, upgrade the bus, and set a 3-card squad.";
 
     public override void _Ready()
     {
@@ -231,58 +214,32 @@ public partial class MapMenu : Control
         };
         sideContent.AddChild(_stageIntelLabel);
 
-        var deckTitle = new Label
+        var convoyTitle = new Label
         {
-            Text = $"Squad & Shop ({GameState.Instance.DeckSizeLimit} cards)"
+            Text = "Convoy Readiness"
         };
-        sideContent.AddChild(deckTitle);
+        sideContent.AddChild(convoyTitle);
 
-        _deckStatusLabel = new Label
+        _convoySummaryLabel = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 48f)
+            CustomMinimumSize = new Vector2(0f, 112f)
         };
-        sideContent.AddChild(_deckStatusLabel);
+        sideContent.AddChild(_convoySummaryLabel);
 
-        foreach (var unit in GameData.GetPlayerUnits())
+        _squadSummaryLabel = new Label
         {
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 8);
-            sideContent.AddChild(row);
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 112f)
+        };
+        sideContent.AddChild(_squadSummaryLabel);
 
-            var deckButton = new Button
-            {
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                CustomMinimumSize = new Vector2(0f, 42f)
-            };
-            deckButton.Pressed += () => ToggleDeckUnit(unit);
-            row.AddChild(deckButton);
-            _deckButtons[unit.Id] = deckButton;
-
-            var upgradeButton = new Button
-            {
-                CustomMinimumSize = new Vector2(112f, 42f)
-            };
-            upgradeButton.Pressed += () => UpgradeUnit(unit);
-            row.AddChild(upgradeButton);
-            _upgradeButtons[unit.Id] = upgradeButton;
-        }
-
-        sideContent.AddChild(new Label
+        _deployStatusLabel = new Label
         {
-            Text = "Bus Upgrades"
-        });
-
-        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
-        {
-            var upgradeButton = new Button
-            {
-                CustomMinimumSize = new Vector2(0f, 42f)
-            };
-            upgradeButton.Pressed += () => UpgradeBase(upgrade.Id);
-            sideContent.AddChild(upgradeButton);
-            _baseUpgradeButtons[upgrade.Id] = upgradeButton;
-        }
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 76f)
+        };
+        sideContent.AddChild(_deployStatusLabel);
 
         _resultLabel = new Label
         {
@@ -291,6 +248,14 @@ public partial class MapMenu : Control
             CustomMinimumSize = new Vector2(0f, 80f)
         };
         sideContent.AddChild(_resultLabel);
+
+        var shopButton = new Button
+        {
+            Text = "Open Convoy Shop",
+            CustomMinimumSize = new Vector2(0, 46)
+        };
+        shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
+        sideContent.AddChild(shopButton);
 
         _exploreButton = new Button
         {
@@ -369,92 +334,17 @@ public partial class MapMenu : Control
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
         _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
-        _deckStatusLabel.Text =
-            $"{_deckStatusMessage}\nActive cards: {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit}";
+        _convoySummaryLabel.Text = BuildConvoySummaryText();
+        _squadSummaryLabel.Text = BuildSquadSummaryText();
         _deployButton.Text = $"Deploy To Stage {_selectedStage} (-{stageEntryFoodCost} food)";
         var canStartBattle = GameState.Instance.CanStartCampaignBattle(_selectedStage, out var deployValidationMessage);
-        if (!canStartBattle)
-        {
-            _deckStatusLabel.Text += $"\n{deployValidationMessage}";
-        }
+        _deployStatusLabel.Text =
+            $"Convoy orders:\n{_convoyStatusMessage}\n" +
+            $"Deploy readiness: {deployValidationMessage}";
 
         _deployButton.Disabled =
             _selectedStage > GameState.Instance.HighestUnlockedStage ||
             !canStartBattle;
-
-        foreach (var pair in _deckButtons)
-        {
-            var unit = GameData.GetUnit(pair.Key);
-            var owned = GameState.Instance.IsUnitOwned(pair.Key);
-            var availableForPurchase = GameState.Instance.IsUnitAvailableForPurchase(pair.Key);
-            var inDeck = owned && GameState.Instance.IsUnitInActiveDeck(pair.Key);
-            var level = GameState.Instance.GetUnitLevel(pair.Key);
-            var unitTint = unit.GetTint();
-            pair.Value.Text = !availableForPurchase
-                ? $"SHOP  S{unit.UnlockStage}  {unit.DisplayName}"
-                : !owned
-                    ? $"FOR SALE  {GameState.Instance.GetUnitPurchaseCost(pair.Key)}g  {unit.DisplayName}"
-                    : inDeck
-                    ? $"ACTIVE  Lv{level}  {unit.DisplayName}"
-                    : $"RESERVE  Lv{level}  {unit.DisplayName}";
-            pair.Value.Disabled = !owned;
-            pair.Value.SelfModulate = !availableForPurchase
-                ? new Color("5c677d")
-                : !owned
-                    ? unitTint.Darkened(0.28f)
-                    : inDeck
-                    ? unitTint.Lightened(0.25f)
-                    : unitTint.Darkened(0.1f);
-            pair.Value.TooltipText = BuildUnitTooltip(unit, level);
-            pair.Value.AddThemeColorOverride("font_color", Colors.White);
-            pair.Value.AddThemeColorOverride("font_hover_color", Colors.White);
-            pair.Value.AddThemeColorOverride("font_pressed_color", Colors.White);
-            pair.Value.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.5f));
-
-            if (_upgradeButtons.TryGetValue(pair.Key, out var upgradeButton))
-            {
-                var isMaxLevel = level >= GameState.Instance.MaxUnitLevel;
-                var upgradeCost = GameState.Instance.GetUnitUpgradeCost(pair.Key);
-                var purchaseCost = GameState.Instance.GetUnitPurchaseCost(pair.Key);
-                upgradeButton.Text = !availableForPurchase
-                    ? $"S{unit.UnlockStage}"
-                    : !owned
-                        ? $"Buy {purchaseCost}"
-                    : isMaxLevel
-                        ? "MAX"
-                        : $"Up {upgradeCost}";
-                upgradeButton.Disabled = !availableForPurchase ||
-                    (!owned && GameState.Instance.Gold < purchaseCost) ||
-                    (owned && (isMaxLevel || GameState.Instance.Gold < upgradeCost));
-                upgradeButton.SelfModulate = !availableForPurchase
-                    ? new Color("4f5d75")
-                    : !owned
-                        ? unitTint.Lerp(Colors.White, 0.12f)
-                    : isMaxLevel
-                        ? new Color("588157")
-                        : unitTint.Lerp(Colors.White, 0.35f);
-            }
-        }
-
-        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
-        {
-            if (!_baseUpgradeButtons.TryGetValue(upgrade.Id, out var button))
-            {
-                continue;
-            }
-
-            var level = GameState.Instance.GetBaseUpgradeLevel(upgrade.Id);
-            var isMaxLevel = level >= upgrade.MaxLevel;
-            var cost = GameState.Instance.GetBaseUpgradeCost(upgrade.Id);
-            button.Text = isMaxLevel
-                ? $"{upgrade.Title}  Lv{level}/{upgrade.MaxLevel}  MAX"
-                : $"{upgrade.Title}  Lv{level}/{upgrade.MaxLevel}  Up {cost}g";
-            button.TooltipText = upgrade.Summary;
-            button.Disabled = isMaxLevel || GameState.Instance.Gold < cost;
-            button.SelfModulate = isMaxLevel
-                ? new Color("588157")
-                : new Color("7bdff2");
-        }
 
         if (GameState.Instance.CanExploreNextStage(out var nextStage, out var exploreMessage))
         {
@@ -481,7 +371,7 @@ public partial class MapMenu : Control
 
         if (!GameState.Instance.CanStartCampaignBattle(_selectedStage, out var message))
         {
-            _deckStatusMessage = message;
+            _convoyStatusMessage = message;
             RefreshUi();
             return;
         }
@@ -536,39 +426,10 @@ public partial class MapMenu : Control
         RefreshUi();
     }
 
-    private void ToggleDeckUnit(UnitDefinition unit)
-    {
-        GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
-        _deckStatusMessage = message;
-        RefreshUi();
-    }
-
-    private void UpgradeUnit(UnitDefinition unit)
-    {
-        if (GameState.Instance.IsUnitOwned(unit.Id))
-        {
-            GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
-            _deckStatusMessage = message;
-            RefreshUi();
-            return;
-        }
-
-        GameState.Instance.TryPurchaseUnit(unit.Id, out var purchaseMessage);
-        _deckStatusMessage = purchaseMessage;
-        RefreshUi();
-    }
-
-    private void UpgradeBase(string upgradeId)
-    {
-        GameState.Instance.TryUpgradeBase(upgradeId, out var message);
-        _deckStatusMessage = message;
-        RefreshUi();
-    }
-
     private void ExploreNextStage()
     {
         GameState.Instance.TryExploreNextStage(out var message);
-        _deckStatusMessage = message;
+        _convoyStatusMessage = message;
         _selectedStage = Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage);
         _activeMapId = GetMapIdForStage(_selectedStage);
         SyncMapSelectorSelection();
@@ -645,12 +506,12 @@ public partial class MapMenu : Control
 
     private static string NormalizeMapId(string mapId)
     {
-        return string.IsNullOrWhiteSpace(mapId) ? "city" : mapId;
+        return RouteCatalog.Normalize(mapId);
     }
 
     private void RefreshRouteBanner()
     {
-        var route = ResolveRoutePresentation(_activeMapId);
+        var route = RouteCatalog.Get(_activeMapId);
         var totalStages = 0;
         var unlockedStages = 0;
         var completedStages = 0;
@@ -679,19 +540,23 @@ public partial class MapMenu : Control
 
         _routeTitleLabel.Text = route.Title;
         _routeTitleLabel.AddThemeColorOverride("font_color", Colors.White);
-        _routeSubtitleLabel.Text = route.Subtitle;
+        _routeSubtitleLabel.Text = route.CampaignSubtitle;
         _routeSubtitleLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.82f));
+        var nextExploreText = TryGetNextStageForMap(_activeMapId, out var nextStage)
+            ? $"   |   Next explore: S{nextStage.StageNumber} ({GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)"
+            : "   |   Route fully explored";
         _routeProgressLabel.Text =
             $"Route progress: {completedStages}/{Mathf.Max(1, totalStages)} cleared   |   " +
             $"{unlockedStages}/{Mathf.Max(1, totalStages)} unlocked   |   " +
-            $"Stars: {earnedStars}/{Mathf.Max(1, totalStages) * 3}";
-        _routeProgressLabel.AddThemeColorOverride("font_color", route.Accent);
-        _routeBannerPanel.SelfModulate = route.PanelColor;
+            $"Stars: {earnedStars}/{Mathf.Max(1, totalStages) * 3}" +
+            nextExploreText;
+        _routeProgressLabel.AddThemeColorOverride("font_color", route.BannerAccent);
+        _routeBannerPanel.SelfModulate = route.BannerPanel;
     }
 
     private void ApplyStageButtonStyle(Button button, StageDefinition stage, int stars, bool unlocked, bool selected)
     {
-        var route = ResolveRoutePresentation(stage.MapId);
+        var route = RouteCatalog.Get(stage.MapId);
         var label = selected ? $"[{stage.StageNumber:00}]" : $"{stage.StageNumber:00}";
         if (stars > 0)
         {
@@ -713,12 +578,12 @@ public partial class MapMenu : Control
             $"{stage.Description.Split('\n')[0]}";
 
         button.SelfModulate = !unlocked
-            ? route.PanelColor.Darkened(0.35f)
+            ? route.BannerPanel.Darkened(0.35f)
             : selected
-                ? route.Accent
+                ? route.BannerAccent
                 : stars > 0
-                    ? route.Accent.Lerp(Colors.White, 0.22f)
-                    : route.PanelColor.Lightened(0.22f);
+                    ? route.BannerAccent.Lerp(Colors.White, 0.22f)
+                    : route.BannerPanel.Lightened(0.22f);
     }
 
     private string BuildStageStatusText(StageDefinition stage, int bestStars, bool unlocked)
@@ -737,35 +602,62 @@ public partial class MapMenu : Control
             $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food";
     }
 
-    private string BuildUnitTooltip(UnitDefinition definition, int level)
+    private string BuildConvoySummaryText()
     {
-        var stats = GameState.Instance.BuildPlayerUnitStats(definition);
-        var shopLine = GameState.Instance.IsUnitOwned(definition.Id)
-            ? $"Owned  |  Upgrade {GameState.Instance.GetUnitUpgradeCost(definition.Id)} gold"
-            : GameState.Instance.IsUnitAvailableForPurchase(definition.Id)
-                ? $"Shop price {GameState.Instance.GetUnitPurchaseCost(definition.Id)} gold"
-                : $"Shop unlock: stage {definition.UnlockStage}";
+        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
+        var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
+        var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
+        var nextExploreLine = TryGetNextStageForMap(_activeMapId, out var nextStage)
+            ? $"Stage {nextStage.StageNumber} ({GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)"
+            : "Route fully explored";
+
         return
-            $"Lv{level} {definition.DisplayName}\n" +
-            $"{shopLine}\n" +
-            $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}\n" +
-            $"Range {stats.AttackRange:0.#}  |  Deploy CD {definition.DeployCooldown:0.#}s";
+            $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
+            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Next exploration: {nextExploreLine}\n" +
+            "Use Convoy Shop for purchases, upgrades, and squad edits.";
     }
 
-    private RoutePresentation ResolveRoutePresentation(string mapId)
+    private string BuildSquadSummaryText()
     {
-        return NormalizeMapId(mapId).ToLowerInvariant() switch
+        var deckUnits = GameState.Instance.GetActiveDeckUnits();
+        var summary =
+            $"Active squad: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n";
+
+        if (deckUnits.Count == 0)
         {
-            "harbor" => new RoutePresentation(
-                "Harbor Front",
-                "Flooded terminals, cranes, and shipbreak lanes. Heavier zombie density and late-battle pressure.",
-                new Color("80ed99"),
-                new Color("1d3557")),
-            _ => new RoutePresentation(
-                "City Route",
-                "Suburban highways and metro choke points. Faster pacing, mixed infected, and earlier ranged pressure.",
-                new Color("ffd166"),
-                new Color("243b53"))
-        };
+            return summary + "No active units. Open Convoy Shop and assign three cards.";
+        }
+
+        for (var i = 0; i < deckUnits.Count; i++)
+        {
+            var unit = deckUnits[i];
+            summary += $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}";
+        }
+
+        if (deckUnits.Count < GameState.Instance.DeckSizeLimit)
+        {
+            summary += "\n\nDeck incomplete. Fill the remaining slots in Convoy Shop.";
+        }
+
+        return summary;
+    }
+
+    private bool TryGetNextStageForMap(string mapId, out StageDefinition stage)
+    {
+        foreach (var routeStage in GameData.GetStagesForMap(mapId))
+        {
+            if (routeStage.StageNumber <= GameState.Instance.HighestUnlockedStage)
+            {
+                continue;
+            }
+
+            stage = routeStage;
+            return true;
+        }
+
+        stage = GameData.GetLatestStageForMap(mapId);
+        return false;
     }
 }

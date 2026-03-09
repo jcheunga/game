@@ -26,6 +26,7 @@ public sealed class UnitStats
         AggroRangeX = Mathf.Max(AttackRange, definition.AggroRangeX);
         AggroRangeY = definition.AggroRangeY;
         BaseDamage = definition.BaseDamage + baseDamageBonus;
+        BusRepairAmount = definition.BusRepairAmount * Mathf.Lerp(1f, damageScale, 0.8f);
         DamageTakenScale = definition.DamageTakenScale;
         DeathBurstDamage = definition.DeathBurstDamage;
         DeathBurstRadius = definition.DeathBurstRadius;
@@ -48,6 +49,7 @@ public sealed class UnitStats
     public float AggroRangeX { get; }
     public float AggroRangeY { get; }
     public int BaseDamage { get; }
+    public float BusRepairAmount { get; }
     public float DamageTakenScale { get; }
     public float DeathBurstDamage { get; }
     public float DeathBurstRadius { get; }
@@ -88,6 +90,11 @@ public sealed class UnitStats
         if (definition.DisplayName.Contains("Marksman"))
         {
             return "sniper";
+        }
+
+        if (definition.BusRepairAmount > 0f || definition.DisplayName.Contains("Mechanic"))
+        {
+            return "support";
         }
 
         if (definition.DisplayName.Contains("Ranger") || definition.DisplayName.Contains("Shooter"))
@@ -136,6 +143,7 @@ public sealed class UnitStats
             "crusher" => 1.25f,
             "brute" => 1.18f,
             "bloater" => 1.22f,
+            "saboteur" => 0.92f,
             "shield" => 1.08f,
             "sniper" => 0.94f,
             "runner" => 0.92f,
@@ -159,6 +167,7 @@ public partial class Unit : Node2D
     public float AggroRangeX { get; private set; }
     public float AggroRangeY { get; private set; }
     public int BaseDamage { get; private set; }
+    public float BusRepairAmount { get; private set; }
     public float DamageTakenScale { get; private set; } = 1f;
     public float DeathBurstDamage { get; private set; }
     public float DeathBurstRadius { get; private set; }
@@ -192,6 +201,7 @@ public partial class Unit : Node2D
         AggroRangeX = stats.AggroRangeX;
         AggroRangeY = stats.AggroRangeY;
         BaseDamage = stats.BaseDamage;
+        BusRepairAmount = stats.BusRepairAmount;
         DamageTakenScale = stats.DamageTakenScale;
         DeathBurstDamage = stats.DeathBurstDamage;
         DeathBurstRadius = stats.DeathBurstRadius;
@@ -340,11 +350,13 @@ public partial class Unit : Node2D
             case "gunner":
             case "marksman":
             case "sniper":
+            case "support":
                 DrawGunnerUnit(bodyColor, accentColor, detailColor, flashStrength, VisualClass == "sniper");
                 break;
             case "spitter":
                 DrawSpitterUnit(bodyColor, accentColor, detailColor, flashStrength);
                 break;
+            case "saboteur":
             case "skirmisher":
             case "runner":
                 DrawSkirmisherUnit(bodyColor, accentColor, detailColor, flashStrength);
@@ -489,6 +501,11 @@ public partial class Unit : Node2D
             detailColor,
             3f,
             true);
+
+        if (VisualClass == "saboteur")
+        {
+            DrawRect(new Rect2(-Radius * 0.08f, -Radius * 0.24f, Radius * 0.36f, Radius * 0.28f), accentColor, true);
+        }
 
         if (flashStrength > 0.05f)
         {

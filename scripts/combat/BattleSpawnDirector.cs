@@ -25,6 +25,8 @@ public sealed class BattleSpawnDirector
     private int _stage;
     private float _enemySpawnTimer;
     private bool _isEndlessMode;
+    private float _additionalEnemyHealthScale = 1f;
+    private float _additionalEnemyDamageScale = 1f;
     private string _endlessRouteId = "city";
     private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
     private int _endlessSegmentStartWave = 1;
@@ -63,6 +65,8 @@ public sealed class BattleSpawnDirector
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
         _endlessTradeoffEnemyCapModifier = 0;
+        _additionalEnemyHealthScale = 1f;
+        _additionalEnemyDamageScale = 1f;
 
         _enemyRoster.Clear();
         _enemyRoster.AddRange(enemyRoster);
@@ -86,6 +90,8 @@ public sealed class BattleSpawnDirector
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
         _endlessTradeoffEnemyCapModifier = 0;
+        _additionalEnemyHealthScale = 1f;
+        _additionalEnemyDamageScale = 1f;
 
         _enemyRoster.Clear();
         _enemyRoster.AddRange(enemyRoster);
@@ -168,6 +174,12 @@ public sealed class BattleSpawnDirector
 
         stats = null!;
         return false;
+    }
+
+    public void SetEnemyScaleModifiers(float healthScale, float damageScale)
+    {
+        _additionalEnemyHealthScale = Mathf.Max(0.5f, healthScale);
+        _additionalEnemyDamageScale = Mathf.Max(0.5f, damageScale);
     }
 
     private void SpawnWeightedWave(Func<int> getActiveEnemyCount, Action<UnitStats, Vector2> spawnEnemy, float elapsed)
@@ -335,22 +347,40 @@ public sealed class BattleSpawnDirector
             remainingBudget -= GetEndlessEnemyCost(definition.Id);
         }
 
-        if (_endlessRouteId == "city" && waveNumber >= 3 && waveNumber % 3 == 0)
+        if (_endlessRouteId == RouteCatalog.CityId && waveNumber >= 3 && waveNumber % 3 == 0)
         {
             QueuePendingSpawn(GetEnemyById(GameData.EnemySpitterId), ref executeAt, spawnInterval);
         }
 
-        if (_endlessRouteId == "harbor" && waveNumber >= 4 && waveNumber % 3 == 0)
+        if (_endlessRouteId == RouteCatalog.HarborId && waveNumber >= 4 && waveNumber % 3 == 0)
         {
             QueuePendingSpawn(GetEnemyById(GameData.EnemyBloaterId), ref executeAt, spawnInterval);
         }
 
+        if (_endlessRouteId == RouteCatalog.FoundryId && waveNumber >= 4 && waveNumber % 3 == 0)
+        {
+            QueuePendingSpawn(GetEnemyById(GameData.EnemySplitterId), ref executeAt, spawnInterval * 0.96f);
+        }
+
+        if (_endlessRouteId == RouteCatalog.FoundryId && waveNumber >= 6 && waveNumber % 4 == 1)
+        {
+            QueuePendingSpawn(GetEnemyById(GameData.EnemySaboteurId), ref executeAt, spawnInterval * 0.82f);
+        }
+
         if (waveNumber >= 5 && waveNumber % 4 == 0)
         {
-            var supportId = _endlessRouteId == "harbor"
-                ? GameData.EnemyCrusherId
-                : GameData.EnemySplitterId;
+            var supportId = _endlessRouteId switch
+            {
+                RouteCatalog.HarborId => GameData.EnemyCrusherId,
+                RouteCatalog.FoundryId => GameData.EnemyCrusherId,
+                _ => GameData.EnemySplitterId
+            };
             QueuePendingSpawn(GetEnemyById(supportId), ref executeAt, spawnInterval);
+
+            if (_endlessRouteId == RouteCatalog.FoundryId && waveNumber >= 8)
+            {
+                QueuePendingSpawn(GetEnemyById(GameData.EnemyBruteId), ref executeAt, spawnInterval * 1.08f);
+            }
         }
 
         if (waveNumber >= 8 && waveNumber % 8 == 0)
@@ -464,8 +494,8 @@ public sealed class BattleSpawnDirector
 
     private UnitStats BuildEnemyStats(UnitDefinition source)
     {
-        var healthScale = _stageData.EnemyHealthScale;
-        var damageScale = _stageData.EnemyDamageScale;
+        var healthScale = _stageData.EnemyHealthScale * _additionalEnemyHealthScale;
+        var damageScale = _stageData.EnemyDamageScale * _additionalEnemyDamageScale;
         var cooldownReduction = (_stage - 1) * 0.05f;
         var baseDamageBonus = (_stage - 1) * 2;
 
@@ -489,12 +519,52 @@ public sealed class BattleSpawnDirector
     private UnitDefinition PickEndlessEnemyDefinition(int waveNumber)
     {
         var walkerWeight = 7f;
-        var runnerWeight = waveNumber >= 2 ? (_endlessRouteId == "city" ? 4.6f : 3.1f) + (waveNumber * 0.12f) : 0f;
-        var bloaterWeight = waveNumber >= 4 ? (_endlessRouteId == "harbor" ? 3.6f : 1.8f) : 0f;
+        var runnerWeight = waveNumber >= 2
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.CityId => 4.6f,
+                RouteCatalog.HarborId => 3.1f,
+                RouteCatalog.FoundryId => 2.4f,
+                _ => 3.4f
+            }) + (waveNumber * 0.12f)
+            : 0f;
+        var bloaterWeight = waveNumber >= 4
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.HarborId => 3.6f,
+                RouteCatalog.FoundryId => 1.5f,
+                _ => 1.8f
+            })
+            : 0f;
         var bruteWeight = waveNumber >= 3 ? 2.5f + (waveNumber * 0.08f) : 0f;
-        var spitterWeight = waveNumber >= 3 ? (_endlessRouteId == "city" ? 3.6f : 2.2f) + (waveNumber * 0.05f) : 0f;
-        var splitterWeight = waveNumber >= 6 ? (_endlessRouteId == "harbor" ? 2.9f : 2.1f) + (waveNumber * 0.04f) : 0f;
+        var saboteurWeight = waveNumber >= 5
+            ? (_endlessRouteId == RouteCatalog.FoundryId ? 2.6f : 0.9f) + (waveNumber * 0.03f)
+            : 0f;
+        var spitterWeight = waveNumber >= 3
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.CityId => 3.6f,
+                RouteCatalog.FoundryId => 1.8f,
+                _ => 2.2f
+            }) + (waveNumber * 0.05f)
+            : 0f;
+        var splitterWeight = waveNumber >= 6
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.HarborId => 2.9f,
+                RouteCatalog.FoundryId => 3.9f,
+                _ => 2.1f
+            }) + (waveNumber * 0.04f)
+            : 0f;
         var crusherWeight = waveNumber >= 5 ? 2.1f + (waveNumber * 0.05f) : 0f;
+
+        if (_endlessRouteId == RouteCatalog.FoundryId)
+        {
+            bruteWeight *= 1.18f;
+            crusherWeight *= 1.28f;
+            runnerWeight *= 0.92f;
+            saboteurWeight *= 1.25f;
+        }
 
         switch (_endlessRouteForkId)
         {
@@ -503,21 +573,24 @@ public sealed class BattleSpawnDirector
                 spitterWeight *= 1.25f;
                 bloaterWeight *= 0.85f;
                 bruteWeight *= 0.9f;
+                saboteurWeight *= 1.18f;
                 break;
             case EndlessRouteForkCatalog.ScavengeDetourId:
                 bloaterWeight *= 1.35f;
                 bruteWeight *= 1.3f;
                 runnerWeight *= 0.92f;
                 spitterWeight *= 0.9f;
+                saboteurWeight *= 0.88f;
                 break;
             case EndlessRouteForkCatalog.FortifiedBlockId:
                 runnerWeight *= 0.8f;
                 spitterWeight *= 0.8f;
                 crusherWeight *= 1.15f;
+                saboteurWeight *= 1.08f;
                 break;
         }
 
-        var total = walkerWeight + runnerWeight + bloaterWeight + bruteWeight + spitterWeight + splitterWeight + crusherWeight;
+        var total = walkerWeight + runnerWeight + bloaterWeight + bruteWeight + saboteurWeight + spitterWeight + splitterWeight + crusherWeight;
         if (total <= 0f)
         {
             return GetEnemyById(GameData.EnemyWalkerId);
@@ -548,6 +621,12 @@ public sealed class BattleSpawnDirector
         }
 
         roll -= bruteWeight;
+        if (roll < saboteurWeight)
+        {
+            return GetEnemyById(GameData.EnemySaboteurId);
+        }
+
+        roll -= saboteurWeight;
         if (roll < spitterWeight)
         {
             return GetEnemyById(GameData.EnemySpitterId);
@@ -653,6 +732,7 @@ public sealed class BattleSpawnDirector
             GameData.EnemyBloaterId => 2,
             GameData.EnemyBruteId => 2,
             GameData.EnemySpitterId => 2,
+            GameData.EnemySaboteurId => 2,
             GameData.EnemySplitterId => 3,
             GameData.EnemyCrusherId => 3,
             GameData.EnemyBossId => 6,
@@ -662,9 +742,7 @@ public sealed class BattleSpawnDirector
 
     private static string NormalizeRouteId(string routeId)
     {
-        return string.IsNullOrWhiteSpace(routeId)
-            ? "city"
-            : routeId.Trim().ToLowerInvariant();
+        return RouteCatalog.Normalize(routeId);
     }
 
     private float ResolveEndlessCadence()

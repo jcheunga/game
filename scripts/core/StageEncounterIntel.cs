@@ -30,7 +30,8 @@ public static class StageEncounterIntel
             return
                 $"Threat: {ResolveThreatRating(stage)}\n" +
                 "Pressure: dynamic infected activity\n" +
-                $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}";
+                $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}\n" +
+                $"Hazards: {StageHazards.BuildInlineSummary(stage)}";
         }
 
         var counts = BuildUnitCounts(stage, out var totalEnemies);
@@ -47,7 +48,7 @@ public static class StageEncounterIntel
             $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")}  |  " +
             $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")}  |  " +
             $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}\n" +
-            $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}";
+            $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}  |  Hazards: {StageHazards.BuildInlineSummary(stage)}";
     }
 
     public static string BuildEncounterIntel(StageDefinition stage)
@@ -85,6 +86,7 @@ public static class StageEncounterIntel
         builder.AppendLine(
             $"Scheduled contacts: {totalEnemies}  |  Enemy types: {counts.Count}  |  Peak wave: {peakWave.TriggerTime:0}s");
         builder.AppendLine($"Threat mix: {string.Join(", ", topThreats)}");
+        builder.AppendLine($"Hazards: {StageHazards.BuildInlineSummary(stage)}");
 
         if (bossWave != null)
         {
@@ -207,6 +209,7 @@ public static class StageEncounterIntel
             (peakWaveCount * 0.08f) +
             (Mathf.Min(totalEnemies, 30) * 0.015f) +
             (StageModifiers.HasModifiers(stage) ? stage.Modifiers.Length * 0.08f : 0f) +
+            (StageHazards.HasHazards(stage) ? stage.Hazards.Length * 0.1f : 0f) +
             (StageModifiers.ResolveEnemyCapBonus(stage) * 0.12f) +
             (hasBoss ? 0.55f : 0f);
     }

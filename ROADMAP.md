@@ -189,6 +189,19 @@ This sprint should stay narrow and practical:
 - added route-specific contact success tradeoffs so securing relay/cache/safehouse events now shifts the rest of the segment instead of being pure upside
 - added route-specific hostile response packs so active relay/cache/safehouse contacts now draw their own reinforcements during the segment
 - added one-time midpoint convoy assists so each active relay/cache/safehouse contact now has a player-side swing event during the segment too
+- replaced the prototype scrap/fuel layer with a persistent gold/food economy, including stage entry costs and exploration costs
+- added owned-unit purchasing, persistent unit leveling, and bus/base upgrades powered by gold
+- added a dedicated convoy shop screen so purchases, upgrades, deck edits, and route intel are no longer mixed into the map view
+- expanded the bus upgrade track with a deploy-cooldown `Dispatch Console` upgrade and surfaced upgrade previews in the shop
+- added a shop-side action board that recommends direct purchases and upgrades based on the selected stage threat mix
+- added the first multiplayer slice as an async challenge mode with shareable codes, seeded encounters, personal-best score tracking, and a dedicated prep screen
+- added persistent async challenge history so multiplayer prep now shows recent local attempts for the current code and recent queue activity
+- expanded the player roster again with a `Mechanic` support unit that can repair the bus and is surfaced through the shop recommendation board
+- expanded the campaign with a third `Foundry Line` district, including four new scripted stages and endless-route support
+- added a late-game `Breacher` unit that specializes in higher barricade/base damage for reinforced stages
+- added a `Saboteur` enemy archetype that dives the bus/objective path and is now seeded into Foundry stages and endless Foundry pressure
+- added stage-authored battlefield hazards with telegraph rings, timed pulses, loadout intel, and Foundry-specific heat/rail/furnace encounters
+- added a new hazard-hit mission objective type so Foundry stars can reward actually navigating battlefield hazards cleanly
 
 ## Recommended Build Order After This Commit
 

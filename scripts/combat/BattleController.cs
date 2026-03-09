@@ -78,6 +78,27 @@ public partial class BattleController : Node2D
 		public Color Color { get; }
 	}
 
+	private sealed class StageHazardState
+	{
+		public StageHazardState(
+			StageHazardDefinition definition,
+			Vector2 anchor,
+			float nextTriggerTime,
+			Color color)
+		{
+			Definition = definition;
+			Anchor = anchor;
+			NextTriggerTime = nextTriggerTime;
+			Color = color;
+		}
+
+		public StageHazardDefinition Definition { get; }
+		public Vector2 Anchor { get; }
+		public float NextTriggerTime { get; set; }
+		public bool WarningIssued { get; set; }
+		public Color Color { get; }
+	}
+
 	private sealed class EndlessDirectiveState
 	{
 		public EndlessDirectiveState(
@@ -162,6 +183,7 @@ public partial class BattleController : Node2D
 	private CombatTuning _combat = new();
 
 	private readonly List<Unit> _units = new();
+	private readonly List<StageHazardState> _stageHazards = new();
 	private readonly BattleDeckState _deck = new();
 	private readonly RandomNumberGenerator _rng = new();
 	private BattleSpawnDirector _spawnDirector = null!;
@@ -187,6 +209,8 @@ public partial class BattleController : Node2D
 	private readonly HashSet<string> _endlessRunUpgrades = new(StringComparer.OrdinalIgnoreCase);
 
 	private StageDefinition _stageData = null!;
+	private AsyncChallengeDefinition _challengeDefinition = null!;
+	private AsyncChallengeMutatorDefinition _challengeMutator = null!;
 
 	private int _stage;
 	private string _activeRouteId = "city";
@@ -206,6 +230,7 @@ public partial class BattleController : Node2D
 	private float _elapsed;
 	private int _playerDeployments;
 	private int _enemyDefeats;
+	private int _playerHazardHits;
 	private float _playerBaseFlashTimer;
 	private float _enemyBaseFlashTimer;
 	private bool _battleEnded;
@@ -226,6 +251,7 @@ public partial class BattleController : Node2D
 	private EndlessContactActor _activeEndlessContactActor = null!;
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
+	private bool IsChallengeMode => _battleMode == BattleRunMode.AsyncChallenge;
 
 	private float PlayerBaseX => _combat.PlayerBaseX;
 	private float EnemyBaseX => _combat.EnemyBaseX;
@@ -246,10 +272,21 @@ public partial class BattleController : Node2D
 
 	public override void _Ready()
 	{
-		_rng.Randomize();
-		_spawnDirector = new BattleSpawnDirector(_rng);
 		_combat = GameData.Combat;
 		_battleMode = GameState.Instance.CurrentBattleMode;
+		_challengeDefinition = GameState.Instance.GetSelectedAsyncChallenge();
+		_challengeMutator = AsyncChallengeCatalog.GetMutator(_challengeDefinition.MutatorId);
+
+		if (IsChallengeMode)
+		{
+			_rng.Seed = (ulong)_challengeDefinition.Seed;
+		}
+		else
+		{
+			_rng.Randomize();
+		}
+
+		_spawnDirector = new BattleSpawnDirector(_rng);
 
 		if (IsEndlessMode)
 		{
@@ -260,6 +297,18 @@ public partial class BattleController : Node2D
 			_stage = _stageData.StageNumber;
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData) * 1.08f;
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
+		}
+		else if (IsChallengeMode)
+		{
+			_stage = Mathf.Clamp(_challengeDefinition.Stage, 1, GameState.Instance.MaxStage);
+			_stageData = GameData.GetStage(_stage);
+			_activeRouteId = NormalizeRouteId(_stageData.MapId);
+			_playerBaseMaxHealth = _stageData.PlayerBaseHealth *
+				StageModifiers.ResolvePlayerBaseHealthScale(_stageData) *
+				_challengeMutator.PlayerBaseHealthScale;
+			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth *
+				StageModifiers.ResolveEnemyBaseHealthScale(_stageData) *
+				_challengeMutator.EnemyBaseHealthScale;
 		}
 		else
 		{
@@ -274,10 +323,13 @@ public partial class BattleController : Node2D
 		_playerBaseHealth = _playerBaseMaxHealth;
 		_enemyBaseHealth = _enemyBaseMaxHealth;
 
-		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(_combat.CourageMax);
-		_courage = Mathf.Min(_maxCourage, _combat.CourageStart);
+		var baseCourageMax = _combat.CourageMax + (IsChallengeMode ? _challengeMutator.CourageMaxBonus : 0f);
+		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(baseCourageMax);
+		_courage = Mathf.Min(_maxCourage, Mathf.Max(0f, _combat.CourageStart + (IsChallengeMode ? _challengeMutator.CourageMaxBonus * 0.35f : 0f)));
 		_courageGainPerSecond = GameState.Instance.ApplyPlayerCourageGainUpgrade(
-			_combat.CourageGainPerSecond * StageModifiers.ResolveCourageGainScale(_stageData));
+			_combat.CourageGainPerSecond *
+			StageModifiers.ResolveCourageGainScale(_stageData) *
+			(IsChallengeMode ? _challengeMutator.CourageGainScale : 1f));
 
 		if (IsEndlessMode)
 		{
@@ -286,6 +338,7 @@ public partial class BattleController : Node2D
 
 		_playerDeployments = 0;
 		_enemyDefeats = 0;
+		_playerHazardHits = 0;
 		_endlessCheckpointActive = false;
 		_endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
 		_endlessContactCourageGainScale = 1f;
@@ -321,12 +374,20 @@ public partial class BattleController : Node2D
 		else
 		{
 			_spawnDirector.Initialize(_stage, _stageData, _combat, GameData.GetEnemyUnits());
+			if (IsChallengeMode)
+			{
+				_spawnDirector.SetEnemyScaleModifiers(_challengeMutator.EnemyHealthScale, _challengeMutator.EnemyDamageScale);
+			}
 		}
+
+		InitializeStageHazards();
 
 		BuildUi();
 		SetStatus(
 			IsEndlessMode
 				? "Select a squad card, click the battlefield to deploy, and hold against escalating waves."
+				: IsChallengeMode
+					? $"Challenge {_challengeDefinition.Code}: deploy from the bus and post the best score you can."
 				: "Select a squad card, then click the battlefield to deploy from the bus.");
 		UpdateHud();
 	}
@@ -360,6 +421,7 @@ public partial class BattleController : Node2D
 		}
 
 		DrawTerrainDecoration();
+		DrawStageHazards();
 		DrawEndlessFieldEvent();
 		DrawEndlessContactEvent();
 
@@ -412,6 +474,30 @@ public partial class BattleController : Node2D
 				new Color("c1121f"),
 				new Color("52b788"),
 				new Color("ef476f")),
+			"railyard" => new TerrainPalette(
+				new Color("33211d"),
+				new Color("1c1616"),
+				new Color(1f, 0.79f, 0.56f, 0.08f),
+				new Color("bc6c25"),
+				new Color("c1121f"),
+				new Color("f4a261"),
+				new Color("ef476f")),
+			"smelter" => new TerrainPalette(
+				new Color("3f1d12"),
+				new Color("23120f"),
+				new Color(1f, 0.6f, 0.2f, 0.1f),
+				new Color("e76f51"),
+				new Color("c1121f"),
+				new Color("f4a261"),
+				new Color("ff4d6d")),
+			"foundry" => new TerrainPalette(
+				new Color("2a1a17"),
+				new Color("161312"),
+				new Color(1f, 0.75f, 0.38f, 0.08f),
+				new Color("f77f00"),
+				new Color("c1121f"),
+				new Color("fcbf49"),
+				new Color("ef476f")),
 			_ => new TerrainPalette(
 				new Color("14213d"),
 				new Color("22324f"),
@@ -460,6 +546,40 @@ public partial class BattleController : Node2D
 						2f,
 						true);
 				}
+				break;
+			case "railyard":
+				for (var i = 0; i < 3; i++)
+				{
+					var y = BaseCenterY - 56f + (i * 42f);
+					DrawLine(
+						new Vector2(BattlefieldLeft + 48f, y),
+						new Vector2(BattlefieldRight - 48f, y),
+						new Color(0.95f, 0.72f, 0.42f, 0.16f),
+						2f,
+						true);
+
+					for (var j = 0; j < 11; j++)
+					{
+						var x = Mathf.Lerp(BattlefieldLeft + 86f, BattlefieldRight - 86f, j / 10f);
+						DrawRect(new Rect2(x - 6f, y - 7f, 12f, 14f), new Color(0f, 0f, 0f, 0.24f), true);
+					}
+				}
+				break;
+			case "smelter":
+				DrawRect(new Rect2(BattlefieldLeft + 120f, BattlefieldBottom - 58f, 180f, 18f), new Color(1f, 0.42f, 0.1f, 0.34f), true);
+				DrawRect(new Rect2(BattlefieldRight - 310f, BattlefieldTop + 42f, 168f, 16f), new Color(1f, 0.54f, 0.18f, 0.28f), true);
+				DrawCircle(new Vector2(BattlefieldLeft + 210f, BattlefieldTop + 62f), 26f, new Color(1f, 0.4f, 0.15f, 0.1f));
+				DrawCircle(new Vector2(BattlefieldRight - 196f, BattlefieldBottom - 68f), 34f, new Color(1f, 0.55f, 0.2f, 0.1f));
+				break;
+			case "foundry":
+				for (var i = 0; i < 5; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 104f, BattlefieldRight - 104f, i / 4f);
+					DrawRect(new Rect2(x - 12f, BattlefieldTop + 26f, 24f, 92f), new Color(0f, 0f, 0f, 0.18f), true);
+					DrawRect(new Rect2(x - 26f, BattlefieldTop + 112f, 52f, 12f), new Color(0.95f, 0.58f, 0.2f, 0.16f), true);
+				}
+
+				DrawRect(new Rect2(BattlefieldLeft + 160f, BattlefieldBottom - 52f, BattlefieldRight - BattlefieldLeft - 320f, 20f), new Color(1f, 0.48f, 0.14f, 0.18f), true);
 				break;
 		}
 	}
@@ -562,6 +682,7 @@ public partial class BattleController : Node2D
 		_deck.TickCooldowns(deltaF);
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
 		UpdateEndlessFieldEvent(deltaF);
+		UpdateStageHazards();
 
 		SimulateUnits(deltaF);
 		CleanupDeadUnits();
@@ -765,7 +886,7 @@ public partial class BattleController : Node2D
 
 		var retryButton = new Button
 		{
-			Text = IsEndlessMode ? "Restart Run" : "Retry Stage",
+			Text = IsEndlessMode ? "Restart Run" : IsChallengeMode ? "Retry Challenge" : "Retry Stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		retryButton.Pressed += () => SceneRouter.Instance.RetryBattle();
@@ -773,7 +894,7 @@ public partial class BattleController : Node2D
 
 		var mapButton = new Button
 		{
-			Text = IsEndlessMode ? "Back To Endless Prep" : "Back To Map",
+			Text = IsEndlessMode ? "Back To Endless Prep" : IsChallengeMode ? "Back To Multiplayer" : "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		mapButton.Pressed += () =>
@@ -781,6 +902,12 @@ public partial class BattleController : Node2D
 			if (IsEndlessMode)
 			{
 				SceneRouter.Instance.GoToEndless();
+				return;
+			}
+
+			if (IsChallengeMode)
+			{
+				SceneRouter.Instance.GoToMultiplayer();
 				return;
 			}
 
@@ -842,10 +969,14 @@ public partial class BattleController : Node2D
 	{
 		_baseHealthLabel.Text = IsEndlessMode
 			? $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Route: {ResolveRouteLabel(_activeRouteId)} endless hold"
-			: $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Barricade: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}";
+			: IsChallengeMode
+				? $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Barricade: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}   |   Challenge {_challengeDefinition.Code}"
+				: $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Barricade: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}";
 		_resourceLabel.Text = IsEndlessMode
 			? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Endless wave {_spawnDirector.EndlessWaveNumber}   |   Best {GameState.Instance.BestEndlessWave}"
-			: $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Stage {_stage}";
+			: IsChallengeMode
+				? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Challenge Stage {_stage}   |   Best {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}"
+				: $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Stage {_stage}";
 		var waveStatus = _spawnDirector.IsEndlessMode
 			? $"   |   Pending surge: {Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed):0.0}s   |   Queued spawns: {_spawnDirector.PendingSpawnCount}"
 			: _spawnDirector.UsesScriptedWaves
@@ -988,7 +1119,7 @@ public partial class BattleController : Node2D
 
 		var stats = BuildPlayerUnitStatsForBattle(definition);
 		_courage -= stats.Cost;
-		_deck.MarkDeployed(definition);
+		_deck.MarkDeployed(definition, ResolvePlayerDeployCooldown(definition));
 		_playerDeployments++;
 		SpawnUnit(Team.Player, stats, spawnPosition);
 		SpawnEffect(spawnPosition, stats.Color, 12f, 42f, 0.28f);
@@ -1171,6 +1302,43 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private bool ShouldRepairBus(Unit unit)
+	{
+		return unit.Team == Team.Player &&
+			unit.BusRepairAmount > 0.05f &&
+			_playerBaseHealth < _playerBaseMaxHealth - 0.5f;
+	}
+
+	private void SimulatePlayerBusSupport(Unit unit, float delta)
+	{
+		var supportRadius = BaseCoreRadius + 18f;
+		if (unit.CanAttackPosition(PlayerBaseCorePosition, supportRadius))
+		{
+			if (unit.TryBeginAttackPosition(PlayerBaseCorePosition, supportRadius))
+			{
+				var repaired = Mathf.Min(unit.BusRepairAmount, _playerBaseMaxHealth - _playerBaseHealth);
+				if (repaired > 0.05f)
+				{
+					_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repaired);
+					_playerBaseFlashTimer = 0.12f;
+					SpawnEffect(PlayerBaseCorePosition, unit.Tint.Lightened(0.12f), 7f, 22f, 0.18f);
+					SpawnFloatText(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
+					SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "REPAIR", unit.Tint.Lightened(0.18f), 0.42f);
+				}
+			}
+
+			return;
+		}
+
+		unit.MoveToward(
+			PlayerBaseCorePosition,
+			delta,
+			BattlefieldLeft,
+			BattlefieldRight,
+			BattlefieldTop + SpawnVerticalPadding,
+			BattlefieldBottom - SpawnVerticalPadding);
+	}
+
 	private bool ShouldApproachBase(Unit unit)
 	{
 		if (unit.Team == Team.Player)
@@ -1194,8 +1362,9 @@ public partial class BattleController : Node2D
 			var target = FindClosestEnemy(unit);
 			var prioritizeContact = ShouldPrioritizeEndlessContact(unit, target);
 			var supportContact = ShouldSupportEndlessContact(unit, target);
+			var prioritizeObjectiveRaid = ShouldPrioritizeObjectiveRaid(unit, target);
 
-			if (target != null && unit.CanAttack(target))
+			if (target != null && !prioritizeObjectiveRaid && unit.CanAttack(target))
 			{
 				if (unit.UsesProjectile)
 				{
@@ -1221,7 +1390,7 @@ public partial class BattleController : Node2D
 			{
 				SimulatePlayerContactSupport(unit, delta);
 			}
-			else if (target != null)
+			else if (target != null && !prioritizeObjectiveRaid)
 			{
 				if (unit.UsesProjectile)
 				{
@@ -1242,11 +1411,15 @@ public partial class BattleController : Node2D
 			else
 			{
 				var targetBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
-				if (unit.CanAttackPosition(targetBase, BaseCoreRadius))
+				if (ShouldRepairBus(unit))
+				{
+					SimulatePlayerBusSupport(unit, delta);
+				}
+				else if (unit.CanAttackPosition(targetBase, BaseCoreRadius))
 				{
 					TryAttackBase(unit);
 				}
-				else if (ShouldApproachBase(unit))
+				else if (prioritizeObjectiveRaid || ShouldApproachBase(unit))
 				{
 					unit.MoveToward(
 						targetBase,
@@ -1396,12 +1569,20 @@ public partial class BattleController : Node2D
 			"spitter" => true,
 			"walker" => true,
 			"runner" => true,
+			"saboteur" => true,
 			"brute" => true,
 			"crusher" => true,
 			"splitter" => true,
 			"boss" => true,
 			_ => false
 		};
+	}
+
+	private static bool ShouldPrioritizeObjectiveRaid(Unit unit, Unit directTarget)
+	{
+		return unit.Team == Team.Enemy &&
+			unit.VisualClass == "saboteur" &&
+			(directTarget == null || !unit.CanAttack(directTarget));
 	}
 
 	private void SimulateEnemyContactPressure(Unit unit, float delta)
@@ -1758,12 +1939,25 @@ public partial class BattleController : Node2D
 	private string BuildDeployButtonTooltip(UnitDefinition definition, int level, bool isReady, float cooldown)
 	{
 		var stats = BuildPlayerUnitStatsForBattle(definition);
+		var effectiveDeployCooldown = ResolvePlayerDeployCooldown(definition);
 		var status = isReady ? "Ready to deploy" : $"Cooldown: {cooldown:0.0}s";
 		return
 			$"Lv{level} {definition.DisplayName}\n" +
 			$"{status}\n" +
 			$"HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Range {stats.AttackRange:0.#}\n" +
-			$"Deploy CD {definition.DeployCooldown:0.#}s";
+			$"Deploy CD {effectiveDeployCooldown:0.#}s" +
+			(stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : "");
+	}
+
+	private float ResolvePlayerDeployCooldown(UnitDefinition definition)
+	{
+		var cooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
+		if (IsChallengeMode)
+		{
+			cooldown *= _challengeMutator.DeployCooldownScale;
+		}
+
+		return Mathf.Max(1.5f, cooldown);
 	}
 
 	private string BuildWaveIntelText()
@@ -1796,10 +1990,11 @@ public partial class BattleController : Node2D
 		}
 
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
+		var hazardSummary = BuildStageHazardIntelText();
 
 		if (!_spawnDirector.UsesScriptedWaves)
 		{
-			return $"{modifierSummary}\nEncounter intel: dynamic pressure spawns are active on this route.";
+			return $"{modifierSummary}\n{hazardSummary}\nEncounter intel: dynamic pressure spawns are active on this route.";
 		}
 
 		if (!_spawnDirector.TryGetNextScriptedWave(out var nextWave))
@@ -1807,7 +2002,7 @@ public partial class BattleController : Node2D
 			var suffix = _spawnDirector.PendingSpawnCount > 0
 				? $"Encounter intel: {_spawnDirector.PendingSpawnCount} enemies still queued from the active scripted wave."
 				: "Encounter intel: all scripted waves have deployed. Finish the route.";
-			return $"{modifierSummary}\n{suffix}";
+			return $"{modifierSummary}\n{hazardSummary}\n{suffix}";
 		}
 
 		var countdown = Mathf.Max(0f, nextWave.TriggerTime - _elapsed);
@@ -1816,8 +2011,161 @@ public partial class BattleController : Node2D
 			: nextWave.Label;
 		return
 			$"{modifierSummary}\n" +
+			$"{hazardSummary}\n" +
 			$"Next wave in {countdown:0.0}s: {label}\n" +
 			$"{BuildWaveEntrySummary(nextWave)}";
+	}
+
+	private void InitializeStageHazards()
+	{
+		_stageHazards.Clear();
+		if (_stageData?.Hazards == null)
+		{
+			return;
+		}
+
+		foreach (var hazard in _stageData.Hazards)
+		{
+			if (hazard == null)
+			{
+				continue;
+			}
+
+			var anchor = new Vector2(
+				Mathf.Lerp(BattlefieldLeft + 48f, BattlefieldRight - 48f, Mathf.Clamp(hazard.XRatio, 0f, 1f)),
+				Mathf.Lerp(BattlefieldTop + 32f, BattlefieldBottom - 32f, Mathf.Clamp(hazard.YRatio, 0f, 1f)));
+			_stageHazards.Add(new StageHazardState(
+				hazard,
+				anchor,
+				Mathf.Max(1.5f, hazard.StartTime),
+				hazard.GetTint()));
+		}
+	}
+
+	private void UpdateStageHazards()
+	{
+		foreach (var hazard in _stageHazards)
+		{
+			var warningStart = hazard.NextTriggerTime - Mathf.Max(0.35f, hazard.Definition.WarningDuration);
+			if (!hazard.WarningIssued &&
+				_elapsed + 0.001f >= warningStart &&
+				_elapsed + 0.001f < hazard.NextTriggerTime)
+			{
+				hazard.WarningIssued = true;
+				SetStatus($"Hazard priming: {ResolveStageHazardLabel(hazard.Definition)}.");
+			}
+
+			if (_elapsed + 0.001f < hazard.NextTriggerTime)
+			{
+				continue;
+			}
+
+			TriggerStageHazard(hazard);
+			hazard.NextTriggerTime += Mathf.Max(2.5f, hazard.Definition.Interval);
+			hazard.WarningIssued = false;
+		}
+	}
+
+	private void TriggerStageHazard(StageHazardState hazard)
+	{
+		SpawnEffect(
+			hazard.Anchor,
+			hazard.Color.Lightened(0.08f),
+			12f,
+			Mathf.Max(26f, hazard.Definition.Radius),
+			0.24f,
+			false);
+		SpawnFloatText(
+			hazard.Anchor + new Vector2(0f, -Mathf.Min(72f, hazard.Definition.Radius + 10f)),
+			ResolveStageHazardLabel(hazard.Definition).ToUpperInvariant(),
+			hazard.Color.Lightened(0.18f),
+			0.54f);
+
+		foreach (var unit in _units)
+		{
+			if (unit.IsDead || unit.Position.DistanceTo(hazard.Anchor) > hazard.Definition.Radius)
+			{
+				continue;
+			}
+
+			var appliedDamage = unit.TakeDamage(hazard.Definition.Damage);
+			SpawnDamageFeedback(unit.Position, appliedDamage, hazard.Color);
+			if (unit.Team == Team.Player && appliedDamage > 0.05f)
+			{
+				_playerHazardHits++;
+			}
+		}
+
+		if (CanInteractWithEndlessContactActor(_activeEndlessContactActor) &&
+			_activeEndlessContactActor.Position.DistanceTo(hazard.Anchor) <= hazard.Definition.Radius)
+		{
+			var appliedDamage = _activeEndlessContactActor.ApplyPressureDamage(hazard.Definition.Damage * 0.85f);
+			RegisterEndlessContactPressure(appliedDamage);
+		}
+	}
+
+	private void DrawStageHazards()
+	{
+		foreach (var hazard in _stageHazards)
+		{
+			var radius = Mathf.Max(20f, hazard.Definition.Radius);
+			var warningDuration = Mathf.Max(0.35f, hazard.Definition.WarningDuration);
+			var timeUntil = Mathf.Max(0f, hazard.NextTriggerTime - _elapsed);
+			var warningRatio = timeUntil <= warningDuration
+				? 1f - Mathf.Clamp(timeUntil / warningDuration, 0f, 1f)
+				: 0f;
+			var pulse = 0.5f + (0.5f * Mathf.Sin((_elapsed + hazard.Anchor.X * 0.002f) * 5.5f));
+
+			DrawCircle(hazard.Anchor, radius, new Color(hazard.Color, 0.04f + (warningRatio * 0.12f)));
+			DrawArc(
+				hazard.Anchor,
+				radius + 4f + (warningRatio * 4f),
+				0f,
+				Mathf.Tau,
+				36,
+				new Color(hazard.Color, 0.16f + (warningRatio * 0.5f)),
+				2f + (warningRatio * 2f));
+
+			if (warningRatio > 0.01f && pulse > 0.45f)
+			{
+				DrawArc(
+					hazard.Anchor,
+					radius * (0.64f + (warningRatio * 0.18f)),
+					0f,
+					Mathf.Tau,
+					28,
+					new Color(hazard.Color.Lightened(0.2f), 0.24f + (warningRatio * 0.38f)),
+					2f,
+					true);
+			}
+		}
+	}
+
+	private string BuildStageHazardIntelText()
+	{
+		if (_stageHazards.Count == 0)
+		{
+			return "Hazards: none";
+		}
+
+		var parts = new List<string>();
+		for (var i = 0; i < _stageHazards.Count && i < 2; i++)
+		{
+			var hazard = _stageHazards[i];
+			parts.Add($"{ResolveStageHazardLabel(hazard.Definition)} {Mathf.Max(0f, hazard.NextTriggerTime - _elapsed):0.0}s");
+		}
+
+		if (_stageHazards.Count > 2)
+		{
+			parts.Add($"+{_stageHazards.Count - 2} more");
+		}
+
+		return "Hazards: " + string.Join("  |  ", parts);
+	}
+
+	private static string ResolveStageHazardLabel(StageHazardDefinition hazard)
+	{
+		return string.IsNullOrWhiteSpace(hazard?.Label) ? "Hazard pulse" : hazard.Label;
 	}
 
 	private string BuildWaveEntrySummary(StageWaveDefinition wave)
@@ -1888,11 +2236,7 @@ public partial class BattleController : Node2D
 
 	private string BuildEndlessPressureText()
 	{
-		var routeText = _activeRouteId switch
-		{
-			"harbor" => "Heavier bodies, bloaters, and crusher spikes as the clock climbs.",
-			_ => "Faster runners, frequent spitters, and tighter surge cadence over time."
-		};
+		var routeText = RouteCatalog.Get(_activeRouteId).PressureSummary;
 
 		var forkText = _endlessRouteForkId switch
 		{
@@ -3347,6 +3691,35 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		if (IsChallengeMode)
+		{
+			var stageResult = BuildStageBattleResult();
+			var starsEarned = playerWon
+				? StageObjectives.EvaluateVictory(_stageData, stageResult).StarsEarned
+				: 0;
+			var score = AsyncChallengeCatalog.CalculateScore(_challengeDefinition, stageResult, playerWon, starsEarned);
+			GameState.Instance.ApplyAsyncChallengeResult(
+				_challengeDefinition.Code,
+				score,
+				_elapsed,
+				_enemyDefeats,
+				starsEarned,
+				playerWon,
+				false);
+			_endLabel.Text =
+				$"Challenge {_challengeDefinition.Code}\n" +
+				$"{(playerWon ? "Cleared" : "Failed")}  |  Score {score}\n" +
+				$"Time {_elapsed:0.0}s  |  Enemy defeats {_enemyDefeats}  |  Stars {starsEarned}/3\n" +
+				$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}";
+			SetStatus(playerWon
+				? "Challenge clear recorded. Share the code and see who posts the cleaner score."
+				: "Challenge failed. Refit the approach and try the same code again.");
+			_endCenter.Visible = true;
+			_endPanel.Visible = true;
+			UpdateHud();
+			return;
+		}
+
 		if (playerWon)
 		{
 			var evaluation = StageObjectives.EvaluateVictory(_stageData, BuildStageBattleResult());
@@ -3384,6 +3757,24 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		if (IsChallengeMode)
+		{
+			if (!_battleEnded)
+			{
+				GameState.Instance.ApplyAsyncChallengeResult(
+					_challengeDefinition.Code,
+					0,
+					_elapsed,
+					_enemyDefeats,
+					0,
+					false,
+					true);
+			}
+
+			SceneRouter.Instance.GoToMultiplayer();
+			return;
+		}
+
 		if (!_battleEnded)
 		{
 			GameState.Instance.ApplyRetreat(_stage);
@@ -3400,7 +3791,8 @@ public partial class BattleController : Node2D
 			PlayerBaseMaxHealth = _playerBaseMaxHealth,
 			Elapsed = _elapsed,
 			PlayerDeployments = _playerDeployments,
-			EnemyDefeats = _enemyDefeats
+			EnemyDefeats = _enemyDefeats,
+			PlayerHazardHits = _playerHazardHits
 		};
 	}
 
@@ -3435,18 +3827,12 @@ public partial class BattleController : Node2D
 
 	private static string ResolveRouteLabel(string routeId)
 	{
-		return NormalizeRouteId(routeId) switch
-		{
-			"harbor" => "Harbor Front",
-			_ => "City Route"
-		};
+		return RouteCatalog.Get(routeId).Title;
 	}
 
 	private static string NormalizeRouteId(string routeId)
 	{
-		return string.IsNullOrWhiteSpace(routeId)
-			? "city"
-			: routeId.Trim().ToLowerInvariant();
+		return RouteCatalog.Normalize(routeId);
 	}
 
 	private void ApplyEndlessBoon()

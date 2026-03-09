@@ -1,0 +1,1030 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Godot;
+
+public partial class ShopMenu : Control
+{
+    private sealed class ShopRecommendation
+    {
+        public ShopRecommendation(string id, string title, string summary, string actionLabel, Action execute, bool disabled = false)
+        {
+            Id = id;
+            Title = title;
+            Summary = summary;
+            ActionLabel = actionLabel;
+            Execute = execute;
+            Disabled = disabled;
+        }
+
+        public string Id { get; }
+        public string Title { get; }
+        public string Summary { get; }
+        public string ActionLabel { get; }
+        public Action Execute { get; }
+        public bool Disabled { get; }
+    }
+
+    private Label _resourcesLabel = null!;
+    private Label _statusLabel = null!;
+    private Label _summaryLabel = null!;
+    private Label _deckLabel = null!;
+    private Label _routeIntelLabel = null!;
+    private VBoxContainer _recommendationStack = null!;
+    private VBoxContainer _unitStack = null!;
+    private VBoxContainer _baseStack = null!;
+
+    public override void _Ready()
+    {
+        BuildUi();
+        RefreshUi();
+    }
+
+    private void BuildUi()
+    {
+        var background = new ColorRect
+        {
+            Color = new Color("14213d")
+        };
+        background.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(background);
+
+        var titlePanel = new PanelContainer
+        {
+            Position = new Vector2(24f, 20f),
+            Size = new Vector2(1232f, 82f)
+        };
+        AddChild(titlePanel);
+
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", 16);
+        titlePanel.AddChild(titleRow);
+
+        titleRow.AddChild(new Label
+        {
+            Text = "Convoy Shop",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        _resourcesLabel = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        titleRow.AddChild(_resourcesLabel);
+
+        var summaryPanel = new PanelContainer
+        {
+            Position = new Vector2(24f, 122f),
+            Size = new Vector2(360f, 520f)
+        };
+        AddChild(summaryPanel);
+
+        var summaryPadding = new MarginContainer();
+        summaryPadding.AddThemeConstantOverride("margin_left", 18);
+        summaryPadding.AddThemeConstantOverride("margin_right", 18);
+        summaryPadding.AddThemeConstantOverride("margin_top", 18);
+        summaryPadding.AddThemeConstantOverride("margin_bottom", 18);
+        summaryPanel.AddChild(summaryPadding);
+
+        var summaryScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        summaryPadding.AddChild(summaryScroll);
+
+        var summaryStack = new VBoxContainer();
+        summaryStack.AddThemeConstantOverride("separation", 12);
+        summaryScroll.AddChild(summaryStack);
+
+        summaryStack.AddChild(new Label
+        {
+            Text = "Economy"
+        });
+
+        _summaryLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 140f)
+        };
+        summaryStack.AddChild(_summaryLabel);
+
+        summaryStack.AddChild(new Label
+        {
+            Text = "Active Squad"
+        });
+
+        _deckLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 110f)
+        };
+        summaryStack.AddChild(_deckLabel);
+
+        summaryStack.AddChild(new Label
+        {
+            Text = "Route Intel"
+        });
+
+        _routeIntelLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 150f)
+        };
+        summaryStack.AddChild(_routeIntelLabel);
+
+        summaryStack.AddChild(new Label
+        {
+            Text = "Action Board"
+        });
+
+        _recommendationStack = new VBoxContainer();
+        _recommendationStack.AddThemeConstantOverride("separation", 10);
+        summaryStack.AddChild(_recommendationStack);
+
+        _statusLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 92f)
+        };
+        summaryStack.AddChild(_statusLabel);
+
+        var unitsPanel = new PanelContainer
+        {
+            Position = new Vector2(408f, 122f),
+            Size = new Vector2(500f, 520f)
+        };
+        AddChild(unitsPanel);
+
+        var unitsPadding = new MarginContainer();
+        unitsPadding.AddThemeConstantOverride("margin_left", 18);
+        unitsPadding.AddThemeConstantOverride("margin_right", 18);
+        unitsPadding.AddThemeConstantOverride("margin_top", 18);
+        unitsPadding.AddThemeConstantOverride("margin_bottom", 18);
+        unitsPanel.AddChild(unitsPadding);
+
+        var unitsScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        unitsPadding.AddChild(unitsScroll);
+
+        _unitStack = new VBoxContainer();
+        _unitStack.AddThemeConstantOverride("separation", 12);
+        unitsScroll.AddChild(_unitStack);
+
+        var basePanel = new PanelContainer
+        {
+            Position = new Vector2(932f, 122f),
+            Size = new Vector2(324f, 520f)
+        };
+        AddChild(basePanel);
+
+        var basePadding = new MarginContainer();
+        basePadding.AddThemeConstantOverride("margin_left", 18);
+        basePadding.AddThemeConstantOverride("margin_right", 18);
+        basePadding.AddThemeConstantOverride("margin_top", 18);
+        basePadding.AddThemeConstantOverride("margin_bottom", 18);
+        basePanel.AddChild(basePadding);
+
+        var baseScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        basePadding.AddChild(baseScroll);
+
+        _baseStack = new VBoxContainer();
+        _baseStack.AddThemeConstantOverride("separation", 12);
+        baseScroll.AddChild(_baseStack);
+
+        var bottomPanel = new PanelContainer
+        {
+            Position = new Vector2(24f, 660f),
+            Size = new Vector2(1232f, 56f)
+        };
+        AddChild(bottomPanel);
+
+        var bottomRow = new HBoxContainer();
+        bottomRow.AddThemeConstantOverride("separation", 12);
+        bottomPanel.AddChild(bottomRow);
+
+        var titleButton = new Button
+        {
+            Text = "Back To Title",
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+        titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
+        bottomRow.AddChild(titleButton);
+
+        var mapButton = new Button
+        {
+            Text = "Back To Map",
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+        mapButton.Pressed += () => SceneRouter.Instance.GoToMap();
+        bottomRow.AddChild(mapButton);
+
+        var briefingButton = new Button
+        {
+            Text = $"Stage {GameState.Instance.SelectedStage} Briefing",
+            CustomMinimumSize = new Vector2(190f, 0f),
+            Disabled = GameState.Instance.SelectedStage > GameState.Instance.HighestUnlockedStage
+        };
+        briefingButton.Pressed += () => SceneRouter.Instance.GoToLoadout();
+        bottomRow.AddChild(briefingButton);
+
+        var multiplayerButton = new Button
+        {
+            Text = "Multiplayer",
+            CustomMinimumSize = new Vector2(160f, 0f)
+        };
+        multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
+        bottomRow.AddChild(multiplayerButton);
+
+        bottomRow.AddChild(new Control
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        });
+
+        var endlessButton = new Button
+        {
+            Text = "Endless Prep",
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+        endlessButton.Pressed += () => SceneRouter.Instance.GoToEndless();
+        bottomRow.AddChild(endlessButton);
+    }
+
+    private void RefreshUi()
+    {
+        _resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
+        _summaryLabel.Text = BuildSummaryText();
+        _deckLabel.Text = BuildDeckSummaryText();
+        _routeIntelLabel.Text = BuildRouteIntelText();
+        RebuildRecommendations();
+        _statusLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
+        RebuildUnitPanels();
+        RebuildBaseUpgradePanels();
+    }
+
+    private string BuildSummaryText()
+    {
+        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextStage, out var exploreMessage)
+            ? $"Next exploration: Stage {nextStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food."
+            : exploreMessage;
+
+        return
+            $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
+            $"Bus hull level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Pantry level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Dispatch level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
+            "Economy rules:\n" +
+            "- Gold buys units, unit levels, and bus upgrades.\n" +
+            "- Food pays for stage entry and map exploration.\n\n" +
+            nextExploreLine;
+    }
+
+    private string BuildRouteIntelText()
+    {
+        var selectedStage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId)
+            .Where(stage => stage.StageNumber >= selectedStage.StageNumber)
+            .Take(3)
+            .ToArray();
+
+        var intel =
+            $"Selected route: {selectedStage.MapName}\n" +
+            $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" +
+            $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food";
+
+        if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
+        {
+            intel += $"\nNext route exploration: Stage {nextRouteStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextRouteStage.StageNumber)} food";
+        }
+        else
+        {
+            intel += "\nNext route exploration: Route fully explored";
+        }
+
+        if (upcomingStages.Length > 0)
+        {
+            intel += "\n\nUpcoming route stops:";
+            foreach (var stage in upcomingStages)
+            {
+                var unlocked = stage.StageNumber <= GameState.Instance.HighestUnlockedStage ? "Ready" : "Locked";
+                intel +=
+                    $"\nS{stage.StageNumber} {stage.StageName}  |  {unlocked}" +
+                    $"\n  Entry {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food  |  Reward +{stage.RewardGold}g / +{stage.RewardFood}f";
+            }
+        }
+
+        var pendingUnits = GameData.GetPlayerUnits()
+            .Where(unit => !GameState.Instance.IsUnitOwned(unit.Id))
+            .OrderBy(unit => unit.UnlockStage)
+            .Take(2)
+            .ToArray();
+
+        if (pendingUnits.Length > 0)
+        {
+            intel += "\n\nNext unit unlocks:";
+            foreach (var unit in pendingUnits)
+            {
+                var unlockStage = GameData.GetStage(Mathf.Clamp(unit.UnlockStage, 1, GameState.Instance.MaxStage));
+                var unlockState = GameState.Instance.IsUnitAvailableForPurchase(unit.Id)
+                    ? $"Shop unlocked  |  {GameState.Instance.GetUnitPurchaseCost(unit.Id)} gold"
+                    : $"Explore stage {unit.UnlockStage}";
+                intel += $"\n{unit.DisplayName} - {unlockStage.MapName} S{unit.UnlockStage}  |  {unlockState}";
+            }
+        }
+
+        return intel;
+    }
+
+    private bool TryGetNextStageForMap(string mapId, out StageDefinition stage)
+    {
+        foreach (var routeStage in GameData.GetStagesForMap(mapId))
+        {
+            if (routeStage.StageNumber <= GameState.Instance.HighestUnlockedStage)
+            {
+                continue;
+            }
+
+            stage = routeStage;
+            return true;
+        }
+
+        stage = GameData.GetLatestStageForMap(mapId);
+        return false;
+    }
+
+    private void RebuildRecommendations()
+    {
+        foreach (var child in _recommendationStack.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var recommendations = BuildRecommendations();
+        if (recommendations.Count == 0)
+        {
+            _recommendationStack.AddChild(new Label
+            {
+                Text = "No urgent shop actions. The convoy is broadly ready for the selected stage.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+            return;
+        }
+
+        foreach (var recommendation in recommendations)
+        {
+            _recommendationStack.AddChild(BuildRecommendationPanel(recommendation));
+        }
+    }
+
+    private List<ShopRecommendation> BuildRecommendations()
+    {
+        var stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var recommendations = new List<ShopRecommendation>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var counts = BuildStageEnemyCounts(stage);
+        var runnerCount = counts.TryGetValue(GameData.EnemyRunnerId, out var runnerValue) ? runnerValue : 0;
+        var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurValue) ? saboteurValue : 0;
+        var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitterValue) ? spitterValue : 0;
+        var busSensitiveObjective = stage.Objectives.Any(objective =>
+            objective != null &&
+            objective.Type.Equals("bus_hull_ratio", StringComparison.OrdinalIgnoreCase));
+        var hazardHeavyStage = StageHazards.HasHazards(stage);
+        var barricadeHeavyStage =
+            stage.EnemyBaseHealth >= 680f ||
+            stage.Modifiers.Any(modifier =>
+                modifier != null &&
+                modifier.Type.Equals("reinforced_barricade", StringComparison.OrdinalIgnoreCase));
+        var heavyCount =
+            (counts.TryGetValue(GameData.EnemyBruteId, out var bruteValue) ? bruteValue : 0) +
+            (counts.TryGetValue(GameData.EnemyCrusherId, out var crusherValue) ? crusherValue : 0) +
+            (counts.TryGetValue(GameData.EnemyBossId, out var bossValue) ? bossValue : 0);
+
+        if (!GameState.Instance.HasFullDeck)
+        {
+            var reserveUnit = GameState.Instance.GetOwnedPlayerUnits()
+                .FirstOrDefault(unit => !GameState.Instance.IsUnitInActiveDeck(unit.Id));
+            if (reserveUnit != null)
+            {
+                TryAddRecommendation(
+                    recommendations,
+                    seen,
+                    new ShopRecommendation(
+                        $"deck:{reserveUnit.Id}",
+                        "Fill the convoy deck",
+                        $"{reserveUnit.DisplayName} is already owned and can fill the empty squad slot immediately.",
+                        $"Add {reserveUnit.DisplayName}",
+                        () =>
+                        {
+                            GameState.Instance.ToggleDeckUnit(reserveUnit.Id, out var message);
+                            _statusLabel.Text = $"Last report:\n{message}";
+                        }));
+            }
+        }
+
+        if (spitterCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerMarksmanId,
+                "Counter ranged pressure",
+                $"Stage {stage.StageNumber} fields {spitterCount} spitter contacts. A long-range card helps clean them up before they chip the bus.");
+
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerRangerId,
+                "Add mobile ranged support",
+                "Ranger gives the convoy another projectile unit for stages that stack spitters and mixed backline pressure.");
+        }
+
+        if (heavyCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerDefenderId,
+                "Brace for heavy infected",
+                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Defender upgrades help the line survive crushers and brutes.");
+
+            TryAddBaseRecommendation(
+                recommendations,
+                seen,
+                BaseUpgradeCatalog.HullPlatingId,
+                "Reinforce the bus",
+                "Hull Plating buys more margin against heavy pressure and missed contact pickups.");
+        }
+
+        if (barricadeHeavyStage)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerBreacherId,
+                "Punch through the barricade",
+                "This district hardens the enemy objective. Breacher gives the convoy a stronger base-damage card for reinforced late-game stages.");
+        }
+
+        if (busSensitiveObjective || StageEncounterIntel.ResolveThreatRating(stage) is "Severe" or "Extreme")
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerMechanicId,
+                "Protect the bus hull",
+                "This stage cares about hull preservation. Mechanic can patch the bus between surges when the lane is briefly stable.");
+        }
+
+        if (hazardHeavyStage)
+        {
+            TryAddBaseRecommendation(
+                recommendations,
+                seen,
+                BaseUpgradeCatalog.HullPlatingId,
+                "Buffer hazard pulses",
+                "This stage has live battlefield hazards. Extra hull buys time when vents or bursts clip the convoy line.");
+        }
+
+        if (runnerCount >= 3 || saboteurCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerBrawlerId,
+                "Meet fast rushes early",
+                saboteurCount > 0
+                    ? $"Stage {stage.StageNumber} includes {saboteurCount} saboteur contacts that dive the bus. Brawler upgrades help intercept them before they cash in base damage."
+                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. Brawler upgrades stabilize the front line.");
+
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerRaiderId,
+                "Add a fast skirmisher",
+                saboteurCount > 0
+                    ? "Raider helps run down saboteurs and peel pressure off the bus before they convert into barricade damage."
+                    : "Raider helps cover runner-heavy stages and rotate pressure away from the bus.");
+        }
+
+        TryAddBaseRecommendation(
+            recommendations,
+            seen,
+            BaseUpgradeCatalog.DispatchConsoleId,
+            "Speed up card recovery",
+            "Dispatch Console shortens deploy recovery so the convoy can answer waves with fewer dead turns.");
+
+        TryAddBaseRecommendation(
+            recommendations,
+            seen,
+            BaseUpgradeCatalog.PantryId,
+            "Expand courage economy",
+            "Pantry upgrades let the convoy front-load bigger defenses and recover faster after expensive drops.");
+
+        if (recommendations.Count < 3)
+        {
+            foreach (var unit in GameState.Instance.GetActiveDeckUnits().OrderBy(unit => GameState.Instance.GetUnitLevel(unit.Id)))
+            {
+                if (!TryAddUnitRecommendation(
+                    recommendations,
+                    seen,
+                    unit.Id,
+                    $"Sharpen {unit.DisplayName}",
+                    $"{unit.DisplayName} is already in the active squad, so upgrading it has immediate value on the next deployment."))
+                {
+                    continue;
+                }
+
+                if (recommendations.Count >= 3)
+                {
+                    break;
+                }
+            }
+        }
+
+        return recommendations.Take(3).ToList();
+    }
+
+    private Control BuildRecommendationPanel(ShopRecommendation recommendation)
+    {
+        var panel = new PanelContainer
+        {
+            SelfModulate = new Color("22333b")
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 12);
+        padding.AddThemeConstantOverride("margin_right", 12);
+        padding.AddThemeConstantOverride("margin_top", 10);
+        padding.AddThemeConstantOverride("margin_bottom", 10);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 6);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = recommendation.Title
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = recommendation.Summary,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var actionButton = new Button
+        {
+            Text = recommendation.ActionLabel,
+            Disabled = recommendation.Disabled,
+            CustomMinimumSize = new Vector2(0f, 34f)
+        };
+        actionButton.Pressed += () =>
+        {
+            recommendation.Execute();
+            RefreshUi();
+        };
+        stack.AddChild(actionButton);
+
+        return panel;
+    }
+
+    private bool TryAddUnitRecommendation(
+        List<ShopRecommendation> recommendations,
+        HashSet<string> seen,
+        string unitId,
+        string title,
+        string rationale)
+    {
+        var unit = GameData.GetUnit(unitId);
+        var available = GameState.Instance.IsUnitAvailableForPurchase(unit.Id);
+        var owned = GameState.Instance.IsUnitOwned(unit.Id);
+        var inDeck = owned && GameState.Instance.IsUnitInActiveDeck(unit.Id);
+        var level = GameState.Instance.GetUnitLevel(unit.Id);
+        var canAddToDeck = owned && !inDeck && !GameState.Instance.HasFullDeck;
+
+        if (!available)
+        {
+            return false;
+        }
+
+        if (!owned)
+        {
+            var purchaseCost = GameState.Instance.GetUnitPurchaseCost(unit.Id);
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"buy:{unit.Id}",
+                    title,
+                    $"{rationale}\nCost: {purchaseCost} gold.",
+                    $"Buy {unit.DisplayName}",
+                    () =>
+                    {
+                        GameState.Instance.TryPurchaseUnit(unit.Id, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    },
+                    GameState.Instance.Gold < purchaseCost));
+        }
+
+        if (canAddToDeck)
+        {
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"deck:{unit.Id}",
+                    title,
+                    $"{rationale}\n{unit.DisplayName} is owned and ready to slot into the active convoy.",
+                    $"Add {unit.DisplayName}",
+                    () =>
+                    {
+                        GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    }));
+        }
+
+        if (level < GameState.Instance.MaxUnitLevel)
+        {
+            var upgradeCost = GameState.Instance.GetUnitUpgradeCost(unit.Id);
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"upgrade_unit:{unit.Id}",
+                    title,
+                    $"{rationale}\nUpgrade cost: {upgradeCost} gold.",
+                    $"Upgrade {unit.DisplayName}",
+                    () =>
+                    {
+                        GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    },
+                    GameState.Instance.Gold < upgradeCost));
+        }
+
+        return false;
+    }
+
+    private bool TryAddBaseRecommendation(
+        List<ShopRecommendation> recommendations,
+        HashSet<string> seen,
+        string upgradeId,
+        string title,
+        string rationale)
+    {
+        var definition = BaseUpgradeCatalog.Get(upgradeId);
+        var level = GameState.Instance.GetBaseUpgradeLevel(upgradeId);
+        if (level >= definition.MaxLevel)
+        {
+            return false;
+        }
+
+        var cost = GameState.Instance.GetBaseUpgradeCost(upgradeId);
+        return TryAddRecommendation(
+            recommendations,
+            seen,
+            new ShopRecommendation(
+                $"upgrade_base:{upgradeId}",
+                title,
+                $"{rationale}\nUpgrade cost: {cost} gold.",
+                $"Upgrade {definition.Title}",
+                () =>
+                {
+                    GameState.Instance.TryUpgradeBase(upgradeId, out var message);
+                    _statusLabel.Text = $"Last report:\n{message}";
+                },
+                GameState.Instance.Gold < cost));
+    }
+
+    private static bool TryAddRecommendation(
+        List<ShopRecommendation> recommendations,
+        HashSet<string> seen,
+        ShopRecommendation recommendation)
+    {
+        if (!seen.Add(recommendation.Id))
+        {
+            return false;
+        }
+
+        recommendations.Add(recommendation);
+        return true;
+    }
+
+    private static Dictionary<string, int> BuildStageEnemyCounts(StageDefinition stage)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (stage?.Waves == null)
+        {
+            return counts;
+        }
+
+        foreach (var wave in stage.Waves)
+        {
+            foreach (var entry in wave.Entries)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId))
+                {
+                    continue;
+                }
+
+                counts[entry.UnitId] = counts.TryGetValue(entry.UnitId, out var current)
+                    ? current + Mathf.Max(1, entry.Count)
+                    : Mathf.Max(1, entry.Count);
+            }
+        }
+
+        return counts;
+    }
+
+    private string BuildDeckSummaryText()
+    {
+        var deckUnits = GameState.Instance.GetActiveDeckUnits();
+        if (deckUnits.Count == 0)
+        {
+            return "No units in the active deck.";
+        }
+
+        var lines = $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}";
+        for (var i = 0; i < deckUnits.Count; i++)
+        {
+            var unit = deckUnits[i];
+            lines += $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}";
+        }
+
+        return lines;
+    }
+
+    private string BuildUnitPreviewText(UnitDefinition unit, bool owned, int level, bool isMaxLevel)
+    {
+        var currentStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level);
+        var effectiveDeployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown);
+        var summary =
+            $"HP {Mathf.RoundToInt(currentStats.MaxHealth)}  |  ATK {currentStats.AttackDamage:0.#}  |  Range {currentStats.AttackRange:0.#}\n" +
+            $"Deploy CD {effectiveDeployCooldown:0.#}s  |  Base {currentStats.BaseDamage}" +
+            (currentStats.BusRepairAmount > 0.05f ? $"  |  Repair {currentStats.BusRepairAmount:0.#}" : "");
+
+        if (!owned)
+        {
+            return summary;
+        }
+
+        if (isMaxLevel)
+        {
+            return summary + "\nNext upgrade: max level reached.";
+        }
+
+        var nextStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level + 1);
+        summary +=
+            $"\nNext Lv{level + 1}: " +
+            $"HP +{Mathf.RoundToInt(nextStats.MaxHealth - currentStats.MaxHealth)}  |  " +
+            $"ATK +{(nextStats.AttackDamage - currentStats.AttackDamage):0.#}  |  " +
+            $"Base +{nextStats.BaseDamage - currentStats.BaseDamage}" +
+            (currentStats.BusRepairAmount > 0.05f || nextStats.BusRepairAmount > 0.05f
+                ? $"  |  Repair +{(nextStats.BusRepairAmount - currentStats.BusRepairAmount):0.#}"
+                : "");
+        return summary;
+    }
+
+    private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
+    {
+        return upgrade.Id switch
+        {
+            BaseUpgradeCatalog.HullPlatingId =>
+                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerBaseHealthScaleAtLevel(level) - 1f) * 100f)}% bus hull",
+            BaseUpgradeCatalog.PantryId =>
+                $"+{GameState.Instance.GetPlayerCourageMaxBonusAtLevel(level):0} max courage  |  " +
+                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerCourageGainScaleAtLevel(level) - 1f) * 100f)}% gain",
+            BaseUpgradeCatalog.DispatchConsoleId =>
+                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% deploy recovery",
+            _ => upgrade.Summary
+        };
+    }
+
+    private void RebuildUnitPanels()
+    {
+        foreach (var child in _unitStack.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _unitStack.AddChild(new Label
+        {
+            Text = "Units"
+        });
+
+        foreach (var unit in GameData.GetPlayerUnits())
+        {
+            _unitStack.AddChild(BuildUnitPanel(unit));
+        }
+    }
+
+    private Control BuildUnitPanel(UnitDefinition unit)
+    {
+        var owned = GameState.Instance.IsUnitOwned(unit.Id);
+        var available = GameState.Instance.IsUnitAvailableForPurchase(unit.Id);
+        var inDeck = owned && GameState.Instance.IsUnitInActiveDeck(unit.Id);
+        var level = GameState.Instance.GetUnitLevel(unit.Id);
+        var purchaseCost = GameState.Instance.GetUnitPurchaseCost(unit.Id);
+        var upgradeCost = GameState.Instance.GetUnitUpgradeCost(unit.Id);
+        var isMaxLevel = level >= GameState.Instance.MaxUnitLevel;
+        var stats = GameState.Instance.BuildPlayerUnitStats(unit);
+        var effectiveDeployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown);
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 178f),
+            SelfModulate = unit.GetTint().Darkened(0.15f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        var statusLine = !available
+            ? $"Locked until stage {unit.UnlockStage}"
+            : !owned
+                ? $"For sale: {purchaseCost} gold"
+                : inDeck
+                    ? $"Owned  |  Lv{level}  |  In active deck"
+                    : $"Owned  |  Lv{level}  |  Reserve";
+
+        stack.AddChild(new Label
+        {
+            Text = $"{unit.DisplayName}  |  Deploy {unit.Cost} courage"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = statusLine,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = BuildUnitPreviewText(unit, owned, level, isMaxLevel),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text =
+                $"Move {stats.Speed:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s  |  Effective deploy {effectiveDeployCooldown:0.#}s",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var deckButton = new Button
+        {
+            Text = !owned
+                ? "Buy First"
+                : inDeck
+                    ? "Remove From Deck"
+                    : "Add To Deck",
+            CustomMinimumSize = new Vector2(170f, 0f),
+            Disabled = !owned
+        };
+        deckButton.Pressed += () =>
+        {
+            GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
+            GameState.Instance.SetSelectedStage(GameState.Instance.SelectedStage);
+            _statusLabel.Text = $"Last report:\n{message}";
+            RefreshUi();
+        };
+        row.AddChild(deckButton);
+
+        var actionButton = new Button
+        {
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+
+        if (!available)
+        {
+            actionButton.Text = $"Explore S{unit.UnlockStage}";
+            actionButton.Disabled = true;
+        }
+        else if (!owned)
+        {
+            actionButton.Text = $"Buy {purchaseCost} gold";
+            actionButton.Disabled = GameState.Instance.Gold < purchaseCost;
+            actionButton.Pressed += () =>
+            {
+                GameState.Instance.TryPurchaseUnit(unit.Id, out var message);
+                _statusLabel.Text = $"Last report:\n{message}";
+                RefreshUi();
+            };
+        }
+        else if (isMaxLevel)
+        {
+            actionButton.Text = "Max Level";
+            actionButton.Disabled = true;
+        }
+        else
+        {
+            actionButton.Text = $"Upgrade {upgradeCost} gold";
+            actionButton.Disabled = GameState.Instance.Gold < upgradeCost;
+            actionButton.Pressed += () =>
+            {
+                GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+                _statusLabel.Text = $"Last report:\n{message}";
+                RefreshUi();
+            };
+        }
+
+        row.AddChild(actionButton);
+        return panel;
+    }
+
+    private void RebuildBaseUpgradePanels()
+    {
+        foreach (var child in _baseStack.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _baseStack.AddChild(new Label
+        {
+            Text = "Bus Upgrades"
+        });
+
+        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
+        {
+            _baseStack.AddChild(BuildBaseUpgradePanel(upgrade));
+        }
+    }
+
+    private Control BuildBaseUpgradePanel(BaseUpgradeDefinition upgrade)
+    {
+        var level = GameState.Instance.GetBaseUpgradeLevel(upgrade.Id);
+        var isMaxLevel = level >= upgrade.MaxLevel;
+        var cost = GameState.Instance.GetBaseUpgradeCost(upgrade.Id);
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 150f),
+            SelfModulate = new Color("264653")
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = $"{upgrade.Title}  |  Lv{level}/{upgrade.MaxLevel}"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text =
+                $"{upgrade.Summary}\n" +
+                $"Current: {BuildBaseUpgradeEffectText(upgrade, level)}" +
+                (isMaxLevel ? "\nNext: maxed" : $"\nNext Lv{level + 1}: {BuildBaseUpgradeEffectText(upgrade, level + 1)}"),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var button = new Button
+        {
+            Text = isMaxLevel ? "Maxed" : $"Upgrade {cost} gold",
+            Disabled = isMaxLevel || GameState.Instance.Gold < cost,
+            CustomMinimumSize = new Vector2(0f, 38f)
+        };
+        button.Pressed += () =>
+        {
+            GameState.Instance.TryUpgradeBase(upgrade.Id, out var message);
+            _statusLabel.Text = $"Last report:\n{message}";
+            RefreshUi();
+        };
+        stack.AddChild(button);
+
+        return panel;
+    }
+}

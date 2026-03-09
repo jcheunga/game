@@ -20,6 +20,7 @@ public static class BaseUpgradeCatalog
 {
     public const string HullPlatingId = "hull_plating";
     public const string PantryId = "convoy_pantry";
+    public const string DispatchConsoleId = "dispatch_console";
 
     private static readonly BaseUpgradeDefinition[] Upgrades =
     {
@@ -32,6 +33,11 @@ public static class BaseUpgradeCatalog
             PantryId,
             "Convoy Pantry",
             "Increase max courage by 6 and courage gain by 6% per level.",
+            5),
+        new(
+            DispatchConsoleId,
+            "Dispatch Console",
+            "Reduce squad deploy cooldowns by 6% per level.",
             5)
     };
 

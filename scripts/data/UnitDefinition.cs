@@ -19,6 +19,7 @@ public sealed class UnitDefinition
     public float AggroRangeX { get; set; } = 220f;
     public float AggroRangeY { get; set; } = 96f;
     public int BaseDamage { get; set; } = 12;
+    public float BusRepairAmount { get; set; }
     public float DeployCooldown { get; set; } = 8f;
     public float DamageTakenScale { get; set; } = 1f;
     public float DeathBurstDamage { get; set; }

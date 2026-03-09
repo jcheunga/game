@@ -7,7 +7,10 @@
       "TerrainId": "urban",
       "StageName": "Outskirts",
       "Description": "Low density swarm near abandoned gas stations.\nRecommended squad: Brawler + Shooter.",
-      "RewardScrap": 40,
+      "RewardGold": 50,
+      "RewardFood": 3,
+      "EntryFoodCost": 1,
+      "ExploreFoodCost": 1,
       "MapX": 132.0,
       "MapY": 356.0,
       "PlayerBaseHealth": 300.0,
@@ -68,7 +71,10 @@
       "TerrainId": "highway",
       "StageName": "Highway",
       "Description": "Faster infected and tighter lane pressure.\nRecommended squad: 2x Brawler, 1x Shooter.",
-      "RewardScrap": 68,
+      "RewardGold": 75,
+      "RewardFood": 3,
+      "EntryFoodCost": 1,
+      "ExploreFoodCost": 1,
       "MapX": 324.0,
       "MapY": 248.0,
       "PlayerBaseHealth": 315.0,
@@ -137,7 +143,10 @@
       "TerrainId": "night",
       "StageName": "Mall District",
       "Description": "Dense mixed wave before the city boss siege. Keep your line stable.",
-      "RewardScrap": 95,
+      "RewardGold": 105,
+      "RewardFood": 3,
+      "EntryFoodCost": 1,
+      "ExploreFoodCost": 2,
       "MapX": 540.0,
       "MapY": 314.0,
       "PlayerBaseHealth": 335.0,
@@ -219,7 +228,10 @@
       "TerrainId": "night",
       "StageName": "Metro Citadel",
       "Description": "City boss stage. Overlord spawns begin toward the end of the battle.",
-      "RewardScrap": 130,
+      "RewardGold": 145,
+      "RewardFood": 4,
+      "EntryFoodCost": 1,
+      "ExploreFoodCost": 2,
       "MapX": 742.0,
       "MapY": 226.0,
       "PlayerBaseHealth": 355.0,
@@ -311,7 +323,10 @@
       "TerrainId": "industrial",
       "StageName": "Docks Perimeter",
       "Description": "Second map unlocked. Rusted docks and container chokepoints.",
-      "RewardScrap": 150,
+      "RewardGold": 170,
+      "RewardFood": 4,
+      "EntryFoodCost": 2,
+      "ExploreFoodCost": 3,
       "MapX": 168.0,
       "MapY": 496.0,
       "PlayerBaseHealth": 365.0,
@@ -398,7 +413,10 @@
       "TerrainId": "swamp",
       "StageName": "Flooded Terminal",
       "Description": "Waterlogged streets slow pushes. Spitters and heavy units dominate.",
-      "RewardScrap": 178,
+      "RewardGold": 200,
+      "RewardFood": 4,
+      "EntryFoodCost": 2,
+      "ExploreFoodCost": 3,
       "MapX": 346.0,
       "MapY": 546.0,
       "PlayerBaseHealth": 385.0,
@@ -483,7 +501,10 @@
       "TerrainId": "shipyard",
       "StageName": "Crane Gauntlet",
       "Description": "Heavy armor waves push through wrecked cranes before the final harbor boss.",
-      "RewardScrap": 208,
+      "RewardGold": 235,
+      "RewardFood": 5,
+      "EntryFoodCost": 2,
+      "ExploreFoodCost": 4,
       "MapX": 556.0,
       "MapY": 502.0,
       "PlayerBaseHealth": 400.0,
@@ -567,7 +588,10 @@
       "TerrainId": "shipyard",
       "StageName": "Wreck Flagship",
       "Description": "Harbor boss stage. Overlord spawns begin toward the end of the battle.",
-      "RewardScrap": 245,
+      "RewardGold": 280,
+      "RewardFood": 5,
+      "EntryFoodCost": 3,
+      "ExploreFoodCost": 4,
       "MapX": 742.0,
       "MapY": 432.0,
       "PlayerBaseHealth": 420.0,
@@ -655,6 +679,475 @@
             { "UnitId": "enemy_spitter", "Count": 1 },
             { "UnitId": "enemy_runner", "Count": 1 },
             { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 9,
+      "MapId": "foundry",
+      "MapName": "Foundry Line",
+      "TerrainId": "railyard",
+      "StageName": "Freight Siding",
+      "Description": "Third route unlocked. Freight cuts favor splitter screens, saboteur dives, and brute-led pushes.\nRecommended squad: Defender + Shooter + Mechanic or Breacher.",
+      "RewardGold": 320,
+      "RewardFood": 6,
+      "EntryFoodCost": 3,
+      "ExploreFoodCost": 5,
+      "MapX": 148.0,
+      "MapY": 206.0,
+      "PlayerBaseHealth": 440.0,
+      "EnemyBaseHealth": 650.0,
+      "EnemySpawnMin": 2.35,
+      "EnemySpawnMax": 3.3,
+      "EnemyHealthScale": 1.54,
+      "EnemyDamageScale": 1.5,
+      "WalkerWeight": 0.12,
+      "RunnerWeight": 0.12,
+      "BruteWeight": 0.28,
+      "SpitterWeight": 0.14,
+      "CrusherWeight": 0.22,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.14,
+      "Hazards": [
+        {
+          "Type": "rail_surge",
+          "Label": "Rail Surge",
+          "XRatio": 0.34,
+          "YRatio": 0.58,
+          "Radius": 66.0,
+          "Interval": 9.5,
+          "StartTime": 9.0,
+          "WarningDuration": 1.7,
+          "Damage": 15.0,
+          "ColorHex": "f8961e"
+        }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 5.0 },
+        { "Type": "enemy_defeats", "Value": 20.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Freight scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Switchyard break",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.36,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Boxcar crush",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Rail pit pressure",
+          "TriggerTime": 50.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Freight stampede",
+          "TriggerTime": 68.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 10,
+      "MapId": "foundry",
+      "MapName": "Foundry Line",
+      "TerrainId": "smelter",
+      "StageName": "Smelter Row",
+      "Description": "Molten choke points, saboteur flanks, and reinforced barricades reward higher bus damage and disciplined deploy pacing.\nRecommended squad: Breacher + Defender + Marksman.",
+      "RewardGold": 360,
+      "RewardFood": 6,
+      "EntryFoodCost": 3,
+      "ExploreFoodCost": 5,
+      "MapX": 334.0,
+      "MapY": 154.0,
+      "PlayerBaseHealth": 455.0,
+      "EnemyBaseHealth": 700.0,
+      "EnemySpawnMin": 2.25,
+      "EnemySpawnMax": 3.15,
+      "EnemyHealthScale": 1.62,
+      "EnemyDamageScale": 1.58,
+      "WalkerWeight": 0.1,
+      "RunnerWeight": 0.08,
+      "BruteWeight": 0.3,
+      "SpitterWeight": 0.16,
+      "CrusherWeight": 0.26,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.16,
+      "Hazards": [
+        {
+          "Type": "heat_vent",
+          "Label": "Heat Vent",
+          "XRatio": 0.31,
+          "YRatio": 0.76,
+          "Radius": 72.0,
+          "Interval": 8.8,
+          "StartTime": 8.0,
+          "WarningDuration": 1.9,
+          "Damage": 16.0,
+          "ColorHex": "f3722c"
+        },
+        {
+          "Type": "slag_burst",
+          "Label": "Slag Burst",
+          "XRatio": 0.72,
+          "YRatio": 0.28,
+          "Radius": 60.0,
+          "Interval": 10.5,
+          "StartTime": 13.0,
+          "WarningDuration": 1.6,
+          "Damage": 18.0,
+          "ColorHex": "f9844a"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.14 },
+        { "Type": "armored_convoy", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.72 },
+        { "Type": "hazard_hits_limit", "Value": 4.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Slag walkers",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 3 },
+            { "UnitId": "enemy_bloater", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Vent spitters",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.35,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Furnace crews",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.31,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Breach fans",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Smelter surge",
+          "TriggerTime": 76.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 11,
+      "MapId": "foundry",
+      "MapName": "Foundry Line",
+      "TerrainId": "foundry",
+      "StageName": "Cinder Causeway",
+      "Description": "Steady heavy pushes, splitter screens, and saboteur feints test how well the convoy recovers between surges.",
+      "RewardGold": 410,
+      "RewardFood": 7,
+      "EntryFoodCost": 4,
+      "ExploreFoodCost": 5,
+      "MapX": 548.0,
+      "MapY": 244.0,
+      "PlayerBaseHealth": 470.0,
+      "EnemyBaseHealth": 760.0,
+      "EnemySpawnMin": 2.15,
+      "EnemySpawnMax": 3.0,
+      "EnemyHealthScale": 1.68,
+      "EnemyDamageScale": 1.64,
+      "WalkerWeight": 0.08,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.32,
+      "SpitterWeight": 0.14,
+      "CrusherWeight": 0.3,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.18,
+      "Hazards": [
+        {
+          "Type": "cinder_blast",
+          "Label": "Cinder Blast",
+          "XRatio": 0.43,
+          "YRatio": 0.48,
+          "Radius": 74.0,
+          "Interval": 8.6,
+          "StartTime": 7.5,
+          "WarningDuration": 1.7,
+          "Damage": 17.0,
+          "ColorHex": "f94144"
+        },
+        {
+          "Type": "pipe_rupture",
+          "Label": "Pipe Rupture",
+          "XRatio": 0.79,
+          "YRatio": 0.68,
+          "Radius": 62.0,
+          "Interval": 11.0,
+          "StartTime": 12.5,
+          "WarningDuration": 1.8,
+          "Damage": 19.0,
+          "ColorHex": "f3722c"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "surging_courage", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "enemy_defeats", "Value": 22.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Ash lane scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Chain haul",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Cinder screen",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Crucible hold",
+          "TriggerTime": 52.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Heat spike",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Causeway shove",
+          "TriggerTime": 90.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 12,
+      "MapId": "foundry",
+      "MapName": "Foundry Line",
+      "TerrainId": "foundry",
+      "StageName": "Furnace Crown",
+      "Description": "Foundry boss stage. Splitters, saboteurs, and crushers hold the line until the Overlord joins the furnace push.",
+      "RewardGold": 470,
+      "RewardFood": 8,
+      "EntryFoodCost": 4,
+      "ExploreFoodCost": 6,
+      "MapX": 728.0,
+      "MapY": 170.0,
+      "PlayerBaseHealth": 490.0,
+      "EnemyBaseHealth": 840.0,
+      "EnemySpawnMin": 2.1,
+      "EnemySpawnMax": 2.9,
+      "EnemyHealthScale": 1.78,
+      "EnemyDamageScale": 1.72,
+      "WalkerWeight": 0.06,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.28,
+      "SpitterWeight": 0.16,
+      "CrusherWeight": 0.34,
+      "BossWeight": 0.3,
+      "BossSpawnStartTime": 76.0,
+      "BonusWaveChance": 0.2,
+      "Hazards": [
+        {
+          "Type": "furnace_burst",
+          "Label": "Furnace Burst",
+          "XRatio": 0.36,
+          "YRatio": 0.62,
+          "Radius": 80.0,
+          "Interval": 8.0,
+          "StartTime": 8.0,
+          "WarningDuration": 1.9,
+          "Damage": 18.0,
+          "ColorHex": "f3722c"
+        },
+        {
+          "Type": "crown_overheat",
+          "Label": "Crown Overheat",
+          "XRatio": 0.7,
+          "YRatio": 0.34,
+          "Radius": 68.0,
+          "Interval": 10.0,
+          "StartTime": 14.0,
+          "WarningDuration": 1.7,
+          "Damage": 20.0,
+          "ColorHex": "f94144"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.2 },
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 24.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Furnace scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Burner screen",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.33,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Press room",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Molten break",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Overlord ignition",
+          "TriggerTime": 76.0,
+          "SpawnInterval": 0.42,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Furnace close",
+          "TriggerTime": 96.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
           ]
         }
       ]

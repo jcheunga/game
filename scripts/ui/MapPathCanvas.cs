@@ -4,37 +4,6 @@ using Godot;
 
 public partial class MapPathCanvas : Control
 {
-    private readonly struct RouteTheme
-    {
-        public RouteTheme(
-            Color backgroundTop,
-            Color backgroundBottom,
-            Color routeColor,
-            Color routeGlow,
-            Color unlockedNode,
-            Color lockedNode,
-            Color selectedNode,
-            Color accent)
-        {
-            BackgroundTop = backgroundTop;
-            BackgroundBottom = backgroundBottom;
-            RouteColor = routeColor;
-            RouteGlow = routeGlow;
-            UnlockedNode = unlockedNode;
-            LockedNode = lockedNode;
-            SelectedNode = selectedNode;
-            Accent = accent;
-        }
-
-        public Color BackgroundTop { get; }
-        public Color BackgroundBottom { get; }
-        public Color RouteColor { get; }
-        public Color RouteGlow { get; }
-        public Color UnlockedNode { get; }
-        public Color LockedNode { get; }
-        public Color SelectedNode { get; }
-        public Color Accent { get; }
-    }
 
     public Dictionary<int, Vector2> StagePoints { get; } = new();
     public Dictionary<int, string> StageMapIds { get; } = new();
@@ -44,17 +13,17 @@ public partial class MapPathCanvas : Control
 
     public override void _Draw()
     {
-        var theme = ResolveTheme();
-        DrawBackground(theme);
-        DrawRouteDecor(theme);
-        DrawRouteLines(theme);
-        DrawStageNodes(theme);
+        var route = RouteCatalog.Get(ActiveMapId);
+        DrawBackground(route);
+        DrawRouteDecor(route);
+        DrawRouteLines(route);
+        DrawStageNodes(route);
     }
 
-    private void DrawBackground(RouteTheme theme)
+    private void DrawBackground(RouteDefinition route)
     {
-        DrawRect(new Rect2(Vector2.Zero, Size), theme.BackgroundBottom, true);
-        DrawRect(new Rect2(0f, 0f, Size.X, Size.Y * 0.44f), theme.BackgroundTop, true);
+        DrawRect(new Rect2(Vector2.Zero, Size), route.BackgroundBottom, true);
+        DrawRect(new Rect2(0f, 0f, Size.X, Size.Y * 0.44f), route.BackgroundTop, true);
 
         for (var i = 0; i < 10; i++)
         {
@@ -63,13 +32,13 @@ public partial class MapPathCanvas : Control
             DrawLine(
                 new Vector2(32f, y),
                 new Vector2(Size.X - 32f, y),
-                new Color(theme.RouteGlow, 0.045f + (i * 0.003f)),
+                new Color(route.RouteGlow, 0.045f + (i * 0.003f)),
                 1.2f,
                 true);
         }
     }
 
-    private void DrawRouteDecor(RouteTheme theme)
+    private void DrawRouteDecor(RouteDefinition route)
     {
         var mapId = NormalizeMapId(ActiveMapId);
         if (mapId == "harbor")
@@ -80,6 +49,32 @@ public partial class MapPathCanvas : Control
                 var x = Mathf.Lerp(110f, Size.X - 110f, i / 4f);
                 DrawRect(new Rect2(x - 42f, 78f + (i % 2) * 28f, 84f, 20f), new Color(0f, 0f, 0f, 0.18f), true);
                 DrawRect(new Rect2(x - 18f, Size.Y - 174f + ((i + 1) % 2) * 14f, 36f, 54f), new Color(1f, 1f, 1f, 0.06f), true);
+            }
+        }
+        else if (mapId == "foundry")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 108f, Size.X, 52f), new Color("311d18", 0.46f), true);
+            for (var i = 0; i < 6; i++)
+            {
+                var x = Mathf.Lerp(72f, Size.X - 72f, i / 5f);
+                DrawLine(
+                    new Vector2(x - 36f, Size.Y - 132f),
+                    new Vector2(x + 48f, 112f + ((i % 2) * 24f)),
+                    new Color(1f, 0.62f, 0.2f, 0.08f),
+                    14f,
+                    true);
+                DrawRect(new Rect2(x - 28f, 84f + ((i + 1) % 2) * 36f, 56f, 16f), new Color(0f, 0f, 0f, 0.22f), true);
+            }
+
+            for (var i = 0; i < 5; i++)
+            {
+                var x = Mathf.Lerp(90f, Size.X - 90f, i / 4f);
+                DrawLine(
+                    new Vector2(x - 42f, Size.Y - 88f),
+                    new Vector2(x + 42f, Size.Y - 88f),
+                    new Color(1f, 0.7f, 0.32f, 0.28f),
+                    3f,
+                    true);
             }
         }
         else
@@ -99,12 +94,12 @@ public partial class MapPathCanvas : Control
             for (var i = 0; i < 18; i++)
             {
                 var x = Mathf.Lerp(32f, Size.X - 32f, i / 17f);
-                DrawRect(new Rect2(x - 7f, Size.Y - 74f, 14f, 4f), new Color(1f, 0.92f, 0.52f, 0.35f), true);
+                DrawRect(new Rect2(x - 7f, Size.Y - 74f, 14f, 4f), new Color(route.BannerAccent, 0.35f), true);
             }
         }
     }
 
-    private void DrawRouteLines(RouteTheme theme)
+    private void DrawRouteLines(RouteDefinition route)
     {
         for (var stage = 1; stage < GameData.MaxStage; stage++)
         {
@@ -124,15 +119,15 @@ public partial class MapPathCanvas : Control
             }
 
             var unlocked = stage < HighestUnlockedStage;
-            var lineColor = unlocked ? theme.RouteColor : new Color(theme.LockedNode, 0.55f);
-            var glowColor = unlocked ? theme.RouteGlow : new Color(0f, 0f, 0f, 0.22f);
+            var lineColor = unlocked ? route.RouteColor : new Color(route.LockedNode, 0.55f);
+            var glowColor = unlocked ? route.RouteGlow : new Color(0f, 0f, 0f, 0.22f);
 
             DrawLine(from, to, glowColor, 11f, true);
             DrawLine(from, to, lineColor, 5f, true);
         }
     }
 
-    private void DrawStageNodes(RouteTheme theme)
+    private void DrawStageNodes(RouteDefinition route)
     {
         foreach (var pair in StagePoints)
         {
@@ -148,20 +143,20 @@ public partial class MapPathCanvas : Control
             var completed = stage < HighestUnlockedStage;
             var isSelected = stage == SelectedStage;
 
-            var nodeColor = unlocked ? theme.UnlockedNode : theme.LockedNode;
+            var nodeColor = unlocked ? route.UnlockedNode : route.LockedNode;
             if (isSelected)
             {
-                nodeColor = theme.SelectedNode;
+                nodeColor = route.SelectedNode;
             }
 
             if (completed)
             {
-                DrawCircle(point, 44f, new Color(theme.RouteGlow, 0.16f));
+                DrawCircle(point, 44f, new Color(route.RouteGlow, 0.16f));
             }
 
             if (isSelected)
             {
-                DrawArc(point, 48f, 0f, Mathf.Tau, 36, new Color(theme.SelectedNode, 0.75f), 5f);
+                DrawArc(point, 48f, 0f, Mathf.Tau, 36, new Color(route.SelectedNode, 0.75f), 5f);
             }
 
             DrawCircle(point, 38f, new Color(0f, 0f, 0f, 0.34f));
@@ -170,7 +165,7 @@ public partial class MapPathCanvas : Control
 
             if (completed)
             {
-                DrawRect(new Rect2(point + new Vector2(18f, -34f), new Vector2(10f, 10f)), theme.Accent, true);
+                DrawRect(new Rect2(point + new Vector2(18f, -34f), new Vector2(10f, 10f)), route.Accent, true);
             }
 
             if (!unlocked)
@@ -184,31 +179,6 @@ public partial class MapPathCanvas : Control
     private bool IsStageVisible(string mapId)
     {
         return NormalizeMapId(mapId).Equals(NormalizeMapId(ActiveMapId), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private RouteTheme ResolveTheme()
-    {
-        return NormalizeMapId(ActiveMapId) switch
-        {
-            "harbor" => new RouteTheme(
-                new Color("173753"),
-                new Color("0f2438"),
-                new Color("5bc0eb"),
-                new Color("9bdaf1"),
-                new Color("3aaed8"),
-                new Color("244a63"),
-                new Color("ffd166"),
-                new Color("80ed99")),
-            _ => new RouteTheme(
-                new Color("22304a"),
-                new Color("111b2d"),
-                new Color("6fffe9"),
-                new Color("c9fff8"),
-                new Color("5bc0be"),
-                new Color("25314d"),
-                new Color("ffd166"),
-                new Color("ffb703"))
-        };
     }
 
     private static string NormalizeMapId(string mapId)

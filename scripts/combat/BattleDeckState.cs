@@ -78,9 +78,12 @@ public sealed class BattleDeckState
         return true;
     }
 
-    public void MarkDeployed(UnitDefinition definition)
+    public void MarkDeployed(UnitDefinition definition, float cooldownDuration = -1f)
     {
-        _cooldowns[definition.Id] = Mathf.Max(0f, definition.DeployCooldown);
+        var appliedCooldown = cooldownDuration >= 0f
+            ? cooldownDuration
+            : definition.DeployCooldown;
+        _cooldowns[definition.Id] = Mathf.Max(0f, appliedCooldown);
         AutoArmNextReadyUnit(definition);
     }
 

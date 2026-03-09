@@ -92,7 +92,22 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
+            Text =
+                $"Bus upgrades: Hull Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Convoy Pantry Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Dispatch Console Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        missionStack.AddChild(new Label
+        {
             Text = StageModifiers.BuildSummaryText(_stage),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        missionStack.AddChild(new Label
+        {
+            Text = StageHazards.BuildSummaryText(_stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -162,6 +177,14 @@ public partial class LoadoutMenu : Control
         backButton.Pressed += () => SceneRouter.Instance.GoToMap();
         bottomRow.AddChild(backButton);
 
+        var shopButton = new Button
+        {
+            Text = "Convoy Shop",
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+        shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
+        bottomRow.AddChild(shopButton);
+
         bottomRow.AddChild(new Control
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -191,6 +214,7 @@ public partial class LoadoutMenu : Control
     private Control BuildUnitPanel(UnitDefinition definition)
     {
         var stats = GameState.Instance.BuildPlayerUnitStats(definition);
+        var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(0f, 110f)
@@ -215,7 +239,7 @@ public partial class LoadoutMenu : Control
         stack.AddChild(new Label
         {
             Text =
-                $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Base {stats.BaseDamage}  |  Deploy CD {definition.DeployCooldown:0.#}s",
+                $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Base {stats.BaseDamage}  |  Deploy CD {deployCooldown:0.#}s",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -223,7 +247,8 @@ public partial class LoadoutMenu : Control
         {
             Text =
                 $"Speed {stats.Speed:0.#}  |  Range {stats.AttackRange:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s" +
-                (stats.UsesProjectile ? $"  |  Projectile {stats.ProjectileSpeed:0.#}" : ""),
+                (stats.UsesProjectile ? $"  |  Projectile {stats.ProjectileSpeed:0.#}" : "") +
+                (stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : ""),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

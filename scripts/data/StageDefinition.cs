@@ -32,6 +32,7 @@ public sealed class StageDefinition
     public float BonusWaveChance { get; set; }
     public float TwoStarBusHullRatio { get; set; } = 0.5f;
     public float ThreeStarTimeLimitSeconds { get; set; } = 90f;
+    public StageHazardDefinition[] Hazards { get; set; } = Array.Empty<StageHazardDefinition>();
     public StageModifierDefinition[] Modifiers { get; set; } = Array.Empty<StageModifierDefinition>();
     public StageObjectiveDefinition[] Objectives { get; set; } = Array.Empty<StageObjectiveDefinition>();
     public StageWaveDefinition[] Waves { get; set; } = Array.Empty<StageWaveDefinition>();

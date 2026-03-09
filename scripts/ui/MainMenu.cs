@@ -111,7 +111,7 @@ public partial class MainMenu : Control
         return
             "Convoy status:\n" +
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
-            $"Resources: {GameState.Instance.Scrap} scrap  |  {GameState.Instance.Fuel} fuel\n" +
+            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"Active squad: {squadLine}";

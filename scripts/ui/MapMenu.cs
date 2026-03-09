@@ -23,6 +23,7 @@ public partial class MapMenu : Control
     private readonly Dictionary<int, Button> _stageButtons = new();
     private readonly Dictionary<string, Button> _deckButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Button> _upgradeButtons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Button> _baseUpgradeButtons = new(StringComparer.OrdinalIgnoreCase);
 
     private OptionButton _mapSelector = null!;
     private Label _resourcesLabel = null!;
@@ -39,6 +40,7 @@ public partial class MapMenu : Control
     private Label _routeTitleLabel = null!;
     private Label _routeSubtitleLabel = null!;
     private Label _routeProgressLabel = null!;
+    private Button _exploreButton = null!;
     private Button _deployButton = null!;
     private MapPathCanvas _mapCanvas = null!;
 
@@ -231,7 +233,7 @@ public partial class MapMenu : Control
 
         var deckTitle = new Label
         {
-            Text = $"Squad & Upgrades ({GameState.Instance.DeckSizeLimit} cards)"
+            Text = $"Squad & Shop ({GameState.Instance.DeckSizeLimit} cards)"
         };
         sideContent.AddChild(deckTitle);
 
@@ -266,6 +268,22 @@ public partial class MapMenu : Control
             _upgradeButtons[unit.Id] = upgradeButton;
         }
 
+        sideContent.AddChild(new Label
+        {
+            Text = "Bus Upgrades"
+        });
+
+        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
+        {
+            var upgradeButton = new Button
+            {
+                CustomMinimumSize = new Vector2(0f, 42f)
+            };
+            upgradeButton.Pressed += () => UpgradeBase(upgrade.Id);
+            sideContent.AddChild(upgradeButton);
+            _baseUpgradeButtons[upgrade.Id] = upgradeButton;
+        }
+
         _resultLabel = new Label
         {
             Text = "",
@@ -273,6 +291,14 @@ public partial class MapMenu : Control
             CustomMinimumSize = new Vector2(0f, 80f)
         };
         sideContent.AddChild(_resultLabel);
+
+        _exploreButton = new Button
+        {
+            Text = "Explore Next Stage",
+            CustomMinimumSize = new Vector2(0, 46)
+        };
+        _exploreButton.Pressed += ExploreNextStage;
+        sideContent.AddChild(_exploreButton);
 
         _deployButton = new Button
         {
@@ -309,7 +335,7 @@ public partial class MapMenu : Control
             _selectedStage = FindPreferredStageForActiveMap();
         }
 
-        _resourcesLabel.Text = $"Scrap: {GameState.Instance.Scrap}  |  Fuel: {GameState.Instance.Fuel}";
+        _resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
         _resultLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
         RefreshRouteBanner();
 
@@ -334,18 +360,19 @@ public partial class MapMenu : Control
         var stage = GameData.GetStage(_selectedStage);
         var stageUnlocked = _selectedStage <= GameState.Instance.HighestUnlockedStage;
         var bestStars = GameState.Instance.GetStageStars(_selectedStage);
+        var stageEntryFoodCost = GameState.Instance.GetStageEntryFoodCost(_selectedStage);
         _stageNameLabel.Text = $"{stage.MapName} - Stage {_selectedStage}: {stage.StageName}";
         _stageDescriptionLabel.Text = stage.Description;
         _stageStatusLabel.Text = BuildStageStatusText(stage, bestStars, stageUnlocked);
         _stageRewardLabel.Text =
-            $"Reward on clear: +{stage.RewardScrap} scrap, +{GameData.Combat.VictoryFuelReward} fuel   |   Terrain: {stage.TerrainId}";
+            $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}";
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
         _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
         _deckStatusLabel.Text =
             $"{_deckStatusMessage}\nActive cards: {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit}";
-        _deployButton.Text = $"Deploy To Stage {_selectedStage}";
-        var canStartBattle = GameState.Instance.CanStartBattle(out var deployValidationMessage);
+        _deployButton.Text = $"Deploy To Stage {_selectedStage} (-{stageEntryFoodCost} food)";
+        var canStartBattle = GameState.Instance.CanStartCampaignBattle(_selectedStage, out var deployValidationMessage);
         if (!canStartBattle)
         {
             _deckStatusLabel.Text += $"\n{deployValidationMessage}";
@@ -358,19 +385,24 @@ public partial class MapMenu : Control
         foreach (var pair in _deckButtons)
         {
             var unit = GameData.GetUnit(pair.Key);
-            var unlocked = GameState.Instance.IsUnitUnlocked(pair.Key);
-            var inDeck = GameState.Instance.IsUnitInActiveDeck(pair.Key);
+            var owned = GameState.Instance.IsUnitOwned(pair.Key);
+            var availableForPurchase = GameState.Instance.IsUnitAvailableForPurchase(pair.Key);
+            var inDeck = owned && GameState.Instance.IsUnitInActiveDeck(pair.Key);
             var level = GameState.Instance.GetUnitLevel(pair.Key);
             var unitTint = unit.GetTint();
-            pair.Value.Text = !unlocked
-                ? $"LOCKED  S{unit.UnlockStage}  {unit.DisplayName}"
-                : inDeck
+            pair.Value.Text = !availableForPurchase
+                ? $"SHOP  S{unit.UnlockStage}  {unit.DisplayName}"
+                : !owned
+                    ? $"FOR SALE  {GameState.Instance.GetUnitPurchaseCost(pair.Key)}g  {unit.DisplayName}"
+                    : inDeck
                     ? $"ACTIVE  Lv{level}  {unit.DisplayName}"
                     : $"RESERVE  Lv{level}  {unit.DisplayName}";
-            pair.Value.Disabled = !unlocked;
-            pair.Value.SelfModulate = !unlocked
+            pair.Value.Disabled = !owned;
+            pair.Value.SelfModulate = !availableForPurchase
                 ? new Color("5c677d")
-                : inDeck
+                : !owned
+                    ? unitTint.Darkened(0.28f)
+                    : inDeck
                     ? unitTint.Lightened(0.25f)
                     : unitTint.Darkened(0.1f);
             pair.Value.TooltipText = BuildUnitTooltip(unit, level);
@@ -383,18 +415,60 @@ public partial class MapMenu : Control
             {
                 var isMaxLevel = level >= GameState.Instance.MaxUnitLevel;
                 var upgradeCost = GameState.Instance.GetUnitUpgradeCost(pair.Key);
-                upgradeButton.Text = !unlocked
+                var purchaseCost = GameState.Instance.GetUnitPurchaseCost(pair.Key);
+                upgradeButton.Text = !availableForPurchase
                     ? $"S{unit.UnlockStage}"
+                    : !owned
+                        ? $"Buy {purchaseCost}"
                     : isMaxLevel
                         ? "MAX"
                         : $"Up {upgradeCost}";
-                upgradeButton.Disabled = !unlocked || isMaxLevel || GameState.Instance.Scrap < upgradeCost;
-                upgradeButton.SelfModulate = !unlocked
+                upgradeButton.Disabled = !availableForPurchase ||
+                    (!owned && GameState.Instance.Gold < purchaseCost) ||
+                    (owned && (isMaxLevel || GameState.Instance.Gold < upgradeCost));
+                upgradeButton.SelfModulate = !availableForPurchase
                     ? new Color("4f5d75")
+                    : !owned
+                        ? unitTint.Lerp(Colors.White, 0.12f)
                     : isMaxLevel
                         ? new Color("588157")
                         : unitTint.Lerp(Colors.White, 0.35f);
             }
+        }
+
+        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
+        {
+            if (!_baseUpgradeButtons.TryGetValue(upgrade.Id, out var button))
+            {
+                continue;
+            }
+
+            var level = GameState.Instance.GetBaseUpgradeLevel(upgrade.Id);
+            var isMaxLevel = level >= upgrade.MaxLevel;
+            var cost = GameState.Instance.GetBaseUpgradeCost(upgrade.Id);
+            button.Text = isMaxLevel
+                ? $"{upgrade.Title}  Lv{level}/{upgrade.MaxLevel}  MAX"
+                : $"{upgrade.Title}  Lv{level}/{upgrade.MaxLevel}  Up {cost}g";
+            button.TooltipText = upgrade.Summary;
+            button.Disabled = isMaxLevel || GameState.Instance.Gold < cost;
+            button.SelfModulate = isMaxLevel
+                ? new Color("588157")
+                : new Color("7bdff2");
+        }
+
+        if (GameState.Instance.CanExploreNextStage(out var nextStage, out var exploreMessage))
+        {
+            _exploreButton.Text = $"Explore Stage {nextStage.StageNumber} (-{GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)";
+            _exploreButton.Disabled = false;
+            _exploreButton.TooltipText = $"{nextStage.MapName}: {nextStage.StageName}\n{nextStage.Description}";
+        }
+        else
+        {
+            _exploreButton.Disabled = true;
+            _exploreButton.TooltipText = exploreMessage;
+            _exploreButton.Text = GameState.Instance.HighestUnlockedStage >= GameState.Instance.MaxStage
+                ? "Route Fully Explored"
+                : $"Explore Locked ({GameState.Instance.GetStageExploreFoodCost(GameState.Instance.HighestUnlockedStage + 1)} food)";
         }
     }
 
@@ -405,7 +479,7 @@ public partial class MapMenu : Control
             return;
         }
 
-        if (!GameState.Instance.CanStartBattle(out var message))
+        if (!GameState.Instance.CanStartCampaignBattle(_selectedStage, out var message))
         {
             _deckStatusMessage = message;
             RefreshUi();
@@ -471,8 +545,33 @@ public partial class MapMenu : Control
 
     private void UpgradeUnit(UnitDefinition unit)
     {
-        GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+        if (GameState.Instance.IsUnitOwned(unit.Id))
+        {
+            GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+            _deckStatusMessage = message;
+            RefreshUi();
+            return;
+        }
+
+        GameState.Instance.TryPurchaseUnit(unit.Id, out var purchaseMessage);
+        _deckStatusMessage = purchaseMessage;
+        RefreshUi();
+    }
+
+    private void UpgradeBase(string upgradeId)
+    {
+        GameState.Instance.TryUpgradeBase(upgradeId, out var message);
         _deckStatusMessage = message;
+        RefreshUi();
+    }
+
+    private void ExploreNextStage()
+    {
+        GameState.Instance.TryExploreNextStage(out var message);
+        _deckStatusMessage = message;
+        _selectedStage = Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage);
+        _activeMapId = GetMapIdForStage(_selectedStage);
+        SyncMapSelectorSelection();
         RefreshUi();
     }
 
@@ -635,14 +734,20 @@ public partial class MapMenu : Control
 
         return
             $"Stage status: {stageState}  |  Best stars: {bestStars}/3\n" +
-            $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}";
+            $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food";
     }
 
     private string BuildUnitTooltip(UnitDefinition definition, int level)
     {
         var stats = GameState.Instance.BuildPlayerUnitStats(definition);
+        var shopLine = GameState.Instance.IsUnitOwned(definition.Id)
+            ? $"Owned  |  Upgrade {GameState.Instance.GetUnitUpgradeCost(definition.Id)} gold"
+            : GameState.Instance.IsUnitAvailableForPurchase(definition.Id)
+                ? $"Shop price {GameState.Instance.GetUnitPurchaseCost(definition.Id)} gold"
+                : $"Shop unlock: stage {definition.UnlockStage}";
         return
             $"Lv{level} {definition.DisplayName}\n" +
+            $"{shopLine}\n" +
             $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}\n" +
             $"Range {stats.AttackRange:0.#}  |  Deploy CD {definition.DeployCooldown:0.#}s";
     }

@@ -31,7 +31,7 @@ godot --headless --path . --build-solutions --quit
 ## Prototype controls
 
 - Main menu:
-  - Shows live convoy progress, unlocked-stage count, resources, next deployment, and active squad summary
+  - Shows live convoy progress, unlocked-stage count, gold/food, next deployment, and active squad summary
   - `Start Campaign`: opens map
   - `Endless Run`: opens the survival-mode prep screen
   - `Reset Progress`: restores stage unlock/resource defaults
@@ -45,13 +45,14 @@ godot --headless --path . --build-solutions --quit
   - Switch between `City Route` and `Harbor Front` in the map selector
   - Review route banner progress, earned stars, and route-specific stage styling on the map
   - Hover stage nodes for threat and star intel before selecting them
-  - Build a 3-card active squad and spend scrap on unit upgrades
+  - Build a 3-card active squad, buy new units with gold, and upgrade units/base from the same screen
+  - Spend food to explore the next stage and to begin stage deployments
   - Select stage node (`1-8`) and press `Deploy`
   - `Back To Title`: return to menu
 - Loadout:
   - Review stage objectives, active stage modifiers, scripted wave timing, enemy threat mix, and active squad stats
   - Later stages can swap in custom goals like deploy caps or enemy defeat targets
-  - `Deploy Convoy`: start the battle
+  - `Deploy Convoy`: spend food and start the battle
   - `Back To Map`: adjust deck/upgrades before deploying
 - Battle:
   - Pick a unit card (`Brawler`, `Shooter`, `Defender`, `Ranger`, `Raider`, `Marksman`) when unlocked
@@ -72,7 +73,17 @@ godot --headless --path . --build-solutions --quit
   - Deploys, deaths, death bursts, and base hits now emit simple combat feedback pulses
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
-  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, convoy support events, projected salvage, retreat-based cash-out, and a temporary opening boon
+  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, convoy support events, battlefield events, live segment directives, route-specific contact events, projected salvage, retreat-based cash-out, and a temporary opening boon
+  - Endless contact events now render as visible relay, cache, and safehouse moments on the battlefield instead of only zone markers
+  - Those endless contacts are now spawned battlefield actors with their own durability, contested state, and failure/survival feedback
+  - Eligible melee enemies in endless mode can now break off and explicitly attack contact actors instead of only pressuring them through zone logic
+  - Player units in endless mode can now actively support contacts with escort/haul/uplink actions instead of relying only on passive presence repair
+  - Ranged units now participate in the same loop too: spitters can pressure contacts at range, and player gunners/snipers can support them with projectile-based uplinks
+  - Endless HUD and checkpoint reports now surface contact actor hull, support actions, pressure actions, and contribution totals instead of leaving that loop only in floating text
+  - Contact failures now carry route-specific penalties like courage loss, cooldown setbacks, salvage loss, and convoy hull damage instead of only missing a reward
+  - Contact successes now also carry route-specific tradeoffs, like earlier surge timing, higher enemy caps, or reduced courage gain until checkpoint
+  - Active endless contacts now call in route-specific hostile response packs, so relay/cache/safehouse events create their own reinforcement pressure during the segment
+  - Each endless contact now also fires a one-time midpoint convoy assist, like relay uplinks, salvage reserve parts, or safehouse militia support
   - Higher stages can spawn the `Overlord` boss enemy
   - Units and enemies attack the opposing base core repeatedly until it is destroyed
   - Mission stars are evaluated from stage-authored objective rules
@@ -105,4 +116,4 @@ godot --headless --path . --build-solutions --quit
 - Unit and stage tuning are data-driven from JSON files in `data/` and loaded through `GameData`.
 - Global combat pacing/limits (spawn pressure, enemy cap, base approach distance, courage economy, etc.) is in `data/combat_config.json`.
 - Stage objective, modifier, and encounter-intel summaries are shared across map, loadout, and battle-facing UI.
-- Endless-mode best wave/time and selected route are also persisted in `GameState`.
+- Endless-mode best wave/time, selected route, owned units, base upgrades, and the gold/food economy are also persisted in `GameState`.

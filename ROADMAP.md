@@ -12,6 +12,7 @@ Current target:
 - cooldown-driven deck play
 - stage-based zombie waves
 - persistent roster and upgrade progression
+- shop-driven economy with gold and food as the main progression currencies
 
 Longer-term expansion targets:
 
@@ -26,7 +27,7 @@ The project already has a working vertical slice:
 - title screen, campaign map, and battle scene flow
 - save/load for progression state
 - stage unlock progression
-- scrap/fuel rewards
+- prototype scrap/fuel rewards
 - data-driven units, stages, and combat tuning
 - real-time combat with melee and projectile units
 - enemy wave spawning
@@ -43,6 +44,8 @@ Main gaps versus the intended DAZW-style experience:
 - stages are still mostly tuning-driven rather than explicitly scripted
 - no squad-building metagame beyond basic stage selection
 - no unit upgrade tree or long-term roster progression
+- no real shop/payment flow for buying units, unit upgrades, or bus/base upgrades
+- current prototype currencies do not match the intended gold/food economy loop
 - no mission objectives, stars, or encounter scripting
 - no differentiated enemy abilities or special combat rules
 - placeholder rendering is still carrying too much of the experience
@@ -66,10 +69,23 @@ Objective: create pre-battle decision making and persistent player growth.
 - squad/deck editing before deployment
 - roster unlock rules
 - unit leveling and upgrade costs
+- in-game shop flow for purchasing new units
+- base/bus upgrade track purchased through the same economy layer
 - persistent team composition data
 - better rewards and stage completion structure
 
-### Milestone 3: Mission Structure
+### Milestone 3: Economy, Shop, And Map Costs
+
+Objective: replace the prototype reward model with the long-term progression economy.
+
+- replace scrap/fuel with `gold` and `food`
+- use `gold` for unit purchases, unit levels, unit upgrades, and bus/base upgrades
+- use `food` to start new stages and to explore new sections of the campaign map
+- add shop/payment UI for buying units and confirming upgrade costs
+- persist owned units, upgrade tiers, and base upgrade levels in save data
+- tune stage rewards so campaign clears feed both upgrade growth and map expansion
+
+### Milestone 4: Mission Structure
 
 Objective: move from "sandbox stage" to "campaign mission".
 
@@ -79,7 +95,7 @@ Objective: move from "sandbox stage" to "campaign mission".
 - star ratings or bonus objectives
 - clearer map progression by district/route
 
-### Milestone 4: Presentation Pass
+### Milestone 5: Presentation Pass
 
 Objective: replace prototype abstraction with readable game feedback.
 
@@ -89,7 +105,7 @@ Objective: replace prototype abstraction with readable game feedback.
 - map and menu polish
 - audio pass
 
-### Milestone 5: Content Expansion And Balance
+### Milestone 6: Content Expansion And Balance
 
 Objective: scale once the systems are trustworthy.
 
@@ -98,7 +114,7 @@ Objective: scale once the systems are trustworthy.
 - stage modifiers and challenge content
 - balance passes for courage economy, cooldowns, and wave pacing
 
-### Milestone 6: Endless Roguelite Mode
+### Milestone 7: Endless Roguelite Mode
 
 Objective: add a replayable run-based mode that reuses the combat and progression systems without depending on the linear campaign.
 
@@ -108,7 +124,7 @@ Objective: add a replayable run-based mode that reuses the combat and progressio
 - escalating enemy wave generation and boss checkpoints
 - run rewards that feed back into the main progression economy
 
-### Milestone 7: Multiplayer
+### Milestone 8: Multiplayer
 
 Objective: support networked play only after combat/state flow is stable enough to stop rewriting core rules.
 
@@ -138,7 +154,7 @@ This sprint should stay narrow and practical:
 - shifted battle framing from generic base-vs-hive toward bus-vs-barricade
 - added stage-authored wave definitions and scripted enemy spawning
 - added persistent stage star ratings and basic mission goals
-- added persistent unit upgrades funded by scrap and applied in battle
+- added persistent unit upgrades funded by the current prototype economy and applied in battle
 - added roster unlock rules and expanded the player unit pool
 - added a pre-battle loadout screen between map and battle
 - split battle deck/spawn/objective logic out of `BattleController`
@@ -160,15 +176,31 @@ This sprint should stay narrow and practical:
 - added route-fork decisions on major endless checkpoints so later segments can trade pressure for payout
 - added fork-specific segment events so chosen route branches now alter the actual enemy packs inside each endless segment
 - added convoy support events tied to endless route forks so branch choices now affect both enemy pressure and player-side assistance
+- added battlefield events tied to endless route forks so each branch now changes the live arena, not only the spawns and support layer
+- added live endless segment directives tied to route forks so each checkpoint block now has an optional objective/reward layer on top of survival
+- added route-specific endless contact events so each segment can spawn a battlefield-side rescue/cache/relay objective with its own reward path
+- upgraded endless contact events from pure zone logic into visible relay, cache, and safehouse setpieces in battle
+- upgraded endless contact events again into spawned battlefield actors with durability and contested-state feedback instead of controller-only props
+- added enemy-side contact targeting so endless actors are now pressured by actual attacker behavior, not only passive zone decay
+- added player-side contact support actions so allied units can escort, haul, or uplink contacts instead of only repairing them through passive presence
+- extended the contact loop to ranged units so spitters, gunners, and snipers now affect contact actors through projectile interactions too
+- surfaced endless contact telemetry in the HUD and checkpoint summaries so hull, support contribution, and enemy pressure are readable while balancing
+- added route-specific contact failure penalties so missed relay/cache/safehouse events now hit real run resources and convoy health instead of only denying upside
+- added route-specific contact success tradeoffs so securing relay/cache/safehouse events now shifts the rest of the segment instead of being pure upside
+- added route-specific hostile response packs so active relay/cache/safehouse contacts now draw their own reinforcements during the segment
+- added one-time midpoint convoy assists so each active relay/cache/safehouse contact now has a player-side swing event during the segment too
 
 ## Recommended Build Order After This Commit
 
-1. replace placeholder combat visuals with authored assets and richer effects
-2. keep balancing courage economy, cooldowns, unlock pacing, and objective targets
-3. expand campaign breadth with more maps and districts once the core loop is solid
-4. add audio and stronger menu/map presentation
-5. deepen the endless scaffold with run upgrades, modifier drafts, and route forks instead of only raw survival scaling
-6. start multiplayer only after combat authority/state sync requirements are clear
+1. replace the prototype scrap/fuel layer with the planned gold/food economy and shop flow
+2. add unit purchasing, unit leveling, and bus/base upgrades on top of that economy
+3. connect food costs to stage entry and map exploration so route expansion has real pressure
+4. keep balancing courage economy, unlock pacing, and objective targets against the new currencies
+5. replace placeholder combat visuals with authored assets and richer effects
+6. expand campaign breadth with more maps and districts once the core loop is solid
+7. add audio and stronger menu/map presentation
+8. deepen the endless scaffold with run upgrades, modifier drafts, and route forks instead of only raw survival scaling
+9. start multiplayer only after combat authority/state sync requirements are clear
 
 ## Guardrails
 

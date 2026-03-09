@@ -76,12 +76,12 @@ public static class StageObjectives
     public static string BuildResultSummary(
         StageDefinition stage,
         StageObjectiveEvaluation evaluation,
-        int rewardScrap,
-        int rewardFuel,
+        int rewardGold,
+        int rewardFood,
         int bestStars)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"Reward: +{rewardScrap} scrap, +{rewardFuel} fuel.");
+        builder.AppendLine($"Reward: +{rewardGold} gold, +{rewardFood} food.");
         builder.AppendLine($"Stars earned: {evaluation.StarsEarned}/3   |   Best: {bestStars}/3");
 
         for (var i = 0; i < evaluation.Outcomes.Length; i++)

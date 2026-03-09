@@ -53,7 +53,7 @@ public partial class EndlessMenu : Control
 
         titleRow.AddChild(new Label
         {
-            Text = $"Scrap: {GameState.Instance.Scrap}  |  Fuel: {GameState.Instance.Fuel}",
+            Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}",
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -243,7 +243,7 @@ public partial class EndlessMenu : Control
             "- Waves scale up continuously.\n" +
             "- Pick one temporary opening boon before deploying.\n" +
             "- Retreat to cash out salvage.\n" +
-            "- Scrap and fuel rewards scale with wave reached, time alive, and kills.";
+            "- Gold and food rewards scale with wave reached, time alive, and kills.";
 
         RebuildSquadPanels();
 

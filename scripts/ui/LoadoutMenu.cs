@@ -40,7 +40,7 @@ public partial class LoadoutMenu : Control
 
         var resourcesLabel = new Label
         {
-            Text = $"Scrap: {GameState.Instance.Scrap}  |  Fuel: {GameState.Instance.Fuel}",
+            Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}",
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -87,7 +87,7 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
-            Text = $"Reward on clear: +{_stage.RewardScrap} scrap, +{GameData.Combat.VictoryFuelReward} fuel"
+            Text = $"Reward on clear: +{_stage.RewardGold} gold, +{_stage.RewardFood} food  |  Entry cost: -{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food"
         });
 
         missionStack.AddChild(new Label
@@ -136,7 +136,7 @@ public partial class LoadoutMenu : Control
             rosterStack.AddChild(BuildUnitPanel(definition));
         }
 
-        var canStartBattle = GameState.Instance.CanStartBattle(out var deployValidationMessage);
+        var canStartBattle = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var deployValidationMessage);
         rosterStack.AddChild(new Label
         {
             Text = deployValidationMessage,
@@ -169,12 +169,19 @@ public partial class LoadoutMenu : Control
 
         var deployButton = new Button
         {
-            Text = canStartBattle ? "Deploy Convoy" : "Convoy Not Ready",
+            Text = canStartBattle
+                ? $"Deploy Convoy (-{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food)"
+                : "Convoy Not Ready",
             CustomMinimumSize = new Vector2(220f, 0f)
         };
         deployButton.Disabled = !canStartBattle;
         deployButton.Pressed += () =>
         {
+            if (!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber, out _))
+            {
+                return;
+            }
+
             GameState.Instance.PrepareCampaignBattle();
             SceneRouter.Instance.GoToBattle();
         };

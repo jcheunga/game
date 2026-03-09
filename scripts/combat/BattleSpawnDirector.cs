@@ -29,6 +29,7 @@ public sealed class BattleSpawnDirector
     private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
     private int _endlessSegmentStartWave = 1;
     private float _nextEndlessWaveTime;
+    private int _endlessTradeoffEnemyCapModifier;
 
     public BattleSpawnDirector(RandomNumberGenerator rng)
     {
@@ -61,6 +62,7 @@ public sealed class BattleSpawnDirector
         _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
+        _endlessTradeoffEnemyCapModifier = 0;
 
         _enemyRoster.Clear();
         _enemyRoster.AddRange(enemyRoster);
@@ -83,6 +85,7 @@ public sealed class BattleSpawnDirector
         _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
+        _endlessTradeoffEnemyCapModifier = 0;
 
         _enemyRoster.Clear();
         _enemyRoster.AddRange(enemyRoster);
@@ -136,7 +139,8 @@ public sealed class BattleSpawnDirector
             return _combat.GetMaxActiveEnemies(_stage) +
                 StageModifiers.ResolveEnemyCapBonus(_stageData) +
                 Math.Min(10, Math.Max(0, EndlessWaveNumber / 2)) +
-                ResolveEndlessEnemyCapModifier();
+                ResolveEndlessEnemyCapModifier() +
+                _endlessTradeoffEnemyCapModifier;
         }
 
         return _combat.GetMaxActiveEnemies(_stage) + StageModifiers.ResolveEnemyCapBonus(_stageData);
@@ -297,6 +301,26 @@ public sealed class BattleSpawnDirector
         _endlessRouteForkId = EndlessRouteForkCatalog.Normalize(forkId);
         _endlessSegmentStartWave = Math.Max(1, EndlessWaveNumber + 1);
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
+    }
+
+    public void ResetEndlessSegmentTradeoffs()
+    {
+        _endlessTradeoffEnemyCapModifier = 0;
+    }
+
+    public void SetEndlessTradeoffEnemyCapModifier(int value)
+    {
+        _endlessTradeoffEnemyCapModifier = value;
+    }
+
+    public void AdvanceNextEndlessWave(float elapsed, float seconds)
+    {
+        if (!_isEndlessMode || seconds <= 0f)
+        {
+            return;
+        }
+
+        _nextEndlessWaveTime = Math.Max(elapsed + 0.75f, _nextEndlessWaveTime - seconds);
     }
 
     private void QueueEndlessWave(float executeAt, int waveNumber)

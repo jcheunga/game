@@ -5,12 +5,13 @@ using Godot;
 
 public partial class GameState : Node
 {
-	private const int DefaultScrap = 120;
-	private const int DefaultFuel = 10;
+	private const int DefaultGold = 120;
+	private const int DefaultFood = 12;
 	private const int DefaultUnlockedStage = 1;
 	private const int MaxDeckSize = 3;
 	private const int DefaultUnitLevel = 1;
 	private const int MaxPlayerUnitLevel = 5;
+	private const int MaxPersistentBaseUpgradeLevel = 5;
 	private const string DefaultEndlessRouteId = "city";
 	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
@@ -25,8 +26,10 @@ public partial class GameState : Node
 
 	public static GameState Instance { get; private set; }
 
-	public int Scrap { get; private set; } = DefaultScrap;
-	public int Fuel { get; private set; } = DefaultFuel;
+	public int Gold { get; private set; } = DefaultGold;
+	public int Food { get; private set; } = DefaultFood;
+	public int Scrap => Gold;
+	public int Fuel => Food;
 	public int HighestUnlockedStage { get; private set; } = DefaultUnlockedStage;
 	public int SelectedStage { get; private set; } = DefaultUnlockedStage;
 	public string SelectedEndlessRouteId { get; private set; } = DefaultEndlessRouteId;
@@ -43,11 +46,14 @@ public partial class GameState : Node
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
+	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
 
 	private readonly List<string> _activeDeckUnitIds = new();
 	private readonly List<int> _stageStars = new();
+	private readonly HashSet<string> _ownedPlayerUnitIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 
 	public override void _EnterTree()
 	{
@@ -110,19 +116,16 @@ public partial class GameState : Node
 		Persist();
 	}
 
-	public void ApplyVictory(int stage, int rewardScrap, int rewardFuel, int starsEarned)
+	public void ApplyVictory(int stage, int rewardGold, int rewardFood, int starsEarned)
 	{
-		var previousHighestUnlockedStage = HighestUnlockedStage;
-		Scrap += rewardScrap;
-		Fuel += rewardFuel;
-		UnlockNextStageInternal(stage);
+		Gold += Math.Max(0, rewardGold);
+		Food += Math.Max(0, rewardFood);
 		var bestStars = RecordStageStars(stage, starsEarned);
-		var newlyUnlockedUnits = GetNewlyUnlockedPlayerUnits(previousHighestUnlockedStage);
-		var unlockSuffix = newlyUnlockedUnits.Count > 0
-			? $" New unit unlocked: {string.Join(", ", newlyUnlockedUnits.Select(unit => unit.DisplayName))}."
+		var nextStageHint = stage < MaxStage
+			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the convoy is ready."
 			: "";
 		LastResultMessage =
-			$"Stage {stage} cleared. +{rewardScrap} scrap, +{rewardFuel} fuel. Stars: {bestStars}/3.{unlockSuffix}";
+			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3.{nextStageHint}";
 		Persist();
 	}
 
@@ -138,11 +141,11 @@ public partial class GameState : Node
 		Persist();
 	}
 
-	public void ApplyEndlessResult(string routeId, int waveReached, float elapsedSeconds, int enemyDefeats, int rewardScrap, int rewardFuel, bool retreated)
+	public void ApplyEndlessResult(string routeId, int waveReached, float elapsedSeconds, int enemyDefeats, int rewardGold, int rewardFood, bool retreated)
 	{
 		SelectedEndlessRouteId = NormalizeRouteId(routeId);
-		Scrap += Math.Max(0, rewardScrap);
-		Fuel += Math.Max(0, rewardFuel);
+		Gold += Math.Max(0, rewardGold);
+		Food += Math.Max(0, rewardFood);
 		BestEndlessWave = Math.Max(BestEndlessWave, Math.Max(0, waveReached));
 		BestEndlessTimeSeconds = Math.Max(BestEndlessTimeSeconds, Math.Max(0f, elapsedSeconds));
 		EndlessRuns++;
@@ -151,7 +154,7 @@ public partial class GameState : Node
 		var outcome = retreated ? "withdrew" : "was overrun";
 		LastResultMessage =
 			$"Endless run {outcome} on {routeLabel}. Wave {Math.Max(0, waveReached)}, {elapsedSeconds:0.0}s, {enemyDefeats} defeats. " +
-			$"+{Math.Max(0, rewardScrap)} scrap, +{Math.Max(0, rewardFuel)} fuel.";
+			$"+{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food.";
 		Persist();
 	}
 
@@ -174,8 +177,13 @@ public partial class GameState : Node
 
 	public IReadOnlyList<UnitDefinition> GetUnlockedPlayerUnits()
 	{
+		return GetOwnedPlayerUnits();
+	}
+
+	public IReadOnlyList<UnitDefinition> GetOwnedPlayerUnits()
+	{
 		return GameData.GetPlayerUnits()
-			.Where(unit => IsUnitUnlocked(unit.Id))
+			.Where(unit => IsUnitOwned(unit.Id))
 			.ToArray();
 	}
 
@@ -191,6 +199,11 @@ public partial class GameState : Node
 
 	public bool IsUnitUnlocked(string unitId)
 	{
+		return IsUnitOwned(unitId);
+	}
+
+	public bool IsUnitOwned(string unitId)
+	{
 		try
 		{
 			var definition = GameData.GetUnit(unitId);
@@ -199,10 +212,93 @@ public partial class GameState : Node
 				return true;
 			}
 
+			return _ownedPlayerUnitIds.Contains(definition.Id);
+		}
+		catch (Exception)
+		{
+			return false;
+		}
+	}
+
+	public bool IsUnitAvailableForPurchase(string unitId)
+	{
+		try
+		{
+			var definition = GameData.GetUnit(unitId);
+			if (!definition.IsPlayerSide)
+			{
+				return false;
+			}
+
 			return HighestUnlockedStage >= Mathf.Max(1, definition.UnlockStage);
 		}
 		catch (Exception)
 		{
+			return false;
+		}
+	}
+
+	public int GetUnitPurchaseCost(string unitId)
+	{
+		var definition = GameData.GetUnit(unitId);
+		if (!definition.IsPlayerSide)
+		{
+			return 0;
+		}
+
+		if (definition.GoldCost > 0)
+		{
+			return definition.GoldCost;
+		}
+
+		if (DefaultDeckUnitIds.Contains(definition.Id, StringComparer.OrdinalIgnoreCase))
+		{
+			return 0;
+		}
+
+		return 120 + (definition.Cost * 2) + (Math.Max(0, definition.UnlockStage - 1) * 35);
+	}
+
+	public bool TryPurchaseUnit(string unitId, out string message)
+	{
+		try
+		{
+			var definition = GameData.GetUnit(unitId);
+			if (!definition.IsPlayerSide)
+			{
+				message = "Enemy units cannot be purchased.";
+				return false;
+			}
+
+			if (IsUnitOwned(definition.Id))
+			{
+				message = $"{definition.DisplayName} is already owned.";
+				return false;
+			}
+
+			if (!IsUnitAvailableForPurchase(definition.Id))
+			{
+				message = $"{definition.DisplayName} becomes available after exploring stage {definition.UnlockStage}.";
+				return false;
+			}
+
+			var cost = GetUnitPurchaseCost(definition.Id);
+			if (Gold < cost)
+			{
+				message = $"Need {cost} gold to buy {definition.DisplayName}.";
+				return false;
+			}
+
+			Gold -= cost;
+			_ownedPlayerUnitIds.Add(definition.Id);
+			LastResultMessage = $"{definition.DisplayName} purchased for {cost} gold.";
+			Persist();
+			message = LastResultMessage;
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Unit data was not found.";
 			return false;
 		}
 	}
@@ -218,7 +314,7 @@ public partial class GameState : Node
 	{
 		var definition = GameData.GetUnit(unitId);
 		var level = GetUnitLevel(unitId);
-		return definition.Cost + 20 + ((level - 1) * 25);
+		return definition.Cost + 35 + ((level - 1) * 30);
 	}
 
 	public bool TryUpgradeUnit(string unitId, out string message)
@@ -232,9 +328,9 @@ public partial class GameState : Node
 				return false;
 			}
 
-			if (!IsUnitUnlocked(definition.Id))
+			if (!IsUnitOwned(definition.Id))
 			{
-				message = $"{definition.DisplayName} unlocks at stage {definition.UnlockStage}.";
+				message = $"Buy {definition.DisplayName} in the shop before upgrading it.";
 				return false;
 			}
 
@@ -246,15 +342,15 @@ public partial class GameState : Node
 			}
 
 			var cost = GetUnitUpgradeCost(definition.Id);
-			if (Scrap < cost)
+			if (Gold < cost)
 			{
-				message = $"Need {cost} scrap to upgrade {definition.DisplayName}.";
+				message = $"Need {cost} gold to upgrade {definition.DisplayName}.";
 				return false;
 			}
 
-			Scrap -= cost;
+			Gold -= cost;
 			_unitUpgradeLevels[definition.Id] = currentLevel + 1;
-			LastResultMessage = $"{definition.DisplayName} upgraded to level {currentLevel + 1}. -{cost} scrap.";
+			LastResultMessage = $"{definition.DisplayName} upgraded to level {currentLevel + 1}. -{cost} gold.";
 			Persist();
 			message = LastResultMessage;
 			return true;
@@ -264,6 +360,72 @@ public partial class GameState : Node
 			message = "Unit data was not found.";
 			return false;
 		}
+	}
+
+	public int GetBaseUpgradeLevel(string upgradeId)
+	{
+		return _baseUpgradeLevels.TryGetValue(upgradeId, out var level)
+			? level
+			: 0;
+	}
+
+	public int GetBaseUpgradeCost(string upgradeId)
+	{
+		var level = GetBaseUpgradeLevel(upgradeId);
+		return upgradeId switch
+		{
+			BaseUpgradeCatalog.HullPlatingId => 90 + (level * 70),
+			BaseUpgradeCatalog.PantryId => 80 + (level * 65),
+			_ => 100 + (level * 60)
+		};
+	}
+
+	public bool TryUpgradeBase(string upgradeId, out string message)
+	{
+		try
+		{
+			var definition = BaseUpgradeCatalog.Get(upgradeId);
+			var currentLevel = GetBaseUpgradeLevel(upgradeId);
+			if (currentLevel >= definition.MaxLevel)
+			{
+				message = $"{definition.Title} is already max level.";
+				return false;
+			}
+
+			var cost = GetBaseUpgradeCost(upgradeId);
+			if (Gold < cost)
+			{
+				message = $"Need {cost} gold to upgrade {definition.Title}.";
+				return false;
+			}
+
+			Gold -= cost;
+			_baseUpgradeLevels[upgradeId] = currentLevel + 1;
+			LastResultMessage = $"{definition.Title} upgraded to level {currentLevel + 1}. -{cost} gold.";
+			Persist();
+			message = LastResultMessage;
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Base upgrade data was not found.";
+			return false;
+		}
+	}
+
+	public float ApplyPlayerBaseHealthUpgrade(float baseHealth)
+	{
+		return baseHealth * GetPlayerBaseHealthScale();
+	}
+
+	public float ApplyPlayerCourageMaxUpgrade(float baseMax)
+	{
+		return baseMax + GetPlayerCourageMaxBonus();
+	}
+
+	public float ApplyPlayerCourageGainUpgrade(float baseGain)
+	{
+		return baseGain * GetPlayerCourageGainScale();
 	}
 
 	public UnitStats BuildPlayerUnitStats(UnitDefinition definition)
@@ -310,6 +472,101 @@ public partial class GameState : Node
 		return true;
 	}
 
+	public bool CanStartCampaignBattle(int stage, out string message)
+	{
+		if (!CanStartBattle(out message))
+		{
+			return false;
+		}
+
+		if (stage < 1 || stage > HighestUnlockedStage)
+		{
+			message = "Explore this route segment before deploying there.";
+			return false;
+		}
+
+		var foodCost = GetStageEntryFoodCost(stage);
+		if (Food < foodCost)
+		{
+			message = $"Need {foodCost} food to begin stage {stage}.";
+			return false;
+		}
+
+		message = $"Convoy ready. Stage entry costs {foodCost} food.";
+		return true;
+	}
+
+	public bool TrySpendStageEntryFood(int stage, out string message)
+	{
+		if (!CanStartCampaignBattle(stage, out message))
+		{
+			return false;
+		}
+
+		var foodCost = GetStageEntryFoodCost(stage);
+		Food -= foodCost;
+		LastResultMessage = $"Convoy dispatched to stage {stage}. -{foodCost} food.";
+		Persist();
+		message = LastResultMessage;
+		return true;
+	}
+
+	public bool CanExploreNextStage(out StageDefinition nextStage, out string message)
+	{
+		if (HighestUnlockedStage >= MaxStage)
+		{
+			nextStage = GameData.GetStage(MaxStage);
+			message = "All route segments are already explored.";
+			return false;
+		}
+
+		nextStage = GameData.GetStage(HighestUnlockedStage + 1);
+		var foodCost = GetStageExploreFoodCost(nextStage.StageNumber);
+		if (Food < foodCost)
+		{
+			message = $"Need {foodCost} food to explore stage {nextStage.StageNumber}.";
+			return false;
+		}
+
+		message = $"Explore stage {nextStage.StageNumber} for {foodCost} food.";
+		return true;
+	}
+
+	public bool TryExploreNextStage(out string message)
+	{
+		if (!CanExploreNextStage(out var nextStage, out message))
+		{
+			return false;
+		}
+
+		var previousHighestUnlockedStage = HighestUnlockedStage;
+		var foodCost = GetStageExploreFoodCost(nextStage.StageNumber);
+		Food -= foodCost;
+		HighestUnlockedStage = nextStage.StageNumber;
+		SelectedStage = nextStage.StageNumber;
+		var newlyAvailableUnits = GetNewlyAvailablePlayerUnits(previousHighestUnlockedStage);
+		var availabilitySuffix = newlyAvailableUnits.Count > 0
+			? $" New shop unit available: {string.Join(", ", newlyAvailableUnits.Select(unit => unit.DisplayName))}."
+			: "";
+		LastResultMessage =
+			$"Explored {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}. -{foodCost} food.{availabilitySuffix}";
+		Persist();
+		message = LastResultMessage;
+		return true;
+	}
+
+	public int GetStageEntryFoodCost(int stage)
+	{
+		var definition = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
+		return Math.Max(1, definition.EntryFoodCost);
+	}
+
+	public int GetStageExploreFoodCost(int stage)
+	{
+		var definition = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
+		return Math.Max(1, definition.ExploreFoodCost);
+	}
+
 	public bool ToggleDeckUnit(string unitId, out string message)
 	{
 		if (string.IsNullOrWhiteSpace(unitId))
@@ -348,9 +605,17 @@ public partial class GameState : Node
 				return false;
 			}
 
-			if (!IsUnitUnlocked(definition.Id))
+			if (!IsUnitOwned(definition.Id))
 			{
-				message = $"{definition.DisplayName} unlocks at stage {definition.UnlockStage}.";
+				if (IsUnitAvailableForPurchase(definition.Id))
+				{
+					message = $"{definition.DisplayName} is in the shop for {GetUnitPurchaseCost(definition.Id)} gold.";
+				}
+				else
+				{
+					message = $"{definition.DisplayName} becomes available after exploring stage {definition.UnlockStage}.";
+				}
+
 				return false;
 			}
 
@@ -364,6 +629,21 @@ public partial class GameState : Node
 			message = "Unit data was not found.";
 			return false;
 		}
+	}
+
+	private float GetPlayerBaseHealthScale()
+	{
+		return 1f + (GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId) * 0.12f);
+	}
+
+	private float GetPlayerCourageMaxBonus()
+	{
+		return GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId) * 6f;
+	}
+
+	private float GetPlayerCourageGainScale()
+	{
+		return 1f + (GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId) * 0.06f);
 	}
 
 	private void LoadOrInitialize()
@@ -383,8 +663,8 @@ public partial class GameState : Node
 
 	private void ApplyDefaults()
 	{
-		Scrap = DefaultScrap;
-		Fuel = DefaultFuel;
+		Gold = DefaultGold;
+		Food = DefaultFood;
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
 		SelectedEndlessRouteId = DefaultEndlessRouteId;
@@ -395,8 +675,15 @@ public partial class GameState : Node
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
+		_ownedPlayerUnitIds.Clear();
+		foreach (var unitId in DefaultDeckUnitIds)
+		{
+			_ownedPlayerUnitIds.Add(unitId);
+		}
+
 		_stageStars.Clear();
 		_unitUpgradeLevels.Clear();
+		_baseUpgradeLevels.Clear();
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
 		EndlessRuns = 0;
@@ -404,8 +691,8 @@ public partial class GameState : Node
 
 	private void ApplySavedData(GameSaveData saved)
 	{
-		Scrap = saved.Scrap;
-		Fuel = saved.Fuel;
+		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
+		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		SelectedStage = saved.SelectedStage;
 		SelectedEndlessRouteId = saved.Version >= 6
@@ -443,6 +730,28 @@ public partial class GameState : Node
 			}
 		}
 
+		_ownedPlayerUnitIds.Clear();
+		if (saved.Version >= 8 && saved.OwnedPlayerUnitIds != null && saved.OwnedPlayerUnitIds.Length > 0)
+		{
+			foreach (var unitId in saved.OwnedPlayerUnitIds)
+			{
+				if (!string.IsNullOrWhiteSpace(unitId))
+				{
+					_ownedPlayerUnitIds.Add(unitId);
+				}
+			}
+		}
+		else
+		{
+			foreach (var unit in GameData.GetPlayerUnits())
+			{
+				if (unit.UnlockStage <= HighestUnlockedStage)
+				{
+					_ownedPlayerUnitIds.Add(unit.Id);
+				}
+			}
+		}
+
 		_stageStars.Clear();
 		if (saved.Version >= 4 && saved.StageStars != null)
 		{
@@ -466,6 +775,18 @@ public partial class GameState : Node
 			}
 		}
 
+		_baseUpgradeLevels.Clear();
+		if (saved.Version >= 8 && saved.BaseUpgradeLevels != null)
+		{
+			foreach (var pair in saved.BaseUpgradeLevels)
+			{
+				if (!string.IsNullOrWhiteSpace(pair.Key))
+				{
+					_baseUpgradeLevels[pair.Key] = pair.Value;
+				}
+			}
+		}
+
 		if (saved.Version >= 6)
 		{
 			BestEndlessWave = Math.Max(0, saved.BestEndlessWave);
@@ -482,6 +803,9 @@ public partial class GameState : Node
 
 	private void ClampState()
 	{
+		Gold = Math.Max(0, Gold);
+		Food = Math.Max(0, Food);
+
 		if (MaxStage <= 0)
 		{
 			HighestUnlockedStage = 1;
@@ -507,9 +831,11 @@ public partial class GameState : Node
 			SelectedStage = HighestUnlockedStage;
 		}
 
+		NormalizeOwnedUnits();
 		NormalizeDeck();
 		NormalizeStageStars();
 		NormalizeUnitLevels();
+		NormalizeBaseUpgrades();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
 		BestEndlessWave = Math.Max(0, BestEndlessWave);
@@ -535,8 +861,8 @@ public partial class GameState : Node
 	{
 		return new GameSaveData
 		{
-			Scrap = Scrap,
-			Fuel = Fuel,
+			Gold = Gold,
+			Food = Food,
 			HighestUnlockedStage = HighestUnlockedStage,
 			SelectedStage = SelectedStage,
 			SelectedEndlessRouteId = SelectedEndlessRouteId,
@@ -545,19 +871,29 @@ public partial class GameState : Node
 			ShowDevUi = ShowDevUi,
 			ShowFpsCounter = ShowFpsCounter,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
+			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
 			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
+			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
 			BestEndlessWave = BestEndlessWave,
 			BestEndlessTimeSeconds = BestEndlessTimeSeconds,
 			EndlessRuns = EndlessRuns
 		};
 	}
 
+	private void NormalizeOwnedUnits()
+	{
+		var validPlayerIds = new HashSet<string>(GameData.PlayerRosterIds, StringComparer.OrdinalIgnoreCase);
+		_ownedPlayerUnitIds.RemoveWhere(unitId => !validPlayerIds.Contains(unitId));
+		foreach (var defaultId in DefaultDeckUnitIds)
+		{
+			_ownedPlayerUnitIds.Add(defaultId);
+		}
+	}
+
 	private void NormalizeDeck()
 	{
-		var validPlayerIds = new HashSet<string>(
-			GameData.PlayerRosterIds.Where(IsUnitUnlocked),
-			StringComparer.OrdinalIgnoreCase);
+		var validPlayerIds = new HashSet<string>(_ownedPlayerUnitIds, StringComparer.OrdinalIgnoreCase);
 		_activeDeckUnitIds.RemoveAll(unitId => !validPlayerIds.Contains(unitId));
 
 		for (var i = _activeDeckUnitIds.Count - 1; i >= 0; i--)
@@ -587,7 +923,7 @@ public partial class GameState : Node
 				break;
 			}
 
-			if (!IsUnitUnlocked(defaultId))
+			if (!IsUnitOwned(defaultId))
 			{
 				continue;
 			}
@@ -664,7 +1000,41 @@ public partial class GameState : Node
 		}
 	}
 
-	private IReadOnlyList<UnitDefinition> GetNewlyUnlockedPlayerUnits(int previousHighestUnlockedStage)
+	private void NormalizeBaseUpgrades()
+	{
+		var validUpgradeIds = new HashSet<string>(
+			BaseUpgradeCatalog.GetAll().Select(upgrade => upgrade.Id),
+			StringComparer.OrdinalIgnoreCase);
+		var invalidKeys = new List<string>();
+
+		foreach (var pair in _baseUpgradeLevels)
+		{
+			if (!validUpgradeIds.Contains(pair.Key))
+			{
+				invalidKeys.Add(pair.Key);
+				continue;
+			}
+
+			_baseUpgradeLevels[pair.Key] = Mathf.Clamp(pair.Value, 0, MaxPersistentBaseUpgradeLevel);
+		}
+
+		foreach (var invalidKey in invalidKeys)
+		{
+			_baseUpgradeLevels.Remove(invalidKey);
+		}
+
+		foreach (var upgrade in BaseUpgradeCatalog.GetAll())
+		{
+			if (_baseUpgradeLevels.ContainsKey(upgrade.Id))
+			{
+				continue;
+			}
+
+			_baseUpgradeLevels[upgrade.Id] = 0;
+		}
+	}
+
+	private IReadOnlyList<UnitDefinition> GetNewlyAvailablePlayerUnits(int previousHighestUnlockedStage)
 	{
 		return GameData.GetPlayerUnits()
 			.Where(unit => unit.UnlockStage > previousHighestUnlockedStage && unit.UnlockStage <= HighestUnlockedStage)

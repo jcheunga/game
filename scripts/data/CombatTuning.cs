@@ -27,7 +27,8 @@ public sealed class CombatTuning
     public float EnemySpawnIntervalFloor { get; set; } = 1.4f;
 
     public int[] MaxActiveEnemiesByStage { get; set; } = { 5, 7, 8, 9, 10, 11, 12, 13 };
-    public int VictoryFuelReward { get; set; } = 2;
+    public int VictoryFoodReward { get; set; } = 2;
+    public int VictoryFuelReward { get => VictoryFoodReward; set => VictoryFoodReward = value; }
 
     public int GetMaxActiveEnemies(int stage)
     {

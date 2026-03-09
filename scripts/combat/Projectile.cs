@@ -3,7 +3,7 @@ using Godot;
 
 public partial class Projectile : Node2D
 {
-    private Unit _target = null!;
+    private Node2D _target = null!;
     private float _damage;
     private float _speed;
     private Color _color = Colors.White;
@@ -11,14 +11,37 @@ public partial class Projectile : Node2D
     private bool _active;
     private Vector2 _travelDirection = Vector2.Right;
     private Action<Vector2, float, Color> _onHit = null!;
+    private Func<float, float> _applyImpact = null!;
+    private Func<bool> _shouldCancel = null!;
 
     public void Setup(Unit target, float damage, float speed, Color color, Action<Vector2, float, Color> onHit = null)
+    {
+        Setup(
+            target,
+            damage,
+            speed,
+            color,
+            target.TakeDamage,
+            () => !IsInstanceValid(target) || target.IsDead,
+            onHit);
+    }
+
+    public void Setup(
+        Node2D target,
+        float damage,
+        float speed,
+        Color color,
+        Func<float, float> applyImpact,
+        Func<bool> shouldCancel = null,
+        Action<Vector2, float, Color> onHit = null)
     {
         _target = target;
         _damage = damage;
         _speed = speed;
         _color = color;
         _radius = damage >= 18f ? 6f : 5f;
+        _applyImpact = applyImpact;
+        _shouldCancel = shouldCancel;
         _onHit = onHit;
         _active = true;
     }
@@ -30,7 +53,7 @@ public partial class Projectile : Node2D
             return;
         }
 
-        if (!IsInstanceValid(_target) || _target.IsDead)
+        if (!IsInstanceValid(_target) || (_shouldCancel != null && _shouldCancel()))
         {
             QueueFree();
             return;
@@ -43,7 +66,7 @@ public partial class Projectile : Node2D
 
         if (distance <= step + _radius)
         {
-            var appliedDamage = _target.TakeDamage(_damage);
+            var appliedDamage = _applyImpact?.Invoke(_damage) ?? 0f;
             _onHit?.Invoke(GlobalPosition, appliedDamage, _color);
             SpawnImpactEffect();
             QueueFree();

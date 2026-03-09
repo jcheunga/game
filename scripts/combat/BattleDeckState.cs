@@ -98,6 +98,20 @@ public sealed class BattleDeckState
         }
     }
 
+    public void IncreaseCooldowns(float amount)
+    {
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        for (var i = 0; i < _roster.Count; i++)
+        {
+            var unit = _roster[i];
+            _cooldowns[unit.Id] = GetCooldownRemaining(unit.Id) + amount;
+        }
+    }
+
     private void AutoArmNextReadyUnit(UnitDefinition deployedUnit)
     {
         if (ArmedUnit != deployedUnit)

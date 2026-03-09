@@ -33,7 +33,7 @@ public static class EndlessBoonCatalog
         new(
             SalvageCacheId,
             "Salvage Cache",
-            "Endless run scrap rewards are increased by 25% when the run ends.")
+            "Endless run gold rewards are increased by 25% when the run ends.")
     };
 
     public static EndlessBoonDefinition[] GetAll()

@@ -9,7 +9,11 @@ public sealed class StageDefinition
     public string MapName { get; set; } = "City Route";
     public string TerrainId { get; set; } = "urban";
     public string Description { get; set; } = "";
-    public int RewardScrap { get; set; } = 40;
+    public int RewardGold { get; set; } = 40;
+    public int RewardFood { get; set; } = 2;
+    public int EntryFoodCost { get; set; } = 1;
+    public int ExploreFoodCost { get; set; } = 2;
+    public int RewardScrap { get => RewardGold; set => RewardGold = value; }
     public float MapX { get; set; } = 120f;
     public float MapY { get; set; } = 220f;
     public float PlayerBaseHealth { get; set; } = 300f;

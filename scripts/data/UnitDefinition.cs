@@ -7,6 +7,7 @@ public sealed class UnitDefinition
     public string DisplayName { get; set; } = "";
     public string Side { get; set; } = "Enemy";
     public int UnlockStage { get; set; } = 1;
+    public int GoldCost { get; set; }
     public int Cost { get; set; }
     public float MaxHealth { get; set; } = 50f;
     public float Speed { get; set; } = 60f;

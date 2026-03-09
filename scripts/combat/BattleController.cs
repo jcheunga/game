@@ -4,6 +4,8 @@ using Godot;
 
 public partial class BattleController : Node2D
 {
+	private const string DefaultEndlessContactTradeoffLabel = "No contact tradeoff active.";
+
 	private readonly struct TerrainPalette
 	{
 		public TerrainPalette(
@@ -43,6 +45,104 @@ public partial class BattleController : Node2D
 
 		public UnitDefinition Definition { get; }
 		public Button Button { get; }
+	}
+
+	private sealed class EndlessFieldEvent
+	{
+		public EndlessFieldEvent(
+			string type,
+			string label,
+			Vector2[] anchors,
+			float duration,
+			float interval,
+			float radius,
+			Color color)
+		{
+			Type = type;
+			Label = label;
+			Anchors = anchors;
+			Remaining = duration;
+			PulseTimer = interval;
+			Interval = interval;
+			Radius = radius;
+			Color = color;
+		}
+
+		public string Type { get; }
+		public string Label { get; }
+		public Vector2[] Anchors { get; }
+		public float Remaining { get; set; }
+		public float PulseTimer { get; set; }
+		public float Interval { get; }
+		public float Radius { get; }
+		public Color Color { get; }
+	}
+
+	private sealed class EndlessDirectiveState
+	{
+		public EndlessDirectiveState(
+			EndlessDirectiveDefinition definition,
+			int startWave,
+			int checkpointWave,
+			int targetCount,
+			float targetRatio,
+			int startEnemyDefeats,
+			int startDeployments,
+			float startBusHullRatio)
+		{
+			Definition = definition;
+			StartWave = startWave;
+			CheckpointWave = checkpointWave;
+			TargetCount = targetCount;
+			TargetRatio = targetRatio;
+			StartEnemyDefeats = startEnemyDefeats;
+			StartDeployments = startDeployments;
+			LowestBusHullRatio = startBusHullRatio;
+		}
+
+		public EndlessDirectiveDefinition Definition { get; }
+		public int StartWave { get; }
+		public int CheckpointWave { get; }
+		public int TargetCount { get; }
+		public float TargetRatio { get; }
+		public int StartEnemyDefeats { get; }
+		public int StartDeployments { get; }
+		public float LowestBusHullRatio { get; set; }
+		public bool Completed { get; set; }
+		public bool Failed { get; set; }
+		public bool RewardGranted { get; set; }
+	}
+
+	private sealed class EndlessContactState
+	{
+		public EndlessContactState(
+			EndlessContactDefinition definition,
+			Vector2 anchor,
+			Color color)
+		{
+			Definition = definition;
+			Anchor = anchor;
+			Color = color;
+		}
+
+		public EndlessContactDefinition Definition { get; }
+		public Vector2 Anchor { get; }
+		public Color Color { get; }
+		public float Progress { get; set; }
+		public bool PlayerInside { get; set; }
+		public bool EnemyInside { get; set; }
+		public int PlayerSupportActions { get; set; }
+		public int EnemyPressureActions { get; set; }
+		public float PlayerSupportRepairTotal { get; set; }
+		public float EnemyPressureDamageTotal { get; set; }
+		public float PlayerSupportProgressTotal { get; set; }
+		public float ResponseTimer { get; set; }
+		public int ResponseWavesTriggered { get; set; }
+		public int ResponseWaveLimit { get; set; }
+		public bool SupportMomentTriggered { get; set; }
+		public bool Completed { get; set; }
+		public bool Failed { get; set; }
+		public bool RewardGranted { get; set; }
 	}
 
 	private readonly struct EndlessDraftOption
@@ -93,6 +193,8 @@ public partial class BattleController : Node2D
 	private string _endlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
 	private string _endlessSupportEventLabel = "No convoy support event yet.";
+	private string _endlessBattlefieldEventLabel = "No battlefield event active.";
+	private string _endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
 
 	private float _playerBaseHealth;
 	private float _playerBaseMaxHealth;
@@ -108,11 +210,20 @@ public partial class BattleController : Node2D
 	private float _enemyBaseFlashTimer;
 	private bool _battleEnded;
 	private bool _endlessCheckpointActive;
+	private float _endlessContactCourageGainScale = 1f;
 	private float _endlessUnitHealthScale = 1f;
 	private float _endlessUnitDamageScale = 1f;
 	private float _endlessScrapScale = 1f;
+	private int _endlessDirectiveScrapBonus;
+	private int _endlessDirectiveFuelBonus;
+	private int _endlessContactScrapBonus;
+	private int _endlessContactFuelBonus;
 	private string[] _draftOptionIds = Array.Empty<string>();
 	private bool _draftingRouteFork;
+	private EndlessFieldEvent _activeEndlessFieldEvent = null!;
+	private EndlessDirectiveState _activeEndlessDirective = null!;
+	private EndlessContactState _activeEndlessContact = null!;
+	private EndlessContactActor _activeEndlessContactActor = null!;
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
 
@@ -141,11 +252,11 @@ public partial class BattleController : Node2D
 		_battleMode = GameState.Instance.CurrentBattleMode;
 
 		if (IsEndlessMode)
-			{
-				_activeRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
-				_endlessBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
-				_endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
-				_stageData = GameData.GetLatestStageForMap(_activeRouteId);
+		{
+			_activeRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
+			_endlessBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
+			_endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
+			_stageData = GameData.GetLatestStageForMap(_activeRouteId);
 			_stage = _stageData.StageNumber;
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData) * 1.08f;
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
@@ -159,12 +270,14 @@ public partial class BattleController : Node2D
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
 		}
 
+		_playerBaseMaxHealth = GameState.Instance.ApplyPlayerBaseHealthUpgrade(_playerBaseMaxHealth);
 		_playerBaseHealth = _playerBaseMaxHealth;
 		_enemyBaseHealth = _enemyBaseMaxHealth;
 
-		_courage = _combat.CourageStart;
-		_maxCourage = _combat.CourageMax;
-		_courageGainPerSecond = _combat.CourageGainPerSecond * StageModifiers.ResolveCourageGainScale(_stageData);
+		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(_combat.CourageMax);
+		_courage = Mathf.Min(_maxCourage, _combat.CourageStart);
+		_courageGainPerSecond = GameState.Instance.ApplyPlayerCourageGainUpgrade(
+			_combat.CourageGainPerSecond * StageModifiers.ResolveCourageGainScale(_stageData));
 
 		if (IsEndlessMode)
 		{
@@ -174,20 +287,36 @@ public partial class BattleController : Node2D
 		_playerDeployments = 0;
 		_enemyDefeats = 0;
 		_endlessCheckpointActive = false;
+		_endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
+		_endlessContactCourageGainScale = 1f;
 		_endlessUnitHealthScale = 1f;
 		_endlessUnitDamageScale = 1f;
-			_endlessScrapScale = 1f;
-			_endlessRunUpgrades.Clear();
-			_draftOptionIds = Array.Empty<string>();
-			_draftingRouteFork = false;
-			_endlessSupportEventLabel = IsEndlessMode
-				? "Opening convoy package deployed."
-				: "No convoy support event yet.";
+		_endlessScrapScale = 1f;
+		_endlessDirectiveScrapBonus = 0;
+		_endlessDirectiveFuelBonus = 0;
+		_endlessContactScrapBonus = 0;
+		_endlessContactFuelBonus = 0;
+		_endlessRunUpgrades.Clear();
+		_draftOptionIds = Array.Empty<string>();
+		_draftingRouteFork = false;
+		_endlessSupportEventLabel = IsEndlessMode
+			? "Opening convoy package deployed."
+			: "No convoy support event yet.";
+		_endlessBattlefieldEventLabel = IsEndlessMode
+			? "Initial route event is arming."
+			: "No battlefield event active.";
+		_activeEndlessFieldEvent = null;
+		_activeEndlessDirective = null;
+		_activeEndlessContact = null;
+		_activeEndlessContactActor = null;
 
 		_deck.Initialize(GameState.Instance.GetActiveDeckUnits());
 		if (IsEndlessMode)
 		{
 			_spawnDirector.InitializeEndless(_activeRouteId, _stageData, _combat, GameData.GetEnemyUnits());
+			StartRouteForkFieldEvent(_endlessRouteForkId);
+			StartEndlessDirectiveSegment();
+			StartEndlessContactEvent();
 		}
 		else
 		{
@@ -231,6 +360,8 @@ public partial class BattleController : Node2D
 		}
 
 		DrawTerrainDecoration();
+		DrawEndlessFieldEvent();
+		DrawEndlessContactEvent();
 
 		DrawPlayerBus(palette);
 		DrawEnemyBarricade(palette);
@@ -422,7 +553,7 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = Mathf.Max(0f, _playerBaseFlashTimer - deltaF);
 		_enemyBaseFlashTimer = Mathf.Max(0f, _enemyBaseFlashTimer - deltaF);
 
-		_courage += _courageGainPerSecond * deltaF;
+		_courage += (_courageGainPerSecond * _endlessContactCourageGainScale) * deltaF;
 		if (_courage > _maxCourage)
 		{
 			_courage = _maxCourage;
@@ -430,9 +561,12 @@ public partial class BattleController : Node2D
 
 		_deck.TickCooldowns(deltaF);
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
+		UpdateEndlessFieldEvent(deltaF);
 
 		SimulateUnits(deltaF);
 		CleanupDeadUnits();
+		UpdateEndlessDirectiveState();
+		UpdateEndlessContactEvent(deltaF);
 		MaybeOpenEndlessDraft();
 		UpdateHud();
 		QueueRedraw();
@@ -781,6 +915,25 @@ public partial class BattleController : Node2D
 		return count;
 	}
 
+	private bool HasTeamUnitInRadius(Team team, Vector2 anchor, float radius)
+	{
+		var radiusSquared = radius * radius;
+		foreach (var unit in _units)
+		{
+			if (unit.IsDead || unit.Team != team)
+			{
+				continue;
+			}
+
+			if (unit.Position.DistanceSquaredTo(anchor) <= radiusSquared)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private void ArmPlayerUnit(UnitDefinition definition)
 	{
 		if (_battleEnded)
@@ -869,6 +1022,126 @@ public partial class BattleController : Node2D
 		AddChild(projectile);
 	}
 
+	private void SpawnContactPressureProjectile(Unit attacker)
+	{
+		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
+		{
+			return;
+		}
+
+		var targetActor = _activeEndlessContactActor;
+		var projectile = new Projectile();
+		projectile.GlobalPosition = attacker.GlobalPosition;
+		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 400f;
+		var color = attacker.Tint.Lightened(0.18f);
+		projectile.Setup(
+			targetActor,
+			ResolveEnemyContactAttackDamage(attacker),
+			speed,
+			color,
+			damage =>
+			{
+				if (!CanInteractWithEndlessContactActor(targetActor))
+				{
+					return 0f;
+				}
+
+				var appliedDamage = targetActor.ApplyPressureDamage(damage);
+				RegisterEndlessContactPressure(appliedDamage);
+				return appliedDamage;
+			},
+			() => !CanInteractWithEndlessContactActor(targetActor),
+			(position, appliedDamage, hitColor) =>
+			{
+				if (appliedDamage > 0.05f)
+				{
+					SpawnEffect(position, hitColor, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
+					SpawnFloatText(position + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", hitColor.Lightened(0.22f), 0.46f);
+				}
+			});
+		AddChild(projectile);
+	}
+
+	private void SpawnContactSupportProjectile(Unit unit, float repairAmount, float progressBoost, string supportLabel)
+	{
+		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
+		{
+			return;
+		}
+
+		var targetActor = _activeEndlessContactActor;
+		var projectile = new Projectile();
+		projectile.GlobalPosition = unit.GlobalPosition;
+		var speed = unit.ProjectileSpeed > 0f ? unit.ProjectileSpeed : 420f;
+		var color = unit.Tint.Lightened(0.24f);
+		projectile.Setup(
+			targetActor,
+			repairAmount,
+			speed,
+			color,
+			_ =>
+			{
+				if (!CanInteractWithEndlessContactActor(targetActor))
+				{
+					return 0f;
+				}
+
+				var repaired = targetActor.Repair(repairAmount);
+				_activeEndlessContact.Progress = Mathf.Min(
+					_activeEndlessContact.Definition.TargetSeconds,
+					_activeEndlessContact.Progress + progressBoost);
+				RegisterEndlessContactSupport(repaired, progressBoost);
+				SpawnFloatText(
+					targetActor.Position + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
+					supportLabel,
+					color.Lightened(0.2f),
+					0.48f);
+				return repaired;
+			},
+			() => !CanInteractWithEndlessContactActor(targetActor),
+			(position, appliedRepair, hitColor) =>
+			{
+				if (appliedRepair > 0.05f)
+				{
+					SpawnEffect(position, hitColor, 6f, 18f + (appliedRepair * 0.2f), 0.16f, false);
+				}
+			});
+		AddChild(projectile);
+	}
+
+	private bool CanInteractWithEndlessContactActor(EndlessContactActor actor)
+	{
+		return IsInstanceValid(actor) &&
+			IsInstanceValid(_activeEndlessContactActor) &&
+			ReferenceEquals(_activeEndlessContactActor, actor) &&
+			_activeEndlessContact != null &&
+			!_activeEndlessContact.Completed &&
+			!_activeEndlessContact.Failed;
+	}
+
+	private void RegisterEndlessContactSupport(float repaired, float progressBoost)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return;
+		}
+
+		_activeEndlessContact.PlayerSupportActions++;
+		_activeEndlessContact.PlayerSupportRepairTotal += Mathf.Max(0f, repaired);
+		_activeEndlessContact.PlayerSupportProgressTotal += Mathf.Max(0f, progressBoost);
+	}
+
+	private void RegisterEndlessContactPressure(float appliedDamage)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return;
+		}
+
+		_activeEndlessContact.EnemyPressureActions++;
+		_activeEndlessContact.EnemyPressureDamageTotal += Mathf.Max(0f, appliedDamage);
+	}
+
 	private void TryAttackBase(Unit attacker)
 	{
 		if (IsEndlessMode && attacker.Team == Team.Player)
@@ -919,6 +1192,8 @@ public partial class BattleController : Node2D
 
 			unit.TickAttackTimer(delta);
 			var target = FindClosestEnemy(unit);
+			var prioritizeContact = ShouldPrioritizeEndlessContact(unit, target);
+			var supportContact = ShouldSupportEndlessContact(unit, target);
 
 			if (target != null && unit.CanAttack(target))
 			{
@@ -937,6 +1212,14 @@ public partial class BattleController : Node2D
 						SpawnDamageFeedback(target.Position, appliedDamage, unit.Tint);
 					}
 				}
+			}
+			else if (prioritizeContact)
+			{
+				SimulateEnemyContactPressure(unit, delta);
+			}
+			else if (supportContact)
+			{
+				SimulatePlayerContactSupport(unit, delta);
 			}
 			else if (target != null)
 			{
@@ -986,6 +1269,182 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private bool ShouldSupportEndlessContact(Unit unit, Unit directTarget)
+	{
+		if (!IsEndlessMode ||
+			unit.Team != Team.Player ||
+			_activeEndlessContact == null ||
+			!IsInstanceValid(_activeEndlessContactActor) ||
+			_activeEndlessContact.Completed ||
+			_activeEndlessContact.Failed)
+		{
+			return false;
+		}
+
+		var contactPosition = _activeEndlessContactActor.Position;
+		var distanceToContact = unit.Position.DistanceTo(contactPosition);
+		if (distanceToContact > Mathf.Max(210f, unit.AggroRangeX * 1.3f))
+		{
+			return false;
+		}
+
+		if (directTarget == null)
+		{
+			return true;
+		}
+
+		if (unit.CanAttack(directTarget))
+		{
+			return false;
+		}
+
+		var targetDistance = unit.Position.DistanceTo(directTarget.Position);
+		return distanceToContact + 14f <= targetDistance;
+	}
+
+	private void SimulatePlayerContactSupport(Unit unit, float delta)
+	{
+		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
+		{
+			return;
+		}
+
+		var contactPosition = _activeEndlessContactActor.Position;
+		var supportRadius = ResolveEndlessContactSupportRadius();
+		if (unit.CanAttackPosition(contactPosition, supportRadius))
+		{
+			if (unit.TryBeginAttackPosition(contactPosition, supportRadius))
+			{
+				var repairAmount = ResolvePlayerContactSupportRepair(unit);
+				var progressBoost = ResolvePlayerContactSupportProgress(unit);
+				var supportLabel = ResolvePlayerContactSupportLabel(unit);
+				if (unit.UsesProjectile)
+				{
+					SpawnContactSupportProjectile(unit, repairAmount, progressBoost, supportLabel);
+				}
+				else
+				{
+					var repaired = _activeEndlessContactActor.Repair(repairAmount);
+					_activeEndlessContact.Progress = Mathf.Min(
+						_activeEndlessContact.Definition.TargetSeconds,
+						_activeEndlessContact.Progress + progressBoost);
+					RegisterEndlessContactSupport(repaired, progressBoost);
+
+					if (repaired > 0.05f)
+					{
+						SpawnEffect(contactPosition, unit.Tint.Lightened(0.15f), 6f, 18f + (repaired * 0.2f), 0.16f, false);
+					}
+
+					SpawnFloatText(
+						contactPosition + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
+						supportLabel,
+						unit.Tint.Lightened(0.28f),
+						0.48f);
+				}
+			}
+
+			return;
+		}
+
+		unit.MoveToward(
+			contactPosition,
+			delta,
+			BattlefieldLeft,
+			BattlefieldRight,
+			BattlefieldTop + SpawnVerticalPadding,
+			BattlefieldBottom - SpawnVerticalPadding);
+	}
+
+	private bool ShouldPrioritizeEndlessContact(Unit unit, Unit directTarget)
+	{
+		if (!IsEndlessMode ||
+			unit.Team != Team.Enemy ||
+			!CanEnemyUnitPressureContact(unit) ||
+			_activeEndlessContact == null ||
+			!IsInstanceValid(_activeEndlessContactActor) ||
+			_activeEndlessContact.Completed ||
+			_activeEndlessContact.Failed)
+		{
+			return false;
+		}
+
+		var contactPosition = _activeEndlessContactActor.Position;
+		var distanceToContact = unit.Position.DistanceTo(contactPosition);
+		if (distanceToContact > Mathf.Max(220f, unit.AggroRangeX * 1.35f))
+		{
+			return false;
+		}
+
+		if (directTarget == null)
+		{
+			return true;
+		}
+
+		if (unit.CanAttack(directTarget))
+		{
+			return false;
+		}
+
+		var targetDistance = unit.Position.DistanceTo(directTarget.Position);
+		return distanceToContact + 18f < targetDistance || unit.Position.X <= contactPosition.X + 96f;
+	}
+
+	private bool CanEnemyUnitPressureContact(Unit unit)
+	{
+		return unit.VisualClass switch
+		{
+			"spitter" => true,
+			"walker" => true,
+			"runner" => true,
+			"brute" => true,
+			"crusher" => true,
+			"splitter" => true,
+			"boss" => true,
+			_ => false
+		};
+	}
+
+	private void SimulateEnemyContactPressure(Unit unit, float delta)
+	{
+		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
+		{
+			return;
+		}
+
+		var contactPosition = _activeEndlessContactActor.Position;
+		var contactRadius = ResolveEndlessContactAttackRadius();
+		if (unit.CanAttackPosition(contactPosition, contactRadius))
+		{
+			if (unit.TryBeginAttackPosition(contactPosition, contactRadius))
+			{
+				if (unit.UsesProjectile)
+				{
+					SpawnContactPressureProjectile(unit);
+				}
+				else
+				{
+					var appliedDamage = _activeEndlessContactActor.ApplyPressureDamage(ResolveEnemyContactAttackDamage(unit));
+					RegisterEndlessContactPressure(appliedDamage);
+					if (appliedDamage > 0.05f)
+					{
+						SpawnEffect(contactPosition, unit.Tint, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
+						SpawnFloatText(contactPosition + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", unit.Tint.Lightened(0.22f), 0.46f);
+					}
+				}
+			}
+
+			return;
+		}
+
+		unit.MoveToward(
+			contactPosition,
+			delta,
+			BattlefieldLeft,
+			BattlefieldRight,
+			BattlefieldTop + SpawnVerticalPadding,
+			BattlefieldBottom - SpawnVerticalPadding);
+	}
+
 	private Unit FindClosestEnemy(Unit source)
 	{
 		Unit bestTarget = null;
@@ -1004,6 +1463,29 @@ public partial class BattleController : Node2D
 			}
 
 			var distance = source.Position.DistanceSquaredTo(candidate.Position);
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				bestTarget = candidate;
+			}
+		}
+
+		return bestTarget;
+	}
+
+	private Unit FindClosestEnemyToPoint(Vector2 point, float maxDistance)
+	{
+		Unit bestTarget = null;
+		var bestDistance = maxDistance * maxDistance;
+
+		foreach (var candidate in _units)
+		{
+			if (candidate.IsDead || candidate.Team != Team.Enemy)
+			{
+				continue;
+			}
+
+			var distance = candidate.Position.DistanceSquaredTo(point);
 			if (distance < bestDistance)
 			{
 				bestDistance = distance;
@@ -1190,6 +1672,71 @@ public partial class BattleController : Node2D
 		DrawCircle(origin + new Vector2(-4f + (plumeOffset * 0.4f), -24f), 14f + (smokeStrength * 6f), new Color(0f, 0f, 0f, 0.12f + (smokeStrength * 0.12f)));
 	}
 
+	private void DrawEndlessFieldEvent()
+	{
+		if (!IsEndlessMode || _activeEndlessFieldEvent == null)
+		{
+			return;
+		}
+
+		var alpha = Mathf.Clamp(_activeEndlessFieldEvent.Remaining / 4f, 0.18f, 0.65f);
+		for (var i = 0; i < _activeEndlessFieldEvent.Anchors.Length; i++)
+		{
+			var anchor = _activeEndlessFieldEvent.Anchors[i];
+			DrawArc(
+				anchor,
+				_activeEndlessFieldEvent.Radius,
+				0f,
+				Mathf.Tau,
+				24,
+				new Color(_activeEndlessFieldEvent.Color, alpha),
+				3f);
+			DrawCircle(anchor, 7f, new Color(_activeEndlessFieldEvent.Color, alpha + 0.1f));
+		}
+	}
+
+	private void DrawEndlessContactEvent()
+	{
+		if (!IsEndlessMode || _activeEndlessContact == null)
+		{
+			return;
+		}
+
+		var definition = _activeEndlessContact.Definition;
+		var progressRatio = Mathf.Clamp(_activeEndlessContact.Progress / Mathf.Max(0.01f, definition.TargetSeconds), 0f, 1f);
+		var baseAlpha = _activeEndlessContact.Completed
+			? 0.72f
+			: _activeEndlessContact.Failed
+				? 0.2f
+				: 0.38f + (Mathf.Sin(_elapsed * 4.4f) * 0.08f);
+		var drawColor = _activeEndlessContact.Color
+			.Lightened(_activeEndlessContact.PlayerInside ? 0.08f : 0f)
+			.Darkened(_activeEndlessContact.EnemyInside ? 0.12f : 0f);
+		var color = new Color(drawColor, Mathf.Clamp(baseAlpha, 0.16f, 0.78f));
+		var anchor = _activeEndlessContact.Anchor;
+		var fillAlpha = _activeEndlessContact.Completed
+			? 0.16f
+			: _activeEndlessContact.Failed
+				? 0.05f
+				: _activeEndlessContact.EnemyInside
+					? 0.08f
+					: 0.12f;
+
+		DrawCircle(anchor, definition.Radius, new Color(drawColor, fillAlpha));
+
+		DrawArc(anchor, definition.Radius, 0f, Mathf.Tau, 32, color, 3f);
+		DrawCircle(anchor, 8f, color.Lightened(0.1f));
+
+		if (!_activeEndlessContact.Failed)
+		{
+			var progressRadius = Mathf.Lerp(18f, definition.Radius - 8f, progressRatio);
+			DrawArc(anchor, progressRadius, -Mathf.Pi * 0.5f, -Mathf.Pi * 0.5f + (Mathf.Tau * progressRatio), 32, color.Lightened(0.18f), 5f);
+		}
+
+		DrawLine(anchor + new Vector2(-10f, 0f), anchor + new Vector2(10f, 0f), color, 2f, true);
+		DrawLine(anchor + new Vector2(0f, -10f), anchor + new Vector2(0f, 10f), color, 2f, true);
+	}
+
 	private Color ResolveDeployButtonTint(UnitDefinition definition, bool isReady, bool hasCourage, bool armed)
 	{
 		var tint = definition.GetTint();
@@ -1235,12 +1782,17 @@ public partial class BattleController : Node2D
 			}
 
 			var endlessCountdown = Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed);
-			return
-				$"Endless intel: {ResolveRouteLabel(_activeRouteId)} surge route  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
-				$"Current wave: {_spawnDirector.EndlessWaveNumber}  |  Next surge in {endlessCountdown:0.0}s  |  Queued: {_spawnDirector.PendingSpawnCount}\n" +
-				$"Pressure profile: {BuildEndlessPressureText()}\n" +
-				$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
-				$"Convoy support: {_endlessSupportEventLabel}";
+		return
+			$"Endless intel: {ResolveRouteLabel(_activeRouteId)} surge route  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
+			$"Current wave: {_spawnDirector.EndlessWaveNumber}  |  Next surge in {endlessCountdown:0.0}s  |  Queued: {_spawnDirector.PendingSpawnCount}\n" +
+			$"Pressure profile: {BuildEndlessPressureText()}\n" +
+			$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
+			$"{BuildEndlessDirectiveText()}\n" +
+			$"{BuildEndlessContactText()}\n" +
+			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
+			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
+			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
+			$"Convoy support: {_endlessSupportEventLabel}";
 		}
 
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
@@ -1295,11 +1847,43 @@ public partial class BattleController : Node2D
 		return
 			"Endless run:\n" +
 			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Enemy defeats: {_enemyDefeats}  |  Survival: {_elapsed:0.0}s\n" +
-			$"Projected salvage: +{projectedScrap} scrap, +{projectedFuel} fuel  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}\n" +
+			$"Projected payout: +{projectedScrap} gold, +{projectedFuel} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}\n" +
+			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveScrapBonus)} gold / {FormatSignedInt(_endlessDirectiveFuelBonus)} food  |  contacts {FormatSignedInt(_endlessContactScrapBonus)} gold / {FormatSignedInt(_endlessContactFuelBonus)} food\n" +
 			$"Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Run upgrades: {_endlessRunUpgrades.Count}\n" +
 			$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
+			$"{BuildEndlessDirectiveText()}\n" +
+			$"{BuildEndlessContactText()}\n" +
+			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
+			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
+			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
 			$"Convoy support: {_endlessSupportEventLabel}\n" +
 			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
+	}
+
+	private string BuildEndlessContactTelemetryText()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return "Telemetry standby.";
+		}
+
+		var healthPercent = IsInstanceValid(_activeEndlessContactActor)
+			? Mathf.RoundToInt(_activeEndlessContactActor.HealthRatio * 100f)
+			: 0;
+		var state = _activeEndlessContact.Completed
+			? "Secured"
+			: _activeEndlessContact.Failed
+				? "Lost"
+				: _activeEndlessContact.EnemyInside
+					? "Contested"
+					: _activeEndlessContact.PlayerInside
+					? "Supported"
+						: "Open";
+		var supportMomentState = _activeEndlessContact.SupportMomentTriggered
+			? "Used"
+			: "Standby";
+		return
+			$"State {state}  |  Actor hull {healthPercent}%  |  Support {_activeEndlessContact.PlayerSupportActions} ({Mathf.RoundToInt(_activeEndlessContact.PlayerSupportRepairTotal)} hull / +{_activeEndlessContact.PlayerSupportProgressTotal:0.0}s)  |  Pressure {_activeEndlessContact.EnemyPressureActions} ({Mathf.RoundToInt(_activeEndlessContact.EnemyPressureDamageTotal)} damage)  |  Responses {_activeEndlessContact.ResponseWavesTriggered}/{_activeEndlessContact.ResponseWaveLimit}  |  Assist {supportMomentState}";
 	}
 
 	private string BuildEndlessPressureText()
@@ -1314,7 +1898,7 @@ public partial class BattleController : Node2D
 		{
 			EndlessRouteForkCatalog.MainlinePushId => "Current fork speeds up the line and raises ranged pressure.",
 			EndlessRouteForkCatalog.ScavengeDetourId => "Current fork slows the surge slightly but adds heavier salvage lanes.",
-			EndlessRouteForkCatalog.FortifiedBlockId => "Current fork softens pressure at the cost of lower scrap efficiency.",
+			EndlessRouteForkCatalog.FortifiedBlockId => "Current fork softens pressure at the cost of lower gold efficiency.",
 			_ => ""
 		};
 
@@ -1333,12 +1917,14 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		ResolveEndlessDirectiveCheckpoint();
+		ResolveEndlessContactCheckpoint();
 		_endlessCheckpointActive = true;
 		_draftingRouteFork = IsRouteForkCheckpoint();
 		_draftOptionIds = _draftingRouteFork ? BuildRouteForkOptions() : BuildDraftOptions();
 		_draftLabel.Text = _draftingRouteFork
-			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the convoy rolls out."
-			: $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose one run upgrade before the next surge.";
+			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the convoy rolls out.\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}"
+			: $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose one run upgrade before the next surge.\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}";
 
 		for (var i = 0; i < _draftButtons.Count; i++)
 		{
@@ -1427,6 +2013,9 @@ public partial class BattleController : Node2D
 		_draftPanel.Visible = false;
 		_draftOptionIds = Array.Empty<string>();
 		_draftingRouteFork = false;
+		StartRouteForkFieldEvent(_endlessRouteForkId);
+		StartEndlessDirectiveSegment();
+		StartEndlessContactEvent();
 		_spawnDirector.ResumeEndlessAfterCheckpoint(_elapsed);
 		UpdateHud();
 	}
@@ -1482,7 +2071,7 @@ public partial class BattleController : Node2D
 			"courage_pump" => new EndlessDraftOption("courage_pump", "Courage Pump", "Increase courage generation by 20% for the rest of the run."),
 			"shock_drill" => new EndlessDraftOption("shock_drill", "Shock Drill", "Future deployed units deal 12% more damage for the rest of the run."),
 			"field_tonic" => new EndlessDraftOption("field_tonic", "Field Tonic", "Future deployed units gain 18% more health for the rest of the run."),
-			"salvage_contract" => new EndlessDraftOption("salvage_contract", "Salvage Contract", "Increase final scrap payout by 15% for the rest of the run."),
+			"salvage_contract" => new EndlessDraftOption("salvage_contract", "Salvage Contract", "Increase final gold payout by 15% for the rest of the run."),
 			_ => new EndlessDraftOption("supply_drop", "Supply Drop", "Immediately gain +25 courage for the next deployment burst.")
 		};
 	}
@@ -1497,6 +2086,7 @@ public partial class BattleController : Node2D
 	{
 		_endlessRouteForkId = EndlessRouteForkCatalog.Normalize(optionId);
 		_spawnDirector.SetEndlessRouteFork(_endlessRouteForkId);
+		StartRouteForkFieldEvent(_endlessRouteForkId);
 
 		TriggerRouteForkSupportEvent(_endlessRouteForkId);
 	}
@@ -1525,6 +2115,1106 @@ public partial class BattleController : Node2D
 					: GameData.PlayerBrawlerId);
 				break;
 		}
+	}
+
+	private void StartRouteForkFieldEvent(string routeForkId)
+	{
+		var normalizedForkId = EndlessRouteForkCatalog.Normalize(routeForkId);
+		_activeEndlessFieldEvent = normalizedForkId switch
+		{
+			EndlessRouteForkCatalog.MainlinePushId => new EndlessFieldEvent(
+				"mainline_push",
+				"Rapid flares sweep the forward lanes and detonate around the rush line.",
+				new[]
+				{
+					new Vector2(EnemySpawnX - 150f, BattlefieldTop + 96f),
+					new Vector2(EnemySpawnX - 210f, BaseCenterY),
+					new Vector2(EnemySpawnX - 150f, BattlefieldBottom - 96f)
+				},
+				18f,
+				2.8f,
+				54f,
+				new Color("ffd166")),
+			EndlessRouteForkCatalog.ScavengeDetourId => new EndlessFieldEvent(
+				"scavenge_detour",
+				"Supply caches pulse courage and quick repairs from the convoy side streets.",
+				new[]
+				{
+					new Vector2(PlayerSpawnX + 40f, BattlefieldTop + 118f),
+					new Vector2(PlayerSpawnX + 40f, BattlefieldBottom - 118f)
+				},
+				20f,
+				4.2f,
+				44f,
+				new Color("80ed99")),
+			_ => new EndlessFieldEvent(
+				"fortified_block",
+				"A safehouse turret scans the block and suppresses enemies near the convoy.",
+				new[]
+				{
+					new Vector2(PlayerBaseX + 124f, BaseCenterY - 34f)
+				},
+				22f,
+				2.7f,
+				320f,
+				new Color("9bf6ff"))
+		};
+
+		_endlessBattlefieldEventLabel = _activeEndlessFieldEvent.Label;
+	}
+
+	private void StartEndlessDirectiveSegment()
+	{
+		if (!IsEndlessMode)
+		{
+			return;
+		}
+
+		var definition = EndlessDirectiveCatalog.GetForRouteFork(_endlessRouteForkId);
+		var targetCount = ResolveDirectiveTargetCount(definition);
+		var targetRatio = ResolveDirectiveTargetRatio(definition);
+		var currentBusRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
+		_activeEndlessDirective = new EndlessDirectiveState(
+			definition,
+			Math.Max(1, _spawnDirector.EndlessWaveNumber + 1),
+			_spawnDirector.EndlessWaveNumber + 5,
+			targetCount,
+			targetRatio,
+			_enemyDefeats,
+			_playerDeployments,
+			currentBusRatio);
+		SetStatus($"Convoy directive issued: {definition.Title}. {definition.Summary}");
+	}
+
+	private void UpdateEndlessDirectiveState()
+	{
+		if (!IsEndlessMode || _activeEndlessDirective == null || _battleEnded)
+		{
+			return;
+		}
+
+		var currentBusRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
+		_activeEndlessDirective.LowestBusHullRatio = Mathf.Min(_activeEndlessDirective.LowestBusHullRatio, currentBusRatio);
+
+		if (_activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
+		{
+			return;
+		}
+
+		switch (_activeEndlessDirective.Definition.Type)
+		{
+			case "enemy_defeats":
+				if (GetDirectiveEnemyDefeatProgress() >= _activeEndlessDirective.TargetCount)
+				{
+					CompleteEndlessDirective("Threat lane cleared ahead of schedule.");
+				}
+				break;
+			case "deploy_limit":
+				if (GetDirectiveDeploymentCount() > _activeEndlessDirective.TargetCount)
+				{
+					FailEndlessDirective("The sweep went loud. The salvage window collapsed.");
+				}
+				break;
+			case "bus_hull_ratio":
+				if (_activeEndlessDirective.LowestBusHullRatio < _activeEndlessDirective.TargetRatio)
+				{
+					FailEndlessDirective("The barricade line cracked below the safehouse threshold.");
+				}
+				break;
+		}
+	}
+
+	private void ResolveEndlessDirectiveCheckpoint()
+	{
+		if (!IsEndlessMode || _activeEndlessDirective == null || _activeEndlessDirective.RewardGranted)
+		{
+			return;
+		}
+
+		if (_activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
+		{
+			return;
+		}
+
+		switch (_activeEndlessDirective.Definition.Type)
+		{
+			case "enemy_defeats":
+				if (GetDirectiveEnemyDefeatProgress() >= _activeEndlessDirective.TargetCount)
+				{
+					CompleteEndlessDirective("Breakthrough window secured at the checkpoint.");
+				}
+				else
+				{
+					FailEndlessDirective("The convoy missed the breakthrough quota before the checkpoint.");
+				}
+				break;
+			case "deploy_limit":
+				if (GetDirectiveDeploymentCount() <= _activeEndlessDirective.TargetCount)
+				{
+					CompleteEndlessDirective("The convoy reached the checkpoint with the salvage sweep intact.");
+				}
+				else
+				{
+					FailEndlessDirective("Too many deployments burned the salvage sweep before the checkpoint.");
+				}
+				break;
+			case "bus_hull_ratio":
+				if (_activeEndlessDirective.LowestBusHullRatio >= _activeEndlessDirective.TargetRatio)
+				{
+					CompleteEndlessDirective("The bus held the fortified block all the way to the checkpoint.");
+				}
+				else
+				{
+					FailEndlessDirective("The fortified hold broke before the convoy reached the checkpoint.");
+				}
+				break;
+		}
+	}
+
+	private int GetDirectiveEnemyDefeatProgress()
+	{
+		return _activeEndlessDirective == null
+			? 0
+			: Math.Max(0, _enemyDefeats - _activeEndlessDirective.StartEnemyDefeats);
+	}
+
+	private int GetDirectiveDeploymentCount()
+	{
+		return _activeEndlessDirective == null
+			? 0
+			: Math.Max(0, _playerDeployments - _activeEndlessDirective.StartDeployments);
+	}
+
+	private int ResolveDirectiveTargetCount(EndlessDirectiveDefinition definition)
+	{
+		if (definition == null)
+		{
+			return 0;
+		}
+
+		return definition.Type switch
+		{
+			"enemy_defeats" => definition.TargetCount + Math.Min(6, _spawnDirector.EndlessWaveNumber / 5),
+			_ => definition.TargetCount
+		};
+	}
+
+	private static float ResolveDirectiveTargetRatio(EndlessDirectiveDefinition definition)
+	{
+		return definition == null ? 0f : definition.TargetRatio;
+	}
+
+	private void CompleteEndlessDirective(string statusText)
+	{
+		if (_activeEndlessDirective == null || _activeEndlessDirective.RewardGranted)
+		{
+			return;
+		}
+
+		_activeEndlessDirective.Completed = true;
+		_activeEndlessDirective.RewardGranted = true;
+		ApplyEndlessDirectiveReward(_activeEndlessDirective);
+		SetStatus($"{_activeEndlessDirective.Definition.Title} complete. {statusText}");
+	}
+
+	private void FailEndlessDirective(string statusText)
+	{
+		if (_activeEndlessDirective == null || _activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
+		{
+			return;
+		}
+
+		_activeEndlessDirective.Failed = true;
+		SetStatus($"{_activeEndlessDirective.Definition.Title} failed. {statusText}");
+	}
+
+	private void ApplyEndlessDirectiveReward(EndlessDirectiveState directive)
+	{
+		switch (directive.Definition.Id)
+		{
+			case EndlessDirectiveCatalog.BreakthroughDirectiveId:
+				_courage = Mathf.Min(_maxCourage, _courage + 16f);
+				_deck.ReduceCooldowns(1.5f);
+				SpawnEffect(PlayerBaseCorePosition, new Color("ffe066"), 12f, 30f, 0.24f);
+				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "BREAKTHROUGH", new Color("fff3b0"), 0.62f);
+				break;
+			case EndlessDirectiveCatalog.SalvageSweepDirectiveId:
+				_endlessDirectiveScrapBonus += 28;
+				_endlessDirectiveFuelBonus += 1;
+				RepairBusByRatio(0.04f);
+				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "SALVAGE SECURED", new Color("f4a261"), 0.66f);
+				break;
+			case EndlessDirectiveCatalog.HoldLineDirectiveId:
+				RepairBusByRatio(0.08f);
+				_deck.ReduceCooldowns(1f);
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
+					? GameData.PlayerDefenderId
+					: GameData.PlayerBrawlerId);
+				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "SAFEHOUSE AID", new Color("ade8f4"), 0.66f);
+				break;
+		}
+	}
+
+	private string BuildEndlessDirectiveText()
+	{
+		if (!IsEndlessMode || _activeEndlessDirective == null)
+		{
+			return "Directive: standby.";
+		}
+
+		var prefix = _activeEndlessDirective.Completed
+			? "[OK]"
+			: _activeEndlessDirective.Failed
+				? "[X]"
+				: "[..]";
+		return $"{prefix} Directive: {_activeEndlessDirective.Definition.Title}  |  {BuildEndlessDirectiveProgressText()}  |  {_activeEndlessDirective.Definition.RewardSummary}";
+	}
+
+	private string BuildEndlessDirectiveCheckpointSummary()
+	{
+		if (_activeEndlessDirective == null)
+		{
+			return "Directive report: standby.";
+		}
+
+		var prefix = _activeEndlessDirective.Completed
+			? "[OK]"
+			: _activeEndlessDirective.Failed
+				? "[X]"
+				: "[..]";
+		return $"{prefix} {_activeEndlessDirective.Definition.Title}  |  {BuildEndlessDirectiveProgressText()}";
+	}
+
+	private string BuildEndlessDirectiveProgressText()
+	{
+		if (_activeEndlessDirective == null)
+		{
+			return "No directive";
+		}
+
+		return _activeEndlessDirective.Definition.Type switch
+		{
+			"enemy_defeats" => $"Defeats {GetDirectiveEnemyDefeatProgress()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
+			"deploy_limit" => $"Deployments {GetDirectiveDeploymentCount()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
+			"bus_hull_ratio" => $"Bus hull low {Mathf.RoundToInt(_activeEndlessDirective.LowestBusHullRatio * 100f)}% / keep above {Mathf.RoundToInt(_activeEndlessDirective.TargetRatio * 100f)}% through wave {_activeEndlessDirective.CheckpointWave}",
+			_ => _activeEndlessDirective.Definition.Summary
+		};
+	}
+
+	private void ResetEndlessContactTradeoffs()
+	{
+		_endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
+		_endlessContactCourageGainScale = 1f;
+		_spawnDirector.ResetEndlessSegmentTradeoffs();
+	}
+
+	private void StartEndlessContactEvent()
+	{
+		if (!IsEndlessMode)
+		{
+			return;
+		}
+
+		ResetEndlessContactTradeoffs();
+
+		var definition = EndlessContactCatalog.GetForRouteFork(_endlessRouteForkId);
+		if (IsInstanceValid(_activeEndlessContactActor))
+		{
+			_activeEndlessContactActor.QueueFree();
+		}
+
+		_activeEndlessContact = new EndlessContactState(
+			definition,
+			ResolveEndlessContactAnchor(definition.Id),
+			ResolveEndlessContactColor(definition.Id));
+		_activeEndlessContact.ResponseTimer = ResolveEndlessContactResponseCadence(definition.Id);
+		_activeEndlessContact.ResponseWaveLimit = ResolveEndlessContactResponseLimit(definition.Id);
+		_activeEndlessContactActor = new EndlessContactActor();
+		_activeEndlessContactActor.Position = _activeEndlessContact.Anchor;
+		_activeEndlessContactActor.Setup(
+			definition.Id,
+			_activeEndlessContact.Color,
+			definition.Radius,
+			ResolveEndlessContactMaxHealth(definition.Id));
+		AddChild(_activeEndlessContactActor);
+	}
+
+	private Vector2 ResolveEndlessContactAnchor(string contactId)
+	{
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.64f), BaseCenterY),
+			EndlessContactCatalog.SalvageCacheId => new Vector2(PlayerSpawnX + 132f, BattlefieldBottom - 128f),
+			EndlessContactCatalog.SafehouseRescueId => new Vector2(PlayerBaseX + 164f, BattlefieldTop + 126f),
+			_ => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.5f), BaseCenterY)
+		};
+	}
+
+	private static Color ResolveEndlessContactColor(string contactId)
+	{
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => new Color("ffb703"),
+			EndlessContactCatalog.SalvageCacheId => new Color("84cc16"),
+			EndlessContactCatalog.SafehouseRescueId => new Color("90e0ef"),
+			_ => Colors.White
+		};
+	}
+
+	private float ResolveEndlessContactResponseCadence(string contactId)
+	{
+		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
+		var baseCadence = contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => 6.8f,
+			EndlessContactCatalog.SalvageCacheId => 7.4f,
+			EndlessContactCatalog.SafehouseRescueId => 7.9f,
+			_ => 7.2f
+		};
+
+		return Mathf.Max(3.6f, baseCadence - (wavePressure * 0.08f));
+	}
+
+	private int ResolveEndlessContactResponseLimit(string contactId)
+	{
+		var extra = Mathf.Clamp(_spawnDirector.EndlessWaveNumber / 6, 0, 2);
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => 2 + extra,
+			EndlessContactCatalog.SalvageCacheId => 2 + extra,
+			EndlessContactCatalog.SafehouseRescueId => 1 + extra,
+			_ => 2
+		};
+	}
+
+	private void UpdateEndlessContactEvent(float delta)
+	{
+		if (!IsEndlessMode || _activeEndlessContact == null || _battleEnded)
+		{
+			return;
+		}
+
+		if (_activeEndlessContact.Completed || _activeEndlessContact.Failed)
+		{
+			return;
+		}
+
+		var anchor = _activeEndlessContact.Anchor;
+		var radius = _activeEndlessContact.Definition.Radius;
+		var playerInside = HasTeamUnitInRadius(Team.Player, anchor, radius);
+		var enemyInside = HasTeamUnitInRadius(Team.Enemy, anchor, radius);
+		_activeEndlessContact.PlayerInside = playerInside;
+		_activeEndlessContact.EnemyInside = enemyInside;
+
+		if (IsInstanceValid(_activeEndlessContactActor))
+		{
+			if (playerInside && !enemyInside)
+			{
+				_activeEndlessContactActor.Repair(ResolveEndlessContactPresenceRepairRate(_activeEndlessContact.Definition.Id) * delta);
+			}
+		}
+
+		switch (_activeEndlessContact.Definition.Type)
+		{
+			case "forward_presence":
+				if (playerInside && !enemyInside)
+				{
+					_activeEndlessContact.Progress += delta * 1.2f;
+				}
+				else if (playerInside)
+				{
+					_activeEndlessContact.Progress += delta * 0.4f;
+				}
+				else
+				{
+					_activeEndlessContact.Progress -= delta * 0.3f;
+				}
+				break;
+			case "secure_cache":
+				if (playerInside && !enemyInside)
+				{
+					_activeEndlessContact.Progress += delta * 1.25f;
+				}
+				else if (enemyInside)
+				{
+					_activeEndlessContact.Progress -= delta * 0.9f;
+				}
+				else
+				{
+					_activeEndlessContact.Progress -= delta * 0.18f;
+				}
+				break;
+			case "rescue_hold":
+				if (!enemyInside)
+				{
+					_activeEndlessContact.Progress += playerInside ? delta * 1.18f : delta * 0.85f;
+				}
+				else
+				{
+					_activeEndlessContact.Progress -= delta * 1.05f;
+				}
+				break;
+		}
+
+		_activeEndlessContact.Progress = Mathf.Clamp(
+			_activeEndlessContact.Progress,
+			0f,
+			_activeEndlessContact.Definition.TargetSeconds);
+
+		if (IsInstanceValid(_activeEndlessContactActor))
+		{
+			_activeEndlessContactActor.UpdateState(
+				_activeEndlessContact.Progress / Mathf.Max(0.01f, _activeEndlessContact.Definition.TargetSeconds),
+				playerInside,
+				enemyInside,
+				_activeEndlessContact.Completed,
+				_activeEndlessContact.Failed);
+
+			if (_activeEndlessContactActor.Health <= 0.01f)
+			{
+				FailEndlessContactEvent("The battlefield contact was destroyed before the convoy secured it.");
+				return;
+			}
+		}
+
+		TryTriggerEndlessContactSupportMoment();
+
+		if (_activeEndlessContact.Progress + 0.001f >= _activeEndlessContact.Definition.TargetSeconds)
+		{
+			CompleteEndlessContactEvent();
+			return;
+		}
+
+		UpdateEndlessContactResponses(delta);
+	}
+
+	private void UpdateEndlessContactResponses(float delta)
+	{
+		if (_activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
+		{
+			return;
+		}
+
+		if (_activeEndlessContact.ResponseWavesTriggered >= _activeEndlessContact.ResponseWaveLimit)
+		{
+			return;
+		}
+
+		_activeEndlessContact.ResponseTimer -= delta;
+		if (_activeEndlessContact.ResponseTimer > 0f)
+		{
+			return;
+		}
+
+		if (TriggerEndlessContactResponse())
+		{
+			_activeEndlessContact.ResponseWavesTriggered++;
+			_activeEndlessContact.ResponseTimer = ResolveEndlessContactResponseCadence(_activeEndlessContact.Definition.Id) * 0.9f;
+			return;
+		}
+
+		_activeEndlessContact.ResponseTimer = 1.6f;
+	}
+
+	private void TryTriggerEndlessContactSupportMoment()
+	{
+		if (_activeEndlessContact == null || _activeEndlessContact.SupportMomentTriggered)
+		{
+			return;
+		}
+
+		if (_activeEndlessContact.Progress + 0.001f < (_activeEndlessContact.Definition.TargetSeconds * 0.5f))
+		{
+			return;
+		}
+
+		_activeEndlessContact.SupportMomentTriggered = true;
+		var contact = _activeEndlessContact;
+		var statusText = "";
+		switch (contact.Definition.Id)
+		{
+			case EndlessContactCatalog.RelaySignalId:
+				_courage = Mathf.Min(_maxCourage, _courage + 8f);
+				_deck.ReduceCooldowns(0.7f);
+				statusText = "Relay uplink pulse refreshed courage and squad recovery.";
+				_endlessSupportEventLabel = "Relay uplink pulse boosted convoy deployment tempo.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "UPLINK BURST", contact.Color.Lightened(0.28f), 0.6f);
+				break;
+			case EndlessContactCatalog.SalvageCacheId:
+				_endlessContactScrapBonus += 8;
+				RepairBusByRatio(0.02f);
+				statusText = "Salvage crew hauled reserve parts aboard the convoy.";
+				_endlessSupportEventLabel = "Reserve salvage loaded: light repairs and extra payout banked.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "SUPPLY WINCH", contact.Color.Lightened(0.28f), 0.6f);
+				break;
+			case EndlessContactCatalog.SafehouseRescueId:
+				RepairBusByRatio(0.03f);
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerShooterId)
+					? GameData.PlayerShooterId
+					: GameData.PlayerBrawlerId);
+				statusText = "Safehouse volunteers joined the firing line around the convoy.";
+				_endlessSupportEventLabel = "Militia volunteers deployed from the safehouse block.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "MILITIA JOIN", contact.Color.Lightened(0.28f), 0.6f);
+				break;
+			default:
+				return;
+		}
+
+		SpawnEffect(contact.Anchor, contact.Color.Lightened(0.08f), 10f, contact.Definition.Radius * 0.58f, 0.22f, false);
+		SetStatus($"{contact.Definition.Title} triggered convoy assistance. {statusText}");
+	}
+
+	private bool TriggerEndlessContactResponse()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return false;
+		}
+
+		var contact = _activeEndlessContact;
+		var spawned = 0;
+		var label = "";
+		switch (contact.Definition.Id)
+		{
+			case EndlessContactCatalog.RelaySignalId:
+				label = "Intercept Pack";
+				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 78f, 122f) ? 1 : 0;
+				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 110f, 154f) ? 1 : 0;
+				if (_spawnDirector.EndlessWaveNumber >= 3 || contact.PlayerInside)
+				{
+					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemySpitterId, 148f, 196f, 28f) ? 1 : 0;
+				}
+				break;
+			case EndlessContactCatalog.SalvageCacheId:
+				label = "Scavenge Swarm";
+				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 70f, 112f, 34f) ? 1 : 0;
+				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBloaterId, 118f, 162f, 26f) ? 1 : 0;
+				if (_spawnDirector.EndlessWaveNumber >= 6)
+				{
+					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBruteId, 154f, 198f, 22f) ? 1 : 0;
+				}
+				break;
+			case EndlessContactCatalog.SafehouseRescueId:
+				label = "Blockade Push";
+				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 66f, 104f, 30f) ? 1 : 0;
+				spawned += TrySpawnEndlessContactResponseEnemy(
+					_spawnDirector.EndlessWaveNumber >= 6 ? GameData.EnemyCrusherId : GameData.EnemyBruteId,
+					120f,
+					168f,
+					20f) ? 1 : 0;
+				if (_spawnDirector.EndlessWaveNumber >= 9)
+				{
+					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemySpitterId, 154f, 196f, 18f) ? 1 : 0;
+				}
+				break;
+		}
+
+		if (spawned <= 0)
+		{
+			return false;
+		}
+
+		SpawnEffect(contact.Anchor, contact.Color.Darkened(0.08f), 10f, contact.Definition.Radius * 0.62f, 0.24f, false);
+		SpawnFloatText(contact.Anchor + new Vector2(0f, -72f), label.ToUpperInvariant(), contact.Color.Lightened(0.1f), 0.58f);
+		_endlessBattlefieldEventLabel = $"Contact response active: {label}.";
+		SetStatus($"{contact.Definition.Title} triggered a hostile response: {label}.");
+		return true;
+	}
+
+	private bool TrySpawnEndlessContactResponseEnemy(string unitId, float minOffsetX, float maxOffsetX, float verticalRange = 38f)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return false;
+		}
+
+		if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies() + 2)
+		{
+			return false;
+		}
+
+		if (!_spawnDirector.TryBuildEnemyStats(unitId, out var stats))
+		{
+			return false;
+		}
+
+		var anchor = _activeEndlessContact.Anchor;
+		var position = new Vector2(
+			Mathf.Clamp(anchor.X + _rng.RandfRange(minOffsetX, maxOffsetX), BattlefieldLeft + 48f, BattlefieldRight - 48f),
+			Mathf.Clamp(anchor.Y + _rng.RandfRange(-verticalRange, verticalRange), BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
+		SpawnEnemyUnit(stats, position);
+		return true;
+	}
+
+	private void ResolveEndlessContactCheckpoint()
+	{
+		if (!IsEndlessMode || _activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
+		{
+			return;
+		}
+
+		FailEndlessContactEvent();
+	}
+
+	private void CompleteEndlessContactEvent()
+	{
+		if (_activeEndlessContact == null || _activeEndlessContact.RewardGranted)
+		{
+			return;
+		}
+
+		_activeEndlessContact.Completed = true;
+		_activeEndlessContact.RewardGranted = true;
+		ApplyEndlessContactReward(_activeEndlessContact);
+		SetStatus($"{_activeEndlessContact.Definition.Title} secured. {ResolveEndlessContactCompleteStatus(_activeEndlessContact.Definition.Id)} {_endlessContactTradeoffLabel}");
+	}
+
+	private void FailEndlessContactEvent(string statusText = null)
+	{
+		if (_activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
+		{
+			return;
+		}
+
+		_activeEndlessContact.Failed = true;
+		ApplyEndlessContactFailurePenalty(_activeEndlessContact);
+		if (IsInstanceValid(_activeEndlessContactActor))
+		{
+			_activeEndlessContactActor.UpdateState(
+				_activeEndlessContact.Progress / Mathf.Max(0.01f, _activeEndlessContact.Definition.TargetSeconds),
+				_activeEndlessContact.PlayerInside,
+				_activeEndlessContact.EnemyInside,
+				false,
+				true);
+		}
+
+		var penaltyText = ResolveEndlessContactFailurePenaltyText(_activeEndlessContact.Definition.Id);
+		var baseStatus = statusText ?? $"{_activeEndlessContact.Definition.Title} lost before the convoy cleared the segment.";
+		SetStatus($"{baseStatus} {penaltyText}");
+	}
+
+	private void ApplyEndlessContactReward(EndlessContactState contact)
+	{
+		SpawnEffect(contact.Anchor, contact.Color, 12f, contact.Definition.Radius * 0.72f, 0.28f, false);
+		if (IsInstanceValid(_activeEndlessContactActor))
+		{
+			_activeEndlessContactActor.Repair(_activeEndlessContactActor.MaxHealth);
+			_activeEndlessContactActor.UpdateState(1f, true, false, true, false);
+		}
+
+		switch (contact.Definition.Id)
+		{
+			case EndlessContactCatalog.RelaySignalId:
+				_courage = Mathf.Min(_maxCourage, _courage + 14f);
+				_deck.ReduceCooldowns(1.2f);
+				ApplyEndlessContactSuccessTradeoff(contact);
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELAY ONLINE", contact.Color.Lightened(0.2f), 0.66f);
+				break;
+			case EndlessContactCatalog.SalvageCacheId:
+				_endlessContactScrapBonus += 22;
+				_endlessContactFuelBonus += 1;
+				RepairBusByRatio(0.03f);
+				ApplyEndlessContactSuccessTradeoff(contact);
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "CACHE SECURED", contact.Color.Lightened(0.2f), 0.66f);
+				break;
+			case EndlessContactCatalog.SafehouseRescueId:
+				RepairBusByRatio(0.06f);
+				_deck.ReduceCooldowns(0.8f);
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
+					? GameData.PlayerDefenderId
+					: GameData.PlayerBrawlerId);
+				ApplyEndlessContactSuccessTradeoff(contact);
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SURVIVORS OUT", contact.Color.Lightened(0.2f), 0.66f);
+				break;
+		}
+	}
+
+	private void ApplyEndlessContactSuccessTradeoff(EndlessContactState contact)
+	{
+		switch (contact.Definition.Id)
+		{
+			case EndlessContactCatalog.RelaySignalId:
+				_spawnDirector.AdvanceNextEndlessWave(_elapsed, 1.4f);
+				_endlessContactTradeoffLabel = "Relay sprint active: the next surge arrives 1.4s sooner.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "SURGE PULLED FORWARD", new Color("ffd166"), 0.68f);
+				break;
+			case EndlessContactCatalog.SalvageCacheId:
+				_spawnDirector.SetEndlessTradeoffEnemyCapModifier(1);
+				_endlessContactTradeoffLabel = "Cargo drag active: enemy cap is +1 until the next checkpoint.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "LANE STRETCHED", new Color("caffbf"), 0.68f);
+				break;
+			case EndlessContactCatalog.SafehouseRescueId:
+				_endlessContactCourageGainScale = 0.85f;
+				_endlessContactTradeoffLabel = "Evac load active: courage gain is reduced by 15% until checkpoint.";
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "EVAC LOAD", new Color("bde0fe"), 0.68f);
+				break;
+		}
+	}
+
+	private static string ResolveEndlessContactCompleteStatus(string contactId)
+	{
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => "Forward scouts refreshed the route intel and opened the line.",
+			EndlessContactCatalog.SalvageCacheId => "The crew hauled the cache aboard before the lane collapsed.",
+			EndlessContactCatalog.SafehouseRescueId => "Safehouse survivors joined the convoy before the block fell.",
+			_ => "The convoy secured the battlefield contact."
+		};
+	}
+
+	private void ApplyEndlessContactFailurePenalty(EndlessContactState contact)
+	{
+		switch (contact.Definition.Id)
+		{
+			case EndlessContactCatalog.RelaySignalId:
+				_courage = Mathf.Max(0f, _courage - 14f);
+				_deck.IncreaseCooldowns(1.8f);
+				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SIGNAL LOST", new Color("ffb4a2"), 0.62f);
+				break;
+			case EndlessContactCatalog.SalvageCacheId:
+				_endlessContactScrapBonus -= 16;
+				_endlessContactFuelBonus -= 1;
+				DamageBusByRatio(0.04f, new Color("f28482"), "CACHE LOST");
+				break;
+			case EndlessContactCatalog.SafehouseRescueId:
+				DamageBusByRatio(0.08f, new Color("ef476f"), "BLOCK LOST");
+				_deck.IncreaseCooldowns(1f);
+				break;
+		}
+	}
+
+	private static string ResolveEndlessContactFailurePenaltyText(string contactId)
+	{
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => "The convoy loses courage and squad cards recover slower.",
+			EndlessContactCatalog.SalvageCacheId => "Projected salvage drops and the bus takes collision damage.",
+			EndlessContactCatalog.SafehouseRescueId => "The convoy takes a hard hull hit and squad recovery slows.",
+			_ => "The convoy loses ground on the route."
+		};
+	}
+
+	private float ResolveEndlessContactMaxHealth(string contactId)
+	{
+		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => 72f + (wavePressure * 2.8f),
+			EndlessContactCatalog.SalvageCacheId => 88f + (wavePressure * 3.1f),
+			EndlessContactCatalog.SafehouseRescueId => 104f + (wavePressure * 3.5f),
+			_ => 80f
+		};
+	}
+
+	private float ResolveEndlessContactPresenceRepairRate(string contactId)
+	{
+		return contactId switch
+		{
+			EndlessContactCatalog.RelaySignalId => 1.6f,
+			EndlessContactCatalog.SalvageCacheId => 1.3f,
+			EndlessContactCatalog.SafehouseRescueId => 1.8f,
+			_ => 1.2f
+		};
+	}
+
+	private float ResolveEndlessContactAttackRadius()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return 22f;
+		}
+
+		return _activeEndlessContact.Definition.Id switch
+		{
+			EndlessContactCatalog.RelaySignalId => 26f,
+			EndlessContactCatalog.SalvageCacheId => 32f,
+			EndlessContactCatalog.SafehouseRescueId => 38f,
+			_ => 28f
+		};
+	}
+
+	private float ResolveEndlessContactSupportRadius()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return 34f;
+		}
+
+		return _activeEndlessContact.Definition.Id switch
+		{
+			EndlessContactCatalog.RelaySignalId => 34f,
+			EndlessContactCatalog.SalvageCacheId => 40f,
+			EndlessContactCatalog.SafehouseRescueId => 44f,
+			_ => 36f
+		};
+	}
+
+	private float ResolvePlayerContactSupportRepair(Unit unit)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return 0f;
+		}
+
+		return _activeEndlessContact.Definition.Id switch
+		{
+			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
+			{
+				"gunner" => 5.2f,
+				"sniper" => 5.4f,
+				"shield" => 4.2f,
+				_ => 3.6f
+			},
+			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
+			{
+				"skirmisher" => 5f,
+				"fighter" => 4.8f,
+				"shield" => 4.3f,
+				_ => 3.5f
+			},
+			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
+			{
+				"shield" => 6.2f,
+				"fighter" => 5.3f,
+				"skirmisher" => 4.6f,
+				_ => 3.8f
+			},
+			_ => 3.4f
+		};
+	}
+
+	private float ResolvePlayerContactSupportProgress(Unit unit)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return 0f;
+		}
+
+		return _activeEndlessContact.Definition.Id switch
+		{
+			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
+			{
+				"gunner" => 0.95f,
+				"sniper" => 1.05f,
+				"shield" => 0.5f,
+				_ => 0.62f
+			},
+			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
+			{
+				"skirmisher" => 1.05f,
+				"fighter" => 0.92f,
+				"shield" => 0.68f,
+				_ => 0.56f
+			},
+			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
+			{
+				"shield" => 1.05f,
+				"fighter" => 0.94f,
+				"skirmisher" => 0.82f,
+				_ => 0.58f
+			},
+			_ => 0.5f
+		};
+	}
+
+	private string ResolvePlayerContactSupportLabel(Unit unit)
+	{
+		if (_activeEndlessContact == null)
+		{
+			return "SUPPORT";
+		}
+
+		return _activeEndlessContact.Definition.Id switch
+		{
+			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
+			{
+				"gunner" => "LINK",
+				"sniper" => "UPLINK",
+				_ => "BOOST"
+			},
+			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
+			{
+				"skirmisher" => "LOAD",
+				"fighter" => "HAUL",
+				_ => "COVER"
+			},
+			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
+			{
+				"shield" => "ESCORT",
+				"fighter" => "GUARD",
+				_ => "STABILIZE"
+			},
+			_ => "SUPPORT"
+		};
+	}
+
+	private float ResolveEnemyContactAttackDamage(Unit unit)
+	{
+		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
+		var baseDamage = unit.VisualClass switch
+		{
+			"spitter" => 13f,
+			"runner" => 8f,
+			"walker" => 11f,
+			"splitter" => 12f,
+			"brute" => 15f,
+			"crusher" => 18f,
+			"boss" => 24f,
+			_ => 10f
+		};
+
+		return baseDamage + (wavePressure * 0.38f);
+	}
+
+	private string BuildEndlessContactText()
+	{
+		if (!IsEndlessMode || _activeEndlessContact == null)
+		{
+			return "Contact event: standby.";
+		}
+
+		var prefix = _activeEndlessContact.Completed
+			? "[OK]"
+			: _activeEndlessContact.Failed
+				? "[X]"
+				: "[..]";
+		return $"{prefix} Contact: {_activeEndlessContact.Definition.Title}  |  {BuildEndlessContactProgressText()}  |  {_activeEndlessContact.Definition.RewardSummary}  |  {_activeEndlessContact.Definition.TradeoffSummary}  |  {_activeEndlessContact.Definition.PenaltySummary}";
+	}
+
+	private string BuildEndlessContactCheckpointSummary()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return "Contact report: standby.";
+		}
+
+		var prefix = _activeEndlessContact.Completed
+			? "[OK]"
+			: _activeEndlessContact.Failed
+				? "[X]"
+				: "[..]";
+		return $"{prefix} {_activeEndlessContact.Definition.Title}  |  {BuildEndlessContactProgressText()}";
+	}
+
+	private string BuildEndlessContactProgressText()
+	{
+		if (_activeEndlessContact == null)
+		{
+			return "No contact";
+		}
+
+		var progress = _activeEndlessContact.Progress;
+		var target = _activeEndlessContact.Definition.TargetSeconds;
+		return _activeEndlessContact.Definition.Type switch
+		{
+			"forward_presence" => $"Presence {progress:0.0}/{target:0.0}s inside the relay zone",
+			"secure_cache" => $"Secure window {progress:0.0}/{target:0.0}s at the cache radius",
+			"rescue_hold" => $"Hold timer {progress:0.0}/{target:0.0}s around the rescue block",
+			_ => _activeEndlessContact.Definition.Summary
+		};
+	}
+
+	private void UpdateEndlessFieldEvent(float delta)
+	{
+		if (!IsEndlessMode || _activeEndlessFieldEvent == null || _battleEnded)
+		{
+			return;
+		}
+
+		_activeEndlessFieldEvent.Remaining = Mathf.Max(0f, _activeEndlessFieldEvent.Remaining - delta);
+		_activeEndlessFieldEvent.PulseTimer -= delta;
+
+		while (_activeEndlessFieldEvent != null && _activeEndlessFieldEvent.PulseTimer <= 0f && _activeEndlessFieldEvent.Remaining > 0f)
+		{
+			TriggerEndlessFieldEventPulse(_activeEndlessFieldEvent);
+			_activeEndlessFieldEvent.PulseTimer += _activeEndlessFieldEvent.Interval;
+		}
+
+		if (_activeEndlessFieldEvent != null && _activeEndlessFieldEvent.Remaining <= 0f)
+		{
+			_endlessBattlefieldEventLabel = "Segment event spent. Await the next route checkpoint.";
+			_activeEndlessFieldEvent = null;
+		}
+	}
+
+	private void TriggerEndlessFieldEventPulse(EndlessFieldEvent fieldEvent)
+	{
+		switch (fieldEvent.Type)
+		{
+			case "mainline_push":
+				TriggerMainlinePushPulse(fieldEvent);
+				break;
+			case "scavenge_detour":
+				TriggerScavengeDetourPulse(fieldEvent);
+				break;
+			case "fortified_block":
+				TriggerFortifiedBlockPulse(fieldEvent);
+				break;
+		}
+	}
+
+	private void TriggerMainlinePushPulse(EndlessFieldEvent fieldEvent)
+	{
+		for (var i = 0; i < fieldEvent.Anchors.Length; i++)
+		{
+			var anchor = fieldEvent.Anchors[i];
+			SpawnEffect(anchor, fieldEvent.Color, 10f, fieldEvent.Radius, 0.22f, false);
+
+			foreach (var unit in _units)
+			{
+				if (unit.IsDead || unit.Team != Team.Enemy)
+				{
+					continue;
+				}
+
+				if (unit.Position.DistanceTo(anchor) > fieldEvent.Radius)
+				{
+					continue;
+				}
+
+				var appliedDamage = unit.TakeDamage(18f + (_spawnDirector.EndlessWaveNumber * 0.8f));
+				SpawnDamageFeedback(unit.Position, appliedDamage, fieldEvent.Color);
+			}
+		}
+
+		_endlessBattlefieldEventLabel = "Rapid flares detonated across the forward lanes.";
+	}
+
+	private void TriggerScavengeDetourPulse(EndlessFieldEvent fieldEvent)
+	{
+		for (var i = 0; i < fieldEvent.Anchors.Length; i++)
+		{
+			var anchor = fieldEvent.Anchors[i];
+			SpawnEffect(anchor, fieldEvent.Color, 12f, 26f, 0.24f);
+			SpawnFloatText(anchor + new Vector2(0f, -18f), "CACHE", fieldEvent.Color.Lightened(0.3f), 0.5f);
+		}
+
+		_courage = Mathf.Min(_maxCourage, _courage + 8f);
+		_deck.ReduceCooldowns(1.2f);
+		RepairBusByRatio(0.03f);
+		_endlessBattlefieldEventLabel = "Scavenge caches yielded courage and quick repairs.";
+	}
+
+	private void TriggerFortifiedBlockPulse(EndlessFieldEvent fieldEvent)
+	{
+		var anchor = fieldEvent.Anchors[0];
+		SpawnEffect(anchor, fieldEvent.Color, 10f, 34f, 0.22f, false);
+
+		var target = FindClosestEnemyToPoint(anchor, fieldEvent.Radius);
+		if (target != null)
+		{
+			var appliedDamage = target.TakeDamage(26f + (_spawnDirector.EndlessWaveNumber * 0.7f));
+			SpawnDamageFeedback(target.Position, appliedDamage, fieldEvent.Color);
+			SpawnFloatText(target.Position + new Vector2(0f, -20f), "TURRET", fieldEvent.Color.Lightened(0.25f), 0.46f);
+		}
+		else
+		{
+			RepairBusByRatio(0.02f);
+		}
+
+		_endlessBattlefieldEventLabel = target != null
+			? "Safehouse turret suppressed the closest target."
+			: "Safehouse crew redirected the pulse into convoy repairs.";
 	}
 
 	private UnitStats BuildPlayerUnitStatsForBattle(UnitDefinition definition)
@@ -1582,6 +3272,24 @@ public partial class BattleController : Node2D
 		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
 	}
 
+	private void DamageBusByRatio(float ratio, Color color, string label = "")
+	{
+		if (ratio <= 0f)
+		{
+			return;
+		}
+
+		var damageAmount = _playerBaseMaxHealth * ratio;
+		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth - damageAmount);
+		_playerBaseFlashTimer = 0.22f;
+		SpawnEffect(PlayerBaseCorePosition, color, 10f, 30f, 0.22f, false);
+		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+		if (!string.IsNullOrWhiteSpace(label))
+		{
+			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.18f), 0.62f);
+		}
+	}
+
 	private bool IsRouteForkCheckpoint()
 	{
 		return _spawnDirector.EndlessWaveNumber > 0 && _spawnDirector.EndlessWaveNumber % 10 == 0;
@@ -1631,7 +3339,7 @@ public partial class BattleController : Node2D
 				$"Endless run ended on {ResolveRouteLabel(_activeRouteId)}.\n" +
 				$"Wave reached: {_spawnDirector.EndlessWaveNumber}\n" +
 				$"Survival time: {_elapsed:0.0}s   |   Enemy defeats: {_enemyDefeats}\n" +
-				$"Salvage secured: +{rewardScrap} scrap, +{rewardFuel} fuel";
+				$"Payout secured: +{rewardScrap} gold, +{rewardFuel} food";
 			SetStatus("The convoy was eventually overrun. Salvage crews recovered what they could.");
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
@@ -1643,10 +3351,10 @@ public partial class BattleController : Node2D
 		{
 			var evaluation = StageObjectives.EvaluateVictory(_stageData, BuildStageBattleResult());
 			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
-			GameState.Instance.ApplyVictory(_stage, _stageData.RewardScrap, _combat.VictoryFuelReward, evaluation.StarsEarned);
+			GameState.Instance.ApplyVictory(_stage, _stageData.RewardGold, _stageData.RewardFood, evaluation.StarsEarned);
 			_endLabel.Text =
 				$"Victory on stage {_stage}.\n" +
-				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardScrap, _combat.VictoryFuelReward, bestStars)}";
+				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardGold, _stageData.RewardFood, bestStars)}";
 			SetStatus("Barricade smashed. Route secured.");
 		}
 		else
@@ -1707,7 +3415,7 @@ public partial class BattleController : Node2D
 			reward = Mathf.RoundToInt(reward * 1.25f);
 		}
 
-		return reward;
+		return Math.Max(0, reward + _endlessDirectiveScrapBonus + _endlessContactScrapBonus);
 	}
 
 	private int CalculateEndlessFuelReward()
@@ -1717,7 +3425,12 @@ public partial class BattleController : Node2D
 			return 0;
 		}
 
-		return Math.Max(0, _spawnDirector.EndlessWaveNumber / 4);
+		return Math.Max(0, (_spawnDirector.EndlessWaveNumber / 4) + _endlessDirectiveFuelBonus + _endlessContactFuelBonus);
+	}
+
+	private static string FormatSignedInt(int value)
+	{
+		return value >= 0 ? $"+{value}" : value.ToString();
 	}
 
 	private static string ResolveRouteLabel(string routeId)

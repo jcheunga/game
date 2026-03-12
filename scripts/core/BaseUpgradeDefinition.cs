@@ -21,6 +21,7 @@ public static class BaseUpgradeCatalog
     public const string HullPlatingId = "hull_plating";
     public const string PantryId = "convoy_pantry";
     public const string DispatchConsoleId = "dispatch_console";
+    public const string SignalRelayId = "signal_relay";
 
     private static readonly BaseUpgradeDefinition[] Upgrades =
     {
@@ -38,6 +39,11 @@ public static class BaseUpgradeCatalog
             DispatchConsoleId,
             "Dispatch Console",
             "Reduce squad deploy cooldowns by 6% per level.",
+            5),
+        new(
+            SignalRelayId,
+            "Signal Relay",
+            "Harden convoy comms against jammers. Shorten signal jams and blunt their courage/cooldown penalties.",
             5)
     };
 

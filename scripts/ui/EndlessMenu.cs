@@ -205,6 +205,14 @@ public partial class EndlessMenu : Control
         editSquadButton.Pressed += () => SceneRouter.Instance.GoToShop();
         bottomRow.AddChild(editSquadButton);
 
+        var settingsButton = new Button
+        {
+            Text = "Settings",
+            CustomMinimumSize = new Vector2(150f, 0f)
+        };
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        bottomRow.AddChild(settingsButton);
+
         bottomRow.AddChild(new Control
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -227,11 +235,15 @@ public partial class EndlessMenu : Control
         var templateStage = GameData.GetLatestStageForMap(_selectedRouteId);
         var routeStages = GameData.GetStagesForMap(_selectedRouteId);
         var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);
+        var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_selectedRouteId);
         _routeTitleLabel.Text = $"{templateStage.MapName} Endless Run";
         _routeSummaryLabel.Text =
             $"{BuildRouteDescription(_selectedRouteId)}\n\n" +
             $"District stages in campaign: {routeStages.Count}\n" +
             $"{StageEncounterIntel.BuildCompactSummary(templateStage)}\n\n" +
+            $"Boss checkpoint: wave {EndlessBossCheckpointCatalog.BossCheckpointInterval} - {bossCheckpoint.Title}\n" +
+            $"{bossCheckpoint.Summary}\n" +
+            $"{bossCheckpoint.RewardSummary}\n\n" +
             $"Opening boon: {selectedBoon.Title}\n{selectedBoon.Summary}";
         _recordLabel.Text =
             $"Run record:\n" +
@@ -241,6 +253,7 @@ public partial class EndlessMenu : Control
         _rulesLabel.Text =
             $"Run rules:\n" +
             "- Waves scale up continuously.\n" +
+            $"- Every {EndlessBossCheckpointCatalog.BossCheckpointInterval}th wave is a boss checkpoint with extra rewards.\n" +
             "- Pick one temporary opening boon before deploying.\n" +
             "- Use Convoy Shop to change the active squad or buy upgrades.\n" +
             "- Retreat to cash out salvage.\n" +
@@ -264,6 +277,12 @@ public partial class EndlessMenu : Control
         _squadStack.AddChild(new Label
         {
             Text = $"Active Squad ({GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit})"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildActiveDeckSynergySummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
         foreach (var definition in GameState.Instance.GetActiveDeckUnits())
@@ -300,7 +319,9 @@ public partial class EndlessMenu : Control
 
         stack.AddChild(new Label
         {
-            Text = $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}"
+            Text =
+                $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
+                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}"
         });
 
         stack.AddChild(new Label
@@ -314,7 +335,7 @@ public partial class EndlessMenu : Control
         {
             Text =
                 $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
-                (stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : ""),
+                UnitStatText.BuildInlineTraits(stats),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

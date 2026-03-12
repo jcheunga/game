@@ -95,7 +95,8 @@ public partial class LoadoutMenu : Control
             Text =
                 $"Bus upgrades: Hull Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
                 $"Convoy Pantry Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"Dispatch Console Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
+                $"Dispatch Console Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Signal Relay Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -146,6 +147,12 @@ public partial class LoadoutMenu : Control
             Text = $"Active Squad ({GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit})"
         });
 
+        rosterStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildActiveDeckSynergySummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
         foreach (var definition in GameState.Instance.GetActiveDeckUnits())
         {
             rosterStack.AddChild(BuildUnitPanel(definition));
@@ -184,6 +191,14 @@ public partial class LoadoutMenu : Control
         };
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
         bottomRow.AddChild(shopButton);
+
+        var settingsButton = new Button
+        {
+            Text = "Settings",
+            CustomMinimumSize = new Vector2(150f, 0f)
+        };
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        bottomRow.AddChild(settingsButton);
 
         bottomRow.AddChild(new Control
         {
@@ -233,7 +248,9 @@ public partial class LoadoutMenu : Control
 
         stack.AddChild(new Label
         {
-            Text = $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}"
+            Text =
+                $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
+                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}"
         });
 
         stack.AddChild(new Label
@@ -248,7 +265,7 @@ public partial class LoadoutMenu : Control
             Text =
                 $"Speed {stats.Speed:0.#}  |  Range {stats.AttackRange:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s" +
                 (stats.UsesProjectile ? $"  |  Projectile {stats.ProjectileSpeed:0.#}" : "") +
-                (stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : ""),
+                UnitStatText.BuildInlineTraits(stats),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

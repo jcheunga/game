@@ -15,7 +15,9 @@ public static class GameData
         PlayerRaiderId,
         PlayerMechanicId,
         PlayerMarksmanId,
-        PlayerBreacherId
+        PlayerBreacherId,
+        PlayerGrenadierId,
+        PlayerCoordinatorId
     };
 
     public static readonly string[] EnemyRosterIds =
@@ -27,6 +29,8 @@ public static class GameData
         EnemySpitterId,
         EnemySplitterId,
         EnemySaboteurId,
+        EnemyHowlerId,
+        EnemyJammerId,
         EnemyCrusherId,
         EnemyBossId
     };
@@ -39,6 +43,8 @@ public static class GameData
     public const string PlayerMechanicId = "player_mechanic";
     public const string PlayerMarksmanId = "player_marksman";
     public const string PlayerBreacherId = "player_breacher";
+    public const string PlayerGrenadierId = "player_grenadier";
+    public const string PlayerCoordinatorId = "player_coordinator";
     public const string EnemyWalkerId = "enemy_walker";
     public const string EnemyRunnerId = "enemy_runner";
     public const string EnemyBloaterId = "enemy_bloater";
@@ -46,6 +52,8 @@ public static class GameData
     public const string EnemySpitterId = "enemy_spitter";
     public const string EnemySplitterId = "enemy_splitter";
     public const string EnemySaboteurId = "enemy_saboteur";
+    public const string EnemyHowlerId = "enemy_howler";
+    public const string EnemyJammerId = "enemy_jammer";
     public const string EnemyCrusherId = "enemy_crusher";
     public const string EnemyBossId = "enemy_boss";
 
@@ -270,6 +278,7 @@ public static class GameData
                     Id = PlayerBrawlerId,
                     DisplayName = "Brawler",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.FrontlineTag,
                     UnlockStage = 1,
                     GoldCost = 0,
                     Cost = 20,
@@ -290,6 +299,7 @@ public static class GameData
                     Id = PlayerShooterId,
                     DisplayName = "Shooter",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.SupportTag,
                     UnlockStage = 1,
                     GoldCost = 0,
                     Cost = 30,
@@ -312,6 +322,7 @@ public static class GameData
                     Id = PlayerDefenderId,
                     DisplayName = "Defender",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.FrontlineTag,
                     UnlockStage = 1,
                     GoldCost = 0,
                     Cost = 28,
@@ -332,6 +343,7 @@ public static class GameData
                     Id = PlayerRangerId,
                     DisplayName = "Ranger",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 2,
                     GoldCost = 170,
                     Cost = 36,
@@ -354,6 +366,7 @@ public static class GameData
                     Id = PlayerRaiderId,
                     DisplayName = "Raider",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 4,
                     GoldCost = 220,
                     Cost = 18,
@@ -376,6 +389,7 @@ public static class GameData
                     Id = PlayerMarksmanId,
                     DisplayName = "Marksman",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 6,
                     GoldCost = 320,
                     Cost = 42,
@@ -400,6 +414,7 @@ public static class GameData
                     Id = PlayerBreacherId,
                     DisplayName = "Breacher",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.BreachTag,
                     UnlockStage = 9,
                     GoldCost = 420,
                     Cost = 38,
@@ -418,12 +433,71 @@ public static class GameData
                 }
             },
             {
+                PlayerGrenadierId,
+                new UnitDefinition
+                {
+                    Id = PlayerGrenadierId,
+                    DisplayName = "Grenadier",
+                    Side = "Player",
+                    SquadTag = SquadSynergyCatalog.BreachTag,
+                    UnlockStage = 10,
+                    GoldCost = 460,
+                    Cost = 40,
+                    MaxHealth = 58f,
+                    Speed = 50f,
+                    AttackDamage = 16f,
+                    AttackRange = 160f,
+                    AttackCooldown = 1.45f,
+                    AttackSplashRadius = 56f,
+                    UsesProjectile = true,
+                    ProjectileSpeed = 430f,
+                    AggroRangeX = 320f,
+                    AggroRangeY = 136f,
+                    BaseDamage = 18,
+                    DeployCooldown = 12.5f,
+                    VisualClass = "gunner",
+                    VisualScale = 1.02f,
+                    ColorHex = "f28482"
+                }
+            },
+            {
+                PlayerCoordinatorId,
+                new UnitDefinition
+                {
+                    Id = PlayerCoordinatorId,
+                    DisplayName = "Coordinator",
+                    Side = "Player",
+                    SquadTag = SquadSynergyCatalog.SupportTag,
+                    UnlockStage = 13,
+                    GoldCost = 560,
+                    Cost = 34,
+                    MaxHealth = 62f,
+                    Speed = 58f,
+                    AttackDamage = 11f,
+                    AttackRange = 150f,
+                    AttackCooldown = 1.06f,
+                    UsesProjectile = true,
+                    ProjectileSpeed = 500f,
+                    AggroRangeX = 300f,
+                    AggroRangeY = 128f,
+                    BaseDamage = 16,
+                    AuraRadius = 148f,
+                    AuraAttackDamageScale = 1.12f,
+                    AuraSpeedScale = 1.08f,
+                    DeployCooldown = 11.5f,
+                    VisualClass = "support",
+                    VisualScale = 1f,
+                    ColorHex = "b7efc5"
+                }
+            },
+            {
                 PlayerMechanicId,
                 new UnitDefinition
                 {
                     Id = PlayerMechanicId,
                     DisplayName = "Mechanic",
                     Side = "Player",
+                    SquadTag = SquadSynergyCatalog.SupportTag,
                     UnlockStage = 5,
                     GoldCost = 260,
                     Cost = 26,
@@ -579,6 +653,56 @@ public static class GameData
                 }
             },
             {
+                EnemyHowlerId,
+                new UnitDefinition
+                {
+                    Id = EnemyHowlerId,
+                    DisplayName = "Howler",
+                    Side = "Enemy",
+                    Cost = 0,
+                    MaxHealth = 84f,
+                    Speed = 72f,
+                    AttackDamage = 13f,
+                    AttackRange = 30f,
+                    AttackCooldown = 1.02f,
+                    AggroRangeX = 220f,
+                    AggroRangeY = 96f,
+                    BaseDamage = 18,
+                    AuraRadius = 158f,
+                    AuraAttackDamageScale = 1.22f,
+                    AuraSpeedScale = 1.18f,
+                    VisualClass = "howler",
+                    VisualScale = 1.04f,
+                    ColorHex = "f8961e"
+                }
+            },
+            {
+                EnemyJammerId,
+                new UnitDefinition
+                {
+                    Id = EnemyJammerId,
+                    DisplayName = "Jammer",
+                    Side = "Enemy",
+                    Cost = 0,
+                    MaxHealth = 70f,
+                    Speed = 64f,
+                    AttackDamage = 9f,
+                    AttackRange = 30f,
+                    AttackCooldown = 0.96f,
+                    AggroRangeX = 214f,
+                    AggroRangeY = 94f,
+                    BaseDamage = 16,
+                    SpecialAbilityId = "jam_signal",
+                    SpecialCooldown = 11f,
+                    SpecialCourageGainScale = 0.68f,
+                    SpecialDeployCooldownPenalty = 1.2f,
+                    SpecialBuffDuration = 5.2f,
+                    VisualClass = "jammer",
+                    VisualScale = 0.98f,
+                    ColorHex = "577590"
+                }
+            },
+            {
                 EnemyCrusherId,
                 new UnitDefinition
                 {
@@ -613,6 +737,14 @@ public static class GameData
                     AggroRangeY = 110f,
                     BaseDamage = 55,
                     DamageTakenScale = 0.82f,
+                    SpecialAbilityId = "rally_call",
+                    SpecialCooldown = 12f,
+                    SpecialSpawnUnitId = EnemyWalkerId,
+                    SpecialSpawnCount = 2,
+                    SpecialBuffRadius = 182f,
+                    SpecialBuffDuration = 5.4f,
+                    SpecialBuffAttackDamageScale = 1.32f,
+                    SpecialBuffSpeedScale = 1.2f,
                     ColorHex = "5a189a"
                 }
             }
@@ -967,6 +1099,122 @@ public static class GameData
                 BossWeight = 0.3f,
                 BossSpawnStartTime = 76f,
                 BonusWaveChance = 0.2f
+            },
+            new StageDefinition
+            {
+                StageNumber = 13,
+                StageName = "Outer Gate",
+                MapId = "quarantine",
+                MapName = "Quarantine Wall",
+                TerrainId = "checkpoint",
+                Description = "Fourth route unlocked. Screening barriers and decon sirens set up spitter fire behind sealed gates.",
+                RewardGold = 520,
+                RewardFood = 8,
+                EntryFoodCost = 4,
+                ExploreFoodCost = 6,
+                MapX = 156f,
+                MapY = 472f,
+                PlayerBaseHealth = 510f,
+                EnemyBaseHealth = 900f,
+                EnemySpawnMin = 2.0f,
+                EnemySpawnMax = 2.82f,
+                EnemyHealthScale = 1.86f,
+                EnemyDamageScale = 1.80f,
+                WalkerWeight = 0.06f,
+                RunnerWeight = 0.06f,
+                BruteWeight = 0.18f,
+                SpitterWeight = 0.30f,
+                CrusherWeight = 0.22f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.20f
+            },
+            new StageDefinition
+            {
+                StageNumber = 14,
+                StageName = "Decon Corridor",
+                MapId = "quarantine",
+                MapName = "Quarantine Wall",
+                TerrainId = "decon",
+                Description = "Toxic wash tunnels punish overcommits while support infected stack behind the spray lanes.",
+                RewardGold = 580,
+                RewardFood = 9,
+                EntryFoodCost = 5,
+                ExploreFoodCost = 7,
+                MapX = 332f,
+                MapY = 548f,
+                PlayerBaseHealth = 530f,
+                EnemyBaseHealth = 950f,
+                EnemySpawnMin = 1.96f,
+                EnemySpawnMax = 2.76f,
+                EnemyHealthScale = 1.94f,
+                EnemyDamageScale = 1.88f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.05f,
+                BruteWeight = 0.20f,
+                SpitterWeight = 0.32f,
+                CrusherWeight = 0.22f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.22f
+            },
+            new StageDefinition
+            {
+                StageNumber = 15,
+                StageName = "Triage Break",
+                MapId = "quarantine",
+                MapName = "Quarantine Wall",
+                TerrainId = "lab",
+                Description = "Lab-side barricades harden up while saboteurs and howlers try to crack the convoy from behind.",
+                RewardGold = 650,
+                RewardFood = 9,
+                EntryFoodCost = 5,
+                ExploreFoodCost = 7,
+                MapX = 548f,
+                MapY = 506f,
+                PlayerBaseHealth = 545f,
+                EnemyBaseHealth = 1030f,
+                EnemySpawnMin = 1.9f,
+                EnemySpawnMax = 2.68f,
+                EnemyHealthScale = 2.02f,
+                EnemyDamageScale = 1.95f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.04f,
+                BruteWeight = 0.22f,
+                SpitterWeight = 0.30f,
+                CrusherWeight = 0.26f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.24f
+            },
+            new StageDefinition
+            {
+                StageNumber = 16,
+                StageName = "Blacksite Seal",
+                MapId = "quarantine",
+                MapName = "Quarantine Wall",
+                TerrainId = "blacksite",
+                Description = "Quarantine boss stage. Toxic purge cycles and sealed kill-box walls hold until the Overlord breaches the blacksite.",
+                RewardGold = 730,
+                RewardFood = 10,
+                EntryFoodCost = 6,
+                ExploreFoodCost = 8,
+                MapX = 734f,
+                MapY = 556f,
+                PlayerBaseHealth = 565f,
+                EnemyBaseHealth = 1140f,
+                EnemySpawnMin = 1.82f,
+                EnemySpawnMax = 2.56f,
+                EnemyHealthScale = 2.12f,
+                EnemyDamageScale = 2.05f,
+                WalkerWeight = 0.04f,
+                RunnerWeight = 0.04f,
+                BruteWeight = 0.22f,
+                SpitterWeight = 0.32f,
+                CrusherWeight = 0.28f,
+                BossWeight = 0.32f,
+                BossSpawnStartTime = 78f,
+                BonusWaveChance = 0.24f
             }
         };
     }

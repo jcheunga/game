@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Godot;
 
 public partial class GameState : Node
@@ -12,11 +13,15 @@ public partial class GameState : Node
 	private const int DefaultUnitLevel = 1;
 	private const int MaxPlayerUnitLevel = 5;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
+	private const int MaxPinnedChallenges = 8;
 	private const string DefaultEndlessRouteId = "city";
 	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
 	private const bool DefaultShowDevUi = true;
 	private const bool DefaultShowFpsCounter = true;
+	private const bool DefaultAudioMuted = false;
+	private const int DefaultEffectsVolumePercent = 85;
+	private const int DefaultAmbienceVolumePercent = 65;
 	private static readonly string DefaultAsyncChallengeCode =
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
@@ -40,6 +45,9 @@ public partial class GameState : Node
 	public string LastResultMessage { get; private set; } = DefaultReport;
 	public bool ShowDevUi { get; private set; } = DefaultShowDevUi;
 	public bool ShowFpsCounter { get; private set; } = DefaultShowFpsCounter;
+	public bool AudioMuted { get; private set; } = DefaultAudioMuted;
+	public int EffectsVolumePercent { get; private set; } = DefaultEffectsVolumePercent;
+	public int AmbienceVolumePercent { get; private set; } = DefaultAmbienceVolumePercent;
 	public BattleRunMode CurrentBattleMode { get; private set; } = BattleRunMode.Campaign;
 	public IReadOnlyList<string> ActiveDeckUnitIds => _activeDeckUnitIds;
 	public int BestEndlessWave { get; private set; }
@@ -52,14 +60,17 @@ public partial class GameState : Node
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
+	public bool HasSelectedAsyncChallengeLockedDeck => _selectedAsyncChallengeLockedDeckUnitIds.Count >= MaxDeckSize;
 
 	private readonly List<string> _activeDeckUnitIds = new();
+	private readonly List<string> _selectedAsyncChallengeLockedDeckUnitIds = new();
 	private readonly List<int> _stageStars = new();
 	private readonly HashSet<string> _ownedPlayerUnitIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<ChallengeRunRecord> _challengeHistory = new();
+	private readonly List<string> _pinnedChallengeCodes = new();
 
 	public override void _EnterTree()
 	{
@@ -134,21 +145,71 @@ public partial class GameState : Node
 			Mathf.Clamp(challenge.Stage, 1, MaxStage),
 			challenge.MutatorId,
 			challenge.Seed).Code;
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
 		Persist();
 		message = $"Loaded challenge {SelectedAsyncChallengeCode}.";
 		return true;
+	}
+
+	public bool TrySetSelectedAsyncChallengeBoard(string code, IEnumerable<string> lockedDeckUnitIds, out string message)
+	{
+		if (!TrySetSelectedAsyncChallengeCode(code, out message))
+		{
+			return false;
+		}
+
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
+		if (lockedDeckUnitIds != null)
+		{
+			foreach (var unitId in lockedDeckUnitIds)
+			{
+				if (!string.IsNullOrWhiteSpace(unitId))
+				{
+					_selectedAsyncChallengeLockedDeckUnitIds.Add(unitId.Trim());
+				}
+			}
+		}
+
+		NormalizeSelectedAsyncChallengeLockedDeck();
+		Persist();
+		message = HasSelectedAsyncChallengeLockedDeck
+			? $"Loaded shared challenge {SelectedAsyncChallengeCode} with a locked LAN squad."
+			: $"Loaded shared challenge {SelectedAsyncChallengeCode}.";
+		return true;
+	}
+
+	public void SetSelectedFeaturedChallenge(FeaturedChallengeDefinition featured)
+	{
+		if (featured == null)
+		{
+			return;
+		}
+
+		SelectedAsyncChallengeCode = featured.Challenge.Code;
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
+		foreach (var unitId in featured.LockedDeckUnitIds)
+		{
+			if (!string.IsNullOrWhiteSpace(unitId))
+			{
+				_selectedAsyncChallengeLockedDeckUnitIds.Add(unitId.Trim());
+			}
+		}
+
+		NormalizeSelectedAsyncChallengeLockedDeck();
+		Persist();
 	}
 
 	public void GenerateAsyncChallenge(int stage, string mutatorId)
 	{
 		var challenge = AsyncChallengeCatalog.Generate(Mathf.Clamp(stage, 1, MaxStage), mutatorId);
 		SelectedAsyncChallengeCode = challenge.Code;
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
 		Persist();
 	}
 
 	public bool CanStartAsyncChallenge(out string message)
 	{
-		if (!CanStartBattle(out message))
+		if (!HasSelectedAsyncChallengeLockedDeck && !CanStartBattle(out message))
 		{
 			return false;
 		}
@@ -160,13 +221,17 @@ public partial class GameState : Node
 			return false;
 		}
 
-		message = $"Challenge {challenge.Code} ready on stage {challenge.Stage}.";
+		message = HasSelectedAsyncChallengeLockedDeck
+			? $"Featured challenge {challenge.Code} ready with a locked squad board."
+			: $"Challenge {challenge.Code} ready on stage {challenge.Stage}.";
 		return true;
 	}
 
 	public bool PrepareAsyncChallenge(string code, out string message)
 	{
-		if (!TrySetSelectedAsyncChallengeCode(code, out message))
+		var normalizedCode = AsyncChallengeCatalog.NormalizeCode(code);
+		if (!normalizedCode.Equals(SelectedAsyncChallengeCode, StringComparison.OrdinalIgnoreCase) &&
+			!TrySetSelectedAsyncChallengeCode(code, out message))
 		{
 			return false;
 		}
@@ -261,7 +326,181 @@ public partial class GameState : Node
 			.ToArray();
 	}
 
-	public void ApplyAsyncChallengeResult(string code, int score, float elapsedSeconds, int enemyDefeats, int starsEarned, bool won, bool retreated)
+	public ChallengeRunRecord GetLatestChallengeRun(string codeFilter = "")
+	{
+		var normalizedCode = string.IsNullOrWhiteSpace(codeFilter)
+			? ""
+			: AsyncChallengeCatalog.NormalizeCode(codeFilter);
+		foreach (var entry in _challengeHistory)
+		{
+			if (!string.IsNullOrWhiteSpace(normalizedCode) &&
+				!entry.Code.Equals(normalizedCode, StringComparison.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			return CloneChallengeHistoryRecord(entry);
+		}
+
+		return null;
+	}
+
+	public ChallengeRunRecord GetChallengeGhostRun(string codeFilter = "", bool preferLockedDeck = false)
+	{
+		var normalizedCode = string.IsNullOrWhiteSpace(codeFilter)
+			? ""
+			: AsyncChallengeCatalog.NormalizeCode(codeFilter);
+		ChallengeRunRecord preferred = null;
+		ChallengeRunRecord fallback = null;
+
+		foreach (var entry in _challengeHistory)
+		{
+			if (!string.IsNullOrWhiteSpace(normalizedCode) &&
+				!entry.Code.Equals(normalizedCode, StringComparison.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			if (IsBetterChallengeGhostCandidate(entry, fallback))
+			{
+				fallback = entry;
+			}
+
+			if (entry.UsedLockedDeck == preferLockedDeck && IsBetterChallengeGhostCandidate(entry, preferred))
+			{
+				preferred = entry;
+			}
+		}
+
+		return preferred != null
+			? CloneChallengeHistoryRecord(preferred)
+			: fallback != null
+				? CloneChallengeHistoryRecord(fallback)
+				: null;
+	}
+
+	public string BuildChallengeGhostSummary(ChallengeRunRecord record)
+	{
+		if (record == null)
+		{
+			return "Ghost benchmark: no local benchmark tape saved yet for this board.";
+		}
+
+		var outcome = record.Retreated
+			? "Retreated"
+			: record.Won
+				? "Cleared"
+				: "Failed";
+		var medal = "No Medal";
+		if (AsyncChallengeCatalog.TryParse(record.Code, out var challenge, out _))
+		{
+			medal = AsyncChallengeCatalog.ResolveMedalLabel(challenge, record.Score);
+		}
+
+		return
+			$"Ghost benchmark: {outcome}  |  {record.Score} pts ({medal})  |  Hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Deploys {record.PlayerDeployments}  |  {(record.UsedLockedDeck ? "locked deck" : "player deck")}";
+	}
+
+	public string BuildChallengeRunTapeSummary(ChallengeRunRecord record, int maxDeployments = 6)
+	{
+		if (record == null)
+		{
+			return "Latest run tape:\nNo local tape saved yet for this board.";
+		}
+
+		var builder = new StringBuilder();
+		var deckNames = record.DeckUnitIds == null || record.DeckUnitIds.Length == 0
+			? "No deck data saved."
+			: string.Join(", ", record.DeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName));
+		builder.AppendLine("Latest run tape:");
+		builder.AppendLine($"Deck ({(record.UsedLockedDeck ? "featured lock" : "player deck")}): {deckNames}");
+		builder.AppendLine($"Deploys {record.PlayerDeployments}  |  Bus hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Stars {record.StarsEarned}/3");
+		builder.AppendLine(AsyncChallengeCatalog.BuildScoreSummary(BuildChallengeRunScoreBreakdown(record)));
+
+		if (record.Deployments == null || record.Deployments.Count == 0)
+		{
+			builder.Append("Deploy log: none captured.");
+			return builder.ToString().TrimEnd();
+		}
+
+		var segments = new List<string>();
+		for (var i = 0; i < record.Deployments.Count && i < maxDeployments; i++)
+		{
+			var deployment = record.Deployments[i];
+			segments.Add($"{deployment.TimeSeconds:0.0}s {GameData.GetUnit(deployment.UnitId).DisplayName}@{deployment.LanePercent}%");
+		}
+
+		if (record.Deployments.Count > maxDeployments)
+		{
+			segments.Add($"+{record.Deployments.Count - maxDeployments} more");
+		}
+
+		builder.Append("Deploy log: ");
+		builder.Append(string.Join("  |  ", segments));
+		return builder.ToString().TrimEnd();
+	}
+
+	public IReadOnlyList<string> GetPinnedChallengeCodes()
+	{
+		return _pinnedChallengeCodes.ToArray();
+	}
+
+	public bool IsChallengeCodePinned(string code)
+	{
+		var normalized = NormalizePinnedChallengeCode(code);
+		return !string.IsNullOrWhiteSpace(normalized) &&
+			_pinnedChallengeCodes.Contains(normalized, StringComparer.OrdinalIgnoreCase);
+	}
+
+	public bool TogglePinnedChallengeCode(string code, out bool pinnedNow, out string message)
+	{
+		var normalized = NormalizePinnedChallengeCode(code);
+		if (string.IsNullOrWhiteSpace(normalized))
+		{
+			pinnedNow = false;
+			message = "Challenge code could not be pinned.";
+			return false;
+		}
+
+		var existingIndex = _pinnedChallengeCodes.FindIndex(entry =>
+			entry.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+		if (existingIndex >= 0)
+		{
+			_pinnedChallengeCodes.RemoveAt(existingIndex);
+			pinnedNow = false;
+			message = $"Removed {normalized} from the pinned challenge board.";
+			Persist();
+			return true;
+		}
+
+		if (_pinnedChallengeCodes.Count >= MaxPinnedChallenges)
+		{
+			pinnedNow = false;
+			message = $"Pinned board full. Remove a code before adding {normalized}.";
+			return false;
+		}
+
+		_pinnedChallengeCodes.Insert(0, normalized);
+		pinnedNow = true;
+		message = $"Pinned {normalized} to the challenge board.";
+		Persist();
+		return true;
+	}
+
+	public void ApplyAsyncChallengeResult(
+		string code,
+		int score,
+		float elapsedSeconds,
+		int enemyDefeats,
+		int starsEarned,
+		bool won,
+		bool retreated,
+		IReadOnlyList<string> deckUnitIds = null,
+		IReadOnlyList<ChallengeDeploymentRecord> deployments = null,
+		int playerDeployments = 0,
+		float busHullRatio = 0f,
+		bool usedLockedDeck = false,
+		AsyncChallengeScoreBreakdown scoreBreakdown = null)
 	{
 		AsyncChallengeCatalog.TryParse(code, out var challenge, out _);
 		var normalizedCode = AsyncChallengeCatalog.NormalizeCode(challenge.Code);
@@ -280,6 +519,21 @@ public partial class GameState : Node
 			ElapsedSeconds = Math.Max(0f, elapsedSeconds),
 			EnemyDefeats = Math.Max(0, enemyDefeats),
 			StarsEarned = Mathf.Clamp(starsEarned, 0, 3),
+			CompletionBonus = Math.Max(0, scoreBreakdown?.CompletionBonus ?? 0),
+			StarBonus = Math.Max(0, scoreBreakdown?.StarBonus ?? 0),
+			KillBonus = Math.Max(0, scoreBreakdown?.KillBonus ?? 0),
+			HullBonus = Math.Max(0, scoreBreakdown?.HullBonus ?? 0),
+			TimeBonus = Math.Max(0, scoreBreakdown?.TimeBonus ?? 0),
+			DeployPenalty = Math.Max(0, scoreBreakdown?.DeployPenalty ?? 0),
+			RawScore = Math.Max(0, scoreBreakdown?.RawScore ?? score),
+			ScoreMultiplier = Mathf.Max(0.1f, scoreBreakdown?.Multiplier ?? 1f),
+			UsedLockedDeck = usedLockedDeck,
+			DeckUnitIds = (deckUnitIds ?? Array.Empty<string>()).ToArray(),
+			PlayerDeployments = Math.Max(0, playerDeployments),
+			BusHullRatio = Mathf.Clamp(busHullRatio, 0f, 1f),
+			Deployments = deployments == null
+				? []
+				: deployments.Select(CloneChallengeDeploymentRecord).ToList(),
 			PlayedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 		});
 		NormalizeChallengeHistory();
@@ -317,9 +571,115 @@ public partial class GameState : Node
 		Persist();
 	}
 
+	public void SetAudioMuted(bool muted)
+	{
+		AudioMuted = muted;
+		Persist();
+		AudioDirector.Instance?.RefreshMixFromState();
+	}
+
+	public void SetEffectsVolumePercent(int percent)
+	{
+		EffectsVolumePercent = Mathf.Clamp(percent, 0, 100);
+		Persist();
+		AudioDirector.Instance?.RefreshMixFromState();
+	}
+
+	public void SetAmbienceVolumePercent(int percent)
+	{
+		AmbienceVolumePercent = Mathf.Clamp(percent, 0, 100);
+		Persist();
+		AudioDirector.Instance?.RefreshMixFromState();
+	}
+
 	public IReadOnlyList<UnitDefinition> GetActiveDeckUnits()
 	{
 		return GameData.GetUnitsByIds(_activeDeckUnitIds);
+	}
+
+	public IReadOnlyList<UnitDefinition> GetSelectedAsyncChallengeDeckUnits()
+	{
+		return HasSelectedAsyncChallengeLockedDeck
+			? GameData.GetUnitsByIds(_selectedAsyncChallengeLockedDeckUnitIds)
+			: GetActiveDeckUnits();
+	}
+
+	public IReadOnlyList<UnitDefinition> GetBattleDeckUnits()
+	{
+		return CurrentBattleMode == BattleRunMode.AsyncChallenge && HasSelectedAsyncChallengeLockedDeck
+			? GetSelectedAsyncChallengeDeckUnits()
+			: GetActiveDeckUnits();
+	}
+
+	public IReadOnlyList<SquadSynergyDefinition> GetActiveDeckSynergies()
+	{
+		return GetDeckSynergies(GetActiveDeckUnits());
+	}
+
+	public IReadOnlyList<SquadSynergyDefinition> GetSelectedAsyncChallengeDeckSynergies()
+	{
+		return GetDeckSynergies(GetSelectedAsyncChallengeDeckUnits());
+	}
+
+	public IReadOnlyList<SquadSynergyDefinition> GetBattleDeckSynergies()
+	{
+		return GetDeckSynergies(GetBattleDeckUnits());
+	}
+
+	public IReadOnlyList<SquadSynergyDefinition> GetDeckSynergies(IEnumerable<UnitDefinition> deckUnits)
+	{
+		return SquadSynergyCatalog.ResolveActive(deckUnits);
+	}
+
+	public string BuildActiveDeckSynergySummary()
+	{
+		return BuildDeckSynergySummary(GetActiveDeckUnits());
+	}
+
+	public string BuildSelectedAsyncChallengeDeckSynergySummary()
+	{
+		return BuildDeckSynergySummary(GetSelectedAsyncChallengeDeckUnits());
+	}
+
+	public string BuildBattleDeckSynergySummary()
+	{
+		return BuildDeckSynergySummary(GetBattleDeckUnits());
+	}
+
+	public string BuildDeckSynergySummary(IEnumerable<UnitDefinition> deckUnits)
+	{
+		var synergies = GetDeckSynergies(deckUnits);
+		if (synergies.Count == 0)
+		{
+			return "Active synergies: none. Pair two cards from the same squad role to unlock one.";
+		}
+
+		return "Active synergies:\n" + string.Join(
+			"\n",
+			synergies.Select(synergy => $"- {synergy.Title}: {synergy.Summary}"));
+	}
+
+	public string BuildActiveDeckSynergyInlineSummary()
+	{
+		return BuildDeckSynergyInlineSummary(GetActiveDeckUnits());
+	}
+
+	public string BuildSelectedAsyncChallengeDeckSynergyInlineSummary()
+	{
+		return BuildDeckSynergyInlineSummary(GetSelectedAsyncChallengeDeckUnits());
+	}
+
+	public string BuildBattleDeckSynergyInlineSummary()
+	{
+		return BuildDeckSynergyInlineSummary(GetBattleDeckUnits());
+	}
+
+	public string BuildDeckSynergyInlineSummary(IEnumerable<UnitDefinition> deckUnits)
+	{
+		var synergies = GetDeckSynergies(deckUnits);
+		return synergies.Count == 0
+			? "No deck synergy active"
+			: string.Join("  |  ", synergies.Select(synergy => synergy.Title));
 	}
 
 	public IReadOnlyList<UnitDefinition> GetUnlockedPlayerUnits()
@@ -524,6 +884,7 @@ public partial class GameState : Node
 			BaseUpgradeCatalog.HullPlatingId => 90 + (level * 70),
 			BaseUpgradeCatalog.PantryId => 80 + (level * 65),
 			BaseUpgradeCatalog.DispatchConsoleId => 95 + (level * 75),
+			BaseUpgradeCatalog.SignalRelayId => 100 + (level * 80),
 			_ => 100 + (level * 60)
 		};
 	}
@@ -581,14 +942,31 @@ public partial class GameState : Node
 		return Mathf.Max(1.5f, baseCooldown * GetPlayerDeployCooldownScale());
 	}
 
+	public float ApplyPlayerSignalJamDurationUpgrade(float baseDuration)
+	{
+		return Mathf.Max(1.8f, baseDuration * GetPlayerSignalJamDurationScale());
+	}
+
+	public float ApplyPlayerSignalJamCooldownPenaltyUpgrade(float basePenalty)
+	{
+		return Mathf.Max(0f, basePenalty * GetPlayerSignalJamCooldownPenaltyScale());
+	}
+
+	public float ApplyPlayerSignalJamCourageGainScaleUpgrade(float jamScale)
+	{
+		var clampedScale = Mathf.Clamp(jamScale, 0f, 1f);
+		var mitigation = GetPlayerSignalJamSuppressionMitigation();
+		return Mathf.Clamp(clampedScale + ((1f - clampedScale) * mitigation), 0f, 1f);
+	}
+
 	public UnitStats BuildPlayerUnitStats(UnitDefinition definition)
 	{
-		return BuildPlayerUnitStatsForLevel(definition, GetUnitLevel(definition.Id), 1f, 1f, 0f, 0);
+		return BuildPlayerUnitStatsForDeck(definition, GetActiveDeckUnits());
 	}
 
 	public UnitStats BuildPlayerUnitStatsAtLevel(UnitDefinition definition, int level)
 	{
-		return BuildPlayerUnitStatsForLevel(definition, level, 1f, 1f, 0f, 0);
+		return BuildPlayerUnitStatsAtLevelForDeck(definition, level, GetActiveDeckUnits());
 	}
 
 	public UnitStats BuildPlayerUnitStats(
@@ -598,9 +976,56 @@ public partial class GameState : Node
 		float bonusCooldownReduction,
 		int bonusBaseDamage)
 	{
-		return BuildPlayerUnitStatsForLevel(
+		return BuildPlayerUnitStatsForDeck(
+			definition,
+			GetActiveDeckUnits(),
+			bonusHealthScale,
+			bonusDamageScale,
+			bonusCooldownReduction,
+			bonusBaseDamage);
+	}
+
+	public UnitStats BuildPlayerUnitStatsForDeck(UnitDefinition definition, IEnumerable<UnitDefinition> deckUnits)
+	{
+		return BuildPlayerUnitStatsAtLevelForDeck(definition, GetUnitLevel(definition.Id), deckUnits);
+	}
+
+	public UnitStats BuildPlayerUnitStatsAtLevelForDeck(UnitDefinition definition, int level, IEnumerable<UnitDefinition> deckUnits)
+	{
+		return BuildPlayerUnitStatsAtLevelForDeck(definition, level, deckUnits, 1f, 1f, 0f, 0);
+	}
+
+	public UnitStats BuildPlayerUnitStatsForDeck(
+		UnitDefinition definition,
+		IEnumerable<UnitDefinition> deckUnits,
+		float bonusHealthScale,
+		float bonusDamageScale,
+		float bonusCooldownReduction,
+		int bonusBaseDamage)
+	{
+		return BuildPlayerUnitStatsAtLevelForDeck(
 			definition,
 			GetUnitLevel(definition.Id),
+			deckUnits,
+			bonusHealthScale,
+			bonusDamageScale,
+			bonusCooldownReduction,
+			bonusBaseDamage);
+	}
+
+	private UnitStats BuildPlayerUnitStatsAtLevelForDeck(
+		UnitDefinition definition,
+		int level,
+		IEnumerable<UnitDefinition> deckUnits,
+		float bonusHealthScale,
+		float bonusDamageScale,
+		float bonusCooldownReduction,
+		int bonusBaseDamage)
+	{
+		return BuildPlayerUnitStatsForLevel(
+			definition,
+			level,
+			deckUnits,
 			bonusHealthScale,
 			bonusDamageScale,
 			bonusCooldownReduction,
@@ -627,9 +1052,25 @@ public partial class GameState : Node
 		return Mathf.Max(0.55f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.06f));
 	}
 
+	public float GetPlayerSignalJamDurationScaleAtLevel(int level)
+	{
+		return Mathf.Max(0.5f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.1f));
+	}
+
+	public float GetPlayerSignalJamCooldownPenaltyScaleAtLevel(int level)
+	{
+		return Mathf.Max(0.35f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.13f));
+	}
+
+	public float GetPlayerSignalJamSuppressionMitigationAtLevel(int level)
+	{
+		return Mathf.Clamp(Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.12f, 0f, 0.6f);
+	}
+
 	private UnitStats BuildPlayerUnitStatsForLevel(
 		UnitDefinition definition,
 		int level,
+		IEnumerable<UnitDefinition> deckUnits,
 		float bonusHealthScale,
 		float bonusDamageScale,
 		float bonusCooldownReduction,
@@ -640,6 +1081,12 @@ public partial class GameState : Node
 		var damageScale = (1f + (bonusLevel * 0.1f)) * Math.Max(0.1f, bonusDamageScale);
 		var cooldownReduction = (bonusLevel * 0.03f) + Math.Max(0f, bonusCooldownReduction);
 		var baseDamageBonus = (bonusLevel * 2) + Math.Max(0, bonusBaseDamage);
+		var synergyBonus = ResolveDeckSynergyBonus(definition, deckUnits);
+
+		healthScale *= synergyBonus.HealthScale;
+		damageScale *= synergyBonus.DamageScale;
+		cooldownReduction += synergyBonus.CooldownReduction;
+		baseDamageBonus += synergyBonus.BaseDamageBonus;
 
 		return new UnitStats(
 			definition,
@@ -647,6 +1094,17 @@ public partial class GameState : Node
 			damageScale,
 			cooldownReduction,
 			baseDamageBonus);
+	}
+
+	private static SquadSynergyBonus ResolveDeckSynergyBonus(UnitDefinition definition, IEnumerable<UnitDefinition> deckUnits)
+	{
+		var resolvedDeck = deckUnits?
+			.Where(unit => unit != null)
+			.ToArray() ?? Array.Empty<UnitDefinition>();
+		var inDeck = resolvedDeck.Any(unit => unit.Id.Equals(definition.Id, StringComparison.OrdinalIgnoreCase));
+		return inDeck
+			? SquadSynergyCatalog.Aggregate(SquadSynergyCatalog.ResolveActive(resolvedDeck))
+			: SquadSynergyBonus.None;
 	}
 
 	public bool IsUnitInActiveDeck(string unitId)
@@ -845,6 +1303,21 @@ public partial class GameState : Node
 		return GetPlayerDeployCooldownScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId));
 	}
 
+	private float GetPlayerSignalJamDurationScale()
+	{
+		return GetPlayerSignalJamDurationScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId));
+	}
+
+	private float GetPlayerSignalJamCooldownPenaltyScale()
+	{
+		return GetPlayerSignalJamCooldownPenaltyScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId));
+	}
+
+	private float GetPlayerSignalJamSuppressionMitigation()
+	{
+		return GetPlayerSignalJamSuppressionMitigationAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId));
+	}
+
 	private void LoadOrInitialize()
 	{
 		if (SaveSystem.Instance != null && SaveSystem.Instance.TryLoad(out var saved))
@@ -872,9 +1345,13 @@ public partial class GameState : Node
 		LastResultMessage = DefaultReport;
 		ShowDevUi = DefaultShowDevUi;
 		ShowFpsCounter = DefaultShowFpsCounter;
+		AudioMuted = DefaultAudioMuted;
+		EffectsVolumePercent = DefaultEffectsVolumePercent;
+		AmbienceVolumePercent = DefaultAmbienceVolumePercent;
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
 		_ownedPlayerUnitIds.Clear();
 		foreach (var unitId in DefaultDeckUnitIds)
 		{
@@ -886,6 +1363,7 @@ public partial class GameState : Node
 		_baseUpgradeLevels.Clear();
 		_challengeBestScores.Clear();
 		_challengeHistory.Clear();
+		_pinnedChallengeCodes.Clear();
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
 		EndlessRuns = 0;
@@ -901,6 +1379,17 @@ public partial class GameState : Node
 		SelectedAsyncChallengeCode = saved.Version >= 9
 			? AsyncChallengeCatalog.NormalizeCode(saved.SelectedAsyncChallengeCode)
 			: DefaultAsyncChallengeCode;
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
+		if (saved.Version >= 13 && saved.SelectedAsyncChallengeLockedDeckUnitIds != null)
+		{
+			foreach (var unitId in saved.SelectedAsyncChallengeLockedDeckUnitIds)
+			{
+				if (!string.IsNullOrWhiteSpace(unitId))
+				{
+					_selectedAsyncChallengeLockedDeckUnitIds.Add(unitId.Trim());
+				}
+			}
+		}
 		SelectedEndlessRouteId = saved.Version >= 6
 			? NormalizeRouteId(saved.SelectedEndlessRouteId)
 			: DefaultEndlessRouteId;
@@ -920,6 +1409,19 @@ public partial class GameState : Node
 		{
 			ShowDevUi = DefaultShowDevUi;
 			ShowFpsCounter = DefaultShowFpsCounter;
+		}
+
+		if (saved.Version >= 11)
+		{
+			AudioMuted = saved.AudioMuted;
+			EffectsVolumePercent = saved.EffectsVolumePercent;
+			AmbienceVolumePercent = saved.AmbienceVolumePercent;
+		}
+		else
+		{
+			AudioMuted = DefaultAudioMuted;
+			EffectsVolumePercent = DefaultEffectsVolumePercent;
+			AmbienceVolumePercent = DefaultAmbienceVolumePercent;
 		}
 
 		_activeDeckUnitIds.Clear();
@@ -1035,6 +1537,18 @@ public partial class GameState : Node
 				_challengeHistory.Add(CloneChallengeHistoryRecord(entry));
 			}
 		}
+
+		_pinnedChallengeCodes.Clear();
+		if (saved.Version >= 12 && saved.PinnedChallengeCodes != null)
+		{
+			foreach (var code in saved.PinnedChallengeCodes)
+			{
+				if (!string.IsNullOrWhiteSpace(code))
+				{
+					_pinnedChallengeCodes.Add(code);
+				}
+			}
+		}
 	}
 
 	private void ClampState()
@@ -1074,6 +1588,8 @@ public partial class GameState : Node
 		NormalizeBaseUpgrades();
 		NormalizeChallengeScores();
 		NormalizeChallengeHistory();
+		NormalizePinnedChallenges();
+		NormalizeSelectedAsyncChallengeLockedDeck();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
 		SelectedAsyncChallengeCode = GetSelectedAsyncChallenge().Code;
@@ -1081,6 +1597,8 @@ public partial class GameState : Node
 		BestEndlessTimeSeconds = Math.Max(0f, BestEndlessTimeSeconds);
 		EndlessRuns = Math.Max(0, EndlessRuns);
 		ChallengeRuns = Math.Max(0, ChallengeRuns);
+		EffectsVolumePercent = Mathf.Clamp(EffectsVolumePercent, 0, 100);
+		AmbienceVolumePercent = Mathf.Clamp(AmbienceVolumePercent, 0, 100);
 	}
 
 	private void UnlockNextStageInternal(int clearedStage)
@@ -1106,11 +1624,15 @@ public partial class GameState : Node
 			HighestUnlockedStage = HighestUnlockedStage,
 			SelectedStage = SelectedStage,
 			SelectedAsyncChallengeCode = SelectedAsyncChallengeCode,
+			SelectedAsyncChallengeLockedDeckUnitIds = _selectedAsyncChallengeLockedDeckUnitIds.ToArray(),
 			SelectedEndlessRouteId = SelectedEndlessRouteId,
 			SelectedEndlessBoonId = SelectedEndlessBoonId,
 			LastResultMessage = LastResultMessage,
 			ShowDevUi = ShowDevUi,
 			ShowFpsCounter = ShowFpsCounter,
+			AudioMuted = AudioMuted,
+			EffectsVolumePercent = EffectsVolumePercent,
+			AmbienceVolumePercent = AmbienceVolumePercent,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
@@ -1123,7 +1645,8 @@ public partial class GameState : Node
 			ChallengeRuns = ChallengeRuns,
 			ChallengeHistory = _challengeHistory
 				.Select(CloneChallengeHistoryRecord)
-				.ToList()
+				.ToList(),
+			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray()
 		};
 	}
 
@@ -1307,6 +1830,7 @@ public partial class GameState : Node
 	private void NormalizeChallengeHistory()
 	{
 		_challengeHistory.RemoveAll(entry => entry == null);
+		var validUnitIds = new HashSet<string>(GameData.PlayerRosterIds, StringComparer.OrdinalIgnoreCase);
 		for (var i = 0; i < _challengeHistory.Count; i++)
 		{
 			var entry = _challengeHistory[i];
@@ -1317,7 +1841,23 @@ public partial class GameState : Node
 			entry.ElapsedSeconds = Math.Max(0f, entry.ElapsedSeconds);
 			entry.EnemyDefeats = Math.Max(0, entry.EnemyDefeats);
 			entry.StarsEarned = Mathf.Clamp(entry.StarsEarned, 0, 3);
+			entry.CompletionBonus = Math.Max(0, entry.CompletionBonus);
+			entry.StarBonus = Math.Max(0, entry.StarBonus);
+			entry.KillBonus = Math.Max(0, entry.KillBonus);
+			entry.HullBonus = Math.Max(0, entry.HullBonus);
+			entry.TimeBonus = Math.Max(0, entry.TimeBonus);
+			entry.DeployPenalty = Math.Max(0, entry.DeployPenalty);
+			entry.RawScore = Math.Max(0, entry.RawScore);
+			entry.ScoreMultiplier = entry.ScoreMultiplier > 0f ? entry.ScoreMultiplier : 1f;
+			if (entry.RawScore == 0 && entry.Score > 0)
+			{
+				entry.RawScore = entry.Score;
+			}
+			entry.PlayerDeployments = Math.Max(0, entry.PlayerDeployments);
+			entry.BusHullRatio = Mathf.Clamp(entry.BusHullRatio, 0f, 1f);
 			entry.PlayedAtUnixSeconds = Math.Max(0L, entry.PlayedAtUnixSeconds);
+			entry.DeckUnitIds = NormalizeChallengeDeckUnitIds(entry.DeckUnitIds, validUnitIds);
+			entry.Deployments = NormalizeChallengeDeployments(entry.Deployments, validUnitIds);
 		}
 
 		_challengeHistory.Sort((left, right) =>
@@ -1330,6 +1870,61 @@ public partial class GameState : Node
 		if (_challengeHistory.Count > maxEntries)
 		{
 			_challengeHistory.RemoveRange(maxEntries, _challengeHistory.Count - maxEntries);
+		}
+	}
+
+	private void NormalizePinnedChallenges()
+	{
+		var normalized = new List<string>();
+		var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+		foreach (var code in _pinnedChallengeCodes)
+		{
+			var normalizedCode = NormalizePinnedChallengeCode(code);
+			if (string.IsNullOrWhiteSpace(normalizedCode) || !seen.Add(normalizedCode))
+			{
+				continue;
+			}
+
+			normalized.Add(normalizedCode);
+			if (normalized.Count >= MaxPinnedChallenges)
+			{
+				break;
+			}
+		}
+
+		_pinnedChallengeCodes.Clear();
+		_pinnedChallengeCodes.AddRange(normalized);
+	}
+
+	private void NormalizeSelectedAsyncChallengeLockedDeck()
+	{
+		var validIds = new HashSet<string>(GameData.PlayerRosterIds, StringComparer.OrdinalIgnoreCase);
+		var normalized = new List<string>();
+
+		foreach (var unitId in _selectedAsyncChallengeLockedDeckUnitIds)
+		{
+			if (string.IsNullOrWhiteSpace(unitId) || !validIds.Contains(unitId))
+			{
+				continue;
+			}
+
+			if (normalized.Contains(unitId, StringComparer.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			normalized.Add(unitId);
+			if (normalized.Count >= MaxDeckSize)
+			{
+				break;
+			}
+		}
+
+		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
+		if (normalized.Count == MaxDeckSize)
+		{
+			_selectedAsyncChallengeLockedDeckUnitIds.AddRange(normalized);
 		}
 	}
 
@@ -1346,8 +1941,182 @@ public partial class GameState : Node
 			ElapsedSeconds = Math.Max(0f, record.ElapsedSeconds),
 			EnemyDefeats = Math.Max(0, record.EnemyDefeats),
 			StarsEarned = Mathf.Clamp(record.StarsEarned, 0, 3),
+			CompletionBonus = Math.Max(0, record.CompletionBonus),
+			StarBonus = Math.Max(0, record.StarBonus),
+			KillBonus = Math.Max(0, record.KillBonus),
+			HullBonus = Math.Max(0, record.HullBonus),
+			TimeBonus = Math.Max(0, record.TimeBonus),
+			DeployPenalty = Math.Max(0, record.DeployPenalty),
+			RawScore = Math.Max(0, record.RawScore),
+			ScoreMultiplier = record.ScoreMultiplier > 0f ? record.ScoreMultiplier : 1f,
+			UsedLockedDeck = record.UsedLockedDeck,
+			DeckUnitIds = record.DeckUnitIds?.ToArray() ?? [],
+			PlayerDeployments = Math.Max(0, record.PlayerDeployments),
+			BusHullRatio = Mathf.Clamp(record.BusHullRatio, 0f, 1f),
+			Deployments = record.Deployments?
+				.Select(CloneChallengeDeploymentRecord)
+				.ToList() ?? [],
 			PlayedAtUnixSeconds = Math.Max(0L, record.PlayedAtUnixSeconds)
 		};
+	}
+
+	private static ChallengeDeploymentRecord CloneChallengeDeploymentRecord(ChallengeDeploymentRecord record)
+	{
+		return new ChallengeDeploymentRecord
+		{
+			UnitId = record?.UnitId ?? "",
+			TimeSeconds = Math.Max(0f, record?.TimeSeconds ?? 0f),
+			LanePercent = Mathf.Clamp(record?.LanePercent ?? 0, 0, 100)
+		};
+	}
+
+	private static bool IsBetterChallengeGhostCandidate(ChallengeRunRecord candidate, ChallengeRunRecord current)
+	{
+		if (candidate == null)
+		{
+			return false;
+		}
+
+		if (current == null)
+		{
+			return true;
+		}
+
+		var candidateOutcome = candidate.Won ? 2 : candidate.Retreated ? 0 : 1;
+		var currentOutcome = current.Won ? 2 : current.Retreated ? 0 : 1;
+		if (candidateOutcome != currentOutcome)
+		{
+			return candidateOutcome > currentOutcome;
+		}
+
+		if (candidate.Score != current.Score)
+		{
+			return candidate.Score > current.Score;
+		}
+
+		if (candidate.StarsEarned != current.StarsEarned)
+		{
+			return candidate.StarsEarned > current.StarsEarned;
+		}
+
+		if (!Mathf.IsEqualApprox(candidate.BusHullRatio, current.BusHullRatio))
+		{
+			return candidate.BusHullRatio > current.BusHullRatio;
+		}
+
+		return candidate.PlayedAtUnixSeconds > current.PlayedAtUnixSeconds;
+	}
+
+	private static AsyncChallengeScoreBreakdown BuildChallengeRunScoreBreakdown(ChallengeRunRecord record)
+	{
+		var completionBonus = Math.Max(0, record?.CompletionBonus ?? 0);
+		var starBonus = Math.Max(0, record?.StarBonus ?? 0);
+		var killBonus = Math.Max(0, record?.KillBonus ?? 0);
+		var hullBonus = Math.Max(0, record?.HullBonus ?? 0);
+		var timeBonus = Math.Max(0, record?.TimeBonus ?? 0);
+		var deployPenalty = Math.Max(0, record?.DeployPenalty ?? 0);
+		var multiplier = record != null && record.ScoreMultiplier > 0f ? record.ScoreMultiplier : 1f;
+		var rawScore = Math.Max(0, record?.RawScore ?? 0);
+		if (rawScore == 0)
+		{
+			rawScore = Math.Max(0, completionBonus + starBonus + killBonus + hullBonus + timeBonus - deployPenalty);
+		}
+
+		if (rawScore == 0)
+		{
+			rawScore = Math.Max(0, record?.Score ?? 0);
+		}
+
+		var finalScore = Math.Max(0, record?.Score ?? 0);
+		if (finalScore == 0 && rawScore > 0)
+		{
+			finalScore = Mathf.Max(0, Mathf.RoundToInt(rawScore * multiplier));
+		}
+
+		return new AsyncChallengeScoreBreakdown(
+			completionBonus,
+			starBonus,
+			killBonus,
+			hullBonus,
+			timeBonus,
+			deployPenalty,
+			rawScore,
+			multiplier,
+			finalScore);
+	}
+
+	private static string[] NormalizeChallengeDeckUnitIds(IEnumerable<string> deckUnitIds, HashSet<string> validUnitIds)
+	{
+		if (deckUnitIds == null)
+		{
+			return [];
+		}
+
+		var normalized = new List<string>();
+		foreach (var unitId in deckUnitIds)
+		{
+			if (string.IsNullOrWhiteSpace(unitId) || !validUnitIds.Contains(unitId))
+			{
+				continue;
+			}
+
+			if (normalized.Contains(unitId, StringComparer.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			normalized.Add(unitId);
+			if (normalized.Count >= MaxDeckSize)
+			{
+				break;
+			}
+		}
+
+		return normalized.ToArray();
+	}
+
+	private static List<ChallengeDeploymentRecord> NormalizeChallengeDeployments(
+		IEnumerable<ChallengeDeploymentRecord> deployments,
+		HashSet<string> validUnitIds)
+	{
+		if (deployments == null)
+		{
+			return [];
+		}
+
+		var normalized = new List<ChallengeDeploymentRecord>();
+		foreach (var deployment in deployments)
+		{
+			if (deployment == null ||
+				string.IsNullOrWhiteSpace(deployment.UnitId) ||
+				!validUnitIds.Contains(deployment.UnitId))
+			{
+				continue;
+			}
+
+			normalized.Add(new ChallengeDeploymentRecord
+			{
+				UnitId = deployment.UnitId,
+				TimeSeconds = Math.Max(0f, deployment.TimeSeconds),
+				LanePercent = Mathf.Clamp(deployment.LanePercent, 0, 100)
+			});
+		}
+
+		normalized.Sort((left, right) => left.TimeSeconds.CompareTo(right.TimeSeconds));
+		return normalized;
+	}
+
+	private string NormalizePinnedChallengeCode(string code)
+	{
+		if (!AsyncChallengeCatalog.TryParse(code, out var challenge, out _))
+		{
+			return string.Empty;
+		}
+
+		return AsyncChallengeCatalog.Create(
+			Mathf.Clamp(challenge.Stage, 1, MaxStage),
+			challenge.MutatorId,
+			challenge.Seed).Code;
 	}
 
 	private IReadOnlyList<UnitDefinition> GetNewlyAvailablePlayerUnits(int previousHighestUnlockedStage)

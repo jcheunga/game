@@ -3,6 +3,8 @@ using Godot;
 
 public partial class MainMenu : Control
 {
+    private Label _summaryLabel = null!;
+
     public override void _Ready()
     {
         BuildUi();
@@ -52,13 +54,13 @@ public partial class MainMenu : Control
         };
         stack.AddChild(subtitle);
 
-        var summaryLabel = new Label
+        _summaryLabel = new Label
         {
             Text = BuildProgressSummary(),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             CustomMinimumSize = new Vector2(0f, 120f)
         };
-        stack.AddChild(summaryLabel);
+        stack.AddChild(_summaryLabel);
 
         var startButton = BuildButton(GameState.Instance.HighestUnlockedStage > 1 ? "Resume Campaign" : "Start Campaign");
         startButton.Pressed += () => SceneRouter.Instance.GoToMap();
@@ -75,6 +77,10 @@ public partial class MainMenu : Control
         var multiplayerButton = BuildButton("Multiplayer Challenge");
         multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
         stack.AddChild(multiplayerButton);
+
+        var settingsButton = BuildButton("Settings");
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        stack.AddChild(settingsButton);
 
         var resetButton = BuildButton("Reset Progress");
         resetButton.Pressed += () =>
@@ -112,6 +118,7 @@ public partial class MainMenu : Control
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
         var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
         var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
+        var relayLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId);
         var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextExploreStage, out _)
             ? $"Next exploration: Stage {nextExploreStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextExploreStage.StageNumber)} food"
             : "Route exploration complete";
@@ -131,11 +138,12 @@ public partial class MainMenu : Control
             "Convoy status:\n" +
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
             $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Relay {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
             $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"{nextExploreLine}\n" +
-            $"Active squad: {squadLine}";
+            $"Active squad: {squadLine}\n" +
+            $"Deck synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
     }
 }

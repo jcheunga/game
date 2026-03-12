@@ -11,6 +11,7 @@ public sealed class StageBattleResult
     public int PlayerDeployments { get; init; }
     public int EnemyDefeats { get; init; }
     public int PlayerHazardHits { get; init; }
+    public float PlayerSignalJamSeconds { get; init; }
 }
 
 public sealed class StageObjectiveOutcome
@@ -166,6 +167,7 @@ public static class StageObjectives
             "deploy_limit" => result.PlayerDeployments <= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),
             "enemy_defeats" => result.EnemyDefeats >= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),
             "hazard_hits_limit" => result.PlayerHazardHits <= Mathf.RoundToInt(Mathf.Max(0f, objective.Value)),
+            "signal_jam_limit" => result.PlayerSignalJamSeconds <= Mathf.Max(0f, objective.Value),
             _ => false
         };
     }
@@ -186,6 +188,7 @@ public static class StageObjectives
             "deploy_limit" => $"Deploy no more than {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} units",
             "enemy_defeats" => $"Defeat at least {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} enemies",
             "hazard_hits_limit" => $"Take no more than {Mathf.RoundToInt(Mathf.Max(0f, objective.Value))} hazard hits",
+            "signal_jam_limit" => $"Spend no more than {Mathf.Max(0f, objective.Value):0.#}s under signal jam",
             _ => objective.Type
         };
     }
@@ -210,6 +213,7 @@ public static class StageObjectives
             "deploy_limit" => BuildDeployLimitLiveStatus(objective, result, label),
             "enemy_defeats" => BuildEnemyDefeatLiveStatus(objective, result, label),
             "hazard_hits_limit" => BuildHazardHitLiveStatus(objective, result, label),
+            "signal_jam_limit" => BuildSignalJamLiveStatus(objective, result, label),
             _ => new StageObjectiveLiveStatus
             {
                 Label = label,
@@ -332,6 +336,24 @@ public static class StageObjectives
         {
             Label = label,
             Detail = $"{result.PlayerHazardHits}/{limit} hazard hits",
+            State = state
+        };
+    }
+
+    private static StageObjectiveLiveStatus BuildSignalJamLiveStatus(
+        StageObjectiveDefinition objective,
+        StageBattleResult result,
+        string label)
+    {
+        var limit = Mathf.Max(0f, objective.Value);
+        var state = result.PlayerSignalJamSeconds <= limit
+            ? StageObjectiveLiveState.Active
+            : StageObjectiveLiveState.Failed;
+
+        return new StageObjectiveLiveStatus
+        {
+            Label = label,
+            Detail = $"{result.PlayerSignalJamSeconds:0.0}s / {limit:0.0}s jammed",
             State = state
         };
     }

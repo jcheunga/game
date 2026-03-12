@@ -246,6 +246,14 @@ public partial class ShopMenu : Control
         multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
         bottomRow.AddChild(multiplayerButton);
 
+        var settingsButton = new Button
+        {
+            Text = "Settings",
+            CustomMinimumSize = new Vector2(140f, 0f)
+        };
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        bottomRow.AddChild(settingsButton);
+
         bottomRow.AddChild(new Control
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -283,7 +291,8 @@ public partial class ShopMenu : Control
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
             $"Bus hull level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Pantry level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Dispatch level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
+            $"Dispatch level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Relay level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
             "- Gold buys units, unit levels, and bus upgrades.\n" +
             "- Food pays for stage entry and map exploration.\n\n" +
@@ -395,7 +404,11 @@ public partial class ShopMenu : Control
         var counts = BuildStageEnemyCounts(stage);
         var runnerCount = counts.TryGetValue(GameData.EnemyRunnerId, out var runnerValue) ? runnerValue : 0;
         var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurValue) ? saboteurValue : 0;
+        var howlerCount = counts.TryGetValue(GameData.EnemyHowlerId, out var howlerValue) ? howlerValue : 0;
+        var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammerValue) ? jammerValue : 0;
         var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitterValue) ? spitterValue : 0;
+        var splitterCount = counts.TryGetValue(GameData.EnemySplitterId, out var splitterValue) ? splitterValue : 0;
+        var walkerCount = counts.TryGetValue(GameData.EnemyWalkerId, out var walkerValue) ? walkerValue : 0;
         var busSensitiveObjective = stage.Objectives.Any(objective =>
             objective != null &&
             objective.Type.Equals("bus_hull_ratio", StringComparison.OrdinalIgnoreCase));
@@ -447,6 +460,65 @@ public partial class ShopMenu : Control
                 GameData.PlayerRangerId,
                 "Add mobile ranged support",
                 "Ranger gives the convoy another projectile unit for stages that stack spitters and mixed backline pressure.");
+        }
+
+        if (howlerCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerMarksmanId,
+                "Delete support howlers early",
+                $"Stage {stage.StageNumber} includes {howlerCount} howler contacts that buff nearby infected speed and damage. Marksman helps remove them before the lane spikes.");
+
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerRangerId,
+                "Pressure the howl lane",
+                "Ranger gives the convoy a second fast ranged answer when support infected sit behind heavier bodies.");
+        }
+
+        if (howlerCount > 0 ||
+            jammerCount > 0 ||
+            (spitterCount >= 3 && heavyCount >= 2) ||
+            stage.MapId.Equals(RouteCatalog.QuarantineId, StringComparison.OrdinalIgnoreCase))
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerCoordinatorId,
+                "Force-multiply the convoy",
+                stage.MapId.Equals(RouteCatalog.QuarantineId, StringComparison.OrdinalIgnoreCase)
+                    ? "Quarantine stages pile ranged support and breach dives into the same lane. Coordinator buffs nearby allies so the convoy trades better through long late-game pushes."
+                    : "Coordinator adds a live attack/speed aura, which helps the whole lane keep up once support infected and heavy bodies start stacking together.");
+        }
+
+        if (jammerCount > 0)
+        {
+            TryAddBaseRecommendation(
+                recommendations,
+                seen,
+                BaseUpgradeCatalog.SignalRelayId,
+                "Harden convoy comms",
+                $"Stage {stage.StageNumber} includes {jammerCount} jammer contacts that stall courage flow and drag card recovery. Signal Relay cuts jam uptime and blunts the suppression window.");
+
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerMarksmanId,
+                "Remove jammers early",
+                "Marksman helps pick off jammer supports before they chain signal disruption into the next surge.");
+        }
+
+        if (splitterCount >= 2 || walkerCount >= 8 || (howlerCount > 0 && splitterCount > 0))
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerGrenadierId,
+                "Break clustered waves",
+                $"Stage {stage.StageNumber} stacks grouped contacts and support bodies. Grenadier splash helps clear splitter packs and buffed crowds before they snowball.");
         }
 
         if (heavyCount > 0)
@@ -756,11 +828,15 @@ public partial class ShopMenu : Control
             return "No units in the active deck.";
         }
 
-        var lines = $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}";
+        var lines =
+            $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
+            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
         for (var i = 0; i < deckUnits.Count; i++)
         {
             var unit = deckUnits[i];
-            lines += $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}";
+            lines +=
+                $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}" +
+                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}";
         }
 
         return lines;
@@ -773,7 +849,7 @@ public partial class ShopMenu : Control
         var summary =
             $"HP {Mathf.RoundToInt(currentStats.MaxHealth)}  |  ATK {currentStats.AttackDamage:0.#}  |  Range {currentStats.AttackRange:0.#}\n" +
             $"Deploy CD {effectiveDeployCooldown:0.#}s  |  Base {currentStats.BaseDamage}" +
-            (currentStats.BusRepairAmount > 0.05f ? $"  |  Repair {currentStats.BusRepairAmount:0.#}" : "");
+            UnitStatText.BuildInlineTraits(currentStats);
 
         if (!owned)
         {
@@ -791,9 +867,13 @@ public partial class ShopMenu : Control
             $"HP +{Mathf.RoundToInt(nextStats.MaxHealth - currentStats.MaxHealth)}  |  " +
             $"ATK +{(nextStats.AttackDamage - currentStats.AttackDamage):0.#}  |  " +
             $"Base +{nextStats.BaseDamage - currentStats.BaseDamage}" +
+            (currentStats.AttackSplashRadius > 0.05f || nextStats.AttackSplashRadius > 0.05f
+                ? $"  |  Splash {nextStats.AttackSplashRadius:0.#}"
+                : "") +
             (currentStats.BusRepairAmount > 0.05f || nextStats.BusRepairAmount > 0.05f
                 ? $"  |  Repair +{(nextStats.BusRepairAmount - currentStats.BusRepairAmount):0.#}"
-                : "");
+                : "") +
+            (UnitStatText.HasAura(nextStats) ? $"  |  {UnitStatText.BuildAuraSummary(nextStats)}" : "");
         return summary;
     }
 
@@ -808,6 +888,10 @@ public partial class ShopMenu : Control
                 $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerCourageGainScaleAtLevel(level) - 1f) * 100f)}% gain",
             BaseUpgradeCatalog.DispatchConsoleId =>
                 $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% deploy recovery",
+            BaseUpgradeCatalog.SignalRelayId =>
+                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamDurationScaleAtLevel(level)) * 100f)}% jam time  |  " +
+                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamCooldownPenaltyScaleAtLevel(level)) * 100f)}% jam cooldown hit  |  " +
+                $"+{Mathf.RoundToInt(GameState.Instance.GetPlayerSignalJamSuppressionMitigationAtLevel(level) * 100f)}% jam resist",
             _ => upgrade.Summary
         };
     }
@@ -869,7 +953,9 @@ public partial class ShopMenu : Control
 
         stack.AddChild(new Label
         {
-            Text = $"{unit.DisplayName}  |  Deploy {unit.Cost} courage"
+            Text =
+                $"{unit.DisplayName}  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}  |  " +
+                $"Deploy {unit.Cost} courage"
         });
 
         stack.AddChild(new Label
@@ -887,7 +973,8 @@ public partial class ShopMenu : Control
         stack.AddChild(new Label
         {
             Text =
-                $"Move {stats.Speed:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s  |  Effective deploy {effectiveDeployCooldown:0.#}s",
+                $"Move {stats.Speed:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s  |  Effective deploy {effectiveDeployCooldown:0.#}s" +
+                UnitStatText.BuildInlineTraits(stats),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

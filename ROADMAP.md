@@ -189,19 +189,45 @@ This sprint should stay narrow and practical:
 - added route-specific contact success tradeoffs so securing relay/cache/safehouse events now shifts the rest of the segment instead of being pure upside
 - added route-specific hostile response packs so active relay/cache/safehouse contacts now draw their own reinforcements during the segment
 - added one-time midpoint convoy assists so each active relay/cache/safehouse contact now has a player-side swing event during the segment too
+- added explicit endless boss checkpoints every 15 waves so survival now builds toward route-specific warlord surges with dedicated escort packs, HUD intel, and extra clear rewards
 - replaced the prototype scrap/fuel layer with a persistent gold/food economy, including stage entry costs and exploration costs
 - added owned-unit purchasing, persistent unit leveling, and bus/base upgrades powered by gold
 - added a dedicated convoy shop screen so purchases, upgrades, deck edits, and route intel are no longer mixed into the map view
 - expanded the bus upgrade track with a deploy-cooldown `Dispatch Console` upgrade and surfaced upgrade previews in the shop
+- expanded the bus upgrade track again with an anti-jam `Signal Relay` upgrade that shortens jammer windows and softens their courage/cooldown disruption
 - added a shop-side action board that recommends direct purchases and upgrades based on the selected stage threat mix
+- added squad-role deck synergies so pairing cards by role now changes deployed unit stats and gives the loadout/shop layer a stronger deck-building decision
 - added the first multiplayer slice as an async challenge mode with shareable codes, seeded encounters, personal-best score tracking, and a dedicated prep screen
 - added persistent async challenge history so multiplayer prep now shows recent local attempts for the current code and recent queue activity
+- added a rotating featured challenge queue plus pinned rematch boards so the async multiplayer screen now has recurring boards and saved rivalry codes instead of only ad-hoc code entry
+- upgraded featured async challenge boards with deterministic locked-squad runs so some daily multiplayer boards now compare execution on the exact same 3-card convoy instead of only the same seed
+- added async challenge score transparency so multiplayer prep now explains the formula up front and battle results show the full post-run point breakdown instead of only the final score
+- added async medal target tiers so challenge prep, featured boards, pinned rematches, and result screens now show deterministic bronze/silver/gold/ace score ladders for the same seeded board
+- added async run tapes so local challenge history now stores deck context plus deployment timing/lane logs for the selected board instead of only score lines
+- upgraded async run tapes again so saved local challenge history now preserves the underlying score split, not only the final score and deployment log
+- added async challenge ghost benchmarks so multiplayer prep can arm the best saved local run for a board and battle can replay its deployment timing/lane drops as a live benchmark overlay
+- upgraded async ghosts with live split feedback and result-screen deltas so the benchmark now teaches timing/route discipline instead of only replaying markers
+- added a `Blackout Relay` async mutator so challenge boards can pulse scripted signal blackouts and test convoy timing under jammer-style pressure instead of only raw stat modifiers
+- added a LAN race room flow with host/join, shared board sync, launch control, and room scoreboard submission on top of the async challenge system
 - expanded the player roster again with a `Mechanic` support unit that can repair the bus and is surfaced through the shop recommendation board
 - expanded the campaign with a third `Foundry Line` district, including four new scripted stages and endless-route support
+- expanded the campaign again with a fourth `Quarantine Wall` district, including four new scripted stages, new checkpoint/decon/lab/blacksite battle palettes, and endless-route support for ranged-support/saboteur-heavy pressure
 - added a late-game `Breacher` unit that specializes in higher barricade/base damage for reinforced stages
 - added a `Saboteur` enemy archetype that dives the bus/objective path and is now seeded into Foundry stages and endless Foundry pressure
 - added stage-authored battlefield hazards with telegraph rings, timed pulses, loadout intel, and Foundry-specific heat/rail/furnace encounters
 - added a new hazard-hit mission objective type so Foundry stars can reward actually navigating battlefield hazards cleanly
+- added a `Howler` support enemy with a live ally buff aura, plus Harbor/Foundry/endless seeding so late-game waves now mix in support-priority targets instead of only raw frontline pressure
+- added a `Jammer` support enemy that can suppress courage gain and spike card recovery, plus late Quarantine/endless seeding so enemy pressure now attacks convoy tempo as well as hull
+- added a `signal_jam_limit` mission objective type and seeded it into jammer-heavy Quarantine stages so support disruption now matters to star play too
+- upgraded shared encounter intel so map/loadout/multiplayer briefings now call out support pressure like howlers, jammers, saboteurs, and spitters instead of only raw threat totals
+- carried those support-pressure tags into campaign node tooltips and live next-wave battle intel so the player keeps the same read after deployment
+- added live battle support-pressure telemetry so active howlers, jammers, saboteurs, spitters, bosses, and signal-jam windows stay visible while the fight is running
+- upgraded the `Overlord` boss from a large stat block into a real rally-command encounter that buffs nearby infected and spawns escort bodies during boss stages
+- expanded the player roster again with a `Grenadier` splash-damage card and the shared AoE attack support needed to counter clustered Harbor/Foundry waves
+- expanded the player roster again with a late-game `Coordinator` support card that uses a live ally aura to boost nearby convoy units against support-heavy Quarantine and late-route waves
+- started the audio pass with a shared procedural audio layer for UI interactions, scene ambience pulses, deploys, impacts, hazard warnings, base hits, and win/loss stingers
+- added persistent audio settings on the main menu so SFX level, ambience level, and mute state survive saves instead of resetting every boot
+- moved audio/interface controls into a shared settings screen so campaign, shop, loadout, endless, and multiplayer prep all expose the same persistent options flow
 
 ## Recommended Build Order After This Commit
 

@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 public enum Team
@@ -21,6 +22,7 @@ public sealed class UnitStats
         AttackDamage = definition.AttackDamage * damageScale;
         AttackRange = definition.AttackRange;
         AttackCooldown = Mathf.Max(0.45f, definition.AttackCooldown - cooldownReduction);
+        AttackSplashRadius = definition.AttackSplashRadius;
         UsesProjectile = definition.UsesProjectile;
         ProjectileSpeed = definition.ProjectileSpeed;
         AggroRangeX = Mathf.Max(AttackRange, definition.AggroRangeX);
@@ -28,6 +30,19 @@ public sealed class UnitStats
         BaseDamage = definition.BaseDamage + baseDamageBonus;
         BusRepairAmount = definition.BusRepairAmount * Mathf.Lerp(1f, damageScale, 0.8f);
         DamageTakenScale = definition.DamageTakenScale;
+        AuraRadius = definition.AuraRadius;
+        AuraAttackDamageScale = definition.AuraAttackDamageScale;
+        AuraSpeedScale = definition.AuraSpeedScale;
+        SpecialAbilityId = definition.SpecialAbilityId ?? "";
+        SpecialCooldown = definition.SpecialCooldown;
+        SpecialCourageGainScale = definition.SpecialCourageGainScale;
+        SpecialDeployCooldownPenalty = definition.SpecialDeployCooldownPenalty;
+        SpecialSpawnUnitId = definition.SpecialSpawnUnitId ?? "";
+        SpecialSpawnCount = definition.SpecialSpawnCount;
+        SpecialBuffRadius = definition.SpecialBuffRadius;
+        SpecialBuffDuration = definition.SpecialBuffDuration;
+        SpecialBuffAttackDamageScale = definition.SpecialBuffAttackDamageScale;
+        SpecialBuffSpeedScale = definition.SpecialBuffSpeedScale;
         DeathBurstDamage = definition.DeathBurstDamage;
         DeathBurstRadius = definition.DeathBurstRadius;
         SpawnOnDeathUnitId = definition.SpawnOnDeathUnitId;
@@ -44,6 +59,7 @@ public sealed class UnitStats
     public float AttackDamage { get; }
     public float AttackRange { get; }
     public float AttackCooldown { get; }
+    public float AttackSplashRadius { get; }
     public bool UsesProjectile { get; }
     public float ProjectileSpeed { get; }
     public float AggroRangeX { get; }
@@ -51,6 +67,19 @@ public sealed class UnitStats
     public int BaseDamage { get; }
     public float BusRepairAmount { get; }
     public float DamageTakenScale { get; }
+    public float AuraRadius { get; }
+    public float AuraAttackDamageScale { get; }
+    public float AuraSpeedScale { get; }
+    public string SpecialAbilityId { get; }
+    public float SpecialCooldown { get; }
+    public float SpecialCourageGainScale { get; }
+    public float SpecialDeployCooldownPenalty { get; }
+    public string SpecialSpawnUnitId { get; }
+    public int SpecialSpawnCount { get; }
+    public float SpecialBuffRadius { get; }
+    public float SpecialBuffDuration { get; }
+    public float SpecialBuffAttackDamageScale { get; }
+    public float SpecialBuffSpeedScale { get; }
     public float DeathBurstDamage { get; }
     public float DeathBurstRadius { get; }
     public string SpawnOnDeathUnitId { get; }
@@ -70,6 +99,16 @@ public sealed class UnitStats
         if (definition.DeathBurstDamage > 0f)
         {
             return "bloater";
+        }
+
+        if (definition.AuraRadius > 0f || definition.DisplayName.Contains("Howler"))
+        {
+            return "howler";
+        }
+
+        if (string.Equals(definition.SpecialAbilityId, "jam_signal", StringComparison.OrdinalIgnoreCase))
+        {
+            return "jammer";
         }
 
         if (definition.SpawnOnDeathCount > 0)
@@ -144,6 +183,8 @@ public sealed class UnitStats
             "brute" => 1.18f,
             "bloater" => 1.22f,
             "saboteur" => 0.92f,
+            "howler" => 1.04f,
+            "jammer" => 0.98f,
             "shield" => 1.08f,
             "sniper" => 0.94f,
             "runner" => 0.92f,
@@ -162,6 +203,7 @@ public partial class Unit : Node2D
     public float AttackDamage { get; private set; }
     public float AttackRange { get; private set; }
     public float AttackCooldown { get; private set; }
+    public float AttackSplashRadius { get; private set; }
     public bool UsesProjectile { get; private set; }
     public float ProjectileSpeed { get; private set; }
     public float AggroRangeX { get; private set; }
@@ -169,6 +211,19 @@ public partial class Unit : Node2D
     public int BaseDamage { get; private set; }
     public float BusRepairAmount { get; private set; }
     public float DamageTakenScale { get; private set; } = 1f;
+    public float AuraRadius { get; private set; }
+    public float AuraAttackDamageScale { get; private set; } = 1f;
+    public float AuraSpeedScale { get; private set; } = 1f;
+    public string SpecialAbilityId { get; private set; } = "";
+    public float SpecialCooldown { get; private set; }
+    public float SpecialCourageGainScale { get; private set; } = 1f;
+    public float SpecialDeployCooldownPenalty { get; private set; }
+    public string SpecialSpawnUnitId { get; private set; } = "";
+    public int SpecialSpawnCount { get; private set; }
+    public float SpecialBuffRadius { get; private set; }
+    public float SpecialBuffDuration { get; private set; }
+    public float SpecialBuffAttackDamageScale { get; private set; } = 1f;
+    public float SpecialBuffSpeedScale { get; private set; } = 1f;
     public float DeathBurstDamage { get; private set; }
     public float DeathBurstRadius { get; private set; }
     public string SpawnOnDeathUnitId { get; private set; } = "";
@@ -177,13 +232,24 @@ public partial class Unit : Node2D
     public float VisualScale { get; private set; } = 1f;
     public float Radius { get; private set; } = 16f;
     public Color Tint => _bodyColor;
+    public float CurrentAttackDamage => AttackDamage * _currentAttackDamageScale;
+    public bool ProvidesAura => AuraRadius > 0f && (AuraAttackDamageScale > 1.01f || AuraSpeedScale > 1.01f);
+    public bool HasSpecialAbility => !string.IsNullOrWhiteSpace(SpecialAbilityId) && SpecialCooldown > 0.05f;
 
     public bool IsDead => Health <= 0f;
 
     private float _attackTimer;
+    private float _specialTimer;
     private float _hitFlashTimer;
     private float _attackFlashTimer;
+    private float _auraFlashTimer;
     private float _idleTimer;
+    private float _currentAttackDamageScale = 1f;
+    private float _currentSpeedScale = 1f;
+    private float _temporaryCombatBuffTimer;
+    private float _temporaryAttackDamageScale = 1f;
+    private float _temporarySpeedScale = 1f;
+    private bool _hasAuraBuff;
     private Color _bodyColor = Colors.White;
 
     public void Setup(Team team, UnitStats stats, Vector2 startPosition)
@@ -196,6 +262,7 @@ public partial class Unit : Node2D
         AttackDamage = stats.AttackDamage;
         AttackRange = stats.AttackRange;
         AttackCooldown = stats.AttackCooldown;
+        AttackSplashRadius = stats.AttackSplashRadius;
         UsesProjectile = stats.UsesProjectile;
         ProjectileSpeed = stats.ProjectileSpeed;
         AggroRangeX = stats.AggroRangeX;
@@ -203,6 +270,19 @@ public partial class Unit : Node2D
         BaseDamage = stats.BaseDamage;
         BusRepairAmount = stats.BusRepairAmount;
         DamageTakenScale = stats.DamageTakenScale;
+        AuraRadius = stats.AuraRadius;
+        AuraAttackDamageScale = stats.AuraAttackDamageScale;
+        AuraSpeedScale = stats.AuraSpeedScale;
+        SpecialAbilityId = stats.SpecialAbilityId;
+        SpecialCooldown = stats.SpecialCooldown;
+        SpecialCourageGainScale = stats.SpecialCourageGainScale;
+        SpecialDeployCooldownPenalty = stats.SpecialDeployCooldownPenalty;
+        SpecialSpawnUnitId = stats.SpecialSpawnUnitId;
+        SpecialSpawnCount = stats.SpecialSpawnCount;
+        SpecialBuffRadius = stats.SpecialBuffRadius;
+        SpecialBuffDuration = stats.SpecialBuffDuration;
+        SpecialBuffAttackDamageScale = stats.SpecialBuffAttackDamageScale;
+        SpecialBuffSpeedScale = stats.SpecialBuffSpeedScale;
         DeathBurstDamage = stats.DeathBurstDamage;
         DeathBurstRadius = stats.DeathBurstRadius;
         SpawnOnDeathUnitId = stats.SpawnOnDeathUnitId;
@@ -211,7 +291,56 @@ public partial class Unit : Node2D
         VisualScale = stats.VisualScale;
         Radius = ResolveRadius(stats);
         _bodyColor = stats.Color;
+        _specialTimer = HasSpecialAbility
+            ? Mathf.Max(3f, SpecialCooldown * 0.55f)
+            : 0f;
         Position = startPosition;
+    }
+
+    public void ResetCombatModifiers()
+    {
+        if (_temporaryCombatBuffTimer > 0.01f)
+        {
+            _currentAttackDamageScale = Mathf.Max(1f, _temporaryAttackDamageScale);
+            _currentSpeedScale = Mathf.Max(1f, _temporarySpeedScale);
+            _hasAuraBuff = true;
+        }
+        else
+        {
+            _currentAttackDamageScale = 1f;
+            _currentSpeedScale = 1f;
+            _hasAuraBuff = false;
+            _temporaryAttackDamageScale = 1f;
+            _temporarySpeedScale = 1f;
+        }
+    }
+
+    public void ApplyCombatAura(float attackDamageScale, float speedScale)
+    {
+        var appliedAttackScale = Mathf.Max(1f, attackDamageScale);
+        var appliedSpeedScale = Mathf.Max(1f, speedScale);
+        if (appliedAttackScale <= 1.001f && appliedSpeedScale <= 1.001f)
+        {
+            return;
+        }
+
+        _currentAttackDamageScale = Mathf.Max(_currentAttackDamageScale, appliedAttackScale);
+        _currentSpeedScale = Mathf.Max(_currentSpeedScale, appliedSpeedScale);
+        _hasAuraBuff = true;
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.18f);
+    }
+
+    public void ApplyTemporaryCombatBuff(float attackDamageScale, float speedScale, float duration)
+    {
+        if (duration <= 0.05f)
+        {
+            return;
+        }
+
+        _temporaryAttackDamageScale = Mathf.Max(_temporaryAttackDamageScale, Mathf.Max(1f, attackDamageScale));
+        _temporarySpeedScale = Mathf.Max(_temporarySpeedScale, Mathf.Max(1f, speedScale));
+        _temporaryCombatBuffTimer = Mathf.Max(_temporaryCombatBuffTimer, duration);
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
     }
 
     public void TickAttackTimer(float delta)
@@ -220,6 +349,26 @@ public partial class Unit : Node2D
         {
             _attackTimer -= delta;
         }
+    }
+
+    public void TickSpecialTimer(float delta)
+    {
+        if (_specialTimer > 0f)
+        {
+            _specialTimer -= delta;
+        }
+    }
+
+    public bool TryTriggerSpecialAbility()
+    {
+        if (!HasSpecialAbility || _specialTimer > 0f)
+        {
+            return false;
+        }
+
+        _specialTimer = SpecialCooldown;
+        _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.18f);
+        return true;
     }
 
     public bool CanAttack(Unit target)
@@ -284,7 +433,8 @@ public partial class Unit : Node2D
             return;
         }
 
-        Position += offset.Normalized() * Speed * delta;
+        var effectiveSpeed = Speed * Mathf.Max(0.4f, _currentSpeedScale);
+        Position += offset.Normalized() * effectiveSpeed * delta;
         Position = new Vector2(
             Mathf.Clamp(Position.X, minX, maxX),
             Mathf.Clamp(Position.Y, minY, maxY));
@@ -293,7 +443,7 @@ public partial class Unit : Node2D
     public void Advance(float delta, float minX, float maxX, float minY, float maxY)
     {
         var direction = Team == Team.Player ? 1f : -1f;
-        Position += new Vector2(direction * Speed * delta, 0f);
+        Position += new Vector2(direction * Speed * Mathf.Max(0.4f, _currentSpeedScale) * delta, 0f);
         Position = new Vector2(
             Mathf.Clamp(Position.X, minX, maxX),
             Mathf.Clamp(Position.Y, minY, maxY));
@@ -318,6 +468,8 @@ public partial class Unit : Node2D
         _idleTimer += deltaF;
         _hitFlashTimer = Mathf.Max(0f, _hitFlashTimer - deltaF);
         _attackFlashTimer = Mathf.Max(0f, _attackFlashTimer - deltaF);
+        _auraFlashTimer = Mathf.Max(0f, _auraFlashTimer - deltaF);
+        _temporaryCombatBuffTimer = Mathf.Max(0f, _temporaryCombatBuffTimer - deltaF);
         QueueRedraw();
     }
 
@@ -335,6 +487,7 @@ public partial class Unit : Node2D
 
         DrawSetTransform(new Vector2(0f, bobOffset), 0f, Vector2.One);
         DrawUnitSilhouette(bodyColor, accentColor, detailColor, flashStrength);
+        DrawAuraIndicators(accentColor);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
 
         DrawHealthBar();
@@ -355,6 +508,12 @@ public partial class Unit : Node2D
                 break;
             case "spitter":
                 DrawSpitterUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "howler":
+                DrawHowlerUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "jammer":
+                DrawJammerUnit(bodyColor, accentColor, detailColor, flashStrength);
                 break;
             case "saboteur":
             case "skirmisher":
@@ -476,6 +635,75 @@ public partial class Unit : Node2D
                 new Vector2(facing * Radius * 0.84f, -Radius * 0.6f),
                 Radius * 0.22f * (1f + flashStrength),
                 accentColor.Lightened(0.55f));
+        }
+    }
+
+    private void DrawHowlerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        DrawCircle(new Vector2(0f, -Radius * 0.18f), Radius * 0.58f, bodyColor);
+        DrawCircle(new Vector2(0f, -Radius * 0.92f), Radius * 0.26f, accentColor);
+        DrawRect(new Rect2(-Radius * 0.22f, -Radius * 0.08f, Radius * 0.44f, Radius * 0.82f), detailColor, true);
+        DrawLine(
+            new Vector2(-Radius * 0.22f, -Radius * 1.02f),
+            new Vector2(-Radius * 0.46f, -Radius * 1.34f),
+            accentColor,
+            3f,
+            true);
+        DrawLine(
+            new Vector2(Radius * 0.22f, -Radius * 1.02f),
+            new Vector2(Radius * 0.46f, -Radius * 1.34f),
+            accentColor,
+            3f,
+            true);
+        DrawFacingRect(facing * Radius * 0.08f, -Radius * 0.38f, facing * Radius * 0.52f, Radius * 0.18f, accentColor.Darkened(0.15f));
+
+        if (flashStrength > 0.05f)
+        {
+            DrawArc(
+                new Vector2(facing * Radius * 0.42f, -Radius * 0.56f),
+                Radius * 0.48f,
+                -0.8f,
+                0.8f,
+                16,
+                accentColor.Lightened(0.6f),
+                3f);
+        }
+    }
+
+    private void DrawJammerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        DrawCircle(new Vector2(0f, -Radius * 0.22f), Radius * 0.5f, bodyColor);
+        DrawCircle(new Vector2(0f, -Radius * 0.9f), Radius * 0.24f, accentColor);
+        DrawRect(new Rect2(-Radius * 0.2f, -Radius * 0.08f, Radius * 0.4f, Radius * 0.8f), detailColor, true);
+        DrawRect(new Rect2(-Radius * 0.5f, -Radius * 0.16f, Radius * 0.22f, Radius * 0.54f), accentColor.Darkened(0.15f), true);
+        DrawLine(
+            new Vector2(Radius * 0.1f, -Radius * 0.62f),
+            new Vector2(Radius * 0.48f, -Radius * 1.28f),
+            accentColor,
+            3f,
+            true);
+        DrawArc(
+            new Vector2(Radius * 0.5f, -Radius * 1.34f),
+            Radius * 0.22f,
+            0.4f,
+            2.7f,
+            10,
+            accentColor.Lightened(0.1f),
+            2f);
+        DrawFacingRect(facing * Radius * 0.08f, -Radius * 0.34f, facing * Radius * 0.54f, Radius * 0.16f, accentColor.Darkened(0.22f));
+
+        if (flashStrength > 0.05f)
+        {
+            DrawArc(
+                new Vector2(0f, -Radius * 0.32f),
+                Radius * 0.84f,
+                -0.5f,
+                0.5f,
+                14,
+                accentColor.Lightened(0.6f),
+                3f);
         }
     }
 
@@ -601,6 +829,33 @@ public partial class Unit : Node2D
         }
     }
 
+    private void DrawAuraIndicators(Color accentColor)
+    {
+        if (ProvidesAura)
+        {
+            var auraAlpha = 0.05f + (Mathf.Sin(_idleTimer * 2.4f) * 0.015f);
+            var auraColor = new Color(accentColor.Lightened(0.12f), Mathf.Clamp(auraAlpha, 0.03f, 0.08f));
+            DrawArc(Vector2.Zero, AuraRadius, 0f, Mathf.Tau, 36, auraColor, 2f);
+        }
+
+        if (!_hasAuraBuff && _auraFlashTimer <= 0.01f)
+        {
+            return;
+        }
+
+        var flashStrength = _hasAuraBuff
+            ? 0.28f + (Mathf.Sin(_idleTimer * 8f) * 0.05f)
+            : Mathf.Clamp(_auraFlashTimer / 0.18f, 0f, 1f) * 0.28f;
+        DrawArc(
+            Vector2.Zero,
+            Radius * 1.18f,
+            0f,
+            Mathf.Tau,
+            20,
+            new Color(accentColor.Lightened(0.25f), Mathf.Clamp(flashStrength, 0.1f, 0.34f)),
+            2f);
+    }
+
     private float ResolveRadius(UnitStats stats)
     {
         var radius = 14f * stats.VisualScale;
@@ -610,6 +865,7 @@ public partial class Unit : Node2D
             "bloater" => radius + 3f,
             "crusher" => radius + 3f,
             "brute" => radius + 2f,
+            "howler" => radius + 1f,
             "sniper" => radius - 1f,
             "runner" => radius - 1f,
             _ => radius

@@ -565,6 +565,7 @@
           "TriggerTime": 52.0,
           "SpawnInterval": 0.3,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
             { "UnitId": "enemy_crusher", "Count": 1 },
             { "UnitId": "enemy_runner", "Count": 2 }
@@ -644,6 +645,7 @@
           "TriggerTime": 36.0,
           "SpawnInterval": 0.3,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_runner", "Count": 2 },
             { "UnitId": "enemy_bloater", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
@@ -861,6 +863,7 @@
           "TriggerTime": 20.0,
           "SpawnInterval": 0.35,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
             { "UnitId": "enemy_walker", "Count": 2 }
           ]
@@ -892,6 +895,7 @@
           "TriggerTime": 76.0,
           "SpawnInterval": 0.28,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 2 },
             { "UnitId": "enemy_brute", "Count": 1 },
             { "UnitId": "enemy_walker", "Count": 2 }
@@ -987,6 +991,7 @@
           "TriggerTime": 34.0,
           "SpawnInterval": 0.3,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_splitter", "Count": 2 },
             { "UnitId": "enemy_brute", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 }
@@ -1017,6 +1022,7 @@
           "TriggerTime": 90.0,
           "SpawnInterval": 0.26,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 2 },
             { "UnitId": "enemy_splitter", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 }
@@ -1102,6 +1108,7 @@
           "TriggerTime": 20.0,
           "SpawnInterval": 0.33,
           "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
             { "UnitId": "enemy_runner", "Count": 1 },
             { "UnitId": "enemy_saboteur", "Count": 1 },
@@ -1135,6 +1142,7 @@
           "SpawnInterval": 0.42,
           "Entries": [
             { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
             { "UnitId": "enemy_crusher", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 }
           ]
@@ -1148,6 +1156,548 @@
             { "UnitId": "enemy_brute", "Count": 2 },
             { "UnitId": "enemy_splitter", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 13,
+      "MapId": "quarantine",
+      "MapName": "Quarantine Wall",
+      "TerrainId": "checkpoint",
+      "StageName": "Outer Gate",
+      "Description": "Fourth route unlocked. Screening barriers and decon sirens set up spitter fire behind sealed gates.",
+      "RewardGold": 520,
+      "RewardFood": 8,
+      "EntryFoodCost": 4,
+      "ExploreFoodCost": 6,
+      "MapX": 156.0,
+      "MapY": 472.0,
+      "PlayerBaseHealth": 510.0,
+      "EnemyBaseHealth": 900.0,
+      "EnemySpawnMin": 2.0,
+      "EnemySpawnMax": 2.82,
+      "EnemyHealthScale": 1.86,
+      "EnemyDamageScale": 1.8,
+      "WalkerWeight": 0.06,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.18,
+      "SpitterWeight": 0.3,
+      "CrusherWeight": 0.22,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.2,
+      "Hazards": [
+        {
+          "Type": "decon_sweep",
+          "Label": "Decon Sweep",
+          "XRatio": 0.34,
+          "YRatio": 0.44,
+          "Radius": 70.0,
+          "Interval": 9.0,
+          "StartTime": 7.0,
+          "WarningDuration": 1.8,
+          "Damage": 18.0,
+          "ColorHex": "95d5b2"
+        },
+        {
+          "Type": "barrier_arc",
+          "Label": "Barrier Arc",
+          "XRatio": 0.67,
+          "YRatio": 0.6,
+          "Radius": 62.0,
+          "Interval": 11.0,
+          "StartTime": 12.0,
+          "WarningDuration": 1.7,
+          "Damage": 20.0,
+          "ColorHex": "d8f3dc"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "armored_convoy", "Value": 1.06 },
+        { "Type": "surging_courage", "Value": 1.05 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "signal_jam_limit", "Value": 6.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Gate break",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.4,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Seal team breach",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Decon siren",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Triage spill",
+          "TriggerTime": 52.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Checkpoint lock",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Clean room fallback",
+          "TriggerTime": 90.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 14,
+      "MapId": "quarantine",
+      "MapName": "Quarantine Wall",
+      "TerrainId": "decon",
+      "StageName": "Decon Corridor",
+      "Description": "Toxic wash tunnels punish overcommits while support infected stack behind the spray lanes.",
+      "RewardGold": 580,
+      "RewardFood": 9,
+      "EntryFoodCost": 5,
+      "ExploreFoodCost": 7,
+      "MapX": 332.0,
+      "MapY": 548.0,
+      "PlayerBaseHealth": 530.0,
+      "EnemyBaseHealth": 950.0,
+      "EnemySpawnMin": 1.96,
+      "EnemySpawnMax": 2.76,
+      "EnemyHealthScale": 1.94,
+      "EnemyDamageScale": 1.88,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.2,
+      "SpitterWeight": 0.32,
+      "CrusherWeight": 0.22,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.22,
+      "Hazards": [
+        {
+          "Type": "bleach_vent",
+          "Label": "Bleach Vent",
+          "XRatio": 0.26,
+          "YRatio": 0.64,
+          "Radius": 76.0,
+          "Interval": 8.5,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 19.0,
+          "ColorHex": "a7f3d0"
+        },
+        {
+          "Type": "quarantine_spray",
+          "Label": "Quarantine Spray",
+          "XRatio": 0.59,
+          "YRatio": 0.34,
+          "Radius": 64.0,
+          "Interval": 9.5,
+          "StartTime": 13.0,
+          "WarningDuration": 1.6,
+          "Damage": 20.0,
+          "ColorHex": "34d399"
+        },
+        {
+          "Type": "siren_pulse",
+          "Label": "Siren Pulse",
+          "XRatio": 0.76,
+          "YRatio": 0.58,
+          "Radius": 58.0,
+          "Interval": 12.0,
+          "StartTime": 20.0,
+          "WarningDuration": 1.5,
+          "Damage": 18.0,
+          "ColorHex": "ecfccb"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.12 },
+        { "Type": "swarm_density", "Value": 1.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.72 },
+        { "Type": "hazard_hits_limit", "Value": 4.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Tunnel breach",
+          "TriggerTime": 4.5,
+          "SpawnInterval": 0.36,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Foam line",
+          "TriggerTime": 17.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Backdoor peel",
+          "TriggerTime": 33.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Decon crush",
+          "TriggerTime": 49.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Washout surge",
+          "TriggerTime": 67.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Final scrub",
+          "TriggerTime": 87.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 15,
+      "MapId": "quarantine",
+      "MapName": "Quarantine Wall",
+      "TerrainId": "lab",
+      "StageName": "Triage Break",
+      "Description": "Lab-side barricades harden up while saboteurs and howlers try to crack the convoy from behind.",
+      "RewardGold": 650,
+      "RewardFood": 9,
+      "EntryFoodCost": 5,
+      "ExploreFoodCost": 7,
+      "MapX": 548.0,
+      "MapY": 506.0,
+      "PlayerBaseHealth": 545.0,
+      "EnemyBaseHealth": 1030.0,
+      "EnemySpawnMin": 1.9,
+      "EnemySpawnMax": 2.68,
+      "EnemyHealthScale": 2.02,
+      "EnemyDamageScale": 1.95,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.04,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.3,
+      "CrusherWeight": 0.26,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.24,
+      "Hazards": [
+        {
+          "Type": "cryo_leak",
+          "Label": "Cryo Leak",
+          "XRatio": 0.42,
+          "YRatio": 0.31,
+          "Radius": 60.0,
+          "Interval": 10.0,
+          "StartTime": 9.0,
+          "WarningDuration": 1.7,
+          "Damage": 19.0,
+          "ColorHex": "99f6e4"
+        },
+        {
+          "Type": "turret_sweep",
+          "Label": "Auto Turret Sweep",
+          "XRatio": 0.7,
+          "YRatio": 0.54,
+          "Radius": 72.0,
+          "Interval": 11.5,
+          "StartTime": 16.0,
+          "WarningDuration": 1.8,
+          "Damage": 21.0,
+          "ColorHex": "bef264"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.16 },
+        { "Type": "swarm_density", "Value": 1.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "signal_jam_limit", "Value": 7.5 }
+      ],
+      "Waves": [
+        {
+          "Label": "Ward breach",
+          "TriggerTime": 5.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Specimen loose",
+          "TriggerTime": 19.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Triage collapse",
+          "TriggerTime": 35.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Lockdown lane",
+          "TriggerTime": 53.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Containment crack",
+          "TriggerTime": 71.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Lab purge",
+          "TriggerTime": 92.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 16,
+      "MapId": "quarantine",
+      "MapName": "Quarantine Wall",
+      "TerrainId": "blacksite",
+      "StageName": "Blacksite Seal",
+      "Description": "Quarantine boss stage. Toxic purge cycles and sealed kill-box walls hold until the Overlord breaches the blacksite.",
+      "RewardGold": 730,
+      "RewardFood": 10,
+      "EntryFoodCost": 6,
+      "ExploreFoodCost": 8,
+      "MapX": 734.0,
+      "MapY": 556.0,
+      "PlayerBaseHealth": 565.0,
+      "EnemyBaseHealth": 1140.0,
+      "EnemySpawnMin": 1.82,
+      "EnemySpawnMax": 2.56,
+      "EnemyHealthScale": 2.12,
+      "EnemyDamageScale": 2.05,
+      "WalkerWeight": 0.04,
+      "RunnerWeight": 0.04,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.32,
+      "CrusherWeight": 0.28,
+      "BossWeight": 0.32,
+      "BossSpawnStartTime": 78.0,
+      "BonusWaveChance": 0.24,
+      "Hazards": [
+        {
+          "Type": "purge_gas",
+          "Label": "Purge Gas",
+          "XRatio": 0.32,
+          "YRatio": 0.58,
+          "Radius": 84.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.9,
+          "Damage": 20.0,
+          "ColorHex": "22c55e"
+        },
+        {
+          "Type": "containment_arc",
+          "Label": "Containment Arc",
+          "XRatio": 0.68,
+          "YRatio": 0.38,
+          "Radius": 66.0,
+          "Interval": 10.2,
+          "StartTime": 14.0,
+          "WarningDuration": 1.7,
+          "Damage": 22.0,
+          "ColorHex": "d9f99d"
+        },
+        {
+          "Type": "blacksite_sweep",
+          "Label": "Blacksite Sweep",
+          "XRatio": 0.5,
+          "YRatio": 0.26,
+          "Radius": 72.0,
+          "Interval": 12.5,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 23.0,
+          "ColorHex": "fef08a"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.24 },
+        { "Type": "armored_convoy", "Value": 1.08 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 26.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Outer seal",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Decon collapse",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Siren pack",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Blacksite breach",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Overlord containment",
+          "TriggerTime": 78.0,
+          "SpawnInterval": 0.36,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Purge survivors",
+          "TriggerTime": 98.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
           ]
         }
       ]

@@ -60,6 +60,7 @@ public static class RouteCatalog
     public const string CityId = "city";
     public const string HarborId = "harbor";
     public const string FoundryId = "foundry";
+    public const string QuarantineId = "quarantine";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -119,6 +120,25 @@ public static class RouteCatalog
                 new Color("493628"),
                 new Color("ffe66d"),
                 new Color("f4a261"))
+        },
+        {
+            QuarantineId,
+            new RouteDefinition(
+                QuarantineId,
+                "Quarantine Wall",
+                "Decon corridors, triage tents, and blacksite checkpoints. Spitters, howlers, and saboteurs stack behind sealed containment lines.",
+                "Quarantine Wall favors ranged infected support, saboteur breach timing, and hazard-heavy toxic checkpoint segments.",
+                "Spitters and howlers back repeated saboteur dives while toxic purge hazards punish overcommits.",
+                new Color("d9ed92"),
+                new Color("1b4332"),
+                new Color("204e4a"),
+                new Color("102a29"),
+                new Color("95d5b2"),
+                new Color("d8f3dc"),
+                new Color("52b788"),
+                new Color("29443d"),
+                new Color("fef08a"),
+                new Color("d9ed92"))
         }
     };
 
@@ -136,7 +156,8 @@ public static class RouteCatalog
         {
             Definitions[CityId],
             Definitions[HarborId],
-            Definitions[FoundryId]
+            Definitions[FoundryId],
+            Definitions[QuarantineId]
         };
     }
 

@@ -20,6 +20,8 @@ config/icon="res://icon.svg"
 SaveSystem="*res://scenes/autoload/SaveSystem.tscn"
 GameState="*res://scenes/autoload/GameState.tscn"
 SceneRouter="*res://scenes/autoload/SceneRouter.tscn"
+AudioDirector="*res://scenes/autoload/AudioDirector.tscn"
+LanChallengeService="*res://scenes/autoload/LanChallengeService.tscn"
 
 [display]
 

@@ -77,6 +77,34 @@ public partial class MapPathCanvas : Control
                     true);
             }
         }
+        else if (mapId == "quarantine")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 124f, Size.X, 72f), new Color("183a37", 0.44f), true);
+
+            for (var i = 0; i < 7; i++)
+            {
+                var x = Mathf.Lerp(78f, Size.X - 78f, i / 6f);
+                DrawRect(new Rect2(x - 38f, 96f + ((i + 1) % 2) * 26f, 76f, 18f), new Color(1f, 0.96f, 0.62f, 0.12f), true);
+                DrawLine(
+                    new Vector2(x - 44f, Size.Y - 142f),
+                    new Vector2(x + 34f, Size.Y - 72f),
+                    new Color(0.85f, 1f, 0.78f, 0.08f),
+                    10f,
+                    true);
+            }
+
+            for (var i = 0; i < 10; i++)
+            {
+                var x = Mathf.Lerp(42f, Size.X - 42f, i / 9f);
+                var y = Size.Y - 110f;
+                DrawLine(
+                    new Vector2(x - 18f, y - 10f),
+                    new Vector2(x + 8f, y + 10f),
+                    new Color(1f, 0.95f, 0.55f, 0.26f),
+                    4f,
+                    true);
+            }
+        }
         else
         {
             for (var i = 0; i < 7; i++)

@@ -42,12 +42,15 @@ public static class StageEncounterIntel
             .FirstOrDefault();
         var bossWave = stage.Waves.FirstOrDefault(
             wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
+        var supportPressure = BuildSupportPressureSummary(counts);
 
         return
             $"Threat: {ResolveThreatRating(stage)}  |  Contacts: {totalEnemies}  |  Enemy types: {counts.Count}\n" +
             $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")}  |  " +
             $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")}  |  " +
-            $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}\n" +
+            $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}  |  " +
+            $"Boss trait: {(bossWave == null ? "n/a" : "Rally call")}\n" +
+            $"{supportPressure}\n" +
             $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}  |  Hazards: {StageHazards.BuildInlineSummary(stage)}";
     }
 
@@ -86,11 +89,12 @@ public static class StageEncounterIntel
         builder.AppendLine(
             $"Scheduled contacts: {totalEnemies}  |  Enemy types: {counts.Count}  |  Peak wave: {peakWave.TriggerTime:0}s");
         builder.AppendLine($"Threat mix: {string.Join(", ", topThreats)}");
+        builder.AppendLine(BuildSupportPressureSummary(counts));
         builder.AppendLine($"Hazards: {StageHazards.BuildInlineSummary(stage)}");
 
         if (bossWave != null)
         {
-            builder.Append($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}");
+            builder.Append($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby infected.");
         }
         else
         {
@@ -98,6 +102,20 @@ public static class StageEncounterIntel
         }
 
         return builder.ToString();
+    }
+
+    public static string BuildSupportPressureSummary(StageDefinition stage)
+    {
+        var counts = BuildUnitCounts(stage, out _);
+        return BuildSupportPressureSummary(counts);
+    }
+
+    public static string BuildWavePressureSummary(StageWaveDefinition wave)
+    {
+        var pressureFlags = BuildWavePressureFlags(wave);
+        return string.IsNullOrWhiteSpace(pressureFlags)
+            ? "Pressure tags: standard front."
+            : $"Pressure tags: {pressureFlags}";
     }
 
     public static string BuildWaveSummary(StageDefinition stage, int maxEntriesPerWave = 3)
@@ -119,7 +137,10 @@ public static class StageEncounterIntel
         {
             var wave = stage.Waves[i];
             var label = string.IsNullOrWhiteSpace(wave.Label) ? $"Wave {i + 1}" : wave.Label;
-            builder.AppendLine($"{i + 1}. {wave.TriggerTime:0}s  |  {label}  |  {BuildWaveEntrySummary(wave, maxEntriesPerWave)}");
+            var pressureFlags = BuildWavePressureFlags(wave);
+            builder.AppendLine(
+                $"{i + 1}. {wave.TriggerTime:0}s  |  {label}  |  {BuildWaveEntrySummary(wave, maxEntriesPerWave)}" +
+                (string.IsNullOrWhiteSpace(pressureFlags) ? "" : $"  |  {pressureFlags}"));
         }
 
         return builder.ToString().TrimEnd();
@@ -188,6 +209,90 @@ public static class StageEncounterIntel
             : "No enemy composition data.";
     }
 
+    private static string BuildSupportPressureSummary(Dictionary<string, int> counts)
+    {
+        if (counts == null || counts.Count == 0)
+        {
+            return "Support pressure: none.";
+        }
+
+        var pressure = new List<string>();
+
+        if (counts.TryGetValue(GameData.EnemyHowlerId, out var howlerCount) && howlerCount > 0)
+        {
+            pressure.Add($"Howler x{howlerCount} (aura buffs)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemyJammerId, out var jammerCount) && jammerCount > 0)
+        {
+            pressure.Add($"Jammer x{jammerCount} (courage jams)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurCount) && saboteurCount > 0)
+        {
+            pressure.Add($"Saboteur x{saboteurCount} (bus dives)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemySpitterId, out var spitterCount) && spitterCount > 0)
+        {
+            pressure.Add($"Spitter x{spitterCount} (ranged chip)");
+        }
+
+        return pressure.Count == 0
+            ? "Support pressure: none."
+            : $"Support pressure: {string.Join(", ", pressure)}";
+    }
+
+    private static string BuildWavePressureFlags(StageWaveDefinition wave)
+    {
+        if (wave?.Entries == null || wave.Entries.Length == 0)
+        {
+            return "";
+        }
+
+        var flags = new List<string>();
+        if (WaveContainsUnit(wave, GameData.EnemyHowlerId))
+        {
+            flags.Add("buff aura");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemyJammerId))
+        {
+            flags.Add("signal jam");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemySaboteurId))
+        {
+            flags.Add("bus dive");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemySpitterId))
+        {
+            flags.Add("ranged chip");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemyBossId))
+        {
+            flags.Add("boss rally");
+        }
+
+        return string.Join(", ", flags);
+    }
+
+    private static bool WaveContainsUnit(StageWaveDefinition wave, string unitId)
+    {
+        for (var i = 0; i < wave.Entries.Length; i++)
+        {
+            var entry = wave.Entries[i];
+            if (entry != null && entry.UnitId == unitId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static float CalculateThreatScore(StageDefinition stage)
     {
         if (stage == null)
@@ -201,6 +306,10 @@ public static class StageEncounterIntel
             : 0;
         var hasBoss = stage.HasScriptedWaves &&
             stage.Waves.Any(wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
+        var howlerCount = counts.TryGetValue(GameData.EnemyHowlerId, out var howlers) ? howlers : 0;
+        var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammers) ? jammers : 0;
+        var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurs) ? saboteurs : 0;
+        var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitters) ? spitters : 0;
 
         return
             ((stage.EnemyHealthScale + stage.EnemyDamageScale) * 0.72f) +
@@ -208,6 +317,10 @@ public static class StageEncounterIntel
             (counts.Count * 0.11f) +
             (peakWaveCount * 0.08f) +
             (Mathf.Min(totalEnemies, 30) * 0.015f) +
+            (howlerCount * 0.06f) +
+            (jammerCount * 0.08f) +
+            (saboteurCount * 0.05f) +
+            (spitterCount * 0.03f) +
             (StageModifiers.HasModifiers(stage) ? stage.Modifiers.Length * 0.08f : 0f) +
             (StageHazards.HasHazards(stage) ? stage.Hazards.Length * 0.1f : 0f) +
             (StageModifiers.ResolveEnemyCapBonus(stage) * 0.12f) +

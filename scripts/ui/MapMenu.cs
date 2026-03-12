@@ -257,6 +257,14 @@ public partial class MapMenu : Control
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
         sideContent.AddChild(shopButton);
 
+        var settingsButton = new Button
+        {
+            Text = "Settings",
+            CustomMinimumSize = new Vector2(0, 42)
+        };
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        sideContent.AddChild(settingsButton);
+
         _exploreButton = new Button
         {
             Text = "Explore Next Stage",
@@ -575,7 +583,8 @@ public partial class MapMenu : Control
         button.TooltipText =
             $"{stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"Threat: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Stars: {stars}/3\n" +
-            $"{stage.Description.Split('\n')[0]}";
+            $"{stage.Description.Split('\n')[0]}\n" +
+            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}";
 
         button.SelfModulate = !unlocked
             ? route.BannerPanel.Darkened(0.35f)
@@ -599,7 +608,8 @@ public partial class MapMenu : Control
 
         return
             $"Stage status: {stageState}  |  Best stars: {bestStars}/3\n" +
-            $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food";
+            $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food\n" +
+            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}";
     }
 
     private string BuildConvoySummaryText()
@@ -608,13 +618,14 @@ public partial class MapMenu : Control
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
         var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
         var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
+        var relayLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId);
         var nextExploreLine = TryGetNextStageForMap(_activeMapId, out var nextStage)
             ? $"Stage {nextStage.StageNumber} ({GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)"
             : "Route fully explored";
 
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Relay {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Next exploration: {nextExploreLine}\n" +
             "Use Convoy Shop for purchases, upgrades, and squad edits.";
     }
@@ -623,7 +634,8 @@ public partial class MapMenu : Control
     {
         var deckUnits = GameState.Instance.GetActiveDeckUnits();
         var summary =
-            $"Active squad: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n";
+            $"Active squad: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
+            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n";
 
         if (deckUnits.Count == 0)
         {
@@ -633,7 +645,9 @@ public partial class MapMenu : Control
         for (var i = 0; i < deckUnits.Count; i++)
         {
             var unit = deckUnits[i];
-            summary += $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}";
+            summary +=
+                $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}" +
+                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}";
         }
 
         if (deckUnits.Count < GameState.Instance.DeckSizeLimit)

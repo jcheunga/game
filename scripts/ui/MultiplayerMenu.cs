@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Godot;
 
@@ -9,6 +11,7 @@ public partial class MultiplayerMenu : Control
     private LineEdit _codeEdit = null!;
     private Label _summaryLabel = null!;
     private Label _recordLabel = null!;
+    private Label _tapeLabel = null!;
     private Label _historyLabel = null!;
     private Label _rulesLabel = null!;
     private Label _statusLabel = null!;
@@ -182,6 +185,13 @@ public partial class MultiplayerMenu : Control
         };
         missionStack.AddChild(_recordLabel);
 
+        _tapeLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(0f, 88f)
+        };
+        missionStack.AddChild(_tapeLabel);
+
         _historyLabel = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
@@ -254,6 +264,22 @@ public partial class MultiplayerMenu : Control
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
         bottomRow.AddChild(shopButton);
 
+        var settingsButton = new Button
+        {
+            Text = "Settings",
+            CustomMinimumSize = new Vector2(150f, 0f)
+        };
+        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        bottomRow.AddChild(settingsButton);
+
+        var lanButton = new Button
+        {
+            Text = "LAN Race",
+            CustomMinimumSize = new Vector2(160f, 0f)
+        };
+        lanButton.Pressed += () => SceneRouter.Instance.GoToLanRace();
+        bottomRow.AddChild(lanButton);
+
         bottomRow.AddChild(new Control
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -276,23 +302,40 @@ public partial class MultiplayerMenu : Control
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
+        var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
+        var ghostRun = GameState.Instance.GetChallengeGhostRun(challenge.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
+        var deckModeLabel = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+            ? $"Locked featured squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"
+            : $"Active squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}";
         _codeEdit.Text = challenge.Code;
         _summaryLabel.Text =
             $"Challenge target: {stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"{AsyncChallengeCatalog.BuildSummary(challenge)}\n\n" +
+            $"{deckModeLabel}\n" +
+            $"{GameState.Instance.BuildSelectedAsyncChallengeDeckSynergyInlineSummary()}\n\n" +
             $"{StageEncounterIntel.BuildCompactSummary(stage)}";
         _recordLabel.Text =
             $"Local records:\n" +
             $"Best for this code: {GameState.Instance.GetAsyncChallengeBestScore(challenge.Code)}\n" +
+            $"Best tier: {AsyncChallengeCatalog.ResolveMedalLabel(challenge, GameState.Instance.GetAsyncChallengeBestScore(challenge.Code))}\n" +
             $"Challenge runs logged: {GameState.Instance.ChallengeRuns}\n" +
-            $"Route lock: {(challenge.Stage <= GameState.Instance.HighestUnlockedStage ? "ready" : $"explore stage {challenge.Stage} first")}";
+            $"Route lock: {(challenge.Stage <= GameState.Instance.HighestUnlockedStage ? "ready" : $"explore stage {challenge.Stage} first")}\n" +
+            $"Deck mode: {(GameState.Instance.HasSelectedAsyncChallengeLockedDeck ? "featured locked squad" : "player active squad")}\n" +
+            $"{GameState.Instance.BuildChallengeGhostSummary(ghostRun)}\n" +
+            $"{AsyncChallengeCatalog.BuildTargetSummary(challenge, GameState.Instance.GetAsyncChallengeBestScore(challenge.Code))}";
+        _tapeLabel.Text = GameState.Instance.BuildChallengeRunTapeSummary(GameState.Instance.GetLatestChallengeRun(challenge.Code));
         _historyLabel.Text = BuildHistoryText(challenge);
         _rulesLabel.Text =
             "Challenge rules:\n" +
             "- Runs use the exact same challenge code, stage, mutator, and seeded spawn pattern.\n" +
             "- No food is spent and no campaign stars or stage unlocks are awarded.\n" +
             "- Compare score, time, stars, and hull preservation on the same code.\n" +
-            $"- Active mutator: {mutator.Title}.";
+            "- Daily featured boards rotate from the unlocked campaign range.\n" +
+            "- Featured boards can also lock the convoy to the same 3-card squad for fairer score races.\n" +
+            "- Pinned codes stay saved until you clear them from the board.\n" +
+            $"- Active mutator: {mutator.Title}.\n\n" +
+            $"{AsyncChallengeCatalog.BuildScoringGuide(challenge)}\n\n" +
+            $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}";
 
         RebuildSquadPanels(stage);
 
@@ -311,12 +354,55 @@ public partial class MultiplayerMenu : Control
 
         _squadStack.AddChild(new Label
         {
-            Text = $"Active Squad ({GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit})"
+            Text = $"Daily Featured Queue ({FeaturedChallengeCatalog.GetDailyRotationStamp()})"
         });
 
-        foreach (var definition in GameState.Instance.GetActiveDeckUnits())
+        foreach (var featured in FeaturedChallengeCatalog.GetDailyRotation(
+                     GameState.Instance.HighestUnlockedStage,
+                     GameState.Instance.MaxStage))
         {
-            _squadStack.AddChild(BuildUnitPanel(definition));
+            _squadStack.AddChild(BuildFeaturedChallengePanel(featured));
+        }
+
+        _squadStack.AddChild(new Label
+        {
+            Text = $"Pinned Codes ({GameState.Instance.GetPinnedChallengeCodes().Count})"
+        });
+
+        var pinnedCodes = GameState.Instance.GetPinnedChallengeCodes();
+        if (pinnedCodes.Count == 0)
+        {
+            _squadStack.AddChild(new Label
+            {
+                Text = "Pin any challenge code to keep it on the board for rematches.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+        }
+        else
+        {
+            foreach (var code in pinnedCodes)
+            {
+                _squadStack.AddChild(BuildPinnedChallengePanel(code));
+            }
+        }
+
+        var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+                ? $"Featured Squad Lock ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})"
+                : $"Active Squad ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildSelectedAsyncChallengeDeckSynergySummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        foreach (var definition in previewDeck)
+        {
+            _squadStack.AddChild(BuildUnitPanel(definition, previewDeck));
         }
 
         _squadStack.AddChild(new Label
@@ -326,9 +412,9 @@ public partial class MultiplayerMenu : Control
         });
     }
 
-    private Control BuildUnitPanel(UnitDefinition definition)
+    private Control BuildUnitPanel(UnitDefinition definition, IReadOnlyList<UnitDefinition> deckUnits)
     {
-        var stats = GameState.Instance.BuildPlayerUnitStats(definition);
+        var stats = GameState.Instance.BuildPlayerUnitStatsForDeck(definition, deckUnits);
         var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
@@ -348,7 +434,9 @@ public partial class MultiplayerMenu : Control
 
         stack.AddChild(new Label
         {
-            Text = $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}"
+            Text =
+                $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
+                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}"
         });
 
         stack.AddChild(new Label
@@ -362,9 +450,154 @@ public partial class MultiplayerMenu : Control
         {
             Text =
                 $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
-                (stats.BusRepairAmount > 0.05f ? $"  |  Repair {stats.BusRepairAmount:0.#}" : ""),
+                UnitStatText.BuildInlineTraits(stats),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+
+        return panel;
+    }
+
+    private Control BuildFeaturedChallengePanel(FeaturedChallengeDefinition featured)
+    {
+        var challenge = featured.Challenge;
+        var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
+        var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
+        var best = GameState.Instance.GetAsyncChallengeBestScore(challenge.Code);
+        var isPinned = GameState.Instance.IsChallengeCodePinned(challenge.Code);
+        var lockedLabel = challenge.Stage <= GameState.Instance.HighestUnlockedStage
+            ? "Ready"
+            : $"Locked until stage {challenge.Stage}";
+        var deckSummary = string.Join(
+            ", ",
+            featured.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName));
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 148f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = $"{featured.Title}  |  {stage.MapName} S{stage.StageNumber}"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text =
+                $"{challenge.Code}  |  {mutator.Title}  |  Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
+                $"{featured.Summary}\n" +
+                $"Locked squad: {deckSummary}\n" +
+                $"Status: {lockedLabel}\n" +
+                $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var loadButton = new Button
+        {
+            Text = "Load Featured",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        loadButton.Pressed += () => LoadFeaturedChallenge(featured);
+        row.AddChild(loadButton);
+
+        var pinButton = new Button
+        {
+            Text = isPinned ? "Unpin" : "Pin",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        pinButton.Pressed += () => TogglePinnedChallenge(challenge.Code);
+        row.AddChild(pinButton);
+
+        return panel;
+    }
+
+    private Control BuildPinnedChallengePanel(string code)
+    {
+        if (!AsyncChallengeCatalog.TryParse(code, out var challenge, out _))
+        {
+            return new Label
+            {
+                Text = code,
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+        }
+
+        var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
+        var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
+        var best = GameState.Instance.GetAsyncChallengeBestScore(challenge.Code);
+        var recent = GameState.Instance.GetRecentChallengeHistory(1, challenge.Code);
+        var recentLine = recent.Count > 0
+            ? $"Latest: {FormatHistoryEntry(recent[0], false)}"
+            : "Latest: no local attempts yet.";
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 136f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = $"{challenge.Code}  |  {stage.MapName} S{stage.StageNumber}  |  {mutator.Title}"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text =
+                $"Pinned rematch board  |  Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
+                $"{recentLine}\n" +
+                $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var loadButton = new Button
+        {
+            Text = "Load Pinned",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        loadButton.Pressed += () => LoadChallengeCode(challenge.Code, $"Loaded pinned code {challenge.Code}.");
+        row.AddChild(loadButton);
+
+        var removeButton = new Button
+        {
+            Text = "Remove Pin",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        removeButton.Pressed += () => TogglePinnedChallenge(challenge.Code);
+        row.AddChild(removeButton);
 
         return panel;
     }
@@ -409,6 +642,43 @@ public partial class MultiplayerMenu : Control
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         _selectedStage = challenge.Stage;
         _selectedMutatorId = challenge.MutatorId;
+        _statusLabel.Text = $"Status:\n{message}";
+        RefreshUi();
+    }
+
+    private void LoadChallengeCode(string code, string successPrefix)
+    {
+        if (!GameState.Instance.TrySetSelectedAsyncChallengeCode(code, out var message))
+        {
+            _statusLabel.Text = $"Status:\n{message}";
+            return;
+        }
+
+        var challenge = GameState.Instance.GetSelectedAsyncChallenge();
+        _selectedStage = challenge.Stage;
+        _selectedMutatorId = challenge.MutatorId;
+        _statusLabel.Text = $"Status:\n{successPrefix}";
+        RefreshUi();
+    }
+
+    private void LoadFeaturedChallenge(FeaturedChallengeDefinition featured)
+    {
+        GameState.Instance.SetSelectedFeaturedChallenge(featured);
+        var challenge = GameState.Instance.GetSelectedAsyncChallenge();
+        _selectedStage = challenge.Stage;
+        _selectedMutatorId = challenge.MutatorId;
+        _statusLabel.Text = $"Status:\nLoaded featured board {featured.Title} with its locked squad.";
+        RefreshUi();
+    }
+
+    private void TogglePinnedChallenge(string code)
+    {
+        if (!GameState.Instance.TogglePinnedChallengeCode(code, out _, out var message))
+        {
+            _statusLabel.Text = $"Status:\n{message}";
+            return;
+        }
+
         _statusLabel.Text = $"Status:\n{message}";
         RefreshUi();
     }
@@ -494,9 +764,26 @@ public partial class MultiplayerMenu : Control
             ? DateTimeOffset.FromUnixTimeSeconds(record.PlayedAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm")
             : "--";
         var outcome = record.Retreated ? "RET" : record.Won ? "WIN" : "FAIL";
+        var medal = "No Medal";
+        if (AsyncChallengeCatalog.TryParse(record.Code, out var challenge, out _))
+        {
+            medal = AsyncChallengeCatalog.ResolveMedalLabel(challenge, record.Score);
+        }
+
         var suffix = includeCode
             ? $" | {record.Code}"
             : $" | {record.StarsEarned}/3 stars | {record.EnemyDefeats} defeats";
-        return $"{stamp} | {outcome} | {record.Score} pts | {record.ElapsedSeconds:0.0}s{suffix}";
+        var rawScore = Math.Max(0, record.RawScore);
+        if (rawScore == 0)
+        {
+            rawScore = Math.Max(0, record.Score);
+        }
+
+        var multiplier = record.ScoreMultiplier > 0f ? record.ScoreMultiplier : 1f;
+        var hullPercent = Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f);
+        var deckMode = record.UsedLockedDeck ? "Locked deck" : "Player deck";
+        return
+            $"{stamp} | {outcome} | {record.Score} pts | {medal} | {record.ElapsedSeconds:0.0}s{suffix}\n" +
+            $"  Raw {rawScore} x{multiplier:0.##} | Hull {hullPercent}% | Deploys {record.PlayerDeployments} | {deckMode}";
     }
 }

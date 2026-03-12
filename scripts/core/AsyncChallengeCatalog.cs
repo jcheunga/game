@@ -16,7 +16,11 @@ public sealed class AsyncChallengeMutatorDefinition
         float courageGainScale,
         float courageMaxBonus,
         float deployCooldownScale,
-        float scoreMultiplier)
+        float scoreMultiplier,
+        float signalJamIntervalSeconds = 0f,
+        float signalJamDurationSeconds = 0f,
+        float signalJamCourageGainScale = 1f,
+        float signalJamCooldownPenalty = 0f)
     {
         Id = id;
         Code = code;
@@ -30,6 +34,10 @@ public sealed class AsyncChallengeMutatorDefinition
         CourageMaxBonus = courageMaxBonus;
         DeployCooldownScale = deployCooldownScale;
         ScoreMultiplier = scoreMultiplier;
+        SignalJamIntervalSeconds = signalJamIntervalSeconds;
+        SignalJamDurationSeconds = signalJamDurationSeconds;
+        SignalJamCourageGainScale = signalJamCourageGainScale;
+        SignalJamCooldownPenalty = signalJamCooldownPenalty;
     }
 
     public string Id { get; }
@@ -44,6 +52,10 @@ public sealed class AsyncChallengeMutatorDefinition
     public float CourageMaxBonus { get; }
     public float DeployCooldownScale { get; }
     public float ScoreMultiplier { get; }
+    public float SignalJamIntervalSeconds { get; }
+    public float SignalJamDurationSeconds { get; }
+    public float SignalJamCourageGainScale { get; }
+    public float SignalJamCooldownPenalty { get; }
 }
 
 public sealed class AsyncChallengeDefinition
@@ -62,11 +74,63 @@ public sealed class AsyncChallengeDefinition
     public string MutatorId { get; }
 }
 
+public sealed class AsyncChallengeScoreBreakdown
+{
+    public AsyncChallengeScoreBreakdown(
+        int completionBonus,
+        int starBonus,
+        int killBonus,
+        int hullBonus,
+        int timeBonus,
+        int deployPenalty,
+        int rawScore,
+        float multiplier,
+        int finalScore)
+    {
+        CompletionBonus = completionBonus;
+        StarBonus = starBonus;
+        KillBonus = killBonus;
+        HullBonus = hullBonus;
+        TimeBonus = timeBonus;
+        DeployPenalty = deployPenalty;
+        RawScore = rawScore;
+        Multiplier = multiplier;
+        FinalScore = finalScore;
+    }
+
+    public int CompletionBonus { get; }
+    public int StarBonus { get; }
+    public int KillBonus { get; }
+    public int HullBonus { get; }
+    public int TimeBonus { get; }
+    public int DeployPenalty { get; }
+    public int RawScore { get; }
+    public float Multiplier { get; }
+    public int FinalScore { get; }
+}
+
+public sealed class AsyncChallengeTargetScores
+{
+    public AsyncChallengeTargetScores(int bronze, int silver, int gold, int ace)
+    {
+        Bronze = bronze;
+        Silver = silver;
+        Gold = gold;
+        Ace = ace;
+    }
+
+    public int Bronze { get; }
+    public int Silver { get; }
+    public int Gold { get; }
+    public int Ace { get; }
+}
+
 public static class AsyncChallengeCatalog
 {
     public const string PressureSpikeId = "pressure_spike";
     public const string RationedRunId = "rationed_run";
     public const string SiegeNightId = "siege_night";
+    public const string BlackoutRelayId = "blackout_relay";
 
     private static readonly AsyncChallengeMutatorDefinition[] Mutators =
     {
@@ -109,6 +173,24 @@ public static class AsyncChallengeCatalog
             0f,
             1.05f,
             1.38f)
+        ,
+        new(
+            BlackoutRelayId,
+            "BLK",
+            "Blackout Relay",
+            "Challenge control keeps pulsing signal blackouts across the route. Time drops around forced jammer windows and convoy recovery discipline.",
+            1.08f,
+            1.06f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.44f,
+            16f,
+            3.8f,
+            0.52f,
+            1.35f)
     };
 
     public static AsyncChallengeMutatorDefinition[] GetAll()
@@ -193,6 +275,15 @@ public static class AsyncChallengeCatalog
 
     public static int CalculateScore(AsyncChallengeDefinition challenge, StageBattleResult result, bool won, int starsEarned)
     {
+        return CalculateScoreBreakdown(challenge, result, won, starsEarned).FinalScore;
+    }
+
+    public static AsyncChallengeScoreBreakdown CalculateScoreBreakdown(
+        AsyncChallengeDefinition challenge,
+        StageBattleResult result,
+        bool won,
+        int starsEarned)
+    {
         var mutator = GetMutator(challenge.MutatorId);
         var baseHullRatio = result.PlayerBaseMaxHealth <= 0f
             ? 0f
@@ -207,7 +298,90 @@ public static class AsyncChallengeCatalog
             : Mathf.RoundToInt(Mathf.Min(result.Elapsed, 90f) * 2.5f);
 
         var rawScore = completionBonus + starBonus + killBonus + hullBonus + timeBonus - deployPenalty;
-        return Mathf.Max(0, Mathf.RoundToInt(rawScore * mutator.ScoreMultiplier));
+        var finalScore = Mathf.Max(0, Mathf.RoundToInt(rawScore * mutator.ScoreMultiplier));
+        return new AsyncChallengeScoreBreakdown(
+            completionBonus,
+            starBonus,
+            killBonus,
+            hullBonus,
+            timeBonus,
+            deployPenalty,
+            rawScore,
+            mutator.ScoreMultiplier,
+            finalScore);
+    }
+
+    public static string BuildScoreSummary(AsyncChallengeScoreBreakdown breakdown)
+    {
+        return
+            $"Outcome +{breakdown.CompletionBonus}  |  Stars +{breakdown.StarBonus}  |  Kills +{breakdown.KillBonus}\n" +
+            $"Hull +{breakdown.HullBonus}  |  Time +{breakdown.TimeBonus}  |  Deploys -{breakdown.DeployPenalty}\n" +
+            $"Raw {breakdown.RawScore}  x{breakdown.Multiplier:0.##}  =  {breakdown.FinalScore}";
+    }
+
+    public static string BuildScoringGuide(AsyncChallengeDefinition challenge)
+    {
+        var mutator = GetMutator(challenge.MutatorId);
+        return
+            "Score model:\n" +
+            "- Outcome: clear +1000, fail +250\n" +
+            "- Stars: +240 each   |   Kills: +22 each   |   Hull: up to +280\n" +
+            "- Time: clear up to +1200 before 120s, fail survival up to +225\n" +
+            $"- Deploys: -18 each   |   Mutator multiplier: x{mutator.ScoreMultiplier:0.##}";
+    }
+
+    public static AsyncChallengeTargetScores GetTargetScores(AsyncChallengeDefinition challenge)
+    {
+        var mutator = GetMutator(challenge.MutatorId);
+        var baseTarget = 520 + (challenge.Stage * 125);
+        var bronze = Mathf.RoundToInt(baseTarget * mutator.ScoreMultiplier);
+        var silver = Mathf.RoundToInt((baseTarget + 220 + (challenge.Stage * 12)) * mutator.ScoreMultiplier);
+        var gold = Mathf.RoundToInt((baseTarget + 500 + (challenge.Stage * 18)) * mutator.ScoreMultiplier);
+        var ace = Mathf.RoundToInt((baseTarget + 860 + (challenge.Stage * 24)) * mutator.ScoreMultiplier);
+
+        silver = Math.Max(silver, bronze + 120);
+        gold = Math.Max(gold, silver + 140);
+        ace = Math.Max(ace, gold + 180);
+        return new AsyncChallengeTargetScores(bronze, silver, gold, ace);
+    }
+
+    public static string ResolveMedalLabel(AsyncChallengeDefinition challenge, int score)
+    {
+        var targets = GetTargetScores(challenge);
+        if (score >= targets.Ace)
+        {
+            return "Convoy Ace";
+        }
+
+        if (score >= targets.Gold)
+        {
+            return "Gold";
+        }
+
+        if (score >= targets.Silver)
+        {
+            return "Silver";
+        }
+
+        if (score >= targets.Bronze)
+        {
+            return "Bronze";
+        }
+
+        return "No Medal";
+    }
+
+    public static string BuildTargetSummary(AsyncChallengeDefinition challenge, int score = -1)
+    {
+        var targets = GetTargetScores(challenge);
+        var summary =
+            $"Targets: Bronze {targets.Bronze}  |  Silver {targets.Silver}  |  Gold {targets.Gold}  |  Ace {targets.Ace}";
+        if (score < 0)
+        {
+            return summary;
+        }
+
+        return $"{summary}\nCurrent tier: {ResolveMedalLabel(challenge, score)}";
     }
 
     public static string BuildSummary(AsyncChallengeDefinition challenge)

@@ -16,10 +16,13 @@ public partial class MultiplayerMenu : Control
     private Label _rulesLabel = null!;
     private Label _statusLabel = null!;
     private VBoxContainer _squadStack = null!;
+    private Button _refreshOnlineButton = null!;
+    private Button _syncButton = null!;
     private Button _startButton = null!;
 
     private int _selectedStage = 1;
     private string _selectedMutatorId = AsyncChallengeCatalog.PressureSpikeId;
+    private string _lastStatusMessage = "";
 
     public override void _Ready()
     {
@@ -168,7 +171,7 @@ public partial class MultiplayerMenu : Control
         copyButton.Pressed += () =>
         {
             DisplayServer.ClipboardSet(_codeEdit.Text);
-            _statusLabel.Text = $"Status:\nCopied {_codeEdit.Text} to the clipboard.";
+            SetStatusMessage($"Copied {_codeEdit.Text} to the clipboard.");
         };
         actionRow.AddChild(copyButton);
 
@@ -272,6 +275,38 @@ public partial class MultiplayerMenu : Control
         settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
         bottomRow.AddChild(settingsButton);
 
+        _syncButton = new Button
+        {
+            Text = "Flush Outbox",
+            CustomMinimumSize = new Vector2(170f, 0f)
+        };
+        _syncButton.Pressed += FlushOutbox;
+        bottomRow.AddChild(_syncButton);
+
+        _refreshOnlineButton = new Button
+        {
+            Text = "Refresh Online",
+            CustomMinimumSize = new Vector2(170f, 0f)
+        };
+        _refreshOnlineButton.Pressed += RefreshOnlineData;
+        bottomRow.AddChild(_refreshOnlineButton);
+
+        var quickMatchButton = new Button
+        {
+            Text = "Quick Match",
+            CustomMinimumSize = new Vector2(170f, 0f)
+        };
+        quickMatchButton.Pressed += QuickMatchOnlineRoom;
+        bottomRow.AddChild(quickMatchButton);
+
+        var hostOnlineButton = new Button
+        {
+            Text = "Host Online Room",
+            CustomMinimumSize = new Vector2(190f, 0f)
+        };
+        hostOnlineButton.Pressed += HostOnlineRoom;
+        bottomRow.AddChild(hostOnlineButton);
+
         var lanButton = new Button
         {
             Text = "LAN Race",
@@ -322,7 +357,10 @@ public partial class MultiplayerMenu : Control
             $"Route lock: {(challenge.Stage <= GameState.Instance.HighestUnlockedStage ? "ready" : $"explore stage {challenge.Stage} first")}\n" +
             $"Deck mode: {(GameState.Instance.HasSelectedAsyncChallengeLockedDeck ? "featured locked squad" : "player active squad")}\n" +
             $"{GameState.Instance.BuildChallengeGhostSummary(ghostRun)}\n" +
-            $"{AsyncChallengeCatalog.BuildTargetSummary(challenge, GameState.Instance.GetAsyncChallengeBestScore(challenge.Code))}";
+            $"{AsyncChallengeCatalog.BuildTargetSummary(challenge, GameState.Instance.GetAsyncChallengeBestScore(challenge.Code))}\n\n" +
+            $"{PlayerProfileSyncService.BuildStatusSummary()}\n\n" +
+            $"{GameState.Instance.BuildChallengeSyncSummary(2)}\n\n" +
+            $"{(ChallengeSyncService.Instance?.BuildStatusSummary() ?? "Sync service unavailable.")}";
         _tapeLabel.Text = GameState.Instance.BuildChallengeRunTapeSummary(GameState.Instance.GetLatestChallengeRun(challenge.Code));
         _historyLabel.Text = BuildHistoryText(challenge);
         _rulesLabel.Text =
@@ -340,7 +378,17 @@ public partial class MultiplayerMenu : Control
         RebuildSquadPanels(stage);
 
         var canStart = GameState.Instance.CanStartAsyncChallenge(out var readinessMessage);
-        _statusLabel.Text = $"Status:\n{readinessMessage}";
+        var statusMessage = string.IsNullOrWhiteSpace(_lastStatusMessage)
+            ? readinessMessage
+            : _lastStatusMessage;
+        _statusLabel.Text = $"Status:\n{statusMessage}";
+        _syncButton.Disabled = GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null;
+        _syncButton.Text = GameState.Instance.PendingChallengeSubmissionCount <= 0
+            ? "Outbox Empty"
+            : $"Flush Outbox ({GameState.Instance.PendingChallengeSubmissionCount})";
+        _refreshOnlineButton.Disabled = ChallengeLeaderboardService.Instance == null &&
+            ChallengeBoardFeedService.Instance == null &&
+            !OnlineRoomDirectoryService.IsAvailable;
         _startButton.Disabled = !canStart;
         _startButton.Text = canStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
     }
@@ -350,6 +398,111 @@ public partial class MultiplayerMenu : Control
         foreach (var child in _squadStack.GetChildren())
         {
             child.QueueFree();
+        }
+
+        _squadStack.AddChild(new Label
+        {
+            Text = "Online Room Directory"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomDirectoryService.BuildSnapshotSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomCreateService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomJoinService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomMatchmakeService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomSessionService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomResultService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomScoreboardService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = OnlineRoomTelemetryService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
+        if (joinedRoomTicket != null)
+        {
+            _squadStack.AddChild(BuildOnlineRoomActionPanel());
+        }
+
+        var onlineRooms = OnlineRoomDirectoryService.GetCachedRooms();
+        if (onlineRooms.Count == 0)
+        {
+            _squadStack.AddChild(new Label
+            {
+                Text = "No online room listings cached yet.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+        }
+        else
+        {
+            foreach (var room in onlineRooms)
+            {
+                _squadStack.AddChild(BuildOnlineRoomPanel(room));
+            }
+        }
+
+        _squadStack.AddChild(new Label
+        {
+            Text = "Remote Featured Feed"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = ChallengeBoardFeedService.Instance?.BuildSnapshotSummary() ??
+                "Remote challenge feed service unavailable.",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var remoteFeed = ChallengeBoardFeedService.Instance?.GetCachedFeaturedChallenges() ?? [];
+        if (remoteFeed.Count == 0)
+        {
+            _squadStack.AddChild(new Label
+            {
+                Text = "No remote featured boards cached yet.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+        }
+        else
+        {
+            foreach (var featured in remoteFeed)
+            {
+                _squadStack.AddChild(BuildFeaturedChallengePanel(featured, "Load Remote"));
+            }
         }
 
         _squadStack.AddChild(new Label
@@ -386,6 +539,8 @@ public partial class MultiplayerMenu : Control
             }
         }
 
+        _squadStack.AddChild(BuildLeaderboardPanel(GameState.Instance.GetSelectedAsyncChallenge().Code));
+
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         _squadStack.AddChild(new Label
         {
@@ -410,6 +565,217 @@ public partial class MultiplayerMenu : Control
             Text = StageEncounterIntel.BuildEncounterIntel(stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+    }
+
+    private Control BuildLeaderboardPanel(string code)
+    {
+        var panel = new PanelContainer();
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 12);
+        padding.AddThemeConstantOverride("margin_right", 12);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = "Remote Board"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = ChallengeLeaderboardService.Instance?.BuildSnapshotSummary(code, 5) ??
+                "Remote leaderboard service unavailable.",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        return panel;
+    }
+
+    private Control BuildOnlineRoomPanel(OnlineRoomDirectoryEntry room)
+    {
+        AsyncChallengeCatalog.TryParse(room.BoardCode, out var challenge, out _);
+        var stage = challenge != null
+            ? GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage))
+            : null;
+        var mutator = challenge != null
+            ? AsyncChallengeCatalog.GetMutator(challenge.MutatorId)
+            : null;
+        var deckSummary = room.UsesLockedDeck
+            ? $"Locked squad: {string.Join(", ", room.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
+            : "Deck mode: player convoys";
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 156f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = $"{room.Title}  |  {room.CurrentPlayers}/{room.MaxPlayers} runners  |  {room.Status}"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text =
+                $"{room.BoardCode}  |  Host {room.HostCallsign}  |  Region {room.Region}\n" +
+                $"{room.BoardTitle}\n" +
+                $"{room.Summary}\n" +
+                $"{deckSummary}\n" +
+                $"Spectators: {room.SpectatorCount}" +
+                (stage == null || mutator == null
+                    ? ""
+                    : $"\nStage: {stage.MapName} S{stage.StageNumber}  |  Mutator: {mutator.Title}"),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var loadButton = new Button
+        {
+            Text = "Load Room Board",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        loadButton.Pressed += () => LoadOnlineRoomBoard(room);
+        row.AddChild(loadButton);
+
+        var joinButton = new Button
+        {
+            Text = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId ? "Host Seat Active" : "Request Join",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId
+        };
+        joinButton.Pressed += () => RequestOnlineRoomJoin(room);
+        row.AddChild(joinButton);
+
+        var copyButton = new Button
+        {
+            Text = "Copy Room ID",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        copyButton.Pressed += () =>
+        {
+            DisplayServer.ClipboardSet(string.IsNullOrWhiteSpace(room.RoomId) ? room.BoardCode : room.RoomId);
+            SetStatusMessage($"Copied {(string.IsNullOrWhiteSpace(room.RoomId) ? room.BoardCode : room.RoomId)} to the clipboard.");
+            RefreshUi();
+        };
+        row.AddChild(copyButton);
+
+        return panel;
+    }
+
+    private Control BuildOnlineRoomActionPanel()
+    {
+        var panel = new PanelContainer();
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 12);
+        padding.AddThemeConstantOverride("margin_right", 12);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = "Online Room Controls"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = OnlineRoomActionService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var readyButton = new Button
+        {
+            Text = OnlineRoomActionService.BuildToggleReadyLabel(),
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = !OnlineRoomActionService.CanToggleReady()
+        };
+        readyButton.Pressed += ToggleOnlineRoomReady;
+        row.AddChild(readyButton);
+
+        var refreshButton = new Button
+        {
+            Text = "Refresh Joined Room",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        refreshButton.Pressed += RefreshJoinedOnlineRoom;
+        row.AddChild(refreshButton);
+
+        var launchButton = new Button
+        {
+            Text = OnlineRoomActionService.BuildLaunchRoundLabel(),
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = !OnlineRoomActionService.CanLaunchRound()
+        };
+        launchButton.Pressed += LaunchOnlineRoomRound;
+        row.AddChild(launchButton);
+
+        var scoreRow = new HBoxContainer();
+        scoreRow.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(scoreRow);
+
+        var refreshScoreboardButton = new Button
+        {
+            Text = "Refresh Room Scoreboard",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        refreshScoreboardButton.Pressed += RefreshOnlineRoomScoreboard;
+        scoreRow.AddChild(refreshScoreboardButton);
+
+        var resetRoundButton = new Button
+        {
+            Text = OnlineRoomActionService.BuildResetRoundLabel(),
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = !OnlineRoomActionService.CanResetRound()
+        };
+        resetRoundButton.Pressed += ResetOnlineRoomRound;
+        scoreRow.AddChild(resetRoundButton);
+
+        var leaveRoomButton = new Button
+        {
+            Text = OnlineRoomActionService.BuildLeaveRoomLabel(),
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        leaveRoomButton.Pressed += LeaveOnlineRoom;
+        scoreRow.AddChild(leaveRoomButton);
+
+        return panel;
     }
 
     private Control BuildUnitPanel(UnitDefinition definition, IReadOnlyList<UnitDefinition> deckUnits)
@@ -457,7 +823,7 @@ public partial class MultiplayerMenu : Control
         return panel;
     }
 
-    private Control BuildFeaturedChallengePanel(FeaturedChallengeDefinition featured)
+    private Control BuildFeaturedChallengePanel(FeaturedChallengeDefinition featured, string loadButtonText = "Load Featured")
     {
         var challenge = featured.Challenge;
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
@@ -509,7 +875,7 @@ public partial class MultiplayerMenu : Control
 
         var loadButton = new Button
         {
-            Text = "Load Featured",
+            Text = loadButtonText,
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -627,7 +993,7 @@ public partial class MultiplayerMenu : Control
     private void GenerateChallengeCode()
     {
         GameState.Instance.GenerateAsyncChallenge(_selectedStage, _selectedMutatorId);
-        _statusLabel.Text = $"Status:\nRolled {GameState.Instance.SelectedAsyncChallengeCode}.";
+        SetStatusMessage($"Rolled {GameState.Instance.SelectedAsyncChallengeCode}.");
         RefreshUi();
     }
 
@@ -635,14 +1001,14 @@ public partial class MultiplayerMenu : Control
     {
         if (!GameState.Instance.TrySetSelectedAsyncChallengeCode(_codeEdit.Text, out var message))
         {
-            _statusLabel.Text = $"Status:\n{message}";
+            SetStatusMessage(message);
             return;
         }
 
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         _selectedStage = challenge.Stage;
         _selectedMutatorId = challenge.MutatorId;
-        _statusLabel.Text = $"Status:\n{message}";
+        SetStatusMessage(message);
         RefreshUi();
     }
 
@@ -650,14 +1016,14 @@ public partial class MultiplayerMenu : Control
     {
         if (!GameState.Instance.TrySetSelectedAsyncChallengeCode(code, out var message))
         {
-            _statusLabel.Text = $"Status:\n{message}";
+            SetStatusMessage(message);
             return;
         }
 
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         _selectedStage = challenge.Stage;
         _selectedMutatorId = challenge.MutatorId;
-        _statusLabel.Text = $"Status:\n{successPrefix}";
+        SetStatusMessage(successPrefix);
         RefreshUi();
     }
 
@@ -667,7 +1033,196 @@ public partial class MultiplayerMenu : Control
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         _selectedStage = challenge.Stage;
         _selectedMutatorId = challenge.MutatorId;
-        _statusLabel.Text = $"Status:\nLoaded featured board {featured.Title} with its locked squad.";
+        SetStatusMessage($"Loaded featured board {featured.Title} with its locked squad.");
+        RefreshUi();
+    }
+
+    private void LoadOnlineRoomBoard(OnlineRoomDirectoryEntry room)
+    {
+        if (!AsyncChallengeCatalog.TryParse(room.BoardCode, out var challenge, out var message))
+        {
+            SetStatusMessage(message);
+            return;
+        }
+
+        if (room.UsesLockedDeck)
+        {
+            GameState.Instance.SetSelectedFeaturedChallenge(new FeaturedChallengeDefinition(
+                string.IsNullOrWhiteSpace(room.RoomId) ? room.BoardCode : room.RoomId,
+                string.IsNullOrWhiteSpace(room.Title) ? "Online Room" : room.Title,
+                string.IsNullOrWhiteSpace(room.Summary) ? "Remote room board." : room.Summary,
+                challenge,
+                room.LockedDeckUnitIds ?? []));
+            var selected = GameState.Instance.GetSelectedAsyncChallenge();
+            _selectedStage = selected.Stage;
+            _selectedMutatorId = selected.MutatorId;
+        }
+        else
+        {
+            if (!GameState.Instance.TrySetSelectedAsyncChallengeCode(room.BoardCode, out message))
+            {
+                SetStatusMessage(message);
+                return;
+            }
+
+            _selectedStage = challenge.Stage;
+            _selectedMutatorId = challenge.MutatorId;
+        }
+
+        SetStatusMessage(
+            $"Loaded room board {room.BoardCode} from {room.Title}. Use `Request Join` if you want to negotiate backend room access; this action only preloads the board locally.");
+        RefreshUi();
+    }
+
+    private void RequestOnlineRoomJoin(OnlineRoomDirectoryEntry room)
+    {
+        if (!OnlineRoomJoinService.RequestJoin(room, out var message))
+        {
+            SetStatusMessage(message);
+            RefreshUi();
+            return;
+        }
+
+        var statusParts = new List<string> { message };
+        if (OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage))
+        {
+            statusParts.Add(sessionMessage);
+        }
+        else
+        {
+            statusParts.Add(sessionMessage);
+        }
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void HostOnlineRoom()
+    {
+        var statusParts = new List<string>();
+        if (!OnlineRoomCreateService.HostSelectedChallenge(out var hostMessage))
+        {
+            SetStatusMessage(hostMessage);
+            RefreshUi();
+            return;
+        }
+
+        statusParts.Add(hostMessage);
+        OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage);
+        statusParts.Add(sessionMessage);
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void QuickMatchOnlineRoom()
+    {
+        if (!OnlineRoomMatchmakeService.QuickMatchSelectedChallenge(out var message))
+        {
+            SetStatusMessage(message);
+            RefreshUi();
+            return;
+        }
+
+        SetStatusMessage(message);
+        RefreshUi();
+    }
+
+    private void ToggleOnlineRoomReady()
+    {
+        var statusParts = new List<string>();
+        if (!OnlineRoomActionService.ToggleReady(out var actionMessage))
+        {
+            SetStatusMessage(actionMessage);
+            RefreshUi();
+            return;
+        }
+
+        statusParts.Add(actionMessage);
+        if (OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage))
+        {
+            statusParts.Add(sessionMessage);
+        }
+        else
+        {
+            statusParts.Add(sessionMessage);
+        }
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void LaunchOnlineRoomRound()
+    {
+        var statusParts = new List<string>();
+        if (!OnlineRoomActionService.LaunchRound(out var actionMessage))
+        {
+            SetStatusMessage(actionMessage);
+            RefreshUi();
+            return;
+        }
+
+        statusParts.Add(actionMessage);
+        OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage);
+        statusParts.Add(sessionMessage);
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void RefreshJoinedOnlineRoom()
+    {
+        var statusParts = new List<string>();
+        OnlineRoomSessionService.RefreshJoinedRoom(out var message);
+        statusParts.Add(message);
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void RefreshOnlineRoomScoreboard()
+    {
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var message);
+        SetStatusMessage(message);
+        RefreshUi();
+    }
+
+    private void ResetOnlineRoomRound()
+    {
+        var statusParts = new List<string>();
+        if (!OnlineRoomActionService.ResetRound(out var actionMessage))
+        {
+            SetStatusMessage(actionMessage);
+            RefreshUi();
+            return;
+        }
+
+        statusParts.Add(actionMessage);
+        OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage);
+        statusParts.Add(sessionMessage);
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
+    }
+
+    private void LeaveOnlineRoom()
+    {
+        if (!OnlineRoomActionService.LeaveRoom(out var message))
+        {
+            SetStatusMessage(message);
+            RefreshUi();
+            return;
+        }
+
+        SetStatusMessage(message);
         RefreshUi();
     }
 
@@ -675,11 +1230,11 @@ public partial class MultiplayerMenu : Control
     {
         if (!GameState.Instance.TogglePinnedChallengeCode(code, out _, out var message))
         {
-            _statusLabel.Text = $"Status:\n{message}";
+            SetStatusMessage(message);
             return;
         }
 
-        _statusLabel.Text = $"Status:\n{message}";
+        SetStatusMessage(message);
         RefreshUi();
     }
 
@@ -687,11 +1242,80 @@ public partial class MultiplayerMenu : Control
     {
         if (!GameState.Instance.PrepareAsyncChallenge(_codeEdit.Text, out var message))
         {
-            _statusLabel.Text = $"Status:\n{message}";
+            SetStatusMessage(message);
             return;
         }
 
         SceneRouter.Instance.GoToBattle();
+    }
+
+    private void FlushOutbox()
+    {
+        if (ChallengeSyncService.Instance == null)
+        {
+            SetStatusMessage("Sync service is unavailable.");
+            RefreshUi();
+            return;
+        }
+
+        ChallengeSyncService.Instance.RefreshStatusFromState();
+        ChallengeSyncService.Instance.FlushPendingSubmissions(out var message);
+        SetStatusMessage(message);
+        RefreshUi();
+    }
+
+    private void RefreshOnlineData()
+    {
+        var challenge = GameState.Instance.GetSelectedAsyncChallenge();
+        var statusParts = new System.Collections.Generic.List<string>();
+
+        if (PlayerProfileSyncService.RefreshProfile(out var profileMessage))
+        {
+            statusParts.Add(profileMessage);
+        }
+        else
+        {
+            statusParts.Add(profileMessage);
+        }
+
+        OnlineRoomDirectoryService.RefreshRooms(
+            GameState.Instance.HighestUnlockedStage,
+            GameState.Instance.MaxStage,
+            4,
+            out var roomMessage);
+        statusParts.Add(roomMessage);
+
+        if (OnlineRoomJoinService.GetCachedTicket() != null)
+        {
+            OnlineRoomSessionService.RefreshJoinedRoom(out var sessionStatus);
+            statusParts.Add(sessionStatus);
+            OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardStatus);
+            statusParts.Add(scoreboardStatus);
+        }
+
+        if (ChallengeBoardFeedService.Instance != null)
+        {
+            ChallengeBoardFeedService.Instance.RefreshFeed(
+                GameState.Instance.HighestUnlockedStage,
+                GameState.Instance.MaxStage,
+                3,
+                out var feedMessage);
+            statusParts.Add(feedMessage);
+        }
+
+        if (ChallengeLeaderboardService.Instance != null)
+        {
+            ChallengeLeaderboardService.Instance.RefreshBoard(challenge.Code, 5, out var boardMessage);
+            statusParts.Add(boardMessage);
+        }
+
+        if (statusParts.Count == 0)
+        {
+            statusParts.Add("Remote online services are unavailable.");
+        }
+
+        SetStatusMessage(string.Join("\n", statusParts));
+        RefreshUi();
     }
 
     private void SyncStageSelector()
@@ -756,6 +1380,14 @@ public partial class MultiplayerMenu : Control
         }
 
         return builder.ToString().TrimEnd();
+    }
+
+    private void SetStatusMessage(string message)
+    {
+        _lastStatusMessage = string.IsNullOrWhiteSpace(message)
+            ? ""
+            : message.Trim();
+        _statusLabel.Text = $"Status:\n{_lastStatusMessage}";
     }
 
     private static string FormatHistoryEntry(ChallengeRunRecord record, bool includeCode)

@@ -4,13 +4,19 @@
 
 Build a game that captures the core feel of **Dead Ahead: Zombie Warfare** while using original code, original presentation, and a cleaner internal architecture.
 
+Theme pivot:
+
+- keep the lane-battle, cooldown-card, stage-progression structure
+- replace the current zombie/apocalypse presentation with an original **medieval fantasy** setting
+- shift the battlefield fantasy toward **warbands, castles, siege pressure, and magic**
+
 Current target:
 
 - campaign map -> mission select -> battle
-- bus vs barricade presentation
+- medieval fantasy battlefield framing, likely **war wagon/caravan vs gatehouse/fortress**
 - courage-based card deployment
 - cooldown-driven deck play
-- stage-based zombie waves
+- stage-based enemy waves with medieval/fantasy factions
 - persistent roster and upgrade progression
 - shop-driven economy with gold and food as the main progression currencies
 
@@ -18,6 +24,7 @@ Longer-term expansion targets:
 
 - endless roguelite mode built on top of the battle/meta systems
 - multiplayer built only after the combat loop and state model are stable
+- internet/mobile backend-backed multiplayer after the LAN and async room flows are proven locally
 
 ## What We Have Already Done
 
@@ -40,6 +47,7 @@ This means the project is no longer at "empty prototype" status. It has a combat
 Main gaps versus the intended DAZW-style experience:
 
 - battle still uses prototype presentation instead of a strong bus/barricade fantasy
+- the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion
 - deployment was roster-based rather than deck/card-based
 - stages are still mostly tuning-driven rather than explicitly scripted
 - no squad-building metagame beyond basic stage selection
@@ -52,11 +60,21 @@ Main gaps versus the intended DAZW-style experience:
 
 ## Milestones
 
+### Milestone 0: Medieval Fantasy Theme Pivot
+
+Objective: lock the new fiction and content direction before scaling more maps and units.
+
+- replace zombie/modern naming, factions, and encounter language with original medieval fantasy equivalents
+- decide the final battlefield fantasy, such as **war wagon vs gatehouse**, **caravan vs keep**, or another original siege framing
+- define the first player kingdom/faction, first enemy factions, and magic tone
+- rename/retheme currencies, missions, stage labels, and route presentation where needed
+- create a short art/content bible so later roster, spell, and map work all point at the same setting
+
 ### Milestone 1: DAZW-Style Battle Core
 
 Objective: make the battle feel recognizably closer to the target game.
 
-- present combat as **bus escort vs zombie barricade**
+- present combat as a readable **medieval siege lane battle**
 - use a **limited active deck**
 - add **per-card cooldowns**
 - support **stage wave scripting**
@@ -70,6 +88,7 @@ Objective: create pre-battle decision making and persistent player growth.
 - roster unlock rules
 - unit leveling and upgrade costs
 - in-game shop flow for purchasing new units
+- add a dedicated **spell/magic card layer** alongside troop cards
 - base/bus upgrade track purchased through the same economy layer
 - persistent team composition data
 - better rewards and stage completion structure
@@ -94,25 +113,51 @@ Objective: move from "sandbox stage" to "campaign mission".
 - alternate mission goals
 - star ratings or bonus objectives
 - clearer map progression by district/route
+- fantasy-specific mission events such as ritual sites, gate breaches, relic escorts, cursed weather, or siege objectives
 
 ### Milestone 5: Presentation Pass
 
 Objective: replace prototype abstraction with readable game feedback.
 
-- proper sprites/animations
-- hit, death, projectile, and deploy effects
+- proper medieval/fantasy sprites and animations
+- hit, death, projectile, deploy, and spell effects
 - stronger HUD and battle readability
-- map and menu polish
+- map and menu polish with stronger regional identity
 - audio pass
+- replace zombie/modern placeholder presentation with armor, banners, fortifications, beasts, undead, spell FX, and stronger faction silhouettes
 
 ### Milestone 6: Content Expansion And Balance
 
 Objective: scale once the systems are trustworthy.
 
-- more units and zombie archetypes
-- more maps and districts
+- launch roster target of **at least 10 unique player units**
+- add a reusable **spell roster** with active magic/support cards
+- campaign target of **at least 10 maps/districts**
+- each map should contain **5 or more stages**, for a target of **50+ campaign stages**
 - stage modifiers and challenge content
 - balance passes for courage economy, cooldowns, and wave pacing
+- each map should have a distinct biome/faction/hazard identity
+
+Minimum player unit target for the first medieval roster:
+
+- `Swordsman`
+- `Spearman`
+- `Shield Knight`
+- `Archer`
+- `Crossbowman`
+- `Cavalry Rider`
+- `Halberdier`
+- `Battle Monk`
+- `Mage`
+- `Siege Engineer`
+
+Minimum spell/magic target for the first medieval roster:
+
+- `Fireball`
+- `Heal`
+- `Frost Burst`
+- `Lightning Strike`
+- `Barrier Ward`
 
 ### Milestone 7: Endless Roguelite Mode
 
@@ -134,15 +179,29 @@ Objective: support networked play only after combat/state flow is stable enough 
 - build lobby/session flow and disconnect handling
 - rebalance units/objectives around the chosen multiplayer mode
 
+### Milestone 9: Internet Multiplayer And Mobile Backend
+
+Objective: extend the current async/LAN multiplayer systems into a store-ready internet stack for mobile release.
+
+- keep async challenge boards as the first internet-safe multiplayer feature
+- move room/session state onto a transport-agnostic model that can be reused by LAN and online rooms
+- add backend-backed player identity, profile sync, and challenge result submission
+- add online room discovery/matchmaking instead of local-IP-only hosting
+- add backend-backed live room telemetry and race-monitor updates for in-progress internet challenge rooms
+- choose relay or authoritative hosting for real-time room races instead of raw peer-to-peer assumptions
+- support reconnects, mobile backgrounding, and stale-room recovery
+- add basic anti-cheat, leaderboard validation, and moderation/reporting hooks
+- keep LAN as the local proving ground for room flow before shipping the internet equivalent
+
 ## Immediate Next Sprint
 
 This sprint should stay narrow and practical:
 
-1. add persistent deck selection
-2. add deploy cooldowns to unit cards
-3. shift battle language and visuals toward bus vs barricade
-4. replace generic spawn randomness with wave-script support
-5. keep content count small while the combat foundation is stabilizing
+1. lock the medieval fantasy theme bible and final battlefield framing
+2. define the first 10-unit roster and first 5 spells
+3. define the 10-map campaign target with 5+ stages per map
+4. keep the existing combat/progression structure but retheme future content toward medieval factions, siege pressure, and magic
+5. only expand content after the renamed/themed roster and map plan are coherent
 
 ## Work Completed In This Sprint
 
@@ -200,6 +259,14 @@ This sprint should stay narrow and practical:
 - added the first multiplayer slice as an async challenge mode with shareable codes, seeded encounters, personal-best score tracking, and a dedicated prep screen
 - added persistent async challenge history so multiplayer prep now shows recent local attempts for the current code and recent queue activity
 - added a rotating featured challenge queue plus pinned rematch boards so the async multiplayer screen now has recurring boards and saved rivalry codes instead of only ad-hoc code entry
+- added provider-backed internet room hosting, join tickets, room-session polling, room actions, result submission, scoreboards, and rematch reset so the async multiplayer screen now covers the full backend room lifecycle before real internet transport exists
+- added provider-backed room leave flow plus service-side state cleanup, so joined or hosted internet rooms can be exited cleanly without relying on a replacement join ticket
+- added provider-backed live online-room telemetry heartbeats plus a cached telemetry status block in multiplayer prep, so in-progress internet room races now have a race-monitor seam alongside results and standings
+- added provider-backed player profile sync with a cached auth/session status seam in settings and multiplayer, so the internet stack now has a real identity handshake before deeper backend account work lands
+- added provider-backed quick matchmaking for the selected async board, so the client can negotiate a seat directly from the backend instead of only browsing and joining room cards manually
+- added HTTP stub smoke coverage for online room create, launch, reset, leave, result, scoreboard, and telemetry flows so the backend room contracts are exercised end to end instead of only compile-checked
+- added HTTP stub smoke coverage for the player-profile contract as well, so backend identity/profile sync is exercised end to end instead of only being compile-checked
+- added HTTP stub smoke coverage for the room-matchmake contract as well, so backend quick-join seat negotiation is exercised end to end instead of only being compile-checked
 - upgraded featured async challenge boards with deterministic locked-squad runs so some daily multiplayer boards now compare execution on the exact same 3-card convoy instead of only the same seed
 - added async challenge score transparency so multiplayer prep now explains the formula up front and battle results show the full post-run point breakdown instead of only the final score
 - added async medal target tiers so challenge prep, featured boards, pinned rematches, and result screens now show deterministic bronze/silver/gold/ace score ladders for the same seeded board
@@ -209,6 +276,50 @@ This sprint should stay narrow and practical:
 - upgraded async ghosts with live split feedback and result-screen deltas so the benchmark now teaches timing/route discipline instead of only replaying markers
 - added a `Blackout Relay` async mutator so challenge boards can pulse scripted signal blackouts and test convoy timing under jammer-style pressure instead of only raw stat modifiers
 - added a LAN race room flow with host/join, shared board sync, launch control, and room scoreboard submission on top of the async challenge system
+- extended LAN race rooms with per-peer ready states so the host can verify the synced board is armed before launch
+- added a dedicated LAN launch-readiness panel so the host can see the active runner pool, spectator pool, and named launch blockers without inferring them from the room text
+- tightened LAN battle flow so challenge end screens route back through room-rematch paths instead of silently dropping into solo async retry behavior
+- added persistent convoy call signs and wired them into LAN room labels, ready states, and room scoreboards so peers are identifiable across runs
+- added live LAN peer race-state tracking so room summaries now show who is still in prep, who is currently racing, and who has already submitted a result
+- added per-peer convoy deck syncing for player-deck LAN boards so the room summary now shows each runner's current squad and active synergy before launch
+- tightened LAN board integrity so changing a convoy deck clears ready state and player-deck rooms require a full synced 3-card convoy on every peer before launch
+- added live LAN race telemetry so room summaries now stream current time, hull, and defeat counts for peers that are already in battle before the final scoreboard arrives
+- added a dedicated LAN race monitor panel so live room progress and completed submissions no longer compete for the same final-scoreboard space
+- added a shared LAN battle-load barrier and countdown so room races no longer start simulation until every peer has finished loading into battle
+- added disconnect preservation for LAN races so a dropped runner is recorded as `DC` instead of silently disappearing from the room monitor and final scoreboard
+- updated LAN challenge end screens so they keep listening to room-state changes and refresh their room monitor / scoreboard while other runners finish
+- added cumulative LAN session standings across rematches so the room menu and live LAN end screens now show an ongoing room leaderboard, not only the current-race result sheet
+- added late-join spectator handling for LAN rooms so peers connecting during an active race are shown as spectators until the next reset/rematch instead of skewing active-race counts
+- hardened LAN round locking so hosts cannot rehost/refresh/launch over an in-flight race, and room UI now flips into a clearer rematch-ready state once the round is complete
+- tightened spectator rematch eligibility so late joiners stay out of the next launch until they explicitly ready, instead of being auto-pulled into the following race
+- fixed rematch phase recovery so completed runners move back into the visible ready pool when they re-arm, instead of staying stuck in stale `submitted` room state
+- tightened host launch gating again so empty rematch pools are rejected and launch failures now name the exact ready/deck blockers instead of only returning counts
+- added a real two-instance headless LAN smoke harness, with an autoload test director driving host/join/ready/launch/result sync over ENet and isolated `--save-suffix=...` slots keeping smoke runs off the main save data
+- extracted LAN room presentation onto a shared multiplayer room snapshot/formatter layer so future internet-backed rooms can reuse the same room, readiness, and monitor UI model instead of rebuilding it from scratch
+- added a stable player profile ID plus a persistent async challenge submission outbox so future backend/mobile sync can build on real queued result envelopes instead of starting from local history blobs
+- added the first backend-ready sync stub for async multiplayer, with a provider-based batch sync service, settings-backed provider selection, optional HTTP endpoint configuration, and a manual outbox flush path writing queued challenge result envelopes into a local journal so the mobile/backend submission lifecycle can be exercised before a live service exists
+- added a real HTTP challenge-sync smoke harness, with a headless sync driver posting to a local stub server so the online provider path is exercised end to end instead of only existing as an interface and DTO layer
+- added a provider-backed remote leaderboard pull path for async challenges, including a multiplayer-screen `Refresh Board` action and cached standings for the selected code
+- added a real HTTP leaderboard smoke harness, with a headless leaderboard driver pulling from a local stub server so the online read path is exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed remote challenge-feed pull path for async multiplayer, including cached backend-authored featured boards on the multiplayer screen and a unified `Refresh Online` action that refreshes both feed and leaderboard state
+- added a real HTTP challenge-feed smoke harness, with a headless feed driver pulling from a local stub server so backend-authored board discovery is exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed online room-directory pull path on the multiplayer screen, so internet room discovery can cache remote room boards ahead of full internet room join/matchmaking
+- added a real HTTP room-directory smoke harness, with a headless room-directory driver pulling from a local stub server so online room discovery is exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed online room-join ticket path on top of room discovery, so the client can negotiate backend join access and relay hints before real internet room transport exists
+- added a real HTTP room-join smoke harness, with a temp .NET runner posting to a local stub server so join-ticket negotiation is exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed online room-session polling path on top of join tickets, so the client can pull backend room runner/ready/monitor state before real internet room transport exists
+- added a real HTTP room-session smoke harness, with a temp .NET runner posting to a local stub server so backend room-lobby polling is exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed online room-action path on top of session polling, so the client can toggle backend ready state and then repoll room state before real internet room transport exists
+- added a real HTTP room-action smoke harness, with a temp .NET runner posting to a local stub server so backend ready-state actions are exercised end to end instead of only existing as a provider abstraction
+- added a provider-backed online room-host path on top of directory/join/session work, so the selected async board can be published as a hosted room, adopted locally as a host seat, and merged back into the cached room directory
+- added a real HTTP room-create smoke harness, with a temp .NET runner posting to a local stub server so backend room-host publish is exercised end to end instead of only existing as a provider abstraction
+- extended online room actions with a host-side launch/countdown path, so hosted rooms can move beyond ready-state toggles and simulate backend round launch before real internet transport exists
+- added a real HTTP room-launch smoke harness, with a temp .NET runner posting a `launch_round` action to a local stub server so backend room countdown handoff is exercised end to end instead of only existing as a UI button
+- extended online room actions again with a host-side rematch/reset path, so finished backend room rounds can return to prep instead of staying stuck after submitted results
+- added a real HTTP room-reset smoke harness, with a temp .NET runner posting a `reset_round` action to a local stub server so backend rematch/reset handoff is exercised end to end instead of only existing as a UI button
+- added a provider-backed online room-result submission path, so async challenge clears, fails, and retreats can now report into an active backend room when the board code matches
+- added a provider-backed online room-scoreboard fetch path, so multiplayer prep can review shared room standings instead of stopping at room monitor text alone
+- added real HTTP room-result and room-scoreboard smoke harnesses, with temp .NET runners exercising backend result submission and standings fetch end to end against local stub servers
 - expanded the player roster again with a `Mechanic` support unit that can repair the bus and is surfaced through the shop recommendation board
 - expanded the campaign with a third `Foundry Line` district, including four new scripted stages and endless-route support
 - expanded the campaign again with a fourth `Quarantine Wall` district, including four new scripted stages, new checkpoint/decon/lab/blacksite battle palettes, and endless-route support for ranged-support/saboteur-heavy pressure

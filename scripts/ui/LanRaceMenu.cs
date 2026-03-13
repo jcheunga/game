@@ -5,13 +5,17 @@ public partial class LanRaceMenu : Control
 {
 	private Label _boardLabel = null!;
 	private Label _roomLabel = null!;
+	private Label _readinessLabel = null!;
+	private Label _monitorLabel = null!;
 	private Label _scoreboardLabel = null!;
+	private Label _sessionLabel = null!;
 	private Label _statusLabel = null!;
 	private LineEdit _addressEdit = null!;
 	private Button _hostButton = null!;
 	private Button _refreshButton = null!;
 	private Button _joinButton = null!;
 	private Button _closeButton = null!;
+	private Button _readyButton = null!;
 	private Button _launchButton = null!;
 
 	public override void _Ready()
@@ -200,15 +204,51 @@ public partial class LanRaceMenu : Control
 
 		roomStack.AddChild(new Label
 		{
+			Text = "Launch Readiness"
+		});
+
+		_readinessLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			CustomMinimumSize = new Vector2(0f, 136f)
+		};
+		roomStack.AddChild(_readinessLabel);
+
+		roomStack.AddChild(new Label
+		{
+			Text = "Race Monitor"
+		});
+
+		_monitorLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			CustomMinimumSize = new Vector2(0f, 148f)
+		};
+		roomStack.AddChild(_monitorLabel);
+
+		roomStack.AddChild(new Label
+		{
 			Text = "Scoreboard"
 		});
 
 		_scoreboardLabel = new Label
 		{
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(0f, 220f)
+			CustomMinimumSize = new Vector2(0f, 136f)
 		};
 		roomStack.AddChild(_scoreboardLabel);
+
+		roomStack.AddChild(new Label
+		{
+			Text = "Session Standings"
+		});
+
+		_sessionLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			CustomMinimumSize = new Vector2(0f, 156f)
+		};
+		roomStack.AddChild(_sessionLabel);
 
 		var bottomPanel = new PanelContainer
 		{
@@ -242,6 +282,14 @@ public partial class LanRaceMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		});
 
+		_readyButton = new Button
+		{
+			Text = "Ready Up",
+			CustomMinimumSize = new Vector2(180f, 0f)
+		};
+		_readyButton.Pressed += ToggleReady;
+		bottomRow.AddChild(_readyButton);
+
 		_launchButton = new Button
 		{
 			Text = "Launch LAN Race",
@@ -270,15 +318,41 @@ public partial class LanRaceMenu : Control
 			"Change the armed board on the Multiplayer Challenge screen, then return here to host or rebroadcast it.";
 
 		_roomLabel.Text = LanChallengeService.Instance?.BuildRoomSummary() ?? "LAN room service unavailable.";
+		_readinessLabel.Text = LanChallengeService.Instance?.BuildLaunchReadinessSummary() ?? "LAN launch readiness unavailable.";
+		_monitorLabel.Text = LanChallengeService.Instance?.BuildRaceMonitorSummary() ?? "LAN race monitor unavailable.";
 		_scoreboardLabel.Text = LanChallengeService.Instance?.ScoreboardSummary ?? "LAN scoreboard unavailable.";
+		_sessionLabel.Text = LanChallengeService.Instance?.SessionStandingsSummary ?? "LAN session standings unavailable.";
 		_statusLabel.Text = $"Status:\n{LanChallengeService.Instance?.SessionStatus ?? "No LAN room service available."}";
 
 		var service = LanChallengeService.Instance;
 		_hostButton.Text = service != null && service.IsHosting ? "Rehost Current Board" : "Host Current Board";
-		_refreshButton.Disabled = service == null || !service.IsHosting;
+		_hostButton.Disabled = service != null && service.IsHosting && service.RoundLocked;
+		_refreshButton.Disabled = service == null || !service.IsHosting || service.RoundLocked;
 		_joinButton.Disabled = service != null && service.HasRoom && !service.IsClient;
 		_closeButton.Disabled = service == null || !service.HasRoom;
-		_launchButton.Disabled = service == null || !service.IsHosting || string.IsNullOrWhiteSpace(service.SharedChallengeCode);
+		_readyButton.Disabled =
+			service == null ||
+			!service.HasRoom ||
+			(service.RoundLocked && !service.RoundComplete);
+		_readyButton.Text =
+			service == null || !service.HasRoom
+				? "Ready Up"
+				: service.LocalSpectating && !service.RoundComplete
+					? "Spectating"
+					: service.LocalSpectating && service.RoundComplete
+						? "Join Rematch"
+						: service.LocalReady
+							? "Unready"
+							: service.RoundComplete
+								? "Ready Rematch"
+								: "Ready Up";
+		_launchButton.Disabled =
+			service == null ||
+			!service.IsHosting ||
+			service.RoundLocked ||
+			string.IsNullOrWhiteSpace(service.SharedChallengeCode) ||
+			!service.AllPeersReady ||
+			!service.AllPeersDecksReady;
 	}
 
 	private void HostBoard()
@@ -337,6 +411,23 @@ public partial class LanRaceMenu : Control
 	private void CloseRoom()
 	{
 		LanChallengeService.Instance?.CloseRoom();
+		RefreshUi();
+	}
+
+	private void ToggleReady()
+	{
+		if (LanChallengeService.Instance == null)
+		{
+			return;
+		}
+
+		if (!LanChallengeService.Instance.ToggleLocalReady(out var message))
+		{
+			_statusLabel.Text = $"Status:\n{message}";
+			return;
+		}
+
+		_statusLabel.Text = $"Status:\n{message}";
 		RefreshUi();
 	}
 

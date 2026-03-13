@@ -4,11 +4,17 @@ public partial class SettingsMenu : Control
 {
     private Label _audioLabel = null!;
     private Label _interfaceLabel = null!;
+    private Label _callsignLabel = null!;
+    private Label _syncLabel = null!;
     private Label _returnLabel = null!;
     private Button _muteButton = null!;
     private Button _showDevUiButton = null!;
     private Button _showFpsButton = null!;
+    private Button _syncProviderButton = null!;
+    private Button _syncAutoFlushButton = null!;
     private Button _backButton = null!;
+    private LineEdit _callsignEdit = null!;
+    private LineEdit _syncEndpointEdit = null!;
 
     public override void _Ready()
     {
@@ -31,7 +37,7 @@ public partial class SettingsMenu : Control
 
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(720f, 560f)
+            CustomMinimumSize = new Vector2(760f, 720f)
         };
         center.AddChild(panel);
 
@@ -145,6 +151,35 @@ public partial class SettingsMenu : Control
         };
         interfaceStack.AddChild(_interfaceLabel);
 
+        _callsignLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        interfaceStack.AddChild(_callsignLabel);
+
+        var callsignRow = new HBoxContainer();
+        callsignRow.AddThemeConstantOverride("separation", 8);
+        interfaceStack.AddChild(callsignRow);
+
+        _callsignEdit = new LineEdit
+        {
+            PlaceholderText = "Convoy",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        callsignRow.AddChild(_callsignEdit);
+
+        var callsignButton = new Button
+        {
+            Text = "Apply Callsign",
+            CustomMinimumSize = new Vector2(180f, 40f)
+        };
+        callsignButton.Pressed += () =>
+        {
+            GameState.Instance.SetPlayerCallsign(_callsignEdit.Text);
+            RefreshUi();
+        };
+        callsignRow.AddChild(callsignButton);
+
         var interfaceRow = new HBoxContainer();
         interfaceRow.AddThemeConstantOverride("separation", 8);
         interfaceStack.AddChild(interfaceRow);
@@ -163,6 +198,82 @@ public partial class SettingsMenu : Control
         });
         interfaceRow.AddChild(_showFpsButton);
 
+        var syncPanel = new PanelContainer();
+        stack.AddChild(syncPanel);
+
+        var syncPadding = new MarginContainer();
+        syncPadding.AddThemeConstantOverride("margin_left", 14);
+        syncPadding.AddThemeConstantOverride("margin_top", 14);
+        syncPadding.AddThemeConstantOverride("margin_right", 14);
+        syncPadding.AddThemeConstantOverride("margin_bottom", 14);
+        syncPanel.AddChild(syncPadding);
+
+        var syncStack = new VBoxContainer();
+        syncStack.AddThemeConstantOverride("separation", 10);
+        syncPadding.AddChild(syncStack);
+
+        syncStack.AddChild(new Label
+        {
+            Text = "Multiplayer Sync"
+        });
+
+        _syncLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        syncStack.AddChild(_syncLabel);
+
+        var providerRow = new HBoxContainer();
+        providerRow.AddThemeConstantOverride("separation", 8);
+        syncStack.AddChild(providerRow);
+
+        _syncProviderButton = BuildCompactButton("Switch Provider", () =>
+        {
+            var nextProviderId = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
+                ? ChallengeSyncProviderCatalog.LocalJournalId
+                : ChallengeSyncProviderCatalog.HttpApiId;
+            GameState.Instance.SetChallengeSyncProvider(nextProviderId);
+            RefreshUi();
+        });
+        providerRow.AddChild(_syncProviderButton);
+
+        _syncAutoFlushButton = BuildCompactButton("Toggle Auto Flush", () =>
+        {
+            GameState.Instance.SetChallengeSyncAutoFlush(!GameState.Instance.ChallengeSyncAutoFlush);
+            RefreshUi();
+        });
+        providerRow.AddChild(_syncAutoFlushButton);
+
+        var profileButton = BuildCompactButton("Refresh Profile", () =>
+        {
+            PlayerProfileSyncService.RefreshProfile(out _);
+            RefreshUi();
+        });
+        providerRow.AddChild(profileButton);
+
+        var endpointRow = new HBoxContainer();
+        endpointRow.AddThemeConstantOverride("separation", 8);
+        syncStack.AddChild(endpointRow);
+
+        _syncEndpointEdit = new LineEdit
+        {
+            PlaceholderText = "https://api.example.com/challenge-sync",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        endpointRow.AddChild(_syncEndpointEdit);
+
+        var endpointButton = new Button
+        {
+            Text = "Apply Endpoint",
+            CustomMinimumSize = new Vector2(190f, 40f)
+        };
+        endpointButton.Pressed += () =>
+        {
+            GameState.Instance.SetChallengeSyncEndpoint(_syncEndpointEdit.Text);
+            RefreshUi();
+        };
+        endpointRow.AddChild(endpointButton);
+
         var defaultsButton = new Button
         {
             Text = "Restore Defaults",
@@ -170,11 +281,16 @@ public partial class SettingsMenu : Control
         };
         defaultsButton.Pressed += () =>
         {
+            GameState.Instance.SetPlayerCallsign("Convoy");
+            GameState.Instance.ClearPlayerProfileSession();
             GameState.Instance.SetAudioMuted(false);
             GameState.Instance.SetEffectsVolumePercent(85);
             GameState.Instance.SetAmbienceVolumePercent(65);
             GameState.Instance.SetShowDevUi(true);
             GameState.Instance.SetShowFpsCounter(true);
+            GameState.Instance.SetChallengeSyncProvider(ChallengeSyncProviderCatalog.LocalJournalId);
+            GameState.Instance.SetChallengeSyncEndpoint("");
+            GameState.Instance.SetChallengeSyncAutoFlush(false);
             RefreshUi();
         };
         stack.AddChild(defaultsButton);
@@ -226,9 +342,33 @@ public partial class SettingsMenu : Control
         _interfaceLabel.Text =
             $"Combat intel panels: {(GameState.Instance.ShowDevUi ? "Shown" : "Hidden")}\n" +
             $"FPS counter: {(GameState.Instance.ShowFpsCounter ? "Shown" : "Hidden")}";
+        _callsignLabel.Text = $"Convoy callsign: {GameState.Instance.PlayerCallsign}\nUsed for LAN room labels and shared scoreboards.";
+        _syncLabel.Text =
+            $"Profile: {GameState.Instance.PlayerProfileId}\n" +
+            $"Auth token: {(string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken) ? "none" : "active")}\n" +
+            $"Last profile sync: {(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds <= 0 ? "never" : System.DateTimeOffset.FromUnixTimeSeconds(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm:ss"))}\n" +
+            $"Provider: {ChallengeSyncProviderCatalog.GetDisplayName(GameState.Instance.ChallengeSyncProviderId)}\n" +
+            $"Auto flush: {(GameState.Instance.ChallengeSyncAutoFlush ? "On" : "Off")}\n" +
+            $"Endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.ChallengeSyncEndpoint) ? "not set" : GameState.Instance.ChallengeSyncEndpoint)}\n\n" +
+            $"{PlayerProfileSyncService.BuildStatusSummary()}\n\n" +
+            $"{(ChallengeSyncService.Instance?.BuildStatusSummary() ?? "Sync service unavailable.")}";
+        if (!_callsignEdit.HasFocus())
+        {
+            _callsignEdit.Text = GameState.Instance.PlayerCallsign;
+        }
+        if (!_syncEndpointEdit.HasFocus())
+        {
+            _syncEndpointEdit.Text = GameState.Instance.ChallengeSyncEndpoint;
+        }
         _muteButton.Text = GameState.Instance.AudioMuted ? "Unmute" : "Mute";
         _showDevUiButton.Text = GameState.Instance.ShowDevUi ? "Hide Combat Intel" : "Show Combat Intel";
         _showFpsButton.Text = GameState.Instance.ShowFpsCounter ? "Hide FPS Counter" : "Show FPS Counter";
+        _syncProviderButton.Text = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
+            ? "Use Local Stub"
+            : "Use HTTP API";
+        _syncAutoFlushButton.Text = GameState.Instance.ChallengeSyncAutoFlush
+            ? "Disable Auto Flush"
+            : "Enable Auto Flush";
         _backButton.Text = $"Back To {SceneRouter.Instance.SettingsReturnLabel}";
     }
 }

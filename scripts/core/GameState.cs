@@ -14,9 +14,15 @@ public partial class GameState : Node
 	private const int MaxPlayerUnitLevel = 5;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
 	private const int MaxPinnedChallenges = 8;
+	private const int MaxPendingChallengeSubmissions = 24;
 	private const string DefaultEndlessRouteId = "city";
 	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
+	private const string DefaultPlayerCallsign = "Convoy";
+	private const string DefaultChallengeSyncProviderId = ChallengeSyncProviderCatalog.LocalJournalId;
+	private const string DefaultChallengeSyncEndpoint = "";
+	private const bool DefaultChallengeSyncAutoFlush = false;
+	private const string DefaultPlayerAuthToken = "";
 	private const bool DefaultShowDevUi = true;
 	private const bool DefaultShowFpsCounter = true;
 	private const bool DefaultAudioMuted = false;
@@ -43,6 +49,15 @@ public partial class GameState : Node
 	public string SelectedEndlessRouteId { get; private set; } = DefaultEndlessRouteId;
 	public string SelectedEndlessBoonId { get; private set; } = DefaultEndlessBoonId;
 	public string LastResultMessage { get; private set; } = DefaultReport;
+	public string PlayerCallsign { get; private set; } = DefaultPlayerCallsign;
+	public string PlayerProfileId { get; private set; } = "";
+	public string PlayerAuthToken { get; private set; } = DefaultPlayerAuthToken;
+	public long LastPlayerProfileSyncAtUnixSeconds { get; private set; }
+	public long LastChallengeSyncAtUnixSeconds { get; private set; }
+	public int TotalChallengeSubmissionsSynced { get; private set; }
+	public string ChallengeSyncProviderId { get; private set; } = DefaultChallengeSyncProviderId;
+	public string ChallengeSyncEndpoint { get; private set; } = DefaultChallengeSyncEndpoint;
+	public bool ChallengeSyncAutoFlush { get; private set; } = DefaultChallengeSyncAutoFlush;
 	public bool ShowDevUi { get; private set; } = DefaultShowDevUi;
 	public bool ShowFpsCounter { get; private set; } = DefaultShowFpsCounter;
 	public bool AudioMuted { get; private set; } = DefaultAudioMuted;
@@ -54,6 +69,7 @@ public partial class GameState : Node
 	public float BestEndlessTimeSeconds { get; private set; }
 	public int EndlessRuns { get; private set; }
 	public int ChallengeRuns { get; private set; }
+	public int PendingChallengeSubmissionCount => _pendingChallengeSubmissions.Count;
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
@@ -70,6 +86,7 @@ public partial class GameState : Node
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<ChallengeRunRecord> _challengeHistory = new();
+	private readonly List<ChallengeSubmissionEnvelope> _pendingChallengeSubmissions = new();
 	private readonly List<string> _pinnedChallengeCodes = new();
 
 	public override void _EnterTree()
@@ -107,6 +124,55 @@ public partial class GameState : Node
 	{
 		SelectedEndlessRouteId = NormalizeRouteId(routeId);
 		Persist();
+	}
+
+	public void SetPlayerCallsign(string callsign)
+	{
+		PlayerCallsign = NormalizePlayerCallsign(callsign);
+		Persist();
+		LanChallengeService.Instance?.RefreshLocalProfile();
+		PlayerProfileSyncService.InvalidateFromState("Player callsign changed. Refresh profile sync when ready.");
+	}
+
+	public void SetChallengeSyncProvider(string providerId)
+	{
+		ChallengeSyncProviderId = ChallengeSyncProviderCatalog.NormalizeId(providerId);
+		Persist();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
+		PlayerProfileSyncService.InvalidateFromState("Sync provider changed. Refresh profile sync when ready.");
+	}
+
+	public void SetChallengeSyncEndpoint(string endpoint)
+	{
+		ChallengeSyncEndpoint = NormalizeChallengeSyncEndpoint(endpoint);
+		Persist();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
+		PlayerProfileSyncService.InvalidateFromState("Sync endpoint changed. Refresh profile sync when ready.");
+	}
+
+	public void ApplyPlayerProfileSession(string profileId, string callsign, string authToken, long syncedAtUnixSeconds)
+	{
+		PlayerProfileId = NormalizePlayerProfileId(profileId);
+		PlayerCallsign = NormalizePlayerCallsign(callsign);
+		PlayerAuthToken = NormalizePlayerAuthToken(authToken);
+		LastPlayerProfileSyncAtUnixSeconds = Math.Max(0L, syncedAtUnixSeconds);
+		Persist();
+		LanChallengeService.Instance?.RefreshLocalProfile();
+	}
+
+	public void ClearPlayerProfileSession()
+	{
+		PlayerAuthToken = DefaultPlayerAuthToken;
+		LastPlayerProfileSyncAtUnixSeconds = 0L;
+		Persist();
+		PlayerProfileSyncService.InvalidateFromState("Cleared cached profile session.");
+	}
+
+	public void SetChallengeSyncAutoFlush(bool enabled)
+	{
+		ChallengeSyncAutoFlush = enabled;
+		Persist();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
 	}
 
 	public void PrepareCampaignBattle()
@@ -440,6 +506,123 @@ public partial class GameState : Node
 		return builder.ToString().TrimEnd();
 	}
 
+	public IReadOnlyList<ChallengeSubmissionEnvelope> GetPendingChallengeSubmissions(int maxCount = 6, string codeFilter = "")
+	{
+		var normalizedCode = string.IsNullOrWhiteSpace(codeFilter)
+			? ""
+			: AsyncChallengeCatalog.NormalizeCode(codeFilter);
+		return _pendingChallengeSubmissions
+			.Where(entry =>
+				string.IsNullOrWhiteSpace(normalizedCode) ||
+				entry.Code.Equals(normalizedCode, StringComparison.OrdinalIgnoreCase))
+			.OrderByDescending(entry => entry.QueuedAtUnixSeconds)
+			.ThenByDescending(entry => entry.Score)
+			.Take(Math.Max(1, maxCount))
+			.Select(CloneChallengeSubmissionEnvelope)
+			.ToArray();
+	}
+
+	public string BuildChallengeSyncSummary(int maxEntries = 3)
+	{
+		var builder = new StringBuilder();
+		builder.AppendLine("Internet sync outbox:");
+		builder.AppendLine($"Profile: {BuildPlayerProfileDisplayId()}");
+		builder.AppendLine($"Provider: {ChallengeSyncProviderCatalog.GetDisplayName(ChallengeSyncProviderId)}");
+		builder.AppendLine($"Auto flush: {(ChallengeSyncAutoFlush ? "On" : "Off")}");
+		builder.AppendLine($"Pending packets: {_pendingChallengeSubmissions.Count}");
+		builder.AppendLine($"Packets synced: {TotalChallengeSubmissionsSynced}");
+		builder.AppendLine($"Last sync: {FormatUnixTimestamp(LastChallengeSyncAtUnixSeconds)}");
+		builder.AppendLine("Queue mode: offline-first packet outbox.");
+		if (_pendingChallengeSubmissions.Count == 0)
+		{
+			builder.Append("Latest packets: none queued yet.");
+			return builder.ToString().TrimEnd();
+		}
+
+		builder.AppendLine("Latest packets:");
+		foreach (var entry in _pendingChallengeSubmissions
+			.OrderByDescending(record => record.QueuedAtUnixSeconds)
+			.ThenByDescending(record => record.Score)
+			.Take(Math.Max(1, maxEntries)))
+		{
+			builder.AppendLine(FormatChallengeSubmissionEnvelope(entry));
+		}
+
+		return builder.ToString().TrimEnd();
+	}
+
+	public void RecordChallengeSubmissionAttempt(IEnumerable<string> submissionIds, long attemptedAtUnixSeconds)
+	{
+		if (submissionIds == null || _pendingChallengeSubmissions.Count == 0)
+		{
+			return;
+		}
+
+		var normalizedIds = new HashSet<string>(
+			submissionIds
+				.Where(id => !string.IsNullOrWhiteSpace(id))
+				.Select(NormalizeSubmissionId),
+			StringComparer.OrdinalIgnoreCase);
+		if (normalizedIds.Count == 0)
+		{
+			return;
+		}
+
+		var normalizedTimestamp = Math.Max(0L, attemptedAtUnixSeconds);
+		var changed = false;
+		foreach (var entry in _pendingChallengeSubmissions)
+		{
+			if (!normalizedIds.Contains(entry.SubmissionId))
+			{
+				continue;
+			}
+
+			entry.UploadAttempts = Math.Max(0, entry.UploadAttempts) + 1;
+			entry.LastUploadAttemptUnixSeconds = normalizedTimestamp;
+			changed = true;
+		}
+
+		if (!changed)
+		{
+			return;
+		}
+
+		NormalizePendingChallengeSubmissions();
+		Persist();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
+	}
+
+	public int CompleteChallengeSubmissions(IEnumerable<string> submissionIds, long syncedAtUnixSeconds)
+	{
+		if (submissionIds == null || _pendingChallengeSubmissions.Count == 0)
+		{
+			return 0;
+		}
+
+		var normalizedIds = new HashSet<string>(
+			submissionIds
+				.Where(id => !string.IsNullOrWhiteSpace(id))
+				.Select(NormalizeSubmissionId),
+			StringComparer.OrdinalIgnoreCase);
+		if (normalizedIds.Count == 0)
+		{
+			return 0;
+		}
+
+		var removed = _pendingChallengeSubmissions.RemoveAll(entry => normalizedIds.Contains(entry.SubmissionId));
+		if (removed <= 0)
+		{
+			return 0;
+		}
+
+		LastChallengeSyncAtUnixSeconds = Math.Max(0L, syncedAtUnixSeconds);
+		TotalChallengeSubmissionsSynced = Math.Max(0, TotalChallengeSubmissionsSynced) + removed;
+		NormalizePendingChallengeSubmissions();
+		Persist();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
+		return removed;
+	}
+
 	public IReadOnlyList<string> GetPinnedChallengeCodes()
 	{
 		return _pinnedChallengeCodes.ToArray();
@@ -537,6 +720,22 @@ public partial class GameState : Node
 			PlayedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 		});
 		NormalizeChallengeHistory();
+		QueueChallengeSubmission(
+			normalizedCode,
+			challenge.Stage,
+			challenge.MutatorId,
+			Math.Max(0, score),
+			won,
+			retreated,
+			Math.Max(0f, elapsedSeconds),
+			Math.Max(0, enemyDefeats),
+			Mathf.Clamp(starsEarned, 0, 3),
+			deckUnitIds,
+			deployments,
+			Math.Max(0, playerDeployments),
+			Mathf.RoundToInt(Mathf.Clamp(busHullRatio, 0f, 1f) * 100f),
+			usedLockedDeck,
+			scoreBreakdown);
 
 		if (retreated)
 		{
@@ -557,6 +756,10 @@ public partial class GameState : Node
 		}
 
 		Persist();
+		if (ChallengeSyncAutoFlush)
+		{
+			ChallengeSyncService.Instance?.TryAutoFlushPending();
+		}
 	}
 
 	public void SetShowDevUi(bool enabled)
@@ -1238,6 +1441,7 @@ public partial class GameState : Node
 
 			_activeDeckUnitIds.RemoveAll(id => id.Equals(normalizedId, StringComparison.OrdinalIgnoreCase));
 			Persist();
+			LanChallengeService.Instance?.RefreshLocalDeckProfile();
 			message = "Unit moved to reserve.";
 			return true;
 		}
@@ -1273,6 +1477,7 @@ public partial class GameState : Node
 
 			_activeDeckUnitIds.Add(definition.Id);
 			Persist();
+			LanChallengeService.Instance?.RefreshLocalDeckProfile();
 			message = $"{definition.DisplayName} added to deck.";
 			return true;
 		}
@@ -1343,6 +1548,15 @@ public partial class GameState : Node
 		SelectedEndlessRouteId = DefaultEndlessRouteId;
 		SelectedEndlessBoonId = DefaultEndlessBoonId;
 		LastResultMessage = DefaultReport;
+		PlayerCallsign = DefaultPlayerCallsign;
+		PlayerProfileId = GeneratePlayerProfileId();
+		PlayerAuthToken = DefaultPlayerAuthToken;
+		LastPlayerProfileSyncAtUnixSeconds = 0L;
+		LastChallengeSyncAtUnixSeconds = 0L;
+		TotalChallengeSubmissionsSynced = 0;
+		ChallengeSyncProviderId = DefaultChallengeSyncProviderId;
+		ChallengeSyncEndpoint = DefaultChallengeSyncEndpoint;
+		ChallengeSyncAutoFlush = DefaultChallengeSyncAutoFlush;
 		ShowDevUi = DefaultShowDevUi;
 		ShowFpsCounter = DefaultShowFpsCounter;
 		AudioMuted = DefaultAudioMuted;
@@ -1363,6 +1577,7 @@ public partial class GameState : Node
 		_baseUpgradeLevels.Clear();
 		_challengeBestScores.Clear();
 		_challengeHistory.Clear();
+		_pendingChallengeSubmissions.Clear();
 		_pinnedChallengeCodes.Clear();
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
@@ -1396,6 +1611,33 @@ public partial class GameState : Node
 		SelectedEndlessBoonId = saved.Version >= 7
 			? NormalizeEndlessBoonId(saved.SelectedEndlessBoonId)
 			: DefaultEndlessBoonId;
+		PlayerCallsign = saved.Version >= 16
+			? NormalizePlayerCallsign(saved.PlayerCallsign)
+			: DefaultPlayerCallsign;
+		PlayerProfileId = saved.Version >= 17
+			? NormalizePlayerProfileId(saved.PlayerProfileId)
+			: GeneratePlayerProfileId();
+		PlayerAuthToken = saved.Version >= 20
+			? NormalizePlayerAuthToken(saved.PlayerAuthToken)
+			: DefaultPlayerAuthToken;
+		LastPlayerProfileSyncAtUnixSeconds = saved.Version >= 20
+			? Math.Max(0L, saved.LastPlayerProfileSyncAtUnixSeconds)
+			: 0L;
+		LastChallengeSyncAtUnixSeconds = saved.Version >= 18
+			? Math.Max(0L, saved.LastChallengeSyncAtUnixSeconds)
+			: 0L;
+		TotalChallengeSubmissionsSynced = saved.Version >= 18
+			? Math.Max(0, saved.TotalChallengeSubmissionsSynced)
+			: 0;
+		ChallengeSyncProviderId = saved.Version >= 19
+			? ChallengeSyncProviderCatalog.NormalizeId(saved.ChallengeSyncProviderId)
+			: DefaultChallengeSyncProviderId;
+		ChallengeSyncEndpoint = saved.Version >= 19
+			? NormalizeChallengeSyncEndpoint(saved.ChallengeSyncEndpoint)
+			: DefaultChallengeSyncEndpoint;
+		ChallengeSyncAutoFlush = saved.Version >= 19
+			? saved.ChallengeSyncAutoFlush
+			: DefaultChallengeSyncAutoFlush;
 		LastResultMessage = string.IsNullOrWhiteSpace(saved.LastResultMessage)
 			? DefaultReport
 			: saved.LastResultMessage;
@@ -1538,6 +1780,20 @@ public partial class GameState : Node
 			}
 		}
 
+		_pendingChallengeSubmissions.Clear();
+		if (saved.Version >= 17 && saved.PendingChallengeSubmissions != null)
+		{
+			foreach (var entry in saved.PendingChallengeSubmissions)
+			{
+				if (entry == null)
+				{
+					continue;
+				}
+
+				_pendingChallengeSubmissions.Add(CloneChallengeSubmissionEnvelope(entry));
+			}
+		}
+
 		_pinnedChallengeCodes.Clear();
 		if (saved.Version >= 12 && saved.PinnedChallengeCodes != null)
 		{
@@ -1588,15 +1844,24 @@ public partial class GameState : Node
 		NormalizeBaseUpgrades();
 		NormalizeChallengeScores();
 		NormalizeChallengeHistory();
+		NormalizePendingChallengeSubmissions();
 		NormalizePinnedChallenges();
 		NormalizeSelectedAsyncChallengeLockedDeck();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
+		PlayerCallsign = NormalizePlayerCallsign(PlayerCallsign);
+		PlayerProfileId = NormalizePlayerProfileId(PlayerProfileId);
+		PlayerAuthToken = NormalizePlayerAuthToken(PlayerAuthToken);
+		LastPlayerProfileSyncAtUnixSeconds = Math.Max(0L, LastPlayerProfileSyncAtUnixSeconds);
+		ChallengeSyncProviderId = ChallengeSyncProviderCatalog.NormalizeId(ChallengeSyncProviderId);
+		ChallengeSyncEndpoint = NormalizeChallengeSyncEndpoint(ChallengeSyncEndpoint);
 		SelectedAsyncChallengeCode = GetSelectedAsyncChallenge().Code;
 		BestEndlessWave = Math.Max(0, BestEndlessWave);
 		BestEndlessTimeSeconds = Math.Max(0f, BestEndlessTimeSeconds);
 		EndlessRuns = Math.Max(0, EndlessRuns);
 		ChallengeRuns = Math.Max(0, ChallengeRuns);
+		LastChallengeSyncAtUnixSeconds = Math.Max(0L, LastChallengeSyncAtUnixSeconds);
+		TotalChallengeSubmissionsSynced = Math.Max(0, TotalChallengeSubmissionsSynced);
 		EffectsVolumePercent = Mathf.Clamp(EffectsVolumePercent, 0, 100);
 		AmbienceVolumePercent = Mathf.Clamp(AmbienceVolumePercent, 0, 100);
 	}
@@ -1628,6 +1893,13 @@ public partial class GameState : Node
 			SelectedEndlessRouteId = SelectedEndlessRouteId,
 			SelectedEndlessBoonId = SelectedEndlessBoonId,
 			LastResultMessage = LastResultMessage,
+			PlayerCallsign = PlayerCallsign,
+			PlayerProfileId = PlayerProfileId,
+			PlayerAuthToken = PlayerAuthToken,
+			LastPlayerProfileSyncAtUnixSeconds = LastPlayerProfileSyncAtUnixSeconds,
+			ChallengeSyncProviderId = ChallengeSyncProviderId,
+			ChallengeSyncEndpoint = ChallengeSyncEndpoint,
+			ChallengeSyncAutoFlush = ChallengeSyncAutoFlush,
 			ShowDevUi = ShowDevUi,
 			ShowFpsCounter = ShowFpsCounter,
 			AudioMuted = AudioMuted,
@@ -1646,6 +1918,11 @@ public partial class GameState : Node
 			ChallengeHistory = _challengeHistory
 				.Select(CloneChallengeHistoryRecord)
 				.ToList(),
+			PendingChallengeSubmissions = _pendingChallengeSubmissions
+				.Select(CloneChallengeSubmissionEnvelope)
+				.ToList(),
+			LastChallengeSyncAtUnixSeconds = LastChallengeSyncAtUnixSeconds,
+			TotalChallengeSubmissionsSynced = TotalChallengeSubmissionsSynced,
 			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray()
 		};
 	}
@@ -1873,6 +2150,58 @@ public partial class GameState : Node
 		}
 	}
 
+	private void NormalizePendingChallengeSubmissions()
+	{
+		_pendingChallengeSubmissions.RemoveAll(entry => entry == null);
+		var validUnitIds = new HashSet<string>(GameData.PlayerRosterIds, StringComparer.OrdinalIgnoreCase);
+		var seenSubmissionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		for (var i = _pendingChallengeSubmissions.Count - 1; i >= 0; i--)
+		{
+			var entry = _pendingChallengeSubmissions[i];
+			entry.SubmissionId = NormalizeSubmissionId(entry.SubmissionId);
+			if (!seenSubmissionIds.Add(entry.SubmissionId))
+			{
+				_pendingChallengeSubmissions.RemoveAt(i);
+				continue;
+			}
+
+			entry.PlayerProfileId = NormalizePlayerProfileId(entry.PlayerProfileId);
+			entry.PlayerCallsign = NormalizePlayerCallsign(entry.PlayerCallsign);
+			entry.Code = AsyncChallengeCatalog.NormalizeCode(entry.Code);
+			entry.Stage = Mathf.Clamp(entry.Stage, 1, MaxStage);
+			entry.MutatorId = AsyncChallengeCatalog.NormalizeMutatorId(entry.MutatorId);
+			entry.Score = Math.Max(0, entry.Score);
+			entry.RawScore = Math.Max(0, entry.RawScore);
+			if (entry.RawScore == 0 && entry.Score > 0)
+			{
+				entry.RawScore = entry.Score;
+			}
+
+			entry.ScoreMultiplier = entry.ScoreMultiplier > 0f ? entry.ScoreMultiplier : 1f;
+			entry.ElapsedSeconds = Math.Max(0f, entry.ElapsedSeconds);
+			entry.EnemyDefeats = Math.Max(0, entry.EnemyDefeats);
+			entry.StarsEarned = Mathf.Clamp(entry.StarsEarned, 0, 3);
+			entry.DeckUnitIds = NormalizeChallengeDeckUnitIds(entry.DeckUnitIds, validUnitIds);
+			entry.PlayerDeployments = Math.Max(0, entry.PlayerDeployments);
+			entry.HullPercent = Mathf.Clamp(entry.HullPercent, 0, 100);
+			entry.QueuedAtUnixSeconds = Math.Max(0L, entry.QueuedAtUnixSeconds);
+			entry.UploadAttempts = Math.Max(0, entry.UploadAttempts);
+			entry.LastUploadAttemptUnixSeconds = Math.Max(0L, entry.LastUploadAttemptUnixSeconds);
+			entry.Deployments = NormalizeChallengeDeployments(entry.Deployments, validUnitIds);
+		}
+
+		_pendingChallengeSubmissions.Sort((left, right) =>
+		{
+			var queuedComparison = right.QueuedAtUnixSeconds.CompareTo(left.QueuedAtUnixSeconds);
+			return queuedComparison != 0 ? queuedComparison : right.Score.CompareTo(left.Score);
+		});
+
+		if (_pendingChallengeSubmissions.Count > MaxPendingChallengeSubmissions)
+		{
+			_pendingChallengeSubmissions.RemoveRange(MaxPendingChallengeSubmissions, _pendingChallengeSubmissions.Count - MaxPendingChallengeSubmissions);
+		}
+	}
+
 	private void NormalizePinnedChallenges()
 	{
 		var normalized = new List<string>();
@@ -1958,6 +2287,130 @@ public partial class GameState : Node
 				.ToList() ?? [],
 			PlayedAtUnixSeconds = Math.Max(0L, record.PlayedAtUnixSeconds)
 		};
+	}
+
+	private static ChallengeSubmissionEnvelope CloneChallengeSubmissionEnvelope(ChallengeSubmissionEnvelope entry)
+	{
+		return new ChallengeSubmissionEnvelope
+		{
+			SubmissionId = entry?.SubmissionId ?? "",
+			PlayerProfileId = entry?.PlayerProfileId ?? "",
+			PlayerCallsign = entry?.PlayerCallsign ?? "",
+			Code = AsyncChallengeCatalog.NormalizeCode(entry?.Code ?? ""),
+			Stage = Math.Max(1, entry?.Stage ?? 1),
+			MutatorId = AsyncChallengeCatalog.NormalizeMutatorId(entry?.MutatorId ?? AsyncChallengeCatalog.PressureSpikeId),
+			Score = Math.Max(0, entry?.Score ?? 0),
+			RawScore = Math.Max(0, entry?.RawScore ?? 0),
+			ScoreMultiplier = entry != null && entry.ScoreMultiplier > 0f ? entry.ScoreMultiplier : 1f,
+			Won = entry?.Won ?? false,
+			Retreated = entry?.Retreated ?? false,
+			ElapsedSeconds = Math.Max(0f, entry?.ElapsedSeconds ?? 0f),
+			EnemyDefeats = Math.Max(0, entry?.EnemyDefeats ?? 0),
+			StarsEarned = Mathf.Clamp(entry?.StarsEarned ?? 0, 0, 3),
+			UsedLockedDeck = entry?.UsedLockedDeck ?? false,
+			DeckUnitIds = entry?.DeckUnitIds?.ToArray() ?? [],
+			PlayerDeployments = Math.Max(0, entry?.PlayerDeployments ?? 0),
+			HullPercent = Mathf.Clamp(entry?.HullPercent ?? 0, 0, 100),
+			QueuedAtUnixSeconds = Math.Max(0L, entry?.QueuedAtUnixSeconds ?? 0L),
+			UploadAttempts = Math.Max(0, entry?.UploadAttempts ?? 0),
+			LastUploadAttemptUnixSeconds = Math.Max(0L, entry?.LastUploadAttemptUnixSeconds ?? 0L),
+			Deployments = entry?.Deployments?
+				.Select(CloneChallengeDeploymentRecord)
+				.ToList() ?? []
+		};
+	}
+
+	private static string NormalizePlayerCallsign(string callsign)
+	{
+		var raw = string.IsNullOrWhiteSpace(callsign)
+			? DefaultPlayerCallsign
+			: callsign.Trim();
+		var builder = new StringBuilder();
+		foreach (var character in raw)
+		{
+			if (char.IsLetterOrDigit(character) || character == ' ' || character == '-' || character == '_')
+			{
+				builder.Append(character);
+			}
+		}
+
+		var normalized = builder.ToString().Trim();
+		if (string.IsNullOrWhiteSpace(normalized))
+		{
+			normalized = DefaultPlayerCallsign;
+		}
+
+		if (normalized.Length > 18)
+		{
+			normalized = normalized[..18].TrimEnd();
+		}
+
+		return string.IsNullOrWhiteSpace(normalized)
+			? DefaultPlayerCallsign
+			: normalized;
+	}
+
+	private static string NormalizePlayerProfileId(string profileId)
+	{
+		var normalized = NormalizeSubmissionId(profileId);
+		return string.IsNullOrWhiteSpace(normalized)
+			? GeneratePlayerProfileId()
+			: normalized;
+	}
+
+	private static string NormalizePlayerAuthToken(string authToken)
+	{
+		if (string.IsNullOrWhiteSpace(authToken))
+		{
+			return "";
+		}
+
+		var normalized = authToken.Trim();
+		return normalized.Length > 240
+			? normalized[..240]
+			: normalized;
+	}
+
+	private static string GeneratePlayerProfileId()
+	{
+		var token = Guid.NewGuid().ToString("N")[..10].ToUpperInvariant();
+		return $"CVY-{token}";
+	}
+
+	private static string NormalizeChallengeSyncEndpoint(string endpoint)
+	{
+		var normalized = string.IsNullOrWhiteSpace(endpoint)
+			? ""
+			: endpoint.Trim();
+		if (string.IsNullOrWhiteSpace(normalized))
+		{
+			return "";
+		}
+
+		return normalized.Length > 240
+			? normalized[..240]
+			: normalized;
+	}
+
+	private static string NormalizeSubmissionId(string submissionId)
+	{
+		if (string.IsNullOrWhiteSpace(submissionId))
+		{
+			return Guid.NewGuid().ToString("N").ToUpperInvariant();
+		}
+
+		var builder = new StringBuilder();
+		foreach (var character in submissionId.Trim())
+		{
+			if (char.IsLetterOrDigit(character) || character == '-')
+			{
+				builder.Append(char.ToUpperInvariant(character));
+			}
+		}
+
+		return builder.Length == 0
+			? Guid.NewGuid().ToString("N").ToUpperInvariant()
+			: builder.ToString();
 	}
 
 	private static ChallengeDeploymentRecord CloneChallengeDeploymentRecord(ChallengeDeploymentRecord record)
@@ -2104,6 +2557,88 @@ public partial class GameState : Node
 
 		normalized.Sort((left, right) => left.TimeSeconds.CompareTo(right.TimeSeconds));
 		return normalized;
+	}
+
+	private void QueueChallengeSubmission(
+		string normalizedCode,
+		int stage,
+		string mutatorId,
+		int score,
+		bool won,
+		bool retreated,
+		float elapsedSeconds,
+		int enemyDefeats,
+		int starsEarned,
+		IReadOnlyList<string> deckUnitIds,
+		IReadOnlyList<ChallengeDeploymentRecord> deployments,
+		int playerDeployments,
+		int hullPercent,
+		bool usedLockedDeck,
+		AsyncChallengeScoreBreakdown scoreBreakdown)
+	{
+		_pendingChallengeSubmissions.Insert(0, new ChallengeSubmissionEnvelope
+		{
+			SubmissionId = Guid.NewGuid().ToString("N").ToUpperInvariant(),
+			PlayerProfileId = PlayerProfileId,
+			PlayerCallsign = PlayerCallsign,
+			Code = normalizedCode,
+			Stage = Mathf.Clamp(stage, 1, MaxStage),
+			MutatorId = AsyncChallengeCatalog.NormalizeMutatorId(mutatorId),
+			Score = Math.Max(0, score),
+			RawScore = Math.Max(0, scoreBreakdown?.RawScore ?? score),
+			ScoreMultiplier = Mathf.Max(0.1f, scoreBreakdown?.Multiplier ?? 1f),
+			Won = won,
+			Retreated = retreated,
+			ElapsedSeconds = Math.Max(0f, elapsedSeconds),
+			EnemyDefeats = Math.Max(0, enemyDefeats),
+			StarsEarned = Mathf.Clamp(starsEarned, 0, 3),
+			UsedLockedDeck = usedLockedDeck,
+			DeckUnitIds = (deckUnitIds ?? Array.Empty<string>()).ToArray(),
+			PlayerDeployments = Math.Max(0, playerDeployments),
+			HullPercent = Mathf.Clamp(hullPercent, 0, 100),
+			QueuedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+			UploadAttempts = 0,
+			LastUploadAttemptUnixSeconds = 0,
+			Deployments = deployments == null
+				? []
+				: deployments.Select(CloneChallengeDeploymentRecord).ToList()
+		});
+		NormalizePendingChallengeSubmissions();
+		ChallengeSyncService.Instance?.RefreshStatusFromState();
+	}
+
+	private string BuildPlayerProfileDisplayId()
+	{
+		return $"{PlayerCallsign}  |  {PlayerProfileId}";
+	}
+
+	private static string FormatUnixTimestamp(long unixSeconds)
+	{
+		if (unixSeconds <= 0)
+		{
+			return "never";
+		}
+
+		return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToLocalTime().ToString("MM-dd HH:mm");
+	}
+
+	private static string FormatChallengeSubmissionEnvelope(ChallengeSubmissionEnvelope entry)
+	{
+		var stamp = entry.QueuedAtUnixSeconds > 0
+			? FormatUnixTimestamp(entry.QueuedAtUnixSeconds)
+			: "--";
+		var medal = "No Medal";
+		if (AsyncChallengeCatalog.TryParse(entry.Code, out var challenge, out _))
+		{
+			medal = AsyncChallengeCatalog.ResolveMedalLabel(challenge, entry.Score);
+		}
+
+		var status = entry.UploadAttempts > 0
+			? $"attempted x{entry.UploadAttempts}"
+			: "queued";
+		return
+			$"{stamp} | {entry.Score} pts | {medal} | {entry.Code} | " +
+			$"{(entry.UsedLockedDeck ? "locked deck" : "player deck")} | {status}";
 	}
 
 	private string NormalizePinnedChallengeCode(string code)

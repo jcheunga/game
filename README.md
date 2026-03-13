@@ -40,13 +40,68 @@ godot --headless --path . --build-solutions --quit
   - `Reset Progress`: restores stage unlock/resource defaults
 - Settings:
   - Adjust persistent SFX level, ambience level, mute state, combat intel visibility, and FPS counter visibility
+  - Refresh the current player profile against the active local/HTTP multiplayer provider and review cached auth/session status
   - Returns to the menu/prep screen you opened it from
 - Multiplayer challenge:
   - Build or import a shareable challenge code like `CH-04-PRS-4821`
   - Browse a daily featured challenge queue generated from unlocked stages
   - Featured boards can lock everyone to the same 3-card convoy for fairer async score races
   - Pin challenge codes to keep rematch boards saved locally
+  - `Refresh Online` now also pulls a provider-backed internet room directory, so the multiplayer screen can preview remote room boards before full internet room join exists
+  - `Refresh Online` now also refreshes the provider-backed player profile/auth snapshot used by the internet multiplayer stack
+  - `Quick Match` now negotiates a provider-backed room seat for the currently selected board and immediately adopts the returned join ticket into the room monitor flow
+  - `Host Online Room` now publishes the selected async board through a provider-backed room-host flow, adopts the returned host seat locally, and injects that hosted room back into the cached room directory
+  - Online room listings now also support a provider-backed `Request Join` step, so the client can negotiate a backend join ticket and relay hint before real internet room transport is built
+  - Once a join ticket exists, `Refresh Online` now also pulls a provider-backed room session snapshot so the multiplayer screen can show current runners, ready state, and race-monitor text for that backend room
+  - Joined internet rooms now also expose provider-backed room action controls, so the client can toggle ready state and then repoll the backend room snapshot without needing real internet room transport yet
+  - Hosted internet rooms now also expose a provider-backed `Launch Online Room` control, so the host path can push the backend room into countdown state before real internet room transport exists
+  - Hosted internet rooms now also expose a provider-backed rematch reset control, so finished room rounds can return to prep instead of staying stuck on a submitted board
+  - Joined or hosted internet rooms now also expose a provider-backed `Leave Online Room` control, so backend room state and local cached room/session/result data can be cleared cleanly without replacing it through another join ticket
+  - Async challenge clears, failures, and retreats can now submit provider-backed room results when the selected board matches the active internet room ticket
+  - Joined internet rooms now also cache a provider-backed room scoreboard, so multiplayer prep can review shared room standings alongside the room monitor
+  - Joined internet room challenge runs now also stream provider-backed live telemetry heartbeats, and the multiplayer screen surfaces that cached telemetry provider status next to the room monitor and scoreboard
+  - `Refresh Online` now pulls both a cached remote leaderboard for the selected challenge code and a provider-backed remote featured feed, so backend-authored challenge boards can sit alongside the local daily queue
   - `LAN Race` rooms can host the current seeded board over local ENet, sync it to nearby clients, and compare submitted results on a shared room scoreboard
+  - LAN rooms now also track per-peer ready state and block launch until the synced board is armed on every connected machine
+  - LAN rooms now surface a dedicated launch-readiness panel that names the active runner pool, deck blockers, ready blockers, and spectators instead of leaving launch state implicit
+  - LAN race end screens now route back through the room-rematch flow instead of defaulting to a solo async retry path
+  - Convoy call signs are now persisted in Settings and used across LAN room labels, ready states, and scoreboards
+  - LAN room summaries now also show live peer race state, so the lobby can tell who is still in prep, who is currently in battle, and who has already submitted a result
+  - Player-deck LAN boards now also sync each peer's current convoy deck and active deck synergy into the room summary before launch
+  - Changing cards in a LAN room now clears that runner's ready state, and player-deck boards will not launch until every synced runner has a full 3-card convoy
+  - Active LAN races now also stream low-bandwidth live telemetry back into the room, so racing peers show current time, hull, and defeats before the final scoreboard submission lands
+  - The LAN screen now has a dedicated race monitor panel separate from the final scoreboard, so live progress and completed submissions stay readable during a room race
+  - LAN races now also use a shared load barrier and countdown, so combat does not start until every runner has finished loading into battle
+  - If a runner disconnects during a LAN race, the room now preserves a `DC` result entry instead of silently dropping them from the monitor and scoreboard
+  - LAN challenge end screens now stay live after your own run finishes, updating with room-monitor and scoreboard changes as other runners finish or disconnect
+  - LAN rooms now also keep cumulative session standings across rematches, and those standings are shown both in the room panel and on the live LAN challenge end screen
+  - Late joiners now enter an in-progress LAN race as spectators instead of being counted as missing competitors until the next rematch/reset
+  - Hosts can no longer rebroadcast or relaunch a LAN board while a round is in flight, and the room now switches into an explicit rematch-ready state once all active submissions are in
+  - Spectators now stay out of the next launch until they explicitly ready for the rematch, so late joiners do not get auto-pulled into the following race
+  - Completed runners now also leave the stale `submitted` state once they re-arm for a rematch, so the room monitor reflects the real rematch pool instead of last-round status
+  - Host launch attempts now fail with named blockers, and the room refuses zero-runner rematches instead of silently launching an empty round
+  - `scripts/smoke/lan_race_smoke.sh` now runs a real two-instance headless LAN smoke test, with `LanSmokeDirector` driving host/join/ready/launch/result submission over ENet and `--save-suffix=...` keeping smoke runs off the main save slot
+  - LAN room presentation now runs through a shared multiplayer room snapshot/formatter layer, so future internet-backed rooms can reuse the same room, readiness, and monitor model instead of starting over
+  - Async challenge results now also queue into a persistent internet-ready outbox with a stable player profile ID, so future mobile/backend submission has a real client-side packet path instead of starting from local history only
+  - The multiplayer screen now includes a manual `Flush Outbox` path backed by a provider-based sync service, with the default `Local Journal Stub` buffering batch envelopes so queued challenge packets can be exercised end-to-end before a real internet backend exists
+  - Settings now also expose the sync provider mode, optional HTTP endpoint, and auto-flush toggle so a future mobile/backend provider can be enabled without changing the queue UI
+  - Settings now also surface a provider-backed player profile/auth status block, so callsign/profile sync can be exercised before full internet account systems exist
+  - `scripts/smoke/http_player_profile_sync_smoke.sh` now drives the HTTP player-profile provider end to end against a local stub server, so the backend profile/auth seam is smoke-tested before room matchmaking depends on it
+  - `scripts/smoke/http_challenge_sync_smoke.sh` now drives the HTTP sync provider end to end against a local stub server, so the online challenge-submission path is smoke-tested instead of only compile-checked
+  - `scripts/smoke/http_challenge_leaderboard_smoke.sh` now drives the HTTP leaderboard provider end to end against a local stub server, so the remote board fetch path is also smoke-tested
+  - `scripts/smoke/http_challenge_feed_smoke.sh` now drives the HTTP challenge-feed provider end to end against a local stub server, so backend-authored board discovery is also smoke-tested
+  - `scripts/smoke/http_online_room_directory_smoke.sh` now drives the HTTP room-directory provider end to end against a local stub server, so internet room discovery is also smoke-tested before real room join ships
+  - `scripts/smoke/http_online_room_matchmake_smoke.sh` now drives the HTTP room-matchmake provider end to end against a local stub server, so backend quick-join seat negotiation is also smoke-tested before full internet room transport ships
+  - `scripts/smoke/http_online_room_join_smoke.sh` now drives the HTTP room-join provider end to end against a local stub server, so backend join-ticket negotiation is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_session_smoke.sh` now drives the HTTP room-session provider end to end against a local stub server, so backend room-lobby polling is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_action_smoke.sh` now drives the HTTP room-action provider end to end against a local stub server, so backend ready-state actions are also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_create_smoke.sh` now drives the HTTP room-create provider end to end against a local stub server, so backend room-host publish is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_launch_smoke.sh` now drives the HTTP room-launch action end to end against a local stub server, so backend room countdown/launch handoff is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_reset_smoke.sh` now drives the HTTP room-reset action end to end against a local stub server, so backend rematch/reset handoff is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_leave_smoke.sh` now drives the HTTP room-leave action end to end against a local stub server, so backend room-exit handoff is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_result_smoke.sh` now drives the HTTP room-result provider end to end against a local stub server, so backend room-result submission is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_scoreboard_smoke.sh` now drives the HTTP room-scoreboard provider end to end against a local stub server, so backend room standings fetch is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_telemetry_smoke.sh` now drives the HTTP room-telemetry provider end to end against a local stub server, so backend live race-monitor heartbeats are also smoke-tested before real internet room transport ships
   - Pick a stage and mutator, or roll a new seeded code
   - Run the same seeded encounter locally and compare score on the same code
   - Review the scoring formula, medal targets, and the full post-run score breakdown

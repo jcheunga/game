@@ -36,7 +36,7 @@ public sealed class ChallengeRunRecord
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 15;
+    public int Version { get; set; } = 20;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
@@ -46,6 +46,13 @@ public sealed class GameSaveData
     public string SelectedEndlessRouteId { get; set; } = "city";
     public string SelectedEndlessBoonId { get; set; } = EndlessBoonCatalog.SurplusCourageId;
     public string LastResultMessage { get; set; } = "Pick a district and clear the route.";
+    public string PlayerCallsign { get; set; } = "Convoy";
+    public string PlayerProfileId { get; set; } = "";
+    public string PlayerAuthToken { get; set; } = "";
+    public long LastPlayerProfileSyncAtUnixSeconds { get; set; }
+    public string ChallengeSyncProviderId { get; set; } = ChallengeSyncProviderCatalog.LocalJournalId;
+    public string ChallengeSyncEndpoint { get; set; } = "";
+    public bool ChallengeSyncAutoFlush { get; set; }
     public bool ShowDevUi { get; set; } = true;
     public bool ShowFpsCounter { get; set; } = true;
     public bool AudioMuted { get; set; }
@@ -64,5 +71,8 @@ public sealed class GameSaveData
     public Dictionary<string, int> ChallengeBestScores { get; set; } = new();
     public int ChallengeRuns { get; set; }
     public List<ChallengeRunRecord> ChallengeHistory { get; set; } = [];
+    public List<ChallengeSubmissionEnvelope> PendingChallengeSubmissions { get; set; } = [];
+    public long LastChallengeSyncAtUnixSeconds { get; set; }
+    public int TotalChallengeSubmissionsSynced { get; set; }
     public string[] PinnedChallengeCodes { get; set; } = [];
 }

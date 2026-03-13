@@ -22,6 +22,13 @@ GameState="*res://scenes/autoload/GameState.tscn"
 SceneRouter="*res://scenes/autoload/SceneRouter.tscn"
 AudioDirector="*res://scenes/autoload/AudioDirector.tscn"
 LanChallengeService="*res://scenes/autoload/LanChallengeService.tscn"
+ChallengeSyncService="*res://scenes/autoload/ChallengeSyncService.tscn"
+ChallengeLeaderboardService="*res://scenes/autoload/ChallengeLeaderboardService.tscn"
+ChallengeBoardFeedService="*res://scenes/autoload/ChallengeBoardFeedService.tscn"
+ChallengeBoardFeedSmokeDirector="*res://scenes/autoload/ChallengeBoardFeedSmokeDirector.tscn"
+ChallengeLeaderboardSmokeDirector="*res://scenes/autoload/ChallengeLeaderboardSmokeDirector.tscn"
+ChallengeSyncSmokeDirector="*res://scenes/autoload/ChallengeSyncSmokeDirector.tscn"
+LanSmokeDirector="*res://scenes/autoload/LanSmokeDirector.tscn"
 
 [display]
 

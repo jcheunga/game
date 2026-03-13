@@ -6,6 +6,8 @@ using Godot;
 public partial class BattleController : Node2D
 {
 	private const string DefaultEndlessContactTradeoffLabel = "No contact tradeoff active.";
+	private const float LanRaceTelemetryIntervalSeconds = 1f;
+	private const float OnlineRoomTelemetryIntervalSeconds = 1f;
 
 	private readonly struct TerrainPalette
 	{
@@ -280,9 +282,17 @@ public partial class BattleController : Node2D
 	private EndlessContactActor _activeEndlessContactActor = null!;
 	private ChallengeRunRecord _challengeGhostRun = null!;
 	private int _challengeGhostNextIndex;
+	private float _lanRaceTelemetryTimer;
+	private float _onlineRoomTelemetryTimer;
+	private bool _lanStartBarrierActive;
+	private string _lanChallengeEndBaseText = "";
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
 	private bool IsChallengeMode => _battleMode == BattleRunMode.AsyncChallenge;
+	private bool IsLanRaceMode => IsChallengeMode && LanChallengeService.Instance != null && LanChallengeService.Instance.HasRoom;
+	private bool IsOnlineRoomMode => IsChallengeMode &&
+		!IsLanRaceMode &&
+		OnlineRoomTelemetryService.HasJoinedRoomForChallenge(_challengeDefinition);
 
 	private float PlayerBaseX => _combat.PlayerBaseX;
 	private float EnemyBaseX => _combat.EnemyBaseX;
@@ -318,6 +328,10 @@ public partial class BattleController : Node2D
 		}
 
 		_spawnDirector = new BattleSpawnDirector(_rng);
+		_lanRaceTelemetryTimer = IsLanRaceMode ? 0.2f : 0f;
+		_onlineRoomTelemetryTimer = IsOnlineRoomMode ? 0.2f : 0f;
+		_lanStartBarrierActive = IsLanRaceMode;
+		_lanChallengeEndBaseText = "";
 
 		if (IsEndlessMode)
 		{
@@ -437,6 +451,23 @@ public partial class BattleController : Node2D
 					? $"Challenge {_challengeDefinition.Code}: deploy from the bus and post the best score you can. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {(HasChallengeGhostRun() ? "Local ghost benchmark armed." : "No local ghost benchmark saved yet.")}"
 				: $"Select a squad card, then click the battlefield to deploy from the bus. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()}.");
 		UpdateHud();
+		if (IsLanRaceMode)
+		{
+			if (LanChallengeService.Instance != null)
+			{
+				LanChallengeService.Instance.StateChanged += OnLanRaceStateChanged;
+			}
+
+			LanChallengeService.Instance?.ReportLocalBattleLoaded();
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (IsLanRaceMode && LanChallengeService.Instance != null)
+		{
+			LanChallengeService.Instance.StateChanged -= OnLanRaceStateChanged;
+		}
 	}
 
 	public override void _Draw()
@@ -816,6 +847,11 @@ public partial class BattleController : Node2D
 		}
 
 		var deltaF = (float)delta;
+		if (HandleLanStartBarrier(deltaF))
+		{
+			return;
+		}
+
 		_elapsed += deltaF;
 		_playerBaseFlashTimer = Mathf.Max(0f, _playerBaseFlashTimer - deltaF);
 		_enemyBaseFlashTimer = Mathf.Max(0f, _enemyBaseFlashTimer - deltaF);
@@ -856,9 +892,115 @@ public partial class BattleController : Node2D
 		UpdateEndlessDirectiveState();
 		UpdateEndlessContactEvent(deltaF);
 		MaybeOpenEndlessDraft();
+		UpdateLanRaceTelemetry(deltaF);
+		UpdateOnlineRoomTelemetry(deltaF);
 		UpdateHud();
 		QueueRedraw();
 		CheckBattleEnd();
+	}
+
+	private bool HandleLanStartBarrier(float delta)
+	{
+		if (!_lanStartBarrierActive || !IsLanRaceMode)
+		{
+			return false;
+		}
+
+		var service = LanChallengeService.Instance;
+		if (service == null)
+		{
+			_lanStartBarrierActive = false;
+			return false;
+		}
+
+		if (service.RaceCombatReleased)
+		{
+			_lanStartBarrierActive = false;
+			SetStatus("LAN countdown complete. Race live.");
+			UpdateHud();
+			QueueRedraw();
+			return false;
+		}
+
+		if (service.RaceCountdownActive)
+		{
+			SetStatus($"LAN launch sync. Combat begins in {service.RaceCountdownRemainingSeconds:0.0}s.");
+		}
+		else
+		{
+			SetStatus("Waiting for all LAN runners to finish loading...");
+		}
+
+		UpdateHud();
+		QueueRedraw();
+		return true;
+	}
+
+	private void UpdateLanRaceTelemetry(float delta)
+	{
+		if (!IsLanRaceMode || _battleEnded || LanChallengeService.Instance == null)
+		{
+			return;
+		}
+
+		_lanRaceTelemetryTimer -= delta;
+		if (_lanRaceTelemetryTimer > 0f)
+		{
+			return;
+		}
+
+		_lanRaceTelemetryTimer = LanRaceTelemetryIntervalSeconds;
+		LanChallengeService.Instance.UpdateLocalRaceTelemetry(
+			_elapsed,
+			_enemyDefeats,
+			_playerBaseMaxHealth <= 0f ? 0f : _playerBaseHealth / _playerBaseMaxHealth);
+	}
+
+	private void UpdateOnlineRoomTelemetry(float delta)
+	{
+		if (!IsOnlineRoomMode || _battleEnded)
+		{
+			return;
+		}
+
+		_onlineRoomTelemetryTimer -= delta;
+		if (_onlineRoomTelemetryTimer > 0f)
+		{
+			return;
+		}
+
+		_onlineRoomTelemetryTimer = OnlineRoomTelemetryIntervalSeconds;
+		OnlineRoomTelemetryService.UpdateLocalRaceTelemetry(
+			_challengeDefinition,
+			_elapsed,
+			_enemyDefeats,
+			_playerBaseMaxHealth <= 0f ? 0f : _playerBaseHealth / _playerBaseMaxHealth);
+	}
+
+	private void OnLanRaceStateChanged()
+	{
+		RefreshLanRaceEndPanel();
+	}
+
+	private void RefreshLanRaceEndPanel()
+	{
+		if (!IsLanRaceMode || string.IsNullOrWhiteSpace(_lanChallengeEndBaseText) || _endLabel == null || !_endPanel.Visible)
+		{
+			return;
+		}
+
+		var service = LanChallengeService.Instance;
+		if (service == null)
+		{
+			_endLabel.Text = _lanChallengeEndBaseText;
+			return;
+		}
+
+		_endLabel.Text =
+			$"{_lanChallengeEndBaseText}\n\n" +
+			$"{service.BuildRaceMonitorSummary()}\n\n" +
+			$"{service.ScoreboardSummary}\n\n" +
+			$"{service.SessionStandingsSummary}";
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -1053,15 +1195,36 @@ public partial class BattleController : Node2D
 
 		var retryButton = new Button
 		{
-			Text = IsEndlessMode ? "Restart Run" : IsChallengeMode ? "Retry Challenge" : "Retry Stage",
+			Text = IsEndlessMode
+				? "Restart Run"
+				: IsLanRaceMode
+					? "Room Rematch"
+					: IsChallengeMode
+						? "Retry Challenge"
+						: "Retry Stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
-		retryButton.Pressed += () => SceneRouter.Instance.RetryBattle();
+		retryButton.Pressed += () =>
+		{
+			if (IsLanRaceMode)
+			{
+				SceneRouter.Instance.GoToLanRace();
+				return;
+			}
+
+			SceneRouter.Instance.RetryBattle();
+		};
 		endVBox.AddChild(retryButton);
 
 		var mapButton = new Button
 		{
-			Text = IsEndlessMode ? "Back To Endless Prep" : IsChallengeMode ? "Back To Multiplayer" : "Back To Map",
+			Text = IsEndlessMode
+				? "Back To Endless Prep"
+				: IsLanRaceMode
+					? "Back To Multiplayer"
+					: IsChallengeMode
+						? "Back To Multiplayer"
+						: "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		mapButton.Pressed += () =>
@@ -1074,7 +1237,14 @@ public partial class BattleController : Node2D
 
 			if (IsChallengeMode)
 			{
-				SceneRouter.Instance.GoToMultiplayer();
+				if (IsLanRaceMode)
+				{
+					SceneRouter.Instance.GoToMultiplayer();
+				}
+				else
+				{
+					SceneRouter.Instance.GoToMultiplayer();
+				}
 				return;
 			}
 
@@ -4587,19 +4757,47 @@ public partial class BattleController : Node2D
 				playerWon,
 				false,
 				GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
-			_endLabel.Text =
+			var onlineRoomResultSubmitted = false;
+			if (OnlineRoomResultService.HasJoinedRoomForChallenge(_challengeDefinition))
+			{
+				onlineRoomResultSubmitted = OnlineRoomResultService.SubmitChallengeResult(
+					_challengeDefinition,
+					scoreBreakdown,
+					_elapsed,
+					starsEarned,
+					_enemyDefeats,
+					_playerBaseMaxHealth <= 0f ? 0f : _playerBaseHealth / _playerBaseMaxHealth,
+					playerWon,
+					false,
+					GameState.Instance.HasSelectedAsyncChallengeLockedDeck,
+					out _);
+			}
+			_lanChallengeEndBaseText =
 				$"Challenge {_challengeDefinition.Code}\n" +
 				$"{(playerWon ? "Cleared" : "Failed")}  |  Score {scoreBreakdown.FinalScore}  |  Tier {medalLabel}\n" +
 				$"{AsyncChallengeCatalog.BuildScoreSummary(scoreBreakdown)}\n" +
 				$"{AsyncChallengeCatalog.BuildTargetSummary(_challengeDefinition, scoreBreakdown.FinalScore)}\n" +
 				$"{BuildChallengeGhostResultSummary(scoreBreakdown.FinalScore, starsEarned)}\n" +
-				$"Time {_elapsed:0.0}s  |  Enemy defeats {_enemyDefeats}  |  Stars {starsEarned}/3\n" +
-				$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}";
+			$"Time {_elapsed:0.0}s  |  Enemy defeats {_enemyDefeats}  |  Stars {starsEarned}/3\n" +
+			$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}";
+			if (!IsLanRaceMode)
+			{
+				_endLabel.Text = _lanChallengeEndBaseText;
+			}
 			SetStatus(playerWon
-				? "Challenge clear recorded. Share the code and see who posts the cleaner score."
-				: "Challenge failed. Refit the approach and try the same code again.");
+				? IsLanRaceMode
+					? "LAN race result submitted. Return to the room for the shared scoreboard."
+					: onlineRoomResultSubmitted
+						? "Online room result submitted. Return to multiplayer for the shared room board."
+					: "Challenge clear recorded. Share the code and see who posts the cleaner score."
+				: IsLanRaceMode
+					? "LAN race result submitted. Return to the room and queue a rematch."
+					: onlineRoomResultSubmitted
+						? "Online room failure recorded. Return to multiplayer for the shared room board."
+					: "Challenge failed. Refit the approach and try the same code again.");
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
+			RefreshLanRaceEndPanel();
 			UpdateHud();
 			return;
 		}
@@ -4673,9 +4871,30 @@ public partial class BattleController : Node2D
 					false,
 					true,
 					GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
+				if (OnlineRoomResultService.HasJoinedRoomForChallenge(_challengeDefinition))
+				{
+					OnlineRoomResultService.SubmitChallengeResult(
+						_challengeDefinition,
+						null,
+						_elapsed,
+						0,
+						_enemyDefeats,
+						_playerBaseMaxHealth <= 0f ? 0f : _playerBaseHealth / _playerBaseMaxHealth,
+						false,
+						true,
+						GameState.Instance.HasSelectedAsyncChallengeLockedDeck,
+						out _);
+				}
 			}
 
-			SceneRouter.Instance.GoToMultiplayer();
+			if (IsLanRaceMode)
+			{
+				SceneRouter.Instance.GoToLanRace();
+			}
+			else
+			{
+				SceneRouter.Instance.GoToMultiplayer();
+			}
 			return;
 		}
 

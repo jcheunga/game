@@ -330,6 +330,7 @@ public partial class ShopMenu : Control
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
             $"Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
             $"Heroic directives secured: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
+            $"{GameState.Instance.BuildCampaignReadinessInlineSummary(GameState.Instance.SelectedStage)}\n" +
             $"War wagon plating level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Stores level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
@@ -356,6 +357,7 @@ public partial class ShopMenu : Control
             $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" +
             $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" +
             $"{GameState.Instance.BuildCampaignDirectiveStatusText(selectedStage.StageNumber)}\n" +
+            $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(selectedStage.StageNumber)}\n" +
             $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
 
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
@@ -529,6 +531,33 @@ public partial class ShopMenu : Control
                         GameState.Instance.ToggleCampaignDirective(stage.StageNumber, out var message);
                         _statusLabel.Text = $"Last report:\n{message}";
                     }));
+        }
+
+        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
+        {
+            if (recommendations.Count >= 3)
+            {
+                break;
+            }
+
+            var targetDoctrineId = ResolveRecommendedDoctrineId(
+                unit,
+                supportPressure: howlerCount > 0 || jammerCount > 0 || spitterCount > 0,
+                breachPressure: barricadeHeavyStage || heavyCount > 0,
+                hullSensitive: busSensitiveObjective || hazardHeavyStage,
+                crowdPressure: splitterCount >= 2 || walkerCount >= 8,
+                rushPressure: runnerCount >= 3 || saboteurCount > 0);
+            if (string.IsNullOrWhiteSpace(targetDoctrineId))
+            {
+                continue;
+            }
+
+            TryAddDoctrineRecommendation(
+                recommendations,
+                seen,
+                unit,
+                targetDoctrineId,
+                stage);
         }
 
         switch (primaryMissionType)
@@ -926,6 +955,46 @@ public partial class ShopMenu : Control
         return false;
     }
 
+    private bool TryAddDoctrineRecommendation(
+        List<ShopRecommendation> recommendations,
+        HashSet<string> seen,
+        UnitDefinition unit,
+        string doctrineId,
+        StageDefinition stage)
+    {
+        if (unit == null ||
+            !GameState.Instance.IsUnitDoctrineUnlocked(unit.Id) ||
+            GameState.Instance.GetUnitDoctrineId(unit.Id).Equals(doctrineId, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var doctrine = UnitDoctrineCatalog.GetOrNull(doctrineId);
+        if (doctrine == null)
+        {
+            return false;
+        }
+
+        var retrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
+        return TryAddRecommendation(
+            recommendations,
+            seen,
+            new ShopRecommendation(
+                $"doctrine:{unit.Id}:{doctrine.Id}",
+                $"Forge {doctrine.Title}",
+                $"Stage {stage.StageNumber} pressure favors {doctrine.Title} on {unit.DisplayName}. {doctrine.Summary}\n" +
+                (retrainCost > 0
+                    ? $"Retrain cost: {retrainCost} gold."
+                    : "First doctrine choice is ready."),
+                retrainCost > 0 ? $"Retrain {unit.DisplayName}" : $"Forge {unit.DisplayName}",
+                () =>
+                {
+                    GameState.Instance.TrySelectUnitDoctrine(unit.Id, doctrine.Id, out var message);
+                    _statusLabel.Text = $"Last report:\n{message}";
+                },
+                retrainCost > 0 && GameState.Instance.Gold < retrainCost));
+    }
+
     private bool TryAddSpellRecommendation(
         List<ShopRecommendation> recommendations,
         HashSet<string> seen,
@@ -1028,6 +1097,59 @@ public partial class ShopMenu : Control
         return true;
     }
 
+    private static string ResolveRecommendedDoctrineId(
+        UnitDefinition unit,
+        bool supportPressure,
+        bool breachPressure,
+        bool hullSensitive,
+        bool crowdPressure,
+        bool rushPressure)
+    {
+        var tag = SquadSynergyCatalog.NormalizeTag(unit?.SquadTag);
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return "";
+        }
+
+        if (hullSensitive)
+        {
+            return tag switch
+            {
+                SquadSynergyCatalog.FrontlineTag => "frontline_bastion",
+                SquadSynergyCatalog.SupportTag => "support_ward_circle",
+                SquadSynergyCatalog.BreachTag => "breach_iron_vanguard",
+                SquadSynergyCatalog.ReconTag => "recon_trailblazer",
+                _ => ""
+            };
+        }
+
+        if (supportPressure || breachPressure)
+        {
+            return tag switch
+            {
+                SquadSynergyCatalog.FrontlineTag => "frontline_duelist",
+                SquadSynergyCatalog.SupportTag => "support_quick_chant",
+                SquadSynergyCatalog.BreachTag => "breach_siegebreaker",
+                SquadSynergyCatalog.ReconTag => "recon_deadeye",
+                _ => ""
+            };
+        }
+
+        if (crowdPressure || rushPressure)
+        {
+            return tag switch
+            {
+                SquadSynergyCatalog.FrontlineTag => "frontline_bastion",
+                SquadSynergyCatalog.SupportTag => "support_quick_chant",
+                SquadSynergyCatalog.BreachTag => "breach_iron_vanguard",
+                SquadSynergyCatalog.ReconTag => "recon_trailblazer",
+                _ => ""
+            };
+        }
+
+        return "";
+    }
+
     private static Dictionary<string, int> BuildStageEnemyCounts(StageDefinition stage)
     {
         var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -1066,13 +1188,15 @@ public partial class ShopMenu : Control
         var lines =
             $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
             $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n" +
-            $"Magic: {(deckSpells.Count == 0 ? "none equipped" : string.Join(", ", deckSpells.Select(spell => spell.DisplayName)))}";
+            $"Magic: {(deckSpells.Count == 0 ? "none equipped" : string.Join(", ", deckSpells.Select(spell => spell.DisplayName)))}\n" +
+            $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(GameState.Instance.SelectedStage)}";
         for (var i = 0; i < deckUnits.Count; i++)
         {
             var unit = deckUnits[i];
             lines +=
                 $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}" +
-                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}";
+                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}" +
+                $"  |  {GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}";
         }
 
         return lines;

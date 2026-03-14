@@ -160,6 +160,7 @@ public partial class MainMenu : Control
             $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"{(nextDirective == null ? "Next directive: none" : GameState.Instance.BuildCampaignDirectiveInlineText(nextStage.StageNumber))}\n" +
+            $"{GameState.Instance.BuildCampaignReadinessInlineSummary(nextStage.StageNumber)}\n" +
             $"{nextExploreLine}\n" +
             $"Active squad: {squadLine}\n" +
             $"Active magic: {spellLine}\n" +

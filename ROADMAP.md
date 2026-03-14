@@ -235,6 +235,7 @@ This sprint should stay narrow and practical:
 - added level-gated unit doctrines with persistent save data, armory selection, retraining costs, and real stat bonuses so unit growth now branches instead of stopping at flat levels
 - added optional stage replay heroic directives with one-time bounty rewards, map/loadout/armory surfacing, and extra stage modifiers so campaign replays now carry a real challenge layer instead of only star cleanup
 - upgraded the audio pass with route-specific ambient profiles and battle-pressure-driven pulse timing, so map/prep/combat no longer share one static background texture across every district
+- added a shared campaign readiness evaluator and doctrine-aware armory guidance, so map/loadout/armory prep now calls out real coverage gaps instead of leaving balance reads buried in raw threat text
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
 - extended route identity through the campaign map, loadout briefing, and caravan armory so each district now carries its own color treatment and battlefield-event briefing surface
 - extended that route identity into live combat with route-themed HUD panels, in-battle briefing banners, and heraldic war wagon/gatehouse silhouettes

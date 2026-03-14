@@ -321,6 +321,25 @@ public partial class GameState : Node
 		return CampaignDirectiveCatalog.BuildRewardSummary(GetCampaignDirective(stage));
 	}
 
+	public CampaignReadinessReport GetCampaignReadinessReport(int stage)
+	{
+		var resolvedStage = BuildConfiguredCampaignStage(stage);
+		return CampaignReadinessEvaluator.Evaluate(
+			resolvedStage,
+			GetActiveDeckUnits(),
+			GetActiveDeckSpells());
+	}
+
+	public string BuildCampaignReadinessInlineSummary(int stage)
+	{
+		return CampaignReadinessEvaluator.BuildInlineSummary(GetCampaignReadinessReport(stage));
+	}
+
+	public string BuildCampaignReadinessDetailedSummary(int stage)
+	{
+		return CampaignReadinessEvaluator.BuildDetailedSummary(GetCampaignReadinessReport(stage));
+	}
+
 	public void PrepareEndlessBattle(string routeId)
 	{
 		CurrentBattleMode = BattleRunMode.Endless;
@@ -1813,6 +1832,11 @@ public partial class GameState : Node
 		}
 
 		message = $"Caravan ready. Stage entry costs {foodCost} food.";
+		var readiness = BuildCampaignReadinessInlineSummary(stage);
+		if (!string.IsNullOrWhiteSpace(readiness))
+		{
+			message += $" {readiness}.";
+		}
 		return true;
 	}
 

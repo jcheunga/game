@@ -190,6 +190,12 @@ public partial class LoadoutMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
+        rosterStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildCampaignReadinessDetailedSummary(_stage.StageNumber),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
         foreach (var definition in GameState.Instance.GetActiveDeckUnits())
         {
             rosterStack.AddChild(BuildUnitPanel(definition));

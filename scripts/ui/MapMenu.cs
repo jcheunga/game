@@ -684,11 +684,13 @@ public partial class MapMenu : Control
         var waveStatus = stage.HasScriptedWaves
             ? $"{stage.Waves.Length} scripted waves"
             : "dynamic pressure";
+        var readiness = GameState.Instance.BuildCampaignReadinessInlineSummary(stage.StageNumber);
 
         return
             $"Stage status: {stageState}  |  Best stars: {bestStars}/3\n" +
             $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food\n" +
-            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}";
+            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}\n" +
+            $"{readiness}";
     }
 
     private string BuildConvoySummaryText()
@@ -717,7 +719,8 @@ public partial class MapMenu : Control
         var deckUnits = GameState.Instance.GetActiveDeckUnits();
         var summary =
             $"Active squad: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
-            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n";
+            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n" +
+            $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(_selectedStage)}\n";
 
         if (deckUnits.Count == 0)
         {

@@ -21,6 +21,25 @@ public static class SpellText
         };
     }
 
+    public static string BuildResolvedEffectSummary(ResolvedSpellStats spell)
+    {
+        return spell.EffectType switch
+        {
+            "fireball" =>
+                $"Impact {spell.Power:0.#} in {spell.Radius:0.#}r.",
+            "heal" =>
+                $"Heal {spell.Power:0.#} allies in {spell.Radius:0.#}r and repair {spell.SecondaryPower:0.#} war wagon hull.",
+            "frost_burst" =>
+                $"Burst {spell.Power:0.#} in {spell.Radius:0.#}r and slow enemies for {spell.Duration:0.#}s.",
+            "lightning_strike" =>
+                $"Strike up to 3 enemies in {spell.Radius:0.#}r for {spell.Power:0.#} opening damage.",
+            "barrier_ward" =>
+                $"Ward allies in {spell.Radius:0.#}r for {spell.Duration:0.#}s and cut incoming damage by {BuildReductionPercent(spell.Power)}%.",
+            _ =>
+                spell.DisplayName
+        };
+    }
+
     public static string BuildInlineSummary(SpellDefinition spell)
     {
         return
@@ -35,6 +54,16 @@ public static class SpellText
             $"{status}\n" +
             $"{BuildCostSummary(spell)}\n" +
             $"{BuildEffectSummary(spell)}";
+    }
+
+    public static string BuildTooltipSummary(SpellDefinition spell, ResolvedSpellStats resolved, bool isReady, float cooldownRemaining)
+    {
+        var status = isReady ? "Ready to cast" : $"Cooldown: {cooldownRemaining:0.0}s";
+        return
+            $"Lv{resolved.Level} {spell.DisplayName}\n" +
+            $"{status}\n" +
+            $"Cost {resolved.CourageCost} courage  |  Cooldown {resolved.Cooldown:0.#}s\n" +
+            $"{BuildResolvedEffectSummary(resolved)}";
     }
 
     private static string BuildCostSummary(SpellDefinition spell)

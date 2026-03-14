@@ -18,6 +18,9 @@ public partial class AudioDirector : Node
 	private const string HazardStrikeCueId = "hazard_strike";
 	private const string VictoryCueId = "victory";
 	private const string DefeatCueId = "defeat";
+	private const string SpellCastCueId = "spell_cast";
+	private const string BossSpawnCueId = "boss_spawn";
+	private const string UpgradeConfirmCueId = "upgrade_confirm";
 	private const string MenuAmbienceCueId = "ambience_menu";
 	private const string BattleAmbienceCueId = "ambience_battle";
 	private const string EndlessAmbienceCueId = "ambience_endless";
@@ -173,6 +176,30 @@ public partial class AudioDirector : Node
 	public void PlayDefeat()
 	{
 		PlayCue(DefeatCueId, -7f, 1f, 0.3f);
+	}
+
+	public void PlaySpellCast(string effectType)
+	{
+		var pitchScale = effectType switch
+		{
+			"fireball" => 0.88f,
+			"heal" => 1.12f,
+			"frost_burst" => 1.04f,
+			"lightning_strike" => 0.94f,
+			"barrier_ward" => 1.08f,
+			_ => 1f
+		};
+		PlayCue(SpellCastCueId, -9f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.1f, "spell_cast");
+	}
+
+	public void PlayBossSpawn()
+	{
+		PlayCue(BossSpawnCueId, -6f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.4f, "boss_spawn");
+	}
+
+	public void PlayUpgradeConfirm()
+	{
+		PlayCue(UpgradeConfirmCueId, -10f, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.08f, "upgrade_confirm");
 	}
 
 	public void RefreshMixFromState()
@@ -528,6 +555,17 @@ public partial class AudioDirector : Node
 			new ToneLayer(260f, 160f, 1f, true),
 			new ToneLayer(200f, 116f, 0.4f),
 			new ToneLayer(132f, 74f, 0.24f)));
+		RegisterCue(SpellCastCueId, CreateCue(0.26f, 0.008f, 0.14f, 0.38f, 0.02f, 3.2f, 0.01f, 0f,
+			new ToneLayer(340f, 580f, 1f),
+			new ToneLayer(540f, 860f, 0.32f),
+			new ToneLayer(720f, 1120f, 0.14f)));
+		RegisterCue(BossSpawnCueId, CreateCue(0.72f, 0.02f, 0.32f, 0.38f, 0.06f, 0f, 0f, 3.8f,
+			new ToneLayer(110f, 86f, 1f, true),
+			new ToneLayer(168f, 128f, 0.38f),
+			new ToneLayer(220f, 172f, 0.18f)));
+		RegisterCue(UpgradeConfirmCueId, CreateCue(0.2f, 0.008f, 0.1f, 0.4f, 0.01f, 0f, 0f, 0f,
+			new ToneLayer(380f, 560f, 1f),
+			new ToneLayer(560f, 760f, 0.38f)));
 		RegisterCue(MenuAmbienceCueId, CreateCue(1.8f, 0.12f, 0.36f, 0.22f, 0.04f, 0.18f, 0.01f, 0.55f,
 			new ToneLayer(108f, 112f, 1f),
 			new ToneLayer(162f, 166f, 0.3f),

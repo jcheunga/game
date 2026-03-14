@@ -177,6 +177,9 @@ public sealed class BattleSpawnDirector
         return false;
     }
 
+    public float AdditionalEnemyHealthScale => _additionalEnemyHealthScale;
+    public float AdditionalEnemyDamageScale => _additionalEnemyDamageScale;
+
     public void SetEnemyScaleModifiers(float healthScale, float damageScale)
     {
         _additionalEnemyHealthScale = Mathf.Max(0.5f, healthScale);

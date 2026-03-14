@@ -64,6 +64,27 @@
       "ColorHex": "f6bd60"
     },
     {
+      "Id": "player_spear",
+      "DisplayName": "Spearman",
+      "Side": "Player",
+      "SquadTag": "frontline",
+      "UnlockStage": 3,
+      "GoldCost": 140,
+      "Cost": 24,
+      "MaxHealth": 84.0,
+      "Speed": 72.0,
+      "AttackDamage": 14.0,
+      "AttackRange": 46.0,
+      "AttackCooldown": 1.08,
+      "DeployCooldown": 7.5,
+      "VisualClass": "fighter",
+      "VisualScale": 1.04,
+      "AggroRangeX": 220.0,
+      "AggroRangeY": 88.0,
+      "BaseDamage": 20,
+      "ColorHex": "d4a373"
+    },
+    {
       "Id": "player_ranger",
       "DisplayName": "Crossbowman",
       "Side": "Player",

@@ -40,12 +40,76 @@ public static class StageModifiers
     public static float ResolveEnemySpawnIntervalScale(StageDefinition stage)
     {
         var density = ResolveEnemyCapBonus(stage);
-        if (density <= 0)
+        var rapidScale = ResolveScaleModifier(stage, "rapid_assault", 1f, 0.5f, 1f);
+        if (density <= 0 && rapidScale >= 1f)
         {
             return 1f;
         }
 
-        return Mathf.Clamp(1f - (density * 0.08f), 0.72f, 1f);
+        var densityScale = density > 0
+            ? Mathf.Clamp(1f - (density * 0.08f), 0.72f, 1f)
+            : 1f;
+        return Mathf.Clamp(densityScale * rapidScale, 0.55f, 1f);
+    }
+
+    public static float ResolveEnemyHealthScale(StageDefinition stage)
+    {
+        return ResolveScaleModifier(stage, "elite_vanguard", 1f, 1f, 1.5f);
+    }
+
+    public static float ResolveEnemyDamageScale(StageDefinition stage)
+    {
+        return ResolveScaleModifier(stage, "elite_vanguard", 1f, 1f, 1.5f);
+    }
+
+    public static float ResolveCursedGroundDps(StageDefinition stage)
+    {
+        if (!TryGetModifier(stage, "cursed_ground", out var modifier))
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp(modifier.Value <= 0f ? 2.5f : modifier.Value, 0.5f, 8f);
+    }
+
+    public static bool HasCursedGround(StageDefinition stage)
+    {
+        return ResolveCursedGroundDps(stage) > 0.01f;
+    }
+
+    public static float ResolveFortifiedDeployDefenseScale(StageDefinition stage)
+    {
+        if (!TryGetModifier(stage, "fortified_deploy", out var modifier))
+        {
+            return 1f;
+        }
+
+        return Mathf.Clamp(modifier.Value <= 0f ? 0.6f : modifier.Value, 0.3f, 0.9f);
+    }
+
+    public static float ResolveFortifiedDeployDuration(StageDefinition stage)
+    {
+        return HasModifierType(stage, "fortified_deploy") ? 4f : 0f;
+    }
+
+    public static bool HasFortifiedDeploy(StageDefinition stage)
+    {
+        return HasModifierType(stage, "fortified_deploy");
+    }
+
+    public static bool HasRapidAssault(StageDefinition stage)
+    {
+        return HasModifierType(stage, "rapid_assault");
+    }
+
+    public static bool HasEliteVanguard(StageDefinition stage)
+    {
+        return HasModifierType(stage, "elite_vanguard");
+    }
+
+    private static bool HasModifierType(StageDefinition stage, string type)
+    {
+        return TryGetModifier(stage, type, out _);
     }
 
     public static string BuildSummaryText(StageDefinition stage)
@@ -143,6 +207,10 @@ public static class StageModifiers
             "surging_courage" => $"Surging courage ({ToPercent(modifier.Value, 1f)} courage gain)",
             "drained_courage" => $"Drained courage ({ToPercent(modifier.Value, 1f)} courage gain)",
             "swarm_density" => $"Swarm density (+{Mathf.Max(1, Mathf.RoundToInt(modifier.Value <= 0f ? 1f : modifier.Value))} enemy cap, faster pressure)",
+            "elite_vanguard" => $"Elite vanguard ({ToPercent(modifier.Value, 1f)} enemy health and damage)",
+            "rapid_assault" => $"Rapid assault ({ToPercent(modifier.Value, 1f)} wave interval)",
+            "cursed_ground" => $"Cursed ground ({(modifier.Value <= 0f ? 2.5f : modifier.Value):0.#} damage/s to deployed allies)",
+            "fortified_deploy" => $"Fortified deploy (allies gain {Mathf.RoundToInt((1f - Mathf.Clamp(modifier.Value <= 0f ? 0.6f : modifier.Value, 0.3f, 0.9f)) * 100f)}% defense for 4s on deploy)",
             _ => modifier.Type
         };
     }
@@ -157,6 +225,10 @@ public static class StageModifiers
             "surging_courage" => "Surging courage",
             "drained_courage" => "Drained courage",
             "swarm_density" => "Swarm density",
+            "elite_vanguard" => "Elite vanguard",
+            "rapid_assault" => "Rapid assault",
+            "cursed_ground" => "Cursed ground",
+            "fortified_deploy" => "Fortified deploy",
             _ => modifier.Type
         };
     }

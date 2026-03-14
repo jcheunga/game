@@ -39,6 +39,7 @@ Player roster display names:
 - `player_brawler` -> `Swordsman`
 - `player_shooter` -> `Archer`
 - `player_defender` -> `Shield Knight`
+- `player_spear` -> `Spearman`
 - `player_ranger` -> `Crossbowman`
 - `player_raider` -> `Cavalry Rider`
 - `player_mechanic` -> `Siege Engineer`

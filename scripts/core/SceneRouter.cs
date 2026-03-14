@@ -12,10 +12,15 @@ public partial class SceneRouter : Node
     public const string SettingsScene = "res://scenes/SettingsMenu.tscn";
     public const string BattleScene = "res://scenes/Battle.tscn";
 
+    private const float FadeDuration = 0.18f;
+
     public static SceneRouter Instance { get; private set; }
     public string SettingsReturnLabel => ResolveSceneLabel(_settingsReturnScenePath);
 
     private string _settingsReturnScenePath = MainMenuScene;
+    private CanvasLayer _fadeLayer;
+    private ColorRect _fadeRect;
+    private bool _transitioning;
 
     public override void _EnterTree()
     {
@@ -28,6 +33,20 @@ public partial class SceneRouter : Node
         {
             Instance = null;
         }
+    }
+
+    public override void _Ready()
+    {
+        _fadeLayer = new CanvasLayer { Layer = 128 };
+        AddChild(_fadeLayer);
+        _fadeRect = new ColorRect
+        {
+            Color = new Color(0f, 0f, 0f, 0f),
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        _fadeLayer.AddChild(_fadeRect);
     }
 
     public void GoToMainMenu()
@@ -92,10 +111,33 @@ public partial class SceneRouter : Node
         ChangeScene(BattleScene);
     }
 
-    private void ChangeScene(string path)
+    private async void ChangeScene(string path)
     {
+        if (_transitioning)
+        {
+            return;
+        }
+
+        _transitioning = true;
         AudioDirector.Instance?.PlaySceneChange();
+
+        if (_fadeRect != null)
+        {
+            var fadeOut = CreateTween();
+            fadeOut.TweenProperty(_fadeRect, "color:a", 1f, FadeDuration);
+            await ToSignal(fadeOut, Tween.SignalName.Finished);
+        }
+
         GetTree().ChangeSceneToFile(path);
+
+        if (_fadeRect != null)
+        {
+            var fadeIn = CreateTween();
+            fadeIn.TweenProperty(_fadeRect, "color:a", 0f, FadeDuration);
+            await ToSignal(fadeIn, Tween.SignalName.Finished);
+        }
+
+        _transitioning = false;
     }
 
     private static string ResolveSceneLabel(string path)

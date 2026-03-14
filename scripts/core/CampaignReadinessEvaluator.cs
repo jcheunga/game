@@ -111,6 +111,9 @@ public static class CampaignReadinessEvaluator
                 modifier != null &&
                 modifier.NormalizedType.Equals("drained_courage", StringComparison.OrdinalIgnoreCase)) ||
             jammerCount > 0;
+        var cursedGround = StageModifiers.HasCursedGround(stage);
+        var eliteVanguard = StageModifiers.HasEliteVanguard(stage);
+        var rapidAssault = StageModifiers.HasRapidAssault(stage);
 
         score += Math.Min(12, resolvedUnits.Length * 4);
         score += Math.Min(6, resolvedSpells.Length * 3);
@@ -215,6 +218,45 @@ public static class CampaignReadinessEvaluator
             }
         }
 
+        if (cursedGround)
+        {
+            if (repairCount > 0 || spellIds.Contains(GameData.SpellHealId) || rangedCount >= 2)
+            {
+                score += 8;
+            }
+            else
+            {
+                gaps.Add("Cursed ground drains deployed allies. Bring sustain or lean into ranged cards that stay safer.");
+                score -= 8;
+            }
+        }
+
+        if (eliteVanguard)
+        {
+            if (breachCount > 0 || splashCount > 0 || spellIds.Contains(GameData.SpellFireballId))
+            {
+                score += 7;
+            }
+            else
+            {
+                gaps.Add("Elite vanguard buffs every enemy. Bring burst damage or breach cards to cut through tougher bodies.");
+                score -= 7;
+            }
+        }
+
+        if (rapidAssault)
+        {
+            if (frontlineCount >= 2 || (frontlineCount > 0 && rangedCount > 0))
+            {
+                score += 6;
+            }
+            else
+            {
+                gaps.Add("Rapid assault speeds up wave pacing. A broader frontline or mixed deploy tempo helps survive the pressure.");
+                score -= 6;
+            }
+        }
+
         if (doctrineEligibleCount > doctrineSelections)
         {
             gaps.Add("Forge doctrines for veteran squad cards so level 3 units stop leaving free power on the table.");
@@ -277,8 +319,11 @@ public static class CampaignReadinessEvaluator
         }
         else
         {
-            builder.Append("Priority gaps: ");
-            builder.Append(string.Join("  |  ", report.Gaps));
+            builder.Append("Priority gaps:");
+            foreach (var gap in report.Gaps)
+            {
+                builder.Append($"\n- {gap}");
+            }
         }
 
         return builder.ToString();

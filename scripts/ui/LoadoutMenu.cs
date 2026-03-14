@@ -129,9 +129,10 @@ public partial class LoadoutMenu : Control
         missionStack.AddChild(new Label
         {
             Text =
-                $"War wagon upgrades: War Wagon Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"Caravan Stores Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"March Drum Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"War wagon upgrades:\n" +
+                $"  Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Stores Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+                $"  March Drum Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
                 $"Rune Beacon Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
@@ -352,9 +353,10 @@ public partial class LoadoutMenu : Control
         stack.AddThemeConstantOverride("separation", 6);
         padding.AddChild(stack);
 
+        var spellLevel = GameState.Instance.GetSpellLevel(spell.Id);
         stack.AddChild(new Label
         {
-            Text = spell.DisplayName
+            Text = $"Lv{spellLevel} {spell.DisplayName}"
         });
 
         stack.AddChild(new Label

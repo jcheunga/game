@@ -11,6 +11,7 @@ public static class GameData
         PlayerBrawlerId,
         PlayerShooterId,
         PlayerDefenderId,
+        PlayerSpearId,
         PlayerRangerId,
         PlayerRaiderId,
         PlayerMechanicId,
@@ -53,6 +54,7 @@ public static class GameData
     public const string PlayerMarksmanId = "player_marksman";
     public const string PlayerBreacherId = "player_breacher";
     public const string PlayerGrenadierId = "player_grenadier";
+    public const string PlayerSpearId = "player_spear";
     public const string PlayerCoordinatorId = "player_coordinator";
     public const string SpellFireballId = "spell_fireball";
     public const string SpellHealId = "spell_heal";
@@ -402,6 +404,31 @@ public static class GameData
                     BaseDamage = 20,
                     DeployCooldown = 9f,
                     ColorHex = "f6bd60"
+                }
+            },
+            {
+                PlayerSpearId,
+                new UnitDefinition
+                {
+                    Id = PlayerSpearId,
+                    DisplayName = "Spearman",
+                    Side = "Player",
+                    SquadTag = SquadSynergyCatalog.FrontlineTag,
+                    UnlockStage = 3,
+                    GoldCost = 140,
+                    Cost = 24,
+                    MaxHealth = 84f,
+                    Speed = 72f,
+                    AttackDamage = 14f,
+                    AttackRange = 46f,
+                    AttackCooldown = 1.08f,
+                    AggroRangeX = 220f,
+                    AggroRangeY = 88f,
+                    BaseDamage = 20,
+                    DeployCooldown = 7.5f,
+                    VisualClass = "fighter",
+                    VisualScale = 1.04f,
+                    ColorHex = "d4a373"
                 }
             },
             {

@@ -336,7 +336,7 @@ public partial class ShopMenu : Control
             $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
-            "- Gold buys units, spells, unit levels, and war wagon upgrades.\n" +
+            "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" +
             "- Food pays for stage entry and map exploration.\n\n" +
             nextExploreLine;
     }
@@ -722,6 +722,13 @@ public partial class ShopMenu : Control
                 "Brace for heavy undead",
                 $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Shield Knight upgrades help the line survive bone juggernauts and grave brutes.");
 
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerSpearId,
+                "Trade safely into heavies",
+                "Spearman reach lets the frontline trade with brutes and juggernauts at a safer distance than shorter melee cards.");
+
             TryAddBaseRecommendation(
                 recommendations,
                 seen,
@@ -784,6 +791,13 @@ public partial class ShopMenu : Control
                 saboteurCount > 0
                     ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts that dive the war wagon. Swordsman upgrades help intercept them before they cash in base damage."
                     : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. Swordsman upgrades stabilize the front line.");
+
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerSpearId,
+                "Extend the intercept line",
+                "Spearman reach lets the frontline catch runners and sappers further up the lane before they slip past shorter melee cards.");
 
             TryAddUnitRecommendation(
                 recommendations,
@@ -946,7 +960,10 @@ public partial class ShopMenu : Control
                     $"Upgrade {unit.DisplayName}",
                     () =>
                     {
-                        GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+                        if (GameState.Instance.TryUpgradeUnit(unit.Id, out var message))
+                        {
+                            AudioDirector.Instance?.PlayUpgradeConfirm();
+                        }
                         _statusLabel.Text = $"Last report:\n{message}";
                     },
                     GameState.Instance.Gold < upgradeCost));
@@ -1049,6 +1066,29 @@ public partial class ShopMenu : Control
                     }));
         }
 
+        var spellLevel = GameState.Instance.GetSpellLevel(spell.Id);
+        if (owned && spellLevel < GameState.Instance.MaxSpellLevel)
+        {
+            var upgradeCost = GameState.Instance.GetSpellUpgradeCost(spell.Id);
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"upgrade_spell:{spell.Id}",
+                    title,
+                    $"{rationale}\nLv{spellLevel} -> Lv{spellLevel + 1} upgrade costs {upgradeCost} gold.",
+                    $"Upgrade {spell.DisplayName}",
+                    () =>
+                    {
+                        if (GameState.Instance.TryUpgradeSpell(spell.Id, out var message))
+                        {
+                            AudioDirector.Instance?.PlayUpgradeConfirm();
+                        }
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    },
+                    GameState.Instance.Gold < upgradeCost));
+        }
+
         return false;
     }
 
@@ -1077,7 +1117,10 @@ public partial class ShopMenu : Control
                 $"Upgrade {definition.Title}",
                 () =>
                 {
-                    GameState.Instance.TryUpgradeBase(upgradeId, out var message);
+                    if (GameState.Instance.TryUpgradeBase(upgradeId, out var message))
+                    {
+                        AudioDirector.Instance?.PlayUpgradeConfirm();
+                    }
                     _statusLabel.Text = $"Last report:\n{message}";
                 },
                 GameState.Instance.Gold < cost));
@@ -1410,7 +1453,10 @@ public partial class ShopMenu : Control
             actionButton.Disabled = GameState.Instance.Gold < upgradeCost;
             actionButton.Pressed += () =>
             {
-                GameState.Instance.TryUpgradeUnit(unit.Id, out var message);
+                if (GameState.Instance.TryUpgradeUnit(unit.Id, out var message))
+                {
+                    AudioDirector.Instance?.PlayUpgradeConfirm();
+                }
                 _statusLabel.Text = $"Last report:\n{message}";
                 RefreshUi();
             };
@@ -1474,13 +1520,14 @@ public partial class ShopMenu : Control
         stack.AddThemeConstantOverride("separation", 8);
         padding.AddChild(stack);
 
+        var spellLevelLabel = owned ? $"Lv{GameState.Instance.GetSpellLevel(spell.Id)}/{GameState.Instance.MaxSpellLevel}" : "";
         var statusLine = !available
             ? $"Locked until stage {spell.UnlockStage}"
             : !owned
                 ? $"Archive price: {purchaseCost} gold"
                 : equipped
-                    ? "Owned  |  Equipped"
-                    : "Owned  |  Reserve";
+                    ? $"Owned  |  Equipped  |  {spellLevelLabel}"
+                    : $"Owned  |  Reserve  |  {spellLevelLabel}";
 
         stack.AddChild(new Label
         {
@@ -1550,8 +1597,27 @@ public partial class ShopMenu : Control
         }
         else
         {
-            actionButton.Text = equipped ? "Equipped" : "Ready To Equip";
-            actionButton.Disabled = equipped;
+            var spellLevel = GameState.Instance.GetSpellLevel(spell.Id);
+            if (spellLevel < GameState.Instance.MaxSpellLevel)
+            {
+                var upgradeCost = GameState.Instance.GetSpellUpgradeCost(spell.Id);
+                actionButton.Text = $"Upgrade Lv{spellLevel + 1}  {upgradeCost} gold";
+                actionButton.Disabled = GameState.Instance.Gold < upgradeCost;
+                actionButton.Pressed += () =>
+                {
+                    if (GameState.Instance.TryUpgradeSpell(spell.Id, out var message))
+                    {
+                        AudioDirector.Instance?.PlayUpgradeConfirm();
+                    }
+                    _statusLabel.Text = $"Last report:\n{message}";
+                    RefreshUi();
+                };
+            }
+            else
+            {
+                actionButton.Text = "Max Level";
+                actionButton.Disabled = true;
+            }
         }
 
         row.AddChild(actionButton);
@@ -1621,7 +1687,10 @@ public partial class ShopMenu : Control
         };
         button.Pressed += () =>
         {
-            GameState.Instance.TryUpgradeBase(upgrade.Id, out var message);
+            if (GameState.Instance.TryUpgradeBase(upgrade.Id, out var message))
+            {
+                AudioDirector.Instance?.PlayUpgradeConfirm();
+            }
             _statusLabel.Text = $"Last report:\n{message}";
             RefreshUi();
         };

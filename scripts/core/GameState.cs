@@ -15,6 +15,8 @@ public partial class GameState : Node
 	private const int UnitDoctrineUnlockLevelValue = 3;
 	private const int UnitDoctrineRetrainGoldCost = 75;
 	private const int MaxPlayerUnitLevel = 5;
+	private const int DefaultSpellLevel = 1;
+	private const int MaxPlayerSpellLevel = 3;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
 	private const int MaxPinnedChallenges = 8;
 	private const int MaxPendingChallengeSubmissions = 24;
@@ -87,6 +89,7 @@ public partial class GameState : Node
 	public int DeckSizeLimit => MaxDeckSize;
 	public int SpellDeckSizeLimit => MaxSpellDeckSize;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
+	public int MaxSpellLevel => MaxPlayerSpellLevel;
 	public int UnitDoctrineUnlockLevel => UnitDoctrineUnlockLevelValue;
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
@@ -100,6 +103,7 @@ public partial class GameState : Node
 	private readonly HashSet<string> _ownedPlayerUnitIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _ownedPlayerSpellIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _spellUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, string> _unitDoctrineSelections = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
@@ -1534,6 +1538,64 @@ public partial class GameState : Node
 		}
 	}
 
+	public int GetSpellLevel(string spellId)
+	{
+		return _spellUpgradeLevels.TryGetValue(spellId, out var level)
+			? level
+			: DefaultSpellLevel;
+	}
+
+	public int GetSpellUpgradeCost(string spellId)
+	{
+		var level = GetSpellLevel(spellId);
+		var definition = GameData.GetSpell(spellId);
+		return definition.GoldCost + 60 + ((level - 1) * 45);
+	}
+
+	public bool TryUpgradeSpell(string spellId, out string message)
+	{
+		try
+		{
+			var definition = GameData.GetSpell(spellId);
+			if (!IsSpellOwned(definition.Id))
+			{
+				message = $"Buy {definition.DisplayName} in the shop before upgrading it.";
+				return false;
+			}
+
+			var currentLevel = GetSpellLevel(definition.Id);
+			if (currentLevel >= MaxPlayerSpellLevel)
+			{
+				message = $"{definition.DisplayName} is already max level.";
+				return false;
+			}
+
+			var cost = GetSpellUpgradeCost(definition.Id);
+			if (Gold < cost)
+			{
+				message = $"Need {cost} gold to upgrade {definition.DisplayName}.";
+				return false;
+			}
+
+			Gold -= cost;
+			_spellUpgradeLevels[definition.Id] = currentLevel + 1;
+			LastResultMessage = $"{definition.DisplayName} upgraded to level {currentLevel + 1}. -{cost} gold.";
+			Persist();
+			message = LastResultMessage;
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Spell data was not found.";
+			return false;
+		}
+	}
+
+	public ResolvedSpellStats BuildSpellStats(SpellDefinition definition)
+	{
+		return new ResolvedSpellStats(definition, GetSpellLevel(definition.Id));
+	}
+
 	public int GetBaseUpgradeLevel(string upgradeId)
 	{
 		return _baseUpgradeLevels.TryGetValue(upgradeId, out var level)
@@ -2135,6 +2197,7 @@ public partial class GameState : Node
 
 		_stageStars.Clear();
 		_unitUpgradeLevels.Clear();
+		_spellUpgradeLevels.Clear();
 		_baseUpgradeLevels.Clear();
 		_unitDoctrineSelections.Clear();
 		_armedCampaignDirectiveStage = 0;
@@ -2324,6 +2387,18 @@ public partial class GameState : Node
 				}
 
 				_unitUpgradeLevels[pair.Key] = pair.Value;
+			}
+		}
+
+		_spellUpgradeLevels.Clear();
+		if (saved.Version >= 25 && saved.SpellLevels != null)
+		{
+			foreach (var pair in saved.SpellLevels)
+			{
+				if (!string.IsNullOrWhiteSpace(pair.Key))
+				{
+					_spellUpgradeLevels[pair.Key] = pair.Value;
+				}
 			}
 		}
 
@@ -2560,6 +2635,7 @@ public partial class GameState : Node
 			OwnedPlayerSpellIds = _ownedPlayerSpellIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
 			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
+			SpellLevels = new Dictionary<string, int>(_spellUpgradeLevels),
 			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
 			UnitDoctrineIds = new Dictionary<string, string>(_unitDoctrineSelections),
 			BestEndlessWave = BestEndlessWave,

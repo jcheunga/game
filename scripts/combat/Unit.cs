@@ -16,6 +16,7 @@ public sealed class UnitStats
         float cooldownReduction = 0f,
         int baseDamageBonus = 0)
     {
+        DefinitionId = definition.Id;
         Name = definition.DisplayName;
         MaxHealth = definition.MaxHealth * healthScale;
         Speed = definition.Speed;
@@ -53,6 +54,7 @@ public sealed class UnitStats
         Color = definition.GetTint();
     }
 
+    public string DefinitionId { get; }
     public string Name { get; }
     public float MaxHealth { get; }
     public float Speed { get; }

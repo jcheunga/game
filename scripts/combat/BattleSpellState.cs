@@ -55,6 +55,11 @@ public sealed class BattleSpellState
 
     public bool CanCast(SpellDefinition definition, float courage, bool battleEnded, bool checkpointActive, out string reason)
     {
+        return CanCast(definition, definition.CourageCost, courage, battleEnded, checkpointActive, out reason);
+    }
+
+    public bool CanCast(SpellDefinition definition, int resolvedCourageCost, float courage, bool battleEnded, bool checkpointActive, out string reason)
+    {
         reason = "";
         if (battleEnded)
         {
@@ -75,7 +80,7 @@ public sealed class BattleSpellState
             return false;
         }
 
-        if (courage < definition.CourageCost)
+        if (courage < resolvedCourageCost)
         {
             reason = $"Not enough courage for {definition.DisplayName}.";
             return false;

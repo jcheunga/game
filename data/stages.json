@@ -414,7 +414,7 @@
       "StageName": "Drowned Quay",
       "Description": "Flooded approaches slow pushes. Blight casters and heavy dead control the lane.",
       "RewardGold": 200,
-      "RewardFood": 4,
+      "RewardFood": 5,
       "EntryFoodCost": 2,
       "ExploreFoodCost": 3,
       "MapX": 346.0,
@@ -2377,7 +2377,8 @@
         }
       ],
       "Modifiers": [
-        { "Type": "reinforced_barricade", "Value": 1.12 }
+        { "Type": "reinforced_barricade", "Value": 1.12 },
+        { "Type": "fortified_deploy", "Value": 0.6 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -3137,7 +3138,8 @@
       ],
       "Modifiers": [
         { "Type": "surging_courage", "Value": 1.06 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "elite_vanguard", "Value": 1.18 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -3253,7 +3255,8 @@
       ],
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.18 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "cursed_ground", "Value": 2.5 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -3725,7 +3728,8 @@
       ],
       "Modifiers": [
         { "Type": "surging_courage", "Value": 1.1 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "rapid_assault", "Value": 0.82 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -3839,7 +3843,8 @@
       ],
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.2 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "elite_vanguard", "Value": 1.22 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -4031,8 +4036,8 @@
       "EnemyBaseHealth": 3420.0,
       "EnemySpawnMin": 0.96,
       "EnemySpawnMax": 1.36,
-      "EnemyHealthScale": 4.12,
-      "EnemyDamageScale": 3.9,
+      "EnemyHealthScale": 3.98,
+      "EnemyDamageScale": 3.78,
       "WalkerWeight": 0.01,
       "RunnerWeight": 0.06,
       "BruteWeight": 0.24,
@@ -4312,7 +4317,8 @@
       ],
       "Modifiers": [
         { "Type": "surging_courage", "Value": 1.1 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "rapid_assault", "Value": 0.78 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -4898,7 +4904,8 @@
       ],
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.26 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "cursed_ground", "Value": 3.0 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -4975,8 +4982,8 @@
       "EnemyBaseHealth": 5220.0,
       "EnemySpawnMin": 0.72,
       "EnemySpawnMax": 1.08,
-      "EnemyHealthScale": 5.42,
-      "EnemyDamageScale": 4.98,
+      "EnemyHealthScale": 5.3,
+      "EnemyDamageScale": 4.88,
       "WalkerWeight": 0.01,
       "RunnerWeight": 0.04,
       "BruteWeight": 0.24,
@@ -5106,8 +5113,8 @@
       "EnemyBaseHealth": 5520.0,
       "EnemySpawnMin": 0.7,
       "EnemySpawnMax": 1.04,
-      "EnemyHealthScale": 5.64,
-      "EnemyDamageScale": 5.14,
+      "EnemyHealthScale": 5.46,
+      "EnemyDamageScale": 5.0,
       "WalkerWeight": 0.01,
       "RunnerWeight": 0.04,
       "BruteWeight": 0.24,
@@ -5144,7 +5151,8 @@
       ],
       "Modifiers": [
         { "Type": "armored_convoy", "Value": 1.1 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "fortified_deploy", "Value": 0.5 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -5222,8 +5230,8 @@
       "EnemyBaseHealth": 5860.0,
       "EnemySpawnMin": 0.68,
       "EnemySpawnMax": 1.0,
-      "EnemyHealthScale": 5.88,
-      "EnemyDamageScale": 5.32,
+      "EnemyHealthScale": 5.66,
+      "EnemyDamageScale": 5.16,
       "WalkerWeight": 0.01,
       "RunnerWeight": 0.04,
       "BruteWeight": 0.24,
@@ -5364,8 +5372,8 @@
       "EnemyBaseHealth": 6120.0,
       "EnemySpawnMin": 0.66,
       "EnemySpawnMax": 0.98,
-      "EnemyHealthScale": 6.04,
-      "EnemyDamageScale": 5.48,
+      "EnemyHealthScale": 5.82,
+      "EnemyDamageScale": 5.3,
       "WalkerWeight": 0.01,
       "RunnerWeight": 0.05,
       "BruteWeight": 0.24,
@@ -5402,7 +5410,8 @@
       ],
       "Modifiers": [
         { "Type": "surging_courage", "Value": 1.12 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "elite_vanguard", "Value": 1.28 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -5476,15 +5485,15 @@
       "MapY": 184.0,
       "PlayerBaseHealth": 1430.0,
       "EnemyBaseHealth": 6420.0,
-      "EnemySpawnMin": 0.64,
-      "EnemySpawnMax": 0.96,
-      "EnemyHealthScale": 6.24,
-      "EnemyDamageScale": 5.66,
+      "EnemySpawnMin": 0.72,
+      "EnemySpawnMax": 1.04,
+      "EnemyHealthScale": 5.98,
+      "EnemyDamageScale": 5.44,
       "WalkerWeight": 0.01,
-      "RunnerWeight": 0.04,
-      "BruteWeight": 0.24,
-      "SpitterWeight": 0.24,
-      "CrusherWeight": 0.52,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.26,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.46,
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.49,
@@ -5516,7 +5525,8 @@
       ],
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.28 },
-        { "Type": "armored_convoy", "Value": 1.1 }
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "rapid_assault", "Value": 0.75 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -5592,15 +5602,15 @@
       "MapY": 136.0,
       "PlayerBaseHealth": 1470.0,
       "EnemyBaseHealth": 6740.0,
-      "EnemySpawnMin": 0.62,
-      "EnemySpawnMax": 0.92,
-      "EnemyHealthScale": 6.46,
-      "EnemyDamageScale": 5.84,
+      "EnemySpawnMin": 0.7,
+      "EnemySpawnMax": 1.0,
+      "EnemyHealthScale": 6.14,
+      "EnemyDamageScale": 5.58,
       "WalkerWeight": 0.01,
-      "RunnerWeight": 0.04,
-      "BruteWeight": 0.24,
-      "SpitterWeight": 0.24,
-      "CrusherWeight": 0.52,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.26,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.46,
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.5,
@@ -5632,7 +5642,8 @@
       ],
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.3 },
-        { "Type": "swarm_density", "Value": 2.0 }
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "cursed_ground", "Value": 3.5 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
@@ -5708,15 +5719,15 @@
       "MapY": 148.0,
       "PlayerBaseHealth": 1510.0,
       "EnemyBaseHealth": 7080.0,
-      "EnemySpawnMin": 0.6,
-      "EnemySpawnMax": 0.9,
-      "EnemyHealthScale": 6.7,
-      "EnemyDamageScale": 6.02,
+      "EnemySpawnMin": 0.68,
+      "EnemySpawnMax": 0.98,
+      "EnemyHealthScale": 6.32,
+      "EnemyDamageScale": 5.74,
       "WalkerWeight": 0.01,
-      "RunnerWeight": 0.04,
-      "BruteWeight": 0.24,
-      "SpitterWeight": 0.26,
-      "CrusherWeight": 0.54,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.26,
+      "SpitterWeight": 0.28,
+      "CrusherWeight": 0.42,
       "BossWeight": 0.0,
       "BossSpawnStartTime": 0.0,
       "BonusWaveChance": 0.52,

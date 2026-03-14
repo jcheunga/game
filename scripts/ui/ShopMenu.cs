@@ -25,6 +25,13 @@ public partial class ShopMenu : Control
         public bool Disabled { get; }
     }
 
+    private ColorRect _backgroundTop = null!;
+    private ColorRect _backgroundBottom = null!;
+    private ColorRect _accentBand = null!;
+    private PanelContainer _titlePanel = null!;
+    private PanelContainer _summaryPanel = null!;
+    private PanelContainer _unitsPanel = null!;
+    private PanelContainer _basePanel = null!;
     private Label _resourcesLabel = null!;
     private Label _statusLabel = null!;
     private Label _summaryLabel = null!;
@@ -42,23 +49,40 @@ public partial class ShopMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
+        _backgroundTop = new ColorRect
         {
             Color = new Color("14213d")
         };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        _backgroundTop.Position = Vector2.Zero;
+        _backgroundTop.Size = new Vector2(1280f, 360f);
+        AddChild(_backgroundTop);
 
-        var titlePanel = new PanelContainer
+        _backgroundBottom = new ColorRect
+        {
+            Color = new Color("0d1b2a"),
+            Position = new Vector2(0f, 360f),
+            Size = new Vector2(1280f, 360f)
+        };
+        AddChild(_backgroundBottom);
+
+        _accentBand = new ColorRect
+        {
+            Color = new Color("ffd166"),
+            Position = new Vector2(0f, 104f),
+            Size = new Vector2(1280f, 6f)
+        };
+        AddChild(_accentBand);
+
+        _titlePanel = new PanelContainer
         {
             Position = new Vector2(24f, 20f),
             Size = new Vector2(1232f, 82f)
         };
-        AddChild(titlePanel);
+        AddChild(_titlePanel);
 
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", 16);
-        titlePanel.AddChild(titleRow);
+        _titlePanel.AddChild(titleRow);
 
         titleRow.AddChild(new Label
         {
@@ -75,19 +99,19 @@ public partial class ShopMenu : Control
         };
         titleRow.AddChild(_resourcesLabel);
 
-        var summaryPanel = new PanelContainer
+        _summaryPanel = new PanelContainer
         {
             Position = new Vector2(24f, 122f),
             Size = new Vector2(360f, 520f)
         };
-        AddChild(summaryPanel);
+        AddChild(_summaryPanel);
 
         var summaryPadding = new MarginContainer();
         summaryPadding.AddThemeConstantOverride("margin_left", 18);
         summaryPadding.AddThemeConstantOverride("margin_right", 18);
         summaryPadding.AddThemeConstantOverride("margin_top", 18);
         summaryPadding.AddThemeConstantOverride("margin_bottom", 18);
-        summaryPanel.AddChild(summaryPadding);
+        _summaryPanel.AddChild(summaryPadding);
 
         var summaryScroll = new ScrollContainer
         {
@@ -152,19 +176,19 @@ public partial class ShopMenu : Control
         };
         summaryStack.AddChild(_statusLabel);
 
-        var unitsPanel = new PanelContainer
+        _unitsPanel = new PanelContainer
         {
             Position = new Vector2(408f, 122f),
             Size = new Vector2(500f, 520f)
         };
-        AddChild(unitsPanel);
+        AddChild(_unitsPanel);
 
         var unitsPadding = new MarginContainer();
         unitsPadding.AddThemeConstantOverride("margin_left", 18);
         unitsPadding.AddThemeConstantOverride("margin_right", 18);
         unitsPadding.AddThemeConstantOverride("margin_top", 18);
         unitsPadding.AddThemeConstantOverride("margin_bottom", 18);
-        unitsPanel.AddChild(unitsPadding);
+        _unitsPanel.AddChild(unitsPadding);
 
         var unitsScroll = new ScrollContainer
         {
@@ -177,19 +201,19 @@ public partial class ShopMenu : Control
         _unitStack.AddThemeConstantOverride("separation", 12);
         unitsScroll.AddChild(_unitStack);
 
-        var basePanel = new PanelContainer
+        _basePanel = new PanelContainer
         {
             Position = new Vector2(932f, 122f),
             Size = new Vector2(324f, 520f)
         };
-        AddChild(basePanel);
+        AddChild(_basePanel);
 
         var basePadding = new MarginContainer();
         basePadding.AddThemeConstantOverride("margin_left", 18);
         basePadding.AddThemeConstantOverride("margin_right", 18);
         basePadding.AddThemeConstantOverride("margin_top", 18);
         basePadding.AddThemeConstantOverride("margin_bottom", 18);
-        basePanel.AddChild(basePadding);
+        _basePanel.AddChild(basePadding);
 
         var baseScroll = new ScrollContainer
         {
@@ -270,6 +294,7 @@ public partial class ShopMenu : Control
 
     private void RefreshUi()
     {
+        ApplyRouteTheme();
         _resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
         _summaryLabel.Text = BuildSummaryText();
         _deckLabel.Text = BuildDeckSummaryText();
@@ -278,6 +303,19 @@ public partial class ShopMenu : Control
         _statusLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
         RebuildUnitPanels();
         RebuildBaseUpgradePanels();
+    }
+
+    private void ApplyRouteTheme()
+    {
+        var stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var route = RouteCatalog.Get(stage.MapId);
+        _backgroundTop.Color = route.BackgroundTop;
+        _backgroundBottom.Color = route.BackgroundBottom;
+        _accentBand.Color = route.BannerAccent;
+        _titlePanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
+        _summaryPanel.SelfModulate = route.BannerPanel;
+        _unitsPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
+        _basePanel.SelfModulate = route.BannerPanel.Lightened(0.02f);
     }
 
     private string BuildSummaryText()
@@ -304,15 +342,19 @@ public partial class ShopMenu : Control
     private string BuildRouteIntelText()
     {
         var selectedStage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var route = RouteCatalog.Get(selectedStage.MapId);
         var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId)
             .Where(stage => stage.StageNumber >= selectedStage.StageNumber)
             .Take(3)
             .ToArray();
 
         var intel =
-            $"Selected route: {selectedStage.MapName}\n" +
+            $"Selected route: {route.Title}\n" +
+            $"{route.CampaignSubtitle}\n" +
+            $"Pressure profile: {route.PressureSummary}\n" +
             $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" +
-            $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food";
+            $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" +
+            $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
 
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
         {
@@ -433,6 +475,8 @@ public partial class ShopMenu : Control
             objective != null &&
             objective.Type.Equals("bus_hull_ratio", StringComparison.OrdinalIgnoreCase));
         var hazardHeavyStage = StageHazards.HasHazards(stage);
+        var primaryMissionEvent = StageMissionEvents.GetPrimaryEvent(stage);
+        var primaryMissionType = primaryMissionEvent?.NormalizedType ?? "";
         var barricadeHeavyStage =
             stage.EnemyBaseHealth >= 680f ||
             stage.Modifiers.Any(modifier =>
@@ -463,6 +507,55 @@ public partial class ShopMenu : Control
                             _statusLabel.Text = $"Last report:\n{message}";
                         }));
             }
+        }
+
+        switch (primaryMissionType)
+        {
+            case "ritual_site":
+                TryAddUnitRecommendation(
+                    recommendations,
+                    seen,
+                    GameData.PlayerCoordinatorId,
+                    "Hold the ritual circle",
+                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} needs steady allied presence. Battle Monk helps stacked defenders trade better while the caravan sits on the circle.");
+
+                TryAddSpellRecommendation(
+                    recommendations,
+                    seen,
+                    GameData.SpellBarrierWardId,
+                    "Fortify the ritual hold",
+                    "Barrier Ward buys time on shrine and seal circles where the caravan has to hold ground instead of only racing the next wave.");
+                break;
+            case "relic_escort":
+                TryAddUnitRecommendation(
+                    recommendations,
+                    seen,
+                    GameData.PlayerDefenderId,
+                    "Anchor the escort lane",
+                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} rewards a stable hold more than raw burst. Shield Knight gives the escort lane a frontline that can actually stand in the aisle.");
+
+                TryAddSpellRecommendation(
+                    recommendations,
+                    seen,
+                    GameData.SpellHealId,
+                    "Patch the escort lane",
+                    "Heal keeps the war wagon and escort window alive when the relic convoy needs one more clean push.");
+                break;
+            case "gate_breach":
+                TryAddUnitRecommendation(
+                    recommendations,
+                    seen,
+                    GameData.PlayerBreacherId,
+                    "Exploit the breach window",
+                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} turns lane control into direct siege progress. Halberdier converts that window into real gatehouse damage.");
+
+                TryAddBaseRecommendation(
+                    recommendations,
+                    seen,
+                    BaseUpgradeCatalog.DispatchConsoleId,
+                    "Cycle the breach line faster",
+                    "March Drum helps the caravan refill the breach lane before the wall team loses its opening.");
+                break;
         }
 
         if (spitterCount > 0)

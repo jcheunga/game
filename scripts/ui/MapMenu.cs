@@ -6,6 +6,12 @@ public partial class MapMenu : Control
 {
     private readonly Dictionary<int, Button> _stageButtons = new();
 
+    private ColorRect _backgroundTop = null!;
+    private ColorRect _backgroundBottom = null!;
+    private ColorRect _accentBand = null!;
+    private PanelContainer _topBar = null!;
+    private PanelContainer _mapPanel = null!;
+    private PanelContainer _sidePanel = null!;
     private OptionButton _mapSelector = null!;
     private Label _resourcesLabel = null!;
     private Label _resultLabel = null!;
@@ -17,6 +23,7 @@ public partial class MapMenu : Control
     private Label _stageStatusLabel = null!;
     private Label _stageRewardLabel = null!;
     private Label _stageObjectivesLabel = null!;
+    private Label _stageMissionLabel = null!;
     private Label _stageModifiersLabel = null!;
     private Label _stageIntelLabel = null!;
     private PanelContainer _routeBannerPanel = null!;
@@ -43,23 +50,40 @@ public partial class MapMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
+        _backgroundTop = new ColorRect
         {
             Color = new Color("1b263b")
         };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        _backgroundTop.Position = Vector2.Zero;
+        _backgroundTop.Size = new Vector2(1280f, 360f);
+        AddChild(_backgroundTop);
 
-        var topBar = new PanelContainer
+        _backgroundBottom = new ColorRect
+        {
+            Color = new Color("0d1b2a"),
+            Position = new Vector2(0f, 360f),
+            Size = new Vector2(1280f, 360f)
+        };
+        AddChild(_backgroundBottom);
+
+        _accentBand = new ColorRect
+        {
+            Color = new Color("ffd166"),
+            Position = new Vector2(0f, 92f),
+            Size = new Vector2(1280f, 6f)
+        };
+        AddChild(_accentBand);
+
+        _topBar = new PanelContainer
         {
             Position = new Vector2(20, 18),
             Size = new Vector2(1240, 72)
         };
-        AddChild(topBar);
+        AddChild(_topBar);
 
         var topRow = new HBoxContainer();
         topRow.AddThemeConstantOverride("separation", 12);
-        topBar.AddChild(topRow);
+        _topBar.AddChild(topRow);
 
         var titleLabel = new Label
         {
@@ -84,16 +108,16 @@ public partial class MapMenu : Control
         };
         topRow.AddChild(_resourcesLabel);
 
-        var mapPanel = new PanelContainer
+        _mapPanel = new PanelContainer
         {
             Position = new Vector2(20, 106),
             Size = new Vector2(820, 592)
         };
-        AddChild(mapPanel);
+        AddChild(_mapPanel);
 
         var mapArea = new Control();
         mapArea.SetAnchorsPreset(LayoutPreset.FullRect);
-        mapPanel.AddChild(mapArea);
+        _mapPanel.AddChild(mapArea);
 
         _mapCanvas = new MapPathCanvas();
         _mapCanvas.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -161,19 +185,19 @@ public partial class MapMenu : Control
             _stageButtons[stageId] = stageButton;
         }
 
-        var sidePanel = new PanelContainer
+        _sidePanel = new PanelContainer
         {
             Position = new Vector2(860, 106),
             Size = new Vector2(400, 592)
         };
-        AddChild(sidePanel);
+        AddChild(_sidePanel);
 
         var sidePadding = new MarginContainer();
         sidePadding.AddThemeConstantOverride("margin_left", 18);
         sidePadding.AddThemeConstantOverride("margin_right", 18);
         sidePadding.AddThemeConstantOverride("margin_top", 18);
         sidePadding.AddThemeConstantOverride("margin_bottom", 18);
-        sidePanel.AddChild(sidePadding);
+        _sidePanel.AddChild(sidePadding);
 
         var sideScroll = new ScrollContainer
         {
@@ -211,6 +235,12 @@ public partial class MapMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         sideContent.AddChild(_stageObjectivesLabel);
+
+        _stageMissionLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        sideContent.AddChild(_stageMissionLabel);
 
         _stageModifiersLabel = new Label
         {
@@ -341,6 +371,7 @@ public partial class MapMenu : Control
         }
 
         var stage = GameData.GetStage(_selectedStage);
+        ApplyRouteTheme(stage);
         var stageUnlocked = _selectedStage <= GameState.Instance.HighestUnlockedStage;
         var bestStars = GameState.Instance.GetStageStars(_selectedStage);
         var stageEntryFoodCost = GameState.Instance.GetStageEntryFoodCost(_selectedStage);
@@ -350,6 +381,7 @@ public partial class MapMenu : Control
         _stageRewardLabel.Text =
             $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}";
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
+        _stageMissionLabel.Text = StageMissionEvents.BuildSummaryText(stage);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
         _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
         _convoySummaryLabel.Text = BuildConvoySummaryText();
@@ -527,6 +559,23 @@ public partial class MapMenu : Control
         return RouteCatalog.Normalize(mapId);
     }
 
+    private void ApplyRouteTheme(StageDefinition stage)
+    {
+        var route = RouteCatalog.Get(stage?.MapId ?? _activeMapId);
+        _backgroundTop.Color = route.BackgroundTop;
+        _backgroundBottom.Color = route.BackgroundBottom;
+        _accentBand.Color = route.BannerAccent;
+        _topBar.SelfModulate = route.BannerPanel.Lightened(0.08f);
+        _mapPanel.SelfModulate = route.BannerPanel.Lerp(Colors.White, 0.06f);
+        _sidePanel.SelfModulate = route.BannerPanel.Darkened(0.04f);
+        _routeBannerPanel.SelfModulate = route.BannerPanel;
+
+        _stageNameLabel.AddThemeColorOverride("font_color", route.BannerAccent);
+        _stageRewardLabel.AddThemeColorOverride("font_color", route.Accent.Lightened(0.12f));
+        _deployStatusLabel.AddThemeColorOverride("font_color", route.Accent.Lightened(0.26f));
+        _resourcesLabel.AddThemeColorOverride("font_color", Colors.White);
+    }
+
     private void RefreshRouteBanner()
     {
         var route = RouteCatalog.Get(_activeMapId);
@@ -596,7 +645,8 @@ public partial class MapMenu : Control
             $"{stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"Threat: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Stars: {stars}/3\n" +
             $"{stage.Description.Split('\n')[0]}\n" +
-            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}";
+            $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}\n" +
+            $"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}";
 
         button.SelfModulate = !unlocked
             ? route.BannerPanel.Darkened(0.35f)

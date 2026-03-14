@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text;
 using Godot;
 
 public static class StageMissionEvents
@@ -30,6 +31,28 @@ public static class StageMissionEvents
         return labels.Length > 0
             ? string.Join(", ", labels)
             : "none";
+    }
+
+    public static string BuildSummaryText(StageDefinition stage)
+    {
+        if (!HasMissionEvents(stage))
+        {
+            return "Battlefield events: none";
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("Battlefield events:");
+
+        foreach (var mission in stage.MissionEvents.Where(mission => mission != null && !string.IsNullOrWhiteSpace(mission.Type)))
+        {
+            builder.AppendLine(
+                $"- {ResolveTitle(mission)}  |  Starts {Mathf.Max(0f, mission.StartTime):0.#}s  |  Radius {Mathf.Max(1f, mission.Radius):0}");
+            builder.AppendLine($"  {ResolveSummary(mission)}");
+            builder.AppendLine($"  {ResolveRewardSummary(mission)}");
+            builder.AppendLine($"  {ResolvePenaltySummary(mission)}");
+        }
+
+        return builder.ToString().TrimEnd();
     }
 
     public static string ResolveTitle(StageMissionEventDefinition mission)

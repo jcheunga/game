@@ -12,18 +12,38 @@ public partial class LoadoutMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
+        var route = RouteCatalog.Get(_stage.MapId);
+
+        var backgroundTop = new ColorRect
         {
-            Color = new Color("0d1b2a")
+            Color = route.BackgroundTop
         };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        backgroundTop.Position = Vector2.Zero;
+        backgroundTop.Size = new Vector2(1280f, 360f);
+        AddChild(backgroundTop);
+
+        var backgroundBottom = new ColorRect
+        {
+            Color = route.BackgroundBottom,
+            Position = new Vector2(0f, 360f),
+            Size = new Vector2(1280f, 360f)
+        };
+        AddChild(backgroundBottom);
+
+        var accentBand = new ColorRect
+        {
+            Color = route.BannerAccent,
+            Position = new Vector2(0f, 104f),
+            Size = new Vector2(1280f, 6f)
+        };
+        AddChild(accentBand);
 
         var titlePanel = new PanelContainer
         {
             Position = new Vector2(24f, 20f),
             Size = new Vector2(1232f, 80f)
         };
+        titlePanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
         AddChild(titlePanel);
 
         var titleRow = new HBoxContainer();
@@ -32,10 +52,11 @@ public partial class LoadoutMenu : Control
 
         var titleLabel = new Label
         {
-            Text = $"Loadout Briefing  |  Stage {_stage.StageNumber}: {_stage.StageName}",
+            Text = $"Loadout Briefing  |  {route.Title}  |  Stage {_stage.StageNumber}: {_stage.StageName}",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center
         };
+        titleLabel.AddThemeColorOverride("font_color", route.BannerAccent);
         titleRow.AddChild(titleLabel);
 
         var resourcesLabel = new Label
@@ -52,6 +73,7 @@ public partial class LoadoutMenu : Control
             Position = new Vector2(24f, 122f),
             Size = new Vector2(472f, 520f)
         };
+        missionPanel.SelfModulate = route.BannerPanel;
         AddChild(missionPanel);
 
         var missionPadding = new MarginContainer();
@@ -67,7 +89,13 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
-            Text = $"{_stage.MapName}  |  Terrain: {_stage.TerrainId}"
+            Text = $"{route.Title}  |  Terrain: {_stage.TerrainId}"
+        });
+
+        missionStack.AddChild(new Label
+        {
+            Text = $"{route.CampaignSubtitle}\nPressure profile: {route.PressureSummary}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
         missionStack.AddChild(new Label
@@ -82,6 +110,12 @@ public partial class LoadoutMenu : Control
             Text = StageObjectives.BuildSummaryText(
                 _stage,
                 GameState.Instance.GetStageStars(_stage.StageNumber)),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        missionStack.AddChild(new Label
+        {
+            Text = StageMissionEvents.BuildSummaryText(_stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -129,6 +163,7 @@ public partial class LoadoutMenu : Control
             Position = new Vector2(520f, 122f),
             Size = new Vector2(736f, 520f)
         };
+        rosterPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
         AddChild(rosterPanel);
 
         var rosterPadding = new MarginContainer();
@@ -186,6 +221,7 @@ public partial class LoadoutMenu : Control
             Position = new Vector2(24f, 660f),
             Size = new Vector2(1232f, 56f)
         };
+        bottomPanel.SelfModulate = route.BannerPanel.Lightened(0.04f);
         AddChild(bottomPanel);
 
         var bottomRow = new HBoxContainer();

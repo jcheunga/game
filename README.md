@@ -166,6 +166,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
 - Campaign map:
   - Switch between `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, `Sunfall Steppe`, `Gloamwood Verge`, and `Crownfall Citadel` in the map selector
   - Review route banner progress, district buildout status, earned stars, and route-specific stage styling on the map
+  - Route, map, and stage panels now tint to the selected district so each front reads like its own campaign space instead of a shared generic menu
   - Hover stage nodes for threat and star intel before selecting them
   - Review caravan readiness, active squad summary, and route-specific exploration costs
   - Spend food to explore the next stage and to begin stage deployments
@@ -176,18 +177,20 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Review owned spells, spell archive unlocks, and the active magic deck
   - See each unit’s squad role (`Frontline`, `Recon`, `Support`, `Breach`) and the active deck synergy it contributes to
   - Use the `Action Board` to follow stage-targeted buy/upgrade suggestions
+  - The `Action Board` now also reacts to authored battlefield events like ritual holds, relic escorts, and breach charges
   - Buy new units with gold once their shop stage is explored
   - Scribe new spells with gold once their route stage is explored
   - Equip up to 2 active spell cards alongside the 3-card squad
   - Upgrade owned units with gold
   - Preview unit stat gains before buying upgrades
   - Upgrade `War Wagon Plating`, `Caravan Stores`, `March Drum`, and `Rune Beacon`
-  - Review route intel, next exploration costs, and upcoming unit/spell unlocks while shopping
+  - Review route intel, battlefield events, next exploration costs, and upcoming unit/spell unlocks while shopping
   - Return to the title screen, campaign map, or endless prep from the same screen
   - `Stage Briefing`: jump straight into the selected campaign loadout screen
   - `Back To Title`: return to menu
 - Loadout:
   - Review stage objectives, active stage modifiers, stage hazards, scripted wave timing, enemy threat mix, and active squad stats
+  - Battlefield mission events now get the same dedicated briefing treatment on the map, loadout screen, and armory route-intel panel
   - Shared encounter intel now explicitly calls out support pressure like howlers, jammers, saboteurs, and spitters before deployment
   - Live wave intel and campaign node tooltips now keep those support-pressure tags visible during stage selection and battle
   - Battle HUD now also shows the currently active support pressure on the field, including howlers, jammers, saboteurs, spitters, bosses, and any live signal jam timer

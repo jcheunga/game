@@ -196,7 +196,7 @@ Objective: extend the current async/LAN multiplayer systems into a store-ready i
 
 ## Immediate Next Sprint
 
-All milestone code work is complete, including real particle effects for combat events. Remaining work is asset-driven:
+All milestone code work is complete, including real particle effects, HUD polish, menu animations, and presentation pass improvements. Remaining work is asset-driven:
 
 1. replace placeholder combat visuals with authored medieval/fantasy sprites and animations (M5 art)
 2. create faction-distinct unit silhouettes with armor, banners, and creature models
@@ -394,6 +394,13 @@ All milestone code work is complete, including real particle effects for combat 
 - added real `CpuParticles2D` particle effects for deploy bursts, unit death bursts, projectile impacts and trails, spell casts (fireball/heal/frost/lightning/ward), base hit debris, boss spawn bursts, death burst explosions, and victory/defeat end particles
 - added terrain-specific ambient particle systems so each battlefield now has atmospheric effects: embers in foundry/smelter, snow in pass/watchfort, mist in marsh/swamp/shipyard, dust motes in cathedral/shrine, ash fall in ossuary/bridgefort, leaf drift in grove/timberroad, wind dust in grassland/steppe, and fireflies at night
 - added a critical health screen-edge vignette that pulses red when the war wagon drops below 35% hull
+- added visual courage meter bar and wave progress bar to the battle HUD with animated fill and flash-on-change
+- added visual cooldown overlay on deploy and spell card buttons so card recovery reads as a shrinking dark fill
+- added staggered fade-in entrance animations and ambient ember particles to the title screen
+- added side-panel fade transition on campaign map stage selection changes
+- added animated fade-in/scale battle end panel instead of instant visibility toggle
+- added pulsing glow ring around selected campaign map nodes and gentle bob on locked stage icons
+- added staggered fade-in entrance animations to loadout briefing panels
 
 ## Recommended Build Order After This Commit
 

@@ -3537,6 +3537,592 @@
           ]
         }
       ]
+    },
+    {
+      "StageNumber": 32,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "waystation",
+      "StageName": "Burned Waystation",
+      "Description": "Charred shelters and open lanes force quick answers to raider probes and horn-led rushes.\nRecommended squad: Cavalry Rider + Archer + Shield Knight.",
+      "RewardGold": 2620,
+      "RewardFood": 18,
+      "EntryFoodCost": 10,
+      "ExploreFoodCost": 13,
+      "MapX": 172.0,
+      "MapY": 286.0,
+      "PlayerBaseHealth": 930.0,
+      "EnemyBaseHealth": 2780.0,
+      "EnemySpawnMin": 1.12,
+      "EnemySpawnMax": 1.6,
+      "EnemyHealthScale": 3.6,
+      "EnemyDamageScale": 3.42,
+      "WalkerWeight": 0.02,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.22,
+      "CrusherWeight": 0.38,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.36,
+      "Hazards": [
+        {
+          "Type": "ember_shear",
+          "Label": "Ember Shear",
+          "XRatio": 0.44,
+          "YRatio": 0.34,
+          "Radius": 74.0,
+          "Interval": 9.4,
+          "StartTime": 10.0,
+          "WarningDuration": 1.7,
+          "Damage": 24.0,
+          "ColorHex": "f4a261"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 10.0 },
+        { "Type": "clear_within", "Value": 126.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Ash scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Waystation horn",
+          "TriggerTime": 22.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Burn line",
+          "TriggerTime": 42.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Flank riders",
+          "TriggerTime": 64.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Road crush",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 33,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "grassland",
+      "StageName": "Ash Grass",
+      "Description": "Open ground and cinder wind favor fast raiders, howler signals, and long flanking dives.\nRecommended squad: Cavalry Rider + Crossbowman + Battle Monk.",
+      "RewardGold": 2810,
+      "RewardFood": 19,
+      "EntryFoodCost": 10,
+      "ExploreFoodCost": 13,
+      "MapX": 336.0,
+      "MapY": 482.0,
+      "PlayerBaseHealth": 955.0,
+      "EnemyBaseHealth": 2920.0,
+      "EnemySpawnMin": 1.08,
+      "EnemySpawnMax": 1.54,
+      "EnemyHealthScale": 3.72,
+      "EnemyDamageScale": 3.52,
+      "WalkerWeight": 0.02,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.4,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.37,
+      "Hazards": [
+        {
+          "Type": "dust_devils",
+          "Label": "Dust Devils",
+          "XRatio": 0.34,
+          "YRatio": 0.62,
+          "Radius": 72.0,
+          "Interval": 9.0,
+          "StartTime": 8.5,
+          "WarningDuration": 1.8,
+          "Damage": 25.0,
+          "ColorHex": "e9c46a"
+        },
+        {
+          "Type": "ember_shear",
+          "Label": "Ember Shear",
+          "XRatio": 0.72,
+          "YRatio": 0.26,
+          "Radius": 68.0,
+          "Interval": 10.8,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 24.0,
+          "ColorHex": "f4a261"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.1 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "enemy_defeats", "Value": 40.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Grass riders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_walker", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Horn chain",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Cinder pass",
+          "TriggerTime": 46.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Open flank",
+          "TriggerTime": 68.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ash crush",
+          "TriggerTime": 92.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 34,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "siegecamp",
+      "StageName": "Siege Ring",
+      "Description": "Roving siege tents and breach crews turn the lane into a tempo fight over repeated dives.\nRecommended squad: Halberdier + Battle Monk + Cavalry Rider.",
+      "RewardGold": 3010,
+      "RewardFood": 19,
+      "EntryFoodCost": 11,
+      "ExploreFoodCost": 13,
+      "MapX": 506.0,
+      "MapY": 210.0,
+      "PlayerBaseHealth": 980.0,
+      "EnemyBaseHealth": 3080.0,
+      "EnemySpawnMin": 1.04,
+      "EnemySpawnMax": 1.48,
+      "EnemyHealthScale": 3.84,
+      "EnemyDamageScale": 3.64,
+      "WalkerWeight": 0.02,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.4,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.38,
+      "Hazards": [
+        {
+          "Type": "fireline",
+          "Label": "Fireline",
+          "XRatio": 0.58,
+          "YRatio": 0.3,
+          "Radius": 78.0,
+          "Interval": 9.2,
+          "StartTime": 9.0,
+          "WarningDuration": 1.8,
+          "Damage": 25.0,
+          "ColorHex": "ffb703"
+        },
+        {
+          "Type": "camp_spark",
+          "Label": "Camp Spark",
+          "XRatio": 0.28,
+          "YRatio": 0.68,
+          "Radius": 70.0,
+          "Interval": 10.6,
+          "StartTime": 16.0,
+          "WarningDuration": 1.7,
+          "Damage": 24.0,
+          "ColorHex": "f4a261"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.2 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "enemy_defeats", "Value": 42.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Camp outriders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Breach train",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Cinder wagons",
+          "TriggerTime": 46.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ring collapse",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Siege ring surge",
+          "TriggerTime": 94.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 35,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "waystation",
+      "StageName": "Sunfall Redoubt",
+      "Description": "The redoubt burns hot with horn relays and rider pressure that punish any stalled push.\nRecommended squad: Cavalry Rider + Battle Monk + Crossbowman.",
+      "RewardGold": 3220,
+      "RewardFood": 20,
+      "EntryFoodCost": 11,
+      "ExploreFoodCost": 14,
+      "MapX": 654.0,
+      "MapY": 372.0,
+      "PlayerBaseHealth": 1005.0,
+      "EnemyBaseHealth": 3240.0,
+      "EnemySpawnMin": 1.0,
+      "EnemySpawnMax": 1.42,
+      "EnemyHealthScale": 3.98,
+      "EnemyDamageScale": 3.76,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.18,
+      "CrusherWeight": 0.42,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.39,
+      "Hazards": [
+        {
+          "Type": "fireline",
+          "Label": "Fireline",
+          "XRatio": 0.34,
+          "YRatio": 0.62,
+          "Radius": 80.0,
+          "Interval": 8.8,
+          "StartTime": 8.5,
+          "WarningDuration": 1.8,
+          "Damage": 26.0,
+          "ColorHex": "ffb703"
+        },
+        {
+          "Type": "dust_devils",
+          "Label": "Dust Devils",
+          "XRatio": 0.72,
+          "YRatio": 0.28,
+          "Radius": 72.0,
+          "Interval": 10.8,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 25.0,
+          "ColorHex": "e9c46a"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "surging_courage", "Value": 1.1 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.75 },
+        { "Type": "enemy_defeats", "Value": 44.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Relay riders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ash breach",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Redoubt fire",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Wide charge",
+          "TriggerTime": 72.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "Sunfall crush",
+          "TriggerTime": 96.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 36,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "siegecamp",
+      "StageName": "Sunfall Warcamp",
+      "Description": "Sunfall Steppe boss stage. Fire lines and horn relays pound the lane until the Grave Lord charges out of the warcamp.",
+      "RewardGold": 3450,
+      "RewardFood": 21,
+      "EntryFoodCost": 11,
+      "ExploreFoodCost": 14,
+      "MapX": 784.0,
+      "MapY": 546.0,
+      "PlayerBaseHealth": 1035.0,
+      "EnemyBaseHealth": 3420.0,
+      "EnemySpawnMin": 0.96,
+      "EnemySpawnMax": 1.36,
+      "EnemyHealthScale": 4.12,
+      "EnemyDamageScale": 3.9,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.18,
+      "CrusherWeight": 0.42,
+      "BossWeight": 0.4,
+      "BossSpawnStartTime": 86.0,
+      "BonusWaveChance": 0.4,
+      "Hazards": [
+        {
+          "Type": "fireline",
+          "Label": "Fireline",
+          "XRatio": 0.28,
+          "YRatio": 0.32,
+          "Radius": 82.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 26.0,
+          "ColorHex": "ffb703"
+        },
+        {
+          "Type": "camp_spark",
+          "Label": "Camp Spark",
+          "XRatio": 0.68,
+          "YRatio": 0.54,
+          "Radius": 74.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 25.0,
+          "ColorHex": "f4a261"
+        },
+        {
+          "Type": "dust_devils",
+          "Label": "Dust Devils",
+          "XRatio": 0.5,
+          "YRatio": 0.78,
+          "Radius": 74.0,
+          "Interval": 12.2,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 25.0,
+          "ColorHex": "e9c46a"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.3 },
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "surging_courage", "Value": 1.12 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 46.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Outer ride",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Warcamp breach",
+          "TriggerTime": 26.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "Fire volleys",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Ash-rider ring",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "Ash-rider khan",
+          "TriggerTime": 86.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Last charge",
+          "TriggerTime": 108.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

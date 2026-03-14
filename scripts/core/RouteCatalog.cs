@@ -64,6 +64,7 @@ public static class RouteCatalog
     public const string ThornwallId = "thornwall";
     public const string BasilicaId = "basilica";
     public const string MireId = "mire";
+    public const string SteppeId = "steppe";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -199,6 +200,25 @@ public static class RouteCatalog
                 new Color("33452f"),
                 new Color("fefae0"),
                 new Color("90be6d"))
+        },
+        {
+            SteppeId,
+            new RouteDefinition(
+                SteppeId,
+                "Sunfall Steppe",
+                "Burned waystations, open grassland forts, and roaming siege camps. Fast rider strikes and fire volleys test raw pace.",
+                "Sunfall Steppe favors fast raiders, howler horns, and breach timing through wide open lanes.",
+                "Fast strike packs, fire hazards, and repeated flank dives punish slow deck cycles.",
+                new Color("f4a261"),
+                new Color("53311f"),
+                new Color("7a4e2b"),
+                new Color("21160f"),
+                new Color("ffb703"),
+                new Color("ffd6a5"),
+                new Color("f4a261"),
+                new Color("5a3928"),
+                new Color("fefae0"),
+                new Color("f4a261"))
         }
     };
 
@@ -220,7 +240,8 @@ public static class RouteCatalog
             Definitions[QuarantineId],
             Definitions[ThornwallId],
             Definitions[BasilicaId],
-            Definitions[MireId]
+            Definitions[MireId],
+            Definitions[SteppeId]
         };
     }
 

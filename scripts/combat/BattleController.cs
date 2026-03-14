@@ -729,6 +729,30 @@ public partial class BattleController : Node2D
 				new Color("c1121f"),
 				new Color("d8f3dc"),
 				new Color("ef476f")),
+			"grassland" => new TerrainPalette(
+				new Color("755132"),
+				new Color("2b1d13"),
+				new Color(1f, 0.92f, 0.7f, 0.08f),
+				new Color("f4a261"),
+				new Color("c1121f"),
+				new Color("ffd6a5"),
+				new Color("ef476f")),
+			"waystation" => new TerrainPalette(
+				new Color("6a4930"),
+				new Color("2a1b11"),
+				new Color(1f, 0.9f, 0.68f, 0.08f),
+				new Color("e9c46a"),
+				new Color("c1121f"),
+				new Color("fef3c7"),
+				new Color("ef476f")),
+			"siegecamp" => new TerrainPalette(
+				new Color("5e4130"),
+				new Color("24180f"),
+				new Color(1f, 0.86f, 0.66f, 0.08f),
+				new Color("ffb703"),
+				new Color("c1121f"),
+				new Color("ffd6a5"),
+				new Color("ef476f")),
 			_ => new TerrainPalette(
 				new Color("14213d"),
 				new Color("22324f"),
@@ -1028,6 +1052,56 @@ public partial class BattleController : Node2D
 						new Vector2(x, BattlefieldBottom - 58f),
 						new Color(0.86f, 0.96f, 0.9f, 0.1f),
 						3f,
+						true);
+				}
+				break;
+			case "grassland":
+				for (var i = 0; i < 8; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 64f, BattlefieldRight - 64f, i / 7f);
+					DrawLine(
+						new Vector2(x - 16f, BattlefieldBottom - 46f),
+						new Vector2(x + 12f, BattlefieldBottom - 64f),
+						new Color(1f, 0.86f, 0.48f, 0.16f),
+						3f,
+						true);
+				}
+				break;
+			case "waystation":
+				for (var i = 0; i < 4; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 140f, BattlefieldRight - 140f, i / 3f);
+					DrawRect(new Rect2(x - 24f, BattlefieldTop + 38f, 48f, 68f), new Color(0f, 0f, 0f, 0.16f), true);
+					DrawLine(
+						new Vector2(x - 26f, BattlefieldTop + 38f),
+						new Vector2(x, BattlefieldTop + 18f),
+						new Color(1f, 0.92f, 0.74f, 0.1f),
+						4f,
+						true);
+					DrawLine(
+						new Vector2(x + 26f, BattlefieldTop + 38f),
+						new Vector2(x, BattlefieldTop + 18f),
+						new Color(1f, 0.92f, 0.74f, 0.1f),
+						4f,
+						true);
+				}
+				break;
+			case "siegecamp":
+				for (var i = 0; i < 5; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 4f);
+					DrawRect(new Rect2(x - 18f, BattlefieldTop + 54f + ((i % 2) * 10f), 36f, 56f), new Color(0f, 0f, 0f, 0.16f), true);
+					DrawLine(
+						new Vector2(x - 22f, BattlefieldTop + 54f + ((i % 2) * 10f)),
+						new Vector2(x, BattlefieldTop + 30f + ((i % 2) * 10f)),
+						new Color(1f, 0.82f, 0.54f, 0.12f),
+						4f,
+						true);
+					DrawLine(
+						new Vector2(x + 22f, BattlefieldTop + 54f + ((i % 2) * 10f)),
+						new Vector2(x, BattlefieldTop + 30f + ((i % 2) * 10f)),
+						new Color(1f, 0.82f, 0.54f, 0.12f),
+						4f,
 						true);
 				}
 				break;
@@ -4552,6 +4626,11 @@ public partial class BattleController : Node2D
 			case RouteCatalog.MireId:
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerMechanicId)
 					? GameData.PlayerMechanicId
+					: GameData.PlayerBrawlerId);
+				break;
+			case RouteCatalog.SteppeId:
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
+					? GameData.PlayerRaiderId
 					: GameData.PlayerBrawlerId);
 				break;
 		}

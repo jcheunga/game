@@ -199,6 +199,33 @@ public partial class MapPathCanvas : Control
                     true);
             }
         }
+        else if (mapId == "steppe")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 126f, Size.X, 84f), new Color("4f311f", 0.56f), true);
+
+            for (var i = 0; i < 7; i++)
+            {
+                var x = Mathf.Lerp(62f, Size.X - 62f, i / 6f);
+                DrawLine(
+                    new Vector2(x - 26f, Size.Y - 92f + ((i % 2) * 8f)),
+                    new Vector2(x + 30f, Size.Y - 108f + ((i % 2) * 8f)),
+                    new Color("ffd166", 0.18f),
+                    6f,
+                    true);
+            }
+
+            for (var i = 0; i < 6; i++)
+            {
+                var x = Mathf.Lerp(90f, Size.X - 90f, i / 5f);
+                DrawRect(new Rect2(x - 10f, 94f + ((i % 2) * 20f), 20f, 78f), new Color(0f, 0f, 0f, 0.16f), true);
+                DrawLine(
+                    new Vector2(x, 94f + ((i % 2) * 20f)),
+                    new Vector2(x + 22f, 82f + ((i % 2) * 20f)),
+                    new Color(1f, 0.92f, 0.7f, 0.12f),
+                    4f,
+                    true);
+            }
+        }
         else
         {
             for (var i = 0; i < 7; i++)

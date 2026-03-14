@@ -83,11 +83,11 @@ public static class CampaignPlanCatalog
             "Rot mist, drowned dead, split broods, and hull-grind attrition packs."),
         new(
             8,
-            "steppe",
+            RouteCatalog.SteppeId,
             "Sunfall Steppe",
             5,
             "Burned waystations, open grassland forts, and roaming siege camps that push pace and flanking pressure.",
-            "Fast rider strikes, fire volleys, and long-lane reinforcement races."),
+            "Fast rider strikes, howler-led raids, and repeated breach dives through open lanes."),
         new(
             9,
             "gloamwood",

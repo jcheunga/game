@@ -136,6 +136,21 @@ public static class EndlessBossCheckpointCatalog
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySplitterId, Count = 2 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.SteppeId,
+            "Ash-Rider Khan",
+            "A steppe Grave Lord gallops in behind howler horns, sapper riders, and crusher escorts across the open field.",
+            "Reward: bank +46 gold, +1 food, and call a cavalry reinforcement.",
+            "The ash-rider khan broke under the caravan line and the march seized the open steppe again.",
+            46,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyRunnerId, Count = 3 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
             })
     };
 

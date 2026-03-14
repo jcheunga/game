@@ -97,7 +97,7 @@ public static class CampaignPlanCatalog
             "Ambush packs, snare hazards, hex support, and staggered assault waves from the tree line."),
         new(
             10,
-            "citadel",
+            RouteCatalog.CitadelId,
             "Crownfall Citadel",
             5,
             "Bridge forts, breach yards, and the inner keep where every prior threat pattern converges into the capital siege.",
@@ -145,9 +145,9 @@ public static class CampaignPlanCatalog
 
     public static string BuildCampaignStatusSummary()
     {
-        var nextFrontier = TryGetNextUnauthored(out var district)
+        var nextFrontier = TryGetNextIncomplete(out var district)
             ? district.Title
-            : "Full district outline locked";
+            : "Full campaign target locked";
         return
             $"Campaign buildout: {GetAuthoredDistrictCount()}/{GetTargetDistrictCount()} districts authored  |  " +
             $"{GetAuthoredStageCount()}/{GetTargetStageCount()} stages playable  |  " +
@@ -184,11 +184,11 @@ public static class CampaignPlanCatalog
         return false;
     }
 
-    private static bool TryGetNextUnauthored(out CampaignDistrictPlan district)
+    private static bool TryGetNextIncomplete(out CampaignDistrictPlan district)
     {
         foreach (var item in Districts)
         {
-            if (GetAuthoredStageCount(item.Id) == 0)
+            if (GetAuthoredStageCount(item.Id) < item.StageTarget)
             {
                 district = item;
                 return true;

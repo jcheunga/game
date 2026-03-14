@@ -349,6 +349,8 @@ This sprint should stay narrow and practical:
 - expanded the campaign again with a seventh `Mire of Saints` district, including five new scripted stages, new marsh/chapel/ferry battle palettes, and endless-route support for attrition-heavy bloater/splitter/spitter pressure
 - expanded the campaign again with an eighth `Sunfall Steppe` district, including five new scripted stages, new grassland/waystation/siegecamp battle palettes, and endless-route support for fast rider/howler/sapper pressure
 - expanded the campaign again with a ninth `Gloamwood Verge` district, including five new scripted stages, new grove/witchcircle/timberroad battle palettes, and endless-route support for ambush-heavy runner/hexer/sapper pressure
+- expanded the campaign again with a tenth `Crownfall Citadel` district, including five new scripted stages, new bridgefort/breachyard/innerkeep battle palettes, and endless-route support for mixed endgame command pressure
+- backfilled `King's Road`, `Saltwake Docks`, `Emberforge March`, and `Ashen Ward` with fifth capstone stages so the campaign now hits the `10`-district / `50`-stage target
 - added a late-game `Halberdier` unit that specializes in higher gate/base damage for reinforced stages
 - added a `Sapper` enemy archetype that dives the war wagon/objective path and is now seeded into Emberforge stages and endless Emberforge pressure
 - added stage-authored battlefield hazards with telegraph rings, timed pulses, loadout intel, and Foundry-specific heat/rail/furnace encounters

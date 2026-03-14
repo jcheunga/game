@@ -66,6 +66,7 @@ public static class RouteCatalog
     public const string MireId = "mire";
     public const string SteppeId = "steppe";
     public const string GloamwoodId = "gloamwood";
+    public const string CitadelId = "citadel";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -239,6 +240,25 @@ public static class RouteCatalog
                 new Color("33242b"),
                 new Color("fefae0"),
                 new Color("b08968"))
+        },
+        {
+            CitadelId,
+            new RouteDefinition(
+                CitadelId,
+                "Crownfall Citadel",
+                "Bridge forts, breach yards, and the inner keep. Every prior pressure pattern converges into the capital siege finale.",
+                "Crownfall Citadel favors mixed command waves, breach dives, and stacked support pressure through fortified lanes.",
+                "Mixed command waves, fortified lanes, and layered support pressure punish any weak point in the caravan line.",
+                new Color("cdb4db"),
+                new Color("2d3142"),
+                new Color("4a506b"),
+                new Color("151922"),
+                new Color("e0aaff"),
+                new Color("f8edff"),
+                new Color("c77dff"),
+                new Color("353c52"),
+                new Color("fefae0"),
+                new Color("cdb4db"))
         }
     };
 
@@ -262,7 +282,8 @@ public static class RouteCatalog
             Definitions[BasilicaId],
             Definitions[MireId],
             Definitions[SteppeId],
-            Definitions[GloamwoodId]
+            Definitions[GloamwoodId],
+            Definitions[CitadelId]
         };
     }
 

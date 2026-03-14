@@ -253,6 +253,27 @@ public partial class MapPathCanvas : Control
                 DrawCircle(new Vector2(x, Size.Y - 94f - ((i % 2) * 8f)), 4f, new Color("f4a261", 0.38f));
             }
         }
+        else if (mapId == "citadel")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 128f, Size.X, 86f), new Color("262c3d", 0.58f), true);
+
+            for (var i = 0; i < 5; i++)
+            {
+                var x = Mathf.Lerp(94f, Size.X - 94f, i / 4f);
+                DrawRect(new Rect2(x - 26f, 90f + ((i % 2) * 18f), 52f, 70f), new Color(0f, 0f, 0f, 0.18f), true);
+                for (var j = 0; j < 3; j++)
+                {
+                    DrawRect(new Rect2(x - 26f + (j * 18f), 84f + ((i % 2) * 18f), 12f, 10f), new Color("f8edff", 0.14f), true);
+                }
+            }
+
+            DrawLine(
+                new Vector2(52f, Size.Y - 86f),
+                new Vector2(Size.X - 52f, Size.Y - 86f),
+                new Color("cdb4db", 0.22f),
+                6f,
+                true);
+        }
         else
         {
             for (var i = 0; i < 7; i++)
@@ -277,14 +298,18 @@ public partial class MapPathCanvas : Control
 
     private void DrawRouteLines(RouteDefinition route)
     {
-        for (var stage = 1; stage < GameData.MaxStage; stage++)
+        var routeStages = GameData.GetStagesForMap(ActiveMapId);
+        for (var i = 0; i < routeStages.Count - 1; i++)
         {
-            if (!StagePoints.TryGetValue(stage, out var from) || !StagePoints.TryGetValue(stage + 1, out var to))
+            var fromStage = routeStages[i].StageNumber;
+            var toStage = routeStages[i + 1].StageNumber;
+
+            if (!StagePoints.TryGetValue(fromStage, out var from) || !StagePoints.TryGetValue(toStage, out var to))
             {
                 continue;
             }
 
-            if (!StageMapIds.TryGetValue(stage, out var fromMap) || !StageMapIds.TryGetValue(stage + 1, out var toMap))
+            if (!StageMapIds.TryGetValue(fromStage, out var fromMap) || !StageMapIds.TryGetValue(toStage, out var toMap))
             {
                 continue;
             }
@@ -294,7 +319,7 @@ public partial class MapPathCanvas : Control
                 continue;
             }
 
-            var unlocked = stage < HighestUnlockedStage;
+            var unlocked = fromStage < HighestUnlockedStage;
             var lineColor = unlocked ? route.RouteColor : new Color(route.LockedNode, 0.55f);
             var glowColor = unlocked ? route.RouteGlow : new Color(0f, 0f, 0f, 0.22f);
 

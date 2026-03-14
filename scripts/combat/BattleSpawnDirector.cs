@@ -481,6 +481,21 @@ public sealed class BattleSpawnDirector
             QueuePendingSpawn(GetEnemyById(GameData.EnemySaboteurId), ref executeAt, spawnInterval * 0.84f);
         }
 
+        if (_endlessRouteId == RouteCatalog.CitadelId && waveNumber >= 4 && waveNumber % 3 == 2)
+        {
+            QueuePendingSpawn(GetEnemyById(GameData.EnemySpitterId), ref executeAt, spawnInterval * 0.92f);
+        }
+
+        if (_endlessRouteId == RouteCatalog.CitadelId && waveNumber >= 5 && waveNumber % 4 == 1)
+        {
+            QueuePendingSpawn(GetEnemyById(GameData.EnemyHowlerId), ref executeAt, spawnInterval * 0.94f);
+        }
+
+        if (_endlessRouteId == RouteCatalog.CitadelId && waveNumber >= 6 && waveNumber % 5 == 0)
+        {
+            QueuePendingSpawn(GetEnemyById(GameData.EnemySaboteurId), ref executeAt, spawnInterval * 0.84f);
+        }
+
         if (waveNumber >= 5 && waveNumber % 4 == 0)
         {
             var supportId = _endlessRouteId switch
@@ -493,6 +508,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => GameData.EnemyBloaterId,
                 RouteCatalog.SteppeId => GameData.EnemyHowlerId,
                 RouteCatalog.GloamwoodId => GameData.EnemyJammerId,
+                RouteCatalog.CitadelId => GameData.EnemyCrusherId,
                 _ => GameData.EnemySplitterId
             };
             QueuePendingSpawn(GetEnemyById(supportId), ref executeAt, spawnInterval);
@@ -530,6 +546,11 @@ public sealed class BattleSpawnDirector
             if (_endlessRouteId == RouteCatalog.GloamwoodId && waveNumber >= 8)
             {
                 QueuePendingSpawn(GetEnemyById(GameData.EnemyHowlerId), ref executeAt, spawnInterval * 0.96f);
+            }
+
+            if (_endlessRouteId == RouteCatalog.CitadelId && waveNumber >= 8)
+            {
+                QueuePendingSpawn(GetEnemyById(GameData.EnemyJammerId), ref executeAt, spawnInterval * 0.98f);
             }
         }
 
@@ -733,6 +754,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 1.4f,
                 RouteCatalog.SteppeId => 4.5f,
                 RouteCatalog.GloamwoodId => 3.8f,
+                RouteCatalog.CitadelId => 2.8f,
                 _ => 3.4f
             }) + (waveNumber * 0.12f)
             : 0f;
@@ -747,6 +769,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 3.2f,
                 RouteCatalog.SteppeId => 0.8f,
                 RouteCatalog.GloamwoodId => 0.9f,
+                RouteCatalog.CitadelId => 1.4f,
                 _ => 1.8f
             })
             : 0f;
@@ -761,6 +784,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 0.8f,
                 RouteCatalog.SteppeId => 2.6f,
                 RouteCatalog.GloamwoodId => 2.2f,
+                RouteCatalog.CitadelId => 2.0f,
                 _ => 0.9f
             }) + (waveNumber * 0.03f)
             : 0f;
@@ -775,6 +799,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 1.1f,
                 RouteCatalog.SteppeId => 2.8f,
                 RouteCatalog.GloamwoodId => 2.4f,
+                RouteCatalog.CitadelId => 2.1f,
                 _ => 0.8f
             }) + (waveNumber * 0.03f)
             : 0f;
@@ -787,6 +812,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 0.6f,
                 RouteCatalog.SteppeId => 0.4f,
                 RouteCatalog.GloamwoodId => 2.6f,
+                RouteCatalog.CitadelId => 2.0f,
                 _ => 0.2f
             }) + (waveNumber * 0.02f)
             : 0f;
@@ -801,6 +827,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 3.4f,
                 RouteCatalog.SteppeId => 1.2f,
                 RouteCatalog.GloamwoodId => 2.4f,
+                RouteCatalog.CitadelId => 2.8f,
                 _ => 2.2f
             }) + (waveNumber * 0.05f)
             : 0f;
@@ -815,6 +842,7 @@ public sealed class BattleSpawnDirector
                 RouteCatalog.MireId => 3.1f,
                 RouteCatalog.SteppeId => 1.0f,
                 RouteCatalog.GloamwoodId => 0.9f,
+                RouteCatalog.CitadelId => 2.2f,
                 _ => 2.1f
             }) + (waveNumber * 0.04f)
             : 0f;
@@ -902,6 +930,19 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.08f;
             splitterWeight *= 0.72f;
             crusherWeight *= 0.98f;
+        }
+
+        if (_endlessRouteId == RouteCatalog.CitadelId)
+        {
+            runnerWeight *= 0.96f;
+            bloaterWeight *= 0.9f;
+            bruteWeight *= 1.12f;
+            saboteurWeight *= 1.18f;
+            howlerWeight *= 1.12f;
+            jammerWeight *= 1.18f;
+            spitterWeight *= 1.16f;
+            splitterWeight *= 1.08f;
+            crusherWeight *= 1.18f;
         }
 
         switch (_endlessRouteForkId)

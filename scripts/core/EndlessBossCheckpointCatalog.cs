@@ -166,6 +166,22 @@ public static class EndlessBossCheckpointCatalog
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyJammerId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.CitadelId,
+            "Crownbreaker Marshal",
+            "A citadel Grave Lord leads mixed herald, hexer, and breach pressure through the final bridge fort.",
+            "Reward: bank +50 gold, +1 food, and call a halberdier reinforcement.",
+            "The crownbreaker marshal fell and the caravan forced a breach into the inner keep.",
+            50,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyJammerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
             })
     };
 

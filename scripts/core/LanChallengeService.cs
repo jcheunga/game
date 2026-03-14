@@ -368,7 +368,7 @@ public partial class LanChallengeService : Node
 
 		if (!HasSharedLockedDeck() && !ResolvePeerDeckIsFull(Multiplayer.GetUniqueId()))
 		{
-			message = $"Fill a {GameState.Instance.DeckSizeLimit}-card convoy deck before readying for LAN launch.";
+			message = $"Fill a {GameState.Instance.DeckSizeLimit}-card squad before readying for LAN launch.";
 			return false;
 		}
 
@@ -422,12 +422,12 @@ public partial class LanChallengeService : Node
 		_peerNames[localPeerId] = GameState.Instance.PlayerCallsign;
 		if (IsHosting)
 		{
-			SessionStatus = $"Updated host convoy callsign to {GameState.Instance.PlayerCallsign}.";
+			SessionStatus = $"Updated host caravan callsign to {GameState.Instance.PlayerCallsign}.";
 			BroadcastNameSnapshot();
 		}
 		else
 		{
-			SessionStatus = $"Updated local convoy callsign to {GameState.Instance.PlayerCallsign}.";
+			SessionStatus = $"Updated local caravan callsign to {GameState.Instance.PlayerCallsign}.";
 			RpcId(1, nameof(SetRemotePeerProfile), GameState.Instance.PlayerCallsign);
 			NotifyStateChanged();
 		}
@@ -445,13 +445,13 @@ public partial class LanChallengeService : Node
 		_readyPeers[localPeerId] = false;
 		if (IsHosting)
 		{
-			SessionStatus = "Updated host convoy deck. Ready state cleared.";
+			SessionStatus = "Updated host squad deck. Ready state cleared.";
 			BroadcastDeckSnapshot();
 			BroadcastReadySnapshot();
 		}
 		else
 		{
-			SessionStatus = "Updated local convoy deck. Ready state cleared.";
+			SessionStatus = "Updated local squad deck. Ready state cleared.";
 			RpcId(1, nameof(SetRemotePeerDeckProfile), string.Join(",", BuildLocalDeckProfile()));
 			RpcId(1, nameof(SetRemoteReadyState), false);
 			NotifyStateChanged();
@@ -1534,7 +1534,7 @@ public partial class LanChallengeService : Node
 		_peerNames[senderId] = string.IsNullOrWhiteSpace(callsign)
 			? $"Runner {senderId}"
 			: callsign.Trim();
-		SessionStatus = $"{ResolvePeerLabel(senderId)} updated their convoy callsign.";
+		SessionStatus = $"{ResolvePeerLabel(senderId)} updated their caravan callsign.";
 		BroadcastNameSnapshot();
 	}
 
@@ -1549,7 +1549,7 @@ public partial class LanChallengeService : Node
 		var senderId = Multiplayer.GetRemoteSenderId();
 		_peerDecks[senderId] = ParseDeckProfileCsv(deckCsv);
 		_readyPeers[senderId] = false;
-		SessionStatus = $"{ResolvePeerLabel(senderId)} updated their convoy deck. Ready cleared.";
+		SessionStatus = $"{ResolvePeerLabel(senderId)} updated their squad deck. Ready cleared.";
 		BroadcastDeckSnapshot();
 		BroadcastReadySnapshot();
 	}

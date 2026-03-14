@@ -50,7 +50,7 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 				boardCode = ticket.BoardCode,
 				ticketId = ticket.TicketId,
 				joinToken = ticket.JoinToken,
-				playerCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy",
+				playerCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
 				playerProfileId = GameState.Instance?.PlayerProfileId ?? ""
 			}
 		};
@@ -107,8 +107,8 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 				PeerCount = peerSnapshots.Count,
 				SharedChallengeCode = boardCode,
 				SharedChallengeTitle = boardTitle,
-				LocalCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy",
-				DeckModeSummary = GetString(root, "deckModeSummary", ticket.UsesLockedDeck ? "Deck mode: locked shared squad." : "Deck mode: player convoys."),
+				LocalCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
+				DeckModeSummary = GetString(root, "deckModeSummary", ticket.UsesLockedDeck ? "Deck mode: locked shared squad." : "Deck mode: player squads."),
 				JoinAddressSummary = GetString(root, "relayEndpoint", ticket.RelayEndpoint),
 				UsesLockedDeck = GetBool(root, "usesLockedDeck", ticket.UsesLockedDeck),
 				RoundLocked = GetBool(root, "roundLocked", false),
@@ -116,7 +116,7 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 				RaceCountdownActive = GetBool(root, "raceCountdownActive", false),
 				RaceCountdownRemainingSeconds = GetFloat(root, "raceCountdownRemainingSeconds", 0f),
 				SelectedBoardCode = boardCode,
-				SelectedBoardDeckMode = GetString(root, "selectedBoardDeckMode", ticket.UsesLockedDeck ? "locked shared squad" : "player convoy"),
+				SelectedBoardDeckMode = GetString(root, "selectedBoardDeckMode", ticket.UsesLockedDeck ? "locked shared squad" : "player squad"),
 				Peers = peerSnapshots
 			}
 		};

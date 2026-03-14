@@ -62,7 +62,7 @@ public static class OnlineRoomResultService
 			TicketId = ticket.TicketId,
 			JoinToken = ticket.JoinToken,
 			PlayerProfileId = GameState.Instance?.PlayerProfileId ?? "",
-			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy",
+			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
 			Score = score,
 			StarsEarned = Mathf.Clamp(starsEarned, 0, 3),
 			HullPercent = hullPercent,

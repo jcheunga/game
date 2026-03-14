@@ -10,6 +10,7 @@ public partial class GameState : Node
 	private const int DefaultFood = 12;
 	private const int DefaultUnlockedStage = 1;
 	private const int MaxDeckSize = 3;
+	private const int MaxSpellDeckSize = 2;
 	private const int DefaultUnitLevel = 1;
 	private const int MaxPlayerUnitLevel = 5;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
@@ -18,7 +19,7 @@ public partial class GameState : Node
 	private const string DefaultEndlessRouteId = "city";
 	private const string DefaultEndlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private const string DefaultReport = "Pick a district and clear the route.";
-	private const string DefaultPlayerCallsign = "Convoy";
+	private const string DefaultPlayerCallsign = "Lantern";
 	private const string DefaultChallengeSyncProviderId = ChallengeSyncProviderCatalog.LocalJournalId;
 	private const string DefaultChallengeSyncEndpoint = "";
 	private const bool DefaultChallengeSyncAutoFlush = false;
@@ -35,6 +36,11 @@ public partial class GameState : Node
 		GameData.PlayerBrawlerId,
 		GameData.PlayerShooterId,
 		GameData.PlayerDefenderId
+	};
+	private static readonly string[] DefaultDeckSpellIds =
+	{
+		GameData.SpellFireballId,
+		GameData.SpellHealId
 	};
 
 	public static GameState Instance { get; private set; }
@@ -65,6 +71,7 @@ public partial class GameState : Node
 	public int AmbienceVolumePercent { get; private set; } = DefaultAmbienceVolumePercent;
 	public BattleRunMode CurrentBattleMode { get; private set; } = BattleRunMode.Campaign;
 	public IReadOnlyList<string> ActiveDeckUnitIds => _activeDeckUnitIds;
+	public IReadOnlyList<string> ActiveDeckSpellIds => _activeDeckSpellIds;
 	public int BestEndlessWave { get; private set; }
 	public float BestEndlessTimeSeconds { get; private set; }
 	public int EndlessRuns { get; private set; }
@@ -73,15 +80,19 @@ public partial class GameState : Node
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
+	public int SpellDeckSizeLimit => MaxSpellDeckSize;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
+	public bool HasAnySpellEquipped => _activeDeckSpellIds.Count > 0;
 	public bool HasSelectedAsyncChallengeLockedDeck => _selectedAsyncChallengeLockedDeckUnitIds.Count >= MaxDeckSize;
 
 	private readonly List<string> _activeDeckUnitIds = new();
+	private readonly List<string> _activeDeckSpellIds = new();
 	private readonly List<string> _selectedAsyncChallengeLockedDeckUnitIds = new();
 	private readonly List<int> _stageStars = new();
 	private readonly HashSet<string> _ownedPlayerUnitIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _ownedPlayerSpellIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
@@ -332,7 +343,7 @@ public partial class GameState : Node
 		Food += Math.Max(0, rewardFood);
 		var bestStars = RecordStageStars(stage, starsEarned);
 		var nextStageHint = stage < MaxStage
-			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the convoy is ready."
+			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the caravan is ready."
 			: "";
 		LastResultMessage =
 			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3.{nextStageHint}";
@@ -341,7 +352,7 @@ public partial class GameState : Node
 
 	public void ApplyDefeat(int stage)
 	{
-		LastResultMessage = $"Stage {stage} failed. The bus line was overrun.";
+		LastResultMessage = $"Stage {stage} failed. The war wagon line was overrun.";
 		Persist();
 	}
 
@@ -480,7 +491,7 @@ public partial class GameState : Node
 			: string.Join(", ", record.DeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName));
 		builder.AppendLine("Latest run tape:");
 		builder.AppendLine($"Deck ({(record.UsedLockedDeck ? "featured lock" : "player deck")}): {deckNames}");
-		builder.AppendLine($"Deploys {record.PlayerDeployments}  |  Bus hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Stars {record.StarsEarned}/3");
+		builder.AppendLine($"Deploys {record.PlayerDeployments}  |  War wagon hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Stars {record.StarsEarned}/3");
 		builder.AppendLine(AsyncChallengeCatalog.BuildScoreSummary(BuildChallengeRunScoreBreakdown(record)));
 
 		if (record.Deployments == null || record.Deployments.Count == 0)
@@ -800,6 +811,11 @@ public partial class GameState : Node
 		return GameData.GetUnitsByIds(_activeDeckUnitIds);
 	}
 
+	public IReadOnlyList<SpellDefinition> GetActiveDeckSpells()
+	{
+		return GameData.GetSpellsByIds(_activeDeckSpellIds);
+	}
+
 	public IReadOnlyList<UnitDefinition> GetSelectedAsyncChallengeDeckUnits()
 	{
 		return HasSelectedAsyncChallengeLockedDeck
@@ -807,11 +823,25 @@ public partial class GameState : Node
 			: GetActiveDeckUnits();
 	}
 
+	public IReadOnlyList<SpellDefinition> GetSelectedAsyncChallengeDeckSpells()
+	{
+		return HasSelectedAsyncChallengeLockedDeck
+			? Array.Empty<SpellDefinition>()
+			: GetActiveDeckSpells();
+	}
+
 	public IReadOnlyList<UnitDefinition> GetBattleDeckUnits()
 	{
 		return CurrentBattleMode == BattleRunMode.AsyncChallenge && HasSelectedAsyncChallengeLockedDeck
 			? GetSelectedAsyncChallengeDeckUnits()
 			: GetActiveDeckUnits();
+	}
+
+	public IReadOnlyList<SpellDefinition> GetBattleDeckSpells()
+	{
+		return CurrentBattleMode == BattleRunMode.AsyncChallenge && HasSelectedAsyncChallengeLockedDeck
+			? Array.Empty<SpellDefinition>()
+			: GetActiveDeckSpells();
 	}
 
 	public IReadOnlyList<SquadSynergyDefinition> GetActiveDeckSynergies()
@@ -885,6 +915,33 @@ public partial class GameState : Node
 			: string.Join("  |  ", synergies.Select(synergy => synergy.Title));
 	}
 
+	public string BuildActiveSpellSummary()
+	{
+		return BuildSpellSummary(GetActiveDeckSpells());
+	}
+
+	public string BuildSelectedAsyncChallengeSpellSummary()
+	{
+		return HasSelectedAsyncChallengeLockedDeck
+			? "Featured squad lock: spell cards disabled on this board."
+			: BuildSpellSummary(GetSelectedAsyncChallengeDeckSpells());
+	}
+
+	public string BuildSpellSummary(IEnumerable<SpellDefinition> spells)
+	{
+		var resolvedSpells = spells?
+			.Where(spell => spell != null)
+			.ToArray() ?? Array.Empty<SpellDefinition>();
+		if (resolvedSpells.Length == 0)
+		{
+			return "Active magic: none.";
+		}
+
+		return "Active magic: " + string.Join(
+			", ",
+			resolvedSpells.Select(spell => $"{spell.DisplayName} ({spell.CourageCost})"));
+	}
+
 	public IReadOnlyList<UnitDefinition> GetUnlockedPlayerUnits()
 	{
 		return GetOwnedPlayerUnits();
@@ -894,6 +951,13 @@ public partial class GameState : Node
 	{
 		return GameData.GetPlayerUnits()
 			.Where(unit => IsUnitOwned(unit.Id))
+			.ToArray();
+	}
+
+	public IReadOnlyList<SpellDefinition> GetOwnedPlayerSpells()
+	{
+		return GameData.GetPlayerSpells()
+			.Where(spell => IsSpellOwned(spell.Id))
 			.ToArray();
 	}
 
@@ -923,6 +987,37 @@ public partial class GameState : Node
 			}
 
 			return _ownedPlayerUnitIds.Contains(definition.Id);
+		}
+		catch (Exception)
+		{
+			return false;
+		}
+	}
+
+	public bool IsSpellOwned(string spellId)
+	{
+		try
+		{
+			var definition = GameData.GetSpell(spellId);
+			return _ownedPlayerSpellIds.Contains(definition.Id);
+		}
+		catch (Exception)
+		{
+			return false;
+		}
+	}
+
+	public bool IsSpellUnlocked(string spellId)
+	{
+		return IsSpellOwned(spellId);
+	}
+
+	public bool IsSpellAvailableForPurchase(string spellId)
+	{
+		try
+		{
+			var definition = GameData.GetSpell(spellId);
+			return definition.UnlockStage <= HighestUnlockedStage;
 		}
 		catch (Exception)
 		{
@@ -969,6 +1064,22 @@ public partial class GameState : Node
 		return 120 + (definition.Cost * 2) + (Math.Max(0, definition.UnlockStage - 1) * 35);
 	}
 
+	public int GetSpellPurchaseCost(string spellId)
+	{
+		var definition = GameData.GetSpell(spellId);
+		if (definition.GoldCost > 0)
+		{
+			return definition.GoldCost;
+		}
+
+		if (DefaultDeckSpellIds.Contains(definition.Id, StringComparer.OrdinalIgnoreCase))
+		{
+			return 0;
+		}
+
+		return 90 + (Math.Max(0, definition.UnlockStage - 1) * 24) + (definition.CourageCost * 2);
+	}
+
 	public bool TryPurchaseUnit(string unitId, out string message)
 	{
 		try
@@ -1009,6 +1120,46 @@ public partial class GameState : Node
 		catch (Exception)
 		{
 			message = "Unit data was not found.";
+			return false;
+		}
+	}
+
+	public bool TryPurchaseSpell(string spellId, out string message)
+	{
+		try
+		{
+			var definition = GameData.GetSpell(spellId);
+			if (IsSpellOwned(definition.Id))
+			{
+				message = $"{definition.DisplayName} is already prepared in the grimoire.";
+				return false;
+			}
+
+			if (!IsSpellAvailableForPurchase(definition.Id))
+			{
+				message = $"{definition.DisplayName} becomes available after exploring stage {definition.UnlockStage}.";
+				return false;
+			}
+
+			var cost = GetSpellPurchaseCost(definition.Id);
+			if (Gold < cost)
+			{
+				message = $"Need {cost} gold to scribe {definition.DisplayName}.";
+				return false;
+			}
+
+			Gold -= cost;
+			_ownedPlayerSpellIds.Add(definition.Id);
+			LastResultMessage = cost > 0
+				? $"{definition.DisplayName} scribed for {cost} gold."
+				: $"{definition.DisplayName} prepared for the caravan.";
+			Persist();
+			message = LastResultMessage;
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Spell data was not found.";
 			return false;
 		}
 	}
@@ -1315,11 +1466,16 @@ public partial class GameState : Node
 		return _activeDeckUnitIds.Contains(unitId, StringComparer.OrdinalIgnoreCase);
 	}
 
+	public bool IsSpellInActiveDeck(string spellId)
+	{
+		return _activeDeckSpellIds.Contains(spellId, StringComparer.OrdinalIgnoreCase);
+	}
+
 	public bool CanStartBattle(out string message)
 	{
 		if (_activeDeckUnitIds.Count < MaxDeckSize)
 		{
-			message = $"Fill all {MaxDeckSize} squad cards in Convoy Shop before deploying.";
+			message = $"Fill all {MaxDeckSize} squad cards in Caravan Armory before deploying.";
 			return false;
 		}
 
@@ -1347,7 +1503,7 @@ public partial class GameState : Node
 			return false;
 		}
 
-		message = $"Convoy ready. Stage entry costs {foodCost} food.";
+		message = $"Caravan ready. Stage entry costs {foodCost} food.";
 		return true;
 	}
 
@@ -1360,7 +1516,7 @@ public partial class GameState : Node
 
 		var foodCost = GetStageEntryFoodCost(stage);
 		Food -= foodCost;
-		LastResultMessage = $"Convoy dispatched to stage {stage}. -{foodCost} food.";
+		LastResultMessage = $"Caravan dispatched to stage {stage}. -{foodCost} food.";
 		Persist();
 		message = LastResultMessage;
 		return true;
@@ -1400,8 +1556,20 @@ public partial class GameState : Node
 		HighestUnlockedStage = nextStage.StageNumber;
 		SelectedStage = nextStage.StageNumber;
 		var newlyAvailableUnits = GetNewlyAvailablePlayerUnits(previousHighestUnlockedStage);
-		var availabilitySuffix = newlyAvailableUnits.Count > 0
-			? $" New shop unit available: {string.Join(", ", newlyAvailableUnits.Select(unit => unit.DisplayName))}."
+		var newlyAvailableSpells = GetNewlyAvailablePlayerSpells(previousHighestUnlockedStage);
+		var availabilityParts = new List<string>();
+		if (newlyAvailableUnits.Count > 0)
+		{
+			availabilityParts.Add($"New shop unit available: {string.Join(", ", newlyAvailableUnits.Select(unit => unit.DisplayName))}.");
+		}
+
+		if (newlyAvailableSpells.Count > 0)
+		{
+			availabilityParts.Add($"New spell archive unlocked: {string.Join(", ", newlyAvailableSpells.Select(spell => spell.DisplayName))}.");
+		}
+
+		var availabilitySuffix = availabilityParts.Count > 0
+			? $" {string.Join(" ", availabilityParts)}"
 			: "";
 		LastResultMessage =
 			$"Explored {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}. -{foodCost} food.{availabilitySuffix}";
@@ -1488,6 +1656,58 @@ public partial class GameState : Node
 		}
 	}
 
+	public bool ToggleDeckSpell(string spellId, out string message)
+	{
+		if (string.IsNullOrWhiteSpace(spellId))
+		{
+			message = "Invalid spell.";
+			return false;
+		}
+
+		var normalizedId = spellId.Trim();
+		if (_activeDeckSpellIds.Contains(normalizedId, StringComparer.OrdinalIgnoreCase))
+		{
+			_activeDeckSpellIds.RemoveAll(id => id.Equals(normalizedId, StringComparison.OrdinalIgnoreCase));
+			Persist();
+			message = "Spell moved out of the active deck.";
+			return true;
+		}
+
+		if (_activeDeckSpellIds.Count >= MaxSpellDeckSize)
+		{
+			message = $"Spell deck is full ({MaxSpellDeckSize} cards). Remove one first.";
+			return false;
+		}
+
+		try
+		{
+			var definition = GameData.GetSpell(normalizedId);
+			if (!IsSpellOwned(definition.Id))
+			{
+				if (IsSpellAvailableForPurchase(definition.Id))
+				{
+					message = $"{definition.DisplayName} can be scribed for {GetSpellPurchaseCost(definition.Id)} gold.";
+				}
+				else
+				{
+					message = $"{definition.DisplayName} becomes available after exploring stage {definition.UnlockStage}.";
+				}
+
+				return false;
+			}
+
+			_activeDeckSpellIds.Add(definition.Id);
+			Persist();
+			message = $"{definition.DisplayName} added to the active spell deck.";
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Spell data was not found.";
+			return false;
+		}
+	}
+
 	private float GetPlayerBaseHealthScale()
 	{
 		return GetPlayerBaseHealthScaleAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId));
@@ -1565,11 +1785,18 @@ public partial class GameState : Node
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
+		_activeDeckSpellIds.Clear();
+		_activeDeckSpellIds.AddRange(DefaultDeckSpellIds);
 		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
 		_ownedPlayerUnitIds.Clear();
+		_ownedPlayerSpellIds.Clear();
 		foreach (var unitId in DefaultDeckUnitIds)
 		{
 			_ownedPlayerUnitIds.Add(unitId);
+		}
+		foreach (var spellId in DefaultDeckSpellIds)
+		{
+			_ownedPlayerSpellIds.Add(spellId);
 		}
 
 		_stageStars.Clear();
@@ -1680,6 +1907,20 @@ public partial class GameState : Node
 			}
 		}
 
+		_activeDeckSpellIds.Clear();
+		if (saved.Version >= 21 && saved.ActiveDeckSpellIds != null)
+		{
+			foreach (var spellId in saved.ActiveDeckSpellIds)
+			{
+				if (string.IsNullOrWhiteSpace(spellId))
+				{
+					continue;
+				}
+
+				_activeDeckSpellIds.Add(spellId);
+			}
+		}
+
 		_ownedPlayerUnitIds.Clear();
 		if (saved.Version >= 8 && saved.OwnedPlayerUnitIds != null && saved.OwnedPlayerUnitIds.Length > 0)
 		{
@@ -1698,6 +1939,29 @@ public partial class GameState : Node
 				if (unit.UnlockStage <= HighestUnlockedStage)
 				{
 					_ownedPlayerUnitIds.Add(unit.Id);
+				}
+			}
+		}
+
+		_ownedPlayerSpellIds.Clear();
+		if (saved.Version >= 21 && saved.OwnedPlayerSpellIds != null && saved.OwnedPlayerSpellIds.Length > 0)
+		{
+			foreach (var spellId in saved.OwnedPlayerSpellIds)
+			{
+				if (!string.IsNullOrWhiteSpace(spellId))
+				{
+					_ownedPlayerSpellIds.Add(spellId);
+				}
+			}
+		}
+		else
+		{
+			foreach (var spell in GameData.GetPlayerSpells())
+			{
+				if (DefaultDeckSpellIds.Contains(spell.Id, StringComparer.OrdinalIgnoreCase) ||
+					spell.GoldCost <= 0 && spell.UnlockStage <= HighestUnlockedStage)
+				{
+					_ownedPlayerSpellIds.Add(spell.Id);
 				}
 			}
 		}
@@ -1838,7 +2102,9 @@ public partial class GameState : Node
 		}
 
 		NormalizeOwnedUnits();
+		NormalizeOwnedSpells();
 		NormalizeDeck();
+		NormalizeSpellDeck();
 		NormalizeStageStars();
 		NormalizeUnitLevels();
 		NormalizeBaseUpgrades();
@@ -1906,7 +2172,9 @@ public partial class GameState : Node
 			EffectsVolumePercent = EffectsVolumePercent,
 			AmbienceVolumePercent = AmbienceVolumePercent,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
+			ActiveDeckSpellIds = _activeDeckSpellIds.ToArray(),
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),
+			OwnedPlayerSpellIds = _ownedPlayerSpellIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
 			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
 			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
@@ -1934,6 +2202,16 @@ public partial class GameState : Node
 		foreach (var defaultId in DefaultDeckUnitIds)
 		{
 			_ownedPlayerUnitIds.Add(defaultId);
+		}
+	}
+
+	private void NormalizeOwnedSpells()
+	{
+		var validSpellIds = new HashSet<string>(GameData.PlayerSpellIds, StringComparer.OrdinalIgnoreCase);
+		_ownedPlayerSpellIds.RemoveWhere(spellId => !validSpellIds.Contains(spellId));
+		foreach (var defaultId in DefaultDeckSpellIds)
+		{
+			_ownedPlayerSpellIds.Add(defaultId);
 		}
 	}
 
@@ -1980,6 +2258,32 @@ public partial class GameState : Node
 			}
 
 			_activeDeckUnitIds.Add(defaultId);
+		}
+	}
+
+	private void NormalizeSpellDeck()
+	{
+		var validSpellIds = new HashSet<string>(_ownedPlayerSpellIds, StringComparer.OrdinalIgnoreCase);
+		_activeDeckSpellIds.RemoveAll(spellId => !validSpellIds.Contains(spellId));
+
+		for (var i = _activeDeckSpellIds.Count - 1; i >= 0; i--)
+		{
+			var currentId = _activeDeckSpellIds[i];
+			for (var j = 0; j < i; j++)
+			{
+				if (!_activeDeckSpellIds[j].Equals(currentId, StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
+				_activeDeckSpellIds.RemoveAt(i);
+				break;
+			}
+		}
+
+		if (_activeDeckSpellIds.Count > MaxSpellDeckSize)
+		{
+			_activeDeckSpellIds.RemoveRange(MaxSpellDeckSize, _activeDeckSpellIds.Count - MaxSpellDeckSize);
 		}
 	}
 
@@ -2658,6 +2962,13 @@ public partial class GameState : Node
 	{
 		return GameData.GetPlayerUnits()
 			.Where(unit => unit.UnlockStage > previousHighestUnlockedStage && unit.UnlockStage <= HighestUnlockedStage)
+			.ToArray();
+	}
+
+	private IReadOnlyList<SpellDefinition> GetNewlyAvailablePlayerSpells(int previousHighestUnlockedStage)
+	{
+		return GameData.GetPlayerSpells()
+			.Where(spell => spell.UnlockStage > previousHighestUnlockedStage && spell.UnlockStage <= HighestUnlockedStage)
 			.ToArray();
 	}
 

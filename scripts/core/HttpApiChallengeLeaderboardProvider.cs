@@ -60,7 +60,7 @@ public sealed class HttpApiChallengeLeaderboardProvider : IChallengeLeaderboardP
 					{
 						Rank = GetInt(item, "rank", rank),
 						Code = normalizedCode,
-						PlayerCallsign = GetString(item, "playerCallsign", "Convoy"),
+						PlayerCallsign = GetString(item, "playerCallsign", "Lantern"),
 						PlayerProfileId = GetString(item, "playerProfileId", ""),
 						Score = GetInt(item, "score", 0),
 						StarsEarned = GetInt(item, "starsEarned", 0),

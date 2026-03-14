@@ -61,7 +61,7 @@ public sealed class HttpApiOnlineRoomDirectoryProvider : IOnlineRoomDirectoryPro
 						RoomId = GetString(item, "roomId", Guid.NewGuid().ToString("N")),
 						Title = GetString(item, "title", "Remote Room"),
 						Summary = GetString(item, "summary", "Internet room listing from the backend."),
-						HostCallsign = GetString(item, "hostCallsign", "Convoy Host"),
+						HostCallsign = GetString(item, "hostCallsign", "Lantern Host"),
 						BoardCode = GetString(item, "boardCode", ""),
 						BoardTitle = GetString(item, "boardTitle", ""),
 						CurrentPlayers = GetInt(item, "currentPlayers", 1),

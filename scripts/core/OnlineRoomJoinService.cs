@@ -238,7 +238,7 @@ public static class OnlineRoomJoinService
 	private static string ResolvePlayerCallsign(GameState gameState)
 	{
 		return string.IsNullOrWhiteSpace(gameState?.PlayerCallsign)
-			? "Convoy"
+			? "Lantern"
 			: gameState.PlayerCallsign;
 	}
 
@@ -296,7 +296,7 @@ public static class OnlineRoomJoinService
 
 		return ticket.UsesLockedDeck
 			? $"Armed room board {ticket.BoardCode} with the negotiated shared squad."
-			: $"Armed room board {ticket.BoardCode} for the negotiated player-deck seat.";
+			: $"Armed room board {ticket.BoardCode} for the negotiated player-squad seat.";
 	}
 
 	private static OnlineRoomJoinTicket NormalizeAdoptedTicket(OnlineRoomJoinTicket ticket)
@@ -321,14 +321,14 @@ public static class OnlineRoomJoinService
 			BoardCode = boardCode,
 			Status = string.IsNullOrWhiteSpace(ticket.Status) ? "accepted" : ticket.Status.Trim().ToLowerInvariant(),
 			Summary = string.IsNullOrWhiteSpace(ticket.Summary)
-				? $"Backend room {ticket.RoomTitle} accepted this convoy."
+				? $"Backend room {ticket.RoomTitle} accepted this caravan."
 				: ticket.Summary.Trim(),
 			TicketId = string.IsNullOrWhiteSpace(ticket.TicketId) ? $"JOIN-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}" : ticket.TicketId.Trim(),
 			JoinToken = string.IsNullOrWhiteSpace(ticket.JoinToken) ? $"pending-{Guid.NewGuid():N}" : ticket.JoinToken.Trim(),
 			TransportHint = string.IsNullOrWhiteSpace(ticket.TransportHint) ? "internet_room_pending" : ticket.TransportHint.Trim(),
 			RelayEndpoint = string.IsNullOrWhiteSpace(ticket.RelayEndpoint) ? "pending relay" : ticket.RelayEndpoint.Trim(),
 			SeatLabel = string.IsNullOrWhiteSpace(ticket.SeatLabel)
-				? (usesLockedDeck ? "locked-squad seat" : "player-convoy seat")
+				? (usesLockedDeck ? "locked-squad seat" : "player-squad seat")
 				: ticket.SeatLabel.Trim(),
 			RequestedAtUnixSeconds = requestedAt,
 			ExpiresAtUnixSeconds = ticket.ExpiresAtUnixSeconds > 0 ? ticket.ExpiresAtUnixSeconds : requestedAt + 180,
@@ -429,7 +429,7 @@ public static class OnlineRoomJoinService
 			TransportHint = string.IsNullOrWhiteSpace(ticket?.TransportHint) ? "internet_room_pending" : ticket.TransportHint,
 			RelayEndpoint = string.IsNullOrWhiteSpace(ticket?.RelayEndpoint) ? "pending relay" : ticket.RelayEndpoint,
 			SeatLabel = string.IsNullOrWhiteSpace(ticket?.SeatLabel)
-				? (usesLockedDeck ? "locked-squad seat" : "player-convoy seat")
+				? (usesLockedDeck ? "locked-squad seat" : "player-squad seat")
 				: ticket.SeatLabel,
 			RequestedAtUnixSeconds = requestedAt,
 			ExpiresAtUnixSeconds = expiresAt,

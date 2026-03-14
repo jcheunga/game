@@ -42,14 +42,14 @@ public partial class MainMenu : Control
 
         var title = new Label
         {
-            Text = "ROADLINE: ZOMBIE SIEGE",
+            Text = "CROWNROAD: SIEGE OF ASH",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         stack.AddChild(title);
 
         var subtitle = new Label
         {
-            Text = "Dead Ahead-style prototype\nBuild squads, hold lanes, push the route.",
+            Text = "Medieval fantasy siege prototype\nBuild a warband, hold the lane, break the gate.",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         stack.AddChild(subtitle);
@@ -58,7 +58,7 @@ public partial class MainMenu : Control
         {
             Text = BuildProgressSummary(),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 120f)
+            CustomMinimumSize = new Vector2(0f, 136f)
         };
         stack.AddChild(_summaryLabel);
 
@@ -66,7 +66,7 @@ public partial class MainMenu : Control
         startButton.Pressed += () => SceneRouter.Instance.GoToMap();
         stack.AddChild(startButton);
 
-        var shopButton = BuildButton("Convoy Shop");
+        var shopButton = BuildButton("Caravan Armory");
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
         stack.AddChild(shopButton);
 
@@ -115,6 +115,7 @@ public partial class MainMenu : Control
         }
 
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
         var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
         var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
@@ -131,19 +132,25 @@ public partial class MainMenu : Control
             squadLine = "No active squad configured.";
         }
 
+        var spellLine = GameState.Instance.GetActiveDeckSpells().Count == 0
+            ? "No active magic prepared."
+            : string.Join(", ", GameState.Instance.GetActiveDeckSpells().Select(spell => spell.DisplayName));
+
         var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
         var bestChallengeScore = GameState.Instance.GetAsyncChallengeBestScore(selectedChallenge.Code);
 
         return
-            "Convoy status:\n" +
+            "Caravan status:\n" +
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
-            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Relay {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"{CampaignPlanCatalog.BuildCampaignStatusSummary()}\n" +
+            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}  |  Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
+            $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
             $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"{nextExploreLine}\n" +
             $"Active squad: {squadLine}\n" +
+            $"Active magic: {spellLine}\n" +
             $"Deck synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
     }
 }

@@ -150,7 +150,7 @@ public static class OnlineRoomDirectoryService
 				RoomId = string.IsNullOrWhiteSpace(entry.RoomId) ? $"ROOM-{roomIndex:000}" : entry.RoomId.Trim(),
 				Title = string.IsNullOrWhiteSpace(entry.Title) ? "Remote Room" : entry.Title.Trim(),
 				Summary = string.IsNullOrWhiteSpace(entry.Summary) ? "Internet room listing." : entry.Summary.Trim(),
-				HostCallsign = string.IsNullOrWhiteSpace(entry.HostCallsign) ? "Convoy Host" : entry.HostCallsign.Trim(),
+				HostCallsign = string.IsNullOrWhiteSpace(entry.HostCallsign) ? "Lantern Host" : entry.HostCallsign.Trim(),
 				BoardCode = code,
 				BoardTitle = string.IsNullOrWhiteSpace(entry.BoardTitle)
 					? BuildBoardTitle(challenge.Stage)

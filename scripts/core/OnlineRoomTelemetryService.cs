@@ -33,7 +33,7 @@ public static class OnlineRoomTelemetryService
 			TicketId = ticket.TicketId,
 			JoinToken = ticket.JoinToken,
 			PlayerProfileId = GameState.Instance?.PlayerProfileId ?? "",
-			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy",
+			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
 			ElapsedSeconds = Math.Max(0f, elapsedSeconds),
 			EnemyDefeats = Math.Max(0, enemyDefeats),
 			HullPercent = Mathf.RoundToInt(Mathf.Clamp(busHullRatio, 0f, 1f) * 100f),

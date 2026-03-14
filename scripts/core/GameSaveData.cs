@@ -36,7 +36,7 @@ public sealed class ChallengeRunRecord
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 20;
+    public int Version { get; set; } = 21;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
@@ -46,7 +46,7 @@ public sealed class GameSaveData
     public string SelectedEndlessRouteId { get; set; } = "city";
     public string SelectedEndlessBoonId { get; set; } = EndlessBoonCatalog.SurplusCourageId;
     public string LastResultMessage { get; set; } = "Pick a district and clear the route.";
-    public string PlayerCallsign { get; set; } = "Convoy";
+    public string PlayerCallsign { get; set; } = "Lantern";
     public string PlayerProfileId { get; set; } = "";
     public string PlayerAuthToken { get; set; } = "";
     public long LastPlayerProfileSyncAtUnixSeconds { get; set; }
@@ -59,7 +59,9 @@ public sealed class GameSaveData
     public int EffectsVolumePercent { get; set; } = 85;
     public int AmbienceVolumePercent { get; set; } = 65;
     public string[] ActiveDeckUnitIds { get; set; } = [];
+    public string[] ActiveDeckSpellIds { get; set; } = [];
     public string[] OwnedPlayerUnitIds { get; set; } = [];
+    public string[] OwnedPlayerSpellIds { get; set; } = [];
     public int[] StageStars { get; set; } = [];
     public Dictionary<string, int> UnitLevels { get; set; } = new();
     public Dictionary<string, int> BaseUpgradeLevels { get; set; } = new();

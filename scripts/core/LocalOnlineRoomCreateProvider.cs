@@ -25,8 +25,8 @@ public sealed class LocalOnlineRoomCreateProvider : IOnlineRoomCreateProvider
 			Title = $"{request.PlayerCallsign} Relay",
 			Summary = request.UsesLockedDeck
 				? "Hosted local internet-room stub using the selected locked async squad."
-				: "Hosted local internet-room stub using the selected async board and player convoy seats.",
-			HostCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Convoy Host" : request.PlayerCallsign.Trim(),
+				: "Hosted local internet-room stub using the selected async board and player squad seats.",
+			HostCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Lantern Host" : request.PlayerCallsign.Trim(),
 			BoardCode = boardCode,
 			BoardTitle = string.IsNullOrWhiteSpace(request.BoardTitle) ? boardCode : request.BoardTitle.Trim(),
 			CurrentPlayers = 1,

@@ -135,8 +135,8 @@ public static class StageModifiers
 
         return modifier.NormalizedType switch
         {
-            "armored_convoy" => $"Armored convoy ({ToPercent(modifier.Value, 1f)} bus hull)",
-            "reinforced_barricade" => $"Reinforced barricade ({ToPercent(modifier.Value, 1f)} enemy hull)",
+            "armored_convoy" => $"Armored caravan ({ToPercent(modifier.Value, 1f)} war wagon hull)",
+            "reinforced_barricade" => $"Reinforced gatehouse ({ToPercent(modifier.Value, 1f)} enemy hull)",
             "surging_courage" => $"Surging courage ({ToPercent(modifier.Value, 1f)} courage gain)",
             "swarm_density" => $"Swarm density (+{Mathf.Max(1, Mathf.RoundToInt(modifier.Value <= 0f ? 1f : modifier.Value))} enemy cap, faster pressure)",
             _ => modifier.Type
@@ -147,8 +147,8 @@ public static class StageModifiers
     {
         return modifier.NormalizedType switch
         {
-            "armored_convoy" => "Armored convoy",
-            "reinforced_barricade" => "Reinforced barricade",
+            "armored_convoy" => "Armored caravan",
+            "reinforced_barricade" => "Reinforced gatehouse",
             "surging_courage" => "Surging courage",
             "swarm_density" => "Swarm density",
             _ => modifier.Type

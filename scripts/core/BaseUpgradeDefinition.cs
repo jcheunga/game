@@ -27,23 +27,23 @@ public static class BaseUpgradeCatalog
     {
         new(
             HullPlatingId,
-            "Hull Plating",
-            "Increase bus hull by 12% per level in every battle.",
+            "War Wagon Plating",
+            "Increase war wagon hull by 12% per level in every battle.",
             5),
         new(
             PantryId,
-            "Convoy Pantry",
+            "Caravan Stores",
             "Increase max courage by 6 and courage gain by 6% per level.",
             5),
         new(
             DispatchConsoleId,
-            "Dispatch Console",
-            "Reduce squad deploy cooldowns by 6% per level.",
+            "March Drum",
+            "Reduce troop and spell card cooldowns by 6% per level.",
             5),
         new(
             SignalRelayId,
-            "Signal Relay",
-            "Harden convoy comms against jammers. Shorten signal jams and blunt their courage/cooldown penalties.",
+            "Rune Beacon",
+            "Harden caravan wards against hexers. Shorten signal jams and blunt their courage and cooldown penalties.",
             5)
     };
 

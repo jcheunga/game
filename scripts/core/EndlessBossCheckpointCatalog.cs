@@ -40,10 +40,10 @@ public static class EndlessBossCheckpointCatalog
     {
         new(
             RouteCatalog.CityId,
-            "Signal Breaker",
-            "An Overlord charge backed by runners and spitters tries to crack the expressway hold.",
+            "Bell-Tower Breaker",
+            "A Grave Lord charge backed by ghouls and blight casters tries to crack the road hold.",
             "Reward: bank +32 gold, +1 food, and surge +18 courage.",
-            "The convoy broke the expressway warlord and regained tempo for the next stretch.",
+            "The road warlord fell and the caravan regained tempo for the next stretch.",
             32,
             1,
             new[]
@@ -54,9 +54,9 @@ public static class EndlessBossCheckpointCatalog
         new(
             RouteCatalog.HarborId,
             "Drowned Crown",
-            "A harbor Overlord leans behind bloater and crusher pressure to collapse the choke point.",
-            "Reward: bank +36 gold, +1 food, and repair 6% bus hull.",
-            "The harbor crown collapsed and the convoy patched the bus before the next push.",
+            "A Saltwake Grave Lord leans behind rot hulk and bone juggernaut pressure to collapse the choke point.",
+            "Reward: bank +36 gold, +1 food, and repair 6% war wagon hull.",
+            "The drowned crown collapsed and the caravan patched the war wagon before the next push.",
             36,
             1,
             new[]
@@ -67,9 +67,9 @@ public static class EndlessBossCheckpointCatalog
         new(
             RouteCatalog.FoundryId,
             "Furnace Tyrant",
-            "A furnace Overlord arrives with splitter nests and saboteur escorts through the smelter lanes.",
+            "A furnace Grave Lord arrives with bone nests and sapper escorts through the smelter lanes.",
             "Reward: bank +38 gold, +1 food, and trim deck cooldowns by 1.0s.",
-            "The furnace tyrant fell and the convoy reset its deploy rhythm before the next surge.",
+            "The furnace tyrant fell and the caravan reset its deploy rhythm before the next surge.",
             38,
             1,
             new[]
@@ -80,10 +80,10 @@ public static class EndlessBossCheckpointCatalog
             }),
         new(
             RouteCatalog.QuarantineId,
-            "Containment Breach",
-            "A blacksite Overlord breaches containment under howler, spitter, and saboteur support.",
+            "Vault Breach",
+            "An Ashen Ward grave lord breaches the vault under dread herald, blight caster, and sapper support.",
             "Reward: bank +34 gold, +1 food, and call a defender reinforcement.",
-            "The containment breach was sealed and militia support stabilized the next block.",
+            "The vault breach was sealed and militia support stabilized the next block.",
             34,
             1,
             new[]
@@ -91,6 +91,36 @@ public static class EndlessBossCheckpointCatalog
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.ThornwallId,
+            "Frosthorn Breaker",
+            "A Thornwall Grave Lord leads howler horns, saboteur raiders, and crusher escorts down through the watch gate.",
+            "Reward: bank +40 gold, +1 food, and call a crossbow reinforcement.",
+            "The frosthorn breaker fell and the high watch fired for the caravan's next climb.",
+            40,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyRunnerId, Count = 3 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.BasilicaId,
+            "Sepulcher Warden",
+            "A basilica Grave Lord advances behind hexers, blight casters, and relic-guard crushers through the altar lane.",
+            "Reward: bank +42 gold, +1 food, and call a battle monk reinforcement.",
+            "The sepulcher warden fell and the caravan seized the choir line for the next push.",
+            42,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySplitterId, Count = 2 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyJammerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
             })
     };
 

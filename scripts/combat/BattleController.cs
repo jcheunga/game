@@ -52,6 +52,24 @@ public partial class BattleController : Node2D
 		public Button Button { get; }
 	}
 
+	private sealed class SpellSlot
+	{
+		public SpellSlot(SpellDefinition definition, Button button)
+		{
+			Definition = definition;
+			Button = button;
+		}
+
+		public SpellDefinition Definition { get; }
+		public Button Button { get; }
+	}
+
+	private enum BattleSelectionMode
+	{
+		Unit,
+		Spell
+	}
+
 	private sealed class ChallengeGhostMarker
 	{
 		public ChallengeGhostMarker(string unitId, Vector2 position, Color color, float triggerTime)
@@ -208,6 +226,7 @@ public partial class BattleController : Node2D
 	private readonly List<Unit> _units = new();
 	private readonly List<StageHazardState> _stageHazards = new();
 	private readonly BattleDeckState _deck = new();
+	private readonly BattleSpellState _spellDeck = new();
 	private readonly List<ChallengeDeploymentRecord> _challengeDeploymentTape = new();
 	private readonly List<ChallengeGhostMarker> _challengeGhostMarkers = new();
 	private readonly RandomNumberGenerator _rng = new();
@@ -230,6 +249,7 @@ public partial class BattleController : Node2D
 	private CheckBox _showDevUiToggle = null!;
 	private CheckBox _showFpsToggle = null!;
 	private readonly List<DeploySlot> _deploySlots = new();
+	private readonly List<SpellSlot> _spellSlots = new();
 	private readonly List<Button> _draftButtons = new();
 	private readonly HashSet<string> _endlessRunUpgrades = new(StringComparer.OrdinalIgnoreCase);
 
@@ -241,7 +261,7 @@ public partial class BattleController : Node2D
 	private string _activeRouteId = "city";
 	private string _endlessBoonId = EndlessBoonCatalog.SurplusCourageId;
 	private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
-	private string _endlessSupportEventLabel = "No convoy support event yet.";
+	private string _endlessSupportEventLabel = "No caravan support event yet.";
 	private string _endlessBattlefieldEventLabel = "No battlefield event active.";
 	private string _endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
 
@@ -278,6 +298,7 @@ public partial class BattleController : Node2D
 	private string _lastEndlessBossCheckpointTitle = "";
 	private string[] _draftOptionIds = Array.Empty<string>();
 	private bool _draftingRouteFork;
+	private BattleSelectionMode _selectionMode = BattleSelectionMode.Unit;
 	private EndlessFieldEvent _activeEndlessFieldEvent = null!;
 	private EndlessDirectiveState _activeEndlessDirective = null!;
 	private EndlessContactState _activeEndlessContact = null!;
@@ -423,8 +444,8 @@ public partial class BattleController : Node2D
 		_draftOptionIds = Array.Empty<string>();
 		_draftingRouteFork = false;
 		_endlessSupportEventLabel = IsEndlessMode
-			? "Opening convoy package deployed."
-			: "No convoy support event yet.";
+			? "Opening caravan package deployed."
+			: "No caravan support event yet.";
 		_endlessBattlefieldEventLabel = IsEndlessMode
 			? "Initial route event is arming."
 			: "No battlefield event active.";
@@ -450,6 +471,8 @@ public partial class BattleController : Node2D
 		}
 
 		_deck.Initialize(GameState.Instance.GetBattleDeckUnits());
+		_spellDeck.Initialize(GameState.Instance.GetBattleDeckSpells());
+		_selectionMode = BattleSelectionMode.Unit;
 		if (IsEndlessMode)
 		{
 			_spawnDirector.InitializeEndless(_activeRouteId, _stageData, _combat, GameData.GetEnemyUnits());
@@ -471,10 +494,10 @@ public partial class BattleController : Node2D
 		BuildUi();
 		SetStatus(
 			IsEndlessMode
-				? $"Select a squad card, click the battlefield to deploy, and hold against escalating waves. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()}."
+				? $"Select a squad or spell card, click the battlefield, and hold against escalating waves. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())}"
 				: IsChallengeMode
-					? $"Challenge {_challengeDefinition.Code}: deploy from the bus and post the best score you can. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {(HasChallengeGhostRun() ? "Local ghost benchmark armed." : "No local ghost benchmark saved yet.")}"
-				: $"Select a squad card, then click the battlefield to deploy from the bus. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()}.");
+					? $"Challenge {_challengeDefinition.Code}: deploy from the war wagon, cast support cards when needed, and post the best score you can. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())} {(HasChallengeGhostRun() ? "Local ghost benchmark armed." : "No local ghost benchmark saved yet.")}"
+				: $"Select a squad or spell card, then click the battlefield. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())}");
 		UpdateHud();
 		if (IsLanRaceMode)
 		{
@@ -634,6 +657,54 @@ public partial class BattleController : Node2D
 				new Color("c1121f"),
 				new Color("d9ed92"),
 				new Color("ef476f")),
+			"pass" => new TerrainPalette(
+				new Color("45586d"),
+				new Color("202f3d"),
+				new Color(0.92f, 0.97f, 1f, 0.08f),
+				new Color("a9d6ff"),
+				new Color("c1121f"),
+				new Color("edf6f9"),
+				new Color("ef476f")),
+			"shrine" => new TerrainPalette(
+				new Color("49596a"),
+				new Color("243341"),
+				new Color(0.95f, 0.98f, 0.9f, 0.08f),
+				new Color("d8f3dc"),
+				new Color("c1121f"),
+				new Color("fefae0"),
+				new Color("ef476f")),
+			"watchfort" => new TerrainPalette(
+				new Color("3b4858"),
+				new Color("1d2834"),
+				new Color(0.9f, 0.95f, 1f, 0.08f),
+				new Color("bde0fe"),
+				new Color("c1121f"),
+				new Color("f1faee"),
+				new Color("ef476f")),
+			"cathedral" => new TerrainPalette(
+				new Color("5a4f44"),
+				new Color("2a241f"),
+				new Color(1f, 0.95f, 0.82f, 0.08f),
+				new Color("e9c46a"),
+				new Color("c1121f"),
+				new Color("fefae0"),
+				new Color("ef476f")),
+			"ossuary" => new TerrainPalette(
+				new Color("51473f"),
+				new Color("241f1a"),
+				new Color(0.9f, 1f, 0.88f, 0.08f),
+				new Color("cdb4db"),
+				new Color("c1121f"),
+				new Color("f1faee"),
+				new Color("ef476f")),
+			"reliquary" => new TerrainPalette(
+				new Color("4b4136"),
+				new Color("211c18"),
+				new Color(1f, 0.95f, 0.76f, 0.08f),
+				new Color("ffd166"),
+				new Color("c1121f"),
+				new Color("fff3b0"),
+				new Color("ef476f")),
 			_ => new TerrainPalette(
 				new Color("14213d"),
 				new Color("22324f"),
@@ -784,6 +855,115 @@ public partial class BattleController : Node2D
 						true);
 				}
 				break;
+			case "pass":
+					for (var i = 0; i < 4; i++)
+					{
+						var left = Mathf.Lerp(BattlefieldLeft - 22f, BattlefieldRight - 220f, i / 3f);
+						var peak = left + 96f + ((i % 2) * 18f);
+						var right = left + 198f;
+						DrawColoredPolygon(
+							new[]
+							{
+								new Vector2(left, BattlefieldBottom - 36f),
+								new Vector2(peak, BattlefieldTop + 56f + ((i % 2) * 18f)),
+								new Vector2(right, BattlefieldBottom - 36f)
+							},
+							new Color(0.92f, 0.96f, 1f, 0.08f));
+					}
+
+					for (var i = 0; i < 9; i++)
+					{
+						var x = Mathf.Lerp(BattlefieldLeft + 72f, BattlefieldRight - 72f, i / 8f);
+						DrawLine(
+							new Vector2(x - 12f, BattlefieldTop + 36f + ((i % 3) * 12f)),
+							new Vector2(x + 8f, BattlefieldTop + 60f + ((i % 3) * 12f)),
+							new Color(1f, 1f, 1f, 0.16f),
+							2f,
+							true);
+					}
+					break;
+				case "shrine":
+					for (var i = 0; i < 3; i++)
+					{
+						var x = Mathf.Lerp(BattlefieldLeft + 160f, BattlefieldRight - 160f, i / 2f);
+						DrawCircle(new Vector2(x, BaseCenterY - 12f), 34f, new Color(0.94f, 0.97f, 0.86f, 0.08f));
+						DrawRect(new Rect2(x - 8f, BaseCenterY - 52f, 16f, 80f), new Color(1f, 1f, 1f, 0.08f), true);
+						DrawRect(new Rect2(x - 28f, BaseCenterY + 22f, 56f, 10f), new Color(0.92f, 0.95f, 0.82f, 0.1f), true);
+					}
+					break;
+				case "watchfort":
+					for (var i = 0; i < 4; i++)
+					{
+						var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 3f);
+						DrawRect(new Rect2(x - 30f, BattlefieldTop + 28f, 60f, 92f), new Color(0f, 0f, 0f, 0.16f), true);
+						for (var j = 0; j < 3; j++)
+						{
+							DrawRect(new Rect2(x - 30f + (j * 20f), BattlefieldTop + 22f, 14f, 10f), new Color(0.94f, 0.98f, 1f, 0.12f), true);
+						}
+					}
+
+					DrawLine(
+						new Vector2(BattlefieldLeft + 62f, BattlefieldBottom - 58f),
+						new Vector2(BattlefieldRight - 62f, BattlefieldBottom - 58f),
+						new Color(0.88f, 0.93f, 1f, 0.18f),
+						4f,
+						true);
+					break;
+			case "cathedral":
+				for (var i = 0; i < 4; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 120f, BattlefieldRight - 120f, i / 3f);
+					DrawArc(
+						new Vector2(x, BattlefieldTop + 132f + ((i % 2) * 10f)),
+						44f,
+						Mathf.Pi,
+						Mathf.Tau,
+						20,
+						new Color(1f, 0.96f, 0.82f, 0.12f),
+						4f);
+					DrawLine(
+						new Vector2(x - 44f, BattlefieldTop + 132f + ((i % 2) * 10f)),
+						new Vector2(x - 44f, BattlefieldBottom - 46f),
+						new Color(1f, 0.96f, 0.86f, 0.08f),
+						4f,
+						true);
+					DrawLine(
+						new Vector2(x + 44f, BattlefieldTop + 132f + ((i % 2) * 10f)),
+						new Vector2(x + 44f, BattlefieldBottom - 46f),
+						new Color(1f, 0.96f, 0.86f, 0.08f),
+						4f,
+						true);
+				}
+
+				for (var i = 0; i < 8; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 72f, BattlefieldRight - 72f, i / 7f);
+					DrawCircle(new Vector2(x, BattlefieldBottom - 54f - ((i % 2) * 6f)), 3f, new Color(1f, 0.84f, 0.46f, 0.65f));
+				}
+				break;
+			case "ossuary":
+				for (var i = 0; i < 4; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 132f, BattlefieldRight - 132f, i / 3f);
+					DrawCircle(new Vector2(x - 18f, BattlefieldBottom - 54f), 18f, new Color(1f, 0.98f, 0.94f, 0.08f));
+					DrawCircle(new Vector2(x + 14f, BattlefieldBottom - 48f), 22f, new Color(0.88f, 1f, 0.9f, 0.08f));
+					DrawRect(new Rect2(x - 8f, BattlefieldTop + 34f, 16f, 86f), new Color(0f, 0f, 0f, 0.14f), true);
+				}
+				break;
+			case "reliquary":
+				for (var i = 0; i < 3; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
+					DrawRect(new Rect2(x - 30f, BattlefieldTop + 32f, 60f, 90f), new Color(1f, 0.95f, 0.74f, 0.08f), true);
+					DrawRect(new Rect2(x - 10f, BattlefieldTop + 18f, 20f, 118f), new Color(0f, 0f, 0f, 0.16f), true);
+					DrawLine(
+						new Vector2(x, BattlefieldTop + 18f),
+						new Vector2(x, BattlefieldBottom - 42f),
+						new Color(1f, 0.9f, 0.56f, 0.12f),
+						3f,
+						true);
+				}
+				break;
 		}
 	}
 
@@ -912,6 +1092,7 @@ public partial class BattleController : Node2D
 		}
 
 		_deck.TickCooldowns(deltaF);
+		_spellDeck.TickCooldowns(deltaF);
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
 		UpdateEndlessFieldEvent(deltaF);
 		UpdateStageHazards();
@@ -1185,7 +1366,7 @@ public partial class BattleController : Node2D
 
 		if (IsInBattlefield(mouseButton.Position))
 		{
-			TryDeployAtY(mouseButton.Position.Y);
+			TryUseSelectionAt(mouseButton.Position);
 		}
 	}
 
@@ -1242,10 +1423,10 @@ public partial class BattleController : Node2D
 		infoVBox.AddChild(new Label { Text = IsEndlessMode ? "Endless Deployment" : "Deployment" });
 		infoVBox.AddChild(new Label
 		{
-			Text = IsEndlessMode
-				? "1) Pick a squad card below.\n2) Click the battlefield lane.\n3) Survive escalating waves or retreat with salvage."
-				: "1) Pick a squad card below.\n2) Click the battlefield lane.\nCards spend courage and go on cooldown after deployment."
-		});
+				Text = IsEndlessMode
+					? "1) Pick a squad or spell card below.\n2) Click the battlefield.\n3) Survive escalating waves or retreat to bank recovered rewards."
+					: "1) Pick a squad or spell card below.\n2) Click the battlefield.\nCards spend courage and go on cooldown after use."
+			});
 
 		_waveIntelLabel = new Label
 		{
@@ -1300,13 +1481,17 @@ public partial class BattleController : Node2D
 		var spawnPanel = new PanelContainer
 		{
 			Position = new Vector2(16f, 586f),
-			Size = new Vector2(1246f, 114f)
+			Size = new Vector2(1246f, _spellDeck.Roster.Count > 0 ? 188f : 114f)
 		};
 		root.AddChild(spawnPanel);
 
-		var spawnRow = new HBoxContainer();
-		spawnRow.AddThemeConstantOverride("separation", 10);
-		spawnPanel.AddChild(spawnRow);
+		var spawnStack = new VBoxContainer();
+		spawnStack.AddThemeConstantOverride("separation", 8);
+		spawnPanel.AddChild(spawnStack);
+
+		var unitRow = new HBoxContainer();
+		unitRow.AddThemeConstantOverride("separation", 10);
+		spawnStack.AddChild(unitRow);
 
 		foreach (var definition in _deck.Roster)
 		{
@@ -1322,8 +1507,33 @@ public partial class BattleController : Node2D
 			button.AddThemeColorOverride("font_pressed_color", Colors.White);
 			button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
 			button.Pressed += () => ArmPlayerUnit(unit);
-			spawnRow.AddChild(button);
+			unitRow.AddChild(button);
 			_deploySlots.Add(new DeploySlot(unit, button));
+		}
+
+		if (_spellDeck.Roster.Count > 0)
+		{
+			var spellRow = new HBoxContainer();
+			spellRow.AddThemeConstantOverride("separation", 10);
+			spawnStack.AddChild(spellRow);
+
+			foreach (var definition in _spellDeck.Roster)
+			{
+				var spell = definition;
+				var button = new Button
+				{
+					Text = spell.DisplayName,
+					SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+					CustomMinimumSize = new Vector2(0f, 64f)
+				};
+				button.AddThemeColorOverride("font_color", Colors.White);
+				button.AddThemeColorOverride("font_hover_color", Colors.White);
+				button.AddThemeColorOverride("font_pressed_color", Colors.White);
+				button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
+				button.Pressed += () => ArmSpell(spell);
+				spellRow.AddChild(button);
+				_spellSlots.Add(new SpellSlot(spell, button));
+			}
 		}
 
 		_endCenter = new CenterContainer();
@@ -1483,10 +1693,10 @@ public partial class BattleController : Node2D
 	private void UpdateHud()
 	{
 		_baseHealthLabel.Text = IsEndlessMode
-			? $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Route: {ResolveRouteLabel(_activeRouteId)} endless hold"
+			? $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Route: {ResolveRouteLabel(_activeRouteId)} endless hold"
 			: IsChallengeMode
-				? $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Barricade: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}   |   Challenge {_challengeDefinition.Code}"
-				: $"Bus hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Barricade: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}";
+				? $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Gatehouse: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}   |   Challenge {_challengeDefinition.Code}"
+				: $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Gatehouse: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}";
 		_resourceLabel.Text = IsEndlessMode
 			? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Endless wave {_spawnDirector.EndlessWaveNumber}   |   Best {GameState.Instance.BestEndlessWave}"
 			: IsChallengeMode
@@ -1531,6 +1741,26 @@ public partial class BattleController : Node2D
 				$"{marker}Lv{level} {slot.Definition.DisplayName}\n{stateLabel}  |  {slot.Definition.Cost} courage";
 			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, slot.Definition == _deck.ArmedUnit);
 			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
+		}
+
+		foreach (var slot in _spellSlots)
+		{
+			var cooldown = _spellDeck.GetCooldownRemaining(slot.Definition.Id);
+			var isReady = cooldown <= 0.05f;
+			var hasCourage = _courage >= slot.Definition.CourageCost;
+			var armed = _selectionMode == BattleSelectionMode.Spell && slot.Definition == _spellDeck.ArmedSpell;
+			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
+
+			var stateLabel = !isReady
+				? $"RECOVER {cooldown:0.0}s"
+				: hasCourage
+					? "READY"
+					: $"NEED {slot.Definition.CourageCost}";
+			var marker = armed ? "* " : "";
+			slot.Button.Text =
+				$"{marker}{slot.Definition.DisplayName}\n{stateLabel}  |  {slot.Definition.CourageCost} courage";
+			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
+			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, isReady, cooldown);
 		}
 	}
 
@@ -1607,27 +1837,27 @@ public partial class BattleController : Node2D
 		var parts = new List<string>();
 		if (howlers > 0)
 		{
-			parts.Add($"Howler x{howlers}");
+			parts.Add($"Dread Herald x{howlers}");
 		}
 
 		if (jammers > 0)
 		{
-			parts.Add($"Jammer x{jammers}");
+			parts.Add($"Hexer x{jammers}");
 		}
 
 		if (saboteurs > 0)
 		{
-			parts.Add($"Saboteur x{saboteurs}");
+			parts.Add($"Sapper x{saboteurs}");
 		}
 
 		if (spitters > 0)
 		{
-			parts.Add($"Spitter x{spitters}");
+			parts.Add($"Blight Caster x{spitters}");
 		}
 
 		if (bosses > 0)
 		{
-			parts.Add($"Overlord x{bosses}");
+			parts.Add($"Grave Lord x{bosses}");
 		}
 
 		if (_enemySignalJamTimer > 0.05f)
@@ -1666,9 +1896,23 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		_selectionMode = BattleSelectionMode.Unit;
 		_deck.Arm(definition);
 		SetStatus(
-			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}. Click the battlefield to deploy from the bus.");
+			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}. Click the battlefield to deploy from the war wagon.");
+		UpdateHud();
+	}
+
+	private void ArmSpell(SpellDefinition definition)
+	{
+		if (_battleEnded)
+		{
+			return;
+		}
+
+		_selectionMode = BattleSelectionMode.Spell;
+		_spellDeck.Arm(definition);
+		SetStatus($"Selected {definition.DisplayName}. Click the battlefield to cast it.");
 		UpdateHud();
 	}
 
@@ -1680,6 +1924,23 @@ public partial class BattleController : Node2D
 			position.Y <= BattlefieldBottom;
 	}
 
+	private void TryUseSelectionAt(Vector2 clickPosition)
+	{
+		if (_selectionMode == BattleSelectionMode.Spell && _spellDeck.HasArmedSpell)
+		{
+			TryCastSpellAt(_spellDeck.ArmedSpell, ClampBattlefieldPoint(clickPosition));
+			return;
+		}
+
+		if (!_deck.HasArmedUnit)
+		{
+			SetStatus("Pick a squad or spell card first, then click the battlefield.");
+			return;
+		}
+
+		TryDeployAtY(clickPosition.Y);
+	}
+
 	private void TryDeployAtY(float clickY)
 	{
 		if (!_deck.HasArmedUnit)
@@ -1688,14 +1949,25 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (!_deck.CanDeploy(_deck.ArmedUnit, _courage, _battleEnded, out var reason))
+		var spawnY = Mathf.Clamp(clickY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
+		TrySpawnPlayer(_deck.ArmedUnit, new Vector2(PlayerSpawnX, spawnY));
+	}
+
+	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
+	{
+		if (!_spellDeck.CanCast(definition, _courage, _battleEnded, _endlessCheckpointActive, out var reason))
 		{
 			SetStatus(reason);
 			return;
 		}
 
-		var spawnY = Mathf.Clamp(clickY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		TrySpawnPlayer(_deck.ArmedUnit, new Vector2(PlayerSpawnX, spawnY));
+		_courage -= definition.CourageCost;
+		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(definition));
+		var effectSummary = ApplySpellEffect(definition, targetPosition);
+		_selectionMode = BattleSelectionMode.Unit;
+		AudioDirector.Instance?.PlayUiConfirm();
+		SetStatus($"Cast {definition.DisplayName} at lane {Mathf.RoundToInt(targetPosition.Y)}. {effectSummary}");
+		UpdateHud();
 	}
 
 	private void TrySpawnPlayer(UnitDefinition definition, Vector2 spawnPosition)
@@ -1721,7 +1993,7 @@ public partial class BattleController : Node2D
 		SpawnEffect(spawnPosition, stats.Color, 12f, 42f, 0.28f);
 		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition, spawnPosition);
 		SetStatus(
-			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name} from the bus at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{ghostDeployFeedback}");
+			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name} from the war wagon at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{ghostDeployFeedback}");
 		UpdateHud();
 	}
 
@@ -2166,7 +2438,7 @@ public partial class BattleController : Node2D
 		SpawnEffect(boss.Position, boss.Tint.Lightened(0.15f), 12f, Mathf.Max(56f, boss.SpecialBuffRadius * 0.55f), 0.28f, false);
 		SpawnFloatText(boss.Position + new Vector2(0f, -48f), "RALLY", boss.Tint.Lightened(0.26f), 0.6f);
 		SetStatus(
-			$"Overlord rally call: {buffedCount} infected surged forward" +
+			$"Grave Lord rally call: {buffedCount} undead surged forward" +
 			(escortsSpawned > 0 ? $" and {escortsSpawned} escorts joined the push." : "."));
 		return true;
 	}
@@ -2189,6 +2461,7 @@ public partial class BattleController : Node2D
 		if (cooldownPenalty > 0.05f)
 		{
 			_deck.IncreaseCooldowns(cooldownPenalty);
+			_spellDeck.IncreaseCooldowns(cooldownPenalty);
 		}
 
 		SpawnEffect(jammer.Position, jammer.Tint.Lightened(0.08f), 12f, 54f, 0.26f, false);
@@ -2199,7 +2472,7 @@ public partial class BattleController : Node2D
 		{
 			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -86f), "RELAY HARDENED", new Color("d9f0ff"), 0.56f);
 		}
-		SetStatus($"Enemy jammer disrupted convoy dispatch: courage gain suppressed for {jamDuration:0.0}s and card recovery delayed.");
+		SetStatus($"Enemy hexer disrupted caravan rhythm: courage gain suppressed for {jamDuration:0.0}s and card recovery delayed.");
 		return true;
 	}
 
@@ -2216,6 +2489,7 @@ public partial class BattleController : Node2D
 		if (cooldownPenalty > 0.05f)
 		{
 			_deck.IncreaseCooldowns(cooldownPenalty);
+			_spellDeck.IncreaseCooldowns(cooldownPenalty);
 		}
 
 		var blackoutColor = new Color("93c5fd");
@@ -2228,7 +2502,7 @@ public partial class BattleController : Node2D
 			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -86f), "RELAY HARDENED", new Color("d9f0ff"), 0.56f);
 		}
 
-		SetStatus($"Challenge mutator blackout hit convoy comms for {jamDuration:0.0}s.");
+		SetStatus($"Challenge mutator blackout hit caravan signals for {jamDuration:0.0}s.");
 	}
 
 	private void ApplyTeamAuras()
@@ -2667,6 +2941,180 @@ public partial class BattleController : Node2D
 		AddChild(floatText);
 	}
 
+	private Vector2 ClampBattlefieldPoint(Vector2 position)
+	{
+		return new Vector2(
+			Mathf.Clamp(position.X, BattlefieldLeft + 18f, BattlefieldRight - 18f),
+			Mathf.Clamp(position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
+	}
+
+	private Unit[] GetLivingUnitsInRadius(Vector2 center, float radius, Team team)
+	{
+		var radiusSquared = radius * radius;
+		return _units
+			.Where(unit =>
+				!unit.IsDead &&
+				unit.Team == team &&
+				unit.Position.DistanceSquaredTo(center) <= radiusSquared)
+			.ToArray();
+	}
+
+	private string ApplySpellEffect(SpellDefinition definition, Vector2 targetPosition)
+	{
+		return definition.EffectType switch
+		{
+			"fireball" => ApplyFireballSpell(definition, targetPosition),
+			"heal" => ApplyHealSpell(definition, targetPosition),
+			"frost_burst" => ApplyFrostBurstSpell(definition, targetPosition),
+			"lightning_strike" => ApplyLightningStrikeSpell(definition, targetPosition),
+			"barrier_ward" => ApplyBarrierWardSpell(definition, targetPosition),
+			_ => "The spell fizzled without a scripted effect."
+		};
+	}
+
+	private string ApplyFireballSpell(SpellDefinition definition, Vector2 targetPosition)
+	{
+		var color = definition.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy);
+		var hits = 0;
+		var totalDamage = 0f;
+
+		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.26f, false);
+		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FIREBALL", color.Lightened(0.22f), 0.56f);
+
+		foreach (var target in targets)
+		{
+			var appliedDamage = target.TakeDamage(definition.Power);
+			if (appliedDamage <= 0.05f)
+			{
+				continue;
+			}
+
+			hits++;
+			totalDamage += appliedDamage;
+			SpawnDamageFeedback(target.Position, appliedDamage, color);
+		}
+
+		return hits > 0
+			? $"Fireball hit {hits} enemies for {Mathf.RoundToInt(totalDamage)} total damage."
+			: "Fireball burst across empty ground.";
+	}
+
+	private string ApplyHealSpell(SpellDefinition definition, Vector2 targetPosition)
+	{
+		var color = definition.GetTint();
+		var allies = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Player);
+		var healedUnits = 0;
+		var totalHealing = 0f;
+
+		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false);
+		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "HEAL", color.Lightened(0.18f), 0.56f);
+
+		foreach (var ally in allies)
+		{
+			var healed = ally.Heal(definition.Power);
+			if (healed <= 0.05f)
+			{
+				continue;
+			}
+
+			healedUnits++;
+			totalHealing += healed;
+			SpawnEffect(ally.Position, color.Lightened(0.08f), 8f, 22f, 0.18f, false);
+			SpawnFloatText(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
+		}
+
+		var repaired = RepairBusByAmount(definition.SecondaryPower);
+		return
+			$"Heal restored {Mathf.RoundToInt(totalHealing)} across {healedUnits} allies" +
+			(repaired > 0.05f ? $" and repaired {Mathf.RoundToInt(repaired)} war wagon hull." : ".");
+	}
+
+	private string ApplyFrostBurstSpell(SpellDefinition definition, Vector2 targetPosition)
+	{
+		var color = definition.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy);
+		var slowed = 0;
+		var totalDamage = 0f;
+
+		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.3f, false);
+		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FROST", color.Lightened(0.24f), 0.58f);
+
+		foreach (var target in targets)
+		{
+			var appliedDamage = target.TakeDamage(definition.Power);
+			target.ApplyTemporarySpeedModifier(0.62f, definition.Duration);
+			if (appliedDamage > 0.05f)
+			{
+				totalDamage += appliedDamage;
+				SpawnDamageFeedback(target.Position, appliedDamage, color);
+			}
+
+			slowed++;
+		}
+
+		return slowed > 0
+			? $"Frost Burst slowed {slowed} enemies for {definition.Duration:0.0}s and dealt {Mathf.RoundToInt(totalDamage)} damage."
+			: "Frost Burst failed to catch an enemy pack.";
+	}
+
+	private string ApplyLightningStrikeSpell(SpellDefinition definition, Vector2 targetPosition)
+	{
+		var color = definition.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy)
+			.OrderBy(unit => unit.Position.DistanceSquaredTo(targetPosition))
+			.Take(3)
+			.ToArray();
+		var totalDamage = 0f;
+
+		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false);
+		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "LIGHTNING", color.Lightened(0.18f), 0.56f);
+
+		for (var i = 0; i < targets.Length; i++)
+		{
+			var scale = i switch
+			{
+				0 => 1f,
+				1 => 0.78f,
+				_ => 0.58f
+			};
+			var appliedDamage = targets[i].TakeDamage(definition.Power * scale);
+			if (appliedDamage <= 0.05f)
+			{
+				continue;
+			}
+
+			totalDamage += appliedDamage;
+			SpawnEffect(targets[i].Position, color, 10f, 30f, 0.2f, false);
+			SpawnDamageFeedback(targets[i].Position, appliedDamage, color);
+		}
+
+		return targets.Length > 0
+			? $"Lightning Strike chained through {targets.Length} enemies for {Mathf.RoundToInt(totalDamage)} damage."
+			: "Lightning Strike had no valid target.";
+	}
+
+	private string ApplyBarrierWardSpell(SpellDefinition definition, Vector2 targetPosition)
+	{
+		var color = definition.GetTint();
+		var allies = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Player);
+		var warded = 0;
+
+		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false);
+		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "WARD", color.Lightened(0.18f), 0.56f);
+
+		foreach (var ally in allies)
+		{
+			ally.ApplyTemporaryDefenseModifier(definition.Power, definition.Duration);
+			warded++;
+			SpawnEffect(ally.Position, color.Lightened(0.05f), 6f, 18f, 0.18f, false);
+		}
+
+		return warded > 0
+			? $"Barrier Ward covered {warded} allies for {definition.Duration:0.0}s."
+			: "Barrier Ward found no allied units in the target lane.";
+	}
+
 	private Rect2 OffsetRect(Rect2 rect, Vector2 offset)
 	{
 		return new Rect2(rect.Position + offset, rect.Size);
@@ -2805,6 +3253,24 @@ public partial class BattleController : Node2D
 			: tint.Lerp(Colors.White, 0.25f);
 	}
 
+	private Color ResolveSpellButtonTint(SpellDefinition definition, bool isReady, bool hasCourage, bool armed)
+	{
+		var tint = definition.GetTint();
+		if (!isReady)
+		{
+			return tint.Darkened(0.45f);
+		}
+
+		if (!hasCourage)
+		{
+			return tint.Darkened(0.28f).Lerp(new Color("6c757d"), 0.35f);
+		}
+
+		return armed
+			? tint.Lightened(0.25f)
+			: tint.Lerp(Colors.White, 0.22f);
+	}
+
 	private string BuildDeployButtonTooltip(UnitDefinition definition, int level, bool isReady, float cooldown)
 	{
 		var stats = BuildPlayerUnitStatsForBattle(definition);
@@ -2830,6 +3296,17 @@ public partial class BattleController : Node2D
 		return Mathf.Max(1.5f, cooldown);
 	}
 
+	private float ResolvePlayerSpellCooldown(SpellDefinition definition)
+	{
+		var cooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.Cooldown);
+		if (IsChallengeMode)
+		{
+			cooldown *= _challengeMutator.DeployCooldownScale;
+		}
+
+		return Mathf.Max(2f, cooldown);
+	}
+
 	private string BuildWaveIntelText()
 	{
 		if (IsEndlessMode)
@@ -2845,12 +3322,12 @@ public partial class BattleController : Node2D
 					var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_activeRouteId);
 					return remainingEnemies > 0
 						? $"Boss checkpoint active: {bossCheckpoint.Title}. Clear {remainingEnemies} remaining enemies to open the {checkpointLabel} draft.\n{BuildEndlessBossCheckpointText()}"
-						: $"Boss checkpoint secured: {bossCheckpoint.Title} broken. Choose a {checkpointLabel} to resume the convoy.\n{BuildEndlessBossCheckpointCheckpointSummary()}";
+						: $"Boss checkpoint secured: {bossCheckpoint.Title} broken. Choose a {checkpointLabel} to resume the caravan.\n{BuildEndlessBossCheckpointCheckpointSummary()}";
 				}
 
 				return remainingEnemies > 0
 					? $"Checkpoint wave active: clear {remainingEnemies} remaining enemies to open the {checkpointLabel} draft."
-					: $"Checkpoint ready: choose a {checkpointLabel} to resume the convoy.";
+					: $"Checkpoint ready: choose a {checkpointLabel} to resume the caravan.";
 			}
 
 			var endlessCountdown = Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed);
@@ -2866,7 +3343,7 @@ public partial class BattleController : Node2D
 			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
 			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
 			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
-			$"Convoy support: {_endlessSupportEventLabel}";
+			$"Caravan support: {_endlessSupportEventLabel}";
 		}
 
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
@@ -3382,7 +3859,7 @@ public partial class BattleController : Node2D
 			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
 			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
 			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
-			$"Convoy support: {_endlessSupportEventLabel}\n" +
+			$"Caravan support: {_endlessSupportEventLabel}\n" +
 			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
 	}
 
@@ -3419,7 +3896,7 @@ public partial class BattleController : Node2D
 		var forkText = _endlessRouteForkId switch
 		{
 			EndlessRouteForkCatalog.MainlinePushId => "Current fork speeds up the line and raises ranged pressure.",
-			EndlessRouteForkCatalog.ScavengeDetourId => "Current fork slows the surge slightly but adds heavier salvage lanes.",
+			EndlessRouteForkCatalog.ScavengeDetourId => "Current fork slows the surge slightly but adds heavier supply lanes.",
 			EndlessRouteForkCatalog.FortifiedBlockId => "Current fork softens pressure at the cost of lower gold efficiency.",
 			_ => ""
 		};
@@ -3446,7 +3923,7 @@ public partial class BattleController : Node2D
 		_draftingRouteFork = IsRouteForkCheckpoint();
 		_draftOptionIds = _draftingRouteFork ? BuildRouteForkOptions() : BuildDraftOptions();
 		_draftLabel.Text = _draftingRouteFork
-			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the convoy rolls out.\n{BuildEndlessBossCheckpointCheckpointSummary()}\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}"
+			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the caravan rolls out.\n{BuildEndlessBossCheckpointCheckpointSummary()}\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}"
 			: $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose one run upgrade before the next surge.\n{BuildEndlessBossCheckpointCheckpointSummary()}\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}";
 
 		for (var i = 0; i < _draftButtons.Count; i++)
@@ -3460,7 +3937,7 @@ public partial class BattleController : Node2D
 
 		_draftCenter.Visible = true;
 		_draftPanel.Visible = true;
-		SetStatus(_draftingRouteFork ? "Checkpoint held. Pick the next route segment." : "Checkpoint held. Pick a convoy upgrade.");
+		SetStatus(_draftingRouteFork ? "Checkpoint held. Pick the next route segment." : "Checkpoint held. Pick a caravan boon.");
 		UpdateHud();
 	}
 
@@ -3589,12 +4066,12 @@ public partial class BattleController : Node2D
 	{
 		return optionId switch
 		{
-			"bus_plates" => new EndlessDraftOption("bus_plates", "Bus Plates", "Add 15% max bus hull and repair the convoy by the same amount."),
+			"bus_plates" => new EndlessDraftOption("bus_plates", "Wagon Plates", "Add 15% max war wagon hull and repair the caravan by the same amount."),
 			"supply_drop" => new EndlessDraftOption("supply_drop", "Supply Drop", "Immediately gain +25 courage for the next deployment burst."),
 			"courage_pump" => new EndlessDraftOption("courage_pump", "Courage Pump", "Increase courage generation by 20% for the rest of the run."),
 			"shock_drill" => new EndlessDraftOption("shock_drill", "Shock Drill", "Future deployed units deal 12% more damage for the rest of the run."),
 			"field_tonic" => new EndlessDraftOption("field_tonic", "Field Tonic", "Future deployed units gain 18% more health for the rest of the run."),
-			"salvage_contract" => new EndlessDraftOption("salvage_contract", "Salvage Contract", "Increase final gold payout by 15% for the rest of the run."),
+				"salvage_contract" => new EndlessDraftOption("salvage_contract", "Quartermaster Ledger", "Increase final gold payout by 15% for the rest of the run."),
 			_ => new EndlessDraftOption("supply_drop", "Supply Drop", "Immediately gain +25 courage for the next deployment burst.")
 		};
 	}
@@ -3622,16 +4099,17 @@ public partial class BattleController : Node2D
 				_endlessSupportEventLabel = "Dispatch riders arrived: +20 courage and cooldown recovery across the squad.";
 				_courage = Mathf.Min(_maxCourage, _courage + 20f);
 				_deck.ReduceCooldowns(3f);
+				_spellDeck.ReduceCooldowns(3f);
 				break;
 			case EndlessRouteForkCatalog.ScavengeDetourId:
-				_endlessSupportEventLabel = "Scavenger escort arrived: raider reinforcement deployed and convoy patched.";
+					_endlessSupportEventLabel = "Forager escort arrived: cavalry reinforcement deployed and the war wagon was patched.";
 				RepairBusByRatio(0.1f);
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
 					? GameData.PlayerRaiderId
 					: GameData.PlayerBrawlerId);
 				break;
 			case EndlessRouteForkCatalog.FortifiedBlockId:
-				_endlessSupportEventLabel = "Safehouse militia joined: defender reinforcement and bus repairs secured the block.";
+				_endlessSupportEventLabel = "Safehouse militia joined: shield knight reinforcement and war wagon repairs secured the block.";
 				RepairBusByRatio(0.12f);
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
 					? GameData.PlayerDefenderId
@@ -3660,7 +4138,7 @@ public partial class BattleController : Node2D
 				new Color("ffd166")),
 			EndlessRouteForkCatalog.ScavengeDetourId => new EndlessFieldEvent(
 				"scavenge_detour",
-				"Supply caches pulse courage and quick repairs from the convoy side streets.",
+					"Supply caches pulse courage and quick repairs from the caravan sidelines.",
 				new[]
 				{
 					new Vector2(PlayerSpawnX + 40f, BattlefieldTop + 118f),
@@ -3672,7 +4150,7 @@ public partial class BattleController : Node2D
 				new Color("80ed99")),
 			_ => new EndlessFieldEvent(
 				"fortified_block",
-				"A safehouse turret scans the block and suppresses enemies near the convoy.",
+					"A ward turret scans the block and suppresses enemies near the caravan.",
 				new[]
 				{
 					new Vector2(PlayerBaseX + 124f, BaseCenterY - 34f)
@@ -3706,7 +4184,7 @@ public partial class BattleController : Node2D
 			_enemyDefeats,
 			_playerDeployments,
 			currentBusRatio);
-		SetStatus($"Convoy directive issued: {definition.Title}. {definition.Summary}");
+		SetStatus($"Caravan directive issued: {definition.Title}. {definition.Summary}");
 	}
 
 	private void UpdateEndlessDirectiveState()
@@ -3735,13 +4213,13 @@ public partial class BattleController : Node2D
 			case "deploy_limit":
 				if (GetDirectiveDeploymentCount() > _activeEndlessDirective.TargetCount)
 				{
-					FailEndlessDirective("The sweep went loud. The salvage window collapsed.");
+						FailEndlessDirective("The sweep went loud. The supply window collapsed.");
 				}
 				break;
 			case "bus_hull_ratio":
 				if (_activeEndlessDirective.LowestBusHullRatio < _activeEndlessDirective.TargetRatio)
 				{
-					FailEndlessDirective("The barricade line cracked below the safehouse threshold.");
+					FailEndlessDirective("The ward line cracked below the safehouse threshold.");
 				}
 				break;
 		}
@@ -3768,27 +4246,27 @@ public partial class BattleController : Node2D
 				}
 				else
 				{
-					FailEndlessDirective("The convoy missed the breakthrough quota before the checkpoint.");
+					FailEndlessDirective("The caravan missed the breakthrough quota before the checkpoint.");
 				}
 				break;
 			case "deploy_limit":
 				if (GetDirectiveDeploymentCount() <= _activeEndlessDirective.TargetCount)
 				{
-					CompleteEndlessDirective("The convoy reached the checkpoint with the salvage sweep intact.");
+						CompleteEndlessDirective("The caravan reached the checkpoint with the supply sweep intact.");
 				}
 				else
 				{
-					FailEndlessDirective("Too many deployments burned the salvage sweep before the checkpoint.");
+						FailEndlessDirective("Too many deployments burned the supply sweep before the checkpoint.");
 				}
 				break;
 			case "bus_hull_ratio":
 				if (_activeEndlessDirective.LowestBusHullRatio >= _activeEndlessDirective.TargetRatio)
 				{
-					CompleteEndlessDirective("The bus held the fortified block all the way to the checkpoint.");
+					CompleteEndlessDirective("The war wagon held the fortified block all the way to the checkpoint.");
 				}
 				else
 				{
-					FailEndlessDirective("The fortified hold broke before the convoy reached the checkpoint.");
+					FailEndlessDirective("The fortified hold broke before the caravan reached the checkpoint.");
 				}
 				break;
 		}
@@ -3858,6 +4336,7 @@ public partial class BattleController : Node2D
 			case EndlessDirectiveCatalog.BreakthroughDirectiveId:
 				_courage = Mathf.Min(_maxCourage, _courage + 16f);
 				_deck.ReduceCooldowns(1.5f);
+				_spellDeck.ReduceCooldowns(1.5f);
 				SpawnEffect(PlayerBaseCorePosition, new Color("ffe066"), 12f, 30f, 0.24f);
 				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "BREAKTHROUGH", new Color("fff3b0"), 0.62f);
 				break;
@@ -3870,6 +4349,7 @@ public partial class BattleController : Node2D
 			case EndlessDirectiveCatalog.HoldLineDirectiveId:
 				RepairBusByRatio(0.08f);
 				_deck.ReduceCooldowns(1f);
+				_spellDeck.ReduceCooldowns(1f);
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
 					? GameData.PlayerDefenderId
 					: GameData.PlayerBrawlerId);
@@ -3957,7 +4437,7 @@ public partial class BattleController : Node2D
 		{
 			"enemy_defeats" => $"Defeats {GetDirectiveEnemyDefeatProgress()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
 			"deploy_limit" => $"Deployments {GetDirectiveDeploymentCount()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
-			"bus_hull_ratio" => $"Bus hull low {Mathf.RoundToInt(_activeEndlessDirective.LowestBusHullRatio * 100f)}% / keep above {Mathf.RoundToInt(_activeEndlessDirective.TargetRatio * 100f)}% through wave {_activeEndlessDirective.CheckpointWave}",
+			"bus_hull_ratio" => $"War wagon hull low {Mathf.RoundToInt(_activeEndlessDirective.LowestBusHullRatio * 100f)}% / keep above {Mathf.RoundToInt(_activeEndlessDirective.TargetRatio * 100f)}% through wave {_activeEndlessDirective.CheckpointWave}",
 			_ => _activeEndlessDirective.Definition.Summary
 		};
 	}
@@ -3985,11 +4465,22 @@ public partial class BattleController : Node2D
 				break;
 			case RouteCatalog.FoundryId:
 				_deck.ReduceCooldowns(1f);
+				_spellDeck.ReduceCooldowns(1f);
 				break;
 			case RouteCatalog.QuarantineId:
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId)
 					? GameData.PlayerCoordinatorId
 					: GameData.PlayerDefenderId);
+				break;
+			case RouteCatalog.ThornwallId:
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRangerId)
+					? GameData.PlayerRangerId
+					: GameData.PlayerShooterId);
+				break;
+			case RouteCatalog.BasilicaId:
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId)
+					? GameData.PlayerCoordinatorId
+					: GameData.PlayerMarksmanId);
 				break;
 		}
 
@@ -4170,7 +4661,7 @@ public partial class BattleController : Node2D
 
 			if (_activeEndlessContactActor.Health <= 0.01f)
 			{
-				FailEndlessContactEvent("The battlefield contact was destroyed before the convoy secured it.");
+				FailEndlessContactEvent("The battlefield contact was destroyed before the caravan secured it.");
 				return;
 			}
 		}
@@ -4234,15 +4725,16 @@ public partial class BattleController : Node2D
 			case EndlessContactCatalog.RelaySignalId:
 				_courage = Mathf.Min(_maxCourage, _courage + 8f);
 				_deck.ReduceCooldowns(0.7f);
+				_spellDeck.ReduceCooldowns(0.7f);
 				statusText = "Relay uplink pulse refreshed courage and squad recovery.";
-				_endlessSupportEventLabel = "Relay uplink pulse boosted convoy deployment tempo.";
+				_endlessSupportEventLabel = "Relay uplink pulse boosted caravan deployment tempo.";
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "UPLINK BURST", contact.Color.Lightened(0.28f), 0.6f);
 				break;
 			case EndlessContactCatalog.SalvageCacheId:
 				_endlessContactScrapBonus += 8;
 				RepairBusByRatio(0.02f);
-				statusText = "Salvage crew hauled reserve parts aboard the convoy.";
-				_endlessSupportEventLabel = "Reserve salvage loaded: light repairs and extra payout banked.";
+				statusText = "Salvage crew hauled reserve parts aboard the caravan.";
+					_endlessSupportEventLabel = "Reserve stores loaded: light repairs and extra payout banked.";
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "SUPPLY WINCH", contact.Color.Lightened(0.28f), 0.6f);
 				break;
 			case EndlessContactCatalog.SafehouseRescueId:
@@ -4250,7 +4742,7 @@ public partial class BattleController : Node2D
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerShooterId)
 					? GameData.PlayerShooterId
 					: GameData.PlayerBrawlerId);
-				statusText = "Safehouse volunteers joined the firing line around the convoy.";
+				statusText = "Safehouse volunteers joined the firing line around the caravan.";
 				_endlessSupportEventLabel = "Militia volunteers deployed from the safehouse block.";
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "MILITIA JOIN", contact.Color.Lightened(0.28f), 0.6f);
 				break;
@@ -4259,7 +4751,7 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(contact.Anchor, contact.Color.Lightened(0.08f), 10f, contact.Definition.Radius * 0.58f, 0.22f, false);
-		SetStatus($"{contact.Definition.Title} triggered convoy assistance. {statusText}");
+		SetStatus($"{contact.Definition.Title} triggered caravan assistance. {statusText}");
 	}
 
 	private bool TriggerEndlessContactResponse()
@@ -4387,7 +4879,7 @@ public partial class BattleController : Node2D
 		}
 
 		var penaltyText = ResolveEndlessContactFailurePenaltyText(_activeEndlessContact.Definition.Id);
-		var baseStatus = statusText ?? $"{_activeEndlessContact.Definition.Title} lost before the convoy cleared the segment.";
+		var baseStatus = statusText ?? $"{_activeEndlessContact.Definition.Title} lost before the caravan cleared the segment.";
 		SetStatus($"{baseStatus} {penaltyText}");
 	}
 
@@ -4405,6 +4897,7 @@ public partial class BattleController : Node2D
 			case EndlessContactCatalog.RelaySignalId:
 				_courage = Mathf.Min(_maxCourage, _courage + 14f);
 				_deck.ReduceCooldowns(1.2f);
+				_spellDeck.ReduceCooldowns(1.2f);
 				ApplyEndlessContactSuccessTradeoff(contact);
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELAY ONLINE", contact.Color.Lightened(0.2f), 0.66f);
 				break;
@@ -4418,6 +4911,7 @@ public partial class BattleController : Node2D
 			case EndlessContactCatalog.SafehouseRescueId:
 				RepairBusByRatio(0.06f);
 				_deck.ReduceCooldowns(0.8f);
+				_spellDeck.ReduceCooldowns(0.8f);
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
 					? GameData.PlayerDefenderId
 					: GameData.PlayerBrawlerId);
@@ -4454,9 +4948,9 @@ public partial class BattleController : Node2D
 		return contactId switch
 		{
 			EndlessContactCatalog.RelaySignalId => "Forward scouts refreshed the route intel and opened the line.",
-			EndlessContactCatalog.SalvageCacheId => "The crew hauled the cache aboard before the lane collapsed.",
-			EndlessContactCatalog.SafehouseRescueId => "Safehouse survivors joined the convoy before the block fell.",
-			_ => "The convoy secured the battlefield contact."
+				EndlessContactCatalog.SalvageCacheId => "The crew hauled the supply cache aboard before the lane collapsed.",
+			EndlessContactCatalog.SafehouseRescueId => "Safehouse survivors joined the caravan before the block fell.",
+			_ => "The caravan secured the battlefield contact."
 		};
 	}
 
@@ -4467,6 +4961,7 @@ public partial class BattleController : Node2D
 			case EndlessContactCatalog.RelaySignalId:
 				_courage = Mathf.Max(0f, _courage - 14f);
 				_deck.IncreaseCooldowns(1.8f);
+				_spellDeck.IncreaseCooldowns(1.8f);
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SIGNAL LOST", new Color("ffb4a2"), 0.62f);
 				break;
 			case EndlessContactCatalog.SalvageCacheId:
@@ -4477,6 +4972,7 @@ public partial class BattleController : Node2D
 			case EndlessContactCatalog.SafehouseRescueId:
 				DamageBusByRatio(0.08f, new Color("ef476f"), "BLOCK LOST");
 				_deck.IncreaseCooldowns(1f);
+				_spellDeck.IncreaseCooldowns(1f);
 				break;
 		}
 	}
@@ -4485,10 +4981,10 @@ public partial class BattleController : Node2D
 	{
 		return contactId switch
 		{
-			EndlessContactCatalog.RelaySignalId => "The convoy loses courage and squad cards recover slower.",
-			EndlessContactCatalog.SalvageCacheId => "Projected salvage drops and the bus takes collision damage.",
-			EndlessContactCatalog.SafehouseRescueId => "The convoy takes a hard hull hit and squad recovery slows.",
-			_ => "The convoy loses ground on the route."
+			EndlessContactCatalog.RelaySignalId => "The caravan loses courage and squad cards recover slower.",
+				EndlessContactCatalog.SalvageCacheId => "Projected spoils drop and the war wagon takes collision damage.",
+			EndlessContactCatalog.SafehouseRescueId => "The caravan takes a hard hull hit and squad recovery slows.",
+			_ => "The caravan loses ground on the route."
 		};
 	}
 
@@ -4791,6 +5287,7 @@ public partial class BattleController : Node2D
 
 		_courage = Mathf.Min(_maxCourage, _courage + 8f);
 		_deck.ReduceCooldowns(1.2f);
+		_spellDeck.ReduceCooldowns(1.2f);
 		RepairBusByRatio(0.03f);
 		_endlessBattlefieldEventLabel = "Scavenge caches yielded courage and quick repairs.";
 	}
@@ -4814,7 +5311,7 @@ public partial class BattleController : Node2D
 
 		_endlessBattlefieldEventLabel = target != null
 			? "Safehouse turret suppressed the closest target."
-			: "Safehouse crew redirected the pulse into convoy repairs.";
+			: "Safehouse crew redirected the pulse into caravan repairs.";
 	}
 
 	private UnitStats BuildPlayerUnitStatsForBattle(UnitDefinition definition)
@@ -4872,6 +5369,22 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.PlayBusRepair(healAmount);
 		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
 		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
+	}
+
+	private float RepairBusByAmount(float amount)
+	{
+		if (amount <= 0f || _playerBaseHealth >= _playerBaseMaxHealth)
+		{
+			return 0f;
+		}
+
+		var repaired = Mathf.Min(amount, _playerBaseMaxHealth - _playerBaseHealth);
+		_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repaired);
+		_playerBaseFlashTimer = 0.18f;
+		AudioDirector.Instance?.PlayBusRepair(repaired);
+		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
+		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repaired)}", new Color("b7efc5"), 0.56f);
+		return repaired;
 	}
 
 	private void DamageBusByRatio(float ratio, Color color, string label = "")
@@ -4944,7 +5457,7 @@ public partial class BattleController : Node2D
 				$"Wave reached: {_spawnDirector.EndlessWaveNumber}\n" +
 				$"Survival time: {_elapsed:0.0}s   |   Enemy defeats: {_enemyDefeats}\n" +
 				$"Payout secured: +{rewardScrap} gold, +{rewardFuel} food";
-			SetStatus("The convoy was eventually overrun. Salvage crews recovered what they could.");
+			SetStatus("The caravan was eventually overrun. Salvage crews recovered what they could.");
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
 			UpdateHud();
@@ -5050,14 +5563,14 @@ public partial class BattleController : Node2D
 			_endLabel.Text =
 				$"Victory on stage {_stage}.\n" +
 				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardGold, _stageData.RewardFood, bestStars)}";
-			SetStatus("Barricade smashed. Route secured.");
+			SetStatus("Gatehouse shattered. Route secured.");
 		}
 		else
 		{
 			AudioDirector.Instance?.PlayDefeat();
 			GameState.Instance.ApplyDefeat(_stage);
 			_endLabel.Text = "Defeat on this stage. Refit your squad and try a different timing.";
-			SetStatus("The bus was overrun. Regroup.");
+			SetStatus("The war wagon was overrun. Regroup.");
 		}
 
 		_endCenter.Visible = true;

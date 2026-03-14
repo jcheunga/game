@@ -2,7 +2,7 @@
   "Units": [
     {
       "Id": "player_brawler",
-      "DisplayName": "Brawler",
+      "DisplayName": "Swordsman",
       "Side": "Player",
       "SquadTag": "frontline",
       "UnlockStage": 1,
@@ -22,7 +22,7 @@
     },
     {
       "Id": "player_shooter",
-      "DisplayName": "Shooter",
+      "DisplayName": "Archer",
       "Side": "Player",
       "SquadTag": "support",
       "UnlockStage": 1,
@@ -44,7 +44,7 @@
     },
     {
       "Id": "player_defender",
-      "DisplayName": "Defender",
+      "DisplayName": "Shield Knight",
       "Side": "Player",
       "SquadTag": "frontline",
       "UnlockStage": 1,
@@ -65,7 +65,7 @@
     },
     {
       "Id": "player_ranger",
-      "DisplayName": "Ranger",
+      "DisplayName": "Crossbowman",
       "Side": "Player",
       "SquadTag": "recon",
       "UnlockStage": 2,
@@ -87,7 +87,7 @@
     },
     {
       "Id": "player_raider",
-      "DisplayName": "Raider",
+      "DisplayName": "Cavalry Rider",
       "Side": "Player",
       "SquadTag": "recon",
       "UnlockStage": 4,
@@ -108,7 +108,7 @@
     },
     {
       "Id": "player_mechanic",
-      "DisplayName": "Mechanic",
+      "DisplayName": "Siege Engineer",
       "Side": "Player",
       "SquadTag": "support",
       "UnlockStage": 5,
@@ -132,7 +132,7 @@
     },
     {
       "Id": "player_marksman",
-      "DisplayName": "Marksman",
+      "DisplayName": "Mage",
       "Side": "Player",
       "SquadTag": "recon",
       "UnlockStage": 6,
@@ -155,7 +155,7 @@
     },
     {
       "Id": "player_breacher",
-      "DisplayName": "Breacher",
+      "DisplayName": "Halberdier",
       "Side": "Player",
       "SquadTag": "breach",
       "UnlockStage": 9,
@@ -176,7 +176,7 @@
     },
     {
       "Id": "player_grenadier",
-      "DisplayName": "Grenadier",
+      "DisplayName": "Alchemist",
       "Side": "Player",
       "SquadTag": "breach",
       "UnlockStage": 10,
@@ -200,7 +200,7 @@
     },
     {
       "Id": "player_coordinator",
-      "DisplayName": "Coordinator",
+      "DisplayName": "Battle Monk",
       "Side": "Player",
       "SquadTag": "support",
       "UnlockStage": 13,
@@ -226,7 +226,7 @@
     },
     {
       "Id": "enemy_walker",
-      "DisplayName": "Walker",
+      "DisplayName": "Risen",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 62.0,
@@ -242,7 +242,7 @@
     },
     {
       "Id": "enemy_runner",
-      "DisplayName": "Runner",
+      "DisplayName": "Ghoul",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 40.0,
@@ -259,7 +259,7 @@
     },
     {
       "Id": "enemy_bloater",
-      "DisplayName": "Bloater",
+      "DisplayName": "Rot Hulk",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 88.0,
@@ -278,7 +278,7 @@
     },
     {
       "Id": "enemy_brute",
-      "DisplayName": "Brute",
+      "DisplayName": "Grave Brute",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 112.0,
@@ -295,7 +295,7 @@
     },
     {
       "Id": "enemy_spitter",
-      "DisplayName": "Spitter",
+      "DisplayName": "Blight Caster",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 46.0,
@@ -313,7 +313,7 @@
     },
     {
       "Id": "enemy_splitter",
-      "DisplayName": "Splitter",
+      "DisplayName": "Bone Nest",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 78.0,
@@ -331,7 +331,7 @@
     },
     {
       "Id": "enemy_saboteur",
-      "DisplayName": "Saboteur",
+      "DisplayName": "Sapper",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 52.0,
@@ -348,7 +348,7 @@
     },
     {
       "Id": "enemy_howler",
-      "DisplayName": "Howler",
+      "DisplayName": "Dread Herald",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 84.0,
@@ -368,7 +368,7 @@
     },
     {
       "Id": "enemy_jammer",
-      "DisplayName": "Jammer",
+      "DisplayName": "Hexer",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 70.0,
@@ -390,7 +390,7 @@
     },
     {
       "Id": "enemy_crusher",
-      "DisplayName": "Crusher",
+      "DisplayName": "Bone Juggernaut",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 152.0,
@@ -408,7 +408,7 @@
     },
     {
       "Id": "enemy_boss",
-      "DisplayName": "Overlord",
+      "DisplayName": "Grave Lord",
       "Side": "Enemy",
       "Cost": 0,
       "MaxHealth": 320.0,

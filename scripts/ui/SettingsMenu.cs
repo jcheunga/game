@@ -176,7 +176,7 @@ public partial class SettingsMenu : Control
 
         _callsignEdit = new LineEdit
         {
-            PlaceholderText = "Convoy",
+            PlaceholderText = "Lantern",
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         callsignRow.AddChild(_callsignEdit);
@@ -300,7 +300,7 @@ public partial class SettingsMenu : Control
         };
         defaultsButton.Pressed += () =>
         {
-            GameState.Instance.SetPlayerCallsign("Convoy");
+            GameState.Instance.SetPlayerCallsign("Lantern");
             GameState.Instance.ClearPlayerProfileSession();
             GameState.Instance.SetAudioMuted(false);
             GameState.Instance.SetEffectsVolumePercent(85);
@@ -361,7 +361,7 @@ public partial class SettingsMenu : Control
         _interfaceLabel.Text =
             $"Combat intel panels: {(GameState.Instance.ShowDevUi ? "Shown" : "Hidden")}\n" +
             $"FPS counter: {(GameState.Instance.ShowFpsCounter ? "Shown" : "Hidden")}";
-        _callsignLabel.Text = $"Convoy callsign: {GameState.Instance.PlayerCallsign}\nUsed for LAN room labels and shared scoreboards.";
+        _callsignLabel.Text = $"Caravan callsign: {GameState.Instance.PlayerCallsign}\nUsed for LAN room labels and shared scoreboards.";
         _syncLabel.Text =
             $"Profile: {GameState.Instance.PlayerProfileId}\n" +
             $"Auth token: {(string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken) ? "none" : "active")}\n" +

@@ -1,0 +1,79 @@
+{
+  "Spells": [
+    {
+      "Id": "spell_fireball",
+      "DisplayName": "Fireball",
+      "UnlockStage": 1,
+      "GoldCost": 0,
+      "CourageCost": 22,
+      "Cooldown": 12.0,
+      "EffectType": "fireball",
+      "Power": 34.0,
+      "SecondaryPower": 0.0,
+      "Radius": 76.0,
+      "Duration": 0.0,
+      "Description": "Drop an explosive blast that clears clustered enemies.",
+      "ColorHex": "ff8c42"
+    },
+    {
+      "Id": "spell_heal",
+      "DisplayName": "Heal",
+      "UnlockStage": 2,
+      "GoldCost": 0,
+      "CourageCost": 20,
+      "Cooldown": 13.5,
+      "EffectType": "heal",
+      "Power": 22.0,
+      "SecondaryPower": 18.0,
+      "Radius": 82.0,
+      "Duration": 0.0,
+      "Description": "Restore nearby allies and patch the war wagon hull.",
+      "ColorHex": "8bd3a8"
+    },
+    {
+      "Id": "spell_frost_burst",
+      "DisplayName": "Frost Burst",
+      "UnlockStage": 6,
+      "GoldCost": 130,
+      "CourageCost": 24,
+      "Cooldown": 15.0,
+      "EffectType": "frost_burst",
+      "Power": 16.0,
+      "SecondaryPower": 0.0,
+      "Radius": 88.0,
+      "Duration": 3.2,
+      "Description": "Burst a choke point and slow a whole enemy pack.",
+      "ColorHex": "7bdff2"
+    },
+    {
+      "Id": "spell_lightning_strike",
+      "DisplayName": "Lightning Strike",
+      "UnlockStage": 10,
+      "GoldCost": 165,
+      "CourageCost": 26,
+      "Cooldown": 16.0,
+      "EffectType": "lightning_strike",
+      "Power": 42.0,
+      "SecondaryPower": 0.0,
+      "Radius": 108.0,
+      "Duration": 0.0,
+      "Description": "Arc high damage through priority ranged or support targets.",
+      "ColorHex": "ffe066"
+    },
+    {
+      "Id": "spell_barrier_ward",
+      "DisplayName": "Barrier Ward",
+      "UnlockStage": 14,
+      "GoldCost": 185,
+      "CourageCost": 24,
+      "Cooldown": 18.0,
+      "EffectType": "barrier_ward",
+      "Power": 0.62,
+      "SecondaryPower": 0.0,
+      "Radius": 94.0,
+      "Duration": 4.5,
+      "Description": "Ward a lane so allied units absorb less incoming damage.",
+      "ColorHex": "cdb4db"
+    }
+  ]
+}

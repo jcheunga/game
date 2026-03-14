@@ -3,10 +3,10 @@
     {
       "StageNumber": 1,
       "MapId": "city",
-      "MapName": "City Route",
+      "MapName": "King's Road",
       "TerrainId": "urban",
-      "StageName": "Outskirts",
-      "Description": "Low density swarm near abandoned gas stations.\nRecommended squad: Brawler + Shooter.",
+      "StageName": "Far Gate",
+      "Description": "Thin undead probes along the outer farms and pilgrim road.\nRecommended squad: Swordsman + Archer.",
       "RewardGold": 50,
       "RewardFood": 3,
       "EntryFoodCost": 1,
@@ -29,7 +29,7 @@
       "BonusWaveChance": 0.0,
       "Waves": [
         {
-          "Label": "Scouts at the pumps",
+          "Label": "Wayside scouts",
           "TriggerTime": 2.5,
           "SpawnInterval": 0.55,
           "Entries": [
@@ -46,7 +46,7 @@
           ]
         },
         {
-          "Label": "Gas station spill",
+          "Label": "Wayside shrine spill",
           "TriggerTime": 22.0,
           "SpawnInterval": 0.45,
           "Entries": [
@@ -67,10 +67,10 @@
     {
       "StageNumber": 2,
       "MapId": "city",
-      "MapName": "City Route",
+      "MapName": "King's Road",
       "TerrainId": "highway",
-      "StageName": "Highway",
-      "Description": "Faster infected and tighter lane pressure.\nRecommended squad: 2x Brawler, 1x Shooter.",
+      "StageName": "Stone Causeway",
+      "Description": "Faster ghouls and tighter lane pressure on the raised road.\nRecommended squad: 2x Swordsman, 1x Archer.",
       "RewardGold": 75,
       "RewardFood": 3,
       "EntryFoodCost": 1,
@@ -98,7 +98,7 @@
       ],
       "Waves": [
         {
-          "Label": "Frontage runners",
+          "Label": "Causeway runners",
           "TriggerTime": 2.5,
           "SpawnInterval": 0.45,
           "Entries": [
@@ -107,7 +107,7 @@
           ]
         },
         {
-          "Label": "Overpass break",
+          "Label": "Bridge break",
           "TriggerTime": 12.0,
           "SpawnInterval": 0.4,
           "Entries": [
@@ -116,7 +116,7 @@
           ]
         },
         {
-          "Label": "Median spitters",
+          "Label": "Causeway blight",
           "TriggerTime": 24.0,
           "SpawnInterval": 0.45,
           "Entries": [
@@ -125,7 +125,7 @@
           ]
         },
         {
-          "Label": "Pileup crush",
+          "Label": "Wagon wreck crush",
           "TriggerTime": 38.0,
           "SpawnInterval": 0.4,
           "Entries": [
@@ -139,10 +139,10 @@
     {
       "StageNumber": 3,
       "MapId": "city",
-      "MapName": "City Route",
+      "MapName": "King's Road",
       "TerrainId": "night",
-      "StageName": "Mall District",
-      "Description": "Dense mixed wave before the city boss siege. Keep your line stable.",
+      "StageName": "Market Ward",
+      "Description": "Dense mixed waves before the inner gate assault. Keep your line steady.",
       "RewardGold": 105,
       "RewardFood": 3,
       "EntryFoodCost": 1,
@@ -170,7 +170,7 @@
       ],
       "Waves": [
         {
-          "Label": "Mall doors",
+          "Label": "Market gates",
           "TriggerTime": 3.0,
           "SpawnInterval": 0.45,
           "Entries": [
@@ -179,7 +179,7 @@
           ]
         },
         {
-          "Label": "Food court hold",
+          "Label": "Lantern square hold",
           "TriggerTime": 14.0,
           "SpawnInterval": 0.42,
           "Entries": [
@@ -189,7 +189,7 @@
           ]
         },
         {
-          "Label": "Escalator breach",
+          "Label": "Stair breach",
           "TriggerTime": 28.0,
           "SpawnInterval": 0.38,
           "Entries": [
@@ -199,7 +199,7 @@
           ]
         },
         {
-          "Label": "Atrium crush",
+          "Label": "Market hall crush",
           "TriggerTime": 44.0,
           "SpawnInterval": 0.42,
           "Entries": [
@@ -224,10 +224,10 @@
     {
       "StageNumber": 4,
       "MapId": "city",
-      "MapName": "City Route",
+      "MapName": "King's Road",
       "TerrainId": "night",
-      "StageName": "Metro Citadel",
-      "Description": "City boss stage. Overlord spawns begin toward the end of the battle.",
+      "StageName": "Bell Tower Gate",
+      "Description": "King's Road boss stage. Grave Lord entries begin toward the end of the battle.",
       "RewardGold": 145,
       "RewardFood": 4,
       "EntryFoodCost": 1,
@@ -296,7 +296,7 @@
           ]
         },
         {
-          "Label": "Overlord arrival",
+          "Label": "Grave Lord arrival",
           "TriggerTime": 70.0,
           "SpawnInterval": 0.5,
           "Entries": [
@@ -319,10 +319,10 @@
     {
       "StageNumber": 5,
       "MapId": "harbor",
-      "MapName": "Harbor Front",
+      "MapName": "Saltwake Docks",
       "TerrainId": "industrial",
-      "StageName": "Docks Perimeter",
-      "Description": "Second map unlocked. Rusted docks and container chokepoints.",
+      "StageName": "Mooring Ring",
+      "Description": "Second district unlocked. Salt-soaked quays and chainlift chokepoints.",
       "RewardGold": 170,
       "RewardFood": 4,
       "EntryFoodCost": 2,
@@ -363,7 +363,7 @@
           ]
         },
         {
-          "Label": "Container flank",
+          "Label": "Crateyard flank",
           "TriggerTime": 16.0,
           "SpawnInterval": 0.4,
           "Entries": [
@@ -373,7 +373,7 @@
           ]
         },
         {
-          "Label": "Forklift jam",
+          "Label": "Winch jam",
           "TriggerTime": 31.0,
           "SpawnInterval": 0.35,
           "Entries": [
@@ -409,10 +409,10 @@
     {
       "StageNumber": 6,
       "MapId": "harbor",
-      "MapName": "Harbor Front",
+      "MapName": "Saltwake Docks",
       "TerrainId": "swamp",
-      "StageName": "Flooded Terminal",
-      "Description": "Waterlogged streets slow pushes. Spitters and heavy units dominate.",
+      "StageName": "Drowned Quay",
+      "Description": "Flooded approaches slow pushes. Blight casters and heavy dead control the lane.",
       "RewardGold": 200,
       "RewardFood": 4,
       "EntryFoodCost": 2,
@@ -462,7 +462,7 @@
           ]
         },
         {
-          "Label": "Toxic spray",
+          "Label": "Blight spray",
           "TriggerTime": 34.0,
           "SpawnInterval": 0.34,
           "Entries": [
@@ -471,7 +471,7 @@
           ]
         },
         {
-          "Label": "Terminal crush",
+          "Label": "Quayside crush",
           "TriggerTime": 50.0,
           "SpawnInterval": 0.32,
           "Entries": [
@@ -497,10 +497,10 @@
     {
       "StageNumber": 7,
       "MapId": "harbor",
-      "MapName": "Harbor Front",
+      "MapName": "Saltwake Docks",
       "TerrainId": "shipyard",
-      "StageName": "Crane Gauntlet",
-      "Description": "Heavy armor waves push through wrecked cranes before the final harbor boss.",
+      "StageName": "Chainlift Yard",
+      "Description": "Armored waves force through broken cranes before the Grave Lord arrives.",
       "RewardGold": 235,
       "RewardFood": 5,
       "EntryFoodCost": 2,
@@ -585,10 +585,10 @@
     {
       "StageNumber": 8,
       "MapId": "harbor",
-      "MapName": "Harbor Front",
+      "MapName": "Saltwake Docks",
       "TerrainId": "shipyard",
-      "StageName": "Wreck Flagship",
-      "Description": "Harbor boss stage. Overlord spawns begin toward the end of the battle.",
+      "StageName": "Wreck Admiral",
+      "Description": "Saltwake boss stage. Grave Lord entries begin toward the end of the battle.",
       "RewardGold": 280,
       "RewardFood": 5,
       "EntryFoodCost": 3,
@@ -662,7 +662,7 @@
           ]
         },
         {
-          "Label": "Overlord on deck",
+          "Label": "Grave Lord on deck",
           "TriggerTime": 72.0,
           "SpawnInterval": 0.45,
           "Entries": [
@@ -688,10 +688,10 @@
     {
       "StageNumber": 9,
       "MapId": "foundry",
-      "MapName": "Foundry Line",
+      "MapName": "Emberforge March",
       "TerrainId": "railyard",
-      "StageName": "Freight Siding",
-      "Description": "Third route unlocked. Freight cuts favor splitter screens, saboteur dives, and brute-led pushes.\nRecommended squad: Defender + Shooter + Mechanic or Breacher.",
+      "StageName": "Forge Siding",
+      "Description": "Third district unlocked. Coal spurs favor split-brood screens, sapper dives, and brute-led pushes.\nRecommended squad: Shield Knight + Archer + Siege Engineer or Halberdier.",
       "RewardGold": 320,
       "RewardFood": 6,
       "EntryFoodCost": 3,
@@ -733,7 +733,7 @@
       ],
       "Waves": [
         {
-          "Label": "Freight scouts",
+          "Label": "Coal spur scouts",
           "TriggerTime": 4.0,
           "SpawnInterval": 0.42,
           "Entries": [
@@ -742,7 +742,7 @@
           ]
         },
         {
-          "Label": "Switchyard break",
+          "Label": "Spur break",
           "TriggerTime": 18.0,
           "SpawnInterval": 0.36,
           "Entries": [
@@ -753,7 +753,7 @@
           ]
         },
         {
-          "Label": "Boxcar crush",
+          "Label": "Ore wagon crush",
           "TriggerTime": 34.0,
           "SpawnInterval": 0.34,
           "Entries": [
@@ -774,7 +774,7 @@
           ]
         },
         {
-          "Label": "Freight stampede",
+          "Label": "Ore cart stampede",
           "TriggerTime": 68.0,
           "SpawnInterval": 0.28,
           "Entries": [
@@ -789,10 +789,10 @@
     {
       "StageNumber": 10,
       "MapId": "foundry",
-      "MapName": "Foundry Line",
+      "MapName": "Emberforge March",
       "TerrainId": "smelter",
       "StageName": "Smelter Row",
-      "Description": "Molten choke points, saboteur flanks, and reinforced barricades reward higher bus damage and disciplined deploy pacing.\nRecommended squad: Breacher + Defender + Marksman.",
+      "Description": "Molten choke points, sapper flanks, and reinforced gates reward higher gate damage and disciplined deployment.\nRecommended squad: Halberdier + Shield Knight + Mage.",
       "RewardGold": 360,
       "RewardFood": 6,
       "EntryFoodCost": 3,
@@ -906,10 +906,10 @@
     {
       "StageNumber": 11,
       "MapId": "foundry",
-      "MapName": "Foundry Line",
+      "MapName": "Emberforge March",
       "TerrainId": "foundry",
       "StageName": "Cinder Causeway",
-      "Description": "Steady heavy pushes, splitter screens, and saboteur feints test how well the convoy recovers between surges.",
+      "Description": "Steady heavy pushes, split-brood screens, and sapper feints test how well the caravan recovers between surges.",
       "RewardGold": 410,
       "RewardFood": 7,
       "EntryFoodCost": 4,
@@ -1033,10 +1033,10 @@
     {
       "StageNumber": 12,
       "MapId": "foundry",
-      "MapName": "Foundry Line",
+      "MapName": "Emberforge March",
       "TerrainId": "foundry",
       "StageName": "Furnace Crown",
-      "Description": "Foundry boss stage. Splitters, saboteurs, and crushers hold the line until the Overlord joins the furnace push.",
+      "Description": "Emberforge boss stage. Split broods, sappers, and juggernauts hold the line until the Grave Lord joins the furnace push.",
       "RewardGold": 470,
       "RewardFood": 8,
       "EntryFoodCost": 4,
@@ -1116,7 +1116,7 @@
           ]
         },
         {
-          "Label": "Press room",
+          "Label": "Anvil hall",
           "TriggerTime": 38.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1137,7 +1137,7 @@
           ]
         },
         {
-          "Label": "Overlord ignition",
+          "Label": "Grave Lord ignition",
           "TriggerTime": 76.0,
           "SpawnInterval": 0.42,
           "Entries": [
@@ -1163,10 +1163,10 @@
     {
       "StageNumber": 13,
       "MapId": "quarantine",
-      "MapName": "Quarantine Wall",
+      "MapName": "Ashen Ward",
       "TerrainId": "checkpoint",
-      "StageName": "Outer Gate",
-      "Description": "Fourth route unlocked. Screening barriers and decon sirens set up spitter fire behind sealed gates.",
+      "StageName": "Outer Ward",
+      "Description": "Fourth district unlocked. Warded barriers and purge bells set up blight fire behind sealed gates.",
       "RewardGold": 520,
       "RewardFood": 8,
       "EntryFoodCost": 4,
@@ -1190,7 +1190,7 @@
       "Hazards": [
         {
           "Type": "decon_sweep",
-          "Label": "Decon Sweep",
+          "Label": "Purge Sweep",
           "XRatio": 0.34,
           "YRatio": 0.44,
           "Radius": 70.0,
@@ -1234,7 +1234,7 @@
           ]
         },
         {
-          "Label": "Seal team breach",
+          "Label": "Wardbreaker breach",
           "TriggerTime": 18.0,
           "SpawnInterval": 0.34,
           "Entries": [
@@ -1244,7 +1244,7 @@
           ]
         },
         {
-          "Label": "Decon siren",
+          "Label": "Purge bell",
           "TriggerTime": 34.0,
           "SpawnInterval": 0.32,
           "Entries": [
@@ -1255,7 +1255,7 @@
           ]
         },
         {
-          "Label": "Triage spill",
+          "Label": "Leech-basin spill",
           "TriggerTime": 52.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1278,7 +1278,7 @@
           ]
         },
         {
-          "Label": "Clean room fallback",
+          "Label": "Sanctum fallback",
           "TriggerTime": 90.0,
           "SpawnInterval": 0.28,
           "Entries": [
@@ -1294,10 +1294,10 @@
     {
       "StageNumber": 14,
       "MapId": "quarantine",
-      "MapName": "Quarantine Wall",
+      "MapName": "Ashen Ward",
       "TerrainId": "decon",
-      "StageName": "Decon Corridor",
-      "Description": "Toxic wash tunnels punish overcommits while support infected stack behind the spray lanes.",
+      "StageName": "Purge Cloister",
+      "Description": "Caustic wash halls punish overcommits while curse support stacks behind the ritual lanes.",
       "RewardGold": 580,
       "RewardFood": 9,
       "EntryFoodCost": 5,
@@ -1321,7 +1321,7 @@
       "Hazards": [
         {
           "Type": "bleach_vent",
-          "Label": "Bleach Vent",
+          "Label": "Caustic Vent",
           "XRatio": 0.26,
           "YRatio": 0.64,
           "Radius": 76.0,
@@ -1333,7 +1333,7 @@
         },
         {
           "Type": "quarantine_spray",
-          "Label": "Quarantine Spray",
+          "Label": "Caustic Spray",
           "XRatio": 0.59,
           "YRatio": 0.34,
           "Radius": 64.0,
@@ -1376,7 +1376,7 @@
           ]
         },
         {
-          "Label": "Foam line",
+          "Label": "Wardfoam line",
           "TriggerTime": 17.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1395,7 +1395,7 @@
           ]
         },
         {
-          "Label": "Decon crush",
+          "Label": "Cloister crush",
           "TriggerTime": 49.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1416,7 +1416,7 @@
           ]
         },
         {
-          "Label": "Final scrub",
+          "Label": "Final purge",
           "TriggerTime": 87.0,
           "SpawnInterval": 0.26,
           "Entries": [
@@ -1432,10 +1432,10 @@
     {
       "StageNumber": 15,
       "MapId": "quarantine",
-      "MapName": "Quarantine Wall",
+      "MapName": "Ashen Ward",
       "TerrainId": "lab",
-      "StageName": "Triage Break",
-      "Description": "Lab-side barricades harden up while saboteurs and howlers try to crack the convoy from behind.",
+      "StageName": "Leechcourt",
+      "Description": "Plaguehouse barricades harden up while sappers and dread heralds try to crack the caravan from behind.",
       "RewardGold": 650,
       "RewardFood": 9,
       "EntryFoodCost": 5,
@@ -1459,7 +1459,7 @@
       "Hazards": [
         {
           "Type": "cryo_leak",
-          "Label": "Cryo Leak",
+          "Label": "Frost Leak",
           "XRatio": 0.42,
           "YRatio": 0.31,
           "Radius": 60.0,
@@ -1471,7 +1471,7 @@
         },
         {
           "Type": "turret_sweep",
-          "Label": "Auto Turret Sweep",
+          "Label": "Sentinel Sweep",
           "XRatio": 0.7,
           "YRatio": 0.54,
           "Radius": 72.0,
@@ -1503,7 +1503,7 @@
           ]
         },
         {
-          "Label": "Specimen loose",
+          "Label": "Reliquary loose",
           "TriggerTime": 19.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1514,7 +1514,7 @@
           ]
         },
         {
-          "Label": "Triage collapse",
+          "Label": "Leech hall collapse",
           "TriggerTime": 35.0,
           "SpawnInterval": 0.28,
           "Entries": [
@@ -1524,7 +1524,7 @@
           ]
         },
         {
-          "Label": "Lockdown lane",
+          "Label": "Lockseal lane",
           "TriggerTime": 53.0,
           "SpawnInterval": 0.28,
           "Entries": [
@@ -1547,7 +1547,7 @@
           ]
         },
         {
-          "Label": "Lab purge",
+          "Label": "Leechcourt purge",
           "TriggerTime": 92.0,
           "SpawnInterval": 0.24,
           "Entries": [
@@ -1563,10 +1563,10 @@
     {
       "StageNumber": 16,
       "MapId": "quarantine",
-      "MapName": "Quarantine Wall",
+      "MapName": "Ashen Ward",
       "TerrainId": "blacksite",
-      "StageName": "Blacksite Seal",
-      "Description": "Quarantine boss stage. Toxic purge cycles and sealed kill-box walls hold until the Overlord breaches the blacksite.",
+      "StageName": "Black Vault Seal",
+      "Description": "Ashen Ward boss stage. Purge cycles and sealed kill-box walls hold until the Grave Lord breaches the vault.",
       "RewardGold": 730,
       "RewardFood": 10,
       "EntryFoodCost": 6,
@@ -1614,7 +1614,7 @@
         },
         {
           "Type": "blacksite_sweep",
-          "Label": "Blacksite Sweep",
+          "Label": "Vault Sweep",
           "XRatio": 0.5,
           "YRatio": 0.26,
           "Radius": 72.0,
@@ -1647,7 +1647,7 @@
           ]
         },
         {
-          "Label": "Decon collapse",
+          "Label": "Purge collapse",
           "TriggerTime": 20.0,
           "SpawnInterval": 0.3,
           "Entries": [
@@ -1657,7 +1657,7 @@
           ]
         },
         {
-          "Label": "Siren pack",
+          "Label": "Bell pack",
           "TriggerTime": 38.0,
           "SpawnInterval": 0.28,
           "Entries": [
@@ -1668,7 +1668,7 @@
           ]
         },
         {
-          "Label": "Blacksite breach",
+          "Label": "Vault breach",
           "TriggerTime": 56.0,
           "SpawnInterval": 0.26,
           "Entries": [
@@ -1678,7 +1678,7 @@
           ]
         },
         {
-          "Label": "Overlord containment",
+          "Label": "Grave Lord breach",
           "TriggerTime": 78.0,
           "SpawnInterval": 0.36,
           "Entries": [
@@ -1689,7 +1689,7 @@
           ]
         },
         {
-          "Label": "Purge survivors",
+          "Label": "Purge remnant",
           "TriggerTime": 98.0,
           "SpawnInterval": 0.24,
           "Entries": [
@@ -1698,6 +1698,1254 @@
             { "UnitId": "enemy_saboteur", "Count": 1 },
             { "UnitId": "enemy_spitter", "Count": 2 },
             { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 17,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "pass",
+      "StageName": "Narrow Ascent",
+      "Description": "Frostbound scouts test the cliff road while raiders look for the war wagon axle.\nRecommended squad: Shield Knight + Archer + Siege Engineer.",
+      "RewardGold": 820,
+      "RewardFood": 10,
+      "EntryFoodCost": 6,
+      "ExploreFoodCost": 8,
+      "MapX": 138.0,
+      "MapY": 520.0,
+      "PlayerBaseHealth": 580.0,
+      "EnemyBaseHealth": 1180.0,
+      "EnemySpawnMin": 1.82,
+      "EnemySpawnMax": 2.52,
+      "EnemyHealthScale": 2.18,
+      "EnemyDamageScale": 2.1,
+      "WalkerWeight": 0.06,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.16,
+      "CrusherWeight": 0.24,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.24,
+      "Hazards": [
+        {
+          "Type": "frost_gale",
+          "Label": "Frost Gale",
+          "XRatio": 0.48,
+          "YRatio": 0.34,
+          "Radius": 70.0,
+          "Interval": 10.2,
+          "StartTime": 11.0,
+          "WarningDuration": 1.8,
+          "Damage": 18.0,
+          "ColorHex": "bfdbfe"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.06 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 10.0 },
+        { "Type": "clear_within", "Value": 112.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Cliff scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Goat path breach",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Rime horn",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Snowslide push",
+          "TriggerTime": 52.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Ascent hold",
+          "TriggerTime": 72.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 18,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "pass",
+      "StageName": "Rime Switchback",
+      "Description": "Narrow turns compress the climb under sleet while howlers and sappers chain quick dives.\nRecommended squad: Shield Knight + Crossbowman + Halberdier.",
+      "RewardGold": 900,
+      "RewardFood": 11,
+      "EntryFoodCost": 6,
+      "ExploreFoodCost": 8,
+      "MapX": 304.0,
+      "MapY": 430.0,
+      "PlayerBaseHealth": 600.0,
+      "EnemyBaseHealth": 1240.0,
+      "EnemySpawnMin": 1.76,
+      "EnemySpawnMax": 2.46,
+      "EnemyHealthScale": 2.24,
+      "EnemyDamageScale": 2.16,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.12,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.18,
+      "CrusherWeight": 0.24,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.25,
+      "Hazards": [
+        {
+          "Type": "icefall",
+          "Label": "Icefall",
+          "XRatio": 0.34,
+          "YRatio": 0.62,
+          "Radius": 72.0,
+          "Interval": 9.0,
+          "StartTime": 8.5,
+          "WarningDuration": 1.7,
+          "Damage": 20.0,
+          "ColorHex": "c7d2fe"
+        },
+        {
+          "Type": "frost_gale",
+          "Label": "Frost Gale",
+          "XRatio": 0.72,
+          "YRatio": 0.26,
+          "Radius": 64.0,
+          "Interval": 11.4,
+          "StartTime": 14.0,
+          "WarningDuration": 1.8,
+          "Damage": 19.0,
+          "ColorHex": "e0f2fe"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.12 },
+        { "Type": "surging_courage", "Value": 1.04 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "enemy_defeats", "Value": 24.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Switchback vanguard",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Snow horn",
+          "TriggerTime": 18.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Axle raid",
+          "TriggerTime": 34.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Frozen spill",
+          "TriggerTime": 52.0,
+          "SpawnInterval": 0.27,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ridge collapse",
+          "TriggerTime": 72.0,
+          "SpawnInterval": 0.25,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 19,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "shrine",
+      "StageName": "Avalanche Shrine",
+      "Description": "Avalanche bells ring over the pass, and the dead surge whenever the shrine drifts crack open.\nRecommended squad: Battle Monk + Mage + Shield Knight.",
+      "RewardGold": 980,
+      "RewardFood": 11,
+      "EntryFoodCost": 6,
+      "ExploreFoodCost": 9,
+      "MapX": 470.0,
+      "MapY": 252.0,
+      "PlayerBaseHealth": 620.0,
+      "EnemyBaseHealth": 1310.0,
+      "EnemySpawnMin": 1.72,
+      "EnemySpawnMax": 2.38,
+      "EnemyHealthScale": 2.32,
+      "EnemyDamageScale": 2.24,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.18,
+      "CrusherWeight": 0.26,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.26,
+      "Hazards": [
+        {
+          "Type": "avalanche_bell",
+          "Label": "Avalanche Bell",
+          "XRatio": 0.52,
+          "YRatio": 0.22,
+          "Radius": 82.0,
+          "Interval": 8.8,
+          "StartTime": 9.0,
+          "WarningDuration": 1.9,
+          "Damage": 22.0,
+          "ColorHex": "e2e8f0"
+        },
+        {
+          "Type": "scree_burst",
+          "Label": "Scree Burst",
+          "XRatio": 0.26,
+          "YRatio": 0.66,
+          "Radius": 66.0,
+          "Interval": 10.8,
+          "StartTime": 14.0,
+          "WarningDuration": 1.7,
+          "Damage": 20.0,
+          "ColorHex": "cbd5e1"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "surging_courage", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.74 },
+        { "Type": "hazard_hits_limit", "Value": 4.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Shrine pilgrims",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 3 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Bell drift",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Drift breach",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Avalanche wake",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Ridge warband",
+          "TriggerTime": 74.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Shrine overrun",
+          "TriggerTime": 94.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 20,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "watchfort",
+      "StageName": "High Watch",
+      "Description": "Watchfire bastions harden the lane while horns and raid ladders drive the climb.\nRecommended squad: Shield Knight + Crossbowman + Battle Monk.",
+      "RewardGold": 1060,
+      "RewardFood": 12,
+      "EntryFoodCost": 7,
+      "ExploreFoodCost": 9,
+      "MapX": 642.0,
+      "MapY": 364.0,
+      "PlayerBaseHealth": 640.0,
+      "EnemyBaseHealth": 1400.0,
+      "EnemySpawnMin": 1.66,
+      "EnemySpawnMax": 2.32,
+      "EnemyHealthScale": 2.4,
+      "EnemyDamageScale": 2.32,
+      "WalkerWeight": 0.04,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.3,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.27,
+      "Hazards": [
+        {
+          "Type": "watchfire_volley",
+          "Label": "Watchfire Volley",
+          "XRatio": 0.7,
+          "YRatio": 0.4,
+          "Radius": 70.0,
+          "Interval": 9.4,
+          "StartTime": 10.0,
+          "WarningDuration": 1.8,
+          "Damage": 21.0,
+          "ColorHex": "fde68a"
+        },
+        {
+          "Type": "icefall",
+          "Label": "Icefall",
+          "XRatio": 0.38,
+          "YRatio": 0.68,
+          "Radius": 72.0,
+          "Interval": 11.2,
+          "StartTime": 16.0,
+          "WarningDuration": 1.7,
+          "Damage": 21.0,
+          "ColorHex": "bfdbfe"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.18 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "enemy_defeats", "Value": 28.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Wall scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ladder rush",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Murder-slit blight",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Fort crush",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Watch horn",
+          "TriggerTime": 78.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "High watch breach",
+          "TriggerTime": 98.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 21,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "watchfort",
+      "StageName": "Thornwall Gate",
+      "Description": "Thornwall Pass boss stage. Avalanche bells and watchfire volleys hold until the Grave Lord storms the gate.",
+      "RewardGold": 1160,
+      "RewardFood": 13,
+      "EntryFoodCost": 7,
+      "ExploreFoodCost": 10,
+      "MapX": 770.0,
+      "MapY": 220.0,
+      "PlayerBaseHealth": 665.0,
+      "EnemyBaseHealth": 1520.0,
+      "EnemySpawnMin": 1.58,
+      "EnemySpawnMax": 2.22,
+      "EnemyHealthScale": 2.52,
+      "EnemyDamageScale": 2.42,
+      "WalkerWeight": 0.03,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.32,
+      "BossWeight": 0.34,
+      "BossSpawnStartTime": 80.0,
+      "BonusWaveChance": 0.28,
+      "Hazards": [
+        {
+          "Type": "avalanche_bell",
+          "Label": "Avalanche Bell",
+          "XRatio": 0.28,
+          "YRatio": 0.54,
+          "Radius": 86.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.9,
+          "Damage": 23.0,
+          "ColorHex": "e2e8f0"
+        },
+        {
+          "Type": "watchfire_volley",
+          "Label": "Watchfire Volley",
+          "XRatio": 0.68,
+          "YRatio": 0.28,
+          "Radius": 70.0,
+          "Interval": 10.0,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 22.0,
+          "ColorHex": "fde68a"
+        },
+        {
+          "Type": "gale_cut",
+          "Label": "Gale Cut",
+          "XRatio": 0.52,
+          "YRatio": 0.74,
+          "Radius": 64.0,
+          "Interval": 12.4,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 21.0,
+          "ColorHex": "e0f2fe"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.26 },
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 30.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Outer horns",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Pass raiders",
+          "TriggerTime": 22.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ice breach",
+          "TriggerTime": 40.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Gate snowfall",
+          "TriggerTime": 60.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Frosthorn warlord",
+          "TriggerTime": 80.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Last ascent",
+          "TriggerTime": 100.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 22,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "cathedral",
+      "StageName": "Outer Nave",
+      "Description": "Collapsed transepts and pew barricades turn the first nave into a slow grind under curse fire.\nRecommended squad: Shield Knight + Mage + Archer.",
+      "RewardGold": 1260,
+      "RewardFood": 13,
+      "EntryFoodCost": 7,
+      "ExploreFoodCost": 10,
+      "MapX": 150.0,
+      "MapY": 338.0,
+      "PlayerBaseHealth": 690.0,
+      "EnemyBaseHealth": 1600.0,
+      "EnemySpawnMin": 1.56,
+      "EnemySpawnMax": 2.18,
+      "EnemyHealthScale": 2.6,
+      "EnemyDamageScale": 2.48,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.22,
+      "CrusherWeight": 0.28,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.28,
+      "Hazards": [
+        {
+          "Type": "censer_cloud",
+          "Label": "Censer Cloud",
+          "XRatio": 0.42,
+          "YRatio": 0.58,
+          "Radius": 74.0,
+          "Interval": 9.8,
+          "StartTime": 10.0,
+          "WarningDuration": 1.8,
+          "Damage": 20.0,
+          "ColorHex": "d9f99d"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.12 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.76 },
+        { "Type": "enemy_defeats", "Value": 28.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Pew shadows",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Choir stir",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Nave breach",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Censer roll",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Relic guard",
+          "TriggerTime": 80.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 23,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "ossuary",
+      "StageName": "Ossuary Court",
+      "Description": "Bone courts spill smaller dead while hexers and heralds hold the center under crumbling saints.\nRecommended squad: Alchemist + Battle Monk + Shield Knight.",
+      "RewardGold": 1360,
+      "RewardFood": 13,
+      "EntryFoodCost": 7,
+      "ExploreFoodCost": 10,
+      "MapX": 322.0,
+      "MapY": 206.0,
+      "PlayerBaseHealth": 710.0,
+      "EnemyBaseHealth": 1680.0,
+      "EnemySpawnMin": 1.5,
+      "EnemySpawnMax": 2.12,
+      "EnemyHealthScale": 2.68,
+      "EnemyDamageScale": 2.56,
+      "WalkerWeight": 0.05,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.28,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.29,
+      "Hazards": [
+        {
+          "Type": "bonefall",
+          "Label": "Bonefall",
+          "XRatio": 0.28,
+          "YRatio": 0.26,
+          "Radius": 70.0,
+          "Interval": 9.2,
+          "StartTime": 8.5,
+          "WarningDuration": 1.7,
+          "Damage": 21.0,
+          "ColorHex": "e7e5e4"
+        },
+        {
+          "Type": "grave_incense",
+          "Label": "Grave Incense",
+          "XRatio": 0.72,
+          "YRatio": 0.62,
+          "Radius": 68.0,
+          "Interval": 11.2,
+          "StartTime": 14.0,
+          "WarningDuration": 1.8,
+          "Damage": 22.0,
+          "ColorHex": "ecfccb"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "swarm_density", "Value": 2.0 },
+        { "Type": "surging_courage", "Value": 1.06 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "enemy_defeats", "Value": 32.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Bone court wake",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "Reliquary thieves",
+          "TriggerTime": 20.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Hex choir",
+          "TriggerTime": 38.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Saintfall",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ossuary guard",
+          "TriggerTime": 78.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Court overrun",
+          "TriggerTime": 98.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 24,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "cathedral",
+      "StageName": "Choir Ruin",
+      "Description": "The choir loft rains curses over the aisle while relic escorts try to pin the war wagon in place.\nRecommended squad: Crossbowman + Mage + Battle Monk.",
+      "RewardGold": 1470,
+      "RewardFood": 14,
+      "EntryFoodCost": 8,
+      "ExploreFoodCost": 10,
+      "MapX": 510.0,
+      "MapY": 410.0,
+      "PlayerBaseHealth": 730.0,
+      "EnemyBaseHealth": 1770.0,
+      "EnemySpawnMin": 1.46,
+      "EnemySpawnMax": 2.06,
+      "EnemyHealthScale": 2.76,
+      "EnemyDamageScale": 2.64,
+      "WalkerWeight": 0.04,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.3,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.3,
+      "Hazards": [
+        {
+          "Type": "choir_peal",
+          "Label": "Choir Peal",
+          "XRatio": 0.54,
+          "YRatio": 0.24,
+          "Radius": 82.0,
+          "Interval": 8.8,
+          "StartTime": 9.0,
+          "WarningDuration": 1.9,
+          "Damage": 23.0,
+          "ColorHex": "fef3c7"
+        },
+        {
+          "Type": "censer_cloud",
+          "Label": "Censer Cloud",
+          "XRatio": 0.34,
+          "YRatio": 0.72,
+          "Radius": 72.0,
+          "Interval": 10.6,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 21.0,
+          "ColorHex": "d9f99d"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.18 },
+        { "Type": "surging_courage", "Value": 1.08 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "clear_within", "Value": 122.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Broken choir",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Loft stir",
+          "TriggerTime": 22.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Curse aisle",
+          "TriggerTime": 40.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Escort press",
+          "TriggerTime": 60.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Choir collapse",
+          "TriggerTime": 82.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Sanctum hold",
+          "TriggerTime": 102.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 25,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "reliquary",
+      "StageName": "Reliquary Steps",
+      "Description": "Relic vault stairs narrow the line into a ceremonial kill zone guarded by elite undead and curse engines.\nRecommended squad: Halberdier + Shield Knight + Mage.",
+      "RewardGold": 1590,
+      "RewardFood": 14,
+      "EntryFoodCost": 8,
+      "ExploreFoodCost": 11,
+      "MapX": 676.0,
+      "MapY": 262.0,
+      "PlayerBaseHealth": 750.0,
+      "EnemyBaseHealth": 1880.0,
+      "EnemySpawnMin": 1.4,
+      "EnemySpawnMax": 1.98,
+      "EnemyHealthScale": 2.86,
+      "EnemyDamageScale": 2.74,
+      "WalkerWeight": 0.04,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.32,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.31,
+      "Hazards": [
+        {
+          "Type": "reliquary_flare",
+          "Label": "Reliquary Flare",
+          "XRatio": 0.66,
+          "YRatio": 0.34,
+          "Radius": 68.0,
+          "Interval": 9.4,
+          "StartTime": 10.0,
+          "WarningDuration": 1.7,
+          "Damage": 24.0,
+          "ColorHex": "fde68a"
+        },
+        {
+          "Type": "bonefall",
+          "Label": "Bonefall",
+          "XRatio": 0.26,
+          "YRatio": 0.64,
+          "Radius": 74.0,
+          "Interval": 11.0,
+          "StartTime": 17.0,
+          "WarningDuration": 1.8,
+          "Damage": 22.0,
+          "ColorHex": "e7e5e4"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.24 },
+        { "Type": "armored_convoy", "Value": 1.08 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.74 },
+        { "Type": "enemy_defeats", "Value": 34.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Step sentries",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Urn break",
+          "TriggerTime": 22.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Hex procession",
+          "TriggerTime": 42.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Vault stairs",
+          "TriggerTime": 62.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Relic wardens",
+          "TriggerTime": 84.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Reliquary surge",
+          "TriggerTime": 104.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 26,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "reliquary",
+      "StageName": "Sepulcher Crown",
+      "Description": "Hollow Basilica boss stage. Reliquary flares and censer clouds hold until the Grave Lord claims the high altar.",
+      "RewardGold": 1740,
+      "RewardFood": 15,
+      "EntryFoodCost": 8,
+      "ExploreFoodCost": 11,
+      "MapX": 780.0,
+      "MapY": 500.0,
+      "PlayerBaseHealth": 780.0,
+      "EnemyBaseHealth": 2020.0,
+      "EnemySpawnMin": 1.34,
+      "EnemySpawnMax": 1.92,
+      "EnemyHealthScale": 2.98,
+      "EnemyDamageScale": 2.86,
+      "WalkerWeight": 0.03,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.28,
+      "CrusherWeight": 0.34,
+      "BossWeight": 0.36,
+      "BossSpawnStartTime": 82.0,
+      "BonusWaveChance": 0.32,
+      "Hazards": [
+        {
+          "Type": "choir_peal",
+          "Label": "Choir Peal",
+          "XRatio": 0.3,
+          "YRatio": 0.28,
+          "Radius": 80.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.9,
+          "Damage": 24.0,
+          "ColorHex": "fef3c7"
+        },
+        {
+          "Type": "reliquary_flare",
+          "Label": "Reliquary Flare",
+          "XRatio": 0.7,
+          "YRatio": 0.52,
+          "Radius": 70.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 24.0,
+          "ColorHex": "fde68a"
+        },
+        {
+          "Type": "grave_incense",
+          "Label": "Grave Incense",
+          "XRatio": 0.52,
+          "YRatio": 0.76,
+          "Radius": 72.0,
+          "Interval": 12.6,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 23.0,
+          "ColorHex": "ecfccb"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.28 },
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 36.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Altar wake",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Censer bearers",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Relic escort",
+          "TriggerTime": 44.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Choir of ash",
+          "TriggerTime": 64.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Sepulcher crown",
+          "TriggerTime": 82.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Last liturgy",
+          "TriggerTime": 104.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
           ]
         }
       ]

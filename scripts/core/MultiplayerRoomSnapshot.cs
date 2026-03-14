@@ -98,7 +98,7 @@ public static class MultiplayerRoomFormatter
 			: $"\nShare IP: {snapshot.JoinAddressSummary}";
 		var peerDeckSummary = snapshot.UsesLockedDeck
 			? ""
-			: $"\nDeck sync: {launchEligiblePeers.Count(peer => peer.HasFullDeck)}/{launchEligiblePeers.Length} full active convoys\nPeer convoys:\n{BuildPeerDeckSummaryText(snapshot.Peers)}";
+			: $"\nDeck sync: {launchEligiblePeers.Count(peer => peer.HasFullDeck)}/{launchEligiblePeers.Length} full active squads\nPeer squads:\n{BuildPeerDeckSummaryText(snapshot.Peers)}";
 		var roomIdentityLine = string.IsNullOrWhiteSpace(snapshot.RoomTitle) && string.IsNullOrWhiteSpace(snapshot.RoomId)
 			? ""
 			: $"Room: {(string.IsNullOrWhiteSpace(snapshot.RoomTitle) ? "Active Room" : snapshot.RoomTitle)}" +
@@ -166,7 +166,7 @@ public static class MultiplayerRoomFormatter
 		{
 			lines.Add(incompleteDeckPeers.Length > 0
 				? $"Deck blockers: {BuildPeerListText(incompleteDeckPeers)}"
-				: "Deck sync: all active runners have full convoys.");
+				: "Deck sync: all active runners have full squads.");
 		}
 
 		if (spectatorPeers.Length > 0)

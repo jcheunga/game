@@ -80,7 +80,7 @@ public static class OnlineRoomMatchmakeService
 	private static string ResolvePlayerCallsign(GameState gameState)
 	{
 		return string.IsNullOrWhiteSpace(gameState?.PlayerCallsign)
-			? "Convoy"
+			? "Lantern"
 			: gameState.PlayerCallsign;
 	}
 
@@ -139,7 +139,7 @@ public static class OnlineRoomMatchmakeService
 			ProviderId = LocalProvider.Id,
 			ProviderDisplayName = LocalProvider.DisplayName,
 			Status = "accepted",
-			Summary = $"Matched Convoy into {room.Title}.",
+			Summary = $"Matched into {room.Title}.",
 			CreatedNewRoom = false,
 			Room = room,
 			JoinTicket = new OnlineRoomJoinTicket
@@ -155,7 +155,7 @@ public static class OnlineRoomMatchmakeService
 				JoinToken = $"matched-{Guid.NewGuid():N}",
 				TransportHint = "internet_room_stub",
 				RelayEndpoint = $"stub://room/{room.RoomId}",
-				SeatLabel = wantsLockedDeckSeat ? "locked-squad seat" : "player-convoy seat",
+				SeatLabel = wantsLockedDeckSeat ? "locked-squad seat" : "player-squad seat",
 				RequestedAtUnixSeconds = requestedAt,
 				ExpiresAtUnixSeconds = requestedAt + 180,
 				UsesLockedDeck = room.UsesLockedDeck,

@@ -14,7 +14,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 
 	public OnlineRoomSessionSnapshot FetchRoomSession(OnlineRoomJoinTicket ticket)
 	{
-		var localCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy";
+		var localCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern";
 		var boardTitle = BuildBoardTitle(ticket.BoardCode);
 		var roomId = string.IsNullOrWhiteSpace(ticket.RoomId) ? ticket.BoardCode : ticket.RoomId;
 		var localSeatStatus = ticket.Status?.Trim().ToLowerInvariant() ?? "";
@@ -88,7 +88,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				LocalCallsign = localCallsign,
 				DeckModeSummary = ticket.UsesLockedDeck
 					? "Deck mode: locked shared squad negotiated by join ticket."
-					: "Deck mode: player convoy seats negotiated by join ticket.",
+					: "Deck mode: player squads negotiated by join ticket.",
 				JoinAddressSummary = ticket.RelayEndpoint,
 				UsesLockedDeck = ticket.UsesLockedDeck,
 				RoundLocked = roundLaunched && !roundComplete,
@@ -96,7 +96,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				RaceCountdownActive = roundLaunched && !roundComplete && !raceLive,
 				RaceCountdownRemainingSeconds = roundLaunched && !roundComplete && !raceLive ? 4f : 0f,
 				SelectedBoardCode = ticket.BoardCode,
-				SelectedBoardDeckMode = ticket.UsesLockedDeck ? "locked shared squad" : "player convoy",
+				SelectedBoardDeckMode = ticket.UsesLockedDeck ? "locked shared squad" : "player squad",
 				Peers = peerSnapshots
 			}
 		};
@@ -138,7 +138,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
 					? $"{localCallsign}  |  locked squad"
-					: $"{localCallsign}  |  player convoy"
+					: $"{localCallsign}  |  player squad"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -160,7 +160,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
 					? "IronBell  |  locked squad"
-					: "IronBell  |  Brawler, Shooter, Defender"
+					: "IronBell  |  Swordsman, Archer, Shield Knight"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -182,7 +182,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
 					? "Northgate  |  locked squad"
-					: "Northgate  |  Raider, Ranger, Defender"
+					: "Northgate  |  Cavalry Rider, Crossbowman, Shield Knight"
 			}
 		];
 	}
@@ -223,7 +223,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
 					? "IronBell  |  locked squad"
-					: "IronBell  |  Brawler, Shooter, Defender"
+					: "IronBell  |  Swordsman, Archer, Shield Knight"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -245,7 +245,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
 					? $"{localCallsign}  |  locked squad"
-					: $"{localCallsign}  |  player convoy"
+					: $"{localCallsign}  |  player squad"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -267,7 +267,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
 					? "Northgate  |  locked squad"
-					: "Northgate  |  Raider, Ranger, Defender"
+					: "Northgate  |  Cavalry Rider, Crossbowman, Shield Knight"
 			}
 		];
 	}

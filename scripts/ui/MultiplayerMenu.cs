@@ -285,7 +285,7 @@ public partial class MultiplayerMenu : Control
 
         var shopButton = new Button
         {
-            Text = "Convoy Shop",
+            Text = "Caravan Armory",
             CustomMinimumSize = new Vector2(180f, 0f)
         };
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
@@ -371,7 +371,8 @@ public partial class MultiplayerMenu : Control
             $"Challenge target: {stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"{AsyncChallengeCatalog.BuildSummary(challenge)}\n\n" +
             $"{deckModeLabel}\n" +
-            $"{GameState.Instance.BuildSelectedAsyncChallengeDeckSynergyInlineSummary()}\n\n" +
+            $"{GameState.Instance.BuildSelectedAsyncChallengeDeckSynergyInlineSummary()}\n" +
+            $"{GameState.Instance.BuildSelectedAsyncChallengeSpellSummary()}\n\n" +
             $"{StageEncounterIntel.BuildCompactSummary(stage)}";
         _recordLabel.Text =
             $"Local records:\n" +
@@ -393,7 +394,7 @@ public partial class MultiplayerMenu : Control
             "- No food is spent and no campaign stars or stage unlocks are awarded.\n" +
             "- Compare score, time, stars, and hull preservation on the same code.\n" +
             "- Daily featured boards rotate from the unlocked campaign range.\n" +
-            "- Featured boards can also lock the convoy to the same 3-card squad for fairer score races.\n" +
+            "- Featured boards can also lock every runner to the same 3-card squad for fairer score races.\n" +
             "- Pinned codes stay saved until you clear them from the board.\n" +
             $"- Active mutator: {mutator.Title}.\n\n" +
             $"{AsyncChallengeCatalog.BuildScoringGuide(challenge)}\n\n" +
@@ -587,6 +588,19 @@ public partial class MultiplayerMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+                ? "Spell Layer"
+                : $"Active Magic ({GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit})"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildSelectedAsyncChallengeSpellSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
         foreach (var definition in previewDeck)
         {
             _squadStack.AddChild(BuildUnitPanel(definition, previewDeck));
@@ -639,7 +653,7 @@ public partial class MultiplayerMenu : Control
             : null;
         var deckSummary = room.UsesLockedDeck
             ? $"Locked squad: {string.Join(", ", room.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
-            : "Deck mode: player convoys";
+            : "Deck mode: player squads";
 
         var panel = new PanelContainer
         {

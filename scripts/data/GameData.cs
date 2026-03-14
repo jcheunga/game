@@ -20,6 +20,15 @@ public static class GameData
         PlayerCoordinatorId
     };
 
+    public static readonly string[] PlayerSpellIds =
+    {
+        SpellFireballId,
+        SpellHealId,
+        SpellFrostBurstId,
+        SpellLightningStrikeId,
+        SpellBarrierWardId
+    };
+
     public static readonly string[] EnemyRosterIds =
     {
         EnemyWalkerId,
@@ -45,6 +54,11 @@ public static class GameData
     public const string PlayerBreacherId = "player_breacher";
     public const string PlayerGrenadierId = "player_grenadier";
     public const string PlayerCoordinatorId = "player_coordinator";
+    public const string SpellFireballId = "spell_fireball";
+    public const string SpellHealId = "spell_heal";
+    public const string SpellFrostBurstId = "spell_frost_burst";
+    public const string SpellLightningStrikeId = "spell_lightning_strike";
+    public const string SpellBarrierWardId = "spell_barrier_ward";
     public const string EnemyWalkerId = "enemy_walker";
     public const string EnemyRunnerId = "enemy_runner";
     public const string EnemyBloaterId = "enemy_bloater";
@@ -58,6 +72,7 @@ public static class GameData
     public const string EnemyBossId = "enemy_boss";
 
     private const string UnitsPath = "res://data/units.json";
+    private const string SpellsPath = "res://data/spells.json";
     private const string StagesPath = "res://data/stages.json";
     private const string CombatPath = "res://data/combat_config.json";
 
@@ -69,6 +84,7 @@ public static class GameData
     private static bool _loaded;
     private static StageDefinition[] _stages = Array.Empty<StageDefinition>();
     private static Dictionary<string, UnitDefinition> _units = new();
+    private static Dictionary<string, SpellDefinition> _spells = new();
     private static CombatTuning _combat = new();
 
     private sealed class UnitCollection
@@ -79,6 +95,11 @@ public static class GameData
     private sealed class StageCollection
     {
         public List<StageDefinition> Stages { get; set; } = new();
+    }
+
+    private sealed class SpellCollection
+    {
+        public List<SpellDefinition> Spells { get; set; } = new();
     }
 
     private sealed class CombatCollection
@@ -129,12 +150,29 @@ public static class GameData
             .ToArray();
     }
 
+    public static IReadOnlyList<SpellDefinition> GetPlayerSpells()
+    {
+        EnsureLoaded();
+        return PlayerSpellIds
+            .Select(GetSpell)
+            .ToArray();
+    }
+
     public static IReadOnlyList<UnitDefinition> GetUnitsByIds(IEnumerable<string> unitIds)
     {
         EnsureLoaded();
         return unitIds
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .Select(GetUnit)
+            .ToArray();
+    }
+
+    public static IReadOnlyList<SpellDefinition> GetSpellsByIds(IEnumerable<string> spellIds)
+    {
+        EnsureLoaded();
+        return spellIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(GetSpell)
             .ToArray();
     }
 
@@ -181,6 +219,18 @@ public static class GameData
         throw new InvalidOperationException($"Unit id '{unitId}' was not found in data.");
     }
 
+    public static SpellDefinition GetSpell(string spellId)
+    {
+        EnsureLoaded();
+
+        if (_spells.TryGetValue(spellId, out var spell))
+        {
+            return spell;
+        }
+
+        throw new InvalidOperationException($"Spell id '{spellId}' was not found in data.");
+    }
+
     private static void EnsureLoaded()
     {
         if (_loaded)
@@ -193,16 +243,23 @@ public static class GameData
         try
         {
             var unitsText = ReadTextFile(UnitsPath);
+            var spellsText = ReadTextFile(SpellsPath);
             var stagesText = ReadTextFile(StagesPath);
             var combatText = ReadTextFile(CombatPath);
 
             var unitsDoc = JsonSerializer.Deserialize<UnitCollection>(unitsText, JsonOptions);
+            var spellsDoc = JsonSerializer.Deserialize<SpellCollection>(spellsText, JsonOptions);
             var stagesDoc = JsonSerializer.Deserialize<StageCollection>(stagesText, JsonOptions);
             var combatDoc = JsonSerializer.Deserialize<CombatCollection>(combatText, JsonOptions);
 
             if (unitsDoc == null || unitsDoc.Units.Count == 0)
             {
                 throw new InvalidOperationException("units.json does not contain units.");
+            }
+
+            if (spellsDoc == null || spellsDoc.Spells.Count == 0)
+            {
+                throw new InvalidOperationException("spells.json does not contain spells.");
             }
 
             if (stagesDoc == null || stagesDoc.Stages.Count == 0)
@@ -224,6 +281,17 @@ public static class GameData
                 }
 
                 _units[unit.Id] = unit;
+            }
+
+            _spells = new Dictionary<string, SpellDefinition>(StringComparer.OrdinalIgnoreCase);
+            foreach (var spell in spellsDoc.Spells)
+            {
+                if (string.IsNullOrWhiteSpace(spell.Id))
+                {
+                    continue;
+                }
+
+                _spells[spell.Id] = spell;
             }
 
             _stages = stagesDoc.Stages
@@ -276,7 +344,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerBrawlerId,
-                    DisplayName = "Brawler",
+                    DisplayName = "Swordsman",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.FrontlineTag,
                     UnlockStage = 1,
@@ -297,7 +365,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerShooterId,
-                    DisplayName = "Shooter",
+                    DisplayName = "Archer",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.SupportTag,
                     UnlockStage = 1,
@@ -320,7 +388,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerDefenderId,
-                    DisplayName = "Defender",
+                    DisplayName = "Shield Knight",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.FrontlineTag,
                     UnlockStage = 1,
@@ -341,7 +409,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerRangerId,
-                    DisplayName = "Ranger",
+                    DisplayName = "Crossbowman",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 2,
@@ -364,7 +432,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerRaiderId,
-                    DisplayName = "Raider",
+                    DisplayName = "Cavalry Rider",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 4,
@@ -387,7 +455,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerMarksmanId,
-                    DisplayName = "Marksman",
+                    DisplayName = "Mage",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.ReconTag,
                     UnlockStage = 6,
@@ -412,7 +480,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerBreacherId,
-                    DisplayName = "Breacher",
+                    DisplayName = "Halberdier",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.BreachTag,
                     UnlockStage = 9,
@@ -437,7 +505,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerGrenadierId,
-                    DisplayName = "Grenadier",
+                    DisplayName = "Alchemist",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.BreachTag,
                     UnlockStage = 10,
@@ -465,7 +533,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerCoordinatorId,
-                    DisplayName = "Coordinator",
+                    DisplayName = "Battle Monk",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.SupportTag,
                     UnlockStage = 13,
@@ -495,7 +563,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = PlayerMechanicId,
-                    DisplayName = "Mechanic",
+                    DisplayName = "Siege Engineer",
                     Side = "Player",
                     SquadTag = SquadSynergyCatalog.SupportTag,
                     UnlockStage = 5,
@@ -522,7 +590,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyWalkerId,
-                    DisplayName = "Walker",
+                    DisplayName = "Risen",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 62f,
@@ -539,7 +607,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyRunnerId,
-                    DisplayName = "Runner",
+                    DisplayName = "Ghoul",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 40f,
@@ -556,7 +624,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyBloaterId,
-                    DisplayName = "Bloater",
+                    DisplayName = "Rot Hulk",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 88f,
@@ -577,7 +645,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyBruteId,
-                    DisplayName = "Brute",
+                    DisplayName = "Grave Brute",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 112f,
@@ -594,7 +662,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemySpitterId,
-                    DisplayName = "Spitter",
+                    DisplayName = "Blight Caster",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 46f,
@@ -615,7 +683,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemySplitterId,
-                    DisplayName = "Splitter",
+                    DisplayName = "Bone Nest",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 78f,
@@ -636,7 +704,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemySaboteurId,
-                    DisplayName = "Saboteur",
+                    DisplayName = "Sapper",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 52f,
@@ -657,7 +725,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyHowlerId,
-                    DisplayName = "Howler",
+                    DisplayName = "Dread Herald",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 84f,
@@ -681,7 +749,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyJammerId,
-                    DisplayName = "Jammer",
+                    DisplayName = "Hexer",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 70f,
@@ -707,7 +775,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyCrusherId,
-                    DisplayName = "Crusher",
+                    DisplayName = "Bone Juggernaut",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 152f,
@@ -725,7 +793,7 @@ public static class GameData
                 new UnitDefinition
                 {
                     Id = EnemyBossId,
-                    DisplayName = "Overlord",
+                    DisplayName = "Grave Lord",
                     Side = "Enemy",
                     Cost = 0,
                     MaxHealth = 320f,
@@ -755,11 +823,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 1,
-                StageName = "Outskirts",
+                StageName = "Far Gate",
                 MapId = "city",
-                MapName = "City Route",
+                MapName = "King's Road",
                 TerrainId = "urban",
-                Description = "Low density swarm near abandoned gas stations.\nRecommended squad: Brawler + Shooter.",
+                Description = "Thin undead probes along the outer farms and pilgrim road.\nRecommended squad: Swordsman + Archer.",
                 RewardGold = 50,
                 RewardFood = 3,
                 EntryFoodCost = 1,
@@ -784,11 +852,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 2,
-                StageName = "Highway",
+                StageName = "Stone Causeway",
                 MapId = "city",
-                MapName = "City Route",
+                MapName = "King's Road",
                 TerrainId = "highway",
-                Description = "Faster infected and tighter lane pressure.\nRecommended squad: 2x Brawler, 1x Shooter.",
+                Description = "Faster ghouls and tighter lane pressure on the raised road.\nRecommended squad: 2x Swordsman, 1x Archer.",
                 RewardGold = 75,
                 RewardFood = 3,
                 EntryFoodCost = 1,
@@ -813,11 +881,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 3,
-                StageName = "Mall District",
+                StageName = "Market Ward",
                 MapId = "city",
-                MapName = "City Route",
+                MapName = "King's Road",
                 TerrainId = "night",
-                Description = "Dense mixed wave before the city boss siege. Keep your line stable.",
+                Description = "Dense mixed waves before the inner gate assault. Keep your line steady.",
                 RewardGold = 105,
                 RewardFood = 3,
                 EntryFoodCost = 1,
@@ -842,11 +910,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 4,
-                StageName = "Metro Citadel",
+                StageName = "Bell Tower Gate",
                 MapId = "city",
-                MapName = "City Route",
+                MapName = "King's Road",
                 TerrainId = "night",
-                Description = "City boss stage. Overlord spawns begin toward the end of the battle.",
+                Description = "King's Road boss stage. Grave Lord entries begin toward the end of the battle.",
                 RewardGold = 145,
                 RewardFood = 4,
                 EntryFoodCost = 1,
@@ -871,11 +939,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 5,
-                StageName = "Docks Perimeter",
+                StageName = "Mooring Ring",
                 MapId = "harbor",
-                MapName = "Harbor Front",
+                MapName = "Saltwake Docks",
                 TerrainId = "industrial",
-                Description = "Second map unlocked. Rusted docks and container chokepoints.",
+                Description = "Second district unlocked. Salt-soaked quays and chainlift chokepoints.",
                 RewardGold = 170,
                 RewardFood = 4,
                 EntryFoodCost = 2,
@@ -900,11 +968,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 6,
-                StageName = "Flooded Terminal",
+                StageName = "Drowned Quay",
                 MapId = "harbor",
-                MapName = "Harbor Front",
+                MapName = "Saltwake Docks",
                 TerrainId = "swamp",
-                Description = "Waterlogged streets slow pushes. Spitters and heavy units dominate.",
+                Description = "Flooded approaches slow pushes. Blight casters and heavy dead control the lane.",
                 RewardGold = 200,
                 RewardFood = 4,
                 EntryFoodCost = 2,
@@ -929,11 +997,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 7,
-                StageName = "Crane Gauntlet",
+                StageName = "Chainlift Yard",
                 MapId = "harbor",
-                MapName = "Harbor Front",
+                MapName = "Saltwake Docks",
                 TerrainId = "shipyard",
-                Description = "Heavy armor waves push through wrecked cranes before the final harbor boss.",
+                Description = "Armored waves force through broken cranes before the Grave Lord arrives.",
                 RewardGold = 235,
                 RewardFood = 5,
                 EntryFoodCost = 2,
@@ -958,11 +1026,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 8,
-                StageName = "Wreck Flagship",
+                StageName = "Wreck Admiral",
                 MapId = "harbor",
-                MapName = "Harbor Front",
+                MapName = "Saltwake Docks",
                 TerrainId = "shipyard",
-                Description = "Harbor boss stage. Overlord spawns begin toward the end of the battle.",
+                Description = "Saltwake boss stage. Grave Lord entries begin toward the end of the battle.",
                 RewardGold = 280,
                 RewardFood = 5,
                 EntryFoodCost = 3,
@@ -987,11 +1055,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 9,
-                StageName = "Freight Siding",
+                StageName = "Forge Siding",
                 MapId = "foundry",
-                MapName = "Foundry Line",
+                MapName = "Emberforge March",
                 TerrainId = "railyard",
-                Description = "Third route unlocked. Freight cuts favor splitters and brute pressure.",
+                Description = "Third district unlocked. Coal spurs favor split-brood screens, sapper dives, and brute-led pushes.\nRecommended squad: Shield Knight + Archer + Siege Engineer or Halberdier.",
                 RewardGold = 320,
                 RewardFood = 6,
                 EntryFoodCost = 3,
@@ -1018,9 +1086,9 @@ public static class GameData
                 StageNumber = 10,
                 StageName = "Smelter Row",
                 MapId = "foundry",
-                MapName = "Foundry Line",
+                MapName = "Emberforge March",
                 TerrainId = "smelter",
-                Description = "Molten lanes and reinforced barricades reward higher bus damage and disciplined deployments.",
+                Description = "Molten choke points, sapper flanks, and reinforced gates reward higher gate damage and disciplined deployment.\nRecommended squad: Halberdier + Shield Knight + Mage.",
                 RewardGold = 360,
                 RewardFood = 6,
                 EntryFoodCost = 3,
@@ -1047,9 +1115,9 @@ public static class GameData
                 StageNumber = 11,
                 StageName = "Cinder Causeway",
                 MapId = "foundry",
-                MapName = "Foundry Line",
+                MapName = "Emberforge March",
                 TerrainId = "foundry",
-                Description = "Steady heavy pushes and splitter screens test how well the convoy recovers between surges.",
+                Description = "Steady heavy pushes, split-brood screens, and sapper feints test how well the caravan recovers between surges.",
                 RewardGold = 410,
                 RewardFood = 7,
                 EntryFoodCost = 4,
@@ -1076,9 +1144,9 @@ public static class GameData
                 StageNumber = 12,
                 StageName = "Furnace Crown",
                 MapId = "foundry",
-                MapName = "Foundry Line",
+                MapName = "Emberforge March",
                 TerrainId = "foundry",
-                Description = "Foundry boss stage. Splitters and crushers hold the line until the Overlord joins the furnace push.",
+                Description = "Emberforge boss stage. Split broods, sappers, and juggernauts hold the line until the Grave Lord joins the furnace push.",
                 RewardGold = 470,
                 RewardFood = 8,
                 EntryFoodCost = 4,
@@ -1103,11 +1171,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 13,
-                StageName = "Outer Gate",
+                StageName = "Outer Ward",
                 MapId = "quarantine",
-                MapName = "Quarantine Wall",
+                MapName = "Ashen Ward",
                 TerrainId = "checkpoint",
-                Description = "Fourth route unlocked. Screening barriers and decon sirens set up spitter fire behind sealed gates.",
+                Description = "Fourth district unlocked. Warded barriers and purge bells set up blight fire behind sealed gates.",
                 RewardGold = 520,
                 RewardFood = 8,
                 EntryFoodCost = 4,
@@ -1132,11 +1200,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 14,
-                StageName = "Decon Corridor",
+                StageName = "Purge Cloister",
                 MapId = "quarantine",
-                MapName = "Quarantine Wall",
+                MapName = "Ashen Ward",
                 TerrainId = "decon",
-                Description = "Toxic wash tunnels punish overcommits while support infected stack behind the spray lanes.",
+                Description = "Caustic wash halls punish overcommits while curse support stacks behind the ritual lanes.",
                 RewardGold = 580,
                 RewardFood = 9,
                 EntryFoodCost = 5,
@@ -1161,11 +1229,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 15,
-                StageName = "Triage Break",
+                StageName = "Leechcourt",
                 MapId = "quarantine",
-                MapName = "Quarantine Wall",
+                MapName = "Ashen Ward",
                 TerrainId = "lab",
-                Description = "Lab-side barricades harden up while saboteurs and howlers try to crack the convoy from behind.",
+                Description = "Plaguehouse barricades harden up while sappers and dread heralds try to crack the caravan from behind.",
                 RewardGold = 650,
                 RewardFood = 9,
                 EntryFoodCost = 5,
@@ -1190,11 +1258,11 @@ public static class GameData
             new StageDefinition
             {
                 StageNumber = 16,
-                StageName = "Blacksite Seal",
+                StageName = "Black Vault Seal",
                 MapId = "quarantine",
-                MapName = "Quarantine Wall",
+                MapName = "Ashen Ward",
                 TerrainId = "blacksite",
-                Description = "Quarantine boss stage. Toxic purge cycles and sealed kill-box walls hold until the Overlord breaches the blacksite.",
+                Description = "Ashen Ward boss stage. Purge cycles and sealed kill-box walls hold until the Grave Lord breaches the vault.",
                 RewardGold = 730,
                 RewardFood = 10,
                 EntryFoodCost = 6,
@@ -1215,6 +1283,296 @@ public static class GameData
                 BossWeight = 0.32f,
                 BossSpawnStartTime = 78f,
                 BonusWaveChance = 0.24f
+            },
+            new StageDefinition
+            {
+                StageNumber = 17,
+                StageName = "Narrow Ascent",
+                MapId = "thornwall",
+                MapName = "Thornwall Pass",
+                TerrainId = "pass",
+                Description = "Frostbound scouts test the cliff road while raiders look for the war wagon axle.",
+                RewardGold = 820,
+                RewardFood = 10,
+                EntryFoodCost = 6,
+                ExploreFoodCost = 8,
+                MapX = 138f,
+                MapY = 520f,
+                PlayerBaseHealth = 580f,
+                EnemyBaseHealth = 1180f,
+                EnemySpawnMin = 1.82f,
+                EnemySpawnMax = 2.52f,
+                EnemyHealthScale = 2.18f,
+                EnemyDamageScale = 2.1f,
+                WalkerWeight = 0.06f,
+                RunnerWeight = 0.1f,
+                BruteWeight = 0.22f,
+                SpitterWeight = 0.16f,
+                CrusherWeight = 0.24f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.24f
+            },
+            new StageDefinition
+            {
+                StageNumber = 18,
+                StageName = "Rime Switchback",
+                MapId = "thornwall",
+                MapName = "Thornwall Pass",
+                TerrainId = "pass",
+                Description = "Narrow turns compress the climb under sleet while howlers and sappers chain quick dives.",
+                RewardGold = 900,
+                RewardFood = 11,
+                EntryFoodCost = 6,
+                ExploreFoodCost = 8,
+                MapX = 304f,
+                MapY = 430f,
+                PlayerBaseHealth = 600f,
+                EnemyBaseHealth = 1240f,
+                EnemySpawnMin = 1.76f,
+                EnemySpawnMax = 2.46f,
+                EnemyHealthScale = 2.24f,
+                EnemyDamageScale = 2.16f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.12f,
+                BruteWeight = 0.22f,
+                SpitterWeight = 0.18f,
+                CrusherWeight = 0.24f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.25f
+            },
+            new StageDefinition
+            {
+                StageNumber = 19,
+                StageName = "Avalanche Shrine",
+                MapId = "thornwall",
+                MapName = "Thornwall Pass",
+                TerrainId = "shrine",
+                Description = "Avalanche bells ring over the pass, and the dead surge whenever the shrine drifts crack open.",
+                RewardGold = 980,
+                RewardFood = 11,
+                EntryFoodCost = 6,
+                ExploreFoodCost = 9,
+                MapX = 470f,
+                MapY = 252f,
+                PlayerBaseHealth = 620f,
+                EnemyBaseHealth = 1310f,
+                EnemySpawnMin = 1.72f,
+                EnemySpawnMax = 2.38f,
+                EnemyHealthScale = 2.32f,
+                EnemyDamageScale = 2.24f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.1f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.18f,
+                CrusherWeight = 0.26f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.26f
+            },
+            new StageDefinition
+            {
+                StageNumber = 20,
+                StageName = "High Watch",
+                MapId = "thornwall",
+                MapName = "Thornwall Pass",
+                TerrainId = "watchfort",
+                Description = "Watchfire bastions harden the lane while horns and raid ladders drive the climb.",
+                RewardGold = 1060,
+                RewardFood = 12,
+                EntryFoodCost = 7,
+                ExploreFoodCost = 9,
+                MapX = 642f,
+                MapY = 364f,
+                PlayerBaseHealth = 640f,
+                EnemyBaseHealth = 1400f,
+                EnemySpawnMin = 1.66f,
+                EnemySpawnMax = 2.32f,
+                EnemyHealthScale = 2.4f,
+                EnemyDamageScale = 2.32f,
+                WalkerWeight = 0.04f,
+                RunnerWeight = 0.1f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.2f,
+                CrusherWeight = 0.3f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.27f
+            },
+            new StageDefinition
+            {
+                StageNumber = 21,
+                StageName = "Thornwall Gate",
+                MapId = "thornwall",
+                MapName = "Thornwall Pass",
+                TerrainId = "watchfort",
+                Description = "Thornwall Pass boss stage. Avalanche bells and watchfire volleys hold until the Grave Lord storms the gate.",
+                RewardGold = 1160,
+                RewardFood = 13,
+                EntryFoodCost = 7,
+                ExploreFoodCost = 10,
+                MapX = 770f,
+                MapY = 220f,
+                PlayerBaseHealth = 665f,
+                EnemyBaseHealth = 1520f,
+                EnemySpawnMin = 1.58f,
+                EnemySpawnMax = 2.22f,
+                EnemyHealthScale = 2.52f,
+                EnemyDamageScale = 2.42f,
+                WalkerWeight = 0.03f,
+                RunnerWeight = 0.1f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.2f,
+                CrusherWeight = 0.32f,
+                BossWeight = 0.34f,
+                BossSpawnStartTime = 80f,
+                BonusWaveChance = 0.28f
+            },
+            new StageDefinition
+            {
+                StageNumber = 22,
+                StageName = "Outer Nave",
+                MapId = "basilica",
+                MapName = "Hollow Basilica",
+                TerrainId = "cathedral",
+                Description = "Collapsed transepts and pew barricades turn the first nave into a slow grind under curse fire.",
+                RewardGold = 1260,
+                RewardFood = 13,
+                EntryFoodCost = 7,
+                ExploreFoodCost = 10,
+                MapX = 150f,
+                MapY = 338f,
+                PlayerBaseHealth = 690f,
+                EnemyBaseHealth = 1600f,
+                EnemySpawnMin = 1.56f,
+                EnemySpawnMax = 2.18f,
+                EnemyHealthScale = 2.6f,
+                EnemyDamageScale = 2.48f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.06f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.22f,
+                CrusherWeight = 0.28f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.28f
+            },
+            new StageDefinition
+            {
+                StageNumber = 23,
+                StageName = "Ossuary Court",
+                MapId = "basilica",
+                MapName = "Hollow Basilica",
+                TerrainId = "ossuary",
+                Description = "Bone courts spill smaller dead while hexers and heralds hold the center under crumbling saints.",
+                RewardGold = 1360,
+                RewardFood = 13,
+                EntryFoodCost = 7,
+                ExploreFoodCost = 10,
+                MapX = 322f,
+                MapY = 206f,
+                PlayerBaseHealth = 710f,
+                EnemyBaseHealth = 1680f,
+                EnemySpawnMin = 1.5f,
+                EnemySpawnMax = 2.12f,
+                EnemyHealthScale = 2.68f,
+                EnemyDamageScale = 2.56f,
+                WalkerWeight = 0.05f,
+                RunnerWeight = 0.06f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.24f,
+                CrusherWeight = 0.28f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.29f
+            },
+            new StageDefinition
+            {
+                StageNumber = 24,
+                StageName = "Choir Ruin",
+                MapId = "basilica",
+                MapName = "Hollow Basilica",
+                TerrainId = "cathedral",
+                Description = "The choir loft rains curses over the aisle while relic escorts try to pin the war wagon in place.",
+                RewardGold = 1470,
+                RewardFood = 14,
+                EntryFoodCost = 8,
+                ExploreFoodCost = 10,
+                MapX = 510f,
+                MapY = 410f,
+                PlayerBaseHealth = 730f,
+                EnemyBaseHealth = 1770f,
+                EnemySpawnMin = 1.46f,
+                EnemySpawnMax = 2.06f,
+                EnemyHealthScale = 2.76f,
+                EnemyDamageScale = 2.64f,
+                WalkerWeight = 0.04f,
+                RunnerWeight = 0.05f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.26f,
+                CrusherWeight = 0.3f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.3f
+            },
+            new StageDefinition
+            {
+                StageNumber = 25,
+                StageName = "Reliquary Steps",
+                MapId = "basilica",
+                MapName = "Hollow Basilica",
+                TerrainId = "reliquary",
+                Description = "Relic vault stairs narrow the line into a ceremonial kill zone guarded by elite undead and curse engines.",
+                RewardGold = 1590,
+                RewardFood = 14,
+                EntryFoodCost = 8,
+                ExploreFoodCost = 11,
+                MapX = 676f,
+                MapY = 262f,
+                PlayerBaseHealth = 750f,
+                EnemyBaseHealth = 1880f,
+                EnemySpawnMin = 1.4f,
+                EnemySpawnMax = 1.98f,
+                EnemyHealthScale = 2.86f,
+                EnemyDamageScale = 2.74f,
+                WalkerWeight = 0.04f,
+                RunnerWeight = 0.05f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.26f,
+                CrusherWeight = 0.32f,
+                BossWeight = 0f,
+                BossSpawnStartTime = 0f,
+                BonusWaveChance = 0.31f
+            },
+            new StageDefinition
+            {
+                StageNumber = 26,
+                StageName = "Sepulcher Crown",
+                MapId = "basilica",
+                MapName = "Hollow Basilica",
+                TerrainId = "reliquary",
+                Description = "Hollow Basilica boss stage. Reliquary flares and censer clouds hold until the Grave Lord claims the high altar.",
+                RewardGold = 1740,
+                RewardFood = 15,
+                EntryFoodCost = 8,
+                ExploreFoodCost = 11,
+                MapX = 780f,
+                MapY = 500f,
+                PlayerBaseHealth = 780f,
+                EnemyBaseHealth = 2020f,
+                EnemySpawnMin = 1.34f,
+                EnemySpawnMax = 1.92f,
+                EnemyHealthScale = 2.98f,
+                EnemyDamageScale = 2.86f,
+                WalkerWeight = 0.03f,
+                RunnerWeight = 0.05f,
+                BruteWeight = 0.24f,
+                SpitterWeight = 0.28f,
+                CrusherWeight = 0.34f,
+                BossWeight = 0.36f,
+                BossSpawnStartTime = 82f,
+                BonusWaveChance = 0.32f
             }
         };
     }

@@ -42,7 +42,7 @@ public static class OnlineRoomReportService
 			TicketId = ticket.TicketId,
 			JoinToken = ticket.JoinToken,
 			PlayerProfileId = GameState.Instance?.PlayerProfileId ?? "",
-			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Convoy",
+			PlayerCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
 			SubjectType = subjectType,
 			SubjectLabel = subjectLabel,
 			ReasonId = resolvedReasonId,

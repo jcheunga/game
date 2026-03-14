@@ -101,7 +101,7 @@ public sealed class UnitStats
             return "bloater";
         }
 
-        if (definition.AuraRadius > 0f || definition.DisplayName.Contains("Howler"))
+        if (definition.AuraRadius > 0f || HasIdToken(definition, "howler"))
         {
             return "howler";
         }
@@ -121,27 +121,27 @@ public sealed class UnitStats
             return "boss";
         }
 
-        if (definition.DisplayName.Contains("Defender"))
+        if (HasIdToken(definition, "defender"))
         {
             return "shield";
         }
 
-        if (definition.DisplayName.Contains("Marksman"))
+        if (HasIdToken(definition, "marksman"))
         {
             return "sniper";
         }
 
-        if (definition.BusRepairAmount > 0f || definition.DisplayName.Contains("Mechanic"))
+        if (definition.BusRepairAmount > 0f || HasIdToken(definition, "mechanic"))
         {
             return "support";
         }
 
-        if (definition.DisplayName.Contains("Ranger") || definition.DisplayName.Contains("Shooter"))
+        if (HasIdToken(definition, "ranger") || HasIdToken(definition, "shooter"))
         {
             return "gunner";
         }
 
-        if (definition.DisplayName.Contains("Raider"))
+        if (HasIdToken(definition, "raider"))
         {
             return "skirmisher";
         }
@@ -167,6 +167,12 @@ public sealed class UnitStats
         }
 
         return definition.IsPlayerSide ? "fighter" : "walker";
+    }
+
+    private static bool HasIdToken(UnitDefinition definition, string token)
+    {
+        return !string.IsNullOrWhiteSpace(definition?.Id) &&
+            definition.Id.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private static float ResolveVisualScale(UnitDefinition definition)
@@ -235,6 +241,7 @@ public partial class Unit : Node2D
     public float CurrentAttackDamage => AttackDamage * _currentAttackDamageScale;
     public bool ProvidesAura => AuraRadius > 0f && (AuraAttackDamageScale > 1.01f || AuraSpeedScale > 1.01f);
     public bool HasSpecialAbility => !string.IsNullOrWhiteSpace(SpecialAbilityId) && SpecialCooldown > 0.05f;
+    public float HealthRatio => MaxHealth <= 0.01f ? 0f : Mathf.Clamp(Health / MaxHealth, 0f, 1f);
 
     public bool IsDead => Health <= 0f;
 
@@ -246,9 +253,11 @@ public partial class Unit : Node2D
     private float _idleTimer;
     private float _currentAttackDamageScale = 1f;
     private float _currentSpeedScale = 1f;
+    private float _currentDamageTakenScale = 1f;
     private float _temporaryCombatBuffTimer;
     private float _temporaryAttackDamageScale = 1f;
     private float _temporarySpeedScale = 1f;
+    private float _temporaryDamageTakenScale = 1f;
     private bool _hasAuraBuff;
     private Color _bodyColor = Colors.White;
 
@@ -302,16 +311,22 @@ public partial class Unit : Node2D
         if (_temporaryCombatBuffTimer > 0.01f)
         {
             _currentAttackDamageScale = Mathf.Max(1f, _temporaryAttackDamageScale);
-            _currentSpeedScale = Mathf.Max(1f, _temporarySpeedScale);
-            _hasAuraBuff = true;
+            _currentSpeedScale = Mathf.Clamp(_temporarySpeedScale, 0.35f, 3f);
+            _currentDamageTakenScale = Mathf.Clamp(_temporaryDamageTakenScale, 0.25f, 2.5f);
+            _hasAuraBuff =
+                _temporaryAttackDamageScale > 1.001f ||
+                Mathf.Abs(_temporarySpeedScale - 1f) > 0.01f ||
+                _temporaryDamageTakenScale < 0.999f;
         }
         else
         {
             _currentAttackDamageScale = 1f;
             _currentSpeedScale = 1f;
+            _currentDamageTakenScale = 1f;
             _hasAuraBuff = false;
             _temporaryAttackDamageScale = 1f;
             _temporarySpeedScale = 1f;
+            _temporaryDamageTakenScale = 1f;
         }
     }
 
@@ -339,6 +354,33 @@ public partial class Unit : Node2D
 
         _temporaryAttackDamageScale = Mathf.Max(_temporaryAttackDamageScale, Mathf.Max(1f, attackDamageScale));
         _temporarySpeedScale = Mathf.Max(_temporarySpeedScale, Mathf.Max(1f, speedScale));
+        _temporaryCombatBuffTimer = Mathf.Max(_temporaryCombatBuffTimer, duration);
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
+    }
+
+    public void ApplyTemporarySpeedModifier(float speedScale, float duration)
+    {
+        if (duration <= 0.05f)
+        {
+            return;
+        }
+
+        var appliedScale = Mathf.Clamp(speedScale, 0.35f, 2.5f);
+        _temporarySpeedScale = appliedScale < 1f
+            ? Mathf.Min(_temporarySpeedScale, appliedScale)
+            : Mathf.Max(_temporarySpeedScale, appliedScale);
+        _temporaryCombatBuffTimer = Mathf.Max(_temporaryCombatBuffTimer, duration);
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
+    }
+
+    public void ApplyTemporaryDefenseModifier(float damageTakenScale, float duration)
+    {
+        if (duration <= 0.05f)
+        {
+            return;
+        }
+
+        _temporaryDamageTakenScale = Mathf.Min(_temporaryDamageTakenScale, Mathf.Clamp(damageTakenScale, 0.25f, 2.5f));
         _temporaryCombatBuffTimer = Mathf.Max(_temporaryCombatBuffTimer, duration);
         _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
     }
@@ -452,7 +494,7 @@ public partial class Unit : Node2D
     public float TakeDamage(float damage)
     {
         var previousHealth = Health;
-        Health -= damage * Mathf.Max(0.05f, DamageTakenScale);
+        Health -= damage * Mathf.Max(0.05f, DamageTakenScale * _currentDamageTakenScale);
         if (Health < 0f)
         {
             Health = 0f;
@@ -460,6 +502,19 @@ public partial class Unit : Node2D
 
         _hitFlashTimer = 0.2f;
         return Mathf.Max(0f, previousHealth - Health);
+    }
+
+    public float Heal(float amount)
+    {
+        if (amount <= 0f || Health >= MaxHealth)
+        {
+            return 0f;
+        }
+
+        var previousHealth = Health;
+        Health = Mathf.Min(MaxHealth, Health + amount);
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.18f);
+        return Mathf.Max(0f, Health - previousHealth);
     }
 
     public override void _Process(double delta)

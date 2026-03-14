@@ -22,6 +22,7 @@ public partial class MapMenu : Control
     private PanelContainer _routeBannerPanel = null!;
     private Label _routeTitleLabel = null!;
     private Label _routeSubtitleLabel = null!;
+    private Label _routeCampaignLabel = null!;
     private Label _routeProgressLabel = null!;
     private Button _exploreButton = null!;
     private Button _deployButton = null!;
@@ -29,7 +30,7 @@ public partial class MapMenu : Control
 
     private int _selectedStage = 1;
     private string _activeMapId = "city";
-    private string _convoyStatusMessage = "Use Convoy Shop to buy units, upgrade the bus, and set a 3-card squad.";
+    private string _convoyStatusMessage = "Use Caravan Armory to recruit units, fortify the war wagon, and set a 3-card squad.";
 
     public override void _Ready()
     {
@@ -101,7 +102,7 @@ public partial class MapMenu : Control
         _routeBannerPanel = new PanelContainer
         {
             Position = new Vector2(18f, 18f),
-            Size = new Vector2(324f, 120f)
+            Size = new Vector2(324f, 182f)
         };
         mapArea.AddChild(_routeBannerPanel);
 
@@ -125,7 +126,16 @@ public partial class MapMenu : Control
         };
         routeBannerStack.AddChild(_routeSubtitleLabel);
 
-        _routeProgressLabel = new Label();
+        _routeCampaignLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        routeBannerStack.AddChild(_routeCampaignLabel);
+
+        _routeProgressLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
         routeBannerStack.AddChild(_routeProgressLabel);
 
         foreach (var stage in GameData.Stages)
@@ -216,7 +226,7 @@ public partial class MapMenu : Control
 
         var convoyTitle = new Label
         {
-            Text = "Convoy Readiness"
+            Text = "Caravan Readiness"
         };
         sideContent.AddChild(convoyTitle);
 
@@ -251,7 +261,7 @@ public partial class MapMenu : Control
 
         var shopButton = new Button
         {
-            Text = "Open Convoy Shop",
+            Text = "Open Caravan Armory",
             CustomMinimumSize = new Vector2(0, 46)
         };
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
@@ -347,7 +357,7 @@ public partial class MapMenu : Control
         _deployButton.Text = $"Deploy To Stage {_selectedStage} (-{stageEntryFoodCost} food)";
         var canStartBattle = GameState.Instance.CanStartCampaignBattle(_selectedStage, out var deployValidationMessage);
         _deployStatusLabel.Text =
-            $"Convoy orders:\n{_convoyStatusMessage}\n" +
+            $"Caravan orders:\n{_convoyStatusMessage}\n" +
             $"Deploy readiness: {deployValidationMessage}";
 
         _deployButton.Disabled =
@@ -550,6 +560,8 @@ public partial class MapMenu : Control
         _routeTitleLabel.AddThemeColorOverride("font_color", Colors.White);
         _routeSubtitleLabel.Text = route.CampaignSubtitle;
         _routeSubtitleLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.82f));
+        _routeCampaignLabel.Text = CampaignPlanCatalog.BuildRoutePlanSummary(_activeMapId);
+        _routeCampaignLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.72f));
         var nextExploreText = TryGetNextStageForMap(_activeMapId, out var nextStage)
             ? $"   |   Next explore: S{nextStage.StageNumber} ({GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)"
             : "   |   Route fully explored";
@@ -625,9 +637,9 @@ public partial class MapMenu : Control
 
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Bus upgrades: Hull {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Pantry {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Dispatch {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Relay {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Next exploration: {nextExploreLine}\n" +
-            "Use Convoy Shop for purchases, upgrades, and squad edits.";
+            "Use Caravan Armory for purchases, upgrades, and squad edits.";
     }
 
     private string BuildSquadSummaryText()
@@ -639,7 +651,7 @@ public partial class MapMenu : Control
 
         if (deckUnits.Count == 0)
         {
-            return summary + "No active units. Open Convoy Shop and assign three cards.";
+            return summary + "No active units. Open Caravan Armory and assign three cards.";
         }
 
         for (var i = 0; i < deckUnits.Count; i++)
@@ -652,7 +664,7 @@ public partial class MapMenu : Control
 
         if (deckUnits.Count < GameState.Instance.DeckSizeLimit)
         {
-            summary += "\n\nDeck incomplete. Fill the remaining slots in Convoy Shop.";
+            summary += "\n\nDeck incomplete. Fill the remaining slots in Caravan Armory.";
         }
 
         return summary;

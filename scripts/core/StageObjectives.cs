@@ -183,7 +183,7 @@ public static class StageObjectives
         return type switch
         {
             "clear_route" => "Clear the route",
-            "bus_hull_ratio" => $"Finish with bus hull >= {Mathf.RoundToInt(ResolveBusHullThreshold(stage, objective) * 100f)}%",
+            "bus_hull_ratio" => $"Finish with war wagon hull >= {Mathf.RoundToInt(ResolveBusHullThreshold(stage, objective) * 100f)}%",
             "clear_within" => $"Clear within {ResolveTimeLimit(stage, objective):0}s",
             "deploy_limit" => $"Deploy no more than {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} units",
             "enemy_defeats" => $"Defeat at least {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} enemies",

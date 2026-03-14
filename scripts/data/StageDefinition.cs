@@ -6,7 +6,7 @@ public sealed class StageDefinition
     public int StageNumber { get; set; } = 1;
     public string StageName { get; set; } = "";
     public string MapId { get; set; } = "city";
-    public string MapName { get; set; } = "City Route";
+    public string MapName { get; set; } = "King's Road";
     public string TerrainId { get; set; } = "urban";
     public string Description { get; set; } = "";
     public int RewardGold { get; set; } = 40;

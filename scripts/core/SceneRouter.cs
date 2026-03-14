@@ -103,7 +103,7 @@ public partial class SceneRouter : Node
         return path switch
         {
             MapScene => "Campaign Map",
-            ShopScene => "Convoy Shop",
+            ShopScene => "Caravan Armory",
             MultiplayerScene => "Multiplayer Challenge",
             LanRaceScene => "LAN Race",
             EndlessScene => "Endless Prep",

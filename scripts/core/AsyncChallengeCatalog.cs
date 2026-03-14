@@ -151,7 +151,7 @@ public static class AsyncChallengeCatalog
             RationedRunId,
             "RAT",
             "Rationed Run",
-            "Convoy courage income is thinner and squad recovery drags. Strong test of deck order and discipline.",
+            "Caravan courage income is thinner and squad recovery drags. Strong test of deck order and discipline.",
             1.08f,
             1.05f,
             1f,
@@ -164,7 +164,7 @@ public static class AsyncChallengeCatalog
             SiegeNightId,
             "SGE",
             "Siege Night",
-            "The barricade is reinforced and the bus starts the run under heavier siege conditions.",
+            "The gatehouse is reinforced and the war wagon starts the run under heavier siege pressure.",
             1.1f,
             1.08f,
             1.18f,
@@ -178,7 +178,7 @@ public static class AsyncChallengeCatalog
             BlackoutRelayId,
             "BLK",
             "Blackout Relay",
-            "Challenge control keeps pulsing signal blackouts across the route. Time drops around forced jammer windows and convoy recovery discipline.",
+            "Challenge control keeps pulsing signal blackouts across the route. Time drops around forced hex windows and caravan recovery discipline.",
             1.08f,
             1.06f,
             1f,
@@ -350,7 +350,7 @@ public static class AsyncChallengeCatalog
         var targets = GetTargetScores(challenge);
         if (score >= targets.Ace)
         {
-            return "Convoy Ace";
+            return "Crown Ace";
         }
 
         if (score >= targets.Gold)

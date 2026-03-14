@@ -46,7 +46,7 @@ public sealed class LocalOnlineRoomDirectoryProvider : IOnlineRoomDirectoryProvi
 				index == 0 ? "Featured Lockstep Lobby" : "Featured Open Relay",
 				index == 0
 					? "Local stub room using a locked daily squad for fair async rematches."
-					: "Local stub room using the daily board with player convoy decks.",
+					: "Local stub room using the daily board with player squads.",
 				index == 0 ? "Ironhare" : "Northgate",
 				featured.Challenge.Code,
 				BuildBoardTitle(featured.Challenge.Stage),

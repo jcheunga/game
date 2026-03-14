@@ -46,7 +46,7 @@ This means the project is no longer at "empty prototype" status. It has a combat
 
 Main gaps versus the intended DAZW-style experience:
 
-- battle still uses prototype presentation instead of a strong bus/barricade fantasy
+- battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy
 - the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion
 - deployment was roster-based rather than deck/card-based
 - stages are still mostly tuning-driven rather than explicitly scripted
@@ -197,11 +197,11 @@ Objective: extend the current async/LAN multiplayer systems into a store-ready i
 
 This sprint should stay narrow and practical:
 
-1. lock the medieval fantasy theme bible and final battlefield framing
-2. define the first 10-unit roster and first 5 spells
-3. define the 10-map campaign target with 5+ stages per map
-4. keep the existing combat/progression structure but retheme future content toward medieval factions, siege pressure, and magic
-5. only expand content after the renamed/themed roster and map plan are coherent
+1. carry the first-pass fiction lock through the remaining menu, battle, and multiplayer copy
+2. expand authored districts toward the 10-map / 50-stage campaign target
+3. keep the existing combat/progression structure but retheme future content toward medieval factions, siege pressure, and magic
+4. replace remaining legacy convoy/bus/zombie phrasing in active player-facing flows
+5. only expand content after the renamed roster, route set, and stage plan are coherent
 
 ## Work Completed In This Sprint
 
@@ -210,7 +210,7 @@ This sprint should stay narrow and practical:
 - added deck selection controls on the campaign map
 - added per-unit deploy cooldown data
 - added cooldown-based deploy gating in battle
-- shifted battle framing from generic base-vs-hive toward bus-vs-barricade
+- shifted battle framing from generic base-vs-hive toward war wagon-vs-gatehouse
 - added stage-authored wave definitions and scripted enemy spawning
 - added persistent stage star ratings and basic mission goals
 - added persistent unit upgrades funded by the current prototype economy and applied in battle
@@ -250,7 +250,7 @@ This sprint should stay narrow and practical:
 - added one-time midpoint convoy assists so each active relay/cache/safehouse contact now has a player-side swing event during the segment too
 - added explicit endless boss checkpoints every 15 waves so survival now builds toward route-specific warlord surges with dedicated escort packs, HUD intel, and extra clear rewards
 - replaced the prototype scrap/fuel layer with a persistent gold/food economy, including stage entry costs and exploration costs
-- added owned-unit purchasing, persistent unit leveling, and bus/base upgrades powered by gold
+- added owned-unit purchasing, persistent unit leveling, and war wagon/base upgrades powered by gold
 - added a dedicated convoy shop screen so purchases, upgrades, deck edits, and route intel are no longer mixed into the map view
 - expanded the bus upgrade track with a deploy-cooldown `Dispatch Console` upgrade and surfaced upgrade previews in the shop
 - expanded the bus upgrade track again with an anti-jam `Signal Relay` upgrade that shortens jammer windows and softens their courage/cooldown disruption
@@ -341,25 +341,32 @@ This sprint should stay narrow and practical:
 - added a top-level multiplayer stack smoke suite, so LAN plus the full HTTP multiplayer/backend path can be rerun from one command before deeper transport work lands
 - hardened the LAN and HTTP multiplayer smoke harnesses for reruns, with per-run LAN ports and reusable stub-server sockets so repeated stack-suite runs stop cross-connecting rooms or failing on recently closed ports
 - added stale internet-room seat recovery with direct room rejoin plus quick-match fallback, and wired that recovery path into manual refresh, the seat button, and app-resume recovery so expired runner seats no longer stop at a dead-end warning
-- expanded the player roster again with a `Mechanic` support unit that can repair the bus and is surfaced through the shop recommendation board
-- expanded the campaign with a third `Foundry Line` district, including four new scripted stages and endless-route support
-- expanded the campaign again with a fourth `Quarantine Wall` district, including four new scripted stages, new checkpoint/decon/lab/blacksite battle palettes, and endless-route support for ranged-support/saboteur-heavy pressure
-- added a late-game `Breacher` unit that specializes in higher barricade/base damage for reinforced stages
-- added a `Saboteur` enemy archetype that dives the bus/objective path and is now seeded into Foundry stages and endless Foundry pressure
+- expanded the player roster again with a `Siege Engineer` support unit that can repair the war wagon and is surfaced through the shop recommendation board
+- expanded the campaign with a third `Emberforge March` district, including four new scripted stages and endless-route support
+- expanded the campaign again with a fourth `Ashen Ward` district, including four new scripted stages, new checkpoint/decon/lab/vault battle palettes, and endless-route support for ranged-support/sapper-heavy pressure
+- expanded the campaign to a fifth `Thornwall Pass` district, including five new scripted stages, new pass/shrine/watchfort battle palettes, and endless-route support for faster raider/sapper pressure
+- expanded the campaign again with a sixth `Hollow Basilica` district, including five new scripted stages, new cathedral/ossuary/reliquary battle palettes, and endless-route support for splitter/caster/hex pressure
+- added a late-game `Halberdier` unit that specializes in higher gate/base damage for reinforced stages
+- added a `Sapper` enemy archetype that dives the war wagon/objective path and is now seeded into Emberforge stages and endless Emberforge pressure
 - added stage-authored battlefield hazards with telegraph rings, timed pulses, loadout intel, and Foundry-specific heat/rail/furnace encounters
 - added a new hazard-hit mission objective type so Foundry stars can reward actually navigating battlefield hazards cleanly
-- added a `Howler` support enemy with a live ally buff aura, plus Harbor/Foundry/endless seeding so late-game waves now mix in support-priority targets instead of only raw frontline pressure
-- added a `Jammer` support enemy that can suppress courage gain and spike card recovery, plus late Quarantine/endless seeding so enemy pressure now attacks convoy tempo as well as hull
+- added a `Dread Herald` support enemy with a live ally buff aura, plus Saltwake/Emberforge/endless seeding so late-game waves now mix in support-priority targets instead of only raw frontline pressure
+- added a `Hexer` support enemy that can suppress courage gain and spike card recovery, plus late Ashen Ward/endless seeding so enemy pressure now attacks caravan tempo as well as hull
 - added a `signal_jam_limit` mission objective type and seeded it into jammer-heavy Quarantine stages so support disruption now matters to star play too
 - upgraded shared encounter intel so map/loadout/multiplayer briefings now call out support pressure like howlers, jammers, saboteurs, and spitters instead of only raw threat totals
 - carried those support-pressure tags into campaign node tooltips and live next-wave battle intel so the player keeps the same read after deployment
 - added live battle support-pressure telemetry so active howlers, jammers, saboteurs, spitters, bosses, and signal-jam windows stay visible while the fight is running
-- upgraded the `Overlord` boss from a large stat block into a real rally-command encounter that buffs nearby infected and spawns escort bodies during boss stages
-- expanded the player roster again with a `Grenadier` splash-damage card and the shared AoE attack support needed to counter clustered Harbor/Foundry waves
-- expanded the player roster again with a late-game `Coordinator` support card that uses a live ally aura to boost nearby convoy units against support-heavy Quarantine and late-route waves
+- upgraded the `Grave Lord` boss from a large stat block into a real rally-command encounter that buffs nearby undead and spawns escort bodies during boss stages
+- expanded the player roster again with an `Alchemist` splash-damage card and the shared AoE attack support needed to counter clustered Saltwake/Emberforge waves
+- expanded the player roster again with a late-game `Battle Monk` support card that uses a live ally aura to boost nearby caravan units against support-heavy Ashen Ward and late-route waves
+- added the first spell/magic card layer with persistent spell ownership, shop/loadout decking, and live battle casts for `Fireball`, `Heal`, `Frost Burst`, `Lightning Strike`, and `Barrier Ward`
+- added a first-pass medieval fantasy theme bible centered on the `Lantern Caravan`, the `Rotbound Host`, and `war wagon vs gatehouse` battlefield framing
+- rethemed the main menu, route catalog, unit display names, and stage/map display text toward the new fantasy fiction while keeping internal IDs and balance data stable
 - started the audio pass with a shared procedural audio layer for UI interactions, scene ambience pulses, deploys, impacts, hazard warnings, base hits, and win/loss stingers
 - added persistent audio settings on the main menu so SFX level, ambience level, and mute state survive saves instead of resetting every boot
 - moved audio/interface controls into a shared settings screen so campaign, shop, loadout, endless, and multiplayer prep all expose the same persistent options flow
+- defined the long-term 10-district / 50-stage campaign target in a dedicated campaign plan and surfaced authored-vs-target progress on the title screen and campaign map
+- carried the fiction lock deeper into runtime content by retheming lingering stage/wave labels, spell copy, endless fork/directive/contact text, and fallback data away from modern/prototype wording
 
 ## Recommended Build Order After This Commit
 

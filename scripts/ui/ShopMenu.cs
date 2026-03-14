@@ -62,7 +62,7 @@ public partial class ShopMenu : Control
 
         titleRow.AddChild(new Label
         {
-            Text = "Convoy Shop",
+            Text = "Caravan Armory",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center
         });
@@ -283,18 +283,20 @@ public partial class ShopMenu : Control
     private string BuildSummaryText()
     {
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
         var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextStage, out var exploreMessage)
             ? $"Next exploration: Stage {nextStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food."
             : exploreMessage;
 
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Bus hull level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Pantry level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Dispatch level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Relay level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
+            $"Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
+            $"War wagon plating level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Stores level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
+            $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
-            "- Gold buys units, unit levels, and bus upgrades.\n" +
+            "- Gold buys units, spells, unit levels, and war wagon upgrades.\n" +
             "- Food pays for stage entry and map exploration.\n\n" +
             nextExploreLine;
     }
@@ -352,6 +354,24 @@ public partial class ShopMenu : Control
             }
         }
 
+        var pendingSpells = GameData.GetPlayerSpells()
+            .Where(spell => !GameState.Instance.IsSpellOwned(spell.Id))
+            .OrderBy(spell => spell.UnlockStage)
+            .Take(2)
+            .ToArray();
+        if (pendingSpells.Length > 0)
+        {
+            intel += "\n\nNext spell unlocks:";
+            foreach (var spell in pendingSpells)
+            {
+                var unlockStage = GameData.GetStage(Mathf.Clamp(spell.UnlockStage, 1, GameState.Instance.MaxStage));
+                var unlockState = GameState.Instance.IsSpellAvailableForPurchase(spell.Id)
+                    ? $"Archive open  |  {GameState.Instance.GetSpellPurchaseCost(spell.Id)} gold"
+                    : $"Explore stage {spell.UnlockStage}";
+                intel += $"\n{spell.DisplayName} - {unlockStage.MapName} S{spell.UnlockStage}  |  {unlockState}";
+            }
+        }
+
         return intel;
     }
 
@@ -384,7 +404,7 @@ public partial class ShopMenu : Control
         {
             _recommendationStack.AddChild(new Label
             {
-                Text = "No urgent shop actions. The convoy is broadly ready for the selected stage.",
+                Text = "No urgent armory actions. The caravan is broadly ready for the selected stage.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
             return;
@@ -434,7 +454,7 @@ public partial class ShopMenu : Control
                     seen,
                     new ShopRecommendation(
                         $"deck:{reserveUnit.Id}",
-                        "Fill the convoy deck",
+                        "Fill the active squad",
                         $"{reserveUnit.DisplayName} is already owned and can fill the empty squad slot immediately.",
                         $"Add {reserveUnit.DisplayName}",
                         () =>
@@ -452,14 +472,21 @@ public partial class ShopMenu : Control
                 seen,
                 GameData.PlayerMarksmanId,
                 "Counter ranged pressure",
-                $"Stage {stage.StageNumber} fields {spitterCount} spitter contacts. A long-range card helps clean them up before they chip the bus.");
+                $"Stage {stage.StageNumber} fields {spitterCount} blight caster contacts. A long-range card helps clean them up before they chip the war wagon.");
 
             TryAddUnitRecommendation(
                 recommendations,
                 seen,
                 GameData.PlayerRangerId,
                 "Add mobile ranged support",
-                "Ranger gives the convoy another projectile unit for stages that stack spitters and mixed backline pressure.");
+                "Crossbowman gives the caravan another projectile unit for stages that stack blight casters and mixed backline pressure.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellLightningStrikeId,
+                "Crack priority backliners",
+                "Lightning Strike tags ranged or support threats before they sit safely behind the front.");
         }
 
         if (howlerCount > 0)
@@ -468,15 +495,22 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 GameData.PlayerMarksmanId,
-                "Delete support howlers early",
-                $"Stage {stage.StageNumber} includes {howlerCount} howler contacts that buff nearby infected speed and damage. Marksman helps remove them before the lane spikes.");
+                "Delete support heralds early",
+                $"Stage {stage.StageNumber} includes {howlerCount} dread herald contacts that buff nearby undead speed and damage. Mage helps remove them before the lane spikes.");
 
             TryAddUnitRecommendation(
                 recommendations,
                 seen,
                 GameData.PlayerRangerId,
                 "Pressure the howl lane",
-                "Ranger gives the convoy a second fast ranged answer when support infected sit behind heavier bodies.");
+                "Crossbowman gives the caravan a second fast ranged answer when support undead sit behind heavier bodies.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellLightningStrikeId,
+                "Punish exposed supports",
+                "Lightning Strike gives the caravan a direct answer when dread heralds or hexers hide behind heavier bodies.");
         }
 
         if (howlerCount > 0 ||
@@ -488,10 +522,10 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 GameData.PlayerCoordinatorId,
-                "Force-multiply the convoy",
+                "Force-multiply the caravan",
                 stage.MapId.Equals(RouteCatalog.QuarantineId, StringComparison.OrdinalIgnoreCase)
-                    ? "Quarantine stages pile ranged support and breach dives into the same lane. Coordinator buffs nearby allies so the convoy trades better through long late-game pushes."
-                    : "Coordinator adds a live attack/speed aura, which helps the whole lane keep up once support infected and heavy bodies start stacking together.");
+                    ? "Ashen Ward stages pile ranged support and breach dives into the same lane. Battle Monk buffs nearby allies so the caravan trades better through long late-game pushes."
+                    : "Battle Monk adds a live attack and speed aura, which helps the whole lane keep up once support undead and heavy bodies start stacking together.");
         }
 
         if (jammerCount > 0)
@@ -500,15 +534,22 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 BaseUpgradeCatalog.SignalRelayId,
-                "Harden convoy comms",
-                $"Stage {stage.StageNumber} includes {jammerCount} jammer contacts that stall courage flow and drag card recovery. Signal Relay cuts jam uptime and blunts the suppression window.");
+                "Harden caravan wards",
+                $"Stage {stage.StageNumber} includes {jammerCount} hexer contacts that stall courage flow and drag card recovery. Rune Beacon cuts jam uptime and blunts the suppression window.");
 
             TryAddUnitRecommendation(
                 recommendations,
                 seen,
                 GameData.PlayerMarksmanId,
-                "Remove jammers early",
-                "Marksman helps pick off jammer supports before they chain signal disruption into the next surge.");
+                "Remove hexers early",
+                "Mage helps pick off hexer supports before they chain signal disruption into the next surge.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellBarrierWardId,
+                "Stabilize a jammed lane",
+                "Barrier Ward buys time through suppression windows when the caravan cannot answer immediately with normal deploy tempo.");
         }
 
         if (splitterCount >= 2 || walkerCount >= 8 || (howlerCount > 0 && splitterCount > 0))
@@ -518,7 +559,14 @@ public partial class ShopMenu : Control
                 seen,
                 GameData.PlayerGrenadierId,
                 "Break clustered waves",
-                $"Stage {stage.StageNumber} stacks grouped contacts and support bodies. Grenadier splash helps clear splitter packs and buffed crowds before they snowball.");
+                $"Stage {stage.StageNumber} stacks grouped contacts and support bodies. Alchemist splash helps clear bone nests and buffed crowds before they snowball.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellFireballId,
+                "Burn down crowd spikes",
+                "Fireball is the fastest answer when grouped waves start stacking faster than the unit line can chew through them.");
         }
 
         if (heavyCount > 0)
@@ -527,15 +575,15 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 GameData.PlayerDefenderId,
-                "Brace for heavy infected",
-                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Defender upgrades help the line survive crushers and brutes.");
+                "Brace for heavy undead",
+                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Shield Knight upgrades help the line survive bone juggernauts and grave brutes.");
 
             TryAddBaseRecommendation(
                 recommendations,
                 seen,
                 BaseUpgradeCatalog.HullPlatingId,
-                "Reinforce the bus",
-                "Hull Plating buys more margin against heavy pressure and missed contact pickups.");
+                "Reinforce the war wagon",
+                "War Wagon Plating buys more margin against heavy pressure and missed contact pickups.");
         }
 
         if (barricadeHeavyStage)
@@ -544,8 +592,8 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 GameData.PlayerBreacherId,
-                "Punch through the barricade",
-                "This district hardens the enemy objective. Breacher gives the convoy a stronger base-damage card for reinforced late-game stages.");
+                "Punch through the gatehouse",
+                "This district hardens the enemy objective. Halberdier gives the caravan a stronger base-damage card for reinforced late-game stages.");
         }
 
         if (busSensitiveObjective || StageEncounterIntel.ResolveThreatRating(stage) is "Severe" or "Extreme")
@@ -554,8 +602,15 @@ public partial class ShopMenu : Control
                 recommendations,
                 seen,
                 GameData.PlayerMechanicId,
-                "Protect the bus hull",
-                "This stage cares about hull preservation. Mechanic can patch the bus between surges when the lane is briefly stable.");
+                "Protect the war wagon hull",
+                "This stage cares about hull preservation. Siege Engineer can patch the war wagon between surges when the lane is briefly stable.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellHealId,
+                "Patch the caravan on demand",
+                "Heal lets the run recover a cracked lane or war wagon hull immediately instead of waiting for a safe Siege Engineer window.");
         }
 
         if (hazardHeavyStage)
@@ -565,7 +620,14 @@ public partial class ShopMenu : Control
                 seen,
                 BaseUpgradeCatalog.HullPlatingId,
                 "Buffer hazard pulses",
-                "This stage has live battlefield hazards. Extra hull buys time when vents or bursts clip the convoy line.");
+                "This stage has live battlefield hazards. Extra hull buys time when vents or bursts clip the caravan line.");
+
+            TryAddSpellRecommendation(
+                recommendations,
+                seen,
+                GameData.SpellFrostBurstId,
+                "Slow hazard pileups",
+                "Frost Burst holds dense pushes in telegraphed hazard zones so the caravan has more time to reposition and recover.");
         }
 
         if (runnerCount >= 3 || saboteurCount > 0)
@@ -576,8 +638,8 @@ public partial class ShopMenu : Control
                 GameData.PlayerBrawlerId,
                 "Meet fast rushes early",
                 saboteurCount > 0
-                    ? $"Stage {stage.StageNumber} includes {saboteurCount} saboteur contacts that dive the bus. Brawler upgrades help intercept them before they cash in base damage."
-                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. Brawler upgrades stabilize the front line.");
+                    ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts that dive the war wagon. Swordsman upgrades help intercept them before they cash in base damage."
+                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. Swordsman upgrades stabilize the front line.");
 
             TryAddUnitRecommendation(
                 recommendations,
@@ -585,8 +647,8 @@ public partial class ShopMenu : Control
                 GameData.PlayerRaiderId,
                 "Add a fast skirmisher",
                 saboteurCount > 0
-                    ? "Raider helps run down saboteurs and peel pressure off the bus before they convert into barricade damage."
-                    : "Raider helps cover runner-heavy stages and rotate pressure away from the bus.");
+                    ? "Cavalry Rider helps run down sappers and peel pressure off the war wagon before they convert into gatehouse damage."
+                    : "Cavalry Rider helps cover ghoul-heavy stages and rotate pressure away from the war wagon.");
         }
 
         TryAddBaseRecommendation(
@@ -594,14 +656,14 @@ public partial class ShopMenu : Control
             seen,
             BaseUpgradeCatalog.DispatchConsoleId,
             "Speed up card recovery",
-            "Dispatch Console shortens deploy recovery so the convoy can answer waves with fewer dead turns.");
+            "March Drum shortens card recovery so the caravan can answer waves with fewer dead turns.");
 
         TryAddBaseRecommendation(
             recommendations,
             seen,
             BaseUpgradeCatalog.PantryId,
             "Expand courage economy",
-            "Pantry upgrades let the convoy front-load bigger defenses and recover faster after expensive drops.");
+            "Caravan Stores let the caravan front-load bigger defenses and recover faster after expensive drops.");
 
         if (recommendations.Count < 3)
         {
@@ -718,7 +780,7 @@ public partial class ShopMenu : Control
                 new ShopRecommendation(
                     $"deck:{unit.Id}",
                     title,
-                    $"{rationale}\n{unit.DisplayName} is owned and ready to slot into the active convoy.",
+                    $"{rationale}\n{unit.DisplayName} is owned and ready to slot into the active squad.",
                     $"Add {unit.DisplayName}",
                     () =>
                     {
@@ -744,6 +806,63 @@ public partial class ShopMenu : Control
                         _statusLabel.Text = $"Last report:\n{message}";
                     },
                     GameState.Instance.Gold < upgradeCost));
+        }
+
+        return false;
+    }
+
+    private bool TryAddSpellRecommendation(
+        List<ShopRecommendation> recommendations,
+        HashSet<string> seen,
+        string spellId,
+        string title,
+        string rationale)
+    {
+        var spell = GameData.GetSpell(spellId);
+        var available = GameState.Instance.IsSpellAvailableForPurchase(spell.Id);
+        var owned = GameState.Instance.IsSpellOwned(spell.Id);
+        var equipped = owned && GameState.Instance.IsSpellInActiveDeck(spell.Id);
+        var canEquip = owned && !equipped && GameState.Instance.ActiveDeckSpellIds.Count < GameState.Instance.SpellDeckSizeLimit;
+
+        if (!available)
+        {
+            return false;
+        }
+
+        if (!owned)
+        {
+            var purchaseCost = GameState.Instance.GetSpellPurchaseCost(spell.Id);
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"buy_spell:{spell.Id}",
+                    title,
+                    $"{rationale}\nCost: {purchaseCost} gold.",
+                    $"Scribe {spell.DisplayName}",
+                    () =>
+                    {
+                        GameState.Instance.TryPurchaseSpell(spell.Id, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    },
+                    GameState.Instance.Gold < purchaseCost));
+        }
+
+        if (canEquip)
+        {
+            return TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"deck_spell:{spell.Id}",
+                    title,
+                    $"{rationale}\n{spell.DisplayName} is owned and can fill an empty spell slot immediately.",
+                    $"Equip {spell.DisplayName}",
+                    () =>
+                    {
+                        GameState.Instance.ToggleDeckSpell(spell.Id, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    }));
         }
 
         return false;
@@ -823,6 +942,7 @@ public partial class ShopMenu : Control
     private string BuildDeckSummaryText()
     {
         var deckUnits = GameState.Instance.GetActiveDeckUnits();
+        var deckSpells = GameState.Instance.GetActiveDeckSpells();
         if (deckUnits.Count == 0)
         {
             return "No units in the active deck.";
@@ -830,7 +950,8 @@ public partial class ShopMenu : Control
 
         var lines =
             $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
-            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
+            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n" +
+            $"Magic: {(deckSpells.Count == 0 ? "none equipped" : string.Join(", ", deckSpells.Select(spell => spell.DisplayName)))}";
         for (var i = 0; i < deckUnits.Count; i++)
         {
             var unit = deckUnits[i];
@@ -882,12 +1003,12 @@ public partial class ShopMenu : Control
         return upgrade.Id switch
         {
             BaseUpgradeCatalog.HullPlatingId =>
-                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerBaseHealthScaleAtLevel(level) - 1f) * 100f)}% bus hull",
+                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerBaseHealthScaleAtLevel(level) - 1f) * 100f)}% war wagon hull",
             BaseUpgradeCatalog.PantryId =>
                 $"+{GameState.Instance.GetPlayerCourageMaxBonusAtLevel(level):0} max courage  |  " +
                 $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerCourageGainScaleAtLevel(level) - 1f) * 100f)}% gain",
             BaseUpgradeCatalog.DispatchConsoleId =>
-                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% deploy recovery",
+                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% card recovery",
             BaseUpgradeCatalog.SignalRelayId =>
                 $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamDurationScaleAtLevel(level)) * 100f)}% jam time  |  " +
                 $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamCooldownPenaltyScaleAtLevel(level)) * 100f)}% jam cooldown hit  |  " +
@@ -911,6 +1032,16 @@ public partial class ShopMenu : Control
         foreach (var unit in GameData.GetPlayerUnits())
         {
             _unitStack.AddChild(BuildUnitPanel(unit));
+        }
+
+        _unitStack.AddChild(new Label
+        {
+            Text = "Spells"
+        });
+
+        foreach (var spell in GameData.GetPlayerSpells())
+        {
+            _unitStack.AddChild(BuildSpellPanel(spell));
         }
     }
 
@@ -1043,6 +1174,114 @@ public partial class ShopMenu : Control
         return panel;
     }
 
+    private Control BuildSpellPanel(SpellDefinition spell)
+    {
+        var owned = GameState.Instance.IsSpellOwned(spell.Id);
+        var available = GameState.Instance.IsSpellAvailableForPurchase(spell.Id);
+        var equipped = owned && GameState.Instance.IsSpellInActiveDeck(spell.Id);
+        var purchaseCost = GameState.Instance.GetSpellPurchaseCost(spell.Id);
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 158f),
+            SelfModulate = spell.GetTint().Darkened(0.12f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 8);
+        padding.AddChild(stack);
+
+        var statusLine = !available
+            ? $"Locked until stage {spell.UnlockStage}"
+            : !owned
+                ? $"Archive price: {purchaseCost} gold"
+                : equipped
+                    ? "Owned  |  Equipped"
+                    : "Owned  |  Reserve";
+
+        stack.AddChild(new Label
+        {
+            Text = $"{spell.DisplayName}  |  Magic Card"
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = statusLine,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = SpellText.BuildInlineSummary(spell),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = spell.Description,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(row);
+
+        var deckButton = new Button
+        {
+            Text = !owned
+                ? "Scribe First"
+                : equipped
+                    ? "Remove Spell"
+                    : "Equip Spell",
+            CustomMinimumSize = new Vector2(170f, 0f),
+            Disabled = !owned
+        };
+        deckButton.Pressed += () =>
+        {
+            GameState.Instance.ToggleDeckSpell(spell.Id, out var message);
+            _statusLabel.Text = $"Last report:\n{message}";
+            RefreshUi();
+        };
+        row.AddChild(deckButton);
+
+        var actionButton = new Button
+        {
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+
+        if (!available)
+        {
+            actionButton.Text = $"Explore S{spell.UnlockStage}";
+            actionButton.Disabled = true;
+        }
+        else if (!owned)
+        {
+            actionButton.Text = purchaseCost > 0 ? $"Scribe {purchaseCost} gold" : "Prepare Spell";
+            actionButton.Disabled = GameState.Instance.Gold < purchaseCost;
+            actionButton.Pressed += () =>
+            {
+                GameState.Instance.TryPurchaseSpell(spell.Id, out var message);
+                _statusLabel.Text = $"Last report:\n{message}";
+                RefreshUi();
+            };
+        }
+        else
+        {
+            actionButton.Text = equipped ? "Equipped" : "Ready To Equip";
+            actionButton.Disabled = equipped;
+        }
+
+        row.AddChild(actionButton);
+        return panel;
+    }
+
     private void RebuildBaseUpgradePanels()
     {
         foreach (var child in _baseStack.GetChildren())
@@ -1052,7 +1291,7 @@ public partial class ShopMenu : Control
 
         _baseStack.AddChild(new Label
         {
-            Text = "Bus Upgrades"
+            Text = "War Wagon Upgrades"
         });
 
         foreach (var upgrade in BaseUpgradeCatalog.GetAll())

@@ -28,11 +28,11 @@ public static class EndlessBoonCatalog
             "Start the run with +25 courage so the opening lane stabilizes faster."),
         new(
             ReinforcedBusId,
-            "Reinforced Bus",
-            "The convoy starts with +20% bus hull for longer survival against spikes."),
+            "Reinforced Wagon",
+            "The caravan starts with +20% war wagon hull for longer survival against spikes."),
         new(
             SalvageCacheId,
-            "Salvage Cache",
+            "Supply Cache",
             "Endless run gold rewards are increased by 25% when the run ends.")
     };
 

@@ -105,6 +105,78 @@ public partial class MapPathCanvas : Control
                     true);
             }
         }
+        else if (mapId == "thornwall")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 132f, Size.X, 84f), new Color("223140", 0.54f), true);
+
+            for (var i = 0; i < 5; i++)
+            {
+                var left = Mathf.Lerp(-24f, Size.X - 180f, i / 4f);
+                var peak = left + 90f + ((i % 2) * 22f);
+                var right = left + 190f;
+                DrawColoredPolygon(
+                    new[]
+                    {
+                        new Vector2(left, Size.Y - 90f),
+                        new Vector2(peak, 118f + ((i % 2) * 26f)),
+                        new Vector2(right, Size.Y - 90f)
+                    },
+                    new Color("d8e2f0", 0.12f));
+                DrawLine(
+                    new Vector2(peak - 20f, 132f + ((i % 2) * 24f)),
+                    new Vector2(peak + 10f, 188f + ((i % 2) * 18f)),
+                    new Color(1f, 1f, 1f, 0.16f),
+                    4f,
+                    true);
+            }
+
+            for (var i = 0; i < 10; i++)
+            {
+                var x = Mathf.Lerp(54f, Size.X - 54f, i / 9f);
+                var y = 72f + ((i % 3) * 18f);
+                DrawLine(
+                    new Vector2(x - 16f, y),
+                    new Vector2(x + 8f, y + 22f),
+                    new Color("f1faee", 0.18f),
+                    3f,
+                    true);
+            }
+        }
+        else if (mapId == "basilica")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 128f, Size.X, 80f), new Color("2a241d", 0.56f), true);
+
+            for (var i = 0; i < 5; i++)
+            {
+                var x = Mathf.Lerp(92f, Size.X - 92f, i / 4f);
+                DrawArc(
+                    new Vector2(x, 132f + ((i % 2) * 18f)),
+                    44f,
+                    Mathf.Pi,
+                    Mathf.Tau,
+                    18,
+                    new Color("fef3c7", 0.12f),
+                    4f);
+                DrawLine(
+                    new Vector2(x - 44f, 132f + ((i % 2) * 18f)),
+                    new Vector2(x - 44f, Size.Y - 122f),
+                    new Color(1f, 0.97f, 0.86f, 0.08f),
+                    5f,
+                    true);
+                DrawLine(
+                    new Vector2(x + 44f, 132f + ((i % 2) * 18f)),
+                    new Vector2(x + 44f, Size.Y - 122f),
+                    new Color(1f, 0.97f, 0.86f, 0.08f),
+                    5f,
+                    true);
+            }
+
+            for (var i = 0; i < 12; i++)
+            {
+                var x = Mathf.Lerp(42f, Size.X - 42f, i / 11f);
+                DrawCircle(new Vector2(x, Size.Y - 92f - ((i % 2) * 8f)), 3f, new Color("ffd166", 0.55f));
+            }
+        }
         else
         {
             for (var i = 0; i < 7; i++)

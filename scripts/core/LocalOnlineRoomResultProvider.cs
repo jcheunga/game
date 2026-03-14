@@ -26,7 +26,7 @@ public sealed class LocalOnlineRoomResultProvider : IOnlineRoomResultProvider
 		{
 			RoomId = roomId,
 			BoardCode = boardCode,
-			PlayerCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Convoy" : request.PlayerCallsign.Trim(),
+			PlayerCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Lantern" : request.PlayerCallsign.Trim(),
 			PlayerProfileId = request.PlayerProfileId ?? "",
 			Score = Math.Max(0, request.Score),
 			StarsEarned = Math.Max(0, request.StarsEarned),

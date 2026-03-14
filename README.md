@@ -1,9 +1,13 @@
 # Game (Godot + C#)
 
-Godot `4.6.1` Mono project with a Dead Ahead-style prototype loop:
+Godot `4.6.1` Mono project with a Dead Ahead-style structure and an original medieval fantasy siege wrapper:
 main menu -> campaign map/endless prep -> loadout briefing -> freefield battle.
 
+Current fiction lock: `Lantern Caravan` vs the `Rotbound Host`, framed as `war wagon vs gatehouse`.
+
 Roadmap and milestone plan: `ROADMAP.md`
+Theme reference: `THEME_BIBLE.md`
+Campaign target reference: `CAMPAIGN_PLAN.md`
 
 ## Requirements
 
@@ -57,9 +61,9 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
 ## Prototype controls
 
 - Main menu:
-  - Shows live convoy progress, unlocked-stage count, gold/food, next deployment, and active squad summary
+  - Shows live caravan progress, unlocked-stage count, authored campaign progress, gold/food, next deployment, and active squad summary
   - `Start Campaign`: opens map
-  - `Convoy Shop`: opens the dedicated unit/base upgrade screen
+  - `Caravan Armory`: opens the dedicated unit/base upgrade screen
   - `Endless Run`: opens the survival-mode prep screen
   - `Multiplayer Challenge`: opens the async challenge prep screen
   - `Settings`: opens the shared audio/interface settings screen
@@ -71,7 +75,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
 - Multiplayer challenge:
   - Build or import a shareable challenge code like `CH-04-PRS-4821`
   - Browse a daily featured challenge queue generated from unlocked stages
-  - Featured boards can lock everyone to the same 3-card convoy for fairer async score races
+  - Featured boards can lock everyone to the same 3-card squad for fairer async score races
   - Pin challenge codes to keep rematch boards saved locally
   - `Refresh Online` now also pulls a provider-backed internet room directory, so the multiplayer screen can preview remote room boards before full internet room join exists
   - `Refresh Online` now also refreshes the provider-backed player profile/auth snapshot used by the internet multiplayer stack
@@ -105,10 +109,10 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - LAN rooms now also track per-peer ready state and block launch until the synced board is armed on every connected machine
   - LAN rooms now surface a dedicated launch-readiness panel that names the active runner pool, deck blockers, ready blockers, and spectators instead of leaving launch state implicit
   - LAN race end screens now route back through the room-rematch flow instead of defaulting to a solo async retry path
-  - Convoy call signs are now persisted in Settings and used across LAN room labels, ready states, and scoreboards
+  - Caravan call signs are now persisted in Settings and used across LAN room labels, ready states, and scoreboards
   - LAN room summaries now also show live peer race state, so the lobby can tell who is still in prep, who is currently in battle, and who has already submitted a result
-  - Player-deck LAN boards now also sync each peer's current convoy deck and active deck synergy into the room summary before launch
-  - Changing cards in a LAN room now clears that runner's ready state, and player-deck boards will not launch until every synced runner has a full 3-card convoy
+  - Player-deck LAN boards now also sync each peer's current squad and active deck synergy into the room summary before launch
+  - Changing cards in a LAN room now clears that runner's ready state, and player-deck boards will not launch until every synced runner has a full 3-card squad
   - Active LAN races now also stream low-bandwidth live telemetry back into the room, so racing peers show current time, hull, and defeats before the final scoreboard submission lands
   - The LAN screen now has a dedicated race monitor panel separate from the final scoreboard, so live progress and completed submissions stay readable during a room race
   - LAN races now also use a shared load barrier and countdown, so combat does not start until every runner has finished loading into battle
@@ -151,31 +155,34 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Get live ghost split feedback on deploys and a result-screen delta versus the armed benchmark
   - Inspect the latest local run tape, including deck context, stored score split, and deployment timeline for the selected board
   - Review recent local attempts for the current code and recent challenge queue history
-  - `Convoy Shop`: adjust the active squad and upgrades before posting a score
+  - `Caravan Armory`: adjust the active squad and upgrades before posting a score
 - Endless prep:
-  - Choose `City Route`, `Harbor Front`, `Foundry Line`, or `Quarantine Wall` for the survival run
+  - Choose `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, or `Hollow Basilica` for the survival run
   - Pick one temporary opening boon before the run starts
   - Review the route-specific boss checkpoint that arrives every 15 waves and what it pays out
   - Review best endless wave/time, route pressure profile, and active squad stats
-  - `Deploy Endless Convoy`: start the endless survival battle
-  - `Convoy Shop`: buy upgrades and edit the active squad before the run
+  - `Begin Endless March`: start the endless survival battle
+  - `Caravan Armory`: buy upgrades and edit the active squad before the run
 - Campaign map:
-  - Switch between `City Route`, `Harbor Front`, `Foundry Line`, and `Quarantine Wall` in the map selector
-  - Review route banner progress, earned stars, and route-specific stage styling on the map
+  - Switch between `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, and `Hollow Basilica` in the map selector
+  - Review route banner progress, district buildout status, earned stars, and route-specific stage styling on the map
   - Hover stage nodes for threat and star intel before selecting them
-  - Review convoy readiness, active squad summary, and route-specific exploration costs
+  - Review caravan readiness, active squad summary, and route-specific exploration costs
   - Spend food to explore the next stage and to begin stage deployments
-  - `Open Convoy Shop`: jump into the dedicated shop screen
+  - `Open Caravan Armory`: jump into the dedicated shop screen
   - Select a stage node and press `Deploy`
 - Shop:
   - Review owned units, shop-locked units, and active deck status
+  - Review owned spells, spell archive unlocks, and the active magic deck
   - See each unit’s squad role (`Frontline`, `Recon`, `Support`, `Breach`) and the active deck synergy it contributes to
   - Use the `Action Board` to follow stage-targeted buy/upgrade suggestions
   - Buy new units with gold once their shop stage is explored
+  - Scribe new spells with gold once their route stage is explored
+  - Equip up to 2 active spell cards alongside the 3-card squad
   - Upgrade owned units with gold
   - Preview unit stat gains before buying upgrades
-  - Upgrade `Hull Plating`, `Convoy Pantry`, `Dispatch Console`, and `Signal Relay` bus systems
-  - Review route intel, next exploration costs, and upcoming unit unlocks while shopping
+  - Upgrade `War Wagon Plating`, `Caravan Stores`, `March Drum`, and `Rune Beacon`
+  - Review route intel, next exploration costs, and upcoming unit/spell unlocks while shopping
   - Return to the title screen, campaign map, or endless prep from the same screen
   - `Stage Briefing`: jump straight into the selected campaign loadout screen
   - `Back To Title`: return to menu
@@ -184,45 +191,50 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Shared encounter intel now explicitly calls out support pressure like howlers, jammers, saboteurs, and spitters before deployment
   - Live wave intel and campaign node tooltips now keep those support-pressure tags visible during stage selection and battle
   - Battle HUD now also shows the currently active support pressure on the field, including howlers, jammers, saboteurs, spitters, bosses, and any live signal jam timer
-  - Async challenge mutators can now also script route-wide signal blackouts, so multiplayer boards can pressure convoy timing without only inflating enemy stats
+  - Async challenge mutators can now also script route-wide signal blackouts, so multiplayer boards can pressure caravan timing without only inflating enemy stats
   - Review active deck synergies before deploying
+  - Review the active magic deck before deploying, including spell courage costs, cooldowns, and effect summaries
   - Later stages can swap in custom goals like deploy caps, enemy defeat targets, hazard-hit limits, or signal-jam uptime limits
-  - `Deploy Convoy`: spend food and start the battle
-  - `Convoy Shop`: adjust squad and upgrades before deploying
+  - `Deploy Caravan`: spend food and start the battle
+  - `Caravan Armory`: adjust squad and upgrades before deploying
   - `Back To Map`: return to route selection
 - Battle:
-  - Pick a unit card (`Brawler`, `Shooter`, `Defender`, `Ranger`, `Raider`, `Mechanic`, `Marksman`, `Breacher`, `Grenadier`, `Coordinator`) when unlocked
-  - Click anywhere on the battlefield to deploy at the clicked height
-  - Card deploys consume courage and enter cooldown
+  - Pick a unit card (`Swordsman`, `Archer`, `Shield Knight`, `Crossbowman`, `Cavalry Rider`, `Siege Engineer`, `Mage`, `Halberdier`, `Alchemist`, `Battle Monk`) when unlocked
+  - Pick a spell card (`Fireball`, `Heal`, `Frost Burst`, `Lightning Strike`, `Barrier Ward`) when unlocked and equipped
+  - Click anywhere on the battlefield to deploy at the clicked height or target a spell cast
+  - Unit deploys and spell casts both consume courage and enter cooldown
   - Pair two cards from the same squad role to activate deck synergies like `Frontline Drill`, `Recon Link`, `Support Mesh`, or `Breach Line`
+  - `Fireball` clears clustered pushes, `Heal` restores allies and war wagon hull, `Frost Burst` slows packed lanes, `Lightning Strike` deletes priority backliners, and `Barrier Ward` hardens allied units in a threatened lane
   - Units aggro and fight when enemies enter their aggro box
-  - `Shooter` and `Ranger` fire visible projectiles
-  - `Mechanic` can repair the bus during lulls instead of only pushing forward
-  - `Breacher` trades tempo for higher barricade/base damage on reinforced late-game stages
-  - `Grenadier` adds splash-damage projectile coverage for grouped splitter/support waves
-  - `Coordinator` buffs nearby allies with a live attack/speed aura so the convoy can scale through heavier support-heavy late-game waves
-  - `Spitter` now uses the same projectile attack path from the enemy side
-  - `Saboteur` tries to slip past lane fights and cash in higher bus damage unless the convoy ties it up directly
-  - `Howler` buffs nearby infected movement and damage, so late Harbor/Foundry waves now have a real support target to prioritize
-  - `Jammer` can disrupt convoy courage flow and spike card recovery, so late Quarantine waves now pressure the economy as well as the front line
-  - `Overlord` now uses a live rally call that buffs nearby infected and spawns escorts instead of acting like a pure stat-check boss
-  - `Crusher` and `Overlord` reduce incoming damage
-  - `Bloater` explodes on death and damages nearby units
-  - `Splitter` breaks into smaller walkers on death
-  - Later stages can apply route modifiers like reinforced barricades, armored convoys, courage surges, and swarm density
+  - `Archer` and `Crossbowman` fire visible projectiles
+  - `Siege Engineer` can repair the war wagon during lulls instead of only pushing forward
+  - `Halberdier` trades tempo for higher gate/base damage on reinforced late-game stages
+  - `Alchemist` adds splash-damage projectile coverage for grouped split-brood/support waves
+  - `Battle Monk` buffs nearby allies with a live attack/speed aura so the caravan can scale through heavier support-heavy late-game waves
+  - `Blight Caster` now uses the same projectile attack path from the enemy side
+  - `Sapper` tries to slip past lane fights and cash in higher war wagon damage unless the caravan ties it up directly
+  - `Dread Herald` buffs nearby undead movement and damage, so late Saltwake/Emberforge waves now have a real support target to prioritize
+  - `Hexer` can disrupt caravan courage flow and spike card recovery, so late Ashen Ward waves now pressure the economy as well as the front line
+  - `Grave Lord` now uses a live rally call that buffs nearby undead and spawns escorts instead of acting like a pure stat-check boss
+  - `Bone Juggernaut` and `Grave Lord` reduce incoming damage
+  - `Rot Hulk` explodes on death and damages nearby units
+  - `Bone Nest` breaks into smaller risen on death
+  - Later stages can apply route modifiers like reinforced gates, armored caravans, courage surges, and swarm density
   - Foundry stages can also author timed battlefield hazards like rail surges, heat vents, cinder blasts, and furnace bursts
-  - The new `Foundry Line` district adds railyard/smelter/foundry battle palettes plus heavier splitter/crusher route pressure
-  - `Quarantine Wall` adds checkpoint/decon/lab/blacksite battle palettes plus spitter/howler/saboteur-heavy toxic checkpoint pressure
+  - `Emberforge March` adds railyard/smelter/foundry battle palettes plus heavier splitter/crusher route pressure
+  - `Ashen Ward` adds checkpoint/cloister/leechcourt/vault battle palettes plus spitter/howler/saboteur-heavy purge-route pressure
+  - `Thornwall Pass` adds pass/shrine/watchfort battle palettes plus faster runner/howler/sapper pressure under mountain hazards
+  - `Hollow Basilica` adds cathedral/ossuary/reliquary battle palettes plus splitter/spitter/hexer pressure around relic choke points
   - Units now use differentiated silhouettes and size profiles instead of plain circles
   - Hits and attacks flash units, and projectiles now draw trails with impact pulses
-  - The bus and barricade now show damage state, shake on impact, and expose clearer base health bars
+  - The war wagon and gatehouse now show damage state, shake on impact, and expose clearer base health bars
   - Deploy cards are now color-coded by unit and show clearer ready/recover states
   - Damage now produces floating combat text for melee hits, projectile hits, death bursts, and base hits
   - Deploys, deaths, death bursts, and base hits now emit simple combat feedback pulses
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
-  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, convoy support events, battlefield events, live segment directives, route-specific contact events, projected salvage, retreat-based cash-out, and a temporary opening boon
+  - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, caravan support events, battlefield events, live segment directives, route-specific contact events, projected spoils, retreat-based reward banking, and a temporary opening boon
   - Every 15th wave is now a deliberate boss checkpoint with route-specific escort pressure and extra clear rewards
   - Endless contact events now render as visible relay, cache, and safehouse moments on the battlefield instead of only zone markers
   - Those endless contacts are now spawned battlefield actors with their own durability, contested state, and failure/survival feedback
@@ -230,15 +242,15 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Player units in endless mode can now actively support contacts with escort/haul/uplink actions instead of relying only on passive presence repair
   - Ranged units now participate in the same loop too: spitters can pressure contacts at range, and player gunners/snipers can support them with projectile-based uplinks
   - Endless HUD and checkpoint reports now surface contact actor hull, support actions, pressure actions, and contribution totals instead of leaving that loop only in floating text
-  - Contact failures now carry route-specific penalties like courage loss, cooldown setbacks, salvage loss, and convoy hull damage instead of only missing a reward
+  - Contact failures now carry route-specific penalties like courage loss, cooldown setbacks, lost spoils, and caravan hull damage instead of only missing a reward
   - Contact successes now also carry route-specific tradeoffs, like earlier surge timing, higher enemy caps, or reduced courage gain until checkpoint
   - Active endless contacts now call in route-specific hostile response packs, so relay/cache/safehouse events create their own reinforcement pressure during the segment
-  - Each endless contact now also fires a one-time midpoint convoy assist, like relay uplinks, salvage reserve parts, or safehouse militia support
-  - Higher stages can spawn the `Overlord` boss enemy
+  - Each endless contact now also fires a one-time midpoint caravan assist, like relay uplinks, reserve stores, or safehouse militia support
+  - Higher stages can spawn the `Grave Lord` boss enemy
   - Units and enemies attack the opposing base core repeatedly until it is destroyed
   - Mission stars are evaluated from stage-authored objective rules
-  - Win by reducing enemy hive HP to 0
-  - Lose if player base HP reaches 0
+  - Win by reducing enemy gatehouse HP to 0
+  - Lose if war wagon hull reaches 0
 
 ## Project layout
 

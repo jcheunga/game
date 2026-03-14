@@ -23,7 +23,7 @@ public sealed class LocalOnlineRoomJoinProvider : IOnlineRoomJoinProvider
 		var summary = normalizedStatus switch
 		{
 			"spectate" => $"Room {room.Title} is already racing. Stub join ticket marked spectator-only until the next round.",
-			"waitlist" => $"Room {room.Title} is full. Stub join ticket placed this convoy on the waitlist.",
+			"waitlist" => $"Room {room.Title} is full. Stub join ticket placed this caravan on the waitlist.",
 			_ => $"Stub join ticket reserved a seat in {room.Title}."
 		};
 
@@ -40,7 +40,7 @@ public sealed class LocalOnlineRoomJoinProvider : IOnlineRoomJoinProvider
 			JoinToken = $"stub-{Guid.NewGuid():N}",
 			TransportHint = "internet_room_stub",
 			RelayEndpoint = $"stub://room/{room.RoomId}",
-			SeatLabel = room.UsesLockedDeck ? "locked-squad seat" : "player-convoy seat",
+			SeatLabel = room.UsesLockedDeck ? "locked-squad seat" : "player-squad seat",
 			RequestedAtUnixSeconds = requestedAt,
 			ExpiresAtUnixSeconds = requestedAt + 180,
 			UsesLockedDeck = room.UsesLockedDeck,

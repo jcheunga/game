@@ -46,7 +46,7 @@ public partial class EndlessMenu : Control
 
         titleRow.AddChild(new Label
         {
-            Text = "Endless Convoy",
+            Text = "Endless March",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center
         });
@@ -199,7 +199,7 @@ public partial class EndlessMenu : Control
 
         var editSquadButton = new Button
         {
-            Text = "Convoy Shop",
+            Text = "Caravan Armory",
             CustomMinimumSize = new Vector2(220f, 0f)
         };
         editSquadButton.Pressed += () => SceneRouter.Instance.GoToShop();
@@ -255,8 +255,8 @@ public partial class EndlessMenu : Control
             "- Waves scale up continuously.\n" +
             $"- Every {EndlessBossCheckpointCatalog.BossCheckpointInterval}th wave is a boss checkpoint with extra rewards.\n" +
             "- Pick one temporary opening boon before deploying.\n" +
-            "- Use Convoy Shop to change the active squad or buy upgrades.\n" +
-            "- Retreat to cash out salvage.\n" +
+            "- Use Caravan Armory to change the active squad or buy upgrades.\n" +
+            "- Retreat to bank the gold and food recovered so far.\n" +
             "- Gold and food rewards scale with wave reached, time alive, and kills.";
 
         RebuildSquadPanels();
@@ -264,7 +264,7 @@ public partial class EndlessMenu : Control
         var canStartBattle = GameState.Instance.CanStartBattle(out var deployMessage);
         _deckStatusLabel.Text = deployMessage;
         _deployButton.Disabled = !canStartBattle;
-        _deployButton.Text = canStartBattle ? "Deploy Endless Convoy" : "Convoy Not Ready";
+        _deployButton.Text = canStartBattle ? "Begin Endless March" : "Caravan Not Ready";
     }
 
     private void RebuildSquadPanels()
@@ -288,6 +288,22 @@ public partial class EndlessMenu : Control
         foreach (var definition in GameState.Instance.GetActiveDeckUnits())
         {
             _squadStack.AddChild(BuildUnitPanel(definition));
+        }
+
+        _squadStack.AddChild(new Label
+        {
+            Text = $"Active Magic ({GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit})"
+        });
+
+        _squadStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildActiveSpellSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        foreach (var spell in GameState.Instance.GetActiveDeckSpells())
+        {
+            _squadStack.AddChild(BuildSpellPanel(spell));
         }
 
         _deckStatusLabel = new Label
@@ -336,6 +352,39 @@ public partial class EndlessMenu : Control
             Text =
                 $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
                 UnitStatText.BuildInlineTraits(stats),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        return panel;
+    }
+
+    private Control BuildSpellPanel(SpellDefinition spell)
+    {
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 88f),
+            SelfModulate = spell.GetTint().Darkened(0.08f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 10);
+        padding.AddThemeConstantOverride("margin_bottom", 10);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 6);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = spell.DisplayName
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = SpellText.BuildInlineSummary(spell),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

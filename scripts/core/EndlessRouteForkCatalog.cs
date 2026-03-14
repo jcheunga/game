@@ -25,15 +25,15 @@ public static class EndlessRouteForkCatalog
         new(
             MainlinePushId,
             "Mainline Push",
-            "Faster surge cadence with more runners and spitters. Scrap payout +10%."),
+            "Faster surge cadence with more ghouls and blight casters. Gold payout +10%."),
         new(
             ScavengeDetourId,
-            "Scavenge Detour",
-            "Slightly slower surges with heavier infected and richer salvage lanes. Scrap payout +20%."),
+            "Supply Detour",
+            "Slightly slower surges with heavier dead and richer supply lanes. Gold payout +20%."),
         new(
             FortifiedBlockId,
             "Fortified Block",
-            "More controlled pressure and a stronger hold point. Scrap payout -10%.")
+            "More controlled pressure and a stronger ward line. Gold payout -10%.")
     };
 
     public static EndlessRouteForkDefinition[] GetAll()

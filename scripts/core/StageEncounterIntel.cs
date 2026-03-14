@@ -29,7 +29,7 @@ public static class StageEncounterIntel
         {
             return
                 $"Threat: {ResolveThreatRating(stage)}\n" +
-                "Pressure: dynamic infected activity\n" +
+                "Pressure: dynamic undead activity\n" +
                 $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}\n" +
                 $"Hazards: {StageHazards.BuildInlineSummary(stage)}";
         }
@@ -66,7 +66,7 @@ public static class StageEncounterIntel
             return
                 "Encounter intel:\n" +
                 $"Threat rating: {ResolveThreatRating(stage)}\n" +
-                "Roaming infected pressure with dynamic composition.";
+                "Roaming undead pressure with dynamic composition.";
         }
 
         var counts = BuildUnitCounts(stage, out var totalEnemies);
@@ -94,7 +94,7 @@ public static class StageEncounterIntel
 
         if (bossWave != null)
         {
-            builder.Append($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby infected.");
+            builder.Append($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby undead.");
         }
         else
         {
@@ -220,22 +220,22 @@ public static class StageEncounterIntel
 
         if (counts.TryGetValue(GameData.EnemyHowlerId, out var howlerCount) && howlerCount > 0)
         {
-            pressure.Add($"Howler x{howlerCount} (aura buffs)");
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyHowlerId).DisplayName} x{howlerCount} (aura buffs)");
         }
 
         if (counts.TryGetValue(GameData.EnemyJammerId, out var jammerCount) && jammerCount > 0)
         {
-            pressure.Add($"Jammer x{jammerCount} (courage jams)");
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyJammerId).DisplayName} x{jammerCount} (courage hex)");
         }
 
         if (counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurCount) && saboteurCount > 0)
         {
-            pressure.Add($"Saboteur x{saboteurCount} (bus dives)");
+            pressure.Add($"{GameData.GetUnit(GameData.EnemySaboteurId).DisplayName} x{saboteurCount} (war wagon dives)");
         }
 
         if (counts.TryGetValue(GameData.EnemySpitterId, out var spitterCount) && spitterCount > 0)
         {
-            pressure.Add($"Spitter x{spitterCount} (ranged chip)");
+            pressure.Add($"{GameData.GetUnit(GameData.EnemySpitterId).DisplayName} x{spitterCount} (ranged blight)");
         }
 
         return pressure.Count == 0
@@ -263,7 +263,7 @@ public static class StageEncounterIntel
 
         if (WaveContainsUnit(wave, GameData.EnemySaboteurId))
         {
-            flags.Add("bus dive");
+            flags.Add("war wagon dive");
         }
 
         if (WaveContainsUnit(wave, GameData.EnemySpitterId))

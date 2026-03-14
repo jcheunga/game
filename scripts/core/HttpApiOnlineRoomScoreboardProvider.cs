@@ -62,7 +62,7 @@ public sealed class HttpApiOnlineRoomScoreboardProvider : IOnlineRoomScoreboardP
 						Rank = GetInt(item, "rank", rank),
 						RoomId = ticket.RoomId,
 						BoardCode = ticket.BoardCode,
-						PlayerCallsign = GetString(item, "playerCallsign", "Convoy"),
+						PlayerCallsign = GetString(item, "playerCallsign", "Lantern"),
 						PlayerProfileId = GetString(item, "playerProfileId", ""),
 						Score = GetInt(item, "score", 0),
 						StarsEarned = GetInt(item, "starsEarned", 0),

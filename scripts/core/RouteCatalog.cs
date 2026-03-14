@@ -61,6 +61,8 @@ public static class RouteCatalog
     public const string HarborId = "harbor";
     public const string FoundryId = "foundry";
     public const string QuarantineId = "quarantine";
+    public const string ThornwallId = "thornwall";
+    public const string BasilicaId = "basilica";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -68,10 +70,10 @@ public static class RouteCatalog
             CityId,
             new RouteDefinition(
                 CityId,
-                "City Route",
-                "Suburban highways and metro choke points. Faster pacing, mixed infected, and earlier ranged pressure.",
-                "City Route favors faster infected, early spitters, and more frequent surge timing.",
-                "Faster runners, frequent spitters, and tighter surge cadence over time.",
+                "King's Road",
+                "Outer fields, market wards, and bell-tower approaches. Faster pacing, mixed undead, and earlier curse fire.",
+                "King's Road favors faster ghouls, early blight casters, and more frequent surge timing.",
+                "Fast ghouls, frequent curse fire, and tighter surge cadence over time.",
                 new Color("ffd166"),
                 new Color("243b53"),
                 new Color("22304a"),
@@ -87,10 +89,10 @@ public static class RouteCatalog
             HarborId,
             new RouteDefinition(
                 HarborId,
-                "Harbor Front",
-                "Flooded terminals, cranes, and shipbreak lanes. Heavier zombie density and late-battle pressure.",
-                "Harbor Front favors heavier infected, bloaters, and later boss pressure around the choke point.",
-                "Heavier bodies, bloaters, and crusher spikes as the clock climbs.",
+                "Saltwake Docks",
+                "Tide-broken quays, chain cranes, and wreck piers. Heavier undead density and stronger late-battle crushes.",
+                "Saltwake Docks favors heavier dead, rot hulks, and later grave-lord pressure around the choke point.",
+                "Heavier bodies, rot hulks, and juggernaut spikes as the tide rises.",
                 new Color("80ed99"),
                 new Color("1d3557"),
                 new Color("173753"),
@@ -106,10 +108,10 @@ public static class RouteCatalog
             FoundryId,
             new RouteDefinition(
                 FoundryId,
-                "Foundry Line",
-                "Freight cuts, smelter rows, and furnace crowns. Splitter packs, saboteurs, and crushers hit harder as the district heats up.",
-                "Foundry Line favors splitter packs, saboteur dives, and crusher escorts through furnace lanes.",
-                "Saboteur dives, splitter nests, and steadier heavy surges build as the furnace route heats up.",
+                "Emberforge March",
+                "Coal spurs, smelter rows, and furnace crowns. Bone nests, sappers, and juggernauts hit harder as the forge wakes.",
+                "Emberforge March favors split-brood packs, sapper dives, and juggernaut escorts through furnace lanes.",
+                "Sapper dives, split broods, and steadier heavy surges build as the forge heats up.",
                 new Color("ff9f1c"),
                 new Color("4b2e1f"),
                 new Color("402218"),
@@ -125,10 +127,10 @@ public static class RouteCatalog
             QuarantineId,
             new RouteDefinition(
                 QuarantineId,
-                "Quarantine Wall",
-                "Decon corridors, triage tents, and blacksite checkpoints. Spitters, howlers, and saboteurs stack behind sealed containment lines.",
-                "Quarantine Wall favors ranged infected support, saboteur breach timing, and hazard-heavy toxic checkpoint segments.",
-                "Spitters and howlers back repeated saboteur dives while toxic purge hazards punish overcommits.",
+                "Ashen Ward",
+                "Purge cloisters, leech tents, and sealed vault checkpoints. Blight casters, heralds, and sappers stack behind warded lines.",
+                "Ashen Ward favors ranged curse support, sapper breach timing, and hazard-heavy purge segments.",
+                "Blight casters and heralds back repeated sapper dives while purge hazards punish overcommits.",
                 new Color("d9ed92"),
                 new Color("1b4332"),
                 new Color("204e4a"),
@@ -139,6 +141,44 @@ public static class RouteCatalog
                 new Color("29443d"),
                 new Color("fef08a"),
                 new Color("d9ed92"))
+        },
+        {
+            ThornwallId,
+            new RouteDefinition(
+                ThornwallId,
+                "Thornwall Pass",
+                "Cliff roads, avalanche shrines, and watch forts. Fast raid packs and mountain hazards break the lane from above.",
+                "Thornwall Pass favors fast raiders, sapper breaches, and avalanche pressure across narrow hold lines.",
+                "Fast raid packs, cliffside hazards, and repeated breach dives collapse the line if left unchecked.",
+                new Color("cfe8ff"),
+                new Color("2f3e53"),
+                new Color("4b5d73"),
+                new Color("19232f"),
+                new Color("9ad1ff"),
+                new Color("e0f2ff"),
+                new Color("7db4e6"),
+                new Color("2f4356"),
+                new Color("fefae0"),
+                new Color("cfe8ff"))
+        },
+        {
+            BasilicaId,
+            new RouteDefinition(
+                BasilicaId,
+                "Hollow Basilica",
+                "Ruined cathedrals, ossuary courts, and reliquary vaults. Relic guardians and curse liturgy turn each fight into a ritual choke point.",
+                "Hollow Basilica favors split-brood screens, blight casters, and hex support around relic choke points.",
+                "Caster-backed relic guards, brood screens, and curse support bog the caravan in set-piece holds.",
+                new Color("e9c46a"),
+                new Color("3b3a30"),
+                new Color("5b5147"),
+                new Color("231f1a"),
+                new Color("f4d58d"),
+                new Color("fff3c4"),
+                new Color("d1b892"),
+                new Color("473b30"),
+                new Color("fefae0"),
+                new Color("e9c46a"))
         }
     };
 
@@ -157,7 +197,9 @@ public static class RouteCatalog
             Definitions[CityId],
             Definitions[HarborId],
             Definitions[FoundryId],
-            Definitions[QuarantineId]
+            Definitions[QuarantineId],
+            Definitions[ThornwallId],
+            Definitions[BasilicaId]
         };
     }
 

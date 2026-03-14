@@ -25,7 +25,7 @@ public sealed class LocalPlayerProfileSyncProvider : IPlayerProfileSyncProvider
 			Status = "ok",
 			Summary = $"Local profile stub refreshed {request.PlayerCallsign}.",
 			PlayerProfileId = normalizedProfileId,
-			PlayerCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Convoy" : request.PlayerCallsign.Trim(),
+			PlayerCallsign = string.IsNullOrWhiteSpace(request.PlayerCallsign) ? "Lantern" : request.PlayerCallsign.Trim(),
 			AuthState = "local_stub",
 			SessionToken = $"LOCAL-{normalizedProfileId}",
 			CanSubmitChallenges = true,

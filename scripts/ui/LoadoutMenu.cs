@@ -93,10 +93,10 @@ public partial class LoadoutMenu : Control
         missionStack.AddChild(new Label
         {
             Text =
-                $"Bus upgrades: Hull Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"Convoy Pantry Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"Dispatch Console Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
-                $"Signal Relay Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
+                $"War wagon upgrades: War Wagon Plating Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Caravan Stores Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"March Drum Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}  |  " +
+                $"Rune Beacon Lv{GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -158,6 +158,22 @@ public partial class LoadoutMenu : Control
             rosterStack.AddChild(BuildUnitPanel(definition));
         }
 
+        rosterStack.AddChild(new Label
+        {
+            Text = $"Active Magic ({GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit})"
+        });
+
+        rosterStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildActiveSpellSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        foreach (var spell in GameState.Instance.GetActiveDeckSpells())
+        {
+            rosterStack.AddChild(BuildSpellPanel(spell));
+        }
+
         var canStartBattle = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var deployValidationMessage);
         rosterStack.AddChild(new Label
         {
@@ -186,7 +202,7 @@ public partial class LoadoutMenu : Control
 
         var shopButton = new Button
         {
-            Text = "Convoy Shop",
+            Text = "Caravan Armory",
             CustomMinimumSize = new Vector2(180f, 0f)
         };
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
@@ -208,8 +224,8 @@ public partial class LoadoutMenu : Control
         var deployButton = new Button
         {
             Text = canStartBattle
-                ? $"Deploy Convoy (-{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food)"
-                : "Convoy Not Ready",
+                ? $"Deploy Caravan (-{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food)"
+                : "Caravan Not Ready",
             CustomMinimumSize = new Vector2(220f, 0f)
         };
         deployButton.Disabled = !canStartBattle;
@@ -266,6 +282,39 @@ public partial class LoadoutMenu : Control
                 $"Speed {stats.Speed:0.#}  |  Range {stats.AttackRange:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s" +
                 (stats.UsesProjectile ? $"  |  Projectile {stats.ProjectileSpeed:0.#}" : "") +
                 UnitStatText.BuildInlineTraits(stats),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        return panel;
+    }
+
+    private Control BuildSpellPanel(SpellDefinition spell)
+    {
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 92f),
+            SelfModulate = spell.GetTint().Darkened(0.08f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 10);
+        padding.AddThemeConstantOverride("margin_bottom", 10);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 6);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = spell.DisplayName
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = SpellText.BuildInlineSummary(spell),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

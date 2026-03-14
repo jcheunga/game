@@ -111,7 +111,7 @@ public static class OnlineRoomCreateService
 		builder.AppendLine($"Board: {_hostedRoom.BoardCode}  |  Host: {_hostedRoom.HostCallsign}  |  Region: {_hostedRoom.Region}");
 		builder.AppendLine($"Players: {_hostedRoom.CurrentPlayers}/{_hostedRoom.MaxPlayers}  |  Spectators: {_hostedRoom.SpectatorCount}");
 		builder.AppendLine($"Transport: {_hostedRoom.TransportHint}  |  Relay: {_hostedRoom.RelayEndpoint}");
-		builder.Append($"Deck mode: {(_hostedRoom.UsesLockedDeck ? BuildLockedDeckSummary(_hostedRoom.LockedDeckUnitIds) : "player convoy seats")}");
+		builder.Append($"Deck mode: {(_hostedRoom.UsesLockedDeck ? BuildLockedDeckSummary(_hostedRoom.LockedDeckUnitIds) : "player squad seats")}");
 		return builder.ToString();
 	}
 

@@ -6427,19 +6427,7 @@ public partial class BattleController : Node2D
 
 		if (IsEndlessMode)
 		{
-			AudioDirector.Instance?.PlayDefeat();
-			var rewardScrap = CalculateEndlessScrapReward();
-			var rewardFuel = CalculateEndlessFuelReward();
-			GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardScrap, rewardFuel, false);
-			_endLabel.Text =
-				$"Endless run ended on {ResolveRouteLabel(_activeRouteId)}.\n" +
-				$"Wave reached: {_spawnDirector.EndlessWaveNumber}\n" +
-				$"Survival time: {_elapsed:0.0}s   |   Enemy defeats: {_enemyDefeats}\n" +
-				$"Payout secured: +{rewardScrap} gold, +{rewardFuel} food";
-			SetStatus("The caravan was eventually overrun. Rear scouts recovered what they could.");
-			_endCenter.Visible = true;
-			_endPanel.Visible = true;
-			UpdateHud();
+			FinalizeEndlessRun(false);
 			return;
 		}
 
@@ -6575,9 +6563,11 @@ public partial class BattleController : Node2D
 		{
 			if (!_battleEnded)
 			{
-				var rewardScrap = CalculateEndlessScrapReward();
-				var rewardFuel = CalculateEndlessFuelReward();
-				GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardScrap, rewardFuel, true);
+				_battleEnded = true;
+				_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
+				_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
+				FinalizeEndlessRun(true);
+				return;
 			}
 
 			SceneRouter.Instance.GoToEndless();
@@ -6668,6 +6658,25 @@ public partial class BattleController : Node2D
 		};
 	}
 
+	private void FinalizeEndlessRun(bool retreated)
+	{
+		var rewardGold = CalculateEndlessScrapReward();
+		var rewardFood = CalculateEndlessFuelReward();
+		GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardGold, rewardFood, retreated);
+		_endLabel.Text = BuildEndlessRunDebriefText(rewardGold, rewardFood, retreated);
+		SetStatus(retreated
+			? "The caravan withdrew in good order and banked its spoils."
+			: "The caravan was eventually overrun. Rear scouts recovered what they could.");
+		if (!retreated)
+		{
+			AudioDirector.Instance?.PlayDefeat();
+		}
+
+		_endCenter.Visible = true;
+		_endPanel.Visible = true;
+		UpdateHud();
+	}
+
 	private string BuildStageBattleStatsText(StageBattleResult result)
 	{
 		var routeLabel = ResolveRouteLabel(_activeRouteId);
@@ -6722,6 +6731,42 @@ public partial class BattleController : Node2D
 
 		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
 		return $"{mission.Progress:0.0}/{target:0.0}s secured when the route ended";
+	}
+
+	private string BuildEndlessRunDebriefText(int rewardGold, int rewardFood, bool retreated)
+	{
+		var routeLabel = ResolveRouteLabel(_activeRouteId);
+		var outcomeLine = retreated
+			? $"Endless retreat banked on {routeLabel}."
+			: $"Endless run ended on {routeLabel}.";
+		return
+			$"{outcomeLine}\n" +
+			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Survival: {_elapsed:0.0}s  |  Enemy defeats: {_enemyDefeats}\n" +
+			$"Banked payout: +{rewardGold} gold, +{rewardFood} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
+			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveScrapBonus)} gold / {FormatSignedInt(_endlessDirectiveFuelBonus)} food  |  contacts {FormatSignedInt(_endlessContactScrapBonus)} gold / {FormatSignedInt(_endlessContactFuelBonus)} food  |  bosses {FormatSignedInt(_endlessBossScrapBonus)} gold / {FormatSignedInt(_endlessBossFuelBonus)} food\n" +
+			$"{BuildEndlessRunUpgradeSummary()}\n" +
+			$"{BuildEndlessBossCheckpointText()}\n" +
+			$"{BuildEndlessDirectiveCheckpointSummary()}\n" +
+			$"{BuildEndlessContactCheckpointSummary()}\n" +
+			$"Tradeoff report: {_endlessContactTradeoffLabel}\n" +
+			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
+			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
+			$"Caravan support: {_endlessSupportEventLabel}\n" +
+			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
+	}
+
+	private string BuildEndlessRunUpgradeSummary()
+	{
+		if (_endlessRunUpgrades.Count == 0)
+		{
+			return "Run upgrades: none";
+		}
+
+		var labels = _endlessRunUpgrades
+			.Select(id => GetDraftOption(id).Title)
+			.OrderBy(title => title, StringComparer.OrdinalIgnoreCase)
+			.ToArray();
+		return "Run upgrades: " + string.Join(", ", labels);
 	}
 
 	private int CalculateEndlessScrapReward()

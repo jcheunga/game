@@ -230,6 +230,7 @@ This sprint should stay narrow and practical:
 - upgraded the spell layer from shared placeholder pulses into distinct fireball, heal, frost, lightning, and ward battlefield signatures
 - added floating combat text so damage events read clearly during melee, projectile, burst, and base hits
 - upgraded battle debriefs so campaign and challenge runs now report route metrics, final objective outcomes, and battlefield-event resolution instead of only a binary result line
+- upgraded endless run closure so defeats and voluntary retreats now open a full route debrief with banked payout, boon/path context, directive/contact reports, and reward-bank telemetry
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
 - extended route identity through the campaign map, loadout briefing, and caravan armory so each district now carries its own color treatment and battlefield-event briefing surface
 - extended that route identity into live combat with route-themed HUD panels, in-battle briefing banners, and heraldic war wagon/gatehouse silhouettes

@@ -45,6 +45,23 @@ public partial class ShopMenu : Control
     {
         BuildUi();
         RefreshUi();
+        AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel });
+    }
+
+    private void AnimateEntrance(Control[] panels)
+    {
+        for (var i = 0; i < panels.Length; i++)
+        {
+            var panel = panels[i];
+            if (panel == null) continue;
+            panel.Modulate = new Color(1f, 1f, 1f, 0f);
+            var delay = 0.06f + (i * 0.05f);
+            var tween = CreateTween();
+            tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
+                .SetDelay(delay)
+                .SetTrans(Tween.TransitionType.Cubic)
+                .SetEase(Tween.EaseType.Out);
+        }
     }
 
     private void BuildUi()

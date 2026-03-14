@@ -25,6 +25,25 @@ public partial class SettingsMenu : Control
         }
         BuildUi();
         RefreshUi();
+        AnimateEntrance();
+    }
+
+    private Control _mainPanel;
+
+    private void AnimateEntrance()
+    {
+        if (_mainPanel == null) return;
+        _mainPanel.Modulate = new Color(1f, 1f, 1f, 0f);
+        _mainPanel.Scale = new Vector2(0.97f, 0.97f);
+        _mainPanel.PivotOffset = _mainPanel.Size * 0.5f;
+        var tween = CreateTween();
+        tween.SetParallel(true);
+        tween.TweenProperty(_mainPanel, "modulate:a", 1f, 0.25f)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(_mainPanel, "scale", Vector2.One, 0.3f)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
     }
 
     public override void _ExitTree()
@@ -53,6 +72,7 @@ public partial class SettingsMenu : Control
             CustomMinimumSize = new Vector2(760f, 720f)
         };
         center.AddChild(panel);
+        _mainPanel = panel;
 
         var content = new MarginContainer();
         content.AddThemeConstantOverride("margin_left", 24);

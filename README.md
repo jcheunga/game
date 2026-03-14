@@ -221,6 +221,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - `Bone Nest` breaks into smaller risen on death
   - Later stages can apply route modifiers like reinforced gates, armored caravans, courage surges, and swarm density
   - Foundry stages can also author timed battlefield hazards like rail surges, heat vents, cinder blasts, and furnace bursts
+  - Later campaign stages can now also author battlefield mission events like ritual sites, relic escorts, and gate breaches, with live progress, success swings, and failure penalties
   - `Emberforge March` adds railyard/smelter/foundry battle palettes plus heavier splitter/crusher route pressure
   - `Ashen Ward` adds checkpoint/cloister/leechcourt/vault battle palettes plus spitter/howler/saboteur-heavy purge-route pressure
   - `Thornwall Pass` adds pass/shrine/watchfort battle palettes plus faster runner/howler/sapper pressure under mountain hazards
@@ -237,6 +238,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Deploys, deaths, death bursts, and base hits now emit simple combat feedback pulses
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
+  - Active campaign mission events now show their own battlefield-event progress in combat instead of living only in stage text
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
   - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, caravan support events, battlefield events, live segment directives, route-specific contact events, projected spoils, retreat-based reward banking, and a temporary opening boon
   - Every 15th wave is now a deliberate boss checkpoint with route-specific escort pressure and extra clear rewards
@@ -286,5 +288,5 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
 - Shared audio/interface options are surfaced through `SettingsMenu` and persisted in `GameState`.
 - Unit and stage tuning are data-driven from JSON files in `data/` and loaded through `GameData`.
 - Global combat pacing/limits (spawn pressure, enemy cap, base approach distance, courage economy, etc.) is in `data/combat_config.json`.
-- Stage objective, modifier, and encounter-intel summaries are shared across map, loadout, and battle-facing UI.
+- Stage objective, modifier, mission-event, and encounter-intel summaries are shared across map, loadout, and battle-facing UI.
 - Endless-mode best wave/time, selected route, owned units, base upgrades, and the gold/food economy are also persisted in `GameState`.

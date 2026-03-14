@@ -1926,7 +1926,7 @@
       "MapName": "Thornwall Pass",
       "TerrainId": "shrine",
       "StageName": "Avalanche Shrine",
-      "Description": "Avalanche bells ring over the pass, and the dead surge whenever the shrine drifts crack open.\nRecommended squad: Battle Monk + Mage + Shield Knight.",
+      "Description": "Avalanche bells ring over the pass, and the crew must steady the shrine dais before the drifts crack open again.\nRecommended squad: Battle Monk + Mage + Shield Knight.",
       "RewardGold": 980,
       "RewardFood": 11,
       "EntryFoodCost": 6,
@@ -1979,8 +1979,23 @@
       ],
       "Objectives": [
         { "Type": "clear_route" },
-        { "Type": "bus_hull_ratio", "Value": 0.74 },
+        { "Type": "mission_event_success" },
         { "Type": "hazard_hits_limit", "Value": 4.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Avalanche Shrine",
+          "Summary": "Hold the shrine dais long enough to silence the dead bells before the pass collapses again.",
+          "RewardSummary": "Reward: +12 courage and cleaner deck recovery once the bells go quiet.",
+          "PenaltySummary": "Risk: lose courage and card tempo if the shrine falls.",
+          "XRatio": 0.58,
+          "YRatio": 0.48,
+          "Radius": 80.0,
+          "TargetSeconds": 7.5,
+          "StartTime": 24.0,
+          "ColorHex": "fefae0"
+        }
       ],
       "Waves": [
         {
@@ -2557,7 +2572,7 @@
       "MapName": "Hollow Basilica",
       "TerrainId": "cathedral",
       "StageName": "Choir Ruin",
-      "Description": "The choir loft rains curses over the aisle while relic escorts try to pin the war wagon in place.\nRecommended squad: Crossbowman + Mage + Battle Monk.",
+      "Description": "The choir loft rains curses over the aisle while reliquary bearers try to cross the nave under caravan cover.\nRecommended squad: Crossbowman + Mage + Battle Monk.",
       "RewardGold": 1470,
       "RewardFood": 14,
       "EntryFoodCost": 8,
@@ -2610,8 +2625,23 @@
       ],
       "Objectives": [
         { "Type": "clear_route" },
-        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "mission_event_success" },
         { "Type": "clear_within", "Value": 122.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "relic_escort",
+          "Title": "Reliquary Bearers",
+          "Summary": "Hold the aisle long enough for the reliquary bearers to reach the war wagon.",
+          "RewardSummary": "Reward: a repair burst and escort reinforcement once the relics clear the nave.",
+          "PenaltySummary": "Risk: the war wagon takes a direct hit if the escort lane collapses.",
+          "XRatio": 0.56,
+          "YRatio": 0.5,
+          "Radius": 82.0,
+          "TargetSeconds": 8.4,
+          "StartTime": 28.0,
+          "ColorHex": "ffe5b4"
+        }
       ],
       "Waves": [
         {
@@ -4934,7 +4964,7 @@
       "MapName": "Crownfall Citadel",
       "TerrainId": "bridgefort",
       "StageName": "Crownward Gate",
-      "Description": "Gatehouse towers and command relays stack pressure from every prior district into one line.\nRecommended squad: Shield Knight + Battle Monk + Crossbowman.",
+      "Description": "Gatehouse towers and command relays stack pressure while the breach crew tries to crack the crownward wall.\nRecommended squad: Shield Knight + Battle Monk + Crossbowman.",
       "RewardGold": 5760,
       "RewardFood": 25,
       "EntryFoodCost": 13,
@@ -4987,8 +5017,23 @@
       ],
       "Objectives": [
         { "Type": "clear_route" },
-        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "mission_event_success" },
         { "Type": "enemy_defeats", "Value": 60.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "gate_breach",
+          "Title": "Breach Crew",
+          "Summary": "Keep the charge line clear long enough for the crew to break the crownward gate braces.",
+          "RewardSummary": "Reward: direct gatehouse damage when the breach charge lands.",
+          "PenaltySummary": "Risk: the gatehouse regains footing and hull if the charge fails.",
+          "XRatio": 0.78,
+          "YRatio": 0.48,
+          "Radius": 76.0,
+          "TargetSeconds": 7.8,
+          "StartTime": 32.0,
+          "ColorHex": "ffd166"
+        }
       ],
       "Waves": [
         {
@@ -5654,7 +5699,7 @@
       "MapName": "Ashen Ward",
       "TerrainId": "blacksite",
       "StageName": "Ashen Remnant",
-      "Description": "A late Ashen Ward capstone where purge hazards, hex pressure, and breach teams form the final campaign challenge stage.\nRecommended squad: Mage + Battle Monk + Shield Knight.",
+      "Description": "A late Ashen Ward capstone where purge hazards, hex pressure, and a failing seal circle define the final caravan push.\nRecommended squad: Mage + Battle Monk + Shield Knight.",
       "RewardGold": 8160,
       "RewardFood": 30,
       "EntryFoodCost": 14,
@@ -5721,7 +5766,22 @@
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
-        { "Type": "enemy_defeats", "Value": 72.0 }
+        { "Type": "mission_event_success" }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Purge Seal",
+          "Summary": "Hold the failing seal circle long enough to keep the containment grid from turning on the caravan.",
+          "RewardSummary": "Reward: courage surge and cleaner recovery when the seal stabilizes.",
+          "PenaltySummary": "Risk: lose card tempo if the seal fails under pressure.",
+          "XRatio": 0.46,
+          "YRatio": 0.52,
+          "Radius": 82.0,
+          "TargetSeconds": 8.8,
+          "StartTime": 36.0,
+          "ColorHex": "bbf7d0"
+        }
       ],
       "Waves": [
         {

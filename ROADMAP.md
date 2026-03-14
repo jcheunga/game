@@ -224,6 +224,7 @@ This sprint should stay narrow and practical:
 - surfaced stage threat intel in loadout and live wave previews in battle HUD
 - added data-driven stage modifiers that affect hull values, courage gain, and swarm pressure
 - added live in-battle objective tracking instead of end-screen-only star feedback
+- added stage-authored battlefield mission events, including ritual-site holds, relic escorts, and gate-breach charges with live progress, success swings, and failure penalties
 - started the presentation pass with differentiated unit silhouettes, hit flashes, and projectile trails
 - improved battlefield readability with base damage states, impact shake, base health bars, and stronger deploy cards
 - added floating combat text so damage events read clearly during melee, projectile, burst, and base hits

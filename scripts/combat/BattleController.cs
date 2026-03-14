@@ -140,6 +140,31 @@ public partial class BattleController : Node2D
 		public Color Color { get; }
 	}
 
+	private sealed class StageMissionState
+	{
+		public StageMissionState(
+			StageMissionEventDefinition definition,
+			Vector2 anchor,
+			Color color)
+		{
+			Definition = definition;
+			Anchor = anchor;
+			Color = color;
+		}
+
+		public StageMissionEventDefinition Definition { get; }
+		public Vector2 Anchor { get; }
+		public Color Color { get; }
+		public EndlessContactActor Actor { get; set; } = null!;
+		public float Progress { get; set; }
+		public bool Started { get; set; }
+		public bool SupportMomentTriggered { get; set; }
+		public bool PlayerInside { get; set; }
+		public bool EnemyInside { get; set; }
+		public bool Completed { get; set; }
+		public bool Failed { get; set; }
+	}
+
 	private sealed class EndlessDirectiveState
 	{
 		public EndlessDirectiveState(
@@ -225,6 +250,7 @@ public partial class BattleController : Node2D
 
 	private readonly List<Unit> _units = new();
 	private readonly List<StageHazardState> _stageHazards = new();
+	private readonly List<StageMissionState> _stageMissions = new();
 	private readonly BattleDeckState _deck = new();
 	private readonly BattleSpellState _spellDeck = new();
 	private readonly List<ChallengeDeploymentRecord> _challengeDeploymentTape = new();
@@ -490,6 +516,7 @@ public partial class BattleController : Node2D
 		}
 
 		InitializeStageHazards();
+		InitializeStageMissions();
 
 		BuildUi();
 		SetStatus(
@@ -1375,6 +1402,7 @@ public partial class BattleController : Node2D
 
 		SimulateUnits(deltaF);
 		CleanupDeadUnits();
+		UpdateStageMissions(deltaF);
 		UpdateEndlessDirectiveState();
 		UpdateEndlessContactEvent(deltaF);
 		MaybeOpenEndlessDraft();
@@ -1994,9 +2022,18 @@ public partial class BattleController : Node2D
 			$"Time: {_elapsed:0.0}s   |   Active enemies: {CountTeamUnits(Team.Enemy)}   |   Active allies: {CountTeamUnits(Team.Player)}{waveStatus}";
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
 		_waveIntelLabel.Text = BuildWaveIntelText();
-		_objectiveStatusLabel.Text = IsEndlessMode
-			? BuildEndlessStatusText()
-			: StageObjectives.BuildLiveSummary(_stageData, BuildStageBattleResult());
+		if (IsEndlessMode)
+		{
+			_objectiveStatusLabel.Text = BuildEndlessStatusText();
+		}
+		else
+		{
+			var objectiveText = StageObjectives.BuildLiveSummary(_stageData, BuildStageBattleResult());
+			var missionText = BuildStageMissionEventText();
+			_objectiveStatusLabel.Text = string.IsNullOrWhiteSpace(missionText)
+				? objectiveText
+				: $"{objectiveText}\n{missionText}";
+		}
 
 		foreach (var slot in _deploySlots)
 		{
@@ -3582,6 +3619,78 @@ public partial class BattleController : Node2D
 		return Mathf.Max(2f, cooldown);
 	}
 
+	private string BuildStageMissionIntelText()
+	{
+		if (_stageMissions.Count == 0)
+		{
+			return "";
+		}
+
+		var mission = _stageMissions.FirstOrDefault(candidate => !candidate.Completed && !candidate.Failed);
+		if (mission == null)
+		{
+			return "Mission event: all authored battlefield objectives are resolved.\n";
+		}
+
+		var title = StageMissionEvents.ResolveTitle(mission.Definition);
+		if (!mission.Started)
+		{
+			return $"Mission event standby: {title} arms in {Mathf.Max(0f, mission.Definition.StartTime - _elapsed):0.0}s.\n";
+		}
+
+		return $"Mission event active: {title}  |  {BuildStageMissionProgressText(mission)}\n";
+	}
+
+	private string BuildStageMissionEventText()
+	{
+		if (_stageMissions.Count == 0)
+		{
+			return "";
+		}
+
+		var lines = new List<string>
+		{
+			"Battlefield events:"
+		};
+
+		foreach (var mission in _stageMissions)
+		{
+			var prefix = mission.Completed
+				? "[OK]"
+				: mission.Failed
+					? "[X]"
+					: mission.Started
+						? "[..]"
+						: "[--]";
+			lines.Add($"{prefix} {StageMissionEvents.ResolveTitle(mission.Definition)}  |  {BuildStageMissionProgressText(mission)}");
+		}
+
+		return string.Join("\n", lines);
+	}
+
+	private string BuildStageMissionProgressText(StageMissionState mission)
+	{
+		if (mission == null)
+		{
+			return "No mission event.";
+		}
+
+		if (!mission.Started)
+		{
+			return $"Arms at {mission.Definition.StartTime:0.0}s";
+		}
+
+		var progress = mission.Progress;
+		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
+		return mission.Definition.NormalizedType switch
+		{
+			"ritual_site" => $"Cleanse {progress:0.0}/{target:0.0}s at the shrine circle",
+			"relic_escort" => $"Escort window {progress:0.0}/{target:0.0}s around the relic route",
+			"gate_breach" => $"Breach timer {progress:0.0}/{target:0.0}s on the wall charge",
+			_ => $"{progress:0.0}/{target:0.0}s secured"
+		};
+	}
+
 	private string BuildWaveIntelText()
 	{
 		if (IsEndlessMode)
@@ -3623,13 +3732,14 @@ public partial class BattleController : Node2D
 
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
 		var hazardSummary = BuildStageHazardIntelText();
+		var missionSummary = BuildStageMissionIntelText();
 		var challengeHeaderText = IsChallengeMode
 			? $"{BuildChallengeMutatorText()}\n{BuildOnlineRoomRaceText()}{BuildChallengeGhostText()}\n"
 			: "";
 
 		if (!_spawnDirector.UsesScriptedWaves)
 		{
-			return $"{modifierSummary}\n{hazardSummary}\n{challengeHeaderText}Encounter intel: dynamic pressure spawns are active on this route.";
+			return $"{modifierSummary}\n{hazardSummary}\n{missionSummary}{challengeHeaderText}Encounter intel: dynamic pressure spawns are active on this route.";
 		}
 
 		if (!_spawnDirector.TryGetNextScriptedWave(out var nextWave))
@@ -3637,7 +3747,7 @@ public partial class BattleController : Node2D
 			var suffix = _spawnDirector.PendingSpawnCount > 0
 				? $"Encounter intel: {_spawnDirector.PendingSpawnCount} enemies still queued from the active scripted wave."
 				: "Encounter intel: all scripted waves have deployed. Finish the route.";
-			return $"{modifierSummary}\n{hazardSummary}\n{challengeHeaderText}{suffix}";
+			return $"{modifierSummary}\n{hazardSummary}\n{missionSummary}{challengeHeaderText}{suffix}";
 		}
 
 		var countdown = Mathf.Max(0f, nextWave.TriggerTime - _elapsed);
@@ -3647,6 +3757,7 @@ public partial class BattleController : Node2D
 			return
 				$"{modifierSummary}\n" +
 				$"{hazardSummary}\n" +
+				missionSummary +
 				challengeHeaderText +
 				$"{BuildActiveEnemyPressureText()}\n" +
 				$"Next wave in {countdown:0.0}s: {label}\n" +
@@ -3863,6 +3974,328 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private void InitializeStageMissions()
+	{
+		_stageMissions.Clear();
+		if (IsEndlessMode || _stageData?.MissionEvents == null)
+		{
+			return;
+		}
+
+		foreach (var mission in _stageData.MissionEvents)
+		{
+			if (mission == null || string.IsNullOrWhiteSpace(mission.Type))
+			{
+				continue;
+			}
+
+			var anchor = new Vector2(
+				Mathf.Lerp(BattlefieldLeft + 64f, BattlefieldRight - 64f, Mathf.Clamp(mission.XRatio, 0f, 1f)),
+				Mathf.Lerp(BattlefieldTop + 48f, BattlefieldBottom - 48f, Mathf.Clamp(mission.YRatio, 0f, 1f)));
+			_stageMissions.Add(new StageMissionState(mission, anchor, mission.GetTint()));
+		}
+	}
+
+	private void UpdateStageMissions(float delta)
+	{
+		if (IsEndlessMode || _stageMissions.Count == 0 || _battleEnded)
+		{
+			return;
+		}
+
+		foreach (var mission in _stageMissions)
+		{
+			if (!mission.Started)
+			{
+				if (_elapsed + 0.001f >= mission.Definition.StartTime)
+				{
+					StartStageMission(mission);
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			if (!CanInteractWithStageMission(mission))
+			{
+				continue;
+			}
+
+			var playerInside = HasTeamUnitInRadius(Team.Player, mission.Anchor, mission.Definition.Radius);
+			var enemyInside = HasTeamUnitInRadius(Team.Enemy, mission.Anchor, mission.Definition.Radius);
+			mission.PlayerInside = playerInside;
+			mission.EnemyInside = enemyInside;
+
+			if (playerInside && !enemyInside)
+			{
+				mission.Actor.Repair(ResolveStageMissionPresenceRepairRate(mission.Definition) * delta);
+			}
+			else if (enemyInside)
+			{
+				mission.Actor.ApplyPressureDamage(ResolveStageMissionPressureRate(mission.Definition) * delta);
+			}
+
+			switch (mission.Definition.NormalizedType)
+			{
+				case "ritual_site":
+					if (playerInside && !enemyInside)
+					{
+						mission.Progress += delta * 1.18f;
+					}
+					else if (playerInside)
+					{
+						mission.Progress += delta * 0.44f;
+					}
+					else if (enemyInside)
+					{
+						mission.Progress -= delta * 0.72f;
+					}
+					else
+					{
+						mission.Progress -= delta * 0.22f;
+					}
+					break;
+				case "relic_escort":
+					if (!enemyInside)
+					{
+						mission.Progress += playerInside ? delta * 1.14f : delta * 0.68f;
+					}
+					else
+					{
+						mission.Progress -= delta * 0.94f;
+					}
+					break;
+				case "gate_breach":
+					if (playerInside && !enemyInside)
+					{
+						mission.Progress += delta * 1.28f;
+					}
+					else if (playerInside)
+					{
+						mission.Progress += delta * 0.52f;
+					}
+					else if (enemyInside)
+					{
+						mission.Progress -= delta * 0.86f;
+					}
+					else
+					{
+						mission.Progress -= delta * 0.34f;
+					}
+					break;
+			}
+
+			mission.Progress = Mathf.Clamp(
+				mission.Progress,
+				0f,
+				Mathf.Max(1f, mission.Definition.TargetSeconds));
+			mission.Actor.UpdateState(
+				mission.Progress / Mathf.Max(1f, mission.Definition.TargetSeconds),
+				playerInside,
+				enemyInside,
+				false,
+				false);
+
+			if (mission.Actor.Health <= 0.01f)
+			{
+				FailStageMission(mission, $"{StageMissionEvents.ResolveTitle(mission.Definition)} collapsed before the caravan secured it.");
+				continue;
+			}
+
+			TryTriggerStageMissionSupportMoment(mission);
+
+			if (mission.Progress + 0.001f >= mission.Definition.TargetSeconds)
+			{
+				CompleteStageMission(mission);
+			}
+		}
+	}
+
+	private void StartStageMission(StageMissionState mission)
+	{
+		if (mission.Started)
+		{
+			return;
+		}
+
+		mission.Started = true;
+		mission.Actor = new EndlessContactActor();
+		mission.Actor.Position = mission.Anchor;
+		mission.Actor.Setup(
+			mission.Definition.NormalizedType,
+			mission.Color,
+			mission.Definition.Radius,
+			ResolveStageMissionMaxHealth(mission.Definition));
+		mission.Actor.UpdateState(0f, false, false, false, false);
+		AddChild(mission.Actor);
+		SetStatus($"{StageMissionEvents.ResolveTitle(mission.Definition)} active. {StageMissionEvents.ResolveSummary(mission.Definition)}");
+	}
+
+	private bool CanInteractWithStageMission(StageMissionState mission)
+	{
+		return mission != null &&
+			mission.Started &&
+			!mission.Completed &&
+			!mission.Failed &&
+			IsInstanceValid(mission.Actor);
+	}
+
+	private void TryTriggerStageMissionSupportMoment(StageMissionState mission)
+	{
+		if (mission.SupportMomentTriggered ||
+			mission.Progress + 0.001f < (Mathf.Max(1f, mission.Definition.TargetSeconds) * 0.5f))
+		{
+			return;
+		}
+
+		mission.SupportMomentTriggered = true;
+		var title = StageMissionEvents.ResolveTitle(mission.Definition);
+		switch (mission.Definition.NormalizedType)
+		{
+			case "ritual_site":
+				_courage = Mathf.Min(_maxCourage, _courage + 6f);
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "WARD FLARE", mission.Color.Lightened(0.2f), 0.58f);
+				SetStatus($"{title} flared and steadied the caravan. Courage surged.");
+				break;
+			case "relic_escort":
+				RepairBusByRatio(0.03f);
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "RELIC PASS", mission.Color.Lightened(0.2f), 0.58f);
+				SetStatus($"{title} reached cover and bought the war wagon time to patch the line.");
+				break;
+			case "gate_breach":
+				DamageEnemyBaseByRatio(0.05f, mission.Color, "CRACKED");
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "WALL CRACK", mission.Color.Lightened(0.2f), 0.58f);
+				SetStatus($"{title} opened the first cracks in the gatehouse.");
+				break;
+		}
+
+		SpawnEffect(mission.Anchor, mission.Color.Lightened(0.08f), 10f, mission.Definition.Radius * 0.58f, 0.22f, false);
+	}
+
+	private void CompleteStageMission(StageMissionState mission)
+	{
+		if (mission.Completed || mission.Failed)
+		{
+			return;
+		}
+
+		mission.Completed = true;
+		if (IsInstanceValid(mission.Actor))
+		{
+			mission.Actor.Repair(mission.Actor.MaxHealth);
+			mission.Actor.UpdateState(1f, true, false, true, false);
+		}
+
+		SpawnEffect(mission.Anchor, mission.Color, 12f, mission.Definition.Radius * 0.72f, 0.28f, false);
+		switch (mission.Definition.NormalizedType)
+		{
+			case "ritual_site":
+				_courage = Mathf.Min(_maxCourage, _courage + 12f);
+				_deck.ReduceCooldowns(0.8f);
+				_spellDeck.ReduceCooldowns(0.8f);
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RITE SECURED", mission.Color.Lightened(0.18f), 0.64f);
+				break;
+			case "relic_escort":
+				RepairBusByRatio(0.06f);
+				SpawnSupportUnit(ResolveStageMissionSupportUnitId());
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RELICS THROUGH", mission.Color.Lightened(0.18f), 0.64f);
+				break;
+			case "gate_breach":
+				DamageEnemyBaseByRatio(0.18f, mission.Color, "GATE BREACHED");
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "BREACH LANDED", mission.Color.Lightened(0.18f), 0.64f);
+				break;
+		}
+
+		SetStatus($"{StageMissionEvents.ResolveTitle(mission.Definition)} secured. {StageMissionEvents.ResolveRewardSummary(mission.Definition)}");
+	}
+
+	private void FailStageMission(StageMissionState mission, string statusText = null)
+	{
+		if (mission.Completed || mission.Failed)
+		{
+			return;
+		}
+
+		mission.Failed = true;
+		if (IsInstanceValid(mission.Actor))
+		{
+			mission.Actor.UpdateState(
+				mission.Progress / Mathf.Max(1f, mission.Definition.TargetSeconds),
+				mission.PlayerInside,
+				mission.EnemyInside,
+				false,
+				true);
+		}
+
+		switch (mission.Definition.NormalizedType)
+		{
+			case "ritual_site":
+				_courage = Mathf.Max(0f, _courage - 12f);
+				_deck.IncreaseCooldowns(0.8f);
+				_spellDeck.IncreaseCooldowns(0.8f);
+				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RITE LOST", new Color("ffb4a2"), 0.62f);
+				break;
+			case "relic_escort":
+				DamageBusByRatio(0.08f, mission.Color, "ESCORT LOST");
+				break;
+			case "gate_breach":
+				RepairEnemyBaseByRatio(0.08f, mission.Color, "GATE RESET");
+				break;
+		}
+
+		var baseStatus = statusText ?? $"{StageMissionEvents.ResolveTitle(mission.Definition)} was lost before the route was secure.";
+		SetStatus($"{baseStatus} {StageMissionEvents.ResolvePenaltySummary(mission.Definition)}");
+	}
+
+	private float ResolveStageMissionMaxHealth(StageMissionEventDefinition mission)
+	{
+		return mission.NormalizedType switch
+		{
+			"ritual_site" => 84f,
+			"relic_escort" => 104f,
+			"gate_breach" => 116f,
+			_ => 88f
+		};
+	}
+
+	private static float ResolveStageMissionPresenceRepairRate(StageMissionEventDefinition mission)
+	{
+		return mission.NormalizedType switch
+		{
+			"ritual_site" => 2.1f,
+			"relic_escort" => 1.9f,
+			"gate_breach" => 1.7f,
+			_ => 1.8f
+		};
+	}
+
+	private static float ResolveStageMissionPressureRate(StageMissionEventDefinition mission)
+	{
+		return mission.NormalizedType switch
+		{
+			"ritual_site" => 7.8f,
+			"relic_escort" => 8.6f,
+			"gate_breach" => 9.4f,
+			_ => 8f
+		};
+	}
+
+	private string ResolveStageMissionSupportUnitId()
+	{
+		if (GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId))
+		{
+			return GameData.PlayerCoordinatorId;
+		}
+
+		if (GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId))
+		{
+			return GameData.PlayerDefenderId;
+		}
+
+		return GameData.PlayerBrawlerId;
+	}
+
 	private void UpdateStageHazards()
 	{
 		foreach (var hazard in _stageHazards)
@@ -3924,6 +4357,23 @@ public partial class BattleController : Node2D
 		{
 			var appliedDamage = _activeEndlessContactActor.ApplyPressureDamage(hazard.Definition.Damage * 0.85f);
 			RegisterEndlessContactPressure(appliedDamage);
+		}
+
+		foreach (var mission in _stageMissions)
+		{
+			if (!CanInteractWithStageMission(mission) ||
+				mission.Anchor.DistanceTo(hazard.Anchor) > hazard.Definition.Radius)
+			{
+				continue;
+			}
+
+			mission.Actor.ApplyPressureDamage(hazard.Definition.Damage * 0.55f);
+			if (mission.Actor.Health <= 0.01f)
+			{
+				FailStageMission(
+					mission,
+					$"{StageMissionEvents.ResolveTitle(mission.Definition)} was shattered by {ResolveStageHazardLabel(hazard.Definition).ToLowerInvariant()}.");
+			}
 		}
 	}
 
@@ -5666,6 +6116,43 @@ public partial class BattleController : Node2D
 		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
 	}
 
+	private void DamageEnemyBaseByRatio(float ratio, Color color, string label = "")
+	{
+		if (ratio <= 0f)
+		{
+			return;
+		}
+
+		var damageAmount = _enemyBaseMaxHealth * ratio;
+		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth - damageAmount);
+		_enemyBaseFlashTimer = 0.22f;
+		AudioDirector.Instance?.PlayBaseHit(false, damageAmount);
+		SpawnEffect(EnemyBaseCorePosition, color, 10f, 30f, 0.22f, false);
+		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+		if (!string.IsNullOrWhiteSpace(label))
+		{
+			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.18f), 0.62f);
+		}
+	}
+
+	private void RepairEnemyBaseByRatio(float ratio, Color color, string label = "")
+	{
+		if (ratio <= 0f)
+		{
+			return;
+		}
+
+		var repairAmount = _enemyBaseMaxHealth * ratio;
+		_enemyBaseHealth = Mathf.Min(_enemyBaseMaxHealth, _enemyBaseHealth + repairAmount);
+		_enemyBaseFlashTimer = 0.18f;
+		SpawnEffect(EnemyBaseCorePosition, color.Lightened(0.08f), 10f, 28f, 0.22f);
+		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repairAmount)}", color.Lightened(0.18f), 0.56f);
+		if (!string.IsNullOrWhiteSpace(label))
+		{
+			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.24f), 0.62f);
+		}
+	}
+
 	private float RepairBusByAmount(float amount)
 	{
 		if (amount <= 0f || _playerBaseHealth >= _playerBaseMaxHealth)
@@ -5955,6 +6442,8 @@ public partial class BattleController : Node2D
 
 	private StageBattleResult BuildStageBattleResult()
 	{
+		var completedMissionEvents = _stageMissions.Count(mission => mission.Completed);
+		var failedMissionEvents = _stageMissions.Count(mission => mission.Failed);
 		return new StageBattleResult
 		{
 			PlayerBaseHealth = _playerBaseHealth,
@@ -5963,7 +6452,10 @@ public partial class BattleController : Node2D
 			PlayerDeployments = _playerDeployments,
 			EnemyDefeats = _enemyDefeats,
 			PlayerHazardHits = _playerHazardHits,
-			PlayerSignalJamSeconds = _playerSignalJamSeconds
+			PlayerSignalJamSeconds = _playerSignalJamSeconds,
+			CompletedMissionEvents = completedMissionEvents,
+			FailedMissionEvents = failedMissionEvents,
+			TotalMissionEvents = _stageMissions.Count
 		};
 	}
 

@@ -1349,7 +1349,7 @@ public static class GameData
                 MapId = "thornwall",
                 MapName = "Thornwall Pass",
                 TerrainId = "shrine",
-                Description = "Avalanche bells ring over the pass, and the dead surge whenever the shrine drifts crack open.",
+                Description = "Avalanche bells ring over the pass, and the crew must steady the shrine dais before the drifts crack open again.",
                 RewardGold = 980,
                 RewardFood = 11,
                 EntryFoodCost = 6,
@@ -1369,7 +1369,30 @@ public static class GameData
                 CrusherWeight = 0.26f,
                 BossWeight = 0f,
                 BossSpawnStartTime = 0f,
-                BonusWaveChance = 0.26f
+                BonusWaveChance = 0.26f,
+                Objectives = new[]
+                {
+                    new StageObjectiveDefinition { Type = "clear_route" },
+                    new StageObjectiveDefinition { Type = "mission_event_success" },
+                    new StageObjectiveDefinition { Type = "hazard_hits_limit", Value = 4f }
+                },
+                MissionEvents = new[]
+                {
+                    new StageMissionEventDefinition
+                    {
+                        Type = "ritual_site",
+                        Title = "Avalanche Shrine",
+                        Summary = "Hold the shrine dais long enough to silence the dead bells before the pass collapses again.",
+                        RewardSummary = "Reward: +12 courage and cleaner deck recovery once the bells go quiet.",
+                        PenaltySummary = "Risk: lose courage and card tempo if the shrine falls.",
+                        XRatio = 0.58f,
+                        YRatio = 0.48f,
+                        Radius = 80f,
+                        TargetSeconds = 7.5f,
+                        StartTime = 24f,
+                        ColorHex = "fefae0"
+                    }
+                }
             },
             new StageDefinition
             {
@@ -1494,7 +1517,7 @@ public static class GameData
                 MapId = "basilica",
                 MapName = "Hollow Basilica",
                 TerrainId = "cathedral",
-                Description = "The choir loft rains curses over the aisle while relic escorts try to pin the war wagon in place.",
+                Description = "The choir loft rains curses over the aisle while reliquary bearers try to cross the nave under caravan cover.",
                 RewardGold = 1470,
                 RewardFood = 14,
                 EntryFoodCost = 8,
@@ -1514,7 +1537,30 @@ public static class GameData
                 CrusherWeight = 0.3f,
                 BossWeight = 0f,
                 BossSpawnStartTime = 0f,
-                BonusWaveChance = 0.3f
+                BonusWaveChance = 0.3f,
+                Objectives = new[]
+                {
+                    new StageObjectiveDefinition { Type = "clear_route" },
+                    new StageObjectiveDefinition { Type = "mission_event_success" },
+                    new StageObjectiveDefinition { Type = "clear_within", Value = 122f }
+                },
+                MissionEvents = new[]
+                {
+                    new StageMissionEventDefinition
+                    {
+                        Type = "relic_escort",
+                        Title = "Reliquary Bearers",
+                        Summary = "Hold the aisle long enough for the reliquary bearers to reach the war wagon.",
+                        RewardSummary = "Reward: a repair burst and escort reinforcement once the relics clear the nave.",
+                        PenaltySummary = "Risk: the war wagon takes a direct hit if the escort lane collapses.",
+                        XRatio = 0.56f,
+                        YRatio = 0.5f,
+                        Radius = 82f,
+                        TargetSeconds = 8.4f,
+                        StartTime = 28f,
+                        ColorHex = "ffe5b4"
+                    }
+                }
             },
             new StageDefinition
             {
@@ -2074,7 +2120,7 @@ public static class GameData
                 MapId = "citadel",
                 MapName = "Crownfall Citadel",
                 TerrainId = "bridgefort",
-                Description = "Gatehouse towers and command relays stack pressure from every prior district into one line.",
+                Description = "Gatehouse towers and command relays stack pressure while the breach crew tries to crack the crownward wall.",
                 RewardGold = 5760,
                 RewardFood = 25,
                 EntryFoodCost = 13,
@@ -2094,7 +2140,30 @@ public static class GameData
                 CrusherWeight = 0.48f,
                 BossWeight = 0f,
                 BossSpawnStartTime = 0f,
-                BonusWaveChance = 0.46f
+                BonusWaveChance = 0.46f,
+                Objectives = new[]
+                {
+                    new StageObjectiveDefinition { Type = "clear_route" },
+                    new StageObjectiveDefinition { Type = "mission_event_success" },
+                    new StageObjectiveDefinition { Type = "enemy_defeats", Value = 60f }
+                },
+                MissionEvents = new[]
+                {
+                    new StageMissionEventDefinition
+                    {
+                        Type = "gate_breach",
+                        Title = "Breach Crew",
+                        Summary = "Keep the charge line clear long enough for the crew to break the crownward gate braces.",
+                        RewardSummary = "Reward: direct gatehouse damage when the breach charge lands.",
+                        PenaltySummary = "Risk: the gatehouse regains footing and hull if the charge fails.",
+                        XRatio = 0.78f,
+                        YRatio = 0.48f,
+                        Radius = 76f,
+                        TargetSeconds = 7.8f,
+                        StartTime = 32f,
+                        ColorHex = "ffd166"
+                    }
+                }
             },
             new StageDefinition
             {
@@ -2248,7 +2317,7 @@ public static class GameData
                 MapId = "quarantine",
                 MapName = "Ashen Ward",
                 TerrainId = "blacksite",
-                Description = "A late Ashen Ward capstone where purge hazards, hex pressure, and breach teams form the final campaign challenge stage.",
+                Description = "A late Ashen Ward capstone where purge hazards, hex pressure, and a failing seal circle define the final caravan push.",
                 RewardGold = 8160,
                 RewardFood = 30,
                 EntryFoodCost = 14,
@@ -2268,7 +2337,30 @@ public static class GameData
                 CrusherWeight = 0.54f,
                 BossWeight = 0f,
                 BossSpawnStartTime = 0f,
-                BonusWaveChance = 0.52f
+                BonusWaveChance = 0.52f,
+                Objectives = new[]
+                {
+                    new StageObjectiveDefinition { Type = "clear_route" },
+                    new StageObjectiveDefinition { Type = "hazard_hits_limit", Value = 3f },
+                    new StageObjectiveDefinition { Type = "mission_event_success" }
+                },
+                MissionEvents = new[]
+                {
+                    new StageMissionEventDefinition
+                    {
+                        Type = "ritual_site",
+                        Title = "Purge Seal",
+                        Summary = "Hold the failing seal circle long enough to keep the containment grid from turning on the caravan.",
+                        RewardSummary = "Reward: courage surge and cleaner recovery when the seal stabilizes.",
+                        PenaltySummary = "Risk: lose card tempo if the seal fails under pressure.",
+                        XRatio = 0.46f,
+                        YRatio = 0.52f,
+                        Radius = 82f,
+                        TargetSeconds = 8.8f,
+                        StartTime = 36f,
+                        ColorHex = "bbf7d0"
+                    }
+                }
             }
         };
     }

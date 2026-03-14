@@ -12,6 +12,9 @@ public sealed class StageBattleResult
     public int EnemyDefeats { get; init; }
     public int PlayerHazardHits { get; init; }
     public float PlayerSignalJamSeconds { get; init; }
+    public int CompletedMissionEvents { get; init; }
+    public int FailedMissionEvents { get; init; }
+    public int TotalMissionEvents { get; init; }
 }
 
 public sealed class StageObjectiveOutcome
@@ -168,6 +171,7 @@ public static class StageObjectives
             "enemy_defeats" => result.EnemyDefeats >= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),
             "hazard_hits_limit" => result.PlayerHazardHits <= Mathf.RoundToInt(Mathf.Max(0f, objective.Value)),
             "signal_jam_limit" => result.PlayerSignalJamSeconds <= Mathf.Max(0f, objective.Value),
+            "mission_event_success" => result.CompletedMissionEvents >= ResolveMissionEventTarget(objective),
             _ => false
         };
     }
@@ -189,6 +193,7 @@ public static class StageObjectives
             "enemy_defeats" => $"Defeat at least {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} enemies",
             "hazard_hits_limit" => $"Take no more than {Mathf.RoundToInt(Mathf.Max(0f, objective.Value))} hazard hits",
             "signal_jam_limit" => $"Spend no more than {Mathf.Max(0f, objective.Value):0.#}s under signal jam",
+            "mission_event_success" => BuildMissionEventObjectiveLabel(stage, objective),
             _ => objective.Type
         };
     }
@@ -214,6 +219,7 @@ public static class StageObjectives
             "enemy_defeats" => BuildEnemyDefeatLiveStatus(objective, result, label),
             "hazard_hits_limit" => BuildHazardHitLiveStatus(objective, result, label),
             "signal_jam_limit" => BuildSignalJamLiveStatus(objective, result, label),
+            "mission_event_success" => BuildMissionEventLiveStatus(objective, result, label),
             _ => new StageObjectiveLiveStatus
             {
                 Label = label,
@@ -236,6 +242,25 @@ public static class StageObjectives
     private static float ResolvePlayerBaseReference(StageDefinition stage, StageBattleResult result)
     {
         return Mathf.Max(1f, result.PlayerBaseMaxHealth > 0f ? result.PlayerBaseMaxHealth : stage.PlayerBaseHealth);
+    }
+
+    private static int ResolveMissionEventTarget(StageObjectiveDefinition objective)
+    {
+        return Mathf.Max(1, Mathf.RoundToInt(objective.Value <= 0f ? 1f : objective.Value));
+    }
+
+    private static string BuildMissionEventObjectiveLabel(StageDefinition stage, StageObjectiveDefinition objective)
+    {
+        var required = ResolveMissionEventTarget(objective);
+        var primaryMission = StageMissionEvents.GetPrimaryEvent(stage);
+        if (required == 1 && primaryMission != null)
+        {
+            return $"Secure {StageMissionEvents.ResolveTitle(primaryMission)}";
+        }
+
+        return required == 1
+            ? "Secure the battlefield objective"
+            : $"Secure {required} battlefield objectives";
     }
 
     private static string NormalizeType(string type)
@@ -354,6 +379,31 @@ public static class StageObjectives
         {
             Label = label,
             Detail = $"{result.PlayerSignalJamSeconds:0.0}s / {limit:0.0}s jammed",
+            State = state
+        };
+    }
+
+    private static StageObjectiveLiveStatus BuildMissionEventLiveStatus(
+        StageObjectiveDefinition objective,
+        StageBattleResult result,
+        string label)
+    {
+        var required = ResolveMissionEventTarget(objective);
+        var remaining = Mathf.Max(0, result.TotalMissionEvents - result.CompletedMissionEvents - result.FailedMissionEvents);
+        var state = result.CompletedMissionEvents >= required
+            ? StageObjectiveLiveState.Completed
+            : result.CompletedMissionEvents + remaining < required
+                ? StageObjectiveLiveState.Failed
+                : StageObjectiveLiveState.Active;
+
+        var detail = result.TotalMissionEvents <= 0
+            ? "No battlefield objective authored"
+            : $"{result.CompletedMissionEvents}/{required} secured  |  {remaining} pending  |  {result.FailedMissionEvents} lost";
+
+        return new StageObjectiveLiveStatus
+        {
+            Label = label,
+            Detail = detail,
             State = state
         };
     }

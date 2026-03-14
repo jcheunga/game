@@ -35,6 +35,7 @@ public sealed class StageDefinition
     public StageHazardDefinition[] Hazards { get; set; } = Array.Empty<StageHazardDefinition>();
     public StageModifierDefinition[] Modifiers { get; set; } = Array.Empty<StageModifierDefinition>();
     public StageObjectiveDefinition[] Objectives { get; set; } = Array.Empty<StageObjectiveDefinition>();
+    public StageMissionEventDefinition[] MissionEvents { get; set; } = Array.Empty<StageMissionEventDefinition>();
     public StageWaveDefinition[] Waves { get; set; } = Array.Empty<StageWaveDefinition>();
 
     public Vector2 MapPoint => new(MapX, MapY);

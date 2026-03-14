@@ -144,6 +144,15 @@ public partial class EndlessContactActor : Node2D
             case EndlessContactCatalog.SafehouseRescueId:
                 DrawSafehouseRescue(drawColor);
                 break;
+            case "ritual_site":
+                DrawRitualSite(drawColor);
+                break;
+            case "relic_escort":
+                DrawRelicEscort(drawColor);
+                break;
+            case "gate_breach":
+                DrawGateBreach(drawColor);
+                break;
         }
     }
 
@@ -232,6 +241,59 @@ public partial class EndlessContactActor : Node2D
         {
             var signalAlpha = 0.18f + (0.08f * Mathf.Sin(_pulseTimer * 4.9f));
             DrawCircle(new Vector2(0f, -34f), 8f + (_progressRatio * 3f), new Color(drawColor, signalAlpha));
+        }
+    }
+
+    private void DrawRitualSite(Color drawColor)
+    {
+        var altarColor = _failed ? new Color("6c757d") : new Color("3d405b");
+        DrawCircle(Vector2.Zero, 18f, new Color(drawColor, _completed ? 0.22f : 0.12f));
+        DrawCircle(Vector2.Zero, 9f, altarColor);
+        for (var i = 0; i < 6; i++)
+        {
+            var angle = (Mathf.Tau / 6f) * i;
+            var point = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 26f;
+            DrawCircle(point, 4.5f, drawColor.Lightened(0.08f));
+            DrawLine(Vector2.Zero, point, new Color(drawColor, 0.28f), 2f, true);
+        }
+
+        var flareAlpha = _failed ? 0.06f : 0.16f + (_progressRatio * 0.18f);
+        DrawArc(Vector2.Zero, 34f + (_progressRatio * 8f), 0f, Mathf.Tau, 24, new Color(drawColor, flareAlpha), 3f);
+        DrawArc(Vector2.Zero, 44f + (_progressRatio * 12f), 0f, Mathf.Tau, 28, new Color(drawColor, flareAlpha * 0.7f), 2f);
+    }
+
+    private void DrawRelicEscort(Color drawColor)
+    {
+        var wagonColor = _failed ? new Color("6c757d") : new Color("8d6e63");
+        DrawRect(new Rect2(new Vector2(-24f, -8f), new Vector2(48f, 24f)), wagonColor, true);
+        DrawRect(new Rect2(new Vector2(-18f, -18f), new Vector2(36f, 12f)), drawColor.Darkened(0.2f), true);
+        DrawCircle(new Vector2(-14f, 20f), 8f, new Color("495057"));
+        DrawCircle(new Vector2(14f, 20f), 8f, new Color("495057"));
+        DrawRect(new Rect2(new Vector2(-6f, -26f), new Vector2(12f, 16f)), drawColor.Lightened(0.08f), true);
+        DrawCivilianSilhouette(new Vector2(-30f, 18f), new Color("f8f9fa"), 0.82f, false);
+        DrawCivilianSilhouette(new Vector2(30f, 18f), new Color("e9ecef"), 0.82f, true);
+
+        if (_completed)
+        {
+            DrawLine(new Vector2(18f, -18f), new Vector2(56f, -40f), new Color(drawColor, 0.28f), 2f, true);
+            DrawRect(new Rect2(new Vector2(52f, -48f), new Vector2(18f, 12f)), drawColor.Lightened(0.1f), true);
+        }
+    }
+
+    private void DrawGateBreach(Color drawColor)
+    {
+        var wallColor = _failed ? new Color("495057") : new Color("5c677d");
+        DrawRect(new Rect2(new Vector2(-28f, -32f), new Vector2(56f, 64f)), wallColor, true);
+        DrawRect(new Rect2(new Vector2(-10f, -14f), new Vector2(20f, 46f)), new Color("2b2d42"), true);
+        DrawLine(new Vector2(-4f, -24f), new Vector2(-18f, 18f), drawColor.Lightened(0.08f), 4f, true);
+        DrawLine(new Vector2(6f, -28f), new Vector2(20f, 14f), drawColor.Lightened(0.08f), 4f, true);
+        DrawRect(new Rect2(new Vector2(-42f, 18f), new Vector2(28f, 10f)), drawColor.Darkened(0.18f), true);
+        DrawLine(new Vector2(-14f, 23f), new Vector2(-34f, 6f), drawColor, 4f, true);
+        DrawLine(new Vector2(-14f, 23f), new Vector2(-34f, 40f), drawColor, 4f, true);
+
+        if (_completed)
+        {
+            DrawArc(new Vector2(18f, -6f), 18f, -Mathf.Pi * 0.4f, Mathf.Pi * 0.4f, 16, new Color(drawColor, 0.3f), 3f);
         }
     }
 

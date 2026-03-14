@@ -27,9 +27,14 @@ public static class StageEncounterIntel
 
         if (!stage.HasScriptedWaves)
         {
+            var missionLine = StageMissionEvents.HasMissionEvents(stage)
+                ? $"Mission events: {StageMissionEvents.BuildInlineSummary(stage)}"
+                : "";
             return
                 $"Threat: {ResolveThreatRating(stage)}\n" +
                 "Pressure: dynamic undead activity\n" +
+                missionLine +
+                (missionLine.Length > 0 ? "\n" : "") +
                 $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}\n" +
                 $"Hazards: {StageHazards.BuildInlineSummary(stage)}";
         }
@@ -44,6 +49,10 @@ public static class StageEncounterIntel
             wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
         var supportPressure = BuildSupportPressureSummary(counts);
 
+        var missionSummary = StageMissionEvents.HasMissionEvents(stage)
+            ? $"Mission events: {StageMissionEvents.BuildInlineSummary(stage)}"
+            : "";
+
         return
             $"Threat: {ResolveThreatRating(stage)}  |  Contacts: {totalEnemies}  |  Enemy types: {counts.Count}\n" +
             $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")}  |  " +
@@ -51,6 +60,8 @@ public static class StageEncounterIntel
             $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}  |  " +
             $"Boss trait: {(bossWave == null ? "n/a" : "Rally call")}\n" +
             $"{supportPressure}\n" +
+            $"{missionSummary}" +
+            (missionSummary.Length > 0 ? "\n" : "") +
             $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}  |  Hazards: {StageHazards.BuildInlineSummary(stage)}";
     }
 
@@ -90,6 +101,10 @@ public static class StageEncounterIntel
             $"Scheduled contacts: {totalEnemies}  |  Enemy types: {counts.Count}  |  Peak wave: {peakWave.TriggerTime:0}s");
         builder.AppendLine($"Threat mix: {string.Join(", ", topThreats)}");
         builder.AppendLine(BuildSupportPressureSummary(counts));
+        if (StageMissionEvents.HasMissionEvents(stage))
+        {
+            builder.AppendLine($"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}");
+        }
         builder.AppendLine($"Hazards: {StageHazards.BuildInlineSummary(stage)}");
 
         if (bossWave != null)

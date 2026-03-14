@@ -1503,6 +1503,7 @@ public partial class BattleController : Node2D
 		UpdateLanRaceTelemetry(deltaF);
 		UpdateOnlineRoomTelemetry(deltaF);
 		UpdateOnlineRoomMonitor(deltaF);
+		AudioDirector.Instance?.SetBattlePressure(ResolveBattleAudioPressure());
 		UpdateHud();
 		QueueRedraw();
 		CheckBattleEnd();
@@ -6433,6 +6434,7 @@ public partial class BattleController : Node2D
 		}
 
 		_battleEnded = true;
+		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
 
@@ -6672,6 +6674,7 @@ public partial class BattleController : Node2D
 
 	private void FinalizeEndlessRun(bool retreated)
 	{
+		AudioDirector.Instance?.SetBattlePressure(0.14f);
 		var rewardGold = CalculateEndlessScrapReward();
 		var rewardFood = CalculateEndlessFuelReward();
 		GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardGold, rewardFood, retreated);
@@ -6697,6 +6700,19 @@ public partial class BattleController : Node2D
 			$"{routeLabel}  |  Stage {_stage}  |  {_stageData.StageName}\n" +
 			$"Time {result.Elapsed:0.0}s  |  Hull {hullPercent}%  |  Enemy defeats {result.EnemyDefeats}  |  Deployments {result.PlayerDeployments}\n" +
 			$"Hazard hits {result.PlayerHazardHits}  |  Signal jam {result.PlayerSignalJamSeconds:0.0}s";
+	}
+
+	private float ResolveBattleAudioPressure()
+	{
+		var enemyCountPressure = Mathf.Clamp(CountTeamUnits(Team.Enemy) / 12f, 0f, 1f) * 0.45f;
+		var hullPressure = (1f - Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f)) * 0.3f;
+		var pendingPressure = Mathf.Clamp(_spawnDirector.PendingSpawnCount / 10f, 0f, 1f) * 0.12f;
+		var hazardPressure = _stageHazards.Any(hazard => hazard.WarningIssued || hazard.NextTriggerTime <= _elapsed + 2f) ? 0.08f : 0f;
+		var missionPressure = _stageMissions.Any(mission => mission.Started && !mission.Completed && !mission.Failed) ? 0.08f : 0f;
+		var endlessPressure = IsEndlessMode
+			? Mathf.Clamp(_spawnDirector.EndlessWaveNumber / 40f, 0f, 1f) * 0.14f
+			: 0f;
+		return Mathf.Clamp(enemyCountPressure + hullPressure + pendingPressure + hazardPressure + missionPressure + endlessPressure, 0f, 1f);
 	}
 
 	private string BuildStageMissionDebriefText()

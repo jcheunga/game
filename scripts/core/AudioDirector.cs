@@ -23,6 +23,16 @@ public partial class AudioDirector : Node
 	private const string EndlessAmbienceCueId = "ambience_endless";
 	private const string MultiplayerAmbienceCueId = "ambience_multiplayer";
 	private const string ShopAmbienceCueId = "ambience_shop";
+	private const string RoadAmbienceCueId = "ambience_route_road";
+	private const string HarborAmbienceCueId = "ambience_route_harbor";
+	private const string FoundryAmbienceCueId = "ambience_route_foundry";
+	private const string QuarantineAmbienceCueId = "ambience_route_quarantine";
+	private const string ThornwallAmbienceCueId = "ambience_route_thornwall";
+	private const string BasilicaAmbienceCueId = "ambience_route_basilica";
+	private const string MireAmbienceCueId = "ambience_route_mire";
+	private const string SteppeAmbienceCueId = "ambience_route_steppe";
+	private const string GloamwoodAmbienceCueId = "ambience_route_gloamwood";
+	private const string CitadelAmbienceCueId = "ambience_route_citadel";
 
 	private readonly struct ToneLayer
 	{
@@ -48,9 +58,12 @@ public partial class AudioDirector : Node
 
 	private Timer _ambienceTimer = null!;
 	private string _currentScenePath = string.Empty;
+	private string _currentAmbienceContextKey = string.Empty;
 	private string _currentAmbienceCueId = string.Empty;
 	private float _currentAmbienceVolumeDb = -24f;
 	private Vector2 _currentAmbienceIntervalRange = new(5.8f, 7.4f);
+	private Vector2 _currentAmbiencePitchRange = new(0.985f, 1.015f);
+	private float _battlePressure;
 
 	public override void _EnterTree()
 	{
@@ -167,6 +180,18 @@ public partial class AudioDirector : Node
 		UpdateSceneContext(true);
 	}
 
+	public void SetBattlePressure(float pressure)
+	{
+		var clamped = Mathf.Clamp(pressure, 0f, 1f);
+		if (Mathf.Abs(clamped - _battlePressure) < 0.06f)
+		{
+			return;
+		}
+
+		_battlePressure = clamped;
+		UpdateSceneContext(true);
+	}
+
 	private void OnTreeNodeAdded(Node node)
 	{
 		if (node is Button button)
@@ -205,24 +230,34 @@ public partial class AudioDirector : Node
 	private void UpdateSceneContext(bool force = false)
 	{
 		var scenePath = GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
-		if (!force && scenePath == _currentScenePath)
+		if (scenePath != SceneRouter.BattleScene)
+		{
+			_battlePressure = 0f;
+		}
+
+		var contextKey = ResolveAmbienceContextKey(scenePath);
+		if (!force && scenePath == _currentScenePath && contextKey == _currentAmbienceContextKey)
 		{
 			return;
 		}
 
 		_currentScenePath = scenePath;
+		_currentAmbienceContextKey = contextKey;
 
 		var nextCueId = ResolveAmbienceCueId(scenePath);
 		var nextVolumeDb = ResolveAmbienceVolumeDb(scenePath);
 		var nextIntervalRange = ResolveAmbienceIntervalRange(scenePath);
+		var nextPitchRange = ResolveAmbiencePitchRange(scenePath);
 		var ambienceChanged =
 			nextCueId != _currentAmbienceCueId ||
 			Mathf.Abs(nextVolumeDb - _currentAmbienceVolumeDb) > 0.05f ||
-			nextIntervalRange != _currentAmbienceIntervalRange;
+			nextIntervalRange != _currentAmbienceIntervalRange ||
+			nextPitchRange != _currentAmbiencePitchRange;
 
 		_currentAmbienceCueId = nextCueId;
 		_currentAmbienceVolumeDb = nextVolumeDb;
 		_currentAmbienceIntervalRange = nextIntervalRange;
+		_currentAmbiencePitchRange = nextPitchRange;
 
 		if (string.IsNullOrWhiteSpace(_currentAmbienceCueId))
 		{
@@ -238,15 +273,16 @@ public partial class AudioDirector : Node
 
 	private string ResolveAmbienceCueId(string scenePath)
 	{
+		var routeCueId = ResolveRouteAmbienceCueId(ResolveContextRouteId(scenePath));
 		return scenePath switch
 		{
 			SceneRouter.MainMenuScene => MenuAmbienceCueId,
-			SceneRouter.MapScene => MenuAmbienceCueId,
-			SceneRouter.LoadoutScene => MenuAmbienceCueId,
-			SceneRouter.ShopScene => ShopAmbienceCueId,
-			SceneRouter.EndlessScene => EndlessAmbienceCueId,
-			SceneRouter.MultiplayerScene => MultiplayerAmbienceCueId,
-			SceneRouter.BattleScene => BattleAmbienceCueId,
+			SceneRouter.MapScene => string.IsNullOrWhiteSpace(routeCueId) ? MenuAmbienceCueId : routeCueId,
+			SceneRouter.LoadoutScene => string.IsNullOrWhiteSpace(routeCueId) ? MenuAmbienceCueId : routeCueId,
+			SceneRouter.ShopScene => string.IsNullOrWhiteSpace(routeCueId) ? ShopAmbienceCueId : routeCueId,
+			SceneRouter.EndlessScene => string.IsNullOrWhiteSpace(routeCueId) ? EndlessAmbienceCueId : routeCueId,
+			SceneRouter.MultiplayerScene => string.IsNullOrWhiteSpace(routeCueId) ? MultiplayerAmbienceCueId : routeCueId,
+			SceneRouter.BattleScene => string.IsNullOrWhiteSpace(routeCueId) ? BattleAmbienceCueId : routeCueId,
 			_ => string.Empty
 		};
 	}
@@ -255,7 +291,7 @@ public partial class AudioDirector : Node
 	{
 		return scenePath switch
 		{
-			SceneRouter.BattleScene => -22f,
+			SceneRouter.BattleScene => Mathf.Lerp(-23f, -18.5f, _battlePressure),
 			SceneRouter.EndlessScene => -23f,
 			SceneRouter.MultiplayerScene => -24f,
 			SceneRouter.ShopScene => -24f,
@@ -267,11 +303,113 @@ public partial class AudioDirector : Node
 	{
 		return scenePath switch
 		{
-			SceneRouter.BattleScene => new Vector2(3.4f, 4.8f),
+			SceneRouter.BattleScene => new Vector2(
+				Mathf.Lerp(3.6f, 1.9f, _battlePressure),
+				Mathf.Lerp(4.8f, 3.1f, _battlePressure)),
 			SceneRouter.EndlessScene => new Vector2(3.1f, 4.2f),
 			SceneRouter.MultiplayerScene => new Vector2(4.3f, 5.4f),
 			SceneRouter.ShopScene => new Vector2(4.6f, 5.8f),
 			_ => new Vector2(5.2f, 6.8f)
+		};
+	}
+
+	private Vector2 ResolveAmbiencePitchRange(string scenePath)
+	{
+		var routeId = ResolveContextRouteId(scenePath);
+		var range = routeId switch
+		{
+			RouteCatalog.CityId => new Vector2(0.99f, 1.02f),
+			RouteCatalog.HarborId => new Vector2(0.94f, 0.98f),
+			RouteCatalog.FoundryId => new Vector2(0.88f, 0.93f),
+			RouteCatalog.QuarantineId => new Vector2(0.9f, 0.95f),
+			RouteCatalog.ThornwallId => new Vector2(1f, 1.04f),
+			RouteCatalog.BasilicaId => new Vector2(0.86f, 0.91f),
+			RouteCatalog.MireId => new Vector2(0.83f, 0.89f),
+			RouteCatalog.SteppeId => new Vector2(1.03f, 1.08f),
+			RouteCatalog.GloamwoodId => new Vector2(0.88f, 0.94f),
+			RouteCatalog.CitadelId => new Vector2(0.94f, 1f),
+			_ => new Vector2(0.985f, 1.015f)
+		};
+
+		if (scenePath == SceneRouter.BattleScene)
+		{
+			return new Vector2(
+				Mathf.Max(0.78f, range.X - (_battlePressure * 0.03f)),
+				Mathf.Min(1.12f, range.Y + (_battlePressure * 0.04f)));
+		}
+
+		return range;
+	}
+
+	private string ResolveAmbienceContextKey(string scenePath)
+	{
+		var routeId = ResolveContextRouteId(scenePath);
+		var pressureBucket = scenePath == SceneRouter.BattleScene
+			? Mathf.RoundToInt(_battlePressure * 4f)
+			: 0;
+		return $"{scenePath}|{routeId}|{pressureBucket}";
+	}
+
+	private string ResolveContextRouteId(string scenePath)
+	{
+		if (GameState.Instance == null)
+		{
+			return "";
+		}
+
+		return scenePath switch
+		{
+			SceneRouter.MapScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
+			SceneRouter.LoadoutScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
+			SceneRouter.ShopScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
+			SceneRouter.EndlessScene => RouteCatalog.Get(GameData.GetLatestStageForMap(GameState.Instance.SelectedEndlessRouteId).MapId).Id,
+			SceneRouter.MultiplayerScene => ResolveStageRouteId(GameState.Instance.GetSelectedAsyncChallenge().Stage),
+			SceneRouter.BattleScene => ResolveBattleRouteId(),
+			_ => ""
+		};
+	}
+
+	private string ResolveBattleRouteId()
+	{
+		if (GameState.Instance == null)
+		{
+			return "";
+		}
+
+		return GameState.Instance.CurrentBattleMode switch
+		{
+			BattleRunMode.Endless => RouteCatalog.Get(GameData.GetLatestStageForMap(GameState.Instance.SelectedEndlessRouteId).MapId).Id,
+			BattleRunMode.AsyncChallenge => ResolveStageRouteId(GameState.Instance.GetSelectedAsyncChallenge().Stage),
+			_ => ResolveStageRouteId(GameState.Instance.SelectedStage)
+		};
+	}
+
+	private static string ResolveStageRouteId(int stage)
+	{
+		if (GameState.Instance == null || GameState.Instance.MaxStage <= 0)
+		{
+			return "";
+		}
+
+		var clampedStage = Mathf.Clamp(stage, 1, GameState.Instance.MaxStage);
+		return RouteCatalog.Get(GameData.GetStage(clampedStage).MapId).Id;
+	}
+
+	private static string ResolveRouteAmbienceCueId(string routeId)
+	{
+		return routeId switch
+		{
+			RouteCatalog.CityId => RoadAmbienceCueId,
+			RouteCatalog.HarborId => HarborAmbienceCueId,
+			RouteCatalog.FoundryId => FoundryAmbienceCueId,
+			RouteCatalog.QuarantineId => QuarantineAmbienceCueId,
+			RouteCatalog.ThornwallId => ThornwallAmbienceCueId,
+			RouteCatalog.BasilicaId => BasilicaAmbienceCueId,
+			RouteCatalog.MireId => MireAmbienceCueId,
+			RouteCatalog.SteppeId => SteppeAmbienceCueId,
+			RouteCatalog.GloamwoodId => GloamwoodAmbienceCueId,
+			RouteCatalog.CitadelId => CitadelAmbienceCueId,
+			_ => ""
 		};
 	}
 
@@ -285,7 +423,7 @@ public partial class AudioDirector : Node
 		PlayCue(
 			_currentAmbienceCueId,
 			_currentAmbienceVolumeDb,
-			1f + _rng.RandfRange(-0.025f, 0.025f),
+			_rng.RandfRange(_currentAmbiencePitchRange.X, _currentAmbiencePitchRange.Y),
 			isAmbience: true);
 		ScheduleNextAmbiencePulse();
 	}
@@ -410,6 +548,46 @@ public partial class AudioDirector : Node
 			new ToneLayer(164f, 168f, 1f, true),
 			new ToneLayer(328f, 336f, 0.2f),
 			new ToneLayer(492f, 504f, 0.08f)));
+		RegisterCue(RoadAmbienceCueId, CreateCue(1.75f, 0.11f, 0.34f, 0.22f, 0.04f, 0.16f, 0.008f, 0.6f,
+			new ToneLayer(108f, 112f, 1f),
+			new ToneLayer(164f, 168f, 0.32f),
+			new ToneLayer(218f, 224f, 0.14f)));
+		RegisterCue(HarborAmbienceCueId, CreateCue(1.9f, 0.12f, 0.38f, 0.2f, 0.06f, 0.24f, 0.01f, 0.4f,
+			new ToneLayer(96f, 100f, 1f),
+			new ToneLayer(144f, 148f, 0.28f),
+			new ToneLayer(286f, 292f, 0.1f)));
+		RegisterCue(FoundryAmbienceCueId, CreateCue(1.58f, 0.08f, 0.28f, 0.24f, 0.08f, 0f, 0f, 1.8f,
+			new ToneLayer(76f, 82f, 1f, true),
+			new ToneLayer(152f, 160f, 0.24f),
+			new ToneLayer(228f, 244f, 0.08f)));
+		RegisterCue(QuarantineAmbienceCueId, CreateCue(1.66f, 0.08f, 0.3f, 0.22f, 0.05f, 0.28f, 0.014f, 1.2f,
+			new ToneLayer(84f, 88f, 1f),
+			new ToneLayer(168f, 174f, 0.24f),
+			new ToneLayer(336f, 348f, 0.08f)));
+		RegisterCue(ThornwallAmbienceCueId, CreateCue(1.72f, 0.1f, 0.34f, 0.22f, 0.04f, 0.18f, 0.01f, 0.75f,
+			new ToneLayer(116f, 122f, 1f),
+			new ToneLayer(174f, 182f, 0.26f),
+			new ToneLayer(234f, 244f, 0.1f)));
+		RegisterCue(BasilicaAmbienceCueId, CreateCue(1.82f, 0.14f, 0.42f, 0.2f, 0.03f, 0.12f, 0.006f, 0.3f,
+			new ToneLayer(92f, 94f, 1f),
+			new ToneLayer(184f, 188f, 0.22f),
+			new ToneLayer(368f, 376f, 0.12f)));
+		RegisterCue(MireAmbienceCueId, CreateCue(1.86f, 0.12f, 0.4f, 0.2f, 0.07f, 0.22f, 0.012f, 0.25f,
+			new ToneLayer(78f, 82f, 1f),
+			new ToneLayer(118f, 124f, 0.3f),
+			new ToneLayer(236f, 244f, 0.08f)));
+		RegisterCue(SteppeAmbienceCueId, CreateCue(1.68f, 0.08f, 0.28f, 0.22f, 0.03f, 0.3f, 0.012f, 0.9f,
+			new ToneLayer(132f, 138f, 1f),
+			new ToneLayer(198f, 206f, 0.24f),
+			new ToneLayer(396f, 408f, 0.08f)));
+		RegisterCue(GloamwoodAmbienceCueId, CreateCue(1.74f, 0.1f, 0.36f, 0.2f, 0.05f, 0.2f, 0.012f, 0.55f,
+			new ToneLayer(88f, 92f, 1f),
+			new ToneLayer(132f, 136f, 0.28f),
+			new ToneLayer(264f, 272f, 0.1f)));
+		RegisterCue(CitadelAmbienceCueId, CreateCue(1.62f, 0.08f, 0.3f, 0.24f, 0.03f, 0f, 0f, 1.4f,
+			new ToneLayer(110f, 114f, 1f, true),
+			new ToneLayer(220f, 228f, 0.24f),
+			new ToneLayer(330f, 342f, 0.1f)));
 	}
 
 	private void RegisterCue(string id, AudioStreamWav cue)

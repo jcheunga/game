@@ -250,6 +250,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Fully clearing a district now grants a one-time chapter reward, and the map/title screens track claimed district rewards as a campaign meta milestone
   - Owned units now unlock doctrine branches at level 3, and Caravan Armory can forge or retrain those specializations with persistent stat bonuses
   - Cleared stages now unlock optional heroic directives with extra modifiers and one-time bounty rewards, so campaign replays have a real challenge/bounty loop
+  - Audio ambience now shifts by district and battle pressure, so route selection and live combat carry different procedural mood beds instead of one generic backdrop
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
   - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, caravan support events, battlefield events, live segment directives, route-specific contact events, projected spoils, retreat-based reward banking, and a temporary opening boon
   - Every 15th wave is now a deliberate boss checkpoint with route-specific escort pressure and extra clear rewards

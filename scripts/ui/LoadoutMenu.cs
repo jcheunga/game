@@ -4,10 +4,13 @@ public partial class LoadoutMenu : Control
 {
     private StageDefinition _stage = null!;
 
+    private readonly System.Collections.Generic.List<Control> _animatedPanels = new();
+
     public override void _Ready()
     {
         _stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         BuildUi();
+        PlayEntranceAnimations();
     }
 
     private void BuildUi()
@@ -45,6 +48,7 @@ public partial class LoadoutMenu : Control
         };
         titlePanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
         AddChild(titlePanel);
+        _animatedPanels.Add(titlePanel);
 
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", 16);
@@ -75,6 +79,7 @@ public partial class LoadoutMenu : Control
         };
         missionPanel.SelfModulate = route.BannerPanel;
         AddChild(missionPanel);
+        _animatedPanels.Add(missionPanel);
 
         var missionPadding = new MarginContainer();
         missionPadding.AddThemeConstantOverride("margin_left", 18);
@@ -168,6 +173,7 @@ public partial class LoadoutMenu : Control
         };
         rosterPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
         AddChild(rosterPanel);
+        _animatedPanels.Add(rosterPanel);
 
         var rosterPadding = new MarginContainer();
         rosterPadding.AddThemeConstantOverride("margin_left", 18);
@@ -285,6 +291,21 @@ public partial class LoadoutMenu : Control
             SceneRouter.Instance.GoToBattle();
         };
         bottomRow.AddChild(deployButton);
+    }
+
+    private void PlayEntranceAnimations()
+    {
+        for (var i = 0; i < _animatedPanels.Count; i++)
+        {
+            var panel = _animatedPanels[i];
+            panel.Modulate = new Color(1f, 1f, 1f, 0f);
+            var delay = 0.06f + (i * 0.06f);
+            var tween = CreateTween();
+            tween.TweenProperty(panel, "modulate:a", 1f, 0.25f)
+                .SetDelay(delay)
+                .SetTrans(Tween.TransitionType.Cubic)
+                .SetEase(Tween.EaseType.Out);
+        }
     }
 
     private Control BuildUnitPanel(UnitDefinition definition)

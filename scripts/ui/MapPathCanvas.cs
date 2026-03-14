@@ -11,6 +11,14 @@ public partial class MapPathCanvas : Control
     public int SelectedStage { get; set; } = 1;
     public string ActiveMapId { get; set; } = "city";
 
+    private float _animTimer;
+
+    public override void _Process(double delta)
+    {
+        _animTimer += (float)delta;
+        QueueRedraw();
+    }
+
     public override void _Draw()
     {
         var route = RouteCatalog.Get(ActiveMapId);
@@ -357,7 +365,10 @@ public partial class MapPathCanvas : Control
 
             if (isSelected)
             {
-                DrawArc(point, 48f, 0f, Mathf.Tau, 36, new Color(route.SelectedNode, 0.75f), 5f);
+                var pulse = 0.55f + (Mathf.Sin(_animTimer * 3.2f) * 0.2f);
+                var glowRadius = 50f + (Mathf.Sin(_animTimer * 2.4f) * 4f);
+                DrawArc(point, glowRadius, 0f, Mathf.Tau, 36, new Color(route.SelectedNode, pulse), 5f);
+                DrawCircle(point, glowRadius + 2f, new Color(route.SelectedNode, pulse * 0.12f));
             }
 
             DrawCircle(point, 38f, new Color(0f, 0f, 0f, 0.34f));
@@ -371,8 +382,10 @@ public partial class MapPathCanvas : Control
 
             if (!unlocked)
             {
-                DrawArc(point + new Vector2(0f, 2f), 10f, Mathf.Pi, Mathf.Tau, 14, new Color(1f, 1f, 1f, 0.75f), 3f);
-                DrawRect(new Rect2(point + new Vector2(-8f, 2f), new Vector2(16f, 12f)), new Color(1f, 1f, 1f, 0.75f), true);
+                var lockBob = Mathf.Sin(_animTimer * 1.5f + (stage * 0.7f)) * 2f;
+                var lockCenter = point + new Vector2(0f, 2f + lockBob);
+                DrawArc(lockCenter, 10f, Mathf.Pi, Mathf.Tau, 14, new Color(1f, 1f, 1f, 0.75f), 3f);
+                DrawRect(new Rect2(lockCenter + new Vector2(-8f, 0f), new Vector2(16f, 12f)), new Color(1f, 1f, 1f, 0.75f), true);
             }
         }
     }

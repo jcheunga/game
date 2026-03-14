@@ -4324,6 +4324,23 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private void ShowEndPanelAnimated()
+	{
+		_endCenter.Visible = true;
+		_endPanel.Visible = true;
+		_endPanel.Modulate = new Color(1f, 1f, 1f, 0f);
+		_endPanel.Scale = new Vector2(0.94f, 0.94f);
+		_endPanel.PivotOffset = _endPanel.Size * 0.5f;
+		var tween = CreateTween();
+		tween.SetParallel(true);
+		tween.TweenProperty(_endPanel, "modulate:a", 1f, 0.35f)
+			.SetTrans(Tween.TransitionType.Cubic)
+			.SetEase(Tween.EaseType.Out);
+		tween.TweenProperty(_endPanel, "scale", Vector2.One, 0.4f)
+			.SetTrans(Tween.TransitionType.Back)
+			.SetEase(Tween.EaseType.Out);
+	}
+
 	private void SpawnBattleEndParticles(bool playerWon)
 	{
 		if (playerWon)
@@ -6767,8 +6784,7 @@ public partial class BattleController : Node2D
 			SetStatus("The war wagon was overrun. Regroup.");
 		}
 
-		_endCenter.Visible = true;
-		_endPanel.Visible = true;
+		ShowEndPanelAnimated();
 		UpdateHud();
 	}
 
@@ -6888,8 +6904,7 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayDefeat();
 		}
 
-		_endCenter.Visible = true;
-		_endPanel.Visible = true;
+		ShowEndPanelAnimated();
 		UpdateHud();
 	}
 

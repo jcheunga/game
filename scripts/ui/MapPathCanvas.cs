@@ -226,6 +226,33 @@ public partial class MapPathCanvas : Control
                     true);
             }
         }
+        else if (mapId == "gloamwood")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 130f, Size.X, 88f), new Color("251824", 0.58f), true);
+
+            for (var i = 0; i < 7; i++)
+            {
+                var x = Mathf.Lerp(70f, Size.X - 70f, i / 6f);
+                DrawLine(
+                    new Vector2(x, Size.Y - 50f),
+                    new Vector2(x - 18f, 92f + ((i % 3) * 16f)),
+                    new Color("b08968", 0.14f),
+                    8f,
+                    true);
+                DrawLine(
+                    new Vector2(x, 126f + ((i % 2) * 20f)),
+                    new Vector2(x + 26f, 92f + ((i % 2) * 14f)),
+                    new Color("dda15e", 0.12f),
+                    4f,
+                    true);
+            }
+
+            for (var i = 0; i < 8; i++)
+            {
+                var x = Mathf.Lerp(84f, Size.X - 84f, i / 7f);
+                DrawCircle(new Vector2(x, Size.Y - 94f - ((i % 2) * 8f)), 4f, new Color("f4a261", 0.38f));
+            }
+        }
         else
         {
             for (var i = 0; i < 7; i++)

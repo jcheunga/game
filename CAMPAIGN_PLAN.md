@@ -2,7 +2,7 @@
 
 Target campaign breadth: `10` districts with `5` stages each, for a `50-stage` campaign.
 
-Current authored status: `8` playable districts and `36` live stages. The first eight districts are in-game now; the remaining two are the next content targets for campaign expansion.
+Current authored status: `9` playable districts and `41` live stages. The first nine districts are in-game now; the remaining one is the next content target for campaign expansion.
 
 1. `King's Road` (`Playable`, target `5` stages): outer farms, pilgrim roads, and bell-tower wards where the Lantern Caravan first meets the Rotbound Host.
 2. `Saltwake Docks` (`Playable`, target `5` stages): flooded quays, chain cranes, and wreck piers built around heavier undead and dockside choke points.
@@ -12,5 +12,5 @@ Current authored status: `8` playable districts and `36` live stages. The first 
 6. `Hollow Basilica` (`Playable`, target `5` stages): ruined cathedrals, ossuary plazas, and reliquary vaults where relic guardians and necromantic ceremony define the fights.
 7. `Mire of Saints` (`Playable`, target `5` stages): bog causeways, drowned chapels, and plague ferries that slow the march and lean into attrition pressure.
 8. `Sunfall Steppe` (`Playable`, target `5` stages): burned waystations, open grassland forts, and roaming siege camps built around fast rider strikes and fire volleys.
-9. `Gloamwood Verge` (`Planned`, target `5` stages): thorn groves, witch circles, and haunted timber roads shaped by ambush timing, snares, and curse traps.
+9. `Gloamwood Verge` (`Playable`, target `5` stages): thorn groves, witch circles, and haunted timber roads shaped by ambush timing, snares, and curse traps.
 10. `Crownfall Citadel` (`Planned`, target `5` stages): bridge forts, breach yards, and the inner keep where earlier threat patterns converge into the capital siege finale.

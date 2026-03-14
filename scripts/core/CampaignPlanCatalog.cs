@@ -90,11 +90,11 @@ public static class CampaignPlanCatalog
             "Fast rider strikes, howler-led raids, and repeated breach dives through open lanes."),
         new(
             9,
-            "gloamwood",
+            RouteCatalog.GloamwoodId,
             "Gloamwood Verge",
             5,
             "Thorn groves, witch circles, and haunted timber roads where curse traps and ambush timing rule the route.",
-            "Ambush packs, snare magic, and staggered assault waves from the tree line."),
+            "Ambush packs, snare hazards, hex support, and staggered assault waves from the tree line."),
         new(
             10,
             "citadel",

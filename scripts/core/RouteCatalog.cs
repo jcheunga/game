@@ -65,6 +65,7 @@ public static class RouteCatalog
     public const string BasilicaId = "basilica";
     public const string MireId = "mire";
     public const string SteppeId = "steppe";
+    public const string GloamwoodId = "gloamwood";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -219,6 +220,25 @@ public static class RouteCatalog
                 new Color("5a3928"),
                 new Color("fefae0"),
                 new Color("f4a261"))
+        },
+        {
+            GloamwoodId,
+            new RouteDefinition(
+                GloamwoodId,
+                "Gloamwood Verge",
+                "Thorn groves, witch circles, and haunted timber roads. Ambush timing, curse traps, and snare hazards break clean marches.",
+                "Gloamwood Verge favors ambush packs, hex support, and sapper dives through cursed timber lanes.",
+                "Ambush packs, curse support, and snare hazards punish overcommits and slow recoveries.",
+                new Color("7f5539"),
+                new Color("2c1f24"),
+                new Color("3d2b38"),
+                new Color("171017"),
+                new Color("b08968"),
+                new Color("e6ccb2"),
+                new Color("9c6644"),
+                new Color("33242b"),
+                new Color("fefae0"),
+                new Color("b08968"))
         }
     };
 
@@ -241,7 +261,8 @@ public static class RouteCatalog
             Definitions[ThornwallId],
             Definitions[BasilicaId],
             Definitions[MireId],
-            Definitions[SteppeId]
+            Definitions[SteppeId],
+            Definitions[GloamwoodId]
         };
     }
 

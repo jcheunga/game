@@ -151,6 +151,21 @@ public static class EndlessBossCheckpointCatalog
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.GloamwoodId,
+            "Thorn Hexlord",
+            "A gloamwood Grave Lord advances behind hexers, howler packs, and sapper ambushers through the thorn road.",
+            "Reward: bank +48 gold, +1 food, and call a mage reinforcement.",
+            "The thorn hexlord fell and the caravan burned a safe line through the next grove.",
+            48,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyRunnerId, Count = 2 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyJammerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyHowlerId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySaboteurId, Count = 1 }
             })
     };
 

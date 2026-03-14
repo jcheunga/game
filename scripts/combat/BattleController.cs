@@ -753,6 +753,30 @@ public partial class BattleController : Node2D
 				new Color("c1121f"),
 				new Color("ffd6a5"),
 				new Color("ef476f")),
+			"grove" => new TerrainPalette(
+				new Color("4d3228"),
+				new Color("1d1415"),
+				new Color(0.96f, 0.88f, 0.74f, 0.08f),
+				new Color("b08968"),
+				new Color("c1121f"),
+				new Color("e6ccb2"),
+				new Color("ef476f")),
+			"witchcircle" => new TerrainPalette(
+				new Color("513139"),
+				new Color("22161c"),
+				new Color(0.92f, 0.86f, 0.8f, 0.08f),
+				new Color("dda15e"),
+				new Color("c1121f"),
+				new Color("fefae0"),
+				new Color("ef476f")),
+			"timberroad" => new TerrainPalette(
+				new Color("5b3b2d"),
+				new Color("241813"),
+				new Color(0.95f, 0.86f, 0.76f, 0.08f),
+				new Color("bc6c25"),
+				new Color("c1121f"),
+				new Color("f4a261"),
+				new Color("ef476f")),
 			_ => new TerrainPalette(
 				new Color("14213d"),
 				new Color("22324f"),
@@ -1101,6 +1125,46 @@ public partial class BattleController : Node2D
 						new Vector2(x + 22f, BattlefieldTop + 54f + ((i % 2) * 10f)),
 						new Vector2(x, BattlefieldTop + 30f + ((i % 2) * 10f)),
 						new Color(1f, 0.82f, 0.54f, 0.12f),
+						4f,
+						true);
+				}
+				break;
+			case "grove":
+				for (var i = 0; i < 6; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 88f, BattlefieldRight - 88f, i / 5f);
+					DrawLine(
+						new Vector2(x, BattlefieldBottom - 42f),
+						new Vector2(x - 12f, BattlefieldTop + 78f + ((i % 2) * 14f)),
+						new Color(0.72f, 0.54f, 0.4f, 0.2f),
+						8f,
+						true);
+					DrawCircle(new Vector2(x - 18f, BattlefieldTop + 68f + ((i % 2) * 14f)), 20f, new Color(0.9f, 0.76f, 0.62f, 0.08f));
+				}
+				break;
+			case "witchcircle":
+				for (var i = 0; i < 3; i++)
+				{
+					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
+					DrawCircle(new Vector2(x, BaseCenterY - 14f), 38f, new Color(1f, 0.92f, 0.78f, 0.08f));
+					for (var j = 0; j < 6; j++)
+					{
+						var angle = (Mathf.Tau / 6f) * j;
+						DrawCircle(
+							new Vector2(x, BaseCenterY - 14f) + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 32f,
+							4f,
+							new Color(0.96f, 0.84f, 0.62f, 0.5f));
+					}
+				}
+				break;
+			case "timberroad":
+				for (var i = 0; i < 5; i++)
+				{
+					var y = BaseCenterY - 62f + (i * 30f);
+					DrawLine(
+						new Vector2(BattlefieldLeft + 52f, y),
+						new Vector2(BattlefieldRight - 52f, y),
+						new Color(0.76f, 0.46f, 0.2f, 0.14f),
 						4f,
 						true);
 				}
@@ -4632,6 +4696,11 @@ public partial class BattleController : Node2D
 				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
 					? GameData.PlayerRaiderId
 					: GameData.PlayerBrawlerId);
+				break;
+			case RouteCatalog.GloamwoodId:
+				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerMarksmanId)
+					? GameData.PlayerMarksmanId
+					: GameData.PlayerShooterId);
 				break;
 		}
 

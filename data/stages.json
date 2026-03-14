@@ -4123,6 +4123,592 @@
           ]
         }
       ]
+    },
+    {
+      "StageNumber": 37,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "grove",
+      "StageName": "Thorn Verge",
+      "Description": "The timber edge closes in with ambush packs, snare hazards, and curse-lit brush.\nRecommended squad: Crossbowman + Mage + Shield Knight.",
+      "RewardGold": 3700,
+      "RewardFood": 21,
+      "EntryFoodCost": 11,
+      "ExploreFoodCost": 14,
+      "MapX": 164.0,
+      "MapY": 512.0,
+      "PlayerBaseHealth": 1060.0,
+      "EnemyBaseHealth": 3600.0,
+      "EnemySpawnMin": 0.94,
+      "EnemySpawnMax": 1.34,
+      "EnemyHealthScale": 4.24,
+      "EnemyDamageScale": 4.0,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.42,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.4,
+      "Hazards": [
+        {
+          "Type": "thorn_snare",
+          "Label": "Thorn Snare",
+          "XRatio": 0.36,
+          "YRatio": 0.62,
+          "Radius": 78.0,
+          "Interval": 9.2,
+          "StartTime": 10.0,
+          "WarningDuration": 1.8,
+          "Damage": 26.0,
+          "ColorHex": "b08968"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "armored_convoy", "Value": 1.1 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "bus_hull_ratio", "Value": 0.75 },
+        { "Type": "enemy_defeats", "Value": 46.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Brush scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Hidden horns",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Snare break",
+          "TriggerTime": 46.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Curse brush",
+          "TriggerTime": 70.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Verge crush",
+          "TriggerTime": 94.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 38,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "witchcircle",
+      "StageName": "Witch Circle",
+      "Description": "The circle grounds the fight under hex support and repeated flank dives from the treeline.\nRecommended squad: Mage + Battle Monk + Crossbowman.",
+      "RewardGold": 3960,
+      "RewardFood": 22,
+      "EntryFoodCost": 12,
+      "ExploreFoodCost": 14,
+      "MapX": 334.0,
+      "MapY": 282.0,
+      "PlayerBaseHealth": 1090.0,
+      "EnemyBaseHealth": 3780.0,
+      "EnemySpawnMin": 0.9,
+      "EnemySpawnMax": 1.3,
+      "EnemyHealthScale": 4.38,
+      "EnemyDamageScale": 4.12,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.44,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.41,
+      "Hazards": [
+        {
+          "Type": "witchfire",
+          "Label": "Witchfire",
+          "XRatio": 0.52,
+          "YRatio": 0.24,
+          "Radius": 80.0,
+          "Interval": 8.8,
+          "StartTime": 9.0,
+          "WarningDuration": 1.8,
+          "Damage": 27.0,
+          "ColorHex": "dda15e"
+        },
+        {
+          "Type": "thorn_snare",
+          "Label": "Thorn Snare",
+          "XRatio": 0.28,
+          "YRatio": 0.72,
+          "Radius": 72.0,
+          "Interval": 10.8,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 26.0,
+          "ColorHex": "b08968"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "surging_courage", "Value": 1.1 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 4.0 },
+        { "Type": "enemy_defeats", "Value": 48.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Circle scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Hex chorus",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Root breach",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Witchfire ring",
+          "TriggerTime": 72.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Circle crush",
+          "TriggerTime": 96.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 39,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "timberroad",
+      "StageName": "Blackbark Road",
+      "Description": "A cursed timber road turns every stall into an ambush window for raiders and hexers.\nRecommended squad: Halberdier + Mage + Shield Knight.",
+      "RewardGold": 4230,
+      "RewardFood": 22,
+      "EntryFoodCost": 12,
+      "ExploreFoodCost": 15,
+      "MapX": 500.0,
+      "MapY": 430.0,
+      "PlayerBaseHealth": 1120.0,
+      "EnemyBaseHealth": 3980.0,
+      "EnemySpawnMin": 0.86,
+      "EnemySpawnMax": 1.26,
+      "EnemyHealthScale": 4.54,
+      "EnemyDamageScale": 4.24,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.44,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.42,
+      "Hazards": [
+        {
+          "Type": "rootlash",
+          "Label": "Rootlash",
+          "XRatio": 0.62,
+          "YRatio": 0.34,
+          "Radius": 74.0,
+          "Interval": 9.2,
+          "StartTime": 10.0,
+          "WarningDuration": 1.8,
+          "Damage": 27.0,
+          "ColorHex": "bc6c25"
+        },
+        {
+          "Type": "witchfire",
+          "Label": "Witchfire",
+          "XRatio": 0.3,
+          "YRatio": 0.68,
+          "Radius": 72.0,
+          "Interval": 10.6,
+          "StartTime": 16.0,
+          "WarningDuration": 1.7,
+          "Damage": 27.0,
+          "ColorHex": "dda15e"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.22 },
+        { "Type": "swarm_density", "Value": 2.0 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "deploy_limit", "Value": 9.0 },
+        { "Type": "enemy_defeats", "Value": 50.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Timber scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Road hex",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Blackbark crush",
+          "TriggerTime": 48.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Tree-line dive",
+          "TriggerTime": 74.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Road collapse",
+          "TriggerTime": 100.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 40,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "grove",
+      "StageName": "Snare Grove",
+      "Description": "Every advance through the grove is punished by snare roots, curse fire, and hidden breach teams.\nRecommended squad: Battle Monk + Crossbowman + Halberdier.",
+      "RewardGold": 4510,
+      "RewardFood": 23,
+      "EntryFoodCost": 12,
+      "ExploreFoodCost": 15,
+      "MapX": 662.0,
+      "MapY": 208.0,
+      "PlayerBaseHealth": 1150.0,
+      "EnemyBaseHealth": 4200.0,
+      "EnemySpawnMin": 0.82,
+      "EnemySpawnMax": 1.22,
+      "EnemyHealthScale": 4.7,
+      "EnemyDamageScale": 4.38,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.46,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.43,
+      "Hazards": [
+        {
+          "Type": "thorn_snare",
+          "Label": "Thorn Snare",
+          "XRatio": 0.28,
+          "YRatio": 0.58,
+          "Radius": 80.0,
+          "Interval": 8.8,
+          "StartTime": 8.5,
+          "WarningDuration": 1.8,
+          "Damage": 28.0,
+          "ColorHex": "b08968"
+        },
+        {
+          "Type": "rootlash",
+          "Label": "Rootlash",
+          "XRatio": 0.72,
+          "YRatio": 0.28,
+          "Radius": 74.0,
+          "Interval": 10.4,
+          "StartTime": 15.0,
+          "WarningDuration": 1.7,
+          "Damage": 27.0,
+          "ColorHex": "bc6c25"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "surging_courage", "Value": 1.1 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 52.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Hidden verge",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Grove hex",
+          "TriggerTime": 24.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Snare crush",
+          "TriggerTime": 50.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Witchfire lanes",
+          "TriggerTime": 76.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Grove overrun",
+          "TriggerTime": 102.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 41,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "witchcircle",
+      "StageName": "Gloamwood Heart",
+      "Description": "Gloamwood Verge boss stage. Thorn snares and witchfire close the lane until the Grave Lord rises in the heart circle.",
+      "RewardGold": 4800,
+      "RewardFood": 24,
+      "EntryFoodCost": 12,
+      "ExploreFoodCost": 15,
+      "MapX": 784.0,
+      "MapY": 560.0,
+      "PlayerBaseHealth": 1185.0,
+      "EnemyBaseHealth": 4440.0,
+      "EnemySpawnMin": 0.78,
+      "EnemySpawnMax": 1.18,
+      "EnemyHealthScale": 4.88,
+      "EnemyDamageScale": 4.52,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.05,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.46,
+      "BossWeight": 0.42,
+      "BossSpawnStartTime": 88.0,
+      "BonusWaveChance": 0.44,
+      "Hazards": [
+        {
+          "Type": "witchfire",
+          "Label": "Witchfire",
+          "XRatio": 0.26,
+          "YRatio": 0.3,
+          "Radius": 82.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 28.0,
+          "ColorHex": "dda15e"
+        },
+        {
+          "Type": "thorn_snare",
+          "Label": "Thorn Snare",
+          "XRatio": 0.68,
+          "YRatio": 0.56,
+          "Radius": 78.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 28.0,
+          "ColorHex": "b08968"
+        },
+        {
+          "Type": "rootlash",
+          "Label": "Rootlash",
+          "XRatio": 0.5,
+          "YRatio": 0.8,
+          "Radius": 74.0,
+          "Interval": 12.0,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 27.0,
+          "ColorHex": "bc6c25"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.32 },
+        { "Type": "armored_convoy", "Value": 1.1 },
+        { "Type": "surging_courage", "Value": 1.12 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 54.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Heart scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Hex procession",
+          "TriggerTime": 26.0,
+          "SpawnInterval": 0.3,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Thorn breach",
+          "TriggerTime": 50.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Witchfire rush",
+          "TriggerTime": 74.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Thorn hexlord",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.34,
+          "Entries": [
+            { "UnitId": "enemy_boss", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Last snare",
+          "TriggerTime": 110.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_crusher", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -157,14 +157,14 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Review recent local attempts for the current code and recent challenge queue history
   - `Caravan Armory`: adjust the active squad and upgrades before posting a score
 - Endless prep:
-  - Choose `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, or `Sunfall Steppe` for the survival run
+  - Choose `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, `Sunfall Steppe`, or `Gloamwood Verge` for the survival run
   - Pick one temporary opening boon before the run starts
   - Review the route-specific boss checkpoint that arrives every 15 waves and what it pays out
   - Review best endless wave/time, route pressure profile, and active squad stats
   - `Begin Endless March`: start the endless survival battle
   - `Caravan Armory`: buy upgrades and edit the active squad before the run
 - Campaign map:
-  - Switch between `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, and `Sunfall Steppe` in the map selector
+  - Switch between `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, `Sunfall Steppe`, and `Gloamwood Verge` in the map selector
   - Review route banner progress, district buildout status, earned stars, and route-specific stage styling on the map
   - Hover stage nodes for threat and star intel before selecting them
   - Review caravan readiness, active squad summary, and route-specific exploration costs
@@ -227,6 +227,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - `Hollow Basilica` adds cathedral/ossuary/reliquary battle palettes plus splitter/spitter/hexer pressure around relic choke points
   - `Mire of Saints` adds marsh/chapel/ferry battle palettes plus attrition-heavy bloater/splitter/spitter pressure under bog hazards
   - `Sunfall Steppe` adds grassland/waystation/siegecamp battle palettes plus fast rider/howler/sapper pressure under fire hazards
+  - `Gloamwood Verge` adds grove/witchcircle/timberroad battle palettes plus ambush-heavy runner/hexer/sapper pressure under snare hazards
   - Units now use differentiated silhouettes and size profiles instead of plain circles
   - Hits and attacks flash units, and projectiles now draw trails with impact pulses
   - The war wagon and gatehouse now show damage state, shake on impact, and expose clearer base health bars

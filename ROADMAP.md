@@ -227,6 +227,7 @@ This sprint should stay narrow and practical:
 - added stage-authored battlefield mission events, including ritual-site holds, relic escorts, and gate-breach charges with live progress, success swings, and failure penalties
 - started the presentation pass with differentiated unit silhouettes, hit flashes, and projectile trails
 - improved battlefield readability with base damage states, impact shake, base health bars, and stronger deploy cards
+- upgraded the spell layer from shared placeholder pulses into distinct fireball, heal, frost, lightning, and ward battlefield signatures
 - added floating combat text so damage events read clearly during melee, projectile, burst, and base hits
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
 - extended route identity through the campaign map, loadout briefing, and caravan armory so each district now carries its own color treatment and battlefield-event briefing surface

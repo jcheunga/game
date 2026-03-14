@@ -3407,11 +3407,18 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void SpawnEffect(Vector2 position, Color color, float startRadius, float endRadius, float lifetime, bool filled = true)
+	private void SpawnEffect(
+		Vector2 position,
+		Color color,
+		float startRadius,
+		float endRadius,
+		float lifetime,
+		bool filled = true,
+		BattleEffectStyle style = BattleEffectStyle.Pulse)
 	{
 		var effect = new BattleEffect();
 		effect.Position = position;
-		effect.Setup(color, startRadius, endRadius, lifetime, filled);
+		effect.Setup(color, startRadius, endRadius, lifetime, filled, style);
 		AddChild(effect);
 	}
 
@@ -3481,7 +3488,7 @@ public partial class BattleController : Node2D
 		var hits = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.26f, false);
+		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FIREBALL", color.Lightened(0.22f), 0.56f);
 
 		foreach (var target in targets)
@@ -3509,7 +3516,7 @@ public partial class BattleController : Node2D
 		var healedUnits = 0;
 		var totalHealing = 0f;
 
-		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false);
+		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false, BattleEffectStyle.HealBloom);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "HEAL", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
@@ -3522,7 +3529,7 @@ public partial class BattleController : Node2D
 
 			healedUnits++;
 			totalHealing += healed;
-			SpawnEffect(ally.Position, color.Lightened(0.08f), 8f, 22f, 0.18f, false);
+			SpawnEffect(ally.Position, color.Lightened(0.08f), 8f, 22f, 0.18f, false, BattleEffectStyle.HealBloom);
 			SpawnFloatText(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
 		}
 
@@ -3539,7 +3546,7 @@ public partial class BattleController : Node2D
 		var slowed = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.3f, false);
+		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.3f, false, BattleEffectStyle.FrostBurst);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FROST", color.Lightened(0.24f), 0.58f);
 
 		foreach (var target in targets)
@@ -3569,7 +3576,7 @@ public partial class BattleController : Node2D
 			.ToArray();
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false);
+		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false, BattleEffectStyle.LightningStrike);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "LIGHTNING", color.Lightened(0.18f), 0.56f);
 
 		for (var i = 0; i < targets.Length; i++)
@@ -3587,7 +3594,7 @@ public partial class BattleController : Node2D
 			}
 
 			totalDamage += appliedDamage;
-			SpawnEffect(targets[i].Position, color, 10f, 30f, 0.2f, false);
+			SpawnEffect(targets[i].Position, color, 10f, 30f, 0.2f, false, BattleEffectStyle.LightningStrike);
 			SpawnDamageFeedback(targets[i].Position, appliedDamage, color);
 		}
 
@@ -3602,14 +3609,14 @@ public partial class BattleController : Node2D
 		var allies = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Player);
 		var warded = 0;
 
-		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false);
+		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false, BattleEffectStyle.WardSigil);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "WARD", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
 		{
 			ally.ApplyTemporaryDefenseModifier(definition.Power, definition.Duration);
 			warded++;
-			SpawnEffect(ally.Position, color.Lightened(0.05f), 6f, 18f, 0.18f, false);
+			SpawnEffect(ally.Position, color.Lightened(0.05f), 6f, 18f, 0.18f, false, BattleEffectStyle.WardSigil);
 		}
 
 		return warded > 0

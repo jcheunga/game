@@ -49,7 +49,7 @@ public partial class MainMenu : Control
 
         var subtitle = new Label
         {
-            Text = "Medieval fantasy siege prototype\nBuild a warband, hold the lane, break the gate.",
+            Text = "Medieval fantasy siege campaign\nBuild a warband, hold the lane, break the gate.",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         stack.AddChild(subtitle);

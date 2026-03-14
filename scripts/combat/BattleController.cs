@@ -46,10 +46,22 @@ public partial class BattleController : Node2D
 		{
 			Definition = definition;
 			Button = button;
+			CooldownOverlay = new ColorRect
+			{
+				Color = new Color(0f, 0f, 0f, 0.35f),
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+				AnchorBottom = 1f,
+				AnchorRight = 0f,
+				OffsetBottom = 0f,
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				Visible = false
+			};
+			button.AddChild(CooldownOverlay);
 		}
 
 		public UnitDefinition Definition { get; }
 		public Button Button { get; }
+		public ColorRect CooldownOverlay { get; }
 	}
 
 	private sealed class SpellSlot
@@ -58,10 +70,22 @@ public partial class BattleController : Node2D
 		{
 			Definition = definition;
 			Button = button;
+			CooldownOverlay = new ColorRect
+			{
+				Color = new Color(0f, 0f, 0f, 0.35f),
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+				AnchorBottom = 1f,
+				AnchorRight = 0f,
+				OffsetBottom = 0f,
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				Visible = false
+			};
+			button.AddChild(CooldownOverlay);
 		}
 
 		public SpellDefinition Definition { get; }
 		public Button Button { get; }
+		public ColorRect CooldownOverlay { get; }
 	}
 
 	private enum BattleSelectionMode
@@ -262,6 +286,8 @@ public partial class BattleController : Node2D
 	private Label _baseHealthLabel = null!;
 	private Label _resourceLabel = null!;
 	private Label _timerLabel = null!;
+	private BattleHudBar _courageBar = null!;
+	private BattleHudBar _waveProgressBar = null!;
 	private Label _statusLabel = null!;
 	private Label _battleBannerLabel = null!;
 	private Label _battleSubtitleLabel = null!;
@@ -1793,7 +1819,7 @@ public partial class BattleController : Node2D
 		var topHudPanel = new PanelContainer
 		{
 			Position = new Vector2(16f, 16f),
-			Size = new Vector2(540f, 248f)
+			Size = new Vector2(540f, 290f)
 		};
 		topHudPanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
 		root.AddChild(topHudPanel);
@@ -1830,6 +1856,14 @@ public partial class BattleController : Node2D
 
 		_timerLabel = new Label();
 		topVBox.AddChild(_timerLabel);
+
+		_courageBar = new BattleHudBar { CustomMinimumSize = new Vector2(520f, 16f) };
+		_courageBar.Setup(new Color("ffd166"), new Color(1f, 1f, 1f, 0.2f), "Courage");
+		topVBox.AddChild(_courageBar);
+
+		_waveProgressBar = new BattleHudBar { CustomMinimumSize = new Vector2(520f, 12f) };
+		_waveProgressBar.Setup(route.BannerAccent, new Color(1f, 1f, 1f, 0.15f), "Waves");
+		topVBox.AddChild(_waveProgressBar);
 
 		_statusLabel = new Label
 		{
@@ -2181,6 +2215,22 @@ public partial class BattleController : Node2D
 		_timerLabel.Text =
 			$"Time: {_elapsed:0.0}s   |   Active enemies: {CountTeamUnits(Team.Enemy)}   |   Active allies: {CountTeamUnits(Team.Player)}{waveStatus}";
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
+		_courageBar.SetValue(
+			_maxCourage > 0.01f ? _courage / _maxCourage : 0f,
+			$"{Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}");
+		var waveRatio = _spawnDirector.IsEndlessMode
+			? 0f
+			: _spawnDirector.UsesScriptedWaves && _spawnDirector.TotalScriptedWaves > 0
+				? (float)_spawnDirector.NextScriptedWaveIndex / _spawnDirector.TotalScriptedWaves
+				: 0f;
+		_waveProgressBar.SetValue(
+			waveRatio,
+			_spawnDirector.IsEndlessMode
+				? $"Endless wave {_spawnDirector.EndlessWaveNumber}"
+				: _spawnDirector.UsesScriptedWaves
+					? $"{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
+					: "");
+		_waveProgressBar.Visible = _spawnDirector.UsesScriptedWaves || _spawnDirector.IsEndlessMode;
 		_waveIntelLabel.Text = BuildWaveIntelText();
 		if (IsEndlessMode)
 		{
@@ -2213,6 +2263,13 @@ public partial class BattleController : Node2D
 				$"{marker}Lv{level} {slot.Definition.DisplayName}\n{stateLabel}  |  {slot.Definition.Cost} courage";
 			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, slot.Definition == _deck.ArmedUnit);
 			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
+			var totalCd = ResolvePlayerDeployCooldown(slot.Definition);
+			var cdRatio = !isReady && totalCd > 0.1f ? cooldown / totalCd : 0f;
+			slot.CooldownOverlay.Visible = cdRatio > 0.01f;
+			if (cdRatio > 0.01f)
+			{
+				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(cdRatio, 0f, 1f);
+			}
 		}
 
 		foreach (var slot in _spellSlots)
@@ -2234,6 +2291,13 @@ public partial class BattleController : Node2D
 				$"{marker}Lv{resolved.Level} {slot.Definition.DisplayName}\n{stateLabel}  |  {resolved.CourageCost} courage";
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
+			var totalSpellCd = ResolvePlayerSpellCooldown(slot.Definition, resolved);
+			var spellCdRatio = !isReady && totalSpellCd > 0.1f ? cooldown / totalSpellCd : 0f;
+			slot.CooldownOverlay.Visible = spellCdRatio > 0.01f;
+			if (spellCdRatio > 0.01f)
+			{
+				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(spellCdRatio, 0f, 1f);
+			}
 		}
 	}
 

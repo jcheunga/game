@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
@@ -18,6 +19,8 @@ public partial class LanRaceMenu : Control
 	private Button _readyButton = null!;
 	private Button _launchButton = null!;
 
+	private readonly List<Control> _entrancePanels = new();
+
 	public override void _Ready()
 	{
 		BuildUi();
@@ -27,6 +30,22 @@ public partial class LanRaceMenu : Control
 		}
 
 		RefreshUi();
+		AnimateEntrance();
+	}
+
+	private void AnimateEntrance()
+	{
+		for (var i = 0; i < _entrancePanels.Count; i++)
+		{
+			var panel = _entrancePanels[i];
+			panel.Modulate = new Color(1f, 1f, 1f, 0f);
+			var delay = 0.06f + (i * 0.05f);
+			var tween = CreateTween();
+			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
+				.SetDelay(delay)
+				.SetTrans(Tween.TransitionType.Cubic)
+				.SetEase(Tween.EaseType.Out);
+		}
 	}
 
 	public override void _ExitTree()
@@ -52,6 +71,7 @@ public partial class LanRaceMenu : Control
 			Size = new Vector2(1232f, 82f)
 		};
 		AddChild(titlePanel);
+		_entrancePanels.Add(titlePanel);
 
 		var titleRow = new HBoxContainer();
 		titleRow.AddThemeConstantOverride("separation", 16);
@@ -78,6 +98,7 @@ public partial class LanRaceMenu : Control
 			Size = new Vector2(540f, 520f)
 		};
 		AddChild(boardPanel);
+		_entrancePanels.Add(boardPanel);
 
 		var boardPadding = new MarginContainer();
 		boardPadding.AddThemeConstantOverride("margin_left", 18);
@@ -171,6 +192,7 @@ public partial class LanRaceMenu : Control
 			Size = new Vector2(668f, 520f)
 		};
 		AddChild(roomPanel);
+		_entrancePanels.Add(roomPanel);
 
 		var roomPadding = new MarginContainer();
 		roomPadding.AddThemeConstantOverride("margin_left", 18);
@@ -256,6 +278,7 @@ public partial class LanRaceMenu : Control
 			Size = new Vector2(1232f, 56f)
 		};
 		AddChild(bottomPanel);
+		_entrancePanels.Add(bottomPanel);
 
 		var bottomRow = new HBoxContainer();
 		bottomRow.AddThemeConstantOverride("separation", 12);

@@ -382,6 +382,7 @@ public partial class MapMenu : Control
             ApplyStageButtonStyle(button, stageDefinition, stars, stageId <= GameState.Instance.HighestUnlockedStage, stageId == _selectedStage);
         }
 
+		AnimateSidePanelRefresh();
         var stage = GameState.Instance.BuildConfiguredCampaignStage(_selectedStage);
         ApplyRouteTheme(stage);
         var stageUnlocked = _selectedStage <= GameState.Instance.HighestUnlockedStage;
@@ -572,6 +573,20 @@ public partial class MapMenu : Control
     private static string NormalizeMapId(string mapId)
     {
         return RouteCatalog.Normalize(mapId);
+    }
+
+    private void AnimateSidePanelRefresh()
+    {
+        if (_sidePanel == null)
+        {
+            return;
+        }
+
+        _sidePanel.Modulate = new Color(1f, 1f, 1f, 0.5f);
+        var tween = CreateTween();
+        tween.TweenProperty(_sidePanel, "modulate:a", 1f, 0.15f)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
     }
 
     private void ApplyRouteTheme(StageDefinition stage)

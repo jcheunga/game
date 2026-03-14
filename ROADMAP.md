@@ -230,6 +230,7 @@ This sprint should stay narrow and practical:
 - added floating combat text so damage events read clearly during melee, projectile, burst, and base hits
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
 - extended route identity through the campaign map, loadout briefing, and caravan armory so each district now carries its own color treatment and battlefield-event briefing surface
+- extended that route identity into live combat with route-themed HUD panels, in-battle briefing banners, and heraldic war wagon/gatehouse silhouettes
 - upgraded the caravan armory action board so authored battlefield events can influence buy and upgrade recommendations before deployment
 - upgraded the title screen from a placeholder launcher into a live convoy/progression briefing
 - started the endless-mode scaffold with a dedicated prep screen, persisted run records, and a survival battle ruleset with generated escalating waves

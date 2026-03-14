@@ -242,6 +242,8 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - The battle HUD previews the next scripted wave countdown and composition
   - The battle HUD also shows live mission objective progress and failed star conditions
   - Active campaign mission events now show their own battlefield-event progress in combat instead of living only in stage text
+  - Battle HUD panels now inherit the active route colors, and combat opens with a route/stage briefing banner that keeps the live mission or mutator state visible
+  - The war wagon and gatehouse now carry route heraldry and stronger siege silhouettes instead of reading like plain abstract blocks
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
   - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, caravan support events, battlefield events, live segment directives, route-specific contact events, projected spoils, retreat-based reward banking, and a temporary opening boon
   - Every 15th wave is now a deliberate boss checkpoint with route-specific escort pressure and extra clear rewards

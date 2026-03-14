@@ -263,6 +263,9 @@ public partial class BattleController : Node2D
 	private Label _resourceLabel = null!;
 	private Label _timerLabel = null!;
 	private Label _statusLabel = null!;
+	private Label _battleBannerLabel = null!;
+	private Label _battleSubtitleLabel = null!;
+	private Label _battleMissionLabel = null!;
 	private Label _waveIntelLabel = null!;
 	private Label _objectiveStatusLabel = null!;
 	private Label _fpsLabel = null!;
@@ -548,6 +551,7 @@ public partial class BattleController : Node2D
 	public override void _Draw()
 	{
 		var palette = ResolveTerrainPalette();
+		var route = RouteCatalog.Get(_activeRouteId);
 
 		DrawRect(new Rect2(0f, 0f, 1280f, 720f), palette.SkyColor, true);
 
@@ -579,8 +583,8 @@ public partial class BattleController : Node2D
 		DrawEndlessContactEvent();
 		DrawChallengeGhostMarkers();
 
-		DrawPlayerBus(palette);
-		DrawEnemyBarricade(palette);
+		DrawPlayerBus(palette, route);
+		DrawEnemyBarricade(palette, route);
 	}
 
 	private TerrainPalette ResolveTerrainPalette()
@@ -1269,12 +1273,14 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void DrawPlayerBus(TerrainPalette palette)
+	private void DrawPlayerBus(TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
 		var offset = GetBaseShakeOffset(true);
 		var bodyColor = ResolveBaseBodyColor(palette.PlayerBaseColor, _playerBaseFlashTimer, healthRatio);
 		var cabinColor = ResolveBaseCoreColor(palette.PlayerCoreColor, _playerBaseFlashTimer, healthRatio);
+		var trimColor = route.BannerAccent;
+		var trimShadow = route.BannerPanel.Lightened(0.12f);
 		var bodyRect = new Rect2(PlayerBaseX - 46f, BaseCenterY - 34f, 122f, 58f);
 		var cabinRect = new Rect2(PlayerBaseX + 44f, BaseCenterY - 24f, 34f, 34f);
 		var bumperRect = new Rect2(PlayerBaseX - 58f, BaseCenterY + 10f, 16f, 12f);
@@ -1282,6 +1288,56 @@ public partial class BattleController : Node2D
 		DrawRect(OffsetRect(bodyRect, offset), bodyColor, true);
 		DrawRect(OffsetRect(cabinRect, offset), cabinColor, true);
 		DrawRect(OffsetRect(bumperRect, offset), cabinColor.Darkened(0.2f), true);
+		DrawRect(
+			OffsetRect(new Rect2(PlayerBaseX - 34f, BaseCenterY - 44f, 66f, 10f), offset),
+			bodyColor.Darkened(0.18f),
+			true);
+		DrawLine(
+			new Vector2(PlayerBaseX - 20f, BaseCenterY - 34f) + offset,
+			new Vector2(PlayerBaseX - 20f, BaseCenterY - 8f) + offset,
+			trimShadow,
+			3f,
+			true);
+		DrawLine(
+			new Vector2(PlayerBaseX + 18f, BaseCenterY - 34f) + offset,
+			new Vector2(PlayerBaseX + 18f, BaseCenterY - 8f) + offset,
+			trimShadow,
+			3f,
+			true);
+		DrawColoredPolygon(
+			new[]
+			{
+				new Vector2(PlayerBaseX - 30f, BaseCenterY - 34f) + offset,
+				new Vector2(PlayerBaseX - 4f, BaseCenterY - 62f) + offset,
+				new Vector2(PlayerBaseX + 30f, BaseCenterY - 34f) + offset
+			},
+			bodyColor.Lightened(0.18f));
+		DrawLine(
+			new Vector2(PlayerBaseX + 10f, BaseCenterY - 62f) + offset,
+			new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f) + offset,
+			trimShadow,
+			4f,
+			true);
+		DrawColoredPolygon(
+			new[]
+			{
+				new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f) + offset,
+				new Vector2(PlayerBaseX + 46f, BaseCenterY - 100f) + offset,
+				new Vector2(PlayerBaseX + 24f, BaseCenterY - 88f) + offset,
+				new Vector2(PlayerBaseX + 46f, BaseCenterY - 74f) + offset,
+				new Vector2(PlayerBaseX + 10f, BaseCenterY - 80f) + offset
+			},
+			trimColor);
+		DrawLine(
+			new Vector2(PlayerBaseX - 42f, BaseCenterY + 10f) + offset,
+			new Vector2(PlayerBaseX + 62f, BaseCenterY + 10f) + offset,
+			bodyColor.Darkened(0.24f),
+			4f,
+			true);
+		DrawRect(
+			OffsetRect(new Rect2(PlayerBaseX - 2f, BaseCenterY - 14f, 18f, 20f), offset),
+			trimColor.Darkened(0.22f),
+			true);
 		DrawRect(
 			OffsetRect(new Rect2(PlayerBaseX - 26f, BaseCenterY - 20f, 44f, 18f), offset),
 			new Color(1f, 1f, 1f, 0.18f + ((_playerBaseFlashTimer > 0f) ? 0.12f : 0f)),
@@ -1303,18 +1359,56 @@ public partial class BattleController : Node2D
 			new Color("80ed99"));
 	}
 
-	private void DrawEnemyBarricade(TerrainPalette palette)
+	private void DrawEnemyBarricade(TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), 0f, 1f);
 		var offset = GetBaseShakeOffset(false);
 		var wallColor = ResolveBaseBodyColor(palette.EnemyBaseColor, _enemyBaseFlashTimer, healthRatio);
 		var coreColor = ResolveBaseCoreColor(palette.EnemyCoreColor, _enemyBaseFlashTimer, healthRatio);
+		var bannerColor = coreColor.Lerp(route.BannerAccent, 0.28f);
 		var wallBaseX = EnemyBaseX - 52f;
 		DrawRect(OffsetRect(new Rect2(wallBaseX, BaseCenterY - 54f, 76f, 112f), offset), wallColor, true);
 		DrawRect(OffsetRect(new Rect2(wallBaseX - 18f, BaseCenterY - 12f, 18f, 72f), offset), coreColor.Darkened(0.1f), true);
 		DrawRect(OffsetRect(new Rect2(wallBaseX + 76f, BaseCenterY - 36f, 18f, 94f), offset), coreColor.Darkened(0.15f), true);
 		DrawRect(OffsetRect(new Rect2(wallBaseX + 12f, BaseCenterY - 72f, 22f, 18f), offset), coreColor, true);
 		DrawRect(OffsetRect(new Rect2(wallBaseX + 40f, BaseCenterY - 84f, 22f, 30f), offset), coreColor, true);
+		for (var i = 0; i < 4; i++)
+		{
+			DrawRect(
+				OffsetRect(new Rect2(wallBaseX + 4f + (i * 18f), BaseCenterY - 68f - ((i % 2) * 4f), 12f, 14f), offset),
+				coreColor.Darkened(0.04f),
+				true);
+		}
+
+		var gateRect = new Rect2(wallBaseX + 20f, BaseCenterY - 4f, 24f, 54f);
+		DrawRect(OffsetRect(gateRect, offset), wallColor.Darkened(0.28f), true);
+		for (var i = 0; i < 4; i++)
+		{
+			var x = gateRect.Position.X + 4f + (i * 5f);
+			DrawLine(
+				new Vector2(x, gateRect.Position.Y + 4f) + offset,
+				new Vector2(x, gateRect.End.Y - 2f) + offset,
+				coreColor.Lightened(0.16f),
+				2f,
+				true);
+		}
+
+		DrawLine(
+			new Vector2(wallBaseX + 52f, BaseCenterY - 84f) + offset,
+			new Vector2(wallBaseX + 52f, BaseCenterY - 122f) + offset,
+			coreColor.Darkened(0.08f),
+			4f,
+			true);
+		DrawColoredPolygon(
+			new[]
+			{
+				new Vector2(wallBaseX + 52f, BaseCenterY - 122f) + offset,
+				new Vector2(wallBaseX + 16f, BaseCenterY - 114f) + offset,
+				new Vector2(wallBaseX + 38f, BaseCenterY - 102f) + offset,
+				new Vector2(wallBaseX + 18f, BaseCenterY - 86f) + offset,
+				new Vector2(wallBaseX + 52f, BaseCenterY - 92f) + offset
+			},
+			bannerColor);
 		DrawCircle(new Vector2(EnemyBaseX - 10f, BaseCenterY - 26f) + offset, 7f, new Color(1f, 0.45f, 0.2f, 0.9f));
 
 		if (healthRatio < 0.75f)
@@ -1675,6 +1769,7 @@ public partial class BattleController : Node2D
 
 	private void BuildUi()
 	{
+		var route = RouteCatalog.Get(_activeRouteId);
 		var canvasLayer = new CanvasLayer();
 		AddChild(canvasLayer);
 
@@ -1683,16 +1778,37 @@ public partial class BattleController : Node2D
 		root.MouseFilter = Control.MouseFilterEnum.Ignore;
 		canvasLayer.AddChild(root);
 
-		var topPanel = new PanelContainer
+		var topHudPanel = new PanelContainer
 		{
 			Position = new Vector2(16f, 16f),
-			Size = new Vector2(540f, 170f)
+			Size = new Vector2(540f, 248f)
 		};
-		root.AddChild(topPanel);
+		topHudPanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
+		root.AddChild(topHudPanel);
 
 		var topVBox = new VBoxContainer();
-		topVBox.AddThemeConstantOverride("separation", 6);
-		topPanel.AddChild(topVBox);
+		topVBox.AddThemeConstantOverride("separation", 5);
+		topHudPanel.AddChild(topVBox);
+
+		_battleBannerLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart
+		};
+		_battleBannerLabel.AddThemeColorOverride("font_color", route.BannerAccent);
+		topVBox.AddChild(_battleBannerLabel);
+
+		_battleSubtitleLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart
+		};
+		topVBox.AddChild(_battleSubtitleLabel);
+
+		_battleMissionLabel = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart
+		};
+		_battleMissionLabel.AddThemeColorOverride("font_color", route.BannerAccent.Lightened(0.08f));
+		topVBox.AddChild(_battleMissionLabel);
 
 		_baseHealthLabel = new Label();
 		topVBox.AddChild(_baseHealthLabel);
@@ -1712,24 +1828,32 @@ public partial class BattleController : Node2D
 		_fpsLabel = new Label();
 		topVBox.AddChild(_fpsLabel);
 
-		var infoPanel = new PanelContainer
+		var intelPanel = new PanelContainer
 		{
 			Position = new Vector2(572f, 16f),
 			Size = new Vector2(380f, 336f)
 		};
-		root.AddChild(infoPanel);
+		intelPanel.SelfModulate = route.BannerPanel;
+		root.AddChild(intelPanel);
 
 		var infoVBox = new VBoxContainer();
 		infoVBox.AddThemeConstantOverride("separation", 8);
-		infoPanel.AddChild(infoVBox);
+		intelPanel.AddChild(infoVBox);
 
-		infoVBox.AddChild(new Label { Text = IsEndlessMode ? "Endless Deployment" : "Deployment" });
+		var infoHeaderLabel = new Label
+		{
+			Text = IsEndlessMode ? "War Wagon Orders" : IsChallengeMode ? "Challenge Orders" : "Siege Orders"
+		};
+		infoHeaderLabel.AddThemeColorOverride("font_color", route.BannerAccent);
+		infoVBox.AddChild(infoHeaderLabel);
+
 		infoVBox.AddChild(new Label
 		{
-				Text = IsEndlessMode
-					? "1) Pick a squad or spell card below.\n2) Click the battlefield.\n3) Survive escalating waves or retreat to bank recovered rewards."
-					: "1) Pick a squad or spell card below.\n2) Click the battlefield.\nCards spend courage and go on cooldown after use."
-			});
+			Text = IsEndlessMode
+				? "1) Pick a squad or spell card below.\n2) Click the battlefield.\n3) Survive escalating waves or retreat to bank recovered rewards."
+				: "1) Pick a squad or spell card below.\n2) Click the battlefield.\nCards spend courage and go on cooldown after use.",
+			AutowrapMode = TextServer.AutowrapMode.WordSmart
+		});
 
 		_waveIntelLabel = new Label
 		{
@@ -1749,6 +1873,7 @@ public partial class BattleController : Node2D
 			Position = new Vector2(970f, 22f),
 			Size = new Vector2(292f, 44f)
 		};
+		ApplyBattleButtonTheme(retreatButton, route);
 		retreatButton.Pressed += RetreatToMap;
 		root.AddChild(retreatButton);
 
@@ -1757,13 +1882,16 @@ public partial class BattleController : Node2D
 			Position = new Vector2(970f, 76f),
 			Size = new Vector2(292f, 92f)
 		};
+		settingsPanel.SelfModulate = route.BannerPanel.Darkened(0.03f);
 		root.AddChild(settingsPanel);
 
 		var settingsVBox = new VBoxContainer();
 		settingsVBox.AddThemeConstantOverride("separation", 3);
 		settingsPanel.AddChild(settingsVBox);
 
-		settingsVBox.AddChild(new Label { Text = "UI Settings" });
+		var settingsLabel = new Label { Text = "UI Settings" };
+		settingsLabel.AddThemeColorOverride("font_color", route.BannerAccent);
+		settingsVBox.AddChild(settingsLabel);
 
 		_showDevUiToggle = new CheckBox
 		{
@@ -1786,6 +1914,7 @@ public partial class BattleController : Node2D
 			Position = new Vector2(16f, 586f),
 			Size = new Vector2(1246f, _spellDeck.Roster.Count > 0 ? 188f : 114f)
 		};
+		spawnPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
 		root.AddChild(spawnPanel);
 
 		var spawnStack = new VBoxContainer();
@@ -1849,6 +1978,7 @@ public partial class BattleController : Node2D
 			CustomMinimumSize = new Vector2(480f, 280f),
 			Visible = false
 		};
+		_endPanel.SelfModulate = route.BannerPanel.Lightened(0.04f);
 		_endCenter.AddChild(_endPanel);
 
 		var endPadding = new MarginContainer();
@@ -1867,6 +1997,7 @@ public partial class BattleController : Node2D
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
 			HorizontalAlignment = HorizontalAlignment.Center
 		};
+		_endLabel.AddThemeColorOverride("font_color", route.BannerAccent);
 		endVBox.AddChild(_endLabel);
 
 		var retryButton = new Button
@@ -1882,6 +2013,7 @@ public partial class BattleController : Node2D
 							: "Retry Stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
+		ApplyBattleButtonTheme(retryButton, route);
 		retryButton.Pressed += () =>
 		{
 			if (IsLanRaceMode)
@@ -1913,6 +2045,7 @@ public partial class BattleController : Node2D
 							: "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
+		ApplyBattleButtonTheme(mapButton, route);
 		mapButton.Pressed += () =>
 		{
 			if (IsEndlessMode)
@@ -1953,6 +2086,7 @@ public partial class BattleController : Node2D
 			CustomMinimumSize = new Vector2(560f, 320f),
 			Visible = false
 		};
+		_draftPanel.SelfModulate = route.BannerPanel;
 		_draftCenter.AddChild(_draftPanel);
 
 		var draftPadding = new MarginContainer();
@@ -1971,6 +2105,7 @@ public partial class BattleController : Node2D
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
 			HorizontalAlignment = HorizontalAlignment.Center
 		};
+		_draftLabel.AddThemeColorOverride("font_color", route.BannerAccent);
 		draftVBox.AddChild(_draftLabel);
 
 		for (var i = 0; i < 3; i++)
@@ -1980,6 +2115,7 @@ public partial class BattleController : Node2D
 			{
 				CustomMinimumSize = new Vector2(0f, 56f)
 			};
+			ApplyBattleButtonTheme(draftButton, route);
 			draftButton.Pressed += () => ApplyEndlessDraftChoice(draftIndex);
 			draftVBox.AddChild(draftButton);
 			_draftButtons.Add(draftButton);
@@ -1993,8 +2129,20 @@ public partial class BattleController : Node2D
 		_statusLabel.Text = text;
 	}
 
+	private static void ApplyBattleButtonTheme(Button button, RouteDefinition route)
+	{
+		button.SelfModulate = route.BannerPanel.Lightened(0.04f);
+		button.AddThemeColorOverride("font_color", route.BannerAccent);
+		button.AddThemeColorOverride("font_hover_color", route.BannerAccent.Lightened(0.08f));
+		button.AddThemeColorOverride("font_pressed_color", Colors.White);
+		button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.45f));
+	}
+
 	private void UpdateHud()
 	{
+		_battleBannerLabel.Text = BuildBattleBannerTitle();
+		_battleSubtitleLabel.Text = BuildBattleBannerSubtitle();
+		_battleMissionLabel.Text = BuildBattleBannerStatusText();
 		_baseHealthLabel.Text = IsEndlessMode
 			? $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Route: {ResolveRouteLabel(_activeRouteId)} endless hold"
 			: IsChallengeMode
@@ -2074,6 +2222,48 @@ public partial class BattleController : Node2D
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, isReady, cooldown);
 		}
+	}
+
+	private string BuildBattleBannerTitle()
+	{
+		var route = RouteCatalog.Get(_activeRouteId);
+		return IsEndlessMode
+			? $"Endless Hold  |  {route.Title}"
+			: IsChallengeMode
+				? $"Challenge {_challengeDefinition.Code}  |  {route.Title}"
+				: $"Stage {_stage}  |  {route.Title}";
+	}
+
+	private string BuildBattleBannerSubtitle()
+	{
+		var route = RouteCatalog.Get(_activeRouteId);
+		return IsEndlessMode
+			? $"Frontline: {_stageData.StageName}\nPath: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Pressure: {route.PressureSummary}"
+			: $"{_stageData.StageName}\nPressure: {route.PressureSummary}";
+	}
+
+	private string BuildBattleBannerStatusText()
+	{
+		if (IsEndlessMode)
+		{
+			return $"Battlefield event: {_endlessBattlefieldEventLabel}\nCaravan support: {_endlessSupportEventLabel}";
+		}
+
+		var missionSummary = BuildStageMissionIntelText().Trim();
+		if (string.IsNullOrWhiteSpace(missionSummary))
+		{
+			missionSummary = $"Battlefield pressure: {StageEncounterIntel.BuildSupportPressureSummary(_stageData)}";
+		}
+
+		if (!IsChallengeMode)
+		{
+			return missionSummary;
+		}
+
+		var mutatorText = BuildChallengeMutatorText();
+		return string.IsNullOrWhiteSpace(mutatorText)
+			? missionSummary
+			: $"{mutatorText}\n{missionSummary}";
 	}
 
 	private void OnShowDevUiToggled(bool enabled)

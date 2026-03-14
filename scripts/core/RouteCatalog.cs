@@ -63,6 +63,7 @@ public static class RouteCatalog
     public const string QuarantineId = "quarantine";
     public const string ThornwallId = "thornwall";
     public const string BasilicaId = "basilica";
+    public const string MireId = "mire";
 
     private static readonly Dictionary<string, RouteDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -179,6 +180,25 @@ public static class RouteCatalog
                 new Color("473b30"),
                 new Color("fefae0"),
                 new Color("e9c46a"))
+        },
+        {
+            MireId,
+            new RouteDefinition(
+                MireId,
+                "Mire of Saints",
+                "Bog causeways, drowned chapels, and plague ferries. Attrition hazards, rot mist, and shambling hull-grind packs wear the caravan down.",
+                "Mire of Saints favors rot hulks, blight casters, and split-brood pressure through bogged lanes.",
+                "Attrition hazards, plague mist, and heavier body piles drag the caravan into a slow kill.",
+                new Color("90be6d"),
+                new Color("2d3a26"),
+                new Color("415a36"),
+                new Color("162018"),
+                new Color("b7e4a8"),
+                new Color("ecf39e"),
+                new Color("84a98c"),
+                new Color("33452f"),
+                new Color("fefae0"),
+                new Color("90be6d"))
         }
     };
 
@@ -199,7 +219,8 @@ public static class RouteCatalog
             Definitions[FoundryId],
             Definitions[QuarantineId],
             Definitions[ThornwallId],
-            Definitions[BasilicaId]
+            Definitions[BasilicaId],
+            Definitions[MireId]
         };
     }
 

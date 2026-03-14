@@ -121,6 +121,21 @@ public static class EndlessBossCheckpointCatalog
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyJammerId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
                 new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
+            }),
+        new(
+            RouteCatalog.MireId,
+            "Plague Ferryman",
+            "A mire Grave Lord pushes through plague mist behind rot hulks, blight casters, and split-brood escorts.",
+            "Reward: bank +44 gold, +1 food, and call a siege engineer reinforcement.",
+            "The plague ferryman sank and the caravan steadied its axle through the next bog pull.",
+            44,
+            1,
+            new[]
+            {
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyBloaterId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySplitterId, Count = 2 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemySpitterId, Count = 1 },
+                new StageWaveEntryDefinition { UnitId = GameData.EnemyCrusherId, Count = 1 }
             })
     };
 

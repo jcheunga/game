@@ -346,6 +346,7 @@ This sprint should stay narrow and practical:
 - expanded the campaign again with a fourth `Ashen Ward` district, including four new scripted stages, new checkpoint/decon/lab/vault battle palettes, and endless-route support for ranged-support/sapper-heavy pressure
 - expanded the campaign to a fifth `Thornwall Pass` district, including five new scripted stages, new pass/shrine/watchfort battle palettes, and endless-route support for faster raider/sapper pressure
 - expanded the campaign again with a sixth `Hollow Basilica` district, including five new scripted stages, new cathedral/ossuary/reliquary battle palettes, and endless-route support for splitter/caster/hex pressure
+- expanded the campaign again with a seventh `Mire of Saints` district, including five new scripted stages, new marsh/chapel/ferry battle palettes, and endless-route support for attrition-heavy bloater/splitter/spitter pressure
 - added a late-game `Halberdier` unit that specializes in higher gate/base damage for reinforced stages
 - added a `Sapper` enemy archetype that dives the war wagon/objective path and is now seeded into Emberforge stages and endless Emberforge pressure
 - added stage-authored battlefield hazards with telegraph rings, timed pulses, loadout intel, and Foundry-specific heat/rail/furnace encounters

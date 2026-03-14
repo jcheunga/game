@@ -177,6 +177,28 @@ public partial class MapPathCanvas : Control
                 DrawCircle(new Vector2(x, Size.Y - 92f - ((i % 2) * 8f)), 3f, new Color("ffd166", 0.55f));
             }
         }
+        else if (mapId == "mire")
+        {
+            DrawRect(new Rect2(0f, Size.Y - 136f, Size.X, 92f), new Color("20331f", 0.58f), true);
+
+            for (var i = 0; i < 6; i++)
+            {
+                var x = Mathf.Lerp(76f, Size.X - 76f, i / 5f);
+                DrawCircle(new Vector2(x, Size.Y - 98f + ((i % 2) * 10f)), 38f, new Color("90be6d", 0.14f));
+                DrawRect(new Rect2(x - 8f, 104f + ((i % 2) * 22f), 16f, 86f), new Color(1f, 1f, 1f, 0.06f), true);
+            }
+
+            for (var i = 0; i < 10; i++)
+            {
+                var x = Mathf.Lerp(48f, Size.X - 48f, i / 9f);
+                DrawLine(
+                    new Vector2(x - 18f, Size.Y - 76f - ((i % 3) * 6f)),
+                    new Vector2(x + 18f, Size.Y - 82f - ((i % 3) * 6f)),
+                    new Color("ecf39e", 0.18f),
+                    3f,
+                    true);
+            }
+        }
         else
         {
             for (var i = 0; i < 7; i++)

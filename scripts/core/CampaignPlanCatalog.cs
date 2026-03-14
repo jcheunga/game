@@ -76,11 +76,11 @@ public static class CampaignPlanCatalog
             "Bone nests, blight casters, hexers, and elite relic-guard formations."),
         new(
             7,
-            "mire",
+            RouteCatalog.MireId,
             "Mire of Saints",
             5,
             "Bog causeways, drowned chapels, and plague ferries that slow the march and test attrition discipline.",
-            "Swamp pressure, poison pools, and shambling hull-grind packs."),
+            "Rot mist, drowned dead, split broods, and hull-grind attrition packs."),
         new(
             8,
             "steppe",

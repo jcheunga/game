@@ -245,6 +245,7 @@ This runs the LAN headless race smoke plus the full HTTP multiplayer/backend sui
   - Battle HUD panels now inherit the active route colors, and combat opens with a route/stage briefing banner that keeps the live mission or mutator state visible
   - The war wagon and gatehouse now carry route heraldry and stronger siege silhouettes instead of reading like plain abstract blocks
   - Each spell now has its own battlefield signature instead of sharing the same generic pulse, with distinct fireburst, healing bloom, frost, lightning, and ward visuals
+  - Campaign and challenge debriefs now show route metrics, final objective outcomes, and battlefield-event resolution instead of collapsing to a minimal win/loss line
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions
   - Endless mode swaps stage goals for escalating survival waves, checkpoint draft upgrades, route-fork choices, fork-specific segment events, caravan support events, battlefield events, live segment directives, route-specific contact events, projected spoils, retreat-based reward banking, and a temporary opening boon
   - Every 15th wave is now a deliberate boss checkpoint with route-specific escort pressure and extra clear rewards

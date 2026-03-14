@@ -47,19 +47,26 @@ public static class StageObjectives
 {
     public static StageObjectiveEvaluation EvaluateVictory(StageDefinition stage, StageBattleResult result)
     {
+        return EvaluateBattle(stage, result, true);
+    }
+
+    public static StageObjectiveEvaluation EvaluateBattle(StageDefinition stage, StageBattleResult result, bool playerWon)
+    {
         var objectives = ResolveObjectives(stage);
         var outcomes = objectives
             .Select(objective => new StageObjectiveOutcome
             {
                 Label = BuildObjectiveLabel(stage, objective),
-                Completed = EvaluateObjective(stage, objective, result)
+                Completed = EvaluateObjective(stage, objective, result, playerWon)
             })
             .ToArray();
 
         return new StageObjectiveEvaluation
         {
             Outcomes = outcomes,
-            StarsEarned = Mathf.Clamp(outcomes.Count(outcome => outcome.Completed), 1, 3)
+            StarsEarned = playerWon
+                ? Mathf.Clamp(outcomes.Count(outcome => outcome.Completed), 1, 3)
+                : 0
         };
     }
 
@@ -88,10 +95,16 @@ public static class StageObjectives
         var builder = new StringBuilder();
         builder.AppendLine($"Reward: +{rewardGold} gold, +{rewardFood} food.");
         builder.AppendLine($"Stars earned: {evaluation.StarsEarned}/3   |   Best: {bestStars}/3");
+        builder.Append(BuildOutcomeSummary(evaluation));
+        return builder.ToString().TrimEnd();
+    }
 
+    public static string BuildOutcomeSummary(StageObjectiveEvaluation evaluation)
+    {
+        var builder = new StringBuilder();
         for (var i = 0; i < evaluation.Outcomes.Length; i++)
         {
-            var prefix = evaluation.Outcomes[i].Completed ? "[OK]" : "[--]";
+            var prefix = evaluation.Outcomes[i].Completed ? "[OK]" : "[X]";
             builder.AppendLine($"{prefix} {evaluation.Outcomes[i].Label}");
         }
 
@@ -159,12 +172,13 @@ public static class StageObjectives
     private static bool EvaluateObjective(
         StageDefinition stage,
         StageObjectiveDefinition objective,
-        StageBattleResult result)
+        StageBattleResult result,
+        bool playerWon)
     {
         var type = NormalizeType(objective.Type);
         return type switch
         {
-            "clear_route" => true,
+            "clear_route" => playerWon,
             "bus_hull_ratio" => result.PlayerBaseHealth / ResolvePlayerBaseReference(stage, result) >= ResolveBusHullThreshold(stage, objective),
             "clear_within" => result.Elapsed <= ResolveTimeLimit(stage, objective),
             "deploy_limit" => result.PlayerDeployments <= Mathf.RoundToInt(Mathf.Max(1f, objective.Value)),

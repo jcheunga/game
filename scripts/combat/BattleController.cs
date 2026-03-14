@@ -6436,7 +6436,7 @@ public partial class BattleController : Node2D
 				$"Wave reached: {_spawnDirector.EndlessWaveNumber}\n" +
 				$"Survival time: {_elapsed:0.0}s   |   Enemy defeats: {_enemyDefeats}\n" +
 				$"Payout secured: +{rewardScrap} gold, +{rewardFuel} food";
-			SetStatus("The caravan was eventually overrun. Salvage crews recovered what they could.");
+			SetStatus("The caravan was eventually overrun. Rear scouts recovered what they could.");
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
 			UpdateHud();
@@ -6455,9 +6455,8 @@ public partial class BattleController : Node2D
 			}
 
 			var stageResult = BuildStageBattleResult();
-			var starsEarned = playerWon
-				? StageObjectives.EvaluateVictory(_stageData, stageResult).StarsEarned
-				: 0;
+			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, playerWon);
+			var starsEarned = evaluation.StarsEarned;
 			var scoreBreakdown = AsyncChallengeCatalog.CalculateScoreBreakdown(_challengeDefinition, stageResult, playerWon, starsEarned);
 			var medalLabel = AsyncChallengeCatalog.ResolveMedalLabel(_challengeDefinition, scoreBreakdown.FinalScore);
 			var challengeDeckUnitIds = GameState.Instance.GetSelectedAsyncChallengeDeckUnits()
@@ -6505,11 +6504,13 @@ public partial class BattleController : Node2D
 			_lanChallengeEndBaseText =
 				$"Challenge {_challengeDefinition.Code}\n" +
 				$"{(playerWon ? "Cleared" : "Failed")}  |  Score {scoreBreakdown.FinalScore}  |  Tier {medalLabel}\n" +
+				$"{BuildStageBattleStatsText(stageResult)}\n" +
 				$"{AsyncChallengeCatalog.BuildScoreSummary(scoreBreakdown)}\n" +
 				$"{AsyncChallengeCatalog.BuildTargetSummary(_challengeDefinition, scoreBreakdown.FinalScore)}\n" +
+				$"{StageObjectives.BuildOutcomeSummary(evaluation)}\n" +
+				$"{BuildStageMissionDebriefText()}\n" +
 				$"{BuildChallengeGhostResultSummary(scoreBreakdown.FinalScore, starsEarned)}\n" +
-			$"Time {_elapsed:0.0}s  |  Enemy defeats {_enemyDefeats}  |  Stars {starsEarned}/3\n" +
-			$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}";
+				$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}";
 			if (!IsLanRaceMode)
 			{
 				_endLabel.Text = _lanChallengeEndBaseText;
@@ -6536,19 +6537,30 @@ public partial class BattleController : Node2D
 		if (playerWon)
 		{
 			AudioDirector.Instance?.PlayVictory();
-			var evaluation = StageObjectives.EvaluateVictory(_stageData, BuildStageBattleResult());
+			var stageResult = BuildStageBattleResult();
+			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
 			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
 			GameState.Instance.ApplyVictory(_stage, _stageData.RewardGold, _stageData.RewardFood, evaluation.StarsEarned);
 			_endLabel.Text =
-				$"Victory on stage {_stage}.\n" +
-				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardGold, _stageData.RewardFood, bestStars)}";
+				$"Victory on stage {_stage}: {_stageData.StageName}.\n" +
+				$"{BuildStageBattleStatsText(stageResult)}\n" +
+				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardGold, _stageData.RewardFood, bestStars)}\n" +
+				$"{BuildStageMissionDebriefText()}";
 			SetStatus("Gatehouse shattered. Route secured.");
 		}
 		else
 		{
 			AudioDirector.Instance?.PlayDefeat();
+			var stageResult = BuildStageBattleResult();
+			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, false);
+			var bestStars = GameState.Instance.GetStageStars(_stage);
 			GameState.Instance.ApplyDefeat(_stage);
-			_endLabel.Text = "Defeat on this stage. Refit your squad and try a different timing.";
+			_endLabel.Text =
+				$"Defeat on stage {_stage}: {_stageData.StageName}.\n" +
+				$"{BuildStageBattleStatsText(stageResult)}\n" +
+				$"Clear reward on success: +{_stageData.RewardGold} gold, +{_stageData.RewardFood} food   |   Best: {bestStars}/3\n" +
+				$"{StageObjectives.BuildOutcomeSummary(evaluation)}\n" +
+				$"{BuildStageMissionDebriefText()}";
 			SetStatus("The war wagon was overrun. Regroup.");
 		}
 
@@ -6654,6 +6666,62 @@ public partial class BattleController : Node2D
 			FailedMissionEvents = failedMissionEvents,
 			TotalMissionEvents = _stageMissions.Count
 		};
+	}
+
+	private string BuildStageBattleStatsText(StageBattleResult result)
+	{
+		var routeLabel = ResolveRouteLabel(_activeRouteId);
+		var hullPercent = Mathf.RoundToInt(Mathf.Clamp(result.PlayerBaseHealth / Mathf.Max(1f, result.PlayerBaseMaxHealth), 0f, 1f) * 100f);
+		return
+			$"{routeLabel}  |  Stage {_stage}  |  {_stageData.StageName}\n" +
+			$"Time {result.Elapsed:0.0}s  |  Hull {hullPercent}%  |  Enemy defeats {result.EnemyDefeats}  |  Deployments {result.PlayerDeployments}\n" +
+			$"Hazard hits {result.PlayerHazardHits}  |  Signal jam {result.PlayerSignalJamSeconds:0.0}s";
+	}
+
+	private string BuildStageMissionDebriefText()
+	{
+		if (_stageMissions.Count == 0)
+		{
+			return "Battlefield events: none";
+		}
+
+		var lines = new List<string>
+		{
+			"Battlefield events:"
+		};
+
+		foreach (var mission in _stageMissions)
+		{
+			var prefix = mission.Completed
+				? "[OK]"
+				: mission.Failed
+					? "[X]"
+					: "[--]";
+			lines.Add($"{prefix} {StageMissionEvents.ResolveTitle(mission.Definition)}  |  {BuildStageMissionDebriefDetail(mission)}");
+		}
+
+		return string.Join("\n", lines);
+	}
+
+	private string BuildStageMissionDebriefDetail(StageMissionState mission)
+	{
+		if (mission.Completed)
+		{
+			return StageMissionEvents.ResolveRewardSummary(mission.Definition);
+		}
+
+		if (mission.Failed)
+		{
+			return StageMissionEvents.ResolvePenaltySummary(mission.Definition);
+		}
+
+		if (!mission.Started)
+		{
+			return $"Not reached before route end (arms at {mission.Definition.StartTime:0.0}s)";
+		}
+
+		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
+		return $"{mission.Progress:0.0}/{target:0.0}s secured when the route ended";
 	}
 
 	private int CalculateEndlessScrapReward()

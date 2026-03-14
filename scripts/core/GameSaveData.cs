@@ -36,7 +36,7 @@ public sealed class ChallengeRunRecord
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 22;
+    public int Version { get; set; } = 23;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
@@ -78,4 +78,5 @@ public sealed class GameSaveData
     public int TotalChallengeSubmissionsSynced { get; set; }
     public string[] PinnedChallengeCodes { get; set; } = [];
     public string[] ClaimedDistrictRewardIds { get; set; } = [];
+    public Dictionary<string, string> UnitDoctrineIds { get; set; } = new();
 }

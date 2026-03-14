@@ -2400,8 +2400,10 @@ public partial class BattleController : Node2D
 
 		_selectionMode = BattleSelectionMode.Unit;
 		_deck.Arm(definition);
+		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
+		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}. Click the battlefield to deploy from the war wagon.");
+			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}{doctrineSuffix}. Click the battlefield to deploy from the war wagon.");
 		UpdateHud();
 	}
 
@@ -2494,8 +2496,10 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.PlayDeploy(definition);
 		SpawnEffect(spawnPosition, stats.Color, 12f, 42f, 0.28f);
 		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition, spawnPosition);
+		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
+		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name} from the war wagon at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{ghostDeployFeedback}");
+			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from the war wagon at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{ghostDeployFeedback}");
 		UpdateHud();
 	}
 

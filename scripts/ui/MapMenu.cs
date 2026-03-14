@@ -683,6 +683,7 @@ public partial class MapMenu : Control
     private string BuildConvoySummaryText()
     {
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var eligibleDoctrineCount = GameState.Instance.GetEligibleUnitDoctrineCount();
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
         var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
         var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
@@ -693,6 +694,7 @@ public partial class MapMenu : Control
 
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
+            $"Unit doctrines: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount} forged\n" +
             $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Next exploration: {nextExploreLine}\n" +
             "Use Caravan Armory for purchases, upgrades, and squad edits.";
@@ -715,7 +717,8 @@ public partial class MapMenu : Control
             var unit = deckUnits[i];
             summary +=
                 $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}" +
-                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}";
+                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}" +
+                $"  |  {GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}";
         }
 
         if (deckUnits.Count < GameState.Instance.DeckSizeLimit)

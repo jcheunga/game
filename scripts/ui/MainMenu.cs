@@ -116,6 +116,7 @@ public partial class MainMenu : Control
 
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
         var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
+        var eligibleDoctrineCount = GameState.Instance.GetEligibleUnitDoctrineCount();
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
         var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
         var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
@@ -125,7 +126,13 @@ public partial class MainMenu : Control
             : "Route exploration complete";
 
         var squadSummary = GameState.Instance.GetActiveDeckUnits()
-            .Select(unit => $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}");
+            .Select(unit =>
+            {
+                var doctrine = GameState.Instance.GetUnitDoctrineDefinition(unit.Id);
+                return doctrine == null
+                    ? $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}"
+                    : $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)} [{doctrine.Title}]";
+            });
         var squadLine = string.Join(", ", squadSummary);
         if (string.IsNullOrWhiteSpace(squadLine))
         {
@@ -144,6 +151,7 @@ public partial class MainMenu : Control
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
             $"{CampaignPlanCatalog.BuildCampaignStatusSummary()}\n" +
             $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}\n" +
+            $"Unit doctrines forged: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount}\n" +
             $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}  |  Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
             $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +

@@ -1064,15 +1064,18 @@ public partial class ShopMenu : Control
             $"HP {Mathf.RoundToInt(currentStats.MaxHealth)}  |  ATK {currentStats.AttackDamage:0.#}  |  Range {currentStats.AttackRange:0.#}\n" +
             $"Deploy CD {effectiveDeployCooldown:0.#}s  |  Base {currentStats.BaseDamage}" +
             UnitStatText.BuildInlineTraits(currentStats);
+        var doctrineSummary = owned
+            ? GameState.Instance.BuildUnitDoctrineStatusText(unit.Id)
+            : $"Doctrine unlocks at Lv{GameState.Instance.UnitDoctrineUnlockLevel}.";
 
         if (!owned)
         {
-            return summary;
+            return summary + $"\n{doctrineSummary}";
         }
 
         if (isMaxLevel)
         {
-            return summary + "\nNext upgrade: max level reached.";
+            return summary + "\nNext upgrade: max level reached." + $"\n{doctrineSummary}";
         }
 
         var nextStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level + 1);
@@ -1088,7 +1091,7 @@ public partial class ShopMenu : Control
                 ? $"  |  Repair +{(nextStats.BusRepairAmount - currentStats.BusRepairAmount):0.#}"
                 : "") +
             (UnitStatText.HasAura(nextStats) ? $"  |  {UnitStatText.BuildAuraSummary(nextStats)}" : "");
-        return summary;
+        return summary + $"\n{doctrineSummary}";
     }
 
     private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
@@ -1149,10 +1152,14 @@ public partial class ShopMenu : Control
         var isMaxLevel = level >= GameState.Instance.MaxUnitLevel;
         var stats = GameState.Instance.BuildPlayerUnitStats(unit);
         var effectiveDeployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown);
+        var doctrineOptions = GameState.Instance.GetUnitDoctrineOptions(unit.Id);
+        var currentDoctrineId = GameState.Instance.GetUnitDoctrineId(unit.Id);
+        var doctrineUnlocked = owned && GameState.Instance.IsUnitDoctrineUnlocked(unit.Id);
+        var doctrineRetrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
 
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 178f),
+            CustomMinimumSize = new Vector2(0f, doctrineUnlocked ? 228f : 190f),
             SelfModulate = unit.GetTint().Darkened(0.15f)
         };
 
@@ -1179,7 +1186,7 @@ public partial class ShopMenu : Control
         {
             Text =
                 $"{unit.DisplayName}  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}  |  " +
-                $"Deploy {unit.Cost} courage"
+                $"Deploy {unit.Cost} courage  |  {GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}"
         });
 
         stack.AddChild(new Label
@@ -1264,6 +1271,36 @@ public partial class ShopMenu : Control
         }
 
         row.AddChild(actionButton);
+
+        if (doctrineUnlocked && doctrineOptions.Count > 0)
+        {
+            var doctrineRow = new HBoxContainer();
+            doctrineRow.AddThemeConstantOverride("separation", 8);
+            stack.AddChild(doctrineRow);
+
+            foreach (var doctrine in doctrineOptions)
+            {
+                var isSelected = currentDoctrineId.Equals(doctrine.Id, StringComparison.OrdinalIgnoreCase);
+                var doctrineButton = new Button
+                {
+                    Text = isSelected
+                        ? $"{doctrine.Title} Selected"
+                        : string.IsNullOrWhiteSpace(currentDoctrineId)
+                            ? $"Choose {doctrine.Title}"
+                            : $"{doctrine.Title} ({doctrineRetrainCost} gold)",
+                    Disabled = isSelected || (doctrineRetrainCost > 0 && GameState.Instance.Gold < doctrineRetrainCost),
+                    SizeFlagsHorizontal = SizeFlags.ExpandFill
+                };
+                doctrineButton.Pressed += () =>
+                {
+                    GameState.Instance.TrySelectUnitDoctrine(unit.Id, doctrine.Id, out var message);
+                    _statusLabel.Text = $"Last report:\n{message}";
+                    RefreshUi();
+                };
+                doctrineRow.AddChild(doctrineButton);
+            }
+        }
+
         return panel;
     }
 

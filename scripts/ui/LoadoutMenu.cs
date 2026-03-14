@@ -302,7 +302,8 @@ public partial class LoadoutMenu : Control
         {
             Text =
                 $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
-                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}"
+                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}  |  " +
+                $"{GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}"
         });
 
         stack.AddChild(new Label

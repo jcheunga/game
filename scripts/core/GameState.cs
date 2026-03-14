@@ -12,6 +12,8 @@ public partial class GameState : Node
 	private const int MaxDeckSize = 3;
 	private const int MaxSpellDeckSize = 2;
 	private const int DefaultUnitLevel = 1;
+	private const int UnitDoctrineUnlockLevelValue = 3;
+	private const int UnitDoctrineRetrainGoldCost = 75;
 	private const int MaxPlayerUnitLevel = 5;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
 	private const int MaxPinnedChallenges = 8;
@@ -78,11 +80,13 @@ public partial class GameState : Node
 	public int ChallengeRuns { get; private set; }
 	public int PendingChallengeSubmissionCount => _pendingChallengeSubmissions.Count;
 	public int ClaimedDistrictRewardCount => _claimedDistrictRewardIds.Count;
+	public int ClaimedUnitDoctrineCount => _unitDoctrineSelections.Count;
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
 	public int SpellDeckSizeLimit => MaxSpellDeckSize;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
+	public int UnitDoctrineUnlockLevel => UnitDoctrineUnlockLevelValue;
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
 	public bool HasAnySpellEquipped => _activeDeckSpellIds.Count > 0;
@@ -96,6 +100,7 @@ public partial class GameState : Node
 	private readonly HashSet<string> _ownedPlayerSpellIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _unitUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, string> _unitDoctrineSelections = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<ChallengeRunRecord> _challengeHistory = new();
 	private readonly List<ChallengeSubmissionEnvelope> _pendingChallengeSubmissions = new();
@@ -1184,6 +1189,162 @@ public partial class GameState : Node
 		return definition.Cost + 35 + ((level - 1) * 30);
 	}
 
+	public int GetEligibleUnitDoctrineCount()
+	{
+		return GameData.GetPlayerUnits()
+			.Count(definition => IsUnitOwned(definition.Id) && GetUnitLevel(definition.Id) >= UnitDoctrineUnlockLevelValue);
+	}
+
+	public string GetUnitDoctrineId(string unitId)
+	{
+		return _unitDoctrineSelections.TryGetValue(unitId, out var doctrineId)
+			? doctrineId
+			: "";
+	}
+
+	public UnitDoctrineDefinition GetUnitDoctrineDefinition(string unitId)
+	{
+		return UnitDoctrineCatalog.GetOrNull(GetUnitDoctrineId(unitId));
+	}
+
+	public IReadOnlyList<UnitDoctrineDefinition> GetUnitDoctrineOptions(string unitId)
+	{
+		try
+		{
+			var definition = GameData.GetUnit(unitId);
+			return definition.IsPlayerSide
+				? UnitDoctrineCatalog.GetForTag(definition.SquadTag)
+				: Array.Empty<UnitDoctrineDefinition>();
+		}
+		catch (Exception)
+		{
+			return Array.Empty<UnitDoctrineDefinition>();
+		}
+	}
+
+	public bool IsUnitDoctrineUnlocked(string unitId)
+	{
+		return !string.IsNullOrWhiteSpace(unitId) &&
+			IsUnitOwned(unitId) &&
+			GetUnitLevel(unitId) >= UnitDoctrineUnlockLevelValue;
+	}
+
+	public int GetUnitDoctrineRetrainCost(string unitId)
+	{
+		return string.IsNullOrWhiteSpace(GetUnitDoctrineId(unitId))
+			? 0
+			: UnitDoctrineRetrainGoldCost;
+	}
+
+	public bool TrySelectUnitDoctrine(string unitId, string doctrineId, out string message)
+	{
+		try
+		{
+			var definition = GameData.GetUnit(unitId);
+			if (!definition.IsPlayerSide)
+			{
+				message = "Only player units can adopt doctrines.";
+				return false;
+			}
+
+			if (!IsUnitOwned(definition.Id))
+			{
+				message = $"Buy {definition.DisplayName} in the shop before choosing a doctrine.";
+				return false;
+			}
+
+			if (GetUnitLevel(definition.Id) < UnitDoctrineUnlockLevelValue)
+			{
+				message = $"{definition.DisplayName} unlocks doctrines at level {UnitDoctrineUnlockLevelValue}.";
+				return false;
+			}
+
+			var normalizedDoctrineId = UnitDoctrineCatalog.NormalizeId(doctrineId);
+			var doctrine = UnitDoctrineCatalog.GetOrNull(normalizedDoctrineId);
+			if (doctrine == null)
+			{
+				message = "Doctrine data was not found.";
+				return false;
+			}
+
+			if (!GetUnitDoctrineOptions(definition.Id)
+				.Any(option => option.Id.Equals(doctrine.Id, StringComparison.OrdinalIgnoreCase)))
+			{
+				message = $"{doctrine.Title} does not fit {definition.DisplayName}.";
+				return false;
+			}
+
+			var currentDoctrineId = GetUnitDoctrineId(definition.Id);
+			if (currentDoctrineId.Equals(doctrine.Id, StringComparison.OrdinalIgnoreCase))
+			{
+				message = $"{definition.DisplayName} already follows {doctrine.Title}.";
+				return false;
+			}
+
+			var retrainCost = GetUnitDoctrineRetrainCost(definition.Id);
+			if (retrainCost > 0 && Gold < retrainCost)
+			{
+				message = $"Need {retrainCost} gold to retrain {definition.DisplayName}.";
+				return false;
+			}
+
+			if (retrainCost > 0)
+			{
+				Gold -= retrainCost;
+			}
+
+			_unitDoctrineSelections[definition.Id] = doctrine.Id;
+			LastResultMessage = retrainCost > 0
+				? $"{definition.DisplayName} retrained to {doctrine.Title}. -{retrainCost} gold."
+				: $"{definition.DisplayName} adopted {doctrine.Title}.";
+			Persist();
+			message = LastResultMessage;
+			return true;
+		}
+		catch (Exception)
+		{
+			message = "Unit data was not found.";
+			return false;
+		}
+	}
+
+	public string BuildUnitDoctrineInlineText(string unitId)
+	{
+		var doctrine = GetUnitDoctrineDefinition(unitId);
+		if (doctrine != null)
+		{
+			return $"Doctrine: {doctrine.Title}";
+		}
+
+		return IsUnitDoctrineUnlocked(unitId)
+			? "Doctrine ready"
+			: $"Doctrine unlocks Lv{UnitDoctrineUnlockLevelValue}";
+	}
+
+	public string BuildUnitDoctrineStatusText(string unitId)
+	{
+		var doctrine = GetUnitDoctrineDefinition(unitId);
+		if (doctrine != null)
+		{
+			var retrainCost = GetUnitDoctrineRetrainCost(unitId);
+			return retrainCost > 0
+				? $"Doctrine: {doctrine.Title}. {doctrine.Summary} Retrain: {retrainCost} gold."
+				: $"Doctrine: {doctrine.Title}. {doctrine.Summary}";
+		}
+
+		if (!IsUnitDoctrineUnlocked(unitId))
+		{
+			return $"Doctrine unlocks at Lv{UnitDoctrineUnlockLevelValue}.";
+		}
+
+		var options = GetUnitDoctrineOptions(unitId)
+			.Select(option => option.Title)
+			.ToArray();
+		return options.Length == 0
+			? "Doctrine ready."
+			: $"Doctrine ready: choose {string.Join(" or ", options)}.";
+	}
+
 	public bool TryUpgradeUnit(string unitId, out string message)
 	{
 		try
@@ -1442,11 +1603,16 @@ public partial class GameState : Node
 		var cooldownReduction = (bonusLevel * 0.03f) + Math.Max(0f, bonusCooldownReduction);
 		var baseDamageBonus = (bonusLevel * 2) + Math.Max(0, bonusBaseDamage);
 		var synergyBonus = ResolveDeckSynergyBonus(definition, deckUnits);
+		var doctrineBonus = ResolveUnitDoctrineBonus(definition, level);
 
 		healthScale *= synergyBonus.HealthScale;
 		damageScale *= synergyBonus.DamageScale;
 		cooldownReduction += synergyBonus.CooldownReduction;
 		baseDamageBonus += synergyBonus.BaseDamageBonus;
+		healthScale *= doctrineBonus.HealthScale;
+		damageScale *= doctrineBonus.DamageScale;
+		cooldownReduction += doctrineBonus.CooldownReduction;
+		baseDamageBonus += doctrineBonus.BaseDamageBonus;
 
 		return new UnitStats(
 			definition,
@@ -1465,6 +1631,18 @@ public partial class GameState : Node
 		return inDeck
 			? SquadSynergyCatalog.Aggregate(SquadSynergyCatalog.ResolveActive(resolvedDeck))
 			: SquadSynergyBonus.None;
+	}
+
+	private UnitDoctrineBonus ResolveUnitDoctrineBonus(UnitDefinition definition, int level)
+	{
+		if (definition == null ||
+			!definition.IsPlayerSide ||
+			level < UnitDoctrineUnlockLevelValue)
+		{
+			return UnitDoctrineBonus.None;
+		}
+
+		return GetUnitDoctrineDefinition(definition.Id)?.Bonus ?? UnitDoctrineBonus.None;
 	}
 
 	public bool IsUnitInActiveDeck(string unitId)
@@ -1809,6 +1987,7 @@ public partial class GameState : Node
 		_stageStars.Clear();
 		_unitUpgradeLevels.Clear();
 		_baseUpgradeLevels.Clear();
+		_unitDoctrineSelections.Clear();
 		_challengeBestScores.Clear();
 		_challengeHistory.Clear();
 		_pendingChallengeSubmissions.Clear();
@@ -2009,6 +2188,20 @@ public partial class GameState : Node
 			}
 		}
 
+		_unitDoctrineSelections.Clear();
+		if (saved.Version >= 23 && saved.UnitDoctrineIds != null)
+		{
+			foreach (var pair in saved.UnitDoctrineIds)
+			{
+				if (string.IsNullOrWhiteSpace(pair.Key) || string.IsNullOrWhiteSpace(pair.Value))
+				{
+					continue;
+				}
+
+				_unitDoctrineSelections[pair.Key.Trim()] = pair.Value.Trim();
+			}
+		}
+
 		if (saved.Version >= 6)
 		{
 			BestEndlessWave = Math.Max(0, saved.BestEndlessWave);
@@ -2128,6 +2321,7 @@ public partial class GameState : Node
 		NormalizeStageStars();
 		NormalizeUnitLevels();
 		NormalizeBaseUpgrades();
+		NormalizeUnitDoctrines();
 		NormalizeChallengeScores();
 		NormalizeChallengeHistory();
 		NormalizePendingChallengeSubmissions();
@@ -2199,6 +2393,7 @@ public partial class GameState : Node
 			StageStars = _stageStars.ToArray(),
 			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
 			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
+			UnitDoctrineIds = new Dictionary<string, string>(_unitDoctrineSelections),
 			BestEndlessWave = BestEndlessWave,
 			BestEndlessTimeSeconds = BestEndlessTimeSeconds,
 			EndlessRuns = EndlessRuns,
@@ -2453,6 +2648,46 @@ public partial class GameState : Node
 			}
 
 			_unitUpgradeLevels[unitId] = DefaultUnitLevel;
+		}
+	}
+
+	private void NormalizeUnitDoctrines()
+	{
+		var validPlayerIds = new HashSet<string>(GameData.PlayerRosterIds, StringComparer.OrdinalIgnoreCase);
+		var invalidKeys = new List<string>();
+
+		foreach (var pair in _unitDoctrineSelections)
+		{
+			if (!validPlayerIds.Contains(pair.Key))
+			{
+				invalidKeys.Add(pair.Key);
+				continue;
+			}
+
+			if (!IsUnitOwned(pair.Key) || GetUnitLevel(pair.Key) < UnitDoctrineUnlockLevelValue)
+			{
+				invalidKeys.Add(pair.Key);
+				continue;
+			}
+
+			var definition = GameData.GetUnit(pair.Key);
+			var doctrine = UnitDoctrineCatalog.GetOrNull(pair.Value);
+			if (doctrine == null ||
+				!definition.IsPlayerSide ||
+				!doctrine.SquadTag.Equals(
+					SquadSynergyCatalog.NormalizeTag(definition.SquadTag),
+					StringComparison.OrdinalIgnoreCase))
+			{
+				invalidKeys.Add(pair.Key);
+				continue;
+			}
+
+			_unitDoctrineSelections[pair.Key] = doctrine.Id;
+		}
+
+		foreach (var invalidKey in invalidKeys)
+		{
+			_unitDoctrineSelections.Remove(invalidKey);
 		}
 	}
 

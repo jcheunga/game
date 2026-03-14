@@ -6,8 +6,11 @@ using Godot;
 
 public partial class MultiplayerMenu : Control
 {
+    private const float OnlineRoomAutoRefreshIntervalSeconds = 4f;
+
     private OptionButton _stageSelector = null!;
     private OptionButton _mutatorSelector = null!;
+    private OptionButton _roomReportReasonSelector = null!;
     private LineEdit _codeEdit = null!;
     private Label _summaryLabel = null!;
     private Label _recordLabel = null!;
@@ -22,15 +25,36 @@ public partial class MultiplayerMenu : Control
 
     private int _selectedStage = 1;
     private string _selectedMutatorId = AsyncChallengeCatalog.PressureSpikeId;
+    private string _selectedRoomReportReasonId = OnlineRoomReportReasonCatalog.SuspiciousScoreId;
     private string _lastStatusMessage = "";
+    private bool _onlineRoomAutoRefreshEnabled = true;
+    private float _onlineRoomAutoRefreshTimer = 0.5f;
+    private string _onlineRoomAutoRefreshStatus = "Joined room auto refresh armed.";
 
     public override void _Ready()
     {
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         _selectedStage = challenge.Stage;
         _selectedMutatorId = challenge.MutatorId;
+        if (AppLifecycleService.Instance != null)
+        {
+            AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
+        }
         BuildUi();
         RefreshUi();
+    }
+
+    public override void _ExitTree()
+    {
+        if (AppLifecycleService.Instance != null)
+        {
+            AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
+        }
+    }
+
+    public override void _Process(double delta)
+    {
+        TickOnlineRoomAutoRefresh((float)delta);
     }
 
     private void BuildUi()
@@ -378,6 +402,14 @@ public partial class MultiplayerMenu : Control
         RebuildSquadPanels(stage);
 
         var canStart = GameState.Instance.CanStartAsyncChallenge(out var readinessMessage);
+        var startButtonText = canStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
+        if (TryBuildOnlineRoomStartState(challenge, canStart, readinessMessage, out var onlineRoomCanStart, out var onlineRoomButtonText, out var onlineRoomMessage))
+        {
+            canStart = onlineRoomCanStart;
+            startButtonText = onlineRoomButtonText;
+            readinessMessage = onlineRoomMessage;
+        }
+
         var statusMessage = string.IsNullOrWhiteSpace(_lastStatusMessage)
             ? readinessMessage
             : _lastStatusMessage;
@@ -390,7 +422,7 @@ public partial class MultiplayerMenu : Control
             ChallengeBoardFeedService.Instance == null &&
             !OnlineRoomDirectoryService.IsAvailable;
         _startButton.Disabled = !canStart;
-        _startButton.Text = canStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
+        _startButton.Text = startButtonText;
     }
 
     private void RebuildSquadPanels(StageDefinition stage)
@@ -650,7 +682,7 @@ public partial class MultiplayerMenu : Control
 
         var loadButton = new Button
         {
-            Text = "Load Room Board",
+            Text = "Preview Board",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -710,6 +742,30 @@ public partial class MultiplayerMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
+        stack.AddChild(new Label
+        {
+            Text = OnlineRoomSeatLeaseService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = OnlineRoomReportService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = OnlineRoomRecoveryService.BuildStatusSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = BuildOnlineRoomAutoRefreshSummary(),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
@@ -732,6 +788,24 @@ public partial class MultiplayerMenu : Control
         };
         refreshButton.Pressed += RefreshJoinedOnlineRoom;
         row.AddChild(refreshButton);
+
+        var autoRefreshButton = new Button
+        {
+            Text = _onlineRoomAutoRefreshEnabled ? "Pause Auto Refresh" : "Resume Auto Refresh",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        autoRefreshButton.Pressed += ToggleOnlineRoomAutoRefresh;
+        row.AddChild(autoRefreshButton);
+
+        var renewSeatButton = new Button
+        {
+            Text = BuildRenewSeatButtonLabel(),
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        renewSeatButton.Pressed += RenewOnlineRoomSeat;
+        row.AddChild(renewSeatButton);
 
         var launchButton = new Button
         {
@@ -774,6 +848,38 @@ public partial class MultiplayerMenu : Control
         };
         leaveRoomButton.Pressed += LeaveOnlineRoom;
         scoreRow.AddChild(leaveRoomButton);
+
+        var reportRow = new HBoxContainer();
+        reportRow.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(reportRow);
+
+        _roomReportReasonSelector = new OptionButton
+        {
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        foreach (var reason in OnlineRoomReportReasonCatalog.GetAll())
+        {
+            var index = _roomReportReasonSelector.ItemCount;
+            _roomReportReasonSelector.AddItem(reason.Title);
+            _roomReportReasonSelector.SetItemMetadata(index, reason.Id);
+            if (reason.Id == _selectedRoomReportReasonId)
+            {
+                _roomReportReasonSelector.Select(index);
+            }
+        }
+        _roomReportReasonSelector.ItemSelected += OnRoomReportReasonSelected;
+        reportRow.AddChild(_roomReportReasonSelector);
+
+        var reportButton = new Button
+        {
+            Text = "Submit Room Report",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = !OnlineRoomReportService.CanSubmitJoinedRoomReport()
+        };
+        reportButton.Pressed += SubmitOnlineRoomReport;
+        reportRow.AddChild(reportButton);
 
         return panel;
     }
@@ -1070,7 +1176,7 @@ public partial class MultiplayerMenu : Control
         }
 
         SetStatusMessage(
-            $"Loaded room board {room.BoardCode} from {room.Title}. Use `Request Join` if you want to negotiate backend room access; this action only preloads the board locally.");
+            $"Previewed room board {room.BoardCode} from {room.Title}. Use `Request Join` if you want to negotiate backend room access; this action only preloads the board locally.");
         RefreshUi();
     }
 
@@ -1131,6 +1237,50 @@ public partial class MultiplayerMenu : Control
         RefreshUi();
     }
 
+    private void RenewOnlineRoomSeat()
+    {
+        var ticket = OnlineRoomJoinService.GetCachedTicket();
+        if (ticket == null)
+        {
+            QuickMatchOnlineRoom();
+            return;
+        }
+
+        if (OnlineRoomJoinService.HasActiveTicket())
+        {
+            var statusParts = new List<string>();
+            if (!OnlineRoomSeatLeaseService.RenewSeat(out var leaseMessage))
+            {
+                SetStatusMessage(leaseMessage);
+                RefreshUi();
+                return;
+            }
+
+            statusParts.Add(leaseMessage);
+            OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage);
+            statusParts.Add(sessionMessage);
+            OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+            statusParts.Add(scoreboardMessage);
+            _onlineRoomAutoRefreshStatus = $"Seat renewal at {DateTimeOffset.Now:HH:mm:ss}\n{string.Join("\n", statusParts)}";
+            _onlineRoomAutoRefreshTimer = OnlineRoomAutoRefreshIntervalSeconds;
+            SetStatusMessage(string.Join("\n", statusParts));
+            RefreshUi();
+            return;
+        }
+
+        if (!OnlineRoomRecoveryService.TryRecoverExpiredSeat(out var recoveryMessage))
+        {
+            SetStatusMessage(recoveryMessage);
+            RefreshUi();
+            return;
+        }
+
+        _onlineRoomAutoRefreshStatus = $"Seat recovery at {DateTimeOffset.Now:HH:mm:ss}\n{recoveryMessage}";
+        _onlineRoomAutoRefreshTimer = OnlineRoomAutoRefreshIntervalSeconds;
+        SetStatusMessage(recoveryMessage);
+        RefreshUi();
+    }
+
     private void ToggleOnlineRoomReady()
     {
         var statusParts = new List<string>();
@@ -1179,10 +1329,16 @@ public partial class MultiplayerMenu : Control
     private void RefreshJoinedOnlineRoom()
     {
         var statusParts = new List<string>();
+        if (OnlineRoomSeatLeaseService.TryAutoRenewIfNeeded(out var leaseMessage))
+        {
+            statusParts.Add(leaseMessage);
+        }
         OnlineRoomSessionService.RefreshJoinedRoom(out var message);
         statusParts.Add(message);
         OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
         statusParts.Add(scoreboardMessage);
+        _onlineRoomAutoRefreshStatus = $"Manual refresh at {DateTimeOffset.Now:HH:mm:ss}\n{string.Join("\n", statusParts)}";
+        _onlineRoomAutoRefreshTimer = OnlineRoomAutoRefreshIntervalSeconds;
         SetStatusMessage(string.Join("\n", statusParts));
         RefreshUi();
     }
@@ -1190,6 +1346,20 @@ public partial class MultiplayerMenu : Control
     private void RefreshOnlineRoomScoreboard()
     {
         OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var message);
+        _onlineRoomAutoRefreshStatus = $"Scoreboard refresh at {DateTimeOffset.Now:HH:mm:ss}\n{message}";
+        SetStatusMessage(message);
+        RefreshUi();
+    }
+
+    private void SubmitOnlineRoomReport()
+    {
+        if (!OnlineRoomReportService.SubmitJoinedRoomReport(_selectedRoomReportReasonId, out var message))
+        {
+            SetStatusMessage(message);
+            RefreshUi();
+            return;
+        }
+
         SetStatusMessage(message);
         RefreshUi();
     }
@@ -1222,7 +1392,31 @@ public partial class MultiplayerMenu : Control
             return;
         }
 
+        _onlineRoomAutoRefreshStatus = "Joined room auto refresh idle. No active room ticket.";
+        _onlineRoomAutoRefreshTimer = 0.5f;
         SetStatusMessage(message);
+        RefreshUi();
+    }
+
+    private void ToggleOnlineRoomAutoRefresh()
+    {
+        _onlineRoomAutoRefreshEnabled = !_onlineRoomAutoRefreshEnabled;
+        _onlineRoomAutoRefreshTimer = 0.5f;
+        _onlineRoomAutoRefreshStatus = _onlineRoomAutoRefreshEnabled
+            ? "Joined room auto refresh resumed."
+            : "Joined room auto refresh paused.";
+        RefreshUi();
+    }
+
+    private void OnRoomReportReasonSelected(long index)
+    {
+        if (_roomReportReasonSelector == null || index < 0 || index >= _roomReportReasonSelector.ItemCount)
+        {
+            return;
+        }
+
+        _selectedRoomReportReasonId = OnlineRoomReportReasonCatalog.NormalizeId(
+            _roomReportReasonSelector.GetItemMetadata((int)index).AsString());
         RefreshUi();
     }
 
@@ -1240,6 +1434,21 @@ public partial class MultiplayerMenu : Control
 
     private void StartChallenge()
     {
+        var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
+        if (TryBuildOnlineRoomStartState(
+                selectedChallenge,
+                GameState.Instance.CanStartAsyncChallenge(out var baseMessage),
+                baseMessage,
+                out var canEnterOnlineRoomRace,
+                out _,
+                out var onlineRoomMessage) &&
+            !canEnterOnlineRoomRace)
+        {
+            SetStatusMessage(onlineRoomMessage);
+            RefreshUi();
+            return;
+        }
+
         if (!GameState.Instance.PrepareAsyncChallenge(_codeEdit.Text, out var message))
         {
             SetStatusMessage(message);
@@ -1247,6 +1456,109 @@ public partial class MultiplayerMenu : Control
         }
 
         SceneRouter.Instance.GoToBattle();
+    }
+
+    private bool TryBuildOnlineRoomStartState(
+        AsyncChallengeDefinition challenge,
+        bool baseCanStart,
+        string baseReadinessMessage,
+        out bool canStart,
+        out string buttonText,
+        out string message)
+    {
+        canStart = baseCanStart;
+        buttonText = baseCanStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
+        message = baseReadinessMessage;
+
+        var ticket = OnlineRoomJoinService.GetCachedTicket();
+        if (ticket == null || challenge == null)
+        {
+            return false;
+        }
+
+        if (!AsyncChallengeCatalog.NormalizeCode(ticket.BoardCode)
+                .Equals(AsyncChallengeCatalog.NormalizeCode(challenge.Code), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (OnlineRoomJoinService.IsTicketExpired(ticket))
+        {
+            canStart = false;
+            buttonText = "Recover Room Seat";
+            message =
+                $"Joined room seat for {ticket.RoomTitle} has expired.\n" +
+                "Use `Recover Seat` or `Quick Match` before trying to deploy into this room race.";
+            return true;
+        }
+
+        if (string.Equals(ticket.Status, "spectate", StringComparison.OrdinalIgnoreCase))
+        {
+            canStart = false;
+            buttonText = "Spectating Room";
+            message =
+                $"This room seat for {ticket.RoomTitle} is spectate-only.\n" +
+                "Leave the room or negotiate a runner seat before deploying on this board.";
+            return true;
+        }
+
+        if (string.Equals(ticket.Status, "waitlist", StringComparison.OrdinalIgnoreCase))
+        {
+            canStart = false;
+            buttonText = "Waitlisted";
+            message =
+                $"This room seat for {ticket.RoomTitle} is still waitlisted.\n" +
+                "Refresh the joined room or renew the seat once a runner slot opens.";
+            return true;
+        }
+
+        if (!baseCanStart)
+        {
+            canStart = false;
+            buttonText = "Room Board Not Ready";
+            message =
+                $"{baseReadinessMessage}\n" +
+                $"Room seat is armed for {ticket.RoomTitle}, but the selected board is not startable yet.";
+            return true;
+        }
+
+        var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
+        if (roomSnapshot == null || !roomSnapshot.HasRoom)
+        {
+            canStart = false;
+            buttonText = "Refresh Room State";
+            message =
+                $"Room seat is armed for {ticket.RoomTitle}, but no live room snapshot is cached yet.\n" +
+                "Use `Refresh Joined Room` or `Refresh Online` before entering the room race.";
+            return true;
+        }
+
+        if (roomSnapshot.RoundComplete)
+        {
+            canStart = false;
+            buttonText = "Room Round Complete";
+            message =
+                $"The current room round for {ticket.RoomTitle} is already complete.\n" +
+                "Wait for the host to reset the round, or leave and join a fresh room board.";
+            return true;
+        }
+
+        if (!roomSnapshot.RoundLocked)
+        {
+            canStart = false;
+            buttonText = OnlineRoomActionService.CanLaunchRound() ? "Launch Room Round" : "Waiting For Room Launch";
+            message = OnlineRoomActionService.CanLaunchRound()
+                ? $"Host seat is armed for {ticket.RoomTitle}. Launch the room round first, then deploy into the shared race."
+                : $"Joined room {ticket.RoomTitle} is armed for {challenge.Code}, but the host has not launched the round yet.\nReady up in the room controls and wait for the race countdown.";
+            return true;
+        }
+
+        canStart = true;
+        buttonText = roomSnapshot.RaceCountdownActive ? "Enter Online Room Race" : "Deploy Into Online Room";
+        message = roomSnapshot.RaceCountdownActive
+            ? $"Room launch countdown is live for {ticket.RoomTitle}: {roomSnapshot.RaceCountdownRemainingSeconds:0.0}s remaining.\nDeploy now to enter the shared room race on {challenge.Code}."
+            : $"Room round is live for {ticket.RoomTitle}.\nDeploy now to post your result into the active internet-room scoreboard for {challenge.Code}.";
+        return true;
     }
 
     private void FlushOutbox()
@@ -1287,10 +1599,28 @@ public partial class MultiplayerMenu : Control
 
         if (OnlineRoomJoinService.GetCachedTicket() != null)
         {
-            OnlineRoomSessionService.RefreshJoinedRoom(out var sessionStatus);
-            statusParts.Add(sessionStatus);
-            OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardStatus);
-            statusParts.Add(scoreboardStatus);
+            if (!OnlineRoomJoinService.HasActiveTicket())
+            {
+                if (OnlineRoomRecoveryService.TryRecoverExpiredSeat(out var recoveryMessage))
+                {
+                    statusParts.Add(recoveryMessage);
+                }
+                else
+                {
+                    statusParts.Add(recoveryMessage);
+                }
+            }
+            else
+            {
+                if (OnlineRoomSeatLeaseService.TryAutoRenewIfNeeded(out var leaseMessage))
+                {
+                    statusParts.Add(leaseMessage);
+                }
+                OnlineRoomSessionService.RefreshJoinedRoom(out var sessionStatus);
+                statusParts.Add(sessionStatus);
+                OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardStatus);
+                statusParts.Add(scoreboardStatus);
+            }
         }
 
         if (ChallengeBoardFeedService.Instance != null)
@@ -1315,6 +1645,99 @@ public partial class MultiplayerMenu : Control
         }
 
         SetStatusMessage(string.Join("\n", statusParts));
+        _onlineRoomAutoRefreshStatus = $"Online refresh at {DateTimeOffset.Now:HH:mm:ss}\n{string.Join("\n", statusParts)}";
+        _onlineRoomAutoRefreshTimer = OnlineRoomAutoRefreshIntervalSeconds;
+        RefreshUi();
+    }
+
+    private void TickOnlineRoomAutoRefresh(float delta)
+    {
+        if (!_onlineRoomAutoRefreshEnabled)
+        {
+            return;
+        }
+
+        if (AppLifecycleService.Instance?.ShouldPauseOnlineRoomTraffic == true)
+        {
+            _onlineRoomAutoRefreshStatus = "Joined room auto refresh paused: application is backgrounded or unfocused.";
+            _onlineRoomAutoRefreshTimer = 0.5f;
+            return;
+        }
+
+        if (OnlineRoomJoinService.GetCachedTicket() == null)
+        {
+            _onlineRoomAutoRefreshTimer = 0.5f;
+            return;
+        }
+
+        if (!OnlineRoomJoinService.HasActiveTicket())
+        {
+            _onlineRoomAutoRefreshStatus = "Joined room auto refresh paused: the current room seat has expired. Use `Recover Seat` or `Refresh Online` to restore room play.";
+            _onlineRoomAutoRefreshTimer = 0.5f;
+            return;
+        }
+
+        _onlineRoomAutoRefreshTimer -= delta;
+        if (_onlineRoomAutoRefreshTimer > 0f)
+        {
+            return;
+        }
+
+        _onlineRoomAutoRefreshTimer = OnlineRoomAutoRefreshIntervalSeconds;
+        var statusParts = new List<string>();
+        if (OnlineRoomSeatLeaseService.TryAutoRenewIfNeeded(out var leaseMessage))
+        {
+            statusParts.Add(leaseMessage);
+        }
+        OnlineRoomSessionService.RefreshJoinedRoom(out var sessionMessage);
+        statusParts.Add(sessionMessage);
+        OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scoreboardMessage);
+        statusParts.Add(scoreboardMessage);
+        _onlineRoomAutoRefreshStatus = $"Auto refresh at {DateTimeOffset.Now:HH:mm:ss}\n{string.Join("\n", statusParts)}";
+        RefreshUi();
+    }
+
+    private string BuildOnlineRoomAutoRefreshSummary()
+    {
+        var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
+        var lifecycleSummary = AppLifecycleService.Instance?.BuildStatusSummary() ?? "App lifecycle service unavailable.";
+        if (joinedRoomTicket == null)
+        {
+            return
+                "Online room polling:\n" +
+                "No joined room ticket is active.\n" +
+                $"Mode: {(_onlineRoomAutoRefreshEnabled ? "armed" : "paused")}\n\n" +
+                lifecycleSummary;
+        }
+
+        return
+            "Online room polling:\n" +
+            $"Mode: {(_onlineRoomAutoRefreshEnabled ? $"auto every {OnlineRoomAutoRefreshIntervalSeconds:0}s" : "paused")}\n" +
+            $"Seat health: {(OnlineRoomJoinService.HasActiveTicket() ? "active" : OnlineRoomJoinService.GetCachedTicket() == null ? "none" : "expired")}\n" +
+            _onlineRoomAutoRefreshStatus + "\n\n" +
+            lifecycleSummary;
+    }
+
+    private string BuildRenewSeatButtonLabel()
+    {
+        var ticket = OnlineRoomJoinService.GetCachedTicket();
+        if (ticket == null)
+        {
+            return "Quick Match";
+        }
+
+        return OnlineRoomJoinService.HasActiveTicket()
+            ? "Refresh Seat Lease"
+            : "Recover Seat";
+    }
+
+    private void OnAppLifecycleStateChanged()
+    {
+        if (!IsInsideTree())
+        {
+            return;
+        }
+
         RefreshUi();
     }
 

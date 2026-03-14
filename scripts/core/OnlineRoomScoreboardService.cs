@@ -20,10 +20,18 @@ public static class OnlineRoomScoreboardService
 			return false;
 		}
 
+		if (OnlineRoomJoinService.IsTicketExpired(ticket))
+		{
+			message = $"Join ticket for {ticket.RoomTitle} has expired. Renew the room seat before refreshing the room scoreboard.";
+			_lastStatus = message;
+			return false;
+		}
+
 		var provider = ResolveProvider();
 		try
 		{
 			_cachedSnapshot = provider.FetchScoreboard(ticket, limit);
+			OnlineRoomSessionService.ApplyCachedScoreboardSnapshot();
 			_lastStatus = $"{provider.DisplayName}: {_cachedSnapshot.Summary}";
 			message = $"Refreshed online room scoreboard for {ticket.RoomTitle} via {provider.DisplayName}.";
 			return true;
@@ -38,7 +46,7 @@ public static class OnlineRoomScoreboardService
 
 	public static OnlineRoomScoreboardSnapshot GetCachedSnapshot()
 	{
-		return _cachedSnapshot;
+		return BelongsToTicket(_cachedSnapshot, OnlineRoomJoinService.GetCachedTicket()) ? _cachedSnapshot : null;
 	}
 
 	public static void ClearCachedSnapshot(string reason = "")
@@ -61,7 +69,8 @@ public static class OnlineRoomScoreboardService
 				$"Provider status: {_lastStatus}";
 		}
 
-		if (_cachedSnapshot == null)
+		var currentSnapshot = GetCachedSnapshot();
+		if (currentSnapshot == null)
 		{
 			return
 				"Online room scoreboard:\n" +
@@ -71,15 +80,15 @@ public static class OnlineRoomScoreboardService
 		}
 
 		var builder = new StringBuilder();
-		builder.AppendLine($"Online room scoreboard ({_cachedSnapshot.ProviderDisplayName}):");
-		builder.AppendLine(_cachedSnapshot.Summary);
-		if (_cachedSnapshot.Entries.Count == 0)
+		builder.AppendLine($"Online room scoreboard ({currentSnapshot.ProviderDisplayName}):");
+		builder.AppendLine(currentSnapshot.Summary);
+		if (currentSnapshot.Entries.Count == 0)
 		{
-			builder.Append($"No room results cached for {_cachedSnapshot.RoomId} yet.");
+			builder.Append($"No room results cached for {currentSnapshot.RoomId} yet.");
 			return builder.ToString();
 		}
 
-		foreach (var entry in _cachedSnapshot.Entries.Take(Math.Max(1, maxEntries)))
+		foreach (var entry in currentSnapshot.Entries.Take(Math.Max(1, maxEntries)))
 		{
 			builder.AppendLine(
 				$"#{entry.Rank} {entry.PlayerCallsign}  |  {entry.Score} pts  |  Hull {entry.HullPercent}%  |  {entry.ElapsedSeconds:0.0}s  |  {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
@@ -110,5 +119,25 @@ public static class OnlineRoomScoreboardService
 		}
 
 		return normalized.TrimEnd('/') + "/challenge-room-scoreboard";
+	}
+
+	private static bool BelongsToTicket(OnlineRoomScoreboardSnapshot snapshot, OnlineRoomJoinTicket ticket)
+	{
+		if (snapshot == null || ticket == null)
+		{
+			return false;
+		}
+
+		if (!string.IsNullOrWhiteSpace(snapshot.RoomId) &&
+			!string.IsNullOrWhiteSpace(ticket.RoomId) &&
+			!snapshot.RoomId.Equals(ticket.RoomId, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		return string.IsNullOrWhiteSpace(snapshot.BoardCode) ||
+			string.IsNullOrWhiteSpace(ticket.BoardCode) ||
+			AsyncChallengeCatalog.NormalizeCode(snapshot.BoardCode)
+				.Equals(AsyncChallengeCatalog.NormalizeCode(ticket.BoardCode), StringComparison.OrdinalIgnoreCase);
 	}
 }

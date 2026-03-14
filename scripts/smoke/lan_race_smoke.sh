@@ -12,6 +12,7 @@ CLIENT_PID=""
 RUN_TAG="${LAN_SMOKE_RUN_TAG:-$$_$RANDOM}"
 HOST_SAVE_SUFFIX="lan_smoke_host_${RUN_TAG}"
 CLIENT_SAVE_SUFFIX="lan_smoke_client_${RUN_TAG}"
+LAN_PORT="${LAN_SMOKE_PORT:-$((20000 + (RANDOM % 20000)))}"
 
 cleanup() {
 	if [[ -n "$HOST_PID" ]] && kill -0 "$HOST_PID" 2>/dev/null; then
@@ -31,10 +32,10 @@ trap cleanup EXIT
 cd "$ROOT_DIR"
 
 echo "Running LAN smoke host/client pair..."
-godot --headless --path . -- --lan-smoke-role=host --save-suffix="${HOST_SAVE_SUFFIX}" >"$HOST_LOG" 2>&1 &
+godot --headless --path . -- --lan-smoke-role=host --lan-smoke-port="${LAN_PORT}" --save-suffix="${HOST_SAVE_SUFFIX}" >"$HOST_LOG" 2>&1 &
 HOST_PID=$!
 sleep 1
-godot --headless --path . -- --lan-smoke-role=client --lan-smoke-address=127.0.0.1 --save-suffix="${CLIENT_SAVE_SUFFIX}" >"$CLIENT_LOG" 2>&1 &
+godot --headless --path . -- --lan-smoke-role=client --lan-smoke-address=127.0.0.1 --lan-smoke-port="${LAN_PORT}" --save-suffix="${CLIENT_SAVE_SUFFIX}" >"$CLIENT_LOG" 2>&1 &
 CLIENT_PID=$!
 
 wait "$HOST_PID" || HOST_STATUS=$?
@@ -62,5 +63,6 @@ if ! grep -q "LAN_SMOKE PASS" "$CLIENT_LOG"; then
 fi
 
 echo "LAN smoke test passed."
+echo "Port: ${LAN_PORT}"
 echo "Host summary: $(grep 'LAN_SMOKE PASS' "$HOST_LOG" | tail -n 1)"
 echo "Client summary: $(grep 'LAN_SMOKE PASS' "$CLIENT_LOG" | tail -n 1)"

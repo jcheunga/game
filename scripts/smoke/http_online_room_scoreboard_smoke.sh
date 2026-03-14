@@ -77,6 +77,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+HTTPServer.allow_reuse_address = True
 server = HTTPServer(("127.0.0.1", port), Handler)
 server.handle_request()
 PY

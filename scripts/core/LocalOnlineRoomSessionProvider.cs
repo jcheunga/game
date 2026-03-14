@@ -26,13 +26,14 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		var roundComplete = LocalOnlineRoomStubState.IsRoundComplete(roomId);
 		var submittedCallsigns = LocalOnlineRoomStubState.GetSubmittedCallsigns(roomId);
 		var telemetrySnapshots = LocalOnlineRoomStubState.GetTelemetrySnapshots(roomId);
+		var rankedEntries = LocalOnlineRoomResultProvider.GetRankedEntries(roomId, 8);
 		var raceLive = roundLaunched && telemetrySnapshots.Count > 0 && !roundComplete;
 		var localTelemetry = telemetrySnapshots.FirstOrDefault(snapshot =>
 			snapshot.PlayerCallsign.Equals(localCallsign, StringComparison.OrdinalIgnoreCase));
 		var localPresence = !localSeatActive
 			? "spectating via join ticket"
 			: roundComplete && submittedCallsigns.Contains(localCallsign, StringComparer.OrdinalIgnoreCase)
-				? "result submitted, awaiting rematch"
+				? BuildSubmittedPresenceText(localCallsign, rankedEntries)
 			: raceLive && localTelemetry != null
 				? $"racing live: {localTelemetry.ElapsedDeciseconds / 10f:0.0}s, hull {localTelemetry.HullPercent}%"
 			: roundComplete
@@ -49,7 +50,7 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		var localMonitor = !localSeatActive
 			? $"{localCallsign}  |  spectating  |  {ticket.SeatLabel}"
 			: roundComplete && submittedCallsigns.Contains(localCallsign, StringComparer.OrdinalIgnoreCase)
-				? $"{localCallsign}  |  submitted  |  awaiting rematch"
+				? BuildSubmittedMonitorText(localCallsign, rankedEntries)
 			: raceLive && localTelemetry != null
 				? $"{localCallsign}  |  racing  |  {localTelemetry.ElapsedDeciseconds / 10f:0.0}s  |  Hull {localTelemetry.HullPercent}%  |  Defeats {localTelemetry.EnemyDefeats}"
 			: roundComplete
@@ -60,8 +61,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				? $"{localCallsign}  |  prep  |  {(localReady ? "ready" : "host")}  |  host"
 			: $"{localCallsign}  |  prep  |  {(localReady ? "ready" : "not ready")}";
 		var peerSnapshots = localSeatIsHost
-			? BuildHostPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots)
-			: BuildJoinedPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots);
+			? BuildHostPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries)
+			: BuildJoinedPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries);
 
 		return new OnlineRoomSessionSnapshot
 		{
@@ -73,6 +74,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			RoomSnapshot = new MultiplayerRoomSnapshot
 			{
 				HasRoom = true,
+				RoomId = roomId,
+				RoomTitle = string.IsNullOrWhiteSpace(ticket.RoomTitle) ? boardTitle : ticket.RoomTitle,
 				TransportLabel = "Internet Relay",
 				RoleLabel = localSeatStatus == "spectate"
 					? "Online spectator"
@@ -110,7 +113,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		bool raceLive,
 		bool roundComplete,
 		IReadOnlyList<string> submittedCallsigns,
-		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
+		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots,
+		IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
 	{
 		return
 		[
@@ -118,12 +122,18 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 1,
 				Label = localCallsign,
+				IsLocalPlayer = true,
 				Phase = ResolvePhase(localCallsign, localSeatActive, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = !roundComplete && localReady,
 				IsLoaded = (roundLaunched || raceLive) && localSeatActive,
 				IsLaunchEligible = localSeatActive,
 				HasFullDeck = true,
 				MonitorRank = 1,
+				RaceElapsedSeconds = FindTelemetrySeconds(localCallsign, telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent(localCallsign, telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats(localCallsign, telemetrySnapshots),
+				PostedScore = FindSubmittedScore(localCallsign, rankedEntries),
+				PostedRank = FindSubmittedRank(localCallsign, rankedEntries),
 				PresenceText = localPresence,
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
@@ -134,14 +144,20 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 2,
 				Label = "IronBell",
+				IsLocalPlayer = false,
 				Phase = ResolvePhase("IronBell", true, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = !roundComplete,
 				IsLoaded = roundLaunched || raceLive,
 				IsLaunchEligible = true,
 				HasFullDeck = true,
 				MonitorRank = 2,
-				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, true),
-				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, true),
+				RaceElapsedSeconds = FindTelemetrySeconds("IronBell", telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent("IronBell", telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats("IronBell", telemetrySnapshots),
+				PostedScore = FindSubmittedScore("IronBell", rankedEntries),
+				PostedRank = FindSubmittedRank("IronBell", rankedEntries),
+				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
+				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
 					? "IronBell  |  locked squad"
 					: "IronBell  |  Brawler, Shooter, Defender"
@@ -150,14 +166,20 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 3,
 				Label = "Northgate",
+				IsLocalPlayer = false,
 				Phase = ResolvePhase("Northgate", true, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = !roundComplete,
 				IsLoaded = roundLaunched || raceLive,
 				IsLaunchEligible = true,
 				HasFullDeck = true,
 				MonitorRank = 3,
-				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, false),
-				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, false),
+				RaceElapsedSeconds = FindTelemetrySeconds("Northgate", telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent("Northgate", telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats("Northgate", telemetrySnapshots),
+				PostedScore = FindSubmittedScore("Northgate", rankedEntries),
+				PostedRank = FindSubmittedRank("Northgate", rankedEntries),
+				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
+				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
 					? "Northgate  |  locked squad"
 					: "Northgate  |  Raider, Ranger, Defender"
@@ -176,7 +198,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		bool raceLive,
 		bool roundComplete,
 		IReadOnlyList<string> submittedCallsigns,
-		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
+		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots,
+		IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
 	{
 		return
 		[
@@ -184,14 +207,20 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 1,
 				Label = "IronBell",
+				IsLocalPlayer = false,
 				Phase = ResolvePhase("IronBell", true, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = !roundComplete,
 				IsLoaded = roundLaunched || raceLive,
 				IsLaunchEligible = true,
 				HasFullDeck = true,
 				MonitorRank = 1,
-				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, true),
-				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, true),
+				RaceElapsedSeconds = FindTelemetrySeconds("IronBell", telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent("IronBell", telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats("IronBell", telemetrySnapshots),
+				PostedScore = FindSubmittedScore("IronBell", rankedEntries),
+				PostedRank = FindSubmittedRank("IronBell", rankedEntries),
+				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
+				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
 					? "IronBell  |  locked squad"
 					: "IronBell  |  Brawler, Shooter, Defender"
@@ -200,12 +229,18 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 2,
 				Label = localCallsign,
+				IsLocalPlayer = true,
 				Phase = ResolvePhase(localCallsign, localSeatActive, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = !roundComplete && localReady,
 				IsLoaded = (roundLaunched || raceLive) && localSeatActive,
 				IsLaunchEligible = localSeatActive,
 				HasFullDeck = true,
 				MonitorRank = 2,
+				RaceElapsedSeconds = FindTelemetrySeconds(localCallsign, telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent(localCallsign, telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats(localCallsign, telemetrySnapshots),
+				PostedScore = FindSubmittedScore(localCallsign, rankedEntries),
+				PostedRank = FindSubmittedRank(localCallsign, rankedEntries),
 				PresenceText = localPresence,
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
@@ -216,14 +251,20 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 			{
 				PeerId = 3,
 				Label = "Northgate",
+				IsLocalPlayer = false,
 				Phase = ResolvePhase("Northgate", true, roundLaunched, raceLive, roundComplete, submittedCallsigns),
 				IsReady = false,
 				IsLoaded = roundLaunched || raceLive,
 				IsLaunchEligible = true,
 				HasFullDeck = true,
 				MonitorRank = 3,
-				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, false),
-				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, false),
+				RaceElapsedSeconds = FindTelemetrySeconds("Northgate", telemetrySnapshots),
+				HullPercent = FindTelemetryHullPercent("Northgate", telemetrySnapshots),
+				EnemyDefeats = FindTelemetryEnemyDefeats("Northgate", telemetrySnapshots),
+				PostedScore = FindSubmittedScore("Northgate", rankedEntries),
+				PostedRank = FindSubmittedRank("Northgate", rankedEntries),
+				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
+				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
 					? "Northgate  |  locked squad"
 					: "Northgate  |  Raider, Ranger, Defender"
@@ -270,11 +311,12 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		bool roundComplete,
 		IReadOnlyList<string> submittedCallsigns,
 		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots,
+		IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries,
 		bool isHost)
 	{
 		if (roundComplete && submittedCallsigns.Contains(callsign, StringComparer.OrdinalIgnoreCase))
 		{
-			return "result submitted, awaiting rematch";
+			return BuildSubmittedPresenceText(callsign, rankedEntries);
 		}
 
 		if (raceLive)
@@ -303,11 +345,12 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		bool roundComplete,
 		IReadOnlyList<string> submittedCallsigns,
 		IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots,
+		IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries,
 		bool isHost)
 	{
 		if (roundComplete && submittedCallsigns.Contains(callsign, StringComparer.OrdinalIgnoreCase))
 		{
-			return $"{callsign}  |  submitted  |  awaiting rematch";
+			return BuildSubmittedMonitorText(callsign, rankedEntries);
 		}
 
 		if (raceLive)
@@ -346,6 +389,60 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 		return telemetry == null
 			? $"{callsign}  |  racing  |  live room telemetry"
 			: $"{callsign}  |  racing  |  {telemetry.ElapsedDeciseconds / 10f:0.0}s  |  Hull {telemetry.HullPercent}%  |  Defeats {telemetry.EnemyDefeats}";
+	}
+
+	private static float FindTelemetrySeconds(string callsign, IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
+	{
+		var telemetry = telemetrySnapshots.FirstOrDefault(snapshot => snapshot.PlayerCallsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
+		return telemetry == null ? -1f : telemetry.ElapsedDeciseconds / 10f;
+	}
+
+	private static int FindTelemetryHullPercent(string callsign, IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
+	{
+		var telemetry = telemetrySnapshots.FirstOrDefault(snapshot => snapshot.PlayerCallsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
+		return telemetry?.HullPercent ?? -1;
+	}
+
+	private static int FindTelemetryEnemyDefeats(string callsign, IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
+	{
+		var telemetry = telemetrySnapshots.FirstOrDefault(snapshot => snapshot.PlayerCallsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
+		return telemetry?.EnemyDefeats ?? -1;
+	}
+
+	private static string BuildSubmittedPresenceText(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
+	{
+		var entry = FindSubmittedEntry(callsign, rankedEntries);
+		return entry == null
+			? "result submitted, awaiting rematch"
+			: entry.Rank > 0
+				? $"result submitted, provisional #{entry.Rank}"
+				: "result submitted, awaiting rematch";
+	}
+
+	private static string BuildSubmittedMonitorText(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
+	{
+		var entry = FindSubmittedEntry(callsign, rankedEntries);
+		return entry == null
+			? $"{callsign}  |  submitted  |  awaiting rematch"
+			: entry.Rank > 0
+				? $"{callsign}  |  submitted  |  #{entry.Rank}  |  {entry.Score} pts"
+				: $"{callsign}  |  submitted  |  {entry.Score} pts";
+	}
+
+	private static int FindSubmittedScore(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
+	{
+		return FindSubmittedEntry(callsign, rankedEntries)?.Score ?? -1;
+	}
+
+	private static int FindSubmittedRank(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
+	{
+		return FindSubmittedEntry(callsign, rankedEntries)?.Rank ?? -1;
+	}
+
+	private static OnlineRoomScoreboardEntry FindSubmittedEntry(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)
+	{
+		return rankedEntries.FirstOrDefault(entry =>
+			entry.PlayerCallsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
 	}
 
 	private static string BuildBoardTitle(string boardCode)

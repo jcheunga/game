@@ -8,6 +8,8 @@ public partial class BattleController : Node2D
 	private const string DefaultEndlessContactTradeoffLabel = "No contact tradeoff active.";
 	private const float LanRaceTelemetryIntervalSeconds = 1f;
 	private const float OnlineRoomTelemetryIntervalSeconds = 1f;
+	private const float OnlineRoomMonitorRefreshIntervalSeconds = 2f;
+	private const float OnlineRoomEndRefreshIntervalSeconds = 2.5f;
 
 	private readonly struct TerrainPalette
 	{
@@ -284,7 +286,12 @@ public partial class BattleController : Node2D
 	private int _challengeGhostNextIndex;
 	private float _lanRaceTelemetryTimer;
 	private float _onlineRoomTelemetryTimer;
+	private float _onlineRoomMonitorRefreshTimer;
+	private float _onlineRoomEndRefreshTimer;
 	private bool _lanStartBarrierActive;
+	private bool _onlineRoomStartBarrierActive;
+	private float _onlineRoomStartCountdownRemaining;
+	private string _onlineRoomRaceSummary = "";
 	private string _lanChallengeEndBaseText = "";
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
@@ -330,7 +337,12 @@ public partial class BattleController : Node2D
 		_spawnDirector = new BattleSpawnDirector(_rng);
 		_lanRaceTelemetryTimer = IsLanRaceMode ? 0.2f : 0f;
 		_onlineRoomTelemetryTimer = IsOnlineRoomMode ? 0.2f : 0f;
+		_onlineRoomMonitorRefreshTimer = IsOnlineRoomMode ? 1.2f : 0f;
+		_onlineRoomEndRefreshTimer = IsOnlineRoomMode ? 0.75f : 0f;
 		_lanStartBarrierActive = IsLanRaceMode;
+		_onlineRoomStartBarrierActive = false;
+		_onlineRoomStartCountdownRemaining = 0f;
+		_onlineRoomRaceSummary = "";
 		_lanChallengeEndBaseText = "";
 
 		if (IsEndlessMode)
@@ -423,6 +435,19 @@ public partial class BattleController : Node2D
 		_challengeGhostRun = IsChallengeMode
 			? GameState.Instance.GetChallengeGhostRun(_challengeDefinition.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck)
 			: null;
+		if (IsOnlineRoomMode)
+		{
+			var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
+			var roomTitle = OnlineRoomJoinService.GetCachedTicket()?.RoomTitle;
+			_onlineRoomRaceSummary = string.IsNullOrWhiteSpace(roomTitle)
+				? $"Online room board {_challengeDefinition.Code}"
+				: $"Online room: {roomTitle}";
+			if (roomSnapshot?.HasRoom == true && roomSnapshot.RaceCountdownActive && roomSnapshot.RaceCountdownRemainingSeconds > 0.05f)
+			{
+				_onlineRoomStartBarrierActive = true;
+				_onlineRoomStartCountdownRemaining = roomSnapshot.RaceCountdownRemainingSeconds;
+			}
+		}
 
 		_deck.Initialize(GameState.Instance.GetBattleDeckUnits());
 		if (IsEndlessMode)
@@ -852,6 +877,11 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		if (HandleOnlineRoomStartBarrier(deltaF))
+		{
+			return;
+		}
+
 		_elapsed += deltaF;
 		_playerBaseFlashTimer = Mathf.Max(0f, _playerBaseFlashTimer - deltaF);
 		_enemyBaseFlashTimer = Mathf.Max(0f, _enemyBaseFlashTimer - deltaF);
@@ -894,9 +924,20 @@ public partial class BattleController : Node2D
 		MaybeOpenEndlessDraft();
 		UpdateLanRaceTelemetry(deltaF);
 		UpdateOnlineRoomTelemetry(deltaF);
+		UpdateOnlineRoomMonitor(deltaF);
 		UpdateHud();
 		QueueRedraw();
 		CheckBattleEnd();
+	}
+
+	public override void _Process(double delta)
+	{
+		if (!_battleEnded || !IsOnlineRoomMode)
+		{
+			return;
+		}
+
+		TickOnlineRoomEndPanelRefresh((float)delta);
 	}
 
 	private bool HandleLanStartBarrier(float delta)
@@ -936,6 +977,29 @@ public partial class BattleController : Node2D
 		return true;
 	}
 
+	private bool HandleOnlineRoomStartBarrier(float delta)
+	{
+		if (!_onlineRoomStartBarrierActive || !IsOnlineRoomMode)
+		{
+			return false;
+		}
+
+		_onlineRoomStartCountdownRemaining = Mathf.Max(0f, _onlineRoomStartCountdownRemaining - delta);
+		if (_onlineRoomStartCountdownRemaining <= 0.001f)
+		{
+			_onlineRoomStartBarrierActive = false;
+			SetStatus("Online room countdown complete. Race live.");
+			UpdateHud();
+			QueueRedraw();
+			return false;
+		}
+
+		SetStatus($"Online room launch sync. Combat begins in {_onlineRoomStartCountdownRemaining:0.0}s.");
+		UpdateHud();
+		QueueRedraw();
+		return true;
+	}
+
 	private void UpdateLanRaceTelemetry(float delta)
 	{
 		if (!IsLanRaceMode || _battleEnded || LanChallengeService.Instance == null)
@@ -958,7 +1022,7 @@ public partial class BattleController : Node2D
 
 	private void UpdateOnlineRoomTelemetry(float delta)
 	{
-		if (!IsOnlineRoomMode || _battleEnded)
+		if (!IsOnlineRoomMode || _battleEnded || AppLifecycleService.Instance?.ShouldPauseOnlineRoomTraffic == true)
 		{
 			return;
 		}
@@ -975,6 +1039,27 @@ public partial class BattleController : Node2D
 			_elapsed,
 			_enemyDefeats,
 			_playerBaseMaxHealth <= 0f ? 0f : _playerBaseHealth / _playerBaseMaxHealth);
+	}
+
+	private void UpdateOnlineRoomMonitor(float delta)
+	{
+		if (!IsOnlineRoomMode ||
+			_battleEnded ||
+			_onlineRoomStartBarrierActive ||
+			!OnlineRoomJoinService.HasActiveTicket() ||
+			AppLifecycleService.Instance?.ShouldPauseOnlineRoomTraffic == true)
+		{
+			return;
+		}
+
+		_onlineRoomMonitorRefreshTimer -= delta;
+		if (_onlineRoomMonitorRefreshTimer > 0f)
+		{
+			return;
+		}
+
+		_onlineRoomMonitorRefreshTimer = OnlineRoomMonitorRefreshIntervalSeconds;
+		OnlineRoomSessionService.RefreshJoinedRoom(out _);
 	}
 
 	private void OnLanRaceStateChanged()
@@ -1001,6 +1086,84 @@ public partial class BattleController : Node2D
 			$"{service.BuildRaceMonitorSummary()}\n\n" +
 			$"{service.ScoreboardSummary}\n\n" +
 			$"{service.SessionStandingsSummary}";
+	}
+
+	private void TickOnlineRoomEndPanelRefresh(float delta)
+	{
+		if (!IsOnlineRoomMode || _endLabel == null || _endPanel == null || !_endPanel.Visible || string.IsNullOrWhiteSpace(_lanChallengeEndBaseText))
+		{
+			return;
+		}
+
+		_onlineRoomEndRefreshTimer -= delta;
+		if (_onlineRoomEndRefreshTimer > 0f)
+		{
+			return;
+		}
+
+		_onlineRoomEndRefreshTimer = OnlineRoomEndRefreshIntervalSeconds;
+		RefreshOnlineRoomEndPanel(true);
+	}
+
+	private void RefreshOnlineRoomEndPanel(bool refreshProvider)
+	{
+		if (!IsOnlineRoomMode || string.IsNullOrWhiteSpace(_lanChallengeEndBaseText) || _endLabel == null || _endPanel == null || !_endPanel.Visible)
+		{
+			return;
+		}
+
+		if (refreshProvider && OnlineRoomJoinService.HasActiveTicket())
+		{
+			OnlineRoomSessionService.RefreshJoinedRoom(out _);
+			OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out _);
+		}
+
+		var ticket = OnlineRoomJoinService.GetCachedTicket();
+		if (ticket == null)
+		{
+			_endLabel.Text = _lanChallengeEndBaseText;
+			return;
+		}
+
+		var sections = new List<string>
+		{
+			_lanChallengeEndBaseText,
+			$"Online room: {ticket.RoomTitle}"
+		};
+
+		var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
+		if (roomSnapshot?.HasRoom == true)
+		{
+			sections.Add(MultiplayerRoomFormatter.BuildRaceMonitorSummary(roomSnapshot));
+		}
+		else
+		{
+			sections.Add("Room monitor pending. Waiting for the joined-room snapshot to refresh.");
+		}
+
+		var scoreboardSnapshot = OnlineRoomScoreboardService.GetCachedSnapshot();
+		sections.Add(BuildOnlineRoomScoreboardExcerpt(scoreboardSnapshot, 4));
+		_endLabel.Text = string.Join("\n\n", sections.Where(section => !string.IsNullOrWhiteSpace(section)));
+	}
+
+	private static string BuildOnlineRoomScoreboardExcerpt(OnlineRoomScoreboardSnapshot snapshot, int maxEntries)
+	{
+		if (snapshot == null || snapshot.Entries == null || snapshot.Entries.Count == 0)
+		{
+			return "Shared standings: waiting for room results.";
+		}
+
+		var lines = new List<string>
+		{
+			$"Shared standings ({snapshot.ProviderDisplayName}):"
+		};
+		foreach (var entry in snapshot.Entries.Take(Math.Max(1, maxEntries)))
+		{
+			lines.Add(
+				$"#{entry.Rank} {entry.PlayerCallsign}  |  {entry.Score} pts  |  Hull {entry.HullPercent}%  |  {entry.ElapsedSeconds:0.0}s  |  {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
+		}
+
+		return string.Join("\n", lines);
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -1197,11 +1360,13 @@ public partial class BattleController : Node2D
 		{
 			Text = IsEndlessMode
 				? "Restart Run"
-				: IsLanRaceMode
-					? "Room Rematch"
-					: IsChallengeMode
-						? "Retry Challenge"
-						: "Retry Stage",
+					: IsLanRaceMode
+						? "Room Rematch"
+						: IsOnlineRoomMode
+							? "Back To Online Room"
+						: IsChallengeMode
+							? "Retry Challenge"
+							: "Retry Stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		retryButton.Pressed += () =>
@@ -1209,6 +1374,12 @@ public partial class BattleController : Node2D
 			if (IsLanRaceMode)
 			{
 				SceneRouter.Instance.GoToLanRace();
+				return;
+			}
+
+			if (IsOnlineRoomMode)
+			{
+				SceneRouter.Instance.GoToMultiplayer();
 				return;
 			}
 
@@ -1220,11 +1391,13 @@ public partial class BattleController : Node2D
 		{
 			Text = IsEndlessMode
 				? "Back To Endless Prep"
-				: IsLanRaceMode
-					? "Back To Multiplayer"
-					: IsChallengeMode
+					: IsLanRaceMode
 						? "Back To Multiplayer"
-						: "Back To Map",
+						: IsOnlineRoomMode
+							? "Leave Online Room"
+						: IsChallengeMode
+							? "Back To Multiplayer"
+							: "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		mapButton.Pressed += () =>
@@ -1239,6 +1412,11 @@ public partial class BattleController : Node2D
 			{
 				if (IsLanRaceMode)
 				{
+					SceneRouter.Instance.GoToMultiplayer();
+				}
+				else if (IsOnlineRoomMode)
+				{
+					OnlineRoomActionService.LeaveRoom(out _);
 					SceneRouter.Instance.GoToMultiplayer();
 				}
 				else
@@ -2694,7 +2872,7 @@ public partial class BattleController : Node2D
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
 		var hazardSummary = BuildStageHazardIntelText();
 		var challengeHeaderText = IsChallengeMode
-			? $"{BuildChallengeMutatorText()}\n{BuildChallengeGhostText()}\n"
+			? $"{BuildChallengeMutatorText()}\n{BuildOnlineRoomRaceText()}{BuildChallengeGhostText()}\n"
 			: "";
 
 		if (!_spawnDirector.UsesScriptedWaves)
@@ -2741,6 +2919,66 @@ public partial class BattleController : Node2D
 			: $"Next blackout {_challengeMutatorNextJamTimer:0.0}s";
 		return
 			$"Mutator: {_challengeMutator.Title}  |  {status}  |  Cadence {_challengeMutator.SignalJamIntervalSeconds:0.0}s";
+	}
+
+	private string BuildOnlineRoomRaceText()
+	{
+		if (!IsOnlineRoomMode)
+		{
+			return "";
+		}
+
+		if (AppLifecycleService.Instance?.ShouldPauseOnlineRoomTraffic == true)
+		{
+			return $"{_onlineRoomRaceSummary}  |  room sync paused\nResume the app to refresh room telemetry.\n";
+		}
+
+		if (_onlineRoomStartBarrierActive)
+		{
+			return $"{_onlineRoomRaceSummary}  |  Launch sync {_onlineRoomStartCountdownRemaining:0.0}s\n";
+		}
+
+		return $"{_onlineRoomRaceSummary}  |  Room race live\n{BuildOnlineRoomMonitorText()}\n";
+	}
+
+	private string BuildOnlineRoomMonitorText()
+	{
+		var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
+		if (roomSnapshot == null || !roomSnapshot.HasRoom)
+		{
+			return "Room monitor: waiting for joined-room telemetry.";
+		}
+
+		var lines = new List<string>
+		{
+			MultiplayerRoomFormatter.BuildCompactRacePaceSummary(roomSnapshot)
+		};
+		var localPeer = roomSnapshot.Peers.FirstOrDefault(peer => peer.IsLocalPlayer) ??
+			roomSnapshot.Peers.FirstOrDefault(peer =>
+				!string.IsNullOrWhiteSpace(roomSnapshot.LocalCallsign) &&
+				peer.Label.Equals(roomSnapshot.LocalCallsign, StringComparison.OrdinalIgnoreCase));
+		if (localPeer != null && !string.IsNullOrWhiteSpace(localPeer.MonitorText))
+		{
+			lines.Add(localPeer.MonitorText);
+		}
+
+		foreach (var peer in roomSnapshot.Peers
+			.Where(peer => localPeer == null || !peer.Label.Equals(localPeer.Label, StringComparison.OrdinalIgnoreCase))
+			.OrderBy(peer => peer.MonitorRank)
+			.Take(2))
+		{
+			if (!string.IsNullOrWhiteSpace(peer.MonitorText))
+			{
+				lines.Add(peer.MonitorText);
+			}
+		}
+
+		if (lines.Count == 0)
+		{
+			return "Room monitor: waiting for peer activity.";
+		}
+
+		return string.Join("\n", lines);
 	}
 
 	private bool HasChallengeGhostRun()
@@ -4798,6 +5036,7 @@ public partial class BattleController : Node2D
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
 			RefreshLanRaceEndPanel();
+			RefreshOnlineRoomEndPanel(true);
 			UpdateHud();
 			return;
 		}

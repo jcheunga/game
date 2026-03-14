@@ -18,6 +18,11 @@ public static class OnlineRoomResultService
 			return false;
 		}
 
+		if (OnlineRoomJoinService.IsTicketExpired(ticket))
+		{
+			return false;
+		}
+
 		if (string.Equals(ticket.Status, "spectate", StringComparison.OrdinalIgnoreCase) ||
 			string.Equals(ticket.Status, "waitlist", StringComparison.OrdinalIgnoreCase))
 		{
@@ -93,6 +98,7 @@ public static class OnlineRoomResultService
 	public static string BuildStatusSummary()
 	{
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
+		var currentSubmission = GetScopedSubmission(ticket);
 		if (ticket == null)
 		{
 			return
@@ -101,7 +107,7 @@ public static class OnlineRoomResultService
 				$"Provider status: {_lastStatus}";
 		}
 
-		if (_lastSubmission == null)
+		if (currentSubmission == null)
 		{
 			return
 				"Online room result:\n" +
@@ -110,11 +116,11 @@ public static class OnlineRoomResultService
 		}
 
 		var builder = new StringBuilder();
-		builder.AppendLine($"Online room result ({_lastSubmission.ProviderDisplayName}):");
-		builder.AppendLine(_lastSubmission.Summary);
-		builder.AppendLine($"Room: {_lastSubmission.RoomId}  |  Board: {_lastSubmission.BoardCode}");
-		builder.AppendLine($"Score: {_lastSubmission.Score}  |  Provisional rank: {(_lastSubmission.ProvisionalRank > 0 ? $"#{_lastSubmission.ProvisionalRank}" : "pending")}");
-		builder.Append($"Status: {_lastSubmission.Status}");
+		builder.AppendLine($"Online room result ({currentSubmission.ProviderDisplayName}):");
+		builder.AppendLine(currentSubmission.Summary);
+		builder.AppendLine($"Room: {currentSubmission.RoomId}  |  Board: {currentSubmission.BoardCode}");
+		builder.AppendLine($"Score: {currentSubmission.Score}  |  Provisional rank: {(currentSubmission.ProvisionalRank > 0 ? $"#{currentSubmission.ProvisionalRank}" : "pending")}");
+		builder.Append($"Status: {currentSubmission.Status}");
 		return builder.ToString();
 	}
 
@@ -149,5 +155,30 @@ public static class OnlineRoomResultService
 		}
 
 		return normalized.TrimEnd('/') + "/challenge-room-result";
+	}
+
+	private static OnlineRoomResultSubmission GetScopedSubmission(OnlineRoomJoinTicket ticket)
+	{
+		return MatchesRoom(_lastSubmission, ticket) ? _lastSubmission : null;
+	}
+
+	private static bool MatchesRoom(OnlineRoomResultSubmission submission, OnlineRoomJoinTicket ticket)
+	{
+		if (submission == null || ticket == null)
+		{
+			return false;
+		}
+
+		if (!string.IsNullOrWhiteSpace(submission.RoomId) &&
+			!string.IsNullOrWhiteSpace(ticket.RoomId) &&
+			!submission.RoomId.Equals(ticket.RoomId, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		return string.IsNullOrWhiteSpace(submission.BoardCode) ||
+			string.IsNullOrWhiteSpace(ticket.BoardCode) ||
+			AsyncChallengeCatalog.NormalizeCode(submission.BoardCode)
+				.Equals(AsyncChallengeCatalog.NormalizeCode(ticket.BoardCode), StringComparison.OrdinalIgnoreCase);
 	}
 }

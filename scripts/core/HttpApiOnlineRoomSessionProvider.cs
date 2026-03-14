@@ -76,6 +76,8 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 		using var document = JsonDocument.Parse(responseBody);
 		var root = document.RootElement;
 		var peerSnapshots = ParsePeers(root);
+		var roomId = GetString(root, "roomId", ticket.RoomId);
+		var roomTitle = GetString(root, "roomTitle", ticket.RoomTitle);
 		var boardCode = GetString(root, "boardCode", ticket.BoardCode);
 		var boardTitle = GetString(root, "boardTitle", "");
 		if (string.IsNullOrWhiteSpace(boardTitle))
@@ -83,6 +85,10 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 			boardTitle = !string.IsNullOrWhiteSpace(ticket.RoomTitle)
 				? ticket.RoomTitle
 				: boardCode;
+		}
+		if (string.IsNullOrWhiteSpace(roomTitle))
+		{
+			roomTitle = boardTitle;
 		}
 		return new OnlineRoomSessionSnapshot
 		{
@@ -94,6 +100,8 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 			RoomSnapshot = new MultiplayerRoomSnapshot
 			{
 				HasRoom = true,
+				RoomId = roomId,
+				RoomTitle = roomTitle,
 				TransportLabel = GetString(root, "transportLabel", "Internet Relay"),
 				RoleLabel = GetString(root, "roleLabel", "Online contender"),
 				PeerCount = peerSnapshots.Count,
@@ -128,12 +136,18 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 			{
 				PeerId = GetInt(peer, "peerId", peers.Count + 1),
 				Label = GetString(peer, "label", $"Peer {peers.Count + 1}"),
+				IsLocalPlayer = GetBool(peer, "isLocalPlayer", false),
 				Phase = GetString(peer, "phase", "prep"),
 				IsReady = GetBool(peer, "isReady", false),
 				IsLoaded = GetBool(peer, "isLoaded", false),
 				IsLaunchEligible = GetBool(peer, "isLaunchEligible", true),
 				HasFullDeck = GetBool(peer, "hasFullDeck", true),
 				MonitorRank = GetInt(peer, "monitorRank", peers.Count + 1),
+				RaceElapsedSeconds = GetFloat(peer, "raceElapsedSeconds", -1f),
+				HullPercent = GetInt(peer, "hullPercent", -1),
+				EnemyDefeats = GetInt(peer, "enemyDefeats", -1),
+				PostedScore = GetInt(peer, "postedScore", -1),
+				PostedRank = GetInt(peer, "postedRank", -1),
 				PresenceText = GetString(peer, "presenceText", "joined"),
 				MonitorText = GetString(peer, "monitorText", "joined"),
 				DeckText = GetString(peer, "deckText", "")

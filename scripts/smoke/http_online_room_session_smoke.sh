@@ -60,27 +60,37 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "peerId": 1,
                     "label": "IronBell",
-                    "phase": "prep",
+                    "isLocalPlayer": False,
+                    "phase": "submitted",
                     "isReady": True,
-                    "isLoaded": False,
+                    "isLoaded": True,
                     "isLaunchEligible": True,
                     "hasFullDeck": True,
                     "monitorRank": 1,
-                    "presenceText": "ready on locked squad",
-                    "monitorText": "IronBell  |  prep  |  ready  |  host",
+                    "raceElapsedSeconds": -1,
+                    "hullPercent": 88,
+                    "enemyDefeats": 9,
+                    "postedScore": 18450,
+                    "postedRank": 1,
+                    "presenceText": "result submitted, provisional #1",
+                    "monitorText": "IronBell  |  submitted  |  #1  |  18450 pts",
                     "deckText": "IronBell  |  locked squad"
                 },
                 {
                     "peerId": 2,
                     "label": "SmokeConvoy",
-                    "phase": "prep",
+                    "isLocalPlayer": True,
+                    "phase": "racing",
                     "isReady": True,
-                    "isLoaded": False,
+                    "isLoaded": True,
                     "isLaunchEligible": True,
                     "hasFullDeck": True,
                     "monitorRank": 2,
-                    "presenceText": "joined and ready",
-                    "monitorText": "SmokeConvoy  |  prep  |  locked-squad seat",
+                    "raceElapsedSeconds": 12.4,
+                    "hullPercent": 91,
+                    "enemyDefeats": 6,
+                    "presenceText": "racing live: 12.4s, hull 91%",
+                    "monitorText": "SmokeConvoy  |  racing  |  12.4s  |  Hull 91%  |  Defeats 6",
                     "deckText": "SmokeConvoy  |  locked squad"
                 }
             ]
@@ -95,6 +105,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+HTTPServer.allow_reuse_address = True
 server = HTTPServer(("127.0.0.1", port), Handler)
 server.handle_request()
 PY
@@ -118,6 +129,7 @@ EOF
 
 cat >"$RUNNER_PROGRAM" <<'CS'
 using System;
+using System.Linq;
 
 internal static class Program
 {
@@ -149,6 +161,13 @@ internal static class Program
             return 1;
         }
 
+        if (!string.Equals(snapshot.RoomSnapshot.RoomId, "ROOM-LOCK-02", StringComparison.Ordinal) ||
+            !string.Equals(snapshot.RoomSnapshot.RoomTitle, "Locked Squad Scrim", StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine("expected room identity fields in room snapshot");
+            return 1;
+        }
+
         if (snapshot.RoomSnapshot.Peers.Count < 2)
         {
             Console.Error.WriteLine($"expected at least 2 peers, got {snapshot.RoomSnapshot.Peers.Count}");
@@ -158,6 +177,20 @@ internal static class Program
         if (!snapshot.RoomSnapshot.UsesLockedDeck)
         {
             Console.Error.WriteLine("expected locked-deck room snapshot");
+            return 1;
+        }
+
+        var localPeer = snapshot.RoomSnapshot.Peers.FirstOrDefault(peer => peer.IsLocalPlayer);
+        if (localPeer == null || localPeer.RaceElapsedSeconds < 12f || localPeer.HullPercent != 91 || localPeer.EnemyDefeats != 6)
+        {
+            Console.Error.WriteLine("expected structured local peer telemetry in room snapshot");
+            return 1;
+        }
+
+        var leaderPeer = snapshot.RoomSnapshot.Peers.FirstOrDefault(peer => peer.Label == "IronBell");
+        if (leaderPeer == null || leaderPeer.PostedScore != 18450 || leaderPeer.PostedRank != 1)
+        {
+            Console.Error.WriteLine("expected structured submitted peer standings in room snapshot");
             return 1;
         }
 

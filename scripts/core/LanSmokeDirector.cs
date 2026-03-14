@@ -5,6 +5,7 @@ public partial class LanSmokeDirector : Node
 {
 	private const string RoleArgPrefix = "--lan-smoke-role=";
 	private const string AddressArgPrefix = "--lan-smoke-address=";
+	private const string PortArgPrefix = "--lan-smoke-port=";
 	private const string TimeoutArgPrefix = "--lan-smoke-timeout=";
 	private const double DefaultTimeoutSeconds = 45d;
 	private const double HostSubmitDelaySeconds = 1.0d;
@@ -38,6 +39,7 @@ public partial class LanSmokeDirector : Node
 	private SmokeRole _role = SmokeRole.None;
 	private SmokeState _state = SmokeState.Disabled;
 	private string _address = "127.0.0.1";
+	private int _port = LanChallengeService.DefaultPort;
 	private double _timeoutSeconds = DefaultTimeoutSeconds;
 	private double _elapsedSeconds;
 	private double _stateElapsedSeconds;
@@ -56,7 +58,7 @@ public partial class LanSmokeDirector : Node
 
 		ProcessMode = ProcessModeEnum.Always;
 		TransitionTo(SmokeState.WaitForServices, "boot");
-		Log($"boot args ready  |  timeout {_timeoutSeconds:0.#}s  |  save {SaveSystem.Instance?.ActiveSaveFilePath ?? "pending"}");
+		Log($"boot args ready  |  timeout {_timeoutSeconds:0.#}s  |  port {_port}  |  save {SaveSystem.Instance?.ActiveSaveFilePath ?? "pending"}");
 	}
 
 	public override void _Process(double delta)
@@ -113,6 +115,7 @@ public partial class LanSmokeDirector : Node
 			return;
 		}
 
+		LanChallengeService.Instance.ConfigureRoomPort(_port);
 		GameState.Instance.SetPlayerCallsign(_role == SmokeRole.Host ? HostCallsign : ClientCallsign);
 		if (_role == SmokeRole.Host)
 		{
@@ -128,7 +131,7 @@ public partial class LanSmokeDirector : Node
 			return;
 		}
 
-		Log($"services ready  |  joining {_address}");
+		Log($"services ready  |  joining {_address}:{_port}");
 		TransitionTo(SmokeState.JoinRoom, "join host");
 	}
 
@@ -364,6 +367,13 @@ public partial class LanSmokeDirector : Node
 				{
 					_address = addressValue;
 				}
+			}
+			else if (arg.StartsWith(PortArgPrefix, StringComparison.OrdinalIgnoreCase) &&
+				int.TryParse(arg[PortArgPrefix.Length..], out var port) &&
+				port >= LanChallengeService.MinPort &&
+				port <= LanChallengeService.MaxPort)
+			{
+				_port = port;
 			}
 			else if (arg.StartsWith(TimeoutArgPrefix, StringComparison.OrdinalIgnoreCase) &&
 				double.TryParse(arg[TimeoutArgPrefix.Length..], out var timeoutSeconds) &&

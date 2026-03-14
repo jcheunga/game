@@ -6,12 +6,18 @@ public sealed class MultiplayerRoomPeerSnapshot
 {
 	public int PeerId { get; init; }
 	public string Label { get; init; } = "";
+	public bool IsLocalPlayer { get; init; }
 	public string Phase { get; init; } = "";
 	public bool IsReady { get; init; }
 	public bool IsLoaded { get; init; }
 	public bool IsLaunchEligible { get; init; }
 	public bool HasFullDeck { get; init; }
 	public int MonitorRank { get; init; }
+	public float RaceElapsedSeconds { get; init; } = -1f;
+	public int HullPercent { get; init; } = -1;
+	public int EnemyDefeats { get; init; } = -1;
+	public int PostedScore { get; init; } = -1;
+	public int PostedRank { get; init; } = -1;
 	public string PresenceText { get; init; } = "";
 	public string MonitorText { get; init; } = "";
 	public string DeckText { get; init; } = "";
@@ -20,6 +26,8 @@ public sealed class MultiplayerRoomPeerSnapshot
 public sealed class MultiplayerRoomSnapshot
 {
 	public bool HasRoom { get; init; }
+	public string RoomId { get; init; } = "";
+	public string RoomTitle { get; init; } = "";
 	public string TransportLabel { get; init; } = "";
 	public string RoleLabel { get; init; } = "";
 	public int PeerCount { get; init; }
@@ -91,8 +99,13 @@ public static class MultiplayerRoomFormatter
 		var peerDeckSummary = snapshot.UsesLockedDeck
 			? ""
 			: $"\nDeck sync: {launchEligiblePeers.Count(peer => peer.HasFullDeck)}/{launchEligiblePeers.Length} full active convoys\nPeer convoys:\n{BuildPeerDeckSummaryText(snapshot.Peers)}";
+		var roomIdentityLine = string.IsNullOrWhiteSpace(snapshot.RoomTitle) && string.IsNullOrWhiteSpace(snapshot.RoomId)
+			? ""
+			: $"Room: {(string.IsNullOrWhiteSpace(snapshot.RoomTitle) ? "Active Room" : snapshot.RoomTitle)}" +
+				(string.IsNullOrWhiteSpace(snapshot.RoomId) ? "" : $"  |  ID: {snapshot.RoomId}");
 		return
 			$"{snapshot.RoleLabel} room active  |  Peers: {snapshot.PeerCount}\n" +
+			$"{(string.IsNullOrWhiteSpace(roomIdentityLine) ? "" : roomIdentityLine + "\n")}" +
 			$"Board: {snapshot.SharedChallengeCode}\n" +
 			$"{snapshot.SharedChallengeTitle}\n" +
 			$"Transport: {snapshot.TransportLabel}\n" +
@@ -196,6 +209,61 @@ public static class MultiplayerRoomFormatter
 		return string.Join("\n", lines);
 	}
 
+	public static string BuildCompactRacePaceSummary(MultiplayerRoomSnapshot snapshot)
+	{
+		if (snapshot == null || !snapshot.HasRoom)
+		{
+			return "Room pace: no active room.";
+		}
+
+		var launchEligiblePeers = snapshot.Peers
+			.Where(peer => peer.IsLaunchEligible)
+			.ToArray();
+		if (launchEligiblePeers.Length == 0)
+		{
+			return "Room pace: no active runners.";
+		}
+
+		var localPeer = ResolveLocalPeer(snapshot);
+		if (localPeer == null)
+		{
+			return "Room pace: local runner not present in room snapshot.";
+		}
+
+		var rankedPeers = launchEligiblePeers
+			.OrderBy(peer => GetPhaseSortOrder(peer.Phase))
+			.ThenBy(peer => MatchesPhase(peer.Phase, "submitted") && peer.PostedRank > 0 ? peer.PostedRank : int.MaxValue)
+			.ThenByDescending(peer => MatchesPhase(peer.Phase, "submitted") ? peer.PostedScore : int.MinValue)
+			.ThenByDescending(peer => MatchesPhase(peer.Phase, "racing") ? peer.EnemyDefeats : int.MinValue)
+			.ThenBy(peer => MatchesPhase(peer.Phase, "racing") && peer.RaceElapsedSeconds >= 0f ? peer.RaceElapsedSeconds : float.MaxValue)
+			.ThenByDescending(peer => MatchesPhase(peer.Phase, "racing") ? peer.HullPercent : int.MinValue)
+			.ThenBy(peer => peer.MonitorRank)
+			.ThenBy(peer => peer.Label, StringComparer.OrdinalIgnoreCase)
+			.ToArray();
+		var localIndex = Array.FindIndex(rankedPeers, peer => peer.PeerId == localPeer.PeerId);
+		if (localIndex < 0)
+		{
+			return "Room pace: local runner not ranked yet.";
+		}
+
+		if (MatchesPhase(localPeer.Phase, "submitted"))
+		{
+			return localPeer.PostedRank > 0
+				? $"Room pace: result posted at provisional #{localPeer.PostedRank}/{rankedPeers.Length}."
+				: $"Room pace: result posted, awaiting final standings against {rankedPeers.Length} runners.";
+		}
+
+		var leader = rankedPeers[0];
+		if (leader.PeerId == localPeer.PeerId)
+		{
+			return $"Room pace: leading {rankedPeers.Length}-runner room. {BuildPeerPaceText(localPeer)}";
+		}
+
+		return
+			$"Room pace: P{localIndex + 1}/{rankedPeers.Length}. " +
+			$"Leader {leader.Label} {BuildPeerPaceText(leader)}{BuildLeaderGapText(localPeer, leader)}";
+	}
+
 	private static string BuildPeerDeckSummaryText(IEnumerable<MultiplayerRoomPeerSnapshot> peers)
 	{
 		var lines = peers
@@ -214,6 +282,96 @@ public static class MultiplayerRoomFormatter
 			.Where(label => !string.IsNullOrWhiteSpace(label))
 			.ToArray();
 		return labels.Length == 0 ? "none" : string.Join(", ", labels);
+	}
+
+	private static MultiplayerRoomPeerSnapshot ResolveLocalPeer(MultiplayerRoomSnapshot snapshot)
+	{
+		return snapshot.Peers.FirstOrDefault(peer => peer.IsLocalPlayer) ??
+			snapshot.Peers.FirstOrDefault(peer =>
+				!string.IsNullOrWhiteSpace(snapshot.LocalCallsign) &&
+				peer.Label.Equals(snapshot.LocalCallsign, StringComparison.OrdinalIgnoreCase));
+	}
+
+	private static int GetPhaseSortOrder(string phase)
+	{
+		return phase?.Trim().ToLowerInvariant() switch
+		{
+			"submitted" => 0,
+			"racing" => 1,
+			"loading" => 2,
+			"prep" => 3,
+			_ => 4
+		};
+	}
+
+	private static string BuildPeerPaceText(MultiplayerRoomPeerSnapshot peer)
+	{
+		if (peer == null)
+		{
+			return "waiting for telemetry";
+		}
+
+		if (MatchesPhase(peer.Phase, "submitted"))
+		{
+			return peer.PostedScore > 0
+				? $"posted {peer.PostedScore} pts"
+				: "posted a result";
+		}
+
+		if (peer.RaceElapsedSeconds >= 0f)
+		{
+			var parts = new List<string> { $"@ {peer.RaceElapsedSeconds:0.0}s" };
+			if (peer.HullPercent >= 0)
+			{
+				parts.Add($"Hull {peer.HullPercent}%");
+			}
+
+			if (peer.EnemyDefeats >= 0)
+			{
+				parts.Add($"{peer.EnemyDefeats} defeats");
+			}
+
+			return string.Join("  |  ", parts);
+		}
+
+		return peer.PresenceText;
+	}
+
+	private static string BuildLeaderGapText(MultiplayerRoomPeerSnapshot localPeer, MultiplayerRoomPeerSnapshot leader)
+	{
+		if (localPeer == null || leader == null)
+		{
+			return "";
+		}
+
+		if (localPeer.EnemyDefeats >= 0 && leader.EnemyDefeats >= 0 && localPeer.EnemyDefeats != leader.EnemyDefeats)
+		{
+			var defeatGap = leader.EnemyDefeats - localPeer.EnemyDefeats;
+			if (defeatGap > 0)
+			{
+				return $"  |  {defeatGap} defeat{(defeatGap == 1 ? "" : "s")} behind";
+			}
+		}
+
+		if (localPeer.RaceElapsedSeconds >= 0f && leader.RaceElapsedSeconds >= 0f)
+		{
+			var elapsedGap = localPeer.RaceElapsedSeconds - leader.RaceElapsedSeconds;
+			if (elapsedGap > 0.05f)
+			{
+				return $"  |  +{elapsedGap:0.0}s";
+			}
+		}
+
+		if (localPeer.HullPercent >= 0 && leader.HullPercent >= 0 && localPeer.HullPercent != leader.HullPercent)
+		{
+			var hullGap = leader.HullPercent - localPeer.HullPercent;
+			if (hullGap > 0)
+			{
+				return $"  |  {hullGap}% less hull";
+			}
+		}
+
+		return "";
 	}
 
 	private static bool MatchesPhase(string phase, string expected)

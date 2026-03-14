@@ -19,6 +19,7 @@ public static class OnlineRoomActionService
 	{
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
 		return ticket != null &&
+			!OnlineRoomJoinService.IsTicketExpired(ticket) &&
 			!string.Equals(ticket.Status, "spectate", StringComparison.OrdinalIgnoreCase) &&
 			!string.Equals(ticket.Status, "waitlist", StringComparison.OrdinalIgnoreCase);
 	}
@@ -27,6 +28,7 @@ public static class OnlineRoomActionService
 	{
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
 		if (ticket == null ||
+			OnlineRoomJoinService.IsTicketExpired(ticket) ||
 			!string.Equals(ticket.Status, "hosted", StringComparison.OrdinalIgnoreCase) &&
 			(ticket.SeatLabel?.IndexOf("host", StringComparison.OrdinalIgnoreCase) ?? -1) < 0)
 		{
@@ -62,6 +64,7 @@ public static class OnlineRoomActionService
 	{
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
 		if (ticket == null ||
+			OnlineRoomJoinService.IsTicketExpired(ticket) ||
 			!string.Equals(ticket.Status, "hosted", StringComparison.OrdinalIgnoreCase) &&
 			(ticket.SeatLabel?.IndexOf("host", StringComparison.OrdinalIgnoreCase) ?? -1) < 0)
 		{
@@ -85,6 +88,11 @@ public static class OnlineRoomActionService
 			return "Ready Up Online";
 		}
 
+		if (OnlineRoomJoinService.IsTicketExpired(ticket))
+		{
+			return "Seat Expired";
+		}
+
 		if (string.Equals(ticket.Status, "spectate", StringComparison.OrdinalIgnoreCase))
 		{
 			return "Spectator Seat";
@@ -104,6 +112,11 @@ public static class OnlineRoomActionService
 		if (ticket == null)
 		{
 			return "Launch Online Room";
+		}
+
+		if (OnlineRoomJoinService.IsTicketExpired(ticket))
+		{
+			return "Seat Expired";
 		}
 
 		if (!string.Equals(ticket.Status, "hosted", StringComparison.OrdinalIgnoreCase) &&
@@ -127,6 +140,11 @@ public static class OnlineRoomActionService
 		if (ticket == null)
 		{
 			return "Reset Room Round";
+		}
+
+		if (OnlineRoomJoinService.IsTicketExpired(ticket))
+		{
+			return "Seat Expired";
 		}
 
 		if (!string.Equals(ticket.Status, "hosted", StringComparison.OrdinalIgnoreCase) &&
@@ -155,7 +173,9 @@ public static class OnlineRoomActionService
 
 		if (!CanToggleReady())
 		{
-			message = "This join ticket does not have an active runner seat.";
+			message = OnlineRoomJoinService.IsTicketExpired(ticket)
+				? "This join ticket has expired. Renew the room seat first."
+				: "This join ticket does not have an active runner seat.";
 			_lastStatus = message;
 			return false;
 		}
@@ -175,7 +195,9 @@ public static class OnlineRoomActionService
 
 		if (!CanLaunchRound())
 		{
-			message = "The current room is not launch-ready yet. Make sure every active runner is ready and all deck blockers are cleared.";
+			message = OnlineRoomJoinService.IsTicketExpired(ticket)
+				? "This host seat has expired. Renew the room seat before launching."
+				: "The current room is not launch-ready yet. Make sure every active runner is ready and all deck blockers are cleared.";
 			_lastStatus = message;
 			return false;
 		}
@@ -195,7 +217,9 @@ public static class OnlineRoomActionService
 
 		if (!CanResetRound())
 		{
-			message = "The current room is not ready for rematch reset yet. Wait for the round to finish or for room results to land.";
+			message = OnlineRoomJoinService.IsTicketExpired(ticket)
+				? "This host seat has expired. Renew the room seat before resetting the round."
+				: "The current room is not ready for rematch reset yet. Wait for the round to finish or for room results to land.";
 			_lastStatus = message;
 			return false;
 		}
@@ -228,8 +252,21 @@ public static class OnlineRoomActionService
 		OnlineRoomResultService.ClearLastSubmission(clearReason);
 		OnlineRoomScoreboardService.ClearCachedSnapshot(clearReason);
 		OnlineRoomTelemetryService.ClearLastSubmission(clearReason);
+		OnlineRoomSeatLeaseService.ClearLastLease(clearReason);
+		OnlineRoomReportService.ClearLastReport(clearReason);
+		OnlineRoomRecoveryService.ClearLastRecovery(clearReason);
+		ClearLastAction(clearReason);
 		message = $"{actionMessage}\nCleared local room state for {roomTitle}.";
 		return true;
+	}
+
+	public static void ClearLastAction(string reason = "")
+	{
+		_lastResult = null;
+		if (!string.IsNullOrWhiteSpace(reason))
+		{
+			_lastStatus = reason;
+		}
 	}
 
 	public static string BuildStatusSummary()
@@ -249,6 +286,7 @@ public static class OnlineRoomActionService
 				"Online room action:\n" +
 				"Ready-state control is idle for the current join ticket.\n" +
 				$"Current seat: {ticket.SeatLabel}\n" +
+				$"Seat health: {(OnlineRoomJoinService.IsTicketExpired(ticket) ? "expired" : "active")}\n" +
 				$"Suggested action: {BuildToggleReadyLabel()}\n" +
 				$"Provider status: {_lastStatus}";
 		}

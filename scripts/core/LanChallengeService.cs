@@ -47,10 +47,13 @@ public partial class LanChallengeService : Node
 	public static LanChallengeService Instance { get; private set; }
 
 	public const int DefaultPort = 24680;
+	public const int MinPort = 1024;
+	public const int MaxPort = 65535;
 
 	public bool HasRoom => Multiplayer.MultiplayerPeer != null;
 	public bool IsHosting => HasRoom && Multiplayer.IsServer();
 	public bool IsClient => HasRoom && !Multiplayer.IsServer();
+	public int RoomPort { get; private set; } = DefaultPort;
 	public string SharedChallengeCode { get; private set; } = "";
 	public string SharedChallengeTitle { get; private set; } = "";
 	public string SessionStatus { get; private set; } = "No LAN race room active.";
@@ -132,6 +135,16 @@ public partial class LanChallengeService : Node
 		}
 	}
 
+	public void ConfigureRoomPort(int port)
+	{
+		RoomPort = Mathf.Clamp(port, MinPort, MaxPort);
+	}
+
+	public void ResetRoomPort()
+	{
+		RoomPort = DefaultPort;
+	}
+
 	public bool HostSelectedBoard(out string message)
 	{
 		if (IsHosting && IsRoundLocked())
@@ -156,10 +169,10 @@ public partial class LanChallengeService : Node
 		CloseRoomInternal();
 
 		var peer = new ENetMultiplayerPeer();
-		var error = peer.CreateServer(DefaultPort, 3);
+		var error = peer.CreateServer(RoomPort, 3);
 		if (error != Error.Ok)
 		{
-			message = $"Could not host LAN race on port {DefaultPort}: {error}.";
+			message = $"Could not host LAN race on port {RoomPort}: {error}.";
 			SessionStatus = message;
 			NotifyStateChanged();
 			return false;
@@ -178,7 +191,7 @@ public partial class LanChallengeService : Node
 		_loadedPeers.Clear();
 		_loadedPeers[Multiplayer.GetUniqueId()] = false;
 		ResetRoomRaceProgress(false);
-		SessionStatus = $"Hosting {challenge.Code} on port {DefaultPort}. Share IP {BuildJoinAddressSummary()}.";
+		SessionStatus = $"Hosting {challenge.Code} on port {RoomPort}. Share IP {BuildJoinAddressSummary()}.";
 		message = SessionStatus;
 		NotifyStateChanged();
 		return true;
@@ -234,10 +247,10 @@ public partial class LanChallengeService : Node
 		CloseRoomInternal();
 
 		var peer = new ENetMultiplayerPeer();
-		var error = peer.CreateClient(normalizedAddress, DefaultPort);
+		var error = peer.CreateClient(normalizedAddress, RoomPort);
 		if (error != Error.Ok)
 		{
-			message = $"Could not join {normalizedAddress}:{DefaultPort}: {error}.";
+			message = $"Could not join {normalizedAddress}:{RoomPort}: {error}.";
 			SessionStatus = message;
 			NotifyStateChanged();
 			return false;
@@ -250,7 +263,7 @@ public partial class LanChallengeService : Node
 		_peerDecks.Clear();
 		_loadedPeers.Clear();
 		ScoreboardSummary = "LAN scoreboard: waiting for host data.";
-		SessionStatus = $"Connecting to {normalizedAddress}:{DefaultPort}...";
+		SessionStatus = $"Connecting to {normalizedAddress}:{RoomPort}...";
 		message = SessionStatus;
 		NotifyStateChanged();
 		return true;

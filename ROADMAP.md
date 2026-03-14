@@ -262,11 +262,27 @@ This sprint should stay narrow and practical:
 - added provider-backed internet room hosting, join tickets, room-session polling, room actions, result submission, scoreboards, and rematch reset so the async multiplayer screen now covers the full backend room lifecycle before real internet transport exists
 - added provider-backed room leave flow plus service-side state cleanup, so joined or hosted internet rooms can be exited cleanly without relying on a replacement join ticket
 - added provider-backed live online-room telemetry heartbeats plus a cached telemetry status block in multiplayer prep, so in-progress internet room races now have a race-monitor seam alongside results and standings
+- added provider-backed joined-room moderation reports with selectable reasons, so the multiplayer screen now has a basic report/moderation hook for suspicious scores or abusive room behavior instead of leaving that entire store/backend concern for later
 - added provider-backed player profile sync with a cached auth/session status seam in settings and multiplayer, so the internet stack now has a real identity handshake before deeper backend account work lands
 - added provider-backed quick matchmaking for the selected async board, so the client can negotiate a seat directly from the backend instead of only browsing and joining room cards manually
+- added joined-room auto refresh in multiplayer prep, so the internet room session and scoreboard can keep polling while the player waits in the lobby instead of relying only on manual refresh actions
+- added ticket-expiry handling and seat renewal on internet rooms, so stale backend room tickets stop polling/actions/results cleanly and can be recovered through quick match instead of failing silently
+- added provider-backed room-seat lease refresh plus auto-renew wiring, so healthy joined-room seats can be extended during long prep waits and mobile resume recovery instead of falling straight into stale-ticket failure
+- added local board/deck arming from negotiated internet-room tickets, so room join, host adoption, and quick match now sync the selected challenge board and locked shared squad automatically instead of relying on a separate manual load step
+- added joined-room race gating on the main deploy button, so once a board is armed from an internet-room ticket the multiplayer screen waits for backend launch/countdown and labels room-race entry clearly instead of acting like an unrelated solo challenge start
+- routed internet-room battle end screens back through the room lobby instead of direct challenge retry, so submitted room results respect backend rematch/reset flow instead of bypassing it
+- added an online-room battle start barrier tied to backend countdown state, so joined internet-room runs now hold simulation on scene load until the room launch sync actually expires
+- added in-battle joined-room polling plus a compact online-room monitor in challenge intel, so live internet-room runs now keep showing peer race state instead of feeling disconnected once combat starts
+- extended joined-room peer snapshots with structured race metrics and used them for an in-battle room-pace summary, so online races now expose relative standing and leader gap instead of only raw monitor text
+- extended submitted peer snapshots with provisional score/rank, so room monitor and pace summaries can stay standings-aware after runners start posting clears instead of collapsing to plain \"submitted\" text
+- merged refreshed room scoreboards back into the cached room session snapshot, so standings-aware room monitor consumers update immediately instead of waiting for an extra session poll round
+- added a shared app-lifecycle service that pauses room traffic while backgrounded and refreshes profile/room state on resume, so the mobile multiplayer stack now has an explicit backgrounding/recovery path instead of depending on accidental polling behavior
+- added a live online-room end-panel refresh loop, so submitted internet-room runs can keep showing room monitor state and shared standings from battle instead of freezing at a local-only result summary
 - added HTTP stub smoke coverage for online room create, launch, reset, leave, result, scoreboard, and telemetry flows so the backend room contracts are exercised end to end instead of only compile-checked
 - added HTTP stub smoke coverage for the player-profile contract as well, so backend identity/profile sync is exercised end to end instead of only being compile-checked
 - added HTTP stub smoke coverage for the room-matchmake contract as well, so backend quick-join seat negotiation is exercised end to end instead of only being compile-checked
+- added HTTP stub smoke coverage for the room-seat lease contract as well, so backend seat-refresh handoff is exercised end to end before mobile room sessions depend on it
+- added HTTP stub smoke coverage for the room-report contract as well, so backend moderation/report intake is exercised end to end before internet room play depends on it
 - upgraded featured async challenge boards with deterministic locked-squad runs so some daily multiplayer boards now compare execution on the exact same 3-card convoy instead of only the same seed
 - added async challenge score transparency so multiplayer prep now explains the formula up front and battle results show the full post-run point breakdown instead of only the final score
 - added async medal target tiers so challenge prep, featured boards, pinned rematches, and result screens now show deterministic bronze/silver/gold/ace score ladders for the same seeded board
@@ -320,6 +336,11 @@ This sprint should stay narrow and practical:
 - added a provider-backed online room-result submission path, so async challenge clears, fails, and retreats can now report into an active backend room when the board code matches
 - added a provider-backed online room-scoreboard fetch path, so multiplayer prep can review shared room standings instead of stopping at room monitor text alone
 - added real HTTP room-result and room-scoreboard smoke harnesses, with temp .NET runners exercising backend result submission and standings fetch end to end against local stub servers
+- added a sequential online-room smoke suite plus local room-state regression harnesses, so the full backend room surface can be rerun from one entrypoint without parallel build-lock flakiness
+- added a sequential HTTP multiplayer/backend smoke suite, so profile sync, challenge sync/feed/leaderboard, and the full online-room provider surface can be rerun from one command
+- added a top-level multiplayer stack smoke suite, so LAN plus the full HTTP multiplayer/backend path can be rerun from one command before deeper transport work lands
+- hardened the LAN and HTTP multiplayer smoke harnesses for reruns, with per-run LAN ports and reusable stub-server sockets so repeated stack-suite runs stop cross-connecting rooms or failing on recently closed ports
+- added stale internet-room seat recovery with direct room rejoin plus quick-match fallback, and wired that recovery path into manual refresh, the seat button, and app-resume recovery so expired runner seats no longer stop at a dead-end warning
 - expanded the player roster again with a `Mechanic` support unit that can repair the bus and is surfaced through the shop recommendation board
 - expanded the campaign with a third `Foundry Line` district, including four new scripted stages and endless-route support
 - expanded the campaign again with a fourth `Quarantine Wall` district, including four new scripted stages, new checkpoint/decon/lab/blacksite battle palettes, and endless-route support for ranged-support/saboteur-heavy pressure

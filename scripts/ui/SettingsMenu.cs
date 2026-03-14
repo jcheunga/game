@@ -6,6 +6,7 @@ public partial class SettingsMenu : Control
     private Label _interfaceLabel = null!;
     private Label _callsignLabel = null!;
     private Label _syncLabel = null!;
+    private Label _lifecycleLabel = null!;
     private Label _returnLabel = null!;
     private Button _muteButton = null!;
     private Button _showDevUiButton = null!;
@@ -18,8 +19,20 @@ public partial class SettingsMenu : Control
 
     public override void _Ready()
     {
+        if (AppLifecycleService.Instance != null)
+        {
+            AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
+        }
         BuildUi();
         RefreshUi();
+    }
+
+    public override void _ExitTree()
+    {
+        if (AppLifecycleService.Instance != null)
+        {
+            AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
+        }
     }
 
     private void BuildUi()
@@ -223,6 +236,12 @@ public partial class SettingsMenu : Control
         };
         syncStack.AddChild(_syncLabel);
 
+        _lifecycleLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        syncStack.AddChild(_lifecycleLabel);
+
         var providerRow = new HBoxContainer();
         providerRow.AddThemeConstantOverride("separation", 8);
         syncStack.AddChild(providerRow);
@@ -352,6 +371,7 @@ public partial class SettingsMenu : Control
             $"Endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.ChallengeSyncEndpoint) ? "not set" : GameState.Instance.ChallengeSyncEndpoint)}\n\n" +
             $"{PlayerProfileSyncService.BuildStatusSummary()}\n\n" +
             $"{(ChallengeSyncService.Instance?.BuildStatusSummary() ?? "Sync service unavailable.")}";
+        _lifecycleLabel.Text = AppLifecycleService.Instance?.BuildStatusSummary() ?? "App lifecycle service unavailable.";
         if (!_callsignEdit.HasFocus())
         {
             _callsignEdit.Text = GameState.Instance.PlayerCallsign;
@@ -370,5 +390,15 @@ public partial class SettingsMenu : Control
             ? "Disable Auto Flush"
             : "Enable Auto Flush";
         _backButton.Text = $"Back To {SceneRouter.Instance.SettingsReturnLabel}";
+    }
+
+    private void OnAppLifecycleStateChanged()
+    {
+        if (!IsInsideTree())
+        {
+            return;
+        }
+
+        RefreshUi();
     }
 }

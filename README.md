@@ -28,6 +28,32 @@ godot --headless --path . --quit
 godot --headless --path . --build-solutions --quit
 ```
 
+## Smoke tests
+
+Run the full online-room regression suite sequentially:
+
+```bash
+bash scripts/smoke/http_online_room_suite.sh
+```
+
+This covers the HTTP room providers plus the local room-session scope, stale-seat recovery, and ticket-swap regressions without parallel build-artifact contention.
+
+Run the full HTTP multiplayer/backend regression suite:
+
+```bash
+bash scripts/smoke/http_multiplayer_backend_suite.sh
+```
+
+This adds player-profile sync, challenge sync, remote leaderboard/feed coverage, and the full online-room suite.
+
+Run the full multiplayer stack regression suite:
+
+```bash
+bash scripts/smoke/multiplayer_stack_suite.sh
+```
+
+This runs the LAN headless race smoke plus the full HTTP multiplayer/backend suite.
+
 ## Prototype controls
 
 - Main menu:
@@ -52,14 +78,28 @@ godot --headless --path . --build-solutions --quit
   - `Quick Match` now negotiates a provider-backed room seat for the currently selected board and immediately adopts the returned join ticket into the room monitor flow
   - `Host Online Room` now publishes the selected async board through a provider-backed room-host flow, adopts the returned host seat locally, and injects that hosted room back into the cached room directory
   - Online room listings now also support a provider-backed `Request Join` step, so the client can negotiate a backend join ticket and relay hint before real internet room transport is built
+  - Room join, host-seat adoption, and quick match now also arm the selected board and locked/shared deck locally from the negotiated room ticket, so internet room prep no longer depends on a separate manual board-load step
+  - Once the selected board is armed from a room ticket, the main deploy button now reflects joined-room state directly, so internet room races wait on backend launch/countdown instead of behaving like a separate manual challenge start
   - Once a join ticket exists, `Refresh Online` now also pulls a provider-backed room session snapshot so the multiplayer screen can show current runners, ready state, and race-monitor text for that backend room
   - Joined internet rooms now also expose provider-backed room action controls, so the client can toggle ready state and then repoll the backend room snapshot without needing real internet room transport yet
+  - Joined internet rooms now also support menu-side auto refresh, so the room monitor and scoreboard can keep updating while you wait in multiplayer prep without constant manual refresh clicks
+  - Internet room seats now track ticket expiry, warn when a seat has gone stale, and expose a direct `Recover Seat` path that first tries to rejoin the original room before falling back to quick match
+  - Active internet room seats now also support provider-backed lease refresh, so joined-room auto refresh and mobile resume recovery can extend a healthy seat before it expires instead of treating every long prep wait as a stale-ticket failure
   - Hosted internet rooms now also expose a provider-backed `Launch Online Room` control, so the host path can push the backend room into countdown state before real internet room transport exists
   - Hosted internet rooms now also expose a provider-backed rematch reset control, so finished room rounds can return to prep instead of staying stuck on a submitted board
   - Joined or hosted internet rooms now also expose a provider-backed `Leave Online Room` control, so backend room state and local cached room/session/result data can be cleared cleanly without replacing it through another join ticket
   - Async challenge clears, failures, and retreats can now submit provider-backed room results when the selected board matches the active internet room ticket
   - Joined internet rooms now also cache a provider-backed room scoreboard, so multiplayer prep can review shared room standings alongside the room monitor
   - Joined internet room challenge runs now also stream provider-backed live telemetry heartbeats, and the multiplayer screen surfaces that cached telemetry provider status next to the room monitor and scoreboard
+  - Joined internet rooms now also expose a provider-backed moderation/report hook with selectable reasons, so the current room or top remote runner can be flagged without waiting for the final store/backend pass
+  - Internet room battles now return through the room flow on the end screen, so submitted room results no longer offer a direct retry path that bypasses backend rematch/reset state
+  - If an internet room has already entered backend countdown, battle now respects that launch sync with an in-battle start barrier instead of beginning simulation immediately on scene load
+  - During live internet-room races, battle now keeps polling the joined-room session snapshot and shows a compact room monitor in challenge intel, so peer race state remains visible mid-run
+  - Joined-room session snapshots now carry structured per-peer race telemetry, and battle uses that to show a compact room-pace summary instead of relying only on raw monitor strings
+  - Submitted internet-room runners now also carry provisional score/rank in the shared room snapshot, so room pace and monitor text can keep reflecting standings after the first clears land
+  - Room scoreboard refreshes now fold cached standings back into the joined-room session snapshot automatically, so room monitor consumers do not have to wait for a second session poll to see posted ranks
+  - A shared app-lifecycle service now pauses online-room traffic while the app is backgrounded or unfocused and runs profile/room recovery on resume, which gives the mobile internet stack an explicit backgrounding path instead of relying on accidental recovery
+  - Internet room battle end screens now keep refreshing the joined-room monitor and shared standings, so posted room results remain visible without immediately returning to multiplayer prep
   - `Refresh Online` now pulls both a cached remote leaderboard for the selected challenge code and a provider-backed remote featured feed, so backend-authored challenge boards can sit alongside the local daily queue
   - `LAN Race` rooms can host the current seeded board over local ENet, sync it to nearby clients, and compare submitted results on a shared room scoreboard
   - LAN rooms now also track per-peer ready state and block launch until the synced board is armed on every connected machine
@@ -93,6 +133,7 @@ godot --headless --path . --build-solutions --quit
   - `scripts/smoke/http_online_room_directory_smoke.sh` now drives the HTTP room-directory provider end to end against a local stub server, so internet room discovery is also smoke-tested before real room join ships
   - `scripts/smoke/http_online_room_matchmake_smoke.sh` now drives the HTTP room-matchmake provider end to end against a local stub server, so backend quick-join seat negotiation is also smoke-tested before full internet room transport ships
   - `scripts/smoke/http_online_room_join_smoke.sh` now drives the HTTP room-join provider end to end against a local stub server, so backend join-ticket negotiation is also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_lease_smoke.sh` now drives the HTTP room-seat lease provider end to end against a local stub server, so backend seat-refresh handoff is also smoke-tested before long-lived mobile room sessions depend on it
   - `scripts/smoke/http_online_room_session_smoke.sh` now drives the HTTP room-session provider end to end against a local stub server, so backend room-lobby polling is also smoke-tested before real internet room transport ships
   - `scripts/smoke/http_online_room_action_smoke.sh` now drives the HTTP room-action provider end to end against a local stub server, so backend ready-state actions are also smoke-tested before real internet room transport ships
   - `scripts/smoke/http_online_room_create_smoke.sh` now drives the HTTP room-create provider end to end against a local stub server, so backend room-host publish is also smoke-tested before real internet room transport ships
@@ -102,6 +143,7 @@ godot --headless --path . --build-solutions --quit
   - `scripts/smoke/http_online_room_result_smoke.sh` now drives the HTTP room-result provider end to end against a local stub server, so backend room-result submission is also smoke-tested before real internet room transport ships
   - `scripts/smoke/http_online_room_scoreboard_smoke.sh` now drives the HTTP room-scoreboard provider end to end against a local stub server, so backend room standings fetch is also smoke-tested before real internet room transport ships
   - `scripts/smoke/http_online_room_telemetry_smoke.sh` now drives the HTTP room-telemetry provider end to end against a local stub server, so backend live race-monitor heartbeats are also smoke-tested before real internet room transport ships
+  - `scripts/smoke/http_online_room_report_smoke.sh` now drives the HTTP room-report provider end to end against a local stub server, so backend moderation/report intake is also smoke-tested before internet room play depends on it
   - Pick a stage and mutator, or roll a new seeded code
   - Run the same seeded encounter locally and compare score on the same code
   - Review the scoring formula, medal targets, and the full post-run score breakdown

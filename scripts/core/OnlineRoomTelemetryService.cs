@@ -57,6 +57,7 @@ public static class OnlineRoomTelemetryService
 	public static string BuildStatusSummary()
 	{
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
+		var currentSubmission = GetScopedSubmission(ticket);
 		if (ticket == null)
 		{
 			return
@@ -65,7 +66,7 @@ public static class OnlineRoomTelemetryService
 				$"Provider status: {_lastStatus}";
 		}
 
-		if (_lastSubmission == null)
+		if (currentSubmission == null)
 		{
 			return
 				"Online room telemetry:\n" +
@@ -74,10 +75,10 @@ public static class OnlineRoomTelemetryService
 		}
 
 		return
-			$"Online room telemetry ({_lastSubmission.ProviderDisplayName}):\n" +
-			$"{_lastSubmission.Summary}\n" +
-			$"Room: {_lastSubmission.RoomId}  |  Board: {_lastSubmission.BoardCode}\n" +
-				$"Status: {_lastSubmission.Status}";
+			$"Online room telemetry ({currentSubmission.ProviderDisplayName}):\n" +
+			$"{currentSubmission.Summary}\n" +
+			$"Room: {currentSubmission.RoomId}  |  Board: {currentSubmission.BoardCode}\n" +
+				$"Status: {currentSubmission.Status}";
 	}
 
 	public static void ClearLastSubmission(string reason = "")
@@ -111,5 +112,30 @@ public static class OnlineRoomTelemetryService
 		}
 
 		return normalized.TrimEnd('/') + "/challenge-room-telemetry";
+	}
+
+	private static OnlineRoomTelemetrySubmission GetScopedSubmission(OnlineRoomJoinTicket ticket)
+	{
+		return MatchesRoom(_lastSubmission, ticket) ? _lastSubmission : null;
+	}
+
+	private static bool MatchesRoom(OnlineRoomTelemetrySubmission submission, OnlineRoomJoinTicket ticket)
+	{
+		if (submission == null || ticket == null)
+		{
+			return false;
+		}
+
+		if (!string.IsNullOrWhiteSpace(submission.RoomId) &&
+			!string.IsNullOrWhiteSpace(ticket.RoomId) &&
+			!submission.RoomId.Equals(ticket.RoomId, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		return string.IsNullOrWhiteSpace(submission.BoardCode) ||
+			string.IsNullOrWhiteSpace(ticket.BoardCode) ||
+			AsyncChallengeCatalog.NormalizeCode(submission.BoardCode)
+				.Equals(AsyncChallengeCatalog.NormalizeCode(ticket.BoardCode), StringComparison.OrdinalIgnoreCase);
 	}
 }

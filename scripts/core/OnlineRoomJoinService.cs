@@ -14,13 +14,6 @@ public static class OnlineRoomJoinService
 	public static bool RequestJoin(OnlineRoomDirectoryEntry room, out string message)
 	{
 		var gameState = GameState.Instance;
-		if (gameState == null)
-		{
-			message = "Game state is unavailable.";
-			_lastStatus = message;
-			return false;
-		}
-
 		if (room == null || string.IsNullOrWhiteSpace(room.RoomId) || string.IsNullOrWhiteSpace(room.BoardCode))
 		{
 			message = "Selected room listing is incomplete.";
@@ -33,8 +26,8 @@ public static class OnlineRoomJoinService
 		{
 			RoomId = room.RoomId,
 			BoardCode = room.BoardCode,
-			PlayerProfileId = gameState.PlayerProfileId,
-			PlayerCallsign = gameState.PlayerCallsign,
+			PlayerProfileId = ResolvePlayerProfileId(gameState),
+			PlayerCallsign = ResolvePlayerCallsign(gameState),
 			WantsLockedDeckSeat = room.UsesLockedDeck,
 			RequestedAtUnixSeconds = requestedAt
 		};
@@ -42,9 +35,14 @@ public static class OnlineRoomJoinService
 		var provider = ResolveProvider();
 		try
 		{
-			_cachedTicket = NormalizeTicket(provider.RequestJoin(room, request), room, request);
+			var nextTicket = NormalizeTicket(provider.RequestJoin(room, request), room, request);
+			ResetRoomScopedStateForTicketSwap(nextTicket);
+			_cachedTicket = nextTicket;
 			_lastStatus = $"{provider.DisplayName}: {_cachedTicket.Summary}";
-			message = $"Requested join ticket for {room.Title} via {provider.DisplayName}.";
+			var syncedBoardMessage = SyncSelectedBoardFromTicket(_cachedTicket);
+			message = string.IsNullOrWhiteSpace(syncedBoardMessage)
+				? $"Requested join ticket for {room.Title} via {provider.DisplayName}."
+				: $"Requested join ticket for {room.Title} via {provider.DisplayName}.\n{syncedBoardMessage}";
 			return true;
 		}
 		catch (Exception ex)
@@ -64,9 +62,14 @@ public static class OnlineRoomJoinService
 			return false;
 		}
 
-		_cachedTicket = NormalizeHostedTicket(ticket);
+		var nextTicket = NormalizeHostedTicket(ticket);
+		ResetRoomScopedStateForTicketSwap(nextTicket);
+		_cachedTicket = nextTicket;
 		_lastStatus = $"{_cachedTicket.ProviderDisplayName}: {_cachedTicket.Summary}";
-		message = $"Adopted host ticket for {_cachedTicket.RoomTitle}.";
+		var syncedBoardMessage = SyncSelectedBoardFromTicket(_cachedTicket);
+		message = string.IsNullOrWhiteSpace(syncedBoardMessage)
+			? $"Adopted host ticket for {_cachedTicket.RoomTitle}."
+			: $"Adopted host ticket for {_cachedTicket.RoomTitle}.\n{syncedBoardMessage}";
 		return true;
 	}
 
@@ -79,15 +82,49 @@ public static class OnlineRoomJoinService
 			return false;
 		}
 
-		_cachedTicket = NormalizeAdoptedTicket(ticket);
+		var nextTicket = NormalizeAdoptedTicket(ticket);
+		ResetRoomScopedStateForTicketSwap(nextTicket);
+		_cachedTicket = nextTicket;
 		_lastStatus = $"{_cachedTicket.ProviderDisplayName}: {_cachedTicket.Summary}";
-		message = $"Adopted room seat for {_cachedTicket.RoomTitle}.";
+		var syncedBoardMessage = SyncSelectedBoardFromTicket(_cachedTicket);
+		message = string.IsNullOrWhiteSpace(syncedBoardMessage)
+			? $"Adopted room seat for {_cachedTicket.RoomTitle}."
+			: $"Adopted room seat for {_cachedTicket.RoomTitle}.\n{syncedBoardMessage}";
 		return true;
 	}
 
 	public static OnlineRoomJoinTicket GetCachedTicket()
 	{
 		return _cachedTicket;
+	}
+
+	public static bool IsTicketExpired(OnlineRoomJoinTicket ticket = null)
+	{
+		var activeTicket = ticket ?? _cachedTicket;
+		return activeTicket != null &&
+			activeTicket.ExpiresAtUnixSeconds > 0 &&
+			DateTimeOffset.UtcNow.ToUnixTimeSeconds() > activeTicket.ExpiresAtUnixSeconds;
+	}
+
+	public static bool HasActiveTicket()
+	{
+		return _cachedTicket != null && !IsTicketExpired(_cachedTicket);
+	}
+
+	public static long GetRemainingLeaseSeconds(OnlineRoomJoinTicket ticket = null)
+	{
+		var activeTicket = ticket ?? _cachedTicket;
+		if (activeTicket == null)
+		{
+			return 0;
+		}
+
+		if (activeTicket.ExpiresAtUnixSeconds <= 0)
+		{
+			return long.MaxValue;
+		}
+
+		return activeTicket.ExpiresAtUnixSeconds - DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 	}
 
 	public static void ClearCachedTicket(string reason = "")
@@ -115,12 +152,56 @@ public static class OnlineRoomJoinService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room join ({_cachedTicket.ProviderDisplayName}):");
 		builder.AppendLine(_cachedTicket.Summary);
-		builder.AppendLine($"Room: {_cachedTicket.RoomTitle}  |  Status: {_cachedTicket.Status}");
+		builder.AppendLine($"Room: {_cachedTicket.RoomTitle}  |  Status: {_cachedTicket.Status}{(IsTicketExpired(_cachedTicket) ? " (expired)" : "")}");
 		builder.AppendLine($"Board: {_cachedTicket.BoardCode}  |  Seat: {_cachedTicket.SeatLabel}");
 		builder.AppendLine($"Transport: {_cachedTicket.TransportHint}  |  Relay: {_cachedTicket.RelayEndpoint}");
 		builder.AppendLine($"Ticket: {MaskToken(_cachedTicket.TicketId)}  |  Join token: {MaskToken(_cachedTicket.JoinToken)}");
-		builder.Append($"Expires: {expiresLabel}");
+		builder.AppendLine($"Expires: {expiresLabel}  |  Remaining: {FormatRemainingLease(GetRemainingLeaseSeconds(_cachedTicket))}");
+		builder.Append(IsTicketExpired(_cachedTicket)
+			? "Seat health: expired. Renew the room seat before toggling ready or refreshing room state."
+			: "Seat health: active.");
 		return builder.ToString();
+	}
+
+	public static bool UpdateCachedTicketLease(
+		string providerDisplayName,
+		string status,
+		string summary,
+		string joinToken,
+		long expiresAtUnixSeconds,
+		out string message)
+	{
+		if (_cachedTicket == null)
+		{
+			message = "No cached join ticket is available to update.";
+			_lastStatus = message;
+			return false;
+		}
+
+		_cachedTicket = new OnlineRoomJoinTicket
+		{
+			ProviderId = _cachedTicket.ProviderId,
+			ProviderDisplayName = string.IsNullOrWhiteSpace(providerDisplayName) ? _cachedTicket.ProviderDisplayName : providerDisplayName.Trim(),
+			RoomId = _cachedTicket.RoomId,
+			RoomTitle = _cachedTicket.RoomTitle,
+			BoardCode = _cachedTicket.BoardCode,
+			Status = string.IsNullOrWhiteSpace(status) ? _cachedTicket.Status : status.Trim().ToLowerInvariant(),
+			Summary = string.IsNullOrWhiteSpace(summary) ? _cachedTicket.Summary : summary.Trim(),
+			TicketId = _cachedTicket.TicketId,
+			JoinToken = string.IsNullOrWhiteSpace(joinToken) ? _cachedTicket.JoinToken : joinToken.Trim(),
+			TransportHint = _cachedTicket.TransportHint,
+			RelayEndpoint = _cachedTicket.RelayEndpoint,
+			SeatLabel = _cachedTicket.SeatLabel,
+			RequestedAtUnixSeconds = _cachedTicket.RequestedAtUnixSeconds,
+			ExpiresAtUnixSeconds = expiresAtUnixSeconds > 0 ? expiresAtUnixSeconds : _cachedTicket.ExpiresAtUnixSeconds,
+			UsesLockedDeck = _cachedTicket.UsesLockedDeck,
+			LockedDeckUnitIds = _cachedTicket.UsesLockedDeck ? (_cachedTicket.LockedDeckUnitIds ?? []) : []
+		};
+		_lastStatus = $"{_cachedTicket.ProviderDisplayName}: {_cachedTicket.Summary}";
+		message =
+			$"Updated room seat lease for {_cachedTicket.RoomTitle}.\n" +
+			$"Remaining lease: {FormatRemainingLease(GetRemainingLeaseSeconds(_cachedTicket))}.";
+		return true;
 	}
 
 	private static IOnlineRoomJoinProvider ResolveProvider()
@@ -145,6 +226,20 @@ public static class OnlineRoomJoinService
 		}
 
 		return normalized.TrimEnd('/') + "/challenge-room-join";
+	}
+
+	private static string ResolvePlayerProfileId(GameState gameState)
+	{
+		return string.IsNullOrWhiteSpace(gameState?.PlayerProfileId)
+			? "CVY-LOCAL"
+			: gameState.PlayerProfileId;
+	}
+
+	private static string ResolvePlayerCallsign(GameState gameState)
+	{
+		return string.IsNullOrWhiteSpace(gameState?.PlayerCallsign)
+			? "Convoy"
+			: gameState.PlayerCallsign;
 	}
 
 	private static OnlineRoomJoinTicket NormalizeHostedTicket(OnlineRoomJoinTicket ticket)
@@ -183,6 +278,27 @@ public static class OnlineRoomJoinService
 		};
 	}
 
+	private static string SyncSelectedBoardFromTicket(OnlineRoomJoinTicket ticket)
+	{
+		var gameState = GameState.Instance;
+		if (gameState == null || ticket == null || string.IsNullOrWhiteSpace(ticket.BoardCode))
+		{
+			return "";
+		}
+
+		if (!gameState.TrySetSelectedAsyncChallengeBoard(
+				ticket.BoardCode,
+				ticket.UsesLockedDeck ? ticket.LockedDeckUnitIds : Array.Empty<string>(),
+				out var message))
+		{
+			return $"Room seat negotiated, but the local board could not be armed automatically: {message}";
+		}
+
+		return ticket.UsesLockedDeck
+			? $"Armed room board {ticket.BoardCode} with the negotiated shared squad."
+			: $"Armed room board {ticket.BoardCode} for the negotiated player-deck seat.";
+	}
+
 	private static OnlineRoomJoinTicket NormalizeAdoptedTicket(OnlineRoomJoinTicket ticket)
 	{
 		var boardCode = AsyncChallengeCatalog.NormalizeCode(ticket.BoardCode);
@@ -219,6 +335,69 @@ public static class OnlineRoomJoinService
 			UsesLockedDeck = usesLockedDeck,
 			LockedDeckUnitIds = usesLockedDeck ? lockedDeck.ToArray() : []
 		};
+	}
+
+	private static void ResetRoomScopedStateForTicketSwap(OnlineRoomJoinTicket nextTicket)
+	{
+		if (!ShouldResetRoomScopedState(nextTicket))
+		{
+			return;
+		}
+
+		var previousTicket = _cachedTicket;
+		var previousLabel = string.IsNullOrWhiteSpace(previousTicket?.RoomTitle)
+			? previousTicket?.RoomId ?? "previous room"
+			: previousTicket.RoomTitle;
+		var nextLabel = string.IsNullOrWhiteSpace(nextTicket?.RoomTitle)
+			? nextTicket?.RoomId ?? "next room"
+			: nextTicket.RoomTitle;
+		var reason = previousTicket == null
+			? $"Switched active online room seat to {nextLabel}."
+			: $"Switched active online room seat from {previousLabel} to {nextLabel}.";
+		OnlineRoomSessionService.ClearCachedSnapshot(reason);
+		OnlineRoomScoreboardService.ClearCachedSnapshot(reason);
+		OnlineRoomResultService.ClearLastSubmission(reason);
+		OnlineRoomTelemetryService.ClearLastSubmission(reason);
+		OnlineRoomActionService.ClearLastAction(reason);
+		OnlineRoomSeatLeaseService.ClearLastLease(reason);
+		OnlineRoomReportService.ClearLastReport(reason);
+		OnlineRoomRecoveryService.ClearLastRecovery(reason);
+		if (!string.IsNullOrWhiteSpace(previousTicket?.RoomId))
+		{
+			OnlineRoomCreateService.ClearHostedRoom(previousTicket.RoomId, reason);
+		}
+	}
+
+	private static bool ShouldResetRoomScopedState(OnlineRoomJoinTicket nextTicket)
+	{
+		if (nextTicket == null)
+		{
+			return false;
+		}
+
+		if (_cachedTicket == null)
+		{
+			return true;
+		}
+
+		if (!string.IsNullOrWhiteSpace(_cachedTicket.RoomId) &&
+			!string.IsNullOrWhiteSpace(nextTicket.RoomId) &&
+			!_cachedTicket.RoomId.Equals(nextTicket.RoomId, StringComparison.OrdinalIgnoreCase))
+		{
+			return true;
+		}
+
+		if (!string.IsNullOrWhiteSpace(_cachedTicket.TicketId) &&
+			!string.IsNullOrWhiteSpace(nextTicket.TicketId) &&
+			!_cachedTicket.TicketId.Equals(nextTicket.TicketId, StringComparison.OrdinalIgnoreCase))
+		{
+			return true;
+		}
+
+		return !string.IsNullOrWhiteSpace(_cachedTicket.BoardCode) &&
+			!string.IsNullOrWhiteSpace(nextTicket.BoardCode) &&
+			!AsyncChallengeCatalog.NormalizeCode(_cachedTicket.BoardCode)
+				.Equals(AsyncChallengeCatalog.NormalizeCode(nextTicket.BoardCode), StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static OnlineRoomJoinTicket NormalizeTicket(OnlineRoomJoinTicket ticket, OnlineRoomDirectoryEntry room, OnlineRoomJoinRequest request)
@@ -321,5 +500,25 @@ public static class OnlineRoomJoinService
 		}
 
 		return $"{token[..4]}...{token[^4..]}";
+	}
+
+	private static string FormatRemainingLease(long remainingSeconds)
+	{
+		if (remainingSeconds < 0)
+		{
+			return "expired";
+		}
+
+		if (remainingSeconds == 0)
+		{
+			return "now";
+		}
+
+		if (remainingSeconds == long.MaxValue)
+		{
+			return "open";
+		}
+
+		return $"{remainingSeconds}s";
 	}
 }

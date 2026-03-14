@@ -161,7 +161,7 @@ public static class StageEncounterIntel
         return builder.ToString().TrimEnd();
     }
 
-    private static Dictionary<string, int> BuildUnitCounts(StageDefinition stage, out int totalEnemies)
+    public static Dictionary<string, int> BuildUnitCounts(StageDefinition stage, out int totalEnemies)
     {
         var counts = new Dictionary<string, int>();
         totalEnemies = 0;

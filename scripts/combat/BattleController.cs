@@ -420,7 +420,7 @@ public partial class BattleController : Node2D
 		else
 		{
 			_stage = Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage);
-			_stageData = GameData.GetStage(_stage);
+			_stageData = GameState.Instance.BuildConfiguredCampaignStage(_stage);
 			_activeRouteId = NormalizeRouteId(_stageData.MapId);
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
@@ -3822,24 +3822,31 @@ public partial class BattleController : Node2D
 
 	private string BuildStageMissionIntelText()
 	{
+		var directiveText = BuildCampaignDirectiveBattleText();
 		if (_stageMissions.Count == 0)
 		{
-			return "";
+			return string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n";
 		}
 
 		var mission = _stageMissions.FirstOrDefault(candidate => !candidate.Completed && !candidate.Failed);
 		if (mission == null)
 		{
-			return "Mission event: all authored battlefield objectives are resolved.\n";
+			return
+				(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
+				"Mission event: all authored battlefield objectives are resolved.\n";
 		}
 
 		var title = StageMissionEvents.ResolveTitle(mission.Definition);
 		if (!mission.Started)
 		{
-			return $"Mission event standby: {title} arms in {Mathf.Max(0f, mission.Definition.StartTime - _elapsed):0.0}s.\n";
+			return
+				(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
+				$"Mission event standby: {title} arms in {Mathf.Max(0f, mission.Definition.StartTime - _elapsed):0.0}s.\n";
 		}
 
-		return $"Mission event active: {title}  |  {BuildStageMissionProgressText(mission)}\n";
+		return
+			(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
+			$"Mission event active: {title}  |  {BuildStageMissionProgressText(mission)}\n";
 	}
 
 	private string BuildStageMissionEventText()
@@ -6694,15 +6701,21 @@ public partial class BattleController : Node2D
 
 	private string BuildStageMissionDebriefText()
 	{
+		var directiveText = BuildCampaignDirectiveBattleText();
 		if (_stageMissions.Count == 0)
 		{
-			return "Battlefield events: none";
+			return string.IsNullOrWhiteSpace(directiveText)
+				? "Battlefield events: none"
+				: $"{directiveText}\nBattlefield events: none";
 		}
 
-		var lines = new List<string>
+		var lines = new List<string>();
+		if (!string.IsNullOrWhiteSpace(directiveText))
 		{
-			"Battlefield events:"
-		};
+			lines.Add(directiveText);
+		}
+
+		lines.Add("Battlefield events:");
 
 		foreach (var mission in _stageMissions)
 		{
@@ -6715,6 +6728,25 @@ public partial class BattleController : Node2D
 		}
 
 		return string.Join("\n", lines);
+	}
+
+	private string BuildCampaignDirectiveBattleText()
+	{
+		if (IsEndlessMode || IsChallengeMode || !GameState.Instance.IsCampaignDirectiveArmed(_stage))
+		{
+			return "";
+		}
+
+		var directive = GameState.Instance.GetCampaignDirective(_stage);
+		if (directive == null)
+		{
+			return "";
+		}
+
+		var bountyStatus = GameState.Instance.HasClaimedCampaignDirective(directive.Id)
+			? "bounty already claimed"
+			: CampaignDirectiveCatalog.BuildRewardSummary(directive);
+		return $"Heroic directive: {directive.Title}  |  {directive.Summary}  |  {bountyStatus}";
 	}
 
 	private string BuildStageMissionDebriefDetail(StageMissionState mission)

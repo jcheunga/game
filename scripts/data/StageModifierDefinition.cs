@@ -10,4 +10,14 @@ public sealed class StageModifierDefinition
         string.IsNullOrWhiteSpace(Type)
             ? ""
             : Type.Trim().ToLowerInvariant();
+
+    public StageModifierDefinition Clone()
+    {
+        return new StageModifierDefinition
+        {
+            Type = Type,
+            Value = Value,
+            Label = Label
+        };
+    }
 }

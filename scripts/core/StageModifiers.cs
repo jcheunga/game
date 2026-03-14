@@ -12,7 +12,8 @@ public static class StageModifiers
 
     public static float ResolvePlayerBaseHealthScale(StageDefinition stage)
     {
-        return ResolveScaleModifier(stage, "armored_convoy", 1f, 1f, 2f);
+        return ResolveScaleModifier(stage, "armored_convoy", 1f, 1f, 2f) *
+            ResolveScaleModifier(stage, "strained_caravan", 1f, 0.5f, 1f);
     }
 
     public static float ResolveEnemyBaseHealthScale(StageDefinition stage)
@@ -22,7 +23,8 @@ public static class StageModifiers
 
     public static float ResolveCourageGainScale(StageDefinition stage)
     {
-        return ResolveScaleModifier(stage, "surging_courage", 1f, 0.5f, 2f);
+        return ResolveScaleModifier(stage, "surging_courage", 1f, 0.5f, 2f) *
+            ResolveScaleModifier(stage, "drained_courage", 1f, 0.5f, 1f);
     }
 
     public static int ResolveEnemyCapBonus(StageDefinition stage)
@@ -136,8 +138,10 @@ public static class StageModifiers
         return modifier.NormalizedType switch
         {
             "armored_convoy" => $"Armored caravan ({ToPercent(modifier.Value, 1f)} war wagon hull)",
+            "strained_caravan" => $"Strained caravan ({ToPercent(modifier.Value, 1f)} war wagon hull)",
             "reinforced_barricade" => $"Reinforced gatehouse ({ToPercent(modifier.Value, 1f)} enemy hull)",
             "surging_courage" => $"Surging courage ({ToPercent(modifier.Value, 1f)} courage gain)",
+            "drained_courage" => $"Drained courage ({ToPercent(modifier.Value, 1f)} courage gain)",
             "swarm_density" => $"Swarm density (+{Mathf.Max(1, Mathf.RoundToInt(modifier.Value <= 0f ? 1f : modifier.Value))} enemy cap, faster pressure)",
             _ => modifier.Type
         };
@@ -148,8 +152,10 @@ public static class StageModifiers
         return modifier.NormalizedType switch
         {
             "armored_convoy" => "Armored caravan",
+            "strained_caravan" => "Strained caravan",
             "reinforced_barricade" => "Reinforced gatehouse",
             "surging_courage" => "Surging courage",
+            "drained_courage" => "Drained courage",
             "swarm_density" => "Swarm density",
             _ => modifier.Type
         };

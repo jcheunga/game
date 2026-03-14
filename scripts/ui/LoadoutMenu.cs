@@ -6,7 +6,7 @@ public partial class LoadoutMenu : Control
 
     public override void _Ready()
     {
-        _stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        _stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         BuildUi();
     }
 
@@ -121,7 +121,9 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
-            Text = $"Reward on clear: +{_stage.RewardGold} gold, +{_stage.RewardFood} food  |  Entry cost: -{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food"
+            Text =
+                $"Reward on clear: +{_stage.RewardGold} gold, +{_stage.RewardFood} food  |  Entry cost: -{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food\n" +
+                $"{GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber)}"
         });
 
         missionStack.AddChild(new Label

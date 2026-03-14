@@ -233,6 +233,7 @@ This sprint should stay narrow and practical:
 - upgraded endless run closure so defeats and voluntary retreats now open a full route debrief with banked payout, boon/path context, directive/contact reports, and reward-bank telemetry
 - added persistent district-completion rewards with retroactive save reconciliation, so fully securing a campaign route now pays a one-time chapter bonus on top of stage clears
 - added level-gated unit doctrines with persistent save data, armory selection, retraining costs, and real stat bonuses so unit growth now branches instead of stopping at flat levels
+- added optional stage replay heroic directives with one-time bounty rewards, map/loadout/armory surfacing, and extra stage modifiers so campaign replays now carry a real challenge layer instead of only star cleanup
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
 - extended route identity through the campaign map, loadout briefing, and caravan armory so each district now carries its own color treatment and battlefield-event briefing surface
 - extended that route identity into live combat with route-themed HUD panels, in-battle briefing banners, and heraldic war wagon/gatehouse silhouettes

@@ -31,6 +31,7 @@ public partial class MapMenu : Control
     private Label _routeSubtitleLabel = null!;
     private Label _routeCampaignLabel = null!;
     private Label _routeProgressLabel = null!;
+    private Button _directiveButton = null!;
     private Button _exploreButton = null!;
     private Button _deployButton = null!;
     private MapPathCanvas _mapCanvas = null!;
@@ -308,6 +309,14 @@ public partial class MapMenu : Control
         settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
         sideContent.AddChild(settingsButton);
 
+        _directiveButton = new Button
+        {
+            Text = "Heroic Directive",
+            CustomMinimumSize = new Vector2(0, 42)
+        };
+        _directiveButton.Pressed += ToggleSelectedDirective;
+        sideContent.AddChild(_directiveButton);
+
         _exploreButton = new Button
         {
             Text = "Explore Next Stage",
@@ -373,7 +382,7 @@ public partial class MapMenu : Control
             ApplyStageButtonStyle(button, stageDefinition, stars, stageId <= GameState.Instance.HighestUnlockedStage, stageId == _selectedStage);
         }
 
-        var stage = GameData.GetStage(_selectedStage);
+        var stage = GameState.Instance.BuildConfiguredCampaignStage(_selectedStage);
         ApplyRouteTheme(stage);
         var stageUnlocked = _selectedStage <= GameState.Instance.HighestUnlockedStage;
         var bestStars = GameState.Instance.GetStageStars(_selectedStage);
@@ -383,13 +392,15 @@ public partial class MapMenu : Control
         _stageStatusLabel.Text = BuildStageStatusText(stage, bestStars, stageUnlocked);
         _stageRewardLabel.Text =
             $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}\n" +
-            $"{GameState.Instance.BuildDistrictRewardStatusText(stage.MapId)}";
+            $"{GameState.Instance.BuildDistrictRewardStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignDirectiveStatusText(_selectedStage)}";
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
         _stageMissionLabel.Text = StageMissionEvents.BuildSummaryText(stage);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
         _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
         _convoySummaryLabel.Text = BuildConvoySummaryText();
         _squadSummaryLabel.Text = BuildSquadSummaryText();
+        RefreshDirectiveButton();
         _deployButton.Text = $"Deploy To Stage {_selectedStage} (-{stageEntryFoodCost} food)";
         var canStartBattle = GameState.Instance.CanStartCampaignBattle(_selectedStage, out var deployValidationMessage);
         _deployStatusLabel.Text =
@@ -695,6 +706,7 @@ public partial class MapMenu : Control
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
             $"Unit doctrines: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount} forged\n" +
+            $"Heroic directives: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage} secured\n" +
             $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Next exploration: {nextExploreLine}\n" +
             "Use Caravan Armory for purchases, upgrades, and squad edits.";
@@ -727,6 +739,36 @@ public partial class MapMenu : Control
         }
 
         return summary;
+    }
+
+    private void RefreshDirectiveButton()
+    {
+        var directive = GameState.Instance.GetCampaignDirective(_selectedStage);
+        if (directive == null)
+        {
+            _directiveButton.Text = "No Heroic Directive";
+            _directiveButton.Disabled = true;
+            return;
+        }
+
+        var unlocked = GameState.Instance.IsCampaignDirectiveUnlocked(_selectedStage);
+        var armed = GameState.Instance.IsCampaignDirectiveArmed(_selectedStage);
+        var claimed = GameState.Instance.HasClaimedCampaignDirective(directive.Id);
+        _directiveButton.Text = armed
+            ? "Stand Down Directive"
+            : claimed
+                ? $"Replay {directive.Title}"
+                : $"Arm {directive.Title}";
+        _directiveButton.Disabled = !unlocked;
+        _directiveButton.TooltipText =
+            $"{directive.Title}\n{directive.Summary}\n{CampaignDirectiveCatalog.BuildRewardSummary(directive)}";
+    }
+
+    private void ToggleSelectedDirective()
+    {
+        GameState.Instance.ToggleCampaignDirective(_selectedStage, out var message);
+        _convoyStatusMessage = message;
+        RefreshUi();
     }
 
     private bool TryGetNextStageForMap(string mapId, out StageDefinition stage)

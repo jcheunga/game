@@ -307,7 +307,7 @@ public partial class ShopMenu : Control
 
     private void ApplyRouteTheme()
     {
-        var stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         var route = RouteCatalog.Get(stage.MapId);
         _backgroundTop.Color = route.BackgroundTop;
         _backgroundBottom.Color = route.BackgroundBottom;
@@ -329,6 +329,7 @@ public partial class ShopMenu : Control
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
             $"Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
+            $"Heroic directives secured: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
             $"War wagon plating level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Stores level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
@@ -341,7 +342,7 @@ public partial class ShopMenu : Control
 
     private string BuildRouteIntelText()
     {
-        var selectedStage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var selectedStage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         var route = RouteCatalog.Get(selectedStage.MapId);
         var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId)
             .Where(stage => stage.StageNumber >= selectedStage.StageNumber)
@@ -354,6 +355,7 @@ public partial class ShopMenu : Control
             $"Pressure profile: {route.PressureSummary}\n" +
             $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" +
             $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" +
+            $"{GameState.Instance.BuildCampaignDirectiveStatusText(selectedStage.StageNumber)}\n" +
             $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
 
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
@@ -460,7 +462,7 @@ public partial class ShopMenu : Control
 
     private List<ShopRecommendation> BuildRecommendations()
     {
-        var stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         var recommendations = new List<ShopRecommendation>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var counts = BuildStageEnemyCounts(stage);
@@ -507,6 +509,26 @@ public partial class ShopMenu : Control
                             _statusLabel.Text = $"Last report:\n{message}";
                         }));
             }
+        }
+
+        var directive = GameState.Instance.GetCampaignDirective(stage.StageNumber);
+        if (GameState.Instance.IsCampaignDirectiveUnlocked(stage.StageNumber) &&
+            directive != null &&
+            !GameState.Instance.IsCampaignDirectiveArmed(stage.StageNumber))
+        {
+            TryAddRecommendation(
+                recommendations,
+                seen,
+                new ShopRecommendation(
+                    $"directive:{stage.StageNumber}",
+                    $"Arm {directive.Title}",
+                    $"{directive.Summary}\n{CampaignDirectiveCatalog.BuildRewardSummary(directive)}",
+                    "Arm directive",
+                    () =>
+                    {
+                        GameState.Instance.ToggleCampaignDirective(stage.StageNumber, out var message);
+                        _statusLabel.Text = $"Last report:\n{message}";
+                    }));
         }
 
         switch (primaryMissionType)

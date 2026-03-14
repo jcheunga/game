@@ -138,7 +138,7 @@ Objective: scale once the systems are trustworthy.
 - balance passes for courage economy, cooldowns, and wave pacing
 - each map should have a distinct biome/faction/hazard identity
 
-Minimum player unit target for the first medieval roster:
+Minimum player unit target for the first medieval roster (all now in-game):
 
 - `Swordsman`
 - `Spearman`
@@ -150,8 +150,9 @@ Minimum player unit target for the first medieval roster:
 - `Battle Monk`
 - `Mage`
 - `Siege Engineer`
+- `Alchemist` (bonus roster addition)
 
-Minimum spell/magic target for the first medieval roster:
+Minimum spell/magic target for the first medieval roster (all now in-game):
 
 - `Fireball`
 - `Heal`
@@ -195,13 +196,11 @@ Objective: extend the current async/LAN multiplayer systems into a store-ready i
 
 ## Immediate Next Sprint
 
-This sprint should stay narrow and practical:
+All milestone code work is complete, including real particle effects for combat events. Remaining work is asset-driven:
 
-1. carry the first-pass fiction lock through the remaining menu, battle, and multiplayer copy
-2. expand authored districts toward the 10-map / 50-stage campaign target
-3. keep the existing combat/progression structure but retheme future content toward medieval factions, siege pressure, and magic
-4. replace remaining legacy convoy/bus/zombie phrasing in active player-facing flows
-5. only expand content after the renamed roster, route set, and stage plan are coherent
+1. replace placeholder combat visuals with authored medieval/fantasy sprites and animations (M5 art)
+2. create faction-distinct unit silhouettes with armor, banners, and creature models
+3. continue balance tuning as playtesting reveals over/under-tuned stages or economy gaps
 
 ## Work Completed In This Sprint
 
@@ -384,18 +383,22 @@ This sprint should stay narrow and practical:
 - moved audio/interface controls into a shared settings screen so campaign, shop, loadout, endless, and multiplayer prep all expose the same persistent options flow
 - defined the long-term 10-district / 50-stage campaign target in a dedicated campaign plan and surfaced authored-vs-target progress on the title screen and campaign map
 - carried the fiction lock deeper into runtime content by retheming lingering stage/wave labels, spell copy, endless fork/directive/contact text, and fallback data away from modern/prototype wording
+- added the `Spearman` reach-frontline card to complete the minimum 11-unit medieval roster target, with shop recommendations for rush and heavy stages
+- added persistent spell upgrades with level 1-3 progression, gold-funded leveling in the shop, level-scaled power/radius/cooldown/courage in battle, and level display across loadout/shop/battle HUD
+- added four new stage modifier types (`elite_vanguard`, `rapid_assault`, `cursed_ground`, `fortified_deploy`) with battle integration, readiness scoring, and seeded them across 12 mid-to-late campaign stages for replay variety
+- completed legacy phrasing cleanup: renamed all internal `scrap/fuel` variable and method names to `gold/food` in BattleController.cs while preserving backward-compatible save data shims
+- applied a balance pass across all 50 stages: smoothed late-game difficulty curve (stages 40-50), fixed stage 6 food economy spike, reduced stage 36 modifier overload, capped Crusher composition weight, and bumped sparse late-game spawn rates
+- improved presentation pass: broke readiness gaps into bullet lists, added explicit stat labels and courage cost to deploy tooltips, split war wagon upgrades into two readable rows, restructured endless run payout into indented breakdown, split contact telemetry into multi-line format, and changed deploy/spell button states from generic READY/RECOVER to actionable DEPLOY/CAST/CD labels showing deficit amounts
+- added scene transition fades so menu and battle scene changes now use a brief black fade-out/fade-in instead of hard cuts
+- expanded the audio catalog with spell cast sounds (pitch-shifted per spell type), boss spawn stingers, and upgrade confirmation cues, wired into battle spell casts, boss unit spawns, and all shop upgrade paths
+- added real `CpuParticles2D` particle effects for deploy bursts, unit death bursts, projectile impacts and trails, spell casts (fireball/heal/frost/lightning/ward), base hit debris, boss spawn bursts, death burst explosions, and victory/defeat end particles
+- added terrain-specific ambient particle systems so each battlefield now has atmospheric effects: embers in foundry/smelter, snow in pass/watchfort, mist in marsh/swamp/shipyard, dust motes in cathedral/shrine, ash fall in ossuary/bridgefort, leaf drift in grove/timberroad, wind dust in grassland/steppe, and fireflies at night
+- added a critical health screen-edge vignette that pulses red when the war wagon drops below 35% hull
 
 ## Recommended Build Order After This Commit
 
-1. replace the prototype scrap/fuel layer with the planned gold/food economy and shop flow
-2. add unit purchasing, unit leveling, and bus/base upgrades on top of that economy
-3. connect food costs to stage entry and map exploration so route expansion has real pressure
-4. keep balancing courage economy, unlock pacing, and objective targets against the new currencies
-5. replace placeholder combat visuals with authored assets and richer effects
-6. expand campaign breadth with more maps and districts once the core loop is solid
-7. add audio and stronger menu/map presentation
-8. deepen the endless scaffold with run upgrades, modifier drafts, and route forks instead of only raw survival scaling
-9. start multiplayer only after combat authority/state sync requirements are clear
+1. replace placeholder visuals with authored sprites and animations (requires art assets)
+2. continue balance tuning as playtesting surfaces over/under-tuned stages
 
 ## Guardrails
 

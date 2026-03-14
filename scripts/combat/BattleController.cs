@@ -316,13 +316,13 @@ public partial class BattleController : Node2D
 	private float _endlessContactCourageGainScale = 1f;
 	private float _endlessUnitHealthScale = 1f;
 	private float _endlessUnitDamageScale = 1f;
-	private float _endlessScrapScale = 1f;
-	private int _endlessDirectiveScrapBonus;
-	private int _endlessDirectiveFuelBonus;
-	private int _endlessContactScrapBonus;
-	private int _endlessContactFuelBonus;
-	private int _endlessBossScrapBonus;
-	private int _endlessBossFuelBonus;
+	private float _endlessGoldScale = 1f;
+	private int _endlessDirectiveGoldBonus;
+	private int _endlessDirectiveFoodBonus;
+	private int _endlessContactGoldBonus;
+	private int _endlessContactFoodBonus;
+	private int _endlessBossGoldBonus;
+	private int _endlessBossFoodBonus;
 	private int _lastEndlessBossCheckpointWave;
 	private string _lastEndlessBossCheckpointTitle = "";
 	private string[] _draftOptionIds = Array.Empty<string>();
@@ -452,13 +452,13 @@ public partial class BattleController : Node2D
 		_endlessContactCourageGainScale = 1f;
 		_endlessUnitHealthScale = 1f;
 		_endlessUnitDamageScale = 1f;
-		_endlessScrapScale = 1f;
-		_endlessDirectiveScrapBonus = 0;
-		_endlessDirectiveFuelBonus = 0;
-		_endlessContactScrapBonus = 0;
-		_endlessContactFuelBonus = 0;
-		_endlessBossScrapBonus = 0;
-		_endlessBossFuelBonus = 0;
+		_endlessGoldScale = 1f;
+		_endlessDirectiveGoldBonus = 0;
+		_endlessDirectiveFoodBonus = 0;
+		_endlessContactGoldBonus = 0;
+		_endlessContactFoodBonus = 0;
+		_endlessBossGoldBonus = 0;
+		_endlessBossFoodBonus = 0;
 		_lastEndlessBossCheckpointWave = 0;
 		_lastEndlessBossCheckpointTitle = "";
 		_endlessRunUpgrades.Clear();
@@ -516,12 +516,22 @@ public partial class BattleController : Node2D
 			{
 				_spawnDirector.SetEnemyScaleModifiers(_challengeMutator.EnemyHealthScale, _challengeMutator.EnemyDamageScale);
 			}
+
+			var eliteHealthScale = StageModifiers.ResolveEnemyHealthScale(_stageData);
+			var eliteDamageScale = StageModifiers.ResolveEnemyDamageScale(_stageData);
+			if (eliteHealthScale > 1.001f || eliteDamageScale > 1.001f)
+			{
+				_spawnDirector.SetEnemyScaleModifiers(
+					_spawnDirector.AdditionalEnemyHealthScale * eliteHealthScale,
+					_spawnDirector.AdditionalEnemyDamageScale * eliteDamageScale);
+			}
 		}
 
 		InitializeStageHazards();
 		InitializeStageMissions();
 
 		BuildUi();
+		InitializeAmbientParticles();
 		SetStatus(
 			IsEndlessMode
 				? $"Select a squad or spell card, click the battlefield, and hold against escalating waves. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())}"
@@ -585,6 +595,7 @@ public partial class BattleController : Node2D
 
 		DrawPlayerBus(palette, route);
 		DrawEnemyBarricade(palette, route);
+		DrawCriticalHealthVignette();
 	}
 
 	private TerrainPalette ResolveTerrainPalette()
@@ -2193,10 +2204,10 @@ public partial class BattleController : Node2D
 			var level = GameState.Instance.GetUnitLevel(slot.Definition.Id);
 
 			var stateLabel = !isReady
-				? $"RECOVER {cooldown:0.0}s"
+				? $"CD {cooldown:0.0}s"
 				: hasCourage
-					? "READY"
-					: $"NEED {slot.Definition.Cost}";
+					? "DEPLOY"
+					: $"NEED {slot.Definition.Cost - Mathf.FloorToInt(_courage)} more";
 			var marker = slot.Definition == _deck.ArmedUnit ? "> " : "";
 			slot.Button.Text =
 				$"{marker}Lv{level} {slot.Definition.DisplayName}\n{stateLabel}  |  {slot.Definition.Cost} courage";
@@ -2206,22 +2217,23 @@ public partial class BattleController : Node2D
 
 		foreach (var slot in _spellSlots)
 		{
+			var resolved = GameState.Instance.BuildSpellStats(slot.Definition);
 			var cooldown = _spellDeck.GetCooldownRemaining(slot.Definition.Id);
 			var isReady = cooldown <= 0.05f;
-			var hasCourage = _courage >= slot.Definition.CourageCost;
+			var hasCourage = _courage >= resolved.CourageCost;
 			var armed = _selectionMode == BattleSelectionMode.Spell && slot.Definition == _spellDeck.ArmedSpell;
 			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
 
 			var stateLabel = !isReady
-				? $"RECOVER {cooldown:0.0}s"
+				? $"CD {cooldown:0.0}s"
 				: hasCourage
-					? "READY"
-					: $"NEED {slot.Definition.CourageCost}";
+					? "CAST"
+					: $"NEED {resolved.CourageCost - Mathf.FloorToInt(_courage)} more";
 			var marker = armed ? "* " : "";
 			slot.Button.Text =
-				$"{marker}{slot.Definition.DisplayName}\n{stateLabel}  |  {slot.Definition.CourageCost} courage";
+				$"{marker}Lv{resolved.Level} {slot.Definition.DisplayName}\n{stateLabel}  |  {resolved.CourageCost} courage";
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
-			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, isReady, cooldown);
+			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
 		}
 	}
 
@@ -2460,18 +2472,19 @@ public partial class BattleController : Node2D
 
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
 	{
-		if (!_spellDeck.CanCast(definition, _courage, _battleEnded, _endlessCheckpointActive, out var reason))
+		var resolved = GameState.Instance.BuildSpellStats(definition);
+		if (!_spellDeck.CanCast(definition, resolved.CourageCost, _courage, _battleEnded, _endlessCheckpointActive, out var reason))
 		{
 			SetStatus(reason);
 			return;
 		}
 
-		_courage -= definition.CourageCost;
-		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(definition));
-		var effectSummary = ApplySpellEffect(definition, targetPosition);
+		_courage -= resolved.CourageCost;
+		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(definition, resolved));
+		var effectSummary = ApplySpellEffect(resolved, targetPosition);
 		_selectionMode = BattleSelectionMode.Unit;
-		AudioDirector.Instance?.PlayUiConfirm();
-		SetStatus($"Cast {definition.DisplayName} at lane {Mathf.RoundToInt(targetPosition.Y)}. {effectSummary}");
+		AudioDirector.Instance?.PlaySpellCast(resolved.EffectType);
+		SetStatus($"Cast Lv{resolved.Level} {definition.DisplayName} at lane {Mathf.RoundToInt(targetPosition.Y)}. {effectSummary}");
 		UpdateHud();
 	}
 
@@ -2494,8 +2507,10 @@ public partial class BattleController : Node2D
 		_playerDeployments++;
 		RecordChallengeDeployment(definition.Id, spawnPosition.Y);
 		SpawnUnit(Team.Player, stats, spawnPosition);
+		ApplyFortifiedDeployBonus(spawnPosition);
 		AudioDirector.Instance?.PlayDeploy(definition);
 		SpawnEffect(spawnPosition, stats.Color, 12f, 42f, 0.28f);
+		BattleParticles.SpawnDeployBurst(this, spawnPosition, stats.Color);
 		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition, spawnPosition);
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
 		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
@@ -2528,6 +2543,11 @@ public partial class BattleController : Node2D
 	{
 		SpawnUnit(Team.Enemy, stats, position);
 		SpawnEffect(position, stats.Color.Darkened(0.15f), 10f, 26f, 0.22f, false);
+		if (stats.DefinitionId == GameData.EnemyBossId)
+		{
+			BattleParticles.SpawnBossSpawnBurst(this, position, stats.Color);
+			AudioDirector.Instance?.PlayBossSpawn();
+		}
 	}
 
 	private void SpawnUnit(Team team, UnitStats stats, Vector2 position)
@@ -2711,6 +2731,7 @@ public partial class BattleController : Node2D
 			_enemyBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(false, attacker.BaseDamage);
 			SpawnEffect(EnemyBaseCorePosition, attacker.Tint, 8f, 26f, 0.18f);
+			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, attacker.Tint);
 			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{attacker.BaseDamage}", attacker.Tint.Lightened(0.18f), 0.44f);
 		}
 		else
@@ -2719,6 +2740,7 @@ public partial class BattleController : Node2D
 			_playerBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(true, attacker.BaseDamage);
 			SpawnEffect(PlayerBaseCorePosition, attacker.Tint, 8f, 26f, 0.18f);
+			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, attacker.Tint);
 			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{attacker.BaseDamage}", attacker.Tint.Lightened(0.18f), 0.44f);
 		}
 	}
@@ -2774,6 +2796,7 @@ public partial class BattleController : Node2D
 	private void SimulateUnits(float delta)
 	{
 		ApplyTeamAuras();
+		ApplyCursedGroundAttrition(delta);
 
 		foreach (var unit in _units)
 		{
@@ -3043,6 +3066,53 @@ public partial class BattleController : Node2D
 
 				target.ApplyCombatAura(source.AuraAttackDamageScale, source.AuraSpeedScale);
 			}
+		}
+	}
+
+	private void ApplyFortifiedDeployBonus(Vector2 spawnPosition)
+	{
+		if (!StageModifiers.HasFortifiedDeploy(_stageData))
+		{
+			return;
+		}
+
+		var defenseScale = StageModifiers.ResolveFortifiedDeployDefenseScale(_stageData);
+		var duration = StageModifiers.ResolveFortifiedDeployDuration(_stageData);
+		foreach (var unit in _units)
+		{
+			if (unit.IsDead || unit.Team != Team.Player)
+			{
+				continue;
+			}
+
+			if (unit.Position.DistanceTo(spawnPosition) > 12f)
+			{
+				continue;
+			}
+
+			unit.ApplyTemporaryDefenseModifier(defenseScale, duration);
+			SpawnFloatText(unit.Position + new Vector2(0f, -22f), "FORTIFIED", new Color("8ecae6"), 0.46f);
+			break;
+		}
+	}
+
+	private void ApplyCursedGroundAttrition(float delta)
+	{
+		var dps = StageModifiers.ResolveCursedGroundDps(_stageData);
+		if (dps <= 0.01f)
+		{
+			return;
+		}
+
+		var tickDamage = dps * delta;
+		foreach (var unit in _units)
+		{
+			if (unit.IsDead || unit.Team != Team.Player)
+			{
+				continue;
+			}
+
+			unit.TakeDamage(tickDamage);
 		}
 	}
 
@@ -3344,6 +3414,7 @@ public partial class BattleController : Node2D
 			TriggerDeathBurst(deadUnit);
 			TriggerSpawnOnDeath(deadUnit);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
+			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, deadUnit.VisualClass == "boss");
 			_units.RemoveAt(i);
 			deadUnit.QueueFree();
 		}
@@ -3363,6 +3434,7 @@ public partial class BattleController : Node2D
 			deadUnit.DeathBurstRadius,
 			0.26f,
 			false);
+		BattleParticles.SpawnDeathBurstExplosion(this, deadUnit.Position, deadUnit.Tint.Lightened(0.15f), deadUnit.DeathBurstRadius);
 
 		foreach (var candidate in _units)
 		{
@@ -3473,32 +3545,33 @@ public partial class BattleController : Node2D
 			.ToArray();
 	}
 
-	private string ApplySpellEffect(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplySpellEffect(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		return definition.EffectType switch
+		return spell.EffectType switch
 		{
-			"fireball" => ApplyFireballSpell(definition, targetPosition),
-			"heal" => ApplyHealSpell(definition, targetPosition),
-			"frost_burst" => ApplyFrostBurstSpell(definition, targetPosition),
-			"lightning_strike" => ApplyLightningStrikeSpell(definition, targetPosition),
-			"barrier_ward" => ApplyBarrierWardSpell(definition, targetPosition),
+			"fireball" => ApplyFireballSpell(spell, targetPosition),
+			"heal" => ApplyHealSpell(spell, targetPosition),
+			"frost_burst" => ApplyFrostBurstSpell(spell, targetPosition),
+			"lightning_strike" => ApplyLightningStrikeSpell(spell, targetPosition),
+			"barrier_ward" => ApplyBarrierWardSpell(spell, targetPosition),
 			_ => "The spell fizzled without a scripted effect."
 		};
 	}
 
-	private string ApplyFireballSpell(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplyFireballSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		var color = definition.GetTint();
-		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy);
+		var color = spell.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Enemy);
 		var hits = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
+		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
+		BattleParticles.SpawnFireballParticles(this, targetPosition, color, spell.Radius);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FIREBALL", color.Lightened(0.22f), 0.56f);
 
 		foreach (var target in targets)
 		{
-			var appliedDamage = target.TakeDamage(definition.Power);
+			var appliedDamage = target.TakeDamage(spell.Power);
 			if (appliedDamage <= 0.05f)
 			{
 				continue;
@@ -3514,19 +3587,20 @@ public partial class BattleController : Node2D
 			: "Fireball burst across empty ground.";
 	}
 
-	private string ApplyHealSpell(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplyHealSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		var color = definition.GetTint();
-		var allies = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Player);
+		var color = spell.GetTint();
+		var allies = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Player);
 		var healedUnits = 0;
 		var totalHealing = 0f;
 
-		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false, BattleEffectStyle.HealBloom);
+		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.HealBloom);
+		BattleParticles.SpawnHealSparkles(this, targetPosition, color, spell.Radius);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "HEAL", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
 		{
-			var healed = ally.Heal(definition.Power);
+			var healed = ally.Heal(spell.Power);
 			if (healed <= 0.05f)
 			{
 				continue;
@@ -3538,26 +3612,27 @@ public partial class BattleController : Node2D
 			SpawnFloatText(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
 		}
 
-		var repaired = RepairBusByAmount(definition.SecondaryPower);
+		var repaired = RepairBusByAmount(spell.SecondaryPower);
 		return
 			$"Heal restored {Mathf.RoundToInt(totalHealing)} across {healedUnits} allies" +
 			(repaired > 0.05f ? $" and repaired {Mathf.RoundToInt(repaired)} war wagon hull." : ".");
 	}
 
-	private string ApplyFrostBurstSpell(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplyFrostBurstSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		var color = definition.GetTint();
-		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy);
+		var color = spell.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Enemy);
 		var slowed = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 14f, definition.Radius, 0.3f, false, BattleEffectStyle.FrostBurst);
+		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.3f, false, BattleEffectStyle.FrostBurst);
+		BattleParticles.SpawnFrostParticles(this, targetPosition, color, spell.Radius);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FROST", color.Lightened(0.24f), 0.58f);
 
 		foreach (var target in targets)
 		{
-			var appliedDamage = target.TakeDamage(definition.Power);
-			target.ApplyTemporarySpeedModifier(0.62f, definition.Duration);
+			var appliedDamage = target.TakeDamage(spell.Power);
+			target.ApplyTemporarySpeedModifier(0.62f, spell.Duration);
 			if (appliedDamage > 0.05f)
 			{
 				totalDamage += appliedDamage;
@@ -3568,20 +3643,21 @@ public partial class BattleController : Node2D
 		}
 
 		return slowed > 0
-			? $"Frost Burst slowed {slowed} enemies for {definition.Duration:0.0}s and dealt {Mathf.RoundToInt(totalDamage)} damage."
+			? $"Frost Burst slowed {slowed} enemies for {spell.Duration:0.0}s and dealt {Mathf.RoundToInt(totalDamage)} damage."
 			: "Frost Burst failed to catch an enemy pack.";
 	}
 
-	private string ApplyLightningStrikeSpell(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplyLightningStrikeSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		var color = definition.GetTint();
-		var targets = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Enemy)
+		var color = spell.GetTint();
+		var targets = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Enemy)
 			.OrderBy(unit => unit.Position.DistanceSquaredTo(targetPosition))
 			.Take(3)
 			.ToArray();
 		var totalDamage = 0f;
 
 		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false, BattleEffectStyle.LightningStrike);
+		BattleParticles.SpawnLightningParticles(this, targetPosition, color);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "LIGHTNING", color.Lightened(0.18f), 0.56f);
 
 		for (var i = 0; i < targets.Length; i++)
@@ -3592,7 +3668,7 @@ public partial class BattleController : Node2D
 				1 => 0.78f,
 				_ => 0.58f
 			};
-			var appliedDamage = targets[i].TakeDamage(definition.Power * scale);
+			var appliedDamage = targets[i].TakeDamage(spell.Power * scale);
 			if (appliedDamage <= 0.05f)
 			{
 				continue;
@@ -3608,24 +3684,25 @@ public partial class BattleController : Node2D
 			: "Lightning Strike had no valid target.";
 	}
 
-	private string ApplyBarrierWardSpell(SpellDefinition definition, Vector2 targetPosition)
+	private string ApplyBarrierWardSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
-		var color = definition.GetTint();
-		var allies = GetLivingUnitsInRadius(targetPosition, definition.Radius, Team.Player);
+		var color = spell.GetTint();
+		var allies = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Player);
 		var warded = 0;
 
-		SpawnEffect(targetPosition, color, 12f, definition.Radius, 0.28f, false, BattleEffectStyle.WardSigil);
+		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.WardSigil);
+		BattleParticles.SpawnWardParticles(this, targetPosition, color, spell.Radius);
 		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "WARD", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
 		{
-			ally.ApplyTemporaryDefenseModifier(definition.Power, definition.Duration);
+			ally.ApplyTemporaryDefenseModifier(spell.Power, spell.Duration);
 			warded++;
 			SpawnEffect(ally.Position, color.Lightened(0.05f), 6f, 18f, 0.18f, false, BattleEffectStyle.WardSigil);
 		}
 
 		return warded > 0
-			? $"Barrier Ward covered {warded} allies for {definition.Duration:0.0}s."
+			? $"Barrier Ward covered {warded} allies for {spell.Duration:0.0}s."
 			: "Barrier Ward found no allied units in the target lane.";
 	}
 
@@ -3669,6 +3746,26 @@ public partial class BattleController : Node2D
 		DrawRect(new Rect2(origin, new Vector2(width, 8f)), new Color(0f, 0f, 0f, 0.55f), true);
 		DrawRect(new Rect2(origin + new Vector2(1f, 1f), new Vector2((width - 2f) * healthRatio, 6f)), fillColor, true);
 		DrawRect(new Rect2(origin, new Vector2(width, 8f)), frameColor, false, 2f);
+	}
+
+	private void DrawCriticalHealthVignette()
+	{
+		var healthRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
+		if (healthRatio >= 0.35f)
+		{
+			return;
+		}
+
+		var intensity = Mathf.Clamp((0.35f - healthRatio) / 0.35f, 0f, 1f);
+		var pulse = 0.5f + (Mathf.Sin(_elapsed * 4f) * 0.5f);
+		var alpha = intensity * Mathf.Lerp(0.06f, 0.18f, pulse);
+		var vignetteColor = new Color(0.8f, 0.1f, 0.05f, alpha);
+		const float edgeWidth = 48f;
+
+		DrawRect(new Rect2(0f, 0f, edgeWidth, 720f), vignetteColor, true);
+		DrawRect(new Rect2(1280f - edgeWidth, 0f, edgeWidth, 720f), vignetteColor, true);
+		DrawRect(new Rect2(0f, 0f, 1280f, edgeWidth * 0.6f), vignetteColor, true);
+		DrawRect(new Rect2(0f, 720f - (edgeWidth * 0.6f), 1280f, edgeWidth * 0.6f), vignetteColor, true);
 	}
 
 	private void DrawDamageSmoke(Vector2 origin, float healthRatio, Color sourceColor)
@@ -3794,8 +3891,8 @@ public partial class BattleController : Node2D
 			$"Lv{level} {definition.DisplayName}\n" +
 			$"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}\n" +
 			$"{status}\n" +
-			$"HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Range {stats.AttackRange:0.#}\n" +
-			$"Deploy CD {effectiveDeployCooldown:0.#}s" +
+			$"HP: {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK: {stats.AttackDamage:0.#} damage  |  Range: {stats.AttackRange:0.#}\n" +
+			$"Deploy: {effectiveDeployCooldown:0.#}s cooldown  |  Cost: {definition.Cost} courage" +
 			UnitStatText.BuildInlineTraits(stats);
 	}
 
@@ -3812,7 +3909,13 @@ public partial class BattleController : Node2D
 
 	private float ResolvePlayerSpellCooldown(SpellDefinition definition)
 	{
-		var cooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.Cooldown);
+		var resolved = GameState.Instance.BuildSpellStats(definition);
+		return ResolvePlayerSpellCooldown(definition, resolved);
+	}
+
+	private float ResolvePlayerSpellCooldown(SpellDefinition definition, ResolvedSpellStats resolved)
+	{
+		var cooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(resolved.Cooldown);
 		if (IsChallengeMode)
 		{
 			cooldown *= _challengeMutator.DeployCooldownScale;
@@ -4155,6 +4258,35 @@ public partial class BattleController : Node2D
 			DrawLine(marker.Position + new Vector2(-10f, 0f), marker.Position + new Vector2(10f, 0f), rimColor, 2f, true);
 			DrawLine(marker.Position + new Vector2(0f, -10f), marker.Position + new Vector2(0f, 10f), rimColor, 2f, true);
 		}
+	}
+
+	private void SpawnBattleEndParticles(bool playerWon)
+	{
+		if (playerWon)
+		{
+			var goldColor = new Color("ffd166");
+			BattleParticles.SpawnDeployBurst(this, EnemyBaseCorePosition, goldColor);
+			BattleParticles.SpawnDeployBurst(this, EnemyBaseCorePosition + new Vector2(0f, -40f), goldColor.Lightened(0.15f));
+			BattleParticles.SpawnDeathBurst(this, EnemyBaseCorePosition, new Color("ef476f"), true);
+		}
+		else
+		{
+			var smokeColor = new Color(0.3f, 0.28f, 0.25f);
+			BattleParticles.SpawnDeathBurst(this, PlayerBaseCorePosition, smokeColor, true);
+			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, smokeColor);
+		}
+	}
+
+	private void InitializeAmbientParticles()
+	{
+		var ambient = new BattleAmbientParticles();
+		AddChild(ambient);
+		ambient.Setup(
+			_stageData?.TerrainId ?? "urban",
+			BattlefieldLeft,
+			BattlefieldRight,
+			BattlefieldTop,
+			BattlefieldBottom);
 	}
 
 	private void InitializeStageHazards()
@@ -4778,22 +4910,24 @@ public partial class BattleController : Node2D
 
 	private string BuildEndlessStatusText()
 	{
-		var projectedScrap = CalculateEndlessScrapReward();
-		var projectedFuel = CalculateEndlessFuelReward();
+		var projectedGold = CalculateEndlessGoldReward();
+		var projectedFood = CalculateEndlessFoodReward();
 		return
 			"Endless run:\n" +
-			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Enemy defeats: {_enemyDefeats}  |  Survival: {_elapsed:0.0}s\n" +
-			$"Projected payout: +{projectedScrap} gold, +{projectedFuel} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}\n" +
-			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveScrapBonus)} gold / {FormatSignedInt(_endlessDirectiveFuelBonus)} food  |  contacts {FormatSignedInt(_endlessContactScrapBonus)} gold / {FormatSignedInt(_endlessContactFuelBonus)} food  |  bosses {FormatSignedInt(_endlessBossScrapBonus)} gold / {FormatSignedInt(_endlessBossFuelBonus)} food\n" +
-			$"Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Run upgrades: {_endlessRunUpgrades.Count}\n" +
-			$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
+			$"Wave: {_spawnDirector.EndlessWaveNumber}  |  Defeats: {_enemyDefeats}  |  Time: {_elapsed:0.0}s\n" +
+			$"Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Upgrades: {_endlessRunUpgrades.Count}\n" +
+			$"\nPayout: +{projectedGold} gold / +{projectedFood} food\n" +
+			$"  Directives: {FormatSignedInt(_endlessDirectiveGoldBonus)} gold / {FormatSignedInt(_endlessDirectiveFoodBonus)} food\n" +
+			$"  Contacts: {FormatSignedInt(_endlessContactGoldBonus)} gold / {FormatSignedInt(_endlessContactFoodBonus)} food\n" +
+			$"  Bosses: {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
+			$"\nSegment: {_spawnDirector.EndlessSegmentEventLabel}\n" +
 			$"{BuildEndlessBossCheckpointText()}\n" +
 			$"{BuildEndlessDirectiveText()}\n" +
 			$"{BuildEndlessContactText()}\n" +
 			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
-			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
-			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
-			$"Caravan support: {_endlessSupportEventLabel}\n" +
+			$"Contact telemetry:\n{BuildEndlessContactTelemetryText()}\n" +
+			$"Battlefield: {_endlessBattlefieldEventLabel}\n" +
+			$"Support: {_endlessSupportEventLabel}\n" +
 			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
 	}
 
@@ -4820,7 +4954,9 @@ public partial class BattleController : Node2D
 			? "Used"
 			: "Standby";
 		return
-			$"State {state}  |  Actor hull {healthPercent}%  |  Support {_activeEndlessContact.PlayerSupportActions} ({Mathf.RoundToInt(_activeEndlessContact.PlayerSupportRepairTotal)} hull / +{_activeEndlessContact.PlayerSupportProgressTotal:0.0}s)  |  Pressure {_activeEndlessContact.EnemyPressureActions} ({Mathf.RoundToInt(_activeEndlessContact.EnemyPressureDamageTotal)} damage)  |  Responses {_activeEndlessContact.ResponseWavesTriggered}/{_activeEndlessContact.ResponseWaveLimit}  |  Assist {supportMomentState}";
+			$"  State: {state}  |  Hull: {healthPercent}%\n" +
+			$"  Support: {_activeEndlessContact.PlayerSupportActions} actions ({Mathf.RoundToInt(_activeEndlessContact.PlayerSupportRepairTotal)} repair / +{_activeEndlessContact.PlayerSupportProgressTotal:0.0}s progress)\n" +
+			$"  Pressure: {_activeEndlessContact.EnemyPressureActions} attacks ({Mathf.RoundToInt(_activeEndlessContact.EnemyPressureDamageTotal)} damage)  |  Responses: {_activeEndlessContact.ResponseWavesTriggered}/{_activeEndlessContact.ResponseWaveLimit}  |  Assist: {supportMomentState}";
 	}
 
 	private string BuildEndlessPressureText()
@@ -4990,7 +5126,7 @@ public partial class BattleController : Node2D
 			case "salvage_contract":
 				if (_endlessRunUpgrades.Add(optionId))
 				{
-					_endlessScrapScale *= 1.15f;
+					_endlessGoldScale *= 1.15f;
 				}
 				break;
 		}
@@ -5275,8 +5411,8 @@ public partial class BattleController : Node2D
 				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "BREAKTHROUGH", new Color("fff3b0"), 0.62f);
 				break;
 			case EndlessDirectiveCatalog.SalvageSweepDirectiveId:
-				_endlessDirectiveScrapBonus += 28;
-				_endlessDirectiveFuelBonus += 1;
+				_endlessDirectiveGoldBonus += 28;
+				_endlessDirectiveFoodBonus += 1;
 				RepairBusByRatio(0.04f);
 				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "SALVAGE SECURED", new Color("f4a261"), 0.66f);
 				break;
@@ -5386,8 +5522,8 @@ public partial class BattleController : Node2D
 		var definition = EndlessBossCheckpointCatalog.GetForRoute(_activeRouteId);
 		_lastEndlessBossCheckpointWave = _spawnDirector.EndlessWaveNumber;
 		_lastEndlessBossCheckpointTitle = definition.Title;
-		_endlessBossScrapBonus += definition.RewardGold;
-		_endlessBossFuelBonus += definition.RewardFood;
+		_endlessBossGoldBonus += definition.RewardGold;
+		_endlessBossFoodBonus += definition.RewardFood;
 
 		switch (_activeRouteId)
 		{
@@ -5685,7 +5821,7 @@ public partial class BattleController : Node2D
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "UPLINK BURST", contact.Color.Lightened(0.28f), 0.6f);
 				break;
 			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactScrapBonus += 8;
+				_endlessContactGoldBonus += 8;
 				RepairBusByRatio(0.02f);
 				statusText = "Salvage crew hauled reserve parts aboard the caravan.";
 					_endlessSupportEventLabel = "Reserve stores loaded: light repairs and extra payout banked.";
@@ -5856,8 +5992,8 @@ public partial class BattleController : Node2D
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELAY ONLINE", contact.Color.Lightened(0.2f), 0.66f);
 				break;
 			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactScrapBonus += 22;
-				_endlessContactFuelBonus += 1;
+				_endlessContactGoldBonus += 22;
+				_endlessContactFoodBonus += 1;
 				RepairBusByRatio(0.03f);
 				ApplyEndlessContactSuccessTradeoff(contact);
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "CACHE SECURED", contact.Color.Lightened(0.2f), 0.66f);
@@ -5919,8 +6055,8 @@ public partial class BattleController : Node2D
 				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SIGNAL LOST", new Color("ffb4a2"), 0.62f);
 				break;
 			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactScrapBonus -= 16;
-				_endlessContactFuelBonus -= 1;
+				_endlessContactGoldBonus -= 16;
+				_endlessContactFoodBonus -= 1;
 				DamageBusByRatio(0.04f, new Color("f28482"), "CACHE LOST");
 				break;
 			case EndlessContactCatalog.SafehouseRescueId:
@@ -6437,6 +6573,7 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
+		SpawnBattleEndParticles(playerWon);
 
 		if (IsEndlessMode)
 		{
@@ -6675,8 +6812,8 @@ public partial class BattleController : Node2D
 	private void FinalizeEndlessRun(bool retreated)
 	{
 		AudioDirector.Instance?.SetBattlePressure(0.14f);
-		var rewardGold = CalculateEndlessScrapReward();
-		var rewardFood = CalculateEndlessFuelReward();
+		var rewardGold = CalculateEndlessGoldReward();
+		var rewardFood = CalculateEndlessFoodReward();
 		GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardGold, rewardFood, retreated);
 		_endLabel.Text = BuildEndlessRunDebriefText(rewardGold, rewardFood, retreated);
 		SetStatus(retreated
@@ -6796,7 +6933,7 @@ public partial class BattleController : Node2D
 			$"{outcomeLine}\n" +
 			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Survival: {_elapsed:0.0}s  |  Enemy defeats: {_enemyDefeats}\n" +
 			$"Banked payout: +{rewardGold} gold, +{rewardFood} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
-			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveScrapBonus)} gold / {FormatSignedInt(_endlessDirectiveFuelBonus)} food  |  contacts {FormatSignedInt(_endlessContactScrapBonus)} gold / {FormatSignedInt(_endlessContactFuelBonus)} food  |  bosses {FormatSignedInt(_endlessBossScrapBonus)} gold / {FormatSignedInt(_endlessBossFuelBonus)} food\n" +
+			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveGoldBonus)} gold / {FormatSignedInt(_endlessDirectiveFoodBonus)} food  |  contacts {FormatSignedInt(_endlessContactGoldBonus)} gold / {FormatSignedInt(_endlessContactFoodBonus)} food  |  bosses {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
 			$"{BuildEndlessRunUpgradeSummary()}\n" +
 			$"{BuildEndlessBossCheckpointText()}\n" +
 			$"{BuildEndlessDirectiveCheckpointSummary()}\n" +
@@ -6822,28 +6959,28 @@ public partial class BattleController : Node2D
 		return "Run upgrades: " + string.Join(", ", labels);
 	}
 
-	private int CalculateEndlessScrapReward()
+	private int CalculateEndlessGoldReward()
 	{
 		var timeBonus = Mathf.FloorToInt(_elapsed / 18f) * 3;
 		var reward = Math.Max(0, (_spawnDirector.EndlessWaveNumber * 16) + (_enemyDefeats * 2) + timeBonus);
-		reward = Mathf.RoundToInt(reward * _endlessScrapScale);
-		reward = Mathf.RoundToInt(reward * ResolveRouteForkScrapScale());
+		reward = Mathf.RoundToInt(reward * _endlessGoldScale);
+		reward = Mathf.RoundToInt(reward * ResolveRouteForkGoldScale());
 		if (_endlessBoonId == EndlessBoonCatalog.SalvageCacheId)
 		{
 			reward = Mathf.RoundToInt(reward * 1.25f);
 		}
 
-		return Math.Max(0, reward + _endlessDirectiveScrapBonus + _endlessContactScrapBonus + _endlessBossScrapBonus);
+		return Math.Max(0, reward + _endlessDirectiveGoldBonus + _endlessContactGoldBonus + _endlessBossGoldBonus);
 	}
 
-	private int CalculateEndlessFuelReward()
+	private int CalculateEndlessFoodReward()
 	{
 		if (_spawnDirector.EndlessWaveNumber <= 0)
 		{
 			return 0;
 		}
 
-		return Math.Max(0, (_spawnDirector.EndlessWaveNumber / 4) + _endlessDirectiveFuelBonus + _endlessContactFuelBonus + _endlessBossFuelBonus);
+		return Math.Max(0, (_spawnDirector.EndlessWaveNumber / 4) + _endlessDirectiveFoodBonus + _endlessContactFoodBonus + _endlessBossFoodBonus);
 	}
 
 	private static string FormatSignedInt(int value)
@@ -6880,7 +7017,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private float ResolveRouteForkScrapScale()
+	private float ResolveRouteForkGoldScale()
 	{
 		return _endlessRouteForkId switch
 		{

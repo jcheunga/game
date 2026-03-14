@@ -13,6 +13,7 @@ public partial class Projectile : Node2D
     private Action<Vector2, float, Color> _onHit = null!;
     private Func<float, float> _applyImpact = null!;
     private Func<bool> _shouldCancel = null!;
+    private CpuParticles2D _trail;
 
     public void Setup(Unit target, float damage, float speed, Color color, Action<Vector2, float, Color> onHit = null)
     {
@@ -44,6 +45,7 @@ public partial class Projectile : Node2D
         _shouldCancel = shouldCancel;
         _onHit = onHit;
         _active = true;
+        _trail = BattleParticles.SpawnProjectileTrail(this, _color);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -69,6 +71,10 @@ public partial class Projectile : Node2D
             var appliedDamage = _applyImpact?.Invoke(_damage) ?? 0f;
             _onHit?.Invoke(GlobalPosition, appliedDamage, _color);
             SpawnImpactEffect();
+            if (GetParent() != null)
+            {
+                BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition, _color, _damage);
+            }
             QueueFree();
             return;
         }

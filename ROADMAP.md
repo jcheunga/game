@@ -401,6 +401,7 @@ All milestone code work is complete, including real particle effects, HUD polish
 - added animated fade-in/scale battle end panel instead of instant visibility toggle
 - added pulsing glow ring around selected campaign map nodes and gentle bob on locked stage icons
 - added staggered fade-in entrance animations to loadout briefing panels
+- added consistent entrance animations across all remaining menus: shop (title/summary/units/base panels), endless prep (title/mission/squad/bottom panels), settings (centered panel scale+fade), multiplayer (title/mission/squad/bottom panels), and LAN race (title/board/room/bottom panels)
 
 ## Recommended Build Order After This Commit
 

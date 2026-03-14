@@ -77,6 +77,7 @@ public partial class GameState : Node
 	public int EndlessRuns { get; private set; }
 	public int ChallengeRuns { get; private set; }
 	public int PendingChallengeSubmissionCount => _pendingChallengeSubmissions.Count;
+	public int ClaimedDistrictRewardCount => _claimedDistrictRewardIds.Count;
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
@@ -99,6 +100,7 @@ public partial class GameState : Node
 	private readonly List<ChallengeRunRecord> _challengeHistory = new();
 	private readonly List<ChallengeSubmissionEnvelope> _pendingChallengeSubmissions = new();
 	private readonly List<string> _pinnedChallengeCodes = new();
+	private readonly HashSet<string> _claimedDistrictRewardIds = new(StringComparer.OrdinalIgnoreCase);
 
 	public override void _EnterTree()
 	{
@@ -337,17 +339,21 @@ public partial class GameState : Node
 		Persist();
 	}
 
-	public void ApplyVictory(int stage, int rewardGold, int rewardFood, int starsEarned)
+	public string ApplyVictory(int stage, int rewardGold, int rewardFood, int starsEarned)
 	{
 		Gold += Math.Max(0, rewardGold);
 		Food += Math.Max(0, rewardFood);
 		var bestStars = RecordStageStars(stage, starsEarned);
+		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
 		var nextStageHint = stage < MaxStage
 			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the caravan is ready."
 			: "";
 		LastResultMessage =
-			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3.{nextStageHint}";
+			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3." +
+			(string.IsNullOrWhiteSpace(districtRewardSummary) ? "" : $" {districtRewardSummary}") +
+			nextStageHint;
 		Persist();
+		return districtRewardSummary;
 	}
 
 	public void ApplyDefeat(int stage)
@@ -1755,6 +1761,7 @@ public partial class GameState : Node
 		}
 
 		ClampState();
+		GrantPendingDistrictRewardsOnLoad();
 		Persist();
 	}
 
@@ -1806,6 +1813,7 @@ public partial class GameState : Node
 		_challengeHistory.Clear();
 		_pendingChallengeSubmissions.Clear();
 		_pinnedChallengeCodes.Clear();
+		_claimedDistrictRewardIds.Clear();
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
 		EndlessRuns = 0;
@@ -2069,6 +2077,18 @@ public partial class GameState : Node
 				}
 			}
 		}
+
+		_claimedDistrictRewardIds.Clear();
+		if (saved.Version >= 22 && saved.ClaimedDistrictRewardIds != null)
+		{
+			foreach (var districtId in saved.ClaimedDistrictRewardIds)
+			{
+				if (!string.IsNullOrWhiteSpace(districtId))
+				{
+					_claimedDistrictRewardIds.Add(districtId.Trim());
+				}
+			}
+		}
 	}
 
 	private void ClampState()
@@ -2112,6 +2132,7 @@ public partial class GameState : Node
 		NormalizeChallengeHistory();
 		NormalizePendingChallengeSubmissions();
 		NormalizePinnedChallenges();
+		NormalizeClaimedDistrictRewards();
 		NormalizeSelectedAsyncChallengeLockedDeck();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
@@ -2191,8 +2212,85 @@ public partial class GameState : Node
 				.ToList(),
 			LastChallengeSyncAtUnixSeconds = LastChallengeSyncAtUnixSeconds,
 			TotalChallengeSubmissionsSynced = TotalChallengeSubmissionsSynced,
-			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray()
+			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray(),
+			ClaimedDistrictRewardIds = _claimedDistrictRewardIds.ToArray()
 		};
+	}
+
+	public bool HasClaimedDistrictReward(string districtId)
+	{
+		return _claimedDistrictRewardIds.Contains(NormalizeRouteId(districtId));
+	}
+
+	public bool IsDistrictCleared(string districtId)
+	{
+		var stages = GameData.GetStagesForMap(districtId);
+		return stages.Count > 0 && stages.All(stage => GetStageStars(stage.StageNumber) > 0);
+	}
+
+	public string BuildDistrictRewardStatusText(string districtId)
+	{
+		if (!CampaignPlanCatalog.TryGet(districtId, out var district))
+		{
+			return "District reward: none";
+		}
+
+		var totalStages = GameData.GetStagesForMap(district.Id).Count;
+		var clearedStages = GetClearedDistrictStageCount(district.Id);
+		var rewardText = $"+{district.RewardGold} gold, +{district.RewardFood} food";
+		return HasClaimedDistrictReward(district.Id)
+			? $"District reward claimed: {rewardText}"
+			: $"District reward on full clear: {rewardText}  |  {clearedStages}/{Math.Max(1, totalStages)} cleared";
+	}
+
+	private int GetClearedDistrictStageCount(string districtId)
+	{
+		return GameData.GetStagesForMap(districtId)
+			.Count(stage => GetStageStars(stage.StageNumber) > 0);
+	}
+
+	private string TryClaimDistrictRewardForStage(int stage)
+	{
+		var stageData = GameData.GetStage(stage);
+		if (!CampaignPlanCatalog.TryGet(stageData.MapId, out var district) ||
+			_claimedDistrictRewardIds.Contains(district.Id) ||
+			!IsDistrictCleared(district.Id))
+		{
+			return "";
+		}
+
+		_claimedDistrictRewardIds.Add(district.Id);
+		Gold += Math.Max(0, district.RewardGold);
+		Food += Math.Max(0, district.RewardFood);
+		return $"{district.Title} secured. District reward: +{district.RewardGold} gold, +{district.RewardFood} food.";
+	}
+
+	private void GrantPendingDistrictRewardsOnLoad()
+	{
+		var grantedDistricts = new List<CampaignDistrictPlan>();
+		foreach (var district in CampaignPlanCatalog.GetAll())
+		{
+			if (_claimedDistrictRewardIds.Contains(district.Id) || !IsDistrictCleared(district.Id))
+			{
+				continue;
+			}
+
+			_claimedDistrictRewardIds.Add(district.Id);
+			Gold += Math.Max(0, district.RewardGold);
+			Food += Math.Max(0, district.RewardFood);
+			grantedDistricts.Add(district);
+		}
+
+		if (grantedDistricts.Count == 0)
+		{
+			return;
+		}
+
+		var totalGold = grantedDistricts.Sum(district => district.RewardGold);
+		var totalFood = grantedDistricts.Sum(district => district.RewardFood);
+		LastResultMessage = grantedDistricts.Count == 1
+			? $"{grantedDistricts[0].Title} district reward granted on load. +{totalGold} gold, +{totalFood} food."
+			: $"Campaign district rewards reconciled on load. +{totalGold} gold, +{totalFood} food across {grantedDistricts.Count} cleared districts.";
 	}
 
 	private void NormalizeOwnedUnits()
@@ -2303,6 +2401,14 @@ public partial class GameState : Node
 		{
 			_stageStars.Add(0);
 		}
+	}
+
+	private void NormalizeClaimedDistrictRewards()
+	{
+		var validDistrictIds = new HashSet<string>(
+			CampaignPlanCatalog.GetAll().Select(district => district.Id),
+			StringComparer.OrdinalIgnoreCase);
+		_claimedDistrictRewardIds.RemoveWhere(districtId => !validDistrictIds.Contains(districtId));
 	}
 
 	private int RecordStageStars(int stage, int starsEarned)

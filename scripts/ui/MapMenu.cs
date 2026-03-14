@@ -227,7 +227,10 @@ public partial class MapMenu : Control
         };
         sideContent.AddChild(_stageStatusLabel);
 
-        _stageRewardLabel = new Label();
+        _stageRewardLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
         sideContent.AddChild(_stageRewardLabel);
 
         _stageObjectivesLabel = new Label
@@ -379,7 +382,8 @@ public partial class MapMenu : Control
         _stageDescriptionLabel.Text = stage.Description;
         _stageStatusLabel.Text = BuildStageStatusText(stage, bestStars, stageUnlocked);
         _stageRewardLabel.Text =
-            $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}";
+            $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}\n" +
+            $"{GameState.Instance.BuildDistrictRewardStatusText(stage.MapId)}";
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
         _stageMissionLabel.Text = StageMissionEvents.BuildSummaryText(stage);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
@@ -609,7 +613,9 @@ public partial class MapMenu : Control
         _routeTitleLabel.AddThemeColorOverride("font_color", Colors.White);
         _routeSubtitleLabel.Text = route.CampaignSubtitle;
         _routeSubtitleLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.82f));
-        _routeCampaignLabel.Text = CampaignPlanCatalog.BuildRoutePlanSummary(_activeMapId);
+        _routeCampaignLabel.Text =
+            $"{CampaignPlanCatalog.BuildRoutePlanSummary(_activeMapId)}\n" +
+            $"{GameState.Instance.BuildDistrictRewardStatusText(_activeMapId)}";
         _routeCampaignLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.72f));
         var nextExploreText = TryGetNextStageForMap(_activeMapId, out var nextStage)
             ? $"   |   Next explore: S{nextStage.StageNumber} ({GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food)"

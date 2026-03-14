@@ -143,6 +143,7 @@ public partial class MainMenu : Control
             "Caravan status:\n" +
             $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
             $"{CampaignPlanCatalog.BuildCampaignStatusSummary()}\n" +
+            $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}\n" +
             $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}  |  Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
             $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +

@@ -9,6 +9,8 @@ public sealed class CampaignDistrictPlan
         string id,
         string title,
         int stageTarget,
+        int rewardGold,
+        int rewardFood,
         string chapterSummary,
         string threatSummary)
     {
@@ -16,6 +18,8 @@ public sealed class CampaignDistrictPlan
         Id = id;
         Title = title;
         StageTarget = stageTarget;
+        RewardGold = rewardGold;
+        RewardFood = rewardFood;
         ChapterSummary = chapterSummary;
         ThreatSummary = threatSummary;
     }
@@ -24,6 +28,8 @@ public sealed class CampaignDistrictPlan
     public string Id { get; }
     public string Title { get; }
     public int StageTarget { get; }
+    public int RewardGold { get; }
+    public int RewardFood { get; }
     public string ChapterSummary { get; }
     public string ThreatSummary { get; }
 }
@@ -37,6 +43,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.CityId,
             "King's Road",
             5,
+            40,
+            1,
             "Outer farms, pilgrim roads, and bell-tower wards where the Lantern Caravan first meets the Rotbound Host.",
             "Fast ghoul scouts, early blight fire, and tighter bell-tower surge timing."),
         new(
@@ -44,6 +52,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.HarborId,
             "Saltwake Docks",
             5,
+            50,
+            1,
             "Flooded quays, chain cranes, and corpse-choked wreck piers where heavy undead push through narrow kill lanes.",
             "Heavier dead, tide-surge crushes, and Grave Lord pressure around dockside choke points."),
         new(
@@ -51,6 +61,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.FoundryId,
             "Emberforge March",
             5,
+            60,
+            1,
             "Smelter rows, railyards, and furnace crowns where the Host learns to crack the war wagon with industry and fire.",
             "Sapper dives, bone nests, furnace hazards, and steadier heavy escorts."),
         new(
@@ -58,6 +70,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.QuarantineId,
             "Ashen Ward",
             5,
+            70,
+            2,
             "Purge cloisters, sealed courts, and black-vault checkpoints where curse support and containment hazards define the field.",
             "Hexers, heralds, repeated breach timing, and hazard-heavy ward lines."),
         new(
@@ -65,6 +79,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.ThornwallId,
             "Thornwall Pass",
             5,
+            80,
+            2,
             "Cliff roads, watch forts, and avalanche shrines that introduce harsher weather, vertical kill zones, and mountain sieges.",
             "Frost-bitten dead, beast-rider raids, and lane-breaking cliff events."),
         new(
@@ -72,6 +88,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.BasilicaId,
             "Hollow Basilica",
             5,
+            90,
+            2,
             "Ruined cathedrals, ossuary plazas, and reliquary vaults where faith relics and necromantic pageantry collide.",
             "Bone nests, blight casters, hexers, and elite relic-guard formations."),
         new(
@@ -79,6 +97,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.MireId,
             "Mire of Saints",
             5,
+            100,
+            3,
             "Bog causeways, drowned chapels, and plague ferries that slow the march and test attrition discipline.",
             "Rot mist, drowned dead, split broods, and hull-grind attrition packs."),
         new(
@@ -86,6 +106,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.SteppeId,
             "Sunfall Steppe",
             5,
+            110,
+            3,
             "Burned waystations, open grassland forts, and roaming siege camps that push pace and flanking pressure.",
             "Fast rider strikes, howler-led raids, and repeated breach dives through open lanes."),
         new(
@@ -93,6 +115,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.GloamwoodId,
             "Gloamwood Verge",
             5,
+            120,
+            3,
             "Thorn groves, witch circles, and haunted timber roads where curse traps and ambush timing rule the route.",
             "Ambush packs, snare hazards, hex support, and staggered assault waves from the tree line."),
         new(
@@ -100,6 +124,8 @@ public static class CampaignPlanCatalog
             RouteCatalog.CitadelId,
             "Crownfall Citadel",
             5,
+            140,
+            4,
             "Bridge forts, breach yards, and the inner keep where every prior threat pattern converges into the capital siege.",
             "Mixed-faction command waves, siege engines, and the final gate breach.")
     };
@@ -166,6 +192,16 @@ public static class CampaignPlanCatalog
             $"Campaign line: district {district.Order}/{GetTargetDistrictCount()}  |  " +
             $"Authored {authoredStages}/{district.StageTarget} stages  |  " +
             $"Target: {GetTargetStageCount()} total stages";
+    }
+
+    public static string BuildDistrictRewardSummary(string districtId)
+    {
+        if (!TryGet(districtId, out var district))
+        {
+            return "District reward: none";
+        }
+
+        return $"District reward: +{district.RewardGold} gold, +{district.RewardFood} food";
     }
 
     public static bool TryGet(string districtId, out CampaignDistrictPlan district)

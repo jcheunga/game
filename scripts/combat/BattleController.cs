@@ -6528,12 +6528,13 @@ public partial class BattleController : Node2D
 			var stageResult = BuildStageBattleResult();
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
 			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
-			GameState.Instance.ApplyVictory(_stage, _stageData.RewardGold, _stageData.RewardFood, evaluation.StarsEarned);
+			var districtRewardSummary = GameState.Instance.ApplyVictory(_stage, _stageData.RewardGold, _stageData.RewardFood, evaluation.StarsEarned);
 			_endLabel.Text =
 				$"Victory on stage {_stage}: {_stageData.StageName}.\n" +
 				$"{BuildStageBattleStatsText(stageResult)}\n" +
 				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, _stageData.RewardGold, _stageData.RewardFood, bestStars)}\n" +
-				$"{BuildStageMissionDebriefText()}";
+				$"{BuildStageMissionDebriefText()}" +
+				(string.IsNullOrWhiteSpace(districtRewardSummary) ? "" : $"\n{districtRewardSummary}");
 			SetStatus("Gatehouse shattered. Route secured.");
 		}
 		else

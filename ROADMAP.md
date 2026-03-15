@@ -196,11 +196,13 @@ Objective: extend the current async/LAN multiplayer systems into a store-ready i
 
 ## Immediate Next Sprint
 
-All milestone code work is complete, including real particle effects, HUD polish, menu animations, and presentation pass improvements. Remaining work is asset-driven:
+All milestone code work is complete. The backend server implements all M9 HTTP contracts with SQLite persistence. Remaining work is asset-driven or infrastructure-driven:
 
 1. replace placeholder combat visuals with authored medieval/fantasy sprites and animations (M5 art)
 2. create faction-distinct unit silhouettes with armor, banners, and creature models
 3. continue balance tuning as playtesting reveals over/under-tuned stages or economy gaps
+4. deploy the backend server to a real hosting environment for internet multiplayer
+5. replace stub relay endpoints with a real WebSocket relay or transport layer
 
 ## Work Completed In This Sprint
 
@@ -402,11 +404,15 @@ All milestone code work is complete, including real particle effects, HUD polish
 - added pulsing glow ring around selected campaign map nodes and gentle bob on locked stage icons
 - added staggered fade-in entrance animations to loadout briefing panels
 - added consistent entrance animations across all remaining menus: shop (title/summary/units/base panels), endless prep (title/mission/squad/bottom panels), settings (centered panel scale+fade), multiplayer (title/mission/squad/bottom panels), and LAN race (title/board/room/bottom panels)
+- added a standalone ASP.NET backend server (`server/`) implementing all M9 HTTP contracts with SQLite persistence: player profile sync, challenge submission and leaderboards, challenge board feed, online room lifecycle (create/join/session/action/result/scoreboard/telemetry/leave/report/matchmake/seat-lease), stale room expiry, and seeded featured challenge boards
+- added battle pause with Escape key, dimmed overlay, and hotkey reference display
+- added keyboard hotkeys for battle: 1-5 to select unit cards, Q-T to select spell cards
 
 ## Recommended Build Order After This Commit
 
 1. replace placeholder visuals with authored sprites and animations (requires art assets)
-2. continue balance tuning as playtesting surfaces over/under-tuned stages
+2. deploy the backend server and replace stub relay endpoints with real transport
+3. continue balance tuning as playtesting surfaces over/under-tuned stages
 
 ## Guardrails
 

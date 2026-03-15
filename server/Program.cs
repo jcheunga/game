@@ -13,6 +13,12 @@ var dbPath = app.Configuration["DbPath"] ?? "crownroad.db";
 Database.Configure($"Data Source={dbPath}");
 Database.Initialize();
 
+app.UseWebSockets();
+app.Map("/ws/relay/{roomId}", async (HttpContext context, string roomId) =>
+{
+    await RelayHub.HandleConnection(context, roomId);
+});
+
 app.MapPost("/player-profile", Endpoints.PlayerProfile);
 app.MapPost("/challenge-sync", Endpoints.ChallengeSync);
 app.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);

@@ -52,6 +52,7 @@ public static class ServerTests
                 ("RoomSeatLease", () => TestRoomSeatLease(client)),
                 ("RoomDirectory", () => TestRoomDirectory(client)),
                 ("RoomAction_Reset", () => TestRoomActionReset(client)),
+                ("WebSocketRelay", () => TestWebSocketRelay(host)),
             };
 
             foreach (var (name, test) in tests)
@@ -87,7 +88,18 @@ public static class ServerTests
                 webHost.ConfigureServices(services => services.AddRouting());
                 webHost.Configure(app =>
                 {
+                    app.UseWebSockets();
                     app.UseRouting();
+                    app.Use(async (context, next) =>
+                    {
+                        if (context.Request.Path.StartsWithSegments("/ws/relay") && context.WebSockets.IsWebSocketRequest)
+                        {
+                            var roomId = context.Request.Path.Value?.Split('/').LastOrDefault() ?? "";
+                            await RelayHub.HandleConnection(context, roomId);
+                            return;
+                        }
+                        await next();
+                    });
                     app.UseEndpoints(endpoints =>
                     {
                         endpoints.MapPost("/player-profile", Endpoints.PlayerProfile);
@@ -287,6 +299,65 @@ public static class ServerTests
 
         var session = await Get(client, $"/challenge-room-session?roomId={_testRoomId}");
         Assert(session.RootElement.GetProperty("status").GetString() == "lobby", "expected lobby after reset");
+    }
+
+    private static async Task TestWebSocketRelay(IHost host)
+    {
+        var server = host.GetTestServer();
+        var wsClient1 = server.CreateWebSocketClient();
+        var wsClient2 = server.CreateWebSocketClient();
+
+        wsClient1.ConfigureRequest = req => req.Headers["X-Convoy-Profile"] = "WS-PEER-1";
+        wsClient2.ConfigureRequest = req => req.Headers["X-Convoy-Profile"] = "WS-PEER-2";
+
+        var ws1 = await wsClient1.ConnectAsync(new Uri(server.BaseAddress, "/ws/relay/TEST-RELAY-ROOM"), CancellationToken.None);
+        Assert(ws1.State == System.Net.WebSockets.WebSocketState.Open, "ws1 should be open");
+
+        // Small delay for join broadcast
+        await Task.Delay(50);
+
+        var ws2 = await wsClient2.ConnectAsync(new Uri(server.BaseAddress, "/ws/relay/TEST-RELAY-ROOM"), CancellationToken.None);
+        Assert(ws2.State == System.Net.WebSockets.WebSocketState.Open, "ws2 should be open");
+
+        // Read peer_joined message on ws1 (broadcast when ws2 joins)
+        var joinMsg = await ReceiveWsMessage(ws1, 2000);
+        Assert(joinMsg.Contains("peer_joined"), $"expected peer_joined, got: {joinMsg}");
+
+        // ws2 also gets a peer_joined broadcast for itself - drain it
+        var ws2JoinMsg = await ReceiveWsMessage(ws2, 2000);
+        Assert(ws2JoinMsg.Contains("peer_joined"), $"expected ws2 peer_joined, got: {ws2JoinMsg}");
+
+        // Send from ws1, receive on ws2
+        var testPayload = "{\"type\":\"telemetry\",\"elapsed\":10.5,\"hull\":0.9}";
+        await SendWsMessage(ws1, testPayload);
+        var received = await ReceiveWsMessage(ws2, 2000);
+        Assert(received.Contains("telemetry"), $"expected relayed telemetry, got: {received}");
+        Assert(received.Contains("10.5"), "expected elapsed value in relay");
+
+        // Verify peer count
+        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 2, "expected 2 peers in relay room");
+
+        await ws1.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+        await Task.Delay(50);
+        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 1, "expected 1 peer after ws1 close");
+
+        await ws2.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+        await Task.Delay(50);
+        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 0, "expected 0 peers after both close");
+    }
+
+    private static async Task SendWsMessage(System.Net.WebSockets.WebSocket ws, string message)
+    {
+        var bytes = Encoding.UTF8.GetBytes(message);
+        await ws.SendAsync(new ArraySegment<byte>(bytes), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    private static async Task<string> ReceiveWsMessage(System.Net.WebSockets.WebSocket ws, int timeoutMs)
+    {
+        var buffer = new byte[4096];
+        using var cts = new CancellationTokenSource(timeoutMs);
+        var result = await ws.ReceiveAsync(buffer, cts.Token);
+        return Encoding.UTF8.GetString(buffer, 0, result.Count);
     }
 
     // ── HTTP Helpers ─────────────────────────────────────────

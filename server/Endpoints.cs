@@ -264,7 +264,7 @@ public static class Endpoints
             spectatorCount = 0,
             region,
             transportHint = "relay_room",
-            relayEndpoint = $"wss://relay.crownroad.invalid/{roomId}",
+            relayEndpoint = $"ws://localhost:5000/ws/relay/{roomId}",
             usesLockedDeck = usesLocked,
             lockedDeckUnitIds = deckIds,
             hostTicket = new
@@ -275,7 +275,7 @@ public static class Endpoints
                 joinToken,
                 seatLabel = "host seat",
                 transportHint = "relay_room",
-                relayEndpoint = $"wss://relay.crownroad.invalid/{roomId}",
+                relayEndpoint = $"ws://localhost:5000/ws/relay/{roomId}",
                 requestedAtUnixSeconds = now,
                 expiresAtUnixSeconds = now + 3600,
                 usesLockedDeck = usesLocked,
@@ -321,7 +321,7 @@ public static class Endpoints
             boardCode = room.BoardCode,
             seatLabel,
             transportHint = "relay_room",
-            relayEndpoint = $"wss://relay.crownroad.invalid/{roomId}",
+            relayEndpoint = $"ws://localhost:5000/ws/relay/{roomId}",
             requestedAtUnixSeconds = now,
             expiresAtUnixSeconds = now + 3600,
             usesLockedDeck = room.UsesLockedDeck,
@@ -645,7 +645,7 @@ public static class Endpoints
             joinToken,
             seatLabel = "runner",
             transportHint = "relay_room",
-            relayEndpoint = $"wss://relay.crownroad.invalid/{roomId}",
+            relayEndpoint = $"ws://localhost:5000/ws/relay/{roomId}",
             requestedAtUnixSeconds = now,
             expiresAtUnixSeconds = now + 3600
         });

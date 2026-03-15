@@ -202,7 +202,6 @@ All milestone code work is complete. The backend server implements all M9 HTTP c
 2. create faction-distinct unit silhouettes with armor, banners, and creature models
 3. continue balance tuning as playtesting reveals over/under-tuned stages or economy gaps
 4. deploy the backend server to a real hosting environment for internet multiplayer
-5. replace stub relay endpoints with a real WebSocket relay or transport layer
 
 ## Work Completed In This Sprint
 
@@ -407,11 +406,13 @@ All milestone code work is complete. The backend server implements all M9 HTTP c
 - added a standalone ASP.NET backend server (`server/`) implementing all M9 HTTP contracts with SQLite persistence: player profile sync, challenge submission and leaderboards, challenge board feed, online room lifecycle (create/join/session/action/result/scoreboard/telemetry/leave/report/matchmake/seat-lease), stale room expiry, and seeded featured challenge boards
 - added battle pause with Escape key, dimmed overlay, and hotkey reference display
 - added keyboard hotkeys for battle: 1-5 to select unit cards, Q-T to select spell cards
+- added a WebSocket relay transport (`/ws/relay/{roomId}`) for real-time online room state sync with peer join/leave notifications, message broadcast, and automatic room cleanup
+- added 19 backend integration tests covering all HTTP endpoints plus the WebSocket relay, all passing
 
 ## Recommended Build Order After This Commit
 
 1. replace placeholder visuals with authored sprites and animations (requires art assets)
-2. deploy the backend server and replace stub relay endpoints with real transport
+2. deploy the backend server to a real hosting environment
 3. continue balance tuning as playtesting surfaces over/under-tuned stages
 
 ## Guardrails

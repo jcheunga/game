@@ -59,7 +59,8 @@ public static class Endpoints
     {
         var body = await ReadBody(request);
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var entries = GetArray(body, "submissions");
+        var entries = GetArray(body, "batch.submissions");
+        if (entries.Length == 0) entries = GetArray(body, "submissions");
         var accepted = 0;
         var rejected = 0;
 
@@ -288,9 +289,9 @@ public static class Endpoints
     public static async Task<IResult> RoomJoin(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "playerProfileId", "");
-        var callsign = GetString(body, "playerCallsign", "Runner");
-        var roomId = GetString(body, "roomId", "");
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "join.playerProfileId", GetString(body, "playerProfileId", ""));
+        var callsign = GetString(body, "join.playerCallsign", GetString(body, "playerCallsign", "Runner"));
+        var roomId = GetString(body, "join.roomId", GetString(body, "roomId", ""));
         var now = Now();
 
         if (string.IsNullOrWhiteSpace(roomId))
@@ -362,9 +363,9 @@ public static class Endpoints
     public static async Task<IResult> RoomAction(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var roomId = GetString(body, "roomId", "");
-        var action = GetString(body, "action", "");
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+        var roomId = GetString(body, "action.roomId", GetString(body, "roomId", ""));
+        var action = GetString(body, "action.actionId", GetString(body, "action", ""));
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "action.playerProfileId", "");
 
         if (string.IsNullOrWhiteSpace(roomId) || string.IsNullOrWhiteSpace(action))
             return Results.BadRequest(new { error = "missing roomId or action" });
@@ -409,6 +410,16 @@ public static class Endpoints
                 seats.ExecuteNonQuery();
                 return Results.Ok(new { status = "ok", message = "Round reset." });
             }
+            case "leave_room":
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "UPDATE room_seats SET status = 'left' WHERE room_id = $rid AND profile_id = $pid";
+                cmd.Parameters.AddWithValue("$rid", roomId);
+                cmd.Parameters.AddWithValue("$pid", profileId);
+                cmd.ExecuteNonQuery();
+                TouchRoom(conn, roomId);
+                return Results.Ok(new { status = "accepted", actionId = "leave_room", message = "Left room." });
+            }
             default:
                 return Results.BadRequest(new { error = $"unknown action: {action}" });
         }
@@ -419,12 +430,12 @@ public static class Endpoints
     public static async Task<IResult> RoomResult(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var roomId = GetString(body, "roomId", "");
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var score = GetInt(body, "score", 0);
-        var elapsed = GetDouble(body, "elapsedSeconds", 0);
-        var hull = GetDouble(body, "hullRemaining", 0);
-        var defeats = GetInt(body, "enemyDefeats", 0);
+        var roomId = GetString(body, "result.roomId", GetString(body, "roomId", ""));
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "result.playerProfileId", "");
+        var score = GetInt(body, "result.score", GetInt(body, "score", 0));
+        var elapsed = GetDouble(body, "result.elapsedSeconds", GetDouble(body, "elapsedSeconds", 0));
+        var hull = GetDouble(body, "result.hullRemaining", GetDouble(body, "hullRemaining", 0));
+        var defeats = GetInt(body, "result.enemyDefeats", GetInt(body, "enemyDefeats", 0));
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -496,12 +507,12 @@ public static class Endpoints
     public static async Task<IResult> RoomTelemetry(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var roomId = GetString(body, "roomId", "");
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var elapsed = GetDouble(body, "elapsedSeconds", 0);
-        var hull = GetDouble(body, "hullRatio", 1);
-        var defeats = GetInt(body, "enemyDefeats", 0);
-        var status = GetString(body, "raceStatus", "racing");
+        var roomId = GetString(body, "telemetry.roomId", GetString(body, "roomId", ""));
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "telemetry.playerProfileId", "");
+        var elapsed = GetDouble(body, "telemetry.elapsedSeconds", GetDouble(body, "elapsedSeconds", 0));
+        var hull = GetDouble(body, "telemetry.hullRatio", GetDouble(body, "hullRatio", 1));
+        var defeats = GetInt(body, "telemetry.enemyDefeats", GetInt(body, "enemyDefeats", 0));
+        var status = GetString(body, "telemetry.raceStatus", GetString(body, "raceStatus", "racing"));
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -545,11 +556,11 @@ public static class Endpoints
     public static async Task<IResult> RoomReport(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var roomId = GetString(body, "roomId", "");
-        var reporterId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var targetId = GetString(body, "targetProfileId", "");
-        var reason = GetString(body, "reason", "");
-        var details = GetString(body, "details", "");
+        var roomId = GetString(body, "report.roomId", GetString(body, "roomId", ""));
+        var reporterId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "report.reporterProfileId", "");
+        var targetId = GetString(body, "report.targetProfileId", GetString(body, "targetProfileId", ""));
+        var reason = GetString(body, "report.reason", GetString(body, "reason", ""));
+        var details = GetString(body, "report.details", GetString(body, "details", ""));
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -573,9 +584,9 @@ public static class Endpoints
     public static async Task<IResult> RoomMatchmake(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var callsign = GetString(body, "playerCallsign", "Runner");
-        var boardCode = GetString(body, "boardCode", "");
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "matchmake.playerProfileId", "");
+        var callsign = GetString(body, "matchmake.playerCallsign", GetString(body, "playerCallsign", "Runner"));
+        var boardCode = GetString(body, "matchmake.boardCode", GetString(body, "boardCode", ""));
         var now = Now();
 
         using var conn = Database.Open();
@@ -645,9 +656,9 @@ public static class Endpoints
     public static async Task<IResult> RoomSeatLease(HttpRequest request)
     {
         var body = await ReadBody(request);
-        var roomId = GetString(body, "roomId", "");
-        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
-        var ticketId = GetString(body, "ticketId", "");
+        var roomId = GetString(body, "lease.roomId", GetString(body, "roomId", ""));
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "lease.playerProfileId", "");
+        var ticketId = GetString(body, "lease.ticketId", GetString(body, "ticketId", ""));
         var now = Now();
 
         using var conn = Database.Open();

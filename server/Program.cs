@@ -1,4 +1,10 @@
 using CrownroadServer;
+using CrownroadServer.Tests;
+
+if (args.Length > 0 && args[0] == "--test")
+{
+    return await ServerTests.RunAll();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
@@ -25,3 +31,4 @@ app.MapPost("/challenge-room-matchmake", Endpoints.RoomMatchmake);
 app.MapPost("/challenge-room-seat-lease", Endpoints.RoomSeatLease);
 
 app.Run();
+return 0;

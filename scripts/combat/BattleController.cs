@@ -338,6 +338,8 @@ public partial class BattleController : Node2D
 	private float _enemySignalJamTimer;
 	private float _enemySignalJamCourageGainScale = 1f;
 	private bool _battleEnded;
+	private bool _battlePaused;
+	private CenterContainer _pauseOverlay;
 	private bool _endlessCheckpointActive;
 	private float _endlessContactCourageGainScale = 1f;
 	private float _endlessUnitHealthScale = 1f;
@@ -396,6 +398,7 @@ public partial class BattleController : Node2D
 
 	public override void _Ready()
 	{
+		ProcessMode = ProcessModeEnum.Always;
 		_combat = GameData.Combat;
 		_battleMode = GameState.Instance.CurrentBattleMode;
 		_challengeDefinition = GameState.Instance.GetSelectedAsyncChallenge();
@@ -1479,7 +1482,7 @@ public partial class BattleController : Node2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_battleEnded || _endlessCheckpointActive)
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
 		{
 			return;
 		}
@@ -1784,7 +1787,13 @@ public partial class BattleController : Node2D
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (_battleEnded || _endlessCheckpointActive)
+		if (@event is InputEventKey keyEvent && keyEvent.Pressed)
+		{
+			HandleKeyInput(keyEvent);
+			return;
+		}
+
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
 		{
 			return;
 		}
@@ -1802,6 +1811,59 @@ public partial class BattleController : Node2D
 		if (IsInBattlefield(mouseButton.Position))
 		{
 			TryUseSelectionAt(mouseButton.Position);
+		}
+	}
+
+	private void HandleKeyInput(InputEventKey keyEvent)
+	{
+		if (keyEvent.Keycode == Key.Escape)
+		{
+			TogglePause();
+			return;
+		}
+
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
+		{
+			return;
+		}
+
+		var unitIndex = keyEvent.Keycode switch
+		{
+			Key.Key1 => 0,
+			Key.Key2 => 1,
+			Key.Key3 => 2,
+			Key.Key4 => 3,
+			Key.Key5 => 4,
+			_ => -1
+		};
+		if (unitIndex >= 0 && unitIndex < _deploySlots.Count)
+		{
+			ArmPlayerUnit(_deploySlots[unitIndex].Definition);
+			return;
+		}
+
+		var spellIndex = keyEvent.Keycode switch
+		{
+			Key.Q => 0,
+			Key.W => 1,
+			Key.E => 2,
+			Key.R => 3,
+			Key.T => 4,
+			_ => -1
+		};
+		if (spellIndex >= 0 && spellIndex < _spellSlots.Count)
+		{
+			ArmSpell(_spellSlots[spellIndex].Definition);
+		}
+	}
+
+	private void TogglePause()
+	{
+		_battlePaused = !_battlePaused;
+		GetTree().Paused = _battlePaused;
+		if (_pauseOverlay != null)
+		{
+			_pauseOverlay.Visible = _battlePaused;
 		}
 	}
 
@@ -2013,6 +2075,23 @@ public partial class BattleController : Node2D
 				_spellSlots.Add(new SpellSlot(spell, button));
 			}
 		}
+
+		_pauseOverlay = new CenterContainer();
+		_pauseOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		_pauseOverlay.Visible = false;
+		root.AddChild(_pauseOverlay);
+		var pauseBg = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
+		pauseBg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		_pauseOverlay.AddChild(pauseBg);
+		var pauseLabel = new Label
+		{
+			Text = "PAUSED\n\nPress Escape to resume\n\nHotkeys:\n  1-5  Select unit cards\n  Q-T  Select spell cards",
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		pauseLabel.AddThemeFontSizeOverride("font_size", 28);
+		pauseLabel.AddThemeColorOverride("font_color", Colors.White);
+		_pauseOverlay.AddChild(pauseLabel);
 
 		_endCenter = new CenterContainer();
 		_endCenter.SetAnchorsPreset(Control.LayoutPreset.FullRect);

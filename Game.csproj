@@ -4,4 +4,7 @@
     <RootNamespace>Game</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="server/**" />
+  </ItemGroup>
 </Project>

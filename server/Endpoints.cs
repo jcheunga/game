@@ -814,11 +814,10 @@ public static class Endpoints
         foreach (var segment in path.Split('.'))
         {
             if (current.ValueKind != JsonValueKind.Object) return fallback;
-            if (!current.TryGetProperty(segment, out current))
+            if (!current.TryGetProperty(segment, out var next))
             {
-                // case-insensitive fallback
                 var found = false;
-                foreach (var prop in root.EnumerateObject())
+                foreach (var prop in current.EnumerateObject())
                 {
                     if (string.Equals(prop.Name, segment, StringComparison.OrdinalIgnoreCase))
                     {
@@ -828,6 +827,10 @@ public static class Endpoints
                     }
                 }
                 if (!found) return fallback;
+            }
+            else
+            {
+                current = next;
             }
         }
         return current.ValueKind == JsonValueKind.String ? current.GetString() ?? fallback : fallback;

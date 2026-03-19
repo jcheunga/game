@@ -159,7 +159,7 @@ public partial class DebugConsole : CanvasLayer
 		{
 			"help" => "Commands: help, gold <n>, food <n>, unlock <stage>, unlockall, reset, stage <n>, " +
 				"difficulty <id>, speed <1-3>, stats, units, spells, stages, achievement <id>, " +
-				"relic <id>, equip <unitId> <relicId>, cloud upload, cloud download, analytics flush, screenshot",
+				"relic <id>, equip <unitId> <relicId>, cloud upload, cloud download, analytics flush, screenshot, generate sprites",
 			"gold" => SetGold(args),
 			"food" => SetFood(args),
 			"unlock" => UnlockStage(args),
@@ -178,6 +178,7 @@ public partial class DebugConsole : CanvasLayer
 			"cloud" => CloudCommand(args),
 			"analytics" => AnalyticsCommand(args),
 			"screenshot" => TakeScreenshot(),
+			"generate" => GenerateCommand(args),
 			_ => $"Unknown command: {cmd}. Type 'help' for available commands."
 		};
 	}
@@ -367,5 +368,15 @@ public partial class DebugConsole : CanvasLayer
 	{
 		var path = ScreenshotCapture.Capture("debug");
 		return string.IsNullOrWhiteSpace(path) ? "Screenshot failed." : $"Saved: {path}";
+	}
+
+	private static string GenerateCommand(string[] args)
+	{
+		if (args.Length == 0) return "Usage: generate sprites";
+		if (args[0].Equals("sprites", StringComparison.OrdinalIgnoreCase))
+		{
+			return PlaceholderSpriteGenerator.GenerateAll();
+		}
+		return "Usage: generate sprites";
 	}
 }

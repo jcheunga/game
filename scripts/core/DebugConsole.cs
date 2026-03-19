@@ -179,6 +179,7 @@ public partial class DebugConsole : CanvasLayer
 			"analytics" => AnalyticsCommand(args),
 			"screenshot" => TakeScreenshot(),
 			"generate" => GenerateCommand(args),
+			"prestige" => DoPrestige(),
 			_ => $"Unknown command: {cmd}. Type 'help' for available commands."
 		};
 	}
@@ -368,6 +369,12 @@ public partial class DebugConsole : CanvasLayer
 	{
 		var path = ScreenshotCapture.Capture("debug");
 		return string.IsNullOrWhiteSpace(path) ? "Screenshot failed." : $"Saved: {path}";
+	}
+
+	private static string DoPrestige()
+	{
+		if (GameState.Instance == null) return "GameState not available.";
+		return GameState.Instance.TryPrestige(out var msg) ? msg : msg;
 	}
 
 	private static string GenerateCommand(string[] args)

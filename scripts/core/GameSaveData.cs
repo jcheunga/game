@@ -110,6 +110,9 @@ public sealed class GameSaveData
     public bool HasShownConsentPrompt { get; set; }
     public int FontSizeOffset { get; set; }
     public bool HighContrast { get; set; }
+    public int PrestigeLevel { get; set; }
+    public int PrestigeTotalGoldEarned { get; set; }
+    public int PrestigeTotalStagesCleared { get; set; }
     public string[] PurchasedProductIds { get; set; } = [];
     public int TotalPurchaseCount { get; set; }
     public string PurchaseValidationEndpoint { get; set; } = "";

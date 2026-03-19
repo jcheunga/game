@@ -210,6 +210,20 @@ public partial class MainMenu : Control
         stack.AddChild(settingsButton);
         _animatedElements.Add(settingsButton);
 
+        if (GameState.Instance.CanPrestige)
+        {
+            var prestigeButton = BuildButton($"Prestige (New Game+)");
+            prestigeButton.Pressed += () =>
+            {
+                if (GameState.Instance.TryPrestige(out var msg))
+                {
+                    _summaryLabel.Text = msg;
+                }
+            };
+            stack.AddChild(prestigeButton);
+            _animatedElements.Add(prestigeButton);
+        }
+
         var resetButton = BuildButton("Reset Progress");
         resetButton.Pressed += () =>
         {
@@ -324,9 +338,13 @@ public partial class MainMenu : Control
         var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
         var bestChallengeScore = GameState.Instance.GetAsyncChallengeBestScore(selectedChallenge.Code);
 
+        var prestigeText = GameState.Instance.PrestigeLevel > 0
+            ? $"  |  Prestige: {GameState.Instance.GetPrestigeLabel()} (+{GameState.Instance.PrestigeLevel * 10}% gold, +{GameState.Instance.PrestigeLevel * 5}% HP)"
+            : "";
+
         return
             "Caravan status:\n" +
-            $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}\n" +
+            $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}{prestigeText}\n" +
             $"{CampaignPlanCatalog.BuildCampaignStatusSummary()}\n" +
             $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}\n" +
             $"Unit doctrines forged: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount}\n" +

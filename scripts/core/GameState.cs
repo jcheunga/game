@@ -84,6 +84,11 @@ public partial class GameState : Node
 	public bool HasShownConsentPrompt { get; private set; }
 	public int FontSizeOffset { get; private set; }
 	public bool HighContrast { get; private set; }
+	public int PrestigeLevel { get; private set; }
+	public int PrestigeTotalGoldEarned { get; private set; }
+	public int PrestigeTotalStagesCleared { get; private set; }
+	public bool CanPrestige => HighestUnlockedStage >= MaxStage && PrestigeLevel < MaxPrestigeLevel;
+	private const int MaxPrestigeLevel = 5;
 	public string DifficultyId { get; private set; } = DefaultDifficultyId;
 	public int TotalPurchaseCount => _totalPurchaseCount;
 	public string PurchaseValidationEndpoint => _purchaseValidationEndpoint;
@@ -527,8 +532,8 @@ public partial class GameState : Node
 	public string ApplyVictory(int stage, int rewardGold, int rewardFood, int starsEarned)
 	{
 		var diff = GetDifficulty();
-		rewardGold = Godot.Mathf.RoundToInt(Math.Max(0, rewardGold) * diff.GoldRewardScale);
-		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale);
+		rewardGold = Godot.Mathf.RoundToInt(Math.Max(0, rewardGold) * diff.GoldRewardScale * GetPrestigeGoldBonus());
+		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale * GetPrestigeFoodBonus());
 		Gold += rewardGold;
 		Food += rewardFood;
 		var bestStars = RecordStageStars(stage, starsEarned);
@@ -1082,6 +1087,103 @@ public partial class GameState : Node
 	{
 		HighContrast = enabled;
 		Persist();
+	}
+
+	public float GetPrestigeGoldBonus() => 1f + (PrestigeLevel * 0.10f);
+	public float GetPrestigeFoodBonus() => 1f + (PrestigeLevel * 0.08f);
+	public float GetPrestigeUnitHealthBonus() => 1f + (PrestigeLevel * 0.05f);
+	public int GetPrestigeStartingGold() => DefaultGold + (PrestigeLevel * 200);
+	public int GetPrestigeStartingFood() => DefaultFood + (PrestigeLevel * 8);
+
+	public string GetPrestigeLabel()
+	{
+		return PrestigeLevel switch
+		{
+			0 => "",
+			1 => "Veteran",
+			2 => "Elite",
+			3 => "Champion",
+			4 => "Legendary",
+			5 => "Mythic",
+			_ => $"Prestige {PrestigeLevel}"
+		};
+	}
+
+	public bool TryPrestige(out string message)
+	{
+		if (!CanPrestige)
+		{
+			message = PrestigeLevel >= MaxPrestigeLevel
+				? "Maximum prestige level reached."
+				: $"Clear all {MaxStage} stages to unlock prestige.";
+			return false;
+		}
+
+		// Record lifetime stats before reset
+		PrestigeTotalGoldEarned += Gold;
+		PrestigeTotalStagesCleared += HighestUnlockedStage;
+		PrestigeLevel++;
+
+		// Reset progression but keep permanent unlocks
+		var prestigeGold = GetPrestigeStartingGold();
+		var prestigeFood = GetPrestigeStartingFood();
+		var keepUnits = new List<string>(_ownedPlayerUnitIds);
+		var keepSpells = new List<string>(_ownedPlayerSpellIds);
+		var keepEquipment = new List<string>(_ownedEquipmentIds);
+		var keepAchievements = new List<string>(_unlockedAchievementIds);
+		var keepPrestige = new Dictionary<string, int>(_unitPrestigeSelections);
+		var keepDoctrines = new Dictionary<string, string>(_unitDoctrineSelections);
+
+		// Reset campaign state
+		HighestUnlockedStage = DefaultUnlockedStage;
+		SelectedStage = DefaultUnlockedStage;
+		Gold = prestigeGold;
+		Food = prestigeFood;
+		_stageStars.Clear();
+		_unitUpgradeLevels.Clear();
+		_spellUpgradeLevels.Clear();
+		_baseUpgradeLevels.Clear();
+		_claimedDistrictRewardIds.Clear();
+		_claimedCampaignDirectiveIds.Clear();
+		_armedCampaignDirectiveStage = 0;
+
+		// Keep permanent unlocks
+		_ownedPlayerUnitIds.Clear();
+		foreach (var id in keepUnits) _ownedPlayerUnitIds.Add(id);
+		_ownedPlayerSpellIds.Clear();
+		foreach (var id in keepSpells) _ownedPlayerSpellIds.Add(id);
+		_ownedEquipmentIds.Clear();
+		foreach (var id in keepEquipment) _ownedEquipmentIds.Add(id);
+		_unlockedAchievementIds.Clear();
+		foreach (var id in keepAchievements) _unlockedAchievementIds.Add(id);
+		_unitPrestigeSelections.Clear();
+		foreach (var (k, v) in keepPrestige) _unitPrestigeSelections[k] = v;
+		_unitDoctrineSelections.Clear();
+		foreach (var (k, v) in keepDoctrines) _unitDoctrineSelections[k] = v;
+
+		// Keep active deck if units are still owned
+		var validDeck = new List<string>();
+		foreach (var id in _activeDeckUnitIds)
+		{
+			if (_ownedPlayerUnitIds.Contains(id)) validDeck.Add(id);
+		}
+		_activeDeckUnitIds.Clear();
+		_activeDeckUnitIds.AddRange(validDeck.Count >= 3 ? validDeck.GetRange(0, 3) : validDeck);
+		if (_activeDeckUnitIds.Count == 0)
+		{
+			_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
+		}
+
+		LastResultMessage = $"Prestige {PrestigeLevel} achieved! The caravan rides again with {GetPrestigeLabel()} rank.\n" +
+			$"+{PrestigeLevel * 10}% gold, +{PrestigeLevel * 8}% food, +{PrestigeLevel * 5}% unit health.\n" +
+			$"Starting gold: {prestigeGold}, starting food: {prestigeFood}.";
+
+		Persist();
+		CheckAchievements();
+		AnalyticsService.Track("prestige", $"level={PrestigeLevel}");
+
+		message = LastResultMessage;
+		return true;
 	}
 
 	private void ApplyFontSizeOffset()
@@ -2452,6 +2554,9 @@ public partial class GameState : Node
 		HasShownConsentPrompt = false;
 		FontSizeOffset = 0;
 		HighContrast = false;
+		PrestigeLevel = 0;
+		PrestigeTotalGoldEarned = 0;
+		PrestigeTotalStagesCleared = 0;
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
@@ -2579,6 +2684,9 @@ public partial class GameState : Node
 			HasShownConsentPrompt = saved.Version >= 31 && saved.HasShownConsentPrompt;
 			FontSizeOffset = saved.Version >= 31 ? Mathf.Clamp(saved.FontSizeOffset, -4, 8) : 0;
 			HighContrast = saved.Version >= 31 && saved.HighContrast;
+			PrestigeLevel = saved.Version >= 31 ? Mathf.Clamp(saved.PrestigeLevel, 0, MaxPrestigeLevel) : 0;
+			PrestigeTotalGoldEarned = saved.Version >= 31 ? Math.Max(0, saved.PrestigeTotalGoldEarned) : 0;
+			PrestigeTotalStagesCleared = saved.Version >= 31 ? Math.Max(0, saved.PrestigeTotalStagesCleared) : 0;
 		}
 		else
 		{
@@ -3046,6 +3154,9 @@ public partial class GameState : Node
 			HasShownConsentPrompt = HasShownConsentPrompt,
 			FontSizeOffset = FontSizeOffset,
 			HighContrast = HighContrast,
+			PrestigeLevel = PrestigeLevel,
+			PrestigeTotalGoldEarned = PrestigeTotalGoldEarned,
+			PrestigeTotalStagesCleared = PrestigeTotalStagesCleared,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
 			ActiveDeckSpellIds = _activeDeckSpellIds.ToArray(),
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),

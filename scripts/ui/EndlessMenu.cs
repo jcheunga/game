@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Godot;
 
@@ -9,6 +10,7 @@ public partial class EndlessMenu : Control
     private Label _routeSummaryLabel = null!;
     private Label _recordLabel = null!;
     private Label _rulesLabel = null!;
+    private VBoxContainer _historyStack = null!;
     private Label _deckStatusLabel = null!;
     private VBoxContainer _squadStack = null!;
     private Button _deployButton = null!;
@@ -93,9 +95,16 @@ public partial class EndlessMenu : Control
         missionPadding.AddThemeConstantOverride("margin_bottom", 18);
         missionPanel.AddChild(missionPadding);
 
+        var missionScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        missionPadding.AddChild(missionScroll);
+
         var missionStack = new VBoxContainer();
         missionStack.AddThemeConstantOverride("separation", 12);
-        missionPadding.AddChild(missionStack);
+        missionScroll.AddChild(missionStack);
 
         missionStack.AddChild(new Label
         {
@@ -172,6 +181,10 @@ public partial class EndlessMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         missionStack.AddChild(_rulesLabel);
+
+        _historyStack = new VBoxContainer();
+        _historyStack.AddThemeConstantOverride("separation", 4);
+        missionStack.AddChild(_historyStack);
 
         var squadPanel = new PanelContainer
         {
@@ -281,12 +294,58 @@ public partial class EndlessMenu : Control
             "- Retreat to bank the gold and food recovered so far.\n" +
             "- Gold and food rewards scale with wave reached, time alive, and kills.";
 
+        RebuildRunHistory();
         RebuildSquadPanels();
 
         var canStartBattle = GameState.Instance.CanStartBattle(out var deployMessage);
         _deckStatusLabel.Text = deployMessage;
         _deployButton.Disabled = !canStartBattle;
         _deployButton.Text = canStartBattle ? "Begin Endless March" : "Caravan Not Ready";
+    }
+
+    private void RebuildRunHistory()
+    {
+        foreach (var child in _historyStack.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var history = GameState.Instance.GetEndlessRunHistory();
+        if (history.Count == 0)
+        {
+            return;
+        }
+
+        _historyStack.AddChild(new Label
+        {
+            Text = "Run History"
+        });
+
+        var bestWave = GameState.Instance.BestEndlessWave;
+        var displayCount = Math.Min(history.Count, 10);
+        for (var i = 0; i < displayCount; i++)
+        {
+            var run = history[i];
+            var minutes = (int)(run.TimeSeconds / 60f);
+            var seconds = (int)(run.TimeSeconds % 60f);
+            var routeName = GameData.GetLatestStageForMap(run.RouteId).MapName;
+            var diffTitle = DifficultyCatalog.GetById(run.DifficultyId).Title;
+            var line = $"#{i + 1}  Wave {run.Wave}  |  {minutes}:{seconds:D2}  |  {routeName}  |  +{run.GoldEarned} gold  |  {diffTitle}";
+
+            var isBestWave = run.Wave >= bestWave && bestWave > 0;
+            var label = new Label
+            {
+                Text = line,
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+
+            if (isBestWave)
+            {
+                label.AddThemeColorOverride("font_color", new Color("ffd700"));
+            }
+
+            _historyStack.AddChild(label);
+        }
     }
 
     private void RebuildSquadPanels()

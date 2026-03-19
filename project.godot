@@ -30,6 +30,13 @@ ChallengeBoardFeedSmokeDirector="*res://scenes/autoload/ChallengeBoardFeedSmokeD
 ChallengeLeaderboardSmokeDirector="*res://scenes/autoload/ChallengeLeaderboardSmokeDirector.tscn"
 ChallengeSyncSmokeDirector="*res://scenes/autoload/ChallengeSyncSmokeDirector.tscn"
 LanSmokeDirector="*res://scenes/autoload/LanSmokeDirector.tscn"
+NativeIAPService="*res://scenes/autoload/NativeIAPService.tscn"
+SafeAreaService="*res://scenes/autoload/SafeAreaService.tscn"
+MusicPlayer="*res://scenes/autoload/MusicPlayer.tscn"
+DebugConsole="*res://scenes/autoload/DebugConsole.tscn"
+CrashReporter="*res://scenes/autoload/CrashReporter.tscn"
+NetworkStatus="*res://scenes/autoload/NetworkStatus.tscn"
+DeepLinkHandler="*res://scenes/autoload/DeepLinkHandler.tscn"
 
 [display]
 

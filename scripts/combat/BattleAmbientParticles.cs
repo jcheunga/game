@@ -8,6 +8,9 @@ public partial class BattleAmbientParticles : Node2D
 {
 	private CpuParticles2D _primary;
 	private CpuParticles2D _secondary;
+	private CpuParticles2D _weatherPrimary;
+	private CpuParticles2D _weatherSecondary;
+	private ColorRect _weatherOverlay;
 
 	public void Setup(string terrainId, float left, float right, float top, float bottom)
 	{
@@ -304,5 +307,271 @@ public partial class BattleAmbientParticles : Node2D
 		p.ColorRamp = gradient;
 		AddChild(p);
 		return p;
+	}
+
+	public void ApplyWeather(string weatherId, float left, float right, float top, float bottom)
+	{
+		var id = (weatherId ?? "").ToLowerInvariant();
+		if (id == "clear" || id == "")
+		{
+			return;
+		}
+
+		var width = right - left;
+		var height = bottom - top;
+		var center = new Vector2((left + right) * 0.5f, (top + bottom) * 0.5f);
+
+		switch (id)
+		{
+			case "rain":
+				ApplyRainWeather(center, width, height);
+				break;
+			case "fog":
+				ApplyFogWeather(center, width, height);
+				break;
+			case "ashstorm":
+				ApplyAshStormWeather(center, width, height);
+				break;
+			case "blizzard":
+				ApplyBlizzardWeather(center, width, height);
+				break;
+		}
+	}
+
+	private void ApplyRainWeather(Vector2 center, float width, float height)
+	{
+		// Boost existing mist if present
+		if (_primary != null && _primary.Gravity == Vector2.Zero)
+		{
+			_primary.Amount = Mathf.Max(_primary.Amount, 18);
+		}
+
+		// Add rain drops falling from above
+		_weatherPrimary = new CpuParticles2D
+		{
+			Amount = 40,
+			Lifetime = 1.2f,
+			Position = new Vector2(center.X, center.Y - height * 0.5f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.55f, 10f),
+			Direction = new Vector2(0.15f, 1f),
+			Spread = 8f,
+			InitialVelocityMin = 80f,
+			InitialVelocityMax = 130f,
+			Gravity = new Vector2(4f, 60f),
+			ScaleAmountMin = 1f,
+			ScaleAmountMax = 2f,
+			ZIndex = 48,
+			Emitting = true
+		};
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(0.7f, 0.78f, 0.9f, 0f));
+		gradient.AddPoint(0.05f, new Color(0.72f, 0.8f, 0.92f, 0.35f));
+		gradient.AddPoint(0.7f, new Color(0.68f, 0.76f, 0.88f, 0.25f));
+		gradient.AddPoint(1f, new Color(0.65f, 0.74f, 0.86f, 0f));
+		_weatherPrimary.ColorRamp = gradient;
+		AddChild(_weatherPrimary);
+
+		// Add ground-level mist layer
+		_weatherSecondary = new CpuParticles2D
+		{
+			Amount = 14,
+			Lifetime = 4f,
+			Position = new Vector2(center.X, center.Y + height * 0.25f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.5f, height * 0.15f),
+			Direction = new Vector2(1f, 0f),
+			Spread = 20f,
+			InitialVelocityMin = 5f,
+			InitialVelocityMax = 14f,
+			Gravity = Vector2.Zero,
+			ScaleAmountMin = 14f,
+			ScaleAmountMax = 30f,
+			ZIndex = 44,
+			Emitting = true
+		};
+		var mistGradient = new Gradient();
+		mistGradient.SetColor(0, new Color(0.6f, 0.7f, 0.8f, 0f));
+		mistGradient.AddPoint(0.2f, new Color(0.65f, 0.72f, 0.82f, 0.07f));
+		mistGradient.AddPoint(0.6f, new Color(0.68f, 0.75f, 0.84f, 0.05f));
+		mistGradient.AddPoint(1f, new Color(0.68f, 0.75f, 0.84f, 0f));
+		_weatherSecondary.ColorRamp = mistGradient;
+		AddChild(_weatherSecondary);
+	}
+
+	private void ApplyFogWeather(Vector2 center, float width, float height)
+	{
+		// Dramatically increase mist density if present
+		if (_primary != null)
+		{
+			_primary.Amount = Mathf.Max(_primary.Amount * 3, 30);
+		}
+
+		// Add dense fog overlay particles
+		_weatherPrimary = new CpuParticles2D
+		{
+			Amount = 24,
+			Lifetime = 6f,
+			Position = center,
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.55f, height * 0.4f),
+			Direction = new Vector2(0.8f, 0.1f),
+			Spread = 25f,
+			InitialVelocityMin = 3f,
+			InitialVelocityMax = 10f,
+			Gravity = Vector2.Zero,
+			ScaleAmountMin = 20f,
+			ScaleAmountMax = 45f,
+			ZIndex = 46,
+			Emitting = true
+		};
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(0.75f, 0.8f, 0.78f, 0f));
+		gradient.AddPoint(0.15f, new Color(0.78f, 0.82f, 0.8f, 0.12f));
+		gradient.AddPoint(0.5f, new Color(0.8f, 0.84f, 0.82f, 0.1f));
+		gradient.AddPoint(0.85f, new Color(0.78f, 0.82f, 0.8f, 0.06f));
+		gradient.AddPoint(1f, new Color(0.75f, 0.8f, 0.78f, 0f));
+		_weatherPrimary.ColorRamp = gradient;
+		AddChild(_weatherPrimary);
+
+		// Add fog tint overlay
+		_weatherOverlay = new ColorRect
+		{
+			Color = new Color(0.7f, 0.75f, 0.72f, 0.08f),
+			Position = new Vector2(center.X - width * 0.5f, center.Y - height * 0.5f),
+			Size = new Vector2(width, height),
+			ZIndex = 47,
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		AddChild(_weatherOverlay);
+	}
+
+	private void ApplyAshStormWeather(Vector2 center, float width, float height)
+	{
+		// Boost existing embers/ash if present
+		if (_primary != null)
+		{
+			_primary.Amount = Mathf.Max(_primary.Amount * 2, 28);
+			_primary.InitialVelocityMax *= 1.5f;
+		}
+		if (_secondary != null)
+		{
+			_secondary.Amount = Mathf.Max(_secondary.Amount * 2, 24);
+			_secondary.InitialVelocityMax *= 1.4f;
+		}
+
+		// Add heavy ash/ember storm
+		_weatherPrimary = new CpuParticles2D
+		{
+			Amount = 32,
+			Lifetime = 2.5f,
+			Position = new Vector2(center.X - width * 0.3f, center.Y - height * 0.3f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.3f, height * 0.4f),
+			Direction = new Vector2(1f, 0.4f),
+			Spread = 20f,
+			InitialVelocityMin = 25f,
+			InitialVelocityMax = 65f,
+			Gravity = new Vector2(12f, 8f),
+			ScaleAmountMin = 1.5f,
+			ScaleAmountMax = 3.5f,
+			ZIndex = 49,
+			Emitting = true
+		};
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(0.55f, 0.45f, 0.35f, 0f));
+		gradient.AddPoint(0.1f, new Color(0.6f, 0.5f, 0.4f, 0.4f));
+		gradient.AddPoint(0.5f, new Color(0.5f, 0.42f, 0.35f, 0.3f));
+		gradient.AddPoint(1f, new Color(0.4f, 0.35f, 0.3f, 0f));
+		_weatherPrimary.ColorRamp = gradient;
+		AddChild(_weatherPrimary);
+
+		// Add choking ash haze
+		_weatherSecondary = new CpuParticles2D
+		{
+			Amount = 10,
+			Lifetime = 4f,
+			Position = new Vector2(center.X, center.Y + height * 0.1f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.5f, height * 0.2f),
+			Direction = new Vector2(1f, 0f),
+			Spread = 15f,
+			InitialVelocityMin = 8f,
+			InitialVelocityMax = 20f,
+			Gravity = Vector2.Zero,
+			ScaleAmountMin = 16f,
+			ScaleAmountMax = 32f,
+			ZIndex = 44,
+			Emitting = true
+		};
+		var hazeGradient = new Gradient();
+		hazeGradient.SetColor(0, new Color(0.5f, 0.45f, 0.38f, 0f));
+		hazeGradient.AddPoint(0.2f, new Color(0.52f, 0.47f, 0.4f, 0.06f));
+		hazeGradient.AddPoint(0.6f, new Color(0.48f, 0.43f, 0.37f, 0.04f));
+		hazeGradient.AddPoint(1f, new Color(0.45f, 0.4f, 0.35f, 0f));
+		_weatherSecondary.ColorRamp = hazeGradient;
+		AddChild(_weatherSecondary);
+	}
+
+	private void ApplyBlizzardWeather(Vector2 center, float width, float height)
+	{
+		// Boost existing snow if present
+		if (_primary != null)
+		{
+			_primary.Amount = Mathf.Max(_primary.Amount * 3, 50);
+			_primary.InitialVelocityMax *= 1.6f;
+		}
+
+		// Add heavy blizzard snow with wind
+		_weatherPrimary = new CpuParticles2D
+		{
+			Amount = 55,
+			Lifetime = 3f,
+			Position = new Vector2(center.X, center.Y - height * 0.5f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(width * 0.6f, 10f),
+			Direction = new Vector2(0.7f, 1f),
+			Spread = 25f,
+			InitialVelocityMin = 20f,
+			InitialVelocityMax = 55f,
+			Gravity = new Vector2(18f, 22f),
+			ScaleAmountMin = 2f,
+			ScaleAmountMax = 5f,
+			ZIndex = 49,
+			Emitting = true
+		};
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(0.92f, 0.95f, 1f, 0f));
+		gradient.AddPoint(0.08f, new Color(0.93f, 0.96f, 1f, 0.5f));
+		gradient.AddPoint(0.5f, new Color(0.9f, 0.94f, 1f, 0.35f));
+		gradient.AddPoint(1f, new Color(0.88f, 0.92f, 0.98f, 0f));
+		_weatherPrimary.ColorRamp = gradient;
+		AddChild(_weatherPrimary);
+
+		// Add wind-driven ground frost
+		_weatherSecondary = new CpuParticles2D
+		{
+			Amount = 12,
+			Lifetime = 2f,
+			Position = new Vector2(center.X - width * 0.4f, center.Y + height * 0.3f),
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(10f, height * 0.2f),
+			Direction = new Vector2(1f, -0.15f),
+			Spread = 10f,
+			InitialVelocityMin = 30f,
+			InitialVelocityMax = 70f,
+			Gravity = new Vector2(0f, 4f),
+			ScaleAmountMin = 3f,
+			ScaleAmountMax = 7f,
+			ZIndex = 44,
+			Emitting = true
+		};
+		var windGradient = new Gradient();
+		windGradient.SetColor(0, new Color(0.85f, 0.9f, 0.98f, 0f));
+		windGradient.AddPoint(0.1f, new Color(0.88f, 0.92f, 1f, 0.15f));
+		windGradient.AddPoint(0.5f, new Color(0.85f, 0.9f, 0.98f, 0.1f));
+		windGradient.AddPoint(1f, new Color(0.82f, 0.88f, 0.96f, 0f));
+		_weatherSecondary.ColorRamp = windGradient;
+		AddChild(_weatherSecondary);
 	}
 }

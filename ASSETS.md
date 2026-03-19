@@ -14,6 +14,16 @@ Reference: `THEME_BIBLE.md` for full faction/setting details.
 
 All units need a sprite sheet with these animation states. Sheets should be authored at **2x display resolution** for downscale sharpness.
 
+### How To Add Sprites
+
+The game has a built-in sprite loading pipeline (`UnitSpriteLoader`) that automatically picks up authored sprites and renders them instead of the procedural placeholder silhouettes. **No code changes are needed to swap in art — just drop files into the right folder.**
+
+1. Place the sprite sheet PNG at `assets/units/{visual_class}.png` (e.g., `assets/units/fighter.png`)
+2. Optionally place a metadata JSON at `assets/units/{visual_class}.json` to define custom frame counts, durations, and animation ranges (see `assets/units/_example.json` for the format)
+3. If no JSON is provided, the loader assumes a default layout: 8 columns per row, rows in order: idle, walk, attack, hit, death, deploy
+4. The game will render the sprite with automatic facing flip, hit flash modulation, idle bob, and animation state transitions (idle/walk/attack/hit)
+5. Units without a matching sprite file continue rendering procedurally — art can be added one unit at a time
+
 ### Animation States Per Unit
 
 | State | Frames | Loop | Notes |
@@ -35,17 +45,25 @@ Base frame: **64x64 px** at 1x scale. Units with VisualScale > 1.0 use proportio
 
 | Scale | Frame Size | Used By |
 |-------|-----------|---------|
+| 0.82x | 52x52 | War Hound |
+| 0.85x | 54x54 | Risen Thrall (summoned) |
+| 0.88x | 56x56 | Rogue |
 | 0.92x | 58x58 | Cavalry Rider, Sapper, Ghoul |
 | 1.0x | 64x64 | Most units |
-| 1.08x | 70x70 | Shield Knight |
+| 1.06x | 68x68 | Banner Knight, Spearman, Halberdier |
+| 1.08x | 70x70 | Shield Knight, Berserker |
 | 1.18x | 76x76 | Grave Brute |
 | 1.22x | 78x78 | Rot Hulk |
 | 1.25x | 80x80 | Bone Juggernaut |
-| 1.55x | 100x100 | Grave Lord (boss) |
+| 1.35x | 86x86 | Thornwall Chieftain, Gloamwood Witch |
+| 1.40x | 90x90 | Tidecaller, Iron Warden, Plague Archon, Siege Tower, Steppe Warlord |
+| 1.45x | 94x94 | Bone Pontiff |
+| 1.50x | 96x96 | Mire Behemoth |
+| 1.55x | 100x100 | Grave Lord, Dread Sovereign |
 
-### Player Units (11)
+### Player Units (16)
 
-Each unit has a **primary tint color** used for heraldic accents (tabard, shield, weapon glow). The base armor should be neutral iron/leather so tinting works.
+Each unit has a **primary tint color** used for heraldic accents (tabard, shield, weapon glow). The base armor should be neutral iron/leather so tinting works. Units also support 3 prestige color variants (Crimson, Frost, Golden) unlocked via achievements.
 
 | # | Display Name | Visual Class | Tint | Silhouette Brief |
 |---|-------------|-------------|------|-----------------|
@@ -60,8 +78,19 @@ Each unit has a **primary tint color** used for heraldic accents (tabard, shield
 | 9 | **Halberdier** | fighter | #f3722c | Tall build, two-handed polearm (halberd), heavier plate than swordsman. Gate-breaker. |
 | 10 | **Alchemist** | gunner | #f28482 | Medium build, one-handed flask/bomb in throwing pose, satchel of vials. Splash damage. |
 | 11 | **Battle Monk** | support | #b7efc5 | Robed figure with staff, faint aura glow ring around them. Buff provider — needs visible aura idle. |
+| 12 | **War Hound** | hound | #d4a373 | Small quadruped, wolf-like, low sprint pose, jaws open. Cheapest/fastest unit (0.82x scale). |
+| 13 | **Banner Knight** | banner | #ffd166 | Heavy knight holding a tall heraldic banner high with one hand, sword at hip. Visible aura ring for buff radius (1.06x scale). |
+| 14 | **Necromancer** | necromancer | #9b5de5 | Hooded caster, skull-topped staff, dark robes with spectral glow. Free hand gestures for raise-dead ability. |
+| 15 | **Rogue** | skirmisher | #6c757d | Slim build, twin daggers, hooded cloak, crouched forward. Fast assassin (0.88x scale). |
+| 16 | **Berserker** | berserker | #e63946 | Broad-chested fighter, bare arms, twin axes, wild hair. Rage glow intensifies as health drops (1.08x scale). |
 
-### Enemy Units (11)
+### Summoned Units (1)
+
+| # | Display Name | Visual Class | Tint | Silhouette Brief |
+|---|-------------|-------------|------|-----------------|
+| 1 | **Risen Thrall** | skeleton | #c8b6a6 | Skeletal warrior, rusted sword, shambling pose. Spawned by Necromancer. Smaller than Risen enemy (0.85x scale). |
+
+### Enemy Units (16)
 
 Enemies use a **necrotic/undead palette**: grays, purples, sickly greens, bone whites, dark reds. No heraldic tabards — instead use rot marks, exposed bone, spectral glow.
 
@@ -77,11 +106,40 @@ Enemies use a **necrotic/undead palette**: grays, purples, sickly greens, bone w
 | 8 | **Dread Herald** | howler | #f8961e | Standing tall, two horn-like protrusions from head, arms spread. Visible aura ring. |
 | 9 | **Hexer** | jammer | #577590 | Thin figure, antenna/staff with glowing tip, ritual symbols on robe. Signal disruptor. |
 | 10 | **Bone Juggernaut** | crusher | #7f5539 | Massive frame, full bone-plate armor, slow stance. Heaviest standard enemy. |
-| 11 | **Grave Lord** | boss | #5a189a | Towering figure, crown of bone spikes (3 prongs), cape, two escort spawn points at sides. Rally aura visible. |
+| 11 | **Shield Wall** | shieldwall | #8d99ae | Two-figure formation holding overlapping tower shields. Blocks projectiles for nearby enemies. |
+| 12 | **Lich** | lich | #7209b7 | Skeletal mage in tattered robes, hovering slightly, green soul-fire in hands. Periodically raises fallen undead. |
+| 13 | **Siege Tower** | siegetower | #6c584c | Tall wooden tower on wheels, slit windows, ram at base. Slow structure that deploys enemies at the war wagon (1.4x scale). |
+| 14 | **Mirror Knight** | mirror | #adb5bd | Polished silver armor, large reflective shield, mirrored helm. Reflects 30% damage back to attacker. |
+| 15 | **Tunneler** | tunneler | #5c4033 | Hunched digger with clawed gauntlets, dirt-caked armor. Burrows underground (submerge animation) then surfaces behind player lines. |
+
+### Boss Units (10)
+
+Bosses appear at the end of each district. They need larger frames (1.3x–1.55x scale), unique idle animations, and a distinct entrance/spawn animation.
+
+| # | Display Name | District | Scale | Tint | Silhouette Brief |
+|---|-------------|---------|-------|------|-----------------|
+| 1 | **Grave Lord** | King's Road | 1.55x | #5a189a | Towering figure, crown of bone spikes (3 prongs), cape, two escort spawn points at sides. Rally aura visible. |
+| 2 | **Tidecaller** | Saltwake Docks | 1.40x | #219ebc | Drowned priest with barnacle-crusted robes, trident, water splash effects. Summons tidal wave attacks. |
+| 3 | **Iron Warden** | Emberforge March | 1.45x | #e85d04 | Massive armored construct, furnace glow in chest cavity, mechanical arms. Heat shimmer aura. |
+| 4 | **Plague Archon** | Ashen Ward | 1.40x | #606c38 | Robed figure with plague mask, incense censers trailing green smoke. Spawns jammer escorts. |
+| 5 | **Thornwall Chieftain** | Thornwall Pass | 1.35x | #bc6c25 | Mountain raider chief, fur cloak, war horns on back, dual axes. Fast for a boss. |
+| 6 | **Bone Pontiff** | Hollow Basilica | 1.45x | #e0aaff | Skeletal bishop with mitre crown, crozier staff, cathedral-window glow behind. Raises bone escorts. |
+| 7 | **Mire Behemoth** | Mire of Saints | 1.50x | #2d6a4f | Massive swamp creature, moss-covered, roots trailing. Slow but extremely high HP. Attrition boss. |
+| 8 | **Steppe Warlord** | Sunfall Steppe | 1.40x | #d4a373 | Mounted warlord on skeletal horse, lance, war banner. Charges across the lane. |
+| 9 | **Gloamwood Witch** | Gloamwood Verge | 1.35x | #7b2d8e | Floating witch with branch-antler crown, spectral familiars orbiting. Curse and hex attacks. |
+| 10 | **Dread Sovereign** | Crownfall Citadel | 1.55x | #1a1a2e | Final boss. Full bone-plate royal armor, crown of fused skulls, massive two-handed greatsword. Spawns crushers. Highest stats in game. |
 
 ---
 
 ## 2. Structure Sprites
+
+### How To Add Structures
+
+Place a single PNG at `assets/structures/{structure_id}.png`. The game checks for these automatically:
+- `assets/structures/war_wagon.png` — replaces the procedural war wagon (draw area: ~180x140 px)
+- `assets/structures/gatehouse.png` — replaces the procedural enemy gatehouse (draw area: ~180x160 px)
+
+No code changes needed. When a texture exists, it renders with hit flash modulation and damage smoke; when missing, the procedural draw continues.
 
 ### War Wagon (Player Base)
 
@@ -120,6 +178,10 @@ Enemies use a **necrotic/undead palette**: grays, purples, sickly greens, bone w
 ## 3. Battlefield Backgrounds
 
 Each terrain needs a **tiled or stretched background image** fitting the 1280x720 viewport. The battlefield area is approximately 1100x400 px centered vertically.
+
+### How To Add Backgrounds
+
+Place a PNG at `assets/backgrounds/{terrain_id}.png` (e.g., `assets/backgrounds/urban.png`). The game checks for a matching texture on every battle — when found, it renders the texture stretched to 1280x720 instead of the procedural sky+ground+stripes. When missing, the procedural draw continues. Terrain decorations and ambient particles still render on top regardless.
 
 ### Layer Structure
 
@@ -287,6 +349,10 @@ Same structure as deploy cards but with spell icon and magic-themed frame (arcan
 
 All sounds are currently generated procedurally with sine/square waves. Replace with authored audio.
 
+### How To Add Sound Effects
+
+Place an OGG, MP3, or WAV file at `assets/sfx/{cue_id}.ogg` (e.g., `assets/sfx/deploy.ogg`). The `AudioDirector` checks for authored files during cue registration — when found, the authored file plays instead of the procedural synth. No code changes needed. OGG is checked first, then MP3, then WAV.
+
 ### Sound Effects
 
 | Cue ID | Category | Duration | Description |
@@ -336,9 +402,49 @@ Each loop should be **seamlessly loopable** at ~8-15 seconds. The game modulates
 
 ---
 
-## 9. Particle Effect Textures (Optional)
+## 9. Music Tracks
 
-The game uses Godot `CpuParticles2D` with default circle rendering. For polish, provide small particle textures:
+The game has a `MusicPlayer` autoload that crossfades between authored music tracks based on the current scene and route. Drop OGG, MP3, or WAV files into `assets/music/` and they play automatically — no code changes needed.
+
+### How To Add Music
+
+Place a track at `assets/music/{track_id}.ogg` (or `.mp3` / `.wav`). The player searches OGG first, then MP3, then WAV.
+
+### Track Map
+
+| Track ID | Context | Mood/Tempo | Notes |
+|----------|---------|-----------|-------|
+| `title` | Title screen | Warm, majestic, moderate | Main theme — sets the tone for the caravan fantasy |
+| `campaign` | Campaign map | Adventurous, building | Route selection, planning — should feel like a journey |
+| `shop` | Caravan Armory + Cash Shop | Industrious, steady | Forge/market atmosphere, moderate energy |
+| `loadout` | Stage briefing | Tense, anticipatory | Pre-battle preparation, rising energy |
+| `endless_prep` | Endless mode prep | Ominous, building | Roguelite run start, weight of the unknown |
+| `multiplayer` | Multiplayer screens | Competitive, energetic | Challenge/race mood |
+| `battle` | Generic battle fallback | Driving, urgent | Used when no route-specific track exists |
+| `battle_road` | King's Road battles | Heroic, marching | Opening campaign — classic fantasy march |
+| `battle_harbor` | Saltwake Docks battles | Rolling, tidal | Sea-shanty energy, wave-like rhythm |
+| `battle_foundry` | Emberforge March battles | Industrial, pounding | Hammering percussion, furnace intensity |
+| `battle_quarantine` | Ashen Ward battles | Eerie, dissonant | Plague/blight atmosphere, unsettling undertones |
+| `battle_pass` | Thornwall Pass battles | Exposed, driving | Mountain wind motifs, urgent tempo |
+| `battle_basilica` | Hollow Basilica battles | Sacred, heavy | Cathedral organ influence, solemn weight |
+| `battle_mire` | Mire of Saints battles | Oppressive, grinding | Slow, heavy, attrition feel |
+| `battle_steppe` | Sunfall Steppe battles | Open, galloping | Cavalry charge energy, wide open sound |
+| `battle_gloamwood` | Gloamwood Verge battles | Dark, creeping | Witch/forest atmosphere, ambush tension |
+| `battle_citadel` | Crownfall Citadel battles | Grand, climactic | Final district — full orchestral weight, the endgame push |
+
+**Format:** Loopable, 1-3 minutes per track. ~128-160 kbps OGG Vorbis recommended for file size. Battle tracks should loop seamlessly. Menu tracks can have a natural ending that loops back.
+
+**Volume:** The `MusicPlayer` handles volume scaling via the Settings music slider (default 50%). Tracks should be mastered at a consistent level, normalized to ~-14 LUFS.
+
+---
+
+## 10. Particle Effect Textures (Optional)
+
+The game uses Godot `CpuParticles2D` with default circle rendering. For polish, provide small particle textures.
+
+### How To Add Particle Textures
+
+Place a PNG at `assets/particles/{texture_id}.png`. The default texture ID is `particle_soft` — when this file exists, all particle effects use it automatically. No code changes needed.
 
 | Texture | Size | Description |
 |---------|------|-------------|

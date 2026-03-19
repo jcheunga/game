@@ -1,62 +1,79 @@
-# Game (Godot + C#)
+# Crownroad (Godot + C#)
 
-Godot `4.6.1` Mono project with a Dead Ahead-style structure and an original medieval fantasy siege wrapper:
-main menu -> campaign map/endless prep -> loadout briefing -> freefield battle.
+Medieval fantasy lane-battle game built with Godot 4.6 + C#. The **Lantern Caravan** defends its war wagon against the **Rotbound Host** across 50 campaign stages, endless roguelite runs, and async/LAN multiplayer challenges.
 
-Current fiction lock: `Lantern Caravan` vs the `Rotbound Host`, framed as `war wagon vs gatehouse`.
-
-Roadmap and milestone plan: `ROADMAP.md`
-Theme reference: `THEME_BIBLE.md`
-Campaign target reference: `CAMPAIGN_PLAN.md`
-
-## Requirements
-
-- Godot Mono build (you already have `godot` in PATH)
-- .NET SDK 8+
-
-## Run
+## Quick Start
 
 ```bash
-godot --editor --path .
+godot --editor --path .         # open in editor
+godot --path .                  # run directly
 ```
 
-Or run headless:
+## Server
 
 ```bash
-godot --headless --path . --quit
+cd server
+dotnet run                      # start backend on port 5000
+dotnet run -- --test            # run 67 endpoint tests
+dotnet run -- --test-data ../data  # run 1119 data integrity checks
+docker compose up -d            # deploy with Docker
 ```
 
-## Build C# solution
+See `server/.env.example` for Stripe and CORS configuration.
+
+## Tests
+
+| Command | What | Count |
+|---------|------|-------|
+| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 67 |
+| `cd server && dotnet run -- --test-data ../data` | Game data cross-reference checks | 1119 |
+
+## Adding Art Assets (No Code Changes Needed)
+
+| Asset Type | Drop Location | Format |
+|-----------|---------------|--------|
+| Unit sprites | `assets/units/{visual_class}.png` | Sprite sheet + optional `.json` metadata |
+| Backgrounds | `assets/backgrounds/{terrain_id}.png` | 1280x720 full-viewport image |
+| Structures | `assets/structures/war_wagon.png`, `gatehouse.png` | Single image per structure |
+| Music | `assets/music/{track_id}.ogg` | Loopable OGG/MP3/WAV |
+| Sound effects | `assets/sfx/{cue_id}.ogg` | Per-cue OGG/MP3/WAV override |
+
+See `ASSETS.md` for the complete 44-unit manifest, all track/cue IDs, and format specs.
+
+## Adding Translations
+
+Place a JSON file at `data/locale/{language_code}.json` with the same keys as `data/locale/en.json`. It appears in the Settings language selector automatically.
+
+## Export Presets
+
+`export_presets.cfg` includes Web (PWA), Android (arm64, Google Play Billing), and iOS (StoreKit IAP). Build with:
 
 ```bash
-godot --headless --path . --build-solutions --quit
+godot --headless --path . --export-release "Web" builds/web/index.html
+godot --headless --path . --export-release "Android" builds/android/crownroad.apk
+godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 ```
 
-## Smoke tests
+## Key Documents
 
-Run the full online-room regression suite sequentially:
+| File | Contents |
+|------|----------|
+| `ROADMAP.md` | Full milestone plan, sprint log, bugs/hardening status |
+| `ASSETS.md` | Art production manifest (units, backgrounds, structures, audio, particles) |
+| `THEME_BIBLE.md` | Fiction, factions, and setting reference |
+| `CAMPAIGN_PLAN.md` | 10-district / 50-stage campaign structure |
 
-```bash
-bash scripts/smoke/http_online_room_suite.sh
-```
+## Architecture
 
-This covers the HTTP room providers plus the local room-session scope, stale-seat recovery, and ticket-swap regressions without parallel build-artifact contention.
-
-Run the full HTTP multiplayer/backend regression suite:
-
-```bash
-bash scripts/smoke/http_multiplayer_backend_suite.sh
-```
-
-This adds player-profile sync, challenge sync, remote leaderboard/feed coverage, and the full online-room suite.
-
-Run the full multiplayer stack regression suite:
-
-```bash
-bash scripts/smoke/multiplayer_stack_suite.sh
-```
-
-This runs the LAN headless race smoke plus the full HTTP multiplayer/backend suite.
+- **SceneRouter** (autoload) — handles all scene transitions with fade + loading tips
+- **GameState** (autoload) — centralized progression, economy, and settings, persisted via SaveSystem
+- **AudioDirector** (autoload) — procedural SFX with authored audio override support
+- **MusicPlayer** (autoload) — crossfading music tracks mapped to scene/route context
+- **NativeIAPService** (autoload) — platform-detected IAP (Apple StoreKit / Google Play / Stripe)
+- **SafeAreaService** (autoload) — mobile notch/island display inset handling
+- All game data is JSON-driven from `data/` and loaded through `GameData`
+- Unit and projectile object pools reduce GC pressure on mobile
+- Analytics are gated on GDPR consent (first-run prompt + Settings toggle)
 
 ## Prototype controls
 

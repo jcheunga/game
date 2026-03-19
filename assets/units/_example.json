@@ -1,0 +1,12 @@
+{
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "animations": {
+    "idle": { "start": 0, "count": 6, "duration": 0.15, "loop": true },
+    "walk": { "start": 8, "count": 8, "duration": 0.10, "loop": true },
+    "attack": { "start": 16, "count": 5, "duration": 0.10, "loop": false },
+    "hit": { "start": 24, "count": 3, "duration": 0.08, "loop": false },
+    "death": { "start": 32, "count": 6, "duration": 0.12, "loop": false },
+    "deploy": { "start": 40, "count": 4, "duration": 0.10, "loop": false }
+  }
+}

@@ -10,7 +10,37 @@ public partial class LoadoutMenu : Control
     {
         _stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         BuildUi();
+        TryShowMenuHint();
         PlayEntranceAnimations();
+    }
+
+    private void TryShowMenuHint()
+    {
+        if (!GameState.Instance.ShowHints)
+        {
+            return;
+        }
+
+        var hints = TutorialHintCatalog.GetByContext("first_loadout");
+        foreach (var hint in hints)
+        {
+            if (GameState.Instance.HasSeenHint(hint.Id))
+            {
+                continue;
+            }
+
+            var hintLabel = new Label
+            {
+                Text = $"[{hint.Title}] {hint.Body}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                Position = new Vector2(24f, 648f),
+                Size = new Vector2(1232f, 40f),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            hintLabel.AddThemeColorOverride("font_color", new Color("ffd166"));
+            AddChild(hintLabel);
+            GameState.Instance.MarkHintSeen(hint.Id);
+        }
     }
 
     private void BuildUi()
@@ -150,6 +180,12 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
+            Text = WeatherCatalog.BuildStageSummary(_stage),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        missionStack.AddChild(new Label
+        {
             Text = StageHazards.BuildSummaryText(_stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
@@ -196,6 +232,35 @@ public partial class LoadoutMenu : Control
             Text = GameState.Instance.BuildActiveDeckSynergySummary(),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+
+        var deckUnitIds = GameState.Instance.ActiveDeckUnitIds;
+        var deckIdSet = new System.Collections.Generic.HashSet<string>(deckUnitIds, System.StringComparer.OrdinalIgnoreCase);
+        var comboPairLines = new System.Text.StringBuilder();
+        foreach (var combo in ComboPairCatalog.GetAll())
+        {
+            if (deckIdSet.Contains(combo.UnitIdA) && deckIdSet.Contains(combo.UnitIdB))
+            {
+                var bonusPartsA = new System.Collections.Generic.List<string>();
+                if (combo.HealthScaleA > 1f) bonusPartsA.Add($"HP +{Mathf.RoundToInt((combo.HealthScaleA - 1f) * 100f)}%");
+                if (combo.DamageScaleA > 1f) bonusPartsA.Add($"ATK +{Mathf.RoundToInt((combo.DamageScaleA - 1f) * 100f)}%");
+                if (combo.SpeedScaleA > 1f) bonusPartsA.Add($"SPD +{Mathf.RoundToInt((combo.SpeedScaleA - 1f) * 100f)}%");
+                var bonusPartsB = new System.Collections.Generic.List<string>();
+                if (combo.HealthScaleB > 1f) bonusPartsB.Add($"HP +{Mathf.RoundToInt((combo.HealthScaleB - 1f) * 100f)}%");
+                if (combo.DamageScaleB > 1f) bonusPartsB.Add($"ATK +{Mathf.RoundToInt((combo.DamageScaleB - 1f) * 100f)}%");
+                if (combo.SpeedScaleB > 1f) bonusPartsB.Add($"SPD +{Mathf.RoundToInt((combo.SpeedScaleB - 1f) * 100f)}%");
+                var statSummary = string.Join(", ", bonusPartsA.Count >= bonusPartsB.Count ? bonusPartsA : bonusPartsB);
+                comboPairLines.AppendLine($"Combo: {combo.Title} — {statSummary}");
+            }
+        }
+
+        if (comboPairLines.Length > 0)
+        {
+            rosterStack.AddChild(new Label
+            {
+                Text = comboPairLines.ToString().TrimEnd(),
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+        }
 
         rosterStack.AddChild(new Label
         {
@@ -351,6 +416,18 @@ public partial class LoadoutMenu : Control
                 UnitStatText.BuildInlineTraits(stats),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+
+        var unitLevel = GameState.Instance.GetUnitLevel(definition.Id);
+        var activeAbility = UnitActiveAbilityCatalog.GetForUnit(definition.Id);
+        if (activeAbility != null && unitLevel >= activeAbility.UnlockLevel - 1)
+        {
+            var abilityPrefix = unitLevel >= activeAbility.UnlockLevel ? "Ability" : $"Lv{activeAbility.UnlockLevel}+ Ability";
+            stack.AddChild(new Label
+            {
+                Text = $"{abilityPrefix}: {activeAbility.Title} — {activeAbility.Description} (CD: {activeAbility.CooldownSeconds:0.#}s)",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+        }
 
         return panel;
     }

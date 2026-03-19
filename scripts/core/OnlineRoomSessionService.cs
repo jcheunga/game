@@ -10,6 +10,8 @@ public static class OnlineRoomSessionService
 	private static readonly IOnlineRoomSessionProvider LocalProvider = new LocalOnlineRoomSessionProvider();
 	private static OnlineRoomSessionSnapshot _cachedSnapshot;
 	private static string _lastStatus = "Online room session not fetched yet.";
+	private static bool _lastFetchFailed;
+	private static long _lastFetchTimeUnix;
 
 	public static bool RefreshJoinedRoom(out string message)
 	{
@@ -32,6 +34,8 @@ public static class OnlineRoomSessionService
 		try
 		{
 			_cachedSnapshot = provider.FetchRoomSession(ticket);
+			_lastFetchFailed = false;
+			_lastFetchTimeUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 			ApplyCachedScoreboardSnapshot();
 			_lastStatus = $"{provider.DisplayName}: {_cachedSnapshot.Summary}";
 			message = $"Refreshed online room session for {ticket.RoomTitle} via {provider.DisplayName}.";
@@ -39,6 +43,7 @@ public static class OnlineRoomSessionService
 		}
 		catch (Exception ex)
 		{
+			_lastFetchFailed = true;
 			_lastStatus = $"{provider.DisplayName} session fetch failed: {ex.Message}";
 			message = _lastStatus;
 			return false;
@@ -93,6 +98,11 @@ public static class OnlineRoomSessionService
 
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room session ({currentSnapshot.ProviderDisplayName}):");
+		if (_lastFetchFailed)
+		{
+			var ageSec = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _lastFetchTimeUnix;
+			builder.AppendLine($"[stale data — last successful fetch {ageSec}s ago, latest fetch failed]");
+		}
 		builder.AppendLine(currentSnapshot.Summary);
 		builder.AppendLine(MultiplayerRoomFormatter.BuildRoomSummary(currentSnapshot.RoomSnapshot));
 		builder.AppendLine();
@@ -137,6 +147,14 @@ public static class OnlineRoomSessionService
 		}
 
 		if (!BelongsToSameRoom(snapshot.RoomSnapshot, scoreboardSnapshot))
+		{
+			return snapshot;
+		}
+
+		// Skip merge if scoreboard data is older than the session snapshot
+		if (scoreboardSnapshot.FetchedAtUnixSeconds > 0 &&
+			snapshot.FetchedAtUnixSeconds > 0 &&
+			scoreboardSnapshot.FetchedAtUnixSeconds < snapshot.FetchedAtUnixSeconds - 5)
 		{
 			return snapshot;
 		}

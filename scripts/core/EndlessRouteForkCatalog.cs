@@ -19,6 +19,11 @@ public static class EndlessRouteForkCatalog
     public const string MainlinePushId = "mainline_push";
     public const string ScavengeDetourId = "scavenge_detour";
     public const string FortifiedBlockId = "fortified_block";
+    public const string AmbushRavineId = "ambush_ravine";
+    public const string RitualGroundsId = "ritual_grounds";
+    public const string SiegeCampId = "siege_camp";
+    public const string PlagueWindsId = "plague_winds";
+    public const string NecromancersTombId = "necromancers_tomb";
 
     private static readonly EndlessRouteForkDefinition[] Forks =
     {
@@ -33,7 +38,27 @@ public static class EndlessRouteForkCatalog
         new(
             FortifiedBlockId,
             "Fortified Block",
-            "More controlled pressure and a stronger ward line. Gold payout -10%.")
+            "More controlled pressure and a stronger ward line. Gold payout -10%."),
+        new(
+            AmbushRavineId,
+            "Ambush Ravine",
+            "Isolated enemy groups with tunnelers flanking from the rear. High risk, high reward. Gold payout +15%."),
+        new(
+            RitualGroundsId,
+            "Ritual Grounds",
+            "Lich and mirror knight pressure drains your momentum. Courage generation reduced. Gold payout +10%."),
+        new(
+            SiegeCampId,
+            "Siege Camp",
+            "Siege towers roll in alongside heavy brute formations. Brace the wagon. Gold payout +20%."),
+        new(
+            PlagueWindsId,
+            "Plague Winds",
+            "Rot hulks and bloater swarms. Explosive death bursts everywhere. Gold payout +12%."),
+        new(
+            NecromancersTombId,
+            "Necromancer's Tomb",
+            "Constant undead spam with lich reanimation. Overwhelming numbers. Gold payout +25%.")
     };
 
     public static EndlessRouteForkDefinition[] GetAll()

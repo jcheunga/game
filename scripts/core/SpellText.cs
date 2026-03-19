@@ -16,6 +16,16 @@ public static class SpellText
                 $"Strike up to 3 enemies in {spell.Radius:0.#}r for {spell.Power:0.#} opening damage.",
             "barrier_ward" =>
                 $"Ward allies in {spell.Radius:0.#}r for {spell.Duration:0.#}s and cut incoming damage by {BuildReductionPercent(spell.Power)}%.",
+            "stone_barricade" =>
+                $"Raise a wall with {spell.Power:0.#} durability for {spell.Duration:0.#}s.",
+            "war_cry" =>
+                $"Rally all allies: +{Mathf.RoundToInt((spell.Power - 1f) * 100f)}% attack and +{Mathf.RoundToInt((spell.SecondaryPower - 1f) * 100f)}% speed for {spell.Duration:0.#}s.",
+            "earthquake" =>
+                $"Shake {spell.Power:0.#} damage in {spell.Radius:0.#}r and slow for {spell.Duration:0.#}s.",
+            "polymorph" =>
+                $"Transform the toughest enemy in {spell.Radius:0.#}r into a sheep for {spell.Duration:0.#}s.",
+            "resurrect" =>
+                $"Restore the last fallen ally at {Mathf.RoundToInt(spell.Power * 100f)}% health.",
             _ =>
                 spell.Description
         };
@@ -35,6 +45,16 @@ public static class SpellText
                 $"Strike up to 3 enemies in {spell.Radius:0.#}r for {spell.Power:0.#} opening damage.",
             "barrier_ward" =>
                 $"Ward allies in {spell.Radius:0.#}r for {spell.Duration:0.#}s and cut incoming damage by {BuildReductionPercent(spell.Power)}%.",
+            "stone_barricade" =>
+                $"Raise a wall with {spell.Power:0.#} durability for {spell.Duration:0.#}s.",
+            "war_cry" =>
+                $"Rally all allies: +{Mathf.RoundToInt((spell.Power - 1f) * 100f)}% attack and +{Mathf.RoundToInt((spell.SecondaryPower - 1f) * 100f)}% speed for {spell.Duration:0.#}s.",
+            "earthquake" =>
+                $"Shake {spell.Power:0.#} damage in {spell.Radius:0.#}r and slow for {spell.Duration:0.#}s.",
+            "polymorph" =>
+                $"Transform the toughest enemy in {spell.Radius:0.#}r into a sheep for {spell.Duration:0.#}s.",
+            "resurrect" =>
+                $"Restore the last fallen ally at {Mathf.RoundToInt(spell.Power * 100f)}% health.",
             _ =>
                 spell.DisplayName
         };

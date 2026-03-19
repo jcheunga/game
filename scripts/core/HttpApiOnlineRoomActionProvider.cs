@@ -7,7 +7,7 @@ public sealed class HttpApiOnlineRoomActionProvider : IOnlineRoomActionProvider
 {
 	private static readonly HttpClient Client = new()
 	{
-		Timeout = TimeSpan.FromSeconds(6)
+		Timeout = TimeSpan.FromSeconds(15)
 	};
 
 	private static readonly JsonSerializerOptions JsonOptions = new()

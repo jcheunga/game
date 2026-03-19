@@ -43,6 +43,9 @@ public static class EndlessContactCatalog
     public const string RelaySignalId = "relay_signal";
     public const string SalvageCacheId = "salvage_cache";
     public const string SafehouseRescueId = "safehouse_rescue";
+    public const string RelicRecoveryId = "relic_recovery";
+    public const string RitualDisruptionId = "ritual_disruption";
+    public const string ConvoyEscortId = "convoy_escort";
 
     private static readonly EndlessContactDefinition[] Contacts =
     {
@@ -78,7 +81,62 @@ public static class EndlessContactCatalog
             "Risk: take heavy war wagon damage and add +1.0s card recovery.",
             "rescue_hold",
             84f,
-            8f)
+            8f),
+        new(
+            RelicRecoveryId,
+            EndlessRouteForkCatalog.AmbushRavineId,
+            "Relic Recovery",
+            "Secure a buried relic before enemies destroy the dig site.",
+            "Reward: grant a random common relic.",
+            "Tradeoff: dig site defense splits your attention from the main push.",
+            "Risk: lose projected gold and the relic is destroyed.",
+            "site_defense",
+            72f,
+            7f),
+        new(
+            RitualDisruptionId,
+            EndlessRouteForkCatalog.RitualGroundsId,
+            "Ritual Disruption",
+            "Interrupt an enemy ritual channel before it completes.",
+            "Reward: temporary +15% damage buff for 30s.",
+            "Tradeoff: rushing the ritual ground pulls aggro from nearby packs.",
+            "Risk: enemy health +10% for the segment.",
+            "channel_interrupt",
+            78f,
+            6f),
+        new(
+            ConvoyEscortId,
+            EndlessRouteForkCatalog.SiegeCampId,
+            "Convoy Escort",
+            "Escort a supply wagon through the danger zone.",
+            "Reward: restore 20% war wagon hull and +1 food bonus.",
+            "Tradeoff: escort pace slows your advance and extends exposure.",
+            "Risk: lose 10% war wagon hull.",
+            "escort_guard",
+            80f,
+            9f),
+        new(
+            RelicRecoveryId + "_plague",
+            EndlessRouteForkCatalog.PlagueWindsId,
+            "Relic Recovery",
+            "Secure a buried relic before enemies destroy the dig site.",
+            "Reward: grant a random common relic.",
+            "Tradeoff: dig site defense splits your attention from the main push.",
+            "Risk: lose projected gold and the relic is destroyed.",
+            "site_defense",
+            72f,
+            7f),
+        new(
+            RitualDisruptionId + "_necro",
+            EndlessRouteForkCatalog.NecromancersTombId,
+            "Ritual Disruption",
+            "Interrupt an enemy ritual channel before it completes.",
+            "Reward: temporary +15% damage buff for 30s.",
+            "Tradeoff: rushing the ritual ground pulls aggro from nearby packs.",
+            "Risk: enemy health +10% for the segment.",
+            "channel_interrupt",
+            78f,
+            6f)
     };
 
     public static EndlessContactDefinition GetForRouteFork(string routeForkId)

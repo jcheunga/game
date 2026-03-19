@@ -36,7 +36,9 @@ public static class Endpoints
             return Results.BadRequest(new { error = "missing playerProfileId" });
 
         using var conn = Database.Open();
-        UpsertPlayer(conn, profileId, callsign, now);
+        using var tx = conn.BeginTransaction();
+        UpsertPlayer(conn, tx, profileId, callsign, now);
+        tx.Commit();
 
         return Results.Ok(new
         {
@@ -59,6 +61,8 @@ public static class Endpoints
     {
         var body = await ReadBody(request);
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profile ID" });
         var entries = GetArray(body, "batch.submissions");
         if (entries.Length == 0) entries = GetArray(body, "submissions");
         var accepted = 0;
@@ -70,6 +74,14 @@ public static class Endpoints
             var code = GetNestedString(entry, "boardCode", "");
             var score = GetNestedInt(entry, "score", 0);
             if (string.IsNullOrWhiteSpace(code)) { rejected++; continue; }
+            // Bounds validation: reject implausible values
+            var elapsed = GetNestedDouble(entry, "elapsedSeconds", 0);
+            var defeats = GetNestedInt(entry, "enemyDefeats", 0);
+            if (score < 0 || score > 999999 || elapsed < 0 || elapsed > 7200 || defeats < 0 || defeats > 9999)
+            {
+                rejected++;
+                continue;
+            }
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
@@ -231,24 +243,35 @@ public static class Endpoints
         var joinToken = $"host-{Guid.NewGuid():N}";
 
         using var conn = Database.Open();
-        using var ins = conn.CreateCommand();
-        ins.CommandText = """
-            INSERT INTO rooms (room_id, title, host_profile_id, host_callsign, board_code, board_title, status, region, uses_locked_deck, locked_deck_unit_ids, created_at, updated_at)
-            VALUES ($rid, $title, $pid, $cs, $code, $bt, 'lobby', $region, $locked, $deckIds, $now, $now)
-        """;
-        ins.Parameters.AddWithValue("$rid", roomId);
-        ins.Parameters.AddWithValue("$title", $"{callsign} Relay");
-        ins.Parameters.AddWithValue("$pid", profileId);
-        ins.Parameters.AddWithValue("$cs", callsign);
-        ins.Parameters.AddWithValue("$code", boardCode);
-        ins.Parameters.AddWithValue("$bt", boardTitle);
-        ins.Parameters.AddWithValue("$region", region);
-        ins.Parameters.AddWithValue("$locked", usesLocked ? 1 : 0);
-        ins.Parameters.AddWithValue("$deckIds", string.Join(",", deckIds));
-        ins.Parameters.AddWithValue("$now", now);
-        ins.ExecuteNonQuery();
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            using var ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO rooms (room_id, title, host_profile_id, host_callsign, board_code, board_title, status, region, uses_locked_deck, locked_deck_unit_ids, created_at, updated_at)
+                VALUES ($rid, $title, $pid, $cs, $code, $bt, 'lobby', $region, $locked, $deckIds, $now, $now)
+            """;
+            ins.Parameters.AddWithValue("$rid", roomId);
+            ins.Parameters.AddWithValue("$title", $"{callsign} Relay");
+            ins.Parameters.AddWithValue("$pid", profileId);
+            ins.Parameters.AddWithValue("$cs", callsign);
+            ins.Parameters.AddWithValue("$code", boardCode);
+            ins.Parameters.AddWithValue("$bt", boardTitle);
+            ins.Parameters.AddWithValue("$region", region);
+            ins.Parameters.AddWithValue("$locked", usesLocked ? 1 : 0);
+            ins.Parameters.AddWithValue("$deckIds", string.Join(",", deckIds));
+            ins.Parameters.AddWithValue("$now", now);
+            ins.ExecuteNonQuery();
 
-        InsertSeat(conn, roomId, profileId, callsign, ticketId, joinToken, "host seat", now);
+            InsertSeat(conn, tx, roomId, profileId, callsign, ticketId, joinToken, "host seat", now);
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
 
         return Results.Ok(new
         {
@@ -302,13 +325,29 @@ public static class Endpoints
         if (room == null)
             return Results.NotFound(new { error = "room not found" });
 
-        var seatCount = CountActiveSeats(conn, roomId);
+        // Atomic seat count check + insert inside a transaction to prevent race conditions
+        using var tx = conn.BeginTransaction();
+        string seatLabel;
         var ticketId = NewId("JOIN");
         var joinToken = $"join-{Guid.NewGuid():N}";
-        var seatLabel = seatCount >= 4 ? "spectator" : "runner";
-
-        InsertSeat(conn, roomId, profileId, callsign, ticketId, joinToken, seatLabel, now);
-        TouchRoom(conn, roomId);
+        try
+        {
+            var seatCount = CountActiveSeats(conn, roomId, tx);
+            seatLabel = seatCount >= 4 ? "spectator" : "runner";
+            InsertSeat(conn, tx, roomId, profileId, callsign, ticketId, joinToken, seatLabel, now);
+            TouchRoom(conn, roomId, tx);
+            tx.Commit();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
+        {
+            tx.Rollback();
+            return Results.Conflict(new { error = "already joined this room" });
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
 
         return Results.Ok(new
         {
@@ -386,28 +425,36 @@ public static class Endpoints
             }
             case "launch_round":
             {
+                using var tx = conn.BeginTransaction();
                 using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
                 cmd.CommandText = "UPDATE rooms SET status = 'racing', race_started_at = $now, updated_at = $now WHERE room_id = $rid";
                 cmd.Parameters.AddWithValue("$rid", roomId);
                 cmd.Parameters.AddWithValue("$now", Now());
                 cmd.ExecuteNonQuery();
                 using var seats = conn.CreateCommand();
+                seats.Transaction = tx;
                 seats.CommandText = "UPDATE room_seats SET race_status = 'racing' WHERE room_id = $rid AND status != 'left' AND seat_label != 'spectator'";
                 seats.Parameters.AddWithValue("$rid", roomId);
                 seats.ExecuteNonQuery();
+                tx.Commit();
                 return Results.Ok(new { status = "ok", message = "Round launched." });
             }
             case "reset_round":
             {
+                using var tx = conn.BeginTransaction();
                 using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
                 cmd.CommandText = "UPDATE rooms SET status = 'lobby', updated_at = $now WHERE room_id = $rid";
                 cmd.Parameters.AddWithValue("$rid", roomId);
                 cmd.Parameters.AddWithValue("$now", Now());
                 cmd.ExecuteNonQuery();
                 using var seats = conn.CreateCommand();
+                seats.Transaction = tx;
                 seats.CommandText = "UPDATE room_seats SET is_ready = 0, race_status = 'prep', score = 0 WHERE room_id = $rid AND status != 'left'";
                 seats.Parameters.AddWithValue("$rid", roomId);
                 seats.ExecuteNonQuery();
+                tx.Commit();
                 return Results.Ok(new { status = "ok", message = "Round reset." });
             }
             case "leave_room":
@@ -432,10 +479,20 @@ public static class Endpoints
         var body = await ReadBody(request);
         var roomId = GetString(body, "result.roomId", GetString(body, "roomId", ""));
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "result.playerProfileId", "");
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profile ID" });
+        if (string.IsNullOrWhiteSpace(roomId))
+            return Results.BadRequest(new { error = "missing roomId" });
         var score = GetInt(body, "result.score", GetInt(body, "score", 0));
         var elapsed = GetDouble(body, "result.elapsedSeconds", GetDouble(body, "elapsedSeconds", 0));
         var hull = GetDouble(body, "result.hullRemaining", GetDouble(body, "hullRemaining", 0));
         var defeats = GetInt(body, "result.enemyDefeats", GetInt(body, "enemyDefeats", 0));
+
+        // Bounds validation
+        score = Math.Clamp(score, 0, 999999);
+        elapsed = Math.Clamp(elapsed, 0, 7200);
+        hull = Math.Clamp(hull, 0, 10000);
+        defeats = Math.Clamp(defeats, 0, 9999);
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -509,6 +566,10 @@ public static class Endpoints
         var body = await ReadBody(request);
         var roomId = GetString(body, "telemetry.roomId", GetString(body, "roomId", ""));
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? GetString(body, "telemetry.playerProfileId", "");
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profile ID" });
+        if (string.IsNullOrWhiteSpace(roomId))
+            return Results.BadRequest(new { error = "missing roomId" });
         var elapsed = GetDouble(body, "telemetry.elapsedSeconds", GetDouble(body, "elapsedSeconds", 0));
         var hull = GetDouble(body, "telemetry.hullRatio", GetDouble(body, "hullRatio", 1));
         var defeats = GetInt(body, "telemetry.enemyDefeats", GetInt(body, "enemyDefeats", 0));
@@ -539,6 +600,10 @@ public static class Endpoints
         var body = await ReadBody(request);
         var roomId = GetString(body, "roomId", "");
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profile ID" });
+        if (string.IsNullOrWhiteSpace(roomId))
+            return Results.BadRequest(new { error = "missing roomId" });
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -561,6 +626,13 @@ public static class Endpoints
         var targetId = GetString(body, "report.targetProfileId", GetString(body, "targetProfileId", ""));
         var reason = GetString(body, "report.reason", GetString(body, "reason", ""));
         var details = GetString(body, "report.details", GetString(body, "details", ""));
+
+        if (string.IsNullOrWhiteSpace(roomId))
+            return Results.BadRequest(new { error = "missing roomId" });
+        if (string.IsNullOrWhiteSpace(reporterId))
+            return Results.BadRequest(new { error = "missing reporterProfileId" });
+        if (string.IsNullOrWhiteSpace(reason))
+            return Results.BadRequest(new { error = "missing reason" });
 
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
@@ -589,50 +661,66 @@ public static class Endpoints
         var boardCode = GetString(body, "matchmake.boardCode", GetString(body, "boardCode", ""));
         var now = Now();
 
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+        if (string.IsNullOrWhiteSpace(boardCode))
+            return Results.BadRequest(new { error = "missing boardCode" });
+
         using var conn = Database.Open();
         CleanupStaleRooms(conn);
 
-        // Try to find an open room for this board
-        using var find = conn.CreateCommand();
-        find.CommandText = """
-            SELECT room_id, title, board_code FROM rooms
-            WHERE status = 'lobby' AND board_code = $code
-            ORDER BY updated_at DESC LIMIT 1
-        """;
-        find.Parameters.AddWithValue("$code", boardCode);
-        using var reader = find.ExecuteReader();
-
+        // Atomic find-or-create + seat insert to prevent race conditions
+        using var tx = conn.BeginTransaction();
         string roomId, roomTitle;
-        if (reader.Read())
-        {
-            roomId = reader.GetString(0);
-            roomTitle = reader.GetString(1);
-            reader.Close();
-        }
-        else
-        {
-            reader.Close();
-            // Create a new room
-            roomId = NewId("ROOM");
-            roomTitle = $"Quick Match {boardCode}";
-            using var ins = conn.CreateCommand();
-            ins.CommandText = """
-                INSERT INTO rooms (room_id, title, host_profile_id, host_callsign, board_code, board_title, status, region, created_at, updated_at)
-                VALUES ($rid, $title, $pid, $cs, $code, '', 'lobby', 'global', $now, $now)
-            """;
-            ins.Parameters.AddWithValue("$rid", roomId);
-            ins.Parameters.AddWithValue("$title", roomTitle);
-            ins.Parameters.AddWithValue("$pid", profileId);
-            ins.Parameters.AddWithValue("$cs", callsign);
-            ins.Parameters.AddWithValue("$code", boardCode);
-            ins.Parameters.AddWithValue("$now", now);
-            ins.ExecuteNonQuery();
-        }
-
         var ticketId = NewId("MATCH");
         var joinToken = $"match-{Guid.NewGuid():N}";
-        InsertSeat(conn, roomId, profileId, callsign, ticketId, joinToken, "runner", now);
-        TouchRoom(conn, roomId);
+        try
+        {
+            using var find = conn.CreateCommand();
+            find.Transaction = tx;
+            find.CommandText = """
+                SELECT room_id, title, board_code FROM rooms
+                WHERE status = 'lobby' AND board_code = $code
+                ORDER BY updated_at DESC LIMIT 1
+            """;
+            find.Parameters.AddWithValue("$code", boardCode);
+            using var reader = find.ExecuteReader();
+
+            if (reader.Read())
+            {
+                roomId = reader.GetString(0);
+                roomTitle = reader.GetString(1);
+                reader.Close();
+            }
+            else
+            {
+                reader.Close();
+                roomId = NewId("ROOM");
+                roomTitle = $"Quick Match {boardCode}";
+                using var ins = conn.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = """
+                    INSERT INTO rooms (room_id, title, host_profile_id, host_callsign, board_code, board_title, status, region, created_at, updated_at)
+                    VALUES ($rid, $title, $pid, $cs, $code, '', 'lobby', 'global', $now, $now)
+                """;
+                ins.Parameters.AddWithValue("$rid", roomId);
+                ins.Parameters.AddWithValue("$title", roomTitle);
+                ins.Parameters.AddWithValue("$pid", profileId);
+                ins.Parameters.AddWithValue("$cs", callsign);
+                ins.Parameters.AddWithValue("$code", boardCode);
+                ins.Parameters.AddWithValue("$now", now);
+                ins.ExecuteNonQuery();
+            }
+
+            InsertSeat(conn, tx, roomId, profileId, callsign, ticketId, joinToken, "runner", now);
+            TouchRoom(conn, roomId, tx);
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
 
         return Results.Ok(new
         {
@@ -661,6 +749,11 @@ public static class Endpoints
         var ticketId = GetString(body, "lease.ticketId", GetString(body, "ticketId", ""));
         var now = Now();
 
+        if (string.IsNullOrWhiteSpace(roomId))
+            return Results.BadRequest(new { error = "missing roomId" });
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "UPDATE room_seats SET expires_at = $exp WHERE room_id = $rid AND profile_id = $pid";
@@ -676,6 +769,162 @@ public static class Endpoints
             ticketId,
             expiresAtUnixSeconds = now + 3600
         });
+    }
+
+    // ── Achievement Sync ────────────────────────────────────
+
+    public static async Task<IResult> AchievementSync(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        var achievementIds = GetStringArray(body, "achievementIds");
+        if (achievementIds.Length == 0)
+            return Results.Ok(new { synced = 0, total = 0 });
+
+        var synced = 0;
+        using var conn = Database.Open();
+        foreach (var achievementId in achievementIds)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO achievements (profile_id, achievement_id)
+                VALUES ($pid, $aid)
+                ON CONFLICT(profile_id, achievement_id) DO NOTHING
+            """;
+            cmd.Parameters.AddWithValue("$pid", profileId);
+            cmd.Parameters.AddWithValue("$aid", achievementId);
+            synced += cmd.ExecuteNonQuery();
+        }
+
+        using var countCmd = conn.CreateCommand();
+        countCmd.CommandText = "SELECT COUNT(*) FROM achievements WHERE profile_id = $pid";
+        countCmd.Parameters.AddWithValue("$pid", profileId);
+        var total = (int)(long)(countCmd.ExecuteScalar() ?? 0);
+
+        return Results.Ok(new { synced, total });
+    }
+
+    // ── Achievement List ──────────────────────────────────
+
+    public static IResult AchievementList(HttpRequest request, string profileId)
+    {
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT achievement_id, unlocked_at FROM achievements WHERE profile_id = $pid ORDER BY unlocked_at ASC";
+        cmd.Parameters.AddWithValue("$pid", profileId);
+
+        var achievements = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            achievements.Add(new
+            {
+                achievementId = reader.GetString(0),
+                unlockedAt = reader.GetString(1)
+            });
+        }
+
+        return Results.Ok(new { achievements });
+    }
+
+    // ── Daily Complete ────────────────────────────────────
+
+    public static async Task<IResult> DailyComplete(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        var date = GetString(body, "date", "");
+        if (string.IsNullOrWhiteSpace(date))
+            return Results.BadRequest(new { error = "missing date" });
+
+        var score = GetInt(body, "score", 0);
+        if (score < 0 || score > 999999)
+            return Results.BadRequest(new { error = "invalid score" });
+
+        using var conn = Database.Open();
+
+        // Check existing personal best
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT score FROM daily_completions WHERE profile_id = $pid AND daily_date = $date";
+        checkCmd.Parameters.AddWithValue("$pid", profileId);
+        checkCmd.Parameters.AddWithValue("$date", date);
+        var existing = checkCmd.ExecuteScalar();
+        var previousBest = existing != null ? (int)(long)existing : -1;
+
+        var isNewBest = previousBest < 0 || score > previousBest;
+
+        if (previousBest < 0)
+        {
+            // Insert new
+            using var ins = conn.CreateCommand();
+            ins.CommandText = """
+                INSERT INTO daily_completions (profile_id, daily_date, score)
+                VALUES ($pid, $date, $score)
+            """;
+            ins.Parameters.AddWithValue("$pid", profileId);
+            ins.Parameters.AddWithValue("$date", date);
+            ins.Parameters.AddWithValue("$score", score);
+            ins.ExecuteNonQuery();
+        }
+        else if (score > previousBest)
+        {
+            // Update if higher score
+            using var upd = conn.CreateCommand();
+            upd.CommandText = """
+                UPDATE daily_completions SET score = $score, completed_at = datetime('now')
+                WHERE profile_id = $pid AND daily_date = $date
+            """;
+            upd.Parameters.AddWithValue("$pid", profileId);
+            upd.Parameters.AddWithValue("$date", date);
+            upd.Parameters.AddWithValue("$score", score);
+            upd.ExecuteNonQuery();
+        }
+
+        var personalBest = Math.Max(score, previousBest);
+
+        return Results.Ok(new { personalBest, isNewBest });
+    }
+
+    // ── Daily Leaderboard ─────────────────────────────────
+
+    public static IResult DailyLeaderboard(HttpRequest request, string date)
+    {
+        if (string.IsNullOrWhiteSpace(date))
+            return Results.BadRequest(new { error = "missing date" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT profile_id, score, completed_at
+            FROM daily_completions
+            WHERE daily_date = $date
+            ORDER BY score DESC
+            LIMIT 20
+        """;
+        cmd.Parameters.AddWithValue("$date", date);
+
+        var entries = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            entries.Add(new
+            {
+                profileId = reader.GetString(0),
+                score = reader.GetInt32(1),
+                completedAt = reader.GetString(2)
+            });
+        }
+
+        return Results.Ok(new { date, entries });
     }
 
     // ── Helpers ──────────────────────────────────────────────
@@ -696,13 +945,34 @@ public static class Endpoints
             string.IsNullOrWhiteSpace(deckStr) ? [] : deckStr.Split(','));
     }
 
-    private static void InsertSeat(SqliteConnection conn, string roomId, string profileId, string callsign, string ticketId, string joinToken, string seatLabel, long now)
+    private static void InsertSeat(SqliteConnection conn, SqliteTransaction tx, string roomId, string profileId, string callsign, string ticketId, string joinToken, string seatLabel, long now)
     {
+        // Check for existing seat
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.Transaction = tx;
+        checkCmd.CommandText = "SELECT status FROM room_seats WHERE room_id = $rid AND profile_id = $pid";
+        checkCmd.Parameters.AddWithValue("$rid", roomId);
+        checkCmd.Parameters.AddWithValue("$pid", profileId);
+        var existingStatus = checkCmd.ExecuteScalar() as string;
+
+        if (existingStatus != null && existingStatus != "left" && existingStatus != "expired")
+        {
+            throw new SqliteException("Seat already exists for this profile in this room.", 19);
+        }
+
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT OR REPLACE INTO room_seats (room_id, profile_id, callsign, ticket_id, join_token, seat_label, status, joined_at, expires_at)
-            VALUES ($rid, $pid, $cs, $tid, $tok, $seat, 'joined', $now, $exp)
-        """;
+        cmd.Transaction = tx;
+        cmd.CommandText = existingStatus != null
+            ? """
+                UPDATE room_seats SET callsign = $cs, ticket_id = $tid, join_token = $tok,
+                    seat_label = $seat, status = 'joined', joined_at = $now, expires_at = $exp,
+                    is_ready = 0, score = 0, elapsed_seconds = 0, hull_remaining = 0, enemy_defeats = 0, race_status = 'prep'
+                WHERE room_id = $rid AND profile_id = $pid
+              """
+            : """
+                INSERT INTO room_seats (room_id, profile_id, callsign, ticket_id, join_token, seat_label, status, joined_at, expires_at)
+                VALUES ($rid, $pid, $cs, $tid, $tok, $seat, 'joined', $now, $exp)
+              """;
         cmd.Parameters.AddWithValue("$rid", roomId);
         cmd.Parameters.AddWithValue("$pid", profileId);
         cmd.Parameters.AddWithValue("$cs", callsign);
@@ -714,17 +984,19 @@ public static class Endpoints
         cmd.ExecuteNonQuery();
     }
 
-    private static int CountActiveSeats(SqliteConnection conn, string roomId)
+    private static int CountActiveSeats(SqliteConnection conn, string roomId, SqliteTransaction tx = null)
     {
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = "SELECT COUNT(*) FROM room_seats WHERE room_id = $rid AND status != 'left'";
         cmd.Parameters.AddWithValue("$rid", roomId);
         return (int)(long)(cmd.ExecuteScalar() ?? 0);
     }
 
-    private static void TouchRoom(SqliteConnection conn, string roomId)
+    private static void TouchRoom(SqliteConnection conn, string roomId, SqliteTransaction tx = null)
     {
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = "UPDATE rooms SET updated_at = $now WHERE room_id = $rid";
         cmd.Parameters.AddWithValue("$rid", roomId);
         cmd.Parameters.AddWithValue("$now", Now());
@@ -783,9 +1055,10 @@ public static class Endpoints
         return peers;
     }
 
-    private static void UpsertPlayer(SqliteConnection conn, string profileId, string callsign, long now)
+    private static void UpsertPlayer(SqliteConnection conn, SqliteTransaction tx, string profileId, string callsign, long now)
     {
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = """
             INSERT INTO players (profile_id, callsign, synced_at, created_at)
             VALUES ($pid, $cs, $now, $now)
@@ -795,6 +1068,703 @@ public static class Endpoints
         cmd.Parameters.AddWithValue("$cs", callsign);
         cmd.Parameters.AddWithValue("$now", now);
         cmd.ExecuteNonQuery();
+    }
+
+    // ── Purchase Validation ─────────────────────────────────
+
+    private static readonly Dictionary<string, (int Gold, int Food, bool UnitUnlock)> ProductRewards = new()
+    {
+        ["gold_pouch"] = (500, 0, false),
+        ["gold_chest"] = (2200, 0, false),
+        ["gold_warchest"] = (6900, 0, false),
+        ["gold_treasury"] = (18000, 0, false),
+        ["food_rations"] = (0, 20, false),
+        ["food_provisions"] = (0, 65, false),
+        ["food_stockpile"] = (0, 170, false),
+        ["food_granary"] = (0, 460, false),
+        ["starter_kit"] = (800, 30, true),
+        ["campaign_resupply"] = (3000, 80, false),
+    };
+
+    public static async Task<IResult> PurchaseValidate(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        var productId = GetString(body, "productId", "");
+        var platform = GetString(body, "platform", "");
+        var receiptToken = GetString(body, "receiptToken", "");
+        var transactionId = GetString(body, "transactionId", "");
+        var now = Now();
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+        if (string.IsNullOrWhiteSpace(productId))
+            return Results.BadRequest(new { error = "missing productId" });
+        if (string.IsNullOrWhiteSpace(platform))
+            return Results.BadRequest(new { error = "missing platform" });
+        if (string.IsNullOrWhiteSpace(receiptToken))
+            return Results.BadRequest(new { error = "missing receiptToken" });
+
+        if (!ProductRewards.TryGetValue(productId, out var reward))
+            return Results.BadRequest(new { error = "unknown productId" });
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        // Duplicate receipt check
+        if (!string.IsNullOrWhiteSpace(transactionId))
+        {
+            using var dupCheck = conn.CreateCommand();
+            dupCheck.Transaction = tx;
+            dupCheck.CommandText = "SELECT COUNT(*) FROM purchases WHERE transaction_id = $tid AND transaction_id != ''";
+            dupCheck.Parameters.AddWithValue("$tid", transactionId);
+            var dupCount = (long)(dupCheck.ExecuteScalar() ?? 0);
+            if (dupCount > 0)
+            {
+                tx.Rollback();
+                return Results.Json(new { status = "duplicate", message = "This transaction has already been processed." }, statusCode: 409);
+            }
+        }
+
+        // Velocity check: max 10 purchases per profile per hour
+        using var velocityCheck = conn.CreateCommand();
+        velocityCheck.Transaction = tx;
+        velocityCheck.CommandText = "SELECT COUNT(*) FROM purchases WHERE profile_id = $pid AND purchased_at > $cutoff";
+        velocityCheck.Parameters.AddWithValue("$pid", profileId);
+        velocityCheck.Parameters.AddWithValue("$cutoff", now - 3600);
+        var recentCount = (long)(velocityCheck.ExecuteScalar() ?? 0);
+        if (recentCount >= 10)
+        {
+            tx.Rollback();
+            return Results.Json(new { status = "rate_limited", message = "Too many purchases. Please wait before trying again." }, statusCode: 429);
+        }
+
+        // One-time purchase check for starter_kit
+        if (productId == "starter_kit")
+        {
+            using var oneTimeCheck = conn.CreateCommand();
+            oneTimeCheck.Transaction = tx;
+            oneTimeCheck.CommandText = "SELECT COUNT(*) FROM purchases WHERE profile_id = $pid AND product_id = 'starter_kit'";
+            oneTimeCheck.Parameters.AddWithValue("$pid", profileId);
+            var starterCount = (long)(oneTimeCheck.ExecuteScalar() ?? 0);
+            if (starterCount > 0)
+            {
+                tx.Rollback();
+                return Results.Json(new { status = "already_purchased", message = "Adventurer's Kit can only be purchased once." }, statusCode: 409);
+            }
+        }
+
+        var purchaseId = NewId("PUR");
+
+        // Record the purchase
+        using var ins = conn.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = """
+            INSERT INTO purchases (purchase_id, profile_id, product_id, platform, receipt_token, transaction_id,
+                gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
+            VALUES ($purchaseId, $pid, $productId, $platform, $receipt, $tid,
+                $gold, $food, $unitUnlock, 'validated', $now)
+        """;
+        ins.Parameters.AddWithValue("$purchaseId", purchaseId);
+        ins.Parameters.AddWithValue("$pid", profileId);
+        ins.Parameters.AddWithValue("$productId", productId);
+        ins.Parameters.AddWithValue("$platform", platform);
+        ins.Parameters.AddWithValue("$receipt", receiptToken);
+        ins.Parameters.AddWithValue("$tid", transactionId);
+        ins.Parameters.AddWithValue("$gold", reward.Gold);
+        ins.Parameters.AddWithValue("$food", reward.Food);
+        ins.Parameters.AddWithValue("$unitUnlock", reward.UnitUnlock ? 1 : 0);
+        ins.Parameters.AddWithValue("$now", now);
+        ins.ExecuteNonQuery();
+
+        UpsertPlayer(conn, tx, profileId, "", now);
+        tx.Commit();
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            message = "Purchase validated and credited.",
+            purchaseId,
+            productId,
+            goldCredited = reward.Gold,
+            foodCredited = reward.Food,
+            grantedUnitUnlock = reward.UnitUnlock,
+            validatedAtUnixSeconds = now
+        });
+    }
+
+    public static async Task<IResult> PurchaseHistory(HttpRequest request)
+    {
+        var profileId = request.Query["profileId"].FirstOrDefault()
+            ?? request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT purchase_id, product_id, platform, gold_credited, food_credited, purchased_at
+            FROM purchases WHERE profile_id = $pid ORDER BY purchased_at DESC LIMIT 50
+        """;
+        cmd.Parameters.AddWithValue("$pid", profileId);
+
+        var purchases = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            purchases.Add(new
+            {
+                purchaseId = reader.GetString(0),
+                productId = reader.GetString(1),
+                platform = reader.GetString(2),
+                goldCredited = reader.GetInt32(3),
+                foodCredited = reader.GetInt32(4),
+                purchasedAtUnixSeconds = reader.GetInt64(5)
+            });
+        }
+
+        return Results.Ok(new { status = "ok", purchases });
+    }
+
+    public static async Task<IResult> PurchaseProducts(HttpRequest request)
+    {
+        var products = new List<object>();
+        foreach (var (id, reward) in ProductRewards)
+        {
+            products.Add(new
+            {
+                productId = id,
+                goldAmount = reward.Gold,
+                foodAmount = reward.Food,
+                grantsUnitUnlock = reward.UnitUnlock
+            });
+        }
+
+        return Results.Ok(new { status = "ok", products });
+    }
+
+    // ── Analytics ──────────────────────────────────────────
+
+    private const int MaxBatchSize = 50;
+
+    public static async Task<IResult> AnalyticsIngest(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        var clientVersion = GetInt(body, "clientVersion", 0);
+        var platform = GetString(body, "platform", "");
+        var events = GetArray(body, "events");
+        var now = Now();
+
+        if (events.Length == 0)
+            return Results.Ok(new { status = "ok", accepted = 0 });
+        if (events.Length > MaxBatchSize)
+            return Results.BadRequest(new { error = $"batch too large, max {MaxBatchSize}" });
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        var accepted = 0;
+        foreach (var evt in events)
+        {
+            var eventType = GetNestedString(evt, "type", "");
+            if (string.IsNullOrWhiteSpace(eventType)) continue;
+            if (eventType.Length > 64) continue;
+
+            var eventData = GetNestedString(evt, "data", "");
+            if (eventData.Length > 2048) eventData = eventData[..2048];
+
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO analytics_events (profile_id, event_type, event_data, client_version, platform, recorded_at)
+                VALUES ($pid, $type, $data, $ver, $plat, $now)
+            """;
+            cmd.Parameters.AddWithValue("$pid", profileId);
+            cmd.Parameters.AddWithValue("$type", eventType);
+            cmd.Parameters.AddWithValue("$data", eventData);
+            cmd.Parameters.AddWithValue("$ver", clientVersion);
+            cmd.Parameters.AddWithValue("$plat", platform);
+            cmd.Parameters.AddWithValue("$now", now);
+            cmd.ExecuteNonQuery();
+            accepted++;
+        }
+
+        tx.Commit();
+        return Results.Ok(new { status = "ok", accepted });
+    }
+
+    public static async Task<IResult> AnalyticsSummary(HttpRequest request)
+    {
+        var eventType = request.Query["type"].FirstOrDefault() ?? "";
+        var hours = Math.Clamp(GetInt(await ReadBody(request), "hours", 24), 1, 720);
+        var cutoff = Now() - (hours * 3600);
+
+        using var conn = Database.Open();
+
+        if (!string.IsNullOrWhiteSpace(eventType))
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT event_data, COUNT(*) as cnt FROM analytics_events
+                WHERE event_type = $type AND recorded_at > $cutoff
+                GROUP BY event_data ORDER BY cnt DESC LIMIT 50
+            """;
+            cmd.Parameters.AddWithValue("$type", eventType);
+            cmd.Parameters.AddWithValue("$cutoff", cutoff);
+
+            var rows = new List<object>();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                rows.Add(new { data = reader.GetString(0), count = reader.GetInt64(1) });
+            }
+
+            return Results.Ok(new { status = "ok", eventType, hours, rows });
+        }
+
+        // No type filter — return top event types
+        using var topCmd = conn.CreateCommand();
+        topCmd.CommandText = """
+            SELECT event_type, COUNT(*) as cnt FROM analytics_events
+            WHERE recorded_at > $cutoff
+            GROUP BY event_type ORDER BY cnt DESC LIMIT 30
+        """;
+        topCmd.Parameters.AddWithValue("$cutoff", cutoff);
+
+        var types = new List<object>();
+        using var topReader = topCmd.ExecuteReader();
+        while (topReader.Read())
+        {
+            types.Add(new { eventType = topReader.GetString(0), count = topReader.GetInt64(1) });
+        }
+
+        return Results.Ok(new { status = "ok", hours, types });
+    }
+
+    // ── Crash Reports ─────────────────────────────────────
+
+    public static async Task<IResult> CrashReport(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        var errorType = GetString(body, "errorType", "unknown");
+        var errorMessage = GetString(body, "errorMessage", "");
+        var stackTrace = GetString(body, "stackTrace", "");
+        var clientVersion = GetInt(body, "clientVersion", 0);
+        var platform = GetString(body, "platform", "");
+        var scene = GetString(body, "scene", "");
+        var now = Now();
+
+        if (string.IsNullOrWhiteSpace(errorMessage) && string.IsNullOrWhiteSpace(errorType))
+            return Results.BadRequest(new { error = "missing error details" });
+
+        // Truncate large stack traces
+        if (stackTrace.Length > 4096)
+            stackTrace = stackTrace[..4096];
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO crash_reports (profile_id, error_type, error_message, stack_trace, client_version, platform, scene, reported_at)
+            VALUES ($pid, $type, $msg, $trace, $ver, $plat, $scene, $now)
+        """;
+        cmd.Parameters.AddWithValue("$pid", profileId);
+        cmd.Parameters.AddWithValue("$type", errorType);
+        cmd.Parameters.AddWithValue("$msg", errorMessage.Length > 512 ? errorMessage[..512] : errorMessage);
+        cmd.Parameters.AddWithValue("$trace", stackTrace);
+        cmd.Parameters.AddWithValue("$ver", clientVersion);
+        cmd.Parameters.AddWithValue("$plat", platform);
+        cmd.Parameters.AddWithValue("$scene", scene);
+        cmd.Parameters.AddWithValue("$now", now);
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "ok", message = "Crash report recorded." });
+    }
+
+    // ── Cloud Save ─────────────────────────────────────────
+
+    private const int MaxSaveDataBytes = 512 * 1024; // 512 KB
+
+    public static async Task<IResult> CloudSaveUpload(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        var saveData = GetString(body, "saveData", "");
+        var saveVersion = GetInt(body, "saveVersion", 0);
+        var now = Now();
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+        if (string.IsNullOrWhiteSpace(saveData))
+            return Results.BadRequest(new { error = "missing saveData" });
+        if (saveData.Length > MaxSaveDataBytes)
+            return Results.Json(new { error = "save data too large" }, statusCode: 413);
+
+        var saveHash = ComputeHash(saveData);
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        UpsertPlayer(conn, tx, profileId, "", now);
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO cloud_saves (profile_id, save_data, save_version, save_hash, uploaded_at)
+            VALUES ($pid, $data, $ver, $hash, $now)
+            ON CONFLICT(profile_id) DO UPDATE SET
+                save_data = $data, save_version = $ver, save_hash = $hash, uploaded_at = $now
+        """;
+        cmd.Parameters.AddWithValue("$pid", profileId);
+        cmd.Parameters.AddWithValue("$data", saveData);
+        cmd.Parameters.AddWithValue("$ver", saveVersion);
+        cmd.Parameters.AddWithValue("$hash", saveHash);
+        cmd.Parameters.AddWithValue("$now", now);
+        cmd.ExecuteNonQuery();
+
+        tx.Commit();
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            message = "Save uploaded.",
+            saveVersion,
+            saveHash,
+            uploadedAtUnixSeconds = now
+        });
+    }
+
+    public static async Task<IResult> CloudSaveDownload(HttpRequest request)
+    {
+        var profileId = request.Query["profileId"].FirstOrDefault()
+            ?? request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT save_data, save_version, save_hash, uploaded_at FROM cloud_saves WHERE profile_id = $pid";
+        cmd.Parameters.AddWithValue("$pid", profileId);
+
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read())
+        {
+            return Results.Ok(new { status = "empty", message = "No cloud save found." });
+        }
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            saveData = reader.GetString(0),
+            saveVersion = reader.GetInt32(1),
+            saveHash = reader.GetString(2),
+            uploadedAtUnixSeconds = reader.GetInt64(3)
+        });
+    }
+
+    public static async Task<IResult> CloudSaveInfo(HttpRequest request)
+    {
+        var profileId = request.Query["profileId"].FirstOrDefault()
+            ?? request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT save_version, save_hash, uploaded_at, length(save_data) FROM cloud_saves WHERE profile_id = $pid";
+        cmd.Parameters.AddWithValue("$pid", profileId);
+
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read())
+        {
+            return Results.Ok(new { status = "empty", message = "No cloud save found." });
+        }
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            saveVersion = reader.GetInt32(0),
+            saveHash = reader.GetString(1),
+            uploadedAtUnixSeconds = reader.GetInt64(2),
+            sizeBytes = reader.GetInt64(3)
+        });
+    }
+
+    private static string ComputeHash(string input)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexStringLower(bytes)[..16];
+    }
+
+    // ── Stripe Checkout ─────────────────────────────────────
+
+    private static readonly Dictionary<string, (string ProductId, int PriceCents, string Label)> StripePriceMap = new()
+    {
+        ["price_gold_pouch"] = ("gold_pouch", 99, "Pouch of Gold"),
+        ["price_gold_chest"] = ("gold_chest", 399, "Chest of Gold"),
+        ["price_gold_warchest"] = ("gold_warchest", 999, "War Chest"),
+        ["price_gold_treasury"] = ("gold_treasury", 1999, "King's Treasury"),
+        ["price_food_rations"] = ("food_rations", 99, "Field Rations"),
+        ["price_food_provisions"] = ("food_provisions", 299, "Caravan Provisions"),
+        ["price_food_stockpile"] = ("food_stockpile", 699, "Siege Stockpile"),
+        ["price_food_granary"] = ("food_granary", 1499, "Royal Granary"),
+        ["price_starter_kit"] = ("starter_kit", 499, "Adventurer's Kit"),
+        ["price_campaign_resupply"] = ("campaign_resupply", 799, "Campaign Resupply"),
+    };
+
+    private static readonly Dictionary<string, string> ProductToStripePriceId = new()
+    {
+        ["gold_pouch"] = "price_gold_pouch",
+        ["gold_chest"] = "price_gold_chest",
+        ["gold_warchest"] = "price_gold_warchest",
+        ["gold_treasury"] = "price_gold_treasury",
+        ["food_rations"] = "price_food_rations",
+        ["food_provisions"] = "price_food_provisions",
+        ["food_stockpile"] = "price_food_stockpile",
+        ["food_granary"] = "price_food_granary",
+        ["starter_kit"] = "price_starter_kit",
+        ["campaign_resupply"] = "price_campaign_resupply",
+    };
+
+    public static async Task<IResult> StripeCreateCheckout(HttpRequest request)
+    {
+        var stripeKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? "";
+        if (string.IsNullOrWhiteSpace(stripeKey))
+            return Results.Json(new { error = "Stripe is not configured on this server." }, statusCode: 503);
+
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");
+        var productId = GetString(body, "productId", "");
+        var successUrl = GetString(body, "successUrl", "");
+        var cancelUrl = GetString(body, "cancelUrl", "");
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+        if (string.IsNullOrWhiteSpace(productId))
+            return Results.BadRequest(new { error = "missing productId" });
+        if (!ProductToStripePriceId.TryGetValue(productId, out var stripePriceId))
+            return Results.BadRequest(new { error = "unknown productId" });
+        if (!StripePriceMap.TryGetValue(stripePriceId, out var priceInfo))
+            return Results.BadRequest(new { error = "invalid price mapping" });
+
+        if (string.IsNullOrWhiteSpace(successUrl))
+            successUrl = "https://crownroad.game/purchase/success";
+        if (string.IsNullOrWhiteSpace(cancelUrl))
+            cancelUrl = "https://crownroad.game/purchase/cancel";
+
+        Stripe.StripeConfiguration.ApiKey = stripeKey;
+
+        var sessionService = new Stripe.Checkout.SessionService();
+        var sessionOptions = new Stripe.Checkout.SessionCreateOptions
+        {
+            PaymentMethodTypes = new List<string> { "card" },
+            Mode = "payment",
+            SuccessUrl = successUrl + "?session_id={CHECKOUT_SESSION_ID}",
+            CancelUrl = cancelUrl,
+            ClientReferenceId = profileId,
+            LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+            {
+                new()
+                {
+                    PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                    {
+                        Currency = "usd",
+                        UnitAmount = priceInfo.PriceCents,
+                        ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = priceInfo.Label,
+                            Description = $"Crownroad — {priceInfo.Label}"
+                        }
+                    },
+                    Quantity = 1
+                }
+            },
+            Metadata = new Dictionary<string, string>
+            {
+                ["profileId"] = profileId,
+                ["productId"] = productId,
+                ["stripePriceId"] = stripePriceId
+            }
+        };
+
+        try
+        {
+            var session = await sessionService.CreateAsync(sessionOptions);
+            return Results.Ok(new
+            {
+                status = "ok",
+                checkoutUrl = session.Url,
+                sessionId = session.Id,
+                productId,
+                priceCents = priceInfo.PriceCents
+            });
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return Results.Json(new { error = $"Stripe error: {ex.Message}" }, statusCode: 502);
+        }
+    }
+
+    public static async Task<IResult> StripeWebhook(HttpRequest request)
+    {
+        var stripeKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? "";
+        var webhookSecret = Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET") ?? "";
+        if (string.IsNullOrWhiteSpace(stripeKey))
+            return Results.Json(new { error = "Stripe is not configured." }, statusCode: 503);
+
+        Stripe.StripeConfiguration.ApiKey = stripeKey;
+
+        string payload;
+        using (var reader = new StreamReader(request.Body))
+        {
+            payload = await reader.ReadToEndAsync();
+        }
+
+        Stripe.Event stripeEvent;
+        if (!string.IsNullOrWhiteSpace(webhookSecret))
+        {
+            var signature = request.Headers["Stripe-Signature"].FirstOrDefault() ?? "";
+            try
+            {
+                stripeEvent = Stripe.EventUtility.ConstructEvent(payload, signature, webhookSecret);
+            }
+            catch (Stripe.StripeException)
+            {
+                return Results.Json(new { error = "Invalid webhook signature." }, statusCode: 400);
+            }
+        }
+        else
+        {
+            try
+            {
+                stripeEvent = Stripe.EventUtility.ParseEvent(payload);
+            }
+            catch
+            {
+                return Results.Json(new { error = "Invalid event payload." }, statusCode: 400);
+            }
+        }
+
+        if (stripeEvent.Type != Stripe.EventTypes.CheckoutSessionCompleted)
+        {
+            return Results.Ok(new { status = "ignored", eventType = stripeEvent.Type });
+        }
+
+        var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
+        if (session == null)
+            return Results.Ok(new { status = "ignored", reason = "no session object" });
+
+        var profileId = session.Metadata?.GetValueOrDefault("profileId") ?? session.ClientReferenceId ?? "";
+        var productId = session.Metadata?.GetValueOrDefault("productId") ?? "";
+
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(productId))
+            return Results.Ok(new { status = "ignored", reason = "missing metadata" });
+
+        if (!ProductRewards.TryGetValue(productId, out var reward))
+            return Results.Ok(new { status = "ignored", reason = "unknown product" });
+
+        var transactionId = $"stripe-{session.Id}";
+        var now = Now();
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        // Duplicate check
+        using var dupCheck = conn.CreateCommand();
+        dupCheck.Transaction = tx;
+        dupCheck.CommandText = "SELECT COUNT(*) FROM purchases WHERE transaction_id = $tid";
+        dupCheck.Parameters.AddWithValue("$tid", transactionId);
+        var dupCount = (long)(dupCheck.ExecuteScalar() ?? 0);
+        if (dupCount > 0)
+        {
+            tx.Rollback();
+            return Results.Ok(new { status = "duplicate", message = "Already processed." });
+        }
+
+        // One-time check
+        if (productId == "starter_kit")
+        {
+            using var oneTimeCheck = conn.CreateCommand();
+            oneTimeCheck.Transaction = tx;
+            oneTimeCheck.CommandText = "SELECT COUNT(*) FROM purchases WHERE profile_id = $pid AND product_id = 'starter_kit'";
+            oneTimeCheck.Parameters.AddWithValue("$pid", profileId);
+            var starterCount = (long)(oneTimeCheck.ExecuteScalar() ?? 0);
+            if (starterCount > 0)
+            {
+                tx.Rollback();
+                return Results.Ok(new { status = "skipped", reason = "starter_kit already purchased" });
+            }
+        }
+
+        var purchaseId = NewId("PUR");
+
+        using var ins = conn.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = """
+            INSERT INTO purchases (purchase_id, profile_id, product_id, platform, receipt_token, transaction_id,
+                gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
+            VALUES ($purchaseId, $pid, $productId, 'stripe', $receipt, $tid,
+                $gold, $food, $unitUnlock, 'validated', $now)
+        """;
+        ins.Parameters.AddWithValue("$purchaseId", purchaseId);
+        ins.Parameters.AddWithValue("$pid", profileId);
+        ins.Parameters.AddWithValue("$productId", productId);
+        ins.Parameters.AddWithValue("$receipt", $"stripe-checkout-{session.PaymentIntentId}");
+        ins.Parameters.AddWithValue("$tid", transactionId);
+        ins.Parameters.AddWithValue("$gold", reward.Gold);
+        ins.Parameters.AddWithValue("$food", reward.Food);
+        ins.Parameters.AddWithValue("$unitUnlock", reward.UnitUnlock ? 1 : 0);
+        ins.Parameters.AddWithValue("$now", now);
+        ins.ExecuteNonQuery();
+
+        UpsertPlayer(conn, tx, profileId, "", now);
+        tx.Commit();
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            message = "Stripe payment fulfilled.",
+            purchaseId,
+            productId,
+            goldCredited = reward.Gold,
+            foodCredited = reward.Food
+        });
+    }
+
+    public static async Task<IResult> StripeCheckoutStatus(HttpRequest request)
+    {
+        var stripeKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? "";
+        if (string.IsNullOrWhiteSpace(stripeKey))
+            return Results.Json(new { error = "Stripe is not configured." }, statusCode: 503);
+
+        var sessionId = request.Query["sessionId"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(sessionId))
+            return Results.BadRequest(new { error = "missing sessionId" });
+
+        Stripe.StripeConfiguration.ApiKey = stripeKey;
+
+        try
+        {
+            var sessionService = new Stripe.Checkout.SessionService();
+            var session = await sessionService.GetAsync(sessionId);
+
+            return Results.Ok(new
+            {
+                status = "ok",
+                paymentStatus = session.PaymentStatus,
+                productId = session.Metadata?.GetValueOrDefault("productId") ?? "",
+                profileId = session.Metadata?.GetValueOrDefault("profileId") ?? session.ClientReferenceId ?? "",
+                completed = session.PaymentStatus == "paid"
+            });
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return Results.Json(new { error = $"Stripe error: {ex.Message}" }, statusCode: 502);
+        }
     }
 
     // ── JSON Parsing Helpers ─────────────────────────────────

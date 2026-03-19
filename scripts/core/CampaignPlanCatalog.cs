@@ -12,7 +12,8 @@ public sealed class CampaignDistrictPlan
         int rewardGold,
         int rewardFood,
         string chapterSummary,
-        string threatSummary)
+        string threatSummary,
+        string rewardRelicId = "")
     {
         Order = order;
         Id = id;
@@ -22,6 +23,7 @@ public sealed class CampaignDistrictPlan
         RewardFood = rewardFood;
         ChapterSummary = chapterSummary;
         ThreatSummary = threatSummary;
+        RewardRelicId = rewardRelicId ?? "";
     }
 
     public int Order { get; }
@@ -32,6 +34,7 @@ public sealed class CampaignDistrictPlan
     public int RewardFood { get; }
     public string ChapterSummary { get; }
     public string ThreatSummary { get; }
+    public string RewardRelicId { get; }
 }
 
 public static class CampaignPlanCatalog
@@ -46,7 +49,8 @@ public static class CampaignPlanCatalog
             40,
             1,
             "Outer farms, pilgrim roads, and bell-tower wards where the Lantern Caravan first meets the Rotbound Host.",
-            "Fast ghoul scouts, early blight fire, and tighter bell-tower surge timing."),
+            "Fast ghoul scouts, early blight fire, and tighter bell-tower surge timing.",
+            "relic_iron_pendant"),
         new(
             2,
             RouteCatalog.HarborId,
@@ -55,7 +59,8 @@ public static class CampaignPlanCatalog
             50,
             1,
             "Flooded quays, chain cranes, and corpse-choked wreck piers where heavy undead push through narrow kill lanes.",
-            "Heavier dead, tide-surge crushes, and Grave Lord pressure around dockside choke points."),
+            "Heavier dead, tide-surge crushes, and Grave Lord pressure around dockside choke points.",
+            "relic_sharpened_edge"),
         new(
             3,
             RouteCatalog.FoundryId,
@@ -64,7 +69,8 @@ public static class CampaignPlanCatalog
             60,
             1,
             "Smelter rows, railyards, and furnace crowns where the Host learns to crack the war wagon with industry and fire.",
-            "Sapper dives, bone nests, furnace hazards, and steadier heavy escorts."),
+            "Sapper dives, bone nests, furnace hazards, and steadier heavy escorts.",
+            "relic_swift_boots"),
         new(
             4,
             RouteCatalog.QuarantineId,
@@ -73,7 +79,8 @@ public static class CampaignPlanCatalog
             70,
             2,
             "Purge cloisters, sealed courts, and black-vault checkpoints where curse support and containment hazards define the field.",
-            "Hexers, heralds, repeated breach timing, and hazard-heavy ward lines."),
+            "Hexers, heralds, repeated breach timing, and hazard-heavy ward lines.",
+            "relic_battle_drum"),
         new(
             5,
             RouteCatalog.ThornwallId,
@@ -82,7 +89,8 @@ public static class CampaignPlanCatalog
             80,
             2,
             "Cliff roads, watch forts, and avalanche shrines that introduce harsher weather, vertical kill zones, and mountain sieges.",
-            "Frost-bitten dead, beast-rider raids, and lane-breaking cliff events."),
+            "Frost-bitten dead, beast-rider raids, and lane-breaking cliff events.",
+            "relic_guardian_shield"),
         new(
             6,
             RouteCatalog.BasilicaId,
@@ -91,7 +99,8 @@ public static class CampaignPlanCatalog
             90,
             2,
             "Ruined cathedrals, ossuary plazas, and reliquary vaults where faith relics and necromantic pageantry collide.",
-            "Bone nests, blight casters, hexers, and elite relic-guard formations."),
+            "Bone nests, blight casters, hexers, and elite relic-guard formations.",
+            "relic_war_brand"),
         new(
             7,
             RouteCatalog.MireId,
@@ -100,7 +109,8 @@ public static class CampaignPlanCatalog
             100,
             3,
             "Bog causeways, drowned chapels, and plague ferries that slow the march and test attrition discipline.",
-            "Rot mist, drowned dead, split broods, and hull-grind attrition packs."),
+            "Rot mist, drowned dead, split broods, and hull-grind attrition packs.",
+            "relic_windrunner_cloak"),
         new(
             8,
             RouteCatalog.SteppeId,
@@ -109,7 +119,8 @@ public static class CampaignPlanCatalog
             110,
             3,
             "Burned waystations, open grassland forts, and roaming siege camps that push pace and flanking pressure.",
-            "Fast rider strikes, howler-led raids, and repeated breach dives through open lanes."),
+            "Fast rider strikes, howler-led raids, and repeated breach dives through open lanes.",
+            "relic_sages_ring"),
         new(
             9,
             RouteCatalog.GloamwoodId,
@@ -118,7 +129,8 @@ public static class CampaignPlanCatalog
             120,
             3,
             "Thorn groves, witch circles, and haunted timber roads where curse traps and ambush timing rule the route.",
-            "Ambush packs, snare hazards, hex support, and staggered assault waves from the tree line."),
+            "Ambush packs, snare hazards, hex support, and staggered assault waves from the tree line.",
+            "relic_crown_of_valor"),
         new(
             10,
             RouteCatalog.CitadelId,
@@ -127,7 +139,8 @@ public static class CampaignPlanCatalog
             140,
             4,
             "Bridge forts, breach yards, and the inner keep where every prior threat pattern converges into the capital siege.",
-            "Mixed-faction command waves, siege engines, and the final gate breach.")
+            "Mixed-faction command waves, siege engines, and the final gate breach.",
+            "relic_blade_of_ruin")
     };
 
     public static IReadOnlyList<CampaignDistrictPlan> GetAll()
@@ -201,7 +214,17 @@ public static class CampaignPlanCatalog
             return "District reward: none";
         }
 
-        return $"District reward: +{district.RewardGold} gold, +{district.RewardFood} food";
+        var relicHint = "";
+        if (!string.IsNullOrEmpty(district.RewardRelicId))
+        {
+            var relic = GameData.GetEquipment(district.RewardRelicId);
+            if (relic != null)
+            {
+                relicHint = $", +{relic.DisplayName} ({relic.Rarity} relic)";
+            }
+        }
+
+        return $"District reward: +{district.RewardGold} gold, +{district.RewardFood} food{relicHint}";
     }
 
     public static bool TryGet(string districtId, out CampaignDistrictPlan district)

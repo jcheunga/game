@@ -25,6 +25,7 @@ public partial class MapMenu : Control
     private Label _stageObjectivesLabel = null!;
     private Label _stageMissionLabel = null!;
     private Label _stageModifiersLabel = null!;
+    private Label _stageWeatherLabel = null!;
     private Label _stageIntelLabel = null!;
     private PanelContainer _routeBannerPanel = null!;
     private Label _routeTitleLabel = null!;
@@ -46,7 +47,29 @@ public partial class MapMenu : Control
         _activeMapId = GetMapIdForStage(_selectedStage);
         BuildUi();
         BuildMapSelectorItems();
+        TryShowMenuHint();
         RefreshUi();
+        AppRatingPrompt.TryShowOn(this);
+    }
+
+    private void TryShowMenuHint()
+    {
+        if (!GameState.Instance.ShowHints)
+        {
+            return;
+        }
+
+        var hints = TutorialHintCatalog.GetByContext("first_map");
+        foreach (var hint in hints)
+        {
+            if (GameState.Instance.HasSeenHint(hint.Id))
+            {
+                continue;
+            }
+
+            _convoyStatusMessage = $"[{hint.Title}] {hint.Body}";
+            GameState.Instance.MarkHintSeen(hint.Id);
+        }
     }
 
     private void BuildUi()
@@ -252,6 +275,12 @@ public partial class MapMenu : Control
         };
         sideContent.AddChild(_stageModifiersLabel);
 
+        _stageWeatherLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        sideContent.AddChild(_stageWeatherLabel);
+
         _stageIntelLabel = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart
@@ -300,6 +329,14 @@ public partial class MapMenu : Control
         };
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
         sideContent.AddChild(shopButton);
+
+        var cashShopButton = new Button
+        {
+            Text = "Royal Storehouse",
+            CustomMinimumSize = new Vector2(0, 42)
+        };
+        cashShopButton.Pressed += () => SceneRouter.Instance.GoToCashShop();
+        sideContent.AddChild(cashShopButton);
 
         var settingsButton = new Button
         {
@@ -398,6 +435,7 @@ public partial class MapMenu : Control
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
         _stageMissionLabel.Text = StageMissionEvents.BuildSummaryText(stage);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
+        _stageWeatherLabel.Text = WeatherCatalog.BuildStageSummary(stage);
         _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
         _convoySummaryLabel.Text = BuildConvoySummaryText();
         _squadSummaryLabel.Text = BuildSquadSummaryText();
@@ -673,12 +711,16 @@ public partial class MapMenu : Control
         }
 
         button.Text = label;
+        var enemyCallouts = StageEncounterIntel.BuildNotableEnemyCallouts(stage);
+        var weatherInline = WeatherCatalog.BuildInlineSummary(stage);
         button.TooltipText =
             $"{stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"Threat: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Stars: {stars}/3\n" +
             $"{stage.Description.Split('\n')[0]}\n" +
             $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}\n" +
-            $"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}";
+            $"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}" +
+            (weatherInline.Length > 0 ? $"\nWeather: {weatherInline}" : "") +
+            (enemyCallouts.Length > 0 ? $"\n{enemyCallouts}" : "");
 
         button.SelfModulate = !unlocked
             ? route.BannerPanel.Darkened(0.35f)

@@ -7,7 +7,7 @@ public sealed class HttpApiOnlineRoomScoreboardProvider : IOnlineRoomScoreboardP
 {
 	private static readonly HttpClient Client = new()
 	{
-		Timeout = TimeSpan.FromSeconds(6)
+		Timeout = TimeSpan.FromSeconds(15)
 	};
 
 	private readonly string _endpointUrl;

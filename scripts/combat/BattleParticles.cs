@@ -226,6 +226,133 @@ public static class BattleParticles
 		return particles;
 	}
 
+	public static CpuParticles2D SpawnStoneBarricadeParticles(Node parent, Vector2 position, Color color, float radius)
+	{
+		var particles = CreateBase(parent, position, 20);
+		particles.Lifetime = 0.5f;
+		particles.Explosiveness = 0.8f;
+		particles.Direction = new Vector2(0f, -1f);
+		particles.Spread = 90f;
+		particles.InitialVelocityMin = radius * 0.4f;
+		particles.InitialVelocityMax = radius * 1.0f;
+		particles.Gravity = new Vector2(0f, -60f);
+		particles.ScaleAmountMin = 2.5f;
+		particles.ScaleAmountMax = 5.5f;
+		var brown = new Color(0.72f, 0.58f, 0.36f);
+		particles.Color = brown;
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(new Color(0.82f, 0.72f, 0.52f), 0.9f));
+		gradient.AddPoint(0.3f, new Color(brown, 0.7f));
+		gradient.AddPoint(0.7f, new Color(brown.Darkened(0.2f), 0.35f));
+		gradient.AddPoint(1f, new Color(brown.Darkened(0.4f), 0f));
+		particles.ColorRamp = gradient;
+		particles.Emitting = true;
+		AutoFree(particles, 0.7f);
+		return particles;
+	}
+
+	public static CpuParticles2D SpawnWarCryParticles(Node parent, Vector2 position, Color color, float radius)
+	{
+		var particles = CreateBase(parent, position, 24);
+		particles.Lifetime = 0.6f;
+		particles.Explosiveness = 0.9f;
+		particles.Direction = new Vector2(0f, 0f);
+		particles.Spread = 180f;
+		particles.InitialVelocityMin = radius * 0.5f;
+		particles.InitialVelocityMax = radius * 1.4f;
+		particles.Gravity = new Vector2(0f, 20f);
+		particles.ScaleAmountMin = 3f;
+		particles.ScaleAmountMax = 6f;
+		var redOrange = new Color(0.95f, 0.35f, 0.1f);
+		particles.Color = redOrange;
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(new Color(1f, 0.7f, 0.2f), 0.95f));
+		gradient.AddPoint(0.25f, new Color(redOrange, 0.8f));
+		gradient.AddPoint(0.6f, new Color(new Color(0.8f, 0.2f, 0.05f), 0.4f));
+		gradient.AddPoint(1f, new Color(redOrange.Darkened(0.4f), 0f));
+		particles.ColorRamp = gradient;
+		particles.Emitting = true;
+		AutoFree(particles, 0.8f);
+		return particles;
+	}
+
+	public static CpuParticles2D SpawnEarthquakeParticles(Node parent, Vector2 position, Color color, float radius)
+	{
+		var particles = CreateBase(parent, position, 30);
+		particles.Lifetime = 0.55f;
+		particles.Explosiveness = 0.85f;
+		particles.Direction = new Vector2(0f, 1f);
+		particles.Spread = 160f;
+		particles.InitialVelocityMin = radius * 0.3f;
+		particles.InitialVelocityMax = radius * 1.2f;
+		particles.Gravity = new Vector2(0f, 420f);
+		particles.ScaleAmountMin = 3f;
+		particles.ScaleAmountMax = 7f;
+		var darkBrown = new Color(0.55f, 0.4f, 0.22f);
+		particles.Color = darkBrown;
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(new Color(0.7f, 0.55f, 0.3f), 0.9f));
+		gradient.AddPoint(0.3f, new Color(darkBrown, 0.7f));
+		gradient.AddPoint(0.65f, new Color(darkBrown.Darkened(0.2f), 0.35f));
+		gradient.AddPoint(1f, new Color(darkBrown.Darkened(0.5f), 0f));
+		particles.ColorRamp = gradient;
+		particles.Emitting = true;
+		AutoFree(particles, 0.75f);
+		return particles;
+	}
+
+	public static CpuParticles2D SpawnPolymorphParticles(Node parent, Vector2 position, Color color)
+	{
+		var particles = CreateBase(parent, position, 16);
+		particles.Lifetime = 0.65f;
+		particles.Explosiveness = 0.3f;
+		particles.Direction = new Vector2(0f, -1f);
+		particles.Spread = 180f;
+		particles.InitialVelocityMin = 20f;
+		particles.InitialVelocityMax = 60f;
+		particles.Gravity = new Vector2(0f, -10f);
+		particles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Sphere;
+		particles.EmissionSphereRadius = 16f;
+		particles.ScaleAmountMin = 2f;
+		particles.ScaleAmountMax = 4.5f;
+		var purple = new Color(0.7f, 0.3f, 0.9f);
+		particles.Color = purple;
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(Colors.White, 0.9f));
+		gradient.AddPoint(0.25f, new Color(purple.Lightened(0.2f), 0.75f));
+		gradient.AddPoint(0.6f, new Color(purple, 0.4f));
+		gradient.AddPoint(1f, new Color(purple.Darkened(0.2f), 0f));
+		particles.ColorRamp = gradient;
+		particles.Emitting = true;
+		AutoFree(particles, 0.85f);
+		return particles;
+	}
+
+	public static CpuParticles2D SpawnResurrectParticles(Node parent, Vector2 position, Color color)
+	{
+		var particles = CreateBase(parent, position, 18);
+		particles.Lifetime = 0.7f;
+		particles.Explosiveness = 0.4f;
+		particles.Direction = new Vector2(0f, -1f);
+		particles.Spread = 50f;
+		particles.InitialVelocityMin = 40f;
+		particles.InitialVelocityMax = 100f;
+		particles.Gravity = new Vector2(0f, -120f);
+		particles.ScaleAmountMin = 2.5f;
+		particles.ScaleAmountMax = 5f;
+		var golden = new Color(1f, 0.85f, 0.3f);
+		particles.Color = golden;
+		var gradient = new Gradient();
+		gradient.SetColor(0, new Color(Colors.White, 0.95f));
+		gradient.AddPoint(0.2f, new Color(golden, 0.85f));
+		gradient.AddPoint(0.55f, new Color(golden.Darkened(0.1f), 0.5f));
+		gradient.AddPoint(1f, new Color(golden.Darkened(0.3f), 0f));
+		particles.ColorRamp = gradient;
+		particles.Emitting = true;
+		AutoFree(particles, 0.9f);
+		return particles;
+	}
+
 	public static CpuParticles2D SpawnDeathBurstExplosion(Node parent, Vector2 position, Color color, float radius)
 	{
 		var particles = CreateBase(parent, position, 22);
@@ -302,7 +429,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	private static CpuParticles2D CreateBase(Node parent, Vector2 position, int amount)
+	private static CpuParticles2D CreateBase(Node parent, Vector2 position, int amount, string textureId = "particle_soft")
 	{
 		var particles = new CpuParticles2D
 		{
@@ -311,6 +438,13 @@ public static class BattleParticles
 			Position = position,
 			ZIndex = 100
 		};
+
+		var texture = ParticleTextureLoader.TryLoad(textureId);
+		if (texture != null)
+		{
+			particles.Texture = texture;
+		}
+
 		parent.AddChild(particles);
 		return particles;
 	}

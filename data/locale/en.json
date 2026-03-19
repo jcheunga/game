@@ -1,0 +1,73 @@
+{
+  "title_screen": "Crownroad",
+  "title_subtitle": "Lantern Caravan",
+  "btn_campaign": "Campaign",
+  "btn_endless": "Endless",
+  "btn_multiplayer": "Multiplayer",
+  "btn_settings": "Settings",
+  "btn_shop": "Caravan Armory",
+  "btn_cash_shop": "Royal Storehouse",
+  "btn_deploy": "Deploy",
+  "btn_retreat": "Retreat",
+  "btn_back": "Back",
+  "btn_back_to_title": "Back To Title",
+  "btn_back_to_map": "Back To Map",
+
+  "hud_courage": "Courage",
+  "hud_waves": "Waves",
+  "hud_speed": "Speed: {0}",
+  "hud_paused": "PAUSED",
+  "hud_resume": "Press Escape to resume",
+
+  "result_victory": "Stage {0} cleared. +{1} gold, +{2} food. Stars: {3}/3.",
+  "result_defeat": "Stage {0} failed. The war wagon line was overrun.",
+  "result_retreat": "Retreated from stage {0}. No rewards earned.",
+
+  "shop_title": "Caravan Armory",
+  "shop_gold": "Gold: {0}",
+  "shop_food": "Food: {0}",
+  "shop_buy": "Buy — {0}",
+  "shop_purchased": "Purchased",
+  "shop_confirm": "Tap again to confirm",
+  "shop_levelup": "Level Up ({0}g)",
+  "shop_max_level": "Max Level",
+
+  "cash_shop_title": "Royal Storehouse",
+  "cash_shop_info": "All packs are consumable and credit your account immediately.",
+  "cash_shop_gold_packs": "Gold Packs",
+  "cash_shop_food_packs": "Food Packs",
+  "cash_shop_bundles": "Starter & Bundles",
+
+  "settings_title": "Settings",
+  "settings_audio": "Audio Mix",
+  "settings_interface": "Interface",
+  "settings_difficulty": "Difficulty",
+  "settings_sync": "Multiplayer Sync",
+  "settings_payments": "Payments",
+  "settings_achievements": "Achievements",
+  "settings_restore_defaults": "Restore Defaults",
+  "settings_mute": "Mute",
+  "settings_unmute": "Unmute",
+
+  "cloud_upload": "Upload Save",
+  "cloud_restore": "Restore Save",
+  "cloud_check": "Check Cloud",
+  "cloud_uploaded": "Save uploaded to cloud.",
+  "cloud_restored": "Save restored from cloud.",
+  "cloud_empty": "No cloud save found for this profile.",
+
+  "endless_title": "Endless Mode",
+  "endless_prep": "Endless Prep",
+  "endless_best_wave": "Best Wave: {0}",
+
+  "multiplayer_title": "Multiplayer Challenge",
+  "daily_challenge": "Daily Challenge",
+
+  "difficulty_apprentice": "Apprentice",
+  "difficulty_warden": "Warden",
+  "difficulty_champion": "Champion",
+  "difficulty_legend": "Legend",
+
+  "currency_gold": "gold",
+  "currency_food": "food"
+}

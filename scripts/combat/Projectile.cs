@@ -15,6 +15,35 @@ public partial class Projectile : Node2D
     private Func<bool> _shouldCancel = null!;
     private CpuParticles2D _trail;
 
+    public override void _ExitTree()
+    {
+        CleanupTrail();
+    }
+
+    public void ResetForPool()
+    {
+        _active = false;
+        _target = null;
+        _damage = 0f;
+        _speed = 0f;
+        _onHit = null;
+        _applyImpact = null;
+        _shouldCancel = null;
+        _travelDirection = Vector2.Right;
+        CleanupTrail();
+        Visible = false;
+    }
+
+    private void CleanupTrail()
+    {
+        if (_trail != null && IsInstanceValid(_trail))
+        {
+            _trail.Emitting = false;
+            _trail.QueueFree();
+            _trail = null;
+        }
+    }
+
     public void Setup(Unit target, float damage, float speed, Color color, Action<Vector2, float, Color> onHit = null)
     {
         Setup(
@@ -22,7 +51,7 @@ public partial class Projectile : Node2D
             damage,
             speed,
             color,
-            target.TakeDamage,
+            d => target.TakeDamage(d),
             () => !IsInstanceValid(target) || target.IsDead,
             onHit);
     }
@@ -57,7 +86,13 @@ public partial class Projectile : Node2D
 
         if (!IsInstanceValid(_target) || (_shouldCancel != null && _shouldCancel()))
         {
-            QueueFree();
+            // Target died mid-flight — spawn impact effect at current position instead of vanishing silently
+            _onHit?.Invoke(GlobalPosition, 0f, _color);
+            if (GetParent() != null)
+            {
+                BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition, _color, _damage * 0.5f);
+            }
+            ProjectilePool.Release(this);
             return;
         }
 
@@ -75,7 +110,7 @@ public partial class Projectile : Node2D
             {
                 BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition, _color, _damage);
             }
-            QueueFree();
+            ProjectilePool.Release(this);
             return;
         }
 

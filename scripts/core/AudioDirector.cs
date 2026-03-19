@@ -21,6 +21,9 @@ public partial class AudioDirector : Node
 	private const string SpellCastCueId = "spell_cast";
 	private const string BossSpawnCueId = "boss_spawn";
 	private const string UpgradeConfirmCueId = "upgrade_confirm";
+	private const string AchievementUnlockCueId = "achievement_unlock";
+	private const string RelicPickupCueId = "relic_pickup";
+	private const string BossDeathCueId = "boss_death";
 	private const string MenuAmbienceCueId = "ambience_menu";
 	private const string BattleAmbienceCueId = "ambience_battle";
 	private const string EndlessAmbienceCueId = "ambience_endless";
@@ -127,16 +130,22 @@ public partial class AudioDirector : Node
 	public void PlayDeploy(UnitDefinition definition)
 	{
 		var pitchScale = 0.92f + Mathf.Clamp(definition.Cost / 38f, 0f, 0.16f);
+		pitchScale += ResolveVisualClassPitchOffset(definition.VisualClass);
 		PlayCue(DeployCueId, -10f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.05f);
 	}
 
-	public void PlayImpact(float damage)
+	public void PlayImpact(float damage, string visualClass = "")
 	{
 		var heavy = damage >= 18f;
+		var pitchScale = 1f + _rng.RandfRange(-0.06f, 0.06f);
+		if (!string.IsNullOrWhiteSpace(visualClass))
+		{
+			pitchScale += ResolveVisualClassPitchOffset(visualClass);
+		}
 		PlayCue(
 			heavy ? ImpactHeavyCueId : ImpactLightCueId,
 			heavy ? -11f : -15f,
-			1f + _rng.RandfRange(-0.06f, 0.06f),
+			pitchScale,
 			heavy ? 0.08f : 0.045f,
 			heavy ? "impact_heavy" : "impact_light");
 	}
@@ -187,6 +196,11 @@ public partial class AudioDirector : Node
 			"frost_burst" => 1.04f,
 			"lightning_strike" => 0.94f,
 			"barrier_ward" => 1.08f,
+			"stone_barricade" => 0.82f,
+			"war_cry" => 0.78f,
+			"earthquake" => 0.72f,
+			"polymorph" => 1.18f,
+			"resurrect" => 1.06f,
 			_ => 1f
 		};
 		PlayCue(SpellCastCueId, -9f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.1f, "spell_cast");
@@ -200,6 +214,23 @@ public partial class AudioDirector : Node
 	public void PlayUpgradeConfirm()
 	{
 		PlayCue(UpgradeConfirmCueId, -10f, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.08f, "upgrade_confirm");
+	}
+
+	public void PlayAchievementUnlock()
+	{
+		PlayCue(AchievementUnlockCueId, -8f, 1.18f + _rng.RandfRange(-0.02f, 0.02f), 0f, "achievement_unlock");
+		PlayCue(AchievementUnlockCueId, -9f, 1.26f + _rng.RandfRange(-0.02f, 0.02f), 0f, "achievement_unlock_tap");
+	}
+
+	public void PlayRelicPickup()
+	{
+		PlayCue(RelicPickupCueId, -8f, 1.14f + _rng.RandfRange(-0.03f, 0.03f), 0.12f, "relic_pickup");
+	}
+
+	public void PlayBossDeath()
+	{
+		PlayCue(BossDeathCueId, -6f, 0.72f + _rng.RandfRange(-0.02f, 0.02f), 0.3f, "boss_death");
+		PlayCue(AchievementUnlockCueId, -10f, 1.32f + _rng.RandfRange(-0.02f, 0.02f), 0f, "boss_death_chime");
 	}
 
 	public void RefreshMixFromState()
@@ -217,6 +248,24 @@ public partial class AudioDirector : Node
 
 		_battlePressure = clamped;
 		UpdateSceneContext(true);
+	}
+
+	private static float ResolveVisualClassPitchOffset(string visualClass)
+	{
+		return (visualClass ?? "") switch
+		{
+			"hound" => 0.18f,
+			"banner" => -0.12f,
+			"necromancer" => -0.20f,
+			"berserker" => -0.16f,
+			"skirmisher" => 0.08f,
+			"shield" => -0.08f,
+			"sniper" => 0.12f,
+			"boss" => -0.25f,
+			"bloater" => -0.14f,
+			"siegetower" => -0.22f,
+			_ => 0f
+		};
 	}
 
 	private void OnTreeNodeAdded(Node node)
@@ -499,9 +548,11 @@ public partial class AudioDirector : Node
 		_lastCueTimes[throttleKey] = now;
 		var resolvedVolumeDb = ResolveMixedVolumeDb(volumeDb, isAmbience);
 
+		AudioStream stream = _authoredOverrides.TryGetValue(cueId, out var authored) ? authored : cue;
+
 		var player = new AudioStreamPlayer
 		{
-			Stream = cue,
+			Stream = stream,
 			VolumeDb = resolvedVolumeDb,
 			PitchScale = Mathf.Max(0.5f, pitchScale),
 			Bus = "Master"
@@ -566,6 +617,18 @@ public partial class AudioDirector : Node
 		RegisterCue(UpgradeConfirmCueId, CreateCue(0.2f, 0.008f, 0.1f, 0.4f, 0.01f, 0f, 0f, 0f,
 			new ToneLayer(380f, 560f, 1f),
 			new ToneLayer(560f, 760f, 0.38f)));
+		RegisterCue(AchievementUnlockCueId, CreateCue(0.18f, 0.006f, 0.1f, 0.46f, 0.01f, 0f, 0f, 0f,
+			new ToneLayer(680f, 1020f, 1f),
+			new ToneLayer(1020f, 1360f, 0.36f),
+			new ToneLayer(1360f, 1640f, 0.14f)));
+		RegisterCue(RelicPickupCueId, CreateCue(0.28f, 0.008f, 0.16f, 0.42f, 0.02f, 5.5f, 0.012f, 0f,
+			new ToneLayer(520f, 780f, 1f),
+			new ToneLayer(780f, 1040f, 0.34f),
+			new ToneLayer(1040f, 1300f, 0.16f)));
+		RegisterCue(BossDeathCueId, CreateCue(0.48f, 0.006f, 0.28f, 0.52f, 0.14f, 0f, 0f, 0f,
+			new ToneLayer(82f, 48f, 1f, true),
+			new ToneLayer(140f, 72f, 0.38f),
+			new ToneLayer(210f, 96f, 0.16f)));
 		RegisterCue(MenuAmbienceCueId, CreateCue(1.8f, 0.12f, 0.36f, 0.22f, 0.04f, 0.18f, 0.01f, 0.55f,
 			new ToneLayer(108f, 112f, 1f),
 			new ToneLayer(162f, 166f, 0.3f),
@@ -628,10 +691,36 @@ public partial class AudioDirector : Node
 			new ToneLayer(330f, 342f, 0.1f)));
 	}
 
-	private void RegisterCue(string id, AudioStreamWav cue)
+	private static readonly string[] SfxExtensions = { ".ogg", ".mp3", ".wav" };
+	private const string SfxAssetPath = "res://assets/sfx/";
+
+	private void RegisterCue(string id, AudioStreamWav proceduralFallback)
 	{
-		_cues[id] = cue;
+		// Check for an authored audio file first
+		foreach (var ext in SfxExtensions)
+		{
+			var path = $"{SfxAssetPath}{id}{ext}";
+			if (!ResourceLoader.Exists(path)) continue;
+			var authored = ResourceLoader.Load<AudioStream>(path);
+			if (authored is AudioStreamWav wav)
+			{
+				_cues[id] = wav;
+				return;
+			}
+			// For OGG/MP3, wrap in a one-shot player approach — store the procedural
+			// but mark it as overridden so PlayCue can detect it
+			if (authored != null)
+			{
+				_authoredOverrides[id] = authored;
+				_cues[id] = proceduralFallback;
+				return;
+			}
+		}
+
+		_cues[id] = proceduralFallback;
 	}
+
+	private readonly Dictionary<string, AudioStream> _authoredOverrides = new(StringComparer.OrdinalIgnoreCase);
 
 	private AudioStreamWav CreateCue(
 		float durationSeconds,

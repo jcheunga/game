@@ -32,6 +32,7 @@ public partial class ShopMenu : Control
     private PanelContainer _summaryPanel = null!;
     private PanelContainer _unitsPanel = null!;
     private PanelContainer _basePanel = null!;
+    private PanelContainer _relicsPanel = null!;
     private Label _resourcesLabel = null!;
     private Label _statusLabel = null!;
     private Label _summaryLabel = null!;
@@ -40,12 +41,34 @@ public partial class ShopMenu : Control
     private VBoxContainer _recommendationStack = null!;
     private VBoxContainer _unitStack = null!;
     private VBoxContainer _baseStack = null!;
+    private VBoxContainer _relicsStack = null!;
 
     public override void _Ready()
     {
         BuildUi();
         RefreshUi();
-        AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel });
+        TryShowMenuHint();
+        AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel, _relicsPanel });
+    }
+
+    private void TryShowMenuHint()
+    {
+        if (!GameState.Instance.ShowHints)
+        {
+            return;
+        }
+
+        var hints = TutorialHintCatalog.GetByContext("first_shop");
+        foreach (var hint in hints)
+        {
+            if (GameState.Instance.HasSeenHint(hint.Id))
+            {
+                continue;
+            }
+
+            _statusLabel.Text = $"[{hint.Title}] {hint.Body}";
+            GameState.Instance.MarkHintSeen(hint.Id);
+        }
     }
 
     private void AnimateEntrance(Control[] panels)
@@ -195,8 +218,8 @@ public partial class ShopMenu : Control
 
         _unitsPanel = new PanelContainer
         {
-            Position = new Vector2(408f, 122f),
-            Size = new Vector2(500f, 520f)
+            Position = new Vector2(400f, 122f),
+            Size = new Vector2(380f, 520f)
         };
         AddChild(_unitsPanel);
 
@@ -220,8 +243,8 @@ public partial class ShopMenu : Control
 
         _basePanel = new PanelContainer
         {
-            Position = new Vector2(932f, 122f),
-            Size = new Vector2(324f, 520f)
+            Position = new Vector2(796f, 122f),
+            Size = new Vector2(220f, 520f)
         };
         AddChild(_basePanel);
 
@@ -242,6 +265,31 @@ public partial class ShopMenu : Control
         _baseStack = new VBoxContainer();
         _baseStack.AddThemeConstantOverride("separation", 12);
         baseScroll.AddChild(_baseStack);
+
+        _relicsPanel = new PanelContainer
+        {
+            Position = new Vector2(1032f, 122f),
+            Size = new Vector2(224f, 520f)
+        };
+        AddChild(_relicsPanel);
+
+        var relicsPadding = new MarginContainer();
+        relicsPadding.AddThemeConstantOverride("margin_left", 18);
+        relicsPadding.AddThemeConstantOverride("margin_right", 18);
+        relicsPadding.AddThemeConstantOverride("margin_top", 18);
+        relicsPadding.AddThemeConstantOverride("margin_bottom", 18);
+        _relicsPanel.AddChild(relicsPadding);
+
+        var relicsScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        relicsPadding.AddChild(relicsScroll);
+
+        _relicsStack = new VBoxContainer();
+        _relicsStack.AddThemeConstantOverride("separation", 12);
+        relicsScroll.AddChild(_relicsStack);
 
         var bottomPanel = new PanelContainer
         {
@@ -287,6 +335,14 @@ public partial class ShopMenu : Control
         multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
         bottomRow.AddChild(multiplayerButton);
 
+        var cashShopButton = new Button
+        {
+            Text = "Royal Storehouse",
+            CustomMinimumSize = new Vector2(180f, 0f)
+        };
+        cashShopButton.Pressed += () => SceneRouter.Instance.GoToCashShop();
+        bottomRow.AddChild(cashShopButton);
+
         var settingsButton = new Button
         {
             Text = "Settings",
@@ -320,6 +376,7 @@ public partial class ShopMenu : Control
         _statusLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
         RebuildUnitPanels();
         RebuildBaseUpgradePanels();
+        RebuildRelicPanels();
     }
 
     private void ApplyRouteTheme()
@@ -333,6 +390,7 @@ public partial class ShopMenu : Control
         _summaryPanel.SelfModulate = route.BannerPanel;
         _unitsPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
         _basePanel.SelfModulate = route.BannerPanel.Lightened(0.02f);
+        _relicsPanel.SelfModulate = route.BannerPanel.Darkened(0.04f);
     }
 
     private string BuildSummaryText()
@@ -492,6 +550,7 @@ public partial class ShopMenu : Control
         var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitterValue) ? spitterValue : 0;
         var splitterCount = counts.TryGetValue(GameData.EnemySplitterId, out var splitterValue) ? splitterValue : 0;
         var walkerCount = counts.TryGetValue(GameData.EnemyWalkerId, out var walkerValue) ? walkerValue : 0;
+        var lichCount = counts.TryGetValue(GameData.EnemyLichId, out var lichValue) ? lichValue : 0;
         var busSensitiveObjective = stage.Objectives.Any(objective =>
             objective != null &&
             objective.Type.Equals("bus_hull_ratio", StringComparison.OrdinalIgnoreCase));
@@ -824,6 +883,60 @@ public partial class ShopMenu : Control
                 saboteurCount > 0
                     ? "Cavalry Rider helps run down sappers and peel pressure off the war wagon before they convert into gatehouse damage."
                     : "Cavalry Rider helps cover ghoul-heavy stages and rotate pressure away from the war wagon.");
+        }
+
+        if (runnerCount >= 3 || saboteurCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerHoundId,
+                "Cheap tempo against fast rushes",
+                saboteurCount > 0
+                    ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts. War Hound is a cheap tempo unit to bait fast attackers before they reach the war wagon."
+                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. War Hound is a cheap tempo unit to bait fast attackers and buy time for heavier drops.");
+        }
+
+        if (splitterCount >= 2 || walkerCount >= 8)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerNecromancerId,
+                "Raise skeletons from swarm corpses",
+                $"Stage {stage.StageNumber} stacks grouped walker and splitter contacts. Necromancer raises skeletons from enemy corpses to overwhelm the undead with their own numbers.");
+        }
+
+        if (spitterCount > 0 || jammerCount > 0 || lichCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerRogueId,
+                "Assassinate rear support",
+                lichCount > 0
+                    ? $"Stage {stage.StageNumber} includes {lichCount} lich contacts that raise fallen undead. Rogue bypasses the frontline to eliminate rear support before they snowball."
+                    : "Rogue bypasses the frontline to eliminate rear support like blight casters and hexers before they chip the caravan.");
+        }
+
+        if (heavyCount > 0)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerBerserkerId,
+                "Ramp damage against heavies",
+                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Berserker damage scales up as health drops, making it a strong answer to brutes and armored bodies.");
+        }
+
+        if (GameState.Instance.GetActiveDeckUnits().Count(unit => GameData.GetUnit(unit.Id).SquadTag.Equals(SquadSynergyCatalog.FrontlineTag, StringComparison.OrdinalIgnoreCase)) >= 2)
+        {
+            TryAddUnitRecommendation(
+                recommendations,
+                seen,
+                GameData.PlayerBannerId,
+                "Buff the melee frontline",
+                "The active squad already runs multiple melee units. Banner Knight aura buffer pairs well with frontline troops and improves trades across the whole lane.");
         }
 
         TryAddBaseRecommendation(
@@ -1274,14 +1387,22 @@ public partial class ShopMenu : Control
             ? GameState.Instance.BuildUnitDoctrineStatusText(unit.Id)
             : $"Doctrine unlocks at Lv{GameState.Instance.UnitDoctrineUnlockLevel}.";
 
+        var ability = UnitActiveAbilityCatalog.GetForUnit(unit.Id);
+        var abilityLine = "";
+        if (ability != null && level >= ability.UnlockLevel - 1)
+        {
+            var abilityPrefix = level >= ability.UnlockLevel ? "Ability" : $"Lv{ability.UnlockLevel}+ Ability";
+            abilityLine = $"\n{abilityPrefix}: {ability.Title} — {ability.Description} (CD: {ability.CooldownSeconds:0.#}s)";
+        }
+
         if (!owned)
         {
-            return summary + $"\n{doctrineSummary}";
+            return summary + abilityLine + $"\n{doctrineSummary}";
         }
 
         if (isMaxLevel)
         {
-            return summary + "\nNext upgrade: max level reached." + $"\n{doctrineSummary}";
+            return summary + "\nNext upgrade: max level reached." + abilityLine + $"\n{doctrineSummary}";
         }
 
         var nextStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level + 1);
@@ -1297,7 +1418,7 @@ public partial class ShopMenu : Control
                 ? $"  |  Repair +{(nextStats.BusRepairAmount - currentStats.BusRepairAmount):0.#}"
                 : "") +
             (UnitStatText.HasAura(nextStats) ? $"  |  {UnitStatText.BuildAuraSummary(nextStats)}" : "");
-        return summary + $"\n{doctrineSummary}";
+        return summary + abilityLine + $"\n{doctrineSummary}";
     }
 
     private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
@@ -1363,10 +1484,14 @@ public partial class ShopMenu : Control
         var doctrineUnlocked = owned && GameState.Instance.IsUnitDoctrineUnlocked(unit.Id);
         var doctrineRetrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
 
+        var prestigeColor = PrestigeColorCatalog.ResolvePrestigeColor(
+            unit.Id, GameState.Instance.GetUnitPrestigeIndex(unit.Id));
+        var panelTint = prestigeColor ?? unit.GetTint();
+
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(0f, doctrineUnlocked ? 228f : 190f),
-            SelfModulate = unit.GetTint().Darkened(0.15f)
+            SelfModulate = panelTint.Darkened(0.15f)
         };
 
         var padding = new MarginContainer();
@@ -1480,6 +1605,49 @@ public partial class ShopMenu : Control
         }
 
         row.AddChild(actionButton);
+
+        if (owned)
+        {
+            var prestigeVariants = PrestigeColorCatalog.GetUnlockedVariants(unit.Id);
+            if (prestigeVariants.Count > 0)
+            {
+                var currentPrestige = GameState.Instance.GetUnitPrestigeIndex(unit.Id);
+                var currentVariant = currentPrestige > 0
+                    ? PrestigeColorCatalog.GetVariant(unit.Id, currentPrestige)
+                    : null;
+                var colorLabel = currentVariant != null ? currentVariant.Title : "Default";
+
+                var colorButton = new Button
+                {
+                    Text = $"Color: {colorLabel}",
+                    CustomMinimumSize = new Vector2(170f, 0f)
+                };
+                colorButton.Pressed += () =>
+                {
+                    var unlocked = PrestigeColorCatalog.GetUnlockedVariants(unit.Id);
+                    var current = GameState.Instance.GetUnitPrestigeIndex(unit.Id);
+                    var next = 0;
+                    var foundCurrent = current == 0;
+                    foreach (var v in unlocked)
+                    {
+                        if (foundCurrent)
+                        {
+                            next = v.PrestigeIndex;
+                            break;
+                        }
+
+                        if (v.PrestigeIndex == current)
+                        {
+                            foundCurrent = true;
+                        }
+                    }
+
+                    GameState.Instance.SetUnitPrestigeIndex(unit.Id, next);
+                    RefreshUi();
+                };
+                row.AddChild(colorButton);
+            }
+        }
 
         if (doctrineUnlocked && doctrineOptions.Count > 0)
         {
@@ -1712,6 +1880,171 @@ public partial class ShopMenu : Control
             RefreshUi();
         };
         stack.AddChild(button);
+
+        return panel;
+    }
+
+    private void RebuildRelicPanels()
+    {
+        foreach (var child in _relicsStack.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _relicsStack.AddChild(new Label
+        {
+            Text = "Relics"
+        });
+
+        var ownedRelicIds = GameState.Instance.GetOwnedEquipment();
+        var allEquipment = GameData.GetAllEquipment();
+
+        if (ownedRelicIds.Count == 0)
+        {
+            _relicsStack.AddChild(new Label
+            {
+                Text = "No relics acquired yet.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+            return;
+        }
+
+        var ownedRelics = allEquipment
+            .Where(eq => ownedRelicIds.Contains(eq.Id))
+            .ToArray();
+
+        foreach (var relic in ownedRelics)
+        {
+            _relicsStack.AddChild(BuildRelicPanel(relic));
+        }
+    }
+
+    private Control BuildRelicPanel(EquipmentDefinition relic)
+    {
+        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits();
+        var equippedByUnitId = "";
+        var equippedByUnitName = "";
+
+        foreach (var unit in ownedUnits)
+        {
+            var unitEquip = GameState.Instance.GetUnitEquipment(unit.Id);
+            if (unitEquip != null && unitEquip.Id == relic.Id)
+            {
+                equippedByUnitId = unit.Id;
+                equippedByUnitName = unit.DisplayName;
+                break;
+            }
+        }
+
+        var rarityColor = relic.Rarity.ToLowerInvariant() switch
+        {
+            "legendary" => new Color("ffd166"),
+            "epic" => new Color("bb86fc"),
+            "rare" => new Color("64b5f6"),
+            _ => new Color("90a4ae")
+        };
+
+        var panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 170f),
+            SelfModulate = rarityColor.Darkened(0.65f)
+        };
+
+        var padding = new MarginContainer();
+        padding.AddThemeConstantOverride("margin_left", 14);
+        padding.AddThemeConstantOverride("margin_right", 14);
+        padding.AddThemeConstantOverride("margin_top", 12);
+        padding.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(padding);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 6);
+        padding.AddChild(stack);
+
+        stack.AddChild(new Label
+        {
+            Text = $"{relic.DisplayName}  |  {relic.Rarity}"
+        });
+
+        var statParts = new List<string>();
+        if (Mathf.Abs(relic.HealthScale - 1f) > 0.001f)
+            statParts.Add($"HP x{relic.HealthScale:0.##}");
+        if (Mathf.Abs(relic.DamageScale - 1f) > 0.001f)
+            statParts.Add($"DMG x{relic.DamageScale:0.##}");
+        if (Mathf.Abs(relic.CooldownReduction) > 0.001f)
+            statParts.Add($"CD -{Mathf.RoundToInt(relic.CooldownReduction * 100f)}%");
+        if (Mathf.Abs(relic.SpeedScale - 1f) > 0.001f)
+            statParts.Add($"SPD x{relic.SpeedScale:0.##}");
+        if (relic.BaseDamageBonus != 0)
+            statParts.Add($"Base +{relic.BaseDamageBonus}");
+
+        var statLine = statParts.Count > 0 ? string.Join("  |  ", statParts) : "No stat bonuses";
+
+        stack.AddChild(new Label
+        {
+            Text = statLine,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        stack.AddChild(new Label
+        {
+            Text = relic.Description,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var statusText = string.IsNullOrEmpty(equippedByUnitId)
+            ? "Unequipped"
+            : $"Equipped on {equippedByUnitName}";
+
+        stack.AddChild(new Label
+        {
+            Text = statusText,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        if (!string.IsNullOrEmpty(equippedByUnitId))
+        {
+            var unequipButton = new Button
+            {
+                Text = $"Unequip from {equippedByUnitName}",
+                CustomMinimumSize = new Vector2(0f, 32f)
+            };
+            var capturedUnitId = equippedByUnitId;
+            unequipButton.Pressed += () =>
+            {
+                GameState.Instance.UnequipItem(capturedUnitId);
+                _statusLabel.Text = $"Last report:\nUnequipped {relic.DisplayName} from {equippedByUnitName}.";
+                RefreshUi();
+            };
+            stack.AddChild(unequipButton);
+        }
+
+        var equipRow = new HBoxContainer();
+        equipRow.AddThemeConstantOverride("separation", 6);
+        stack.AddChild(equipRow);
+
+        foreach (var unit in ownedUnits)
+        {
+            var currentEquip = GameState.Instance.GetUnitEquipment(unit.Id);
+            if (currentEquip != null && currentEquip.Id == relic.Id)
+                continue;
+
+            var equipButton = new Button
+            {
+                Text = $"Equip {unit.DisplayName}",
+                CustomMinimumSize = new Vector2(0f, 30f),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill
+            };
+            var capturedUnitId = unit.Id;
+            var capturedUnitName = unit.DisplayName;
+            equipButton.Pressed += () =>
+            {
+                GameState.Instance.TryEquipItem(capturedUnitId, relic.Id);
+                _statusLabel.Text = $"Last report:\nEquipped {relic.DisplayName} on {capturedUnitName}.";
+                RefreshUi();
+            };
+            equipRow.AddChild(equipButton);
+        }
 
         return panel;
     }

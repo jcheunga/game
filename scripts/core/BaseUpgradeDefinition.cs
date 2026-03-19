@@ -22,6 +22,9 @@ public static class BaseUpgradeCatalog
     public const string PantryId = "convoy_pantry";
     public const string DispatchConsoleId = "dispatch_console";
     public const string SignalRelayId = "signal_relay";
+    public const string RelicVaultId = "relic_vault";
+    public const string ProjectileWardId = "projectile_ward";
+    public const string GateBreakerId = "gate_breaker";
 
     private static readonly BaseUpgradeDefinition[] Upgrades =
     {
@@ -44,6 +47,21 @@ public static class BaseUpgradeCatalog
             SignalRelayId,
             "Rune Beacon",
             "Harden caravan wards against hexers. Shorten signal jams and blunt their courage and cooldown penalties.",
+            5),
+        new(
+            RelicVaultId,
+            "Relic Repository",
+            "Increase relic drop chance from boss kills by 12% per level.",
+            5),
+        new(
+            ProjectileWardId,
+            "Arrow Ward",
+            "Reduce incoming projectile damage by 8% per level.",
+            5),
+        new(
+            GateBreakerId,
+            "Siege Hammer",
+            "Increase base damage against the gatehouse by 8% per level.",
             5)
     };
 

@@ -32,6 +32,7 @@ public sealed class BattleSpawnDirector
     private int _endlessSegmentStartWave = 1;
     private float _nextEndlessWaveTime;
     private int _endlessTradeoffEnemyCapModifier;
+    private float _endlessTradeoffSpawnIntervalScale = 1f;
 
     public BattleSpawnDirector(RandomNumberGenerator rng)
     {
@@ -66,6 +67,7 @@ public sealed class BattleSpawnDirector
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
         _endlessTradeoffEnemyCapModifier = 0;
+        _endlessTradeoffSpawnIntervalScale = 1f;
         _additionalEnemyHealthScale = 1f;
         _additionalEnemyDamageScale = 1f;
 
@@ -91,6 +93,7 @@ public sealed class BattleSpawnDirector
         _endlessSegmentStartWave = 1;
         EndlessSegmentEventLabel = ResolveEndlessSegmentEventLabel(_endlessRouteForkId);
         _endlessTradeoffEnemyCapModifier = 0;
+        _endlessTradeoffSpawnIntervalScale = 1f;
         _additionalEnemyHealthScale = 1f;
         _additionalEnemyDamageScale = 1f;
 
@@ -136,7 +139,7 @@ public sealed class BattleSpawnDirector
         var spawnIntervalScale = StageModifiers.ResolveEnemySpawnIntervalScale(_stageData);
         _enemySpawnTimer = Mathf.Max(
             _combat.EnemySpawnIntervalFloor,
-            (_rng.RandfRange(_stageData.EnemySpawnMin, _stageData.EnemySpawnMax) * spawnIntervalScale) / pressure);
+            (_rng.RandfRange(_stageData.EnemySpawnMin, _stageData.EnemySpawnMax) * spawnIntervalScale * _endlessTradeoffSpawnIntervalScale) / pressure);
     }
 
     public int GetMaxActiveEnemies()
@@ -289,7 +292,7 @@ public sealed class BattleSpawnDirector
             QueueEndlessWave(_nextEndlessWaveTime, EndlessWaveNumber);
             if (EndlessBossCheckpointCatalog.IsBossCheckpointWave(EndlessWaveNumber))
             {
-                var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_endlessRouteId);
+                var bossCheckpoint = EndlessBossCheckpointCatalog.GetForWave(EndlessWaveNumber, _endlessRouteId);
                 setStatus($"Boss checkpoint wave {EndlessWaveNumber}: {bossCheckpoint.Title} incoming. {bossCheckpoint.Summary}");
             }
             else
@@ -330,11 +333,17 @@ public sealed class BattleSpawnDirector
     public void ResetEndlessSegmentTradeoffs()
     {
         _endlessTradeoffEnemyCapModifier = 0;
+        _endlessTradeoffSpawnIntervalScale = 1f;
     }
 
     public void SetEndlessTradeoffEnemyCapModifier(int value)
     {
         _endlessTradeoffEnemyCapModifier = value;
+    }
+
+    public void SetEndlessTradeoffSpawnIntervalScale(float value)
+    {
+        _endlessTradeoffSpawnIntervalScale = Mathf.Max(0.1f, value);
     }
 
     public void AdvanceNextEndlessWave(float elapsed, float seconds)
@@ -682,7 +691,7 @@ public sealed class BattleSpawnDirector
 
     private void QueueEndlessBossCheckpointWave(int waveNumber, ref float executeAt, float spawnInterval)
     {
-        var definition = EndlessBossCheckpointCatalog.GetForRoute(_endlessRouteId);
+        var definition = EndlessBossCheckpointCatalog.GetForWave(waveNumber, _endlessRouteId);
         if (definition.EscortEntries.Length > 0)
         {
             var leadEscort = definition.EscortEntries[0];
@@ -693,7 +702,7 @@ public sealed class BattleSpawnDirector
                 spawnInterval * 0.9f);
         }
 
-        QueueEnemyCopies(GameData.EnemyBossId, 1, ref executeAt, spawnInterval * 1.18f);
+        QueueEnemyCopies(definition.BossId, 1, ref executeAt, spawnInterval * 1.18f);
 
         for (var i = 1; i < definition.EscortEntries.Length; i++)
         {
@@ -850,6 +859,58 @@ public sealed class BattleSpawnDirector
             }) + (waveNumber * 0.04f)
             : 0f;
         var crusherWeight = waveNumber >= 5 ? 2.1f + (waveNumber * 0.05f) : 0f;
+        var shieldwallWeight = waveNumber >= 10 ? 2.5f + (waveNumber * 0.08f) : 0f;
+        var lichWeight = waveNumber >= 20
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.QuarantineId => 2.7f,
+                RouteCatalog.FoundryId => 0.8f,
+                RouteCatalog.BasilicaId => 2.5f,
+                RouteCatalog.MireId => 0.6f,
+                RouteCatalog.SteppeId => 0.4f,
+                RouteCatalog.GloamwoodId => 2.6f,
+                RouteCatalog.CitadelId => 2.0f,
+                _ => 0.2f
+            }) + (waveNumber * 0.02f)
+            : 0f;
+        var siegetowerWeight = waveNumber >= 25
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.FoundryId => 1.2f,
+                RouteCatalog.CitadelId => 1.0f,
+                RouteCatalog.BasilicaId => 0.8f,
+                _ => 0.5f
+            }) + (waveNumber * 0.02f)
+            : 0f;
+        var mirrorWeight = waveNumber >= 15
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.HarborId => 2.2f,
+                RouteCatalog.FoundryId => 2.8f,
+                RouteCatalog.QuarantineId => 3.4f,
+                RouteCatalog.ThornwallId => 2.4f,
+                RouteCatalog.BasilicaId => 2.0f,
+                RouteCatalog.MireId => 1.1f,
+                RouteCatalog.SteppeId => 2.8f,
+                RouteCatalog.GloamwoodId => 2.4f,
+                RouteCatalog.CitadelId => 2.1f,
+                _ => 0.8f
+            }) + (waveNumber * 0.03f)
+            : 0f;
+        var tunnelerWeight = waveNumber >= 12
+            ? (_endlessRouteId switch
+            {
+                RouteCatalog.FoundryId => 2.6f,
+                RouteCatalog.QuarantineId => 2.4f,
+                RouteCatalog.ThornwallId => 2.9f,
+                RouteCatalog.BasilicaId => 1.2f,
+                RouteCatalog.MireId => 0.8f,
+                RouteCatalog.SteppeId => 2.6f,
+                RouteCatalog.GloamwoodId => 2.2f,
+                RouteCatalog.CitadelId => 2.0f,
+                _ => 0.9f
+            }) + (waveNumber * 0.03f)
+            : 0f;
 
         if (_endlessRouteId == RouteCatalog.FoundryId)
         {
@@ -858,6 +919,9 @@ public sealed class BattleSpawnDirector
             runnerWeight *= 0.92f;
             saboteurWeight *= 1.25f;
             howlerWeight *= 1.2f;
+            shieldwallWeight *= 1.22f;
+            siegetowerWeight *= 1.3f;
+            tunnelerWeight *= 1.18f;
         }
 
         if (_endlessRouteId == RouteCatalog.QuarantineId)
@@ -870,6 +934,9 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.35f;
             splitterWeight *= 0.72f;
             crusherWeight *= 0.92f;
+            lichWeight *= 1.28f;
+            mirrorWeight *= 1.14f;
+            tunnelerWeight *= 1.12f;
         }
 
         if (_endlessRouteId == RouteCatalog.ThornwallId)
@@ -882,6 +949,8 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 0.86f;
             splitterWeight *= 0.7f;
             crusherWeight *= 1.08f;
+            shieldwallWeight *= 1.16f;
+            mirrorWeight *= 1.08f;
         }
 
         if (_endlessRouteId == RouteCatalog.BasilicaId)
@@ -895,6 +964,8 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.32f;
             splitterWeight *= 1.38f;
             crusherWeight *= 1.1f;
+            lichWeight *= 1.36f;
+            siegetowerWeight *= 1.18f;
         }
 
         if (_endlessRouteId == RouteCatalog.MireId)
@@ -908,6 +979,8 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.28f;
             splitterWeight *= 1.26f;
             crusherWeight *= 1.08f;
+            tunnelerWeight *= 1.22f;
+            mirrorWeight *= 0.88f;
         }
 
         if (_endlessRouteId == RouteCatalog.SteppeId)
@@ -920,6 +993,8 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 0.82f;
             splitterWeight *= 0.68f;
             crusherWeight *= 1.12f;
+            shieldwallWeight *= 0.88f;
+            tunnelerWeight *= 1.14f;
         }
 
         if (_endlessRouteId == RouteCatalog.GloamwoodId)
@@ -933,6 +1008,8 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.08f;
             splitterWeight *= 0.72f;
             crusherWeight *= 0.98f;
+            lichWeight *= 1.32f;
+            mirrorWeight *= 1.12f;
         }
 
         if (_endlessRouteId == RouteCatalog.CitadelId)
@@ -946,6 +1023,11 @@ public sealed class BattleSpawnDirector
             spitterWeight *= 1.16f;
             splitterWeight *= 1.08f;
             crusherWeight *= 1.18f;
+            shieldwallWeight *= 1.14f;
+            lichWeight *= 1.16f;
+            siegetowerWeight *= 1.22f;
+            mirrorWeight *= 1.1f;
+            tunnelerWeight *= 1.1f;
         }
 
         switch (_endlessRouteForkId)
@@ -978,7 +1060,7 @@ public sealed class BattleSpawnDirector
                 break;
         }
 
-        var total = walkerWeight + runnerWeight + bloaterWeight + bruteWeight + saboteurWeight + howlerWeight + jammerWeight + spitterWeight + splitterWeight + crusherWeight;
+        var total = walkerWeight + runnerWeight + bloaterWeight + bruteWeight + saboteurWeight + howlerWeight + jammerWeight + spitterWeight + splitterWeight + crusherWeight + shieldwallWeight + lichWeight + siegetowerWeight + mirrorWeight + tunnelerWeight;
         if (total <= 0f)
         {
             return GetEnemyById(GameData.EnemyWalkerId);
@@ -1038,7 +1120,37 @@ public sealed class BattleSpawnDirector
             return GetEnemyById(GameData.EnemySplitterId);
         }
 
-        return GetEnemyById(GameData.EnemyCrusherId);
+        roll -= splitterWeight;
+        if (roll < crusherWeight)
+        {
+            return GetEnemyById(GameData.EnemyCrusherId);
+        }
+
+        roll -= crusherWeight;
+        if (roll < shieldwallWeight)
+        {
+            return GetEnemyById(GameData.EnemyShieldWallId);
+        }
+
+        roll -= shieldwallWeight;
+        if (roll < lichWeight)
+        {
+            return GetEnemyById(GameData.EnemyLichId);
+        }
+
+        roll -= lichWeight;
+        if (roll < siegetowerWeight)
+        {
+            return GetEnemyById(GameData.EnemySiegeTowerId);
+        }
+
+        roll -= siegetowerWeight;
+        if (roll < mirrorWeight)
+        {
+            return GetEnemyById(GameData.EnemyMirrorId);
+        }
+
+        return GetEnemyById(GameData.EnemyTunnelerId);
     }
 
     private UnitDefinition PickEnemyDefinition(float elapsed)
@@ -1137,6 +1249,11 @@ public sealed class BattleSpawnDirector
             GameData.EnemyJammerId => 2,
             GameData.EnemySplitterId => 3,
             GameData.EnemyCrusherId => 3,
+            GameData.EnemyShieldWallId => 2,
+            GameData.EnemyLichId => 3,
+            GameData.EnemySiegeTowerId => 4,
+            GameData.EnemyMirrorId => 2,
+            GameData.EnemyTunnelerId => 2,
             GameData.EnemyBossId => 6,
             _ => 1
         };

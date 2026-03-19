@@ -10,6 +10,7 @@ public partial class SceneRouter : Node
     public const string EndlessScene = "res://scenes/EndlessMenu.tscn";
     public const string LoadoutScene = "res://scenes/LoadoutMenu.tscn";
     public const string SettingsScene = "res://scenes/SettingsMenu.tscn";
+    public const string CashShopScene = "res://scenes/CashShopMenu.tscn";
     public const string BattleScene = "res://scenes/Battle.tscn";
 
     private const float FadeDuration = 0.18f;
@@ -20,6 +21,7 @@ public partial class SceneRouter : Node
     private string _settingsReturnScenePath = MainMenuScene;
     private CanvasLayer _fadeLayer;
     private ColorRect _fadeRect;
+    private Label _tipLabel;
     private bool _transitioning;
 
     public override void _EnterTree()
@@ -47,6 +49,22 @@ public partial class SceneRouter : Node
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
         _fadeLayer.AddChild(_fadeRect);
+
+        _tipLabel = new Label
+        {
+            Text = "",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AnchorLeft = 0.1f,
+            AnchorRight = 0.9f,
+            AnchorTop = 0.7f,
+            AnchorBottom = 0.85f,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            Modulate = new Color(1f, 1f, 1f, 0f),
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        _tipLabel.AddThemeColorOverride("font_color", new Color("c8c8c8"));
+        _fadeLayer.AddChild(_tipLabel);
     }
 
     public void GoToMainMenu()
@@ -77,6 +95,11 @@ public partial class SceneRouter : Node
     public void GoToEndless()
     {
         ChangeScene(EndlessScene);
+    }
+
+    public void GoToCashShop()
+    {
+        ChangeScene(CashShopScene);
     }
 
     public void GoToBattle()
@@ -121,19 +144,35 @@ public partial class SceneRouter : Node
         _transitioning = true;
         AudioDirector.Instance?.PlaySceneChange();
 
+        if (_tipLabel != null)
+        {
+            _tipLabel.Text = LoadingTipCatalog.GetRandom();
+        }
+
         if (_fadeRect != null)
         {
             var fadeOut = CreateTween();
+            fadeOut.SetParallel(true);
             fadeOut.TweenProperty(_fadeRect, "color:a", 1f, FadeDuration);
+            if (_tipLabel != null)
+            {
+                fadeOut.TweenProperty(_tipLabel, "modulate:a", 1f, FadeDuration);
+            }
             await ToSignal(fadeOut, Tween.SignalName.Finished);
         }
 
         GetTree().ChangeSceneToFile(path);
+        MusicPlayer.Instance?.PlayForScene(path);
 
         if (_fadeRect != null)
         {
             var fadeIn = CreateTween();
+            fadeIn.SetParallel(true);
             fadeIn.TweenProperty(_fadeRect, "color:a", 0f, FadeDuration);
+            if (_tipLabel != null)
+            {
+                fadeIn.TweenProperty(_tipLabel, "modulate:a", 0f, FadeDuration);
+            }
             await ToSignal(fadeIn, Tween.SignalName.Finished);
         }
 
@@ -146,6 +185,7 @@ public partial class SceneRouter : Node
         {
             MapScene => "Campaign Map",
             ShopScene => "Caravan Armory",
+            CashShopScene => "Royal Storehouse",
             MultiplayerScene => "Multiplayer Challenge",
             LanRaceScene => "LAN Race",
             EndlessScene => "Endless Prep",

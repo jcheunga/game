@@ -34,15 +34,39 @@ public partial class SaveSystem : Node
         saveData = new GameSaveData();
         var saveFilePath = ResolveSaveFilePath();
 
-        if (!FileAccess.FileExists(saveFilePath))
+        if (TryLoadFromPath(saveFilePath, out saveData))
+        {
+            return true;
+        }
+
+        // Main save failed or missing — try backup
+        var backupPath = saveFilePath + ".bak";
+        if (FileAccess.FileExists(backupPath))
+        {
+            GD.PushWarning($"Main save failed, attempting backup: {backupPath}");
+            if (TryLoadFromPath(backupPath, out saveData))
+            {
+                return true;
+            }
+        }
+
+        saveData = new GameSaveData();
+        return false;
+    }
+
+    private static bool TryLoadFromPath(string path, out GameSaveData saveData)
+    {
+        saveData = new GameSaveData();
+
+        if (!FileAccess.FileExists(path))
         {
             return false;
         }
 
-        using var file = FileAccess.Open(saveFilePath, FileAccess.ModeFlags.Read);
+        using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
         if (file == null)
         {
-            GD.PushError($"Failed to open save file for reading: {saveFilePath}");
+            GD.PushError($"Failed to open save file for reading: {path}");
             return false;
         }
 
@@ -65,7 +89,7 @@ public partial class SaveSystem : Node
         }
         catch (Exception ex)
         {
-            GD.PushError($"Failed to parse save file. {ex.Message}");
+            GD.PushError($"Failed to parse save file {path}. {ex.Message}");
             return false;
         }
     }
@@ -76,15 +100,43 @@ public partial class SaveSystem : Node
         {
             var json = JsonSerializer.Serialize(saveData, JsonOptions);
             var saveFilePath = ResolveSaveFilePath();
+            var tempPath = saveFilePath + ".tmp";
+            var backupPath = saveFilePath + ".bak";
 
-            using var file = FileAccess.Open(saveFilePath, FileAccess.ModeFlags.Write);
-            if (file == null)
+            // Write to temp file first
+            using (var file = FileAccess.Open(tempPath, FileAccess.ModeFlags.Write))
             {
-                GD.PushError($"Failed to open save file for writing: {saveFilePath}");
-                return;
+                if (file == null)
+                {
+                    GD.PushError($"Failed to open temp save file for writing: {tempPath}");
+                    return;
+                }
+
+                file.StoreString(json);
             }
 
-            file.StoreString(json);
+            // Verify the temp file is valid before replacing
+            using (var verify = FileAccess.Open(tempPath, FileAccess.ModeFlags.Read))
+            {
+                if (verify == null || string.IsNullOrWhiteSpace(verify.GetAsText()))
+                {
+                    GD.PushError("Temp save file verification failed, aborting save.");
+                    return;
+                }
+            }
+
+            // Rotate backup: current save -> .bak
+            if (FileAccess.FileExists(saveFilePath))
+            {
+                if (FileAccess.FileExists(backupPath))
+                {
+                    DirAccess.RemoveAbsolute(backupPath);
+                }
+                DirAccess.RenameAbsolute(saveFilePath, backupPath);
+            }
+
+            // Atomic rename: .tmp -> save
+            DirAccess.RenameAbsolute(tempPath, saveFilePath);
         }
         catch (Exception ex)
         {

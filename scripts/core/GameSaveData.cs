@@ -34,9 +34,21 @@ public sealed class ChallengeRunRecord
     public long PlayedAtUnixSeconds { get; set; }
 }
 
+public sealed class EndlessRunRecord
+{
+    public int Wave { get; set; }
+    public float TimeSeconds { get; set; }
+    public string RouteId { get; set; } = "";
+    public string BoonId { get; set; } = "";
+    public int GoldEarned { get; set; }
+    public int FoodEarned { get; set; }
+    public string Date { get; set; } = "";
+    public string DifficultyId { get; set; } = "normal";
+}
+
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 25;
+    public int Version { get; set; } = 31;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
@@ -80,6 +92,25 @@ public sealed class GameSaveData
     public string[] PinnedChallengeCodes { get; set; } = [];
     public string[] ClaimedDistrictRewardIds { get; set; } = [];
     public Dictionary<string, string> UnitDoctrineIds { get; set; } = new();
+    public List<EndlessRunRecord> EndlessRunHistory { get; set; } = [];
     public int ArmedCampaignDirectiveStage { get; set; }
     public string[] ClaimedCampaignDirectiveIds { get; set; } = [];
+    public string[] OwnedEquipmentIds { get; set; } = [];
+    public Dictionary<string, string> UnitEquipmentSlots { get; set; } = new();
+    public string LastDailyDate { get; set; } = "";
+    public string DifficultyId { get; set; } = "normal";
+    public bool ShowHints { get; set; } = true;
+    public string[] SeenHintIds { get; set; } = [];
+    public int DailyStreak { get; set; }
+    public string[] UnlockedAchievementIds { get; set; } = [];
+    public Dictionary<string, int> UnitPrestigeSelections { get; set; } = new();
+    public int MusicVolumePercent { get; set; } = 50;
+    public string Language { get; set; } = "en";
+    public bool AnalyticsConsent { get; set; }
+    public bool HasShownConsentPrompt { get; set; }
+    public int FontSizeOffset { get; set; }
+    public bool HighContrast { get; set; }
+    public string[] PurchasedProductIds { get; set; } = [];
+    public int TotalPurchaseCount { get; set; }
+    public string PurchaseValidationEndpoint { get; set; } = "";
 }

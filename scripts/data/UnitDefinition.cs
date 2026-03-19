@@ -24,6 +24,7 @@ public sealed class UnitDefinition
     public float BusRepairAmount { get; set; }
     public float DeployCooldown { get; set; } = 8f;
     public float DamageTakenScale { get; set; } = 1f;
+    public float DamageReflectScale { get; set; }
     public float AuraRadius { get; set; }
     public float AuraAttackDamageScale { get; set; } = 1f;
     public float AuraSpeedScale { get; set; } = 1f;
@@ -44,6 +45,9 @@ public sealed class UnitDefinition
     public string VisualClass { get; set; } = "";
     public float VisualScale { get; set; }
     public string ColorHex { get; set; } = "ffffff";
+    public string DeployQuote { get; set; } = "";
+    public string KillQuote { get; set; } = "";
+    public string AbilityQuote { get; set; } = "";
 
     public bool IsPlayerSide => Side.Equals("Player", StringComparison.OrdinalIgnoreCase);
 

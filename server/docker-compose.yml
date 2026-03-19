@@ -1,0 +1,22 @@
+services:
+  crownroad-server:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - crownroad-data:/data
+    environment:
+      - DbPath=/data/crownroad.db
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - ASPNETCORE_URLS=http://+:8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  crownroad-data:

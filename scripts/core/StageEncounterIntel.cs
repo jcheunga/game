@@ -109,11 +109,18 @@ public static class StageEncounterIntel
 
         if (bossWave != null)
         {
-            builder.Append($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby undead.");
+            builder.AppendLine($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby undead.");
         }
         else
         {
-            builder.Append("Boss warning: none on this route.");
+            builder.AppendLine("Boss warning: none on this route.");
+        }
+
+        var spellSuggestions = BuildSpellCounterSuggestions(counts);
+        if (spellSuggestions.Count > 0)
+        {
+            builder.Append("Recommended spells: ");
+            builder.Append(string.Join(", ", spellSuggestions.Select(s => $"{s.SpellName} ({s.Reason})")));
         }
 
         return builder.ToString();
@@ -253,6 +260,31 @@ public static class StageEncounterIntel
             pressure.Add($"{GameData.GetUnit(GameData.EnemySpitterId).DisplayName} x{spitterCount} (ranged blight)");
         }
 
+        if (counts.TryGetValue(GameData.EnemyShieldWallId, out var shieldWallCount) && shieldWallCount > 0)
+        {
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyShieldWallId).DisplayName} x{shieldWallCount} (projectile blockers)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemyLichId, out var lichCount) && lichCount > 0)
+        {
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyLichId).DisplayName} x{lichCount} (necromancer support)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemySiegeTowerId, out var siegeTowerCount) && siegeTowerCount > 0)
+        {
+            pressure.Add($"{GameData.GetUnit(GameData.EnemySiegeTowerId).DisplayName} x{siegeTowerCount} (siege towers)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemyMirrorId, out var mirrorCount) && mirrorCount > 0)
+        {
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyMirrorId).DisplayName} x{mirrorCount} (damage reflectors)");
+        }
+
+        if (counts.TryGetValue(GameData.EnemyTunnelerId, out var tunnelerCount) && tunnelerCount > 0)
+        {
+            pressure.Add($"{GameData.GetUnit(GameData.EnemyTunnelerId).DisplayName} x{tunnelerCount} (burrowers)");
+        }
+
         return pressure.Count == 0
             ? "Support pressure: none."
             : $"Support pressure: {string.Join(", ", pressure)}";
@@ -286,6 +318,31 @@ public static class StageEncounterIntel
             flags.Add("ranged chip");
         }
 
+        if (WaveContainsUnit(wave, GameData.EnemyShieldWallId))
+        {
+            flags.Add("shield wall");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemyLichId))
+        {
+            flags.Add("liches");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemySiegeTowerId))
+        {
+            flags.Add("siege towers");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemyMirrorId))
+        {
+            flags.Add("mirror knights");
+        }
+
+        if (WaveContainsUnit(wave, GameData.EnemyTunnelerId))
+        {
+            flags.Add("tunnelers");
+        }
+
         if (WaveContainsUnit(wave, GameData.EnemyBossId))
         {
             flags.Add("boss rally");
@@ -308,6 +365,175 @@ public static class StageEncounterIntel
         return false;
     }
 
+    public static string BuildNotableEnemyCallouts(StageDefinition stage, int maxCallouts = 4)
+    {
+        if (stage?.Waves == null || stage.Waves.Length == 0)
+        {
+            return "";
+        }
+
+        var seen = new HashSet<string>();
+        var callouts = new List<string>();
+
+        foreach (var wave in stage.Waves)
+        {
+            if (wave?.Entries == null)
+            {
+                continue;
+            }
+
+            foreach (var entry in wave.Entries)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId) || !seen.Add(entry.UnitId))
+                {
+                    continue;
+                }
+
+                if (callouts.Count >= maxCallouts)
+                {
+                    break;
+                }
+
+                var callout = entry.UnitId switch
+                {
+                    GameData.EnemyShieldWallId => "Shield Wall: blocks projectiles",
+                    GameData.EnemyLichId => "Lich: raises fallen enemies",
+                    GameData.EnemySiegeTowerId => "Siege Tower: deploys troops at your base",
+                    GameData.EnemyMirrorId => "Mirror Knight: reflects damage",
+                    GameData.EnemyTunnelerId => "Tunneler: burrows behind your lines",
+                    _ when entry.UnitId.StartsWith(GameData.EnemyBossId) =>
+                        $"Boss encounter: {GameData.GetUnit(entry.UnitId).DisplayName}",
+                    _ => null
+                };
+
+                if (callout != null)
+                {
+                    callouts.Add(callout);
+                }
+            }
+
+            if (callouts.Count >= maxCallouts)
+            {
+                break;
+            }
+        }
+
+        return callouts.Count == 0 ? "" : string.Join("\n", callouts);
+    }
+
+    public static List<(string SpellName, string Reason)> BuildSpellCounterSuggestions(StageDefinition stage)
+    {
+        if (stage == null || !stage.HasScriptedWaves)
+        {
+            return new List<(string, string)>();
+        }
+
+        var counts = BuildUnitCounts(stage, out _);
+        return BuildSpellCounterSuggestions(counts);
+    }
+
+    private static List<(string SpellName, string Reason)> BuildSpellCounterSuggestions(Dictionary<string, int> counts)
+    {
+        if (counts == null || counts.Count == 0)
+        {
+            return new List<(string, string)>();
+        }
+
+        var candidates = new List<(string SpellName, string Reason, int Weight)>();
+
+        var swarmCount =
+            (counts.TryGetValue(GameData.EnemyWalkerId, out var walkers) ? walkers : 0) +
+            (counts.TryGetValue(GameData.EnemyRunnerId, out var runners) ? runners : 0);
+        if (swarmCount >= 4)
+        {
+            candidates.Add(("Fireball", "AoE vs swarm", swarmCount));
+            candidates.Add(("Earthquake", "AoE vs swarm", swarmCount - 1));
+        }
+
+        var rangedCount =
+            (counts.TryGetValue(GameData.EnemySpitterId, out var spitters) ? spitters : 0) +
+            (counts.TryGetValue(GameData.EnemyLichId, out var liches) ? liches : 0);
+        if (rangedCount > 0)
+        {
+            candidates.Add(("Lightning Strike", "targets priority ranged enemies", rangedCount + 2));
+        }
+
+        var armorCount =
+            (counts.TryGetValue(GameData.EnemyBruteId, out var brutes) ? brutes : 0) +
+            (counts.TryGetValue(GameData.EnemyCrusherId, out var crushers) ? crushers : 0) +
+            (counts.TryGetValue(GameData.EnemyShieldWallId, out var shields) ? shields : 0);
+        if (armorCount > 0)
+        {
+            candidates.Add(("Polymorph", "disable heavy armor", armorCount + 1));
+        }
+
+        var howlerCount = counts.TryGetValue(GameData.EnemyHowlerId, out var howlers) ? howlers : 0;
+        if (howlerCount > 0)
+        {
+            candidates.Add(("Frost Burst", "slow the buff pack", howlerCount + 1));
+        }
+
+        var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammers) ? jammers : 0;
+        if (jammerCount > 0)
+        {
+            candidates.Add(("War Cry", "burst through signal jam", jammerCount + 1));
+        }
+
+        var bloaterCount = counts.TryGetValue(GameData.EnemyBloaterId, out var bloaters) ? bloaters : 0;
+        if (bloaterCount > 0)
+        {
+            candidates.Add(("Barrier Ward", "reduce death burst damage", bloaterCount));
+        }
+
+        var mirrorCount = counts.TryGetValue(GameData.EnemyMirrorId, out var mirrors) ? mirrors : 0;
+        if (mirrorCount > 0)
+        {
+            candidates.Add(("Stone Barricade", "block without reflect damage", mirrorCount + 2));
+        }
+
+        var tunnelerCount = counts.TryGetValue(GameData.EnemyTunnelerId, out var tunnelers) ? tunnelers : 0;
+        if (tunnelerCount > 0)
+        {
+            candidates.Add(("Heal", "sustain against rear attacks", tunnelerCount + 1));
+        }
+
+        var siegeCount = counts.TryGetValue(GameData.EnemySiegeTowerId, out var sieges) ? sieges : 0;
+        if (siegeCount > 0)
+        {
+            candidates.Add(("Lightning Strike", "kill siege towers before arrival", siegeCount + 3));
+            candidates.Add(("Fireball", "kill siege towers before arrival", siegeCount + 2));
+        }
+
+        var hasBoss = counts.ContainsKey(GameData.EnemyBossId) ||
+            counts.ContainsKey(GameData.EnemyBossDocksId) ||
+            counts.ContainsKey(GameData.EnemyBossForgeId) ||
+            counts.ContainsKey(GameData.EnemyBossWardId) ||
+            counts.ContainsKey(GameData.EnemyBossPassId) ||
+            counts.ContainsKey(GameData.EnemyBossBasilicaId) ||
+            counts.ContainsKey(GameData.EnemyBossMireId) ||
+            counts.ContainsKey(GameData.EnemyBossSteppeId) ||
+            counts.ContainsKey(GameData.EnemyBossVergeId) ||
+            counts.ContainsKey(GameData.EnemyBossCitadelId);
+        if (hasBoss)
+        {
+            candidates.Add(("Resurrect", "recover from boss burst damage", 5));
+        }
+
+        var seen = new HashSet<string>();
+        var results = new List<(string SpellName, string Reason)>();
+        foreach (var candidate in candidates.OrderByDescending(c => c.Weight))
+        {
+            if (results.Count >= 3)
+                break;
+            if (seen.Add(candidate.SpellName))
+            {
+                results.Add((candidate.SpellName, candidate.Reason));
+            }
+        }
+
+        return results;
+    }
+
     private static float CalculateThreatScore(StageDefinition stage)
     {
         if (stage == null)
@@ -325,6 +551,11 @@ public static class StageEncounterIntel
         var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammers) ? jammers : 0;
         var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurs) ? saboteurs : 0;
         var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitters) ? spitters : 0;
+        var shieldWallCount = counts.TryGetValue(GameData.EnemyShieldWallId, out var shieldWalls) ? shieldWalls : 0;
+        var lichCount = counts.TryGetValue(GameData.EnemyLichId, out var liches) ? liches : 0;
+        var siegeTowerCount = counts.TryGetValue(GameData.EnemySiegeTowerId, out var siegeTowers) ? siegeTowers : 0;
+        var mirrorCount = counts.TryGetValue(GameData.EnemyMirrorId, out var mirrors) ? mirrors : 0;
+        var tunnelerCount = counts.TryGetValue(GameData.EnemyTunnelerId, out var tunnelers) ? tunnelers : 0;
 
         return
             ((stage.EnemyHealthScale + stage.EnemyDamageScale) * 0.72f) +
@@ -336,6 +567,11 @@ public static class StageEncounterIntel
             (jammerCount * 0.08f) +
             (saboteurCount * 0.05f) +
             (spitterCount * 0.03f) +
+            (shieldWallCount * 0.07f) +
+            (lichCount * 0.08f) +
+            (siegeTowerCount * 0.06f) +
+            (mirrorCount * 0.05f) +
+            (tunnelerCount * 0.06f) +
             (StageModifiers.HasModifiers(stage) ? stage.Modifiers.Length * 0.08f : 0f) +
             (StageHazards.HasHazards(stage) ? stage.Hazards.Length * 0.1f : 0f) +
             (StageModifiers.ResolveEnemyCapBonus(stage) * 0.12f) +

@@ -10,7 +10,7 @@ public partial class GameState : Node
 	private const int DefaultFood = 12;
 	private const int DefaultUnlockedStage = 1;
 	private const int MaxDeckSize = 3;
-	private const int MaxSpellDeckSize = 2;
+	private const int MaxSpellDeckSize = 3;
 	private const int DefaultUnitLevel = 1;
 	private const int UnitDoctrineUnlockLevelValue = 3;
 	private const int UnitDoctrineRetrainGoldCost = 75;
@@ -28,11 +28,14 @@ public partial class GameState : Node
 	private const string DefaultChallengeSyncEndpoint = "";
 	private const bool DefaultChallengeSyncAutoFlush = false;
 	private const string DefaultPlayerAuthToken = "";
+	private const string DefaultDifficultyId = DifficultyCatalog.NormalId;
 	private const bool DefaultShowDevUi = true;
 	private const bool DefaultShowFpsCounter = true;
 	private const bool DefaultAudioMuted = false;
 	private const int DefaultEffectsVolumePercent = 85;
 	private const int DefaultAmbienceVolumePercent = 65;
+	private const int DefaultMusicVolumePercent = 50;
+	private const string DefaultLanguage = "en";
 	private static readonly string DefaultAsyncChallengeCode =
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
@@ -64,6 +67,7 @@ public partial class GameState : Node
 	public string PlayerAuthToken { get; private set; } = DefaultPlayerAuthToken;
 	public long LastPlayerProfileSyncAtUnixSeconds { get; private set; }
 	public long LastChallengeSyncAtUnixSeconds { get; private set; }
+	public string LastDailyDate { get; private set; } = "";
 	public int TotalChallengeSubmissionsSynced { get; private set; }
 	public string ChallengeSyncProviderId { get; private set; } = DefaultChallengeSyncProviderId;
 	public string ChallengeSyncEndpoint { get; private set; } = DefaultChallengeSyncEndpoint;
@@ -71,8 +75,18 @@ public partial class GameState : Node
 	public bool ShowDevUi { get; private set; } = DefaultShowDevUi;
 	public bool ShowFpsCounter { get; private set; } = DefaultShowFpsCounter;
 	public bool AudioMuted { get; private set; } = DefaultAudioMuted;
+	public bool ShowHints { get; private set; } = true;
 	public int EffectsVolumePercent { get; private set; } = DefaultEffectsVolumePercent;
 	public int AmbienceVolumePercent { get; private set; } = DefaultAmbienceVolumePercent;
+	public int MusicVolumePercent { get; private set; } = DefaultMusicVolumePercent;
+	public string Language { get; private set; } = DefaultLanguage;
+	public bool AnalyticsConsent { get; private set; }
+	public bool HasShownConsentPrompt { get; private set; }
+	public int FontSizeOffset { get; private set; }
+	public bool HighContrast { get; private set; }
+	public string DifficultyId { get; private set; } = DefaultDifficultyId;
+	public int TotalPurchaseCount => _totalPurchaseCount;
+	public string PurchaseValidationEndpoint => _purchaseValidationEndpoint;
 	public BattleRunMode CurrentBattleMode { get; private set; } = BattleRunMode.Campaign;
 	public IReadOnlyList<string> ActiveDeckUnitIds => _activeDeckUnitIds;
 	public IReadOnlyList<string> ActiveDeckSpellIds => _activeDeckSpellIds;
@@ -84,6 +98,7 @@ public partial class GameState : Node
 	public int ClaimedDistrictRewardCount => _claimedDistrictRewardIds.Count;
 	public int ClaimedUnitDoctrineCount => _unitDoctrineSelections.Count;
 	public int ClaimedCampaignDirectiveCount => _claimedCampaignDirectiveIds.Count;
+	public int DailyStreak => _dailyStreak;
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
@@ -107,12 +122,26 @@ public partial class GameState : Node
 	private readonly Dictionary<string, int> _baseUpgradeLevels = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, string> _unitDoctrineSelections = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _challengeBestScores = new(StringComparer.OrdinalIgnoreCase);
+	private readonly List<EndlessRunRecord> _endlessRunHistory = new();
 	private readonly List<ChallengeRunRecord> _challengeHistory = new();
 	private readonly List<ChallengeSubmissionEnvelope> _pendingChallengeSubmissions = new();
 	private readonly List<string> _pinnedChallengeCodes = new();
 	private readonly HashSet<string> _claimedDistrictRewardIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _claimedCampaignDirectiveIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _ownedEquipmentIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, string> _unitEquipmentSlots = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _seenHintIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _unlockedAchievementIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _unitPrestigeSelections = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _purchasedProductIds = new(StringComparer.OrdinalIgnoreCase);
+	private int _totalPurchaseCount;
+	private string _purchaseValidationEndpoint = "";
 	private int _armedCampaignDirectiveStage;
+	private int _dailyStreak;
+	private readonly RandomNumberGenerator _rng = new();
+	private string _lastAchievementNotification = "";
+	private double _lastAchievementSyncTime;
+	private bool _achievementSyncPending;
 
 	public override void _EnterTree()
 	{
@@ -137,6 +166,11 @@ public partial class GameState : Node
 		ApplyDefaults();
 		LastResultMessage = "Progress reset. Route is clear for stage 1.";
 		Persist();
+	}
+
+	public void ReloadFromDisk()
+	{
+		LoadOrInitialize();
 	}
 
 	public void SetSelectedStage(int stage)
@@ -492,8 +526,11 @@ public partial class GameState : Node
 
 	public string ApplyVictory(int stage, int rewardGold, int rewardFood, int starsEarned)
 	{
-		Gold += Math.Max(0, rewardGold);
-		Food += Math.Max(0, rewardFood);
+		var diff = GetDifficulty();
+		rewardGold = Godot.Mathf.RoundToInt(Math.Max(0, rewardGold) * diff.GoldRewardScale);
+		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale);
+		Gold += rewardGold;
+		Food += rewardFood;
 		var bestStars = RecordStageStars(stage, starsEarned);
 		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
 		var directiveRewardSummary = TryClaimCampaignDirectiveReward(stage);
@@ -506,6 +543,9 @@ public partial class GameState : Node
 			(string.IsNullOrWhiteSpace(extraRewardSummary) ? "" : $" {extraRewardSummary}") +
 			nextStageHint;
 		Persist();
+		CheckAchievements();
+		TryAutoCloudBackup();
+		AnalyticsService.TrackStageEnd(stage, true, bestStars, 0f, 1f);
 		return extraRewardSummary;
 	}
 
@@ -513,22 +553,40 @@ public partial class GameState : Node
 	{
 		LastResultMessage = $"Stage {stage} failed. The war wagon line was overrun.";
 		Persist();
+		AnalyticsService.TrackStageEnd(stage, false, 0, 0f, 0f);
 	}
 
 	public void ApplyRetreat(int stage)
 	{
 		LastResultMessage = $"Retreated from stage {stage}. No rewards earned.";
 		Persist();
+		AnalyticsService.TrackStageEnd(stage, false, 0, 0f, 0f);
 	}
 
 	public void ApplyEndlessResult(string routeId, int waveReached, float elapsedSeconds, int enemyDefeats, int rewardGold, int rewardFood, bool retreated)
 	{
+		var diff = GetDifficulty();
+		rewardGold = Godot.Mathf.RoundToInt(Math.Max(0, rewardGold) * diff.GoldRewardScale);
+		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale);
 		SelectedEndlessRouteId = NormalizeRouteId(routeId);
-		Gold += Math.Max(0, rewardGold);
-		Food += Math.Max(0, rewardFood);
+		Gold += rewardGold;
+		Food += rewardFood;
 		BestEndlessWave = Math.Max(BestEndlessWave, Math.Max(0, waveReached));
 		BestEndlessTimeSeconds = Math.Max(BestEndlessTimeSeconds, Math.Max(0f, elapsedSeconds));
 		EndlessRuns++;
+
+		_endlessRunHistory.Insert(0, new EndlessRunRecord
+		{
+			Wave = Math.Max(0, waveReached),
+			TimeSeconds = Math.Max(0f, elapsedSeconds),
+			RouteId = SelectedEndlessRouteId,
+			BoonId = SelectedEndlessBoonId,
+			GoldEarned = rewardGold,
+			FoodEarned = rewardFood,
+			Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+			DifficultyId = DifficultyId ?? DefaultDifficultyId
+		});
+		NormalizeEndlessRunHistory();
 
 		var routeLabel = GameData.GetLatestStageForMap(SelectedEndlessRouteId).MapName;
 		var outcome = retreated ? "withdrew" : "was overrun";
@@ -536,6 +594,12 @@ public partial class GameState : Node
 			$"Endless run {outcome} on {routeLabel}. Wave {Math.Max(0, waveReached)}, {elapsedSeconds:0.0}s, {enemyDefeats} defeats. " +
 			$"+{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food.";
 		Persist();
+		CheckAchievements();
+	}
+
+	public IReadOnlyList<EndlessRunRecord> GetEndlessRunHistory()
+	{
+		return _endlessRunHistory.ToArray();
 	}
 
 	public int GetAsyncChallengeBestScore(string code)
@@ -925,11 +989,32 @@ public partial class GameState : Node
 				$"Score {score}. Best: {newBest}.";
 		}
 
+		var daily = GetDailyChallenge();
+		var dailyChallenge = AsyncChallengeCatalog.Create(
+			Mathf.Clamp(daily.StageIndex, 1, MaxStage),
+			AsyncChallengeCatalog.PressureSpikeId,
+			daily.Seed);
+		if (normalizedCode.Equals(dailyChallenge.Code, StringComparison.OrdinalIgnoreCase))
+		{
+			LastDailyDate = daily.Date;
+		}
+
 		Persist();
 		if (ChallengeSyncAutoFlush)
 		{
 			ChallengeSyncService.Instance?.TryAutoFlushPending();
 		}
+	}
+
+	public void SetDifficulty(string id)
+	{
+		DifficultyId = DifficultyCatalog.GetById(id).Id;
+		Persist();
+	}
+
+	public DifficultyDefinition GetDifficulty()
+	{
+		return DifficultyCatalog.GetById(DifficultyId);
 	}
 
 	public void SetShowDevUi(bool enabled)
@@ -963,6 +1048,72 @@ public partial class GameState : Node
 		AmbienceVolumePercent = Mathf.Clamp(percent, 0, 100);
 		Persist();
 		AudioDirector.Instance?.RefreshMixFromState();
+	}
+
+	public void SetMusicVolumePercent(int percent)
+	{
+		MusicVolumePercent = Mathf.Clamp(percent, 0, 100);
+		Persist();
+		MusicPlayer.Instance?.SetVolumeScale(MusicVolumePercent / 100f);
+	}
+
+	public void SetLanguage(string language)
+	{
+		Language = string.IsNullOrWhiteSpace(language) ? DefaultLanguage : language.Trim().ToLowerInvariant();
+		Locale.SetLanguage(Language);
+		Persist();
+	}
+
+	public void SetAnalyticsConsent(bool consent)
+	{
+		AnalyticsConsent = consent;
+		HasShownConsentPrompt = true;
+		Persist();
+	}
+
+	public void SetFontSizeOffset(int offset)
+	{
+		FontSizeOffset = Mathf.Clamp(offset, -4, 8);
+		Persist();
+		ApplyFontSizeOffset();
+	}
+
+	public void SetHighContrast(bool enabled)
+	{
+		HighContrast = enabled;
+		Persist();
+	}
+
+	private void ApplyFontSizeOffset()
+	{
+		var defaultSize = 16 + FontSizeOffset;
+		if (defaultSize < 12) defaultSize = 12;
+		if (defaultSize > 28) defaultSize = 28;
+		ThemeDB.FallbackFontSize = defaultSize;
+	}
+
+	public void SetShowHints(bool enabled)
+	{
+		ShowHints = enabled;
+		Persist();
+	}
+
+	public bool HasSeenHint(string hintId)
+	{
+		return _seenHintIds.Contains(hintId);
+	}
+
+	public void MarkHintSeen(string hintId)
+	{
+		if (string.IsNullOrWhiteSpace(hintId))
+		{
+			return;
+		}
+
+		if (_seenHintIds.Add(hintId.Trim()))
+		{
+			Persist();
+		}
 	}
 
 	public IReadOnlyList<UnitDefinition> GetActiveDeckUnits()
@@ -1273,6 +1424,7 @@ public partial class GameState : Node
 			_ownedPlayerUnitIds.Add(definition.Id);
 			LastResultMessage = $"{definition.DisplayName} purchased for {cost} gold.";
 			Persist();
+			CheckAchievements();
 			message = LastResultMessage;
 			return true;
 		}
@@ -1313,6 +1465,7 @@ public partial class GameState : Node
 				? $"{definition.DisplayName} scribed for {cost} gold."
 				: $"{definition.DisplayName} prepared for the caravan.";
 			Persist();
+			CheckAchievements();
 			message = LastResultMessage;
 			return true;
 		}
@@ -1528,6 +1681,7 @@ public partial class GameState : Node
 			_unitUpgradeLevels[definition.Id] = currentLevel + 1;
 			LastResultMessage = $"{definition.DisplayName} upgraded to level {currentLevel + 1}. -{cost} gold.";
 			Persist();
+			CheckAchievements();
 			message = LastResultMessage;
 			return true;
 		}
@@ -1612,6 +1766,9 @@ public partial class GameState : Node
 			BaseUpgradeCatalog.PantryId => 80 + (level * 65),
 			BaseUpgradeCatalog.DispatchConsoleId => 95 + (level * 75),
 			BaseUpgradeCatalog.SignalRelayId => 100 + (level * 80),
+			BaseUpgradeCatalog.RelicVaultId => 110 + (level * 85),
+			BaseUpgradeCatalog.ProjectileWardId => 100 + (level * 75),
+			BaseUpgradeCatalog.GateBreakerId => 95 + (level * 80),
 			_ => 100 + (level * 60)
 		};
 	}
@@ -1820,12 +1977,33 @@ public partial class GameState : Node
 		cooldownReduction += doctrineBonus.CooldownReduction;
 		baseDamageBonus += doctrineBonus.BaseDamageBonus;
 
-		return new UnitStats(
+		var speedScale = 1f;
+		var equip = GetUnitEquipment(definition.Id);
+		if (equip != null)
+		{
+			healthScale *= equip.HealthScale;
+			damageScale *= equip.DamageScale;
+			cooldownReduction += equip.CooldownReduction;
+			baseDamageBonus += equip.BaseDamageBonus;
+			speedScale *= equip.SpeedScale;
+		}
+
+		var stats = new UnitStats(
 			definition,
 			healthScale,
 			damageScale,
 			cooldownReduction,
-			baseDamageBonus);
+			baseDamageBonus,
+			speedScale);
+
+		var prestigeIndex = GetUnitPrestigeIndex(definition.Id);
+		var prestigeColor = PrestigeColorCatalog.ResolvePrestigeColor(definition.Id, prestigeIndex);
+		if (prestigeColor.HasValue)
+		{
+			stats.Color = prestigeColor.Value;
+		}
+
+		return stats;
 	}
 
 	private static SquadSynergyBonus ResolveDeckSynergyBonus(UnitDefinition definition, IEnumerable<UnitDefinition> deckUnits)
@@ -1849,6 +2027,90 @@ public partial class GameState : Node
 		}
 
 		return GetUnitDoctrineDefinition(definition.Id)?.Bonus ?? UnitDoctrineBonus.None;
+	}
+
+	public EquipmentDefinition GetUnitEquipment(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId))
+		{
+			return null;
+		}
+
+		if (_unitEquipmentSlots.TryGetValue(unitId, out var equipId) &&
+			!string.IsNullOrWhiteSpace(equipId))
+		{
+			try
+			{
+				return GameData.GetEquipment(equipId);
+			}
+			catch
+			{
+				return null;
+			}
+		}
+
+		return null;
+	}
+
+	public bool TryEquipItem(string unitId, string equipmentId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || string.IsNullOrWhiteSpace(equipmentId))
+		{
+			return false;
+		}
+
+		if (!_ownedEquipmentIds.Contains(equipmentId))
+		{
+			return false;
+		}
+
+		foreach (var pair in _unitEquipmentSlots)
+		{
+			if (pair.Value.Equals(equipmentId, StringComparison.OrdinalIgnoreCase) &&
+				!pair.Key.Equals(unitId, StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+		}
+
+		_unitEquipmentSlots[unitId] = equipmentId;
+		Persist();
+		return true;
+	}
+
+	public void UnequipItem(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId))
+		{
+			return;
+		}
+
+		if (_unitEquipmentSlots.Remove(unitId))
+		{
+			Persist();
+		}
+	}
+
+	public HashSet<string> GetOwnedEquipment()
+	{
+		return new HashSet<string>(_ownedEquipmentIds, StringComparer.OrdinalIgnoreCase);
+	}
+
+	public bool TryGrantEquipment(string equipmentId)
+	{
+		if (string.IsNullOrWhiteSpace(equipmentId))
+		{
+			return false;
+		}
+
+		if (_ownedEquipmentIds.Add(equipmentId))
+		{
+			Persist();
+			CheckAchievements();
+			return true;
+		}
+
+		return false;
 	}
 
 	public bool IsUnitInActiveDeck(string unitId)
@@ -2150,8 +2412,12 @@ public partial class GameState : Node
 		}
 
 		ClampState();
+		Locale.SetLanguage(Language);
+		MusicPlayer.Instance?.SetVolumeScale(MusicVolumePercent / 100f);
+		ApplyFontSizeOffset();
 		GrantPendingDistrictRewardsOnLoad();
 		Persist();
+		AnalyticsService.TrackSessionStart();
 	}
 
 	private void ApplyDefaults()
@@ -2169,15 +2435,23 @@ public partial class GameState : Node
 		PlayerAuthToken = DefaultPlayerAuthToken;
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		LastChallengeSyncAtUnixSeconds = 0L;
+		LastDailyDate = "";
 		TotalChallengeSubmissionsSynced = 0;
 		ChallengeSyncProviderId = DefaultChallengeSyncProviderId;
 		ChallengeSyncEndpoint = DefaultChallengeSyncEndpoint;
 		ChallengeSyncAutoFlush = DefaultChallengeSyncAutoFlush;
+		DifficultyId = DefaultDifficultyId;
 		ShowDevUi = DefaultShowDevUi;
 		ShowFpsCounter = DefaultShowFpsCounter;
 		AudioMuted = DefaultAudioMuted;
 		EffectsVolumePercent = DefaultEffectsVolumePercent;
 		AmbienceVolumePercent = DefaultAmbienceVolumePercent;
+		MusicVolumePercent = DefaultMusicVolumePercent;
+		Language = DefaultLanguage;
+		AnalyticsConsent = false;
+		HasShownConsentPrompt = false;
+		FontSizeOffset = 0;
+		HighContrast = false;
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
@@ -2202,15 +2476,24 @@ public partial class GameState : Node
 		_unitDoctrineSelections.Clear();
 		_armedCampaignDirectiveStage = 0;
 		_challengeBestScores.Clear();
+		_endlessRunHistory.Clear();
 		_challengeHistory.Clear();
 		_pendingChallengeSubmissions.Clear();
 		_pinnedChallengeCodes.Clear();
 		_claimedDistrictRewardIds.Clear();
 		_claimedCampaignDirectiveIds.Clear();
+		_ownedEquipmentIds.Clear();
+		_unitEquipmentSlots.Clear();
+		_unlockedAchievementIds.Clear();
+		_unitPrestigeSelections.Clear();
+		_purchasedProductIds.Clear();
+		_totalPurchaseCount = 0;
+		_purchaseValidationEndpoint = "";
 		BestEndlessWave = 0;
 		BestEndlessTimeSeconds = 0f;
 		EndlessRuns = 0;
 		ChallengeRuns = 0;
+		_dailyStreak = 0;
 	}
 
 	private void ApplySavedData(GameSaveData saved)
@@ -2286,6 +2569,16 @@ public partial class GameState : Node
 			AudioMuted = saved.AudioMuted;
 			EffectsVolumePercent = saved.EffectsVolumePercent;
 			AmbienceVolumePercent = saved.AmbienceVolumePercent;
+			MusicVolumePercent = saved.Version >= 31
+				? Mathf.Clamp(saved.MusicVolumePercent, 0, 100)
+				: DefaultMusicVolumePercent;
+			Language = saved.Version >= 31 && !string.IsNullOrWhiteSpace(saved.Language)
+				? saved.Language.Trim().ToLowerInvariant()
+				: DefaultLanguage;
+			AnalyticsConsent = saved.Version >= 31 && saved.AnalyticsConsent;
+			HasShownConsentPrompt = saved.Version >= 31 && saved.HasShownConsentPrompt;
+			FontSizeOffset = saved.Version >= 31 ? Mathf.Clamp(saved.FontSizeOffset, -4, 8) : 0;
+			HighContrast = saved.Version >= 31 && saved.HighContrast;
 		}
 		else
 		{
@@ -2444,6 +2737,30 @@ public partial class GameState : Node
 			}
 		}
 
+		_ownedEquipmentIds.Clear();
+		if (saved.Version >= 26 && saved.OwnedEquipmentIds != null)
+		{
+			foreach (var equipId in saved.OwnedEquipmentIds)
+			{
+				if (!string.IsNullOrWhiteSpace(equipId))
+				{
+					_ownedEquipmentIds.Add(equipId.Trim());
+				}
+			}
+		}
+
+		_unitEquipmentSlots.Clear();
+		if (saved.Version >= 26 && saved.UnitEquipmentSlots != null)
+		{
+			foreach (var pair in saved.UnitEquipmentSlots)
+			{
+				if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+				{
+					_unitEquipmentSlots[pair.Key.Trim()] = pair.Value.Trim();
+				}
+			}
+		}
+
 		if (saved.Version >= 6)
 		{
 			BestEndlessWave = Math.Max(0, saved.BestEndlessWave);
@@ -2456,6 +2773,31 @@ public partial class GameState : Node
 			BestEndlessTimeSeconds = 0f;
 			EndlessRuns = 0;
 		}
+
+		_endlessRunHistory.Clear();
+		if (saved.Version >= 29 && saved.EndlessRunHistory != null)
+		{
+			foreach (var entry in saved.EndlessRunHistory)
+			{
+				if (entry == null)
+				{
+					continue;
+				}
+
+				_endlessRunHistory.Add(new EndlessRunRecord
+				{
+					Wave = entry.Wave,
+					TimeSeconds = entry.TimeSeconds,
+					RouteId = entry.RouteId ?? "",
+					BoonId = entry.BoonId ?? "",
+					GoldEarned = entry.GoldEarned,
+					FoodEarned = entry.FoodEarned,
+					Date = entry.Date ?? "",
+					DifficultyId = entry.DifficultyId ?? "normal"
+				});
+			}
+		}
+		NormalizeEndlessRunHistory();
 
 		_challengeBestScores.Clear();
 		if (saved.Version >= 9 && saved.ChallengeBestScores != null)
@@ -2524,6 +2866,74 @@ public partial class GameState : Node
 				}
 			}
 		}
+
+		LastDailyDate = saved.Version >= 27 && !string.IsNullOrWhiteSpace(saved.LastDailyDate)
+			? saved.LastDailyDate.Trim()
+			: "";
+
+		DifficultyId = saved.Version >= 28 && !string.IsNullOrWhiteSpace(saved.DifficultyId)
+			? DifficultyCatalog.GetById(saved.DifficultyId).Id
+			: DefaultDifficultyId;
+
+		ShowHints = saved.Version < 28 || saved.ShowHints;
+
+		_seenHintIds.Clear();
+		if (saved.Version >= 28 && saved.SeenHintIds != null)
+		{
+			foreach (var hintId in saved.SeenHintIds)
+			{
+				if (!string.IsNullOrWhiteSpace(hintId))
+				{
+					_seenHintIds.Add(hintId.Trim());
+				}
+			}
+		}
+
+		_dailyStreak = saved.DailyStreak > 0 ? saved.DailyStreak : 0;
+
+		_unlockedAchievementIds.Clear();
+		if (saved.UnlockedAchievementIds != null)
+		{
+			foreach (var achievementId in saved.UnlockedAchievementIds)
+			{
+				if (!string.IsNullOrWhiteSpace(achievementId))
+				{
+					_unlockedAchievementIds.Add(achievementId.Trim());
+				}
+			}
+		}
+
+		_unitPrestigeSelections.Clear();
+		if (saved.Version >= 30 && saved.UnitPrestigeSelections != null)
+		{
+			foreach (var (unitId, index) in saved.UnitPrestigeSelections)
+			{
+				if (!string.IsNullOrWhiteSpace(unitId) && index >= 1 && index <= PrestigeColorCatalog.MaxPrestigeIndex)
+				{
+					_unitPrestigeSelections[unitId.Trim()] = index;
+				}
+			}
+		}
+
+		_purchasedProductIds.Clear();
+		_totalPurchaseCount = 0;
+		_purchaseValidationEndpoint = "";
+		if (saved.Version >= 31)
+		{
+			if (saved.PurchasedProductIds != null)
+			{
+				foreach (var id in saved.PurchasedProductIds)
+				{
+					if (!string.IsNullOrWhiteSpace(id))
+					{
+						_purchasedProductIds.Add(id.Trim());
+					}
+				}
+			}
+
+			_totalPurchaseCount = Math.Max(0, saved.TotalPurchaseCount);
+			_purchaseValidationEndpoint = saved.PurchaseValidationEndpoint?.Trim() ?? "";
+		}
 	}
 
 	private void ClampState()
@@ -2565,6 +2975,7 @@ public partial class GameState : Node
 		NormalizeBaseUpgrades();
 		NormalizeUnitDoctrines();
 		NormalizeChallengeScores();
+		NormalizeEndlessRunHistory();
 		NormalizeChallengeHistory();
 		NormalizePendingChallengeSubmissions();
 		NormalizePinnedChallenges();
@@ -2629,6 +3040,12 @@ public partial class GameState : Node
 			AudioMuted = AudioMuted,
 			EffectsVolumePercent = EffectsVolumePercent,
 			AmbienceVolumePercent = AmbienceVolumePercent,
+			MusicVolumePercent = MusicVolumePercent,
+			Language = Language ?? DefaultLanguage,
+			AnalyticsConsent = AnalyticsConsent,
+			HasShownConsentPrompt = HasShownConsentPrompt,
+			FontSizeOffset = FontSizeOffset,
+			HighContrast = HighContrast,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
 			ActiveDeckSpellIds = _activeDeckSpellIds.ToArray(),
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),
@@ -2641,6 +3058,19 @@ public partial class GameState : Node
 			BestEndlessWave = BestEndlessWave,
 			BestEndlessTimeSeconds = BestEndlessTimeSeconds,
 			EndlessRuns = EndlessRuns,
+			EndlessRunHistory = _endlessRunHistory
+				.Select(e => new EndlessRunRecord
+				{
+					Wave = e.Wave,
+					TimeSeconds = e.TimeSeconds,
+					RouteId = e.RouteId,
+					BoonId = e.BoonId,
+					GoldEarned = e.GoldEarned,
+					FoodEarned = e.FoodEarned,
+					Date = e.Date,
+					DifficultyId = e.DifficultyId
+				})
+				.ToList(),
 			ChallengeBestScores = new Dictionary<string, int>(_challengeBestScores),
 			ChallengeRuns = ChallengeRuns,
 			ChallengeHistory = _challengeHistory
@@ -2654,7 +3084,19 @@ public partial class GameState : Node
 			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray(),
 			ClaimedDistrictRewardIds = _claimedDistrictRewardIds.ToArray(),
 			ArmedCampaignDirectiveStage = _armedCampaignDirectiveStage,
-			ClaimedCampaignDirectiveIds = _claimedCampaignDirectiveIds.ToArray()
+			ClaimedCampaignDirectiveIds = _claimedCampaignDirectiveIds.ToArray(),
+			OwnedEquipmentIds = _ownedEquipmentIds.ToArray(),
+			UnitEquipmentSlots = new Dictionary<string, string>(_unitEquipmentSlots),
+			LastDailyDate = LastDailyDate ?? "",
+			DifficultyId = DifficultyId ?? DefaultDifficultyId,
+			ShowHints = ShowHints,
+			SeenHintIds = _seenHintIds.ToArray(),
+			DailyStreak = _dailyStreak,
+			UnlockedAchievementIds = _unlockedAchievementIds.ToArray(),
+			UnitPrestigeSelections = new Dictionary<string, int>(_unitPrestigeSelections),
+			PurchasedProductIds = _purchasedProductIds.ToArray(),
+			TotalPurchaseCount = _totalPurchaseCount,
+			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? ""
 		};
 	}
 
@@ -2678,7 +3120,16 @@ public partial class GameState : Node
 
 		var totalStages = GameData.GetStagesForMap(district.Id).Count;
 		var clearedStages = GetClearedDistrictStageCount(district.Id);
-		var rewardText = $"+{district.RewardGold} gold, +{district.RewardFood} food";
+		var relicHint = "";
+		if (!string.IsNullOrEmpty(district.RewardRelicId))
+		{
+			var relic = GameData.GetEquipment(district.RewardRelicId);
+			if (relic != null)
+			{
+				relicHint = $", +{relic.DisplayName} ({relic.Rarity} relic)";
+			}
+		}
+		var rewardText = $"+{district.RewardGold} gold, +{district.RewardFood} food{relicHint}";
 		return HasClaimedDistrictReward(district.Id)
 			? $"District reward claimed: {rewardText}"
 			: $"District reward on full clear: {rewardText}  |  {clearedStages}/{Math.Max(1, totalStages)} cleared";
@@ -2703,7 +3154,53 @@ public partial class GameState : Node
 		_claimedDistrictRewardIds.Add(district.Id);
 		Gold += Math.Max(0, district.RewardGold);
 		Food += Math.Max(0, district.RewardFood);
-		return $"{district.Title} secured. District reward: +{district.RewardGold} gold, +{district.RewardFood} food.";
+
+		var relicSummary = "";
+		if (!string.IsNullOrEmpty(district.RewardRelicId))
+		{
+			var relic = GameData.GetEquipment(district.RewardRelicId);
+			if (relic != null && TryGrantEquipment(relic.Id))
+			{
+				relicSummary = $" Relic earned: {relic.DisplayName} ({relic.Rarity})!";
+			}
+		}
+
+		var baseSummary = $"{district.Title} secured. District reward: +{district.RewardGold} gold, +{district.RewardFood} food.{relicSummary}";
+
+		var campaignBonusSummary = TryGrantCampaignCompletionBonus();
+		return string.IsNullOrWhiteSpace(campaignBonusSummary) ? baseSummary : $"{baseSummary} {campaignBonusSummary}";
+	}
+
+	private static readonly string[] CampaignCompletionBonusRelicIds =
+	{
+		"relic_phantom_mantle",
+		"relic_dragon_heart"
+	};
+
+	private string TryGrantCampaignCompletionBonus()
+	{
+		var allDistricts = CampaignPlanCatalog.GetAll();
+		foreach (var district in allDistricts)
+		{
+			if (!_claimedDistrictRewardIds.Contains(district.Id))
+			{
+				return "";
+			}
+		}
+
+		var granted = new List<string>();
+		foreach (var relicId in CampaignCompletionBonusRelicIds)
+		{
+			var relic = GameData.GetEquipment(relicId);
+			if (relic != null && TryGrantEquipment(relic.Id))
+			{
+				granted.Add($"{relic.DisplayName} ({relic.Rarity})");
+			}
+		}
+
+		return granted.Count > 0
+			? $"Campaign complete! Bonus relics earned: {string.Join(", ", granted)}!"
+			: "";
 	}
 
 	private string TryClaimCampaignDirectiveReward(int stage)
@@ -2727,9 +3224,38 @@ public partial class GameState : Node
 		_claimedCampaignDirectiveIds.Add(directive.Id);
 		Gold += directive.BonusGold;
 		Food += directive.BonusFood;
-		return directive.BonusFood > 0
+		var baseSummary = directive.BonusFood > 0
 			? $"Heroic directive secured: {directive.Title}. +{directive.BonusGold} gold, +{directive.BonusFood} food."
 			: $"Heroic directive secured: {directive.Title}. +{directive.BonusGold} gold.";
+
+		var relicSummary = TryRollHeroicRelicDrop();
+		return string.IsNullOrWhiteSpace(relicSummary) ? baseSummary : $"{baseSummary} {relicSummary}";
+	}
+
+	private string TryRollHeroicRelicDrop()
+	{
+		var roll = _rng.Randf();
+		string targetRarity;
+		if (roll < 0.05f)
+			targetRarity = "epic";
+		else if (roll < 0.25f)
+			targetRarity = "rare";
+		else if (roll < 0.65f)
+			targetRarity = "common";
+		else
+			return "";
+
+		var candidates = GameData.GetAllEquipment()
+			.Where(e => string.Equals(e.Rarity, targetRarity, StringComparison.OrdinalIgnoreCase))
+			.ToList();
+		if (candidates.Count == 0)
+			return "";
+
+		var relic = candidates[_rng.RandiRange(0, candidates.Count - 1)];
+		var isNew = TryGrantEquipment(relic.Id);
+		return isNew
+			? $"Relic drop: {relic.DisplayName} ({relic.Rarity})!"
+			: $"Relic drop: {relic.DisplayName} (already owned).";
 	}
 
 	private static string BuildCombinedCampaignBonusSummary(params string[] summaries)
@@ -2796,6 +3322,10 @@ public partial class GameState : Node
 			_claimedDistrictRewardIds.Add(district.Id);
 			Gold += Math.Max(0, district.RewardGold);
 			Food += Math.Max(0, district.RewardFood);
+			if (!string.IsNullOrEmpty(district.RewardRelicId))
+			{
+				TryGrantEquipment(district.RewardRelicId);
+			}
 			grantedDistricts.Add(district);
 		}
 
@@ -2809,6 +3339,8 @@ public partial class GameState : Node
 		LastResultMessage = grantedDistricts.Count == 1
 			? $"{grantedDistricts[0].Title} district reward granted on load. +{totalGold} gold, +{totalFood} food."
 			: $"Campaign district rewards reconciled on load. +{totalGold} gold, +{totalFood} food across {grantedDistricts.Count} cleared districts.";
+
+		TryGrantCampaignCompletionBonus();
 	}
 
 	private void NormalizeOwnedUnits()
@@ -3094,6 +3626,28 @@ public partial class GameState : Node
 			}
 
 			_challengeBestScores[normalized] = score;
+		}
+	}
+
+	private void NormalizeEndlessRunHistory()
+	{
+		_endlessRunHistory.RemoveAll(entry => entry == null);
+		foreach (var entry in _endlessRunHistory)
+		{
+			entry.Wave = Math.Max(0, entry.Wave);
+			entry.TimeSeconds = Math.Max(0f, entry.TimeSeconds);
+			entry.RouteId = NormalizeRouteId(entry.RouteId ?? DefaultEndlessRouteId);
+			entry.BoonId = NormalizeEndlessBoonId(entry.BoonId ?? DefaultEndlessBoonId);
+			entry.GoldEarned = Math.Max(0, entry.GoldEarned);
+			entry.FoodEarned = Math.Max(0, entry.FoodEarned);
+			entry.Date = entry.Date ?? "";
+			entry.DifficultyId = DifficultyCatalog.GetById(entry.DifficultyId ?? DefaultDifficultyId).Id;
+		}
+
+		const int maxEntries = 20;
+		if (_endlessRunHistory.Count > maxEntries)
+		{
+			_endlessRunHistory.RemoveRange(maxEntries, _endlessRunHistory.Count - maxEntries);
 		}
 	}
 
@@ -3674,5 +4228,512 @@ public partial class GameState : Node
 	private static string NormalizeEndlessBoonId(string boonId)
 	{
 		return EndlessBoonCatalog.Normalize(boonId);
+	}
+
+	public static DailyChallenge GetDailyChallenge()
+	{
+		var now = DateTime.UtcNow;
+		var seed = now.DayOfYear + now.Year * 1000;
+		var rng = new Random(seed);
+		var stageIndex = rng.Next(10, 41);
+		var lockedSquad = now.DayOfYear % 2 == 0;
+		var boardLabels = new[] { "Route Trial", "Pressure Test", "Final Push", "Endurance Run" };
+		var boardLabel = boardLabels[seed % boardLabels.Length];
+		var date = now.ToString("yyyy-MM-dd");
+
+		string[] lockedDeckUnitIds;
+		if (lockedSquad)
+		{
+			var roster = GameData.PlayerRosterIds;
+			var deckRng = new Random(seed);
+			var picked = new List<string>(3);
+			var available = new List<string>(roster);
+			for (var i = 0; i < 3 && available.Count > 0; i++)
+			{
+				var index = deckRng.Next(available.Count);
+				picked.Add(available[index]);
+				available.RemoveAt(index);
+			}
+			lockedDeckUnitIds = picked.ToArray();
+		}
+		else
+		{
+			lockedDeckUnitIds = Array.Empty<string>();
+		}
+
+		return new DailyChallenge(seed, boardLabel, stageIndex, lockedSquad, date, lockedDeckUnitIds);
+	}
+
+	public bool HasCompletedDailyChallenge()
+	{
+		var daily = GetDailyChallenge();
+		return !string.IsNullOrEmpty(LastDailyDate) &&
+		       LastDailyDate.Equals(daily.Date, StringComparison.Ordinal);
+	}
+
+	public void MarkDailyChallengeCompleted(int score = 0)
+	{
+		LastDailyDate = GetDailyChallenge().Date;
+		_dailyStreak++;
+		Persist();
+		CheckAchievements();
+		SubmitDailyChallengeToServer(LastDailyDate, score);
+	}
+
+	// ── Cash shop / purchase system ─────────────────────────────────────
+
+	public bool HasPurchasedProduct(string productId)
+	{
+		return !string.IsNullOrWhiteSpace(productId) && _purchasedProductIds.Contains(productId);
+	}
+
+	public void SetPurchaseValidationEndpoint(string endpoint)
+	{
+		_purchaseValidationEndpoint = endpoint?.Trim() ?? "";
+		Persist();
+	}
+
+	public bool TryApplyPurchaseReward(PurchaseValidationResult result)
+	{
+		if (result == null || result.Status != "ok")
+		{
+			return false;
+		}
+
+		if (result.GoldCredited > 0)
+		{
+			Gold += result.GoldCredited;
+		}
+
+		if (result.FoodCredited > 0)
+		{
+			Food += result.FoodCredited;
+		}
+
+		if (!string.IsNullOrWhiteSpace(result.ProductId))
+		{
+			_purchasedProductIds.Add(result.ProductId);
+		}
+
+		_totalPurchaseCount++;
+
+		if (result.GrantedUnitUnlock)
+		{
+			GrantRandomUnitUnlock();
+		}
+
+		Persist();
+		CheckAchievements();
+		return true;
+	}
+
+	private void GrantRandomUnitUnlock()
+	{
+		var candidates = new List<string>();
+		foreach (var unit in GameData.GetPlayerUnits())
+		{
+			if (!_ownedPlayerUnitIds.Contains(unit.Id) && unit.UnlockStage <= HighestUnlockedStage)
+			{
+				candidates.Add(unit.Id);
+			}
+		}
+
+		if (candidates.Count == 0) return;
+
+		var index = _rng.RandiRange(0, candidates.Count - 1);
+		_ownedPlayerUnitIds.Add(candidates[index]);
+	}
+
+	public PurchaseValidationResult ValidatePurchaseWithServer(string productId, string platform, string receiptToken, string transactionId)
+	{
+		if (string.IsNullOrWhiteSpace(_purchaseValidationEndpoint))
+		{
+			return new PurchaseValidationResult
+			{
+				Status = "error",
+				Message = "Purchase validation endpoint not configured."
+			};
+		}
+
+		try
+		{
+			var provider = new HttpApiPurchaseValidationProvider(_purchaseValidationEndpoint);
+			var request = new PurchaseValidationRequest
+			{
+				PlayerProfileId = PlayerProfileId,
+				ProductId = productId,
+				Platform = platform,
+				ReceiptToken = receiptToken,
+				TransactionId = transactionId,
+				RequestedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+			};
+
+			return provider.ValidatePurchase(request);
+		}
+		catch (Exception e)
+		{
+			return new PurchaseValidationResult
+			{
+				Status = "error",
+				Message = $"Validation failed: {e.Message}"
+			};
+		}
+	}
+
+	// ── Auto cloud backup ───────────────────────────────────────────────
+
+	private void TryAutoCloudBackup()
+	{
+		if (string.IsNullOrWhiteSpace(_purchaseValidationEndpoint))
+		{
+			return;
+		}
+
+		try
+		{
+			CloudSaveService.Upload(out _);
+		}
+		catch
+		{
+			// Silent — auto backup should never block gameplay
+		}
+	}
+
+	// ── Achievement system ──────────────────────────────────────────────
+
+	public bool IsAchievementUnlocked(string id)
+	{
+		return !string.IsNullOrWhiteSpace(id) && _unlockedAchievementIds.Contains(id);
+	}
+
+	public bool TryUnlockAchievement(string id)
+	{
+		if (string.IsNullOrWhiteSpace(id))
+		{
+			return false;
+		}
+
+		if (!_unlockedAchievementIds.Add(id))
+		{
+			return false;
+		}
+
+		var definition = AchievementCatalog.GetById(id);
+		_lastAchievementNotification = definition != null
+			? $"Achievement unlocked: {definition.Title}!"
+			: $"Achievement unlocked: {id}!";
+		AudioDirector.Instance?.PlayAchievementUnlock();
+		Persist();
+		ScheduleAchievementSync();
+		return true;
+	}
+
+	public int GetUnlockedAchievementCount()
+	{
+		return _unlockedAchievementIds.Count;
+	}
+
+	public string ConsumeAchievementNotification()
+	{
+		var notification = _lastAchievementNotification;
+		_lastAchievementNotification = "";
+		return notification ?? "";
+	}
+
+	private void ScheduleAchievementSync()
+	{
+		_achievementSyncPending = true;
+		var now = Godot.Time.GetTicksMsec() / 1000.0;
+		if (now - _lastAchievementSyncTime >= 30.0)
+		{
+			FlushAchievementSync();
+		}
+	}
+
+	public void FlushAchievementSync()
+	{
+		if (!_achievementSyncPending)
+		{
+			return;
+		}
+
+		_achievementSyncPending = false;
+		_lastAchievementSyncTime = Godot.Time.GetTicksMsec() / 1000.0;
+		SyncAchievementsToServer();
+	}
+
+	public void SyncAchievementsToServer()
+	{
+		if (_unlockedAchievementIds.Count == 0)
+		{
+			return;
+		}
+
+		var providerId = ChallengeSyncProviderCatalog.NormalizeId(ChallengeSyncProviderId);
+		if (providerId != ChallengeSyncProviderCatalog.HttpApiId)
+		{
+			return;
+		}
+
+		var endpointUrl = BuildAchievementSyncEndpoint(ChallengeSyncEndpoint);
+		if (string.IsNullOrWhiteSpace(endpointUrl))
+		{
+			return;
+		}
+
+		try
+		{
+			var provider = new HttpApiAchievementSyncProvider(endpointUrl);
+			provider.SyncAchievements(PlayerProfileId, _unlockedAchievementIds.ToArray());
+		}
+		catch (Exception ex)
+		{
+			GD.PrintErr($"Achievement sync failed: {ex.Message}");
+		}
+	}
+
+	private void SubmitDailyChallengeToServer(string date, int score)
+	{
+		var providerId = ChallengeSyncProviderCatalog.NormalizeId(ChallengeSyncProviderId);
+		if (providerId != ChallengeSyncProviderCatalog.HttpApiId)
+		{
+			return;
+		}
+
+		var baseUrl = BuildDailyBaseUrl(ChallengeSyncEndpoint);
+		if (string.IsNullOrWhiteSpace(baseUrl))
+		{
+			return;
+		}
+
+		try
+		{
+			var provider = new HttpApiDailyLeaderboardProvider(baseUrl);
+			provider.SubmitCompletion(PlayerProfileId, date, score);
+		}
+		catch (Exception ex)
+		{
+			GD.PrintErr($"Daily challenge submit failed: {ex.Message}");
+		}
+	}
+
+	private static string BuildAchievementSyncEndpoint(string syncEndpoint)
+	{
+		var normalized = string.IsNullOrWhiteSpace(syncEndpoint) ? "" : syncEndpoint.Trim();
+		if (string.IsNullOrWhiteSpace(normalized))
+		{
+			return "";
+		}
+
+		if (normalized.EndsWith("/challenge-sync", StringComparison.OrdinalIgnoreCase))
+		{
+			return normalized[..^"/challenge-sync".Length] + "/achievements/sync";
+		}
+
+		return normalized.TrimEnd('/') + "/achievements/sync";
+	}
+
+	private static string BuildDailyBaseUrl(string syncEndpoint)
+	{
+		var normalized = string.IsNullOrWhiteSpace(syncEndpoint) ? "" : syncEndpoint.Trim();
+		if (string.IsNullOrWhiteSpace(normalized))
+		{
+			return "";
+		}
+
+		if (normalized.EndsWith("/challenge-sync", StringComparison.OrdinalIgnoreCase))
+		{
+			return normalized[..^"/challenge-sync".Length];
+		}
+
+		return normalized.TrimEnd('/');
+	}
+
+	// ── Prestige color selections ──────────────────────────────────────
+
+	public int GetUnitPrestigeIndex(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId))
+		{
+			return 0;
+		}
+
+		return _unitPrestigeSelections.TryGetValue(unitId, out var index) ? index : 0;
+	}
+
+	public void SetUnitPrestigeIndex(string unitId, int index)
+	{
+		if (string.IsNullOrWhiteSpace(unitId))
+		{
+			return;
+		}
+
+		if (index <= 0)
+		{
+			_unitPrestigeSelections.Remove(unitId);
+		}
+		else
+		{
+			_unitPrestigeSelections[unitId] = Math.Clamp(index, 1, PrestigeColorCatalog.MaxPrestigeIndex);
+		}
+	}
+
+	public void CheckAchievements()
+	{
+		// Campaign
+		if (HighestUnlockedStage > 1)
+		{
+			TryUnlockAchievement("first_blood");
+		}
+
+		foreach (var district in CampaignPlanCatalog.GetAll())
+		{
+			if (IsDistrictCleared(district.Id))
+			{
+				TryUnlockAchievement("district_clear");
+				break;
+			}
+		}
+
+		var allDistrictsCleared = true;
+		foreach (var district in CampaignPlanCatalog.GetAll())
+		{
+			if (!IsDistrictCleared(district.Id))
+			{
+				allDistrictsCleared = false;
+				break;
+			}
+		}
+		if (allDistrictsCleared && CampaignPlanCatalog.GetAll().Count > 0)
+		{
+			TryUnlockAchievement("campaign_complete");
+		}
+
+		var threeStarCount = 0;
+		for (var i = 1; i <= MaxStage; i++)
+		{
+			if (GetStageStars(i) >= 3)
+			{
+				threeStarCount++;
+			}
+		}
+		if (threeStarCount >= 25)
+		{
+			TryUnlockAchievement("all_stars");
+		}
+
+		if (_claimedCampaignDirectiveIds.Count >= 10)
+		{
+			TryUnlockAchievement("heroic_clear");
+		}
+
+		// Combat - boss_slayer and boss_hunter checked via stage clears
+		var bossesDefeated = 0;
+		foreach (var district in CampaignPlanCatalog.GetAll())
+		{
+			var stages = GameData.GetStagesForMap(district.Id);
+			if (stages.Count > 0)
+			{
+				var bossStageNumber = stages[stages.Count - 1].StageNumber;
+				if (GetStageStars(bossStageNumber) > 0)
+				{
+					bossesDefeated++;
+				}
+			}
+		}
+		if (bossesDefeated > 0)
+		{
+			TryUnlockAchievement("boss_slayer");
+		}
+		if (bossesDefeated >= 10)
+		{
+			TryUnlockAchievement("boss_hunter");
+		}
+
+		// Endless
+		if (BestEndlessWave >= 30)
+		{
+			TryUnlockAchievement("endless_30");
+		}
+		if (BestEndlessWave >= 60)
+		{
+			TryUnlockAchievement("endless_60");
+		}
+		if (BestEndlessWave >= 90)
+		{
+			TryUnlockAchievement("endless_90");
+		}
+
+		// Collection
+		if (_ownedEquipmentIds.Count >= 6)
+		{
+			TryUnlockAchievement("relic_collector");
+		}
+		if (_ownedEquipmentIds.Count >= 12)
+		{
+			TryUnlockAchievement("full_armory");
+		}
+		if (_ownedPlayerUnitIds.Count >= GameData.PlayerRosterIds.Length)
+		{
+			TryUnlockAchievement("full_roster");
+		}
+
+		// Mastery
+		foreach (var pair in _unitUpgradeLevels)
+		{
+			if (pair.Value >= MaxPlayerUnitLevel)
+			{
+				TryUnlockAchievement("max_unit");
+				break;
+			}
+		}
+		if (_ownedPlayerSpellIds.Count >= GameData.PlayerSpellIds.Length)
+		{
+			TryUnlockAchievement("all_spells");
+		}
+		if (_dailyStreak >= 7)
+		{
+			TryUnlockAchievement("daily_streak");
+		}
+	}
+
+	public void CheckCombatAchievements(float busHealthRatio, float elapsedSeconds, int distinctComboPairsTriggered, int endlessBossCheckpointsCleared)
+	{
+		if (busHealthRatio >= 1f)
+		{
+			TryUnlockAchievement("no_damage");
+		}
+		if (elapsedSeconds > 0f && elapsedSeconds < 60f)
+		{
+			TryUnlockAchievement("speed_clear");
+		}
+		if (distinctComboPairsTriggered >= ComboPairCatalog.GetAll().Count)
+		{
+			TryUnlockAchievement("combo_master");
+		}
+		if (endlessBossCheckpointsCleared >= 5)
+		{
+			TryUnlockAchievement("endless_boss");
+		}
+	}
+}
+
+public readonly struct DailyChallenge
+{
+	public int Seed { get; }
+	public string BoardLabel { get; }
+	public int StageIndex { get; }
+	public bool LockedSquad { get; }
+	public string Date { get; }
+	public string[] LockedDeckUnitIds { get; }
+
+	public DailyChallenge(int seed, string boardLabel, int stageIndex, bool lockedSquad, string date, string[] lockedDeckUnitIds)
+	{
+		Seed = seed;
+		BoardLabel = boardLabel;
+		StageIndex = stageIndex;
+		LockedSquad = lockedSquad;
+		Date = date;
+		LockedDeckUnitIds = lockedDeckUnitIds ?? Array.Empty<string>();
 	}
 }

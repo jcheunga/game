@@ -131,6 +131,11 @@ public static class AsyncChallengeCatalog
     public const string RationedRunId = "rationed_run";
     public const string SiegeNightId = "siege_night";
     public const string BlackoutRelayId = "blackout_relay";
+    public const string MirrorFieldId = "mirror_field";
+    public const string UndyingHostId = "undying_host";
+    public const string SiegeWaveId = "siege_wave";
+    public const string SplitterSwarmId = "splitter_swarm";
+    public const string TunnelerAmbushId = "tunneler_ambush";
 
     private static readonly AsyncChallengeMutatorDefinition[] Mutators =
     {
@@ -190,7 +195,72 @@ public static class AsyncChallengeCatalog
             16f,
             3.8f,
             0.52f,
-            1.35f)
+            1.35f),
+        new(
+            MirrorFieldId,
+            "MIR",
+            "Mirror Field",
+            "Enemy formations reflect a portion of incoming damage. Rewards precision and spell-heavy strategies.",
+            1.05f,
+            1.05f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.52f),
+        new(
+            UndyingHostId,
+            "UDH",
+            "Undying Host",
+            "Fallen enemies have a chance to rise again. Push fast or face an endless horde.",
+            1.08f,
+            1f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.48f),
+        new(
+            SiegeWaveId,
+            "SGW",
+            "Siege Wave",
+            "Siege Towers appear alongside regular waves. Protect the war wagon at all costs.",
+            1.06f,
+            1.04f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.50f),
+        new(
+            SplitterSwarmId,
+            "SPL",
+            "Splitter Swarm",
+            "Splitter enemies spawn additional minions on death. Area damage is essential.",
+            1f,
+            1.06f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.46f),
+        new(
+            TunnelerAmbushId,
+            "TUN",
+            "Tunneler Ambush",
+            "Tunnelers burrow behind your lines more frequently. Guard your rear.",
+            1.04f,
+            1.05f,
+            1f,
+            1f,
+            1f,
+            0f,
+            1f,
+            1.49f)
     };
 
     public static AsyncChallengeMutatorDefinition[] GetAll()

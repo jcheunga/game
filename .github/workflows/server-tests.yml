@@ -1,0 +1,58 @@
+name: Server Tests
+
+on:
+  push:
+    paths:
+      - 'server/**'
+  pull_request:
+    paths:
+      - 'server/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Run tests
+        run: dotnet run -c Release -- --test
+
+      - name: Validate game data
+        run: dotnet run -c Release -- --test-data ../data
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t crownroad-server:latest .
+
+      - name: Verify health endpoint
+        run: |
+          docker run -d --name crownroad-test -p 8080:8080 crownroad-server:latest
+          sleep 3
+          curl -sf http://localhost:8080/health | grep -q healthy
+          docker stop crownroad-test
+          docker rm crownroad-test

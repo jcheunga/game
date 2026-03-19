@@ -13,6 +13,11 @@ namespace CrownroadServer;
 public static class RelayHub
 {
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, WebSocket>> Rooms = new();
+    private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PeerTimeout = TimeSpan.FromSeconds(60);
+
+    // Track last activity per peer for timeout eviction
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, long>> PeerLastActive = new();
 
     public static async Task HandleConnection(HttpContext context, string roomId)
     {
@@ -28,7 +33,9 @@ public static class RelayHub
 
         using var ws = await context.WebSockets.AcceptWebSocketAsync();
         var roomPeers = Rooms.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, WebSocket>());
+        var roomActivity = PeerLastActive.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, long>());
         roomPeers[profileId] = ws;
+        roomActivity[profileId] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         // Notify room about new peer
         await BroadcastSystemMessage(roomPeers, profileId, new
@@ -45,7 +52,18 @@ public static class RelayHub
             var buffer = new byte[4096];
             while (ws.State == WebSocketState.Open)
             {
-                var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
+                using var cts = new CancellationTokenSource(PeerTimeout);
+                WebSocketReceiveResult result;
+                try
+                {
+                    result = await ws.ReceiveAsync(buffer, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Peer timed out — no messages received within PeerTimeout
+                    break;
+                }
+
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     break;
@@ -53,6 +71,7 @@ public static class RelayHub
 
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
+                    roomActivity[profileId] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     await BroadcastToOthers(roomPeers, profileId, message);
                 }
@@ -65,10 +84,12 @@ public static class RelayHub
         finally
         {
             roomPeers.TryRemove(profileId, out _);
+            roomActivity.TryRemove(profileId, out _);
 
             if (roomPeers.IsEmpty)
             {
                 Rooms.TryRemove(roomId, out _);
+                PeerLastActive.TryRemove(roomId, out _);
             }
             else
             {
@@ -112,7 +133,8 @@ public static class RelayHub
             tasks.Add(SendSafe(peer, segment));
         }
 
-        await Task.WhenAll(tasks);
+        if (tasks.Count > 0)
+            await Task.WhenAll(tasks);
     }
 
     private static async Task BroadcastSystemMessage(ConcurrentDictionary<string, WebSocket> peers, string excludeId, object message)
@@ -132,7 +154,8 @@ public static class RelayHub
             tasks.Add(SendSafe(peer, segment));
         }
 
-        await Task.WhenAll(tasks);
+        if (tasks.Count > 0)
+            await Task.WhenAll(tasks);
     }
 
     private static async Task SendSafe(WebSocket ws, ArraySegment<byte> data)
@@ -141,12 +164,13 @@ public static class RelayHub
         {
             if (ws.State == WebSocketState.Open)
             {
-                await ws.SendAsync(data, WebSocketMessageType.Text, true, CancellationToken.None);
+                using var cts = new CancellationTokenSource(SendTimeout);
+                await ws.SendAsync(data, WebSocketMessageType.Text, true, cts.Token);
             }
         }
         catch
         {
-            // Peer gone, ignore
+            // Peer gone or send timed out, ignore
         }
     }
 

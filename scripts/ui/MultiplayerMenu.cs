@@ -32,6 +32,7 @@ public partial class MultiplayerMenu : Control
     private bool _onlineRoomAutoRefreshEnabled = true;
     private float _onlineRoomAutoRefreshTimer = 0.5f;
     private string _onlineRoomAutoRefreshStatus = "Joined room auto refresh armed.";
+    private DailyLeaderboardSnapshot _cachedDailyLeaderboard = null;
 
     public override void _Ready()
     {
@@ -218,6 +219,26 @@ public partial class MultiplayerMenu : Control
             SetStatusMessage($"Copied {_codeEdit.Text} to the clipboard.");
         };
         actionRow.AddChild(copyButton);
+
+        var shareButton = new Button
+        {
+            Text = "Share Link",
+            CustomMinimumSize = new Vector2(0f, 42f),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        shareButton.Pressed += () =>
+        {
+            var code = _codeEdit.Text;
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                SetStatusMessage("No challenge code to share.");
+                return;
+            }
+            var url = DeepLinkHandler.BuildShareUrl(code);
+            DisplayServer.ClipboardSet(url);
+            SetStatusMessage($"Link copied: {url}");
+        };
+        actionRow.AddChild(shareButton);
 
         _summaryLabel = new Label
         {
@@ -557,6 +578,115 @@ public partial class MultiplayerMenu : Control
             foreach (var featured in remoteFeed)
             {
                 _squadStack.AddChild(BuildFeaturedChallengePanel(featured, "Load Remote"));
+            }
+        }
+
+        var dailyChallenge = GameState.GetDailyChallenge();
+        var dailyStage = GameData.GetStage(Mathf.Clamp(dailyChallenge.StageIndex, 1, GameState.Instance.MaxStage));
+        var dailyCompleted = GameState.Instance.HasCompletedDailyChallenge();
+        var dailyLabel = new Label
+        {
+            Text = dailyCompleted ? "Daily Challenge (Completed)" : "Daily Challenge"
+        };
+        dailyLabel.AddThemeColorOverride("font_color", new Color("f5c542"));
+        _squadStack.AddChild(dailyLabel);
+
+        var dailyPanel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 100f),
+            SelfModulate = new Color("3b2e10")
+        };
+        _squadStack.AddChild(dailyPanel);
+
+        var dailyPadding = new MarginContainer();
+        dailyPadding.AddThemeConstantOverride("margin_left", 14);
+        dailyPadding.AddThemeConstantOverride("margin_right", 14);
+        dailyPadding.AddThemeConstantOverride("margin_top", 12);
+        dailyPadding.AddThemeConstantOverride("margin_bottom", 12);
+        dailyPanel.AddChild(dailyPadding);
+
+        var dailyStack = new VBoxContainer();
+        dailyStack.AddThemeConstantOverride("separation", 8);
+        dailyPadding.AddChild(dailyStack);
+
+        var dailyTitleLabel = new Label
+        {
+            Text = $"{dailyChallenge.Date}  |  {dailyChallenge.BoardLabel}  |  {dailyStage.MapName} S{dailyStage.StageNumber}: {dailyStage.StageName}"
+        };
+        dailyTitleLabel.AddThemeColorOverride("font_color", new Color("f5c542"));
+        dailyStack.AddChild(dailyTitleLabel);
+
+        var dailySquadLine = dailyChallenge.LockedSquad && dailyChallenge.LockedDeckUnitIds.Length > 0
+            ? $"Locked squad: {string.Join(", ", dailyChallenge.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
+            : "Free squad (bring your own)";
+        var dailyStatusLine = dailyCompleted
+            ? "Status: Completed"
+            : dailyStage.StageNumber <= GameState.Instance.HighestUnlockedStage
+                ? "Status: Ready"
+                : $"Status: Locked (explore stage {dailyStage.StageNumber} first)";
+
+        dailyStack.AddChild(new Label
+        {
+            Text =
+                $"Seed: {dailyChallenge.Seed}  |  {dailySquadLine}\n" +
+                $"{dailyStatusLine}\n" +
+                $"Stage {dailyStage.StageNumber} must be unlocked to participate.",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var dailyButtonRow = new HBoxContainer();
+        dailyButtonRow.AddThemeConstantOverride("separation", 8);
+        dailyStack.AddChild(dailyButtonRow);
+
+        var playDailyButton = new Button
+        {
+            Text = dailyCompleted ? "Replay Daily Challenge" : "Play Daily Challenge",
+            CustomMinimumSize = new Vector2(0f, 38f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        playDailyButton.Pressed += () => LoadDailyChallenge(dailyChallenge);
+        dailyButtonRow.AddChild(playDailyButton);
+
+        // Daily Leaderboard display
+        var dailyBaseUrl = BuildDailyLeaderboardBaseUrl();
+        if (!string.IsNullOrWhiteSpace(dailyBaseUrl))
+        {
+            dailyStack.AddChild(new HSeparator());
+
+            var leaderboardHeader = new Label
+            {
+                Text = "Daily Leaderboard"
+            };
+            leaderboardHeader.AddThemeColorOverride("font_color", new Color("f5c542"));
+            dailyStack.AddChild(leaderboardHeader);
+
+            if (_cachedDailyLeaderboard == null || _cachedDailyLeaderboard.Entries.Count == 0)
+            {
+                dailyStack.AddChild(new Label
+                {
+                    Text = "No scores yet",
+                    AutowrapMode = TextServer.AutowrapMode.WordSmart
+                });
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                var rank = 1;
+                var entriesToShow = _cachedDailyLeaderboard.Entries.Take(10);
+                foreach (var entry in entriesToShow)
+                {
+                    var truncatedId = entry.ProfileId.Length > 12
+                        ? entry.ProfileId[..12] + ".."
+                        : entry.ProfileId;
+                    sb.AppendLine($"#{rank}  {truncatedId}  —  {entry.Score}");
+                    rank++;
+                }
+
+                dailyStack.AddChild(new Label
+                {
+                    Text = sb.ToString().TrimEnd(),
+                    AutowrapMode = TextServer.AutowrapMode.WordSmart
+                });
             }
         }
 
@@ -1180,6 +1310,72 @@ public partial class MultiplayerMenu : Control
         RefreshUi();
     }
 
+    private void LoadDailyChallenge(DailyChallenge daily)
+    {
+        var clampedStage = Mathf.Clamp(daily.StageIndex, 1, GameState.Instance.MaxStage);
+        var asyncChallenge = AsyncChallengeCatalog.Create(
+            clampedStage,
+            AsyncChallengeCatalog.PressureSpikeId,
+            daily.Seed);
+
+        if (daily.LockedSquad && daily.LockedDeckUnitIds.Length > 0)
+        {
+            var featured = new FeaturedChallengeDefinition(
+                $"daily_{daily.Date}",
+                $"Daily {daily.BoardLabel}",
+                $"Daily challenge for {daily.Date}.",
+                asyncChallenge,
+                daily.LockedDeckUnitIds);
+            GameState.Instance.SetSelectedFeaturedChallenge(featured);
+        }
+        else
+        {
+            if (!GameState.Instance.TrySetSelectedAsyncChallengeCode(asyncChallenge.Code, out var message))
+            {
+                SetStatusMessage(message);
+                return;
+            }
+        }
+
+        var challenge = GameState.Instance.GetSelectedAsyncChallenge();
+        _selectedStage = challenge.Stage;
+        _selectedMutatorId = challenge.MutatorId;
+        SetStatusMessage($"Loaded daily challenge {daily.BoardLabel} ({daily.Date}).");
+        RefreshDailyLeaderboard();
+        RefreshUi();
+    }
+
+    private void RefreshDailyLeaderboard()
+    {
+        var baseUrl = BuildDailyLeaderboardBaseUrl();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            return;
+
+        try
+        {
+            var provider = new HttpApiDailyLeaderboardProvider(baseUrl);
+            var todayDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            _cachedDailyLeaderboard = provider.FetchLeaderboard(todayDate);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"Daily leaderboard fetch failed: {ex.Message}");
+        }
+    }
+
+    private static string BuildDailyLeaderboardBaseUrl()
+    {
+        var syncEndpoint = GameState.Instance?.ChallengeSyncEndpoint ?? "";
+        if (string.IsNullOrWhiteSpace(syncEndpoint))
+            return "";
+
+        var normalized = syncEndpoint.Trim();
+        if (normalized.EndsWith("/challenge-sync", StringComparison.OrdinalIgnoreCase))
+            return normalized[..^"/challenge-sync".Length];
+
+        return normalized.TrimEnd('/');
+    }
+
     private void LoadOnlineRoomBoard(OnlineRoomDirectoryEntry room)
     {
         if (!AsyncChallengeCatalog.TryParse(room.BoardCode, out var challenge, out var message))
@@ -1675,6 +1871,8 @@ public partial class MultiplayerMenu : Control
             ChallengeLeaderboardService.Instance.RefreshBoard(challenge.Code, 5, out var boardMessage);
             statusParts.Add(boardMessage);
         }
+
+        RefreshDailyLeaderboard();
 
         if (statusParts.Count == 0)
         {

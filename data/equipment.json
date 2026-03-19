@@ -1,0 +1,136 @@
+{
+  "Equipment": [
+    {
+      "Id": "relic_iron_pendant",
+      "DisplayName": "Iron Pendant",
+      "Description": "A sturdy amulet that bolsters the wearer.",
+      "Rarity": "common",
+      "HealthScale": 1.08,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_sharpened_edge",
+      "DisplayName": "Sharpened Edge",
+      "Description": "A whetstone-honed blade that bites deeper.",
+      "Rarity": "common",
+      "HealthScale": 1.0,
+      "DamageScale": 1.08,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_swift_boots",
+      "DisplayName": "Swift Boots",
+      "Description": "Light footwear enchanted for speed.",
+      "Rarity": "common",
+      "HealthScale": 1.0,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.08,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_battle_drum",
+      "DisplayName": "Battle Drum",
+      "Description": "A rhythmic charm that quickens the warrior's cadence.",
+      "Rarity": "common",
+      "HealthScale": 1.0,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_guardian_shield",
+      "DisplayName": "Guardian Shield",
+      "Description": "A battered shield that still wards its bearer faithfully.",
+      "Rarity": "rare",
+      "HealthScale": 1.12,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 4
+    },
+    {
+      "Id": "relic_war_brand",
+      "DisplayName": "War Brand",
+      "Description": "A smouldering blade forged in siege-fire.",
+      "Rarity": "rare",
+      "HealthScale": 1.0,
+      "DamageScale": 1.14,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_windrunner_cloak",
+      "DisplayName": "Windrunner Cloak",
+      "Description": "A tattered cloak that catches phantom winds.",
+      "Rarity": "rare",
+      "HealthScale": 1.06,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.12,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_sages_ring",
+      "DisplayName": "Sage's Ring",
+      "Description": "A band of pale silver that sharpens body and mind.",
+      "Rarity": "rare",
+      "HealthScale": 1.08,
+      "DamageScale": 1.10,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_crown_of_valor",
+      "DisplayName": "Crown of Valor",
+      "Description": "A circlet said to have crowned a forgotten king.",
+      "Rarity": "epic",
+      "HealthScale": 1.18,
+      "DamageScale": 1.12,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_blade_of_ruin",
+      "DisplayName": "Blade of Ruin",
+      "Description": "An obsidian sword that thirsts for destruction.",
+      "Rarity": "epic",
+      "HealthScale": 1.0,
+      "DamageScale": 1.20,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 6
+    },
+    {
+      "Id": "relic_phantom_mantle",
+      "DisplayName": "Phantom Mantle",
+      "Description": "A spectral shroud that blurs the wearer between worlds.",
+      "Rarity": "epic",
+      "HealthScale": 1.10,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.16,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_dragon_heart",
+      "DisplayName": "Dragon Heart",
+      "Description": "A crystallised heart still warm with ancient flame.",
+      "Rarity": "epic",
+      "HealthScale": 1.22,
+      "DamageScale": 1.08,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 4
+    }
+  ]
+}

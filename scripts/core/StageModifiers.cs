@@ -107,6 +107,41 @@ public static class StageModifiers
         return HasModifierType(stage, "elite_vanguard");
     }
 
+    public static float ResolveMirrorPressureScale(StageDefinition stage)
+    {
+        if (!TryGetModifier(stage, "mirror_pressure", out var modifier))
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp(modifier.Value <= 0f ? 0.15f : modifier.Value, 0.05f, 0.5f);
+    }
+
+    public static bool HasMirrorPressure(StageDefinition stage)
+    {
+        return HasModifierType(stage, "mirror_pressure");
+    }
+
+    public static float ResolveLichGraveyardChance(StageDefinition stage)
+    {
+        if (!TryGetModifier(stage, "lich_graveyard", out var modifier))
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp(modifier.Value <= 0f ? 0.25f : modifier.Value, 0.05f, 0.5f);
+    }
+
+    public static bool HasLichGraveyard(StageDefinition stage)
+    {
+        return HasModifierType(stage, "lich_graveyard");
+    }
+
+    public static bool HasTunnelInvasion(StageDefinition stage)
+    {
+        return HasModifierType(stage, "tunnel_invasion");
+    }
+
     private static bool HasModifierType(StageDefinition stage, string type)
     {
         return TryGetModifier(stage, type, out _);
@@ -211,6 +246,9 @@ public static class StageModifiers
             "rapid_assault" => $"Rapid assault ({ToPercent(modifier.Value, 1f)} wave interval)",
             "cursed_ground" => $"Cursed ground ({(modifier.Value <= 0f ? 2.5f : modifier.Value):0.#} damage/s to deployed allies)",
             "fortified_deploy" => $"Fortified deploy (allies gain {Mathf.RoundToInt((1f - Mathf.Clamp(modifier.Value <= 0f ? 0.6f : modifier.Value, 0.3f, 0.9f)) * 100f)}% defense for 4s on deploy)",
+            "mirror_pressure" => $"Mirror pressure (enemies reflect {Mathf.RoundToInt((modifier.Value <= 0f ? 0.15f : modifier.Value) * 100f)}% of damage back)",
+            "lich_graveyard" => $"Lich graveyard (fallen enemies have {Mathf.RoundToInt((modifier.Value <= 0f ? 0.25f : modifier.Value) * 100f)}% chance to reanimate)",
+            "tunnel_invasion" => "Tunnel invasion (tunnelers spawn from random positions more frequently)",
             _ => modifier.Type
         };
     }
@@ -229,6 +267,9 @@ public static class StageModifiers
             "rapid_assault" => "Rapid assault",
             "cursed_ground" => "Cursed ground",
             "fortified_deploy" => "Fortified deploy",
+            "mirror_pressure" => "Mirror pressure",
+            "lich_graveyard" => "Lich graveyard",
+            "tunnel_invasion" => "Tunnel invasion",
             _ => modifier.Type
         };
     }

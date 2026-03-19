@@ -19,6 +19,11 @@ public static class EndlessBoonCatalog
     public const string SurplusCourageId = "surplus_courage";
     public const string ReinforcedBusId = "reinforced_bus";
     public const string SalvageCacheId = "salvage_cache";
+    public const string RelicForgeId = "relic_forge";
+    public const string CorpseHoardId = "corpse_hoard";
+    public const string BerserkerBloodId = "berserker_blood";
+    public const string ShieldFormationId = "shield_formation";
+    public const string SplitterBaneId = "splitter_bane";
 
     private static readonly EndlessBoonDefinition[] Boons =
     {
@@ -33,7 +38,27 @@ public static class EndlessBoonCatalog
         new(
             SalvageCacheId,
             "Supply Cache",
-            "Endless run gold rewards are increased by 25% when the run ends.")
+            "Endless run gold rewards are increased by 25% when the run ends."),
+        new(
+            RelicForgeId,
+            "Relic Forge",
+            "Grant a random relic at this checkpoint."),
+        new(
+            CorpseHoardId,
+            "Corpse Hoard",
+            "Necromancer skeletons gain +30% health for the rest of the run."),
+        new(
+            BerserkerBloodId,
+            "Berserker Blood",
+            "All units gain +0.5% damage for every 1% missing health."),
+        new(
+            ShieldFormationId,
+            "Shield Formation",
+            "War wagon gains +20% hull armor for the rest of the run."),
+        new(
+            SplitterBaneId,
+            "Splitter Bane",
+            "Gold rewards from this run increase by 12%.")
     };
 
     public static EndlessBoonDefinition[] GetAll()

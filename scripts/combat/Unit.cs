@@ -14,12 +14,13 @@ public sealed class UnitStats
         float healthScale = 1f,
         float damageScale = 1f,
         float cooldownReduction = 0f,
-        int baseDamageBonus = 0)
+        int baseDamageBonus = 0,
+        float speedScale = 1f)
     {
         DefinitionId = definition.Id;
         Name = definition.DisplayName;
         MaxHealth = definition.MaxHealth * healthScale;
-        Speed = definition.Speed;
+        Speed = definition.Speed * speedScale;
         AttackDamage = definition.AttackDamage * damageScale;
         AttackRange = definition.AttackRange;
         AttackCooldown = Mathf.Max(0.45f, definition.AttackCooldown - cooldownReduction);
@@ -31,6 +32,7 @@ public sealed class UnitStats
         BaseDamage = definition.BaseDamage + baseDamageBonus;
         BusRepairAmount = definition.BusRepairAmount * Mathf.Lerp(1f, damageScale, 0.8f);
         DamageTakenScale = definition.DamageTakenScale;
+        DamageReflectScale = definition.DamageReflectScale;
         AuraRadius = definition.AuraRadius;
         AuraAttackDamageScale = definition.AuraAttackDamageScale;
         AuraSpeedScale = definition.AuraSpeedScale;
@@ -52,6 +54,9 @@ public sealed class UnitStats
         VisualScale = ResolveVisualScale(definition);
         Cost = definition.Cost;
         Color = definition.GetTint();
+        DeployQuote = definition.DeployQuote ?? "";
+        KillQuote = definition.KillQuote ?? "";
+        AbilityQuote = definition.AbilityQuote ?? "";
     }
 
     public string DefinitionId { get; }
@@ -69,6 +74,7 @@ public sealed class UnitStats
     public int BaseDamage { get; }
     public float BusRepairAmount { get; }
     public float DamageTakenScale { get; }
+    public float DamageReflectScale { get; }
     public float AuraRadius { get; }
     public float AuraAttackDamageScale { get; }
     public float AuraSpeedScale { get; }
@@ -89,7 +95,10 @@ public sealed class UnitStats
     public string VisualClass { get; }
     public float VisualScale { get; }
     public int Cost { get; }
-    public Color Color { get; }
+    public Color Color { get; set; }
+    public string DeployQuote { get; }
+    public string KillQuote { get; }
+    public string AbilityQuote { get; }
 
     private static string ResolveVisualClass(UnitDefinition definition)
     {
@@ -187,15 +196,21 @@ public sealed class UnitStats
         return ResolveVisualClass(definition) switch
         {
             "boss" => 1.55f,
+            "siegetower" => 1.6f,
             "crusher" => 1.25f,
             "brute" => 1.18f,
             "bloater" => 1.22f,
-            "saboteur" => 0.92f,
+            "berserker" => 1.08f,
+            "banner" => 1.06f,
+            "mirror" => 1.06f,
             "howler" => 1.04f,
+            "necromancer" => 1.0f,
             "jammer" => 0.98f,
             "shield" => 1.08f,
             "sniper" => 0.94f,
             "runner" => 0.92f,
+            "saboteur" => 0.92f,
+            "hound" => 0.82f,
             _ => 1f
         };
     }
@@ -204,6 +219,7 @@ public sealed class UnitStats
 public partial class Unit : Node2D
 {
     public Team Team { get; private set; }
+    public string DefinitionId { get; private set; } = "";
     public string UnitName { get; private set; } = "";
     public float MaxHealth { get; private set; } = 1f;
     public float Health { get; private set; } = 1f;
@@ -219,6 +235,7 @@ public partial class Unit : Node2D
     public int BaseDamage { get; private set; }
     public float BusRepairAmount { get; private set; }
     public float DamageTakenScale { get; private set; } = 1f;
+    public float DamageReflectScale { get; private set; }
     public float AuraRadius { get; private set; }
     public float AuraAttackDamageScale { get; private set; } = 1f;
     public float AuraSpeedScale { get; private set; } = 1f;
@@ -236,11 +253,19 @@ public partial class Unit : Node2D
     public float DeathBurstRadius { get; private set; }
     public string SpawnOnDeathUnitId { get; private set; } = "";
     public int SpawnOnDeathCount { get; private set; }
+    public string ActiveAbilityId { get; private set; } = "";
+    public float ActiveAbilityCooldown { get; private set; }
+    public bool HasActiveAbility => !string.IsNullOrWhiteSpace(ActiveAbilityId) && ActiveAbilityCooldown > 0.05f;
+    public bool IsUntargetable { get; private set; }
+    public string DeployQuote { get; private set; } = "";
+    public string KillQuote { get; private set; } = "";
+    public string AbilityQuote { get; private set; } = "";
+    public string LastDamagedBy { get; set; } = "";
     public string VisualClass { get; private set; } = "fighter";
     public float VisualScale { get; private set; } = 1f;
     public float Radius { get; private set; } = 16f;
     public Color Tint => _bodyColor;
-    public float CurrentAttackDamage => AttackDamage * _currentAttackDamageScale;
+    public float CurrentAttackDamage => AttackDamage * _currentAttackDamageScale * ResolveBerserkerRageScale();
     public bool ProvidesAura => AuraRadius > 0f && (AuraAttackDamageScale > 1.01f || AuraSpeedScale > 1.01f);
     public bool HasSpecialAbility => !string.IsNullOrWhiteSpace(SpecialAbilityId) && SpecialCooldown > 0.05f;
     public float HealthRatio => MaxHealth <= 0.01f ? 0f : Mathf.Clamp(Health / MaxHealth, 0f, 1f);
@@ -249,10 +274,18 @@ public partial class Unit : Node2D
 
     private float _attackTimer;
     private float _specialTimer;
+    private float _activeAbilityTimer;
+    private float _untargetableTimer;
     private float _hitFlashTimer;
     private float _attackFlashTimer;
     private float _auraFlashTimer;
     private float _idleTimer;
+    private UnitSpriteSheet _spriteSheet;
+    private UnitAnimState _spriteAnimState = UnitAnimState.Idle;
+    private float _spriteAnimTimer;
+    private int _spriteAnimFrame;
+    private bool _spriteLoadAttempted;
+    private Vector2 _prevPosition;
     private float _currentAttackDamageScale = 1f;
     private float _currentSpeedScale = 1f;
     private float _currentDamageTakenScale = 1f;
@@ -266,6 +299,7 @@ public partial class Unit : Node2D
     public void Setup(Team team, UnitStats stats, Vector2 startPosition)
     {
         Team = team;
+        DefinitionId = stats.DefinitionId;
         UnitName = stats.Name;
         MaxHealth = stats.MaxHealth;
         Health = stats.MaxHealth;
@@ -281,6 +315,7 @@ public partial class Unit : Node2D
         BaseDamage = stats.BaseDamage;
         BusRepairAmount = stats.BusRepairAmount;
         DamageTakenScale = stats.DamageTakenScale;
+        DamageReflectScale = stats.DamageReflectScale;
         AuraRadius = stats.AuraRadius;
         AuraAttackDamageScale = stats.AuraAttackDamageScale;
         AuraSpeedScale = stats.AuraSpeedScale;
@@ -302,10 +337,40 @@ public partial class Unit : Node2D
         VisualScale = stats.VisualScale;
         Radius = ResolveRadius(stats);
         _bodyColor = stats.Color;
+        DeployQuote = stats.DeployQuote;
+        KillQuote = stats.KillQuote;
+        AbilityQuote = stats.AbilityQuote;
         _specialTimer = HasSpecialAbility
             ? Mathf.Max(3f, SpecialCooldown * 0.55f)
             : 0f;
         Position = startPosition;
+    }
+
+    public void ResetForPool()
+    {
+        Health = 0f;
+        _attackTimer = 0f;
+        _specialTimer = 0f;
+        _activeAbilityTimer = 0f;
+        _untargetableTimer = 0f;
+        _hitFlashTimer = 0f;
+        _attackFlashTimer = 0f;
+        _auraFlashTimer = 0f;
+        _idleTimer = 0f;
+        _currentAttackDamageScale = 1f;
+        _currentSpeedScale = 1f;
+        _currentDamageTakenScale = 1f;
+        _temporaryCombatBuffTimer = 0f;
+        _temporaryAttackDamageScale = 1f;
+        _temporarySpeedScale = 1f;
+        _temporaryDamageTakenScale = 1f;
+        _spriteLoadAttempted = false;
+        _spriteSheet = null;
+        _spriteAnimState = UnitAnimState.Idle;
+        _spriteAnimFrame = 0;
+        _spriteAnimTimer = 0f;
+        LastDamagedBy = null;
+        Visible = false;
     }
 
     public void ResetCombatModifiers()
@@ -345,6 +410,12 @@ public partial class Unit : Node2D
         _currentSpeedScale = Mathf.Max(_currentSpeedScale, appliedSpeedScale);
         _hasAuraBuff = true;
         _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.18f);
+    }
+
+    public void ApplyWeatherModifiers(float speedScale, float damageScale)
+    {
+        _currentSpeedScale *= speedScale;
+        _currentAttackDamageScale *= damageScale;
     }
 
     public void ApplyTemporaryCombatBuff(float attackDamageScale, float speedScale, float duration)
@@ -415,9 +486,54 @@ public partial class Unit : Node2D
         return true;
     }
 
+    public void SetActiveAbility(string abilityId, float cooldown)
+    {
+        ActiveAbilityId = abilityId ?? "";
+        ActiveAbilityCooldown = cooldown;
+        _activeAbilityTimer = HasActiveAbility
+            ? Mathf.Max(3f, cooldown * 0.5f)
+            : 0f;
+    }
+
+    public void TickActiveAbilityTimer(float delta)
+    {
+        if (_activeAbilityTimer > 0f)
+        {
+            _activeAbilityTimer -= delta;
+        }
+
+        if (_untargetableTimer > 0f)
+        {
+            _untargetableTimer -= delta;
+            if (_untargetableTimer <= 0f)
+            {
+                IsUntargetable = false;
+            }
+        }
+    }
+
+    public bool TryTriggerActiveAbility()
+    {
+        if (!HasActiveAbility || _activeAbilityTimer > 0f)
+        {
+            return false;
+        }
+
+        _activeAbilityTimer = ActiveAbilityCooldown;
+        _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.22f);
+        return true;
+    }
+
+    public void SetUntargetable(float duration)
+    {
+        IsUntargetable = true;
+        _untargetableTimer = duration;
+        _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
+    }
+
     public bool CanAttack(Unit target)
     {
-        if (target.IsDead)
+        if (target.IsDead || target.IsUntargetable)
         {
             return false;
         }
@@ -469,6 +585,12 @@ public partial class Unit : Node2D
         return Mathf.Abs(delta.X) <= AggroRangeX && Mathf.Abs(delta.Y) <= AggroRangeY;
     }
 
+    public bool IsInAggroRange(Unit target, float rangeScale)
+    {
+        var delta = target.Position - Position;
+        return Mathf.Abs(delta.X) <= AggroRangeX * rangeScale && Mathf.Abs(delta.Y) <= AggroRangeY * rangeScale;
+    }
+
     public void MoveToward(Vector2 target, float delta, float minX, float maxX, float minY, float maxY)
     {
         var offset = target - Position;
@@ -493,13 +615,18 @@ public partial class Unit : Node2D
             Mathf.Clamp(Position.Y, minY, maxY));
     }
 
-    public float TakeDamage(float damage)
+    public float TakeDamage(float damage, string attackerName = null)
     {
         var previousHealth = Health;
         Health -= damage * Mathf.Max(0.05f, DamageTakenScale * _currentDamageTakenScale);
         if (Health < 0f)
         {
             Health = 0f;
+        }
+
+        if (!string.IsNullOrEmpty(attackerName))
+        {
+            LastDamagedBy = attackerName;
         }
 
         _hitFlashTimer = 0.2f;
@@ -532,10 +659,101 @@ public partial class Unit : Node2D
 
     public override void _Draw()
     {
+        if (!_spriteLoadAttempted)
+        {
+            _spriteLoadAttempted = true;
+            _spriteSheet = UnitSpriteLoader.TryLoad(VisualClass);
+        }
+
+        // Shadow
         DrawSetTransform(new Vector2(0f, Radius * 0.9f), 0f, new Vector2(1.4f, 0.45f));
         DrawCircle(Vector2.Zero, Radius * 0.82f, new Color(0f, 0f, 0f, 0.18f));
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
 
+        if (_spriteSheet != null)
+        {
+            DrawSpriteFrame();
+        }
+        else
+        {
+            DrawProceduralUnit();
+        }
+
+        DrawHealthBar();
+    }
+
+    private void DrawSpriteFrame()
+    {
+        UpdateSpriteAnimState();
+
+        if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim))
+        {
+            if (!_spriteSheet.Animations.TryGetValue(UnitAnimState.Idle, out anim))
+                return;
+        }
+
+        _spriteAnimTimer += (float)GetProcessDeltaTime();
+        if (_spriteAnimTimer >= anim.FrameDuration)
+        {
+            _spriteAnimTimer -= anim.FrameDuration;
+            _spriteAnimFrame++;
+            if (_spriteAnimFrame >= anim.FrameCount)
+            {
+                _spriteAnimFrame = anim.Loop ? 0 : anim.FrameCount - 1;
+            }
+        }
+
+        var globalFrame = anim.StartFrame + _spriteAnimFrame;
+        var srcRect = UnitSpriteLoader.GetFrameRect(_spriteSheet, globalFrame);
+
+        var facing = GetFacing();
+        var drawScale = (Radius * 2f) / _spriteSheet.FrameWidth * VisualScale;
+        var bobOffset = Mathf.Sin(_idleTimer * 5f + (Speed * 0.02f)) * Radius * 0.06f;
+
+        var drawSize = new Vector2(_spriteSheet.FrameWidth * drawScale, _spriteSheet.FrameHeight * drawScale);
+        var drawPos = new Vector2(-drawSize.X * 0.5f, -drawSize.Y + bobOffset);
+
+        // Flip for facing direction
+        if (facing < 0)
+        {
+            drawPos.X += drawSize.X;
+            drawSize.X = -drawSize.X;
+        }
+
+        var modulate = Colors.White;
+        if (_hitFlashTimer > 0f)
+        {
+            modulate = modulate.Lerp(Colors.White, Mathf.Clamp(_hitFlashTimer / 0.2f, 0f, 0.6f));
+            modulate.R = Mathf.Min(1f, modulate.R + 0.4f);
+        }
+
+        DrawTextureRectRegion(_spriteSheet.Texture, new Rect2(drawPos, drawSize), srcRect, modulate);
+    }
+
+    private void UpdateSpriteAnimState()
+    {
+        var prevState = _spriteAnimState;
+        var moved = Position.DistanceTo(_prevPosition) > 0.5f;
+        _prevPosition = Position;
+
+        if (_hitFlashTimer > 0.05f)
+            _spriteAnimState = UnitAnimState.Hit;
+        else if (_attackFlashTimer > 0.05f)
+            _spriteAnimState = UnitAnimState.Attack;
+        else if (moved)
+            _spriteAnimState = UnitAnimState.Walk;
+        else
+            _spriteAnimState = UnitAnimState.Idle;
+
+        if (_spriteAnimState != prevState)
+        {
+            _spriteAnimFrame = 0;
+            _spriteAnimTimer = 0f;
+        }
+    }
+
+    private void DrawProceduralUnit()
+    {
         var bodyColor = ResolveBodyColor();
         var accentColor = bodyColor.Lightened(0.2f);
         var detailColor = bodyColor.Darkened(0.3f);
@@ -543,11 +761,16 @@ public partial class Unit : Node2D
         var bobOffset = Mathf.Sin(_idleTimer * 5f + (Speed * 0.02f)) * Radius * 0.06f;
 
         DrawSetTransform(new Vector2(0f, bobOffset), 0f, Vector2.One);
+
+        if (GameState.Instance != null && GameState.Instance.HighContrast)
+        {
+            var outlineColor = Team == Team.Player ? new Color("80ed99") : new Color("ef476f");
+            DrawCircle(new Vector2(0f, -Radius * 0.3f), Radius * 0.72f, outlineColor);
+        }
+
         DrawUnitSilhouette(bodyColor, accentColor, detailColor, flashStrength);
         DrawAuraIndicators(accentColor);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
-
-        DrawHealthBar();
     }
 
     private void DrawUnitSilhouette(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
@@ -586,6 +809,24 @@ public partial class Unit : Node2D
                 break;
             case "boss":
                 DrawBossUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "hound":
+                DrawHoundUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "banner":
+                DrawBannerUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "necromancer":
+                DrawNecromancerUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "berserker":
+                DrawBerserkerUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "siegetower":
+                DrawSiegeTowerUnit(bodyColor, accentColor, detailColor, flashStrength);
+                break;
+            case "mirror":
+                DrawMirrorUnit(bodyColor, accentColor, detailColor, flashStrength);
                 break;
             case "splitter":
                 DrawWalkerUnit(bodyColor, accentColor, detailColor, flashStrength, true);
@@ -868,14 +1109,200 @@ public partial class Unit : Node2D
         }
     }
 
+    private void DrawHoundUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        // Low crouching body
+        DrawLine(
+            new Vector2(-facing * Radius * 0.44f, -Radius * 0.08f),
+            new Vector2(facing * Radius * 0.52f, -Radius * 0.26f),
+            bodyColor,
+            Radius * 0.46f,
+            true);
+        // Head
+        DrawCircle(new Vector2(facing * Radius * 0.56f, -Radius * 0.52f), Radius * 0.28f, accentColor);
+        // Ears
+        DrawLine(
+            new Vector2(facing * Radius * 0.48f, -Radius * 0.68f),
+            new Vector2(facing * Radius * 0.32f, -Radius * 1.02f),
+            accentColor,
+            2.5f,
+            true);
+        // Legs
+        DrawLine(new Vector2(-Radius * 0.28f, Radius * 0.08f), new Vector2(-Radius * 0.36f, Radius * 0.72f), detailColor, 2.5f, true);
+        DrawLine(new Vector2(Radius * 0.14f, Radius * 0.08f), new Vector2(Radius * 0.24f, Radius * 0.72f), detailColor, 2.5f, true);
+        // Tail
+        DrawLine(new Vector2(-facing * Radius * 0.44f, -Radius * 0.18f), new Vector2(-facing * Radius * 0.78f, -Radius * 0.48f), detailColor, 2f, true);
+
+        if (flashStrength > 0.05f)
+        {
+            DrawCircle(
+                new Vector2(facing * Radius * 0.72f, -Radius * 0.42f),
+                Radius * 0.18f * (1f + flashStrength),
+                accentColor.Lightened(0.55f));
+        }
+    }
+
+    private void DrawBannerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        // Body
+        DrawRect(new Rect2(-Radius * 0.34f, -Radius * 0.2f, Radius * 0.68f, Radius * 0.88f), bodyColor, true);
+        // Head
+        DrawCircle(new Vector2(0f, -Radius * 0.82f), Radius * 0.3f, accentColor);
+        // Banner pole
+        DrawLine(
+            new Vector2(-facing * Radius * 0.28f, -Radius * 0.14f),
+            new Vector2(-facing * Radius * 0.28f, -Radius * 1.52f),
+            detailColor.Darkened(0.15f),
+            3f,
+            true);
+        // Banner flag
+        DrawRect(
+            new Rect2(
+                -facing * Radius * 0.28f, -Radius * 1.52f,
+                -facing * Radius * 0.52f, Radius * 0.42f),
+            accentColor.Lightened(0.12f),
+            true);
+        // Legs
+        DrawLine(new Vector2(-Radius * 0.18f, Radius * 0.44f), new Vector2(-Radius * 0.32f, Radius * 0.96f), detailColor, 3f, true);
+        DrawLine(new Vector2(Radius * 0.18f, Radius * 0.44f), new Vector2(Radius * 0.32f, Radius * 0.96f), detailColor, 3f, true);
+
+        if (flashStrength > 0.05f)
+        {
+            DrawArc(Vector2.Zero, Radius * 0.64f, 0f, Mathf.Tau, 18, accentColor.Lightened(0.55f), 3f);
+        }
+    }
+
+    private void DrawNecromancerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        // Robed body (triangle-ish)
+        DrawLine(
+            new Vector2(0f, -Radius * 0.56f),
+            new Vector2(-Radius * 0.42f, Radius * 0.62f),
+            bodyColor,
+            Radius * 0.52f,
+            true);
+        DrawLine(
+            new Vector2(0f, -Radius * 0.56f),
+            new Vector2(Radius * 0.42f, Radius * 0.62f),
+            bodyColor,
+            Radius * 0.52f,
+            true);
+        // Hooded head
+        DrawCircle(new Vector2(0f, -Radius * 0.84f), Radius * 0.32f, accentColor.Darkened(0.2f));
+        DrawCircle(new Vector2(0f, -Radius * 0.78f), Radius * 0.2f, detailColor.Lightened(0.1f));
+        // Staff
+        DrawLine(
+            new Vector2(facing * Radius * 0.24f, -Radius * 0.2f),
+            new Vector2(facing * Radius * 0.36f, -Radius * 1.34f),
+            detailColor,
+            3f,
+            true);
+        DrawCircle(new Vector2(facing * Radius * 0.36f, -Radius * 1.42f), Radius * 0.14f, accentColor.Lightened(0.2f));
+
+        if (flashStrength > 0.05f)
+        {
+            DrawCircle(
+                new Vector2(facing * Radius * 0.36f, -Radius * 1.42f),
+                Radius * 0.24f * (1f + flashStrength),
+                accentColor.Lightened(0.5f));
+        }
+    }
+
+    private void DrawBerserkerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        var rageGlow = 1f - HealthRatio;
+        var rageColor = bodyColor.Lerp(new Color("ff2222"), rageGlow * 0.6f);
+        // Broad torso
+        DrawRect(new Rect2(-Radius * 0.46f, -Radius * 0.28f, Radius * 0.92f, Radius * 0.84f), rageColor, true);
+        // Head
+        DrawCircle(new Vector2(0f, -Radius * 0.88f), Radius * 0.3f, accentColor);
+        // Arms (wide stance)
+        DrawLine(new Vector2(-Radius * 0.46f, -Radius * 0.08f), new Vector2(-Radius * 0.82f, Radius * 0.14f), detailColor, 4f, true);
+        DrawLine(new Vector2(Radius * 0.46f, -Radius * 0.08f), new Vector2(Radius * 0.82f, Radius * 0.14f), detailColor, 4f, true);
+        // Legs
+        DrawLine(new Vector2(-Radius * 0.22f, Radius * 0.42f), new Vector2(-Radius * 0.34f, Radius * 0.96f), detailColor, 3f, true);
+        DrawLine(new Vector2(Radius * 0.22f, Radius * 0.42f), new Vector2(Radius * 0.34f, Radius * 0.96f), detailColor, 3f, true);
+        // Rage indicator when low health
+        if (rageGlow > 0.15f)
+        {
+            DrawArc(Vector2.Zero, Radius * 1.1f, 0f, Mathf.Tau, 20, new Color(1f, 0.2f, 0.1f, rageGlow * 0.35f), 3f);
+        }
+
+        if (flashStrength > 0.05f)
+        {
+            DrawLine(
+                new Vector2(facing * Radius * 0.5f, -Radius * 0.32f),
+                new Vector2(facing * Radius * 1.08f, -Radius * 0.12f),
+                accentColor.Lightened(0.55f),
+                4f + flashStrength * 3f,
+                true);
+        }
+    }
+
+    private void DrawSiegeTowerUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        // Tall rectangular tower
+        DrawRect(new Rect2(-Radius * 0.52f, -Radius * 1.2f, Radius * 1.04f, Radius * 2.1f), bodyColor, true);
+        // Horizontal planks
+        DrawRect(new Rect2(-Radius * 0.48f, -Radius * 0.6f, Radius * 0.96f, Radius * 0.12f), detailColor, true);
+        DrawRect(new Rect2(-Radius * 0.48f, Radius * 0.0f, Radius * 0.96f, Radius * 0.12f), detailColor, true);
+        DrawRect(new Rect2(-Radius * 0.48f, Radius * 0.6f, Radius * 0.96f, Radius * 0.12f), detailColor, true);
+        // Battlement top
+        DrawRect(new Rect2(-Radius * 0.56f, -Radius * 1.28f, Radius * 0.3f, Radius * 0.22f), accentColor, true);
+        DrawRect(new Rect2(Radius * 0.26f, -Radius * 1.28f, Radius * 0.3f, Radius * 0.22f), accentColor, true);
+        // Wheels
+        DrawCircle(new Vector2(-Radius * 0.34f, Radius * 0.88f), Radius * 0.16f, detailColor.Darkened(0.2f));
+        DrawCircle(new Vector2(Radius * 0.34f, Radius * 0.88f), Radius * 0.16f, detailColor.Darkened(0.2f));
+
+        if (flashStrength > 0.05f)
+        {
+            DrawRect(new Rect2(-Radius * 0.56f, -Radius * 1.32f, Radius * 1.12f, Radius * 0.08f), accentColor.Lightened(0.55f), true);
+        }
+    }
+
+    private void DrawMirrorUnit(Color bodyColor, Color accentColor, Color detailColor, float flashStrength)
+    {
+        var facing = GetFacing();
+        // Body
+        DrawRect(new Rect2(-Radius * 0.36f, -Radius * 0.2f, Radius * 0.72f, Radius * 0.88f), bodyColor, true);
+        // Head
+        DrawCircle(new Vector2(0f, -Radius * 0.82f), Radius * 0.3f, accentColor);
+        // Mirror shield (reflective, lighter)
+        var shieldColor = accentColor.Lightened(0.35f);
+        DrawFacingRect(facing * Radius * 0.14f, -Radius * 0.48f, facing * Radius * 0.58f, Radius * 0.96f, shieldColor);
+        DrawFacingRect(facing * Radius * 0.24f, -Radius * 0.28f, facing * Radius * 0.36f, Radius * 0.16f, new Color(1f, 1f, 1f, 0.45f));
+        // Legs
+        DrawLine(new Vector2(-Radius * 0.18f, Radius * 0.44f), new Vector2(-Radius * 0.32f, Radius * 0.96f), detailColor, 3f, true);
+        DrawLine(new Vector2(Radius * 0.18f, Radius * 0.44f), new Vector2(Radius * 0.32f, Radius * 0.96f), detailColor, 3f, true);
+
+        if (flashStrength > 0.05f)
+        {
+            DrawArc(
+                new Vector2(facing * Radius * 0.38f, Radius * 0.04f),
+                Radius * 0.52f,
+                -0.9f,
+                0.9f,
+                16,
+                new Color(1f, 1f, 1f, 0.6f),
+                3f);
+        }
+    }
+
     private void DrawHealthBar()
     {
-        var hpBarWidth = Radius * 2.15f;
+        var highContrast = GameState.Instance != null && GameState.Instance.HighContrast;
+        var hpBarWidth = Radius * (highContrast ? 2.5f : 2.15f);
+        var hpBarHeight = highContrast ? 7f : 5f;
         var hpRatio = Mathf.Clamp(Health / MaxHealth, 0f, 1f);
         var barOrigin = new Vector2(-hpBarWidth * 0.5f, -Radius - 16f);
 
-        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth, 5f)), new Color(0f, 0f, 0f, 0.55f), true);
-        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth * hpRatio, 5f)), new Color("80ed99"), true);
+        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth, hpBarHeight)), new Color(0f, 0f, 0f, highContrast ? 0.8f : 0.55f), true);
+        var hpColor = Team == Team.Player ? new Color("80ed99") : new Color("ef476f");
+        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth * hpRatio, hpBarHeight)), hpColor, true);
 
         if (Team == Team.Player)
         {
@@ -913,31 +1340,57 @@ public partial class Unit : Node2D
             2f);
     }
 
+    private float ResolveBerserkerRageScale()
+    {
+        if (!string.Equals(SpecialAbilityId, "berserk_rage", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1f;
+        }
+
+        // At full health: 1.0x damage. At 0 health: up to 1.8x damage (capped to limit multiplicative stacking with Berserker Blood boon).
+        var missingRatio = 1f - HealthRatio;
+        return 1f + (missingRatio * 0.8f);
+    }
+
     private float ResolveRadius(UnitStats stats)
     {
         var radius = 14f * stats.VisualScale;
         return stats.VisualClass switch
         {
             "boss" => radius + 6f,
+            "siegetower" => radius + 6f,
             "bloater" => radius + 3f,
             "crusher" => radius + 3f,
             "brute" => radius + 2f,
+            "banner" => radius + 1f,
+            "berserker" => radius + 1f,
             "howler" => radius + 1f,
+            "mirror" => radius + 1f,
             "sniper" => radius - 1f,
             "runner" => radius - 1f,
+            "hound" => radius - 2f,
             _ => radius
         };
     }
 
     private Color ResolveBodyColor()
     {
+        var baseColor = _bodyColor;
+
+        if (GameState.Instance != null && GameState.Instance.HighContrast)
+        {
+            baseColor = Team == Team.Player
+                ? baseColor.Lightened(0.25f)
+                : baseColor.Darkened(0.15f);
+        }
+
         if (_hitFlashTimer <= 0f)
         {
-            return _bodyColor;
+            return baseColor;
         }
 
         var flashStrength = Mathf.Clamp(_hitFlashTimer / 0.2f, 0f, 1f);
-        return _bodyColor.Lerp(Colors.White, 0.2f + (flashStrength * 0.45f));
+        return baseColor.Lerp(Colors.White, 0.2f + (flashStrength * 0.45f));
     }
 
     private float GetFacing()

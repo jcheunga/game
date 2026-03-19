@@ -18,7 +18,12 @@ public static class GameData
         PlayerMarksmanId,
         PlayerBreacherId,
         PlayerGrenadierId,
-        PlayerCoordinatorId
+        PlayerCoordinatorId,
+        PlayerHoundId,
+        PlayerBannerId,
+        PlayerNecromancerId,
+        PlayerRogueId,
+        PlayerBerserkerId
     };
 
     public static readonly string[] PlayerSpellIds =
@@ -27,7 +32,12 @@ public static class GameData
         SpellHealId,
         SpellFrostBurstId,
         SpellLightningStrikeId,
-        SpellBarrierWardId
+        SpellBarrierWardId,
+        SpellStoneBarricadeId,
+        SpellWarCryId,
+        SpellEarthquakeId,
+        SpellPolymorphId,
+        SpellResurrectId
     };
 
     public static readonly string[] EnemyRosterIds =
@@ -42,7 +52,21 @@ public static class GameData
         EnemyHowlerId,
         EnemyJammerId,
         EnemyCrusherId,
-        EnemyBossId
+        EnemyBossId,
+        EnemyShieldWallId,
+        EnemyLichId,
+        EnemySiegeTowerId,
+        EnemyMirrorId,
+        EnemyTunnelerId,
+        EnemyBossDocksId,
+        EnemyBossForgeId,
+        EnemyBossWardId,
+        EnemyBossPassId,
+        EnemyBossBasilicaId,
+        EnemyBossMireId,
+        EnemyBossSteppeId,
+        EnemyBossVergeId,
+        EnemyBossCitadelId
     };
 
     public const string PlayerBrawlerId = "player_brawler";
@@ -56,11 +80,22 @@ public static class GameData
     public const string PlayerGrenadierId = "player_grenadier";
     public const string PlayerSpearId = "player_spear";
     public const string PlayerCoordinatorId = "player_coordinator";
+    public const string PlayerHoundId = "player_hound";
+    public const string PlayerBannerId = "player_banner";
+    public const string PlayerNecromancerId = "player_necromancer";
+    public const string PlayerRogueId = "player_rogue";
+    public const string PlayerBerserkerId = "player_berserker";
+    public const string PlayerSkeletonId = "player_skeleton";
     public const string SpellFireballId = "spell_fireball";
     public const string SpellHealId = "spell_heal";
     public const string SpellFrostBurstId = "spell_frost_burst";
     public const string SpellLightningStrikeId = "spell_lightning_strike";
     public const string SpellBarrierWardId = "spell_barrier_ward";
+    public const string SpellStoneBarricadeId = "spell_stone_barricade";
+    public const string SpellWarCryId = "spell_war_cry";
+    public const string SpellEarthquakeId = "spell_earthquake";
+    public const string SpellPolymorphId = "spell_polymorph";
+    public const string SpellResurrectId = "spell_resurrect";
     public const string EnemyWalkerId = "enemy_walker";
     public const string EnemyRunnerId = "enemy_runner";
     public const string EnemyBloaterId = "enemy_bloater";
@@ -72,11 +107,26 @@ public static class GameData
     public const string EnemyJammerId = "enemy_jammer";
     public const string EnemyCrusherId = "enemy_crusher";
     public const string EnemyBossId = "enemy_boss";
+    public const string EnemyShieldWallId = "enemy_shieldwall";
+    public const string EnemyLichId = "enemy_lich";
+    public const string EnemySiegeTowerId = "enemy_siegetower";
+    public const string EnemyMirrorId = "enemy_mirror";
+    public const string EnemyTunnelerId = "enemy_tunneler";
+    public const string EnemyBossDocksId = "enemy_boss_docks";
+    public const string EnemyBossForgeId = "enemy_boss_forge";
+    public const string EnemyBossWardId = "enemy_boss_ward";
+    public const string EnemyBossPassId = "enemy_boss_pass";
+    public const string EnemyBossBasilicaId = "enemy_boss_basilica";
+    public const string EnemyBossMireId = "enemy_boss_mire";
+    public const string EnemyBossSteppeId = "enemy_boss_steppe";
+    public const string EnemyBossVergeId = "enemy_boss_verge";
+    public const string EnemyBossCitadelId = "enemy_boss_citadel";
 
     private const string UnitsPath = "res://data/units.json";
     private const string SpellsPath = "res://data/spells.json";
     private const string StagesPath = "res://data/stages.json";
     private const string CombatPath = "res://data/combat_config.json";
+    private const string EquipmentPath = "res://data/equipment.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -87,6 +137,7 @@ public static class GameData
     private static StageDefinition[] _stages = Array.Empty<StageDefinition>();
     private static Dictionary<string, UnitDefinition> _units = new();
     private static Dictionary<string, SpellDefinition> _spells = new();
+    private static Dictionary<string, EquipmentDefinition> _equipment = new();
     private static CombatTuning _combat = new();
 
     private sealed class UnitCollection
@@ -102,6 +153,11 @@ public static class GameData
     private sealed class SpellCollection
     {
         public List<SpellDefinition> Spells { get; set; } = new();
+    }
+
+    private sealed class EquipmentCollection
+    {
+        public List<EquipmentDefinition> Equipment { get; set; } = new();
     }
 
     private sealed class CombatCollection
@@ -233,6 +289,24 @@ public static class GameData
         throw new InvalidOperationException($"Spell id '{spellId}' was not found in data.");
     }
 
+    public static EquipmentDefinition GetEquipment(string id)
+    {
+        EnsureLoaded();
+
+        if (_equipment.TryGetValue(id, out var equip))
+        {
+            return equip;
+        }
+
+        throw new InvalidOperationException($"Equipment id '{id}' was not found in data.");
+    }
+
+    public static IReadOnlyList<EquipmentDefinition> GetAllEquipment()
+    {
+        EnsureLoaded();
+        return _equipment.Values.ToArray();
+    }
+
     private static void EnsureLoaded()
     {
         if (_loaded)
@@ -248,11 +322,13 @@ public static class GameData
             var spellsText = ReadTextFile(SpellsPath);
             var stagesText = ReadTextFile(StagesPath);
             var combatText = ReadTextFile(CombatPath);
+            var equipmentText = ReadTextFile(EquipmentPath);
 
             var unitsDoc = JsonSerializer.Deserialize<UnitCollection>(unitsText, JsonOptions);
             var spellsDoc = JsonSerializer.Deserialize<SpellCollection>(spellsText, JsonOptions);
             var stagesDoc = JsonSerializer.Deserialize<StageCollection>(stagesText, JsonOptions);
             var combatDoc = JsonSerializer.Deserialize<CombatCollection>(combatText, JsonOptions);
+            var equipmentDoc = JsonSerializer.Deserialize<EquipmentCollection>(equipmentText, JsonOptions);
 
             if (unitsDoc == null || unitsDoc.Units.Count == 0)
             {
@@ -294,6 +370,20 @@ public static class GameData
                 }
 
                 _spells[spell.Id] = spell;
+            }
+
+            _equipment = new Dictionary<string, EquipmentDefinition>(StringComparer.OrdinalIgnoreCase);
+            if (equipmentDoc != null)
+            {
+                foreach (var equip in equipmentDoc.Equipment)
+                {
+                    if (string.IsNullOrWhiteSpace(equip.Id))
+                    {
+                        continue;
+                    }
+
+                    _equipment[equip.Id] = equip;
+                }
             }
 
             _stages = stagesDoc.Stages

@@ -44,6 +44,16 @@ public static class FeaturedChallengeCatalog
             "daily_final_push",
             "Final Push",
             "A late-route board for high-pressure clears with tighter score separation."
+        ),
+        (
+            "daily_ambush_gauntlet",
+            "Ambush Gauntlet",
+            "A mid-route board with tunneler and splitter mutators in mind. Rear-line awareness is key."
+        ),
+        (
+            "daily_siege_front",
+            "Siege Front",
+            "A high-stage board where siege and mirror mutators test formation discipline under pressure."
         )
     };
 
@@ -146,6 +156,18 @@ public static class FeaturedChallengeCatalog
             {
                 SquadSynergyCatalog.FrontlineTag,
                 SquadSynergyCatalog.BreachTag,
+                SquadSynergyCatalog.SupportTag
+            },
+            3 => new[]
+            {
+                SquadSynergyCatalog.ReconTag,
+                SquadSynergyCatalog.FrontlineTag,
+                SquadSynergyCatalog.BreachTag
+            },
+            4 => new[]
+            {
+                SquadSynergyCatalog.BreachTag,
+                SquadSynergyCatalog.FrontlineTag,
                 SquadSynergyCatalog.SupportTag
             },
             _ => new[]

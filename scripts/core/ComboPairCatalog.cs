@@ -75,6 +75,46 @@ public static class ComboPairCatalog
             HealthScaleA = 1f, DamageScaleA = 1.08f, SpeedScaleA = 1.06f,
             HealthScaleB = 1f, DamageScaleB = 1.08f, SpeedScaleB = 1.06f,
             Title = "Holy Order"
+        },
+        new()
+        {
+            Id = "dark_pact",
+            UnitIdA = "player_necromancer",
+            UnitIdB = "player_berserker",
+            ProximityRadius = 90f,
+            HealthScaleA = 1.10f, DamageScaleA = 1.15f, SpeedScaleA = 1f,
+            HealthScaleB = 1f, DamageScaleB = 1.18f, SpeedScaleB = 1.08f,
+            Title = "Dark Pact"
+        },
+        new()
+        {
+            Id = "fire_support",
+            UnitIdA = "player_shooter",
+            UnitIdB = "player_mechanic",
+            ProximityRadius = 110f,
+            HealthScaleA = 1f, DamageScaleA = 1.14f, SpeedScaleA = 1f,
+            HealthScaleB = 1.10f, DamageScaleB = 1f, SpeedScaleB = 1f,
+            Title = "Fire Support"
+        },
+        new()
+        {
+            Id = "shadow_strike",
+            UnitIdA = "player_rogue",
+            UnitIdB = "player_necromancer",
+            ProximityRadius = 80f,
+            HealthScaleA = 1f, DamageScaleA = 1.16f, SpeedScaleA = 1.10f,
+            HealthScaleB = 1f, DamageScaleB = 1.10f, SpeedScaleB = 1f,
+            Title = "Shadow Strike"
+        },
+        new()
+        {
+            Id = "vanguard_charge",
+            UnitIdA = "player_brawler",
+            UnitIdB = "player_raider",
+            ProximityRadius = 70f,
+            HealthScaleA = 1.10f, DamageScaleA = 1.12f, SpeedScaleA = 1f,
+            HealthScaleB = 1f, DamageScaleB = 1.10f, SpeedScaleB = 1.12f,
+            Title = "Vanguard Charge"
         }
     };
 

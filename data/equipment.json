@@ -131,6 +131,72 @@
       "CooldownReduction": 0.0,
       "SpeedScale": 1.0,
       "BaseDamageBonus": 4
+    },
+    {
+      "Id": "relic_wolftooth_charm",
+      "DisplayName": "Wolftooth Charm",
+      "Description": "A fang on a leather cord that quickens strikes.",
+      "Rarity": "common",
+      "HealthScale": 1.0,
+      "DamageScale": 1.04,
+      "CooldownReduction": 0.08,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_tombstone_shard",
+      "DisplayName": "Tombstone Shard",
+      "Description": "A fragment of grave-marked stone that drains life from foes.",
+      "Rarity": "rare",
+      "HealthScale": 1.14,
+      "DamageScale": 1.06,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 2
+    },
+    {
+      "Id": "relic_stormcaller_sigil",
+      "DisplayName": "Stormcaller Sigil",
+      "Description": "A runic tablet that crackles with bottled lightning.",
+      "Rarity": "rare",
+      "HealthScale": 1.0,
+      "DamageScale": 1.16,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.08,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_siege_hammer",
+      "DisplayName": "Siege Hammer",
+      "Description": "A lead-core maul designed to crack fortified gates.",
+      "Rarity": "rare",
+      "HealthScale": 1.0,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 0.95,
+      "BaseDamageBonus": 12
+    },
+    {
+      "Id": "relic_spectral_lantern",
+      "DisplayName": "Spectral Lantern",
+      "Description": "A ghostly lamp that reveals weakness in the undead.",
+      "Rarity": "epic",
+      "HealthScale": 1.0,
+      "DamageScale": 1.24,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_immortal_wreath",
+      "DisplayName": "Immortal Wreath",
+      "Description": "A crown of deathless vines that refuses to let its bearer fall.",
+      "Rarity": "epic",
+      "HealthScale": 1.30,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.06,
+      "BaseDamageBonus": 0
     }
   ]
 }

@@ -2,5 +2,6 @@ public enum BattleRunMode
 {
     Campaign = 0,
     Endless = 1,
-    AsyncChallenge = 2
+    AsyncChallenge = 2,
+    BossRush = 3
 }

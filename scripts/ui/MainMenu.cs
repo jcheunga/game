@@ -200,6 +200,24 @@ public partial class MainMenu : Control
         stack.AddChild(endlessButton);
         _animatedElements.Add(endlessButton);
 
+        if (GameState.Instance.HighestUnlockedStage >= 10)
+        {
+            var bossRushButton = BuildButton("Boss Rush");
+            bossRushButton.Pressed += () =>
+            {
+                if (GameState.Instance.PrepareBossRush(out var msg))
+                {
+                    SceneRouter.Instance.GoToLoadout();
+                }
+                else
+                {
+                    _summaryLabel.Text = msg;
+                }
+            };
+            stack.AddChild(bossRushButton);
+            _animatedElements.Add(bossRushButton);
+        }
+
         var multiplayerButton = BuildButton("Multiplayer Challenge");
         multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
         stack.AddChild(multiplayerButton);
@@ -352,6 +370,7 @@ public partial class MainMenu : Control
             $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}  |  Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
             $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
             $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
+            $"Boss rush: {GameState.Instance.BestBossRushWave}/{BossRushCatalog.TotalWaves} bosses  |  {GameState.Instance.BossRushRuns} runs\n" +
             $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"{(nextDirective == null ? "Next directive: none" : GameState.Instance.BuildCampaignDirectiveInlineText(nextStage.StageNumber))}\n" +

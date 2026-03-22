@@ -113,6 +113,9 @@ public sealed class GameSaveData
     public int PrestigeLevel { get; set; }
     public int PrestigeTotalGoldEarned { get; set; }
     public int PrestigeTotalStagesCleared { get; set; }
+    public int BestBossRushWave { get; set; }
+    public float BestBossRushTimeSeconds { get; set; }
+    public int BossRushRuns { get; set; }
     public string[] PurchasedProductIds { get; set; } = [];
     public int TotalPurchaseCount { get; set; }
     public string PurchaseValidationEndpoint { get; set; } = "";

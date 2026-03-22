@@ -88,6 +88,9 @@ public partial class GameState : Node
 	public int PrestigeTotalGoldEarned { get; private set; }
 	public int PrestigeTotalStagesCleared { get; private set; }
 	public bool CanPrestige => HighestUnlockedStage >= MaxStage && PrestigeLevel < MaxPrestigeLevel;
+	public int BestBossRushWave { get; private set; }
+	public float BestBossRushTimeSeconds { get; private set; }
+	public int BossRushRuns { get; private set; }
 	private const int MaxPrestigeLevel = 5;
 	public string DifficultyId { get; private set; } = DefaultDifficultyId;
 	public int TotalPurchaseCount => _totalPurchaseCount;
@@ -1087,6 +1090,42 @@ public partial class GameState : Node
 	{
 		HighContrast = enabled;
 		Persist();
+	}
+
+	public bool PrepareBossRush(out string message)
+	{
+		if (HighestUnlockedStage < 10)
+		{
+			message = "Unlock at least 10 stages to access Boss Rush.";
+			return false;
+		}
+
+		CurrentBattleMode = BattleRunMode.BossRush;
+		message = "Boss Rush armed. Deploy to face all 10 district bosses in sequence.";
+		Persist();
+		return true;
+	}
+
+	public void ApplyBossRushResult(int wavesCleared, float elapsedSeconds, int totalGold, bool completed)
+	{
+		BestBossRushWave = Math.Max(BestBossRushWave, wavesCleared);
+		BestBossRushTimeSeconds = BestBossRushTimeSeconds > 0.01f
+			? (completed ? Math.Min(BestBossRushTimeSeconds, elapsedSeconds) : BestBossRushTimeSeconds)
+			: elapsedSeconds;
+		BossRushRuns++;
+		Gold += totalGold;
+
+		var resultLabel = completed ? "Boss Rush COMPLETE" : $"Boss Rush failed at wave {wavesCleared}/{BossRushCatalog.TotalWaves}";
+		LastResultMessage = $"{resultLabel}. +{totalGold} gold. Best: {BestBossRushWave}/{BossRushCatalog.TotalWaves} waves.";
+
+		Persist();
+		CheckAchievements();
+		AnalyticsService.Track("boss_rush", $"waves={wavesCleared},time={elapsedSeconds:F1},gold={totalGold},complete={completed}");
+
+		if (completed)
+		{
+			TryUnlockAchievement("boss_rush_complete");
+		}
 	}
 
 	public float GetPrestigeGoldBonus() => 1f + (PrestigeLevel * 0.10f);
@@ -2557,6 +2596,9 @@ public partial class GameState : Node
 		PrestigeLevel = 0;
 		PrestigeTotalGoldEarned = 0;
 		PrestigeTotalStagesCleared = 0;
+		BestBossRushWave = 0;
+		BestBossRushTimeSeconds = 0f;
+		BossRushRuns = 0;
 		CurrentBattleMode = BattleRunMode.Campaign;
 		_activeDeckUnitIds.Clear();
 		_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
@@ -2687,6 +2729,9 @@ public partial class GameState : Node
 			PrestigeLevel = saved.Version >= 31 ? Mathf.Clamp(saved.PrestigeLevel, 0, MaxPrestigeLevel) : 0;
 			PrestigeTotalGoldEarned = saved.Version >= 31 ? Math.Max(0, saved.PrestigeTotalGoldEarned) : 0;
 			PrestigeTotalStagesCleared = saved.Version >= 31 ? Math.Max(0, saved.PrestigeTotalStagesCleared) : 0;
+			BestBossRushWave = saved.Version >= 31 ? Math.Max(0, saved.BestBossRushWave) : 0;
+			BestBossRushTimeSeconds = saved.Version >= 31 ? Math.Max(0f, saved.BestBossRushTimeSeconds) : 0f;
+			BossRushRuns = saved.Version >= 31 ? Math.Max(0, saved.BossRushRuns) : 0;
 		}
 		else
 		{
@@ -3157,6 +3202,9 @@ public partial class GameState : Node
 			PrestigeLevel = PrestigeLevel,
 			PrestigeTotalGoldEarned = PrestigeTotalGoldEarned,
 			PrestigeTotalStagesCleared = PrestigeTotalStagesCleared,
+			BestBossRushWave = BestBossRushWave,
+			BestBossRushTimeSeconds = BestBossRushTimeSeconds,
+			BossRushRuns = BossRushRuns,
 			ActiveDeckUnitIds = _activeDeckUnitIds.ToArray(),
 			ActiveDeckSpellIds = _activeDeckSpellIds.ToArray(),
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),

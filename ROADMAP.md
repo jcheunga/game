@@ -277,13 +277,45 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 
 ## Immediate Next Sprint
 
-**All code work is complete.** The project has reached code-complete status across all 10 milestones plus full ship-readiness infrastructure. Every remaining task is art production, audio production, deployment, or platform-specific build configuration — not code.
+**All code work is complete.** The project has reached code-complete status across all 10 milestones plus 28 post-milestone features and full ship-readiness infrastructure. Every remaining task is art production, audio production, deployment, or platform-specific build configuration — not code.
 
 ### What's Ready
 
 | System | Status | How To Use |
 |--------|--------|-----------|
 | 16 player units, 10 spells, 16 enemies, 10 bosses | Implemented | All in `data/units.json`, `data/spells.json` |
+| Relic Forge (dismantle, fuse 3-to-1, craft with shards + gold) | Implemented | Forge menu from Armory |
+| Unit Promotion (elite rank at level 5, second equipment slot) | Implemented | Promote from Armory unit cards |
+| Expeditions (3 slots, 30/60/120 min, gold/food/relic rewards) | Implemented | Expeditions menu from Armory or Main Menu |
+| Seasonal Events (time-limited stages, milestone rewards) | Implemented | Event menu from Main Menu when active |
+| 20 relics (5 common, 7 rare, 8 epic) including 2 event-exclusive | Implemented | `data/equipment.json` |
+| Codex / Bestiary (72 entries: enemies, bosses, units, spells, relics) | Implemented | Codex menu from Main Menu |
+| Skill Trees (16 trees x 5 nodes, Tomes currency) | Implemented | Talents button in Armory unit cards |
+| PvP Arena (async, Elo rating, 5 tiers Bronze-Diamond) | Implemented | Arena menu from Main Menu (stage 20+) |
+| Guild / Warband (5 perks, 5 tiers, weekly goals, contribution) | Implemented | Warband menu from Main Menu |
+| 35 achievements across 6 categories | Implemented | Achievement catalog + server sync |
+| Player Profile Dashboard (6-section stats overview) | Implemented | Profile menu from Main Menu |
+| Campaign Hard Mode (50 stages, 1.3x-2.5x scaling, hardened relics) | Implemented | Normal/Hard toggle on campaign map |
+| Enchantment System (10 enchantments, Essence currency, combat hooks) | Implemented | Enchant tab in Relic Forge |
+| Weekly Raid Boss (4 rotating bosses, community HP, milestone rewards) | Implemented | Raid menu from Main Menu (stage 5+) |
+| 33 relics (5 common, 7 rare, 14 epic, 7 hardened) | Implemented | `data/equipment.json` |
+| Bounty Board (3 daily quests, 15 bounty templates) | Implemented | Bounty menu from Main Menu |
+| Challenge Tower (100 ascending floors, tower relics) | Implemented | Tower menu from Main Menu |
+| Friend List & Gifting (add/remove friends, 3 daily gifts) | Implemented | Friends menu from Main Menu |
+| Mastery System (5 ranks per unit, XP from combat usage) | Implemented | Mastery rank on unit cards |
+| 43 achievements across 7 categories + reward payouts | Implemented | Achievement catalog + rewards |
+| Login Calendar (30-day escalating rewards, monthly reset) | Implemented | Calendar menu from Main Menu |
+| Leaderboard Hub (Arena/Tower/Endless/Daily tabs) | Implemented | Leaderboard menu from Main Menu |
+| War Wagon Cosmetics (8 milestone skins) | Implemented | Skin selector in Settings |
+| Notification Center (badge counts on menu buttons) | Implemented | MainMenu badge counts |
+| Unit Awakening (1-5 stars via tokens, stat bonuses) | Implemented | Star display on unit cards |
+| Season Pass (50-tier free + premium tracks, Season XP) | Implemented | Season Pass menu from Main Menu |
+| Collection Milestones (24 milestones across 6 categories) | Implemented | Progress bars in Profile/Codex |
+| 46 achievements with reward payouts | Implemented | Achievement catalog + rewards |
+| Battle Mutators (12 gameplay modifiers, reward multiplier) | Implemented | Mutator toggles in Loadout |
+| Battle Summary Screen (post-battle stats breakdown) | Implemented | Shown after every battle |
+| Accessibility Options (colorblind, reduced motion, auto-battle, large text) | Implemented | Settings > Accessibility |
+| Live Config Service (server-side tuning, announcements) | Implemented | /config/live endpoint |
 | 50 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
 | Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings |
@@ -697,6 +729,77 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - added `ScreenshotCapture` utility: captures viewport to PNG in `user://screenshots/`, available via F12 in battle, `screenshot` in debug console, and `ScreenshotCapture.Capture()` API
 - updated the battle pause overlay with F12 screenshot hotkey reference
 - updated ASSETS.md with particle texture drop-in instructions
+- added a Relic Forge system with dismantle (break relics into shards by rarity), fusion (combine 3 same-rarity relics into 1 next-rarity), and crafting (forge specific relics with shards + gold) — new `RelicShards` currency, `RelicForgeCatalog`, `ForgeMenu` with three-section UI, and SceneRouter wiring
+- added a Unit Promotion system: max-level (5) units can promote into an elite variant with stat bump (health/damage/speed scales), glow color, and a second equipment slot — new `Sigils` currency dropped from boss kills, `UnitPromotionCatalog` with 16 definitions (one per player unit), promotion bonuses wired into `BuildPlayerUnitStats()` after equipment, promote button in ShopMenu unit cards
+- added an Expedition system: send idle (not-in-deck) units on timed expeditions (Patrol 30m, Scavenge 60m, Dungeon Delve 120m) for gold, food, and relic rewards — 3 slots, `ExpeditionCatalog`, `ExpeditionMenu` with slot status/timer display and dispatch UI, deck assignment blocked for units on expedition
+- added a Seasonal Event framework: time-limited event stages with exclusive rewards (gold, food, sigils, event-exclusive relics) and milestone claim system — `SeasonalEventCatalog` with date-bounded event definitions, `BattleRunMode.SeasonalEvent` with event-specific enemy scaling, `EventMenu` with stage list/progress/milestone panels, conditional event button on Main Menu
+- added 2 initial seasonal events: Midwinter Siege (5 stages, 3 milestones, Frostbound Crown epic relic) and Harvest Moon Hunt (5 stages, 3 milestones, Moonfire Talisman epic relic)
+- added 2 new event-exclusive epic relics to `data/equipment.json`: Frostbound Crown and Moonfire Talisman
+- added 4 new achievements: Relic Smith (first forge/fuse), Elite Vanguard (first promotion), Expedition Veteran (10 expeditions), Festival Champion (complete a seasonal event)
+- bumped save data version to 32 with full migration for RelicShards, Sigils, PromotedUnitIds, UnitEquipmentSlot2, ActiveExpeditions, EventStagesCleared, ClaimedEventRewardIds
+- prestige reset preserves promotions, second equipment slots, shards, and sigils alongside existing permanent unlocks
+- all 71 server tests pass, 1151 data integrity checks pass, 0 build errors
+- added Codex / Bestiary system with 72 entries (16 enemies, 10 bosses, 16 units, 10 spells, 20 relics) — entries unlock on encounter via BattleController spawn/death hooks and GameState acquisition methods; kill counts tracked per enemy; `CodexMenu` with category filters, scrollable grid, and detail panel
+- added Skill Trees / Unit Talent system: 16 trees (one per unit) × 5 nodes in diamond pattern (root → 2 mid → 2 terminal) providing permanent stat bonuses — new `Tomes` currency earned from daily challenges (+1) and expeditions (+1-2); `UnitSkillTreeCatalog`, stat pipeline integrated after promotion block; `SkillTreeMenu` with unit list and node unlock UI; "Talents" button in ShopMenu unit cards
+- added PvP Arena (asynchronous): fight AI-controlled opponent squads, Elo-based ranking (K=32) across 5 tiers (Bronze → Diamond) — `ArenaCatalog` with tier definitions and Elo calculator, `BattleRunMode.Arena` with opponent unit spawning in BattleController, `ArenaMenu` with rating/tier display and 3 opponent cards; server endpoints `/arena/snapshot`, `/arena/opponents`, `/arena/result` with `arena_snapshots` and `arena_results` tables; gated on stage 20
+- added Guild / Warband system: create or join guilds with 5 perks (health, gold, food, expedition speed, relic luck) across 5 tiers (Warband 5 members → Order 50 members) — `GuildCatalog` with perk and tier definitions, guild health perk in stat pipeline, contribution system (50 gold → 10 contribution + 10 guild XP), auto-tier upgrade; `GuildMenu` with guild info/perks/actions; server endpoints for create/join/leave/info/members/contribute with `guilds` and `guild_members` tables
+- added 8 new achievements (31 total): Lore Seeker, Archivist, Scholar, Talent Master, Challenger, Arena Champion, Gold Rank, Warband Recruit
+- added 4 new tutorial hints: codex, skill trees, arena, guild
+- bumped save data version to 33 with full migration for DiscoveredCodexIds, CodexKillCounts, CodexFirstSeenAt, Tomes, UnlockedSkillNodeIds, ArenaRating, ArenaWins, ArenaLosses, GuildId, GuildContributionPoints
+- prestige reset preserves all codex progress, skill tree progress, tomes, arena rating, guild membership
+- all 71 server tests pass, 1151 data integrity checks pass, 0 build errors
+- added Player Profile Dashboard with 6-section stats overview: General (5 currencies + prestige), Campaign (stages/stars/hard mode), Combat (battles/records), Collection (units/spells/relics/codex %), Records (endless/arena/guild), Achievements — all reading existing GameState data with no save changes
+- added Campaign Hard Mode: all 50 stages replayable with enemy scaling from 1.3x→2.5x HP, forced modifiers per tier, +50% gold/food rewards, 5 exclusive "hardened" rarity relics at milestone stages (10/20/30/40/50) — `HardModeCatalog` with per-stage overrides, `IsHardModeActive` flag on GameState (no new BattleRunMode), separate hard mode star tracking
+- added Enchantment System: 10 enchantments (Flame Touch, Lifesteal, Thorns, Haste, Shielding, Vampiric, Crit Strike, Poison, Fortify, Arcane Echo) applied to relics via `EnchantmentCatalog` — new `Essence` currency earned from arena wins (+2), guild contributions (+1), hard mode clears (+1); stat pipeline integrated after guild perks; combat runtime hooks for lifesteal (heal on damage dealt), thorns (reflect damage), and crit (chance + multiplier); enchantment cleared on relic dismantle
+- added Weekly Raid Boss: 4 rotating community bosses (Grave Lord, Iron Warden, Dread Sovereign, Plague Archon) with shared 10-15M HP pool — damage contributed after any battle victory; 5 milestone rewards per boss (gold, essence, exclusive relic at 100%); server endpoints `/raid/status`, `/raid/contribute`, `/raid/rewards` with `raid_bosses` and `raid_contributions` tables; weekly auto-reset
+- added 9 new relics: 5 hardened (Bulwark, Fang, Sigil, Crown, Soul) for hard mode milestones + 4 epic raid relics (Grave Lord's Crown, Iron Warden's Heart, Sovereign's Mantle, Plague Censer)
+- added 4 new achievements (35 total): Hardened Veteran, Iron Legend, Enchanter, Raid Striker
+- added 3 new tutorial hints: hard mode, enchantments, weekly raid
+- bumped save data version to 34 with full migration for HardModeStars, HardModeHighestCleared, Essence, RelicEnchantments, LastRaidWeek, RaidDamageContributed, ClaimedRaidRewardIds
+- prestige reset preserves hard mode stars, essence, enchantments, raid history
+- added "hardened" as a valid equipment rarity in DataIntegrityValidator
+- all 71 server tests pass, 1187 data integrity checks pass, 0 build errors
+- added Bounty Board: 15 bounty templates generating 3 daily quests via date-seeded selection (defeat enemies, deploy units, cast spells, clear stages, earn gold, win arena, etc.) — progress tracked via `AddBountyProgress()` hooks in BattleController (enemy kills, deploys, spell casts) and GameState (stage clears, gold earned, arena wins); `BountyMenu` with progress bars and claim buttons; rewards: gold, food, tomes, essence, sigils
+- added Challenge Tower: 100 ascending floors with enemy scaling from 1.0x→5.0x HP, tier-based forced modifiers, per-floor rewards (gold/food/tomes/essence) — `BattleRunMode.Tower` with floor-based stage selection and scaling; `TowerMenu` with scrollable floor list and detail panel; 4 tower-exclusive relics at floors 25/50/75/100 (2 epic, 2 hardened)
+- added Friend List & Gifting: add/remove friends by profile ID, send up to 3 daily gifts (+50 gold +2 food per gift) — `FriendsMenu` with friend list, add input, gift buttons; server endpoints `/friends/add`, `/friends/remove`, `/friends/list`, `/friends/gift` with `friendships` and `friend_gifts` tables
+- added Mastery System: 5 mastery ranks per unit (Unranked → Initiate → Adept → Expert → Master → Grand Master) with small permanent stat bonuses (1-5% health/damage) — XP earned from deploys (10), kills (25), and battle wins (50); mastery bonus applied as final layer in stat pipeline after enchantments; `MasteryCatalog` with XP thresholds and rank definitions
+- added 4 tower-exclusive relics: Tower Sentinel's Ward, Ascendant's Signet, Apex Talisman, Pinnacle Crown
+- added 7 new achievements (42 total): Bounty Hunter, Tower Climber, Tower Conqueror, Tower Pinnacle, Combat Veteran, Grand Master, Generous Soul
+- added 4 new tutorial hints: bounty board, challenge tower, friends, mastery
+- bumped save data version to 35 with full migration for CompletedBountyIds, BountyProgress, LastBountyDate, TowerHighestFloor, TowerFloorStars, FriendIds, LastGiftSentDate, GiftsSentToday, UnitMasteryXP
+- prestige reset preserves tower progress, mastery XP, friend list
+- stat pipeline final order: prestige → synergy → doctrine → equipment1 → promotion → equipment2 → skill tree → guild perks → enchantments → mastery
+- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- added Achievement Rewards: all 43 achievements now pay out gold, food, tomes, essence, or sigils — `AchievementRewardCatalog` maps each achievement to a scaled reward; `TryClaimAchievementReward()` with retroactive claim support for previously unlocked achievements; claim buttons in Settings achievement section
+- added Login Calendar: 30-day escalating reward calendar (gold → food → tomes → essence → sigils) with monthly reset — `LoginCalendarCatalog` with per-day reward definitions; `LoginCalendarMenu` with 6x5 grid of day tiles; `CanClaimLoginReward()` and `TryClaimLoginReward()` with daily/monthly tracking
+- added Leaderboard Hub: unified 4-tab leaderboard screen (Arena / Tower / Endless / Daily) — `LeaderboardMenu` showing personal bests and server-backed rankings; server endpoints `/leaderboard/arena` and `/leaderboard/tower`; local fallback for offline play
+- added War Wagon Cosmetics: 8 milestone-locked skins (Default, Iron Plated, Royal Guard, Bone Collector, Flame Forged, Shadow Runner, Guild Banner, Legendary) — `WagonSkinCatalog` with unlock conditions checked against GameState milestones; skin tint applied to procedural war wagon drawing in `BattleController.DrawPlayerBus()`; skin selector UI
+- added 1 new achievement (43 total): Wagon Artisan (equip non-default skin)
+- added 2 new tutorial hints: login calendar, wagon skins
+- bumped save data version to 36 with full migration for ClaimedAchievementRewardIds, LoginCalendarDay, LastLoginCalendarDate, LoginCalendarMonth, SelectedWagonSkinId
+- prestige reset preserves achievement reward claims, login calendar progress, wagon skin selection
+- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- added Notification Center: `NotificationService` computes pending reward counts on-the-fly from unclaimed achievement rewards, completed expeditions, claimable bounties, login calendar, and active events — badge counts shown on MainMenu buttons
+- added Unit Awakening: 5 star levels per unit with escalating token + gold costs and 2% health/damage per star — `AwakeningCatalog` with level definitions, `UnitTokens` currency per unit, awakening bonus as final stat pipeline layer after mastery; token sources from boss kills and expeditions
+- added Season Pass: 50-tier free + premium reward tracks with Season XP — `SeasonPassCatalog` with per-tier rewards, XP earned from battle wins (+10), bounty claims (+25), daily challenges (+50), tower clears (+15), arena wins (+20), expedition collects (+10); `SeasonPassMenu` with horizontal tier track, claim buttons, premium upgrade
+- added Collection Milestones: 24 milestones across 6 categories (codex, relics, units, spells, achievements, tower) at 25/50/75/100% thresholds — `CollectionMilestoneCatalog` with per-category progress calculation and scaled rewards
+- added 2 new achievements (45 total): Star Forger (first awakening), Grand Collector (all 100% milestones)
+- added 3 new tutorial hints: notifications, awakening, season pass
+- added 3 achievement reward entries for new achievements (first_skin, first_awakening, collector_complete)
+- bumped save data version to 37 with full migration for UnitStarLevels, UnitTokens, SeasonPassXP, SeasonPassTier, SeasonId, HasPremiumPass, ClaimedSeasonFreeTiers, ClaimedSeasonPremiumTiers, ClaimedCollectionMilestoneIds
+- stat pipeline final order: prestige → synergy → doctrine → equipment1 → promotion → equipment2 → skill tree → guild perks → enchantments → mastery → awakening stars
+- season XP hooks wired into 6 game actions: battle victory, bounty claim, daily challenge, tower floor, arena win, expedition collect
+- prestige reset preserves star levels, tokens, season progress, collection milestones
+- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- added Battle Mutators: 12 player-selectable gameplay modifiers (Double Speed, Glass Cannon, Tank Mode, No Spells, Swarm Mode, Gold Fever, Fog of War, Minimalist, Berserker, Ironman, Elite Gauntlet, Blitz) — each mutator adjusts player/enemy stats and stacks a gold reward multiplier; `BattleMutatorCatalog` with toggle system, mutator panel in LoadoutMenu
+- added Battle Summary Screen: post-battle stats breakdown showing damage dealt/taken, units deployed/lost, spells cast, enemies/bosses defeated, time elapsed, gold/food earned, season XP, mastery XP per unit, star rating — `BattleSummaryData` struct accumulated during battle, `BattleSummaryMenu` with 3-column layout
+- added Accessibility Options: colorblind modes (protanopia/deuteranopia/tritanopia), reduced motion (disable shake/particles), auto-battle (AI deploys units and casts spells), large text mode — all persisted in save data, toggles in Settings
+- added Live Config Service: server-side `/config/live` endpoint returning announcement, MOTD, gold/XP multipliers, and disabled feature IDs — `LiveConfigService` with local cache and offline fallback defaults; MainMenu shows announcement banner
+- added 1 new achievement (46 total): Rule Breaker (5 mutator battles)
+- added 2 new tutorial hints: mutators, accessibility
+- bumped save data version to 38 with migration for ActiveMutatorIds, MutatorBattlesCompleted, ColorblindMode, ReducedMotion, AutoBattleEnabled, LargeTextMode
+- prestige reset preserves accessibility settings and mutator battle count
+- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
 
 ## Bugs, Stability, And Hardening
 

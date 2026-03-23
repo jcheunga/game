@@ -218,6 +218,81 @@ public partial class MainMenu : Control
             _animatedElements.Add(bossRushButton);
         }
 
+        var expeditionButton = BuildButton("Expeditions");
+        expeditionButton.Pressed += () => SceneRouter.Instance.GoToExpeditions();
+        stack.AddChild(expeditionButton);
+        _animatedElements.Add(expeditionButton);
+
+        var seasonPassButton = BuildButton("Season Pass");
+        seasonPassButton.Pressed += () => SceneRouter.Instance.GoToSeasonPass();
+        stack.AddChild(seasonPassButton);
+        _animatedElements.Add(seasonPassButton);
+
+        var calendarButton = BuildButton("Login Calendar");
+        calendarButton.Pressed += () => SceneRouter.Instance.GoToLoginCalendar();
+        stack.AddChild(calendarButton);
+        _animatedElements.Add(calendarButton);
+
+        var bountyButton = BuildButton("Bounty Board");
+        bountyButton.Pressed += () => SceneRouter.Instance.GoToBounty();
+        stack.AddChild(bountyButton);
+        _animatedElements.Add(bountyButton);
+
+        var towerButton = BuildButton("Challenge Tower");
+        towerButton.Pressed += () => SceneRouter.Instance.GoToTower();
+        stack.AddChild(towerButton);
+        _animatedElements.Add(towerButton);
+
+        var codexButton = BuildButton("Codex");
+        codexButton.Pressed += () => SceneRouter.Instance.GoToCodex();
+        stack.AddChild(codexButton);
+        _animatedElements.Add(codexButton);
+
+        if (GameState.Instance.HighestUnlockedStage >= ArenaCatalog.MinRequiredStage)
+        {
+            var arenaButton = BuildButton("PvP Arena");
+            arenaButton.Pressed += () => SceneRouter.Instance.GoToArena();
+            stack.AddChild(arenaButton);
+            _animatedElements.Add(arenaButton);
+        }
+
+        var activeEvent = GameState.Instance.GetActiveEvent();
+        if (activeEvent != null)
+        {
+            var eventButton = BuildButton(activeEvent.Title);
+            eventButton.Pressed += () => SceneRouter.Instance.GoToEvent();
+            stack.AddChild(eventButton);
+            _animatedElements.Add(eventButton);
+        }
+
+        var guildButton = BuildButton("Warband");
+        guildButton.Pressed += () => SceneRouter.Instance.GoToGuild();
+        stack.AddChild(guildButton);
+        _animatedElements.Add(guildButton);
+
+        if (GameState.Instance.HighestUnlockedStage >= 5)
+        {
+            var raidButton = BuildButton("Weekly Raid");
+            raidButton.Pressed += () => SceneRouter.Instance.GoToRaid();
+            stack.AddChild(raidButton);
+            _animatedElements.Add(raidButton);
+        }
+
+        var friendsButton = BuildButton("Friends");
+        friendsButton.Pressed += () => SceneRouter.Instance.GoToFriends();
+        stack.AddChild(friendsButton);
+        _animatedElements.Add(friendsButton);
+
+        var leaderboardButton = BuildButton("Leaderboards");
+        leaderboardButton.Pressed += () => SceneRouter.Instance.GoToLeaderboard();
+        stack.AddChild(leaderboardButton);
+        _animatedElements.Add(leaderboardButton);
+
+        var profileButton = BuildButton("Player Profile");
+        profileButton.Pressed += () => SceneRouter.Instance.GoToProfile();
+        stack.AddChild(profileButton);
+        _animatedElements.Add(profileButton);
+
         var multiplayerButton = BuildButton("Multiplayer Challenge");
         multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
         stack.AddChild(multiplayerButton);

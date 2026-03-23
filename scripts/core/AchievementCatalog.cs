@@ -50,6 +50,47 @@ public static class AchievementCatalog
         new("max_unit", "Master at Arms", "Upgrade any unit to level 5.", "mastery"),
         new("all_spells", "Arcane Scholar", "Own all 10 spells.", "mastery"),
         new("daily_streak", "Dedicated", "Complete 7 daily challenges.", "mastery"),
+
+        // New systems (4)
+        new("first_forge", "Relic Smith", "Forge or fuse your first relic.", "collection"),
+        new("first_promotion", "Elite Vanguard", "Promote a unit to elite rank.", "mastery"),
+        new("expedition_10", "Expedition Veteran", "Complete 10 expeditions.", "mastery"),
+        new("event_complete", "Festival Champion", "Clear all stages in a seasonal event.", "campaign"),
+
+        // Social, Competitive, and Knowledge (8)
+        new("codex_10", "Lore Seeker", "Discover 10 codex entries.", "collection"),
+        new("codex_complete", "Archivist", "Discover all codex entries.", "collection"),
+        new("first_talent", "Scholar", "Unlock your first skill tree node.", "mastery"),
+        new("talent_master", "Talent Master", "Max out a unit's skill tree.", "mastery"),
+        new("arena_first_win", "Challenger", "Win your first arena battle.", "combat"),
+        new("arena_10_wins", "Arena Champion", "Win 10 arena battles.", "combat"),
+        new("arena_gold_tier", "Gold Rank", "Reach Gold tier in the arena.", "mastery"),
+        new("guild_join", "Warband Recruit", "Join a guild.", "mastery"),
+
+        // Endgame content (4)
+        new("hard_mode_10", "Hardened Veteran", "Clear 10 hard mode stages.", "campaign"),
+        new("hard_mode_complete", "Iron Legend", "Clear all 50 hard mode stages.", "campaign"),
+        new("first_enchantment", "Enchanter", "Apply your first enchantment.", "collection"),
+        new("raid_contributor", "Raid Striker", "Contribute to 3 weekly raids.", "mastery"),
+
+        // Daily engagement and progression depth (7)
+        new("bounty_streak_7", "Bounty Hunter", "Complete bounties on 7 different days.", "mastery"),
+        new("tower_25", "Tower Climber", "Reach floor 25 in the Challenge Tower.", "campaign"),
+        new("tower_50", "Tower Conqueror", "Reach floor 50 in the Challenge Tower.", "campaign"),
+        new("tower_100", "Tower Pinnacle", "Conquer all 100 floors of the Challenge Tower.", "campaign"),
+        new("first_mastery", "Combat Veteran", "Reach Adept mastery on any unit.", "mastery"),
+        new("grand_master", "Grand Master", "Reach Grand Master mastery on any unit.", "mastery"),
+        new("gift_sent", "Generous Soul", "Send a gift to a friend.", "mastery"),
+
+        // Retention polish (1)
+        new("first_skin", "Wagon Artisan", "Equip a non-default war wagon skin.", "collection"),
+
+        // Monetization and collection depth (2)
+        new("first_awakening", "Star Forger", "Awaken a unit to 2 stars.", "mastery"),
+        new("collector_complete", "Grand Collector", "Claim all 100% collection milestones.", "collection"),
+
+        // Gameplay variety (1)
+        new("mutator_5", "Rule Breaker", "Complete 5 battles with mutators active.", "combat"),
     };
 
     private static readonly Dictionary<string, AchievementDefinition> ById;

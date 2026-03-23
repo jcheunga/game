@@ -1887,4 +1887,570 @@ public static class Endpoints
     private static bool GetNestedBool(JsonElement el, string prop, bool fallback) =>
         el.ValueKind == JsonValueKind.Object && el.TryGetProperty(prop, out var v) && v.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? v.GetBoolean() : fallback;
+
+    // ── Arena ────────────────────────────────────────────────
+
+    public static async Task<IResult> ArenaUploadSnapshot(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        var deckUnitIds = GetString(body, "deckUnitIds", "");
+        var deckSpellIds = GetString(body, "deckSpellIds", "");
+        var unitLevels = GetString(body, "unitLevels", "");
+        var unitEquipment = GetString(body, "unitEquipment", "");
+        var powerRating = GetInt(body, "powerRating", 0);
+        var arenaRating = GetInt(body, "arenaRating", 1000);
+        var now = Now();
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"INSERT INTO arena_snapshots (profile_id, deck_unit_ids, deck_spell_ids, unit_levels, unit_equipment, power_rating, arena_rating, updated_at)
+            VALUES (@pid, @deck, @spells, @levels, @equip, @power, @rating, @now)
+            ON CONFLICT(profile_id) DO UPDATE SET deck_unit_ids=@deck, deck_spell_ids=@spells, unit_levels=@levels, unit_equipment=@equip, power_rating=@power, arena_rating=@rating, updated_at=@now";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.Parameters.AddWithValue("@deck", deckUnitIds);
+        cmd.Parameters.AddWithValue("@spells", deckSpellIds);
+        cmd.Parameters.AddWithValue("@levels", unitLevels);
+        cmd.Parameters.AddWithValue("@equip", unitEquipment);
+        cmd.Parameters.AddWithValue("@power", powerRating);
+        cmd.Parameters.AddWithValue("@rating", arenaRating);
+        cmd.Parameters.AddWithValue("@now", now);
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "ok" });
+    }
+
+    public static async Task<IResult> ArenaFindOpponents(HttpRequest request)
+    {
+        var profileId = request.Query["profileId"].FirstOrDefault() ?? "";
+        var rating = int.TryParse(request.Query["rating"].FirstOrDefault(), out var r) ? r : 1000;
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"SELECT profile_id, deck_unit_ids, deck_spell_ids, unit_levels, unit_equipment, power_rating, arena_rating
+            FROM arena_snapshots WHERE profile_id != @pid AND arena_rating BETWEEN @lo AND @hi ORDER BY ABS(arena_rating - @rating) LIMIT 3";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.Parameters.AddWithValue("@lo", rating - 200);
+        cmd.Parameters.AddWithValue("@hi", rating + 200);
+        cmd.Parameters.AddWithValue("@rating", rating);
+
+        var opponents = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            opponents.Add(new
+            {
+                profileId = reader.GetString(0),
+                deckUnitIds = reader.GetString(1),
+                deckSpellIds = reader.GetString(2),
+                unitLevels = reader.GetString(3),
+                unitEquipment = reader.GetString(4),
+                powerRating = reader.GetInt32(5),
+                arenaRating = reader.GetInt32(6)
+            });
+        }
+
+        return Results.Ok(new { opponents });
+    }
+
+    public static async Task<IResult> ArenaReportResult(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var opponentProfileId = GetString(body, "opponentProfileId", "");
+        var won = GetBool(body, "won", false);
+        var ratingBefore = GetInt(body, "ratingBefore", 1000);
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        // Simple Elo: K=32
+        var opponentRating = ratingBefore;
+        using var conn = Database.Open();
+        if (!string.IsNullOrWhiteSpace(opponentProfileId))
+        {
+            using var lookupCmd = conn.CreateCommand();
+            lookupCmd.CommandText = "SELECT arena_rating FROM arena_snapshots WHERE profile_id = @pid";
+            lookupCmd.Parameters.AddWithValue("@pid", opponentProfileId);
+            var oppRatingObj = lookupCmd.ExecuteScalar();
+            if (oppRatingObj is long lr) opponentRating = (int)lr;
+        }
+
+        var expected = 1.0 / (1.0 + Math.Pow(10, (opponentRating - ratingBefore) / 400.0));
+        var actual = won ? 1.0 : 0.0;
+        var newRating = Math.Max(0, ratingBefore + (int)(32 * (actual - expected)));
+
+        using var insertCmd = conn.CreateCommand();
+        insertCmd.CommandText = @"INSERT INTO arena_results (profile_id, opponent_profile_id, won, rating_before, rating_after, played_at)
+            VALUES (@pid, @oid, @won, @before, @after, @now)";
+        insertCmd.Parameters.AddWithValue("@pid", profileId);
+        insertCmd.Parameters.AddWithValue("@oid", opponentProfileId ?? "");
+        insertCmd.Parameters.AddWithValue("@won", won ? 1 : 0);
+        insertCmd.Parameters.AddWithValue("@before", ratingBefore);
+        insertCmd.Parameters.AddWithValue("@after", newRating);
+        insertCmd.Parameters.AddWithValue("@now", Now());
+        insertCmd.ExecuteNonQuery();
+
+        // Update player's arena rating in snapshot
+        using var updateCmd = conn.CreateCommand();
+        updateCmd.CommandText = "UPDATE arena_snapshots SET arena_rating = @rating, updated_at = @now WHERE profile_id = @pid";
+        updateCmd.Parameters.AddWithValue("@rating", newRating);
+        updateCmd.Parameters.AddWithValue("@now", Now());
+        updateCmd.Parameters.AddWithValue("@pid", profileId);
+        updateCmd.ExecuteNonQuery();
+
+        return Results.Ok(new { newRating, ratingDelta = newRating - ratingBefore });
+    }
+
+    // ── Guild ────────────────────────────────────────────────
+
+    public static async Task<IResult> GuildCreate(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var name = GetString(body, "name", "Unnamed Warband");
+
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        var guildId = NewId("GLD");
+        var now = Now();
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        using var createCmd = conn.CreateCommand();
+        createCmd.Transaction = tx;
+        createCmd.CommandText = @"INSERT INTO guilds (guild_id, name, leader_profile_id, tier, experience, created_at)
+            VALUES (@gid, @name, @pid, 1, 0, @now)";
+        createCmd.Parameters.AddWithValue("@gid", guildId);
+        createCmd.Parameters.AddWithValue("@name", name);
+        createCmd.Parameters.AddWithValue("@pid", profileId);
+        createCmd.Parameters.AddWithValue("@now", now);
+        createCmd.ExecuteNonQuery();
+
+        using var joinCmd = conn.CreateCommand();
+        joinCmd.Transaction = tx;
+        joinCmd.CommandText = @"INSERT INTO guild_members (guild_id, profile_id, contribution_points, joined_at)
+            VALUES (@gid, @pid, 0, @now)";
+        joinCmd.Parameters.AddWithValue("@gid", guildId);
+        joinCmd.Parameters.AddWithValue("@pid", profileId);
+        joinCmd.Parameters.AddWithValue("@now", now);
+        joinCmd.ExecuteNonQuery();
+
+        tx.Commit();
+        return Results.Ok(new { guildId, name });
+    }
+
+    public static async Task<IResult> GuildJoin(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var guildId = GetString(body, "guildId", "");
+
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(guildId))
+            return Results.BadRequest(new { error = "missing profileId or guildId" });
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        // Check member limit
+        using var countCmd = conn.CreateCommand();
+        countCmd.Transaction = tx;
+        countCmd.CommandText = "SELECT COUNT(*) FROM guild_members WHERE guild_id = @gid";
+        countCmd.Parameters.AddWithValue("@gid", guildId);
+        var count = (long)(countCmd.ExecuteScalar() ?? 0);
+
+        using var tierCmd = conn.CreateCommand();
+        tierCmd.Transaction = tx;
+        tierCmd.CommandText = "SELECT tier FROM guilds WHERE guild_id = @gid";
+        tierCmd.Parameters.AddWithValue("@gid", guildId);
+        var tier = (int)((long)(tierCmd.ExecuteScalar() ?? 1));
+        var maxMembers = tier switch { 2 => 10, 3 => 20, 4 => 30, 5 => 50, _ => 5 };
+
+        if (count >= maxMembers)
+        {
+            tx.Rollback();
+            return Results.Json(new { error = "Guild is full" }, statusCode: 409);
+        }
+
+        using var joinCmd = conn.CreateCommand();
+        joinCmd.Transaction = tx;
+        joinCmd.CommandText = @"INSERT OR IGNORE INTO guild_members (guild_id, profile_id, contribution_points, joined_at)
+            VALUES (@gid, @pid, 0, @now)";
+        joinCmd.Parameters.AddWithValue("@gid", guildId);
+        joinCmd.Parameters.AddWithValue("@pid", profileId);
+        joinCmd.Parameters.AddWithValue("@now", Now());
+        joinCmd.ExecuteNonQuery();
+
+        tx.Commit();
+        return Results.Ok(new { guildId, status = "joined" });
+    }
+
+    public static async Task<IResult> GuildLeave(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var guildId = GetString(body, "guildId", "");
+
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(guildId))
+            return Results.BadRequest(new { error = "missing profileId or guildId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM guild_members WHERE guild_id = @gid AND profile_id = @pid";
+        cmd.Parameters.AddWithValue("@gid", guildId);
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "left" });
+    }
+
+    public static async Task<IResult> GuildInfo(HttpRequest request)
+    {
+        var guildId = request.Query["guildId"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(guildId))
+            return Results.BadRequest(new { error = "missing guildId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT guild_id, name, leader_profile_id, tier, experience FROM guilds WHERE guild_id = @gid";
+        cmd.Parameters.AddWithValue("@gid", guildId);
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read())
+            return Results.NotFound(new { error = "guild not found" });
+
+        using var countCmd = conn.CreateCommand();
+        countCmd.CommandText = "SELECT COUNT(*) FROM guild_members WHERE guild_id = @gid";
+        countCmd.Parameters.AddWithValue("@gid", guildId);
+        var memberCount = (int)((long)(countCmd.ExecuteScalar() ?? 0));
+
+        var tierVal = reader.GetInt32(3);
+        var perkIds = new List<string>();
+        if (tierVal >= 1) perkIds.Add("guild_vitality");
+        if (tierVal >= 2) perkIds.Add("guild_prosperity");
+        if (tierVal >= 3) perkIds.Add("guild_provisions");
+        if (tierVal >= 4) perkIds.Add("guild_haste");
+        if (tierVal >= 5) perkIds.Add("guild_fortune");
+
+        return Results.Ok(new
+        {
+            guildId = reader.GetString(0),
+            name = reader.GetString(1),
+            leaderProfileId = reader.GetString(2),
+            tier = tierVal,
+            experience = reader.GetInt32(4),
+            memberCount,
+            activePerkIds = perkIds.ToArray()
+        });
+    }
+
+    public static async Task<IResult> GuildMembers(HttpRequest request)
+    {
+        var guildId = request.Query["guildId"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(guildId))
+            return Results.BadRequest(new { error = "missing guildId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"SELECT gm.profile_id, COALESCE(pp.callsign, 'Unknown'), gm.contribution_points
+            FROM guild_members gm LEFT JOIN player_profiles pp ON gm.profile_id = pp.profile_id
+            WHERE gm.guild_id = @gid ORDER BY gm.contribution_points DESC";
+        cmd.Parameters.AddWithValue("@gid", guildId);
+
+        var members = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            members.Add(new
+            {
+                profileId = reader.GetString(0),
+                callsign = reader.GetString(1),
+                contributionPoints = reader.GetInt32(2)
+            });
+        }
+
+        return Results.Ok(new { guildId, members });
+    }
+
+    public static async Task<IResult> GuildContribute(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var guildId = GetString(body, "guildId", "");
+        var points = GetInt(body, "points", 10);
+
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(guildId))
+            return Results.BadRequest(new { error = "missing profileId or guildId" });
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        using var memberCmd = conn.CreateCommand();
+        memberCmd.Transaction = tx;
+        memberCmd.CommandText = "UPDATE guild_members SET contribution_points = contribution_points + @pts WHERE guild_id = @gid AND profile_id = @pid";
+        memberCmd.Parameters.AddWithValue("@pts", points);
+        memberCmd.Parameters.AddWithValue("@gid", guildId);
+        memberCmd.Parameters.AddWithValue("@pid", profileId);
+        memberCmd.ExecuteNonQuery();
+
+        using var guildCmd = conn.CreateCommand();
+        guildCmd.Transaction = tx;
+        guildCmd.CommandText = "UPDATE guilds SET experience = experience + @pts WHERE guild_id = @gid";
+        guildCmd.Parameters.AddWithValue("@pts", points);
+        guildCmd.Parameters.AddWithValue("@gid", guildId);
+        guildCmd.ExecuteNonQuery();
+
+        // Auto-upgrade tier based on experience
+        using var tierCmd = conn.CreateCommand();
+        tierCmd.Transaction = tx;
+        tierCmd.CommandText = "SELECT experience FROM guilds WHERE guild_id = @gid";
+        tierCmd.Parameters.AddWithValue("@gid", guildId);
+        var xp = (int)((long)(tierCmd.ExecuteScalar() ?? 0));
+        var newTier = xp >= 10000 ? 5 : xp >= 5000 ? 4 : xp >= 2000 ? 3 : xp >= 500 ? 2 : 1;
+
+        using var updateTier = conn.CreateCommand();
+        updateTier.Transaction = tx;
+        updateTier.CommandText = "UPDATE guilds SET tier = @tier WHERE guild_id = @gid";
+        updateTier.Parameters.AddWithValue("@tier", newTier);
+        updateTier.Parameters.AddWithValue("@gid", guildId);
+        updateTier.ExecuteNonQuery();
+
+        tx.Commit();
+        return Results.Ok(new { status = "contributed", points, newTier });
+    }
+
+    // ── Live Config ────────────────────────────────────────────
+
+    public static async Task<IResult> LiveConfigGet(HttpRequest request)
+    {
+        return Results.Ok(new
+        {
+            announcement = "",
+            motd = "Welcome to the Lantern Caravan! New features and events are added regularly.",
+            goldMultiplier = 1.0,
+            xpMultiplier = 1.0,
+            disabledFeatureIds = Array.Empty<string>()
+        });
+    }
+
+    // ── Leaderboards ─────────────────────────────────────────
+
+    public static async Task<IResult> LeaderboardArena(HttpRequest request)
+    {
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"SELECT s.profile_id, COALESCE(pp.callsign, 'Unknown'), s.arena_rating
+            FROM arena_snapshots s LEFT JOIN player_profiles pp ON s.profile_id = pp.profile_id
+            ORDER BY s.arena_rating DESC LIMIT 10";
+
+        var entries = new List<object>();
+        var rank = 1;
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            entries.Add(new { rank = rank++, profileId = reader.GetString(0), callsign = reader.GetString(1), rating = reader.GetInt32(2) });
+        }
+
+        return Results.Ok(new { entries });
+    }
+
+    public static async Task<IResult> LeaderboardTower(HttpRequest request)
+    {
+        // Tower progress is client-side only; return empty for now
+        // In a full implementation, clients would submit their tower progress
+        return Results.Ok(new { entries = Array.Empty<object>(), note = "Tower leaderboard requires client submission" });
+    }
+
+    // ── Friends ──────────────────────────────────────────────
+
+    public static async Task<IResult> FriendAdd(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var friendId = GetString(body, "friendId", "");
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(friendId))
+            return Results.BadRequest(new { error = "missing profileId or friendId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "INSERT OR IGNORE INTO friendships (profile_id, friend_id, created_at) VALUES (@pid, @fid, @now)";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.Parameters.AddWithValue("@fid", friendId);
+        cmd.Parameters.AddWithValue("@now", Now());
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "added", friendId });
+    }
+
+    public static async Task<IResult> FriendRemove(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var friendId = GetString(body, "friendId", "");
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(friendId))
+            return Results.BadRequest(new { error = "missing profileId or friendId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM friendships WHERE profile_id = @pid AND friend_id = @fid";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.Parameters.AddWithValue("@fid", friendId);
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "removed" });
+    }
+
+    public static async Task<IResult> FriendList(HttpRequest request)
+    {
+        var profileId = request.Query["profileId"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"SELECT f.friend_id, COALESCE(pp.callsign, 'Unknown')
+            FROM friendships f LEFT JOIN player_profiles pp ON f.friend_id = pp.profile_id
+            WHERE f.profile_id = @pid ORDER BY f.created_at";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+
+        var friends = new List<object>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            friends.Add(new { profileId = reader.GetString(0), callsign = reader.GetString(1) });
+        }
+
+        return Results.Ok(new { friends });
+    }
+
+    public static async Task<IResult> FriendGift(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var friendId = GetString(body, "friendId", "");
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(friendId))
+            return Results.BadRequest(new { error = "missing profileId or friendId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "INSERT INTO friend_gifts (sender_id, receiver_id, sent_at) VALUES (@sid, @rid, @now)";
+        cmd.Parameters.AddWithValue("@sid", profileId);
+        cmd.Parameters.AddWithValue("@rid", friendId);
+        cmd.Parameters.AddWithValue("@now", Now());
+        cmd.ExecuteNonQuery();
+
+        return Results.Ok(new { status = "gift_sent" });
+    }
+
+    // ── Raid ─────────────────────────────────────────────────
+
+    public static async Task<IResult> RaidStatus(HttpRequest request)
+    {
+        var weekId = request.Query["weekId"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(weekId))
+        {
+            // Auto-detect current week
+            var now = DateTime.UtcNow;
+            var cal = System.Globalization.CultureInfo.InvariantCulture.Calendar;
+            var week = cal.GetWeekOfYear(now, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            weekId = $"{now.Year}-W{week:D2}";
+        }
+
+        using var conn = Database.Open();
+
+        // Auto-create raid boss for current week if missing
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT damage_dealt FROM raid_bosses WHERE week_id = @wid";
+        checkCmd.Parameters.AddWithValue("@wid", weekId);
+        var existing = checkCmd.ExecuteScalar();
+
+        long damageDone = 0;
+        if (existing == null)
+        {
+            using var insertCmd = conn.CreateCommand();
+            insertCmd.CommandText = "INSERT OR IGNORE INTO raid_bosses (week_id, boss_id, total_health, damage_dealt, created_at) VALUES (@wid, @bid, @hp, 0, @now)";
+            insertCmd.Parameters.AddWithValue("@wid", weekId);
+            insertCmd.Parameters.AddWithValue("@bid", $"raid_boss_{weekId}");
+            insertCmd.Parameters.AddWithValue("@hp", 10_000_000);
+            insertCmd.Parameters.AddWithValue("@now", Now());
+            insertCmd.ExecuteNonQuery();
+        }
+        else
+        {
+            damageDone = (long)existing;
+        }
+
+        return Results.Ok(new { weekId, damageDone, totalHealth = 10_000_000 });
+    }
+
+    public static async Task<IResult> RaidContribute(HttpRequest request)
+    {
+        var body = await ReadBody(request);
+        var profileId = GetString(body, "profileId", "");
+        var damage = GetInt(body, "damage", 0);
+        var weekId = GetString(body, "weekId", "");
+
+        if (string.IsNullOrWhiteSpace(profileId) || damage <= 0)
+            return Results.BadRequest(new { error = "missing profileId or damage" });
+
+        if (string.IsNullOrWhiteSpace(weekId))
+        {
+            var now = DateTime.UtcNow;
+            var cal = System.Globalization.CultureInfo.InvariantCulture.Calendar;
+            var week = cal.GetWeekOfYear(now, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            weekId = $"{now.Year}-W{week:D2}";
+        }
+
+        using var conn = Database.Open();
+        using var tx = conn.BeginTransaction();
+
+        // Insert contribution
+        using var contribCmd = conn.CreateCommand();
+        contribCmd.Transaction = tx;
+        contribCmd.CommandText = "INSERT INTO raid_contributions (week_id, profile_id, damage, contributed_at) VALUES (@wid, @pid, @dmg, @now)";
+        contribCmd.Parameters.AddWithValue("@wid", weekId);
+        contribCmd.Parameters.AddWithValue("@pid", profileId);
+        contribCmd.Parameters.AddWithValue("@dmg", damage);
+        contribCmd.Parameters.AddWithValue("@now", Now());
+        contribCmd.ExecuteNonQuery();
+
+        // Update boss damage
+        using var updateCmd = conn.CreateCommand();
+        updateCmd.Transaction = tx;
+        updateCmd.CommandText = "UPDATE raid_bosses SET damage_dealt = damage_dealt + @dmg WHERE week_id = @wid";
+        updateCmd.Parameters.AddWithValue("@dmg", damage);
+        updateCmd.Parameters.AddWithValue("@wid", weekId);
+        updateCmd.ExecuteNonQuery();
+
+        tx.Commit();
+
+        // Get updated total
+        using var totalCmd = conn.CreateCommand();
+        totalCmd.CommandText = "SELECT damage_dealt FROM raid_bosses WHERE week_id = @wid";
+        totalCmd.Parameters.AddWithValue("@wid", weekId);
+        var total = (long)(totalCmd.ExecuteScalar() ?? 0);
+
+        return Results.Ok(new { weekId, damageDone = total, contributed = damage });
+    }
+
+    public static async Task<IResult> RaidRewards(HttpRequest request)
+    {
+        var weekId = request.Query["weekId"].FirstOrDefault() ?? "";
+        var profileId = request.Query["profileId"].FirstOrDefault() ?? "";
+
+        if (string.IsNullOrWhiteSpace(weekId) || string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing weekId or profileId" });
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT damage_dealt FROM raid_bosses WHERE week_id = @wid";
+        cmd.Parameters.AddWithValue("@wid", weekId);
+        var damageDone = (long)(cmd.ExecuteScalar() ?? 0);
+
+        return Results.Ok(new { weekId, damageDone, totalHealth = 10_000_000 });
+    }
 }

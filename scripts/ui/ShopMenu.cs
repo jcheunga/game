@@ -343,6 +343,22 @@ public partial class ShopMenu : Control
         cashShopButton.Pressed += () => SceneRouter.Instance.GoToCashShop();
         bottomRow.AddChild(cashShopButton);
 
+        var forgeButton = new Button
+        {
+            Text = "Relic Forge",
+            CustomMinimumSize = new Vector2(120f, 0f)
+        };
+        forgeButton.Pressed += () => SceneRouter.Instance.GoToForge();
+        bottomRow.AddChild(forgeButton);
+
+        var expeditionButton = new Button
+        {
+            Text = "Expeditions",
+            CustomMinimumSize = new Vector2(120f, 0f)
+        };
+        expeditionButton.Pressed += () => SceneRouter.Instance.GoToExpeditions();
+        bottomRow.AddChild(expeditionButton);
+
         var settingsButton = new Button
         {
             Text = "Settings",
@@ -1586,8 +1602,37 @@ public partial class ShopMenu : Control
         }
         else if (isMaxLevel)
         {
-            actionButton.Text = "Max Level";
-            actionButton.Disabled = true;
+            var promo = UnitPromotionCatalog.TryGet(unit.Id);
+            var promoted = GameState.Instance.IsUnitPromoted(unit.Id);
+            if (promo != null && !promoted)
+            {
+                actionButton.Text = $"Promote: {promo.GoldCost}g + {promo.SigilCost} sigil";
+                actionButton.Disabled = !GameState.Instance.CanPromoteUnit(unit.Id);
+                actionButton.Pressed += () =>
+                {
+                    if (GameState.Instance.TryPromoteUnit(unit.Id, out var message))
+                    {
+                        AudioDirector.Instance?.PlayUpgradeConfirm();
+                    }
+                    _statusLabel.Text = $"Last report:\n{message}";
+                    RefreshUi();
+                };
+            }
+            else
+            {
+                actionButton.Text = promoted ? $"{promo?.PromotedTitle ?? "Promoted"}" : "Max Level";
+                actionButton.Disabled = true;
+            }
+
+            // Skill tree button for promoted or max-level units
+            var tree = UnitSkillTreeCatalog.GetTree(unit.Id);
+            if (tree != null && owned)
+            {
+                var unlockedCount = GameState.Instance.GetUnlockedSkillNodes(unit.Id).Count;
+                var talentBtn = new Button { Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})", CustomMinimumSize = new Vector2(130f, 0f) };
+                talentBtn.Pressed += () => SceneRouter.Instance.GoToSkillTree();
+                stack.AddChild(talentBtn);
+            }
         }
         else
         {

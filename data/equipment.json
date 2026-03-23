@@ -197,6 +197,171 @@
       "CooldownReduction": 0.0,
       "SpeedScale": 1.06,
       "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_frostbound_crown",
+      "DisplayName": "Frostbound Crown",
+      "Description": "A circlet of eternal ice that chills foes and steels the bearer.",
+      "Rarity": "epic",
+      "HealthScale": 1.16,
+      "DamageScale": 1.14,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 3
+    },
+    {
+      "Id": "relic_moonfire_talisman",
+      "DisplayName": "Moonfire Talisman",
+      "Description": "A blood-red charm that burns brightest under the harvest moon.",
+      "Rarity": "epic",
+      "HealthScale": 1.10,
+      "DamageScale": 1.22,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.10,
+      "BaseDamageBonus": 2
+    },
+    {
+      "Id": "relic_hardened_bulwark",
+      "DisplayName": "Hardened Bulwark",
+      "Description": "A shield tempered in the crucible of Hard Mode. It endures what lesser wards cannot.",
+      "Rarity": "hardened",
+      "HealthScale": 1.25,
+      "DamageScale": 1.0,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 6
+    },
+    {
+      "Id": "relic_hardened_fang",
+      "DisplayName": "Hardened Fang",
+      "Description": "A blade quenched in the blood of hardened foes. It bites deeper than any common steel.",
+      "Rarity": "hardened",
+      "HealthScale": 1.0,
+      "DamageScale": 1.28,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_hardened_sigil",
+      "DisplayName": "Hardened Sigil",
+      "Description": "A rune etched by war itself. It sharpens body and spirit equally.",
+      "Rarity": "hardened",
+      "HealthScale": 1.15,
+      "DamageScale": 1.18,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 4
+    },
+    {
+      "Id": "relic_hardened_crown",
+      "DisplayName": "Hardened Crown",
+      "Description": "A circlet forged from the ashes of impossible victories.",
+      "Rarity": "hardened",
+      "HealthScale": 1.20,
+      "DamageScale": 1.15,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.06,
+      "BaseDamageBonus": 0
+    },
+    {
+      "Id": "relic_hardened_soul",
+      "DisplayName": "Hardened Soul",
+      "Description": "The ultimate reward for conquering the impossible. All who wear it are transformed.",
+      "Rarity": "hardened",
+      "HealthScale": 1.30,
+      "DamageScale": 1.25,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.08,
+      "BaseDamageBonus": 8
+    },
+    {
+      "Id": "relic_raid_grave_crown",
+      "DisplayName": "Grave Lord's Crown",
+      "Description": "Torn from the Grave Lord's brow by the combined might of the realm.",
+      "Rarity": "epic",
+      "HealthScale": 1.20,
+      "DamageScale": 1.16,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 5
+    },
+    {
+      "Id": "relic_raid_iron_heart",
+      "DisplayName": "Iron Warden's Heart",
+      "Description": "The molten core of the Iron Warden, still pulsing with forge-heat.",
+      "Rarity": "epic",
+      "HealthScale": 1.24,
+      "DamageScale": 1.10,
+      "CooldownReduction": 0.0,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 8
+    },
+    {
+      "Id": "relic_raid_sovereign_mantle",
+      "DisplayName": "Sovereign's Mantle",
+      "Description": "The cloak of the Dread Sovereign. It radiates dominion.",
+      "Rarity": "epic",
+      "HealthScale": 1.18,
+      "DamageScale": 1.20,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.06,
+      "BaseDamageBonus": 4
+    },
+    {
+      "Id": "relic_raid_plague_censer",
+      "DisplayName": "Plague Censer",
+      "Description": "The Archon's purified censer, now a blessing instead of a curse.",
+      "Rarity": "epic",
+      "HealthScale": 1.14,
+      "DamageScale": 1.18,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.04,
+      "BaseDamageBonus": 2
+    },
+    {
+      "Id": "relic_tower_sentinel",
+      "DisplayName": "Tower Sentinel's Ward",
+      "Description": "Awarded for reaching floor 25. A ward that steadies the bearer through endless ascent.",
+      "Rarity": "epic",
+      "HealthScale": 1.18,
+      "DamageScale": 1.10,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.0,
+      "BaseDamageBonus": 4
+    },
+    {
+      "Id": "relic_tower_ascendant",
+      "DisplayName": "Ascendant's Signet",
+      "Description": "Awarded for reaching floor 50. A ring that hums with the echoes of fallen floors.",
+      "Rarity": "epic",
+      "HealthScale": 1.14,
+      "DamageScale": 1.20,
+      "CooldownReduction": 0.04,
+      "SpeedScale": 1.06,
+      "BaseDamageBonus": 2
+    },
+    {
+      "Id": "relic_tower_apex",
+      "DisplayName": "Apex Talisman",
+      "Description": "Awarded for reaching floor 75. A charm forged from the peak of impossible heights.",
+      "Rarity": "hardened",
+      "HealthScale": 1.22,
+      "DamageScale": 1.22,
+      "CooldownReduction": 0.06,
+      "SpeedScale": 1.04,
+      "BaseDamageBonus": 6
+    },
+    {
+      "Id": "relic_tower_pinnacle",
+      "DisplayName": "Pinnacle Crown",
+      "Description": "Awarded for conquering floor 100. Only the greatest warriors wear this crown.",
+      "Rarity": "hardened",
+      "HealthScale": 1.28,
+      "DamageScale": 1.28,
+      "CooldownReduction": 0.08,
+      "SpeedScale": 1.08,
+      "BaseDamageBonus": 10
     }
   ]
 }

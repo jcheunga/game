@@ -208,6 +208,87 @@ public static class Database
                 save_hash TEXT NOT NULL DEFAULT '',
                 uploaded_at INTEGER NOT NULL DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS arena_snapshots (
+                profile_id TEXT PRIMARY KEY,
+                deck_unit_ids TEXT NOT NULL DEFAULT '',
+                deck_spell_ids TEXT NOT NULL DEFAULT '',
+                unit_levels TEXT NOT NULL DEFAULT '',
+                unit_equipment TEXT NOT NULL DEFAULT '',
+                power_rating INTEGER NOT NULL DEFAULT 0,
+                arena_rating INTEGER NOT NULL DEFAULT 1000,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS arena_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                profile_id TEXT NOT NULL DEFAULT '',
+                opponent_profile_id TEXT NOT NULL DEFAULT '',
+                won INTEGER NOT NULL DEFAULT 0,
+                rating_before INTEGER NOT NULL DEFAULT 0,
+                rating_after INTEGER NOT NULL DEFAULT 0,
+                played_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_arena_results_player ON arena_results(profile_id, played_at);
+
+            CREATE TABLE IF NOT EXISTS guilds (
+                guild_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                leader_profile_id TEXT NOT NULL DEFAULT '',
+                tier INTEGER NOT NULL DEFAULT 1,
+                experience INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS guild_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                guild_id TEXT NOT NULL DEFAULT '',
+                profile_id TEXT NOT NULL DEFAULT '',
+                contribution_points INTEGER NOT NULL DEFAULT 0,
+                joined_at INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(guild_id, profile_id),
+                FOREIGN KEY(guild_id) REFERENCES guilds(guild_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_guild_members_guild ON guild_members(guild_id);
+
+            CREATE TABLE IF NOT EXISTS raid_bosses (
+                week_id TEXT PRIMARY KEY,
+                boss_id TEXT NOT NULL DEFAULT '',
+                total_health INTEGER NOT NULL DEFAULT 10000000,
+                damage_dealt INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS raid_contributions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                week_id TEXT NOT NULL DEFAULT '',
+                profile_id TEXT NOT NULL DEFAULT '',
+                damage INTEGER NOT NULL DEFAULT 0,
+                contributed_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_raid_contributions_week ON raid_contributions(week_id, profile_id);
+
+            CREATE TABLE IF NOT EXISTS friendships (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                profile_id TEXT NOT NULL DEFAULT '',
+                friend_id TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(profile_id, friend_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_friendships_profile ON friendships(profile_id);
+
+            CREATE TABLE IF NOT EXISTS friend_gifts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id TEXT NOT NULL DEFAULT '',
+                receiver_id TEXT NOT NULL DEFAULT '',
+                sent_at INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_friend_gifts_sender ON friend_gifts(sender_id, sent_at);
         """;
         cmd.ExecuteNonQuery();
         RunMigrations(conn);

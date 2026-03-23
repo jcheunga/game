@@ -107,6 +107,8 @@ public partial class GameState : Node
 	public int ClaimedUnitDoctrineCount => _unitDoctrineSelections.Count;
 	public int ClaimedCampaignDirectiveCount => _claimedCampaignDirectiveIds.Count;
 	public int DailyStreak => _dailyStreak;
+	public int PromotedUnitCount => _promotedUnitIds.Count;
+	public int ActiveExpeditionCount => _activeExpeditions.Count;
 
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
@@ -150,6 +152,124 @@ public partial class GameState : Node
 	private string _lastAchievementNotification = "";
 	private double _lastAchievementSyncTime;
 	private bool _achievementSyncPending;
+
+	// Relic Forge
+	public int RelicShards { get; private set; }
+
+	// Unit Promotion
+	public int Sigils { get; private set; }
+	private readonly HashSet<string> _promotedUnitIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, string> _unitEquipmentSlot2 = new(StringComparer.OrdinalIgnoreCase);
+
+	// Expeditions
+	private readonly List<ExpeditionSlotState> _activeExpeditions = new();
+	public int TotalExpeditionsCompleted { get; private set; }
+
+	// Seasonal Events
+	private readonly Dictionary<string, int> _eventStagesCleared = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _claimedEventRewardIds = new(StringComparer.OrdinalIgnoreCase);
+	public string SelectedEventId { get; private set; } = "";
+	public int SelectedEventStageIndex { get; private set; }
+
+	// Codex
+	private readonly HashSet<string> _discoveredCodexIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _codexKillCounts = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, long> _codexFirstSeenAt = new(StringComparer.OrdinalIgnoreCase);
+
+	// Skill Trees
+	public int Tomes { get; private set; }
+	private readonly Dictionary<string, HashSet<string>> _unlockedSkillNodes = new(StringComparer.OrdinalIgnoreCase);
+
+	// PvP Arena
+	public int ArenaRating { get; private set; } = 1000;
+	public int ArenaWins { get; private set; }
+	public int ArenaLosses { get; private set; }
+	public ArenaOpponentSnapshot SelectedArenaOpponent { get; private set; }
+
+	// Guild
+	public string GuildId { get; private set; } = "";
+	public int GuildContributionPoints { get; private set; }
+	public GuildSnapshot CachedGuildInfo { get; set; }
+
+	// Hard Mode
+	public bool IsHardModeActive { get; private set; }
+	public int HardModeHighestCleared { get; private set; }
+	private readonly List<int> _hardModeStars = new();
+	public bool IsHardModeUnlocked => HighestUnlockedStage >= MaxStage || PrestigeLevel >= 1;
+
+	// Enchantments
+	public int Essence { get; private set; }
+	private readonly Dictionary<string, string> _relicEnchantments = new(StringComparer.OrdinalIgnoreCase);
+
+	// Raid
+	public string LastRaidWeek { get; private set; } = "";
+	public int RaidDamageContributed { get; private set; }
+	private readonly HashSet<string> _claimedRaidRewardIds = new(StringComparer.OrdinalIgnoreCase);
+	private int _raidContributionCount;
+
+	// Bounty Board
+	private readonly HashSet<string> _completedBountyIds = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _bountyProgress = new(StringComparer.OrdinalIgnoreCase);
+	private string _lastBountyDate = "";
+
+	// Challenge Tower
+	public int TowerHighestFloor { get; private set; }
+	private readonly List<int> _towerFloorStars = new();
+	public bool IsTowerMode => CurrentBattleMode == BattleRunMode.Tower;
+	public int SelectedTowerFloor { get; private set; }
+
+	// Friends
+	private readonly HashSet<string> _friendIds = new(StringComparer.OrdinalIgnoreCase);
+	private string _lastGiftSentDate = "";
+	private int _giftsSentToday;
+	public int GiftsSentToday => _giftsSentToday;
+
+	// Mastery
+	private readonly Dictionary<string, int> _unitMasteryXP = new(StringComparer.OrdinalIgnoreCase);
+
+	// Profile accessors
+	public int OwnedUnitCount => _ownedPlayerUnitIds.Count;
+	public int OwnedSpellCount => _ownedPlayerSpellIds.Count;
+	public int OwnedRelicCount => _ownedEquipmentIds.Count;
+	public int AchievementUnlockedCount => _unlockedAchievementIds.Count;
+	public int TotalStarsEarned { get { var s = 0; for (var i = 1; i <= MaxStage; i++) s += GetStageStars(i); return s; } }
+	public int TotalHardModeStarsEarned { get { var s = 0; for (var i = 1; i <= MaxStage; i++) s += GetHardModeStars(i); return s; } }
+
+	// Achievement Rewards
+	private readonly HashSet<string> _claimedAchievementRewardIds = new(StringComparer.OrdinalIgnoreCase);
+
+	// Login Calendar
+	public int LoginCalendarDay { get; private set; }
+	private string _lastLoginCalendarDate = "";
+	private string _loginCalendarMonth = "";
+
+	// War Wagon Cosmetics
+	public string SelectedWagonSkinId { get; private set; } = WagonSkinCatalog.DefaultSkinId;
+
+	// Unit Awakening
+	private readonly Dictionary<string, int> _unitStarLevels = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, int> _unitTokens = new(StringComparer.OrdinalIgnoreCase);
+
+	// Season Pass
+	public int SeasonPassXP { get; private set; }
+	public int SeasonPassTier { get; private set; }
+	public string SeasonId { get; private set; } = SeasonPassCatalog.CurrentSeasonId;
+	public bool HasPremiumPass { get; private set; }
+	private readonly HashSet<int> _claimedSeasonFreeTiers = new();
+	private readonly HashSet<int> _claimedSeasonPremiumTiers = new();
+
+	// Collection Milestones
+	private readonly HashSet<string> _claimedCollectionMilestoneIds = new(StringComparer.OrdinalIgnoreCase);
+
+	// Battle Mutators
+	private readonly HashSet<string> _activeMutatorIds = new(StringComparer.OrdinalIgnoreCase);
+	public int MutatorBattlesCompleted { get; private set; }
+
+	// Accessibility
+	public string ColorblindMode { get; private set; } = "none";
+	public bool ReducedMotion { get; private set; }
+	public bool AutoBattleEnabled { get; private set; }
+	public bool LargeTextMode { get; private set; }
 
 	public override void _EnterTree()
 	{
@@ -1172,6 +1292,46 @@ public partial class GameState : Node
 		var keepAchievements = new List<string>(_unlockedAchievementIds);
 		var keepPrestige = new Dictionary<string, int>(_unitPrestigeSelections);
 		var keepDoctrines = new Dictionary<string, string>(_unitDoctrineSelections);
+		var keepPromotions = new HashSet<string>(_promotedUnitIds);
+		var keepEquipSlot2 = new Dictionary<string, string>(_unitEquipmentSlot2);
+		var keepShards = RelicShards;
+		var keepSigils = Sigils;
+		var keepTomes = Tomes;
+		var keepSkillNodes = _unlockedSkillNodes.ToDictionary(p => p.Key, p => new HashSet<string>(p.Value, StringComparer.OrdinalIgnoreCase));
+		var keepArenaRating = ArenaRating;
+		var keepArenaWins = ArenaWins;
+		var keepArenaLosses = ArenaLosses;
+		var keepGuildId = GuildId;
+		var keepGuildContribution = GuildContributionPoints;
+		var keepCodexIds = new HashSet<string>(_discoveredCodexIds, StringComparer.OrdinalIgnoreCase);
+		var keepCodexKills = new Dictionary<string, int>(_codexKillCounts, StringComparer.OrdinalIgnoreCase);
+		var keepCodexFirstSeen = new Dictionary<string, long>(_codexFirstSeenAt, StringComparer.OrdinalIgnoreCase);
+		var keepHardModeStars = new List<int>(_hardModeStars);
+		var keepHardModeHighest = HardModeHighestCleared;
+		var keepEssence = Essence;
+		var keepEnchantments = new Dictionary<string, string>(_relicEnchantments, StringComparer.OrdinalIgnoreCase);
+		var keepTowerHighest = TowerHighestFloor;
+		var keepTowerStars = new List<int>(_towerFloorStars);
+		var keepFriends = new HashSet<string>(_friendIds, StringComparer.OrdinalIgnoreCase);
+		var keepMasteryXP = new Dictionary<string, int>(_unitMasteryXP, StringComparer.OrdinalIgnoreCase);
+		var keepClaimedAchRewards = new HashSet<string>(_claimedAchievementRewardIds, StringComparer.OrdinalIgnoreCase);
+		var keepLoginDay = LoginCalendarDay;
+		var keepLoginDate = _lastLoginCalendarDate;
+		var keepLoginMonth = _loginCalendarMonth;
+		var keepWagonSkin = SelectedWagonSkinId;
+		var keepStarLevels = new Dictionary<string, int>(_unitStarLevels, StringComparer.OrdinalIgnoreCase);
+		var keepTokens = new Dictionary<string, int>(_unitTokens, StringComparer.OrdinalIgnoreCase);
+		var keepSeasonXP = SeasonPassXP;
+		var keepSeasonTier = SeasonPassTier;
+		var keepPremium = HasPremiumPass;
+		var keepSeasonFree = new HashSet<int>(_claimedSeasonFreeTiers);
+		var keepSeasonPrem = new HashSet<int>(_claimedSeasonPremiumTiers);
+		var keepCollMilestones = new HashSet<string>(_claimedCollectionMilestoneIds, StringComparer.OrdinalIgnoreCase);
+		var keepColorblind = ColorblindMode;
+		var keepReducedMotion = ReducedMotion;
+		var keepAutoBattle = AutoBattleEnabled;
+		var keepLargeText = LargeTextMode;
+		var keepMutatorBattles = MutatorBattlesCompleted;
 
 		// Reset campaign state
 		HighestUnlockedStage = DefaultUnlockedStage;
@@ -1199,6 +1359,63 @@ public partial class GameState : Node
 		foreach (var (k, v) in keepPrestige) _unitPrestigeSelections[k] = v;
 		_unitDoctrineSelections.Clear();
 		foreach (var (k, v) in keepDoctrines) _unitDoctrineSelections[k] = v;
+		_promotedUnitIds.Clear();
+		foreach (var id in keepPromotions) _promotedUnitIds.Add(id);
+		_unitEquipmentSlot2.Clear();
+		foreach (var (k, v) in keepEquipSlot2) _unitEquipmentSlot2[k] = v;
+		RelicShards = keepShards;
+		Sigils = keepSigils;
+		Tomes = keepTomes;
+		_unlockedSkillNodes.Clear();
+		foreach (var (k, v) in keepSkillNodes) _unlockedSkillNodes[k] = v;
+		ArenaRating = keepArenaRating;
+		ArenaWins = keepArenaWins;
+		ArenaLosses = keepArenaLosses;
+		GuildId = keepGuildId;
+		GuildContributionPoints = keepGuildContribution;
+		_discoveredCodexIds.Clear();
+		foreach (var id in keepCodexIds) _discoveredCodexIds.Add(id);
+		_codexKillCounts.Clear();
+		foreach (var (k, v) in keepCodexKills) _codexKillCounts[k] = v;
+		_codexFirstSeenAt.Clear();
+		foreach (var (k, v) in keepCodexFirstSeen) _codexFirstSeenAt[k] = v;
+		_hardModeStars.Clear();
+		_hardModeStars.AddRange(keepHardModeStars);
+		HardModeHighestCleared = keepHardModeHighest;
+		Essence = keepEssence;
+		_relicEnchantments.Clear();
+		foreach (var (k, v) in keepEnchantments) _relicEnchantments[k] = v;
+		TowerHighestFloor = keepTowerHighest;
+		_towerFloorStars.Clear();
+		_towerFloorStars.AddRange(keepTowerStars);
+		_friendIds.Clear();
+		foreach (var id in keepFriends) _friendIds.Add(id);
+		_unitMasteryXP.Clear();
+		foreach (var (k, v) in keepMasteryXP) _unitMasteryXP[k] = v;
+		_claimedAchievementRewardIds.Clear();
+		foreach (var id in keepClaimedAchRewards) _claimedAchievementRewardIds.Add(id);
+		LoginCalendarDay = keepLoginDay;
+		_lastLoginCalendarDate = keepLoginDate;
+		_loginCalendarMonth = keepLoginMonth;
+		SelectedWagonSkinId = keepWagonSkin;
+		_unitStarLevels.Clear();
+		foreach (var (k, v) in keepStarLevels) _unitStarLevels[k] = v;
+		_unitTokens.Clear();
+		foreach (var (k, v) in keepTokens) _unitTokens[k] = v;
+		SeasonPassXP = keepSeasonXP;
+		SeasonPassTier = keepSeasonTier;
+		HasPremiumPass = keepPremium;
+		_claimedSeasonFreeTiers.Clear();
+		foreach (var t in keepSeasonFree) _claimedSeasonFreeTiers.Add(t);
+		_claimedSeasonPremiumTiers.Clear();
+		foreach (var t in keepSeasonPrem) _claimedSeasonPremiumTiers.Add(t);
+		_claimedCollectionMilestoneIds.Clear();
+		foreach (var id in keepCollMilestones) _claimedCollectionMilestoneIds.Add(id);
+		ColorblindMode = keepColorblind;
+		ReducedMotion = keepReducedMotion;
+		AutoBattleEnabled = keepAutoBattle;
+		LargeTextMode = keepLargeText;
+		MutatorBattlesCompleted = keepMutatorBattles;
 
 		// Keep active deck if units are still owned
 		var validDeck = new List<string>();
@@ -1445,6 +1662,11 @@ public partial class GameState : Node
 		}
 	}
 
+	public IReadOnlyCollection<string> GetOwnedPlayerUnitIds()
+	{
+		return _ownedPlayerUnitIds;
+	}
+
 	public bool IsSpellOwned(string spellId)
 	{
 		try
@@ -1563,6 +1785,7 @@ public partial class GameState : Node
 
 			Gold -= cost;
 			_ownedPlayerUnitIds.Add(definition.Id);
+			DiscoverCodexEntry(definition.Id);
 			LastResultMessage = $"{definition.DisplayName} purchased for {cost} gold.";
 			Persist();
 			CheckAchievements();
@@ -1602,6 +1825,7 @@ public partial class GameState : Node
 
 			Gold -= cost;
 			_ownedPlayerSpellIds.Add(definition.Id);
+			DiscoverCodexEntry(definition.Id);
 			LastResultMessage = cost > 0
 				? $"{definition.DisplayName} scribed for {cost} gold."
 				: $"{definition.DisplayName} prepared for the caravan.";
@@ -2129,6 +2353,57 @@ public partial class GameState : Node
 			speedScale *= equip.SpeedScale;
 		}
 
+		// Promotion bonuses + second equipment slot
+		if (_promotedUnitIds.Contains(definition.Id))
+		{
+			var promo = UnitPromotionCatalog.TryGet(definition.Id);
+			if (promo != null)
+			{
+				healthScale *= promo.HealthScale;
+				damageScale *= promo.DamageScale;
+				speedScale *= promo.SpeedScale;
+			}
+
+			var equip2 = GetUnitEquipment2(definition.Id);
+			if (equip2 != null)
+			{
+				healthScale *= equip2.HealthScale;
+				damageScale *= equip2.DamageScale;
+				cooldownReduction += equip2.CooldownReduction;
+				baseDamageBonus += equip2.BaseDamageBonus;
+				speedScale *= equip2.SpeedScale;
+			}
+		}
+
+		// Skill tree bonuses
+		var skillBonus = ResolveSkillTreeBonus(definition.Id);
+		healthScale *= skillBonus.HealthScale;
+		damageScale *= skillBonus.DamageScale;
+		speedScale *= skillBonus.SpeedScale;
+		cooldownReduction += skillBonus.CooldownReduction;
+
+		// Guild perk bonuses
+		var guildBonus = ResolveGuildBonus();
+		healthScale *= guildBonus.HealthScale;
+
+		// Enchantment bonuses
+		var equip1Id = GetEquippedRelicId(definition.Id);
+		var equip2Id = GetEquippedRelicId2(definition.Id);
+		var ench1 = GetRelicEnchantment(equip1Id);
+		var ench2 = GetRelicEnchantment(equip2Id);
+		if (ench1 != null) { healthScale *= ench1.HealthScale; damageScale *= ench1.DamageScale; speedScale *= ench1.SpeedScale; }
+		if (ench2 != null) { healthScale *= ench2.HealthScale; damageScale *= ench2.DamageScale; speedScale *= ench2.SpeedScale; }
+
+		// Mastery bonuses
+		var masteryBonus = ResolveMasteryBonus(definition.Id);
+		healthScale *= masteryBonus.HealthScale;
+		damageScale *= masteryBonus.DamageScale;
+
+		// Awakening star bonuses (final layer)
+		var awakeningBonus = ResolveAwakeningBonus(definition.Id);
+		healthScale *= awakeningBonus.HealthScale;
+		damageScale *= awakeningBonus.DamageScale;
+
 		var stats = new UnitStats(
 			definition,
 			healthScale,
@@ -2246,12 +2521,1600 @@ public partial class GameState : Node
 
 		if (_ownedEquipmentIds.Add(equipmentId))
 		{
+			DiscoverCodexEntry(equipmentId);
 			Persist();
 			CheckAchievements();
 			return true;
 		}
 
 		return false;
+	}
+
+	// ── Relic Forge ──────────────────────────────────────────
+
+	public bool TryDismantleRelic(string relicId, out int shardsGained)
+	{
+		shardsGained = 0;
+		if (string.IsNullOrWhiteSpace(relicId) || !_ownedEquipmentIds.Contains(relicId))
+		{
+			return false;
+		}
+
+		var equip = GameData.GetEquipment(relicId);
+		if (equip == null)
+		{
+			return false;
+		}
+
+		// Auto-unequip from any unit (both slots)
+		foreach (var pair in new Dictionary<string, string>(_unitEquipmentSlots))
+		{
+			if (pair.Value.Equals(relicId, System.StringComparison.OrdinalIgnoreCase))
+			{
+				_unitEquipmentSlots.Remove(pair.Key);
+			}
+		}
+		foreach (var pair in new Dictionary<string, string>(_unitEquipmentSlot2))
+		{
+			if (pair.Value.Equals(relicId, System.StringComparison.OrdinalIgnoreCase))
+			{
+				_unitEquipmentSlot2.Remove(pair.Key);
+			}
+		}
+
+		_ownedEquipmentIds.Remove(relicId);
+		_relicEnchantments.Remove(relicId);
+		shardsGained = RelicForgeCatalog.GetDismantleShards(equip.Rarity);
+		RelicShards += shardsGained;
+		Persist();
+		return true;
+	}
+
+	public bool TryFuseRelics(string[] relicIds, out string resultRelicId)
+	{
+		resultRelicId = null;
+		if (relicIds == null || relicIds.Length != RelicForgeCatalog.RelicsRequiredForFusion)
+		{
+			return false;
+		}
+
+		// Validate all owned and same rarity
+		string sourceRarity = null;
+		foreach (var id in relicIds)
+		{
+			if (!_ownedEquipmentIds.Contains(id))
+			{
+				return false;
+			}
+
+			var equip = GameData.GetEquipment(id);
+			if (equip == null)
+			{
+				return false;
+			}
+
+			if (sourceRarity == null)
+			{
+				sourceRarity = equip.Rarity;
+			}
+			else if (!string.Equals(sourceRarity, equip.Rarity, System.StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+		}
+
+		var targetRarity = RelicForgeCatalog.GetFusionTargetRarity(sourceRarity);
+		if (targetRarity == null)
+		{
+			return false;
+		}
+
+		// Remove source relics (auto-unequips)
+		foreach (var id in relicIds)
+		{
+			TryDismantleRelic(id, out _);
+			// Dismantling grants shards — subtract them back since fusion is not dismantling
+		}
+		// Compensate: fusion should not grant shards
+		RelicShards -= relicIds.Length * RelicForgeCatalog.GetDismantleShards(sourceRarity);
+		if (RelicShards < 0) RelicShards = 0;
+
+		// Pick a random relic of the target rarity
+		var candidates = RelicForgeCatalog.GetRelicsByRarity(targetRarity);
+		if (candidates.Count == 0)
+		{
+			return false;
+		}
+
+		var pick = candidates[_rng.RandiRange(0, candidates.Count - 1)];
+		resultRelicId = pick.Id;
+		TryGrantEquipment(pick.Id);
+		TryUnlockAchievement("first_forge");
+		Persist();
+		CheckAchievements();
+		return true;
+	}
+
+	public bool TryForgeRelic(string relicId, out string message)
+	{
+		message = "";
+		var recipe = RelicForgeCatalog.GetCraftRecipe(relicId);
+		if (recipe == null)
+		{
+			message = "Unknown relic.";
+			return false;
+		}
+
+		if (_ownedEquipmentIds.Contains(relicId))
+		{
+			message = "Already owned.";
+			return false;
+		}
+
+		if (RelicShards < recipe.ShardCost)
+		{
+			message = $"Need {recipe.ShardCost} shards (have {RelicShards}).";
+			return false;
+		}
+
+		if (Gold < recipe.GoldCost)
+		{
+			message = $"Need {recipe.GoldCost} gold (have {Gold}).";
+			return false;
+		}
+
+		RelicShards -= recipe.ShardCost;
+		Gold -= recipe.GoldCost;
+		TryGrantEquipment(relicId);
+		TryUnlockAchievement("first_forge");
+		Persist();
+		CheckAchievements();
+		message = $"Forged {GameData.GetEquipment(relicId)?.DisplayName ?? relicId}!";
+		return true;
+	}
+
+	// ── Unit Promotion ───────────────────────────────────────
+
+	public void GrantSigils(int amount)
+	{
+		if (amount > 0)
+		{
+			Sigils += amount;
+			Persist();
+		}
+	}
+
+	public bool IsUnitPromoted(string unitId)
+	{
+		return _promotedUnitIds.Contains(unitId);
+	}
+
+	public bool CanPromoteUnit(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || _promotedUnitIds.Contains(unitId))
+		{
+			return false;
+		}
+
+		var promo = UnitPromotionCatalog.TryGet(unitId);
+		if (promo == null)
+		{
+			return false;
+		}
+
+		var level = GetUnitLevel(unitId);
+		return level >= UnitPromotionCatalog.RequiredLevel &&
+			   _ownedPlayerUnitIds.Contains(unitId) &&
+			   Gold >= promo.GoldCost &&
+			   Sigils >= promo.SigilCost;
+	}
+
+	public bool TryPromoteUnit(string unitId, out string message)
+	{
+		message = "";
+		var promo = UnitPromotionCatalog.TryGet(unitId);
+		if (promo == null)
+		{
+			message = "No promotion path.";
+			return false;
+		}
+
+		if (_promotedUnitIds.Contains(unitId))
+		{
+			message = "Already promoted.";
+			return false;
+		}
+
+		if (!_ownedPlayerUnitIds.Contains(unitId))
+		{
+			message = "Unit not owned.";
+			return false;
+		}
+
+		if (GetUnitLevel(unitId) < UnitPromotionCatalog.RequiredLevel)
+		{
+			message = $"Requires level {UnitPromotionCatalog.RequiredLevel}.";
+			return false;
+		}
+
+		if (Gold < promo.GoldCost)
+		{
+			message = $"Need {promo.GoldCost} gold (have {Gold}).";
+			return false;
+		}
+
+		if (Sigils < promo.SigilCost)
+		{
+			message = $"Need {promo.SigilCost} sigils (have {Sigils}).";
+			return false;
+		}
+
+		Gold -= promo.GoldCost;
+		Sigils -= promo.SigilCost;
+		_promotedUnitIds.Add(unitId);
+		Persist();
+		CheckAchievements();
+		message = $"{promo.PromotedTitle} promoted!";
+		return true;
+	}
+
+	public EquipmentDefinition GetUnitEquipment2(string unitId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || !_promotedUnitIds.Contains(unitId))
+		{
+			return null;
+		}
+
+		if (_unitEquipmentSlot2.TryGetValue(unitId, out var equipId) &&
+			!string.IsNullOrWhiteSpace(equipId))
+		{
+			try
+			{
+				return GameData.GetEquipment(equipId);
+			}
+			catch
+			{
+				return null;
+			}
+		}
+
+		return null;
+	}
+
+	public bool TryEquipItem2(string unitId, string equipmentId)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || string.IsNullOrWhiteSpace(equipmentId))
+		{
+			return false;
+		}
+
+		if (!_promotedUnitIds.Contains(unitId))
+		{
+			return false;
+		}
+
+		if (!_ownedEquipmentIds.Contains(equipmentId))
+		{
+			return false;
+		}
+
+		// Check not equipped by any unit in either slot
+		foreach (var pair in _unitEquipmentSlots)
+		{
+			if (pair.Value.Equals(equipmentId, System.StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+		}
+		foreach (var pair in _unitEquipmentSlot2)
+		{
+			if (pair.Value.Equals(equipmentId, System.StringComparison.OrdinalIgnoreCase) &&
+				!pair.Key.Equals(unitId, System.StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+		}
+
+		_unitEquipmentSlot2[unitId] = equipmentId;
+		Persist();
+		return true;
+	}
+
+	public void UnequipItem2(string unitId)
+	{
+		if (!string.IsNullOrWhiteSpace(unitId) && _unitEquipmentSlot2.Remove(unitId))
+		{
+			Persist();
+		}
+	}
+
+	public string GetPromotedTitle(string unitId)
+	{
+		if (!_promotedUnitIds.Contains(unitId))
+		{
+			return null;
+		}
+
+		return UnitPromotionCatalog.TryGet(unitId)?.PromotedTitle;
+	}
+
+	// ── Expeditions ──────────────────────────────────────────
+
+	public bool IsUnitOnExpedition(string unitId)
+	{
+		foreach (var slot in _activeExpeditions)
+		{
+			if (slot.AssignedUnitIds != null)
+			{
+				foreach (var id in slot.AssignedUnitIds)
+				{
+					if (string.Equals(id, unitId, System.StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public IReadOnlyList<ExpeditionSlotState> GetActiveExpeditions() => _activeExpeditions;
+
+	public bool TryStartExpedition(string expeditionId, string[] unitIds, out string message)
+	{
+		message = "";
+		var def = ExpeditionCatalog.Get(expeditionId);
+		if (def == null)
+		{
+			message = "Unknown expedition.";
+			return false;
+		}
+
+		if (_activeExpeditions.Count >= ExpeditionCatalog.MaxSlots)
+		{
+			message = "All expedition slots are in use.";
+			return false;
+		}
+
+		if (unitIds == null || unitIds.Length < def.MinUnits || unitIds.Length > def.MaxUnits)
+		{
+			message = $"Requires {def.MinUnits}-{def.MaxUnits} units.";
+			return false;
+		}
+
+		foreach (var unitId in unitIds)
+		{
+			if (!_ownedPlayerUnitIds.Contains(unitId))
+			{
+				message = $"Unit {unitId} not owned.";
+				return false;
+			}
+
+			if (IsUnitInActiveDeck(unitId))
+			{
+				message = "Cannot send deck units on expedition.";
+				return false;
+			}
+
+			if (IsUnitOnExpedition(unitId))
+			{
+				message = "Unit already on expedition.";
+				return false;
+			}
+		}
+
+		var now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		_activeExpeditions.Add(new ExpeditionSlotState
+		{
+			ExpeditionId = expeditionId,
+			AssignedUnitIds = (string[])unitIds.Clone(),
+			StartedAtUnixSeconds = now
+		});
+		Persist();
+		message = $"{def.Title} dispatched.";
+		return true;
+	}
+
+	public bool IsExpeditionComplete(int slotIndex)
+	{
+		if (slotIndex < 0 || slotIndex >= _activeExpeditions.Count)
+		{
+			return false;
+		}
+
+		var slot = _activeExpeditions[slotIndex];
+		var def = ExpeditionCatalog.Get(slot.ExpeditionId);
+		if (def == null)
+		{
+			return false;
+		}
+
+		var now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		var elapsed = now - slot.StartedAtUnixSeconds;
+		return elapsed >= def.DurationMinutes * 60;
+	}
+
+	public System.TimeSpan GetExpeditionTimeRemaining(int slotIndex)
+	{
+		if (slotIndex < 0 || slotIndex >= _activeExpeditions.Count)
+		{
+			return System.TimeSpan.Zero;
+		}
+
+		var slot = _activeExpeditions[slotIndex];
+		var def = ExpeditionCatalog.Get(slot.ExpeditionId);
+		if (def == null)
+		{
+			return System.TimeSpan.Zero;
+		}
+
+		var now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		var endTime = slot.StartedAtUnixSeconds + (def.DurationMinutes * 60);
+		var remaining = endTime - now;
+		return remaining > 0 ? System.TimeSpan.FromSeconds(remaining) : System.TimeSpan.Zero;
+	}
+
+	public bool TryCollectExpedition(int slotIndex, out string resultMessage)
+	{
+		resultMessage = "";
+		if (!IsExpeditionComplete(slotIndex))
+		{
+			resultMessage = "Expedition still in progress.";
+			return false;
+		}
+
+		var slot = _activeExpeditions[slotIndex];
+		var def = ExpeditionCatalog.Get(slot.ExpeditionId);
+		if (def == null)
+		{
+			resultMessage = "Unknown expedition.";
+			return false;
+		}
+
+		// Seed RNG from start time for deterministic rewards
+		var rewardRng = new RandomNumberGenerator();
+		rewardRng.Seed = (ulong)slot.StartedAtUnixSeconds;
+
+		var unitBonus = slot.AssignedUnitIds?.Length ?? 1;
+		var goldReward = def.BaseGoldReward + (rewardRng.RandiRange(0, def.BaseGoldReward / 4));
+		goldReward = (int)(goldReward * (1f + (unitBonus - 1) * 0.15f));
+		var foodReward = def.BaseFoodReward + rewardRng.RandiRange(0, 2);
+
+		Gold += goldReward;
+		Food += foodReward;
+
+		var relicMessage = "";
+		var roll = rewardRng.Randf();
+		if (roll < def.RelicDropChance)
+		{
+			var candidates = RelicForgeCatalog.GetRelicsByRarity(def.RelicDropRarity);
+			if (candidates.Count > 0)
+			{
+				var pick = candidates[rewardRng.RandiRange(0, candidates.Count - 1)];
+				if (TryGrantEquipment(pick.Id))
+				{
+					relicMessage = $" +{pick.DisplayName} ({pick.Rarity})!";
+				}
+			}
+		}
+
+		// Tome reward from expeditions
+		var tomeReward = def.DurationMinutes >= 120 ? 2 : 1;
+		Tomes += tomeReward;
+		AddSeasonXP(SeasonPassCatalog.XPPerExpedition);
+
+		_activeExpeditions.RemoveAt(slotIndex);
+		TotalExpeditionsCompleted++;
+		Persist();
+		CheckAchievements();
+		resultMessage = $"+{goldReward} gold, +{foodReward} food, +{tomeReward} tome(s){relicMessage}";
+		return true;
+	}
+
+	// ── Seasonal Events ──────────────────────────────────────
+
+	public SeasonalEventDefinition GetActiveEvent()
+	{
+		return SeasonalEventCatalog.GetActiveEvent(System.DateTime.UtcNow);
+	}
+
+	public int GetEventProgress(string eventId)
+	{
+		return _eventStagesCleared.TryGetValue(eventId, out var count) ? count : 0;
+	}
+
+	public void PrepareEventBattle(string eventId, int stageIndex)
+	{
+		SelectedEventId = eventId;
+		SelectedEventStageIndex = stageIndex;
+		CurrentBattleMode = BattleRunMode.SeasonalEvent;
+		Persist();
+	}
+
+	public void RecordEventStageCleared(string eventId)
+	{
+		if (string.IsNullOrWhiteSpace(eventId))
+		{
+			return;
+		}
+
+		if (_eventStagesCleared.ContainsKey(eventId))
+		{
+			_eventStagesCleared[eventId]++;
+		}
+		else
+		{
+			_eventStagesCleared[eventId] = 1;
+		}
+
+		Persist();
+		CheckAchievements();
+	}
+
+	public bool TryClaimEventReward(string eventId, int milestoneIndex, out string message)
+	{
+		message = "";
+		var evt = SeasonalEventCatalog.GetById(eventId);
+		if (evt == null || milestoneIndex < 0 || milestoneIndex >= evt.Milestones.Length)
+		{
+			message = "Invalid event or milestone.";
+			return false;
+		}
+
+		var rewardKey = $"{eventId}:{milestoneIndex}";
+		if (_claimedEventRewardIds.Contains(rewardKey))
+		{
+			message = "Already claimed.";
+			return false;
+		}
+
+		var milestone = evt.Milestones[milestoneIndex];
+		var progress = GetEventProgress(eventId);
+		if (progress < milestone.StagesRequired)
+		{
+			message = $"Need {milestone.StagesRequired} clears (have {progress}).";
+			return false;
+		}
+
+		ApplyEventReward(milestone.Reward);
+		_claimedEventRewardIds.Add(rewardKey);
+		Persist();
+		message = $"Claimed: {milestone.Label}";
+		return true;
+	}
+
+	public void ApplyEventStageReward(SeasonalEventReward reward)
+	{
+		ApplyEventReward(reward);
+		Persist();
+	}
+
+	private void ApplyEventReward(SeasonalEventReward reward)
+	{
+		if (reward == null)
+		{
+			return;
+		}
+
+		switch (reward.Type?.ToLowerInvariant())
+		{
+			case "gold":
+				Gold += reward.Amount;
+				break;
+			case "food":
+				Food += reward.Amount;
+				break;
+			case "sigils":
+				Sigils += reward.Amount;
+				break;
+			case "shards":
+				RelicShards += reward.Amount;
+				break;
+			case "relic":
+				if (!string.IsNullOrWhiteSpace(reward.ItemId))
+				{
+					TryGrantEquipment(reward.ItemId);
+				}
+				break;
+		}
+	}
+
+	public bool HasClaimedEventReward(string eventId, int milestoneIndex)
+	{
+		return _claimedEventRewardIds.Contains($"{eventId}:{milestoneIndex}");
+	}
+
+	// ── Codex ────────────────────────────────────────────────
+
+	public void DiscoverCodexEntry(string id)
+	{
+		if (string.IsNullOrWhiteSpace(id) || _discoveredCodexIds.Contains(id))
+		{
+			return;
+		}
+
+		if (CodexCatalog.GetById(id) == null)
+		{
+			return;
+		}
+
+		_discoveredCodexIds.Add(id);
+		if (!_codexFirstSeenAt.ContainsKey(id))
+		{
+			_codexFirstSeenAt[id] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+		}
+
+		Persist();
+		CheckAchievements();
+	}
+
+	public void RecordCodexKill(string enemyId)
+	{
+		if (string.IsNullOrWhiteSpace(enemyId))
+		{
+			return;
+		}
+
+		DiscoverCodexEntry(enemyId);
+		if (_codexKillCounts.ContainsKey(enemyId))
+		{
+			_codexKillCounts[enemyId]++;
+		}
+		else
+		{
+			_codexKillCounts[enemyId] = 1;
+		}
+	}
+
+	public bool IsCodexEntryDiscovered(string id) => _discoveredCodexIds.Contains(id);
+	public int GetCodexKillCount(string id) => _codexKillCounts.TryGetValue(id, out var c) ? c : 0;
+	public long GetCodexFirstSeenAt(string id) => _codexFirstSeenAt.TryGetValue(id, out var t) ? t : 0;
+	public int DiscoveredCodexCount => _discoveredCodexIds.Count;
+
+	// ── Skill Trees ──────────────────────────────────────────
+
+	public void GrantTomes(int amount)
+	{
+		if (amount > 0)
+		{
+			Tomes += amount;
+			Persist();
+		}
+	}
+
+	public IReadOnlyCollection<string> GetUnlockedSkillNodes(string unitId)
+	{
+		return _unlockedSkillNodes.TryGetValue(unitId, out var set) ? set : Array.Empty<string>();
+	}
+
+	public bool IsSkillNodeUnlocked(string unitId, string nodeId)
+	{
+		return _unlockedSkillNodes.TryGetValue(unitId, out var set) && set.Contains(nodeId);
+	}
+
+	public SkillTreeBonus ResolveSkillTreeBonus(string unitId)
+	{
+		if (!_unlockedSkillNodes.TryGetValue(unitId, out var set) || set.Count == 0)
+		{
+			return SkillTreeBonus.None;
+		}
+
+		return UnitSkillTreeCatalog.Resolve(unitId, set);
+	}
+
+	public bool TryUnlockSkillNode(string unitId, string nodeId, out string message)
+	{
+		message = "";
+		var node = UnitSkillTreeCatalog.GetNode(unitId, nodeId);
+		if (node == null)
+		{
+			message = "Unknown talent node.";
+			return false;
+		}
+
+		if (IsSkillNodeUnlocked(unitId, nodeId))
+		{
+			message = "Already unlocked.";
+			return false;
+		}
+
+		if (!string.IsNullOrWhiteSpace(node.PrerequisiteNodeId) &&
+			!IsSkillNodeUnlocked(unitId, node.PrerequisiteNodeId))
+		{
+			message = "Prerequisite not met.";
+			return false;
+		}
+
+		if (Gold < node.GoldCost)
+		{
+			message = $"Need {node.GoldCost} gold (have {Gold}).";
+			return false;
+		}
+
+		if (Tomes < node.TomeCost)
+		{
+			message = $"Need {node.TomeCost} tomes (have {Tomes}).";
+			return false;
+		}
+
+		Gold -= node.GoldCost;
+		Tomes -= node.TomeCost;
+
+		if (!_unlockedSkillNodes.ContainsKey(unitId))
+		{
+			_unlockedSkillNodes[unitId] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		}
+
+		_unlockedSkillNodes[unitId].Add(nodeId);
+		TryUnlockAchievement("first_talent");
+
+		// Check if full tree is complete
+		var tree = UnitSkillTreeCatalog.GetTree(unitId);
+		if (tree != null && _unlockedSkillNodes[unitId].Count >= tree.Nodes.Length)
+		{
+			TryUnlockAchievement("talent_master");
+		}
+
+		Persist();
+		CheckAchievements();
+		message = $"Unlocked {node.Title}!";
+		return true;
+	}
+
+	// ── PvP Arena ────────────────────────────────────────────
+
+	public ArenaTier GetArenaTier() => ArenaCatalog.GetTier(ArenaRating);
+
+	public void PrepareArenaBattle(ArenaOpponentSnapshot opponent)
+	{
+		SelectedArenaOpponent = opponent;
+		CurrentBattleMode = BattleRunMode.Arena;
+		Persist();
+	}
+
+	public void ApplyArenaResult(bool won, int opponentRating)
+	{
+		var newRating = ArenaCatalog.CalculateElo(ArenaRating, opponentRating, won);
+		ArenaRating = newRating;
+		if (won)
+		{
+			ArenaWins++;
+			Essence += 2;
+			AddSeasonXP(SeasonPassCatalog.XPPerArenaWin);
+			TryUnlockAchievement("arena_first_win");
+			if (ArenaWins >= 10) TryUnlockAchievement("arena_10_wins");
+		}
+		else
+		{
+			ArenaLosses++;
+		}
+
+		if (ArenaRating >= 1300) TryUnlockAchievement("arena_gold_tier");
+		Persist();
+		CheckAchievements();
+	}
+
+	// ── Guild ────────────────────────────────────────────────
+
+	public void SetGuildId(string guildId)
+	{
+		GuildId = guildId ?? "";
+		if (!string.IsNullOrWhiteSpace(GuildId))
+		{
+			TryUnlockAchievement("guild_join");
+		}
+
+		Persist();
+	}
+
+	public void AddGuildContribution(int points)
+	{
+		if (points > 0)
+		{
+			GuildContributionPoints += points;
+			Persist();
+			CheckAchievements();
+		}
+	}
+
+	public bool TryGuildContribute(int goldCost, int contributionPoints, out string message)
+	{
+		if (Gold < goldCost)
+		{
+			message = $"Need {goldCost} gold to contribute. You have {Gold}.";
+			return false;
+		}
+
+		Gold -= goldCost;
+		AddGuildContribution(contributionPoints);
+		message = $"Contributed {contributionPoints} points for {goldCost} gold. Gold remaining: {Gold}";
+		return true;
+	}
+
+	public GuildBonus ResolveGuildBonus()
+	{
+		return GuildCatalog.ResolveBonus(CachedGuildInfo);
+	}
+
+	// ── Hard Mode ────────────────────────────────────────────
+
+	public void ToggleHardMode()
+	{
+		IsHardModeActive = !IsHardModeActive;
+	}
+
+	public int GetHardModeStars(int stage)
+	{
+		var index = stage - 1;
+		return index >= 0 && index < _hardModeStars.Count ? _hardModeStars[index] : 0;
+	}
+
+	public void RecordHardModeStars(int stage, int stars)
+	{
+		var index = stage - 1;
+		while (_hardModeStars.Count <= index) _hardModeStars.Add(0);
+		_hardModeStars[index] = Math.Max(_hardModeStars[index], stars);
+		if (stars > 0 && stage > HardModeHighestCleared) HardModeHighestCleared = stage;
+		Persist();
+	}
+
+	public int HardModeClearedCount
+	{
+		get
+		{
+			var count = 0;
+			for (var i = 0; i < _hardModeStars.Count; i++)
+			{
+				if (_hardModeStars[i] > 0) count++;
+			}
+			return count;
+		}
+	}
+
+	public void ApplyHardModeVictory(int stage, int baseRewardGold, int baseRewardFood, int starsEarned)
+	{
+		var hardOverride = HardModeCatalog.GetForStage(stage);
+		var goldReward = (int)(baseRewardGold * 1.5f) + (hardOverride?.BonusGold ?? 0);
+		var foodReward = (int)(baseRewardFood * 1.5f) + (hardOverride?.BonusFood ?? 0);
+
+		Gold += goldReward;
+		Food += foodReward;
+		Essence += 1;
+		RecordHardModeStars(stage, starsEarned);
+
+		// Milestone relic drop
+		if (hardOverride != null && !string.IsNullOrWhiteSpace(hardOverride.MilestoneRelicId))
+		{
+			TryGrantEquipment(hardOverride.MilestoneRelicId);
+		}
+
+		Persist();
+		CheckAchievements();
+	}
+
+	// ── Enchantments ─────────────────────────────────────────
+
+	public void AddEssence(int amount)
+	{
+		if (amount > 0) { Essence += amount; Persist(); }
+	}
+
+	public EnchantmentDefinition GetRelicEnchantment(string relicId)
+	{
+		if (string.IsNullOrWhiteSpace(relicId)) return null;
+		return _relicEnchantments.TryGetValue(relicId, out var enchId) ? EnchantmentCatalog.GetById(enchId) : null;
+	}
+
+	public string GetRelicEnchantmentId(string relicId)
+	{
+		return _relicEnchantments.TryGetValue(relicId, out var enchId) ? enchId : null;
+	}
+
+	public bool TryApplyEnchantment(string relicId, string enchantmentId, out string message)
+	{
+		message = "";
+		if (!_ownedEquipmentIds.Contains(relicId))
+		{
+			message = "Relic not owned.";
+			return false;
+		}
+
+		var ench = EnchantmentCatalog.GetById(enchantmentId);
+		if (ench == null)
+		{
+			message = "Unknown enchantment.";
+			return false;
+		}
+
+		if (Gold < ench.GoldCost)
+		{
+			message = $"Need {ench.GoldCost} gold (have {Gold}).";
+			return false;
+		}
+
+		if (Essence < ench.EssenceCost)
+		{
+			message = $"Need {ench.EssenceCost} essence (have {Essence}).";
+			return false;
+		}
+
+		Gold -= ench.GoldCost;
+		Essence -= ench.EssenceCost;
+		_relicEnchantments[relicId] = enchantmentId;
+		TryUnlockAchievement("first_enchantment");
+		Persist();
+		message = $"Applied {ench.Title} to relic!";
+		return true;
+	}
+
+	public void RemoveEnchantment(string relicId)
+	{
+		if (_relicEnchantments.Remove(relicId)) Persist();
+	}
+
+	private string GetEquippedRelicId(string unitId)
+	{
+		return _unitEquipmentSlots.TryGetValue(unitId, out var id) ? id : null;
+	}
+
+	private string GetEquippedRelicId2(string unitId)
+	{
+		return _unitEquipmentSlot2.TryGetValue(unitId, out var id) ? id : null;
+	}
+
+	// ── Weekly Raid ──────────────────────────────────────────
+
+	public void ContributeRaidDamage(int damage)
+	{
+		var currentWeek = RaidBossCatalog.GetCurrentWeekId();
+		if (LastRaidWeek != currentWeek)
+		{
+			LastRaidWeek = currentWeek;
+			RaidDamageContributed = 0;
+			_claimedRaidRewardIds.Clear();
+			_raidContributionCount = 0;
+		}
+
+		RaidDamageContributed += damage;
+		_raidContributionCount++;
+		if (_raidContributionCount >= 3)
+		{
+			TryUnlockAchievement("raid_contributor");
+		}
+
+		Persist();
+	}
+
+	public bool HasClaimedRaidReward(string weekId, int milestoneIndex)
+	{
+		return _claimedRaidRewardIds.Contains($"{weekId}:{milestoneIndex}");
+	}
+
+	public bool TryClaimRaidReward(string weekId, int milestoneIndex, out string message)
+	{
+		message = "";
+		var boss = RaidBossCatalog.GetForWeek(weekId);
+		if (boss == null || milestoneIndex < 0 || milestoneIndex >= boss.Milestones.Length)
+		{
+			message = "Invalid raid or milestone.";
+			return false;
+		}
+
+		var key = $"{weekId}:{milestoneIndex}";
+		if (_claimedRaidRewardIds.Contains(key))
+		{
+			message = "Already claimed.";
+			return false;
+		}
+
+		var milestone = boss.Milestones[milestoneIndex];
+		if (RaidDamageContributed < milestone.DamageThreshold)
+		{
+			message = $"Community damage not reached ({RaidDamageContributed}/{milestone.DamageThreshold}).";
+			return false;
+		}
+
+		switch (milestone.RewardType?.ToLowerInvariant())
+		{
+			case "gold": Gold += milestone.RewardAmount; break;
+			case "essence": Essence += milestone.RewardAmount; break;
+			case "relic": TryGrantEquipment(milestone.RewardItemId); break;
+		}
+
+		_claimedRaidRewardIds.Add(key);
+		Persist();
+		message = $"Claimed: {milestone.Label}";
+		return true;
+	}
+
+	// ── Bounty Board ─────────────────────────────────────────
+
+	private void ResetBountiesIfNewDay()
+	{
+		var today = BountyBoardCatalog.GetDateKey();
+		if (_lastBountyDate != today)
+		{
+			_lastBountyDate = today;
+			_bountyProgress.Clear();
+		}
+	}
+
+	public int GetBountyProgress(string bountyId)
+	{
+		ResetBountiesIfNewDay();
+		return _bountyProgress.TryGetValue(bountyId, out var p) ? p : 0;
+	}
+
+	public bool IsBountyCompleted(string bountyId)
+	{
+		var today = BountyBoardCatalog.GetDateKey();
+		return _completedBountyIds.Contains($"{today}:{bountyId}");
+	}
+
+	public void AddBountyProgress(string trackingType, int amount)
+	{
+		ResetBountiesIfNewDay();
+		var bounties = BountyBoardCatalog.GetDailyBounties(DateTime.UtcNow);
+		foreach (var b in bounties)
+		{
+			if (string.Equals(b.TrackingType, trackingType, StringComparison.OrdinalIgnoreCase))
+			{
+				if (_bountyProgress.ContainsKey(b.Id))
+					_bountyProgress[b.Id] += amount;
+				else
+					_bountyProgress[b.Id] = amount;
+			}
+		}
+	}
+
+	public bool TryClaimBounty(string bountyId, out string message)
+	{
+		message = "";
+		var bounty = BountyBoardCatalog.GetById(bountyId);
+		if (bounty == null) { message = "Unknown bounty."; return false; }
+
+		var today = BountyBoardCatalog.GetDateKey();
+		var key = $"{today}:{bountyId}";
+		if (_completedBountyIds.Contains(key)) { message = "Already claimed."; return false; }
+
+		var progress = GetBountyProgress(bountyId);
+		if (progress < bounty.TargetCount) { message = $"Progress: {progress}/{bounty.TargetCount}"; return false; }
+
+		switch (bounty.RewardType?.ToLowerInvariant())
+		{
+			case "gold": Gold += bounty.RewardAmount; break;
+			case "food": Food += bounty.RewardAmount; break;
+			case "tomes": Tomes += bounty.RewardAmount; break;
+			case "essence": Essence += bounty.RewardAmount; break;
+			case "sigils": Sigils += bounty.RewardAmount; break;
+		}
+
+		_completedBountyIds.Add(key);
+		AddSeasonXP(SeasonPassCatalog.XPPerBounty);
+		Persist();
+		CheckAchievements();
+		message = $"Claimed +{bounty.RewardAmount} {bounty.RewardType}!";
+		return true;
+	}
+
+	// ── Challenge Tower ──────────────────────────────────────
+
+	public int GetTowerFloorStars(int floor)
+	{
+		var index = floor - 1;
+		return index >= 0 && index < _towerFloorStars.Count ? _towerFloorStars[index] : 0;
+	}
+
+	public void PrepareTowerBattle(int floor)
+	{
+		SelectedTowerFloor = floor;
+		CurrentBattleMode = BattleRunMode.Tower;
+		Persist();
+	}
+
+	public void ApplyTowerVictory(int floor, int starsEarned)
+	{
+		var floorDef = ChallengeTowerCatalog.GetFloor(floor);
+		if (floorDef == null) return;
+
+		Gold += floorDef.RewardGold;
+		Food += floorDef.RewardFood;
+		if (floorDef.RewardTomes > 0) Tomes += floorDef.RewardTomes;
+		if (floorDef.RewardEssence > 0) Essence += floorDef.RewardEssence;
+		if (!string.IsNullOrWhiteSpace(floorDef.MilestoneRelicId))
+			TryGrantEquipment(floorDef.MilestoneRelicId);
+
+		// Record stars
+		var index = floor - 1;
+		while (_towerFloorStars.Count <= index) _towerFloorStars.Add(0);
+		_towerFloorStars[index] = Math.Max(_towerFloorStars[index], starsEarned);
+		if (floor > TowerHighestFloor) TowerHighestFloor = floor;
+		AddSeasonXP(SeasonPassCatalog.XPPerTowerFloor);
+
+		Persist();
+		CheckAchievements();
+	}
+
+	// ── Friends ──────────────────────────────────────────────
+
+	public IReadOnlyCollection<string> GetFriendIds() => _friendIds;
+
+	public void AddFriend(string profileId)
+	{
+		if (!string.IsNullOrWhiteSpace(profileId) && _friendIds.Add(profileId.Trim()))
+		{
+			Persist();
+		}
+	}
+
+	public void RemoveFriend(string profileId)
+	{
+		if (_friendIds.Remove(profileId))
+		{
+			Persist();
+		}
+	}
+
+	public bool TrySendGift(string friendProfileId, out string message)
+	{
+		message = "";
+		var today = BountyBoardCatalog.GetDateKey();
+		if (_lastGiftSentDate != today)
+		{
+			_lastGiftSentDate = today;
+			_giftsSentToday = 0;
+		}
+
+		if (_giftsSentToday >= 3) { message = "Maximum 3 gifts per day."; return false; }
+		if (!_friendIds.Contains(friendProfileId)) { message = "Not on friend list."; return false; }
+
+		_giftsSentToday++;
+		Gold += 50;
+		Food += 2;
+		TryUnlockAchievement("gift_sent");
+		Persist();
+		message = "Gift sent! +50 gold, +2 food.";
+		return true;
+	}
+
+	// ── Mastery ──────────────────────────────────────────────
+
+	public int GetUnitMasteryXP(string unitId)
+	{
+		return _unitMasteryXP.TryGetValue(unitId, out var xp) ? xp : 0;
+	}
+
+	public MasteryRankDefinition GetUnitMasteryRank(string unitId)
+	{
+		return MasteryCatalog.GetRank(GetUnitMasteryXP(unitId));
+	}
+
+	public void AddUnitMasteryXP(string unitId, int amount)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || amount <= 0) return;
+
+		if (_unitMasteryXP.ContainsKey(unitId))
+			_unitMasteryXP[unitId] += amount;
+		else
+			_unitMasteryXP[unitId] = amount;
+
+		var rank = MasteryCatalog.GetRank(_unitMasteryXP[unitId]);
+		if (rank.Rank >= 2) TryUnlockAchievement("first_mastery");
+		if (rank.Rank >= 5) TryUnlockAchievement("grand_master");
+	}
+
+	public MasteryBonus ResolveMasteryBonus(string unitId)
+	{
+		return MasteryCatalog.ResolveBonus(GetUnitMasteryXP(unitId));
+	}
+
+	// ── Achievement Rewards ──────────────────────────────────
+
+	public bool HasClaimedAchievementReward(string achievementId)
+	{
+		return _claimedAchievementRewardIds.Contains(achievementId);
+	}
+
+	public int GetUnclaimedAchievementRewardCount()
+	{
+		var count = 0;
+		foreach (var a in AchievementCatalog.GetAll())
+		{
+			if (_unlockedAchievementIds.Contains(a.Id) &&
+				!_claimedAchievementRewardIds.Contains(a.Id) &&
+				AchievementRewardCatalog.GetForAchievement(a.Id) != null)
+			{
+				count++;
+			}
+		}
+		return count;
+	}
+
+	public bool TryClaimAchievementReward(string achievementId, out string message)
+	{
+		message = "";
+		if (!_unlockedAchievementIds.Contains(achievementId))
+		{
+			message = "Achievement not unlocked.";
+			return false;
+		}
+
+		if (_claimedAchievementRewardIds.Contains(achievementId))
+		{
+			message = "Already claimed.";
+			return false;
+		}
+
+		var reward = AchievementRewardCatalog.GetForAchievement(achievementId);
+		if (reward == null)
+		{
+			message = "No reward for this achievement.";
+			return false;
+		}
+
+		switch (reward.RewardType?.ToLowerInvariant())
+		{
+			case "gold": Gold += reward.RewardAmount; break;
+			case "food": Food += reward.RewardAmount; break;
+			case "tomes": Tomes += reward.RewardAmount; break;
+			case "essence": Essence += reward.RewardAmount; break;
+			case "sigils": Sigils += reward.RewardAmount; break;
+			case "relic": TryGrantEquipment(reward.RewardItemId); break;
+		}
+
+		_claimedAchievementRewardIds.Add(achievementId);
+		Persist();
+		message = $"Claimed: {reward.RewardLabel}";
+		return true;
+	}
+
+	// ── Login Calendar ───────────────────────────────────────
+
+	public bool CanClaimLoginReward()
+	{
+		var today = BountyBoardCatalog.GetDateKey();
+		var currentMonth = LoginCalendarCatalog.GetCurrentMonth();
+
+		if (_loginCalendarMonth != currentMonth)
+		{
+			return true; // New month = reset + day 1 available
+		}
+
+		return _lastLoginCalendarDate != today && LoginCalendarDay < LoginCalendarCatalog.TotalDays;
+	}
+
+	public bool TryClaimLoginReward(out string message)
+	{
+		message = "";
+		var today = BountyBoardCatalog.GetDateKey();
+		var currentMonth = LoginCalendarCatalog.GetCurrentMonth();
+
+		// Reset at month boundary
+		if (_loginCalendarMonth != currentMonth)
+		{
+			_loginCalendarMonth = currentMonth;
+			LoginCalendarDay = 0;
+			_lastLoginCalendarDate = "";
+		}
+
+		if (_lastLoginCalendarDate == today)
+		{
+			message = "Already claimed today.";
+			return false;
+		}
+
+		if (LoginCalendarDay >= LoginCalendarCatalog.TotalDays)
+		{
+			message = "Calendar complete for this month.";
+			return false;
+		}
+
+		LoginCalendarDay++;
+		_lastLoginCalendarDate = today;
+
+		var reward = LoginCalendarCatalog.GetDay(LoginCalendarDay);
+		if (reward != null)
+		{
+			switch (reward.RewardType?.ToLowerInvariant())
+			{
+				case "gold": Gold += reward.RewardAmount; break;
+				case "food": Food += reward.RewardAmount; break;
+				case "tomes": Tomes += reward.RewardAmount; break;
+				case "essence": Essence += reward.RewardAmount; break;
+				case "sigils": Sigils += reward.RewardAmount; break;
+			}
+
+			Persist();
+			message = $"Day {LoginCalendarDay}: {reward.Label}";
+			return true;
+		}
+
+		Persist();
+		message = $"Day {LoginCalendarDay} claimed.";
+		return true;
+	}
+
+	// ── War Wagon Cosmetics ──────────────────────────────────
+
+	public void SetWagonSkin(string skinId)
+	{
+		if (WagonSkinCatalog.IsSkinUnlocked(skinId, this))
+		{
+			SelectedWagonSkinId = skinId;
+			if (!skinId.Equals(WagonSkinCatalog.DefaultSkinId, StringComparison.OrdinalIgnoreCase))
+			{
+				TryUnlockAchievement("first_skin");
+			}
+			Persist();
+		}
+	}
+
+	public IReadOnlyList<WagonSkinDefinition> GetUnlockedWagonSkins()
+	{
+		return WagonSkinCatalog.GetUnlocked(this);
+	}
+
+	public Godot.Color GetWagonSkinColor()
+	{
+		var skin = WagonSkinCatalog.GetById(SelectedWagonSkinId);
+		return new Godot.Color(skin.ColorHex);
+	}
+
+	// ── Unit Awakening ───────────────────────────────────────
+
+	public int GetUnitStarLevel(string unitId)
+	{
+		return _unitStarLevels.TryGetValue(unitId, out var s) ? s : 0;
+	}
+
+	public int GetUnitTokens(string unitId)
+	{
+		return _unitTokens.TryGetValue(unitId, out var t) ? t : 0;
+	}
+
+	public void GrantUnitTokens(string unitId, int amount)
+	{
+		if (string.IsNullOrWhiteSpace(unitId) || amount <= 0) return;
+		if (_unitTokens.ContainsKey(unitId)) _unitTokens[unitId] += amount;
+		else _unitTokens[unitId] = amount;
+	}
+
+	public bool TryAwakenUnit(string unitId, out string message)
+	{
+		message = "";
+		var currentStars = GetUnitStarLevel(unitId);
+		var nextLevel = AwakeningCatalog.GetNextLevel(currentStars);
+		if (nextLevel == null)
+		{
+			message = "Maximum star level reached.";
+			return false;
+		}
+
+		var tokens = GetUnitTokens(unitId);
+		if (tokens < nextLevel.TokenCost)
+		{
+			message = $"Need {nextLevel.TokenCost} tokens (have {tokens}).";
+			return false;
+		}
+
+		if (Gold < nextLevel.GoldCost)
+		{
+			message = $"Need {nextLevel.GoldCost} gold (have {Gold}).";
+			return false;
+		}
+
+		_unitTokens[unitId] -= nextLevel.TokenCost;
+		Gold -= nextLevel.GoldCost;
+		_unitStarLevels[unitId] = currentStars + 1;
+		TryUnlockAchievement("first_awakening");
+		Persist();
+		message = $"Awakened to {currentStars + 1} stars!";
+		return true;
+	}
+
+	public AwakeningBonus ResolveAwakeningBonus(string unitId)
+	{
+		return AwakeningCatalog.ResolveBonus(GetUnitStarLevel(unitId));
+	}
+
+	// ── Season Pass ──────────────────────────────────────────
+
+	public void AddSeasonXP(int amount)
+	{
+		if (amount <= 0) return;
+		SeasonPassXP += amount;
+		SeasonPassTier = SeasonPassCatalog.GetTierForXP(SeasonPassXP);
+		Persist();
+	}
+
+	public bool HasClaimedSeasonFreeTier(int tier)
+	{
+		return _claimedSeasonFreeTiers.Contains(tier);
+	}
+
+	public bool HasClaimedSeasonPremiumTier(int tier)
+	{
+		return _claimedSeasonPremiumTiers.Contains(tier);
+	}
+
+	public bool TryClaimSeasonReward(int tier, bool isPremium, out string message)
+	{
+		message = "";
+		if (tier < 1 || tier > SeasonPassCatalog.MaxTier)
+		{
+			message = "Invalid tier.";
+			return false;
+		}
+
+		if (tier > SeasonPassTier)
+		{
+			message = "Tier not reached yet.";
+			return false;
+		}
+
+		if (isPremium && !HasPremiumPass)
+		{
+			message = "Requires premium pass.";
+			return false;
+		}
+
+		var claimedSet = isPremium ? _claimedSeasonPremiumTiers : _claimedSeasonFreeTiers;
+		if (claimedSet.Contains(tier))
+		{
+			message = "Already claimed.";
+			return false;
+		}
+
+		var tierDef = SeasonPassCatalog.GetTier(tier);
+		if (tierDef == null)
+		{
+			message = "Unknown tier.";
+			return false;
+		}
+
+		var rewardType = isPremium ? tierDef.PremiumRewardType : tierDef.FreeRewardType;
+		var rewardAmount = isPremium ? tierDef.PremiumRewardAmount : tierDef.FreeRewardAmount;
+		var rewardLabel = isPremium ? tierDef.PremiumRewardLabel : tierDef.FreeRewardLabel;
+
+		switch (rewardType?.ToLowerInvariant())
+		{
+			case "gold": Gold += rewardAmount; break;
+			case "food": Food += rewardAmount; break;
+			case "tomes": Tomes += rewardAmount; break;
+			case "essence": Essence += rewardAmount; break;
+			case "sigils": Sigils += rewardAmount; break;
+		}
+
+		claimedSet.Add(tier);
+		Persist();
+		message = $"Tier {tier}: {rewardLabel}";
+		return true;
+	}
+
+	public void SetPremiumPass(bool value)
+	{
+		HasPremiumPass = value;
+		Persist();
+	}
+
+	// ── Collection Milestones ────────────────────────────────
+
+	public bool HasClaimedCollectionMilestone(string milestoneId)
+	{
+		return _claimedCollectionMilestoneIds.Contains(milestoneId);
+	}
+
+	public bool TryClaimCollectionMilestone(string milestoneId, out string message)
+	{
+		message = "";
+		var milestone = CollectionMilestoneCatalog.GetById(milestoneId);
+		if (milestone == null)
+		{
+			message = "Unknown milestone.";
+			return false;
+		}
+
+		if (_claimedCollectionMilestoneIds.Contains(milestoneId))
+		{
+			message = "Already claimed.";
+			return false;
+		}
+
+		var progress = CollectionMilestoneCatalog.GetCollectionPercent(milestone.Category, this);
+		if (progress < milestone.ThresholdPercent)
+		{
+			message = $"Need {milestone.ThresholdPercent}% (at {progress}%).";
+			return false;
+		}
+
+		switch (milestone.RewardType?.ToLowerInvariant())
+		{
+			case "gold": Gold += milestone.RewardAmount; break;
+			case "food": Food += milestone.RewardAmount; break;
+			case "tomes": Tomes += milestone.RewardAmount; break;
+			case "essence": Essence += milestone.RewardAmount; break;
+			case "sigils": Sigils += milestone.RewardAmount; break;
+		}
+
+		_claimedCollectionMilestoneIds.Add(milestoneId);
+		Persist();
+		CheckAchievements();
+		message = $"Claimed: {milestone.RewardLabel}";
+		return true;
+	}
+
+	public int GetCollectionProgress(string category)
+	{
+		return CollectionMilestoneCatalog.GetCollectionPercent(category, this);
+	}
+
+	// ── Battle Mutators ──────────────────────────────────────
+
+	public void ToggleMutator(string mutatorId)
+	{
+		if (_activeMutatorIds.Contains(mutatorId))
+			_activeMutatorIds.Remove(mutatorId);
+		else
+			_activeMutatorIds.Add(mutatorId);
+		Persist();
+	}
+
+	public IReadOnlyCollection<string> GetActiveMutatorIds() => _activeMutatorIds;
+
+	public bool IsMutatorActive(string mutatorId) => _activeMutatorIds.Contains(mutatorId);
+
+	public float GetMutatorRewardMultiplier()
+	{
+		var mult = 1f;
+		foreach (var id in _activeMutatorIds)
+		{
+			var def = BattleMutatorCatalog.GetById(id);
+			if (def != null) mult *= def.GoldRewardMultiplier;
+		}
+		return mult;
+	}
+
+	public void RecordMutatorBattleComplete()
+	{
+		if (_activeMutatorIds.Count > 0)
+		{
+			MutatorBattlesCompleted++;
+			if (MutatorBattlesCompleted >= 5) TryUnlockAchievement("mutator_5");
+			Persist();
+		}
+	}
+
+	public void ClearMutators()
+	{
+		_activeMutatorIds.Clear();
+		Persist();
+	}
+
+	// ── Accessibility ────────────────────────────────────────
+
+	public void SetColorblindMode(string mode)
+	{
+		ColorblindMode = mode ?? "none";
+		Persist();
+	}
+
+	public void SetReducedMotion(bool enabled)
+	{
+		ReducedMotion = enabled;
+		Persist();
+	}
+
+	public void SetAutoBattle(bool enabled)
+	{
+		AutoBattleEnabled = enabled;
+		Persist();
+	}
+
+	public void SetLargeTextMode(bool enabled)
+	{
+		LargeTextMode = enabled;
+		Persist();
 	}
 
 	public bool IsUnitInActiveDeck(string unitId)
@@ -2415,6 +4278,12 @@ public partial class GameState : Node
 		if (_activeDeckUnitIds.Count >= MaxDeckSize)
 		{
 			message = $"Deck is full ({MaxDeckSize} cards). Remove one first.";
+			return false;
+		}
+
+		if (IsUnitOnExpedition(normalizedId))
+		{
+			message = "Unit is away on expedition.";
 			return false;
 		}
 
@@ -2641,6 +4510,81 @@ public partial class GameState : Node
 		EndlessRuns = 0;
 		ChallengeRuns = 0;
 		_dailyStreak = 0;
+
+		// v32
+		RelicShards = 0;
+		Sigils = 0;
+		_promotedUnitIds.Clear();
+		_unitEquipmentSlot2.Clear();
+		_activeExpeditions.Clear();
+		TotalExpeditionsCompleted = 0;
+		_eventStagesCleared.Clear();
+		_claimedEventRewardIds.Clear();
+		SelectedEventId = "";
+		SelectedEventStageIndex = 0;
+
+		// v38
+		_activeMutatorIds.Clear();
+		MutatorBattlesCompleted = 0;
+		ColorblindMode = "none";
+		ReducedMotion = false;
+		AutoBattleEnabled = false;
+		LargeTextMode = false;
+
+		// v37
+		_unitStarLevels.Clear();
+		_unitTokens.Clear();
+		SeasonPassXP = 0;
+		SeasonPassTier = 0;
+		SeasonId = SeasonPassCatalog.CurrentSeasonId;
+		HasPremiumPass = false;
+		_claimedSeasonFreeTiers.Clear();
+		_claimedSeasonPremiumTiers.Clear();
+		_claimedCollectionMilestoneIds.Clear();
+
+		// v36
+		_claimedAchievementRewardIds.Clear();
+		LoginCalendarDay = 0;
+		_lastLoginCalendarDate = "";
+		_loginCalendarMonth = "";
+		SelectedWagonSkinId = WagonSkinCatalog.DefaultSkinId;
+
+		// v35
+		_completedBountyIds.Clear();
+		_bountyProgress.Clear();
+		_lastBountyDate = "";
+		TowerHighestFloor = 0;
+		SelectedTowerFloor = 0;
+		_towerFloorStars.Clear();
+		_friendIds.Clear();
+		_lastGiftSentDate = "";
+		_giftsSentToday = 0;
+		_unitMasteryXP.Clear();
+
+		// v34
+		IsHardModeActive = false;
+		HardModeHighestCleared = 0;
+		_hardModeStars.Clear();
+		Essence = 0;
+		_relicEnchantments.Clear();
+		LastRaidWeek = "";
+		RaidDamageContributed = 0;
+		_claimedRaidRewardIds.Clear();
+		_raidContributionCount = 0;
+
+		// v33
+		_discoveredCodexIds.Clear();
+		_codexKillCounts.Clear();
+		_codexFirstSeenAt.Clear();
+		Tomes = 0;
+		_unlockedSkillNodes.Clear();
+		ArenaRating = 1000;
+		ArenaWins = 0;
+		ArenaLosses = 0;
+		SelectedArenaOpponent = null;
+		GuildId = "";
+		GuildContributionPoints = 0;
+		CachedGuildInfo = null;
 	}
 
 	private void ApplySavedData(GameSaveData saved)
@@ -3087,6 +5031,267 @@ public partial class GameState : Node
 			_totalPurchaseCount = Math.Max(0, saved.TotalPurchaseCount);
 			_purchaseValidationEndpoint = saved.PurchaseValidationEndpoint?.Trim() ?? "";
 		}
+
+		// v32: Relic Forge, Promotion, Expeditions, Events
+		if (saved.Version >= 32)
+		{
+			RelicShards = Math.Max(0, saved.RelicShards);
+			Sigils = Math.Max(0, saved.Sigils);
+
+			_promotedUnitIds.Clear();
+			if (saved.PromotedUnitIds != null)
+			{
+				foreach (var id in saved.PromotedUnitIds)
+				{
+					if (!string.IsNullOrWhiteSpace(id))
+					{
+						_promotedUnitIds.Add(id.Trim());
+					}
+				}
+			}
+
+			_unitEquipmentSlot2.Clear();
+			if (saved.UnitEquipmentSlot2 != null)
+			{
+				foreach (var pair in saved.UnitEquipmentSlot2)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+					{
+						_unitEquipmentSlot2[pair.Key.Trim()] = pair.Value.Trim();
+					}
+				}
+			}
+
+			_activeExpeditions.Clear();
+			if (saved.ActiveExpeditions != null)
+			{
+				foreach (var slot in saved.ActiveExpeditions)
+				{
+					if (slot != null && !string.IsNullOrWhiteSpace(slot.ExpeditionId))
+					{
+						_activeExpeditions.Add(new ExpeditionSlotState
+						{
+							ExpeditionId = slot.ExpeditionId.Trim(),
+							AssignedUnitIds = slot.AssignedUnitIds ?? Array.Empty<string>(),
+							StartedAtUnixSeconds = slot.StartedAtUnixSeconds
+						});
+					}
+				}
+			}
+			TotalExpeditionsCompleted = Math.Max(0, saved.TotalExpeditionsCompleted);
+
+			_eventStagesCleared.Clear();
+			if (saved.EventStagesCleared != null)
+			{
+				foreach (var pair in saved.EventStagesCleared)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key))
+					{
+						_eventStagesCleared[pair.Key.Trim()] = Math.Max(0, pair.Value);
+					}
+				}
+			}
+
+			_claimedEventRewardIds.Clear();
+			if (saved.ClaimedEventRewardIds != null)
+			{
+				foreach (var id in saved.ClaimedEventRewardIds)
+				{
+					if (!string.IsNullOrWhiteSpace(id))
+					{
+						_claimedEventRewardIds.Add(id.Trim());
+					}
+				}
+			}
+		}
+
+		// v33: Codex, Skill Trees, Arena, Guild
+		if (saved.Version >= 33)
+		{
+			_discoveredCodexIds.Clear();
+			if (saved.DiscoveredCodexIds != null)
+			{
+				foreach (var id in saved.DiscoveredCodexIds)
+				{
+					if (!string.IsNullOrWhiteSpace(id)) _discoveredCodexIds.Add(id.Trim());
+				}
+			}
+
+			_codexKillCounts.Clear();
+			if (saved.CodexKillCounts != null)
+			{
+				foreach (var pair in saved.CodexKillCounts)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _codexKillCounts[pair.Key.Trim()] = Math.Max(0, pair.Value);
+				}
+			}
+
+			_codexFirstSeenAt.Clear();
+			if (saved.CodexFirstSeenAt != null)
+			{
+				foreach (var pair in saved.CodexFirstSeenAt)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _codexFirstSeenAt[pair.Key.Trim()] = pair.Value;
+				}
+			}
+
+			Tomes = Math.Max(0, saved.Tomes);
+
+			_unlockedSkillNodes.Clear();
+			if (saved.UnlockedSkillNodeIds != null)
+			{
+				foreach (var pair in saved.UnlockedSkillNodeIds)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key) && pair.Value != null)
+					{
+						var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+						foreach (var nodeId in pair.Value)
+						{
+							if (!string.IsNullOrWhiteSpace(nodeId)) set.Add(nodeId.Trim());
+						}
+						if (set.Count > 0) _unlockedSkillNodes[pair.Key.Trim()] = set;
+					}
+				}
+			}
+
+			ArenaRating = Math.Max(0, saved.ArenaRating);
+			ArenaWins = Math.Max(0, saved.ArenaWins);
+			ArenaLosses = Math.Max(0, saved.ArenaLosses);
+
+			GuildId = saved.GuildId?.Trim() ?? "";
+			GuildContributionPoints = Math.Max(0, saved.GuildContributionPoints);
+		}
+
+		// v34: Hard Mode, Enchantments, Raid
+		if (saved.Version >= 34)
+		{
+			_hardModeStars.Clear();
+			if (saved.HardModeStars != null)
+			{
+				foreach (var s in saved.HardModeStars) _hardModeStars.Add(Math.Max(0, s));
+			}
+			HardModeHighestCleared = Math.Max(0, saved.HardModeHighestCleared);
+
+			Essence = Math.Max(0, saved.Essence);
+			_relicEnchantments.Clear();
+			if (saved.RelicEnchantments != null)
+			{
+				foreach (var pair in saved.RelicEnchantments)
+				{
+					if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+						_relicEnchantments[pair.Key.Trim()] = pair.Value.Trim();
+				}
+			}
+
+			LastRaidWeek = saved.LastRaidWeek?.Trim() ?? "";
+			RaidDamageContributed = Math.Max(0, saved.RaidDamageContributed);
+			_claimedRaidRewardIds.Clear();
+			if (saved.ClaimedRaidRewardIds != null)
+			{
+				foreach (var id in saved.ClaimedRaidRewardIds)
+				{
+					if (!string.IsNullOrWhiteSpace(id)) _claimedRaidRewardIds.Add(id.Trim());
+				}
+			}
+		}
+
+		// v35: Bounty, Tower, Friends, Mastery
+		if (saved.Version >= 35)
+		{
+			_completedBountyIds.Clear();
+			if (saved.CompletedBountyIds != null)
+				foreach (var id in saved.CompletedBountyIds)
+					if (!string.IsNullOrWhiteSpace(id)) _completedBountyIds.Add(id.Trim());
+
+			_bountyProgress.Clear();
+			if (saved.BountyProgress != null)
+				foreach (var pair in saved.BountyProgress)
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _bountyProgress[pair.Key.Trim()] = Math.Max(0, pair.Value);
+
+			_lastBountyDate = saved.LastBountyDate?.Trim() ?? "";
+
+			TowerHighestFloor = Math.Max(0, saved.TowerHighestFloor);
+			_towerFloorStars.Clear();
+			if (saved.TowerFloorStars != null)
+				foreach (var s in saved.TowerFloorStars) _towerFloorStars.Add(Math.Max(0, s));
+
+			_friendIds.Clear();
+			if (saved.FriendIds != null)
+				foreach (var id in saved.FriendIds)
+					if (!string.IsNullOrWhiteSpace(id)) _friendIds.Add(id.Trim());
+
+			_lastGiftSentDate = saved.LastGiftSentDate?.Trim() ?? "";
+			_giftsSentToday = Math.Max(0, saved.GiftsSentToday);
+
+			_unitMasteryXP.Clear();
+			if (saved.UnitMasteryXP != null)
+				foreach (var pair in saved.UnitMasteryXP)
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _unitMasteryXP[pair.Key.Trim()] = Math.Max(0, pair.Value);
+		}
+
+		// v36: Achievement Rewards, Login Calendar, Wagon Skins
+		if (saved.Version >= 36)
+		{
+			_claimedAchievementRewardIds.Clear();
+			if (saved.ClaimedAchievementRewardIds != null)
+				foreach (var id in saved.ClaimedAchievementRewardIds)
+					if (!string.IsNullOrWhiteSpace(id)) _claimedAchievementRewardIds.Add(id.Trim());
+
+			LoginCalendarDay = Math.Max(0, saved.LoginCalendarDay);
+			_lastLoginCalendarDate = saved.LastLoginCalendarDate?.Trim() ?? "";
+			_loginCalendarMonth = saved.LoginCalendarMonth?.Trim() ?? "";
+
+			SelectedWagonSkinId = !string.IsNullOrWhiteSpace(saved.SelectedWagonSkinId)
+				? saved.SelectedWagonSkinId.Trim()
+				: WagonSkinCatalog.DefaultSkinId;
+		}
+
+		// v37: Awakening, Season Pass, Collection Milestones
+		if (saved.Version >= 37)
+		{
+			_unitStarLevels.Clear();
+			if (saved.UnitStarLevels != null)
+				foreach (var pair in saved.UnitStarLevels)
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _unitStarLevels[pair.Key.Trim()] = Math.Clamp(pair.Value, 0, AwakeningCatalog.MaxStars);
+
+			_unitTokens.Clear();
+			if (saved.UnitTokens != null)
+				foreach (var pair in saved.UnitTokens)
+					if (!string.IsNullOrWhiteSpace(pair.Key)) _unitTokens[pair.Key.Trim()] = Math.Max(0, pair.Value);
+
+			SeasonPassXP = Math.Max(0, saved.SeasonPassXP);
+			SeasonPassTier = Math.Max(0, saved.SeasonPassTier);
+			SeasonId = saved.SeasonId?.Trim() ?? SeasonPassCatalog.CurrentSeasonId;
+			HasPremiumPass = saved.HasPremiumPass;
+
+			_claimedSeasonFreeTiers.Clear();
+			if (saved.ClaimedSeasonFreeTiers != null)
+				foreach (var t in saved.ClaimedSeasonFreeTiers) _claimedSeasonFreeTiers.Add(t);
+
+			_claimedSeasonPremiumTiers.Clear();
+			if (saved.ClaimedSeasonPremiumTiers != null)
+				foreach (var t in saved.ClaimedSeasonPremiumTiers) _claimedSeasonPremiumTiers.Add(t);
+
+			_claimedCollectionMilestoneIds.Clear();
+			if (saved.ClaimedCollectionMilestoneIds != null)
+				foreach (var id in saved.ClaimedCollectionMilestoneIds)
+					if (!string.IsNullOrWhiteSpace(id)) _claimedCollectionMilestoneIds.Add(id.Trim());
+		}
+
+		// v38: Battle Mutators, Accessibility
+		if (saved.Version >= 38)
+		{
+			_activeMutatorIds.Clear();
+			if (saved.ActiveMutatorIds != null)
+				foreach (var id in saved.ActiveMutatorIds)
+					if (!string.IsNullOrWhiteSpace(id)) _activeMutatorIds.Add(id.Trim());
+			MutatorBattlesCompleted = Math.Max(0, saved.MutatorBattlesCompleted);
+
+			ColorblindMode = saved.ColorblindMode?.Trim() ?? "none";
+			ReducedMotion = saved.ReducedMotion;
+			AutoBattleEnabled = saved.AutoBattleEnabled;
+			LargeTextMode = saved.LargeTextMode;
+		}
 	}
 
 	private void ClampState()
@@ -3255,7 +5460,84 @@ public partial class GameState : Node
 			UnitPrestigeSelections = new Dictionary<string, int>(_unitPrestigeSelections),
 			PurchasedProductIds = _purchasedProductIds.ToArray(),
 			TotalPurchaseCount = _totalPurchaseCount,
-			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? ""
+			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? "",
+
+			// v32
+			RelicShards = RelicShards,
+			Sigils = Sigils,
+			PromotedUnitIds = _promotedUnitIds.ToArray(),
+			UnitEquipmentSlot2 = new Dictionary<string, string>(_unitEquipmentSlot2),
+			ActiveExpeditions = _activeExpeditions
+				.Select(s => new ExpeditionSlotSaveData
+				{
+					ExpeditionId = s.ExpeditionId,
+					AssignedUnitIds = s.AssignedUnitIds,
+					StartedAtUnixSeconds = s.StartedAtUnixSeconds
+				})
+				.ToList(),
+			TotalExpeditionsCompleted = TotalExpeditionsCompleted,
+			EventStagesCleared = new Dictionary<string, int>(_eventStagesCleared),
+			ClaimedEventRewardIds = _claimedEventRewardIds.ToArray(),
+
+			// v33
+			DiscoveredCodexIds = _discoveredCodexIds.ToArray(),
+			CodexKillCounts = new Dictionary<string, int>(_codexKillCounts),
+			CodexFirstSeenAt = new Dictionary<string, long>(_codexFirstSeenAt),
+			Tomes = Tomes,
+			UnlockedSkillNodeIds = _unlockedSkillNodes.ToDictionary(
+				p => p.Key,
+				p => p.Value.ToArray()),
+			ArenaRating = ArenaRating,
+			ArenaWins = ArenaWins,
+			ArenaLosses = ArenaLosses,
+			GuildId = GuildId ?? "",
+			GuildContributionPoints = GuildContributionPoints,
+
+			// v34
+			HardModeStars = _hardModeStars.ToArray(),
+			HardModeHighestCleared = HardModeHighestCleared,
+			Essence = Essence,
+			RelicEnchantments = new Dictionary<string, string>(_relicEnchantments),
+			LastRaidWeek = LastRaidWeek ?? "",
+			RaidDamageContributed = RaidDamageContributed,
+			ClaimedRaidRewardIds = _claimedRaidRewardIds.ToArray(),
+
+			// v35
+			CompletedBountyIds = _completedBountyIds.ToArray(),
+			BountyProgress = new Dictionary<string, int>(_bountyProgress),
+			LastBountyDate = _lastBountyDate ?? "",
+			TowerHighestFloor = TowerHighestFloor,
+			TowerFloorStars = _towerFloorStars.ToArray(),
+			FriendIds = _friendIds.ToArray(),
+			LastGiftSentDate = _lastGiftSentDate ?? "",
+			GiftsSentToday = _giftsSentToday,
+			UnitMasteryXP = new Dictionary<string, int>(_unitMasteryXP),
+
+			// v36
+			ClaimedAchievementRewardIds = _claimedAchievementRewardIds.ToArray(),
+			LoginCalendarDay = LoginCalendarDay,
+			LastLoginCalendarDate = _lastLoginCalendarDate ?? "",
+			LoginCalendarMonth = _loginCalendarMonth ?? "",
+			SelectedWagonSkinId = SelectedWagonSkinId ?? WagonSkinCatalog.DefaultSkinId,
+
+			// v37
+			UnitStarLevels = new Dictionary<string, int>(_unitStarLevels),
+			UnitTokens = new Dictionary<string, int>(_unitTokens),
+			SeasonPassXP = SeasonPassXP,
+			SeasonPassTier = SeasonPassTier,
+			SeasonId = SeasonId ?? SeasonPassCatalog.CurrentSeasonId,
+			HasPremiumPass = HasPremiumPass,
+			ClaimedSeasonFreeTiers = _claimedSeasonFreeTiers.ToArray(),
+			ClaimedSeasonPremiumTiers = _claimedSeasonPremiumTiers.ToArray(),
+			ClaimedCollectionMilestoneIds = _claimedCollectionMilestoneIds.ToArray(),
+
+			// v38
+			ActiveMutatorIds = _activeMutatorIds.ToArray(),
+			MutatorBattlesCompleted = MutatorBattlesCompleted,
+			ColorblindMode = ColorblindMode ?? "none",
+			ReducedMotion = ReducedMotion,
+			AutoBattleEnabled = AutoBattleEnabled,
+			LargeTextMode = LargeTextMode
 		};
 	}
 
@@ -4434,6 +6716,8 @@ public partial class GameState : Node
 	{
 		LastDailyDate = GetDailyChallenge().Date;
 		_dailyStreak++;
+		Tomes += 1;
+		AddSeasonXP(SeasonPassCatalog.XPPerDailyChallenge);
 		Persist();
 		CheckAchievements();
 		SubmitDailyChallengeToServer(LastDailyDate, score);
@@ -4853,6 +7137,72 @@ public partial class GameState : Node
 		if (_dailyStreak >= 7)
 		{
 			TryUnlockAchievement("daily_streak");
+		}
+
+		// New systems
+		if (_promotedUnitIds.Count > 0)
+		{
+			TryUnlockAchievement("first_promotion");
+		}
+		if (TotalExpeditionsCompleted >= 10)
+		{
+			TryUnlockAchievement("expedition_10");
+		}
+
+		// Check event completion
+		foreach (var evt in SeasonalEventCatalog.GetAll())
+		{
+			if (GetEventProgress(evt.Id) >= evt.Stages.Length)
+			{
+				TryUnlockAchievement("event_complete");
+				break;
+			}
+		}
+
+		// Codex
+		if (_discoveredCodexIds.Count >= 10)
+		{
+			TryUnlockAchievement("codex_10");
+		}
+		if (_discoveredCodexIds.Count >= CodexCatalog.TotalEntries)
+		{
+			TryUnlockAchievement("codex_complete");
+		}
+
+		// Guild contribution
+		if (GuildContributionPoints >= 100)
+		{
+			TryUnlockAchievement("guild_contributor");
+		}
+
+		// Tower
+		if (TowerHighestFloor >= 25) TryUnlockAchievement("tower_25");
+		if (TowerHighestFloor >= 50) TryUnlockAchievement("tower_50");
+		if (TowerHighestFloor >= 100) TryUnlockAchievement("tower_100");
+
+		// Collection milestones — check if all 100% milestones claimed
+		var all100Claimed = true;
+		foreach (var m in CollectionMilestoneCatalog.GetAll())
+		{
+			if (m.ThresholdPercent == 100 && !_claimedCollectionMilestoneIds.Contains(m.Id))
+			{
+				all100Claimed = false;
+				break;
+			}
+		}
+		if (all100Claimed && CollectionMilestoneCatalog.GetAll().Count > 0)
+		{
+			TryUnlockAchievement("collector_complete");
+		}
+
+		// Hard mode
+		if (HardModeClearedCount >= 10)
+		{
+			TryUnlockAchievement("hard_mode_10");
+		}
+		if (HardModeClearedCount >= 50)
+		{
+			TryUnlockAchievement("hard_mode_complete");
 		}
 	}
 

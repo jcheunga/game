@@ -282,6 +282,8 @@ public partial class BattleController : Node2D
 	private readonly RandomNumberGenerator _rng = new();
 	private BattleSpawnDirector _spawnDirector = null!;
 	private BattleRunMode _battleMode;
+	private float _eventEnemyHealthScale = 1f;
+	private float _eventEnemyDamageScale = 1f;
 
 	private Label _baseHealthLabel = null!;
 	private Label _resourceLabel = null!;
@@ -402,6 +404,9 @@ public partial class BattleController : Node2D
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
 	private bool IsChallengeMode => _battleMode == BattleRunMode.AsyncChallenge;
+	private bool IsSeasonalEventMode => _battleMode == BattleRunMode.SeasonalEvent;
+	private bool IsArenaMode => _battleMode == BattleRunMode.Arena;
+	private bool IsTowerMode => _battleMode == BattleRunMode.Tower;
 	private bool IsLanRaceMode => IsChallengeMode && LanChallengeService.Instance != null && LanChallengeService.Instance.HasRoom;
 	private bool IsOnlineRoomMode => IsChallengeMode &&
 		!IsLanRaceMode &&
@@ -473,6 +478,45 @@ public partial class BattleController : Node2D
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth *
 				StageModifiers.ResolveEnemyBaseHealthScale(_stageData) *
 				_challengeMutator.EnemyBaseHealthScale;
+		}
+		else if (IsTowerMode)
+		{
+			var towerFloor = ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor);
+			var baseStage = towerFloor?.BaseStageNumber ?? 1;
+			_stage = Mathf.Clamp(baseStage, 1, GameState.Instance.MaxStage);
+			_stageData = GameData.GetStage(_stage);
+			_activeRouteId = NormalizeRouteId(_stageData.MapId);
+			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
+			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
+			_eventEnemyHealthScale = towerFloor?.EnemyHealthScale ?? 1f;
+			_eventEnemyDamageScale = towerFloor?.EnemyDamageScale ?? 1f;
+		}
+		else if (IsArenaMode)
+		{
+			// Arena: use a mid-campaign stage as the battlefield
+			_stage = Mathf.Clamp(25, 1, GameState.Instance.MaxStage);
+			_stageData = GameData.GetStage(_stage);
+			_activeRouteId = NormalizeRouteId(_stageData.MapId);
+			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
+			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
+		}
+		else if (IsSeasonalEventMode)
+		{
+			var eventDef = SeasonalEventCatalog.GetById(GameState.Instance.SelectedEventId);
+			var eventStageIndex = GameState.Instance.SelectedEventStageIndex;
+			var eventStage = eventDef?.Stages != null && eventStageIndex >= 0 && eventStageIndex < eventDef.Stages.Length
+				? eventDef.Stages[eventStageIndex]
+				: null;
+			var baseStageNum = eventStage?.BaseStageNumber ?? 1;
+			_stage = Mathf.Clamp(baseStageNum, 1, GameState.Instance.MaxStage);
+			_stageData = GameData.GetStage(_stage);
+			_activeRouteId = NormalizeRouteId(_stageData.MapId);
+			var eventHealthScale = eventStage?.EnemyHealthScale ?? 1f;
+			var eventDamageScale = eventStage?.EnemyDamageScale ?? 1f;
+			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
+			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);
+			_eventEnemyHealthScale = eventHealthScale;
+			_eventEnemyDamageScale = eventDamageScale;
 		}
 		else
 		{
@@ -582,7 +626,31 @@ public partial class BattleController : Node2D
 		_deck.Initialize(GameState.Instance.GetBattleDeckUnits());
 		_spellDeck.Initialize(GameState.Instance.GetBattleDeckSpells());
 		_selectionMode = BattleSelectionMode.Unit;
-		if (IsEndlessMode)
+		if (IsArenaMode)
+		{
+			// Spawn opponent units as enemies
+			var opponent = GameState.Instance.SelectedArenaOpponent;
+			if (opponent != null)
+			{
+				var xBase = 1100f;
+				for (var i = 0; i < opponent.DeckUnitIds.Length; i++)
+				{
+					try
+					{
+						var unitDef = GameData.GetUnit(opponent.DeckUnitIds[i]);
+						if (unitDef == null) continue;
+						var level = opponent.UnitLevels.TryGetValue(unitDef.Id, out var lvl) ? lvl : 1;
+						var stats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unitDef, level);
+						var pos = new Vector2(xBase + i * 60f, 360f + (i - 1) * 40f);
+						SpawnEnemyUnit(stats, pos);
+					}
+					catch { }
+				}
+			}
+
+			_spawnDirector.Initialize(_stage, _stageData, _combat, GameData.GetEnemyUnits());
+		}
+		else if (IsEndlessMode)
 		{
 			_spawnDirector.InitializeEndless(_activeRouteId, _stageData, _combat, GameData.GetEnemyUnits());
 			StartRouteForkFieldEvent(_endlessRouteForkId);
@@ -613,6 +681,13 @@ public partial class BattleController : Node2D
 			_spawnDirector.SetEnemyScaleModifiers(
 				_spawnDirector.AdditionalEnemyHealthScale * diffDef.EnemyHealthScale,
 				_spawnDirector.AdditionalEnemyDamageScale * diffDef.EnemyDamageScale);
+		}
+
+		if (IsSeasonalEventMode || IsTowerMode)
+		{
+			_spawnDirector.SetEnemyScaleModifiers(
+				_spawnDirector.AdditionalEnemyHealthScale * _eventEnemyHealthScale,
+				_spawnDirector.AdditionalEnemyDamageScale * _eventEnemyDamageScale);
 		}
 
 		InitializeStageHazards();
@@ -1416,8 +1491,11 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var bodyColor = ResolveBaseBodyColor(palette.PlayerBaseColor, _playerBaseFlashTimer, healthRatio);
-		var cabinColor = ResolveBaseCoreColor(palette.PlayerCoreColor, _playerBaseFlashTimer, healthRatio);
+		var skinTint = GameState.Instance.GetWagonSkinColor();
+		var baseColor = palette.PlayerBaseColor.Lerp(skinTint, 0.4f);
+		var coreColor = palette.PlayerCoreColor.Lerp(skinTint, 0.25f);
+		var bodyColor = ResolveBaseBodyColor(baseColor, _playerBaseFlashTimer, healthRatio);
+		var cabinColor = ResolveBaseCoreColor(coreColor, _playerBaseFlashTimer, healthRatio);
 		var trimColor = route.BannerAccent;
 		var trimShadow = route.BannerPanel.Lightened(0.12f);
 		var bodyRect = new Rect2(PlayerBaseX - 46f, BaseCenterY - 34f, 122f, 58f);
@@ -2832,6 +2910,7 @@ public partial class BattleController : Node2D
 		var effectSummary = ApplySpellEffect(resolved, targetPosition);
 		_selectionMode = BattleSelectionMode.Unit;
 		_spellsCast++;
+		GameState.Instance.AddBountyProgress("spell_casts", 1);
 		AudioDirector.Instance?.PlaySpellCast(resolved.EffectType);
 		SetStatus($"Cast Lv{resolved.Level} {definition.DisplayName} at lane {Mathf.RoundToInt(targetPosition.Y)}. {effectSummary}");
 		UpdateHud();
@@ -2854,6 +2933,8 @@ public partial class BattleController : Node2D
 		_courage -= stats.Cost;
 		_deck.MarkDeployed(definition, ResolvePlayerDeployCooldown(definition));
 		_playerDeployments++;
+		GameState.Instance.AddBountyProgress("unit_deploys", 1);
+		GameState.Instance.AddUnitMasteryXP(definition.Id, MasteryCatalog.XPPerDeploy);
 		RecordChallengeDeployment(definition.Id, spawnPosition.Y);
 		SpawnUnit(Team.Player, stats, spawnPosition);
 		ApplyFortifiedDeployBonus(spawnPosition);
@@ -2894,6 +2975,7 @@ public partial class BattleController : Node2D
 
 	private void SpawnEnemyUnit(UnitStats stats, Vector2 position)
 	{
+		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
 		SpawnUnit(Team.Enemy, stats, position);
 		SpawnEffect(position, stats.Color.Darkened(0.15f), 10f, 26f, 0.22f, false);
 		if (!string.IsNullOrEmpty(stats.DeployQuote) && _rng.Randf() > 0.3f)
@@ -4613,6 +4695,21 @@ public partial class BattleController : Node2D
 			if (deadUnit.Team == Team.Enemy)
 			{
 				_enemyDefeats++;
+				GameState.Instance.RecordCodexKill(deadUnit.DefinitionId);
+				GameState.Instance.AddBountyProgress("enemy_defeats", 1);
+				if (deadUnit.VisualClass == "boss") GameState.Instance.AddBountyProgress("boss_kills", 1);
+				// Mastery XP for the killer
+				if (!string.IsNullOrEmpty(deadUnit.LastDamagedBy))
+				{
+					foreach (var killer in _units)
+					{
+						if (!killer.IsDead && killer.Team == Team.Player && killer.UnitName == deadUnit.LastDamagedBy)
+						{
+							GameState.Instance.AddUnitMasteryXP(killer.DefinitionId, MasteryCatalog.XPPerKill);
+							break;
+						}
+					}
+				}
 
 				if (deadUnit.VisualClass == "boss")
 				{
@@ -4682,6 +4779,10 @@ public partial class BattleController : Node2D
 		var label = isNew ? $"RELIC: {relic.DisplayName}" : "RELIC (owned)";
 		var color = isNew ? new Color("ffd700") : new Color("adb5bd");
 		SpawnFloatText(boss.Position + new Vector2(0f, -48f), label, color, 0.72f);
+
+		// Sigil drop from boss kills
+		GameState.Instance.GrantSigils(1);
+		SpawnFloatText(boss.Position + new Vector2(0f, -70f), "+1 SIGIL", new Color("c0c0ff"), 0.6f);
 	}
 
 	private void TriggerDeathBurst(Unit deadUnit)
@@ -8681,6 +8782,39 @@ public partial class BattleController : Node2D
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
 			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
 			var districtRewardSummary = GameState.Instance.ApplyVictory(_stage, _stageData.RewardGold, _stageData.RewardFood, evaluation.StarsEarned);
+			if (IsArenaMode && GameState.Instance.SelectedArenaOpponent != null)
+			{
+				GameState.Instance.ApplyArenaResult(true, GameState.Instance.SelectedArenaOpponent.ArenaRating);
+			}
+			if (IsTowerMode)
+			{
+				GameState.Instance.ApplyTowerVictory(GameState.Instance.SelectedTowerFloor, evaluation.StarsEarned);
+			}
+			// Bounty: stage cleared
+			GameState.Instance.AddBountyProgress("stages_cleared", 1);
+			GameState.Instance.AddSeasonXP(SeasonPassCatalog.XPPerBattleWin);
+			// Mastery: battle win XP for all deployed units
+			foreach (var unit in _units)
+			{
+				if (!unit.IsDead && unit.Team == Team.Player)
+				{
+					GameState.Instance.AddUnitMasteryXP(unit.DefinitionId, MasteryCatalog.XPPerBattleWin);
+				}
+			}
+			if (IsSeasonalEventMode && !string.IsNullOrWhiteSpace(GameState.Instance.SelectedEventId))
+			{
+				GameState.Instance.RecordEventStageCleared(GameState.Instance.SelectedEventId);
+				var eventDef = SeasonalEventCatalog.GetById(GameState.Instance.SelectedEventId);
+				var eventStageIdx = GameState.Instance.SelectedEventStageIndex;
+				if (eventDef?.Stages != null && eventStageIdx >= 0 && eventStageIdx < eventDef.Stages.Length)
+				{
+					var stageReward = eventDef.Stages[eventStageIdx].CompletionReward;
+					if (stageReward != null)
+					{
+						GameState.Instance.ApplyEventStageReward(stageReward);
+					}
+				}
+			}
 			var busHealthRatio = _playerBaseMaxHealth > 0f ? _playerBaseHealth / _playerBaseMaxHealth : 0f;
 			GameState.Instance.CheckCombatAchievements(busHealthRatio, _elapsed, _triggeredComboPairIds.Count, 0);
 			var achievementLine = GameState.Instance.ConsumeAchievementNotification();
@@ -8700,6 +8834,10 @@ public partial class BattleController : Node2D
 		else
 		{
 			AudioDirector.Instance?.PlayDefeat();
+			if (IsArenaMode && GameState.Instance.SelectedArenaOpponent != null)
+			{
+				GameState.Instance.ApplyArenaResult(false, GameState.Instance.SelectedArenaOpponent.ArenaRating);
+			}
 			var stageResult = BuildStageBattleResult();
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, false);
 			var bestStars = GameState.Instance.GetStageStars(_stage);

@@ -11,6 +11,22 @@ public partial class SceneRouter : Node
     public const string LoadoutScene = "res://scenes/LoadoutMenu.tscn";
     public const string SettingsScene = "res://scenes/SettingsMenu.tscn";
     public const string CashShopScene = "res://scenes/CashShopMenu.tscn";
+    public const string ForgeScene = "res://scenes/ForgeMenu.tscn";
+    public const string ExpeditionScene = "res://scenes/ExpeditionMenu.tscn";
+    public const string EventScene = "res://scenes/EventMenu.tscn";
+    public const string CodexScene = "res://scenes/CodexMenu.tscn";
+    public const string SkillTreeScene = "res://scenes/SkillTreeMenu.tscn";
+    public const string ArenaScene = "res://scenes/ArenaMenu.tscn";
+    public const string GuildScene = "res://scenes/GuildMenu.tscn";
+    public const string ProfileScene = "res://scenes/ProfileMenu.tscn";
+    public const string RaidScene = "res://scenes/RaidMenu.tscn";
+    public const string BountyScene = "res://scenes/BountyMenu.tscn";
+    public const string TowerScene = "res://scenes/TowerMenu.tscn";
+    public const string FriendsScene = "res://scenes/FriendsMenu.tscn";
+    public const string LoginCalendarScene = "res://scenes/LoginCalendarMenu.tscn";
+    public const string LeaderboardScene = "res://scenes/LeaderboardMenu.tscn";
+    public const string SeasonPassScene = "res://scenes/SeasonPassMenu.tscn";
+    public const string BattleSummaryScene = "res://scenes/BattleSummaryMenu.tscn";
     public const string BattleScene = "res://scenes/Battle.tscn";
 
     private const float FadeDuration = 0.18f;
@@ -102,6 +118,86 @@ public partial class SceneRouter : Node
         ChangeScene(CashShopScene);
     }
 
+    public void GoToForge()
+    {
+        ChangeScene(ForgeScene);
+    }
+
+    public void GoToExpeditions()
+    {
+        ChangeScene(ExpeditionScene);
+    }
+
+    public void GoToEvent()
+    {
+        ChangeScene(EventScene);
+    }
+
+    public void GoToCodex()
+    {
+        ChangeScene(CodexScene);
+    }
+
+    public void GoToSkillTree()
+    {
+        ChangeScene(SkillTreeScene);
+    }
+
+    public void GoToArena()
+    {
+        ChangeScene(ArenaScene);
+    }
+
+    public void GoToGuild()
+    {
+        ChangeScene(GuildScene);
+    }
+
+    public void GoToProfile()
+    {
+        ChangeScene(ProfileScene);
+    }
+
+    public void GoToRaid()
+    {
+        ChangeScene(RaidScene);
+    }
+
+    public void GoToBounty()
+    {
+        ChangeScene(BountyScene);
+    }
+
+    public void GoToTower()
+    {
+        ChangeScene(TowerScene);
+    }
+
+    public void GoToFriends()
+    {
+        ChangeScene(FriendsScene);
+    }
+
+    public void GoToLoginCalendar()
+    {
+        ChangeScene(LoginCalendarScene);
+    }
+
+    public void GoToLeaderboard()
+    {
+        ChangeScene(LeaderboardScene);
+    }
+
+    public void GoToSeasonPass()
+    {
+        ChangeScene(SeasonPassScene);
+    }
+
+    public void GoToBattleSummary()
+    {
+        ChangeScene(BattleSummaryScene);
+    }
+
     public void GoToBattle()
     {
         ChangeScene(BattleScene);
@@ -186,6 +282,22 @@ public partial class SceneRouter : Node
             MapScene => "Campaign Map",
             ShopScene => "Caravan Armory",
             CashShopScene => "Royal Storehouse",
+            ForgeScene => "Relic Forge",
+            ExpeditionScene => "Expeditions",
+            EventScene => "Seasonal Event",
+            CodexScene => "Codex",
+            SkillTreeScene => "Skill Trees",
+            ArenaScene => "PvP Arena",
+            GuildScene => "Warband",
+            ProfileScene => "Player Profile",
+            RaidScene => "Weekly Raid",
+            BountyScene => "Bounty Board",
+            TowerScene => "Challenge Tower",
+            FriendsScene => "Friends",
+            LoginCalendarScene => "Login Calendar",
+            LeaderboardScene => "Leaderboards",
+            SeasonPassScene => "Season Pass",
+            BattleSummaryScene => "Battle Summary",
             MultiplayerScene => "Multiplayer Challenge",
             LanRaceScene => "LAN Race",
             EndlessScene => "Endless Prep",

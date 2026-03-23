@@ -85,6 +85,30 @@ app.MapPost("/purchase/stripe-checkout", Endpoints.StripeCreateCheckout);
 app.MapPost("/purchase/stripe-webhook", Endpoints.StripeWebhook);
 app.MapGet("/purchase/stripe-status", Endpoints.StripeCheckoutStatus);
 
+app.MapPost("/arena/snapshot", Endpoints.ArenaUploadSnapshot);
+app.MapGet("/arena/opponents", Endpoints.ArenaFindOpponents);
+app.MapPost("/arena/result", Endpoints.ArenaReportResult);
+
+app.MapPost("/guild/create", Endpoints.GuildCreate);
+app.MapPost("/guild/join", Endpoints.GuildJoin);
+app.MapPost("/guild/leave", Endpoints.GuildLeave);
+app.MapGet("/guild/info", Endpoints.GuildInfo);
+app.MapGet("/guild/members", Endpoints.GuildMembers);
+app.MapPost("/guild/contribute", Endpoints.GuildContribute);
+
+app.MapGet("/config/live", Endpoints.LiveConfigGet);
+app.MapGet("/leaderboard/arena", Endpoints.LeaderboardArena);
+app.MapGet("/leaderboard/tower", Endpoints.LeaderboardTower);
+
+app.MapPost("/friends/add", Endpoints.FriendAdd);
+app.MapPost("/friends/remove", Endpoints.FriendRemove);
+app.MapGet("/friends/list", Endpoints.FriendList);
+app.MapPost("/friends/gift", Endpoints.FriendGift);
+
+app.MapGet("/raid/status", Endpoints.RaidStatus);
+app.MapPost("/raid/contribute", Endpoints.RaidContribute);
+app.MapGet("/raid/rewards", Endpoints.RaidRewards);
+
 app.MapGet("/health", () =>
 {
     try

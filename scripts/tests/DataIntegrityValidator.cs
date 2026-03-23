@@ -145,7 +145,7 @@ public static class DataIntegrityValidator
                 equipmentIds.Add(id);
 
                 Check(!string.IsNullOrWhiteSpace(name), $"Equipment {id} has empty DisplayName");
-                var validRarities = new[] { "common", "rare", "epic" };
+                var validRarities = new[] { "common", "rare", "epic", "hardened" };
                 Check(validRarities.Contains(rarity.ToLowerInvariant()), $"Equipment {id} has invalid rarity: {rarity}");
             }
 

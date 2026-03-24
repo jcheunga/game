@@ -24,7 +24,7 @@ public static class CodexCatalog
 {
 	private static readonly CodexEntry[] Entries =
 	{
-		// ── Player Units (18) ──
+		// ── Player Units (19) ──
 		new("player_brawler", "unit", "Swordsman", "A steadfast blade from the king's levy. Reliable in the vanguard, unyielding under pressure."),
 		new("player_shooter", "unit", "Archer", "Keen-eyed bowmen trained in the royal marches. They thin the horde before it reaches the wall."),
 		new("player_defender", "unit", "Shield Knight", "Sworn protectors of the caravan. Their tower shields turn aside even siege bolts."),
@@ -43,8 +43,9 @@ public static class CodexCatalog
 		new("player_berserker", "unit", "Berserker", "Frenzy warriors who grow stronger as they bleed. High risk, devastating reward."),
 		new("player_lantern_guard", "unit", "Lantern Guard", "Veteran caravan wardens who hold the breach under lampfire and steel. They grind swarms down without yielding ground."),
 		new("player_ballista", "unit", "Ballista Crew", "Siege crews who wheel compact bolt-throwers into the line. Slow to set, brutal when sighted in."),
+		new("player_stormcaller", "unit", "Stormcaller", "Battlefield arcanists who chain thunder through packed enemy lines. Expensive, fragile, and decisive."),
 
-		// ── Enemies (18) ──
+		// ── Enemies (20) ──
 		new("enemy_walker", "enemy", "Risen", "Shambling corpses dragged from shallow graves. Slow and witless, but endless in number."),
 		new("enemy_runner", "enemy", "Ghoul", "Fleet-footed carrion eaters driven by hunger. They sprint past the vanguard to claw at the wagon."),
 		new("enemy_heavy", "enemy", "Grave Brute", "Bloated undead packed with necrotic mass. Each swing from their bone clubs can stagger a shield wall."),
@@ -63,8 +64,10 @@ public static class CodexCatalog
 		new("enemy_crusher", "enemy", "Crusher", "Massive undead spawned only by the Dread Sovereign. They pulverise anything in their path."),
 		new("enemy_boneballista", "enemy", "Bone Ballista", "A lash-bound siege frame dragged by the dead. Its spine bolts burst through packed formations from long range."),
 		new("enemy_catacomb_giant", "enemy", "Catacomb Giant", "An ossuary titan stitched from collapsed tomb guards. When it falls, lesser dead spill out of the wreckage."),
+		new("enemy_revenant_captain", "enemy", "Revenant Captain", "A dead commander still barking orders from the front. Its war-cry hardens every pack around it."),
+		new("enemy_plague_engine", "enemy", "Plague Engine", "A rolling corpse cannon packed with volatile rot. Its bombardment turns safe lanes into kill zones."),
 
-		// ── Bosses (12) ──
+		// ── Bosses (14) ──
 		new("boss_grave_lord", "boss", "Grave Lord", "Ruler of King's Road necropolis. Commands legions of risen from a throne of bone."),
 		new("boss_tidecaller", "boss", "Tidecaller", "A drowned sorcerer who commands the tides of Saltwake. Water and death obey in equal measure."),
 		new("boss_iron_warden", "boss", "Iron Warden", "The immortal guardian of Emberforge. Encased in living iron, he endures all punishment."),
@@ -77,6 +80,8 @@ public static class CodexCatalog
 		new("boss_dread_sovereign", "boss", "Dread Sovereign", "The final enemy. Lord of Crownfall Citadel. All undead answer to his will."),
 		new("enemy_boss_reliquary", "boss", "Reliquary Tyrant", "A vault-lord entombed beneath the Hollow Basilica. He raises siege relics and embalmed dead in the same breath."),
 		new("enemy_boss_ashen_regent", "boss", "Ashen Regent", "The throne's last claimant, crowned in soot and grave iron. His command turns the final road into a funeral march."),
+		new("enemy_boss_tidemaster", "boss", "Harrow Tidemaster", "A drowned warlord fused to the harbor chains. Every signal he gives drags heavier ruin ashore."),
+		new("enemy_boss_plague_monarch", "boss", "Plague Monarch", "The final quarantine tyrant, enthroned in broken sealwork. His command shreds rhythm before the killing blow lands."),
 
 		// ── Spells (10) ──
 		new("spell_fireball", "spell", "Fireball", "A roaring sphere of flame that detonates on impact. The simplest and most reliable war spell."),

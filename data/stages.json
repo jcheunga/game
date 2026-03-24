@@ -6732,6 +6732,507 @@
           ]
         }
       ]
+    },
+    {
+      "StageNumber": 57,
+      "MapId": "city",
+      "MapName": "King's Road",
+      "TerrainId": "night",
+      "WeatherId": "fog",
+      "StageName": "Bellgrave Siege",
+      "Description": "King's Road falls into a full grave procession, with plague engines and revenant officers turning the opening district into a true endgame wall.\nRecommended squad: Stormcaller + Lantern Guard + Ballista Crew.",
+      "RewardGold": 18100,
+      "RewardFood": 50,
+      "EntryFoodCost": 16,
+      "ExploreFoodCost": 18,
+      "MapX": 786.0,
+      "MapY": 108.0,
+      "PlayerBaseHealth": 1840.0,
+      "EnemyBaseHealth": 10250.0,
+      "EnemySpawnMin": 0.6,
+      "EnemySpawnMax": 0.84,
+      "EnemyHealthScale": 7.56,
+      "EnemyDamageScale": 6.82,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.08,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.43,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.63,
+      "Hazards": [
+        {
+          "Type": "bellgrave_flare",
+          "Label": "Bellgrave Flare",
+          "XRatio": 0.32,
+          "YRatio": 0.28,
+          "Radius": 84.0,
+          "Interval": 8.2,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 34.0,
+          "ColorHex": "ffd166"
+        },
+        {
+          "Type": "corpse_collapse",
+          "Label": "Corpse Collapse",
+          "XRatio": 0.7,
+          "YRatio": 0.64,
+          "Radius": 78.0,
+          "Interval": 10.0,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 34.0,
+          "ColorHex": "9bf6ff"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "elite_vanguard", "Value": 1.38 },
+        { "Type": "swarm_density", "Value": 2.2 },
+        { "Type": "armored_convoy", "Value": 1.14 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 86.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Grave outriders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Signal pyres",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Market crush",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Dead parade",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 }
+          ]
+        },
+        {
+          "Label": "Bellgrave siege",
+          "TriggerTime": 118.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 58,
+      "MapId": "harbor",
+      "MapName": "Saltwake Docks",
+      "TerrainId": "shipyard",
+      "WeatherId": "fog",
+      "StageName": "Leviathan Wake",
+      "Description": "The harbor chains drag up a drowned command ship while plague engines rake the dockside and the Harrow Tidemaster calls the tide in.\nRecommended squad: Stormcaller + Ballista Crew + Lantern Guard.",
+      "RewardGold": 19400,
+      "RewardFood": 52,
+      "EntryFoodCost": 16,
+      "ExploreFoodCost": 18,
+      "MapX": 786.0,
+      "MapY": 92.0,
+      "PlayerBaseHealth": 1890.0,
+      "EnemyBaseHealth": 10680.0,
+      "EnemySpawnMin": 0.58,
+      "EnemySpawnMax": 0.84,
+      "EnemyHealthScale": 7.74,
+      "EnemyDamageScale": 6.98,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.43,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.64,
+      "Hazards": [
+        {
+          "Type": "tide_chain",
+          "Label": "Tide Chain",
+          "XRatio": 0.3,
+          "YRatio": 0.7,
+          "Radius": 86.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 35.0,
+          "ColorHex": "5bc0eb"
+        },
+        {
+          "Type": "keel_crush",
+          "Label": "Keel Crush",
+          "XRatio": 0.7,
+          "YRatio": 0.3,
+          "Radius": 80.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 34.0,
+          "ColorHex": "80ed99"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.4 },
+        { "Type": "armored_convoy", "Value": 1.14 },
+        { "Type": "rapid_assault", "Value": 0.7 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 88.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Deck dead",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Chain gang",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Hull breach",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_bloater", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Black tide",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Flood command",
+          "TriggerTime": 118.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Harrow Tidemaster arrives",
+          "TriggerTime": 132.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_boss_tidemaster", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 59,
+      "MapId": "foundry",
+      "MapName": "Emberforge March",
+      "TerrainId": "foundry",
+      "WeatherId": "ashstorm",
+      "StageName": "Molten Ascension",
+      "Description": "The forge crowns crack open into a siege foundry where plague engines, revenant captains, and furnace surges hit all at once.\nRecommended squad: Stormcaller + Ballista Crew + Battle Monk.",
+      "RewardGold": 20850,
+      "RewardFood": 54,
+      "EntryFoodCost": 16,
+      "ExploreFoodCost": 18,
+      "MapX": 786.0,
+      "MapY": 420.0,
+      "PlayerBaseHealth": 1940.0,
+      "EnemyBaseHealth": 11150.0,
+      "EnemySpawnMin": 0.58,
+      "EnemySpawnMax": 0.82,
+      "EnemyHealthScale": 7.94,
+      "EnemyDamageScale": 7.16,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.04,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.43,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.65,
+      "Hazards": [
+        {
+          "Type": "furnace_lance",
+          "Label": "Furnace Lance",
+          "XRatio": 0.32,
+          "YRatio": 0.62,
+          "Radius": 84.0,
+          "Interval": 8.2,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 35.0,
+          "ColorHex": "ff9f1c"
+        },
+        {
+          "Type": "slag_quake",
+          "Label": "Slag Quake",
+          "XRatio": 0.72,
+          "YRatio": 0.28,
+          "Radius": 78.0,
+          "Interval": 10.0,
+          "StartTime": 14.0,
+          "WarningDuration": 1.8,
+          "Damage": 35.0,
+          "ColorHex": "f77f00"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.42 },
+        { "Type": "cursed_ground", "Value": 4.1 },
+        { "Type": "swarm_density", "Value": 2.22 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 90.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Cinder screens",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Forge gunners",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ash hammer",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Redline vents",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Molten ascension",
+          "TriggerTime": 118.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_mirror", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 60,
+      "MapId": "quarantine",
+      "MapName": "Ashen Ward",
+      "TerrainId": "blacksite",
+      "WeatherId": "fog",
+      "StageName": "Pale Crown",
+      "Description": "The last seal complex ruptures into a plague court where signal denial, escort commanders, and the Plague Monarch close the postgame campaign.\nRecommended squad: Stormcaller + Lantern Guard + Battle Monk.",
+      "RewardGold": 22500,
+      "RewardFood": 56,
+      "EntryFoodCost": 17,
+      "ExploreFoodCost": 19,
+      "MapX": 786.0,
+      "MapY": 84.0,
+      "PlayerBaseHealth": 2000.0,
+      "EnemyBaseHealth": 11800.0,
+      "EnemySpawnMin": 0.56,
+      "EnemySpawnMax": 0.8,
+      "EnemyHealthScale": 8.18,
+      "EnemyDamageScale": 7.38,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.43,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.66,
+      "Hazards": [
+        {
+          "Type": "seal_burst",
+          "Label": "Seal Burst",
+          "XRatio": 0.28,
+          "YRatio": 0.32,
+          "Radius": 84.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 36.0,
+          "ColorHex": "22c55e"
+        },
+        {
+          "Type": "plague_arc",
+          "Label": "Plague Arc",
+          "XRatio": 0.7,
+          "YRatio": 0.58,
+          "Radius": 80.0,
+          "Interval": 10.0,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 35.0,
+          "ColorHex": "d9f99d"
+        },
+        {
+          "Type": "crown_gas",
+          "Label": "Crown Gas",
+          "XRatio": 0.5,
+          "YRatio": 0.8,
+          "Radius": 76.0,
+          "Interval": 11.6,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 35.0,
+          "ColorHex": "bef264"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.44 },
+        { "Type": "elite_vanguard", "Value": 1.4 },
+        { "Type": "armored_convoy", "Value": 1.15 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 94.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Ward loyalists",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Signal rot",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Quarantine crush",
+          "TriggerTime": 60.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Seal failure",
+          "TriggerTime": 92.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Pale court",
+          "TriggerTime": 122.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_plague_engine", "Count": 1 },
+            { "UnitId": "enemy_revenant_captain", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Plague Monarch arrives",
+          "TriggerTime": 138.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_boss_plague_monarch", "Count": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

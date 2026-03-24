@@ -25,7 +25,8 @@ public static class GameData
         PlayerRogueId,
         PlayerBerserkerId,
         PlayerLanternGuardId,
-        PlayerBallistaId
+        PlayerBallistaId,
+        PlayerStormcallerId
     };
 
     public static readonly string[] PlayerSpellIds =
@@ -62,6 +63,8 @@ public static class GameData
         EnemyTunnelerId,
         EnemyBoneBallistaId,
         EnemyCatacombGiantId,
+        EnemyRevenantCaptainId,
+        EnemyPlagueEngineId,
         EnemyBossDocksId,
         EnemyBossForgeId,
         EnemyBossWardId,
@@ -72,7 +75,9 @@ public static class GameData
         EnemyBossVergeId,
         EnemyBossCitadelId,
         EnemyBossReliquaryId,
-        EnemyBossAshenRegentId
+        EnemyBossAshenRegentId,
+        EnemyBossTidemasterId,
+        EnemyBossPlagueMonarchId
     };
 
     public const string PlayerBrawlerId = "player_brawler";
@@ -93,6 +98,7 @@ public static class GameData
     public const string PlayerBerserkerId = "player_berserker";
     public const string PlayerLanternGuardId = "player_lantern_guard";
     public const string PlayerBallistaId = "player_ballista";
+    public const string PlayerStormcallerId = "player_stormcaller";
     public const string PlayerSkeletonId = "player_skeleton";
     public const string SpellFireballId = "spell_fireball";
     public const string SpellHealId = "spell_heal";
@@ -122,6 +128,8 @@ public static class GameData
     public const string EnemyTunnelerId = "enemy_tunneler";
     public const string EnemyBoneBallistaId = "enemy_boneballista";
     public const string EnemyCatacombGiantId = "enemy_catacomb_giant";
+    public const string EnemyRevenantCaptainId = "enemy_revenant_captain";
+    public const string EnemyPlagueEngineId = "enemy_plague_engine";
     public const string EnemyBossDocksId = "enemy_boss_docks";
     public const string EnemyBossForgeId = "enemy_boss_forge";
     public const string EnemyBossWardId = "enemy_boss_ward";
@@ -133,6 +141,8 @@ public static class GameData
     public const string EnemyBossCitadelId = "enemy_boss_citadel";
     public const string EnemyBossReliquaryId = "enemy_boss_reliquary";
     public const string EnemyBossAshenRegentId = "enemy_boss_ashen_regent";
+    public const string EnemyBossTidemasterId = "enemy_boss_tidemaster";
+    public const string EnemyBossPlagueMonarchId = "enemy_boss_plague_monarch";
 
     private const string UnitsPath = "res://data/units.json";
     private const string SpellsPath = "res://data/spells.json";

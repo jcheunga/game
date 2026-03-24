@@ -155,6 +155,13 @@ public static class UnitActiveAbilityCatalog
             "Anchor Shot",
             "Deal 300% damage to the farthest enemy in range.",
             15f,
+            4),
+        new(
+            "stormcaller_overcharge",
+            "player_stormcaller",
+            "Overcharge",
+            "Channel 400% damage split across 2 targets.",
+            16f,
             4)
     };
 

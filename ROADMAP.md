@@ -49,7 +49,7 @@ This means the project is no longer at "empty prototype" status. It has a combat
 - local verification command: `./scripts/verify_all.sh`
 - current game build state: `0 warnings, 0 errors`
 - current server verification state: `71 passed, 0 failed, 71 total`
-- current data verification state: `1653 passed, 0 failed`
+- current data verification state: `1743 passed, 0 failed`
 - remaining roadmap work is external only: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
 Historical sprint-log test counts later in this document are point-in-time snapshots. Treat this section as the current repo state.
@@ -61,7 +61,7 @@ Main gaps versus the intended DAZW-style experience:
 - ~~battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy~~ (war wagon/gatehouse framing implemented with route-themed HUD, heraldic silhouettes, and terrain-specific palettes)
 - ~~the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion~~ (full medieval fantasy theme bible applied; menus, routes, units, stages, spells, and fiction all rethemed)
 - ~~deployment was roster-based rather than deck/card-based~~ (deck/card-based deployment with cooldowns, active deck persistence, and loadout screen implemented)
-- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (56 stages across 10 districts with authored waves, battlefield events, hazards, and modifiers)
+- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (60 stages across 10 districts with authored waves, battlefield events, hazards, and modifiers)
 - ~~no squad-building metagame beyond basic stage selection~~ (loadout screen, deck synergies, combo pairs, doctrine branches, and relic equipment all implemented)
 - ~~no real shop/payment flow for buying units, unit upgrades, or bus/base upgrades~~ (convoy shop with unit purchases, leveling, spell upgrades, war wagon upgrades, and relic management)
 - ~~current prototype currencies do not match the intended gold/food economy loop~~ (gold/food economy fully replaced scrap/fuel, with stage costs, upgrade costs, and reward tuning)
@@ -327,7 +327,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 | Battle Summary Screen (post-battle stats breakdown) | Implemented | Shown after every battle |
 | Accessibility Options (colorblind, reduced motion, auto-battle, large text) | Implemented | Settings > Accessibility |
 | Live Config Service (server-side tuning, announcements) | Implemented | /config/live endpoint |
-| 56 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
+| 60 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
 | Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings |
 | Server (Docker + CI + admin dashboard + backups) | Ready to deploy | `cd server && docker compose up -d` |
@@ -338,7 +338,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 | SFX override pipeline (26 cue IDs) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
-| 71 server tests + 1653 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
+| 71 server tests + 1743 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
 
 ### What Remains (Non-Code)
 

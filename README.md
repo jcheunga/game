@@ -1,6 +1,6 @@
 # Crownroad (Godot + C#)
 
-Medieval fantasy lane-battle game built with Godot 4.6 + C#. The **Lantern Caravan** defends its war wagon against the **Rotbound Host** across 56 campaign stages, endless roguelite runs, and async/LAN multiplayer challenges.
+Medieval fantasy lane-battle game built with Godot 4.6 + C#. The **Lantern Caravan** defends its war wagon against the **Rotbound Host** across 60 campaign stages, endless roguelite runs, and async/LAN multiplayer challenges.
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ godot --path .                  # run directly
 cd server
 dotnet run                      # start backend on port 5000
 dotnet run -- --test            # run 71 backend endpoint tests
-dotnet run -- --test-data ../data  # run 1653 game-data, locale, and store-config checks
+dotnet run -- --test-data ../data  # run 1743 game-data, locale, and store-config checks
 docker compose up -d            # deploy with Docker
 ```
 
@@ -26,7 +26,7 @@ See `server/.env.example` for Stripe and CORS configuration.
 
 - Repo-side roadmap work is complete.
 - Primary local verification command: `./scripts/verify_all.sh`
-- Current verified state: game build `0 warnings / 0 errors`, server tests `71 passed`, data checks `1653 passed`
+- Current verified state: game build `0 warnings / 0 errors`, server tests `71 passed`, data checks `1743 passed`
 - Remaining work is external production only: art/audio assets, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
 ## Tests
@@ -34,8 +34,8 @@ See `server/.env.example` for Stripe and CORS configuration.
 | Command | What | Count |
 |---------|------|-------|
 | `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 71 |
-| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 1653 |
-| `./scripts/verify_all.sh` | Full local repo verification | game build + 71 server tests + 1653 data checks |
+| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 1743 |
+| `./scripts/verify_all.sh` | Full local repo verification | game build + 71 server tests + 1743 data checks |
 
 GitHub Actions also runs the game build plus the server/data validation workflow on `server/`, `data/`, `scripts/`, `scenes/`, and project/workflow changes, supports manual dispatch, and cancels stale in-progress runs per ref.
 
@@ -72,7 +72,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 | `ROADMAP.md` | Full milestone plan, sprint log, bugs/hardening status |
 | `ASSETS.md` | Art production manifest (units, backgrounds, structures, audio, particles) |
 | `THEME_BIBLE.md` | Fiction, factions, and setting reference |
-| `CAMPAIGN_PLAN.md` | 10-district campaign structure with the extended 56-stage route plan |
+| `CAMPAIGN_PLAN.md` | 10-district campaign structure with the extended 60-stage route plan |
 
 ## Architecture
 

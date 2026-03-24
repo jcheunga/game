@@ -4427,6 +4427,9 @@ public partial class BattleController : Node2D
 			case "ballista_anchor_shot":
 				ActiveAbilitySnipe(unit);
 				break;
+			case "stormcaller_overcharge":
+				ActiveAbilityArcaneBeam(unit);
+				break;
 		}
 	}
 

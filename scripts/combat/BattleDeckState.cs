@@ -53,6 +53,11 @@ public sealed class BattleDeckState
         ArmedUnit = definition;
     }
 
+    public void Disarm()
+    {
+        ArmedUnit = null!;
+    }
+
     public bool CanDeploy(UnitDefinition definition, float courage, bool battleEnded, out string reason)
     {
         reason = "";

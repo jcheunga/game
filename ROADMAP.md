@@ -43,6 +43,17 @@ The project already has a working vertical slice:
 
 This means the project is no longer at "empty prototype" status. It has a combat sandbox, a progression shell, and content data that can be evolved instead of replaced.
 
+## Current Verification Snapshot
+
+- repo-side roadmap status: complete
+- local verification command: `./scripts/verify_all.sh`
+- current game build state: `0 warnings, 0 errors`
+- current server verification state: `71 passed, 0 failed, 71 total`
+- current data verification state: `1653 passed, 0 failed`
+- remaining roadmap work is external only: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
+
+Historical sprint-log test counts later in this document are point-in-time snapshots. Treat this section as the current repo state.
+
 ## What Still Does Not Match The Target
 
 Main gaps versus the intended DAZW-style experience:
@@ -50,7 +61,7 @@ Main gaps versus the intended DAZW-style experience:
 - ~~battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy~~ (war wagon/gatehouse framing implemented with route-themed HUD, heraldic silhouettes, and terrain-specific palettes)
 - ~~the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion~~ (full medieval fantasy theme bible applied; menus, routes, units, stages, spells, and fiction all rethemed)
 - ~~deployment was roster-based rather than deck/card-based~~ (deck/card-based deployment with cooldowns, active deck persistence, and loadout screen implemented)
-- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (50 stages across 10 districts with authored waves, battlefield events, hazards, and modifiers)
+- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (56 stages across 10 districts with authored waves, battlefield events, hazards, and modifiers)
 - ~~no squad-building metagame beyond basic stage selection~~ (loadout screen, deck synergies, combo pairs, doctrine branches, and relic equipment all implemented)
 - ~~no real shop/payment flow for buying units, unit upgrades, or bus/base upgrades~~ (convoy shop with unit purchases, leveling, spell upgrades, war wagon upgrades, and relic management)
 - ~~current prototype currencies do not match the intended gold/food economy loop~~ (gold/food economy fully replaced scrap/fuel, with stage costs, upgrade costs, and reward tuning)
@@ -316,7 +327,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 | Battle Summary Screen (post-battle stats breakdown) | Implemented | Shown after every battle |
 | Accessibility Options (colorblind, reduced motion, auto-battle, large text) | Implemented | Settings > Accessibility |
 | Live Config Service (server-side tuning, announcements) | Implemented | /config/live endpoint |
-| 50 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
+| 56 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
 | Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings |
 | Server (Docker + CI + admin dashboard + backups) | Ready to deploy | `cd server && docker compose up -d` |
@@ -327,7 +338,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 | SFX override pipeline (26 cue IDs) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
-| 71 server tests + 1119 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
+| 71 server tests + 1653 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
 
 ### What Remains (Non-Code)
 
@@ -629,9 +640,9 @@ Objective: add a real-money shop where players can purchase gold and food packs 
   - **Spells:** Earthquake power 28→38 and courage 30→28 (was weaker than early Fireball), Stone Barricade courage 22→26 and duration 6→4.5s (overpowered for cost), Frost Burst courage 24→20 (overpriced), Barrier Ward power 0.62→0.72 (clearer value), Resurrect courage 32→28 and cooldown 30→26s (too expensive for single use)
   - **Units:** Archer cost 30→24 (range tax was too steep vs Swordsman), Crossbowman damage 13→16 (underperforming for cost), Mage cost 42→46 and damage 26→22 (too strong too early at unlock 6), Rogue cost 22→26 (dominant pick needed cost increase), Battle Monk cost 34→30 (overpriced vs Banner Knight), Berserker damage 16→18 (underwhelming for unlock 12)
   - **Stages:** Stage 5 health/damage scales raised to 1.34/1.30 (was backward vs stage 4), food reward 4→5; Stage 13 food reward 8→10 (difficulty wall with no compensation); Stage 36 health/damage scales raised to 4.12/3.90 (was identical to stage 35); Stages 42-50 gold rewards increased 10-29% and food rewards increased 2-8 to close the late-game reward desert where linear rewards met exponential difficulty
-- added GitHub Actions CI workflow (`server-tests.yml`) that runs `dotnet run -- --test` on server pushes and builds+verifies the Docker image on main
+- added GitHub Actions CI workflow (`server-tests.yml`) that now builds the game, runs `dotnet run -- --test`, validates `--test-data ../data` on game/server/content changes, supports manual dispatch, cancels stale in-progress runs per ref, and builds+verifies the Docker image on main
 - added Godot export presets (`export_presets.cfg`) for Web (PWA-enabled), Android (arm64, Gradle build, Google Play Billing ready), and iOS (StoreKit IAP capability enabled)
-- added `server/deploy.sh` script that runs tests, builds Docker image, and optionally pushes to a configured registry
+- added `server/deploy.sh` script that runs tests, validates game data, builds the Docker image, and optionally pushes to a configured registry
 - updated ASSETS.md art manifest from 11 player + 11 enemy units to the complete 16 player + 1 summoned + 16 enemy + 10 boss roster with silhouette briefs, tint colors, scale values, and visual class assignments for all new units (War Hound, Banner Knight, Necromancer, Rogue, Berserker, Risen Thrall, Shield Wall, Lich, Siege Tower, Mirror Knight, Tunneler, and all 10 district bosses)
 - updated the frame size reference table to cover all unit scales from 0.82x (War Hound) through 1.55x (Dread Sovereign)
 - added cloud save backup and restore: `POST /cloud-save/upload` accepts the full save JSON with SHA-256 hash and version, `GET /cloud-save/download` returns the stored save, `GET /cloud-save/info` returns metadata without the payload — all stored per profile in a new `cloud_saves` table with 512KB size limit
@@ -769,7 +780,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - bumped save data version to 35 with full migration for CompletedBountyIds, BountyProgress, LastBountyDate, TowerHighestFloor, TowerFloorStars, FriendIds, LastGiftSentDate, GiftsSentToday, UnitMasteryXP
 - prestige reset preserves tower progress, mastery XP, friend list
 - stat pipeline final order: prestige → synergy → doctrine → equipment1 → promotion → equipment2 → skill tree → guild perks → enchantments → mastery
-- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- all 71 server tests pass, 1528 data integrity checks pass, 0 build errors
 - added Achievement Rewards: all 43 achievements now pay out gold, food, tomes, essence, or sigils — `AchievementRewardCatalog` maps each achievement to a scaled reward; `TryClaimAchievementReward()` with retroactive claim support for previously unlocked achievements; claim buttons in Settings achievement section
 - added Login Calendar: 30-day escalating reward calendar (gold → food → tomes → essence → sigils) with monthly reset — `LoginCalendarCatalog` with per-day reward definitions; `LoginCalendarMenu` with 6x5 grid of day tiles; `CanClaimLoginReward()` and `TryClaimLoginReward()` with daily/monthly tracking
 - added Leaderboard Hub: unified 4-tab leaderboard screen (Arena / Tower / Endless / Daily) — `LeaderboardMenu` showing personal bests and server-backed rankings; server endpoints `/leaderboard/arena` and `/leaderboard/tower`; local fallback for offline play
@@ -778,7 +789,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - added 2 new tutorial hints: login calendar, wagon skins
 - bumped save data version to 36 with full migration for ClaimedAchievementRewardIds, LoginCalendarDay, LastLoginCalendarDate, LoginCalendarMonth, SelectedWagonSkinId
 - prestige reset preserves achievement reward claims, login calendar progress, wagon skin selection
-- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- all 71 server tests pass, 1528 data integrity checks pass, 0 build errors
 - added Notification Center: `NotificationService` computes pending reward counts on-the-fly from unclaimed achievement rewards, completed expeditions, claimable bounties, login calendar, and active events — badge counts shown on MainMenu buttons
 - added Unit Awakening: 5 star levels per unit with escalating token + gold costs and 2% health/damage per star — `AwakeningCatalog` with level definitions, `UnitTokens` currency per unit, awakening bonus as final stat pipeline layer after mastery; token sources from boss kills and expeditions
 - added Season Pass: 50-tier free + premium reward tracks with Season XP — `SeasonPassCatalog` with per-tier rewards, XP earned from battle wins (+10), bounty claims (+25), daily challenges (+50), tower clears (+15), arena wins (+20), expedition collects (+10); `SeasonPassMenu` with horizontal tier track, claim buttons, premium upgrade
@@ -790,16 +801,24 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - stat pipeline final order: prestige → synergy → doctrine → equipment1 → promotion → equipment2 → skill tree → guild perks → enchantments → mastery → awakening stars
 - season XP hooks wired into 6 game actions: battle victory, bounty claim, daily challenge, tower floor, arena win, expedition collect
 - prestige reset preserves star levels, tokens, season progress, collection milestones
-- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- all 71 server tests pass, 1528 data integrity checks pass, 0 build errors
 - added Battle Mutators: 12 player-selectable gameplay modifiers (Double Speed, Glass Cannon, Tank Mode, No Spells, Swarm Mode, Gold Fever, Fog of War, Minimalist, Berserker, Ironman, Elite Gauntlet, Blitz) — each mutator adjusts player/enemy stats and stacks a gold reward multiplier; `BattleMutatorCatalog` with toggle system, mutator panel in LoadoutMenu
 - added Battle Summary Screen: post-battle stats breakdown showing damage dealt/taken, units deployed/lost, spells cast, enemies/bosses defeated, time elapsed, gold/food earned, season XP, mastery XP per unit, star rating — `BattleSummaryData` struct accumulated during battle, `BattleSummaryMenu` with 3-column layout
 - added Accessibility Options: colorblind modes (protanopia/deuteranopia/tritanopia), reduced motion (disable shake/particles), auto-battle (AI deploys units and casts spells), large text mode — all persisted in save data, toggles in Settings
+- tightened battle deployment feel with lane-snapped placement previews, same-card toggle/disarm flow, right-click and delete cancel support, and short spawn momentum so fresh units enter the line faster
+- added pre-pressure combat readability with incoming wave telegraphs, boss entrance banners, battlefield target-count previews, and support-threat takedown callouts that create visible relief swings
+- smoothed lane fighting with allied anti-clump spacing, target-lock hysteresis, coordinated ranged focus-fire bias, ranged standoff repositioning, and support/backline formation anchoring
+- added heavier impact feedback with hit stagger, scene-local hit shake, projectile/melee kick, clean-defense momentum rewards, and nearby rally bursts on high-value threat kills
+- wired the full battle-feel pass into accessibility by honoring reduced-motion settings across shake, particle emitters, projectile impact flourishes, and pulsing combat alerts
+- hardened ship-readiness validation so locale files are checked against English for missing keys, empty strings, extra keys, and broken format placeholders, while `shop_products.json` now enforces platform product IDs, unique store mappings, and reward/category consistency
+- cleared the remaining nullable warning noise in the touched game/UI/test files and optional server transaction helpers, leaving the local game build at 0 warnings / 0 errors while server verification still passes 71 endpoint tests and 1528 data checks
+- added a single local verification entrypoint (`./scripts/verify_all.sh`) and updated `server/deploy.sh` to run data validation before image build, so the repo’s finished-state checks no longer depend on remembering separate manual commands
 - added Live Config Service: server-side `/config/live` endpoint returning announcement, MOTD, gold/XP multipliers, and disabled feature IDs — `LiveConfigService` with local cache and offline fallback defaults; MainMenu shows announcement banner
 - added 1 new achievement (46 total): Rule Breaker (5 mutator battles)
 - added 2 new tutorial hints: mutators, accessibility
 - bumped save data version to 38 with migration for ActiveMutatorIds, MutatorBattlesCompleted, ColorblindMode, ReducedMotion, AutoBattleEnabled, LargeTextMode
 - prestige reset preserves accessibility settings and mutator battle count
-- all 71 server tests pass, 1203 data integrity checks pass, 0 build errors
+- all 71 server tests pass, 1528 data integrity checks pass, 0 build errors
 
 ## Bugs, Stability, And Hardening
 

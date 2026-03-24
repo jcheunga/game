@@ -69,7 +69,7 @@ public static class AchievementCatalog
 
         // Endgame content (4)
         new("hard_mode_10", "Hardened Veteran", "Clear 10 hard mode stages.", "campaign"),
-        new("hard_mode_complete", "Iron Legend", "Clear all 50 hard mode stages.", "campaign"),
+        new("hard_mode_complete", "Iron Legend", "Clear all hard mode stages.", "campaign"),
         new("first_enchantment", "Enchanter", "Apply your first enchantment.", "collection"),
         new("raid_contributor", "Raid Striker", "Contribute to 3 weekly raids.", "mastery"),
 

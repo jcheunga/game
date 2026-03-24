@@ -1,16 +1,54 @@
-name: Server Tests
+name: Build And Verify
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'server/**'
+      - 'data/**'
+      - 'scripts/**'
+      - 'scenes/**'
+      - '.github/workflows/server-tests.yml'
+      - 'Game.csproj'
+      - 'project.godot'
+      - 'export_presets.cfg'
   pull_request:
     paths:
       - 'server/**'
+      - 'data/**'
+      - 'scripts/**'
+      - 'scenes/**'
+      - '.github/workflows/server-tests.yml'
+      - 'Game.csproj'
+      - 'project.godot'
+      - 'export_presets.cfg'
+
+concurrency:
+  group: build-and-verify-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  game-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore game dependencies
+        run: dotnet restore Game.csproj
+
+      - name: Build game
+        run: dotnet build Game.csproj --no-restore -c Release
+
+  server-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: server
@@ -37,7 +75,10 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 15
+    needs:
+      - game-build
+      - server-test
     if: github.ref == 'refs/heads/main'
     defaults:
       run:
@@ -51,8 +92,7 @@ jobs:
 
       - name: Verify health endpoint
         run: |
+          trap 'docker rm -f crownroad-test >/dev/null 2>&1 || true' EXIT
           docker run -d --name crownroad-test -p 8080:8080 crownroad-server:latest
           sleep 3
           curl -sf http://localhost:8080/health | grep -q healthy
-          docker stop crownroad-test
-          docker rm crownroad-test

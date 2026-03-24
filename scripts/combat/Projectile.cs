@@ -136,7 +136,7 @@ public partial class Projectile : Node2D
 
     private void SpawnImpactEffect()
     {
-        if (GetParent() == null)
+        if (GetParent() == null || IsReducedMotionEnabled())
         {
             return;
         }
@@ -145,5 +145,10 @@ public partial class Projectile : Node2D
         effect.GlobalPosition = GlobalPosition;
         effect.Setup(_color.Lightened(0.15f), _radius * 0.7f, _radius * 3f, 0.16f, false);
         GetParent().AddChild(effect);
+    }
+
+    private static bool IsReducedMotionEnabled()
+    {
+        return GameState.Instance != null && GameState.Instance.ReducedMotion;
     }
 }

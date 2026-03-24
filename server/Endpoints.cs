@@ -984,7 +984,7 @@ public static class Endpoints
         cmd.ExecuteNonQuery();
     }
 
-    private static int CountActiveSeats(SqliteConnection conn, string roomId, SqliteTransaction tx = null)
+    private static int CountActiveSeats(SqliteConnection conn, string roomId, SqliteTransaction? tx = null)
     {
         using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
@@ -993,7 +993,7 @@ public static class Endpoints
         return (int)(long)(cmd.ExecuteScalar() ?? 0);
     }
 
-    private static void TouchRoom(SqliteConnection conn, string roomId, SqliteTransaction tx = null)
+    private static void TouchRoom(SqliteConnection conn, string roomId, SqliteTransaction? tx = null)
     {
         using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;

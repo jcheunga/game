@@ -32,13 +32,14 @@ public static class HardModeCatalog
 
 	static HardModeCatalog()
 	{
-		Overrides = new HardModeStageOverride[50];
+		var totalStages = Math.Max(1, GameData.MaxStage);
+		Overrides = new HardModeStageOverride[totalStages];
 		ByStage = new Dictionary<int, HardModeStageOverride>();
 
-		for (var i = 0; i < 50; i++)
+		for (var i = 0; i < totalStages; i++)
 		{
 			var stage = i + 1;
-			var t = i / 49f; // 0.0 to 1.0 across all stages
+			var t = totalStages <= 1 ? 0f : i / (float)(totalStages - 1); // 0.0 to 1.0 across all stages
 			var healthScale = 1.3f + t * 1.2f; // 1.3x to 2.5x
 			var damageScale = 1.2f + t * 0.8f; // 1.2x to 2.0x
 			var bonusGold = (int)(50 + t * 200);

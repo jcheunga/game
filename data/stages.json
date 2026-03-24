@@ -5993,6 +5993,745 @@
           ]
         }
       ]
+    },
+    {
+      "StageNumber": 51,
+      "MapId": "thornwall",
+      "MapName": "Thornwall Pass",
+      "TerrainId": "watchfort",
+      "WeatherId": "blizzard",
+      "StageName": "Whiteout Bastion",
+      "Description": "The climb returns under full whiteout, with siege bolts and raid horns collapsing the lane into a final mountain hold.\nRecommended squad: Lantern Guard + Crossbowman + Battle Monk.",
+      "RewardGold": 11250,
+      "RewardFood": 39,
+      "EntryFoodCost": 14,
+      "ExploreFoodCost": 16,
+      "MapX": 786.0,
+      "MapY": 540.0,
+      "PlayerBaseHealth": 1560.0,
+      "EnemyBaseHealth": 7440.0,
+      "EnemySpawnMin": 0.66,
+      "EnemySpawnMax": 0.94,
+      "EnemyHealthScale": 6.46,
+      "EnemyDamageScale": 5.86,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.08,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.22,
+      "CrusherWeight": 0.45,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.54,
+      "Hazards": [
+        {
+          "Type": "avalanche_break",
+          "Label": "Avalanche Break",
+          "XRatio": 0.32,
+          "YRatio": 0.26,
+          "Radius": 84.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 32.0,
+          "ColorHex": "cfe8ff"
+        },
+        {
+          "Type": "ice_shard",
+          "Label": "Ice Shard",
+          "XRatio": 0.68,
+          "YRatio": 0.62,
+          "Radius": 78.0,
+          "Interval": 10.0,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 31.0,
+          "ColorHex": "e0f2ff"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "elite_vanguard", "Value": 1.34 },
+        { "Type": "rapid_assault", "Value": 0.72 },
+        { "Type": "armored_convoy", "Value": 1.12 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 72.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Sleet scouts",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Horn line",
+          "TriggerTime": 28.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Ballista perch",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Collapsed switchback",
+          "TriggerTime": 84.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Whiteout bastion",
+          "TriggerTime": 112.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_mirror", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 52,
+      "MapId": "basilica",
+      "MapName": "Hollow Basilica",
+      "TerrainId": "reliquary",
+      "WeatherId": "blizzard",
+      "StageName": "Reliquary Cataclysm",
+      "Description": "A final reliquary vault gives way beneath the caravan while embalmed siege relics and the vault-tyrant rise together.\nRecommended squad: Ballista Crew + Lantern Guard + Mage.",
+      "RewardGold": 12100,
+      "RewardFood": 40,
+      "EntryFoodCost": 14,
+      "ExploreFoodCost": 16,
+      "MapX": 784.0,
+      "MapY": 108.0,
+      "PlayerBaseHealth": 1600.0,
+      "EnemyBaseHealth": 7780.0,
+      "EnemySpawnMin": 0.64,
+      "EnemySpawnMax": 0.92,
+      "EnemyHealthScale": 6.62,
+      "EnemyDamageScale": 5.98,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.04,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.47,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.56,
+      "Hazards": [
+        {
+          "Type": "censer_burst",
+          "Label": "Censer Burst",
+          "XRatio": 0.28,
+          "YRatio": 0.36,
+          "Radius": 82.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 32.0,
+          "ColorHex": "e9c46a"
+        },
+        {
+          "Type": "saintfall",
+          "Label": "Saintfall",
+          "XRatio": 0.68,
+          "YRatio": 0.58,
+          "Radius": 76.0,
+          "Interval": 10.4,
+          "StartTime": 16.0,
+          "WarningDuration": 1.8,
+          "Damage": 32.0,
+          "ColorHex": "fefae0"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.34 },
+        { "Type": "elite_vanguard", "Value": 1.3 },
+        { "Type": "cursed_ground", "Value": 3.8 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 74.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Relic wardens",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_shieldwall", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Censer procession",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_lich", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Vault artillery",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Sepulcher break",
+          "TriggerTime": 86.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_lich", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Choir of dust",
+          "TriggerTime": 112.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_mirror", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Reliquary Tyrant arrives",
+          "TriggerTime": 130.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_boss_reliquary", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 53,
+      "MapId": "mire",
+      "MapName": "Mire of Saints",
+      "TerrainId": "ferry",
+      "WeatherId": "fog",
+      "StageName": "Blackwater Procession",
+      "Description": "A plague flotilla drifts alongside the causeway while rot hulks, siege relics, and drowned giants grind every step.\nRecommended squad: Ballista Crew + Alchemist + Battle Monk.",
+      "RewardGold": 13050,
+      "RewardFood": 42,
+      "EntryFoodCost": 15,
+      "ExploreFoodCost": 17,
+      "MapX": 786.0,
+      "MapY": 104.0,
+      "PlayerBaseHealth": 1640.0,
+      "EnemyBaseHealth": 8160.0,
+      "EnemySpawnMin": 0.64,
+      "EnemySpawnMax": 0.9,
+      "EnemyHealthScale": 6.78,
+      "EnemyDamageScale": 6.1,
+      "WalkerWeight": 0.02,
+      "RunnerWeight": 0.04,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.26,
+      "CrusherWeight": 0.44,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.57,
+      "Hazards": [
+        {
+          "Type": "plague_wake",
+          "Label": "Plague Wake",
+          "XRatio": 0.34,
+          "YRatio": 0.72,
+          "Radius": 86.0,
+          "Interval": 8.6,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 33.0,
+          "ColorHex": "90be6d"
+        },
+        {
+          "Type": "ferry_chain",
+          "Label": "Ferry Chain",
+          "XRatio": 0.72,
+          "YRatio": 0.34,
+          "Radius": 76.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 32.0,
+          "ColorHex": "ecf39e"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "armored_convoy", "Value": 1.12 },
+        { "Type": "swarm_density", "Value": 2.1 },
+        { "Type": "cursed_ground", "Value": 3.9 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 76.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Drowned outriders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 1 },
+            { "UnitId": "enemy_walker", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Bell drift",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Siege barge",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Blackwater crush",
+          "TriggerTime": 86.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_splitter", "Count": 2 },
+            { "UnitId": "enemy_spitter", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Saintless tide",
+          "TriggerTime": 114.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_bloater", "Count": 1 },
+            { "UnitId": "enemy_lich", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 54,
+      "MapId": "steppe",
+      "MapName": "Sunfall Steppe",
+      "TerrainId": "siegecamp",
+      "WeatherId": "ashstorm",
+      "StageName": "Warhorn Expanse",
+      "Description": "The steppe opens into a horn relay big enough to bury the caravan under charges, siege bolts, and dust-blind flanks.\nRecommended squad: Ballista Crew + Cavalry Rider + Lantern Guard.",
+      "RewardGold": 14150,
+      "RewardFood": 43,
+      "EntryFoodCost": 15,
+      "ExploreFoodCost": 17,
+      "MapX": 786.0,
+      "MapY": 112.0,
+      "PlayerBaseHealth": 1680.0,
+      "EnemyBaseHealth": 8580.0,
+      "EnemySpawnMin": 0.62,
+      "EnemySpawnMax": 0.9,
+      "EnemyHealthScale": 6.96,
+      "EnemyDamageScale": 6.26,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.1,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.2,
+      "CrusherWeight": 0.46,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.58,
+      "Hazards": [
+        {
+          "Type": "ember_line",
+          "Label": "Ember Line",
+          "XRatio": 0.3,
+          "YRatio": 0.6,
+          "Radius": 84.0,
+          "Interval": 8.2,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 33.0,
+          "ColorHex": "f4a261"
+        },
+        {
+          "Type": "hornflare",
+          "Label": "Hornflare",
+          "XRatio": 0.7,
+          "YRatio": 0.26,
+          "Radius": 74.0,
+          "Interval": 9.8,
+          "StartTime": 14.0,
+          "WarningDuration": 1.8,
+          "Damage": 32.0,
+          "ColorHex": "ffb703"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "rapid_assault", "Value": 0.68 },
+        { "Type": "elite_vanguard", "Value": 1.34 },
+        { "Type": "reinforced_barricade", "Value": 1.36 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 78.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Scorch riders",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Dust relay",
+          "TriggerTime": 28.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Redline breach",
+          "TriggerTime": 56.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Warhorn crush",
+          "TriggerTime": 84.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 3 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Expanse collapse",
+          "TriggerTime": 112.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 55,
+      "MapId": "gloamwood",
+      "MapName": "Gloamwood Verge",
+      "TerrainId": "witchcircle",
+      "WeatherId": "fog",
+      "StageName": "Moonless Snare",
+      "Description": "The treeline vanishes into moonless fog where tunnelers, mirror knights, and hidden siege relics hit from every angle.\nRecommended squad: Lantern Guard + Ballista Crew + Necromancer.",
+      "RewardGold": 15350,
+      "RewardFood": 45,
+      "EntryFoodCost": 15,
+      "ExploreFoodCost": 17,
+      "MapX": 786.0,
+      "MapY": 102.0,
+      "PlayerBaseHealth": 1730.0,
+      "EnemyBaseHealth": 9040.0,
+      "EnemySpawnMin": 0.62,
+      "EnemySpawnMax": 0.88,
+      "EnemyHealthScale": 7.14,
+      "EnemyDamageScale": 6.42,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.22,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.46,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.6,
+      "Hazards": [
+        {
+          "Type": "root_snare",
+          "Label": "Root Snare",
+          "XRatio": 0.28,
+          "YRatio": 0.32,
+          "Radius": 82.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 33.0,
+          "ColorHex": "84a98c"
+        },
+        {
+          "Type": "witchfire_lash",
+          "Label": "Witchfire Lash",
+          "XRatio": 0.68,
+          "YRatio": 0.66,
+          "Radius": 78.0,
+          "Interval": 10.0,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 33.0,
+          "ColorHex": "c77dff"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "cursed_ground", "Value": 4.0 },
+        { "Type": "swarm_density", "Value": 2.15 },
+        { "Type": "rapid_assault", "Value": 0.72 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 80.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Blind trail",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_tunneler", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Witch lamps",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Mirror grove",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_mirror", "Count": 2 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_tunneler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Root breach",
+          "TriggerTime": 86.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_tunneler", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Moonless circle",
+          "TriggerTime": 114.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_mirror", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_lich", "Count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "StageNumber": 56,
+      "MapId": "citadel",
+      "MapName": "Crownfall Citadel",
+      "TerrainId": "innerkeep",
+      "WeatherId": "fog",
+      "StageName": "Ashen Throne",
+      "Description": "Past the broken keep, the last throne hall erupts in mixed command waves as the Ashen Regent seizes the final breach.\nRecommended squad: Ballista Crew + Lantern Guard + Battle Monk.",
+      "RewardGold": 16800,
+      "RewardFood": 48,
+      "EntryFoodCost": 16,
+      "ExploreFoodCost": 18,
+      "MapX": 786.0,
+      "MapY": 96.0,
+      "PlayerBaseHealth": 1790.0,
+      "EnemyBaseHealth": 9700.0,
+      "EnemySpawnMin": 0.6,
+      "EnemySpawnMax": 0.86,
+      "EnemyHealthScale": 7.38,
+      "EnemyDamageScale": 6.68,
+      "WalkerWeight": 0.01,
+      "RunnerWeight": 0.06,
+      "BruteWeight": 0.24,
+      "SpitterWeight": 0.24,
+      "CrusherWeight": 0.46,
+      "BossWeight": 0.0,
+      "BossSpawnStartTime": 0.0,
+      "BonusWaveChance": 0.62,
+      "Hazards": [
+        {
+          "Type": "ash_lance",
+          "Label": "Ash Lance",
+          "XRatio": 0.3,
+          "YRatio": 0.34,
+          "Radius": 84.0,
+          "Interval": 8.4,
+          "StartTime": 8.0,
+          "WarningDuration": 1.8,
+          "Damage": 34.0,
+          "ColorHex": "d62828"
+        },
+        {
+          "Type": "throne_collapse",
+          "Label": "Throne Collapse",
+          "XRatio": 0.7,
+          "YRatio": 0.62,
+          "Radius": 80.0,
+          "Interval": 10.2,
+          "StartTime": 15.0,
+          "WarningDuration": 1.8,
+          "Damage": 34.0,
+          "ColorHex": "fefae0"
+        },
+        {
+          "Type": "crown_pulse",
+          "Label": "Crown Pulse",
+          "XRatio": 0.5,
+          "YRatio": 0.8,
+          "Radius": 76.0,
+          "Interval": 11.8,
+          "StartTime": 22.0,
+          "WarningDuration": 1.8,
+          "Damage": 33.0,
+          "ColorHex": "c0c0ff"
+        }
+      ],
+      "Modifiers": [
+        { "Type": "reinforced_barricade", "Value": 1.38 },
+        { "Type": "armored_convoy", "Value": 1.12 },
+        { "Type": "elite_vanguard", "Value": 1.36 }
+      ],
+      "Objectives": [
+        { "Type": "clear_route" },
+        { "Type": "hazard_hits_limit", "Value": 3.0 },
+        { "Type": "enemy_defeats", "Value": 84.0 }
+      ],
+      "Waves": [
+        {
+          "Label": "Gate remnant",
+          "TriggerTime": 4.0,
+          "SpawnInterval": 0.32,
+          "Entries": [
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_spitter", "Count": 2 },
+            { "UnitId": "enemy_howler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Black relay",
+          "TriggerTime": 30.0,
+          "SpawnInterval": 0.28,
+          "Entries": [
+            { "UnitId": "enemy_jammer", "Count": 1 },
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_saboteur", "Count": 1 },
+            { "UnitId": "enemy_runner", "Count": 2 }
+          ]
+        },
+        {
+          "Label": "Throne guard",
+          "TriggerTime": 58.0,
+          "SpawnInterval": 0.26,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_brute", "Count": 2 },
+            { "UnitId": "enemy_lich", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Final breach",
+          "TriggerTime": 88.0,
+          "SpawnInterval": 0.24,
+          "Entries": [
+            { "UnitId": "enemy_mirror", "Count": 1 },
+            { "UnitId": "enemy_shieldwall", "Count": 1 },
+            { "UnitId": "enemy_boneballista", "Count": 1 },
+            { "UnitId": "enemy_tunneler", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Regent's command",
+          "TriggerTime": 118.0,
+          "SpawnInterval": 0.22,
+          "Entries": [
+            { "UnitId": "enemy_catacomb_giant", "Count": 1 },
+            { "UnitId": "enemy_crusher", "Count": 1 },
+            { "UnitId": "enemy_howler", "Count": 1 },
+            { "UnitId": "enemy_jammer", "Count": 1 }
+          ]
+        },
+        {
+          "Label": "Ashen Regent arrives",
+          "TriggerTime": 136.0,
+          "SpawnInterval": 0.5,
+          "Entries": [
+            { "UnitId": "enemy_boss_ashen_regent", "Count": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

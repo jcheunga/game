@@ -7200,7 +7200,7 @@ public partial class GameState : Node
 		{
 			TryUnlockAchievement("hard_mode_10");
 		}
-		if (HardModeClearedCount >= 50)
+		if (HardModeClearedCount >= MaxStage)
 		{
 			TryUnlockAchievement("hard_mode_complete");
 		}

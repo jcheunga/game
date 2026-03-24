@@ -1,8 +1,10 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Validates game data JSON files for internal consistency.
@@ -14,6 +16,7 @@ public static class DataIntegrityValidator
     private static int _passed;
     private static int _failed;
     private static readonly List<string> Errors = new();
+    private static readonly Regex IndexedFormatPlaceholderPattern = new(@"\{(\d+)(?:[^}]*)\}", RegexOptions.Compiled);
 
     public static int RunAll(string dataDir)
     {
@@ -28,6 +31,7 @@ public static class DataIntegrityValidator
         var spellsPath = Path.Combine(dataDir, "spells.json");
         var equipmentPath = Path.Combine(dataDir, "equipment.json");
         var shopProductsPath = Path.Combine(dataDir, "shop_products.json");
+        var localeDir = Path.Combine(dataDir, "locale");
 
         // Load all data
         var units = LoadArray(unitsPath, "Units");
@@ -228,18 +232,139 @@ public static class DataIntegrityValidator
         if (shopProducts != null)
         {
             var productIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var sortOrders = new HashSet<int>();
+            var appleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var googleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var stripeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var validCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "gold", "food", "mixed" };
             foreach (var product in shopProducts)
             {
                 var id = GetStr(product, "id");
+                var category = GetStr(product, "category");
+                var currencyType = GetStr(product, "currencyType");
+                var displayName = GetStr(product, "displayName");
+                var description = GetStr(product, "description");
+                var appleProductId = GetStr(product, "appleProductId");
+                var googleProductId = GetStr(product, "googleProductId");
+                var stripePriceId = GetStr(product, "stripePriceId");
+                var sortOrder = GetInt(product, "sortOrder");
+                var currencyAmount = GetInt(product, "currencyAmount");
+                var bonusAmount = GetInt(product, "bonusAmount");
+                var goldAmount = GetInt(product, "goldAmount");
+                var foodAmount = GetInt(product, "foodAmount");
+                var grantsUnitUnlock = GetBool(product, "grantsUnitUnlock");
+
                 Check(!string.IsNullOrWhiteSpace(id), "Shop product has empty id");
                 Check(!productIds.Contains(id), $"Duplicate shop product id: {id}");
                 productIds.Add(id);
 
                 var price = GetFloat(product, "priceUsd");
+                Check(validCategories.Contains(category), $"Shop product {id} has invalid category: {category}");
+                Check(!string.IsNullOrWhiteSpace(displayName), $"Shop product {id} has empty displayName");
+                Check(!string.IsNullOrWhiteSpace(description), $"Shop product {id} has empty description");
                 Check(price > 0, $"Shop product {id} has non-positive priceUsd");
+                Check(sortOrder > 0, $"Shop product {id} has non-positive sortOrder");
+                Check(!sortOrders.Contains(sortOrder), $"Duplicate shop product sortOrder: {sortOrder}");
+                sortOrders.Add(sortOrder);
+
+                Check(!string.IsNullOrWhiteSpace(appleProductId), $"Shop product {id} is missing appleProductId");
+                Check(!string.IsNullOrWhiteSpace(googleProductId), $"Shop product {id} is missing googleProductId");
+                Check(!string.IsNullOrWhiteSpace(stripePriceId), $"Shop product {id} is missing stripePriceId");
+                Check(HasValidStoreProductId(appleProductId, requireDot: true), $"Shop product {id} has invalid appleProductId: {appleProductId}");
+                Check(HasValidStoreProductId(googleProductId, requireDot: false), $"Shop product {id} has invalid googleProductId: {googleProductId}");
+                Check(HasValidStripePriceId(stripePriceId), $"Shop product {id} has invalid stripePriceId: {stripePriceId}");
+                Check(!appleIds.Contains(appleProductId), $"Duplicate appleProductId: {appleProductId}");
+                Check(!googleIds.Contains(googleProductId), $"Duplicate googleProductId: {googleProductId}");
+                Check(!stripeIds.Contains(stripePriceId), $"Duplicate stripePriceId: {stripePriceId}");
+                appleIds.Add(appleProductId);
+                googleIds.Add(googleProductId);
+                stripeIds.Add(stripePriceId);
+
+                Check(bonusAmount >= 0, $"Shop product {id} has negative bonusAmount");
+
+                if (category.Equals("gold", StringComparison.OrdinalIgnoreCase) ||
+                    category.Equals("food", StringComparison.OrdinalIgnoreCase))
+                {
+                    Check(currencyType.Equals(category, StringComparison.OrdinalIgnoreCase),
+                        $"Shop product {id} currencyType '{currencyType}' does not match category '{category}'");
+                    Check(currencyAmount > 0, $"Shop product {id} has non-positive currencyAmount");
+                    Check(goldAmount == 0, $"Shop product {id} should not use goldAmount");
+                    Check(foodAmount == 0, $"Shop product {id} should not use foodAmount");
+                    Check(!grantsUnitUnlock, $"Shop product {id} should not grant a unit unlock");
+                }
+                else if (category.Equals("mixed", StringComparison.OrdinalIgnoreCase))
+                {
+                    Check(currencyType.Equals("mixed", StringComparison.OrdinalIgnoreCase),
+                        $"Shop product {id} should use currencyType 'mixed'");
+                    Check(currencyAmount == 0, $"Shop product {id} should keep currencyAmount at 0");
+                    Check(bonusAmount == 0, $"Shop product {id} should keep bonusAmount at 0");
+                    Check(goldAmount > 0 || foodAmount > 0 || grantsUnitUnlock,
+                        $"Mixed shop product {id} has no meaningful reward configured");
+                }
             }
 
             Check(productIds.Count >= 10, $"Expected at least 10 shop products, found {productIds.Count}");
+        }
+
+        // ── Locale validation ──
+        Console.WriteLine("--- Locales ---");
+        Check(Directory.Exists(localeDir), $"Locale directory not found: {localeDir}");
+        if (Directory.Exists(localeDir))
+        {
+            var localeFiles = Directory.GetFiles(localeDir, "*.json");
+            Check(localeFiles.Length > 0, $"No locale json files found in {localeDir}");
+
+            var englishPath = Path.Combine(localeDir, "en.json");
+            var loadedEnglish = TryLoadStringMap(englishPath, out var englishStrings);
+            Check(loadedEnglish, $"Could not load fallback locale: {englishPath}");
+
+            if (loadedEnglish)
+            {
+                Check(englishStrings.Count >= 60, $"Expected at least 60 English locale keys, found {englishStrings.Count}");
+                foreach (var pair in englishStrings)
+                {
+                    Check(!string.IsNullOrWhiteSpace(pair.Value), $"Locale en key '{pair.Key}' is empty");
+                }
+
+                foreach (var localePath in localeFiles.OrderBy(Path.GetFileName))
+                {
+                    var language = Path.GetFileNameWithoutExtension(localePath);
+                    var loadedLocale = TryLoadStringMap(localePath, out var localizedStrings);
+                    Check(loadedLocale, $"Could not load locale file: {localePath}");
+                    if (!loadedLocale)
+                    {
+                        continue;
+                    }
+
+                    foreach (var pair in localizedStrings)
+                    {
+                        Check(!string.IsNullOrWhiteSpace(pair.Value), $"Locale {language} key '{pair.Key}' is empty");
+                    }
+
+                    if (language.Equals("en", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    foreach (var pair in englishStrings)
+                    {
+                        Check(localizedStrings.ContainsKey(pair.Key), $"Locale {language} is missing key '{pair.Key}'");
+                        if (!localizedStrings.TryGetValue(pair.Key, out var localizedValue))
+                        {
+                            continue;
+                        }
+
+                        Check(
+                            HaveMatchingFormatPlaceholders(pair.Value, localizedValue),
+                            $"Locale {language} key '{pair.Key}' has mismatched format placeholders");
+                    }
+
+                    foreach (var extraKey in localizedStrings.Keys.Where(key => !englishStrings.ContainsKey(key)))
+                    {
+                        Check(false, $"Locale {language} has extra key '{extraKey}' not present in en.json");
+                    }
+                }
+            }
         }
 
         // ── Summary ──
@@ -314,6 +439,38 @@ public static class DataIntegrityValidator
         return result.ToArray();
     }
 
+    private static bool TryLoadStringMap(string path, out Dictionary<string, string> result)
+    {
+        result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"File not found: {path}");
+            return false;
+        }
+
+        var json = File.ReadAllText(path);
+        var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            Console.Error.WriteLine($"Expected root object in {path}");
+            return false;
+        }
+
+        foreach (var prop in doc.RootElement.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.String)
+            {
+                Console.Error.WriteLine($"Expected string value for locale key '{prop.Name}' in {path}");
+                result.Clear();
+                return false;
+            }
+
+            result[prop.Name] = prop.Value.GetString() ?? "";
+        }
+
+        return true;
+    }
+
     private static string GetStr(JsonElement el, string prop)
     {
         return el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
@@ -330,5 +487,64 @@ public static class DataIntegrityValidator
         if (v.TryGetDouble(out var d)) return (float)d;
         if (v.TryGetInt32(out var i)) return i;
         return 0f;
+    }
+
+    private static bool GetBool(JsonElement el, string prop)
+    {
+        return el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.True;
+    }
+
+    private static bool HasValidStoreProductId(string value, bool requireDot)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (requireDot && !value.Contains('.'))
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (!(char.IsLower(c) || char.IsDigit(c) || c == '.' || c == '_'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasValidStripePriceId(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.StartsWith("price_", StringComparison.OrdinalIgnoreCase)
+            && !value.Any(char.IsWhiteSpace);
+    }
+
+    private static bool HaveMatchingFormatPlaceholders(string expected, string actual)
+    {
+        var expectedPlaceholders = new HashSet<string>(StringComparer.Ordinal);
+        var actualPlaceholders = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (Match match in IndexedFormatPlaceholderPattern.Matches(expected))
+        {
+            if (match.Groups.Count > 1)
+            {
+                expectedPlaceholders.Add(match.Groups[1].Value);
+            }
+        }
+
+        foreach (Match match in IndexedFormatPlaceholderPattern.Matches(actual))
+        {
+            if (match.Groups.Count > 1)
+            {
+                actualPlaceholders.Add(match.Groups[1].Value);
+            }
+        }
+
+        return expectedPlaceholders.SetEquals(actualPlaceholders);
     }
 }

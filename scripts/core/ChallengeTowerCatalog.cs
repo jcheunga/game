@@ -47,7 +47,7 @@ public static class ChallengeTowerCatalog
 		{
 			var floor = i + 1;
 			var t = i / 99f; // 0.0 to 1.0
-			var baseStage = ((i % 50) + 1); // cycles through 1-50
+			var baseStage = ((i % Math.Max(1, GameData.MaxStage)) + 1); // cycles through all authored campaign stages
 			var healthScale = 1.0f + t * 4.0f; // 1.0x to 5.0x
 			var damageScale = 1.0f + t * 2.5f; // 1.0x to 3.5x
 			var gold = 50 + (int)(t * 250);

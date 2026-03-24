@@ -53,6 +53,11 @@ public sealed class BattleSpellState
         ArmedSpell = definition;
     }
 
+    public void Disarm()
+    {
+        ArmedSpell = null!;
+    }
+
     public bool CanCast(SpellDefinition definition, float courage, bool battleEnded, bool checkpointActive, out string reason)
     {
         return CanCast(definition, definition.CourageCost, courage, battleEnded, checkpointActive, out reason);

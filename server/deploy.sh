@@ -10,9 +10,13 @@ IMAGE_TAG="${CROWNROAD_TAG:-latest}"
 echo "=== Crownroad Server Deploy ==="
 echo ""
 
-# Run tests first
-echo "--- Running tests ---"
+# Run verification first
+echo "--- Running server tests ---"
 dotnet run -- --test
+echo ""
+
+echo "--- Validating game data ---"
+dotnet run -- --test-data ../data
 echo ""
 
 # Build Docker image

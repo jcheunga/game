@@ -8,6 +8,11 @@ public static class BattleParticles
 {
 	public static CpuParticles2D SpawnDeployBurst(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 24);
 		particles.Lifetime = 0.4f;
 		particles.Explosiveness = 0.92f;
@@ -31,6 +36,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnDeathBurst(Node parent, Vector2 position, Color color, bool isBoss)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var count = isBoss ? 32 : 16;
 		var particles = CreateBase(parent, position, count);
 		particles.Lifetime = isBoss ? 0.6f : 0.4f;
@@ -55,6 +65,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnImpactSparks(Node parent, Vector2 position, Color color, float damage)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var count = Mathf.Clamp(Mathf.RoundToInt(damage * 0.4f), 4, 16);
 		var particles = CreateBase(parent, position, count);
 		particles.Lifetime = 0.25f;
@@ -79,6 +94,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnBaseHitDebris(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 18);
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.9f;
@@ -102,6 +122,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnFireballParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 28);
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.85f;
@@ -128,6 +153,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnHealSparkles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 20);
 		particles.Lifetime = 0.6f;
 		particles.Explosiveness = 0.3f;
@@ -154,6 +184,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnFrostParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 24);
 		particles.Lifetime = 0.55f;
 		particles.Explosiveness = 0.88f;
@@ -178,6 +213,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnLightningParticles(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 14);
 		particles.Lifetime = 0.3f;
 		particles.Explosiveness = 1f;
@@ -202,6 +242,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnWardParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 16);
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.2f;
@@ -228,6 +273,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnStoneBarricadeParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 20);
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.8f;
@@ -253,6 +303,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnWarCryParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 24);
 		particles.Lifetime = 0.6f;
 		particles.Explosiveness = 0.9f;
@@ -278,6 +333,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnEarthquakeParticles(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 30);
 		particles.Lifetime = 0.55f;
 		particles.Explosiveness = 0.85f;
@@ -303,6 +363,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnPolymorphParticles(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 16);
 		particles.Lifetime = 0.65f;
 		particles.Explosiveness = 0.3f;
@@ -330,6 +395,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnResurrectParticles(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 18);
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.4f;
@@ -355,6 +425,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnDeathBurstExplosion(Node parent, Vector2 position, Color color, float radius)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 22);
 		particles.Lifetime = 0.45f;
 		particles.Explosiveness = 0.95f;
@@ -379,6 +454,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnProjectileTrail(Node parent, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = new CpuParticles2D
 		{
 			Amount = 8,
@@ -406,6 +486,11 @@ public static class BattleParticles
 
 	public static CpuParticles2D SpawnBossSpawnBurst(Node parent, Vector2 position, Color color)
 	{
+		if (IsReducedMotionEnabled())
+		{
+			return null;
+		}
+
 		var particles = CreateBase(parent, position, 36);
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.6f;
@@ -447,6 +532,11 @@ public static class BattleParticles
 
 		parent.AddChild(particles);
 		return particles;
+	}
+
+	private static bool IsReducedMotionEnabled()
+	{
+		return GameState.Instance != null && GameState.Instance.ReducedMotion;
 	}
 
 	private static async void AutoFree(CpuParticles2D particles, float delay)

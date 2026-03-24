@@ -1,6 +1,6 @@
 # Crownroad (Godot + C#)
 
-Medieval fantasy lane-battle game built with Godot 4.6 + C#. The **Lantern Caravan** defends its war wagon against the **Rotbound Host** across 50 campaign stages, endless roguelite runs, and async/LAN multiplayer challenges.
+Medieval fantasy lane-battle game built with Godot 4.6 + C#. The **Lantern Caravan** defends its war wagon against the **Rotbound Host** across 56 campaign stages, endless roguelite runs, and async/LAN multiplayer challenges.
 
 ## Quick Start
 
@@ -12,21 +12,32 @@ godot --path .                  # run directly
 ## Server
 
 ```bash
+./scripts/verify_all.sh           # build game + validate data + run server tests
 cd server
 dotnet run                      # start backend on port 5000
-dotnet run -- --test            # run 67 endpoint tests
-dotnet run -- --test-data ../data  # run 1119 data integrity checks
+dotnet run -- --test            # run 71 backend endpoint tests
+dotnet run -- --test-data ../data  # run 1653 game-data, locale, and store-config checks
 docker compose up -d            # deploy with Docker
 ```
 
 See `server/.env.example` for Stripe and CORS configuration.
 
+## Current Status
+
+- Repo-side roadmap work is complete.
+- Primary local verification command: `./scripts/verify_all.sh`
+- Current verified state: game build `0 warnings / 0 errors`, server tests `71 passed`, data checks `1653 passed`
+- Remaining work is external production only: art/audio assets, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
+
 ## Tests
 
 | Command | What | Count |
 |---------|------|-------|
-| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 67 |
-| `cd server && dotnet run -- --test-data ../data` | Game data cross-reference checks | 1119 |
+| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 71 |
+| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 1653 |
+| `./scripts/verify_all.sh` | Full local repo verification | game build + 71 server tests + 1653 data checks |
+
+GitHub Actions also runs the game build plus the server/data validation workflow on `server/`, `data/`, `scripts/`, `scenes/`, and project/workflow changes, supports manual dispatch, and cancels stale in-progress runs per ref.
 
 ## Adding Art Assets (No Code Changes Needed)
 
@@ -38,11 +49,11 @@ See `server/.env.example` for Stripe and CORS configuration.
 | Music | `assets/music/{track_id}.ogg` | Loopable OGG/MP3/WAV |
 | Sound effects | `assets/sfx/{cue_id}.ogg` | Per-cue OGG/MP3/WAV override |
 
-See `ASSETS.md` for the complete 44-unit manifest, all track/cue IDs, and format specs.
+See `ASSETS.md` for the full unit manifest, all track/cue IDs, and format specs.
 
 ## Adding Translations
 
-Place a JSON file at `data/locale/{language_code}.json` with the same keys as `data/locale/en.json`. It appears in the Settings language selector automatically.
+Place a JSON file at `data/locale/{language_code}.json` with the same keys as `data/locale/en.json`. It appears in the Settings language selector automatically. `dotnet run -- --test-data ../data` now checks for missing keys, empty strings, extra keys, and broken `{0}`-style format placeholders before release.
 
 ## Export Presets
 
@@ -61,7 +72,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 | `ROADMAP.md` | Full milestone plan, sprint log, bugs/hardening status |
 | `ASSETS.md` | Art production manifest (units, backgrounds, structures, audio, particles) |
 | `THEME_BIBLE.md` | Fiction, factions, and setting reference |
-| `CAMPAIGN_PLAN.md` | 10-district / 50-stage campaign structure |
+| `CAMPAIGN_PLAN.md` | 10-district campaign structure with the extended 56-stage route plan |
 
 ## Architecture
 

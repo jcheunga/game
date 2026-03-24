@@ -141,6 +141,20 @@ public static class UnitActiveAbilityCatalog
             "Blood Frenzy",
             "Gain 40% attack speed for 6s but take 20% more damage.",
             10f,
+            4),
+        new(
+            "lantern_guard_bulwark",
+            "player_lantern_guard",
+            "Bulwark",
+            "Reduce all damage taken by 60% for 4s.",
+            12f,
+            4),
+        new(
+            "ballista_anchor_shot",
+            "player_ballista",
+            "Anchor Shot",
+            "Deal 300% damage to the farthest enemy in range.",
+            15f,
             4)
     };
 

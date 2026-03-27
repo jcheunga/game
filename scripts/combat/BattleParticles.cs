@@ -13,7 +13,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 24);
+		var particles = CreateBase(parent, position, 24, "particle_deploy");
 		particles.Lifetime = 0.4f;
 		particles.Explosiveness = 0.92f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -42,7 +42,7 @@ public static class BattleParticles
 		}
 
 		var count = isBoss ? 32 : 16;
-		var particles = CreateBase(parent, position, count);
+		var particles = CreateBase(parent, position, count, "particle_smoke");
 		particles.Lifetime = isBoss ? 0.6f : 0.4f;
 		particles.Explosiveness = 0.95f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -71,7 +71,7 @@ public static class BattleParticles
 		}
 
 		var count = Mathf.Clamp(Mathf.RoundToInt(damage * 0.4f), 4, 16);
-		var particles = CreateBase(parent, position, count);
+		var particles = CreateBase(parent, position, count, "particle_spark");
 		particles.Lifetime = 0.25f;
 		particles.Explosiveness = 1f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -99,7 +99,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 18);
+		var particles = CreateBase(parent, position, 18, "particle_stone");
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.9f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -127,7 +127,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 28);
+		var particles = CreateBase(parent, position, 28, "particle_fire");
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.85f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -158,7 +158,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 20);
+		var particles = CreateBase(parent, position, 20, "particle_heal");
 		particles.Lifetime = 0.6f;
 		particles.Explosiveness = 0.3f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -189,7 +189,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 24);
+		var particles = CreateBase(parent, position, 24, "particle_frost");
 		particles.Lifetime = 0.55f;
 		particles.Explosiveness = 0.88f;
 		particles.Direction = new Vector2(0f, 0f);
@@ -218,7 +218,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 14);
+		var particles = CreateBase(parent, position, 14, "particle_lightning");
 		particles.Lifetime = 0.3f;
 		particles.Explosiveness = 1f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -247,7 +247,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 16);
+		var particles = CreateBase(parent, position, 16, "particle_arcane");
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.2f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -278,7 +278,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 20);
+		var particles = CreateBase(parent, position, 20, "particle_stone");
 		particles.Lifetime = 0.5f;
 		particles.Explosiveness = 0.8f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -308,7 +308,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 24);
+		var particles = CreateBase(parent, position, 24, "particle_fire");
 		particles.Lifetime = 0.6f;
 		particles.Explosiveness = 0.9f;
 		particles.Direction = new Vector2(0f, 0f);
@@ -338,7 +338,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 30);
+		var particles = CreateBase(parent, position, 30, "particle_stone");
 		particles.Lifetime = 0.55f;
 		particles.Explosiveness = 0.85f;
 		particles.Direction = new Vector2(0f, 1f);
@@ -368,7 +368,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 16);
+		var particles = CreateBase(parent, position, 16, "particle_arcane");
 		particles.Lifetime = 0.65f;
 		particles.Explosiveness = 0.3f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -400,7 +400,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 18);
+		var particles = CreateBase(parent, position, 18, "particle_heal");
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.4f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -430,7 +430,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 22);
+		var particles = CreateBase(parent, position, 22, "particle_fire");
 		particles.Lifetime = 0.45f;
 		particles.Explosiveness = 0.95f;
 		particles.Direction = new Vector2(0f, -1f);
@@ -480,6 +480,12 @@ public static class BattleParticles
 		gradient.AddPoint(0.5f, new Color(color, 0.3f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
+		var texture = ParticleTextureLoader.TryLoad("particle_trail");
+		if (texture != null)
+		{
+			particles.Texture = texture;
+		}
+
 		parent.AddChild(particles);
 		return particles;
 	}
@@ -491,7 +497,7 @@ public static class BattleParticles
 			return null;
 		}
 
-		var particles = CreateBase(parent, position, 36);
+		var particles = CreateBase(parent, position, 36, "particle_smoke");
 		particles.Lifetime = 0.7f;
 		particles.Explosiveness = 0.6f;
 		particles.Direction = new Vector2(0f, -1f);

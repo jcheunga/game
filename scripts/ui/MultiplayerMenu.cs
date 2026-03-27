@@ -8,9 +8,12 @@ public partial class MultiplayerMenu : Control
 {
     private const float OnlineRoomAutoRefreshIntervalSeconds = 4f;
 
+    private MenuBackdropSet _menuBackdrop = null!;
+    private HBoxContainer _titleRow = null!;
     private OptionButton _stageSelector = null!;
     private OptionButton _mutatorSelector = null!;
     private OptionButton _roomReportReasonSelector = null!;
+    private HBoxContainer _resourcesRow = null!;
     private LineEdit _codeEdit = null!;
     private Label _summaryLabel = null!;
     private Label _recordLabel = null!;
@@ -78,12 +81,8 @@ public partial class MultiplayerMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
-        {
-            Color = new Color("1f2041")
-        };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        var route = RouteCatalog.Get(GameData.GetStage(Mathf.Clamp(_selectedStage, 1, GameState.Instance.MaxStage)).MapId);
+        _menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "multiplayer", route.BackgroundTop, route.Id);
 
         var titlePanel = new PanelContainer
         {
@@ -93,24 +92,20 @@ public partial class MultiplayerMenu : Control
         AddChild(titlePanel);
         _entrancePanels.Add(titlePanel);
 
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", 16);
-        titlePanel.AddChild(titleRow);
+        _titleRow = new HBoxContainer();
+        _titleRow.AddThemeConstantOverride("separation", 16);
+        titlePanel.AddChild(_titleRow);
 
-        titleRow.AddChild(new Label
+        _titleRow.AddChild(new Label
         {
             Text = "Multiplayer Challenge",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center
         });
 
-        titleRow.AddChild(new Label
-        {
-            Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        });
+        _resourcesRow = new HBoxContainer();
+        _resourcesRow.AddThemeConstantOverride("separation", 12);
+        _titleRow.AddChild(_resourcesRow);
 
         var missionPanel = new PanelContainer
         {
@@ -400,12 +395,18 @@ public partial class MultiplayerMenu : Control
     {
         SyncStageSelector();
         SyncMutatorSelector();
+        RebuildResourcesRow();
 
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
+        var route = RouteCatalog.Get(stage.MapId);
+        _menuBackdrop.PrimaryRect.Color = route.BackgroundTop;
+        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("multiplayer", route.Id));
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         var ghostRun = GameState.Instance.GetChallengeGhostRun(challenge.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
+        while (_titleRow.GetChildCount() > 2) _titleRow.GetChild(_titleRow.GetChildCount() - 1).QueueFree();
+        _titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", challenge.Code, new Vector2(24f, 24f)));
         var deckModeLabel = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
             ? $"Locked featured squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"
             : $"Active squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}";
@@ -469,6 +470,17 @@ public partial class MultiplayerMenu : Control
         _startButton.Text = startButtonText;
     }
 
+    private void RebuildResourcesRow()
+    {
+        foreach (var child in _resourcesRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+    }
+
     private void RebuildSquadPanels(StageDefinition stage)
     {
         foreach (var child in _squadStack.GetChildren())
@@ -476,10 +488,7 @@ public partial class MultiplayerMenu : Control
             child.QueueFree();
         }
 
-        _squadStack.AddChild(new Label
-        {
-            Text = "Online Room Directory"
-        });
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Online Room Directory", new Vector2(24f, 24f)));
 
         _squadStack.AddChild(new Label
         {
@@ -538,11 +547,7 @@ public partial class MultiplayerMenu : Control
         var onlineRooms = OnlineRoomDirectoryService.GetCachedRooms();
         if (onlineRooms.Count == 0)
         {
-            _squadStack.AddChild(new Label
-            {
-                Text = "No online room listings cached yet.",
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            });
+            _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No online room listings cached yet.", new Vector2(24f, 24f)));
         }
         else
         {
@@ -552,10 +557,7 @@ public partial class MultiplayerMenu : Control
             }
         }
 
-        _squadStack.AddChild(new Label
-        {
-            Text = "Remote Featured Feed"
-        });
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Remote Featured Feed", new Vector2(24f, 24f)));
 
         _squadStack.AddChild(new Label
         {
@@ -567,11 +569,7 @@ public partial class MultiplayerMenu : Control
         var remoteFeed = ChallengeBoardFeedService.Instance?.GetCachedFeaturedChallenges() ?? [];
         if (remoteFeed.Count == 0)
         {
-            _squadStack.AddChild(new Label
-            {
-                Text = "No remote featured boards cached yet.",
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            });
+            _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No remote featured boards cached yet.", new Vector2(24f, 24f)));
         }
         else
         {
@@ -584,12 +582,10 @@ public partial class MultiplayerMenu : Control
         var dailyChallenge = GameState.GetDailyChallenge();
         var dailyStage = GameData.GetStage(Mathf.Clamp(dailyChallenge.StageIndex, 1, GameState.Instance.MaxStage));
         var dailyCompleted = GameState.Instance.HasCompletedDailyChallenge();
-        var dailyLabel = new Label
-        {
-            Text = dailyCompleted ? "Daily Challenge (Completed)" : "Daily Challenge"
-        };
-        dailyLabel.AddThemeColorOverride("font_color", new Color("f5c542"));
-        _squadStack.AddChild(dailyLabel);
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "daily_streak",
+            dailyCompleted ? "Daily Challenge (Completed)" : "Daily Challenge",
+            new Vector2(24f, 24f)));
 
         var dailyPanel = new PanelContainer
         {
@@ -609,12 +605,10 @@ public partial class MultiplayerMenu : Control
         dailyStack.AddThemeConstantOverride("separation", 8);
         dailyPadding.AddChild(dailyStack);
 
-        var dailyTitleLabel = new Label
-        {
-            Text = $"{dailyChallenge.Date}  |  {dailyChallenge.BoardLabel}  |  {dailyStage.MapName} S{dailyStage.StageNumber}: {dailyStage.StageName}"
-        };
-        dailyTitleLabel.AddThemeColorOverride("font_color", new Color("f5c542"));
-        dailyStack.AddChild(dailyTitleLabel);
+        dailyStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "challenge",
+            $"{dailyChallenge.Date}  |  {dailyChallenge.BoardLabel}  |  {dailyStage.MapName} S{dailyStage.StageNumber}",
+            new Vector2(24f, 24f)));
 
         var dailySquadLine = dailyChallenge.LockedSquad && dailyChallenge.LockedDeckUnitIds.Length > 0
             ? $"Locked squad: {string.Join(", ", dailyChallenge.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
@@ -653,12 +647,7 @@ public partial class MultiplayerMenu : Control
         {
             dailyStack.AddChild(new HSeparator());
 
-            var leaderboardHeader = new Label
-            {
-                Text = "Daily Leaderboard"
-            };
-            leaderboardHeader.AddThemeColorOverride("font_color", new Color("f5c542"));
-            dailyStack.AddChild(leaderboardHeader);
+            dailyStack.AddChild(UiBadgeFactory.CreateMetaMetric("daily_streak", "Daily Leaderboard", new Vector2(24f, 24f)));
 
             if (_cachedDailyLeaderboard == null || _cachedDailyLeaderboard.Entries.Count == 0)
             {
@@ -690,10 +679,10 @@ public partial class MultiplayerMenu : Control
             }
         }
 
-        _squadStack.AddChild(new Label
-        {
-            Text = $"Daily Featured Queue ({FeaturedChallengeCatalog.GetDailyRotationStamp()})"
-        });
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "daily_streak",
+            $"Daily Featured Queue ({FeaturedChallengeCatalog.GetDailyRotationStamp()})",
+            new Vector2(24f, 24f)));
 
         foreach (var featured in FeaturedChallengeCatalog.GetDailyRotation(
                      GameState.Instance.HighestUnlockedStage,
@@ -702,10 +691,10 @@ public partial class MultiplayerMenu : Control
             _squadStack.AddChild(BuildFeaturedChallengePanel(featured));
         }
 
-        _squadStack.AddChild(new Label
-        {
-            Text = $"Pinned Codes ({GameState.Instance.GetPinnedChallengeCodes().Count})"
-        });
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "challenge",
+            $"Pinned Codes ({GameState.Instance.GetPinnedChallengeCodes().Count})",
+            new Vector2(24f, 24f)));
 
         var pinnedCodes = GameState.Instance.GetPinnedChallengeCodes();
         if (pinnedCodes.Count == 0)
@@ -727,12 +716,12 @@ public partial class MultiplayerMenu : Control
         _squadStack.AddChild(BuildLeaderboardPanel(GameState.Instance.GetSelectedAsyncChallenge().Code));
 
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
-        _squadStack.AddChild(new Label
-        {
-            Text = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "members",
+            GameState.Instance.HasSelectedAsyncChallengeLockedDeck
                 ? $"Featured Squad Lock ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})"
-                : $"Active Squad ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})"
-        });
+                : $"Active Squad ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})",
+            new Vector2(24f, 24f)));
 
         _squadStack.AddChild(new Label
         {
@@ -740,12 +729,12 @@ public partial class MultiplayerMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        _squadStack.AddChild(new Label
-        {
-            Text = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "challenge",
+            GameState.Instance.HasSelectedAsyncChallengeLockedDeck
                 ? "Spell Layer"
-                : $"Active Magic ({GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit})"
-        });
+                : $"Active Magic ({GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit})",
+            new Vector2(24f, 24f)));
 
         _squadStack.AddChild(new Label
         {
@@ -775,14 +764,11 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateMetaBadge("challenge", code, new Vector2(48f, 48f)));
 
-        stack.AddChild(new Label
-        {
-            Text = "Remote Board"
-        });
+        stack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Remote Board", new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
@@ -819,14 +805,20 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateMetaBadge("challenge", room.BoardCode, new Vector2(48f, 48f)));
 
-        stack.AddChild(new Label
+        var headerRow = new HBoxContainer();
+        headerRow.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(headerRow);
+
+        headerRow.AddChild(new Label
         {
-            Text = $"{room.Title}  |  {room.CurrentPlayers}/{room.MaxPlayers} runners  |  {room.Status}"
+            Text = $"{room.Title}  |  {room.Status}",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         });
+        headerRow.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"{room.CurrentPlayers}/{room.MaxPlayers}", new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
@@ -893,14 +885,11 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateMetaBadge("challenge", "room", new Vector2(48f, 48f)));
 
-        stack.AddChild(new Label
-        {
-            Text = "Online Room Controls"
-        });
+        stack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Online Room Controls", new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
@@ -1056,7 +1045,7 @@ public partial class MultiplayerMenu : Control
         var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 108f)
+            CustomMinimumSize = new Vector2(0f, 116f)
         };
 
         var padding = new MarginContainer();
@@ -1066,9 +1055,9 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateUnitBadge(definition, new Vector2(72f, 72f)));
 
         stack.AddChild(new Label
         {
@@ -1122,14 +1111,20 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateMetaBadge("challenge", challenge.Code, new Vector2(48f, 48f)));
 
-        stack.AddChild(new Label
+        var headerRow = new HBoxContainer();
+        headerRow.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(headerRow);
+
+        headerRow.AddChild(new Label
         {
-            Text = $"{featured.Title}  |  {stage.MapName} S{stage.StageNumber}"
+            Text = $"{featured.Title}  |  {stage.MapName} S{stage.StageNumber}",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         });
+        headerRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", lockedLabel, new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
@@ -1137,7 +1132,6 @@ public partial class MultiplayerMenu : Control
                 $"{challenge.Code}  |  {mutator.Title}  |  Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
                 $"{featured.Summary}\n" +
                 $"Locked squad: {deckSummary}\n" +
-                $"Status: {lockedLabel}\n" +
                 $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
@@ -1198,14 +1192,14 @@ public partial class MultiplayerMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateMetaBadge("challenge", challenge.Code, new Vector2(48f, 48f)));
 
-        stack.AddChild(new Label
-        {
-            Text = $"{challenge.Code}  |  {stage.MapName} S{stage.StageNumber}  |  {mutator.Title}"
-        });
+        stack.AddChild(UiBadgeFactory.CreateMetaMetric(
+            "challenge",
+            $"{challenge.Code}  |  {stage.MapName} S{stage.StageNumber}  |  {mutator.Title}",
+            new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {

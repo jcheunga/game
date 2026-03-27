@@ -4,7 +4,12 @@ using Godot;
 
 public partial class LanRaceMenu : Control
 {
+	private MenuBackdropSet _menuBackdrop = null!;
+	private HBoxContainer _resourcesRow = null!;
+	private Label _challengeCodeLabel = null!;
 	private Label _boardLabel = null!;
+	private HBoxContainer _boardDeckRow = null!;
+	private HBoxContainer _boardSpellRow = null!;
 	private Label _roomLabel = null!;
 	private Label _readinessLabel = null!;
 	private Label _monitorLabel = null!;
@@ -58,12 +63,7 @@ public partial class LanRaceMenu : Control
 
 	private void BuildUi()
 	{
-		var background = new ColorRect
-		{
-			Color = new Color("14213d")
-		};
-		background.SetAnchorsPreset(LayoutPreset.FullRect);
-		AddChild(background);
+		_menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "lan_race", new Color("14213d"));
 
 		var titlePanel = new PanelContainer
 		{
@@ -83,14 +83,18 @@ public partial class LanRaceMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			VerticalAlignment = VerticalAlignment.Center
 		});
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
-		titleRow.AddChild(new Label
+		_challengeCodeLabel = new Label
 		{
-			Text = $"Current code: {GameState.Instance.SelectedAsyncChallengeCode}",
+			Text = string.Empty,
 			HorizontalAlignment = HorizontalAlignment.Right,
 			VerticalAlignment = VerticalAlignment.Center,
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		});
+		};
+		titleRow.AddChild(_challengeCodeLabel);
 
 		var boardPanel = new PanelContainer
 		{
@@ -122,6 +126,12 @@ public partial class LanRaceMenu : Control
 			CustomMinimumSize = new Vector2(0f, 210f)
 		};
 		boardStack.AddChild(_boardLabel);
+		_boardDeckRow = new HBoxContainer();
+		_boardDeckRow.AddThemeConstantOverride("separation", 8);
+		boardStack.AddChild(_boardDeckRow);
+		_boardSpellRow = new HBoxContainer();
+		_boardSpellRow.AddThemeConstantOverride("separation", 8);
+		boardStack.AddChild(_boardSpellRow);
 
 		boardStack.AddChild(new Label
 		{
@@ -328,6 +338,12 @@ public partial class LanRaceMenu : Control
 		var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
 		var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
 		var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
+		var previewSpells = GameState.Instance.GetSelectedAsyncChallengeDeckSpells();
+		RebuildResourcesRow();
+		_challengeCodeLabel.Text = string.Empty;
+		var titleRow = _challengeCodeLabel.GetParent<HBoxContainer>();
+		while (titleRow.GetChildCount() > 3) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", challenge.Code, new Vector2(24f, 24f)));
 		var deckMode = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
 			? $"Locked LAN squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"
 			: $"Player async squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}";
@@ -339,6 +355,7 @@ public partial class LanRaceMenu : Control
 			$"{GameState.Instance.BuildSelectedAsyncChallengeDeckSynergyInlineSummary()}\n\n" +
 			$"{StageEncounterIntel.BuildCompactSummary(stage)}\n\n" +
 			"Change the armed board on the Multiplayer Challenge screen, then return here to host or rebroadcast it.";
+		RebuildBoardBadgeRows(previewDeck, previewSpells);
 
 		_roomLabel.Text = LanChallengeService.Instance?.BuildRoomSummary() ?? "LAN room service unavailable.";
 		_readinessLabel.Text = LanChallengeService.Instance?.BuildLaunchReadinessSummary() ?? "LAN launch readiness unavailable.";
@@ -376,6 +393,47 @@ public partial class LanRaceMenu : Control
 			string.IsNullOrWhiteSpace(service.SharedChallengeCode) ||
 			!service.AllPeersReady ||
 			!service.AllPeersDecksReady;
+	}
+
+	private void RebuildResourcesRow()
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+	}
+
+	private void RebuildBoardBadgeRows(IReadOnlyList<UnitDefinition> units, IReadOnlyList<SpellDefinition> spells)
+	{
+		foreach (var child in _boardDeckRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		foreach (var child in _boardSpellRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		foreach (var unit in units)
+		{
+			_boardDeckRow.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(34f, 34f)));
+		}
+
+		if (spells.Count == 0)
+		{
+			var emptyText = GameState.Instance.HasSelectedAsyncChallengeLockedDeck ? "Spell lock" : "No spells";
+			_boardSpellRow.AddChild(UiBadgeFactory.CreateRewardMetric("spell", "", emptyText, new Vector2(24f, 24f)));
+			return;
+		}
+
+		foreach (var spell in spells)
+		{
+			_boardSpellRow.AddChild(UiBadgeFactory.CreateSpellBadge(spell, new Vector2(34f, 34f)));
+		}
 	}
 
 	private void HostBoard()

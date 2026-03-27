@@ -14,7 +14,7 @@ public partial class BountyMenu : Control
 	private readonly Label[] _descLabels = new Label[3];
 	private readonly ProgressBar[] _progressBars = new ProgressBar[3];
 	private readonly Label[] _progressLabels = new Label[3];
-	private readonly Label[] _rewardLabels = new Label[3];
+	private readonly HBoxContainer[] _rewardRows = new HBoxContainer[3];
 	private readonly Button[] _claimButtons = new Button[3];
 
 	public override void _Ready()
@@ -42,9 +42,7 @@ public partial class BountyMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("e6a817"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "bounty", new Color("1a1a2e"), new Color("16213e"), new Color("e6a817"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -132,9 +130,11 @@ public partial class BountyMenu : Control
 		// Spacer
 		stack.AddChild(new Control { CustomMinimumSize = new Vector2(0f, 8f) });
 
-		_rewardLabels[index] = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		_rewardLabels[index].AddThemeColorOverride("font_color", new Color("ffd700"));
-		stack.AddChild(_rewardLabels[index]);
+		var rewardCenter = new CenterContainer();
+		stack.AddChild(rewardCenter);
+		_rewardRows[index] = new HBoxContainer();
+		_rewardRows[index].AddThemeConstantOverride("separation", 8);
+		rewardCenter.AddChild(_rewardRows[index]);
 
 		// Spacer pushes button toward bottom
 		stack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
@@ -160,7 +160,7 @@ public partial class BountyMenu : Control
 				_descLabels[i].Text = "";
 				_progressLabels[i].Text = "";
 				_progressBars[i].Value = 0;
-				_rewardLabels[i].Text = "";
+				foreach (var child in _rewardRows[i].GetChildren()) child.QueueFree();
 				_claimButtons[i].Disabled = true;
 				continue;
 			}
@@ -175,7 +175,7 @@ public partial class BountyMenu : Control
 			_progressBars[i].MaxValue = def.TargetCount;
 			_progressBars[i].Value = Math.Min(progress, def.TargetCount);
 			_progressLabels[i].Text = $"Progress: {Math.Min(progress, def.TargetCount)}/{def.TargetCount}";
-			_rewardLabels[i].Text = $"+{def.RewardAmount} {def.RewardType}";
+			RebuildRewardRow(i, def.RewardType, "", $"+{def.RewardAmount} {CapitalizeRewardType(def.RewardType)}");
 			_claimButtons[i].Disabled = !reachedTarget || completed;
 			_claimButtons[i].Text = completed ? "Claimed" : "Claim";
 		}
@@ -196,5 +196,24 @@ public partial class BountyMenu : Control
 		{
 			_statusLabel.Text = message;
 		}
+	}
+
+	private void RebuildRewardRow(int index, string rewardType, string rewardItemId, string text)
+	{
+		foreach (var child in _rewardRows[index].GetChildren()) child.QueueFree();
+		_rewardRows[index].AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, rewardItemId, text, new Vector2(36f, 36f)));
+		var rewardLabel = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
+		rewardLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
+		_rewardRows[index].AddChild(rewardLabel);
+	}
+
+	private static string CapitalizeRewardType(string rewardType)
+	{
+		if (string.IsNullOrWhiteSpace(rewardType))
+		{
+			return "Reward";
+		}
+
+		return char.ToUpperInvariant(rewardType[0]) + rewardType[1..].ToLowerInvariant();
 	}
 }

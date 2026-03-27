@@ -43,9 +43,7 @@ public partial class CodexMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("38bdf8"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "codex", new Color("1a1a2e"), new Color("16213e"), new Color("38bdf8"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -166,6 +164,10 @@ public partial class CodexMenu : Control
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 6);
 
+			row.AddChild(discovered
+				? UiBadgeFactory.CreateCodexBadge(entry, new Vector2(40f, 40f))
+				: UiBadgeFactory.CreateMysteryBadge(new Vector2(40f, 40f)));
+
 			var label = new Label
 			{
 				Text = capturedTitle,
@@ -218,6 +220,10 @@ public partial class CodexMenu : Control
 			_detailStack.AddChild(new Label { Text = "Entry not found." });
 			return;
 		}
+
+		var portrait = new CenterContainer();
+		portrait.AddChild(UiBadgeFactory.CreateCodexPortrait(entry, new Vector2(168f, 168f)));
+		_detailStack.AddChild(portrait);
 
 		// Title
 		var titleLabel = new Label { Text = entry.Title };

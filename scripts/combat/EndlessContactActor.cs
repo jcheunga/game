@@ -153,6 +153,12 @@ public partial class EndlessContactActor : Node2D
             case "gate_breach":
                 DrawGateBreach(drawColor);
                 break;
+            case "rescue_hold":
+                DrawSafehouseRescue(drawColor);
+                break;
+            case "mainline_push":
+                DrawMainlinePush(drawColor);
+                break;
         }
     }
 
@@ -294,6 +300,23 @@ public partial class EndlessContactActor : Node2D
         if (_completed)
         {
             DrawArc(new Vector2(18f, -6f), 18f, -Mathf.Pi * 0.4f, Mathf.Pi * 0.4f, 16, new Color(drawColor, 0.3f), 3f);
+        }
+    }
+
+    private void DrawMainlinePush(Color drawColor)
+    {
+        var laneColor = _failed ? new Color("495057") : new Color("3a506b");
+        DrawRect(new Rect2(new Vector2(-34f, -10f), new Vector2(68f, 20f)), laneColor, true);
+        DrawRect(new Rect2(new Vector2(-34f, -20f), new Vector2(18f, 40f)), laneColor.Darkened(0.08f), true);
+        DrawLine(new Vector2(-20f, -18f), new Vector2(24f, 0f), drawColor.Lightened(0.08f), 5f, true);
+        DrawLine(new Vector2(-20f, 18f), new Vector2(24f, 0f), drawColor.Lightened(0.08f), 5f, true);
+        DrawLine(new Vector2(24f, 0f), new Vector2(48f, 0f), drawColor, 5f, true);
+        DrawLine(new Vector2(36f, -10f), new Vector2(48f, 0f), drawColor, 4f, true);
+        DrawLine(new Vector2(36f, 10f), new Vector2(48f, 0f), drawColor, 4f, true);
+
+        if (_completed)
+        {
+            DrawArc(new Vector2(52f, 0f), 16f, -Mathf.Pi * 0.35f, Mathf.Pi * 0.35f, 16, new Color(drawColor, 0.32f), 3f);
         }
     }
 

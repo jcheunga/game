@@ -9,7 +9,7 @@ public partial class ForgeMenu : Control
 	private PanelContainer _dismantlePanel = null!;
 	private PanelContainer _fusePanel = null!;
 	private PanelContainer _craftPanel = null!;
-	private Label _resourcesLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _dismantleStack = null!;
 	private VBoxContainer _fuseStack = null!;
@@ -41,9 +41,7 @@ public partial class ForgeMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("a855f7"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "forge", new Color("1a1a2e"), new Color("16213e"), new Color("a855f7"), 104f);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);
@@ -51,8 +49,9 @@ public partial class ForgeMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Relic Forge", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_resourcesLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		titleRow.AddChild(_resourcesLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Dismantle panel
 		_dismantlePanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(380f, 480f) };
@@ -133,10 +132,21 @@ public partial class ForgeMenu : Control
 	private void RefreshUi()
 	{
 		var gs = GameState.Instance;
-		_resourcesLabel.Text = $"Gold: {gs.Gold}  |  Shards: {gs.RelicShards}";
+		RebuildResourcesRow(gs);
 		RebuildDismantlePanel();
 		RebuildFusePanel();
 		RebuildCraftPanel();
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("shards", "", gs.RelicShards.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void RebuildDismantlePanel()
@@ -150,6 +160,7 @@ public partial class ForgeMenu : Control
 			var shards = RelicForgeCatalog.GetDismantleShards(equip.Rarity);
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 6);
+			row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(34f, 34f)));
 			var rarityColor = GetRarityColor(equip.Rarity);
 			var label = new Label
 			{
@@ -244,6 +255,7 @@ public partial class ForgeMenu : Control
 
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 6);
+			row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(34f, 34f)));
 			var rarityColor = GetRarityColor(equip.Rarity);
 			var label = new Label
 			{

@@ -8,9 +8,11 @@ public partial class FriendsMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _friendListPanel = null!;
 	private PanelContainer _actionsPanel = null!;
-	private Label _friendCountLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
+	private HBoxContainer _summaryMetricsRow = null!;
 	private Label _statusLabel = null!;
-	private Label _giftInfoLabel = null!;
+	private HBoxContainer _giftStatusRow = null!;
+	private HBoxContainer _giftRewardRow = null!;
 	private VBoxContainer _friendStack = null!;
 	private LineEdit _addFriendInput = null!;
 	private Button _removeBtn = null!;
@@ -41,10 +43,7 @@ public partial class FriendsMenu : Control
 
 	private void BuildUi()
 	{
-		// Background
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("f472b6"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "friends", new Color("1a1a2e"), new Color("16213e"), new Color("f472b6"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -53,8 +52,12 @@ public partial class FriendsMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Friends", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_friendCountLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		titleRow.AddChild(_friendCountLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
+		_summaryMetricsRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_summaryMetricsRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_summaryMetricsRow);
 
 		// Friend List panel (left)
 		_friendListPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(620f, 480f) };
@@ -107,8 +110,12 @@ public partial class FriendsMenu : Control
 		var giftSectionLabel = new Label { Text = "Gift Info" };
 		giftSectionLabel.AddThemeColorOverride("font_color", new Color("f472b6"));
 		actionsInner.AddChild(giftSectionLabel);
-		_giftInfoLabel = new Label();
-		actionsInner.AddChild(_giftInfoLabel);
+		_giftStatusRow = new HBoxContainer();
+		_giftStatusRow.AddThemeConstantOverride("separation", 8);
+		actionsInner.AddChild(_giftStatusRow);
+		_giftRewardRow = new HBoxContainer();
+		_giftRewardRow.AddThemeConstantOverride("separation", 8);
+		actionsInner.AddChild(_giftRewardRow);
 
 		// Remove Friend section
 		actionsInner.AddChild(new HSeparator());
@@ -140,11 +147,55 @@ public partial class FriendsMenu : Control
 	{
 		var gs = GameState.Instance;
 		var friends = gs.GetFriendIds();
-		_friendCountLabel.Text = $"Friends: {friends.Count}";
-		_giftInfoLabel.Text = $"Gifts sent today: {gs.GiftsSentToday}/3\nGift: 50 gold + 2 food";
+		RebuildResourcesRow(gs);
+		RebuildSummaryMetricsRow(friends.Count);
+		RebuildGiftStatusRow(gs.GiftsSentToday);
+		RebuildGiftRewardRow();
 		_selectedFriendId = null;
 		_removeBtn.Disabled = true;
 		RebuildFriendList(friends);
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
+	}
+
+	private void RebuildSummaryMetricsRow(int friendCount)
+	{
+		foreach (var child in _summaryMetricsRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_summaryMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", friendCount.ToString(), new Vector2(24f, 24f)));
+	}
+
+	private void RebuildGiftStatusRow(int giftsSentToday)
+	{
+		foreach (var child in _giftStatusRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_giftStatusRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", $"Gifts sent today: {giftsSentToday}/3", new Vector2(24f, 24f)));
+	}
+
+	private void RebuildGiftRewardRow()
+	{
+		foreach (var child in _giftRewardRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_giftRewardRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", "50", new Vector2(24f, 24f)));
+		_giftRewardRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", "2", new Vector2(24f, 24f)));
 	}
 
 	private void RebuildFriendList(IReadOnlyCollection<string> friends)
@@ -153,7 +204,7 @@ public partial class FriendsMenu : Control
 
 		if (friends.Count == 0)
 		{
-			_friendStack.AddChild(new Label { Text = "No friends yet." });
+			_friendStack.AddChild(UiBadgeFactory.CreateMetaMetric("friends", "No friends yet.", new Vector2(24f, 24f)));
 			return;
 		}
 
@@ -166,6 +217,7 @@ public partial class FriendsMenu : Control
 			row.AddThemeConstantOverride("separation", 6);
 
 			var truncatedId = friendId.Length > 12 ? friendId[..12] + "..." : friendId;
+			row.AddChild(UiBadgeFactory.CreateMetaBadge("friends", truncatedId, new Vector2(28f, 28f)));
 			var selectBtn = new Button
 			{
 				Text = truncatedId,

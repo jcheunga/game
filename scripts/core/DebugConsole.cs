@@ -159,7 +159,7 @@ public partial class DebugConsole : CanvasLayer
 		{
 			"help" => "Commands: help, gold <n>, food <n>, unlock <stage>, unlockall, reset, stage <n>, " +
 				"difficulty <id>, speed <1-3>, stats, units, spells, stages, achievement <id>, " +
-				"relic <id>, equip <unitId> <relicId>, cloud upload, cloud download, analytics flush, screenshot, generate sprites",
+				"relic <id>, equip <unitId> <relicId>, assets, cloud upload, cloud download, analytics flush, screenshot, generate sprites",
 			"gold" => SetGold(args),
 			"food" => SetFood(args),
 			"unlock" => UnlockStage(args),
@@ -175,6 +175,7 @@ public partial class DebugConsole : CanvasLayer
 			"achievement" => GrantAchievement(args),
 			"relic" => GrantRelic(args),
 			"equip" => EquipRelic(args),
+			"assets" => ShowAssetCoverage(),
 			"cloud" => CloudCommand(args),
 			"analytics" => AnalyticsCommand(args),
 			"screenshot" => TakeScreenshot(),
@@ -337,6 +338,11 @@ public partial class DebugConsole : CanvasLayer
 		if (args.Length < 2) return "Usage: equip <unitId> <relicId>";
 		GameState.Instance?.TryEquipItem(args[0], args[1]);
 		return $"Equipped {args[1]} on {args[0]}.";
+	}
+
+	private static string ShowAssetCoverage()
+	{
+		return AssetAuditService.BuildSummary();
 	}
 
 	private static string CloudCommand(string[] args)

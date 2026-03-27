@@ -6,14 +6,18 @@ public partial class MapMenu : Control
 {
     private readonly Dictionary<int, Button> _stageButtons = new();
 
+    private MenuBackdropSet _menuBackdrop = null!;
     private ColorRect _backgroundTop = null!;
     private ColorRect _backgroundBottom = null!;
     private ColorRect _accentBand = null!;
+    private ColorRect _mapBackdropFallback = null!;
+    private TextureRect _mapBackdropTexture = null!;
+    private ColorRect _mapBackdropScrim = null!;
     private PanelContainer _topBar = null!;
     private PanelContainer _mapPanel = null!;
     private PanelContainer _sidePanel = null!;
     private OptionButton _mapSelector = null!;
-    private Label _resourcesLabel = null!;
+    private HBoxContainer _resourcesRow = null!;
     private Label _resultLabel = null!;
     private Label _convoySummaryLabel = null!;
     private Label _squadSummaryLabel = null!;
@@ -21,6 +25,7 @@ public partial class MapMenu : Control
     private Label _stageNameLabel = null!;
     private Label _stageDescriptionLabel = null!;
     private Label _stageStatusLabel = null!;
+    private HBoxContainer _stageRewardRow = null!;
     private Label _stageRewardLabel = null!;
     private Label _stageObjectivesLabel = null!;
     private Label _stageMissionLabel = null!;
@@ -74,29 +79,17 @@ public partial class MapMenu : Control
 
     private void BuildUi()
     {
-        _backgroundTop = new ColorRect
-        {
-            Color = new Color("1b263b")
-        };
-        _backgroundTop.Position = Vector2.Zero;
-        _backgroundTop.Size = new Vector2(1280f, 360f);
-        AddChild(_backgroundTop);
-
-        _backgroundBottom = new ColorRect
-        {
-            Color = new Color("0d1b2a"),
-            Position = new Vector2(0f, 360f),
-            Size = new Vector2(1280f, 360f)
-        };
-        AddChild(_backgroundBottom);
-
-        _accentBand = new ColorRect
-        {
-            Color = new Color("ffd166"),
-            Position = new Vector2(0f, 92f),
-            Size = new Vector2(1280f, 6f)
-        };
-        AddChild(_accentBand);
+        _menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(
+            this,
+            "map",
+            new Color("1b263b"),
+            new Color("0d1b2a"),
+            new Color("ffd166"),
+            92f,
+            _activeMapId);
+        _backgroundTop = _menuBackdrop.PrimaryRect;
+        _backgroundBottom = _menuBackdrop.SecondaryRect;
+        _accentBand = _menuBackdrop.AccentBand;
 
         _topBar = new PanelContainer
         {
@@ -124,13 +117,9 @@ public partial class MapMenu : Control
         _mapSelector.ItemSelected += OnMapSelected;
         topRow.AddChild(_mapSelector);
 
-        _resourcesLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        topRow.AddChild(_resourcesLabel);
+        _resourcesRow = new HBoxContainer();
+        _resourcesRow.AddThemeConstantOverride("separation", 12);
+        topRow.AddChild(_resourcesRow);
 
         _mapPanel = new PanelContainer
         {
@@ -142,6 +131,32 @@ public partial class MapMenu : Control
         var mapArea = new Control();
         mapArea.SetAnchorsPreset(LayoutPreset.FullRect);
         _mapPanel.AddChild(mapArea);
+
+        _mapBackdropFallback = new ColorRect
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        _mapBackdropFallback.SetAnchorsPreset(LayoutPreset.FullRect);
+        mapArea.AddChild(_mapBackdropFallback);
+
+        _mapBackdropTexture = new TextureRect
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            Visible = false
+        };
+        _mapBackdropTexture.SetAnchorsPreset(LayoutPreset.FullRect);
+        mapArea.AddChild(_mapBackdropTexture);
+
+        _mapBackdropScrim = new ColorRect
+        {
+            Color = new Color(0f, 0f, 0f, 0.22f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Visible = false
+        };
+        _mapBackdropScrim.SetAnchorsPreset(LayoutPreset.FullRect);
+        mapArea.AddChild(_mapBackdropScrim);
 
         _mapCanvas = new MapPathCanvas();
         _mapCanvas.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -250,6 +265,10 @@ public partial class MapMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         sideContent.AddChild(_stageStatusLabel);
+
+        _stageRewardRow = new HBoxContainer();
+        _stageRewardRow.AddThemeConstantOverride("separation", 8);
+        sideContent.AddChild(_stageRewardRow);
 
         _stageRewardLabel = new Label
         {
@@ -397,7 +416,7 @@ public partial class MapMenu : Control
             _selectedStage = FindPreferredStageForActiveMap();
         }
 
-        _resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
+        RebuildResourcesRow();
         _resultLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
         RefreshRouteBanner();
 
@@ -428,15 +447,16 @@ public partial class MapMenu : Control
         _stageNameLabel.Text = $"{stage.MapName} - Stage {_selectedStage}: {stage.StageName}";
         _stageDescriptionLabel.Text = stage.Description;
         _stageStatusLabel.Text = BuildStageStatusText(stage, bestStars, stageUnlocked);
+        RebuildStageRewardRow(stage.RewardGold, stage.RewardFood, stageEntryFoodCost);
         _stageRewardLabel.Text =
-            $"Reward on clear: +{stage.RewardGold} gold, +{stage.RewardFood} food   |   Entry: -{stageEntryFoodCost} food   |   Terrain: {stage.TerrainId}\n" +
+            $"Terrain: {stage.TerrainId}\n" +
             $"{GameState.Instance.BuildDistrictRewardStatusText(stage.MapId)}\n" +
             $"{GameState.Instance.BuildCampaignDirectiveStatusText(_selectedStage)}";
         _stageObjectivesLabel.Text = StageObjectives.BuildSummaryText(stage, bestStars);
-        _stageMissionLabel.Text = StageMissionEvents.BuildSummaryText(stage);
+        _stageMissionLabel.Text = StageMissionEvents.BuildCampaignSummaryText(stage);
         _stageModifiersLabel.Text = StageModifiers.BuildSummaryText(stage);
         _stageWeatherLabel.Text = WeatherCatalog.BuildStageSummary(stage);
-        _stageIntelLabel.Text = StageEncounterIntel.BuildCompactSummary(stage);
+        _stageIntelLabel.Text = StageEncounterIntel.BuildCampaignCompactSummary(stage);
         _convoySummaryLabel.Text = BuildConvoySummaryText();
         _squadSummaryLabel.Text = BuildSquadSummaryText();
         RefreshDirectiveButton();
@@ -483,6 +503,42 @@ public partial class MapMenu : Control
         GameState.Instance.SetSelectedStage(_selectedStage);
         GameState.Instance.PrepareCampaignBattle();
         SceneRouter.Instance.GoToLoadout();
+    }
+
+    private void RebuildStageRewardRow(int rewardGold, int rewardFood, int entryFoodCost)
+    {
+        foreach (var child in _stageRewardRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        if (rewardGold > 0)
+        {
+            _stageRewardRow.AddChild(CreateRewardChip("gold", "", $"+{rewardGold} Gold"));
+        }
+
+        if (rewardFood > 0)
+        {
+            _stageRewardRow.AddChild(CreateRewardChip("food", "", $"+{rewardFood} Food"));
+        }
+
+        if (entryFoodCost > 0)
+        {
+            _stageRewardRow.AddChild(CreateRewardChip("food", "", $"-{entryFoodCost} Food Entry"));
+        }
+    }
+
+    private static HBoxContainer CreateRewardChip(string rewardType, string rewardItemId, string text)
+    {
+        var chip = new HBoxContainer();
+        chip.AddThemeConstantOverride("separation", 6);
+        chip.AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, rewardItemId, text, new Vector2(28f, 28f)));
+        chip.AddChild(new Label
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        return chip;
     }
 
     private void BuildMapSelectorItems()
@@ -627,21 +683,43 @@ public partial class MapMenu : Control
             .SetEase(Tween.EaseType.Out);
     }
 
+    private void RebuildResourcesRow()
+    {
+        foreach (var child in _resourcesRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+    }
+
     private void ApplyRouteTheme(StageDefinition stage)
     {
         var route = RouteCatalog.Get(stage?.MapId ?? _activeMapId);
         _backgroundTop.Color = route.BackgroundTop;
         _backgroundBottom.Color = route.BackgroundBottom;
         _accentBand.Color = route.BannerAccent;
+        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("map", route.Id));
         _topBar.SelfModulate = route.BannerPanel.Lightened(0.08f);
         _mapPanel.SelfModulate = route.BannerPanel.Lerp(Colors.White, 0.06f);
         _sidePanel.SelfModulate = route.BannerPanel.Darkened(0.04f);
         _routeBannerPanel.SelfModulate = route.BannerPanel;
+        UpdateMapBackdrop(route);
 
         _stageNameLabel.AddThemeColorOverride("font_color", route.BannerAccent);
         _stageRewardLabel.AddThemeColorOverride("font_color", route.Accent.Lightened(0.12f));
         _deployStatusLabel.AddThemeColorOverride("font_color", route.Accent.Lightened(0.26f));
-        _resourcesLabel.AddThemeColorOverride("font_color", Colors.White);
+    }
+
+    private void UpdateMapBackdrop(RouteDefinition route)
+    {
+        _mapBackdropFallback.Color = route.BackgroundTop.Lerp(route.BackgroundBottom, 0.45f);
+        var texture = UiTextureLoader.TryLoadMapBackground(route.Id);
+        var hasTexture = texture != null;
+        _mapBackdropTexture.Texture = texture;
+        _mapBackdropTexture.Visible = hasTexture;
+        _mapBackdropScrim.Visible = hasTexture;
     }
 
     private void RefreshRouteBanner()
@@ -712,15 +790,22 @@ public partial class MapMenu : Control
 
         button.Text = label;
         var enemyCallouts = StageEncounterIntel.BuildNotableEnemyCallouts(stage);
+        var bossPhaseWarning = StageEncounterIntel.BuildBossPhaseWarning(stage);
         var weatherInline = WeatherCatalog.BuildInlineSummary(stage);
+        var missionInline = StageMissionEvents.BuildCampaignInlineSummary(stage);
         button.TooltipText =
             $"{stage.MapName} - Stage {stage.StageNumber}: {stage.StageName}\n" +
             $"Threat: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Stars: {stars}/3\n" +
             $"{stage.Description.Split('\n')[0]}\n" +
             $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}\n" +
-            $"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}" +
+            (bossPhaseWarning.Length > 0 ? $"{bossPhaseWarning}\n" : "") +
+            $"Battlefield events: {missionInline}" +
             (weatherInline.Length > 0 ? $"\nWeather: {weatherInline}" : "") +
-            (enemyCallouts.Length > 0 ? $"\n{enemyCallouts}" : "");
+            (enemyCallouts.Length > 0 ? $"\n{enemyCallouts}" : "") +
+            $"\n{GameState.Instance.BuildCampaignScoutStatusText(stage.StageNumber)}" +
+            $"\n{GameState.Instance.BuildCampaignMissionOutcomeStatusText(stage.MapId)}" +
+            $"\n{GameState.Instance.BuildCampaignFieldOrderStatusText(stage.MapId)}" +
+            $"\n{GameState.Instance.BuildCampaignConvoyCommandStatusText(stage.MapId)}";
 
         button.SelfModulate = !unlocked
             ? route.BannerPanel.Darkened(0.35f)
@@ -742,12 +827,23 @@ public partial class MapMenu : Control
             ? $"{stage.Waves.Length} scripted waves"
             : "dynamic pressure";
         var readiness = GameState.Instance.BuildCampaignReadinessInlineSummary(stage.StageNumber);
+        var bossPhaseWarning = StageEncounterIntel.BuildBossPhaseWarning(stage);
 
         return
             $"Stage status: {stageState}  |  Best stars: {bestStars}/3\n" +
             $"Threat rating: {StageEncounterIntel.ResolveThreatRating(stage)}  |  Pressure: {waveStatus}  |  Entry: {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food\n" +
             $"{StageEncounterIntel.BuildSupportPressureSummary(stage)}\n" +
-            $"{readiness}";
+            (bossPhaseWarning.Length > 0 ? $"{bossPhaseWarning}\n" : "") +
+            $"{readiness}\n" +
+            $"{GameState.Instance.BuildCampaignScoutStatusText(stage.StageNumber)}\n" +
+            $"{GameState.Instance.BuildCampaignFieldOrderStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignMomentumStatusText()}\n" +
+            $"{GameState.Instance.BuildCampaignConvoyCommandStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignRouteDoctrineStatusText(stage.StageNumber, stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignMissionOutcomeStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignCounterSurgeStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignReserveStatusText()}\n" +
+            $"{GameState.Instance.BuildCampaignRouteSupportStatusText(stage.MapId)}";
     }
 
     private string BuildConvoySummaryText()

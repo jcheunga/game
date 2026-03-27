@@ -7,12 +7,13 @@ public partial class CashShopMenu : Control
 	private ColorRect _backgroundTop = null!;
 	private ColorRect _backgroundBottom = null!;
 	private ColorRect _accentBand = null!;
+	private MenuBackdropSet _menuBackdrop = null!;
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _goldPanel = null!;
 	private PanelContainer _foodPanel = null!;
 	private PanelContainer _mixedPanel = null!;
 	private PanelContainer _statusPanel = null!;
-	private Label _resourcesLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _goldStack = null!;
 	private VBoxContainer _foodStack = null!;
@@ -45,29 +46,16 @@ public partial class CashShopMenu : Control
 
 	private void BuildUi()
 	{
-		_backgroundTop = new ColorRect
-		{
-			Color = new Color("1a1a2e"),
-			Position = Vector2.Zero,
-			Size = new Vector2(1280f, 360f)
-		};
-		AddChild(_backgroundTop);
-
-		_backgroundBottom = new ColorRect
-		{
-			Color = new Color("16213e"),
-			Position = new Vector2(0f, 360f),
-			Size = new Vector2(1280f, 360f)
-		};
-		AddChild(_backgroundBottom);
-
-		_accentBand = new ColorRect
-		{
-			Color = new Color("e2b714"),
-			Position = new Vector2(0f, 104f),
-			Size = new Vector2(1280f, 6f)
-		};
-		AddChild(_accentBand);
+		_menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(
+			this,
+			"cash_shop",
+			new Color("1a1a2e"),
+			new Color("16213e"),
+			new Color("e2b714"),
+			104f);
+		_backgroundTop = _menuBackdrop.PrimaryRect;
+		_backgroundBottom = _menuBackdrop.SecondaryRect;
+		_accentBand = _menuBackdrop.AccentBand;
 
 		// Title panel
 		_titlePanel = new PanelContainer
@@ -88,13 +76,9 @@ public partial class CashShopMenu : Control
 			VerticalAlignment = VerticalAlignment.Center
 		});
 
-		_resourcesLabel = new Label
-		{
-			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		titleRow.AddChild(_resourcesLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Gold packs panel
 		_goldPanel = new PanelContainer
@@ -246,11 +230,22 @@ public partial class CashShopMenu : Control
 
 	private void RefreshUi()
 	{
-		_resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
+		RebuildResourcesRow();
 		RebuildGoldPacks();
 		RebuildFoodPacks();
 		RebuildMixedPacks();
 		RefreshStatus();
+	}
+
+	private void RebuildResourcesRow()
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void RebuildGoldPacks()
@@ -312,6 +307,8 @@ public partial class CashShopMenu : Control
 
 		card.AddChild(nameRow);
 
+		card.AddChild(BuildProductRewardRow(product));
+
 		card.AddChild(new Label
 		{
 			Text = product.FormattedReward,
@@ -343,6 +340,46 @@ public partial class CashShopMenu : Control
 
 		card.AddChild(new HSeparator());
 		stack.AddChild(card);
+	}
+
+	private static HBoxContainer BuildProductRewardRow(ShopProduct product)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+
+		if (product.CurrencyType.Equals("gold", StringComparison.OrdinalIgnoreCase))
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(34f, 34f)));
+		}
+		else if (product.CurrencyType.Equals("food", StringComparison.OrdinalIgnoreCase))
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", product.FormattedReward, new Vector2(34f, 34f)));
+		}
+		else if (product.CurrencyType.Equals("mixed", StringComparison.OrdinalIgnoreCase))
+		{
+			if (product.GoldAmount > 0)
+			{
+				row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{product.GoldAmount} Gold", new Vector2(34f, 34f)));
+			}
+			if (product.FoodAmount > 0)
+			{
+				row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{product.FoodAmount} Food", new Vector2(34f, 34f)));
+			}
+		}
+
+		if (product.GrantsUnitUnlock)
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("unit", "", "Unit Unlock", new Vector2(34f, 34f)));
+		}
+
+		row.AddChild(new Label
+		{
+			Text = product.FormattedReward,
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			VerticalAlignment = VerticalAlignment.Center,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill
+		});
+		return row;
 	}
 
 	private void OnPurchasePressed(string productId, Button button)

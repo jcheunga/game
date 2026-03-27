@@ -37,10 +37,7 @@ public partial class ProfileMenu : Control
 
 	private void BuildUi()
 	{
-		// Background
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("60a0ff"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "profile", new Color("1a1a2e"), new Color("16213e"), new Color("60a0ff"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -159,12 +156,12 @@ public partial class ProfileMenu : Control
 		_generalStack.AddChild(new HSeparator());
 		_generalStack.AddChild(MakeSubheading("Currencies"));
 
-		AddStatRow(_generalStack, "Gold", gs.Gold.ToString("N0"));
-		AddStatRow(_generalStack, "Food", gs.Food.ToString("N0"));
-		AddStatRow(_generalStack, "Sigils", gs.Sigils.ToString("N0"));
-		AddStatRow(_generalStack, "Shards", gs.RelicShards.ToString("N0"));
-		AddStatRow(_generalStack, "Tomes", gs.Tomes.ToString("N0"));
-		AddStatRow(_generalStack, "Essence", gs.Essence.ToString("N0"));
+		AddRewardStatRow(_generalStack, "gold", "Gold", gs.Gold.ToString("N0"));
+		AddRewardStatRow(_generalStack, "food", "Food", gs.Food.ToString("N0"));
+		AddRewardStatRow(_generalStack, "sigils", "Sigils", gs.Sigils.ToString("N0"));
+		AddRewardStatRow(_generalStack, "shards", "Shards", gs.RelicShards.ToString("N0"));
+		AddRewardStatRow(_generalStack, "tomes", "Tomes", gs.Tomes.ToString("N0"));
+		AddRewardStatRow(_generalStack, "essence", "Essence", gs.Essence.ToString("N0"));
 
 		_generalStack.AddChild(new HSeparator());
 		_generalStack.AddChild(MakeSubheading("Campaign"));
@@ -210,9 +207,9 @@ public partial class ProfileMenu : Control
 		var ownedSpells = gs.GetOwnedPlayerSpells().Count;
 		var ownedRelics = gs.GetOwnedEquipment().Count;
 
-		AddStatRow(_collectionStack, "Units Owned", ownedUnits.ToString());
-		AddStatRow(_collectionStack, "Spells Owned", ownedSpells.ToString());
-		AddStatRow(_collectionStack, "Relics Owned", ownedRelics.ToString());
+		AddRewardStatRow(_collectionStack, "unit", "Units Owned", ownedUnits.ToString());
+		AddRewardStatRow(_collectionStack, "spell", "Spells Owned", ownedSpells.ToString());
+		AddRewardStatRow(_collectionStack, "relic", "Relics Owned", ownedRelics.ToString());
 
 		_collectionStack.AddChild(new HSeparator());
 		_collectionStack.AddChild(MakeSubheading("Codex"));
@@ -270,6 +267,34 @@ public partial class ProfileMenu : Control
 		};
 		valueLabel.AddThemeColorOverride("font_color", new Color("e0e8f0"));
 		row.AddChild(valueLabel);
+		parent.AddChild(row);
+	}
+
+	private static void AddRewardStatRow(VBoxContainer parent, string rewardType, string label, string value)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+
+		row.AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, "", label, new Vector2(32f, 32f)));
+
+		var nameLabel = new Label
+		{
+			Text = label,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			VerticalAlignment = VerticalAlignment.Center,
+		};
+		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		row.AddChild(nameLabel);
+
+		var valueLabel = new Label
+		{
+			Text = value,
+			HorizontalAlignment = HorizontalAlignment.Right,
+			VerticalAlignment = VerticalAlignment.Center,
+		};
+		valueLabel.AddThemeColorOverride("font_color", new Color("e0e8f0"));
+		row.AddChild(valueLabel);
+
 		parent.AddChild(row);
 	}
 

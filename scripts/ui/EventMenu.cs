@@ -7,7 +7,7 @@ public partial class EventMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _stagesPanel = null!;
 	private PanelContainer _milestonesPanel = null!;
-	private Label _resourcesLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _stagesStack = null!;
 	private VBoxContainer _milestonesStack = null!;
@@ -37,8 +37,9 @@ public partial class EventMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
+		var evt = GameState.Instance.GetActiveEvent();
+		var bannerColor = evt != null ? new Color(evt.BannerColorHex) : new Color("cc6622");
+		MenuBackdropComposer.AddSplitBackdrop(this, "event", new Color("1a1a2e"), new Color("16213e"), bannerColor, 104f);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);
@@ -46,18 +47,15 @@ public partial class EventMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 
-		var evt = GameState.Instance.GetActiveEvent();
-		var bannerColor = evt != null ? new Color(evt.BannerColorHex) : new Color("cc6622");
-		AddChild(new ColorRect { Color = bannerColor, Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
-
 		titleRow.AddChild(new Label
 		{
 			Text = evt?.Title ?? "No Active Event",
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			VerticalAlignment = VerticalAlignment.Center
 		});
-		_resourcesLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		titleRow.AddChild(_resourcesLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Stages panel
 		_stagesPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(700f, 480f) };
@@ -111,11 +109,23 @@ public partial class EventMenu : Control
 	private void RefreshUi()
 	{
 		var gs = GameState.Instance;
-		_resourcesLabel.Text = $"Gold: {gs.Gold}  |  Food: {gs.Food}  |  Sigils: {gs.Sigils}";
+		RebuildResourcesRow(gs);
 
 		var evt = gs.GetActiveEvent();
 		RebuildStages(evt);
 		RebuildMilestones(evt);
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("sigils", "", gs.Sigils.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void RebuildStages(SeasonalEventDefinition evt)
@@ -153,6 +163,11 @@ public partial class EventMenu : Control
 				VerticalAlignment = VerticalAlignment.Center
 			};
 			if (cleared) label.AddThemeColorOverride("font_color", new Color("60d060"));
+			row.AddChild(UiBadgeFactory.CreateRewardBadge(
+				stage.CompletionReward?.Type,
+				stage.CompletionReward?.ItemId,
+				rewardText,
+				new Vector2(30f, 30f)));
 			row.AddChild(label);
 
 			if (i == progress && !cleared)
@@ -216,6 +231,7 @@ public partial class EventMenu : Control
 				VerticalAlignment = VerticalAlignment.Center
 			};
 			if (claimed) label.AddThemeColorOverride("font_color", new Color("60d060"));
+			row.AddChild(UiBadgeFactory.CreateRewardBadge(ms.Reward?.Type, ms.Reward?.ItemId, rewardText, new Vector2(30f, 30f)));
 			row.AddChild(label);
 
 			if (reachable && !claimed)

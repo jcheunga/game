@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -131,7 +132,7 @@ public static class CodexCatalog
 
 	public static IReadOnlyList<CodexEntry> GetAll() => Entries;
 
-	public static CodexEntry GetById(string id)
+	public static CodexEntry? GetById(string id)
 	{
 		return ById.TryGetValue(id, out var entry) ? entry : null;
 	}

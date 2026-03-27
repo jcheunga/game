@@ -4,8 +4,10 @@ using Godot;
 
 public partial class EndlessMenu : Control
 {
+    private MenuBackdropSet _menuBackdrop = null!;
     private OptionButton _routeSelector = null!;
     private OptionButton _boonSelector = null!;
+    private HBoxContainer _resourcesRow = null!;
     private Label _routeTitleLabel = null!;
     private Label _routeSummaryLabel = null!;
     private Label _recordLabel = null!;
@@ -46,12 +48,8 @@ public partial class EndlessMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
-        {
-            Color = new Color("102a43")
-        };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        var route = RouteCatalog.Get(_selectedRouteId);
+        _menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "endless", route.BackgroundTop, route.Id);
 
         var titlePanel = new PanelContainer
         {
@@ -72,13 +70,9 @@ public partial class EndlessMenu : Control
             VerticalAlignment = VerticalAlignment.Center
         });
 
-        titleRow.AddChild(new Label
-        {
-            Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        });
+        _resourcesRow = new HBoxContainer();
+        _resourcesRow.AddThemeConstantOverride("separation", 12);
+        titleRow.AddChild(_resourcesRow);
 
         var missionPanel = new PanelContainer
         {
@@ -266,11 +260,15 @@ public partial class EndlessMenu : Control
     {
         SyncSelector();
         SyncBoonSelector();
+        RebuildResourcesRow();
 
+        var route = RouteCatalog.Get(_selectedRouteId);
         var templateStage = GameData.GetLatestStageForMap(_selectedRouteId);
         var routeStages = GameData.GetStagesForMap(_selectedRouteId);
         var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);
         var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_selectedRouteId);
+        _menuBackdrop.PrimaryRect.Color = route.BackgroundTop;
+        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("endless", route.Id));
         _routeTitleLabel.Text = $"{templateStage.MapName} Endless Run";
         _routeSummaryLabel.Text =
             $"{BuildRouteDescription(_selectedRouteId)}\n\n" +
@@ -301,6 +299,17 @@ public partial class EndlessMenu : Control
         _deckStatusLabel.Text = deployMessage;
         _deployButton.Disabled = !canStartBattle;
         _deployButton.Text = canStartBattle ? "Begin Endless March" : "Caravan Not Ready";
+    }
+
+    private void RebuildResourcesRow()
+    {
+        foreach (var child in _resourcesRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
     }
 
     private void RebuildRunHistory()
@@ -400,7 +409,7 @@ public partial class EndlessMenu : Control
         var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 108f)
+            CustomMinimumSize = new Vector2(0f, 116f)
         };
 
         var padding = new MarginContainer();
@@ -410,9 +419,9 @@ public partial class EndlessMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateUnitBadge(definition, new Vector2(72f, 72f)));
 
         stack.AddChild(new Label
         {
@@ -444,7 +453,7 @@ public partial class EndlessMenu : Control
     {
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 88f),
+            CustomMinimumSize = new Vector2(0f, 92f),
             SelfModulate = spell.GetTint().Darkened(0.08f)
         };
 
@@ -455,9 +464,10 @@ public partial class EndlessMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 10);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 6);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateSpellBadge(spell, new Vector2(60f, 60f)),
+            stackSpacing: 6);
 
         stack.AddChild(new Label
         {

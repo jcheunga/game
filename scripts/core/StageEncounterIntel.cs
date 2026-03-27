@@ -20,6 +20,16 @@ public static class StageEncounterIntel
 
     public static string BuildCompactSummary(StageDefinition stage)
     {
+        return BuildCompactSummary(stage, false);
+    }
+
+    public static string BuildCampaignCompactSummary(StageDefinition stage)
+    {
+        return BuildCompactSummary(stage, true);
+    }
+
+    private static string BuildCompactSummary(StageDefinition stage, bool includeCampaignMissionFallback)
+    {
         if (stage == null)
         {
             return "Encounter intel unavailable.";
@@ -27,8 +37,9 @@ public static class StageEncounterIntel
 
         if (!stage.HasScriptedWaves)
         {
-            var missionLine = StageMissionEvents.HasMissionEvents(stage)
-                ? $"Mission events: {StageMissionEvents.BuildInlineSummary(stage)}"
+            var dynamicMissionSummary = ResolveMissionInlineSummary(stage, includeCampaignMissionFallback);
+            var missionLine = dynamicMissionSummary.Length > 0
+                ? $"Mission events: {dynamicMissionSummary}"
                 : "";
             return
                 $"Threat: {ResolveThreatRating(stage)}\n" +
@@ -45,12 +56,13 @@ public static class StageEncounterIntel
             .OrderByDescending(wave => wave.Entries.Sum(entry => entry == null ? 0 : Mathf.Max(1, entry.Count)))
             .ThenBy(wave => wave.TriggerTime)
             .FirstOrDefault();
-        var bossWave = stage.Waves.FirstOrDefault(
-            wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
+        var bossWave = FindBossWave(stage);
+        var bossUnitId = TryGetBossUnitId(bossWave);
         var supportPressure = BuildSupportPressureSummary(counts);
 
-        var missionSummary = StageMissionEvents.HasMissionEvents(stage)
-            ? $"Mission events: {StageMissionEvents.BuildInlineSummary(stage)}"
+        var missionInlineSummary = ResolveMissionInlineSummary(stage, includeCampaignMissionFallback);
+        var missionSummary = missionInlineSummary.Length > 0
+            ? $"Mission events: {missionInlineSummary}"
             : "";
 
         return
@@ -58,7 +70,7 @@ public static class StageEncounterIntel
             $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")}  |  " +
             $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")}  |  " +
             $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}  |  " +
-            $"Boss trait: {(bossWave == null ? "n/a" : "Rally call")}\n" +
+            $"Boss phase: {(string.IsNullOrWhiteSpace(bossUnitId) ? "n/a" : GetBossPhaseTitle(bossUnitId))}\n" +
             $"{supportPressure}\n" +
             $"{missionSummary}" +
             (missionSummary.Length > 0 ? "\n" : "") +
@@ -66,6 +78,16 @@ public static class StageEncounterIntel
     }
 
     public static string BuildEncounterIntel(StageDefinition stage)
+    {
+        return BuildEncounterIntel(stage, false);
+    }
+
+    public static string BuildCampaignEncounterIntel(StageDefinition stage)
+    {
+        return BuildEncounterIntel(stage, true);
+    }
+
+    private static string BuildEncounterIntel(StageDefinition stage, bool includeCampaignMissionFallback)
     {
         if (stage == null)
         {
@@ -87,8 +109,8 @@ public static class StageEncounterIntel
             .Take(5)
             .Select(pair => $"{GameData.GetUnit(pair.Key).DisplayName} x{pair.Value}");
 
-        var bossWave = stage.Waves.FirstOrDefault(
-            wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
+        var bossWave = FindBossWave(stage);
+        var bossUnitId = TryGetBossUnitId(bossWave);
         var peakWave = stage.Waves
             .OrderByDescending(wave => wave.Entries.Sum(entry => entry == null ? 0 : Mathf.Max(1, entry.Count)))
             .ThenBy(wave => wave.TriggerTime)
@@ -101,15 +123,19 @@ public static class StageEncounterIntel
             $"Scheduled contacts: {totalEnemies}  |  Enemy types: {counts.Count}  |  Peak wave: {peakWave.TriggerTime:0}s");
         builder.AppendLine($"Threat mix: {string.Join(", ", topThreats)}");
         builder.AppendLine(BuildSupportPressureSummary(counts));
-        if (StageMissionEvents.HasMissionEvents(stage))
+        var missionInlineSummary = ResolveMissionInlineSummary(stage, includeCampaignMissionFallback);
+        if (missionInlineSummary.Length > 0)
         {
-            builder.AppendLine($"Battlefield events: {StageMissionEvents.BuildInlineSummary(stage)}");
+            builder.AppendLine($"Battlefield events: {missionInlineSummary}");
         }
         builder.AppendLine($"Hazards: {StageHazards.BuildInlineSummary(stage)}");
 
         if (bossWave != null)
         {
-            builder.AppendLine($"Boss warning: {bossWave.TriggerTime:0}s  |  {bossWave.Label}  |  Rally call spawns escorts and buffs nearby undead.");
+            var bossName = GameData.GetUnit(bossUnitId).DisplayName;
+            builder.AppendLine(
+                $"Boss warning: {bossWave.TriggerTime:0}s  |  {bossName}  |  " +
+                $"Phase at ~55% HP: {BuildBossPhaseSummary(bossUnitId)}");
         }
         else
         {
@@ -130,6 +156,41 @@ public static class StageEncounterIntel
     {
         var counts = BuildUnitCounts(stage, out _);
         return BuildSupportPressureSummary(counts);
+    }
+
+    public static string GetBossPhaseTitleForStage(StageDefinition stage)
+    {
+        return GetBossPhaseTitle(GetBossUnitIdForStage(stage));
+    }
+
+    public static string BuildBossPhaseWarning(StageDefinition stage)
+    {
+        var bossUnitId = GetBossUnitIdForStage(stage);
+        return string.IsNullOrWhiteSpace(bossUnitId)
+            ? ""
+            : $"Boss phase: {GetBossPhaseTitle(bossUnitId)} at ~55% HP. {BuildBossPhaseSummary(bossUnitId)}";
+    }
+
+    public static string GetBossPhaseTitle(string bossUnitId)
+    {
+        return NormalizeBossUnitId(bossUnitId) switch
+        {
+            GameData.EnemyBossDocksId => "Undertow",
+            GameData.EnemyBossForgeId => "Forge Surge",
+            GameData.EnemyBossWardId => "Blackout Bloom",
+            GameData.EnemyBossPassId => "War Stampede",
+            GameData.EnemyBossBasilicaId => "Crypt Vow",
+            GameData.EnemyBossMireId => "Rot Swell",
+            GameData.EnemyBossSteppeId => "Wolf Run",
+            GameData.EnemyBossVergeId => "Hex Bloom",
+            GameData.EnemyBossCitadelId => "Keep Ward",
+            GameData.EnemyBossReliquaryId => "Catacomb Awakening",
+            GameData.EnemyBossAshenRegentId => "Ashfall Edict",
+            GameData.EnemyBossTidemasterId => "Floodgate Break",
+            GameData.EnemyBossPlagueMonarchId => "Plague Eclipse",
+            GameData.EnemyBossId => "Last Stand",
+            _ => ""
+        };
     }
 
     public static string BuildWavePressureSummary(StageWaveDefinition wave)
@@ -343,9 +404,9 @@ public static class StageEncounterIntel
             flags.Add("tunnelers");
         }
 
-        if (WaveContainsUnit(wave, GameData.EnemyBossId))
+        if (WaveContainsBossUnit(wave))
         {
-            flags.Add("boss rally");
+            flags.Add("boss phase");
         }
 
         return string.Join(", ", flags);
@@ -401,8 +462,8 @@ public static class StageEncounterIntel
                     GameData.EnemySiegeTowerId => "Siege Tower: deploys troops at your base",
                     GameData.EnemyMirrorId => "Mirror Knight: reflects damage",
                     GameData.EnemyTunnelerId => "Tunneler: burrows behind your lines",
-                    _ when entry.UnitId.StartsWith(GameData.EnemyBossId) =>
-                        $"Boss encounter: {GameData.GetUnit(entry.UnitId).DisplayName}",
+                    _ when IsBossUnitId(entry.UnitId) =>
+                        $"Boss encounter: {GameData.GetUnit(entry.UnitId).DisplayName} ({GetBossPhaseTitle(entry.UnitId)})",
                     _ => null
                 };
 
@@ -504,16 +565,7 @@ public static class StageEncounterIntel
             candidates.Add(("Fireball", "kill siege towers before arrival", siegeCount + 2));
         }
 
-        var hasBoss = counts.ContainsKey(GameData.EnemyBossId) ||
-            counts.ContainsKey(GameData.EnemyBossDocksId) ||
-            counts.ContainsKey(GameData.EnemyBossForgeId) ||
-            counts.ContainsKey(GameData.EnemyBossWardId) ||
-            counts.ContainsKey(GameData.EnemyBossPassId) ||
-            counts.ContainsKey(GameData.EnemyBossBasilicaId) ||
-            counts.ContainsKey(GameData.EnemyBossMireId) ||
-            counts.ContainsKey(GameData.EnemyBossSteppeId) ||
-            counts.ContainsKey(GameData.EnemyBossVergeId) ||
-            counts.ContainsKey(GameData.EnemyBossCitadelId);
+        var hasBoss = counts.Keys.Any(IsBossUnitId);
         if (hasBoss)
         {
             candidates.Add(("Resurrect", "recover from boss burst damage", 5));
@@ -545,8 +597,7 @@ public static class StageEncounterIntel
         var peakWaveCount = stage.HasScriptedWaves
             ? stage.Waves.Max(wave => wave.Entries.Sum(entry => entry == null ? 0 : Mathf.Max(1, entry.Count)))
             : 0;
-        var hasBoss = stage.HasScriptedWaves &&
-            stage.Waves.Any(wave => wave.Entries.Any(entry => entry != null && entry.UnitId == GameData.EnemyBossId));
+        var hasBoss = stage.HasScriptedWaves && stage.Waves.Any(WaveContainsBossUnit);
         var howlerCount = counts.TryGetValue(GameData.EnemyHowlerId, out var howlers) ? howlers : 0;
         var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammers) ? jammers : 0;
         var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurs) ? saboteurs : 0;
@@ -577,4 +628,90 @@ public static class StageEncounterIntel
             (StageModifiers.ResolveEnemyCapBonus(stage) * 0.12f) +
             (hasBoss ? 0.55f : 0f);
     }
+
+    private static StageWaveDefinition FindBossWave(StageDefinition stage)
+    {
+        return stage?.Waves?.FirstOrDefault(WaveContainsBossUnit);
+    }
+
+    private static string GetBossUnitIdForStage(StageDefinition stage)
+    {
+        return TryGetBossUnitId(FindBossWave(stage));
+    }
+
+    private static string TryGetBossUnitId(StageWaveDefinition wave)
+    {
+        if (wave?.Entries == null)
+        {
+            return "";
+        }
+
+        foreach (var entry in wave.Entries)
+        {
+            if (entry != null && IsBossUnitId(entry.UnitId))
+            {
+                return entry.UnitId;
+            }
+        }
+
+        return "";
+    }
+
+    private static bool WaveContainsBossUnit(StageWaveDefinition wave)
+    {
+        return !string.IsNullOrWhiteSpace(TryGetBossUnitId(wave));
+    }
+
+    private static bool IsBossUnitId(string unitId)
+    {
+        return !string.IsNullOrWhiteSpace(unitId) &&
+            unitId.StartsWith(GameData.EnemyBossId, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeBossUnitId(string bossUnitId)
+    {
+        return string.IsNullOrWhiteSpace(bossUnitId)
+            ? ""
+            : bossUnitId.Trim().ToLowerInvariant();
+    }
+
+    private static string BuildBossPhaseSummary(string bossUnitId)
+    {
+        return NormalizeBossUnitId(bossUnitId) switch
+        {
+            GameData.EnemyBossDocksId => "Wave surge damages, slows, and shoves the frontline.",
+            GameData.EnemyBossForgeId => "Brute escorts deploy and the nearby push hardens.",
+            GameData.EnemyBossWardId => "Signal jam spikes, cooldowns stall, and the line buckles.",
+            GameData.EnemyBossPassId => "Fast escorts flood in and the nearby pack surges forward.",
+            GameData.EnemyBossBasilicaId => "The keep recovers while ritual escorts answer the vow.",
+            GameData.EnemyBossMireId => "A blight burst damages and drags down nearby defenders.",
+            GameData.EnemyBossSteppeId => "Runners pour in and the nearby pack accelerates.",
+            GameData.EnemyBossVergeId => "The strongest defender is hexed while witchlights thicken the screen.",
+            GameData.EnemyBossCitadelId => "The keep recovers and elite escorts lock down the lane.",
+            GameData.EnemyBossReliquaryId => "Bone artillery joins the fight and the keep regains ground.",
+            GameData.EnemyBossAshenRegentId => "Ashen shockwaves hammer the frontline and a giant steps in.",
+            GameData.EnemyBossTidemasterId => "A tidal break slams the frontline and buys the keep breathing room.",
+            GameData.EnemyBossPlagueMonarchId => "A major blackout hits courage flow while captains reinforce the push.",
+            GameData.EnemyBossId => "The boss rallies nearby undead for one last surge.",
+            _ => "Expect a major battlefield swing near half health."
+        };
+    }
+
+    private static string ResolveMissionInlineSummary(StageDefinition stage, bool includeCampaignMissionFallback)
+    {
+        if (includeCampaignMissionFallback)
+        {
+            var summary = StageMissionEvents.BuildCampaignInlineSummary(stage);
+            return summary == "none" ? "" : summary;
+        }
+
+        if (!StageMissionEvents.HasMissionEvents(stage))
+        {
+            return "";
+        }
+
+        var authoredSummary = StageMissionEvents.BuildInlineSummary(stage);
+        return authoredSummary == "none" ? "" : authoredSummary;
+    }
+
 }

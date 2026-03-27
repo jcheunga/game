@@ -41,10 +41,7 @@ public partial class RaidMenu : Control
 
 	private void BuildUi()
 	{
-		// Background
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("60a0ff"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "raid", new Color("1a1a2e"), new Color("16213e"), new Color("60a0ff"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -149,13 +146,19 @@ public partial class RaidMenu : Control
 	{
 		foreach (var child in _bossStack.GetChildren()) child.QueueFree();
 
+		var codexEntry = CodexCatalog.GetById(_boss.BossUnitId);
+		var portrait = new CenterContainer();
+		portrait.AddChild(codexEntry != null
+			? UiBadgeFactory.CreateCodexPortrait(codexEntry, new Vector2(156f, 156f))
+			: UiBadgeFactory.CreateMysteryBadge(new Vector2(156f, 156f)));
+		_bossStack.AddChild(portrait);
+
 		// Boss name
 		var nameLabel = new Label { Text = _boss.BossName, HorizontalAlignment = HorizontalAlignment.Center };
 		nameLabel.AddThemeColorOverride("font_color", new Color("ff6060"));
 		_bossStack.AddChild(nameLabel);
 
 		// Lore from codex (if available)
-		var codexEntry = CodexCatalog.GetById(_boss.BossUnitId);
 		if (codexEntry != null && !string.IsNullOrWhiteSpace(codexEntry.LoreText))
 		{
 			var loreLabel = new Label
@@ -211,9 +214,17 @@ public partial class RaidMenu : Control
 
 			// Reward info
 			var rewardText = FormatReward(ms.RewardType, ms.RewardItemId, ms.RewardAmount);
-			var rewardLabel = new Label { Text = $"Reward: {rewardText}" };
+			var rewardRow = new HBoxContainer();
+			rewardRow.AddThemeConstantOverride("separation", 8);
+			var rewardBadge = BuildRewardBadge(ms);
+			if (rewardBadge != null)
+			{
+				rewardRow.AddChild(rewardBadge);
+			}
+			var rewardLabel = new Label { Text = $"Reward: {rewardText}", VerticalAlignment = VerticalAlignment.Center };
 			rewardLabel.AddThemeColorOverride("font_color", new Color("c8c8c8"));
-			row.AddChild(rewardLabel);
+			rewardRow.AddChild(rewardLabel);
+			row.AddChild(rewardRow);
 
 			// Threshold
 			var threshLabel = new Label { Text = $"Threshold: {ms.DamageThreshold:N0} damage" };
@@ -276,8 +287,19 @@ public partial class RaidMenu : Control
 		{
 			"gold" => $"{amount} Gold",
 			"essence" => $"{amount} Essence",
-			"relic" => !string.IsNullOrWhiteSpace(rewardItemId) ? $"{rewardItemId} x{amount}" : $"Relic x{amount}",
+			"relic" => $"{GameData.GetEquipment(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
+			"spell" => $"{GameData.GetSpell(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
+			"unit" => $"{GameData.GetUnit(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
 			_ => $"{amount} {rewardType}",
 		};
+	}
+
+	private static Control BuildRewardBadge(RaidBossMilestone milestone)
+	{
+		return UiBadgeFactory.CreateRewardBadge(
+			milestone.RewardType,
+			milestone.RewardItemId,
+			FormatReward(milestone.RewardType, milestone.RewardItemId, milestone.RewardAmount),
+			new Vector2(34f, 34f));
 	}
 }

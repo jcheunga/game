@@ -34,14 +34,11 @@ public partial class BattleSummaryMenu : Control
 
 	private void BuildUi()
 	{
-		// Background
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-
 		var data = BattleSummaryData.Current;
 
 		if (data == null)
 		{
+			MenuBackdropComposer.AddSplitBackdrop(this, "battle_summary", new Color("1a1a2e"), new Color("16213e"), new Color("64748b"), 104f);
 			BuildNullState();
 			return;
 		}
@@ -49,9 +46,7 @@ public partial class BattleSummaryMenu : Control
 		var victoryColor = new Color("22c55e");
 		var defeatColor = new Color("ef4444");
 		var accentColor = data.Won ? victoryColor : defeatColor;
-
-		// Accent divider line
-		AddChild(new ColorRect { Color = accentColor, Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "battle_summary", new Color("1a1a2e"), new Color("16213e"), accentColor, 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -158,9 +153,9 @@ public partial class BattleSummaryMenu : Control
 
 		stack.AddChild(CreateSectionHeader("Rewards"));
 
-		stack.AddChild(CreateStatRow("Gold Earned", data.GoldEarned.ToString()));
-		stack.AddChild(CreateStatRow("Food Earned", data.FoodEarned.ToString()));
-		stack.AddChild(CreateStatRow("Season XP", data.SeasonXPEarned.ToString()));
+		stack.AddChild(CreateRewardSummaryRow("gold", "Gold Earned", data.GoldEarned.ToString()));
+		stack.AddChild(CreateRewardSummaryRow("food", "Food Earned", data.FoodEarned.ToString()));
+		stack.AddChild(CreateRewardSummaryRow("season_xp", "Season XP", data.SeasonXPEarned.ToString()));
 
 		// Star rating
 		var starText = "";
@@ -216,8 +211,7 @@ public partial class BattleSummaryMenu : Control
 		{
 			foreach (var (unitId, xp) in data.MasteryXPPerUnit.OrderByDescending(kvp => kvp.Value))
 			{
-				var unitName = GameData.GetUnit(unitId)?.DisplayName ?? unitId;
-				stack.AddChild(CreateStatRow(unitName, $"+{xp} XP"));
+				stack.AddChild(CreateMasteryRow(unitId, xp));
 			}
 		}
 
@@ -257,6 +251,57 @@ public partial class BattleSummaryMenu : Control
 		};
 		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
 		row.AddChild(nameLabel);
+		var valueLabel = new Label
+		{
+			Text = value,
+			HorizontalAlignment = HorizontalAlignment.Right,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		row.AddChild(valueLabel);
+		return row;
+	}
+
+	private static HBoxContainer CreateMasteryRow(string unitId, int xp)
+	{
+		var unit = GameData.GetUnit(unitId);
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+		row.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(40f, 40f)));
+
+		var nameLabel = new Label
+		{
+			Text = unit?.DisplayName ?? unitId,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		row.AddChild(nameLabel);
+
+		var valueLabel = new Label
+		{
+			Text = $"+{xp} XP",
+			HorizontalAlignment = HorizontalAlignment.Right,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		row.AddChild(valueLabel);
+		return row;
+	}
+
+	private static HBoxContainer CreateRewardSummaryRow(string rewardType, string label, string value)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+		row.AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, "", label, new Vector2(36f, 36f)));
+
+		var nameLabel = new Label
+		{
+			Text = label,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		row.AddChild(nameLabel);
+
 		var valueLabel = new Label
 		{
 			Text = value,

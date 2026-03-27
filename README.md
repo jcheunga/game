@@ -46,10 +46,21 @@ GitHub Actions also runs the game build plus the server/data validation workflow
 | Unit sprites | `assets/units/{visual_class}.png` | Sprite sheet + optional `.json` metadata |
 | Backgrounds | `assets/backgrounds/{terrain_id}.png` | 1280x720 full-viewport image |
 | Structures | `assets/structures/war_wagon.png`, `gatehouse.png` | Single image per structure |
+| Particle textures | `assets/particles/{particle_id}.png` | Battle burst/trail sprites for deploy, impact, spell, and boss VFX |
+| UI backgrounds | `assets/ui/backgrounds/{screen_id}.png` | Shared menu backgrounds for all supported screen IDs in `ASSETS.md` |
+| Route UI overrides | `assets/ui/backgrounds/{screen_id}_{route_id}.png` | Optional route-specific menu art |
+| District map art | `assets/map/backgrounds/{route_id}.png` | Campaign map panel background |
+| Unit icons | `assets/ui/icons/units/{unit_id}.png` | Optional shared fallback: `{visual_class}.png` |
+| Spell icons | `assets/ui/icons/spells/{spell_id}.png` | Optional shared fallback: `{effect_type}.png` |
+| Relic icons | `assets/ui/icons/relics/{relic_id}.png` | Used in armory/loadout cards |
+| Reward icons | `assets/ui/icons/rewards/{reward_type}.png` | Currency/reward badges across main menu, profile, prep screens, social/meta menus, title-bar economy strips, season pass, dailies, events, raids |
+| Meta icons | `assets/ui/icons/meta/{meta_id}.png` | Social, leaderboard, arena, and challenge-status badges |
+| Codex icons | `assets/ui/icons/codex/{entry_id}.png` | Optional codex fallback art |
+| Codex portraits | `assets/ui/portraits/codex/{entry_id}.png` | Used in codex detail view |
 | Music | `assets/music/{track_id}.ogg` | Loopable OGG/MP3/WAV |
 | Sound effects | `assets/sfx/{cue_id}.ogg` | Per-cue OGG/MP3/WAV override |
 
-See `ASSETS.md` for the full unit manifest, all track/cue IDs, and format specs.
+Audit coverage with the in-game debug console command `assets` or `cd server && dotnet run -- --test-data ../data`. See `ASSETS.md` for the full ID lists and format specs.
 
 ## Adding Translations
 

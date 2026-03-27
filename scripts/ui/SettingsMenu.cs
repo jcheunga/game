@@ -85,12 +85,7 @@ public partial class SettingsMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
-        {
-            Color = new Color("14213d")
-        };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        MenuBackdropComposer.AddSolidBackdrop(this, "settings", new Color("14213d"));
 
         var center = new CenterContainer();
         center.SetAnchorsPreset(LayoutPreset.FullRect);

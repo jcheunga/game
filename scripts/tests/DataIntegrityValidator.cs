@@ -32,6 +32,7 @@ public static class DataIntegrityValidator
         var equipmentPath = Path.Combine(dataDir, "equipment.json");
         var shopProductsPath = Path.Combine(dataDir, "shop_products.json");
         var localeDir = Path.Combine(dataDir, "locale");
+        var assetsDir = Path.GetFullPath(Path.Combine(dataDir, "..", "assets"));
 
         // Load all data
         var units = LoadArray(unitsPath, "Units");
@@ -367,6 +368,9 @@ public static class DataIntegrityValidator
             }
         }
 
+        // ── Asset coverage report ──
+        PrintAssetCoverageReport(assetsDir, units, spells, equipment ?? Array.Empty<JsonElement>(), stages);
+
         // ── Summary ──
         Console.WriteLine();
         if (Errors.Count > 0)
@@ -469,6 +473,168 @@ public static class DataIntegrityValidator
         }
 
         return true;
+    }
+
+    private static void PrintAssetCoverageReport(string assetsDir, JsonElement[] units, JsonElement[] spells, JsonElement[] equipment, JsonElement[] stages)
+    {
+        Console.WriteLine("--- Asset Coverage ---");
+        if (!Directory.Exists(assetsDir))
+        {
+            Console.WriteLine($"Assets directory not found: {assetsDir}");
+            return;
+        }
+
+        var unitSpriteDir = Path.Combine(assetsDir, "units");
+        var battleBackgroundDir = Path.Combine(assetsDir, "backgrounds");
+        var structureDir = Path.Combine(assetsDir, "structures");
+        var particleDir = Path.Combine(assetsDir, "particles");
+        var musicDir = Path.Combine(assetsDir, "music");
+        var sfxDir = Path.Combine(assetsDir, "sfx");
+        var screenBackgroundDir = Path.Combine(assetsDir, "ui", "backgrounds");
+        var unitIconDir = Path.Combine(assetsDir, "ui", "icons", "units");
+        var spellIconDir = Path.Combine(assetsDir, "ui", "icons", "spells");
+        var relicIconDir = Path.Combine(assetsDir, "ui", "icons", "relics");
+        var rewardIconDir = Path.Combine(assetsDir, "ui", "icons", "rewards");
+        var metaIconDir = Path.Combine(assetsDir, "ui", "icons", "meta");
+        var codexIconDir = Path.Combine(assetsDir, "ui", "icons", "codex");
+        var codexPortraitDir = Path.Combine(assetsDir, "ui", "portraits", "codex");
+        var mapBackgroundDir = Path.Combine(assetsDir, "map", "backgrounds");
+
+        var visualClasses = units
+            .Select(unit => AssetCoverageCatalog.NormalizeId(GetStr(unit, "VisualClass")))
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        Console.WriteLine(BuildCoverageLine("Unit sprites", visualClasses, id => HasAnyFile(unitSpriteDir, id, ".png"), "assets/units/{visual_class}.png"));
+
+        var terrainIds = stages
+            .Select(stage => AssetCoverageCatalog.NormalizeId(GetStr(stage, "TerrainId")))
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        Console.WriteLine(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasAnyFile(battleBackgroundDir, id, ".png"), "assets/backgrounds/{terrain_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasAnyFile(structureDir, id, ".png"), "assets/structures/{structure_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasAnyFile(particleDir, id, ".png"), "assets/particles/{particle_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Screen backgrounds", AssetCoverageCatalog.ScreenBackgroundIds, id => HasAnyFile(screenBackgroundDir, id, ".png"), "assets/ui/backgrounds/{screen_id}.png"));
+        Console.WriteLine(BuildCoverageLine("District map art", AssetCoverageCatalog.RouteIds, id => HasAnyFile(mapBackgroundDir, id, ".png"), "assets/map/backgrounds/{route_id}.png"));
+        Console.WriteLine(BuildCoverageLine(
+            "Unit icons",
+            units.Select(unit => GetStr(unit, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            unitId => HasUnitIconCoverage(unitIconDir, unitId, units),
+            "assets/ui/icons/units/{unit_id}.png (or {visual_class}.png)"));
+        Console.WriteLine(BuildCoverageLine(
+            "Spell icons",
+            spells.Select(spell => GetStr(spell, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            spellId => HasSpellIconCoverage(spellIconDir, spellId, spells),
+            "assets/ui/icons/spells/{spell_id}.png (or {effect_type}.png)"));
+        Console.WriteLine(BuildCoverageLine(
+            "Relic icons",
+            equipment.Select(item => GetStr(item, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            relicId => HasAnyFile(relicIconDir, relicId, ".png"),
+            "assets/ui/icons/relics/{relic_id}.png"));
+        Console.WriteLine(BuildCoverageLine(
+            "Reward icons",
+            AssetCoverageCatalog.RewardIconIds,
+            rewardType => HasAnyFile(rewardIconDir, rewardType, ".png"),
+            "assets/ui/icons/rewards/{reward_type}.png"));
+        Console.WriteLine(BuildCoverageLine(
+            "Meta icons",
+            AssetCoverageCatalog.MetaIconIds,
+            metaId => HasAnyFile(metaIconDir, metaId, ".png"),
+            "assets/ui/icons/meta/{meta_id}.png"));
+        Console.WriteLine(BuildCoverageLine(
+            "Codex icons",
+            CodexCatalog.GetAll().Select(entry => entry.Id).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            entryId => HasAnyFile(codexIconDir, entryId, ".png"),
+            "assets/ui/icons/codex/{entry_id}.png"));
+        Console.WriteLine(BuildCoverageLine(
+            "Codex portraits",
+            CodexCatalog.GetAll().Select(entry => entry.Id).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            entryId => HasAnyFile(codexPortraitDir, entryId, ".png"),
+            "assets/ui/portraits/codex/{entry_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Music tracks", AssetCoverageCatalog.MusicTrackIds, id => HasAnyFile(musicDir, id, ".ogg", ".mp3", ".wav"), "assets/music/{track_id}.(ogg|mp3|wav)"));
+        Console.WriteLine(BuildCoverageLine("SFX overrides", AssetCoverageCatalog.SfxCueIds, id => HasAnyFile(sfxDir, id, ".ogg", ".mp3", ".wav"), "assets/sfx/{cue_id}.(ogg|mp3|wav)"));
+
+        foreach (var screenId in AssetCoverageCatalog.ScreenBackgroundIds.Where(id => id is "map" or "loadout" or "shop" or "endless" or "multiplayer"))
+        {
+            var routeVariants = AssetCoverageCatalog.RouteIds
+                .Select(routeId => AssetCoverageCatalog.BuildScreenVariantId(screenId, routeId))
+                .ToArray();
+            Console.WriteLine(BuildCoverageLine(
+                $"{screenId} route overrides",
+                routeVariants,
+                id => HasAnyFile(screenBackgroundDir, id, ".png"),
+                $"assets/ui/backgrounds/{screenId}_{{route_id}}.png"));
+        }
+    }
+
+    private static string BuildCoverageLine(string label, IReadOnlyList<string> expectedIds, Func<string, bool> exists, string pattern)
+    {
+        if (expectedIds.Count == 0)
+        {
+            return $"{label}: 0/0";
+        }
+
+        var foundCount = expectedIds.Count(exists);
+        var missingIds = expectedIds.Where(id => !exists(id)).Take(5).ToArray();
+        var missingSuffix = missingIds.Length == 0
+            ? string.Empty
+            : $" | missing: {string.Join(", ", missingIds)}";
+        return $"{label}: {foundCount}/{expectedIds.Count} | drop at {pattern}{missingSuffix}";
+    }
+
+    private static bool HasAnyFile(string directoryPath, string id, params string[] extensions)
+    {
+        if (string.IsNullOrWhiteSpace(directoryPath) || string.IsNullOrWhiteSpace(id) || extensions.Length == 0)
+        {
+            return false;
+        }
+
+        return extensions.Any(extension => File.Exists(Path.Combine(directoryPath, $"{id}{extension}")));
+    }
+
+    private static bool HasUnitIconCoverage(string unitIconDir, string unitId, JsonElement[] units)
+    {
+        if (HasAnyFile(unitIconDir, unitId, ".png"))
+        {
+            return true;
+        }
+
+        foreach (var unit in units)
+        {
+            if (!GetStr(unit, "Id").Equals(unitId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var visualClassId = AssetCoverageCatalog.NormalizeId(GetStr(unit, "VisualClass"));
+            return HasAnyFile(unitIconDir, visualClassId, ".png");
+        }
+
+        return false;
+    }
+
+    private static bool HasSpellIconCoverage(string spellIconDir, string spellId, JsonElement[] spells)
+    {
+        if (HasAnyFile(spellIconDir, spellId, ".png"))
+        {
+            return true;
+        }
+
+        foreach (var spell in spells)
+        {
+            if (!GetStr(spell, "Id").Equals(spellId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var effectTypeId = AssetCoverageCatalog.NormalizeId(GetStr(spell, "EffectType"));
+            return HasAnyFile(spellIconDir, effectTypeId, ".png");
+        }
+
+        return false;
     }
 
     private static string GetStr(JsonElement el, string prop)

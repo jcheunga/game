@@ -36,6 +36,24 @@ public partial class GameState : Node
 	private const int DefaultAmbienceVolumePercent = 65;
 	private const int DefaultMusicVolumePercent = 50;
 	private const string DefaultLanguage = "en";
+	private const int CampaignScoutStartingCourageBonus = 12;
+	private const float CampaignScoutCourageGainScale = 1.15f;
+	private const float CampaignScoutDurationSeconds = 18f;
+	private const int CampaignScoutCacheFoodBonus = 1;
+	private const int MaxCampaignMomentumStacks = 3;
+	private const int CampaignMomentumStartingCouragePerStack = 3;
+	private const float CampaignMomentumAttackScalePerStack = 0.04f;
+	private const float CampaignMomentumSpeedScalePerStack = 0.05f;
+	private const float CampaignMomentumDurationSeconds = 16f;
+	private const float CampaignReserveThresholdRatio = 0.55f;
+	private const int CampaignReserveBaseCourageBonus = 12;
+	private const float CampaignReserveBaseHullRepairRatio = 0.06f;
+	private const float CampaignReserveHullRepairPerDistrict = 0.004f;
+	private const float CampaignReserveCooldownRecoverySeconds = 1.2f;
+	private const float CampaignReserveRallyAttackScale = 1.08f;
+	private const float CampaignReserveRallySpeedScale = 1.1f;
+	private const float CampaignReserveRallyDurationSeconds = 7f;
+	private const int CampaignRouteDoctrineBaseThreshold = 7;
 	private static readonly string DefaultAsyncChallengeCode =
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
@@ -106,6 +124,7 @@ public partial class GameState : Node
 	public int ClaimedDistrictRewardCount => _claimedDistrictRewardIds.Count;
 	public int ClaimedUnitDoctrineCount => _unitDoctrineSelections.Count;
 	public int ClaimedCampaignDirectiveCount => _claimedCampaignDirectiveIds.Count;
+	public int CampaignMomentumStacks => _campaignMomentumStacks;
 	public int DailyStreak => _dailyStreak;
 	public int PromotedUnitCount => _promotedUnitIds.Count;
 	public int ActiveExpeditionCount => _activeExpeditions.Count;
@@ -147,6 +166,7 @@ public partial class GameState : Node
 	private int _totalPurchaseCount;
 	private string _purchaseValidationEndpoint = "";
 	private int _armedCampaignDirectiveStage;
+	private int _campaignMomentumStacks;
 	private int _dailyStreak;
 	private readonly RandomNumberGenerator _rng = new();
 	private string _lastAchievementNotification = "";
@@ -365,6 +385,402 @@ public partial class GameState : Node
 	public void PrepareCampaignBattle()
 	{
 		CurrentBattleMode = BattleRunMode.Campaign;
+	}
+
+	public bool HasCampaignScoutBonus(int stage)
+	{
+		return stage >= 1 &&
+			stage <= HighestUnlockedStage &&
+			GetStageStars(stage) <= 0;
+	}
+
+	public int GetCampaignScoutStartingCourageBonus(int stage)
+	{
+		return HasCampaignScoutBonus(stage)
+			? CampaignScoutStartingCourageBonus
+			: 0;
+	}
+
+	public float GetCampaignScoutCourageGainScale(int stage)
+	{
+		return HasCampaignScoutBonus(stage)
+			? CampaignScoutCourageGainScale
+			: 1f;
+	}
+
+	public float GetCampaignScoutDurationSeconds(int stage)
+	{
+		return HasCampaignScoutBonus(stage)
+			? CampaignScoutDurationSeconds
+			: 0f;
+	}
+
+	public string BuildCampaignScoutStatusText(int stage)
+	{
+		if (stage < 1 || stage > HighestUnlockedStage)
+		{
+			return "Scout report: unavailable until this route is explored.";
+		}
+
+		if (HasCampaignScoutBonus(stage))
+		{
+			return
+				$"Scout report: first-clear route. Start with +{CampaignScoutStartingCourageBonus} courage and +{Mathf.RoundToInt((CampaignScoutCourageGainScale - 1f) * 100f)}% courage gain for {CampaignScoutDurationSeconds:0}s. " +
+				$"Secure 2+ stars on the first clear for +{CampaignScoutCacheFoodBonus} food.";
+		}
+
+		return "Scout report: route already charted. First-clear scouting bonus already spent.";
+	}
+
+	public int GetCampaignMomentumStartingCourageBonus()
+	{
+		return Mathf.Clamp(_campaignMomentumStacks, 0, MaxCampaignMomentumStacks) * CampaignMomentumStartingCouragePerStack;
+	}
+
+	public float GetCampaignMomentumAttackScale()
+	{
+		return 1f + (Mathf.Clamp(_campaignMomentumStacks, 0, MaxCampaignMomentumStacks) * CampaignMomentumAttackScalePerStack);
+	}
+
+	public float GetCampaignMomentumSpeedScale()
+	{
+		return 1f + (Mathf.Clamp(_campaignMomentumStacks, 0, MaxCampaignMomentumStacks) * CampaignMomentumSpeedScalePerStack);
+	}
+
+	public float GetCampaignMomentumDurationSeconds()
+	{
+		return _campaignMomentumStacks > 0
+			? CampaignMomentumDurationSeconds
+			: 0f;
+	}
+
+	public string BuildCampaignMomentumInlineText()
+	{
+		if (_campaignMomentumStacks <= 0)
+		{
+			return "Momentum idle";
+		}
+
+		return
+			$"Momentum {_campaignMomentumStacks}/{MaxCampaignMomentumStacks} " +
+			$"(+{GetCampaignMomentumStartingCourageBonus()} courage, +{Mathf.RoundToInt((GetCampaignMomentumAttackScale() - 1f) * 100f)}% atk, " +
+			$"+{Mathf.RoundToInt((GetCampaignMomentumSpeedScale() - 1f) * 100f)}% speed for {CampaignMomentumDurationSeconds:0}s)";
+	}
+
+	public string BuildCampaignMomentumStatusText()
+	{
+		if (_campaignMomentumStacks <= 0)
+		{
+			return "Caravan momentum: idle. Earn 2+ stars on campaign clears to build an opening march.";
+		}
+
+		return
+			$"Caravan momentum: {_campaignMomentumStacks}/{MaxCampaignMomentumStacks}. " +
+			$"Next campaign battle starts with +{GetCampaignMomentumStartingCourageBonus()} courage and " +
+			$"+{Mathf.RoundToInt((GetCampaignMomentumAttackScale() - 1f) * 100f)}% attack / " +
+			$"+{Mathf.RoundToInt((GetCampaignMomentumSpeedScale() - 1f) * 100f)}% speed for {CampaignMomentumDurationSeconds:0}s. " +
+			$"1-star clears hold it; defeats reset it.";
+	}
+
+	public float GetCampaignReserveThresholdRatio()
+	{
+		return CampaignReserveThresholdRatio;
+	}
+
+	public int GetCampaignReserveCourageBonus()
+	{
+		return CampaignReserveBaseCourageBonus + Mathf.Clamp(ClaimedDistrictRewardCount / 2, 0, 5);
+	}
+
+	public float GetCampaignReserveHullRepairRatio()
+	{
+		return Mathf.Clamp(
+			CampaignReserveBaseHullRepairRatio + (ClaimedDistrictRewardCount * CampaignReserveHullRepairPerDistrict),
+			CampaignReserveBaseHullRepairRatio,
+			0.1f);
+	}
+
+	public float GetCampaignReserveCooldownRecoverySeconds()
+	{
+		return CampaignReserveCooldownRecoverySeconds;
+	}
+
+	public float GetCampaignReserveRallyAttackScale()
+	{
+		return CampaignReserveRallyAttackScale;
+	}
+
+	public float GetCampaignReserveRallySpeedScale()
+	{
+		return CampaignReserveRallySpeedScale;
+	}
+
+	public float GetCampaignReserveRallyDurationSeconds()
+	{
+		return CampaignReserveRallyDurationSeconds;
+	}
+
+	public string BuildCampaignReserveStatusText()
+	{
+		return
+			$"Emergency reserve: ready. At {Mathf.RoundToInt(CampaignReserveThresholdRatio * 100f)}% hull, dispatch +{GetCampaignReserveCourageBonus()} courage, " +
+			$"recover {CampaignReserveCooldownRecoverySeconds:0.0}s of card cooldowns, patch {Mathf.RoundToInt(GetCampaignReserveHullRepairRatio() * 100f)}% hull, and rally the line.";
+	}
+
+	public int GetCampaignRouteDoctrineThreshold(int stage)
+	{
+		if (stage <= 0)
+		{
+			return CampaignRouteDoctrineBaseThreshold;
+		}
+
+		return Mathf.Clamp(CampaignRouteDoctrineBaseThreshold + ((Mathf.Max(1, stage) - 1) / 20), CampaignRouteDoctrineBaseThreshold, 10);
+	}
+
+	public string GetCampaignRouteDoctrineTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Levy",
+			RouteCatalog.HarborId => "Ripchain Echo",
+			RouteCatalog.FoundryId => "Smelter Volley",
+			RouteCatalog.QuarantineId => "Cleanse Pulse",
+			RouteCatalog.ThornwallId => "Stonewake",
+			RouteCatalog.BasilicaId => "Sanctuary Chorus",
+			RouteCatalog.MireId => "Bog Snare",
+			RouteCatalog.SteppeId => "Rider Tempo",
+			RouteCatalog.GloamwoodId => "Witchmark",
+			RouteCatalog.CitadelId => "Bastion Range",
+			_ => "District Doctrine"
+		};
+	}
+
+	public string BuildCampaignRouteDoctrineStatusText(int stage, string routeId)
+	{
+		var threshold = GetCampaignRouteDoctrineThreshold(stage);
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => $"District doctrine: Lantern Levy. Every {threshold} enemy defeats grants +4 courage and trims card cooldowns.",
+			RouteCatalog.HarborId => $"District doctrine: Ripchain Echo. Every {threshold} enemy defeats blasts and slows the nearest enemy push.",
+			RouteCatalog.FoundryId => $"District doctrine: Smelter Volley. Every {threshold} enemy defeats drops a lighter furnace burst on the densest pack.",
+			RouteCatalog.QuarantineId => $"District doctrine: Cleanse Pulse. Every {threshold} enemy defeats clears signal pressure and patches hull.",
+			RouteCatalog.ThornwallId => $"District doctrine: Stonewake. Every {threshold} enemy defeats shoves the nearest enemy line back.",
+			RouteCatalog.BasilicaId => $"District doctrine: Sanctuary Chorus. Every {threshold} enemy defeats patches hull and briefly blesses the convoy.",
+			RouteCatalog.MireId => $"District doctrine: Bog Snare. Every {threshold} enemy defeats damages and drags the nearest push near the wagon.",
+			RouteCatalog.SteppeId => $"District doctrine: Rider Tempo. Every {threshold} enemy defeats grants courage and a short speed surge.",
+			RouteCatalog.GloamwoodId => $"District doctrine: Witchmark. Every {threshold} enemy defeats hexes the toughest enemy on the field.",
+			RouteCatalog.CitadelId => $"District doctrine: Bastion Range. Every {threshold} enemy defeats chips the keep and shells the frontline.",
+			_ => $"District doctrine: active every {threshold} enemy defeats."
+		};
+	}
+
+	public string GetCampaignCounterSurgeTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Press-Gang Rush",
+			RouteCatalog.HarborId => "Tidebreaker Boarders",
+			RouteCatalog.FoundryId => "Smelter Guard",
+			RouteCatalog.QuarantineId => "Hex Sweep",
+			RouteCatalog.ThornwallId => "Pass Stampede",
+			RouteCatalog.BasilicaId => "Crypt Procession",
+			RouteCatalog.MireId => "Rot Flood",
+			RouteCatalog.SteppeId => "Flank Riders",
+			RouteCatalog.GloamwoodId => "Witch Ambush",
+			RouteCatalog.CitadelId => "Iron Reprisals",
+			_ => "Counter-Surge"
+		};
+	}
+
+	public string BuildCampaignCounterSurgeStatusText(string routeId)
+	{
+		var title = GetCampaignCounterSurgeTitle(routeId);
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => $"Counter-surge: {title}. Securing the battlefield objective provokes a fast morale push from the keep.",
+			RouteCatalog.HarborId => $"Counter-surge: {title}. Securing the battlefield objective provokes dock raiders into the same lane.",
+			RouteCatalog.FoundryId => $"Counter-surge: {title}. Securing the battlefield objective provokes armored forge reinforcements.",
+			RouteCatalog.QuarantineId => $"Counter-surge: {title}. Securing the battlefield objective provokes a brief curse sweep with hex support.",
+			RouteCatalog.ThornwallId => $"Counter-surge: {title}. Securing the battlefield objective provokes a downhill stampede.",
+			RouteCatalog.BasilicaId => $"Counter-surge: {title}. Securing the battlefield objective provokes a ritual procession to reclaim the lane.",
+			RouteCatalog.MireId => $"Counter-surge: {title}. Securing the battlefield objective provokes a blight-heavy flood down the lane.",
+			RouteCatalog.SteppeId => $"Counter-surge: {title}. Securing the battlefield objective provokes a fast flank rider response.",
+			RouteCatalog.GloamwoodId => $"Counter-surge: {title}. Securing the battlefield objective provokes a hex-heavy ambush.",
+			RouteCatalog.CitadelId => $"Counter-surge: {title}. Securing the battlefield objective provokes a disciplined armored reprisal.",
+			_ => $"Counter-surge: {title}. Securing the battlefield objective provokes a one-time enemy response."
+		};
+	}
+
+	public string GetCampaignMissionFollowThroughTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Breakthrough",
+			RouteCatalog.HarborId => "Dockbreak Counterfire",
+			RouteCatalog.FoundryId => "Siege Winch",
+			RouteCatalog.QuarantineId => "Lantern Corridor",
+			RouteCatalog.ThornwallId => "Pass Hold",
+			RouteCatalog.BasilicaId => "Sanctified Advance",
+			RouteCatalog.MireId => "Fen Ambush",
+			RouteCatalog.SteppeId => "Outrider Chase",
+			RouteCatalog.GloamwoodId => "Witchlane Seal",
+			RouteCatalog.CitadelId => "Range Correction",
+			_ => "Objective Follow-Through"
+		};
+	}
+
+	public string GetCampaignMissionBacklashTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Street Panic",
+			RouteCatalog.HarborId => "Riptide Reclaim",
+			RouteCatalog.FoundryId => "Molten Counterline",
+			RouteCatalog.QuarantineId => "Ashen Relapse",
+			RouteCatalog.ThornwallId => "Rockfall Panic",
+			RouteCatalog.BasilicaId => "Crypt Reprisal",
+			RouteCatalog.MireId => "Blight Reflux",
+			RouteCatalog.SteppeId => "Reaver Encirclement",
+			RouteCatalog.GloamwoodId => "Hex Reprisal",
+			RouteCatalog.CitadelId => "Bastion Lockdown",
+			_ => "Objective Backlash"
+		};
+	}
+
+	public string BuildCampaignMissionOutcomeStatusText(string routeId)
+	{
+		var followThrough = GetCampaignMissionFollowThroughTitle(routeId);
+		var backlash = GetCampaignMissionBacklashTitle(routeId);
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => $"Objective branch: {followThrough} / {backlash}. Secure the battlefield event to send militia into the opened lane; lose it and raiders rush the wagon.",
+			RouteCatalog.HarborId => $"Objective branch: {followThrough} / {backlash}. Secure the event to call dock guns onto the lane; lose it and boarders flood back over the tide line.",
+			RouteCatalog.FoundryId => $"Objective branch: {followThrough} / {backlash}. Secure the event to haul siege iron forward; lose it and molten guard reinforcements answer the breach.",
+			RouteCatalog.QuarantineId => $"Objective branch: {followThrough} / {backlash}. Secure the event to clear curse pressure and stabilize the convoy; lose it and the ash wards relapse into blackout pressure.",
+			RouteCatalog.ThornwallId => $"Objective branch: {followThrough} / {backlash}. Secure the event to lock the pass down for the caravan; lose it and the mountain sends a panic stampede downhill.",
+			RouteCatalog.BasilicaId => $"Objective branch: {followThrough} / {backlash}. Secure the event to sanctify the push and reinforce the line; lose it and a crypt reprisal restores enemy pressure.",
+			RouteCatalog.MireId => $"Objective branch: {followThrough} / {backlash}. Secure the event to spring a bog ambush on the lane; lose it and the mire rolls a blight reflux back at the wagon.",
+			RouteCatalog.SteppeId => $"Objective branch: {followThrough} / {backlash}. Secure the event to unleash an outrider chase; lose it and reavers loop back for an encirclement.",
+			RouteCatalog.GloamwoodId => $"Objective branch: {followThrough} / {backlash}. Secure the event to seal the route with witchlights; lose it and the grove answers with a hex reprisal.",
+			RouteCatalog.CitadelId => $"Objective branch: {followThrough} / {backlash}. Secure the event to correct the caravan guns onto the keep; lose it and the bastion locks the lane back down.",
+			_ => $"Objective branch: secure the battlefield event for {followThrough}; lose it and {backlash} answers."
+		};
+	}
+
+	public string GetCampaignConvoyCommandTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Call",
+			RouteCatalog.HarborId => "Harpoon Break",
+			RouteCatalog.FoundryId => "Fire Mission",
+			RouteCatalog.QuarantineId => "Ward Column",
+			RouteCatalog.ThornwallId => "Stonefall",
+			RouteCatalog.BasilicaId => "Sanctuary Oath",
+			RouteCatalog.MireId => "Fen Lure",
+			RouteCatalog.SteppeId => "Dust Run",
+			RouteCatalog.GloamwoodId => "Night Mark",
+			RouteCatalog.CitadelId => "Counterbattery",
+			_ => "Convoy Command"
+		};
+	}
+
+	public string BuildCampaignConvoyCommandStatusText(string routeId)
+	{
+		var title = GetCampaignConvoyCommandTitle(routeId);
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => $"Convoy command: {title}. Charges under pressure; press C once ready to call a militia rally into the active lane.",
+			RouteCatalog.HarborId => $"Convoy command: {title}. Charges under pressure; press C once ready to snap chains and dock fire across the active lane.",
+			RouteCatalog.FoundryId => $"Convoy command: {title}. Charges under pressure; press C once ready to walk a furnace barrage onto the frontline.",
+			RouteCatalog.QuarantineId => $"Convoy command: {title}. Charges under pressure; press C once ready to clear curse pressure and harden the convoy.",
+			RouteCatalog.ThornwallId => $"Convoy command: {title}. Charges under pressure; press C once ready to drop a heavy shove across the pass.",
+			RouteCatalog.BasilicaId => $"Convoy command: {title}. Charges under pressure; press C once ready to bless the line and patch the wagon.",
+			RouteCatalog.MireId => $"Convoy command: {title}. Charges under pressure; press C once ready to drag the nearest enemy knot into the bog.",
+			RouteCatalog.SteppeId => $"Convoy command: {title}. Charges under pressure; press C once ready to send outriders through the lane.",
+			RouteCatalog.GloamwoodId => $"Convoy command: {title}. Charges under pressure; press C once ready to hex the heaviest threat.",
+			RouteCatalog.CitadelId => $"Convoy command: {title}. Charges under pressure; press C once ready to correct the convoy guns onto the keep.",
+			_ => $"Convoy command: {title}. Charges under pressure; press C once ready for a one-time route response."
+		};
+	}
+
+	public string GetCampaignFieldOrderAssaultTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Advance",
+			RouteCatalog.HarborId => "Tidecut Push",
+			RouteCatalog.FoundryId => "Furnace Push",
+			RouteCatalog.QuarantineId => "Purge March",
+			RouteCatalog.ThornwallId => "Avalanche Push",
+			RouteCatalog.BasilicaId => "Crusade Step",
+			RouteCatalog.MireId => "Bog Hunt",
+			RouteCatalog.SteppeId => "Rider Sweep",
+			RouteCatalog.GloamwoodId => "Hex Hunt",
+			RouteCatalog.CitadelId => "Siege Step",
+			_ => "Assault Order"
+		};
+	}
+
+	public string GetCampaignFieldOrderBulwarkTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Shield Ring",
+			RouteCatalog.HarborId => "Breakwater Hold",
+			RouteCatalog.FoundryId => "Iron Screen",
+			RouteCatalog.QuarantineId => "Ward Line",
+			RouteCatalog.ThornwallId => "Stone Brace",
+			RouteCatalog.BasilicaId => "Sanctuary Hold",
+			RouteCatalog.MireId => "Reed Bastion",
+			RouteCatalog.SteppeId => "Dust Circle",
+			RouteCatalog.GloamwoodId => "Night Veil",
+			RouteCatalog.CitadelId => "Bastion Stance",
+			_ => "Bulwark Order"
+		};
+	}
+
+	public string BuildCampaignFieldOrderStatusText(string routeId)
+	{
+		var assault = GetCampaignFieldOrderAssaultTitle(routeId);
+		var bulwark = GetCampaignFieldOrderBulwarkTitle(routeId);
+		return $"Field order: after the first battlefield event resolves, choose [Z] {assault} or [X] {bulwark} to arm a follow-up battlefield objective and swing the next reinforcement beat.";
+	}
+
+	public string GetCampaignRouteSupportTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Militia Surge",
+			RouteCatalog.HarborId => "Chain Snare",
+			RouteCatalog.FoundryId => "Furnace Volley",
+			RouteCatalog.QuarantineId => "Ward Lanterns",
+			RouteCatalog.ThornwallId => "Avalanche Horn",
+			RouteCatalog.BasilicaId => "Reliquary Vow",
+			RouteCatalog.MireId => "Fen Drag",
+			RouteCatalog.SteppeId => "Outrider Sweep",
+			RouteCatalog.GloamwoodId => "Witchlight Ambush",
+			RouteCatalog.CitadelId => "Citadel Cannon",
+			_ => "District Support"
+		};
+	}
+
+	public string BuildCampaignRouteSupportStatusText(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "District tactic: Militia Surge. On the first major enemy swell, a banner escort arrives with courage and quick card recovery.",
+			RouteCatalog.HarborId => "District tactic: Chain Snare. On the first major enemy swell, dock crews blast and slow the nearest pressure cluster.",
+			RouteCatalog.FoundryId => "District tactic: Furnace Volley. On the first major enemy swell, forge shells burst across the thickest enemy cluster.",
+			RouteCatalog.QuarantineId => "District tactic: Ward Lanterns. On the first major enemy swell, the caravan shrugs off signal pressure, patches hull, and hardens the line.",
+			RouteCatalog.ThornwallId => "District tactic: Avalanche Horn. On the first major enemy swell, mountain wardens shove the front back down the pass.",
+			RouteCatalog.BasilicaId => "District tactic: Reliquary Vow. On the first major enemy swell, sanctified escorts reinforce the line and patch the wagon.",
+			RouteCatalog.MireId => "District tactic: Fen Drag. On the first major enemy swell, bog fire slows the nearest push and buys repair time.",
+			RouteCatalog.SteppeId => "District tactic: Outrider Sweep. On the first major enemy swell, fast reserves join the field and speed the advance.",
+			RouteCatalog.GloamwoodId => "District tactic: Witchlight Ambush. On the first major enemy swell, the toughest enemy is hexed and its escort stumbles.",
+			RouteCatalog.CitadelId => "District tactic: Citadel Cannon. On the first major enemy swell, the caravan lands a siege volley on the enemy keep and frontline.",
+			_ => "District tactic: none."
+		};
 	}
 
 	public CampaignDirectiveDefinition GetCampaignDirective(int stage)
@@ -659,10 +1075,13 @@ public partial class GameState : Node
 		rewardFood = Godot.Mathf.RoundToInt(Math.Max(0, rewardFood) * diff.FoodRewardScale * GetPrestigeFoodBonus());
 		Gold += rewardGold;
 		Food += rewardFood;
+		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
 		var bestStars = RecordStageStars(stage, starsEarned);
 		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
 		var directiveRewardSummary = TryClaimCampaignDirectiveReward(stage);
-		var extraRewardSummary = BuildCombinedCampaignBonusSummary(districtRewardSummary, directiveRewardSummary);
+		var scoutRewardSummary = TryClaimCampaignScoutCache(firstClear, starsEarned);
+		var momentumSummary = UpdateCampaignMomentumAfterVictory(starsEarned);
+		var extraRewardSummary = BuildCombinedCampaignBonusSummary(districtRewardSummary, directiveRewardSummary, scoutRewardSummary, momentumSummary);
 		var nextStageHint = stage < MaxStage
 			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the caravan is ready."
 			: "";
@@ -679,14 +1098,18 @@ public partial class GameState : Node
 
 	public void ApplyDefeat(int stage)
 	{
-		LastResultMessage = $"Stage {stage} failed. The war wagon line was overrun.";
+		var momentumSummary = BreakCampaignMomentum();
+		LastResultMessage = $"Stage {stage} failed. The war wagon line was overrun." +
+			(string.IsNullOrWhiteSpace(momentumSummary) ? "" : $" {momentumSummary}");
 		Persist();
 		AnalyticsService.TrackStageEnd(stage, false, 0, 0f, 0f);
 	}
 
 	public void ApplyRetreat(int stage)
 	{
-		LastResultMessage = $"Retreated from stage {stage}. No rewards earned.";
+		var momentumSummary = BreakCampaignMomentum();
+		LastResultMessage = $"Retreated from stage {stage}. No rewards earned." +
+			(string.IsNullOrWhiteSpace(momentumSummary) ? "" : $" {momentumSummary}");
 		Persist();
 		AnalyticsService.TrackStageEnd(stage, false, 0, 0f, 0f);
 	}
@@ -1345,6 +1768,7 @@ public partial class GameState : Node
 		_claimedDistrictRewardIds.Clear();
 		_claimedCampaignDirectiveIds.Clear();
 		_armedCampaignDirectiveStage = 0;
+		_campaignMomentumStacks = 0;
 
 		// Keep permanent unlocks
 		_ownedPlayerUnitIds.Clear();
@@ -4530,6 +4954,7 @@ public partial class GameState : Node
 		ReducedMotion = false;
 		AutoBattleEnabled = false;
 		LargeTextMode = false;
+		_campaignMomentumStacks = 0;
 
 		// v37
 		_unitStarLevels.Clear();
@@ -4644,6 +5069,9 @@ public partial class GameState : Node
 			? DefaultReport
 			: saved.LastResultMessage;
 		CurrentBattleMode = BattleRunMode.Campaign;
+		_campaignMomentumStacks = saved.Version >= 39
+			? Mathf.Clamp(saved.CampaignMomentumStacks, 0, MaxCampaignMomentumStacks)
+			: 0;
 		if (saved.Version >= 2)
 		{
 			ShowDevUi = saved.ShowDevUi;
@@ -5537,7 +5965,10 @@ public partial class GameState : Node
 			ColorblindMode = ColorblindMode ?? "none",
 			ReducedMotion = ReducedMotion,
 			AutoBattleEnabled = AutoBattleEnabled,
-			LargeTextMode = LargeTextMode
+			LargeTextMode = LargeTextMode,
+
+			// v39
+			CampaignMomentumStacks = _campaignMomentumStacks
 		};
 	}
 
@@ -5671,6 +6102,49 @@ public partial class GameState : Node
 
 		var relicSummary = TryRollHeroicRelicDrop();
 		return string.IsNullOrWhiteSpace(relicSummary) ? baseSummary : $"{baseSummary} {relicSummary}";
+	}
+
+	private string TryClaimCampaignScoutCache(bool firstClear, int starsEarned)
+	{
+		if (CurrentBattleMode != BattleRunMode.Campaign || !firstClear || starsEarned < 2)
+		{
+			return "";
+		}
+
+		Food += CampaignScoutCacheFoodBonus;
+		return $"Scout cache secured: +{CampaignScoutCacheFoodBonus} food for a strong first clear.";
+	}
+
+	private string UpdateCampaignMomentumAfterVictory(int starsEarned)
+	{
+		if (CurrentBattleMode != BattleRunMode.Campaign)
+		{
+			return "";
+		}
+
+		if (starsEarned >= 2)
+		{
+			var previousStacks = _campaignMomentumStacks;
+			_campaignMomentumStacks = Math.Min(MaxCampaignMomentumStacks, _campaignMomentumStacks + 1);
+			return _campaignMomentumStacks > previousStacks
+				? $"Caravan momentum rose to {_campaignMomentumStacks}/{MaxCampaignMomentumStacks}. Next route starts with +{GetCampaignMomentumStartingCourageBonus()} courage and an opening march."
+				: $"Caravan momentum held at {_campaignMomentumStacks}/{MaxCampaignMomentumStacks}. Full opening march maintained.";
+		}
+
+		return _campaignMomentumStacks > 0
+			? $"Caravan momentum held at {_campaignMomentumStacks}/{MaxCampaignMomentumStacks}."
+			: "";
+	}
+
+	private string BreakCampaignMomentum()
+	{
+		if (CurrentBattleMode != BattleRunMode.Campaign || _campaignMomentumStacks <= 0)
+		{
+			return "";
+		}
+
+		_campaignMomentumStacks = 0;
+		return "Caravan momentum broken.";
 	}
 
 	private string TryRollHeroicRelicDrop()

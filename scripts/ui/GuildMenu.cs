@@ -7,6 +7,7 @@ public partial class GuildMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _infoPanel = null!;
 	private PanelContainer _actionsPanel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _infoStack = null!;
 	private VBoxContainer _actionsStack = null!;
@@ -40,9 +41,7 @@ public partial class GuildMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("f59e0b"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "guild", new Color("1a1a2e"), new Color("16213e"), new Color("f59e0b"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -51,6 +50,9 @@ public partial class GuildMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Warband", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Info panel (left)
 		_infoPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(600f, 480f) };
@@ -107,22 +109,31 @@ public partial class GuildMenu : Control
 		var gs = GameState.Instance;
 		var guild = gs.CachedGuildInfo;
 		var hasGuild = !string.IsNullOrWhiteSpace(gs.GuildId) && guild != null;
+		RebuildResourcesRow(gs);
 
-		// Update title subtitle
+		// Update title metrics
 		var titleRow = _titlePanel.GetChild<HBoxContainer>(0);
-		while (titleRow.GetChildCount() > 1) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
-		var subtitleLabel = new Label
+		while (titleRow.GetChildCount() > 2) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("guild", hasGuild ? guild!.Name : "No Guild", new Vector2(24f, 24f)));
+		if (hasGuild)
 		{
-			Text = hasGuild ? guild!.Name : "No Guild",
-			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-		};
-		subtitleLabel.AddThemeColorOverride("font_color", new Color(hasGuild ? "f59e0b" : "90a0b0"));
-		titleRow.AddChild(subtitleLabel);
+			var tierDef = GuildCatalog.GetTier(guild!.Tier);
+			titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"{guild.MemberCount}/{tierDef.MaxMembers}", new Vector2(24f, 24f)));
+		}
 
 		RebuildInfo(gs, guild, hasGuild);
 		RebuildActions(gs, guild, hasGuild);
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void RebuildInfo(GameState gs, GuildSnapshot guild, bool hasGuild)
@@ -131,23 +142,23 @@ public partial class GuildMenu : Control
 
 		if (!hasGuild)
 		{
-			_infoStack.AddChild(new Label { Text = "You are not in a guild." });
+			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", "No guild joined.", new Vector2(26f, 26f)));
 			_infoStack.AddChild(new Label { Text = "Create or join one to unlock perks." });
 			return;
 		}
 
 		var tierDef = GuildCatalog.GetTier(guild!.Tier);
-		_infoStack.AddChild(new Label { Text = $"Tier: {tierDef.Title} (Tier {guild.Tier})" });
-		_infoStack.AddChild(new Label { Text = $"Experience: {guild.Experience}" });
-		_infoStack.AddChild(new Label { Text = $"Members: {guild.MemberCount} / {tierDef.MaxMembers}" });
-		_infoStack.AddChild(new Label { Text = $"Your Contribution: {gs.GuildContributionPoints}" });
+		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"{tierDef.Title} (Tier {guild.Tier})", new Vector2(26f, 26f)));
+		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"Experience: {guild.Experience}", new Vector2(26f, 26f)));
+		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"Members: {guild.MemberCount} / {tierDef.MaxMembers}", new Vector2(26f, 26f)));
+		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"Your Contribution: {gs.GuildContributionPoints}", new Vector2(26f, 26f)));
 
 		_infoStack.AddChild(new HSeparator());
 
 		// Weekly goal progress
 		if (guild.WeeklyGoalTarget > 0)
 		{
-			_infoStack.AddChild(new Label { Text = $"Weekly Goal: {guild.WeeklyGoalType}" });
+			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"Weekly Goal: {guild.WeeklyGoalType}", new Vector2(26f, 26f)));
 			var progressFraction = Mathf.Clamp((float)guild.WeeklyGoalProgress / guild.WeeklyGoalTarget, 0f, 1f);
 			var progressBar = new ProgressBar
 			{
@@ -158,11 +169,11 @@ public partial class GuildMenu : Control
 				SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			};
 			_infoStack.AddChild(progressBar);
-			_infoStack.AddChild(new Label { Text = $"{guild.WeeklyGoalProgress} / {guild.WeeklyGoalTarget}  ({(int)(progressFraction * 100)}%)" });
+			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"{guild.WeeklyGoalProgress} / {guild.WeeklyGoalTarget}  ({(int)(progressFraction * 100)}%)", new Vector2(26f, 26f)));
 		}
 		else
 		{
-			_infoStack.AddChild(new Label { Text = "No weekly goal active." });
+			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No weekly goal active.", new Vector2(26f, 26f)));
 		}
 
 		_infoStack.AddChild(new HSeparator());

@@ -15,6 +15,7 @@ public partial class TowerMenu : Control
 	private Label _detailStageLabel = null!;
 	private Label _detailScalingLabel = null!;
 	private Label _detailModifiersLabel = null!;
+	private HBoxContainer _detailRewardsRow = null!;
 	private Label _detailRewardsLabel = null!;
 	private Label _detailMilestoneLabel = null!;
 	private Button _deployButton = null!;
@@ -47,9 +48,7 @@ public partial class TowerMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("38bdf8"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "tower", new Color("1a1a2e"), new Color("16213e"), new Color("38bdf8"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -118,9 +117,15 @@ public partial class TowerMenu : Control
 		_detailModifiersLabel.AddThemeColorOverride("font_color", new Color("e07050"));
 		detailStack.AddChild(_detailModifiersLabel);
 
-		_detailRewardsLabel = new Label();
+		_detailRewardsRow = new HBoxContainer();
+		_detailRewardsRow.AddThemeConstantOverride("separation", 8);
+		detailStack.AddChild(_detailRewardsRow);
+		_detailRewardsLabel = new Label
+		{
+			VerticalAlignment = VerticalAlignment.Center
+		};
 		_detailRewardsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		detailStack.AddChild(_detailRewardsLabel);
+		_detailRewardsRow.AddChild(_detailRewardsLabel);
 
 		_detailMilestoneLabel = new Label();
 		_detailMilestoneLabel.AddThemeColorOverride("font_color", new Color("a855f7"));
@@ -227,6 +232,7 @@ public partial class TowerMenu : Control
 		if (def.RewardFood > 0) rewards += $"{def.RewardFood} food  ";
 		if (def.RewardTomes > 0) rewards += $"{def.RewardTomes} tomes  ";
 		if (def.RewardEssence > 0) rewards += $"{def.RewardEssence} essence  ";
+		RebuildRewardBadges(def);
 		_detailRewardsLabel.Text = rewards.Length > 0 ? $"Rewards: {rewards.TrimEnd()}" : "Rewards: None";
 
 		if (!string.IsNullOrEmpty(def.MilestoneRelicId))
@@ -236,6 +242,41 @@ public partial class TowerMenu : Control
 
 		_deployButton.Disabled = isLocked;
 		_deployButton.Text = isLocked ? "Locked" : "Deploy";
+	}
+
+	private void RebuildRewardBadges(TowerFloorDefinition def)
+	{
+		foreach (var child in _detailRewardsRow.GetChildren())
+		{
+			if (child != _detailRewardsLabel)
+			{
+				child.QueueFree();
+			}
+		}
+
+		if (def.RewardGold > 0)
+		{
+			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{def.RewardGold} Gold", new Vector2(30f, 30f)));
+			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
+		}
+
+		if (def.RewardFood > 0)
+		{
+			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{def.RewardFood} Food", new Vector2(30f, 30f)));
+			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
+		}
+
+		if (def.RewardTomes > 0)
+		{
+			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("tomes", "", $"{def.RewardTomes} Tomes", new Vector2(30f, 30f)));
+			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
+		}
+
+		if (def.RewardEssence > 0)
+		{
+			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("essence", "", $"{def.RewardEssence} Essence", new Vector2(30f, 30f)));
+			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
+		}
 	}
 
 	private void OnDeployPressed()

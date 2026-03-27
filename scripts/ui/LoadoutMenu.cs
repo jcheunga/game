@@ -46,30 +46,7 @@ public partial class LoadoutMenu : Control
     private void BuildUi()
     {
         var route = RouteCatalog.Get(_stage.MapId);
-
-        var backgroundTop = new ColorRect
-        {
-            Color = route.BackgroundTop
-        };
-        backgroundTop.Position = Vector2.Zero;
-        backgroundTop.Size = new Vector2(1280f, 360f);
-        AddChild(backgroundTop);
-
-        var backgroundBottom = new ColorRect
-        {
-            Color = route.BackgroundBottom,
-            Position = new Vector2(0f, 360f),
-            Size = new Vector2(1280f, 360f)
-        };
-        AddChild(backgroundBottom);
-
-        var accentBand = new ColorRect
-        {
-            Color = route.BannerAccent,
-            Position = new Vector2(0f, 104f),
-            Size = new Vector2(1280f, 6f)
-        };
-        AddChild(accentBand);
+        MenuBackdropComposer.AddSplitBackdrop(this, "loadout", route.BackgroundTop, route.BackgroundBottom, route.BannerAccent, 104f, route.Id);
 
         var titlePanel = new PanelContainer
         {
@@ -93,14 +70,11 @@ public partial class LoadoutMenu : Control
         titleLabel.AddThemeColorOverride("font_color", route.BannerAccent);
         titleRow.AddChild(titleLabel);
 
-        var resourcesLabel = new Label
-        {
-            Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        titleRow.AddChild(resourcesLabel);
+        var resourcesRow = new HBoxContainer();
+        resourcesRow.AddThemeConstantOverride("separation", 12);
+        resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+        titleRow.AddChild(resourcesRow);
 
         var missionPanel = new PanelContainer
         {
@@ -150,15 +124,51 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
-            Text = StageMissionEvents.BuildSummaryText(_stage),
+            Text = StageMissionEvents.BuildCampaignSummaryText(_stage),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var rewardRow = new HBoxContainer();
+        rewardRow.AddThemeConstantOverride("separation", 8);
+        if (_stage.RewardGold > 0)
+        {
+            rewardRow.AddChild(CreateRewardChip("gold", "", $"+{_stage.RewardGold} Gold"));
+        }
+        if (_stage.RewardFood > 0)
+        {
+            rewardRow.AddChild(CreateRewardChip("food", "", $"+{_stage.RewardFood} Food"));
+        }
+        var entryFoodCost = GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber);
+        if (entryFoodCost > 0)
+        {
+            rewardRow.AddChild(CreateRewardChip("food", "", $"-{entryFoodCost} Food Entry"));
+        }
+        missionStack.AddChild(rewardRow);
+
+        missionStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        missionStack.AddChild(new Label
+        {
+            Text = GameState.Instance.BuildCampaignScoutStatusText(_stage.StageNumber),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
         missionStack.AddChild(new Label
         {
             Text =
-                $"Reward on clear: +{_stage.RewardGold} gold, +{_stage.RewardFood} food  |  Entry cost: -{GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food\n" +
-                $"{GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber)}"
+                $"{GameState.Instance.BuildCampaignFieldOrderStatusText(_stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignMomentumStatusText()}\n" +
+                $"{GameState.Instance.BuildCampaignConvoyCommandStatusText(_stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignRouteDoctrineStatusText(_stage.StageNumber, _stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignMissionOutcomeStatusText(_stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignCounterSurgeStatusText(_stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignReserveStatusText()}\n" +
+                $"{GameState.Instance.BuildCampaignRouteSupportStatusText(_stage.MapId)}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
         missionStack.AddChild(new Label
@@ -192,7 +202,7 @@ public partial class LoadoutMenu : Control
 
         missionStack.AddChild(new Label
         {
-            Text = StageEncounterIntel.BuildEncounterIntel(_stage),
+            Text = StageEncounterIntel.BuildCampaignEncounterIntel(_stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -379,7 +389,7 @@ public partial class LoadoutMenu : Control
         var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 110f)
+            CustomMinimumSize = new Vector2(0f, 118f)
         };
 
         var padding = new MarginContainer();
@@ -389,9 +399,9 @@ public partial class LoadoutMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateUnitBadge(definition, new Vector2(72f, 72f)));
 
         stack.AddChild(new Label
         {
@@ -436,7 +446,7 @@ public partial class LoadoutMenu : Control
     {
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(0f, 92f),
+            CustomMinimumSize = new Vector2(0f, 96f),
             SelfModulate = spell.GetTint().Darkened(0.08f)
         };
 
@@ -447,9 +457,10 @@ public partial class LoadoutMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 10);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 6);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateSpellBadge(spell, new Vector2(64f, 64f)),
+            stackSpacing: 6);
 
         var spellLevel = GameState.Instance.GetSpellLevel(spell.Id);
         stack.AddChild(new Label
@@ -464,5 +475,18 @@ public partial class LoadoutMenu : Control
         });
 
         return panel;
+    }
+
+    private static HBoxContainer CreateRewardChip(string rewardType, string rewardItemId, string text)
+    {
+        var chip = new HBoxContainer();
+        chip.AddThemeConstantOverride("separation", 6);
+        chip.AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, rewardItemId, text, new Vector2(30f, 30f)));
+        chip.AddChild(new Label
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        return chip;
     }
 }

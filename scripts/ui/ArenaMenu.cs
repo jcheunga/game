@@ -7,6 +7,7 @@ public partial class ArenaMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _opponentsPanel = null!;
 	private PanelContainer _ladderPanel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _opponentsStack = null!;
 	private VBoxContainer _ladderStack = null!;
@@ -37,9 +38,7 @@ public partial class ArenaMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("e74c3c"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "arena", new Color("1a1a2e"), new Color("16213e"), new Color("e74c3c"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -48,6 +47,9 @@ public partial class ArenaMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "PvP Arena", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Opponents panel (left)
 		_opponentsPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(600f, 480f) };
@@ -106,24 +108,28 @@ public partial class ArenaMenu : Control
 	{
 		var gs = GameState.Instance;
 		var tier = gs.GetArenaTier();
+		RebuildResourcesRow(gs);
 
 		// Update title row info
 		var titleRow = _titlePanel.GetChild<HBoxContainer>(0);
 		// Remove old dynamic labels if any
-		while (titleRow.GetChildCount() > 1) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
-		var infoLabel = new Label
-		{
-			Text = $"Rating: {gs.ArenaRating}  |  {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}",
-			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-		};
-		infoLabel.AddThemeColorOverride("font_color", new Color(tier.ColorHex));
-		titleRow.AddChild(infoLabel);
+		while (titleRow.GetChildCount() > 2) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("arena_rating", $"{gs.ArenaRating}  |  {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}", new Vector2(24f, 24f)));
 
 		GenerateOpponents();
 		RebuildOpponents();
 		RebuildLadder();
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void GenerateOpponents()
@@ -152,6 +158,7 @@ public partial class ArenaMenu : Control
 			var ratingLabel = new Label { Text = $"Rating: {opponent.ArenaRating} ({ratingTier.Title})" };
 			ratingLabel.AddThemeColorOverride("font_color", new Color(ratingTier.ColorHex));
 			card.AddChild(ratingLabel);
+			card.AddChild(BuildUnitBadgeRow(opponent.DeckUnitIds, 30f));
 
 			var unitNames = string.Join(", ", opponent.DeckUnitIds.Select(id =>
 			{
@@ -215,5 +222,28 @@ public partial class ArenaMenu : Control
 
 		_ladderStack.AddChild(new HSeparator());
 		_ladderStack.AddChild(new Label { Text = $"Your Rating: {gs.ArenaRating}  |  Tier: {playerTier.Title}" });
+	}
+
+	private static HBoxContainer BuildUnitBadgeRow(IEnumerable<string> unitIds, float badgeSize)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 6);
+		foreach (var unitId in unitIds)
+		{
+			row.AddChild(UiBadgeFactory.CreateUnitBadge(TryGetUnit(unitId), new Vector2(badgeSize, badgeSize)));
+		}
+		return row;
+	}
+
+	private static UnitDefinition TryGetUnit(string unitId)
+	{
+		try
+		{
+			return GameData.GetUnit(unitId);
+		}
+		catch
+		{
+			return null;
+		}
 	}
 }

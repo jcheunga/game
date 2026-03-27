@@ -37,7 +37,7 @@ public partial class MusicPlayer : Node
 		["harbor"] = "battle_harbor",
 		["foundry"] = "battle_foundry",
 		["quarantine"] = "battle_quarantine",
-		["pass"] = "battle_pass",
+		["thornwall"] = "battle_pass",
 		["basilica"] = "battle_basilica",
 		["mire"] = "battle_mire",
 		["steppe"] = "battle_steppe",

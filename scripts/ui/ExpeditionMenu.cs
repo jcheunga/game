@@ -8,7 +8,7 @@ public partial class ExpeditionMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _slotsPanel = null!;
 	private PanelContainer _catalogPanel = null!;
-	private Label _resourcesLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _slotsStack = null!;
 	private VBoxContainer _catalogStack = null!;
@@ -40,9 +40,7 @@ public partial class ExpeditionMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("22c55e"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "expedition", new Color("1a1a2e"), new Color("16213e"), new Color("22c55e"), 104f);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);
@@ -50,8 +48,9 @@ public partial class ExpeditionMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Expeditions", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_resourcesLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		titleRow.AddChild(_resourcesLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Active slots panel
 		_slotsPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(600f, 480f) };
@@ -107,9 +106,28 @@ public partial class ExpeditionMenu : Control
 	private void RefreshUi()
 	{
 		var gs = GameState.Instance;
-		_resourcesLabel.Text = $"Gold: {gs.Gold}  |  Food: {gs.Food}  |  Expeditions: {gs.ActiveExpeditionCount}/{ExpeditionCatalog.MaxSlots}";
+		RebuildResourcesRow(gs);
 		RebuildSlots();
 		RebuildCatalog();
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
+
+		var expeditionsLabel = new Label
+		{
+			Text = $"Expeditions {gs.ActiveExpeditionCount}/{ExpeditionCatalog.MaxSlots}",
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		expeditionsLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		_resourcesRow.AddChild(expeditionsLabel);
 	}
 
 	private void RebuildSlots()
@@ -125,14 +143,16 @@ public partial class ExpeditionMenu : Control
 
 			var complete = GameState.Instance.IsExpeditionComplete(i);
 			var remaining = GameState.Instance.GetExpeditionTimeRemaining(i);
-			var unitNames = string.Join(", ", slot.AssignedUnitIds.Select(id =>
-			{
-				try { return GameData.GetUnit(id)?.DisplayName ?? id; } catch { return id; }
-			}));
+			var unitNames = string.Join(", ", slot.AssignedUnitIds.Select(ResolveUnitName));
 
 			var box = new VBoxContainer();
 			box.AddThemeConstantOverride("separation", 2);
-			box.AddChild(new Label { Text = $"{def.Title} — {unitNames}" });
+			box.AddChild(new Label { Text = def.Title });
+			if (slot.AssignedUnitIds.Any())
+			{
+				box.AddChild(BuildUnitBadgeRow(slot.AssignedUnitIds, 34f));
+				box.AddChild(new Label { Text = $"Assigned: {unitNames}", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+			}
 
 			if (complete)
 			{
@@ -178,6 +198,7 @@ public partial class ExpeditionMenu : Control
 			box.AddThemeConstantOverride("separation", 4);
 			box.AddChild(new Label { Text = $"{def.Title} ({def.DurationMinutes}m)" });
 			box.AddChild(new Label { Text = def.Description });
+			box.AddChild(BuildRewardRow(def.BaseGoldReward, def.BaseFoodReward, def.RelicDropChance));
 			box.AddChild(new Label { Text = $"Reward: ~{def.BaseGoldReward} gold, ~{def.BaseFoodReward} food  |  Relic chance: {(int)(def.RelicDropChance * 100)}%" });
 			box.AddChild(new Label { Text = $"Units: {def.MinUnits}-{def.MaxUnits}" });
 
@@ -191,10 +212,8 @@ public partial class ExpeditionMenu : Control
 				if (idleUnits.Length >= def.MinUnits)
 				{
 					var unitPick = idleUnits.Take(def.MaxUnits).ToArray();
-					var unitLabel = string.Join(", ", unitPick.Select(id =>
-					{
-						try { return GameData.GetUnit(id)?.DisplayName ?? id; } catch { return id; }
-					}));
+					var unitLabel = string.Join(", ", unitPick.Select(ResolveUnitName));
+					box.AddChild(BuildUnitBadgeRow(unitPick, 30f));
 					box.AddChild(new Label { Text = $"Send: {unitLabel}" });
 
 					var capturedId = def.Id;
@@ -243,5 +262,52 @@ public partial class ExpeditionMenu : Control
 	{
 		// Helper; GameState should expose this
 		return GameState.Instance.GetOwnedPlayerUnitIds();
+	}
+
+	private static HBoxContainer BuildUnitBadgeRow(IEnumerable<string> unitIds, float badgeSize)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 6);
+		foreach (var unitId in unitIds)
+		{
+			row.AddChild(UiBadgeFactory.CreateUnitBadge(TryGetUnit(unitId), new Vector2(badgeSize, badgeSize)));
+		}
+		return row;
+	}
+
+	private static UnitDefinition TryGetUnit(string unitId)
+	{
+		try
+		{
+			return GameData.GetUnit(unitId);
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	private static string ResolveUnitName(string unitId)
+	{
+		return TryGetUnit(unitId)?.DisplayName ?? unitId;
+	}
+
+	private static HBoxContainer BuildRewardRow(int gold, int food, float relicDropChance)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+		if (gold > 0)
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{gold} Gold", new Vector2(28f, 28f)));
+		}
+		if (food > 0)
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{food} Food", new Vector2(28f, 28f)));
+		}
+		if (relicDropChance > 0f)
+		{
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("relic", "", $"Relic {(int)(relicDropChance * 100)}%", new Vector2(28f, 28f)));
+		}
+		return row;
 	}
 }

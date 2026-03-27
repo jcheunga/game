@@ -4,6 +4,9 @@ using Godot;
 public partial class MainMenu : Control
 {
     private Label _summaryLabel = null!;
+    private HBoxContainer _resourceMetricsRow = null!;
+    private HBoxContainer _progressMetricsRow = null!;
+    private HBoxContainer _socialMetricsRow = null!;
     private Control _panel = null!;
     private readonly System.Collections.Generic.List<Control> _animatedElements = new();
 
@@ -107,12 +110,7 @@ public partial class MainMenu : Control
 
     private void BuildUi()
     {
-        var background = new ColorRect
-        {
-            Color = new Color("1d2d44")
-        };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        MenuBackdropComposer.AddSolidBackdrop(this, "main_menu", new Color("1d2d44"));
 
         var ambientParticles = new CpuParticles2D
         {
@@ -176,14 +174,40 @@ public partial class MainMenu : Control
         stack.AddChild(subtitle);
         _animatedElements.Add(subtitle);
 
+        var metricsCenter = new CenterContainer();
+        stack.AddChild(metricsCenter);
+        _animatedElements.Add(metricsCenter);
+
+        _resourceMetricsRow = new HBoxContainer();
+        _resourceMetricsRow.AddThemeConstantOverride("separation", 12);
+        metricsCenter.AddChild(_resourceMetricsRow);
+
+        var progressMetricsCenter = new CenterContainer();
+        stack.AddChild(progressMetricsCenter);
+        _animatedElements.Add(progressMetricsCenter);
+
+        _progressMetricsRow = new HBoxContainer();
+        _progressMetricsRow.AddThemeConstantOverride("separation", 12);
+        progressMetricsCenter.AddChild(_progressMetricsRow);
+
+        var socialMetricsCenter = new CenterContainer();
+        stack.AddChild(socialMetricsCenter);
+        _animatedElements.Add(socialMetricsCenter);
+
+        _socialMetricsRow = new HBoxContainer();
+        _socialMetricsRow.AddThemeConstantOverride("separation", 12);
+        socialMetricsCenter.AddChild(_socialMetricsRow);
+
         _summaryLabel = new Label
         {
-            Text = BuildProgressSummary(),
+            Text = "",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             CustomMinimumSize = new Vector2(0f, 136f)
         };
         stack.AddChild(_summaryLabel);
         _animatedElements.Add(_summaryLabel);
+
+        RefreshSummaryUi();
 
         var startButton = BuildButton(GameState.Instance.HighestUnlockedStage > 1 ? "Resume Campaign" : "Start Campaign");
         startButton.Pressed += () => SceneRouter.Instance.GoToMap();
@@ -310,6 +334,8 @@ public partial class MainMenu : Control
             {
                 if (GameState.Instance.TryPrestige(out var msg))
                 {
+                    RebuildResourceMetricsRow();
+                    RebuildMetaMetricsRows();
                     _summaryLabel.Text = msg;
                 }
             };
@@ -454,5 +480,69 @@ public partial class MainMenu : Control
             $"Active squad: {squadLine}\n" +
             $"Active magic: {spellLine}\n" +
             $"Deck synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
+    }
+
+    private void RefreshSummaryUi()
+    {
+        RebuildResourceMetricsRow();
+        RebuildMetaMetricsRows();
+        _summaryLabel.Text = BuildProgressSummary();
+    }
+
+    private void RebuildResourceMetricsRow()
+    {
+        foreach (var child in _resourceMetricsRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
+        var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
+
+        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("unit", "", $"{ownedUnits}/{GameData.PlayerRosterIds.Length}", new Vector2(24f, 24f)));
+        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("spell", "", $"{ownedSpells}/{GameData.PlayerSpellIds.Length}", new Vector2(24f, 24f)));
+    }
+
+    private void RebuildMetaMetricsRows()
+    {
+        foreach (var child in _progressMetricsRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        foreach (var child in _socialMetricsRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var gs = GameState.Instance;
+        var guildName = string.IsNullOrWhiteSpace(gs.GuildId) || gs.CachedGuildInfo == null
+            ? "No Guild"
+            : ShortenMetricText(gs.CachedGuildInfo.Name, 10);
+
+        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"S{gs.HighestUnlockedStage}/{gs.MaxStage}", new Vector2(24f, 24f)));
+        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("tower_floor", gs.TowerHighestFloor > 0 ? $"F{gs.TowerHighestFloor}" : "F-", new Vector2(24f, 24f)));
+        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("endless_wave", gs.BestEndlessWave > 0 ? $"W{gs.BestEndlessWave}" : "W-", new Vector2(24f, 24f)));
+
+        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("daily_streak", gs.DailyStreak > 0 ? gs.DailyStreak.ToString() : "-", new Vector2(24f, 24f)));
+        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("guild", guildName, new Vector2(24f, 24f)));
+        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", gs.GetFriendIds().Count.ToString(), new Vector2(24f, 24f)));
+    }
+
+    private static string ShortenMetricText(string text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
+        {
+            return text;
+        }
+
+        if (maxLength <= 3)
+        {
+            return text[..maxLength];
+        }
+
+        return text[..(maxLength - 3)] + "...";
     }
 }

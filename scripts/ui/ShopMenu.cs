@@ -28,12 +28,13 @@ public partial class ShopMenu : Control
     private ColorRect _backgroundTop = null!;
     private ColorRect _backgroundBottom = null!;
     private ColorRect _accentBand = null!;
+    private MenuBackdropSet _menuBackdrop = null!;
     private PanelContainer _titlePanel = null!;
     private PanelContainer _summaryPanel = null!;
     private PanelContainer _unitsPanel = null!;
     private PanelContainer _basePanel = null!;
     private PanelContainer _relicsPanel = null!;
-    private Label _resourcesLabel = null!;
+    private HBoxContainer _resourcesRow = null!;
     private Label _statusLabel = null!;
     private Label _summaryLabel = null!;
     private Label _deckLabel = null!;
@@ -89,29 +90,12 @@ public partial class ShopMenu : Control
 
     private void BuildUi()
     {
-        _backgroundTop = new ColorRect
-        {
-            Color = new Color("14213d")
-        };
-        _backgroundTop.Position = Vector2.Zero;
-        _backgroundTop.Size = new Vector2(1280f, 360f);
-        AddChild(_backgroundTop);
-
-        _backgroundBottom = new ColorRect
-        {
-            Color = new Color("0d1b2a"),
-            Position = new Vector2(0f, 360f),
-            Size = new Vector2(1280f, 360f)
-        };
-        AddChild(_backgroundBottom);
-
-        _accentBand = new ColorRect
-        {
-            Color = new Color("ffd166"),
-            Position = new Vector2(0f, 104f),
-            Size = new Vector2(1280f, 6f)
-        };
-        AddChild(_accentBand);
+        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var route = RouteCatalog.Get(stage.MapId);
+        _menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(this, "shop", route.BackgroundTop, route.BackgroundBottom, route.BannerAccent, 104f, route.Id);
+        _backgroundTop = _menuBackdrop.PrimaryRect;
+        _backgroundBottom = _menuBackdrop.SecondaryRect;
+        _accentBand = _menuBackdrop.AccentBand;
 
         _titlePanel = new PanelContainer
         {
@@ -131,13 +115,9 @@ public partial class ShopMenu : Control
             VerticalAlignment = VerticalAlignment.Center
         });
 
-        _resourcesLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        titleRow.AddChild(_resourcesLabel);
+        _resourcesRow = new HBoxContainer();
+        _resourcesRow.AddThemeConstantOverride("separation", 12);
+        titleRow.AddChild(_resourcesRow);
 
         _summaryPanel = new PanelContainer
         {
@@ -384,7 +364,7 @@ public partial class ShopMenu : Control
     private void RefreshUi()
     {
         ApplyRouteTheme();
-        _resourcesLabel.Text = $"Gold: {GameState.Instance.Gold}  |  Food: {GameState.Instance.Food}";
+        RebuildResourcesRow();
         _summaryLabel.Text = BuildSummaryText();
         _deckLabel.Text = BuildDeckSummaryText();
         _routeIntelLabel.Text = BuildRouteIntelText();
@@ -395,6 +375,17 @@ public partial class ShopMenu : Control
         RebuildRelicPanels();
     }
 
+    private void RebuildResourcesRow()
+    {
+        foreach (var child in _resourcesRow.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+    }
+
     private void ApplyRouteTheme()
     {
         var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
@@ -402,6 +393,7 @@ public partial class ShopMenu : Control
         _backgroundTop.Color = route.BackgroundTop;
         _backgroundBottom.Color = route.BackgroundBottom;
         _accentBand.Color = route.BannerAccent;
+        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("shop", route.Id));
         _titlePanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
         _summaryPanel.SelfModulate = route.BannerPanel;
         _unitsPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
@@ -1517,9 +1509,9 @@ public partial class ShopMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateUnitBadge(unit, new Vector2(84f, 84f)));
 
         var statusLine = !available
             ? $"Locked until stage {unit.UnlockStage}"
@@ -1746,9 +1738,9 @@ public partial class ShopMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateSpellBadge(spell, new Vector2(72f, 72f)));
 
         var spellLevelLabel = owned ? $"Lv{GameState.Instance.GetSpellLevel(spell.Id)}/{GameState.Instance.MaxSpellLevel}" : "";
         var statusLine = !available
@@ -2002,9 +1994,10 @@ public partial class ShopMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 6);
-        padding.AddChild(stack);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
+            padding,
+            UiBadgeFactory.CreateRelicBadge(relic, new Vector2(68f, 68f)),
+            stackSpacing: 6);
 
         stack.AddChild(new Label
         {

@@ -55,7 +55,7 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 38;
+    public int Version { get; set; } = 39;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
@@ -226,4 +226,7 @@ public sealed class GameSaveData
     public bool ReducedMotion { get; set; }
     public bool AutoBattleEnabled { get; set; }
     public bool LargeTextMode { get; set; }
+
+    // v39: Campaign Momentum
+    public int CampaignMomentumStacks { get; set; }
 }

@@ -9,7 +9,7 @@ public partial class SkillTreeMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _unitListPanel = null!;
 	private PanelContainer _treePanel = null!;
-	private Label _tomesLabel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _unitStack = null!;
 	private VBoxContainer _treeStack = null!;
@@ -40,9 +40,7 @@ public partial class SkillTreeMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("facc15"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "skill_tree", new Color("1a1a2e"), new Color("16213e"), new Color("facc15"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -51,8 +49,9 @@ public partial class SkillTreeMenu : Control
 		titleRow.AddThemeConstantOverride("separation", 16);
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Skill Trees", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_tomesLabel = new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		titleRow.AddChild(_tomesLabel);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Left panel: unit list
 		_unitListPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(380f, 480f) };
@@ -107,9 +106,20 @@ public partial class SkillTreeMenu : Control
 	private void RefreshUi()
 	{
 		var gs = GameState.Instance;
-		_tomesLabel.Text = $"Tomes: {gs.Tomes}  |  Gold: {gs.Gold}";
+		RebuildResourcesRow(gs);
 		RebuildUnitList();
 		RebuildTree();
+	}
+
+	private void RebuildResourcesRow(GameState gs)
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("tomes", "", gs.Tomes.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void RebuildUnitList()
@@ -138,6 +148,7 @@ public partial class SkillTreeMenu : Control
 			var capturedId = unitId;
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 6);
+			row.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(38f, 38f)));
 
 			var label = new Label
 			{
@@ -186,9 +197,13 @@ public partial class SkillTreeMenu : Control
 		}
 
 		var unit = GameData.GetUnit(_selectedUnitId);
-		var headerLabel = new Label { Text = $"{unit?.DisplayName ?? _selectedUnitId} - Skill Tree" };
+		var headerRow = new HBoxContainer();
+		headerRow.AddThemeConstantOverride("separation", 10);
+		headerRow.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(52f, 52f)));
+		var headerLabel = new Label { Text = $"{unit?.DisplayName ?? _selectedUnitId} - Skill Tree", VerticalAlignment = VerticalAlignment.Center };
 		headerLabel.AddThemeColorOverride("font_color", new Color("facc15"));
-		_treeStack.AddChild(headerLabel);
+		headerRow.AddChild(headerLabel);
+		_treeStack.AddChild(headerRow);
 
 		_treeStack.AddChild(new HSeparator());
 

@@ -6,6 +6,7 @@ public partial class LeaderboardMenu : Control
 	private PanelContainer _titlePanel = null!;
 	private PanelContainer _tabPanel = null!;
 	private PanelContainer _contentPanel = null!;
+	private HBoxContainer _resourcesRow = null!;
 	private Label _statusLabel = null!;
 	private VBoxContainer _contentStack = null!;
 
@@ -42,9 +43,7 @@ public partial class LeaderboardMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("f59e0b"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "leaderboard", new Color("1a1a2e"), new Color("16213e"), new Color("f59e0b"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -58,6 +57,9 @@ public partial class LeaderboardMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			VerticalAlignment = VerticalAlignment.Center
 		});
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 12);
+		titleRow.AddChild(_resourcesRow);
 
 		// Tab bar panel
 		_tabPanel = new PanelContainer { Position = new Vector2(24f, 112f), Size = new Vector2(1232f, 48f) };
@@ -122,8 +124,20 @@ public partial class LeaderboardMenu : Control
 
 	private void RefreshUi()
 	{
+		RebuildResourcesRow();
 		UpdateTabHighlights();
 		RebuildContent();
+	}
+
+	private void RebuildResourcesRow()
+	{
+		foreach (var child in _resourcesRow.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
 	private void UpdateTabHighlights()
@@ -174,13 +188,8 @@ public partial class LeaderboardMenu : Control
 		_contentStack.AddChild(new HSeparator());
 
 		// Player stats
-		var statsLabel = new Label
-		{
-			Text = $"Your Rating: {gs.ArenaRating}  |  Tier: {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		statsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		_contentStack.AddChild(statsLabel);
+		var arenaStatsRow = CreateMetaSummaryRow("arena_rating", $"Your Rating: {gs.ArenaRating}  |  Tier: {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}", new Color("ffd700"));
+		_contentStack.AddChild(arenaStatsRow);
 
 		_contentStack.AddChild(new HSeparator());
 
@@ -189,16 +198,7 @@ public partial class LeaderboardMenu : Control
 
 		// Player's own entry at the bottom
 		_contentStack.AddChild(new HSeparator());
-		var playerRow = new HBoxContainer();
-		playerRow.AddThemeConstantOverride("separation", 16);
-		playerRow.AddChild(new Label { Text = "---", CustomMinimumSize = new Vector2(40f, 0f) });
-		var playerName = new Label { Text = "You", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		playerName.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerName);
-		var playerScore = new Label { Text = $"{gs.ArenaRating}", HorizontalAlignment = HorizontalAlignment.Right };
-		playerScore.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerScore);
-		_contentStack.AddChild(playerRow);
+		_contentStack.AddChild(CreatePlayerEntryRow("arena_rating", $"{gs.ArenaRating}", new Color("ffd700")));
 	}
 
 	private void BuildTowerContent()
@@ -217,13 +217,7 @@ public partial class LeaderboardMenu : Control
 
 		// Player stats
 		var floorText = gs.TowerHighestFloor > 0 ? $"Floor {gs.TowerHighestFloor}" : "No floors cleared";
-		var statsLabel = new Label
-		{
-			Text = $"Your Highest Floor: {floorText}",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		statsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		_contentStack.AddChild(statsLabel);
+		_contentStack.AddChild(CreateMetaSummaryRow("tower_floor", $"Your Highest Floor: {floorText}", new Color("ffd700")));
 
 		_contentStack.AddChild(new HSeparator());
 
@@ -231,16 +225,7 @@ public partial class LeaderboardMenu : Control
 
 		// Player's own entry
 		_contentStack.AddChild(new HSeparator());
-		var playerRow = new HBoxContainer();
-		playerRow.AddThemeConstantOverride("separation", 16);
-		playerRow.AddChild(new Label { Text = "---", CustomMinimumSize = new Vector2(40f, 0f) });
-		var playerName = new Label { Text = "You", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		playerName.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerName);
-		var playerScore = new Label { Text = floorText, HorizontalAlignment = HorizontalAlignment.Right };
-		playerScore.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerScore);
-		_contentStack.AddChild(playerRow);
+		_contentStack.AddChild(CreatePlayerEntryRow("tower_floor", floorText, new Color("ffd700")));
 	}
 
 	private void BuildEndlessContent()
@@ -260,13 +245,7 @@ public partial class LeaderboardMenu : Control
 		// Player stats
 		var timeSpan = TimeSpan.FromSeconds(gs.BestEndlessTimeSeconds);
 		var timeText = $"{(int)timeSpan.TotalMinutes}:{timeSpan.Seconds:D2}";
-		var statsLabel = new Label
-		{
-			Text = $"Your Best Wave: {gs.BestEndlessWave}  |  Best Time: {timeText}",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		statsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		_contentStack.AddChild(statsLabel);
+		_contentStack.AddChild(CreateMetaSummaryRow("endless_wave", $"Your Best Wave: {gs.BestEndlessWave}  |  Best Time: {timeText}", new Color("ffd700")));
 
 		_contentStack.AddChild(new HSeparator());
 
@@ -274,16 +253,7 @@ public partial class LeaderboardMenu : Control
 
 		// Player's own entry
 		_contentStack.AddChild(new HSeparator());
-		var playerRow = new HBoxContainer();
-		playerRow.AddThemeConstantOverride("separation", 16);
-		playerRow.AddChild(new Label { Text = "---", CustomMinimumSize = new Vector2(40f, 0f) });
-		var playerName = new Label { Text = "You", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		playerName.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerName);
-		var playerScore = new Label { Text = $"Wave {gs.BestEndlessWave}", HorizontalAlignment = HorizontalAlignment.Right };
-		playerScore.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerScore);
-		_contentStack.AddChild(playerRow);
+		_contentStack.AddChild(CreatePlayerEntryRow("endless_wave", $"Wave {gs.BestEndlessWave}", new Color("ffd700")));
 	}
 
 	private void BuildDailyContent()
@@ -301,13 +271,7 @@ public partial class LeaderboardMenu : Control
 		_contentStack.AddChild(new HSeparator());
 
 		// Player stats
-		var statsLabel = new Label
-		{
-			Text = $"Your Daily Streak: {gs.DailyStreak}",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		statsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		_contentStack.AddChild(statsLabel);
+		_contentStack.AddChild(CreateMetaSummaryRow("daily_streak", $"Your Daily Streak: {gs.DailyStreak}", new Color("ffd700")));
 
 		_contentStack.AddChild(new HSeparator());
 
@@ -315,16 +279,7 @@ public partial class LeaderboardMenu : Control
 
 		// Player's own entry
 		_contentStack.AddChild(new HSeparator());
-		var playerRow = new HBoxContainer();
-		playerRow.AddThemeConstantOverride("separation", 16);
-		playerRow.AddChild(new Label { Text = "---", CustomMinimumSize = new Vector2(40f, 0f) });
-		var playerName = new Label { Text = "You", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		playerName.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerName);
-		var playerScore = new Label { Text = $"Streak: {gs.DailyStreak}", HorizontalAlignment = HorizontalAlignment.Right };
-		playerScore.AddThemeColorOverride("font_color", new Color("ffd700"));
-		playerRow.AddChild(playerScore);
-		_contentStack.AddChild(playerRow);
+		_contentStack.AddChild(CreatePlayerEntryRow("daily_streak", $"Streak: {gs.DailyStreak}", new Color("ffd700")));
 	}
 
 	private void AddPlaceholderRankings()
@@ -358,5 +313,46 @@ public partial class LeaderboardMenu : Control
 
 			_contentStack.AddChild(row);
 		}
+	}
+
+	private static Control CreateMetaSummaryRow(string metaId, string text, Color color)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 8);
+		row.AddChild(UiBadgeFactory.CreateMetaBadge(metaId, text, new Vector2(30f, 30f)));
+
+		var label = new Label
+		{
+			Text = text,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill
+		};
+		label.AddThemeColorOverride("font_color", color);
+		row.AddChild(label);
+		return row;
+	}
+
+	private static Control CreatePlayerEntryRow(string metaId, string scoreText, Color color)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 12);
+		row.AddChild(UiBadgeFactory.CreateMetaBadge(metaId, scoreText, new Vector2(28f, 28f)));
+
+		var playerName = new Label
+		{
+			Text = "You",
+			SizeFlagsHorizontal = SizeFlags.ExpandFill
+		};
+		playerName.AddThemeColorOverride("font_color", color);
+		row.AddChild(playerName);
+
+		var playerScore = new Label
+		{
+			Text = scoreText,
+			HorizontalAlignment = HorizontalAlignment.Right
+		};
+		playerScore.AddThemeColorOverride("font_color", color);
+		row.AddChild(playerScore);
+		return row;
 	}
 }

@@ -32,9 +32,7 @@ public partial class LoginCalendarMenu : Control
 
 	private void BuildUi()
 	{
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("ffd700"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "login_calendar", new Color("1a1a2e"), new Color("16213e"), new Color("ffd700"), 104f);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -136,11 +134,17 @@ public partial class LoginCalendarMenu : Control
 
 				tileContent.AddChild(dayLabel);
 
-				// Reward label
+				// Reward label + badge
+				var rewardCenter = new CenterContainer();
+				tileContent.AddChild(rewardCenter);
+				var rewardRow = new HBoxContainer();
+				rewardRow.AddThemeConstantOverride("separation", 6);
+				rewardCenter.AddChild(rewardRow);
+				rewardRow.AddChild(UiBadgeFactory.CreateRewardBadge(reward.RewardType, reward.RewardItemId, reward.Label, new Vector2(26f, 26f)));
 				var rewardLabel = new Label
 				{
 					Text = reward.Label,
-					HorizontalAlignment = HorizontalAlignment.Center
+					VerticalAlignment = VerticalAlignment.Center
 				};
 
 				if (isClaimed)
@@ -150,7 +154,7 @@ public partial class LoginCalendarMenu : Control
 				else
 					rewardLabel.AddThemeColorOverride("font_color", new Color("505860"));
 
-				tileContent.AddChild(rewardLabel);
+				rewardRow.AddChild(rewardLabel);
 
 				// Status or claim button
 				if (isClaimed)

@@ -46,10 +46,7 @@ public partial class SeasonPassMenu : Control
 
 	private void BuildUi()
 	{
-		// Background bands
-		AddChild(new ColorRect { Color = new Color("1a1a2e"), Position = Vector2.Zero, Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("16213e"), Position = new Vector2(0f, 360f), Size = new Vector2(1280f, 360f) });
-		AddChild(new ColorRect { Color = new Color("eab308"), Position = new Vector2(0f, 104f), Size = new Vector2(1280f, 6f) });
+		MenuBackdropComposer.AddSplitBackdrop(this, "season_pass", new Color("1a1a2e"), new Color("16213e"), new Color("eab308"), 104f);
 
 		// ── Title panel ──
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
@@ -222,6 +219,10 @@ public partial class SeasonPassMenu : Control
 			tierLabel.AddThemeColorOverride("font_color", tierColor);
 			col.AddChild(tierLabel);
 
+			var freePreview = new CenterContainer();
+			freePreview.AddChild(UiBadgeFactory.CreateRewardBadge(tier.FreeRewardType, "", tier.FreeRewardLabel, new Vector2(34f, 34f)));
+			col.AddChild(freePreview);
+
 			// Free reward button
 			var freeClaimed = gs.HasClaimedSeasonFreeTier(tier.Tier);
 			var freeUnlocked = tier.Tier <= currentTier;
@@ -247,6 +248,10 @@ public partial class SeasonPassMenu : Control
 			var capturedTierFree = tier.Tier;
 			freeBtn.Pressed += () => OnClaimReward(capturedTierFree, isPremium: false);
 			col.AddChild(freeBtn);
+
+			var premiumPreview = new CenterContainer();
+			premiumPreview.AddChild(UiBadgeFactory.CreateRewardBadge(tier.PremiumRewardType, tier.PremiumRewardItemId, tier.PremiumRewardLabel, new Vector2(34f, 34f)));
+			col.AddChild(premiumPreview);
 
 			// Premium reward button
 			var premClaimed = gs.HasClaimedSeasonPremiumTier(tier.Tier);

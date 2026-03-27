@@ -10367,9 +10367,19 @@ public partial class BattleController : Node2D
 		if (_campaignBonusObjectivePressureFriendly)
 		{
 			var supportUnitId = ResolveCampaignBonusObjectivePressureSupportUnitId();
-			if (!string.IsNullOrWhiteSpace(supportUnitId))
+			var supportCount = ResolveCampaignBonusObjectivePressureSupportCount();
+			for (var i = 0; i < supportCount; i++)
 			{
-				SpawnSupportUnit(supportUnitId, laneY);
+				if (!string.IsNullOrWhiteSpace(supportUnitId))
+				{
+					SpawnSupportUnit(supportUnitId, laneY);
+				}
+			}
+
+			var secondarySupportUnitId = ResolveCampaignBonusObjectivePressureSecondarySupportUnitId();
+			if (!string.IsNullOrWhiteSpace(secondarySupportUnitId))
+			{
+				SpawnSupportUnit(secondarySupportUnitId, laneY);
 			}
 
 			if (_campaignBonusObjectivePressureOffensive)
@@ -10391,7 +10401,13 @@ public partial class BattleController : Node2D
 		var spawned = 0;
 		if (!string.IsNullOrWhiteSpace(primaryEnemyUnitId))
 		{
-			spawned += SpawnEnemySurgeUnits(primaryEnemyUnitId, _campaignBonusObjectivePressureOffensive ? 2 : 1, laneY);
+			spawned += SpawnEnemySurgeUnits(primaryEnemyUnitId, ResolveCampaignBonusObjectivePressureEnemyCount(), laneY);
+		}
+
+		var secondaryEnemyUnitId = ResolveCampaignBonusObjectivePressureSecondaryEnemyUnitId();
+		if (!string.IsNullOrWhiteSpace(secondaryEnemyUnitId))
+		{
+			spawned += SpawnEnemySurgeUnits(secondaryEnemyUnitId, 1, laneY);
 		}
 
 		if (_campaignBonusObjectivePressureOffensive)
@@ -10452,6 +10468,42 @@ public partial class BattleController : Node2D
 		};
 	}
 
+	private int ResolveCampaignBonusObjectivePressureSupportCount()
+	{
+		return _campaignBonusObjectivePressureOffensive
+			? 1
+			: _stage >= 55
+				? 2
+				: 1;
+	}
+
+	private string ResolveCampaignBonusObjectivePressureSecondarySupportUnitId()
+	{
+		if (_campaignBonusObjectivePressureOffensive)
+		{
+			return _activeRouteId switch
+			{
+				RouteCatalog.CityId => GameData.PlayerCoordinatorId,
+				RouteCatalog.HarborId => GameData.PlayerMarksmanId,
+				RouteCatalog.FoundryId => GameData.PlayerMechanicId,
+				RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
+				RouteCatalog.SteppeId => GameData.PlayerHoundId,
+				RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
+				_ => ""
+			};
+		}
+
+		return _activeRouteId switch
+		{
+			RouteCatalog.HarborId => GameData.PlayerDefenderId,
+			RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
+			RouteCatalog.MireId => GameData.PlayerCoordinatorId,
+			RouteCatalog.SteppeId => GameData.PlayerRaiderId,
+			RouteCatalog.GloamwoodId => GameData.PlayerLanternGuardId,
+			_ => ""
+		};
+	}
+
 	private string ResolveCampaignBonusObjectivePressureEnemyUnitId()
 	{
 		return _activeRouteId switch
@@ -10467,6 +10519,43 @@ public partial class BattleController : Node2D
 			RouteCatalog.GloamwoodId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyMirrorId : GameData.EnemyJammerId,
 			RouteCatalog.CitadelId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyCrusherId : GameData.EnemyShieldWallId,
 			_ => GameData.EnemyRunnerId
+		};
+	}
+
+	private int ResolveCampaignBonusObjectivePressureEnemyCount()
+	{
+		if (_campaignBonusObjectivePressureOffensive)
+		{
+			return _stage >= 55 ? 3 : 2;
+		}
+
+		return _stage >= 55 ? 2 : 1;
+	}
+
+	private string ResolveCampaignBonusObjectivePressureSecondaryEnemyUnitId()
+	{
+		if (_campaignBonusObjectivePressureOffensive)
+		{
+			return _activeRouteId switch
+			{
+				RouteCatalog.CityId => GameData.EnemyHowlerId,
+				RouteCatalog.HarborId => GameData.EnemySpitterId,
+				RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
+				RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
+				RouteCatalog.MireId => GameData.EnemySpitterId,
+				RouteCatalog.CitadelId => GameData.EnemySpitterId,
+				_ => ""
+			};
+		}
+
+		return _activeRouteId switch
+		{
+			RouteCatalog.QuarantineId => GameData.EnemySpitterId,
+			RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
+			RouteCatalog.SteppeId => GameData.EnemyRunnerId,
+			RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
+			RouteCatalog.CitadelId => GameData.EnemyCrusherId,
+			_ => ""
 		};
 	}
 
@@ -12926,6 +13015,7 @@ public partial class BattleController : Node2D
 			var doctrineLine = IsCampaignMode ? $"\n{BuildCampaignRouteDoctrineDebriefText()}" : "";
 			var missionAftermathLine = IsCampaignMode ? $"\n{BuildCampaignMissionAftermathDebriefText()}" : "";
 			var counterSurgeLine = IsCampaignMode ? $"\n{BuildCampaignCounterSurgeDebriefText()}" : "";
+			var bonusObjectivePressureLine = IsCampaignMode ? $"\n{BuildCampaignBonusObjectivePressureDebriefText()}" : "";
 			var reserveLine = IsCampaignMode ? $"\n{BuildCampaignReserveDebriefText()}" : "";
 			var routeSupportLine = IsCampaignMode ? $"\n{BuildCampaignRouteSupportDebriefText()}" : "";
 			var bossPhaseLine = IsCampaignMode ? $"\n{BuildCampaignBossPhaseDebriefText()}" : "";
@@ -12942,6 +13032,7 @@ public partial class BattleController : Node2D
 				doctrineLine +
 				missionAftermathLine +
 				counterSurgeLine +
+				bonusObjectivePressureLine +
 				reserveLine +
 				routeSupportLine +
 				bossPhaseLine +
@@ -12969,6 +13060,7 @@ public partial class BattleController : Node2D
 			var doctrineLine = IsCampaignMode ? $"\n{BuildCampaignRouteDoctrineDebriefText()}" : "";
 			var missionAftermathLine = IsCampaignMode ? $"\n{BuildCampaignMissionAftermathDebriefText()}" : "";
 			var counterSurgeLine = IsCampaignMode ? $"\n{BuildCampaignCounterSurgeDebriefText()}" : "";
+			var bonusObjectivePressureLine = IsCampaignMode ? $"\n{BuildCampaignBonusObjectivePressureDebriefText()}" : "";
 			var reserveLine = IsCampaignMode ? $"\n{BuildCampaignReserveDebriefText()}" : "";
 			var routeSupportLine = IsCampaignMode ? $"\n{BuildCampaignRouteSupportDebriefText()}" : "";
 			var bossPhaseLine = IsCampaignMode ? $"\n{BuildCampaignBossPhaseDebriefText()}" : "";
@@ -12986,6 +13078,7 @@ public partial class BattleController : Node2D
 				doctrineLine +
 				missionAftermathLine +
 				counterSurgeLine +
+				bonusObjectivePressureLine +
 				reserveLine +
 				routeSupportLine +
 				bossPhaseLine +
@@ -13215,6 +13308,26 @@ public partial class BattleController : Node2D
 				: _campaignCounterSurgeReady
 					? $"Counter-surge: {_campaignCounterSurgeLabel} was never provoked."
 					: $"Counter-surge: {_campaignCounterSurgeLabel} never landed.";
+	}
+
+	private string BuildCampaignBonusObjectivePressureDebriefText()
+	{
+		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignBonusObjectivePressureLabel))
+		{
+			return "";
+		}
+
+		return _campaignBonusObjectivePressureTriggered
+			? _campaignBonusObjectivePressureFriendly
+				? $"Reserve beat: {_campaignBonusObjectivePressureLabel} landed after the branch objective."
+				: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} landed after the branch objective slipped."
+			: _campaignBonusObjectivePressureQueued
+				? _campaignBonusObjectivePressureFriendly
+					? $"Reserve beat: {_campaignBonusObjectivePressureLabel} was arming when the route ended."
+					: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} was forming when the route ended."
+				: _campaignBonusObjectivePressureFriendly
+					? $"Reserve beat: {_campaignBonusObjectivePressureLabel} never came online."
+					: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} never landed.";
 	}
 
 	private string BuildCampaignRouteSupportDebriefText()

@@ -164,6 +164,25 @@ public static class DataIntegrityValidator
         {
             "city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mire", "steppe", "gloamwood", "citadel"
         };
+        var validMissionEventTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ritual_site", "relic_escort", "gate_breach", "rescue_hold", "mainline_push"
+        };
+        var postgameBossStages = new Dictionary<int, string>
+        {
+            [52] = "enemy_boss_reliquary",
+            [56] = "enemy_boss_ashen_regent",
+            [58] = "enemy_boss_tidemaster",
+            [60] = "enemy_boss_plague_monarch"
+        };
+        var postgameModifierExpectations = new Dictionary<int, string[]>
+        {
+            [51] = new[] { "fortified_deploy" },
+            [52] = new[] { "lich_graveyard" },
+            [53] = new[] { "lich_graveyard" },
+            [55] = new[] { "mirror_pressure", "tunnel_invasion" },
+            [60] = new[] { "fortified_deploy" }
+        };
 
         float prevHealthScale = 0f;
         int prevRewardGold = 0;
@@ -198,10 +217,43 @@ public static class DataIntegrityValidator
             Check(GetFloat(stage, "EnemyBaseHealth") > 0, $"Stage {num} has non-positive EnemyBaseHealth");
 
             // Check wave unit references
+            var hasScriptedWaves = false;
+            var containsExpectedBossWave = !postgameBossStages.ContainsKey(num);
             if (stage.TryGetProperty("Waves", out var waves) && waves.ValueKind == JsonValueKind.Array)
             {
+                hasScriptedWaves = true;
+                var previousTriggerTime = -1f;
                 foreach (var wave in waves.EnumerateArray())
                 {
+                    var triggerTime = GetFloat(wave, "TriggerTime");
+                    var spawnInterval = GetFloat(wave, "SpawnInterval");
+                    Check(triggerTime >= 0f, $"Stage {num} has wave with negative TriggerTime");
+                    Check(spawnInterval > 0f, $"Stage {num} has wave with non-positive SpawnInterval");
+                    Check(triggerTime + 0.001f >= previousTriggerTime, $"Stage {num} has scripted waves out of order");
+                    previousTriggerTime = triggerTime;
+
+                    if (wave.TryGetProperty("Entries", out var entries) && entries.ValueKind == JsonValueKind.Array)
+                    {
+                        var entryCount = 0;
+                        foreach (var entry in entries.EnumerateArray())
+                        {
+                            var waveUnitId = GetStr(entry, "UnitId");
+                            var count = GetInt(entry, "Count");
+                            Check(!string.IsNullOrWhiteSpace(waveUnitId), $"Stage {num} has scripted wave entry with empty UnitId");
+                            Check(unitIds.Contains(waveUnitId), $"Stage {num} wave entry references unknown unit: {waveUnitId}");
+                            Check(count > 0, $"Stage {num} wave entry '{waveUnitId}' has non-positive Count");
+                            if (postgameBossStages.TryGetValue(num, out var expectedBossId) &&
+                                waveUnitId.Equals(expectedBossId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                containsExpectedBossWave = true;
+                            }
+
+                            entryCount++;
+                        }
+
+                        Check(entryCount > 0, $"Stage {num} has scripted wave with empty Entries");
+                    }
+
                     if (wave.TryGetProperty("UnitIds", out var waveUnitIds) && waveUnitIds.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var uid in waveUnitIds.EnumerateArray())
@@ -216,11 +268,45 @@ public static class DataIntegrityValidator
                 }
             }
 
+            if (stage.TryGetProperty("MissionEvents", out var missionEvents) && missionEvents.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var mission in missionEvents.EnumerateArray())
+                {
+                    var missionType = GetStr(mission, "Type");
+                    Check(validMissionEventTypes.Contains(missionType), $"Stage {num} has invalid mission event type: {missionType}");
+                    Check(GetFloat(mission, "Radius") > 0f, $"Stage {num} mission event '{missionType}' has non-positive Radius");
+                    Check(GetFloat(mission, "TargetSeconds") > 0f, $"Stage {num} mission event '{missionType}' has non-positive TargetSeconds");
+                    Check(GetFloat(mission, "StartTime") >= 0f, $"Stage {num} mission event '{missionType}' has negative StartTime");
+                }
+            }
+
+            if (num >= 51 && num <= 60)
+            {
+                Check(hasScriptedWaves, $"Postgame stage {num} is missing scripted waves");
+                Check(stage.TryGetProperty("MissionEvents", out var postgameMissionEvents) &&
+                    postgameMissionEvents.ValueKind == JsonValueKind.Array &&
+                    postgameMissionEvents.GetArrayLength() > 0,
+                    $"Postgame stage {num} is missing an authored mission event");
+
+                if (postgameBossStages.TryGetValue(num, out var expectedBossWaveId))
+                {
+                    Check(containsExpectedBossWave, $"Postgame boss stage {num} is missing boss wave '{expectedBossWaveId}'");
+                }
+
+                if (postgameModifierExpectations.TryGetValue(num, out var expectedModifierTypes))
+                {
+                    foreach (var modifierType in expectedModifierTypes)
+                    {
+                        Check(HasStageModifier(stage, modifierType), $"Postgame stage {num} is missing expected modifier '{modifierType}'");
+                    }
+                }
+            }
+
             prevHealthScale = healthScale;
             prevRewardGold = rewardGold;
         }
 
-        Check(stageNumbers.Count >= 50, $"Expected at least 50 stages, found {stageNumbers.Count}");
+        Check(stageNumbers.Count >= 60, $"Expected at least 60 stages, found {stageNumbers.Count}");
 
         // Check sequential stage numbering
         for (var i = 1; i <= stageNumbers.Count; i++)
@@ -632,6 +718,25 @@ public static class DataIntegrityValidator
 
             var effectTypeId = AssetCoverageCatalog.NormalizeId(GetStr(spell, "EffectType"));
             return HasAnyFile(spellIconDir, effectTypeId, ".png");
+        }
+
+        return false;
+    }
+
+    private static bool HasStageModifier(JsonElement stage, string modifierType)
+    {
+        if (!stage.TryGetProperty("Modifiers", out var modifiers) || modifiers.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        foreach (var modifier in modifiers.EnumerateArray())
+        {
+            var type = GetStr(modifier, "Type");
+            if (type.Equals(modifierType, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
         }
 
         return false;

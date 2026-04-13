@@ -49,7 +49,7 @@ This means the project is no longer at "empty prototype" status. It has a combat
 - local verification command: `./scripts/verify_all.sh`
 - current game build state: `0 warnings, 0 errors`
 - current server verification state: `71 passed, 0 failed, 71 total`
-- current data verification state: `1743 passed, 0 failed`
+- current data verification state: `6437 passed, 0 failed`
 - remaining roadmap work is external only: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
 Historical sprint-log test counts later in this document are point-in-time snapshots. Treat this section as the current repo state.
@@ -338,7 +338,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 | SFX override pipeline (26 cue IDs) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
-| 71 server tests + 1743 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
+| 71 server tests + 6437 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
 
 ### What Remains (Non-Code)
 

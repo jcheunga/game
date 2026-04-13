@@ -174,48 +174,87 @@ public static class StageObjectives
 
     private static StageObjectiveDefinition[] ResolveObjectives(StageDefinition stage)
     {
-        if (stage.Objectives != null && stage.Objectives.Length > 0)
-        {
-            return stage.Objectives.Take(3).ToArray();
-        }
-
-        if (GameState.Instance?.CurrentBattleMode == BattleRunMode.Campaign &&
-            !string.IsNullOrWhiteSpace(StageEncounterIntel.GetBossPressureTitleForStage(stage)))
-        {
-            return new[]
+        var objectives = stage.Objectives != null && stage.Objectives.Length > 0
+            ? stage.Objectives.Take(3).ToArray()
+            : new[]
             {
                 new StageObjectiveDefinition { Type = "clear_route" },
                 new StageObjectiveDefinition { Type = "bus_hull_ratio", Value = stage.TwoStarBusHullRatio },
-                new StageObjectiveDefinition { Type = "boss_pressure_trigger_limit", Value = ResolveBossPressureTriggerLimit(stage, null) }
+                new StageObjectiveDefinition { Type = "clear_within", Value = stage.ThreeStarTimeLimitSeconds }
             };
+
+        return ApplyCampaignObjectiveOverrides(stage, objectives);
+    }
+
+    private static StageObjectiveDefinition[] ApplyCampaignObjectiveOverrides(
+        StageDefinition stage,
+        StageObjectiveDefinition[] objectives)
+    {
+        if (stage == null || GameState.Instance?.CurrentBattleMode != BattleRunMode.Campaign)
+        {
+            return objectives;
         }
 
-        if (HasAdaptiveWaveFollowUpObjective(stage))
+        StageObjectiveDefinition replacement = null!;
+        if (!string.IsNullOrWhiteSpace(StageEncounterIntel.GetBossPressureTitleForStage(stage)))
         {
-            return new[]
+            replacement = new StageObjectiveDefinition
             {
-                new StageObjectiveDefinition { Type = "clear_route" },
-                new StageObjectiveDefinition { Type = "bus_hull_ratio", Value = stage.TwoStarBusHullRatio },
-                new StageObjectiveDefinition { Type = "adaptive_wave_follow_up_success" }
+                Type = "boss_pressure_trigger_limit",
+                Value = ResolveBossPressureTriggerLimit(stage, null)
             };
         }
-
-        if (GameState.Instance?.CurrentBattleMode == BattleRunMode.Campaign &&
-            GameState.Instance.HasCampaignLateCondition(stage.StageNumber))
+        else if (HasAdaptiveWaveFollowUpObjective(stage))
         {
-            return new[]
+            replacement = new StageObjectiveDefinition
             {
-                new StageObjectiveDefinition { Type = "clear_route" },
-                new StageObjectiveDefinition { Type = "bus_hull_ratio", Value = stage.TwoStarBusHullRatio },
-                new StageObjectiveDefinition { Type = "late_condition_trigger_limit", Value = ResolveLateConditionTriggerLimit(stage, null) }
+                Type = "adaptive_wave_follow_up_success"
+            };
+        }
+        else if (GameState.Instance.HasCampaignLateCondition(stage.StageNumber))
+        {
+            replacement = new StageObjectiveDefinition
+            {
+                Type = "late_condition_trigger_limit",
+                Value = ResolveLateConditionTriggerLimit(stage, null)
             };
         }
 
-        return new[]
+        if (replacement == null || !ShouldOverrideCampaignThirdObjective(objectives))
         {
-            new StageObjectiveDefinition { Type = "clear_route" },
-            new StageObjectiveDefinition { Type = "bus_hull_ratio", Value = stage.TwoStarBusHullRatio },
-            new StageObjectiveDefinition { Type = "clear_within", Value = stage.ThreeStarTimeLimitSeconds }
+            return objectives;
+        }
+
+        if (objectives.Length >= 3)
+        {
+            objectives[2] = replacement;
+            return objectives;
+        }
+
+        return objectives.Concat(new[] { replacement }).Take(3).ToArray();
+    }
+
+    private static bool ShouldOverrideCampaignThirdObjective(StageObjectiveDefinition[] objectives)
+    {
+        if (objectives == null || objectives.Length < 3)
+        {
+            return true;
+        }
+
+        var third = objectives[2];
+        if (third == null)
+        {
+            return true;
+        }
+
+        var type = NormalizeType(third.Type);
+        return type switch
+        {
+            "boss_pressure_trigger_limit" => false,
+            "late_condition_trigger_limit" => false,
+            "adaptive_wave_follow_up_success" => false,
+            "mission_event_success" => false,
+            _ => true
         };
     }
 

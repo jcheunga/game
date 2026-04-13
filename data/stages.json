@@ -6051,12 +6051,28 @@
       "Modifiers": [
         { "Type": "elite_vanguard", "Value": 1.34 },
         { "Type": "rapid_assault", "Value": 0.72 },
-        { "Type": "armored_convoy", "Value": 1.12 }
+        { "Type": "armored_convoy", "Value": 1.12 },
+        { "Type": "fortified_deploy", "Value": 0.56 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 72.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Warhorn Pyre",
+          "Summary": "Hold the pyre long enough to smother the raider horns before the pass collapses again.",
+          "RewardSummary": "Reward: +12 courage, cleaner card recovery, and a heavier shove through the pass.",
+          "PenaltySummary": "Risk: the horns stay lit and a fast raid surge crashes into the wagon.",
+          "XRatio": 0.54,
+          "YRatio": 0.46,
+          "Radius": 82.0,
+          "TargetSeconds": 8.0,
+          "StartTime": 26.0,
+          "ColorHex": "e0f2ff"
+        }
       ],
       "Waves": [
         {
@@ -6169,12 +6185,28 @@
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.34 },
         { "Type": "elite_vanguard", "Value": 1.3 },
-        { "Type": "cursed_ground", "Value": 3.8 }
+        { "Type": "cursed_ground", "Value": 3.8 },
+        { "Type": "lich_graveyard", "Value": 0.28 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 74.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "relic_escort",
+          "Title": "Vault Bearers",
+          "Summary": "Hold the cracked nave long enough for ward bearers to drag the reliquary chest back to the caravan.",
+          "RewardSummary": "Reward: the ward chest patches the wagon and sanctified escorts reinforce the line.",
+          "PenaltySummary": "Risk: the chest is shattered and the wagon takes a direct reliquary hit.",
+          "XRatio": 0.58,
+          "YRatio": 0.5,
+          "Radius": 82.0,
+          "TargetSeconds": 8.6,
+          "StartTime": 30.0,
+          "ColorHex": "fef3c7"
+        }
       ],
       "Waves": [
         {
@@ -6294,12 +6326,28 @@
       "Modifiers": [
         { "Type": "armored_convoy", "Value": 1.12 },
         { "Type": "swarm_density", "Value": 2.1 },
-        { "Type": "cursed_ground", "Value": 3.9 }
+        { "Type": "cursed_ground", "Value": 3.9 },
+        { "Type": "lich_graveyard", "Value": 0.26 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 76.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Blackwater Bell",
+          "Summary": "Hold the bell barge beacon long enough to break the drowned procession's rhythm.",
+          "RewardSummary": "Reward: courage surges and the next mire push bogs down around the lane.",
+          "PenaltySummary": "Risk: the bell tolls and a plague wake slams the wagon.",
+          "XRatio": 0.52,
+          "YRatio": 0.66,
+          "Radius": 80.0,
+          "TargetSeconds": 8.4,
+          "StartTime": 30.0,
+          "ColorHex": "90be6d"
+        }
       ],
       "Waves": [
         {
@@ -6419,6 +6467,21 @@
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 78.0 }
       ],
+      "MissionEvents": [
+        {
+          "Type": "relic_escort",
+          "Title": "Horn Relay",
+          "Summary": "Hold the relay lane long enough for outriders to drag the signal cart back through the ash.",
+          "RewardSummary": "Reward: the relay lands and fast escorts join the route with a short speed surge.",
+          "PenaltySummary": "Risk: the relay burns and a flank rush clips the wagon.",
+          "XRatio": 0.56,
+          "YRatio": 0.44,
+          "Radius": 80.0,
+          "TargetSeconds": 8.2,
+          "StartTime": 28.0,
+          "ColorHex": "ffb703"
+        }
+      ],
       "Waves": [
         {
           "Label": "Scorch riders",
@@ -6531,12 +6594,29 @@
       "Modifiers": [
         { "Type": "cursed_ground", "Value": 4.0 },
         { "Type": "swarm_density", "Value": 2.15 },
-        { "Type": "rapid_assault", "Value": 0.72 }
+        { "Type": "rapid_assault", "Value": 0.72 },
+        { "Type": "mirror_pressure", "Value": 0.18 },
+        { "Type": "tunnel_invasion", "Value": 1.0 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 80.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Witchlight Knot",
+          "Summary": "Hold the witchlight knot long enough to expose the hidden trails and break the moonless snare.",
+          "RewardSummary": "Reward: courage steadies, card recovery smooths out, and the lane stops slipping blind.",
+          "PenaltySummary": "Risk: the route stays blind and hidden attackers keep cutting into the convoy.",
+          "XRatio": 0.48,
+          "YRatio": 0.58,
+          "Radius": 80.0,
+          "TargetSeconds": 8.6,
+          "StartTime": 28.0,
+          "ColorHex": "c77dff"
+        }
       ],
       "Waves": [
         {
@@ -6669,6 +6749,21 @@
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 84.0 }
       ],
+      "MissionEvents": [
+        {
+          "Type": "gate_breach",
+          "Title": "Throne Sappers",
+          "Summary": "Keep the throne-side breach lane open long enough for sappers to collapse the regent's cover wall.",
+          "RewardSummary": "Reward: direct keep damage lands and the breach corridor stays marked open.",
+          "PenaltySummary": "Risk: the throne wall recovers and elite guards reset the lane.",
+          "XRatio": 0.72,
+          "YRatio": 0.52,
+          "Radius": 80.0,
+          "TargetSeconds": 8.4,
+          "StartTime": 34.0,
+          "ColorHex": "fca5a5"
+        }
+      ],
       "Waves": [
         {
           "Label": "Gate remnant",
@@ -6797,6 +6892,21 @@
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 86.0 }
       ],
+      "MissionEvents": [
+        {
+          "Type": "relic_escort",
+          "Title": "Militia Lantern Cart",
+          "Summary": "Hold the market lane while the lantern cart hauls powder and rations back to the wagon.",
+          "RewardSummary": "Reward: the wagon is patched and militia escorts join the next push.",
+          "PenaltySummary": "Risk: the cart burns and the wagon takes a direct hit.",
+          "XRatio": 0.38,
+          "YRatio": 0.48,
+          "Radius": 78.0,
+          "TargetSeconds": 8.4,
+          "StartTime": 26.0,
+          "ColorHex": "fde68a"
+        }
+      ],
       "Waves": [
         {
           "Label": "Grave outriders",
@@ -6913,6 +7023,21 @@
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 88.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "gate_breach",
+          "Title": "Harpoon Winch",
+          "Summary": "Cover the winch crew long enough to pin the command ship and tear open the dock lane.",
+          "RewardSummary": "Reward: the chains slam home, crack the keep, and drag the tide line open.",
+          "PenaltySummary": "Risk: the command ship slips free and the harbor regains footing.",
+          "XRatio": 0.64,
+          "YRatio": 0.62,
+          "Radius": 82.0,
+          "TargetSeconds": 8.3,
+          "StartTime": 30.0,
+          "ColorHex": "93c5fd"
+        }
       ],
       "Waves": [
         {
@@ -7041,6 +7166,21 @@
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 90.0 }
       ],
+      "MissionEvents": [
+        {
+          "Type": "gate_breach",
+          "Title": "Furnace Charge",
+          "Summary": "Hold the crucible lane long enough for the furnace charge to rupture the molten wall.",
+          "RewardSummary": "Reward: the blast lands, scorches the keep, and keeps the line open.",
+          "PenaltySummary": "Risk: the wall resets and the foundry line hardens again.",
+          "XRatio": 0.66,
+          "YRatio": 0.48,
+          "Radius": 82.0,
+          "TargetSeconds": 8.2,
+          "StartTime": 30.0,
+          "ColorHex": "fb923c"
+        }
+      ],
       "Waves": [
         {
           "Label": "Cinder screens",
@@ -7164,12 +7304,28 @@
       "Modifiers": [
         { "Type": "reinforced_barricade", "Value": 1.44 },
         { "Type": "elite_vanguard", "Value": 1.4 },
-        { "Type": "armored_convoy", "Value": 1.15 }
+        { "Type": "armored_convoy", "Value": 1.15 },
+        { "Type": "fortified_deploy", "Value": 0.52 }
       ],
       "Objectives": [
         { "Type": "clear_route" },
         { "Type": "hazard_hits_limit", "Value": 3.0 },
         { "Type": "enemy_defeats", "Value": 94.0 }
+      ],
+      "MissionEvents": [
+        {
+          "Type": "ritual_site",
+          "Title": "Ward Seal Lattice",
+          "Summary": "Hold the seal lattice long enough to purge the plague signal and reopen the ward corridor.",
+          "RewardSummary": "Reward: courage surges, cooldown recovery steadies, and the ward line locks in.",
+          "PenaltySummary": "Risk: the plague signal deepens and the wagon takes a purge hit.",
+          "XRatio": 0.5,
+          "YRatio": 0.44,
+          "Radius": 80.0,
+          "TargetSeconds": 8.8,
+          "StartTime": 32.0,
+          "ColorHex": "bef264"
+        }
       ],
       "Waves": [
         {

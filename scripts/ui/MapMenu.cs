@@ -805,7 +805,9 @@ public partial class MapMenu : Control
             $"\n{GameState.Instance.BuildCampaignScoutStatusText(stage.StageNumber)}" +
             $"\n{GameState.Instance.BuildCampaignMissionOutcomeStatusText(stage.MapId)}" +
             $"\n{GameState.Instance.BuildCampaignFieldOrderStatusText(stage.MapId)}" +
-            $"\n{GameState.Instance.BuildCampaignConvoyCommandStatusText(stage.MapId)}";
+            $"\n{GameState.Instance.BuildCampaignConvoyCommandStatusText(stage.MapId)}" +
+            $"\n{GameState.Instance.BuildCampaignAdaptiveWaveStatusText(stage.StageNumber, stage.MapId)}" +
+            $"\n{GameState.Instance.BuildCampaignLateConditionStatusText(stage.StageNumber, stage.MapId)}";
 
         button.SelfModulate = !unlocked
             ? route.BannerPanel.Darkened(0.35f)
@@ -843,7 +845,9 @@ public partial class MapMenu : Control
             $"{GameState.Instance.BuildCampaignMissionOutcomeStatusText(stage.MapId)}\n" +
             $"{GameState.Instance.BuildCampaignCounterSurgeStatusText(stage.MapId)}\n" +
             $"{GameState.Instance.BuildCampaignReserveStatusText()}\n" +
-            $"{GameState.Instance.BuildCampaignRouteSupportStatusText(stage.MapId)}";
+            $"{GameState.Instance.BuildCampaignRouteSupportStatusText(stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignAdaptiveWaveStatusText(stage.StageNumber, stage.MapId)}\n" +
+            $"{GameState.Instance.BuildCampaignLateConditionStatusText(stage.StageNumber, stage.MapId)}";
     }
 
     private string BuildConvoySummaryText()

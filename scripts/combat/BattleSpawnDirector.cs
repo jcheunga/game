@@ -180,6 +180,11 @@ public sealed class BattleSpawnDirector
         return false;
     }
 
+    public int QueueScriptedWaveSupplement(float executeAt, float spawnInterval, IReadOnlyList<StageWaveEntryDefinition> entries)
+    {
+        return QueueScriptedWaveEntries(Mathf.Max(0f, executeAt), Mathf.Max(0.1f, spawnInterval), entries);
+    }
+
     public float AdditionalEnemyHealthScale => _additionalEnemyHealthScale;
     public float AdditionalEnemyDamageScale => _additionalEnemyDamageScale;
 
@@ -232,24 +237,10 @@ public sealed class BattleSpawnDirector
 
     private void QueueScriptedWave(float elapsed, StageWaveDefinition wave)
     {
-        var executeAt = Mathf.Max(elapsed, wave.TriggerTime);
-        var spawnInterval = Mathf.Max(0.1f, wave.SpawnInterval);
-
-        foreach (var entry in wave.Entries)
-        {
-            if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId))
-            {
-                continue;
-            }
-
-            var enemyDefinition = GetEnemyById(entry.UnitId);
-            var count = Math.Max(1, entry.Count);
-            for (var i = 0; i < count; i++)
-            {
-                _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(enemyDefinition, executeAt));
-                executeAt += spawnInterval;
-            }
-        }
+        QueueScriptedWaveEntries(
+            Mathf.Max(elapsed, wave.TriggerTime),
+            Mathf.Max(0.1f, wave.SpawnInterval),
+            wave.Entries);
     }
 
     private void FlushPendingEnemySpawns(
@@ -687,6 +678,34 @@ public sealed class BattleSpawnDirector
         {
             QueuePendingSpawn(definition, ref executeAt, spawnInterval);
         }
+    }
+
+    private int QueueScriptedWaveEntries(float executeAt, float spawnInterval, IReadOnlyList<StageWaveEntryDefinition> entries)
+    {
+        if (entries == null || entries.Count == 0)
+        {
+            return 0;
+        }
+
+        var queued = 0;
+        for (var entryIndex = 0; entryIndex < entries.Count; entryIndex++)
+        {
+            var entry = entries[entryIndex];
+            if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId) || !TryGetEnemyById(entry.UnitId, out var enemyDefinition))
+            {
+                continue;
+            }
+
+            var count = Math.Max(1, entry.Count);
+            for (var i = 0; i < count; i++)
+            {
+                _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(enemyDefinition, executeAt));
+                executeAt += spawnInterval;
+                queued++;
+            }
+        }
+
+        return queued;
     }
 
     private void QueueEndlessBossCheckpointWave(int waveNumber, ref float executeAt, float spawnInterval)

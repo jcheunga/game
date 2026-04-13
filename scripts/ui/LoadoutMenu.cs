@@ -167,7 +167,9 @@ public partial class LoadoutMenu : Control
                 $"{GameState.Instance.BuildCampaignMissionOutcomeStatusText(_stage.MapId)}\n" +
                 $"{GameState.Instance.BuildCampaignCounterSurgeStatusText(_stage.MapId)}\n" +
                 $"{GameState.Instance.BuildCampaignReserveStatusText()}\n" +
-                $"{GameState.Instance.BuildCampaignRouteSupportStatusText(_stage.MapId)}",
+                $"{GameState.Instance.BuildCampaignRouteSupportStatusText(_stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignAdaptiveWaveStatusText(_stage.StageNumber, _stage.MapId)}\n" +
+                $"{GameState.Instance.BuildCampaignLateConditionStatusText(_stage.StageNumber, _stage.MapId)}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

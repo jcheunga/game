@@ -54,6 +54,12 @@ public partial class GameState : Node
 	private const float CampaignReserveRallySpeedScale = 1.1f;
 	private const float CampaignReserveRallyDurationSeconds = 7f;
 	private const int CampaignRouteDoctrineBaseThreshold = 7;
+	private const int CampaignAdaptiveWaveStage = 36;
+	private const int CampaignAdaptiveWaveEliteStage = 51;
+	private const int CampaignLateConditionStage = 31;
+	private const int CampaignLateConditionEliteStage = 51;
+	private const float CampaignLateConditionBaseIntervalSeconds = 18f;
+	private const float CampaignLateConditionEliteIntervalSeconds = 15f;
 	private static readonly string DefaultAsyncChallengeCode =
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
@@ -780,6 +786,153 @@ public partial class GameState : Node
 			RouteCatalog.GloamwoodId => "District tactic: Witchlight Ambush. On the first major enemy swell, the toughest enemy is hexed and its escort stumbles.",
 			RouteCatalog.CitadelId => "District tactic: Citadel Cannon. On the first major enemy swell, the caravan lands a siege volley on the enemy keep and frontline.",
 			_ => "District tactic: none."
+		};
+	}
+
+	public bool HasCampaignAdaptiveWaveRead(int stage)
+	{
+		return stage >= CampaignAdaptiveWaveStage;
+	}
+
+	public string GetCampaignAdaptiveWaveFriendlyTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Read",
+			RouteCatalog.HarborId => "Breakwater Read",
+			RouteCatalog.FoundryId => "Cooling Read",
+			RouteCatalog.QuarantineId => "Ward Read",
+			RouteCatalog.ThornwallId => "Pass Read",
+			RouteCatalog.BasilicaId => "Reliquary Read",
+			RouteCatalog.MireId => "Fen Read",
+			RouteCatalog.SteppeId => "Outrider Read",
+			RouteCatalog.GloamwoodId => "Witchlight Read",
+			RouteCatalog.CitadelId => "Range Read",
+			_ => "Convoy Read"
+		};
+	}
+
+	public string GetCampaignAdaptiveWaveEnemyTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Press-Gang Read",
+			RouteCatalog.HarborId => "Boarding Read",
+			RouteCatalog.FoundryId => "Crucible Read",
+			RouteCatalog.QuarantineId => "Blackout Read",
+			RouteCatalog.ThornwallId => "Stampede Read",
+			RouteCatalog.BasilicaId => "Procession Read",
+			RouteCatalog.MireId => "Blight Read",
+			RouteCatalog.SteppeId => "Hunter Read",
+			RouteCatalog.GloamwoodId => "Hexmoon Read",
+			RouteCatalog.CitadelId => "Iron Read",
+			_ => "Enemy Read"
+		};
+	}
+
+	public string GetCampaignAdaptiveWaveRescueFollowUpTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Lantern Recovery",
+			RouteCatalog.HarborId => "Harbormaster Relief",
+			RouteCatalog.FoundryId => "Cooling Window",
+			RouteCatalog.QuarantineId => "Ward Lockdown",
+			RouteCatalog.ThornwallId => "Pass Hold",
+			RouteCatalog.BasilicaId => "Reliquary Shelter",
+			RouteCatalog.MireId => "Fen Refuge",
+			RouteCatalog.SteppeId => "Outrider Screen",
+			RouteCatalog.GloamwoodId => "Witchlight Shelter",
+			RouteCatalog.CitadelId => "Bastion Hold",
+			_ => "Rescue Window"
+		};
+	}
+
+	public string GetCampaignAdaptiveWaveBreakthroughFollowUpTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Gatecrash Window",
+			RouteCatalog.HarborId => "Chainbreak Window",
+			RouteCatalog.FoundryId => "Slag Break",
+			RouteCatalog.QuarantineId => "Ward Breach",
+			RouteCatalog.ThornwallId => "Avalanche Break",
+			RouteCatalog.BasilicaId => "Reliquary Break",
+			RouteCatalog.MireId => "Fen Break",
+			RouteCatalog.SteppeId => "Rider Break",
+			RouteCatalog.GloamwoodId => "Hexbreak Window",
+			RouteCatalog.CitadelId => "Range Break",
+			_ => "Breakthrough Window"
+		};
+	}
+
+	public string BuildCampaignAdaptiveWaveStatusText(int stage, string routeId)
+	{
+		if (!HasCampaignAdaptiveWaveRead(stage))
+		{
+			return $"Adaptive wave read: dormant until stage {CampaignAdaptiveWaveStage}.";
+		}
+
+		var charges = stage >= CampaignAdaptiveWaveEliteStage ? 3 : 2;
+		var friendly = GetCampaignAdaptiveWaveFriendlyTitle(routeId);
+		var enemy = GetCampaignAdaptiveWaveEnemyTitle(routeId);
+		var rescueFollowUp = GetCampaignAdaptiveWaveRescueFollowUpTitle(routeId);
+		var breakthroughFollowUp = GetCampaignAdaptiveWaveBreakthroughFollowUpTitle(routeId);
+		return $"Adaptive wave read: {friendly} / {enemy}. On scripted waves, lane control bends the first {charges} enemy spawn{(charges == 1 ? "" : "s")}: if the convoy is bending, route support clips the swell; if you own the road, the enemy hardens it instead. After the first read spends, [V] Rescue or [B] Breakthrough can force the next scripted wave read; Rescue biases escort screens and hunter counterpacks, while Breakthrough biases spearhead assaults and bastion counterpacks. That override now also splices a real branch into the next scripted wave: Rescue inserts a Hunter Branch, while Breakthrough inserts a Bastion Branch. Clearing that forced branch arms a small route reward on victory and opens {rescueFollowUp} or {breakthroughFollowUp} to upgrade it. The follow-up test is route-specific: some districts ask for a clean hold, others want the counterpush cut down, and siege routes demand real keep damage. By default, on scripted late routes, securing that follow-up is the third-star mastery check.";
+	}
+
+	public bool HasCampaignLateCondition(int stage)
+	{
+		return stage >= CampaignLateConditionStage;
+	}
+
+	public float GetCampaignLateConditionIntervalSeconds(int stage)
+	{
+		return stage >= CampaignLateConditionEliteStage
+			? CampaignLateConditionEliteIntervalSeconds
+			: CampaignLateConditionBaseIntervalSeconds;
+	}
+
+	public string GetCampaignLateConditionTitle(string routeId)
+	{
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => "Riot Signal",
+			RouteCatalog.HarborId => "Undertow Bell",
+			RouteCatalog.FoundryId => "Slag Front",
+			RouteCatalog.QuarantineId => "Ward Sweep",
+			RouteCatalog.ThornwallId => "Rockfall Cycle",
+			RouteCatalog.BasilicaId => "Reliquary Toll",
+			RouteCatalog.MireId => "Rot Tide",
+			RouteCatalog.SteppeId => "Windlane",
+			RouteCatalog.GloamwoodId => "Hex Moon",
+			RouteCatalog.CitadelId => "Crossfire Window",
+			_ => "Late District Condition"
+		};
+	}
+
+	public string BuildCampaignLateConditionStatusText(int stage, string routeId)
+	{
+		if (!HasCampaignLateCondition(stage))
+		{
+			return $"Late district condition: dormant until stage {CampaignLateConditionStage}.";
+		}
+
+		var title = GetCampaignLateConditionTitle(routeId);
+		var interval = GetCampaignLateConditionIntervalSeconds(stage);
+		return RouteCatalog.Normalize(routeId) switch
+		{
+			RouteCatalog.CityId => $"Late district condition: {title}. Every {interval:0}s, the active lane gets a militia tempo burst with courage and faster cooldown recovery.",
+			RouteCatalog.HarborId => $"Late district condition: {title}. Every {interval:0}s, undertow chains rip through the active lane and slow the enemy push.",
+			RouteCatalog.FoundryId => $"Late district condition: {title}. Every {interval:0}s, slag shells walk across the hottest frontline.",
+			RouteCatalog.QuarantineId => $"Late district condition: {title}. Every {interval:0}s, ward lanterns clear signal pressure and stabilize the lane.",
+			RouteCatalog.ThornwallId => $"Late district condition: {title}. Every {interval:0}s, a downhill shove hits the contested pass.",
+			RouteCatalog.BasilicaId => $"Late district condition: {title}. Every {interval:0}s, reliquary tolls bless the line and patch the wagon.",
+			RouteCatalog.MireId => $"Late district condition: {title}. Every {interval:0}s, bog pressure drags the nearest enemy knot down.",
+			RouteCatalog.SteppeId => $"Late district condition: {title}. Every {interval:0}s, the active lane gets a speed-heavy outrider tempo surge.",
+			RouteCatalog.GloamwoodId => $"Late district condition: {title}. Every {interval:0}s, the heaviest enemy is hexed and the lane stumbles.",
+			RouteCatalog.CitadelId => $"Late district condition: {title}. Every {interval:0}s, convoy guns open a fresh crossfire on the lane and keep.",
+			_ => $"Late district condition: {title}. Every {interval:0}s, the route throws a recurring battlefield pulse."
 		};
 	}
 

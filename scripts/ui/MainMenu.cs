@@ -140,9 +140,10 @@ public partial class MainMenu : Control
         center.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(center);
 
+        var viewportHeight = GetViewportRect().Size.Y;
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(560, 620)
+            CustomMinimumSize = new Vector2(560f, Mathf.Clamp(viewportHeight - 56f, 520f, 760f))
         };
         _panel = panel;
         center.AddChild(panel);
@@ -154,9 +155,16 @@ public partial class MainMenu : Control
         content.AddThemeConstantOverride("margin_bottom", 24);
         panel.AddChild(content);
 
+        var bodyScroll = new ScrollContainer
+        {
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+        };
+        content.AddChild(bodyScroll);
+
         var stack = new VBoxContainer();
         stack.AddThemeConstantOverride("separation", 14);
-        content.AddChild(stack);
+        bodyScroll.AddChild(stack);
 
         var title = new Label
         {
@@ -198,21 +206,47 @@ public partial class MainMenu : Control
         _socialMetricsRow.AddThemeConstantOverride("separation", 12);
         socialMetricsCenter.AddChild(_socialMetricsRow);
 
-        _summaryLabel = new Label
+        var badgeHintLabel = new Label
         {
-            Text = "",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 136f)
+            Text = "CH=campaign, TW=tower, EW=endless, DS=streak, GW=guild, FR=friends",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        stack.AddChild(_summaryLabel);
-        _animatedElements.Add(_summaryLabel);
-
-        RefreshSummaryUi();
+        badgeHintLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.68f));
+        stack.AddChild(badgeHintLabel);
+        _animatedElements.Add(badgeHintLabel);
 
         var startButton = BuildButton(GameState.Instance.HighestUnlockedStage > 1 ? "Resume Campaign" : "Start Campaign");
         startButton.Pressed += () => SceneRouter.Instance.GoToMap();
         stack.AddChild(startButton);
         _animatedElements.Add(startButton);
+
+        var summaryHeading = new Label
+        {
+            Text = "Campaign Snapshot",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        stack.AddChild(summaryHeading);
+        _animatedElements.Add(summaryHeading);
+
+        var summaryScroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(0f, 132f),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+        };
+        stack.AddChild(summaryScroll);
+        _animatedElements.Add(summaryScroll);
+
+        _summaryLabel = new Label
+        {
+            Text = "",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        summaryScroll.AddChild(_summaryLabel);
+        _animatedElements.Add(_summaryLabel);
+
+        RefreshSummaryUi();
 
         var shopButton = BuildButton("Caravan Armory");
         shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
@@ -323,7 +357,7 @@ public partial class MainMenu : Control
         _animatedElements.Add(multiplayerButton);
 
         var settingsButton = BuildButton("Settings");
-        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
+        settingsButton.Pressed += () => MedievalUi.ShowQuickSettings(this);
         stack.AddChild(settingsButton);
         _animatedElements.Add(settingsButton);
 
@@ -344,16 +378,26 @@ public partial class MainMenu : Control
         }
 
         var resetButton = BuildButton("Reset Progress");
-        resetButton.Pressed += () =>
-        {
-            GameState.Instance.ResetProgress();
-            SceneRouter.Instance.GoToMap();
-        };
+        resetButton.Pressed += () => MedievalUi.ShowConfirmation(
+            this,
+            "Abandon this campaign?",
+            "This will erase this local campaign and return you to the first march. This choice cannot be undone from the game.",
+            "Reset campaign",
+            () =>
+            {
+                GameState.Instance.ResetProgress();
+                SceneRouter.Instance.GoToMap();
+            });
         stack.AddChild(resetButton);
         _animatedElements.Add(resetButton);
 
         var quitButton = BuildButton("Quit");
-        quitButton.Pressed += () => GetTree().Quit();
+        quitButton.Pressed += () => MedievalUi.ShowConfirmation(
+            this,
+            "Leave Crownroad?",
+            "Your progress is saved. Return to the road whenever you are ready.",
+            "Quit game",
+            () => GetTree().Quit());
         stack.AddChild(quitButton);
         _animatedElements.Add(quitButton);
 
@@ -424,8 +468,6 @@ public partial class MainMenu : Control
             totalStars += GameState.Instance.GetStageStars(stage.StageNumber);
         }
 
-        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
-        var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
         var eligibleDoctrineCount = GameState.Instance.GetEligibleUnitDoctrineCount();
         var nextDirective = GameState.Instance.GetCampaignDirective(nextStage.StageNumber);
         var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
@@ -457,25 +499,21 @@ public partial class MainMenu : Control
         var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
         var bestChallengeScore = GameState.Instance.GetAsyncChallengeBestScore(selectedChallenge.Code);
 
+        squadLine = ShortenMetricText(squadLine, 88);
+        spellLine = ShortenMetricText(spellLine, 72);
+
         var prestigeText = GameState.Instance.PrestigeLevel > 0
-            ? $"  |  Prestige: {GameState.Instance.GetPrestigeLabel()} (+{GameState.Instance.PrestigeLevel * 10}% gold, +{GameState.Instance.PrestigeLevel * 5}% HP)"
+            ? $"  |  {GameState.Instance.GetPrestigeLabel()}"
             : "";
 
         return
-            "Caravan status:\n" +
-            $"Unlocked stages: {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}{prestigeText}\n" +
-            $"{CampaignPlanCatalog.BuildCampaignStatusSummary()}\n" +
-            $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}\n" +
-            $"Unit doctrines forged: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount}\n" +
-            $"Heroic directives secured: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
-            $"Resources: {GameState.Instance.Gold} gold  |  {GameState.Instance.Food} food  |  Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}  |  Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
-            $"War wagon upgrades: Plating {hullLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Stores {pantryLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Drum {dispatchLevel}/{GameState.Instance.MaxBaseUpgradeLevel}  |  Beacon {relayLevel}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Best endless: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s survived\n" +
-            $"Boss rush: {GameState.Instance.BestBossRushWave}/{BossRushCatalog.TotalWaves} bosses  |  {GameState.Instance.BossRushRuns} runs\n" +
-            $"Selected challenge: {selectedChallenge.Code}  |  Best score {bestChallengeScore}\n" +
+            $"Campaign: stage {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}{prestigeText}\n" +
             $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
             $"{(nextDirective == null ? "Next directive: none" : GameState.Instance.BuildCampaignDirectiveInlineText(nextStage.StageNumber))}\n" +
             $"{GameState.Instance.BuildCampaignReadinessInlineSummary(nextStage.StageNumber)}\n" +
+            $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}  |  Directives: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
+            $"Doctrines forged: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount}  |  Upgrades: plating {hullLevel}, stores {pantryLevel}, drum {dispatchLevel}, beacon {relayLevel}\n" +
+            $"Endless best: wave {GameState.Instance.BestEndlessWave}  |  Boss rush: {GameState.Instance.BestBossRushWave}/{BossRushCatalog.TotalWaves}  |  Challenge {selectedChallenge.Code}: {bestChallengeScore}\n" +
             $"{nextExploreLine}\n" +
             $"Active squad: {squadLine}\n" +
             $"Active magic: {spellLine}\n" +
@@ -499,10 +537,18 @@ public partial class MainMenu : Control
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
         var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
 
-        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
-        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("unit", "", $"{ownedUnits}/{GameData.PlayerRosterIds.Length}", new Vector2(24f, 24f)));
-        _resourceMetricsRow.AddChild(UiBadgeFactory.CreateRewardMetric("spell", "", $"{ownedSpells}/{GameData.PlayerSpellIds.Length}", new Vector2(24f, 24f)));
+        _resourceMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)),
+            "Gold"));
+        _resourceMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)),
+            "Food"));
+        _resourceMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateRewardMetric("unit", "", $"{ownedUnits}/{GameData.PlayerRosterIds.Length}", new Vector2(24f, 24f)),
+            "Owned units"));
+        _resourceMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateRewardMetric("spell", "", $"{ownedSpells}/{GameData.PlayerSpellIds.Length}", new Vector2(24f, 24f)),
+            "Owned spells"));
     }
 
     private void RebuildMetaMetricsRows()
@@ -520,15 +566,33 @@ public partial class MainMenu : Control
         var gs = GameState.Instance;
         var guildName = string.IsNullOrWhiteSpace(gs.GuildId) || gs.CachedGuildInfo == null
             ? "No Guild"
-            : ShortenMetricText(gs.CachedGuildInfo.Name, 10);
+            : ShortenMetricText(gs.CachedGuildInfo.Name, 12);
 
-        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"S{gs.HighestUnlockedStage}/{gs.MaxStage}", new Vector2(24f, 24f)));
-        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("tower_floor", gs.TowerHighestFloor > 0 ? $"F{gs.TowerHighestFloor}" : "F-", new Vector2(24f, 24f)));
-        _progressMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("endless_wave", gs.BestEndlessWave > 0 ? $"W{gs.BestEndlessWave}" : "W-", new Vector2(24f, 24f)));
+        _progressMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("challenge", $"Stage {gs.HighestUnlockedStage}/{gs.MaxStage}", new Vector2(24f, 24f)),
+            "Campaign progress"));
+        _progressMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("tower_floor", gs.TowerHighestFloor > 0 ? $"Tower {gs.TowerHighestFloor}" : "Tower -", new Vector2(24f, 24f)),
+            "Highest tower floor"));
+        _progressMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("endless_wave", gs.BestEndlessWave > 0 ? $"Endless {gs.BestEndlessWave}" : "Endless -", new Vector2(24f, 24f)),
+            "Best endless wave"));
 
-        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("daily_streak", gs.DailyStreak > 0 ? gs.DailyStreak.ToString() : "-", new Vector2(24f, 24f)));
-        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("guild", guildName, new Vector2(24f, 24f)));
-        _socialMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", gs.GetFriendIds().Count.ToString(), new Vector2(24f, 24f)));
+        _socialMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("daily_streak", gs.DailyStreak > 0 ? $"Streak {gs.DailyStreak}" : "Streak -", new Vector2(24f, 24f)),
+            "Daily login streak"));
+        _socialMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("guild", guildName, new Vector2(24f, 24f)),
+            "Guild"));
+        _socialMetricsRow.AddChild(WithTooltip(
+            UiBadgeFactory.CreateMetaMetric("friends", $"{gs.GetFriendIds().Count} friends", new Vector2(24f, 24f)),
+            "Friends"));
+    }
+
+    private static Control WithTooltip(Control control, string tooltip)
+    {
+        control.TooltipText = tooltip;
+        return control;
     }
 
     private static string ShortenMetricText(string text, int maxLength)

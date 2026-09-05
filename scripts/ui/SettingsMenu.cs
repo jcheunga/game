@@ -20,6 +20,7 @@ public partial class SettingsMenu : Control
     private Button _syncProviderButton = null!;
     private Button _syncAutoFlushButton = null!;
     private Button _backButton = null!;
+    private Button _titleButton = null!;
     private Button _difficultyButton = null!;
     private Label _difficultyLabel = null!;
     private LineEdit _callsignEdit = null!;
@@ -35,6 +36,19 @@ public partial class SettingsMenu : Control
         RefreshUi();
         TryShowMenuHint();
         AnimateEntrance();
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.Echo)
+        {
+            return;
+        }
+
+        if (keyEvent.Keycode == Key.Escape)
+        {
+            SceneRouter.Instance.ReturnFromSettings();
+        }
     }
 
     private void TryShowMenuHint()
@@ -91,9 +105,12 @@ public partial class SettingsMenu : Control
         center.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(center);
 
+        var viewportSize = GetViewportRect().Size;
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(760f, 720f)
+            CustomMinimumSize = new Vector2(
+                Mathf.Clamp(viewportSize.X - 48f, 560f, 760f),
+                Mathf.Clamp(viewportSize.Y - 48f, 560f, 860f))
         };
         center.AddChild(panel);
         _mainPanel = panel;
@@ -105,11 +122,12 @@ public partial class SettingsMenu : Control
         content.AddThemeConstantOverride("margin_bottom", 24);
         panel.AddChild(content);
 
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 16);
-        content.AddChild(stack);
+        var rootStack = new VBoxContainer();
+        rootStack.AddThemeConstantOverride("separation", 16);
+        rootStack.SizeFlagsVertical = SizeFlags.ExpandFill;
+        content.AddChild(rootStack);
 
-        stack.AddChild(new Label
+        rootStack.AddChild(new Label
         {
             Text = "Settings",
             HorizontalAlignment = HorizontalAlignment.Center
@@ -120,7 +138,19 @@ public partial class SettingsMenu : Control
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        stack.AddChild(_returnLabel);
+        rootStack.AddChild(_returnLabel);
+
+        var bodyScroll = new ScrollContainer
+        {
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+        };
+        rootStack.AddChild(bodyScroll);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 16);
+        stack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        bodyScroll.AddChild(stack);
 
         var audioPanel = new PanelContainer();
         stack.AddChild(audioPanel);
@@ -603,15 +633,9 @@ public partial class SettingsMenu : Control
         };
         achievementsStack.AddChild(_achievementsLabel);
 
-        stack.AddChild(new Control
-        {
-            CustomMinimumSize = new Vector2(0f, 8f),
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        });
-
         var bottomRow = new HBoxContainer();
         bottomRow.AddThemeConstantOverride("separation", 12);
-        stack.AddChild(bottomRow);
+        rootStack.AddChild(bottomRow);
 
         _backButton = new Button
         {
@@ -620,13 +644,13 @@ public partial class SettingsMenu : Control
         _backButton.Pressed += () => SceneRouter.Instance.ReturnFromSettings();
         bottomRow.AddChild(_backButton);
 
-        var titleButton = new Button
+        _titleButton = new Button
         {
             Text = "Back To Title",
             CustomMinimumSize = new Vector2(180f, 48f)
         };
-        titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
-        bottomRow.AddChild(titleButton);
+        _titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
+        bottomRow.AddChild(_titleButton);
     }
 
     private static Button BuildCompactButton(string text, System.Action onPressed)
@@ -694,7 +718,9 @@ public partial class SettingsMenu : Control
         {
             _purchaseEndpointEdit.Text = GameState.Instance.PurchaseValidationEndpoint;
         }
-        _backButton.Text = $"Back To {SceneRouter.Instance.SettingsReturnLabel}";
+        var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
+        _backButton.Text = $"Back To {returnLabel}";
+        _titleButton.Visible = !returnLabel.Equals("Title", StringComparison.OrdinalIgnoreCase);
         _achievementsLabel.Text = BuildAchievementsText();
     }
 

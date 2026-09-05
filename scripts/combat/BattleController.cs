@@ -356,8 +356,12 @@ public partial class BattleController : Node2D
 	private Label _objectiveStatusLabel = null!;
 	private Label _fpsLabel = null!;
 	private Label _endLabel = null!;
+	private PanelContainer _topHudPanel = null!;
+	private PanelContainer _intelPanel = null!;
 	private PanelContainer _endPanel = null!;
 	private CenterContainer _endCenter = null!;
+	private Button _endPrimaryButton = null!;
+	private Button _endSecondaryButton = null!;
 	private CenterContainer _draftCenter = null!;
 	private PanelContainer _draftPanel = null!;
 	private Label _draftLabel = null!;
@@ -2989,6 +2993,21 @@ public partial class BattleController : Node2D
 
 	private void HandleKeyInput(InputEventKey keyEvent)
 	{
+		if (_battleEnded)
+		{
+			if (keyEvent.Keycode == Key.Enter || keyEvent.Keycode == Key.KpEnter)
+			{
+				HandleEndPanelPrimaryAction();
+				return;
+			}
+
+			if (keyEvent.Keycode == Key.Escape || keyEvent.Keycode == Key.M)
+			{
+				HandleEndPanelSecondaryAction();
+				return;
+			}
+		}
+
 		if (keyEvent.Keycode == Key.Escape)
 		{
 			TogglePause();
@@ -3004,6 +3023,12 @@ public partial class BattleController : Node2D
 		if (keyEvent.Keycode == Key.F12)
 		{
 			ScreenshotCapture.Capture("battle");
+			return;
+		}
+
+		if (keyEvent.Keycode == Key.Tab)
+		{
+			ToggleCombatIntel();
 			return;
 		}
 
@@ -3117,6 +3142,7 @@ public partial class BattleController : Node2D
 
 		var root = new Control();
 		root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		MedievalUi.Apply(root);
 		root.MouseFilter = Control.MouseFilterEnum.Ignore;
 		canvasLayer.AddChild(root);
 
@@ -3125,17 +3151,17 @@ public partial class BattleController : Node2D
 		var safeR = SafeAreaService.Instance?.MarginRight ?? 0;
 		var safeB = SafeAreaService.Instance?.MarginBottom ?? 0;
 
-		var topHudPanel = new PanelContainer
+		_topHudPanel = new PanelContainer
 		{
 			Position = new Vector2(16f + safeL, 16f + safeT),
 			Size = new Vector2(540f, 290f)
 		};
-		topHudPanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
-		root.AddChild(topHudPanel);
+		_topHudPanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
+		root.AddChild(_topHudPanel);
 
 		var topVBox = new VBoxContainer();
 		topVBox.AddThemeConstantOverride("separation", 5);
-		topHudPanel.AddChild(topVBox);
+		_topHudPanel.AddChild(topVBox);
 
 		_battleBannerLabel = new Label
 		{
@@ -3196,17 +3222,17 @@ public partial class BattleController : Node2D
 		_fpsLabel = new Label();
 		topVBox.AddChild(_fpsLabel);
 
-		var intelPanel = new PanelContainer
+		_intelPanel = new PanelContainer
 		{
 			Position = new Vector2(572f + safeL, 16f + safeT),
 			Size = new Vector2(380f, 336f)
 		};
-		intelPanel.SelfModulate = route.BannerPanel;
-		root.AddChild(intelPanel);
+		_intelPanel.SelfModulate = route.BannerPanel;
+		root.AddChild(_intelPanel);
 
 		var infoVBox = new VBoxContainer();
 		infoVBox.AddThemeConstantOverride("separation", 8);
-		intelPanel.AddChild(infoVBox);
+		_intelPanel.AddChild(infoVBox);
 
 		var infoHeaderLabel = new Label
 		{
@@ -3263,9 +3289,10 @@ public partial class BattleController : Node2D
 
 		_showDevUiToggle = new CheckBox
 		{
-			Text = "Show dev UI",
+			Text = "Show combat text [Tab]",
 			ButtonPressed = GameState.Instance.ShowDevUi
 		};
+		_showDevUiToggle.TooltipText = "Hide or show the battle text panels.";
 		_showDevUiToggle.Toggled += OnShowDevUiToggled;
 		settingsVBox.AddChild(_showDevUiToggle);
 
@@ -3354,6 +3381,7 @@ public partial class BattleController : Node2D
 				(IsCampaignMode ? $"  C      Convoy command ({_campaignConvoyCommandLabel}) when charged\n" : "") +
 				(IsCampaignMode ? $"  Z/X    Field order ({_campaignFieldOrderAssaultLabel} / {_campaignFieldOrderBulwarkLabel}) when unlocked\n" : "") +
 				(IsCampaignMode && _campaignAdaptiveWaveReady ? $"  V/B    Adaptive wave override ({CampaignAdaptiveWaveRescueLabel} / {CampaignAdaptiveWaveBreakthroughLabel}) when unlocked\n" : "") +
+				"  Tab    Hide/show combat text\n" +
 				"  Space  Cycle battle speed (1x / 1.5x / 2x / 3x)\n  F12    Screenshot\n\nTips:\n  Units with Lv4+ auto-trigger special abilities in combat\n  Deploy clicks snap toward nearby fronts for cleaner reinforcements\n  Stone Barricade blocks lanes | War Cry buffs all allies | Polymorph disables the toughest enemy\n  Equip relics in the Armory to boost unit stats",
 			HorizontalAlignment = HorizontalAlignment.Center,
 			VerticalAlignment = VerticalAlignment.Center
@@ -3369,7 +3397,7 @@ public partial class BattleController : Node2D
 
 		_endPanel = new PanelContainer
 		{
-			CustomMinimumSize = new Vector2(480f, 280f),
+			CustomMinimumSize = new Vector2(640f, 520f),
 			Visible = false
 		};
 		_endPanel.SelfModulate = route.BannerPanel.Lightened(0.04f);
@@ -3384,17 +3412,28 @@ public partial class BattleController : Node2D
 
 		var endVBox = new VBoxContainer();
 		endVBox.AddThemeConstantOverride("separation", 12);
+		endVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 		endPadding.AddChild(endVBox);
+
+		var endScroll = new ScrollContainer
+		{
+			SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+			CustomMinimumSize = new Vector2(0f, 340f),
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+		};
+		endVBox.AddChild(endScroll);
 
 		_endLabel = new Label
 		{
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			HorizontalAlignment = HorizontalAlignment.Center
+			HorizontalAlignment = HorizontalAlignment.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
 		};
 		_endLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		endVBox.AddChild(_endLabel);
+		_endLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		endScroll.AddChild(_endLabel);
 
-		var retryButton = new Button
+		_endPrimaryButton = new Button
 		{
 			Text = IsEndlessMode
 				? "Restart Run"
@@ -3404,29 +3443,14 @@ public partial class BattleController : Node2D
 							? "Back To Online Room"
 						: IsChallengeMode
 							? "Retry Challenge"
-							: "Retry Stage",
+						: "Retry Stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
-		ApplyBattleButtonTheme(retryButton, route);
-		retryButton.Pressed += () =>
-		{
-			if (IsLanRaceMode)
-			{
-				SceneRouter.Instance.GoToLanRace();
-				return;
-			}
+		ApplyBattleButtonTheme(_endPrimaryButton, route);
+		_endPrimaryButton.Pressed += HandleEndPanelPrimaryAction;
+		endVBox.AddChild(_endPrimaryButton);
 
-			if (IsOnlineRoomMode)
-			{
-				SceneRouter.Instance.GoToMultiplayer();
-				return;
-			}
-
-			SceneRouter.Instance.RetryBattle();
-		};
-		endVBox.AddChild(retryButton);
-
-		var mapButton = new Button
+		_endSecondaryButton = new Button
 		{
 			Text = IsEndlessMode
 				? "Back To Endless Prep"
@@ -3436,39 +3460,12 @@ public partial class BattleController : Node2D
 							? "Leave Online Room"
 						: IsChallengeMode
 							? "Back To Multiplayer"
-							: "Back To Map",
+						: "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
-		ApplyBattleButtonTheme(mapButton, route);
-		mapButton.Pressed += () =>
-		{
-			if (IsEndlessMode)
-			{
-				SceneRouter.Instance.GoToEndless();
-				return;
-			}
-
-			if (IsChallengeMode)
-			{
-				if (IsLanRaceMode)
-				{
-					SceneRouter.Instance.GoToMultiplayer();
-				}
-				else if (IsOnlineRoomMode)
-				{
-					OnlineRoomActionService.LeaveRoom(out _);
-					SceneRouter.Instance.GoToMultiplayer();
-				}
-				else
-				{
-					SceneRouter.Instance.GoToMultiplayer();
-				}
-				return;
-			}
-
-			SceneRouter.Instance.GoToMap();
-		};
-		endVBox.AddChild(mapButton);
+		ApplyBattleButtonTheme(_endSecondaryButton, route);
+		_endSecondaryButton.Pressed += HandleEndPanelSecondaryAction;
+		endVBox.AddChild(_endSecondaryButton);
 
 		_draftCenter = new CenterContainer();
 		_draftCenter.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -3514,6 +3511,12 @@ public partial class BattleController : Node2D
 			draftVBox.AddChild(draftButton);
 			_draftButtons.Add(draftButton);
 		}
+
+		_topHudPanel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		SetMouseFilterRecursive(topVBox, Control.MouseFilterEnum.Ignore);
+		_speedButton.MouseFilter = Control.MouseFilterEnum.Stop;
+		_intelPanel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		SetMouseFilterRecursive(infoVBox, Control.MouseFilterEnum.Ignore);
 
 		ApplyDevUiSettings();
 	}
@@ -3804,10 +3807,19 @@ public partial class BattleController : Node2D
 	private void ApplyDevUiSettings()
 	{
 		var showDevUi = GameState.Instance.ShowDevUi;
+		_topHudPanel.Visible = showDevUi;
+		_intelPanel.Visible = showDevUi;
 		_timerLabel.Visible = showDevUi;
 		_statusLabel.Visible = showDevUi;
 		_showFpsToggle.Disabled = !showDevUi;
 		_fpsLabel.Visible = showDevUi && GameState.Instance.ShowFpsCounter;
+		_showDevUiToggle.SetPressedNoSignal(showDevUi);
+	}
+
+	private void ToggleCombatIntel()
+	{
+		GameState.Instance.SetShowDevUi(!GameState.Instance.ShowDevUi);
+		ApplyDevUiSettings();
 	}
 
 	private int CountTeamUnits(Team team)
@@ -16451,6 +16463,62 @@ public partial class BattleController : Node2D
 		if (!_battleEnded)
 		{
 			GameState.Instance.ApplyRetreat(_stage);
+		}
+
+		SceneRouter.Instance.GoToMap();
+	}
+
+	private void HandleEndPanelPrimaryAction()
+	{
+		if (!_battleEnded)
+		{
+			return;
+		}
+
+		if (IsLanRaceMode)
+		{
+			SceneRouter.Instance.GoToLanRace();
+			return;
+		}
+
+		if (IsOnlineRoomMode)
+		{
+			SceneRouter.Instance.GoToMultiplayer();
+			return;
+		}
+
+		SceneRouter.Instance.RetryBattle();
+	}
+
+	private void HandleEndPanelSecondaryAction()
+	{
+		if (!_battleEnded)
+		{
+			return;
+		}
+
+		if (IsEndlessMode)
+		{
+			SceneRouter.Instance.GoToEndless();
+			return;
+		}
+
+		if (IsChallengeMode)
+		{
+			if (IsLanRaceMode)
+			{
+				SceneRouter.Instance.GoToMultiplayer();
+			}
+			else if (IsOnlineRoomMode)
+			{
+				OnlineRoomActionService.LeaveRoom(out _);
+				SceneRouter.Instance.GoToMultiplayer();
+			}
+			else
+			{
+				SceneRouter.Instance.GoToMultiplayer();
+			}
+			return;
 		}
 
 		SceneRouter.Instance.GoToMap();

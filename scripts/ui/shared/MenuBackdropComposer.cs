@@ -21,18 +21,22 @@ public static class MenuBackdropComposer
 {
     public static MenuBackdropSet AddSolidBackdrop(Control root, string screenId, Color fallbackColor, string variantId = "")
     {
+        MedievalUi.Apply(root);
         var primaryRect = new ColorRect
         {
             Color = fallbackColor
         };
         primaryRect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         root.AddChild(primaryRect);
+        MedievalUi.MarkBackdrop(primaryRect);
 
         var textureRect = BuildTextureRect();
         root.AddChild(textureRect);
+        MedievalUi.MarkBackdrop(textureRect);
 
         var textureScrim = BuildTextureScrim(0.24f);
         root.AddChild(textureScrim);
+        MedievalUi.MarkBackdrop(textureScrim);
 
         var set = new MenuBackdropSet
         {
@@ -46,6 +50,7 @@ public static class MenuBackdropComposer
 
     public static MenuBackdropSet AddSplitBackdrop(Control root, string screenId, Color topColor, Color bottomColor, Color accentColor, float accentY, string variantId = "")
     {
+        MedievalUi.Apply(root);
         var topRect = new ColorRect
         {
             Color = topColor,
@@ -53,6 +58,7 @@ public static class MenuBackdropComposer
             Size = new Vector2(1280f, 360f)
         };
         root.AddChild(topRect);
+        MedievalUi.MarkBackdrop(topRect);
 
         var bottomRect = new ColorRect
         {
@@ -61,12 +67,15 @@ public static class MenuBackdropComposer
             Size = new Vector2(1280f, 360f)
         };
         root.AddChild(bottomRect);
+        MedievalUi.MarkBackdrop(bottomRect);
 
         var textureRect = BuildTextureRect();
         root.AddChild(textureRect);
+        MedievalUi.MarkBackdrop(textureRect);
 
         var textureScrim = BuildTextureScrim(0.28f);
         root.AddChild(textureScrim);
+        MedievalUi.MarkBackdrop(textureScrim);
 
         var accentBand = new ColorRect
         {
@@ -75,6 +84,7 @@ public static class MenuBackdropComposer
             Size = new Vector2(1280f, 6f)
         };
         root.AddChild(accentBand);
+        MedievalUi.MarkBackdrop(accentBand);
 
         var set = new MenuBackdropSet
         {

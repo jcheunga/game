@@ -123,6 +123,12 @@ public partial class MusicPlayer : Node
 	public void SetVolumeScale(float scale)
 	{
 		_musicVolumeScale = Mathf.Clamp(scale, 0f, 1f);
+		// GameState restores preferences before this autoload has built its players.
+		// Keep the value; _Ready will use it when a track starts.
+		if (_playerA == null || _playerB == null)
+		{
+			return;
+		}
 		if (!_fading)
 		{
 			var active = _isPlayerA ? _playerA : _playerB;

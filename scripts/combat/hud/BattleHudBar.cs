@@ -70,7 +70,7 @@ public partial class BattleHudBar : Control
 		}
 
 		var font = ThemeDB.FallbackFont;
-		var fontSize = Mathf.Max(10, Mathf.RoundToInt(barRect.Size.Y * 0.65f));
+		var fontSize = Mathf.Max(18, Mathf.RoundToInt(barRect.Size.Y * 0.65f));
 
 		if (!string.IsNullOrWhiteSpace(_label))
 		{

@@ -22,6 +22,7 @@ public partial class MultiplayerMenu : Control
     private Label _rulesLabel = null!;
     private Label _statusLabel = null!;
     private VBoxContainer _squadStack = null!;
+    private readonly VBoxContainer[] _boardPages = new VBoxContainer[5];
     private Button _refreshOnlineButton = null!;
     private Button _syncButton = null!;
     private Button _startButton = null!;
@@ -122,9 +123,9 @@ public partial class MultiplayerMenu : Control
         missionPadding.AddThemeConstantOverride("margin_bottom", 18);
         missionPanel.AddChild(missionPadding);
 
-        var missionStack = new VBoxContainer();
+        var missionStack = RealmUi.Scroll(missionPadding);
         missionStack.AddThemeConstantOverride("separation", 12);
-        missionPadding.AddChild(missionStack);
+
 
         missionStack.AddChild(new Label
         {
@@ -181,7 +182,7 @@ public partial class MultiplayerMenu : Control
         };
         codeRow.AddChild(_codeEdit);
 
-        var loadCodeButton = new Button
+        var loadCodeButton = new RealmButton
         {
             Text = "Load",
             CustomMinimumSize = new Vector2(92f, 0f)
@@ -193,7 +194,7 @@ public partial class MultiplayerMenu : Control
         actionRow.AddThemeConstantOverride("separation", 8);
         missionStack.AddChild(actionRow);
 
-        var rollButton = new Button
+        var rollButton = new RealmButton
         {
             Text = "Roll Code",
             CustomMinimumSize = new Vector2(0f, 42f),
@@ -202,7 +203,7 @@ public partial class MultiplayerMenu : Control
         rollButton.Pressed += GenerateChallengeCode;
         actionRow.AddChild(rollButton);
 
-        var copyButton = new Button
+        var copyButton = new RealmButton
         {
             Text = "Copy Code",
             CustomMinimumSize = new Vector2(0f, 42f),
@@ -215,7 +216,7 @@ public partial class MultiplayerMenu : Control
         };
         actionRow.AddChild(copyButton);
 
-        var shareButton = new Button
+        var shareButton = new RealmButton
         {
             Text = "Share Link",
             CustomMinimumSize = new Vector2(0f, 42f),
@@ -290,16 +291,21 @@ public partial class MultiplayerMenu : Control
         squadPadding.AddThemeConstantOverride("margin_bottom", 18);
         squadPanel.AddChild(squadPadding);
 
-        var squadScroll = new ScrollContainer
+        var boards = new VBoxContainer(); squadPadding.AddChild(boards);
+        RealmUi.Tabs(boards, index => { for (int i = 0; i < _boardPages.Length; i++) _boardPages[i].GetParent<ScrollContainer>().Visible = i == index; }, "Rooms", "Daily", "Featured", "Saved", "Squad");
+        for (int i = 0; i < _boardPages.Length; i++)
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        squadPadding.AddChild(squadScroll);
-
-        _squadStack = new VBoxContainer();
-        _squadStack.AddThemeConstantOverride("separation", 12);
-        squadScroll.AddChild(_squadStack);
+            _boardPages[i] = RealmUi.Scroll(boards);
+            _boardPages[i].GetParent<ScrollContainer>().Visible = i == 0;
+        }
+        _squadStack = _boardPages[0];
+        _summaryLabel.Visible = _recordLabel.Visible = _tapeLabel.Visible = _historyLabel.Visible = _rulesLabel.Visible = false;
+        missionStack.AddChild(RealmUi.Button("book", "Challenge briefing", () => RealmUi.Details(this, "Challenge briefing", _summaryLabel.Text + "\n\n" + _rulesLabel.Text)));
+        missionStack.AddChild(RealmUi.Button("clock", "Records & replay", () => RealmUi.Details(this, "Records & replay", _recordLabel.Text + "\n\n" + _historyLabel.Text + "\n\n" + _tapeLabel.Text)));
+        _stageSelector.FitToLongestItem = false;
+        _mutatorSelector.FitToLongestItem = false;
+        _statusLabel.CustomMinimumSize = new Vector2(0, 46);
+        _statusLabel.MaxLinesVisible = -1;
 
         var bottomPanel = new PanelContainer
         {
@@ -313,82 +319,16 @@ public partial class MultiplayerMenu : Control
         bottomRow.AddThemeConstantOverride("separation", 12);
         bottomPanel.AddChild(bottomRow);
 
-        var backButton = new Button
-        {
-            Text = "Back To Title",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        backButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
-        bottomRow.AddChild(backButton);
-
-        var shopButton = new Button
-        {
-            Text = "Caravan Armory",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
-        bottomRow.AddChild(shopButton);
-
-        var settingsButton = new Button
-        {
-            Text = "Settings",
-            CustomMinimumSize = new Vector2(150f, 0f)
-        };
-        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
-        bottomRow.AddChild(settingsButton);
-
-        _syncButton = new Button
-        {
-            Text = "Flush Outbox",
-            CustomMinimumSize = new Vector2(170f, 0f)
-        };
-        _syncButton.Pressed += FlushOutbox;
-        bottomRow.AddChild(_syncButton);
-
-        _refreshOnlineButton = new Button
-        {
-            Text = "Refresh Online",
-            CustomMinimumSize = new Vector2(170f, 0f)
-        };
-        _refreshOnlineButton.Pressed += RefreshOnlineData;
-        bottomRow.AddChild(_refreshOnlineButton);
-
-        var quickMatchButton = new Button
-        {
-            Text = "Quick Match",
-            CustomMinimumSize = new Vector2(170f, 0f)
-        };
-        quickMatchButton.Pressed += QuickMatchOnlineRoom;
-        bottomRow.AddChild(quickMatchButton);
-
-        var hostOnlineButton = new Button
-        {
-            Text = "Host Online Room",
-            CustomMinimumSize = new Vector2(190f, 0f)
-        };
-        hostOnlineButton.Pressed += HostOnlineRoom;
-        bottomRow.AddChild(hostOnlineButton);
-
-        var lanButton = new Button
-        {
-            Text = "LAN Race",
-            CustomMinimumSize = new Vector2(160f, 0f)
-        };
-        lanButton.Pressed += () => SceneRouter.Instance.GoToLanRace();
-        bottomRow.AddChild(lanButton);
-
-        bottomRow.AddChild(new Control
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        });
-
-        _startButton = new Button
-        {
-            Text = "Start Challenge",
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
-        _startButton.Pressed += StartChallenge;
-        bottomRow.AddChild(_startButton);
+        bottomRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
+        bottomRow.AddChild(RealmUi.IconButton("sword", "Armory", () => SceneRouter.Instance.GoToShop()));
+        bottomRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
+        _syncButton = RealmUi.IconButton("arrow", "Sync pending results", FlushOutbox); bottomRow.AddChild(_syncButton);
+        _refreshOnlineButton = RealmUi.Button("eye", "Refresh", RefreshOnlineData); bottomRow.AddChild(_refreshOnlineButton);
+        bottomRow.AddChild(RealmUi.Button("people", "Match", QuickMatchOnlineRoom));
+        bottomRow.AddChild(RealmUi.Button("flag", "Host", HostOnlineRoom));
+        bottomRow.AddChild(RealmUi.Button("shield", "LAN", () => SceneRouter.Instance.GoToLanRace()));
+        bottomRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        _startButton = RealmUi.Button("sword", "Start challenge", StartChallenge, true); bottomRow.AddChild(_startButton);
     }
 
     private void RefreshUi()
@@ -405,7 +345,7 @@ public partial class MultiplayerMenu : Control
         _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("multiplayer", route.Id));
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         var ghostRun = GameState.Instance.GetChallengeGhostRun(challenge.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
-        while (_titleRow.GetChildCount() > 2) _titleRow.GetChild(_titleRow.GetChildCount() - 1).QueueFree();
+        RealmUi.TrimChildren(_titleRow, 2);
         _titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", challenge.Code, new Vector2(24f, 24f)));
         var deckModeLabel = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
             ? $"Locked featured squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"
@@ -460,14 +400,13 @@ public partial class MultiplayerMenu : Control
             : _lastStatusMessage;
         _statusLabel.Text = $"Status:\n{statusMessage}";
         _syncButton.Disabled = GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null;
-        _syncButton.Text = GameState.Instance.PendingChallengeSubmissionCount <= 0
-            ? "Outbox Empty"
-            : $"Flush Outbox ({GameState.Instance.PendingChallengeSubmissionCount})";
+        _syncButton.TooltipText = $"Sync results · {GameState.Instance.PendingChallengeSubmissionCount} pending";
         _refreshOnlineButton.Disabled = ChallengeLeaderboardService.Instance == null &&
             ChallengeBoardFeedService.Instance == null &&
             !OnlineRoomDirectoryService.IsAvailable;
         _startButton.Disabled = !canStart;
-        _startButton.Text = startButtonText;
+        _startButton.Text = canStart ? "Start challenge" : "Not ready";
+        _startButton.TooltipText = startButtonText;
     }
 
     private void RebuildResourcesRow()
@@ -483,61 +422,12 @@ public partial class MultiplayerMenu : Control
 
     private void RebuildSquadPanels(StageDefinition stage)
     {
-        foreach (var child in _squadStack.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Online Room Directory", new Vector2(24f, 24f)));
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomDirectoryService.BuildSnapshotSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomCreateService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomJoinService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomMatchmakeService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomSessionService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomResultService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomScoreboardService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = OnlineRoomTelemetryService.BuildStatusSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
+        foreach (var page in _boardPages) RealmUi.Clear(page);
+        _squadStack = _boardPages[0];
+        _squadStack.AddChild(RealmUi.Heading("Challenge rooms", 26));
+        _squadStack.AddChild(RealmUi.Label(OnlineRoomDirectoryService.BuildSnapshotSummary(), 14, true));
+        _squadStack.AddChild(RealmUi.Button("eye", "Connection details", () => RealmUi.Details(this, "Connection details",
+            OnlineRoomCreateService.BuildStatusSummary() + "\n" + OnlineRoomJoinService.BuildStatusSummary() + "\n" + OnlineRoomSessionService.BuildStatusSummary() + "\n" + OnlineRoomTelemetryService.BuildStatusSummary())));
         var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
         if (joinedRoomTicket != null)
         {
@@ -557,6 +447,7 @@ public partial class MultiplayerMenu : Control
             }
         }
 
+        _squadStack = _boardPages[2];
         _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Remote Featured Feed", new Vector2(24f, 24f)));
 
         _squadStack.AddChild(new Label
@@ -579,6 +470,7 @@ public partial class MultiplayerMenu : Control
             }
         }
 
+        _squadStack = _boardPages[1];
         var dailyChallenge = GameState.GetDailyChallenge();
         var dailyStage = GameData.GetStage(Mathf.Clamp(dailyChallenge.StageIndex, 1, GameState.Instance.MaxStage));
         var dailyCompleted = GameState.Instance.HasCompletedDailyChallenge();
@@ -632,7 +524,7 @@ public partial class MultiplayerMenu : Control
         dailyButtonRow.AddThemeConstantOverride("separation", 8);
         dailyStack.AddChild(dailyButtonRow);
 
-        var playDailyButton = new Button
+        var playDailyButton = new RealmButton
         {
             Text = dailyCompleted ? "Replay Daily Challenge" : "Play Daily Challenge",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -691,6 +583,7 @@ public partial class MultiplayerMenu : Control
             _squadStack.AddChild(BuildFeaturedChallengePanel(featured));
         }
 
+        _squadStack = _boardPages[3];
         _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
             "challenge",
             $"Pinned Codes ({GameState.Instance.GetPinnedChallengeCodes().Count})",
@@ -715,6 +608,7 @@ public partial class MultiplayerMenu : Control
 
         _squadStack.AddChild(BuildLeaderboardPanel(GameState.Instance.GetSelectedAsyncChallenge().Code));
 
+        _squadStack = _boardPages[4];
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
             "members",
@@ -838,7 +732,7 @@ public partial class MultiplayerMenu : Control
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var loadButton = new Button
+        var loadButton = new RealmButton
         {
             Text = "Preview Board",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -847,7 +741,7 @@ public partial class MultiplayerMenu : Control
         loadButton.Pressed += () => LoadOnlineRoomBoard(room);
         row.AddChild(loadButton);
 
-        var joinButton = new Button
+        var joinButton = new RealmButton
         {
             Text = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId ? "Host Seat Active" : "Request Join",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -857,7 +751,7 @@ public partial class MultiplayerMenu : Control
         joinButton.Pressed += () => RequestOnlineRoomJoin(room);
         row.AddChild(joinButton);
 
-        var copyButton = new Button
+        var copyButton = new RealmButton
         {
             Text = "Copy Room ID",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -925,7 +819,7 @@ public partial class MultiplayerMenu : Control
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var readyButton = new Button
+        var readyButton = new RealmButton
         {
             Text = OnlineRoomActionService.BuildToggleReadyLabel(),
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -935,7 +829,7 @@ public partial class MultiplayerMenu : Control
         readyButton.Pressed += ToggleOnlineRoomReady;
         row.AddChild(readyButton);
 
-        var refreshButton = new Button
+        var refreshButton = new RealmButton
         {
             Text = "Refresh Joined Room",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -944,7 +838,7 @@ public partial class MultiplayerMenu : Control
         refreshButton.Pressed += RefreshJoinedOnlineRoom;
         row.AddChild(refreshButton);
 
-        var autoRefreshButton = new Button
+        var autoRefreshButton = new RealmButton
         {
             Text = _onlineRoomAutoRefreshEnabled ? "Pause Auto Refresh" : "Resume Auto Refresh",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -953,7 +847,7 @@ public partial class MultiplayerMenu : Control
         autoRefreshButton.Pressed += ToggleOnlineRoomAutoRefresh;
         row.AddChild(autoRefreshButton);
 
-        var renewSeatButton = new Button
+        var renewSeatButton = new RealmButton
         {
             Text = BuildRenewSeatButtonLabel(),
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -962,7 +856,7 @@ public partial class MultiplayerMenu : Control
         renewSeatButton.Pressed += RenewOnlineRoomSeat;
         row.AddChild(renewSeatButton);
 
-        var launchButton = new Button
+        var launchButton = new RealmButton
         {
             Text = OnlineRoomActionService.BuildLaunchRoundLabel(),
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -976,7 +870,7 @@ public partial class MultiplayerMenu : Control
         scoreRow.AddThemeConstantOverride("separation", 8);
         stack.AddChild(scoreRow);
 
-        var refreshScoreboardButton = new Button
+        var refreshScoreboardButton = new RealmButton
         {
             Text = "Refresh Room Scoreboard",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -985,7 +879,7 @@ public partial class MultiplayerMenu : Control
         refreshScoreboardButton.Pressed += RefreshOnlineRoomScoreboard;
         scoreRow.AddChild(refreshScoreboardButton);
 
-        var resetRoundButton = new Button
+        var resetRoundButton = new RealmButton
         {
             Text = OnlineRoomActionService.BuildResetRoundLabel(),
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -995,7 +889,7 @@ public partial class MultiplayerMenu : Control
         resetRoundButton.Pressed += ResetOnlineRoomRound;
         scoreRow.AddChild(resetRoundButton);
 
-        var leaveRoomButton = new Button
+        var leaveRoomButton = new RealmButton
         {
             Text = OnlineRoomActionService.BuildLeaveRoomLabel(),
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -1026,7 +920,7 @@ public partial class MultiplayerMenu : Control
         _roomReportReasonSelector.ItemSelected += OnRoomReportReasonSelected;
         reportRow.AddChild(_roomReportReasonSelector);
 
-        var reportButton = new Button
+        var reportButton = new RealmButton
         {
             Text = "Submit Room Report",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -1064,7 +958,8 @@ public partial class MultiplayerMenu : Control
             Text =
                 $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
                 $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}  |  " +
-                $"{GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}"
+                $"{GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
         stack.AddChild(new Label
@@ -1140,7 +1035,7 @@ public partial class MultiplayerMenu : Control
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var loadButton = new Button
+        var loadButton = new RealmButton
         {
             Text = loadButtonText,
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -1149,7 +1044,7 @@ public partial class MultiplayerMenu : Control
         loadButton.Pressed += () => LoadFeaturedChallenge(featured);
         row.AddChild(loadButton);
 
-        var pinButton = new Button
+        var pinButton = new RealmButton
         {
             Text = isPinned ? "Unpin" : "Pin",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -1214,7 +1109,7 @@ public partial class MultiplayerMenu : Control
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var loadButton = new Button
+        var loadButton = new RealmButton
         {
             Text = "Load Pinned",
             CustomMinimumSize = new Vector2(0f, 38f),
@@ -1223,7 +1118,7 @@ public partial class MultiplayerMenu : Control
         loadButton.Pressed += () => LoadChallengeCode(challenge.Code, $"Loaded pinned code {challenge.Code}.");
         row.AddChild(loadButton);
 
-        var removeButton = new Button
+        var removeButton = new RealmButton
         {
             Text = "Remove Pin",
             CustomMinimumSize = new Vector2(0f, 38f),

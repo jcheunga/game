@@ -1,0 +1,27 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+# A hostname here triggers Caddy's managed TLS certificates and HTTP-to-HTTPS
+# redirect. The application itself is private on the Compose network.
+{$CROWNROAD_API_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+
+	reverse_proxy crownroad-server:8080 {
+		health_uri /health
+		health_interval 30s
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

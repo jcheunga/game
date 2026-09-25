@@ -4,42 +4,35 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-IMAGE_NAME="${CROWNROAD_IMAGE:-crownroad-server}"
-IMAGE_TAG="${CROWNROAD_TAG:-latest}"
+ENV_FILE=".env.production"
+COMPOSE_FILE="docker-compose.production.yml"
 
-echo "=== Crownroad Server Deploy ==="
-echo ""
-
-# Run verification first
-echo "--- Running server tests ---"
-dotnet run -- --test
-echo ""
-
-echo "--- Validating game data ---"
-dotnet run -- --test-data ../data
-echo ""
-
-# Build Docker image
-echo "--- Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG} ---"
-docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
-echo ""
-
-# If a registry is set, push
-if [ -n "${CROWNROAD_REGISTRY:-}" ]; then
-    FULL_TAG="${CROWNROAD_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-    echo "--- Pushing to ${FULL_TAG} ---"
-    docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${FULL_TAG}"
-    docker push "${FULL_TAG}"
-    echo ""
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Missing $ENV_FILE. Copy .env.production.example, set the production values, and create the referenced secret files."
+    exit 1
 fi
 
-echo "--- Done ---"
-echo ""
-echo "To run locally:"
-echo "  docker compose up -d"
-echo ""
-echo "To run with Stripe:"
-echo "  STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_... docker compose up -d"
-echo ""
-echo "Health check:  curl http://localhost:8080/health"
-echo "Full stats:    curl http://localhost:8080/stats"
+if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1; then
+    echo "Docker Engine with the Compose v2 plugin is required."
+    exit 1
+fi
+
+if ! docker info >/dev/null 2>&1; then
+    echo "Docker is installed but its daemon is not available. Start Docker before deploying."
+    exit 1
+fi
+
+COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+
+echo "Validating deployment configuration..."
+"${COMPOSE[@]}" config -q
+
+echo "Running server verification..."
+dotnet run -- --test
+dotnet run -- --test-data ../data
+
+echo "Building and starting the private API and HTTPS proxy..."
+"${COMPOSE[@]}" up -d --build --remove-orphans
+"${COMPOSE[@]}" ps
+
+echo "Deployment started. Verify https://<your API domain>/health after DNS has propagated."

@@ -133,7 +133,7 @@ public partial class SeasonPassMenu : Control
 		progressStack.AddChild(_xpBar);
 
 		// ── Bottom section: upgrade + status + nav ──
-		_bottomPanel = new PanelContainer { Position = new Vector2(24f, 582f), Size = new Vector2(1232f, 80f) };
+		_bottomPanel = new PanelContainer { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 80f) };
 		AddChild(_bottomPanel);
 		var bottomMargin = new MarginContainer();
 		bottomMargin.AddThemeConstantOverride("margin_left", 8);
@@ -145,7 +145,7 @@ public partial class SeasonPassMenu : Control
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		bottomMargin.AddChild(bottomRow);
 
-		_upgradeBtn = new Button
+		_upgradeBtn = new RealmButton
 		{
 			Text = "Upgrade to Premium",
 			CustomMinimumSize = new Vector2(200f, 0f),
@@ -164,7 +164,7 @@ public partial class SeasonPassMenu : Control
 		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
 		bottomRow.AddChild(_statusLabel);
 
-		var mainMenuBtn = new Button { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mainMenuBtn = new RealmButton { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
 		mainMenuBtn.Pressed += () => SceneRouter.Instance.GoToMainMenu();
 		bottomRow.AddChild(mainMenuBtn);
 	}
@@ -226,7 +226,7 @@ public partial class SeasonPassMenu : Control
 			// Free reward button
 			var freeClaimed = gs.HasClaimedSeasonFreeTier(tier.Tier);
 			var freeUnlocked = tier.Tier <= currentTier;
-			var freeBtn = new Button
+			var freeBtn = new RealmButton
 			{
 				Text = freeClaimed ? $"{tier.FreeRewardLabel} [Claimed]" : tier.FreeRewardLabel,
 				CustomMinimumSize = new Vector2(110f, 52f),
@@ -256,7 +256,7 @@ public partial class SeasonPassMenu : Control
 			// Premium reward button
 			var premClaimed = gs.HasClaimedSeasonPremiumTier(tier.Tier);
 			var premUnlocked = tier.Tier <= currentTier && gs.HasPremiumPass;
-			var premBtn = new Button
+			var premBtn = new RealmButton
 			{
 				Text = premClaimed ? $"{tier.PremiumRewardLabel} [Claimed]" : tier.PremiumRewardLabel,
 				CustomMinimumSize = new Vector2(110f, 52f),

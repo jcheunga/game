@@ -96,10 +96,10 @@ public partial class ArenaMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
-		var armoryBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryBtn);
 	}
@@ -113,7 +113,7 @@ public partial class ArenaMenu : Control
 		// Update title row info
 		var titleRow = _titlePanel.GetChild<HBoxContainer>(0);
 		// Remove old dynamic labels if any
-		while (titleRow.GetChildCount() > 2) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		RealmUi.TrimChildren(titleRow, 2);
 		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("arena_rating", $"{gs.ArenaRating}  |  {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}", new Vector2(24f, 24f)));
 
 		GenerateOpponents();
@@ -168,7 +168,7 @@ public partial class ArenaMenu : Control
 			card.AddChild(new Label { Text = $"Power: {opponent.PowerRating}" });
 
 			var capturedOpponent = opponent;
-			var challengeBtn = new Button { Text = "Challenge", CustomMinimumSize = new Vector2(120f, 0f) };
+			var challengeBtn = new RealmButton { Text = "Challenge", CustomMinimumSize = new Vector2(120f, 0f) };
 			challengeBtn.Pressed += () =>
 			{
 				GameState.Instance.PrepareArenaBattle(capturedOpponent);

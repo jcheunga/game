@@ -50,7 +50,7 @@ public partial class LanChallengeService : Node
 	public const int MinPort = 1024;
 	public const int MaxPort = 65535;
 
-	public bool HasRoom => Multiplayer.MultiplayerPeer != null;
+	public bool HasRoom => Multiplayer.MultiplayerPeer is ENetMultiplayerPeer;
 	public bool IsHosting => HasRoom && Multiplayer.IsServer();
 	public bool IsClient => HasRoom && !Multiplayer.IsServer();
 	public int RoomPort { get; private set; } = DefaultPort;
@@ -1667,7 +1667,9 @@ public partial class LanChallengeService : Node
 			}
 		}
 
-		if (HasRoom && !_peerDecks.ContainsKey(Multiplayer.GetUniqueId()))
+		// The first host snapshot may still contain an empty placeholder for this client.
+		// Keep the locally owned squad until the host echoes its received profile.
+		if (HasRoom)
 		{
 			_peerDecks[Multiplayer.GetUniqueId()] = BuildLocalDeckProfile();
 		}

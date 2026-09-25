@@ -762,9 +762,9 @@ public static class StageEncounterIntel
             GameData.EnemyBossSteppeId => "Hunter calls keep adding tempo and flank runners to the push.",
             GameData.EnemyBossVergeId => "Moonhex marks keep re-picking the strongest defender for witchlight pressure.",
             GameData.EnemyBossCitadelId => "Iron salvos keep repairing the keep and shelling the active lane.",
-            GameData.EnemyBossReliquaryId => "Ossuary fire keeps reviving pressure with bone crews and catacomb repairs.",
+            GameData.EnemyBossReliquaryId => "Ossuary Fire briefly strengthens surviving bone crews. The Tyrant's raise spell replaces artillery on its normal cooldown, up to two active. Defeat the crews to open a path; repeated commands do not repair the gate.",
             GameData.EnemyBossAshenRegentId => "Ember decrees keep hammering the lane with ash shock and elite pressure.",
-            GameData.EnemyBossTidemasterId => "Surge tolls keep flooding the lane with shove-heavy tide pressure.",
+            GameData.EnemyBossTidemasterId => "Surge tolls push defenders back. Rally calls replace destroyed plague engines, up to two active; clearing the engines opens room to attack.",
             GameData.EnemyBossPlagueMonarchId => "Black blooms keep renewing signal pressure while plague captains press in.",
             GameData.EnemyBossId => "Repeated command pulses keep nearby undead surging while the boss lives.",
             _ => "Expect repeated smaller boss commands after the phase."

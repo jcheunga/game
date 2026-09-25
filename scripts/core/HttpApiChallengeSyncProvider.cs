@@ -13,6 +13,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
 		WriteIndented = false,
+		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		PropertyNameCaseInsensitive = true
 	};
 
@@ -47,7 +48,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
-		request.Headers.TryAddWithoutValidation("X-Convoy-Profile", batch.PlayerProfileId);
+		PlayerSessionHttp.Apply(request, batch.PlayerProfileId);
 		request.Headers.TryAddWithoutValidation("X-Convoy-Client", batch.ClientLabel);
 		request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
@@ -61,9 +62,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		var parsed = string.IsNullOrWhiteSpace(responseBody)
 			? null
 			: JsonSerializer.Deserialize<ChallengeSyncApiResponse>(responseBody, JsonOptions);
-		var acceptedIds = parsed?.AcceptedSubmissionIds != null && parsed.AcceptedSubmissionIds.Length > 0
-			? parsed.AcceptedSubmissionIds
-			: batch.Submissions.ConvertAll(entry => entry.SubmissionId).ToArray();
+		var acceptedIds = parsed?.AcceptedSubmissionIds ?? [];
 		var rejectedIds = parsed?.RejectedSubmissionIds ?? [];
 
 		return new ChallengeSyncBatchResult

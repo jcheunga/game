@@ -134,7 +134,7 @@ public partial class TowerMenu : Control
 		// Spacer pushes deploy button toward bottom
 		detailStack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 
-		_deployButton = new Button { Text = "Deploy", CustomMinimumSize = new Vector2(200f, 44f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+		_deployButton = new RealmButton { Text = "Deploy", CustomMinimumSize = new Vector2(200f, 44f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
 		_deployButton.Pressed += OnDeployPressed;
 		detailStack.AddChild(_deployButton);
 
@@ -146,7 +146,7 @@ public partial class TowerMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
 	}
@@ -194,7 +194,7 @@ public partial class TowerMenu : Control
 
 			row.AddChild(floorLabel);
 
-			var selectBtn = new Button
+			var selectBtn = new RealmButton
 			{
 				Text = capturedFloor == _selectedFloor ? ">" : "Select",
 				CustomMinimumSize = new Vector2(70f, 0f),

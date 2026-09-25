@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env.production}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env.production}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - crownroad-postgres:/var/lib/postgresql/data
+    secrets:
+      - source: postgres_password
+        target: postgres_password
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  crownroad-server:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Crownroad: Host=postgres;Port=5432;Database=${POSTGRES_DB:?set POSTGRES_DB in .env.production};Username=${POSTGRES_USER:?set POSTGRES_USER in .env.production};Ssl Mode=Disable;Pooling=true;Timeout=15;Command Timeout=15
+      DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+      TrustForwardedHeaders: "true"
+      ADMIN_API_KEY_FILE: /run/secrets/admin_api_key
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH: /run/secrets/google_play_service_account.json
+      APPLE_IAP_PRIVATE_KEY_PATH: /run/secrets/apple_iap_private_key.p8
+    expose:
+      - "8080"
+    secrets:
+      - source: postgres_password
+        target: postgres_password
+      - source: admin_api_key
+        target: admin_api_key
+      - source: google_play_service_account
+        target: google_play_service_account.json
+      - source: apple_iap_private_key
+        target: apple_iap_private_key.p8
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      crownroad-server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  crownroad-postgres:
+  caddy-data:
+  caddy-config:
+
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_SOURCE:?set POSTGRES_PASSWORD_SOURCE in .env.production}
+  admin_api_key:
+    file: ${ADMIN_API_KEY_SOURCE:?set ADMIN_API_KEY_SOURCE in .env.production}
+  google_play_service_account:
+    file: ${GOOGLE_PLAY_SERVICE_ACCOUNT_SOURCE:?set GOOGLE_PLAY_SERVICE_ACCOUNT_SOURCE in .env.production}
+  apple_iap_private_key:
+    file: ${APPLE_IAP_PRIVATE_KEY_SOURCE:?set APPLE_IAP_PRIVATE_KEY_SOURCE in .env.production}

@@ -40,7 +40,7 @@ public partial class NativeIAPService : Node
 	private readonly Dictionary<string, IAPProductInfo> _productCache = new(StringComparer.OrdinalIgnoreCase);
 	private readonly object _callbackLock = new();
 	private Action<IAPPurchaseResult> _pendingPurchaseCallback;
-	private GodotObject _googleBilling;
+	private Node _googleBridge;
 	private GodotObject _appleStore;
 
 	public override void _EnterTree()
@@ -83,26 +83,34 @@ public partial class NativeIAPService : Node
 
 	private void TryInitializeGoogle()
 	{
-		if (!Engine.HasSingleton("GodotGooglePlayBilling"))
+		var bridgeScript = ResourceLoader.Load<Script>("res://scripts/platform/GooglePlayBillingBridge.gd");
+		if (bridgeScript == null)
 		{
-			GD.Print("NativeIAPService: GodotGooglePlayBilling singleton not available.");
+			GD.PrintErr("NativeIAPService: Google Play Billing bridge is missing.");
 			IsAvailable = false;
 			return;
 		}
 
-		_googleBilling = Engine.GetSingleton("GodotGooglePlayBilling");
+		_googleBridge = new Node { Name = "GooglePlayBillingBridge" };
+		_googleBridge.SetScript(bridgeScript);
+		AddChild(_googleBridge);
+		_googleBridge.Connect("billing_ready", Callable.From(OnGoogleConnected));
+		_googleBridge.Connect("billing_unavailable", Callable.From<string>(OnGoogleUnavailable));
+		_googleBridge.Connect("product_details_received", Callable.From<Godot.Collections.Array>(OnGoogleProductDetailsReceived));
+		_googleBridge.Connect("purchase_received", Callable.From<string, string, string, bool>(OnGooglePurchaseReceived));
+		_googleBridge.Connect("purchase_failed", Callable.From<string>(OnGooglePurchaseFailed));
+		_googleBridge.Connect("consume_finished", Callable.From<string, bool, string>(OnGoogleConsumeFinished));
 
-		_googleBilling.Connect("connected", Callable.From(OnGoogleConnected));
-		_googleBilling.Connect("disconnected", Callable.From(OnGoogleDisconnected));
-		_googleBilling.Connect("connect_error", Callable.From<int, string>(OnGoogleConnectError));
-		_googleBilling.Connect("purchases_updated", Callable.From<Godot.Collections.Array>(OnGooglePurchasesUpdated));
-		_googleBilling.Connect("purchase_error", Callable.From<int, string>(OnGooglePurchaseError));
-		_googleBilling.Connect("sku_details_query_completed", Callable.From<Godot.Collections.Array>(OnGoogleSkuDetailsCompleted));
-		_googleBilling.Connect("sku_details_query_error", Callable.From<int, string, Godot.Collections.Array>(OnGoogleSkuDetailsError));
-		_googleBilling.Connect("purchase_acknowledged", Callable.From<string>(OnGooglePurchaseAcknowledged));
-		_googleBilling.Connect("purchase_consumed", Callable.From<string>(OnGooglePurchaseConsumed));
+		var nativeProductIds = new Godot.Collections.Array<string>();
+		foreach (var product in ShopProductCatalog.GetAll())
+		{
+			if (!string.IsNullOrWhiteSpace(product.GoogleProductId))
+			{
+				nativeProductIds.Add(product.GoogleProductId);
+			}
+		}
 
-		_googleBilling.Call("startConnection");
+		_googleBridge.Call("configure", nativeProductIds, GameState.Instance?.PlayerProfileId ?? "");
 	}
 
 	private void OnGoogleConnected()
@@ -110,47 +118,30 @@ public partial class NativeIAPService : Node
 		GD.Print("NativeIAPService: Google Play Billing connected.");
 		IsAvailable = true;
 		IsInitialized = true;
-		QueryGoogleProducts();
 	}
 
-	private void OnGoogleDisconnected()
+	private void OnGoogleUnavailable(string message)
 	{
-		GD.Print("NativeIAPService: Google Play Billing disconnected.");
+		GD.PrintErr($"NativeIAPService: Google Play Billing unavailable: {message}");
 		IsAvailable = false;
 	}
 
-	private void OnGoogleConnectError(int code, string message)
+	private void OnGoogleProductDetailsReceived(Godot.Collections.Array productDetails)
 	{
-		GD.PrintErr($"NativeIAPService: Google connect error {code}: {message}");
-		IsAvailable = false;
-	}
-
-	private void QueryGoogleProducts()
-	{
-		var productIds = new Godot.Collections.Array();
-		foreach (var product in ShopProductCatalog.GetAll())
-		{
-			if (!string.IsNullOrWhiteSpace(product.GoogleProductId))
-			{
-				productIds.Add(product.GoogleProductId);
-			}
-		}
-
-		if (productIds.Count > 0)
-		{
-			_googleBilling.Call("querySkuDetails", productIds, "inapp");
-		}
-	}
-
-	private void OnGoogleSkuDetailsCompleted(Godot.Collections.Array skuDetails)
-	{
-		foreach (var item in skuDetails)
+		foreach (var item in productDetails)
 		{
 			if (item.Obj is not Godot.Collections.Dictionary dict) continue;
-			var sku = dict.GetValueOrDefault("sku", Variant.CreateFrom("")).AsString();
+			var sku = dict.GetValueOrDefault("product_id", Variant.CreateFrom("")).AsString();
 			var title = dict.GetValueOrDefault("title", Variant.CreateFrom("")).AsString();
-			var price = dict.GetValueOrDefault("price", Variant.CreateFrom("")).AsString();
-			var priceMicros = (int)dict.GetValueOrDefault("price_amount_micros", Variant.CreateFrom(0)).AsInt64();
+			var price = "";
+			var priceMicros = 0;
+			if (dict.TryGetValue("one_time_purchase_offer_details_list", out var offersVariant) &&
+				offersVariant.Obj is Godot.Collections.Array offers && offers.Count > 0 &&
+				offers[0].Obj is Godot.Collections.Dictionary offer)
+			{
+				price = offer.GetValueOrDefault("formatted_price", Variant.CreateFrom("")).AsString();
+				priceMicros = (int)offer.GetValueOrDefault("price_amount_micros", Variant.CreateFrom(0)).AsInt64();
+			}
 
 			var catalogProduct = FindProductByGoogleId(sku);
 			if (catalogProduct == null) continue;
@@ -168,60 +159,91 @@ public partial class NativeIAPService : Node
 		GD.Print($"NativeIAPService: Cached {_productCache.Count} Google product prices.");
 	}
 
-	private void OnGoogleSkuDetailsError(int code, string message, Godot.Collections.Array skus)
+	private void OnGooglePurchaseReceived(string nativeProductId, string transactionId, string purchaseToken, bool restored)
 	{
-		GD.PrintErr($"NativeIAPService: Google SKU query error {code}: {message}");
-	}
-
-	private void OnGooglePurchasesUpdated(Godot.Collections.Array purchases)
-	{
-		foreach (var item in purchases)
+		var catalogProduct = FindProductByGoogleId(nativeProductId);
+		if (catalogProduct == null || string.IsNullOrWhiteSpace(purchaseToken))
 		{
-			if (item.Obj is not Godot.Collections.Dictionary dict) continue;
-			var sku = dict.GetValueOrDefault("sku", Variant.CreateFrom("")).AsString();
-			var token = dict.GetValueOrDefault("purchase_token", Variant.CreateFrom("")).AsString();
-			var orderId = dict.GetValueOrDefault("order_id", Variant.CreateFrom("")).AsString();
+			GD.PrintErr("NativeIAPService: Google returned an incomplete or unknown purchase.");
+			return;
+		}
 
-			var catalogProduct = FindProductByGoogleId(sku);
+		var purchase = new IAPPurchaseResult
+		{
+			Success = true,
+			ProductId = catalogProduct.Id,
+			TransactionId = transactionId,
+			ReceiptToken = purchaseToken
+		};
 
-			_googleBilling.Call("consumePurchase", token);
+		Action<IAPPurchaseResult> callback = null;
+		lock (_callbackLock)
+		{
+			callback = _pendingPurchaseCallback;
+			_pendingPurchaseCallback = null;
+		}
 
-			lock (_callbackLock)
-			{
-				_pendingPurchaseCallback?.Invoke(new IAPPurchaseResult
-				{
-					Success = true,
-					ProductId = catalogProduct?.Id ?? sku,
-					TransactionId = orderId,
-					ReceiptToken = token
-				});
-				_pendingPurchaseCallback = null;
-			}
+		if (callback != null)
+		{
+			callback.Invoke(purchase);
+			return;
+		}
+
+		if (restored)
+		{
+			ReconcileRecoveredGooglePurchase(purchase);
 		}
 	}
 
-	private void OnGooglePurchaseError(int code, string message)
+	private void OnGooglePurchaseFailed(string message)
 	{
-		GD.PrintErr($"NativeIAPService: Google purchase error {code}: {message}");
+		GD.PrintErr($"NativeIAPService: Google purchase error: {message}");
 		lock (_callbackLock)
 		{
 			_pendingPurchaseCallback?.Invoke(new IAPPurchaseResult
 			{
 				Success = false,
-				ErrorMessage = $"Google Play error {code}: {message}"
+				ErrorMessage = message
 			});
 			_pendingPurchaseCallback = null;
 		}
 	}
 
-	private void OnGooglePurchaseAcknowledged(string token)
+	private void OnGoogleConsumeFinished(string token, bool success, string message)
 	{
-		GD.Print($"NativeIAPService: Google purchase acknowledged: {token}");
+		if (!success)
+		{
+			GD.PrintErr($"NativeIAPService: Google consumption failed: {message}");
+		}
 	}
 
-	private void OnGooglePurchaseConsumed(string token)
+	private void ReconcileRecoveredGooglePurchase(IAPPurchaseResult purchase)
 	{
-		GD.Print($"NativeIAPService: Google purchase consumed: {token}");
+		if (GameState.Instance == null ||
+			string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ||
+			string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken))
+		{
+			// Leave the transaction untouched. It will be returned by Play again
+			// once the player can authenticate to the commerce backend.
+			return;
+		}
+
+		var result = GameState.Instance.ValidatePurchaseWithServer(
+			purchase.ProductId,
+			"google",
+			purchase.ReceiptToken,
+			purchase.TransactionId);
+		if (result.Status == "ok")
+		{
+			GameState.Instance.TryApplyPurchaseReward(result);
+			ConfirmServerFulfillment(purchase);
+		}
+		else if (result.Status == "already_recorded")
+		{
+			// The backend grant survived but the app was interrupted before the
+			// local Play consumption call. Do not grant a second time.
+			ConfirmServerFulfillment(purchase);
+		}
 	}
 
 	private void TryInitializeApple()
@@ -354,7 +376,7 @@ public partial class NativeIAPService : Node
 		switch (Platform)
 		{
 			case IAPPlatform.Google:
-				_googleBilling?.Call("purchase", product.GoogleProductId);
+				_googleBridge?.Call("begin_purchase", product.GoogleProductId);
 				break;
 
 			case IAPPlatform.Apple:
@@ -379,6 +401,24 @@ public partial class NativeIAPService : Node
 	public IAPProductInfo GetCachedProductInfo(string productId)
 	{
 		return _productCache.TryGetValue(productId, out var info) ? info : null;
+	}
+
+	/// <summary>
+	/// Google consumables must not be consumed until the secure backend has accepted
+	/// and recorded the store transaction. Calling this before server fulfillment
+	/// would make a payment unrecoverable if validation fails or the app closes.
+	/// </summary>
+	public void ConfirmServerFulfillment(IAPPurchaseResult purchase)
+	{
+		if (purchase == null || string.IsNullOrWhiteSpace(purchase.ReceiptToken))
+		{
+			return;
+		}
+
+		if (Platform == IAPPlatform.Google)
+		{
+			_googleBridge?.Call("confirm_consumed", purchase.ReceiptToken);
+		}
 	}
 
 	public string GetLocalizedPrice(string productId)

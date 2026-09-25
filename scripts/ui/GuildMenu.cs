@@ -99,7 +99,7 @@ public partial class GuildMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
 	}
@@ -113,7 +113,7 @@ public partial class GuildMenu : Control
 
 		// Update title metrics
 		var titleRow = _titlePanel.GetChild<HBoxContainer>(0);
-		while (titleRow.GetChildCount() > 2) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		RealmUi.TrimChildren(titleRow, 2);
 		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("guild", hasGuild ? guild!.Name : "No Guild", new Vector2(24f, 24f)));
 		if (hasGuild)
 		{
@@ -207,17 +207,17 @@ public partial class GuildMenu : Control
 
 		if (!hasGuild)
 		{
-			var createBtn = new Button { Text = "Create Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var createBtn = new RealmButton { Text = "Create Guild", CustomMinimumSize = new Vector2(200f, 36f) };
 			createBtn.Pressed += OnCreateGuild;
 			_actionsStack.AddChild(createBtn);
 
-			var joinBtn = new Button { Text = "Join Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var joinBtn = new RealmButton { Text = "Join Guild", CustomMinimumSize = new Vector2(200f, 36f) };
 			joinBtn.Pressed += OnJoinGuild;
 			_actionsStack.AddChild(joinBtn);
 		}
 		else
 		{
-			var contributeBtn = new Button
+			var contributeBtn = new RealmButton
 			{
 				Text = $"Contribute ({ContributionGoldCost} Gold)",
 				CustomMinimumSize = new Vector2(200f, 36f),
@@ -227,7 +227,7 @@ public partial class GuildMenu : Control
 
 			_actionsStack.AddChild(new Label { Text = $"Adds {ContributionPointsGain} contribution + {ContributionGuildXpGain} guild XP" });
 
-			var leaveBtn = new Button { Text = "Leave Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var leaveBtn = new RealmButton { Text = "Leave Guild", CustomMinimumSize = new Vector2(200f, 36f) };
 			leaveBtn.Pressed += OnLeaveGuild;
 			_actionsStack.AddChild(leaveBtn);
 		}

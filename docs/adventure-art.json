@@ -1,0 +1,54 @@
+{
+  "generatedOn": "2026-09-07",
+  "assets": [
+    {
+      "id": "kingdom",
+      "path": "assets/map/adventure/kingdom_overworld.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: playable medieval fantasy adventure-map terrain background, wide landscape 3:2, high resolution. Create an original richly painted strategy-game overworld seen from a steep overhead three-quarter perspective, like a handcrafted miniature diorama. An explorable fallen kingdom: lush rolling green fields and amber dirt tracks in lower left, dense emerald forests, winding blue river with two stone bridges through center, small medieval villages, a windmill, ruined abbey, quarry and lonely watchtowers, rocky highlands and imposing castle in upper right, coastline and harbor on lower right. Readable broad land regions with open clearings throughout for game tokens placed by code. Connected winding roads across entire terrain, intricate charming tiny trees, shadows, masonry and rooftops; warm daylight and saturated moss greens, turquoise water, cream stone, autumn gold. Map fills image edge to edge, no sky, no horizon, no borders. No people or hero tokens, no labels, lettering, numbers, UI, fog overlays or watermark. Artistic personality and clear geography, original game art.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-dac29951-0a56-4150-97ef-e26a774a971b.png"
+    },
+    {
+      "id": "leaders",
+      "path": "assets/map/adventure/rival_leaders.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: portrait atlas for original medieval adventure game rival commanders. A precise 3 columns by 2 rows grid of six separate square bust portraits, equal cells, no margins or gutters. Each face fully within its own square, shoulders cropped at bottom, consistent warm oil-painted fantasy realism. Top left: scarred red-cloaked male brigand captain in battered mail; top middle: stern woman knight in polished dark armor with a steel circlet; top right: grey-bearded crusader marshal with weathered gold-trimmed helm. Bottom left: mysterious pale hooded plague abbess in moss-green robes; bottom middle: rugged dark-skinned warlord in fur and bronze armor; bottom right: ominous elderly pale necromancer king in black royal armor and iron crown. Individual faces distinct and memorable, medieval enemies with personality. Dark muted olive backgrounds, dramatic warm rim lighting, detailed painterly textures, readable small portraits. No text, numbers, frames, lettering, logos, weapons covering faces or watermarks.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-6772470d-5c59-4afe-a09e-0115f78d5f4e.png"
+    },
+    {
+      "id": "miniatures",
+      "path": "assets/map/adventure/landmark_miniatures.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: transparent miniature game-piece atlas for an original medieval fantasy adventure map. EXACT 3 columns by 2 rows of SIX isolated miniatures on genuinely transparent background, equal square cells, generous clear padding between miniatures. Each miniature complete, centered in its own cell, same steep overhead three-quarter isometric camera and painterly detailed fantasy-strategy style. Top left: open weathered oak treasury chest overflowing with gold coins. Top middle: small medieval wooden supply wagon with sacks, bread, barrels and a cream canvas cover. Top right: tall slender ruined stone watchtower, stairs and a fluttering gold pennant. Bottom left: ancient wayside stone shrine with a glowing teal brazier and mossy steps. Bottom middle: charming lantern caravan camp of two cream tents with a blue banner and campfire. Bottom right: mounted medieval hero in steel armor and a bright royal-blue cloak, on a chestnut horse facing northeast, carrying a tall blue pennant. Keep everything fully inside each cell, no overlap, no shared ground slab. Rich hand-painted green moss, warm stone, wood, gold and blue palette. Clear silhouettes, readable at small game sizes. No text, borders, labels, numbers, watermarks or opaque backdrops.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-0b35877a-8a41-41da-b60a-5cc3914ecd83.png"
+    },
+    {
+      "id": "coast",
+      "path": "assets/map/adventure/coast.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: original playable fantasy strategy adventure-map terrain background, wide 3:2 landscape, 1536 by 1024. A storm-worn coastal district: sea-green bays, medieval fishing villages, stone quays, stranded ships, crumbling coastal forts, sandy trails, inland grass and pine groves. At least 80 percent traversable land, water mostly at right edge. Rich painterly handcrafted miniature diorama viewed from a steep overhead three-quarter camera. Intricate small trees and buildings, varied convincing geography, warm readable sunlight, clear silhouettes, charming classic medieval strategy-game feel. Connected broad branching dirt trails traverse the entire landscape from lower left camp territory to upper right castle territory. Keep open areas for game pieces near lower-left, left-middle, upper-middle, center-right, and upper-right. Edge-to-edge terrain, no sky or horizon. No game tokens, people, heroes, UI, text, labels, fog, frames, border, or watermark.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-dcf68f88-9505-44c7-9e59-38112c4ae795.png"
+    },
+    {
+      "id": "ashlands",
+      "path": "assets/map/adventure/ashlands.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: original playable fantasy strategy adventure-map terrain background, wide 3:2 landscape, 1536 by 1024. An ember-forge district: warm ochre dry ground, rusty red cliffs, medieval smelters, charcoal kilns, quarries and a dark citadel; small orange lava cracks far along edges, dusty open paths winding between hills. No modern technology. Rich painterly handcrafted miniature diorama viewed from a steep overhead three-quarter camera. Intricate small trees and buildings, varied convincing geography, warm readable sunlight, clear silhouettes, charming classic medieval strategy-game feel. Connected broad branching dirt trails traverse the entire landscape from lower left camp territory to upper right castle territory. Keep open areas for game pieces near lower-left, left-middle, upper-middle, center-right, and upper-right. Edge-to-edge terrain, no sky or horizon. No game tokens, people, heroes, UI, text, labels, fog, frames, border, or watermark.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-776f4753-8c7b-486a-9716-c14c8e30e25b.png"
+    },
+    {
+      "id": "highlands",
+      "path": "assets/map/adventure/highlands.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: original playable fantasy strategy adventure-map terrain background, wide 3:2 landscape, 1536 by 1024. A mountain-pass district: cream snow patches, grey crags, dark pine forests, icy blue streams, medieval stone watch forts and cliff monasteries; broad open grassy valley roads through central and lower-left areas. Rich painterly handcrafted miniature diorama viewed from a steep overhead three-quarter camera. Intricate small trees and buildings, varied convincing geography, warm readable sunlight, clear silhouettes, charming classic medieval strategy-game feel. Connected broad branching dirt trails traverse the entire landscape from lower left camp territory to upper right castle territory. Keep open areas for game pieces near lower-left, left-middle, upper-middle, center-right, and upper-right. Edge-to-edge terrain, no sky or horizon. No game tokens, people, heroes, UI, text, labels, fog, frames, border, or watermark.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-d9854e68-ecf6-492d-8c45-4a1814580a2d.png"
+    },
+    {
+      "id": "marsh",
+      "path": "assets/map/adventure/marsh.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: original playable fantasy strategy adventure-map terrain background, wide 3:2 landscape, 1536 by 1024. A haunted woodland district: rich moss-green wetlands, turquoise bog pools, gnarled woodland groves, ruined stone shrines, small medieval hamlets, causeways, an abandoned abbey and a brooding castle. Many open clearings and traversable paths. Rich painterly handcrafted miniature diorama viewed from a steep overhead three-quarter camera. Intricate small trees and buildings, varied convincing geography, warm readable sunlight, clear silhouettes, charming classic medieval strategy-game feel. Connected broad branching dirt trails traverse the entire landscape from lower left camp territory to upper right castle territory. Keep open areas for game pieces near lower-left, left-middle, upper-middle, center-right, and upper-right. Edge-to-edge terrain, no sky or horizon. No game tokens, people, heroes, UI, text, labels, fog, frames, border, or watermark.",
+      "source": "/Users/jason/.codex/generated_images/01a0723c-1d7f-7850-8441-704a214a2f4c/exec-f1cd5994-5ebb-43b5-8a67-b6dfe0583dc4.png"
+    }
+  ]
+}

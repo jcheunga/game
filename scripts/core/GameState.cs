@@ -111,7 +111,7 @@ public partial class GameState : Node
 	public int PrestigeLevel { get; private set; }
 	public int PrestigeTotalGoldEarned { get; private set; }
 	public int PrestigeTotalStagesCleared { get; private set; }
-	public bool CanPrestige => HighestUnlockedStage >= MaxStage && PrestigeLevel < MaxPrestigeLevel;
+	public bool CanPrestige => GetStageStars(MaxStage) > 0 && PrestigeLevel < MaxPrestigeLevel;
 	public int BestBossRushWave { get; private set; }
 	public float BestBossRushTimeSeconds { get; private set; }
 	public int BossRushRuns { get; private set; }
@@ -119,6 +119,7 @@ public partial class GameState : Node
 	public string DifficultyId { get; private set; } = DefaultDifficultyId;
 	public int TotalPurchaseCount => _totalPurchaseCount;
 	public string PurchaseValidationEndpoint => _purchaseValidationEndpoint;
+	public bool IsReleaseBackendConfigured => ReleaseBackendConfiguration.IsConfigured;
 	public BattleRunMode CurrentBattleMode { get; private set; } = BattleRunMode.Campaign;
 	public IReadOnlyList<string> ActiveDeckUnitIds => _activeDeckUnitIds;
 	public IReadOnlyList<string> ActiveDeckSpellIds => _activeDeckSpellIds;
@@ -221,7 +222,7 @@ public partial class GameState : Node
 	public bool IsHardModeActive { get; private set; }
 	public int HardModeHighestCleared { get; private set; }
 	private readonly List<int> _hardModeStars = new();
-	public bool IsHardModeUnlocked => HighestUnlockedStage >= MaxStage || PrestigeLevel >= 1;
+	public bool IsHardModeUnlocked => GetStageStars(MaxStage) > 0 || PrestigeLevel >= 1;
 
 	// Enchantments
 	public int Essence { get; private set; }
@@ -349,7 +350,9 @@ public partial class GameState : Node
 
 	public void SetChallengeSyncProvider(string providerId)
 	{
-		ChallengeSyncProviderId = ChallengeSyncProviderCatalog.NormalizeId(providerId);
+		ChallengeSyncProviderId = IsReleaseBackendConfigured
+			? ChallengeSyncProviderCatalog.HttpApiId
+			: ChallengeSyncProviderCatalog.NormalizeId(providerId);
 		Persist();
 		ChallengeSyncService.Instance?.RefreshStatusFromState();
 		PlayerProfileSyncService.InvalidateFromState("Sync provider changed. Refresh profile sync when ready.");
@@ -357,7 +360,9 @@ public partial class GameState : Node
 
 	public void SetChallengeSyncEndpoint(string endpoint)
 	{
-		ChallengeSyncEndpoint = NormalizeChallengeSyncEndpoint(endpoint);
+		ChallengeSyncEndpoint = IsReleaseBackendConfigured
+			? ReleaseBackendConfiguration.ChallengeSyncEndpoint
+			: NormalizeChallengeSyncEndpoint(endpoint);
 		Persist();
 		ChallengeSyncService.Instance?.RefreshStatusFromState();
 		PlayerProfileSyncService.InvalidateFromState("Sync endpoint changed. Refresh profile sync when ready.");
@@ -383,7 +388,7 @@ public partial class GameState : Node
 
 	public void SetChallengeSyncAutoFlush(bool enabled)
 	{
-		ChallengeSyncAutoFlush = enabled;
+		ChallengeSyncAutoFlush = IsReleaseBackendConfigured || enabled;
 		Persist();
 		ChallengeSyncService.Instance?.RefreshStatusFromState();
 	}
@@ -396,7 +401,7 @@ public partial class GameState : Node
 	public bool HasCampaignScoutBonus(int stage)
 	{
 		return stage >= 1 &&
-			stage <= HighestUnlockedStage &&
+			IsCampaignStageUnlocked(stage) &&
 			GetStageStars(stage) <= 0;
 	}
 
@@ -423,7 +428,7 @@ public partial class GameState : Node
 
 	public string BuildCampaignScoutStatusText(int stage)
 	{
-		if (stage < 1 || stage > HighestUnlockedStage)
+		if (!IsCampaignStageUnlocked(stage))
 		{
 			return "Scout report: unavailable until this route is explored.";
 		}
@@ -949,7 +954,7 @@ public partial class GameState : Node
 	public bool IsCampaignDirectiveUnlocked(int stage)
 	{
 		return stage >= 1 &&
-			stage <= HighestUnlockedStage &&
+			IsCampaignStageUnlocked(stage) &&
 			GetStageStars(stage) > 0 &&
 			GetCampaignDirective(stage) != null;
 	}
@@ -1230,14 +1235,17 @@ public partial class GameState : Node
 		Food += rewardFood;
 		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
 		var bestStars = RecordStageStars(stage, starsEarned);
+		var progressionRewardSummary = ClaimCampaignProgressionRewards(stage, starsEarned);
+		if (CurrentBattleMode == BattleRunMode.Campaign) UnlockNextStageInternal(stage);
 		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
 		var directiveRewardSummary = TryClaimCampaignDirectiveReward(stage);
 		var scoutRewardSummary = TryClaimCampaignScoutCache(firstClear, starsEarned);
 		var momentumSummary = UpdateCampaignMomentumAfterVictory(starsEarned);
-		var extraRewardSummary = BuildCombinedCampaignBonusSummary(districtRewardSummary, directiveRewardSummary, scoutRewardSummary, momentumSummary);
-		var nextStageHint = stage < MaxStage
-			? $" Explore stage {stage + 1} for {GetStageExploreFoodCost(stage + 1)} food when the caravan is ready."
-			: "";
+		var extraRewardSummary = BuildCombinedCampaignBonusSummary(progressionRewardSummary, districtRewardSummary, directiveRewardSummary, scoutRewardSummary, momentumSummary);
+		var boss = GameData.GetStagesForMap(GameData.GetStage(stage).MapId).Max(x => x.StageNumber);
+		var nextStageHint = GetAdventureBossRemainingLeaders(boss) == 0 && GetStageStars(boss) == 0
+			? " The district boss gate is open. Challenge its ruler when you are ready."
+			: " Explore freely or challenge another leader when you are ready.";
 		LastResultMessage =
 			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3." +
 			(string.IsNullOrWhiteSpace(extraRewardSummary) ? "" : $" {extraRewardSummary}") +
@@ -1910,6 +1918,8 @@ public partial class GameState : Node
 		var keepMutatorBattles = MutatorBattlesCompleted;
 
 		// Reset campaign state
+		ResetAdventureProgress();
+		ResetProgressionRewards();
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
 		Gold = prestigeGold;
@@ -2704,6 +2714,12 @@ public partial class GameState : Node
 		var level = GetBaseUpgradeLevel(upgradeId);
 		return upgradeId switch
 		{
+			BaseUpgradeCatalog.ArcherCrewId => 85 + (level * 65),
+			BaseUpgradeCatalog.BallistaId => 150 + (level * 85),
+			BaseUpgradeCatalog.FirepotId => 160 + (level * 85),
+			BaseUpgradeCatalog.ArrowVolleyId => 130 + (level * 75),
+			BaseUpgradeCatalog.EmergencyRepairId => 120 + (level * 70),
+			BaseUpgradeCatalog.ReinforcedArmorId => 100 + (level * 75),
 			BaseUpgradeCatalog.HullPlatingId => 90 + (level * 70),
 			BaseUpgradeCatalog.PantryId => 80 + (level * 65),
 			BaseUpgradeCatalog.DispatchConsoleId => 95 + (level * 75),
@@ -4723,9 +4739,11 @@ public partial class GameState : Node
 			return false;
 		}
 
-		if (stage < 1 || stage > HighestUnlockedStage)
+		if (!IsCampaignStageUnlocked(stage))
 		{
-			message = "Explore this route segment before deploying there.";
+			message = stage >= 1 && stage <= MaxStage && IsAdventureBoss(stage)
+				? $"Boss gate sealed: defeat {GetAdventureBossRemainingLeaders(stage)} more leaders in this district."
+				: "This encounter is unavailable.";
 			return false;
 		}
 
@@ -4762,57 +4780,17 @@ public partial class GameState : Node
 
 	public bool CanExploreNextStage(out StageDefinition nextStage, out string message)
 	{
-		if (HighestUnlockedStage >= MaxStage)
-		{
-			nextStage = GameData.GetStage(MaxStage);
-			message = "All route segments are already explored.";
-			return false;
-		}
-
-		nextStage = GameData.GetStage(HighestUnlockedStage + 1);
-		var foodCost = GetStageExploreFoodCost(nextStage.StageNumber);
-		if (Food < foodCost)
-		{
-			message = $"Need {foodCost} food to explore stage {nextStage.StageNumber}.";
-			return false;
-		}
-
-		message = $"Explore stage {nextStage.StageNumber} for {foodCost} food.";
-		return true;
+		nextStage = GameData.Stages.FirstOrDefault(x => IsCampaignStageUnlocked(x.StageNumber) && GetStageStars(x.StageNumber) == 0);
+		message = nextStage == null ? "Every leader has been defeated. You can replay any encounter." : "Explore freely and challenge leaders in any order. Travel is free.";
+		return nextStage != null;
 	}
 
 	public bool TryExploreNextStage(out string message)
 	{
-		if (!CanExploreNextStage(out var nextStage, out message))
-		{
-			return false;
-		}
-
-		var previousHighestUnlockedStage = HighestUnlockedStage;
-		var foodCost = GetStageExploreFoodCost(nextStage.StageNumber);
-		Food -= foodCost;
-		HighestUnlockedStage = nextStage.StageNumber;
+		if (!CanExploreNextStage(out var nextStage, out message)) return false;
 		SelectedStage = nextStage.StageNumber;
-		var newlyAvailableUnits = GetNewlyAvailablePlayerUnits(previousHighestUnlockedStage);
-		var newlyAvailableSpells = GetNewlyAvailablePlayerSpells(previousHighestUnlockedStage);
-		var availabilityParts = new List<string>();
-		if (newlyAvailableUnits.Count > 0)
-		{
-			availabilityParts.Add($"New shop unit available: {string.Join(", ", newlyAvailableUnits.Select(unit => unit.DisplayName))}.");
-		}
-
-		if (newlyAvailableSpells.Count > 0)
-		{
-			availabilityParts.Add($"New spell archive unlocked: {string.Join(", ", newlyAvailableSpells.Select(spell => spell.DisplayName))}.");
-		}
-
-		var availabilitySuffix = availabilityParts.Count > 0
-			? $" {string.Join(" ", availabilityParts)}"
-			: "";
-		LastResultMessage =
-			$"Explored {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}. -{foodCost} food.{availabilitySuffix}";
+		LastResultMessage = message;
 		Persist();
-		message = LastResultMessage;
 		return true;
 	}
 
@@ -4998,6 +4976,7 @@ public partial class GameState : Node
 			ApplyDefaults();
 		}
 
+		ApplyReleaseBackendConfiguration();
 		ClampState();
 		Locale.SetLanguage(Language);
 		MusicPlayer.Instance?.SetVolumeScale(MusicVolumePercent / 100f);
@@ -5009,8 +4988,10 @@ public partial class GameState : Node
 
 	private void ApplyDefaults()
 	{
+		ResetProgressionRewards();
 		Gold = DefaultGold;
 		Food = DefaultFood;
+		ResetAdventureProgress();
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
 		SelectedAsyncChallengeCode = DefaultAsyncChallengeCode;
@@ -5167,9 +5148,11 @@ public partial class GameState : Node
 
 	private void ApplySavedData(GameSaveData saved)
 	{
+		LoadProgressionRewards(saved);
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		HighestUnlockedStage = saved.HighestUnlockedStage;
+		LoadAdventureProgress(saved);
 		SelectedStage = saved.SelectedStage;
 		SelectedAsyncChallengeCode = saved.Version >= 9
 			? AsyncChallengeCatalog.NormalizeCode(saved.SelectedAsyncChallengeCode)
@@ -5900,9 +5883,9 @@ public partial class GameState : Node
 		{
 			SelectedStage = 1;
 		}
-		else if (SelectedStage > HighestUnlockedStage)
+		else if (SelectedStage > MaxStage)
 		{
-			SelectedStage = HighestUnlockedStage;
+			SelectedStage = MaxStage;
 		}
 
 		NormalizeOwnedUnits();
@@ -5961,6 +5944,10 @@ public partial class GameState : Node
 			Gold = Gold,
 			Food = Food,
 			HighestUnlockedStage = HighestUnlockedStage,
+			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
+			AdventureHeroNodes = new Dictionary<string, string>(_adventureHeroNodes),
+			AdventureHeroPositions = _adventureHeroPositions.ToDictionary(x => x.Key, x => new[] { x.Value.X, x.Value.Y }),
+			AdventureExploredCells = _adventureExploredCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
 			SelectedStage = SelectedStage,
 			SelectedAsyncChallengeCode = SelectedAsyncChallengeCode,
 			SelectedAsyncChallengeLockedDeckUnitIds = _selectedAsyncChallengeLockedDeckUnitIds.ToArray(),
@@ -5996,6 +5983,8 @@ public partial class GameState : Node
 			OwnedPlayerUnitIds = _ownedPlayerUnitIds.ToArray(),
 			OwnedPlayerSpellIds = _ownedPlayerSpellIds.ToArray(),
 			StageStars = _stageStars.ToArray(),
+			ClaimedProgressionMilestones = _claimedProgressionMilestones.OrderBy(x => x).ToArray(),
+			ClaimedStageMasteryRewards = _claimedStageMasteryRewards.OrderBy(x => x).ToArray(),
 			UnitLevels = new Dictionary<string, int>(_unitUpgradeLevels),
 			SpellLevels = new Dictionary<string, int>(_spellUpgradeLevels),
 			BaseUpgradeLevels = new Dictionary<string, int>(_baseUpgradeLevels),
@@ -7269,20 +7258,6 @@ public partial class GameState : Node
 			challenge.Seed).Code;
 	}
 
-	private IReadOnlyList<UnitDefinition> GetNewlyAvailablePlayerUnits(int previousHighestUnlockedStage)
-	{
-		return GameData.GetPlayerUnits()
-			.Where(unit => unit.UnlockStage > previousHighestUnlockedStage && unit.UnlockStage <= HighestUnlockedStage)
-			.ToArray();
-	}
-
-	private IReadOnlyList<SpellDefinition> GetNewlyAvailablePlayerSpells(int previousHighestUnlockedStage)
-	{
-		return GameData.GetPlayerSpells()
-			.Where(spell => spell.UnlockStage > previousHighestUnlockedStage && spell.UnlockStage <= HighestUnlockedStage)
-			.ToArray();
-	}
-
 	private void Persist()
 	{
 		SaveSystem.Instance?.Save(BuildSaveData());
@@ -7359,8 +7334,23 @@ public partial class GameState : Node
 
 	public void SetPurchaseValidationEndpoint(string endpoint)
 	{
-		_purchaseValidationEndpoint = endpoint?.Trim() ?? "";
+		_purchaseValidationEndpoint = IsReleaseBackendConfigured
+			? ReleaseBackendConfiguration.ApiBaseUrl
+			: endpoint?.Trim() ?? "";
 		Persist();
+	}
+
+	private void ApplyReleaseBackendConfiguration()
+	{
+		if (!IsReleaseBackendConfigured)
+		{
+			return;
+		}
+
+		ChallengeSyncProviderId = ChallengeSyncProviderCatalog.HttpApiId;
+		ChallengeSyncEndpoint = ReleaseBackendConfiguration.ChallengeSyncEndpoint;
+		ChallengeSyncAutoFlush = true;
+		_purchaseValidationEndpoint = ReleaseBackendConfiguration.ApiBaseUrl;
 	}
 
 	public bool TryApplyPurchaseReward(PurchaseValidationResult result)

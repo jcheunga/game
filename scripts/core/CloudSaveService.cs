@@ -78,7 +78,7 @@ public static class CloudSaveService
 			var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/cloud-save/upload");
-			msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
 			using var response = Client.Send(msg);
@@ -130,7 +130,7 @@ public static class CloudSaveService
 		{
 			using var msg = new HttpRequestMessage(HttpMethod.Get,
 				$"{endpoint.TrimEnd('/')}/cloud-save/download?profileId={Uri.EscapeDataString(profileId)}");
-			msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+			PlayerSessionHttp.Apply(msg, profileId);
 
 			using var response = Client.Send(msg);
 			var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -203,7 +203,7 @@ public static class CloudSaveService
 		{
 			using var msg = new HttpRequestMessage(HttpMethod.Get,
 				$"{endpoint.TrimEnd('/')}/cloud-save/info?profileId={Uri.EscapeDataString(profileId)}");
-			msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+			PlayerSessionHttp.Apply(msg, profileId);
 
 			using var response = Client.Send(msg);
 			var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();

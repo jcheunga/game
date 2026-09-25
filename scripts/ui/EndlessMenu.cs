@@ -98,6 +98,8 @@ public partial class EndlessMenu : Control
 
         var missionStack = new VBoxContainer();
         missionStack.AddThemeConstantOverride("separation", 12);
+        missionStack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        missionScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         missionScroll.AddChild(missionStack);
 
         missionStack.AddChild(new Label
@@ -179,6 +181,10 @@ public partial class EndlessMenu : Control
         _historyStack = new VBoxContainer();
         _historyStack.AddThemeConstantOverride("separation", 4);
         missionStack.AddChild(_historyStack);
+        _historyStack.Visible = false;
+        _rulesLabel.Visible = false;
+        missionStack.AddChild(RealmUi.Button("book", "Field guide", () => RealmUi.Details(this, "Endless march", _routeSummaryLabel.TooltipText + "\n\n" + _rulesLabel.Text)));
+        missionStack.AddChild(RealmUi.Button("clock", "Run history", () => RealmUi.Details(this, "Run history", string.Join("\n", _historyStack.GetChildren().OfType<Label>().Select(x => x.Text)))));
 
         var squadPanel = new PanelContainer
         {
@@ -204,6 +210,8 @@ public partial class EndlessMenu : Control
 
         _squadStack = new VBoxContainer();
         _squadStack.AddThemeConstantOverride("separation", 12);
+        _squadStack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        squadScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         squadScroll.AddChild(_squadStack);
 
         var bottomPanel = new PanelContainer
@@ -218,7 +226,7 @@ public partial class EndlessMenu : Control
         bottomRow.AddThemeConstantOverride("separation", 12);
         bottomPanel.AddChild(bottomRow);
 
-        var backButton = new Button
+        var backButton = new RealmButton
         {
             Text = "Back To Title",
             CustomMinimumSize = new Vector2(180f, 0f)
@@ -226,7 +234,7 @@ public partial class EndlessMenu : Control
         backButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
         bottomRow.AddChild(backButton);
 
-        var editSquadButton = new Button
+        var editSquadButton = new RealmButton
         {
             Text = "Caravan Armory",
             CustomMinimumSize = new Vector2(220f, 0f)
@@ -234,7 +242,7 @@ public partial class EndlessMenu : Control
         editSquadButton.Pressed += () => SceneRouter.Instance.GoToShop();
         bottomRow.AddChild(editSquadButton);
 
-        var settingsButton = new Button
+        var settingsButton = new RealmButton
         {
             Text = "Settings",
             CustomMinimumSize = new Vector2(150f, 0f)
@@ -247,7 +255,7 @@ public partial class EndlessMenu : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         });
 
-        _deployButton = new Button
+        _deployButton = new RealmButton
         {
             Text = "Start Endless Run",
             CustomMinimumSize = new Vector2(240f, 0f)
@@ -278,11 +286,9 @@ public partial class EndlessMenu : Control
             $"{bossCheckpoint.Summary}\n" +
             $"{bossCheckpoint.RewardSummary}\n\n" +
             $"Opening boon: {selectedBoon.Title}\n{selectedBoon.Summary}";
-        _recordLabel.Text =
-            $"Run record:\n" +
-            $"Best wave: {GameState.Instance.BestEndlessWave}\n" +
-            $"Best survival: {GameState.Instance.BestEndlessTimeSeconds:0.0}s\n" +
-            $"Runs completed: {GameState.Instance.EndlessRuns}";
+        _routeSummaryLabel.TooltipText = _routeSummaryLabel.Text;
+        _routeSummaryLabel.Text = $"{BuildRouteDescription(_selectedRouteId)}\n\n{selectedBoon.Summary}";
+        _recordLabel.Text = $"Best wave {GameState.Instance.BestEndlessWave}   ·   {GameState.Instance.EndlessRuns} runs";
         _rulesLabel.Text =
             $"Run rules:\n" +
             "- Waves scale up continuously.\n" +
@@ -359,128 +365,23 @@ public partial class EndlessMenu : Control
 
     private void RebuildSquadPanels()
     {
-        foreach (var child in _squadStack.GetChildren())
+        RealmUi.Clear(_squadStack);
+        _squadStack.AddChild(RealmUi.Heading("Your warband", 28));
+        var cards = new HBoxContainer(); _squadStack.AddChild(cards);
+        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
         {
-            child.QueueFree();
+            var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            cards.AddChild(card);
+            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(150, 170)));
+            card.AddChild(RealmUi.Label(unit.DisplayName, 17));
+            card.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)} · {unit.Cost} courage", 13, true));
         }
-
-        _squadStack.AddChild(new Label
-        {
-            Text = $"Active Squad ({GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit})"
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = GameState.Instance.BuildActiveDeckSynergySummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        foreach (var definition in GameState.Instance.GetActiveDeckUnits())
-        {
-            _squadStack.AddChild(BuildUnitPanel(definition));
-        }
-
-        _squadStack.AddChild(new Label
-        {
-            Text = $"Active Magic ({GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit})"
-        });
-
-        _squadStack.AddChild(new Label
-        {
-            Text = GameState.Instance.BuildActiveSpellSummary(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
+        _squadStack.AddChild(RealmUi.Label(GameState.Instance.BuildActiveDeckSynergyInlineSummary(), 14, true));
+        var spells = new HBoxContainer(); _squadStack.AddChild(spells);
         foreach (var spell in GameState.Instance.GetActiveDeckSpells())
-        {
-            _squadStack.AddChild(BuildSpellPanel(spell));
-        }
-
-        _deckStatusLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        _squadStack.AddChild(_deckStatusLabel);
-    }
-
-    private Control BuildUnitPanel(UnitDefinition definition)
-    {
-        var stats = GameState.Instance.BuildPlayerUnitStats(definition);
-        var deployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(definition.DeployCooldown);
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(0f, 116f)
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 12);
-        padding.AddThemeConstantOverride("margin_bottom", 12);
-        panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateUnitBadge(definition, new Vector2(72f, 72f)));
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
-                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}  |  " +
-                $"{GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}"
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Base {stats.BaseDamage}",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
-                UnitStatText.BuildInlineTraits(stats),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        return panel;
-    }
-
-    private Control BuildSpellPanel(SpellDefinition spell)
-    {
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(0f, 92f),
-            SelfModulate = spell.GetTint().Darkened(0.08f)
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 10);
-        padding.AddThemeConstantOverride("margin_bottom", 10);
-        panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateSpellBadge(spell, new Vector2(60f, 60f)),
-            stackSpacing: 6);
-
-        stack.AddChild(new Label
-        {
-            Text = spell.DisplayName
-        });
-
-        stack.AddChild(new Label
-        {
-            Text = SpellText.BuildInlineSummary(spell),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        return panel;
+            spells.AddChild(RealmUi.Button("bolt", spell.DisplayName, () => RealmUi.Details(this, spell.DisplayName, SpellText.BuildInlineSummary(spell))));
+        _squadStack.AddChild(RealmUi.Button("sword", "Edit warband", () => SceneRouter.Instance.GoToShop()));
+        _deckStatusLabel = RealmUi.Label("", 14, true); _squadStack.AddChild(_deckStatusLabel);
     }
 
     private void OnRouteSelected(long index)

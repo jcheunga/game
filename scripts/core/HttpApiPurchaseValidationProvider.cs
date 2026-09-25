@@ -93,7 +93,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/purchase/validate");
-		message.Headers.TryAddWithoutValidation("X-Convoy-Profile", request.PlayerProfileId);
+		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
 		using var response = Client.Send(message);
@@ -126,7 +126,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		}
 
 		using var message = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/purchase/history?profileId={Uri.EscapeDataString(profileId)}");
-		message.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+		PlayerSessionHttp.Apply(message, profileId);
 
 		using var response = Client.Send(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -174,7 +174,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/purchase/stripe-checkout");
-		message.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+		PlayerSessionHttp.Apply(message, profileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
 		using var response = Client.Send(message);

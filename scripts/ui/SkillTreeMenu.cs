@@ -98,7 +98,7 @@ public partial class SkillTreeMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var armoryBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryBtn);
 	}
@@ -162,7 +162,7 @@ public partial class SkillTreeMenu : Control
 				label.AddThemeColorOverride("font_color", new Color("4ade80"));
 			row.AddChild(label);
 
-			var btn = new Button { Text = "View", CustomMinimumSize = new Vector2(60f, 0f) };
+			var btn = new RealmButton { Text = "View", CustomMinimumSize = new Vector2(60f, 0f) };
 			btn.Pressed += () =>
 			{
 				_selectedUnitId = capturedId;
@@ -304,7 +304,7 @@ public partial class SkillTreeMenu : Control
 					}
 				}
 
-				var unlockBtn = new Button
+				var unlockBtn = new RealmButton
 				{
 					Text = !prereqsMet ? "Prereqs Not Met" : (!canAfford ? "Can't Afford" : "Unlock"),
 					CustomMinimumSize = new Vector2(120f, 0f),

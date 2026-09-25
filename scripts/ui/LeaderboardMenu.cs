@@ -65,27 +65,28 @@ public partial class LeaderboardMenu : Control
 		_tabPanel = new PanelContainer { Position = new Vector2(24f, 112f), Size = new Vector2(1232f, 48f) };
 		AddChild(_tabPanel);
 		var tabRow = new HBoxContainer();
+        tabRow.SetMeta("realm_tabs", true);
 		tabRow.AddThemeConstantOverride("separation", 8);
 		_tabPanel.AddChild(tabRow);
 
-		_arenaTabBtn = new Button { Text = "Arena", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_arenaTabBtn = new RealmButton { Text = "Arena", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_arenaTabBtn.Pressed += () => SwitchTab(Tab.Arena);
 		tabRow.AddChild(_arenaTabBtn);
 
-		_towerTabBtn = new Button { Text = "Tower", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_towerTabBtn = new RealmButton { Text = "Tower", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_towerTabBtn.Pressed += () => SwitchTab(Tab.Tower);
 		tabRow.AddChild(_towerTabBtn);
 
-		_endlessTabBtn = new Button { Text = "Endless", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_endlessTabBtn = new RealmButton { Text = "Endless", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_endlessTabBtn.Pressed += () => SwitchTab(Tab.Endless);
 		tabRow.AddChild(_endlessTabBtn);
 
-		_dailyTabBtn = new Button { Text = "Daily", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_dailyTabBtn = new RealmButton { Text = "Daily", CustomMinimumSize = new Vector2(140f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_dailyTabBtn.Pressed += () => SwitchTab(Tab.Daily);
 		tabRow.AddChild(_dailyTabBtn);
 
 		// Content panel
-		_contentPanel = new PanelContainer { Position = new Vector2(24f, 170f), Size = new Vector2(1232f, 432f) };
+		_contentPanel = new PanelContainer { Position = new Vector2(24f, 198f), Size = new Vector2(1232f, 404f) };
 		AddChild(_contentPanel);
 		var contentOuter = new MarginContainer();
 		contentOuter.AddThemeConstantOverride("margin_left", 16);
@@ -108,10 +109,10 @@ public partial class LeaderboardMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mainMenuBtn = new Button { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mainMenuBtn = new RealmButton { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
 		mainMenuBtn.Pressed += () => SceneRouter.Instance.GoToMainMenu();
 		bottomRow.AddChild(mainMenuBtn);
-		var profileBtn = new Button { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
+		var profileBtn = new RealmButton { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
 		profileBtn.Pressed += () => SceneRouter.Instance.GoToProfile();
 		bottomRow.AddChild(profileBtn);
 	}

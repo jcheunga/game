@@ -5,13 +5,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>CrownroadServer</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);SQLITE_TEST</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\scripts\core\AssetCoverageCatalog.cs" Link="AssetCoverageCatalog.cs" />
     <Compile Include="..\scripts\core\CodexCatalog.cs" Link="CodexCatalog.cs" />
     <Compile Include="..\scripts\tests\DataIntegrityValidator.cs" Link="DataIntegrityValidator.cs" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0-*" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0-*" />
     <PackageReference Include="Stripe.net" Version="50.4.1" />
   </ItemGroup>

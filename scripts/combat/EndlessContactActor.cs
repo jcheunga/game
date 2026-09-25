@@ -30,11 +30,19 @@ public partial class EndlessContactActor : Node2D
 
     public void UpdateState(float progressRatio, bool playerInside, bool enemyInside, bool completed, bool failed)
     {
+        var newlyResolved = !_completed && !_failed && (completed || failed);
         _progressRatio = Mathf.Clamp(progressRatio, 0f, 1f);
         _playerInside = playerInside;
         _enemyInside = enemyInside;
         _completed = completed;
         _failed = failed;
+        if (newlyResolved)
+        {
+            // Keep the outcome visible briefly, then clear the fighting space.
+            var fade = CreateTween();
+            fade.TweenInterval(1.5);
+            fade.TweenProperty(this, "modulate:a", 0f, 0.6);
+        }
         QueueRedraw();
     }
 

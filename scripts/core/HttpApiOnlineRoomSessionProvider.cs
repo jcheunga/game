@@ -42,24 +42,13 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 			throw new InvalidOperationException("HTTP room-session endpoint is not configured.");
 		}
 
-		var requestBody = new
-		{
-			session = new
-			{
-				roomId = ticket.RoomId,
-				boardCode = ticket.BoardCode,
-				ticketId = ticket.TicketId,
-				joinToken = ticket.JoinToken,
-				playerCallsign = GameState.Instance?.PlayerCallsign ?? "Lantern",
-				playerProfileId = GameState.Instance?.PlayerProfileId ?? ""
-			}
-		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var profileId = GameState.Instance?.PlayerProfileId ?? "";
+		var separator = _endpointUrl.Contains('?') ? "&" : "?";
+		var requestUrl = $"{_endpointUrl}{separator}roomId={Uri.EscapeDataString(ticket.RoomId)}";
 
-		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
-		message.Headers.TryAddWithoutValidation("X-Convoy-Profile", GameState.Instance?.PlayerProfileId ?? "");
+		using var message = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+		PlayerSessionHttp.Apply(message, profileId);
 		message.Headers.TryAddWithoutValidation("X-Join-Ticket", ticket.TicketId);
-		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
 		using var response = Client.Send(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();

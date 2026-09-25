@@ -48,6 +48,53 @@ public static class PlayerProfileSyncService
 		}
 	}
 
+	public static bool RefreshProfileForBackendEndpoint(string backendEndpoint, out string message)
+	{
+		var gameState = GameState.Instance;
+		if (gameState == null)
+		{
+			message = "Game state is unavailable.";
+			_lastStatus = message;
+			return false;
+		}
+
+		var baseUrl = backendEndpoint?.TrimEnd('/') ?? "";
+		if (string.IsNullOrWhiteSpace(baseUrl))
+		{
+			message = "Server endpoint is not configured.";
+			_lastStatus = message;
+			return false;
+		}
+
+		var request = new PlayerProfileSyncRequest
+		{
+			PlayerProfileId = gameState.PlayerProfileId,
+			PlayerCallsign = gameState.PlayerCallsign,
+			SyncProviderId = ChallengeSyncProviderCatalog.HttpApiId,
+			RequestedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+		};
+
+		try
+		{
+			var provider = new HttpApiPlayerProfileSyncProvider(baseUrl + "/player-profile");
+			_cachedSnapshot = NormalizeSnapshot(provider.SyncProfile(request), request);
+			_lastStatus = $"{provider.DisplayName}: {_cachedSnapshot.Summary}";
+			gameState.ApplyPlayerProfileSession(
+				_cachedSnapshot.PlayerProfileId,
+				_cachedSnapshot.PlayerCallsign,
+				_cachedSnapshot.SessionToken,
+				_cachedSnapshot.SyncedAtUnixSeconds);
+			message = "Secure player session refreshed.";
+			return true;
+		}
+		catch (Exception ex)
+		{
+			_lastStatus = $"Store session failed: {ex.Message}";
+			message = _lastStatus;
+			return false;
+		}
+	}
+
 	public static PlayerProfileSyncSnapshot GetCachedSnapshot()
 	{
 		return _cachedSnapshot;

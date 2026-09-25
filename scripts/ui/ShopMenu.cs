@@ -88,277 +88,65 @@ public partial class ShopMenu : Control
         }
     }
 
+    private VBoxContainer _unitDetail;
+    private string _selectedRosterId = "";
+    private bool _showSpells;
+    private int _rosterPage;
+
     private void BuildUi()
     {
-        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
-        var route = RouteCatalog.Get(stage.MapId);
-        _menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(this, "shop", route.BackgroundTop, route.BackgroundBottom, route.BannerAccent, 104f, route.Id);
+        var route = RouteCatalog.Get(GameData.GetStage(GameState.Instance.SelectedStage).MapId);
+        _menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(this, "shop", route.BackgroundTop, route.BackgroundBottom, route.BannerAccent, 92, route.Id);
         _backgroundTop = _menuBackdrop.PrimaryRect;
         _backgroundBottom = _menuBackdrop.SecondaryRect;
         _accentBand = _menuBackdrop.AccentBand;
-
-        _titlePanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 20f),
-            Size = new Vector2(1232f, 82f)
-        };
-        AddChild(_titlePanel);
-
+        var header = RealmUi.Panel(this, new Rect2(28, 20, 1224, 72), out _titlePanel);
         var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", 16);
-        _titlePanel.AddChild(titleRow);
-
-        titleRow.AddChild(new Label
-        {
-            Text = "Caravan Armory",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
+        header.AddChild(titleRow);
+        titleRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
+        titleRow.AddChild(RealmUi.Heading("The armory", 28));
         _resourcesRow = new HBoxContainer();
-        _resourcesRow.AddThemeConstantOverride("separation", 12);
         titleRow.AddChild(_resourcesRow);
-
-        _summaryPanel = new PanelContainer
+        titleRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
+        var tabsHost = new VBoxContainer { Position = new Vector2(28, 104), Size = new Vector2(1224, 44) };
+        AddChild(tabsHost);
+        RealmUi.Tabs(tabsHost, index =>
         {
-            Position = new Vector2(24f, 122f),
-            Size = new Vector2(360f, 520f)
-        };
-        AddChild(_summaryPanel);
+            _unitsPanel.Visible = index < 2;
+            _basePanel.Visible = index == 2;
+            _relicsPanel.Visible = index == 3;
+            _summaryPanel.Visible = index == 4;
+            if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; _rosterPage = 0; RebuildUnitPanels(); }
+        }, "Warband", "Battle rites", "War wagon", "Relics", "Adviser");
 
-        var summaryPadding = new MarginContainer();
-        summaryPadding.AddThemeConstantOverride("margin_left", 18);
-        summaryPadding.AddThemeConstantOverride("margin_right", 18);
-        summaryPadding.AddThemeConstantOverride("margin_top", 18);
-        summaryPadding.AddThemeConstantOverride("margin_bottom", 18);
-        _summaryPanel.AddChild(summaryPadding);
-
-        var summaryScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        summaryPadding.AddChild(summaryScroll);
-
-        var summaryStack = new VBoxContainer();
-        summaryStack.AddThemeConstantOverride("separation", 12);
-        summaryScroll.AddChild(summaryStack);
-
-        summaryStack.AddChild(new Label
-        {
-            Text = "Economy"
-        });
-
-        _summaryLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 140f)
-        };
-        summaryStack.AddChild(_summaryLabel);
-
-        summaryStack.AddChild(new Label
-        {
-            Text = "Active Squad"
-        });
-
-        _deckLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 110f)
-        };
-        summaryStack.AddChild(_deckLabel);
-
-        summaryStack.AddChild(new Label
-        {
-            Text = "Route Intel"
-        });
-
-        _routeIntelLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 150f)
-        };
-        summaryStack.AddChild(_routeIntelLabel);
-
-        summaryStack.AddChild(new Label
-        {
-            Text = "Action Board"
-        });
-
-        _recommendationStack = new VBoxContainer();
-        _recommendationStack.AddThemeConstantOverride("separation", 10);
-        summaryStack.AddChild(_recommendationStack);
-
-        _statusLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 92f)
-        };
-        summaryStack.AddChild(_statusLabel);
-
-        _unitsPanel = new PanelContainer
-        {
-            Position = new Vector2(400f, 122f),
-            Size = new Vector2(380f, 520f)
-        };
-        AddChild(_unitsPanel);
-
-        var unitsPadding = new MarginContainer();
-        unitsPadding.AddThemeConstantOverride("margin_left", 18);
-        unitsPadding.AddThemeConstantOverride("margin_right", 18);
-        unitsPadding.AddThemeConstantOverride("margin_top", 18);
-        unitsPadding.AddThemeConstantOverride("margin_bottom", 18);
-        _unitsPanel.AddChild(unitsPadding);
-
-        var unitsScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        unitsPadding.AddChild(unitsScroll);
-
-        _unitStack = new VBoxContainer();
-        _unitStack.AddThemeConstantOverride("separation", 12);
-        unitsScroll.AddChild(_unitStack);
-
-        _basePanel = new PanelContainer
-        {
-            Position = new Vector2(796f, 122f),
-            Size = new Vector2(220f, 520f)
-        };
-        AddChild(_basePanel);
-
-        var basePadding = new MarginContainer();
-        basePadding.AddThemeConstantOverride("margin_left", 18);
-        basePadding.AddThemeConstantOverride("margin_right", 18);
-        basePadding.AddThemeConstantOverride("margin_top", 18);
-        basePadding.AddThemeConstantOverride("margin_bottom", 18);
-        _basePanel.AddChild(basePadding);
-
-        var baseScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        basePadding.AddChild(baseScroll);
-
-        _baseStack = new VBoxContainer();
-        _baseStack.AddThemeConstantOverride("separation", 12);
-        baseScroll.AddChild(_baseStack);
-
-        _relicsPanel = new PanelContainer
-        {
-            Position = new Vector2(1032f, 122f),
-            Size = new Vector2(224f, 520f)
-        };
-        AddChild(_relicsPanel);
-
-        var relicsPadding = new MarginContainer();
-        relicsPadding.AddThemeConstantOverride("margin_left", 18);
-        relicsPadding.AddThemeConstantOverride("margin_right", 18);
-        relicsPadding.AddThemeConstantOverride("margin_top", 18);
-        relicsPadding.AddThemeConstantOverride("margin_bottom", 18);
-        _relicsPanel.AddChild(relicsPadding);
-
-        var relicsScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        relicsPadding.AddChild(relicsScroll);
-
-        _relicsStack = new VBoxContainer();
-        _relicsStack.AddThemeConstantOverride("separation", 12);
-        relicsScroll.AddChild(_relicsStack);
-
-        var bottomPanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 660f),
-            Size = new Vector2(1232f, 56f)
-        };
-        AddChild(bottomPanel);
-
-        var bottomRow = new HBoxContainer();
-        bottomRow.AddThemeConstantOverride("separation", 12);
-        bottomPanel.AddChild(bottomRow);
-
-        var titleButton = new Button
-        {
-            Text = "Back To Title",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
-        bottomRow.AddChild(titleButton);
-
-        var mapButton = new Button
-        {
-            Text = "Back To Map",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        mapButton.Pressed += () => SceneRouter.Instance.GoToMap();
-        bottomRow.AddChild(mapButton);
-
-        var briefingButton = new Button
-        {
-            Text = $"Stage {GameState.Instance.SelectedStage} Briefing",
-            CustomMinimumSize = new Vector2(190f, 0f),
-            Disabled = GameState.Instance.SelectedStage > GameState.Instance.HighestUnlockedStage
-        };
-        briefingButton.Pressed += () => SceneRouter.Instance.GoToLoadout();
-        bottomRow.AddChild(briefingButton);
-
-        var multiplayerButton = new Button
-        {
-            Text = "Multiplayer",
-            CustomMinimumSize = new Vector2(160f, 0f)
-        };
-        multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
-        bottomRow.AddChild(multiplayerButton);
-
-        var cashShopButton = new Button
-        {
-            Text = "Royal Storehouse",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        cashShopButton.Pressed += () => SceneRouter.Instance.GoToCashShop();
-        bottomRow.AddChild(cashShopButton);
-
-        var forgeButton = new Button
-        {
-            Text = "Relic Forge",
-            CustomMinimumSize = new Vector2(120f, 0f)
-        };
-        forgeButton.Pressed += () => SceneRouter.Instance.GoToForge();
-        bottomRow.AddChild(forgeButton);
-
-        var expeditionButton = new Button
-        {
-            Text = "Expeditions",
-            CustomMinimumSize = new Vector2(120f, 0f)
-        };
-        expeditionButton.Pressed += () => SceneRouter.Instance.GoToExpeditions();
-        bottomRow.AddChild(expeditionButton);
-
-        var settingsButton = new Button
-        {
-            Text = "Settings",
-            CustomMinimumSize = new Vector2(140f, 0f)
-        };
-        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
-        bottomRow.AddChild(settingsButton);
-
-        bottomRow.AddChild(new Control
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        });
-
-        var endlessButton = new Button
-        {
-            Text = "Endless Prep",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        endlessButton.Pressed += () => SceneRouter.Instance.GoToEndless();
-        bottomRow.AddChild(endlessButton);
+        var units = RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _unitsPanel);
+        var split = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        units.AddChild(split);
+        var rosterHost = new VBoxContainer { CustomMinimumSize = new Vector2(350, 0) };
+        split.AddChild(rosterHost);
+        _unitStack = RealmUi.Scroll(rosterHost);
+        var detailHost = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        split.AddChild(detailHost);
+        _unitDetail = RealmUi.Scroll(detailHost);
+        _baseStack = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _basePanel));
+        _relicsStack = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _relicsPanel));
+        var summary = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _summaryPanel));
+        _summaryLabel = RealmUi.Label(""); summary.AddChild(_summaryLabel);
+        _deckLabel = RealmUi.Label(""); summary.AddChild(_deckLabel);
+        _routeIntelLabel = RealmUi.Label(""); summary.AddChild(_routeIntelLabel);
+        _recommendationStack = new VBoxContainer(); summary.AddChild(_recommendationStack);
+        _basePanel.Visible = _relicsPanel.Visible = _summaryPanel.Visible = false;
+        var footer = RealmUi.Panel(this, new Rect2(28, 618, 1224, 76), out _);
+        var row = new HBoxContainer(); footer.AddChild(row);
+        _statusLabel = RealmUi.Label("Select a portrait to equip, recruit or upgrade.", 14, true);
+        row.AddChild(_statusLabel);
+        row.AddChild(RealmUi.IconButton("gold", "Royal storehouse", () => SceneRouter.Instance.GoToCashShop()));
+        row.AddChild(RealmUi.IconButton("hammer", "Relic forge", () => SceneRouter.Instance.GoToForge()));
+        row.AddChild(RealmUi.IconButton("flag", "Expeditions", () => SceneRouter.Instance.GoToExpeditions()));
+        row.AddChild(RealmUi.Button("map", "Map", () => SceneRouter.Instance.GoToMap()));
+        var prepare = RealmUi.Button("arrow", "Prepare battle", () => SceneRouter.Instance.GoToLoadout(), true);
+        prepare.Disabled = GameState.Instance.SelectedStage > GameState.Instance.HighestUnlockedStage;
+        row.AddChild(prepare);
     }
 
     private void RefreshUi()
@@ -369,7 +157,6 @@ public partial class ShopMenu : Control
         _deckLabel.Text = BuildDeckSummaryText();
         _routeIntelLabel.Text = BuildRouteIntelText();
         RebuildRecommendations();
-        _statusLabel.Text = $"Last report:\n{GameState.Instance.LastResultMessage}";
         RebuildUnitPanels();
         RebuildBaseUpgradePanels();
         RebuildRelicPanels();
@@ -377,10 +164,7 @@ public partial class ShopMenu : Control
 
     private void RebuildResourcesRow()
     {
-        foreach (var child in _resourcesRow.GetChildren())
-        {
-            child.QueueFree();
-        }
+        RealmUi.Clear(_resourcesRow);
 
         _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
         _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
@@ -394,20 +178,18 @@ public partial class ShopMenu : Control
         _backgroundBottom.Color = route.BackgroundBottom;
         _accentBand.Color = route.BannerAccent;
         _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("shop", route.Id));
-        _titlePanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
-        _summaryPanel.SelfModulate = route.BannerPanel;
-        _unitsPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
-        _basePanel.SelfModulate = route.BannerPanel.Lightened(0.02f);
-        _relicsPanel.SelfModulate = route.BannerPanel.Darkened(0.04f);
+        _titlePanel.SelfModulate = Colors.White;
+        _summaryPanel.SelfModulate = Colors.White;
+        _unitsPanel.SelfModulate = Colors.White;
+        _basePanel.SelfModulate = Colors.White;
+        _relicsPanel.SelfModulate = Colors.White;
     }
 
     private string BuildSummaryText()
     {
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
         var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
-        var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextStage, out var exploreMessage)
-            ? $"Next exploration: Stage {nextStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextStage.StageNumber)} food."
-            : exploreMessage;
+        GameState.Instance.CanExploreNextStage(out _, out var nextExploreLine);
 
         return
             $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
@@ -420,7 +202,7 @@ public partial class ShopMenu : Control
             $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
             "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" +
-            "- Food pays for stage entry and map exploration.\n\n" +
+            "- Food pays for battle entry. Map travel is free.\n\n" +
             nextExploreLine;
     }
 
@@ -478,7 +260,7 @@ public partial class ShopMenu : Control
                 var unlockStage = GameData.GetStage(Mathf.Clamp(unit.UnlockStage, 1, GameState.Instance.MaxStage));
                 var unlockState = GameState.Instance.IsUnitAvailableForPurchase(unit.Id)
                     ? $"Shop unlocked  |  {GameState.Instance.GetUnitPurchaseCost(unit.Id)} gold"
-                    : $"Explore stage {unit.UnlockStage}";
+                    : $"Win stage {unit.UnlockStage - 1}+";
                 intel += $"\n{unit.DisplayName} - {unlockStage.MapName} S{unit.UnlockStage}  |  {unlockState}";
             }
         }
@@ -496,7 +278,7 @@ public partial class ShopMenu : Control
                 var unlockStage = GameData.GetStage(Mathf.Clamp(spell.UnlockStage, 1, GameState.Instance.MaxStage));
                 var unlockState = GameState.Instance.IsSpellAvailableForPurchase(spell.Id)
                     ? $"Archive open  |  {GameState.Instance.GetSpellPurchaseCost(spell.Id)} gold"
-                    : $"Explore stage {spell.UnlockStage}";
+                    : $"Win stage {spell.UnlockStage - 1}+";
                 intel += $"\n{spell.DisplayName} - {unlockStage.MapName} S{spell.UnlockStage}  |  {unlockState}";
             }
         }
@@ -523,10 +305,7 @@ public partial class ShopMenu : Control
 
     private void RebuildRecommendations()
     {
-        foreach (var child in _recommendationStack.GetChildren())
-        {
-            child.QueueFree();
-        }
+        RealmUi.Clear(_recommendationStack);
 
         var recommendations = BuildRecommendations();
         if (recommendations.Count == 0)
@@ -1014,7 +793,7 @@ public partial class ShopMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        var actionButton = new Button
+        var actionButton = new RealmButton
         {
             Text = recommendation.ActionLabel,
             Disabled = recommendation.Disabled,
@@ -1431,6 +1210,8 @@ public partial class ShopMenu : Control
 
     private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
     {
+        var armamentEffect = BaseWeaponCatalog.UpgradeEffect(upgrade.Id, level);
+        if (armamentEffect != null) return armamentEffect;
         return upgrade.Id switch
         {
             BaseUpgradeCatalog.HullPlatingId =>
@@ -1450,30 +1231,43 @@ public partial class ShopMenu : Control
 
     private void RebuildUnitPanels()
     {
-        foreach (var child in _unitStack.GetChildren())
+        RealmUi.Clear(_unitStack);
+        _unitStack.AddChild(RealmUi.Label(_showSpells
+            ? $"RITES  ·  {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} equipped"
+            : $"WARBAND  ·  {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} equipped", 13, true));
+        var grid = new GridContainer { Columns = 2 };
+        _unitStack.AddChild(grid);
+        var entries = (_showSpells ? GameData.GetPlayerSpells().Select(x => (x.Id, x.DisplayName)) : GameData.GetPlayerUnits().Select(x => (x.Id, x.DisplayName))).ToArray();
+        var pageCount = Mathf.Max(1, (entries.Length + 3) / 4);
+        _rosterPage = Mathf.Clamp(_rosterPage, 0, pageCount - 1);
+        if (string.IsNullOrEmpty(_selectedRosterId)) _selectedRosterId = entries.FirstOrDefault().Id ?? "";
+        foreach (var (id, name) in entries.Skip(_rosterPage * 4).Take(4))
         {
-            child.QueueFree();
+            bool equipped = _showSpells ? GameState.Instance.IsSpellInActiveDeck(id) : GameState.Instance.IsUnitInActiveDeck(id);
+            var button = new RealmButton { CustomMinimumSize = new Vector2(156, 104 + ThemeDB.FallbackFont.GetMultilineStringSize(name, HorizontalAlignment.Center, 144, 18).Y), TooltipText = name + (equipped ? " · Equipped" : ""), AccessibilityName = name };
+            grid.AddChild(button);
+            var content = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+            button.AddChild(content);
+            content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            content.OffsetLeft = 6; content.OffsetTop = 6; content.OffsetRight = -6; content.OffsetBottom = -6;
+            var art = _showSpells ? UiBadgeFactory.CreateSpellBadge(GameData.GetSpell(id), new Vector2(138, 82))
+                : UiBadgeFactory.CreateUnitBadge(GameData.GetUnit(id), new Vector2(138, 82));
+            content.AddChild(art);
+            var label = new Label { Text = name, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+            label.AddThemeFontSizeOverride("font_size", 18); content.AddChild(label);
+            if (id == _selectedRosterId) button.AddThemeStyleboxOverride("normal", RealmUi.Surface(new Color("33433c"), RealmUi.Gold));
+            button.Pressed += () => { _selectedRosterId = id; RebuildUnitPanels(); };
         }
-
-        _unitStack.AddChild(new Label
-        {
-            Text = "Units"
-        });
-
-        foreach (var unit in GameData.GetPlayerUnits())
-        {
-            _unitStack.AddChild(BuildUnitPanel(unit));
-        }
-
-        _unitStack.AddChild(new Label
-        {
-            Text = "Spells"
-        });
-
-        foreach (var spell in GameData.GetPlayerSpells())
-        {
-            _unitStack.AddChild(BuildSpellPanel(spell));
-        }
+        var paging = new HBoxContainer(); _unitStack.AddChild(paging);
+        var previous = RealmUi.IconButton("back", "Previous roster page", () => { _rosterPage--; RebuildUnitPanels(); });
+        previous.Disabled = _rosterPage == 0; paging.AddChild(previous);
+        var pageNumber = RealmUi.Label($"{_rosterPage + 1} / {pageCount}", 18, true);
+        pageNumber.HorizontalAlignment = HorizontalAlignment.Center; pageNumber.VerticalAlignment = VerticalAlignment.Center; paging.AddChild(pageNumber);
+        var next = RealmUi.IconButton("arrow", "Next roster page", () => { _rosterPage++; RebuildUnitPanels(); });
+        next.Disabled = _rosterPage >= pageCount - 1; paging.AddChild(next);
+        RealmUi.Clear(_unitDetail);
+        if (!string.IsNullOrEmpty(_selectedRosterId))
+            _unitDetail.AddChild(_showSpells ? BuildSpellPanel(GameData.GetSpell(_selectedRosterId)) : BuildUnitPanel(GameData.GetUnit(_selectedRosterId)));
     }
 
     private Control BuildUnitPanel(UnitDefinition unit)
@@ -1499,7 +1293,7 @@ public partial class ShopMenu : Control
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(0f, doctrineUnlocked ? 228f : 190f),
-            SelfModulate = panelTint.Darkened(0.15f)
+            SelfModulate = Colors.White
         };
 
         var padding = new MarginContainer();
@@ -1511,7 +1305,7 @@ public partial class ShopMenu : Control
 
         var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
             padding,
-            UiBadgeFactory.CreateUnitBadge(unit, new Vector2(84f, 84f)));
+            UiBadgeFactory.CreateUnitBadge(unit, new Vector2(126f, 154f)));
 
         var statusLine = !available
             ? $"Locked until stage {unit.UnlockStage}"
@@ -1521,12 +1315,8 @@ public partial class ShopMenu : Control
                     ? $"Owned  |  Lv{level}  |  In active deck"
                     : $"Owned  |  Lv{level}  |  Reserve";
 
-        stack.AddChild(new Label
-        {
-            Text =
-                $"{unit.DisplayName}  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}  |  " +
-                $"Deploy {unit.Cost} courage  |  {GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}"
-        });
+        stack.AddChild(RealmUi.Heading(unit.DisplayName, 28));
+        stack.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag), 18, true));
 
         stack.AddChild(new Label
         {
@@ -1534,32 +1324,32 @@ public partial class ShopMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        stack.AddChild(new Label
+        var statistics = new HBoxContainer();
+        stack.AddChild(statistics);
+        foreach (var (icon, label, value) in new[] { ("heart", "Health", $"{stats.MaxHealth:0}"), ("sword", "Attack", $"{stats.AttackDamage:0.#}"), ("shield", "Gate damage", $"{stats.BaseDamage:0.#}") })
         {
-            Text = BuildUnitPreviewText(unit, owned, level, isMaxLevel),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Move {stats.Speed:0.#}  |  Attack CD {stats.AttackCooldown:0.##}s  |  Effective deploy {effectiveDeployCooldown:0.#}s" +
-                UnitStatText.BuildInlineTraits(stats),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
+            var stat = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var number = new HBoxContainer();
+            number.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(24, 24) });
+            number.AddChild(RealmUi.Heading(value, 28)); stat.AddChild(number);
+            stat.AddChild(RealmUi.Label(label, 18, true)); statistics.AddChild(stat);
+        }
+        var trainingDetails = BuildUnitPreviewText(unit, owned, level, isMaxLevel) + "\n\n" +
+            $"Move {stats.Speed:0.#} · Attack interval {stats.AttackCooldown:0.##}s · Deploy recovery {effectiveDeployCooldown:0.#}s" + UnitStatText.BuildInlineTraits(stats);
+        stack.AddChild(RealmUi.Button("book", "Training & traits", () => RealmUi.Details(this, unit.DisplayName, trainingDetails)));
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var deckButton = new Button
+        var deckButton = new RealmButton
         {
             Text = !owned
                 ? "Buy First"
                 : inDeck
-                    ? "Remove From Deck"
-                    : "Add To Deck",
-            CustomMinimumSize = new Vector2(170f, 0f),
+                    ? "Unequip"
+                    : "Equip",
+            CustomMinimumSize = new Vector2(130f, 0f),
             Disabled = !owned
         };
         deckButton.Pressed += () =>
@@ -1571,9 +1361,9 @@ public partial class ShopMenu : Control
         };
         row.AddChild(deckButton);
 
-        var actionButton = new Button
+        var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(180f, 0f)
+            CustomMinimumSize = new Vector2(150f, 0f)
         };
 
         if (!available)
@@ -1621,7 +1411,7 @@ public partial class ShopMenu : Control
             if (tree != null && owned)
             {
                 var unlockedCount = GameState.Instance.GetUnlockedSkillNodes(unit.Id).Count;
-                var talentBtn = new Button { Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})", CustomMinimumSize = new Vector2(130f, 0f) };
+                var talentBtn = new RealmButton { Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})", CustomMinimumSize = new Vector2(130f, 0f) };
                 talentBtn.Pressed += () => SceneRouter.Instance.GoToSkillTree();
                 stack.AddChild(talentBtn);
             }
@@ -1654,10 +1444,10 @@ public partial class ShopMenu : Control
                     : null;
                 var colorLabel = currentVariant != null ? currentVariant.Title : "Default";
 
-                var colorButton = new Button
+                var colorButton = new RealmButton
                 {
                     Text = $"Color: {colorLabel}",
-                    CustomMinimumSize = new Vector2(170f, 0f)
+                    CustomMinimumSize = new Vector2(130f, 0f)
                 };
                 colorButton.Pressed += () =>
                 {
@@ -1695,7 +1485,7 @@ public partial class ShopMenu : Control
             foreach (var doctrine in doctrineOptions)
             {
                 var isSelected = currentDoctrineId.Equals(doctrine.Id, StringComparison.OrdinalIgnoreCase);
-                var doctrineButton = new Button
+                var doctrineButton = new RealmButton
                 {
                     Text = isSelected
                         ? $"{doctrine.Title} Selected"
@@ -1778,14 +1568,14 @@ public partial class ShopMenu : Control
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
-        var deckButton = new Button
+        var deckButton = new RealmButton
         {
             Text = !owned
                 ? "Scribe First"
                 : equipped
                     ? "Remove Spell"
                     : "Equip Spell",
-            CustomMinimumSize = new Vector2(170f, 0f),
+            CustomMinimumSize = new Vector2(130f, 0f),
             Disabled = !owned
         };
         deckButton.Pressed += () =>
@@ -1796,9 +1586,9 @@ public partial class ShopMenu : Control
         };
         row.AddChild(deckButton);
 
-        var actionButton = new Button
+        var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(180f, 0f)
+            CustomMinimumSize = new Vector2(150f, 0f)
         };
 
         if (!available)
@@ -1848,15 +1638,14 @@ public partial class ShopMenu : Control
 
     private void RebuildBaseUpgradePanels()
     {
-        foreach (var child in _baseStack.GetChildren())
-        {
-            child.QueueFree();
-        }
+        RealmUi.Clear(_baseStack);
 
         _baseStack.AddChild(new Label
         {
             Text = "War Wagon Upgrades"
         });
+
+        _baseStack.AddChild(RealmUi.Label("Your wagon starts with archers. Install weapons to fire together automatically; train skills and reinforce defenses below. Upgrades carry into every battle.", 16));
 
         foreach (var upgrade in BaseUpgradeCatalog.GetAll())
         {
@@ -1901,7 +1690,7 @@ public partial class ShopMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        var button = new Button
+        var button = new RealmButton
         {
             Text = isMaxLevel ? "Maxed" : $"Upgrade {cost} gold",
             Disabled = isMaxLevel || GameState.Instance.Gold < cost,
@@ -1923,10 +1712,7 @@ public partial class ShopMenu : Control
 
     private void RebuildRelicPanels()
     {
-        foreach (var child in _relicsStack.GetChildren())
-        {
-            child.QueueFree();
-        }
+        RealmUi.Clear(_relicsStack);
 
         _relicsStack.AddChild(new Label
         {
@@ -2042,7 +1828,7 @@ public partial class ShopMenu : Control
 
         if (!string.IsNullOrEmpty(equippedByUnitId))
         {
-            var unequipButton = new Button
+            var unequipButton = new RealmButton
             {
                 Text = $"Unequip from {equippedByUnitName}",
                 CustomMinimumSize = new Vector2(0f, 32f)
@@ -2067,7 +1853,7 @@ public partial class ShopMenu : Control
             if (currentEquip != null && currentEquip.Id == relic.Id)
                 continue;
 
-            var equipButton = new Button
+            var equipButton = new RealmButton
             {
                 Text = $"Equip {unit.DisplayName}",
                 CustomMinimumSize = new Vector2(0f, 30f),

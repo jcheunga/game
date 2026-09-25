@@ -1,16 +1,33 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: crownroad
+      POSTGRES_USER: crownroad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crownroad-development-password}
+    volumes:
+      - crownroad-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crownroad -d crownroad"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   crownroad-server:
     build: .
     ports:
       - "8080:8080"
-    volumes:
-      - crownroad-data:/data
     environment:
-      - DbPath=/data/crownroad.db
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Crownroad=Host=postgres;Port=5432;Database=crownroad;Username=crownroad;Password=${POSTGRES_PASSWORD:-crownroad-development-password};Pooling=true
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - AllowedOrigins=${AllowedOrigins:-}
       - ASPNETCORE_URLS=http://+:8080
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -19,4 +36,4 @@ services:
       start_period: 10s
 
 volumes:
-  crownroad-data:
+  crownroad-postgres:

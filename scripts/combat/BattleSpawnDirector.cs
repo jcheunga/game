@@ -16,7 +16,11 @@ public sealed class BattleSpawnDirector
         public float ExecuteAt { get; }
     }
 
-    private readonly Queue<PendingEnemySpawn> _pendingEnemySpawns = new();
+    private readonly PriorityQueue<PendingEnemySpawn, (float Time, long Order)> _pendingEnemySpawns = new();
+    private long _spawnOrder;
+    private float _nextPendingSpawnAt;
+    private float _scriptedScheduleAdvance;
+    private float _clearFieldSince = -1f;
     private readonly List<UnitDefinition> _enemyRoster = new();
     private readonly RandomNumberGenerator _rng;
 
@@ -75,6 +79,7 @@ public sealed class BattleSpawnDirector
         _enemyRoster.AddRange(enemyRoster);
 
         _pendingEnemySpawns.Clear();
+        ResetScriptedPacing();
     }
 
     public void InitializeEndless(string routeId, StageDefinition stageData, CombatTuning combat, IEnumerable<UnitDefinition> enemyRoster)
@@ -101,7 +106,21 @@ public sealed class BattleSpawnDirector
         _enemyRoster.AddRange(enemyRoster);
 
         _pendingEnemySpawns.Clear();
+        ResetScriptedPacing();
     }
+
+    private void ResetScriptedPacing()
+    {
+        _spawnOrder = 0;
+        _nextPendingSpawnAt = 0f;
+        _scriptedScheduleAdvance = 0f;
+        _clearFieldSince = -1f;
+        IsScriptedWaveHeld = false;
+    }
+
+    public float NextScriptedWaveTime => TryGetNextScriptedWave(out var wave)
+        ? wave.TriggerTime - _scriptedScheduleAdvance : 0f;
+    public bool IsScriptedWaveHeld { get; private set; }
 
     public void Tick(
         float delta,
@@ -118,7 +137,18 @@ public sealed class BattleSpawnDirector
 
         if (UsesScriptedWaves)
         {
-            TriggerScriptedWaves(elapsed, setStatus);
+            // Reward a clean defense with a short recovery, rather than an empty battlefield.
+            if (NextScriptedWaveIndex > 0 && _pendingEnemySpawns.Count == 0 && getActiveEnemyCount() == 0)
+            {
+                if (_clearFieldSince < 0f)
+                {
+                    _clearFieldSince = elapsed;
+                    if (TryGetNextScriptedWave(out var next))
+                        _scriptedScheduleAdvance = Mathf.Max(_scriptedScheduleAdvance, next.TriggerTime - (elapsed + 4f));
+                }
+            }
+            else _clearFieldSince = -1f;
+            TriggerScriptedWaves(elapsed, getActiveEnemyCount, setStatus);
             FlushPendingEnemySpawns(elapsed, getActiveEnemyCount, spawnEnemy);
             return;
         }
@@ -216,13 +246,22 @@ public sealed class BattleSpawnDirector
         SpawnDefinition(PickEnemyDefinition(elapsed), spawnEnemy);
     }
 
-    private void TriggerScriptedWaves(float elapsed, Action<string> setStatus)
+    private void TriggerScriptedWaves(float elapsed, Func<int> getActiveEnemyCount, Action<string> setStatus)
     {
+        IsScriptedWaveHeld = false;
         while (NextScriptedWaveIndex < _stageData.Waves.Length)
         {
             var wave = _stageData.Waves[NextScriptedWaveIndex];
-            if (elapsed + 0.001f < wave.TriggerTime)
+            if (elapsed + _scriptedScheduleAdvance + 0.001f < wave.TriggerTime)
             {
+                return;
+            }
+
+            // A struggling defense gets to finish the current push before another full pack arrives.
+            if (NextScriptedWaveIndex > 0 &&
+                (_pendingEnemySpawns.Count > 0 || getActiveEnemyCount() > Math.Max(2, GetMaxActiveEnemies() / 3)))
+            {
+                IsScriptedWaveHeld = true;
                 return;
             }
 
@@ -238,7 +277,7 @@ public sealed class BattleSpawnDirector
     private void QueueScriptedWave(float elapsed, StageWaveDefinition wave)
     {
         QueueScriptedWaveEntries(
-            Mathf.Max(elapsed, wave.TriggerTime),
+            elapsed,
             Mathf.Max(0.1f, wave.SpawnInterval),
             wave.Entries);
     }
@@ -250,7 +289,7 @@ public sealed class BattleSpawnDirector
     {
         while (_pendingEnemySpawns.Count > 0)
         {
-            if (_pendingEnemySpawns.Peek().ExecuteAt > elapsed)
+            if (_pendingEnemySpawns.Peek().ExecuteAt > elapsed || elapsed < _nextPendingSpawnAt)
             {
                 return;
             }
@@ -262,6 +301,8 @@ public sealed class BattleSpawnDirector
 
             var pendingSpawn = _pendingEnemySpawns.Dequeue();
             SpawnDefinition(pendingSpawn.Definition, spawnEnemy);
+            // A full field must not turn an overdue wave into a single-frame burst.
+            _nextPendingSpawnAt = elapsed + (_isEndlessMode ? 0.18f : 0.35f);
         }
     }
 
@@ -571,8 +612,13 @@ public sealed class BattleSpawnDirector
 
     private void QueuePendingSpawn(UnitDefinition definition, ref float executeAt, float spawnInterval)
     {
-        _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(definition, executeAt));
+        EnqueueSpawn(definition, executeAt);
         executeAt += spawnInterval * _rng.RandfRange(0.88f, 1.14f);
+    }
+
+    private void EnqueueSpawn(UnitDefinition definition, float executeAt)
+    {
+        _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(definition, executeAt), (executeAt, _spawnOrder++));
     }
 
     private void QueueRouteForkEventWave(int waveNumber, ref float executeAt, float spawnInterval)
@@ -699,7 +745,7 @@ public sealed class BattleSpawnDirector
             var count = Math.Max(1, entry.Count);
             for (var i = 0; i < count; i++)
             {
-                _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(enemyDefinition, executeAt));
+                EnqueueSpawn(enemyDefinition, executeAt);
                 executeAt += spawnInterval;
                 queued++;
             }
@@ -750,15 +796,16 @@ public sealed class BattleSpawnDirector
     {
         var healthScale = _stageData.EnemyHealthScale * _additionalEnemyHealthScale;
         var damageScale = _stageData.EnemyDamageScale * _additionalEnemyDamageScale;
-        var cooldownReduction = (_stage - 1) * 0.05f;
-        var baseDamageBonus = (_stage - 1) * 2;
+        // Authored health/damage already provide campaign growth. Preserve each enemy's rhythm.
+        var cooldownReduction = 0f;
+        var baseDamageBonus = Math.Min(10, Math.Max(0, (_stage - 1) / 6));
 
         if (_isEndlessMode)
         {
             var waveFactor = Math.Max(0, EndlessWaveNumber - 1);
             healthScale *= 1f + (waveFactor * 0.07f);
             damageScale *= 1f + (waveFactor * 0.05f);
-            cooldownReduction += waveFactor * 0.025f;
+            cooldownReduction = Math.Min(source.AttackCooldown * 0.15f, waveFactor * 0.005f);
             baseDamageBonus += waveFactor * 2;
         }
 

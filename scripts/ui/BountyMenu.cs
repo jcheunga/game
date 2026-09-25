@@ -75,10 +75,10 @@ public partial class BountyMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
-		var armoryBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryBtn);
 	}
@@ -98,15 +98,19 @@ public partial class BountyMenu : Control
 		var stack = new VBoxContainer();
 		stack.AddThemeConstantOverride("separation", 10);
 		outer.AddChild(stack);
+        stack.AddChild(new HeraldicEmblem { Symbol = index == 0 ? "crown" : index == 1 ? "mountain" : "sword", CustomMinimumSize = new Vector2(78, 78), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
 
 		_titleLabels[index] = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		stack.AddChild(_titleLabels[index]);
+		_titleLabels[index].AddThemeFontOverride("font", RealmUi.TitleFont);
+        _titleLabels[index].AddThemeFontSizeOverride("font_size", 24);
+        _titleLabels[index].AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        stack.AddChild(_titleLabels[index]);
 
 		_descLabels[index] = new Label
 		{
 			HorizontalAlignment = HorizontalAlignment.Center,
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(360f, 0f)
+			CustomMinimumSize = new Vector2(0f, 0f)
 		};
 		_descLabels[index].AddThemeColorOverride("font_color", new Color("b0b8c8"));
 		stack.AddChild(_descLabels[index]);
@@ -116,7 +120,7 @@ public partial class BountyMenu : Control
 
 		_progressBars[index] = new ProgressBar
 		{
-			CustomMinimumSize = new Vector2(360f, 24f),
+			CustomMinimumSize = new Vector2(0f, 24f),
 			MinValue = 0,
 			MaxValue = 1,
 			Value = 0,
@@ -139,7 +143,7 @@ public partial class BountyMenu : Control
 		// Spacer pushes button toward bottom
 		stack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 
-		_claimButtons[index] = new Button { Text = "Claim", CustomMinimumSize = new Vector2(160f, 40f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+		_claimButtons[index] = new RealmButton { Text = "Claim", CustomMinimumSize = new Vector2(160f, 40f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
 		var capturedIndex = index;
 		_claimButtons[index].Pressed += () => OnClaimPressed(capturedIndex);
 		stack.AddChild(_claimButtons[index]);

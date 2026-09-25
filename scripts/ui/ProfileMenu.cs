@@ -113,13 +113,13 @@ public partial class ProfileMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
-		var armoryBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryBtn);
-		var mainBtn = new Button { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mainBtn = new RealmButton { Text = "Main Menu", CustomMinimumSize = new Vector2(140f, 0f) };
 		mainBtn.Pressed += () => SceneRouter.Instance.GoToMainMenu();
 		bottomRow.AddChild(mainBtn);
 	}
@@ -130,7 +130,7 @@ public partial class ProfileMenu : Control
 
 		// Update callsign in title
 		var titleRow = _titlePanel.GetChild<HBoxContainer>(0);
-		while (titleRow.GetChildCount() > 1) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		RealmUi.TrimChildren(titleRow, 1);
 		var callsignLabel = new Label
 		{
 			Text = gs.PlayerCallsign,

@@ -707,18 +707,15 @@ public partial class Unit : Node2D
         var srcRect = UnitSpriteLoader.GetFrameRect(_spriteSheet, globalFrame);
 
         var facing = GetFacing();
-        var drawScale = (Radius * 2f) / _spriteSheet.FrameWidth * VisualScale;
+        var drawScale = (Radius * 2f) / _spriteSheet.FrameWidth * VisualScale * _spriteSheet.DrawScale;
         var bobOffset = Mathf.Sin(_idleTimer * 5f + (Speed * 0.02f)) * Radius * 0.06f;
 
         var drawSize = new Vector2(_spriteSheet.FrameWidth * drawScale, _spriteSheet.FrameHeight * drawScale);
-        var drawPos = new Vector2(-drawSize.X * 0.5f, -drawSize.Y + bobOffset);
+        var lunge = _attackFlashTimer > 0f ? Radius * 0.25f : 0f;
+        var drawPos = new Vector2(-drawSize.X * 0.5f + lunge, -drawSize.Y + bobOffset);
 
-        // Flip for facing direction
-        if (facing < 0)
-        {
-            drawPos.X += drawSize.X;
-            drawSize.X = -drawSize.X;
-        }
+        // Mirror around the unit's position; a negative destination width shifts AtlasTexture regions.
+        DrawSetTransform(Vector2.Zero, 0f, new Vector2(facing < 0 ? -1 : 1, 1));
 
         var modulate = Colors.White;
         if (_hitFlashTimer > 0f)
@@ -728,6 +725,7 @@ public partial class Unit : Node2D
         }
 
         DrawTextureRectRegion(_spriteSheet.Texture, new Rect2(drawPos, drawSize), srcRect, modulate);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 
     private void UpdateSpriteAnimState()
@@ -1298,7 +1296,8 @@ public partial class Unit : Node2D
         var hpBarWidth = Radius * (highContrast ? 2.5f : 2.15f);
         var hpBarHeight = highContrast ? 7f : 5f;
         var hpRatio = Mathf.Clamp(Health / MaxHealth, 0f, 1f);
-        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -Radius - 16f);
+        var spriteHeight = _spriteSheet == null ? Radius + 16f : Radius * 2f * VisualScale * _spriteSheet.DrawScale + 6f;
+        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -spriteHeight);
 
         DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth, hpBarHeight)), new Color(0f, 0f, 0f, highContrast ? 0.8f : 0.55f), true);
         var hpColor = Team == Team.Player ? new Color("80ed99") : new Color("ef476f");

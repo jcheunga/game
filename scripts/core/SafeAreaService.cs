@@ -39,7 +39,15 @@ public partial class SafeAreaService : Node
 
 	private void UpdateSafeArea()
 	{
-		SafeArea = DisplayServer.GetDisplaySafeArea();
+        // Desktop safe rectangles are display coordinates, not window content insets.
+        // Applying them to a windowed game incorrectly shifts the HUD below the menu bar.
+        if (!OS.HasFeature("android") && !OS.HasFeature("ios"))
+        {
+            SafeArea = new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+            MarginLeft = MarginRight = MarginTop = MarginBottom = 0;
+            return;
+        }
+        SafeArea = DisplayServer.GetDisplaySafeArea();
 		var windowSize = DisplayServer.WindowGetSize();
 
 		if (windowSize.X <= 0 || windowSize.Y <= 0)

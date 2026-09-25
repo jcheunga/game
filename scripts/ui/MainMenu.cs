@@ -1,19 +1,15 @@
+using System;
 using System.Linq;
 using Godot;
 
 public partial class MainMenu : Control
 {
-    private Label _summaryLabel = null!;
-    private HBoxContainer _resourceMetricsRow = null!;
-    private HBoxContainer _progressMetricsRow = null!;
-    private HBoxContainer _socialMetricsRow = null!;
-    private Control _panel = null!;
-    private readonly System.Collections.Generic.List<Control> _animatedElements = new();
+    private VBoxContainer _destinations;
+    private Label _notice;
 
     public override void _Ready()
     {
         BuildUi();
-        PlayEntranceAnimations();
         TryShowConsentPrompt();
         TryHandleDeepLink();
     }
@@ -79,7 +75,7 @@ public partial class MainMenu : Control
         buttonRow.AddThemeConstantOverride("separation", 16);
         stack.AddChild(buttonRow);
 
-        var acceptButton = new Button
+        var acceptButton = new RealmButton
         {
             Text = "Allow Analytics",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
@@ -93,7 +89,7 @@ public partial class MainMenu : Control
         };
         buttonRow.AddChild(acceptButton);
 
-        var declineButton = new Button
+        var declineButton = new RealmButton
         {
             Text = "No Thanks",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
@@ -110,503 +106,104 @@ public partial class MainMenu : Control
 
     private void BuildUi()
     {
-        MenuBackdropComposer.AddSolidBackdrop(this, "main_menu", new Color("1d2d44"));
+        MenuBackdropComposer.AddSolidBackdrop(this, "main_menu", new Color("101d26"));
+        var top = new HBoxContainer { Position = new Vector2(40, 26), Size = new Vector2(1200, 44) };
+        AddChild(top);
+        top.AddChild(RealmUi.IconButton("crown", "Player profile", () => SceneRouter.Instance.GoToProfile()));
+        top.AddChild(RealmUi.Label("THE LANTERN CARAVAN", 13, true));
+        top.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24,24)));
+        top.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24,24)));
+        top.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
+        top.AddChild(RealmUi.IconButton("close", "Quit game", () => MedievalUi.ShowConfirmation(this, "Leave Crownroad?", "Your progress is saved.", "Quit", () => GetTree().Quit())));
 
-        var ambientParticles = new CpuParticles2D
+        var hero = new VBoxContainer { Position = new Vector2(64, 112), Size = new Vector2(530, 440) };
+        hero.AddThemeConstantOverride("separation", 13);
+        AddChild(hero);
+        var overline = RealmUi.Label("A KINGDOM WAITING TO BE RECLAIMED", 12, true);
+        hero.AddChild(overline);
+        hero.AddChild(RealmUi.Heading("CROWNROAD", 56));
+        var subtitle = RealmUi.Label("S I E G E   O F   A S H", 17);
+        subtitle.AddThemeColorOverride("font_color", RealmUi.Gold);
+        hero.AddChild(subtitle);
+        hero.AddChild(RealmUi.Label("Gather your warband. Light the road home.", 17, true));
+        hero.AddChild(new Control { CustomMinimumSize = new Vector2(0, 20) });
+        var stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        hero.AddChild(RealmUi.Label($"STAGE {stage.StageNumber:00}  /  {RouteCatalog.Get(stage.MapId).Title.ToUpperInvariant()}", 12, true));
+        hero.AddChild(RealmUi.Heading(stage.StageName, 27));
+        var journey = new HBoxContainer();
+        hero.AddChild(journey);
+        var campaign = RealmUi.Button("map", GameState.Instance.HighestUnlockedStage > 1 ? "Continue journey" : "Begin journey", () => SceneRouter.Instance.GoToMap(), true);
+        campaign.CustomMinimumSize = new Vector2(270, 56);
+        journey.AddChild(campaign);
+        journey.AddChild(RealmUi.Button("sword", "Armory", () => SceneRouter.Instance.GoToShop()));
+        var stars = GameData.Stages.Sum(s => GameState.Instance.GetStageStars(s.StageNumber));
+        hero.AddChild(RealmUi.Label($"{GameData.Stages.Count(s => GameState.Instance.GetStageStars(s.StageNumber) > 0)} / {GameState.Instance.MaxStage} leaders defeated   ·   {stars} stars earned", 13, true));
+        _notice = RealmUi.Label("", 13, true);
+        hero.AddChild(_notice);
+
+        var squad = RealmUi.Panel(this, new Rect2(864, 388, 350, 157), out _);
+        squad.AddChild(RealmUi.Label("YOUR WARBAND", 12, true));
+        var portraits = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        squad.AddChild(portraits);
+        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
         {
-            Amount = 14,
-            Lifetime = 5f,
-            Position = new Vector2(640f, 720f),
-            EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
-            EmissionRectExtents = new Vector2(580f, 10f),
-            Direction = new Vector2(0.15f, -1f),
-            Spread = 18f,
-            InitialVelocityMin = 8f,
-            InitialVelocityMax = 22f,
-            Gravity = new Vector2(4f, -5f),
-            ScaleAmountMin = 2f,
-            ScaleAmountMax = 4f,
-            Emitting = true
-        };
-        var gradient = new Gradient();
-        gradient.SetColor(0, new Color(1f, 0.85f, 0.4f, 0f));
-        gradient.AddPoint(0.15f, new Color(1f, 0.8f, 0.35f, 0.3f));
-        gradient.AddPoint(0.6f, new Color(1f, 0.65f, 0.25f, 0.15f));
-        gradient.AddPoint(1f, new Color(0.9f, 0.5f, 0.15f, 0f));
-        ambientParticles.ColorRamp = gradient;
-        AddChild(ambientParticles);
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
-
-        var viewportHeight = GetViewportRect().Size.Y;
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(560f, Mathf.Clamp(viewportHeight - 56f, 520f, 760f))
-        };
-        _panel = panel;
-        center.AddChild(panel);
-
-        var content = new MarginContainer();
-        content.AddThemeConstantOverride("margin_left", 24);
-        content.AddThemeConstantOverride("margin_top", 24);
-        content.AddThemeConstantOverride("margin_right", 24);
-        content.AddThemeConstantOverride("margin_bottom", 24);
-        panel.AddChild(content);
-
-        var bodyScroll = new ScrollContainer
-        {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
-        };
-        content.AddChild(bodyScroll);
-
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 14);
-        bodyScroll.AddChild(stack);
-
-        var title = new Label
-        {
-            Text = "CROWNROAD: SIEGE OF ASH",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        stack.AddChild(title);
-        _animatedElements.Add(title);
-
-        var subtitle = new Label
-        {
-            Text = "Medieval fantasy siege campaign\nBuild a warband, hold the lane, break the gate.",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        stack.AddChild(subtitle);
-        _animatedElements.Add(subtitle);
-
-        var metricsCenter = new CenterContainer();
-        stack.AddChild(metricsCenter);
-        _animatedElements.Add(metricsCenter);
-
-        _resourceMetricsRow = new HBoxContainer();
-        _resourceMetricsRow.AddThemeConstantOverride("separation", 12);
-        metricsCenter.AddChild(_resourceMetricsRow);
-
-        var progressMetricsCenter = new CenterContainer();
-        stack.AddChild(progressMetricsCenter);
-        _animatedElements.Add(progressMetricsCenter);
-
-        _progressMetricsRow = new HBoxContainer();
-        _progressMetricsRow.AddThemeConstantOverride("separation", 12);
-        progressMetricsCenter.AddChild(_progressMetricsRow);
-
-        var socialMetricsCenter = new CenterContainer();
-        stack.AddChild(socialMetricsCenter);
-        _animatedElements.Add(socialMetricsCenter);
-
-        _socialMetricsRow = new HBoxContainer();
-        _socialMetricsRow.AddThemeConstantOverride("separation", 12);
-        socialMetricsCenter.AddChild(_socialMetricsRow);
-
-        var badgeHintLabel = new Label
-        {
-            Text = "CH=campaign, TW=tower, EW=endless, DS=streak, GW=guild, FR=friends",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        badgeHintLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.68f));
-        stack.AddChild(badgeHintLabel);
-        _animatedElements.Add(badgeHintLabel);
-
-        var startButton = BuildButton(GameState.Instance.HighestUnlockedStage > 1 ? "Resume Campaign" : "Start Campaign");
-        startButton.Pressed += () => SceneRouter.Instance.GoToMap();
-        stack.AddChild(startButton);
-        _animatedElements.Add(startButton);
-
-        var summaryHeading = new Label
-        {
-            Text = "Campaign Snapshot",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        stack.AddChild(summaryHeading);
-        _animatedElements.Add(summaryHeading);
-
-        var summaryScroll = new ScrollContainer
-        {
-            CustomMinimumSize = new Vector2(0f, 132f),
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
-        };
-        stack.AddChild(summaryScroll);
-        _animatedElements.Add(summaryScroll);
-
-        _summaryLabel = new Label
-        {
-            Text = "",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        summaryScroll.AddChild(_summaryLabel);
-        _animatedElements.Add(_summaryLabel);
-
-        RefreshSummaryUi();
-
-        var shopButton = BuildButton("Caravan Armory");
-        shopButton.Pressed += () => SceneRouter.Instance.GoToShop();
-        stack.AddChild(shopButton);
-        _animatedElements.Add(shopButton);
-
-        var endlessButton = BuildButton("Endless Run");
-        endlessButton.Pressed += () => SceneRouter.Instance.GoToEndless();
-        stack.AddChild(endlessButton);
-        _animatedElements.Add(endlessButton);
-
-        if (GameState.Instance.HighestUnlockedStage >= 10)
-        {
-            var bossRushButton = BuildButton("Boss Rush");
-            bossRushButton.Pressed += () =>
-            {
-                if (GameState.Instance.PrepareBossRush(out var msg))
-                {
-                    SceneRouter.Instance.GoToLoadout();
-                }
-                else
-                {
-                    _summaryLabel.Text = msg;
-                }
-            };
-            stack.AddChild(bossRushButton);
-            _animatedElements.Add(bossRushButton);
+            var card = new VBoxContainer();
+            var portrait = UiBadgeFactory.CreateUnitBadge(unit, new Vector2(80, 80));
+            portrait.TooltipText = $"{unit.DisplayName} · Level {GameState.Instance.GetUnitLevel(unit.Id)}";
+            portrait.MouseFilter = MouseFilterEnum.Stop;
+            card.AddChild(portrait);
+            portraits.AddChild(card);
         }
 
-        var expeditionButton = BuildButton("Expeditions");
-        expeditionButton.Pressed += () => SceneRouter.Instance.GoToExpeditions();
-        stack.AddChild(expeditionButton);
-        _animatedElements.Add(expeditionButton);
+        var dock = RealmUi.Panel(this, new Rect2(40, 574, 1200, 120), out _);
+        RealmUi.Tabs(dock, ShowDestinations, "Adventure", "Caravan", "Community");
+        _destinations = new VBoxContainer();
+        dock.AddChild(_destinations);
+        ShowDestinations(0);
+        RealmUi.FadeIn(hero);
+    }
 
-        var seasonPassButton = BuildButton("Season Pass");
-        seasonPassButton.Pressed += () => SceneRouter.Instance.GoToSeasonPass();
-        stack.AddChild(seasonPassButton);
-        _animatedElements.Add(seasonPassButton);
-
-        var calendarButton = BuildButton("Login Calendar");
-        calendarButton.Pressed += () => SceneRouter.Instance.GoToLoginCalendar();
-        stack.AddChild(calendarButton);
-        _animatedElements.Add(calendarButton);
-
-        var bountyButton = BuildButton("Bounty Board");
-        bountyButton.Pressed += () => SceneRouter.Instance.GoToBounty();
-        stack.AddChild(bountyButton);
-        _animatedElements.Add(bountyButton);
-
-        var towerButton = BuildButton("Challenge Tower");
-        towerButton.Pressed += () => SceneRouter.Instance.GoToTower();
-        stack.AddChild(towerButton);
-        _animatedElements.Add(towerButton);
-
-        var codexButton = BuildButton("Codex");
-        codexButton.Pressed += () => SceneRouter.Instance.GoToCodex();
-        stack.AddChild(codexButton);
-        _animatedElements.Add(codexButton);
-
-        if (GameState.Instance.HighestUnlockedStage >= ArenaCatalog.MinRequiredStage)
+    private void ShowDestinations(int tab)
+    {
+        RealmUi.Clear(_destinations);
+        var row = new HBoxContainer();
+        _destinations.AddChild(row);
+        void Link(string icon, string title, Action action, string locked = null)
         {
-            var arenaButton = BuildButton("PvP Arena");
-            arenaButton.Pressed += () => SceneRouter.Instance.GoToArena();
-            stack.AddChild(arenaButton);
-            _animatedElements.Add(arenaButton);
+            var button = RealmUi.Button(icon, title, action);
+            button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            button.Disabled = locked != null;
+            button.TooltipText = locked ?? title;
+            row.AddChild(button);
         }
-
-        var activeEvent = GameState.Instance.GetActiveEvent();
-        if (activeEvent != null)
+        if (tab == 0)
         {
-            var eventButton = BuildButton(activeEvent.Title);
-            eventButton.Pressed += () => SceneRouter.Instance.GoToEvent();
-            stack.AddChild(eventButton);
-            _animatedElements.Add(eventButton);
+            Link("flame", "Endless", () => SceneRouter.Instance.GoToEndless());
+            Link("mountain", "Tower", () => SceneRouter.Instance.GoToTower());
+            Link("flag", "Bounties", () => SceneRouter.Instance.GoToBounty());
+            Link("shield", "Boss rush", null, "Boss rush is in development");
+            Link("sword", "Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage < 5 ? "Win stage 4 or higher to unlock raids" : null);
+            var activeEvent = GameState.Instance.GetActiveEvent();
+            Link("star", "Event", () => SceneRouter.Instance.GoToEvent(), activeEvent == null ? "No event is active" : null);
         }
-
-        var guildButton = BuildButton("Warband");
-        guildButton.Pressed += () => SceneRouter.Instance.GoToGuild();
-        stack.AddChild(guildButton);
-        _animatedElements.Add(guildButton);
-
-        if (GameState.Instance.HighestUnlockedStage >= 5)
+        else if (tab == 1)
         {
-            var raidButton = BuildButton("Weekly Raid");
-            raidButton.Pressed += () => SceneRouter.Instance.GoToRaid();
-            stack.AddChild(raidButton);
-            _animatedElements.Add(raidButton);
-        }
-
-        var friendsButton = BuildButton("Friends");
-        friendsButton.Pressed += () => SceneRouter.Instance.GoToFriends();
-        stack.AddChild(friendsButton);
-        _animatedElements.Add(friendsButton);
-
-        var leaderboardButton = BuildButton("Leaderboards");
-        leaderboardButton.Pressed += () => SceneRouter.Instance.GoToLeaderboard();
-        stack.AddChild(leaderboardButton);
-        _animatedElements.Add(leaderboardButton);
-
-        var profileButton = BuildButton("Player Profile");
-        profileButton.Pressed += () => SceneRouter.Instance.GoToProfile();
-        stack.AddChild(profileButton);
-        _animatedElements.Add(profileButton);
-
-        var multiplayerButton = BuildButton("Multiplayer Challenge");
-        multiplayerButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
-        stack.AddChild(multiplayerButton);
-        _animatedElements.Add(multiplayerButton);
-
-        var settingsButton = BuildButton("Settings");
-        settingsButton.Pressed += () => MedievalUi.ShowQuickSettings(this);
-        stack.AddChild(settingsButton);
-        _animatedElements.Add(settingsButton);
-
-        if (GameState.Instance.CanPrestige)
-        {
-            var prestigeButton = BuildButton($"Prestige (New Game+)");
-            prestigeButton.Pressed += () =>
-            {
-                if (GameState.Instance.TryPrestige(out var msg))
-                {
-                    RebuildResourceMetricsRow();
-                    RebuildMetaMetricsRows();
-                    _summaryLabel.Text = msg;
-                }
-            };
-            stack.AddChild(prestigeButton);
-            _animatedElements.Add(prestigeButton);
-        }
-
-        var resetButton = BuildButton("Reset Progress");
-        resetButton.Pressed += () => MedievalUi.ShowConfirmation(
-            this,
-            "Abandon this campaign?",
-            "This will erase this local campaign and return you to the first march. This choice cannot be undone from the game.",
-            "Reset campaign",
-            () =>
-            {
-                GameState.Instance.ResetProgress();
-                SceneRouter.Instance.GoToMap();
-            });
-        stack.AddChild(resetButton);
-        _animatedElements.Add(resetButton);
-
-        var quitButton = BuildButton("Quit");
-        quitButton.Pressed += () => MedievalUi.ShowConfirmation(
-            this,
-            "Leave Crownroad?",
-            "Your progress is saved. Return to the road whenever you are ready.",
-            "Quit game",
-            () => GetTree().Quit());
-        stack.AddChild(quitButton);
-        _animatedElements.Add(quitButton);
-
-        var netLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        if (NetworkStatus.Instance != null)
-        {
-            netLabel.Text = NetworkStatus.Instance.GetStatusLabel();
-            netLabel.AddThemeColorOverride("font_color", NetworkStatus.Instance.GetStatusColor());
+            Link("flag", "Expeditions", () => SceneRouter.Instance.GoToExpeditions());
+            Link("hammer", "Forge", () => SceneRouter.Instance.GoToForge());
+            Link("gift", "Daily gifts", () => SceneRouter.Instance.GoToLoginCalendar());
+            Link("crown", "Season", () => SceneRouter.Instance.GoToSeasonPass());
+            Link("book", "Codex", () => SceneRouter.Instance.GoToCodex());
+            Link("gold", "Store", () => SceneRouter.Instance.GoToCashShop());
+            if (GameState.Instance.CanPrestige)
+                Link("star", "Prestige", () => MedievalUi.ShowConfirmation(this, "Begin a new age?", "Restart campaign progression for prestige rewards.", "Prestige", () => { GameState.Instance.TryPrestige(out _); SceneRouter.Instance.GoToMainMenu(); }));
         }
         else
         {
-            netLabel.Text = "Offline mode";
-            netLabel.AddThemeColorOverride("font_color", new Color("8b949e"));
+            Link("people", "Warband", () => SceneRouter.Instance.GoToGuild());
+            Link("people", "Friends", () => SceneRouter.Instance.GoToFriends());
+            Link("sword", "Challenges", () => SceneRouter.Instance.GoToMultiplayer());
+            Link("shield", "Arena", () => SceneRouter.Instance.GoToArena(), GameState.Instance.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null);
+            Link("crown", "Rankings", () => SceneRouter.Instance.GoToLeaderboard());
         }
-        stack.AddChild(netLabel);
-        _animatedElements.Add(netLabel);
-    }
-
-    private void PlayEntranceAnimations()
-    {
-        if (_panel != null)
-        {
-            _panel.Modulate = new Color(1f, 1f, 1f, 0f);
-            _panel.Scale = new Vector2(0.96f, 0.96f);
-            _panel.PivotOffset = _panel.CustomMinimumSize * 0.5f;
-            var panelTween = CreateTween();
-            panelTween.SetParallel(true);
-            panelTween.TweenProperty(_panel, "modulate:a", 1f, 0.3f)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
-            panelTween.TweenProperty(_panel, "scale", Vector2.One, 0.35f)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
-        }
-
-        for (var i = 0; i < _animatedElements.Count; i++)
-        {
-            var element = _animatedElements[i];
-            element.Modulate = new Color(1f, 1f, 1f, 0f);
-            var delay = 0.08f + (i * 0.04f);
-            var tween = CreateTween();
-            tween.TweenProperty(element, "modulate:a", 1f, 0.22f)
-                .SetDelay(delay)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
-        }
-    }
-
-    private static Button BuildButton(string text)
-    {
-        return new Button
-        {
-            Text = text,
-            CustomMinimumSize = new Vector2(0, 52)
-        };
-    }
-
-    private string BuildProgressSummary()
-    {
-        var nextStage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
-        var totalStars = 0;
-
-        foreach (var stage in GameData.Stages)
-        {
-            totalStars += GameState.Instance.GetStageStars(stage.StageNumber);
-        }
-
-        var eligibleDoctrineCount = GameState.Instance.GetEligibleUnitDoctrineCount();
-        var nextDirective = GameState.Instance.GetCampaignDirective(nextStage.StageNumber);
-        var hullLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId);
-        var pantryLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId);
-        var dispatchLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId);
-        var relayLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId);
-        var nextExploreLine = GameState.Instance.CanExploreNextStage(out var nextExploreStage, out _)
-            ? $"Next exploration: Stage {nextExploreStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextExploreStage.StageNumber)} food"
-            : "Route exploration complete";
-
-        var squadSummary = GameState.Instance.GetActiveDeckUnits()
-            .Select(unit =>
-            {
-                var doctrine = GameState.Instance.GetUnitDoctrineDefinition(unit.Id);
-                return doctrine == null
-                    ? $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}"
-                    : $"{unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)} [{doctrine.Title}]";
-            });
-        var squadLine = string.Join(", ", squadSummary);
-        if (string.IsNullOrWhiteSpace(squadLine))
-        {
-            squadLine = "No active squad configured.";
-        }
-
-        var spellLine = GameState.Instance.GetActiveDeckSpells().Count == 0
-            ? "No active magic prepared."
-            : string.Join(", ", GameState.Instance.GetActiveDeckSpells().Select(spell => spell.DisplayName));
-
-        var selectedChallenge = GameState.Instance.GetSelectedAsyncChallenge();
-        var bestChallengeScore = GameState.Instance.GetAsyncChallengeBestScore(selectedChallenge.Code);
-
-        squadLine = ShortenMetricText(squadLine, 88);
-        spellLine = ShortenMetricText(spellLine, 72);
-
-        var prestigeText = GameState.Instance.PrestigeLevel > 0
-            ? $"  |  {GameState.Instance.GetPrestigeLabel()}"
-            : "";
-
-        return
-            $"Campaign: stage {GameState.Instance.HighestUnlockedStage}/{GameState.Instance.MaxStage}  |  Stars: {totalStars}{prestigeText}\n" +
-            $"Next deployment: {nextStage.MapName} - Stage {nextStage.StageNumber}: {nextStage.StageName}\n" +
-            $"{(nextDirective == null ? "Next directive: none" : GameState.Instance.BuildCampaignDirectiveInlineText(nextStage.StageNumber))}\n" +
-            $"{GameState.Instance.BuildCampaignReadinessInlineSummary(nextStage.StageNumber)}\n" +
-            $"District rewards claimed: {GameState.Instance.ClaimedDistrictRewardCount}/{CampaignPlanCatalog.GetTargetDistrictCount()}  |  Directives: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
-            $"Doctrines forged: {GameState.Instance.ClaimedUnitDoctrineCount}/{eligibleDoctrineCount}  |  Upgrades: plating {hullLevel}, stores {pantryLevel}, drum {dispatchLevel}, beacon {relayLevel}\n" +
-            $"Endless best: wave {GameState.Instance.BestEndlessWave}  |  Boss rush: {GameState.Instance.BestBossRushWave}/{BossRushCatalog.TotalWaves}  |  Challenge {selectedChallenge.Code}: {bestChallengeScore}\n" +
-            $"{nextExploreLine}\n" +
-            $"Active squad: {squadLine}\n" +
-            $"Active magic: {spellLine}\n" +
-            $"Deck synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}";
-    }
-
-    private void RefreshSummaryUi()
-    {
-        RebuildResourceMetricsRow();
-        RebuildMetaMetricsRows();
-        _summaryLabel.Text = BuildProgressSummary();
-    }
-
-    private void RebuildResourceMetricsRow()
-    {
-        foreach (var child in _resourceMetricsRow.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
-        var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
-
-        _resourceMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)),
-            "Gold"));
-        _resourceMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)),
-            "Food"));
-        _resourceMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateRewardMetric("unit", "", $"{ownedUnits}/{GameData.PlayerRosterIds.Length}", new Vector2(24f, 24f)),
-            "Owned units"));
-        _resourceMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateRewardMetric("spell", "", $"{ownedSpells}/{GameData.PlayerSpellIds.Length}", new Vector2(24f, 24f)),
-            "Owned spells"));
-    }
-
-    private void RebuildMetaMetricsRows()
-    {
-        foreach (var child in _progressMetricsRow.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        foreach (var child in _socialMetricsRow.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        var gs = GameState.Instance;
-        var guildName = string.IsNullOrWhiteSpace(gs.GuildId) || gs.CachedGuildInfo == null
-            ? "No Guild"
-            : ShortenMetricText(gs.CachedGuildInfo.Name, 12);
-
-        _progressMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("challenge", $"Stage {gs.HighestUnlockedStage}/{gs.MaxStage}", new Vector2(24f, 24f)),
-            "Campaign progress"));
-        _progressMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("tower_floor", gs.TowerHighestFloor > 0 ? $"Tower {gs.TowerHighestFloor}" : "Tower -", new Vector2(24f, 24f)),
-            "Highest tower floor"));
-        _progressMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("endless_wave", gs.BestEndlessWave > 0 ? $"Endless {gs.BestEndlessWave}" : "Endless -", new Vector2(24f, 24f)),
-            "Best endless wave"));
-
-        _socialMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("daily_streak", gs.DailyStreak > 0 ? $"Streak {gs.DailyStreak}" : "Streak -", new Vector2(24f, 24f)),
-            "Daily login streak"));
-        _socialMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("guild", guildName, new Vector2(24f, 24f)),
-            "Guild"));
-        _socialMetricsRow.AddChild(WithTooltip(
-            UiBadgeFactory.CreateMetaMetric("friends", $"{gs.GetFriendIds().Count} friends", new Vector2(24f, 24f)),
-            "Friends"));
-    }
-
-    private static Control WithTooltip(Control control, string tooltip)
-    {
-        control.TooltipText = tooltip;
-        return control;
-    }
-
-    private static string ShortenMetricText(string text, int maxLength)
-    {
-        if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
-        {
-            return text;
-        }
-
-        if (maxLength <= 3)
-        {
-            return text[..maxLength];
-        }
-
-        return text[..(maxLength - 3)] + "...";
     }
 }

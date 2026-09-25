@@ -3,4 +3,5 @@ obj/
 *.db
 *.db-wal
 *.db-shm
-.env
+.env*
+secrets/

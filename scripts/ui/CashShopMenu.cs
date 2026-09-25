@@ -18,6 +18,7 @@ public partial class CashShopMenu : Control
 	private VBoxContainer _goldStack = null!;
 	private VBoxContainer _foodStack = null!;
 	private VBoxContainer _mixedStack = null!;
+	private HBoxContainer _categoryTabs = null!;
 	private string _pendingConfirmProductId = "";
 	private Button _pendingConfirmButton;
 
@@ -80,95 +81,21 @@ public partial class CashShopMenu : Control
 		_resourcesRow.AddThemeConstantOverride("separation", 12);
 		titleRow.AddChild(_resourcesRow);
 
-		// Gold packs panel
-		_goldPanel = new PanelContainer
-		{
-			Position = new Vector2(24f, 122f),
-			Size = new Vector2(380f, 520f)
-		};
-		AddChild(_goldPanel);
-
-		var goldPadding = CreatePaddedContainer();
-		_goldPanel.AddChild(goldPadding);
-
-		var goldScroll = new ScrollContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
-		goldPadding.AddChild(goldScroll);
-
-		_goldStack = new VBoxContainer();
-		_goldStack.AddThemeConstantOverride("separation", 12);
-		goldScroll.AddChild(_goldStack);
-
-		// Food packs panel
-		_foodPanel = new PanelContainer
-		{
-			Position = new Vector2(420f, 122f),
-			Size = new Vector2(380f, 520f)
-		};
-		AddChild(_foodPanel);
-
-		var foodPadding = CreatePaddedContainer();
-		_foodPanel.AddChild(foodPadding);
-
-		var foodScroll = new ScrollContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
-		foodPadding.AddChild(foodScroll);
-
-		_foodStack = new VBoxContainer();
-		_foodStack.AddThemeConstantOverride("separation", 12);
-		foodScroll.AddChild(_foodStack);
-
-		// Mixed / starter packs panel
-		_mixedPanel = new PanelContainer
-		{
-			Position = new Vector2(816f, 122f),
-			Size = new Vector2(220f, 280f)
-		};
-		AddChild(_mixedPanel);
-
-		var mixedPadding = CreatePaddedContainer();
-		_mixedPanel.AddChild(mixedPadding);
-
-		var mixedScroll = new ScrollContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
-		mixedPadding.AddChild(mixedScroll);
-
-		_mixedStack = new VBoxContainer();
-		_mixedStack.AddThemeConstantOverride("separation", 12);
-		mixedScroll.AddChild(_mixedStack);
-
-		// Status panel
-		_statusPanel = new PanelContainer
-		{
-			Position = new Vector2(816f, 418f),
-			Size = new Vector2(220f, 224f)
-		};
-		AddChild(_statusPanel);
-
-		var statusPadding = CreatePaddedContainer();
-		_statusPanel.AddChild(statusPadding);
-
-		var statusStack = new VBoxContainer();
-		statusStack.AddThemeConstantOverride("separation", 8);
-		statusPadding.AddChild(statusStack);
-
-		statusStack.AddChild(new Label { Text = "Purchase Info" });
-
-		_statusLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(0f, 120f)
-		};
-		statusStack.AddChild(_statusLabel);
+        var body = new VBoxContainer { Position = new Vector2(24, 122), Size = new Vector2(1232, 510) };
+        body.AddThemeConstantOverride("separation", 12);
+        AddChild(body);
+        _categoryTabs = RealmUi.Tabs(body, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
+        var pages = new Control { SizeFlagsVertical = SizeFlags.ExpandFill };
+        body.AddChild(pages);
+        _goldStack = CreateCatalogPage(pages, out _goldPanel);
+        _foodStack = CreateCatalogPage(pages, out _foodPanel);
+        _mixedStack = CreateCatalogPage(pages, out _mixedPanel);
+        var info = CreateCatalogPage(pages, out _statusPanel);
+        var statusStack = RealmUi.Scroll(info);
+        statusStack.AddChild(RealmUi.Heading("The merchant's ledger"));
+        _statusLabel = RealmUi.Label("");
+        statusStack.AddChild(_statusLabel);
+        SelectCategory(0);
 
 		// Bottom nav
 		var bottomPanel = new PanelContainer
@@ -182,7 +109,7 @@ public partial class CashShopMenu : Control
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		bottomPanel.AddChild(bottomRow);
 
-		var titleButton = new Button
+		var titleButton = new RealmButton
 		{
 			Text = "Back To Title",
 			CustomMinimumSize = new Vector2(180f, 0f)
@@ -190,7 +117,7 @@ public partial class CashShopMenu : Control
 		titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
 		bottomRow.AddChild(titleButton);
 
-		var mapButton = new Button
+		var mapButton = new RealmButton
 		{
 			Text = "Back To Map",
 			CustomMinimumSize = new Vector2(180f, 0f)
@@ -198,7 +125,7 @@ public partial class CashShopMenu : Control
 		mapButton.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapButton);
 
-		var armoryButton = new Button
+		var armoryButton = new RealmButton
 		{
 			Text = "Caravan Armory",
 			CustomMinimumSize = new Vector2(180f, 0f)
@@ -206,7 +133,7 @@ public partial class CashShopMenu : Control
 		armoryButton.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryButton);
 
-		var settingsButton = new Button
+		var settingsButton = new RealmButton
 		{
 			Text = "Settings",
 			CustomMinimumSize = new Vector2(140f, 0f)
@@ -219,7 +146,7 @@ public partial class CashShopMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		});
 
-		var multiplayerButton = new Button
+		var multiplayerButton = new RealmButton
 		{
 			Text = "Multiplayer",
 			CustomMinimumSize = new Vector2(160f, 0f)
@@ -228,119 +155,78 @@ public partial class CashShopMenu : Control
 		bottomRow.AddChild(multiplayerButton);
 	}
 
-	private void RefreshUi()
+    private static VBoxContainer CreateCatalogPage(Control host, out PanelContainer panel)
+    {
+        panel = new PanelContainer();
+        host.AddChild(panel);
+        panel.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var stack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        panel.AddChild(stack);
+        return stack;
+    }
+
+    private void SelectCategory(int index)
+    {
+        var pages = new[] { _goldPanel, _foodPanel, _mixedPanel, _statusPanel };
+        for (var i = 0; i < pages.Length; i++) pages[i].Visible = i == index;
+    }
+
+	private void RefreshUi(bool preserveStatus = false)
 	{
+		_pendingConfirmButton = null;
+		_pendingConfirmProductId = "";
 		RebuildResourcesRow();
 		RebuildGoldPacks();
 		RebuildFoodPacks();
 		RebuildMixedPacks();
-		RefreshStatus();
+		if (!preserveStatus)
+		{
+			RefreshStatus();
+		}
 	}
 
 	private void RebuildResourcesRow()
 	{
-		foreach (var child in _resourcesRow.GetChildren())
-		{
-			child.QueueFree();
-		}
+		RealmUi.Clear(_resourcesRow);
 
 		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
 		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
 	}
 
-	private void RebuildGoldPacks()
-	{
-		ClearChildren(_goldStack);
-		_goldStack.AddChild(new Label { Text = "Gold Packs" });
+    private void RebuildGoldPacks() => RebuildCategory(_goldStack, "gold");
+    private void RebuildFoodPacks() => RebuildCategory(_foodStack, "food");
+    private void RebuildMixedPacks() => RebuildCategory(_mixedStack, "mixed");
 
-		foreach (var product in ShopProductCatalog.GetByCategory("gold"))
-		{
-			AddProductCard(_goldStack, product);
-		}
-	}
+    private void RebuildCategory(VBoxContainer stack, string category)
+    {
+        ClearChildren(stack);
+        var row = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        row.AddThemeConstantOverride("separation", 12);
+        stack.AddChild(row);
+        foreach (var product in ShopProductCatalog.GetByCategory(category))
+            AddProductCard(row, product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id));
+    }
 
-	private void RebuildFoodPacks()
-	{
-		ClearChildren(_foodStack);
-		_foodStack.AddChild(new Label { Text = "Food Packs" });
-
-		foreach (var product in ShopProductCatalog.GetByCategory("food"))
-		{
-			AddProductCard(_foodStack, product);
-		}
-	}
-
-	private void RebuildMixedPacks()
-	{
-		ClearChildren(_mixedStack);
-		_mixedStack.AddChild(new Label { Text = "Starter & Bundles" });
-
-		foreach (var product in ShopProductCatalog.GetByCategory("mixed"))
-		{
-			var isDisabled = product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id);
-			AddProductCard(_mixedStack, product, isDisabled);
-		}
-	}
-
-	private void AddProductCard(VBoxContainer stack, ShopProduct product, bool forceDisabled = false)
-	{
-		var card = new VBoxContainer();
-		card.AddThemeConstantOverride("separation", 4);
-
-		var nameRow = new HBoxContainer();
-		nameRow.AddThemeConstantOverride("separation", 8);
-
-		nameRow.AddChild(new Label
-		{
-			Text = product.DisplayName,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		});
-
-		if (!string.IsNullOrWhiteSpace(product.ValueLabel))
-		{
-			nameRow.AddChild(new Label
-			{
-				Text = $"[{product.ValueLabel}]",
-				HorizontalAlignment = HorizontalAlignment.Right
-			});
-		}
-
-		card.AddChild(nameRow);
-
-		card.AddChild(BuildProductRewardRow(product));
-
-		card.AddChild(new Label
-		{
-			Text = product.FormattedReward,
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		});
-
-		card.AddChild(new Label
-		{
-			Text = product.Description,
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		});
-
-		var buttonRow = new HBoxContainer();
-		buttonRow.AddThemeConstantOverride("separation", 8);
-
-		var localizedPrice = NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
-		var purchaseButton = new Button
-		{
-			Text = forceDisabled ? "Purchased" : $"Buy — {localizedPrice}",
-			CustomMinimumSize = new Vector2(160f, 0f),
-			Disabled = forceDisabled
-		};
-
-		var productId = product.Id;
-		purchaseButton.Pressed += () => OnPurchasePressed(productId, purchaseButton);
-		buttonRow.AddChild(purchaseButton);
-
-		card.AddChild(buttonRow);
-
-		card.AddChild(new HSeparator());
-		stack.AddChild(card);
-	}
+    private void AddProductCard(Control host, ShopProduct product, bool forceDisabled)
+    {
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        host.AddChild(panel);
+        var card = new VBoxContainer();
+        card.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(card);
+        card.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(64, 64), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
+        var title = RealmUi.Heading(product.DisplayName, 24);
+        title.CustomMinimumSize = new Vector2(0, 66);
+        card.AddChild(title);
+        card.AddChild(BuildProductRewardRow(product));
+        card.AddChild(RealmUi.Label(product.Description));
+        card.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
+        card.AddChild(RealmUi.Label(string.IsNullOrWhiteSpace(product.ValueLabel) ? "For the road ahead" : product.ValueLabel, 18, true));
+        var localizedPrice = NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
+        var purchaseButton = new RealmButton { Text = forceDisabled ? "Purchased" : $"Buy — {localizedPrice}", CustomMinimumSize = new Vector2(0, 48), Disabled = forceDisabled };
+        purchaseButton.Pressed += () => OnPurchasePressed(product.Id, purchaseButton);
+        card.AddChild(purchaseButton);
+    }
 
 	private static HBoxContainer BuildProductRewardRow(ShopProduct product)
 	{
@@ -386,6 +272,8 @@ public partial class CashShopMenu : Control
 	{
 		if (_pendingConfirmProductId == productId)
 		{
+			SelectCategory(3);
+			_categoryTabs.GetChild<Button>(3).ButtonPressed = true;
 			ExecutePurchase(productId);
 			_pendingConfirmProductId = "";
 			_pendingConfirmButton = null;
@@ -405,7 +293,7 @@ public partial class CashShopMenu : Control
 		// Show confirm state
 		_pendingConfirmProductId = productId;
 		_pendingConfirmButton = button;
-		button.Text = "Tap again to confirm";
+		button.Text = "Confirm purchase";
 		_statusLabel.Text = "Tap the purchase button a second time to confirm.";
 	}
 
@@ -415,14 +303,23 @@ public partial class CashShopMenu : Control
 		if (product == null)
 		{
 			_statusLabel.Text = "Unknown product.";
-			RefreshUi();
+			RefreshUi(preserveStatus: true);
 			return;
 		}
 
 		var endpoint = GameState.Instance.PurchaseValidationEndpoint;
 		if (string.IsNullOrWhiteSpace(endpoint))
 		{
-			ApplyLocalPurchase(product);
+			_statusLabel.Text = "The store is unavailable in this build. Connect a verified commerce server before accepting payments.";
+			RefreshUi(preserveStatus: true);
+			return;
+		}
+
+		if (string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken) &&
+			!PlayerProfileSyncService.RefreshProfileForBackendEndpoint(endpoint, out var sessionMessage))
+		{
+			_statusLabel.Text = $"Unable to establish a secure store session: {sessionMessage}";
+			RefreshUi(preserveStatus: true);
 			return;
 		}
 
@@ -442,29 +339,8 @@ public partial class CashShopMenu : Control
 			return;
 		}
 
-		// Fallback: direct server validation
-		_statusLabel.Text = $"Validating purchase: {product.DisplayName}...";
-
-		var transactionId = $"local-{Guid.NewGuid():N}";
-		var receiptToken = $"receipt-{transactionId}";
-
-		var result = GameState.Instance.ValidatePurchaseWithServer(productId, platform, receiptToken, transactionId);
-
-		if (result.Status == "ok")
-		{
-			GameState.Instance.TryApplyPurchaseReward(result);
-			_statusLabel.Text = $"Purchased {product.DisplayName}!\n";
-			if (result.GoldCredited > 0) _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
-			if (result.FoodCredited > 0) _statusLabel.Text += $"+{result.FoodCredited} Food  ";
-			if (result.GrantedUnitUnlock) _statusLabel.Text += "\n+ Unit unlock granted!";
-			AudioDirector.Instance?.PlayUpgradeConfirm();
-		}
-		else
-		{
-			_statusLabel.Text = $"Purchase failed: {result.Message}";
-		}
-
-		RefreshUi();
+		_statusLabel.Text = "Native billing is unavailable. This purchase has not been charged.";
+		RefreshUi(preserveStatus: true);
 	}
 
 	private void ExecuteStripePurchase(ShopProduct product)
@@ -504,7 +380,7 @@ public partial class CashShopMenu : Control
 			if (!iapResult.Success)
 			{
 				_statusLabel.Text = $"Purchase cancelled: {iapResult.ErrorMessage}";
-				RefreshUi();
+				RefreshUi(preserveStatus: true);
 				return;
 			}
 
@@ -521,6 +397,7 @@ public partial class CashShopMenu : Control
 			if (result.Status == "ok")
 			{
 				GameState.Instance.TryApplyPurchaseReward(result);
+				NativeIAPService.Instance?.ConfirmServerFulfillment(iapResult);
 				_statusLabel.Text = $"Purchased {product.DisplayName}!\n";
 				if (result.GoldCredited > 0) _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
 				if (result.FoodCredited > 0) _statusLabel.Text += $"+{result.FoodCredited} Food  ";
@@ -532,37 +409,8 @@ public partial class CashShopMenu : Control
 				_statusLabel.Text = $"Validation failed: {result.Message}";
 			}
 
-			RefreshUi();
+			RefreshUi(preserveStatus: true);
 		});
-	}
-
-	private void ApplyLocalPurchase(ShopProduct product)
-	{
-		var goldAmount = product.CurrencyType == "gold" ? product.TotalCurrencyAmount :
-			product.CurrencyType == "mixed" ? product.GoldAmount : 0;
-		var foodAmount = product.CurrencyType == "food" ? product.TotalCurrencyAmount :
-			product.CurrencyType == "mixed" ? product.FoodAmount : 0;
-
-		var result = new PurchaseValidationResult
-		{
-			Status = "ok",
-			Message = "Local purchase applied.",
-			ProductId = product.Id,
-			GoldCredited = goldAmount,
-			FoodCredited = foodAmount,
-			GrantedUnitUnlock = product.GrantsUnitUnlock,
-			ValidatedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-		};
-
-		GameState.Instance.TryApplyPurchaseReward(result);
-
-		_statusLabel.Text = $"Purchased {product.DisplayName}!\n";
-		if (goldAmount > 0) _statusLabel.Text += $"+{goldAmount} Gold  ";
-		if (foodAmount > 0) _statusLabel.Text += $"+{foodAmount} Food  ";
-		if (product.GrantsUnitUnlock) _statusLabel.Text += "\n+ Unit unlock granted!";
-
-		AudioDirector.Instance?.PlayUpgradeConfirm();
-		RefreshUi();
 	}
 
 	private void RefreshStatus()
@@ -580,7 +428,7 @@ public partial class CashShopMenu : Control
 		};
 
 		var endpoint = GameState.Instance.PurchaseValidationEndpoint;
-		lines.Add(string.IsNullOrWhiteSpace(endpoint) ? "Mode: Local (offline)" : "Mode: Online");
+		lines.Add(string.IsNullOrWhiteSpace(endpoint) ? "Mode: Store disabled" : "Mode: Online");
 
 		var nativeIap = NativeIAPService.Instance;
 		if (nativeIap != null)
@@ -612,21 +460,5 @@ public partial class CashShopMenu : Control
 		return "stripe";
 	}
 
-	private static MarginContainer CreatePaddedContainer()
-	{
-		var margin = new MarginContainer();
-		margin.AddThemeConstantOverride("margin_left", 18);
-		margin.AddThemeConstantOverride("margin_right", 18);
-		margin.AddThemeConstantOverride("margin_top", 18);
-		margin.AddThemeConstantOverride("margin_bottom", 18);
-		return margin;
-	}
-
-	private static void ClearChildren(Control parent)
-	{
-		foreach (var child in parent.GetChildren())
-		{
-			child.QueueFree();
-		}
-	}
+	private static void ClearChildren(Control parent) => RealmUi.Clear(parent);
 }

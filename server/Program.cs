@@ -1,5 +1,6 @@
 using CrownroadServer;
 using CrownroadServer.Tests;
+using Microsoft.AspNetCore.HttpOverrides;
 
 if (args.Length > 0 && args[0] == "--test")
 {
@@ -13,19 +14,42 @@ if (args.Length > 0 && args[0] == "--test-data")
 }
 
 var builder = WebApplication.CreateBuilder(args);
+var appEnvironment = builder.Environment;
+var configuredOrigins = (builder.Configuration["AllowedOrigins"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var trustForwardedHeaders = builder.Configuration.GetValue<bool>("TrustForwardedHeaders");
+
+if (appEnvironment.IsProduction())
+{
+    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS")))
+        throw new InvalidOperationException("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS must never be configured in production.");
+    if (configuredOrigins.Length == 0 || configuredOrigins.Any(origin => origin == "*"))
+        throw new InvalidOperationException("AllowedOrigins must contain explicit HTTPS origins in production.");
+}
+
 builder.Services.AddLogging();
+if (trustForwardedHeaders)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // Only enable this setting when the service is private behind the
+        // trusted reverse proxy supplied by docker-compose.production.yml.
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var allowedOrigins = builder.Configuration["AllowedOrigins"] ?? "*";
-        if (allowedOrigins == "*")
+        if (appEnvironment.IsDevelopment() && configuredOrigins.Length == 0)
         {
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
         }
-        else
+        else if (configuredOrigins.Length > 0)
         {
-            policy.WithOrigins(allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            policy.WithOrigins(configuredOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
@@ -35,10 +59,25 @@ builder.Services.AddCors(options =>
 builder.Services.AddHostedService<CrownroadServer.StaleDataCleanup>();
 var app = builder.Build();
 
-var dbPath = app.Configuration["DbPath"] ?? "crownroad.db";
-Database.Configure($"Data Source={dbPath}");
+var databaseConnectionString = app.Configuration.GetConnectionString("Crownroad")
+    ?? app.Configuration["DatabaseConnectionString"];
+if (appEnvironment.IsProduction())
+{
+    if (string.IsNullOrWhiteSpace(databaseConnectionString))
+        throw new InvalidOperationException("ConnectionStrings:Crownroad must be configured with a PostgreSQL connection string in production.");
+    Database.Configure(databaseConnectionString, Environment.GetEnvironmentVariable("DATABASE_PASSWORD_FILE"));
+}
+else
+{
+    var dbPath = app.Configuration["DbPath"] ?? "crownroad.db";
+    Database.Configure(string.IsNullOrWhiteSpace(databaseConnectionString)
+        ? $"Data Source={dbPath}"
+        : databaseConnectionString,
+        Environment.GetEnvironmentVariable("DATABASE_PASSWORD_FILE"));
+}
 Database.Initialize();
 
+if (trustForwardedHeaders) app.UseForwardedHeaders();
 app.UseCors();
 app.UseWebSockets();
 app.UseMiddleware<CrownroadServer.RateLimiter>();
@@ -73,6 +112,7 @@ app.MapGet("/daily/leaderboard/{date}", (HttpRequest request, string date) => En
 app.MapPost("/purchase/validate", Endpoints.PurchaseValidate);
 app.MapGet("/purchase/history", Endpoints.PurchaseHistory);
 app.MapGet("/purchase/products", Endpoints.PurchaseProducts);
+app.MapGet("/wallet", Endpoints.Wallet);
 app.MapPost("/analytics/ingest", Endpoints.AnalyticsIngest);
 app.MapPost("/crash-report", Endpoints.CrashReport);
 app.MapGet("/analytics/summary", Endpoints.AnalyticsSummary);
@@ -126,14 +166,15 @@ app.MapGet("/health", () =>
     }
 });
 
-app.MapGet("/stats", () =>
+app.MapGet("/stats", (HttpRequest request) =>
 {
+    if (AdminAuth.Require(request) is { } adminError) return adminError;
     try
     {
         using var conn = Database.Open();
 
-        long Count(string table) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table}"; return (long)(c.ExecuteScalar() ?? 0); }
-        long CountWhere(string table, string where) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table} WHERE {where}"; return (long)(c.ExecuteScalar() ?? 0); }
+        long Count(string table) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table}"; return Database.ToInt64(c.ExecuteScalar()); }
+        long CountWhere(string table, string where) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table} WHERE {where}"; return Database.ToInt64(c.ExecuteScalar()); }
 
         return Results.Ok(new
         {
@@ -164,8 +205,9 @@ app.MapGet("/stats", () =>
     }
 });
 
-app.MapGet("/admin/balance", () =>
+app.MapGet("/admin/balance", (HttpRequest request) =>
 {
+    if (AdminAuth.Require(request) is { } adminError) return adminError;
     var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "..", "data");
     if (!Directory.Exists(dataDir))
         dataDir = Path.Combine(Directory.GetCurrentDirectory(), "data");
@@ -180,8 +222,17 @@ app.MapGet("/admin/balance", () =>
     }
 });
 
-app.MapPost("/admin/backup", () =>
+app.MapPost("/admin/backup", (HttpRequest request) =>
 {
+    if (AdminAuth.Require(request) is { } adminError) return adminError;
+    if (!Database.SupportsLocalBackups)
+    {
+        return Results.Json(new
+        {
+            error = "postgres_backup_managed_externally",
+            message = "Use the PostgreSQL provider's encrypted backups and point-in-time recovery; database dumps are not created inside the API container."
+        }, statusCode: StatusCodes.Status501NotImplemented);
+    }
     try
     {
         var path = Database.Backup();
@@ -194,13 +245,15 @@ app.MapPost("/admin/backup", () =>
     }
 });
 
-app.MapGet("/admin", () =>
+app.MapGet("/admin", (HttpRequest request) =>
 {
+    if (AdminAuth.Require(request) is { } adminError) return adminError;
+    static string Html(string value) => System.Net.WebUtility.HtmlEncode(value);
     try
     {
         using var conn = Database.Open();
-        long Count(string table) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table}"; return (long)(c.ExecuteScalar() ?? 0); }
-        long CountWhere(string table, string where) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table} WHERE {where}"; return (long)(c.ExecuteScalar() ?? 0); }
+        long Count(string table) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table}"; return Database.ToInt64(c.ExecuteScalar()); }
+        long CountWhere(string table, string where) { using var c = conn.CreateCommand(); c.CommandText = $"SELECT COUNT(*) FROM {table} WHERE {where}"; return Database.ToInt64(c.ExecuteScalar()); }
 
         var players = Count("players");
         var challengeResults = Count("challenge_results");
@@ -227,7 +280,9 @@ app.MapGet("/admin", () =>
             while (reader.Read())
             {
                 var when = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(5)).ToString("MM-dd HH:mm");
-                recentPurchases.Append($"<tr><td>{reader.GetString(0)[..10]}</td><td>{reader.GetString(1)[..Math.Min(12, reader.GetString(1).Length)]}</td><td>{reader.GetString(2)}</td><td>{reader.GetInt32(3)}g+{reader.GetInt32(4)}f</td><td>{when}</td></tr>");
+                var purchaseId = reader.GetString(0);
+                var profileId = reader.GetString(1);
+                recentPurchases.Append($"<tr><td>{Html(purchaseId[..Math.Min(10, purchaseId.Length)])}</td><td>{Html(profileId[..Math.Min(12, profileId.Length)])}</td><td>{Html(reader.GetString(2))}</td><td>{reader.GetInt32(3)}g+{reader.GetInt32(4)}f</td><td>{Html(when)}</td></tr>");
             }
         }
 
@@ -235,12 +290,12 @@ app.MapGet("/admin", () =>
         var recentAnalytics = new System.Text.StringBuilder();
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "SELECT event_type, COUNT(*) FROM analytics_events WHERE recorded_at > $cutoff GROUP BY event_type ORDER BY COUNT(*) DESC LIMIT 10";
-            cmd.Parameters.AddWithValue("$cutoff", DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 86400);
+            cmd.CommandText = "SELECT event_type, COUNT(*) FROM analytics_events WHERE recorded_at > @cutoff GROUP BY event_type ORDER BY COUNT(*) DESC LIMIT 10";
+            cmd.Parameters.AddWithValue("@cutoff", DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 86400);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                recentAnalytics.Append($"<tr><td>{reader.GetString(0)}</td><td>{reader.GetInt64(1)}</td></tr>");
+                recentAnalytics.Append($"<tr><td>{Html(reader.GetString(0))}</td><td>{reader.GetInt64(1)}</td></tr>");
             }
         }
 
@@ -290,7 +345,7 @@ app.MapGet("/admin", () =>
     }
     catch (Exception ex)
     {
-        return Results.Content($"<h1>Error</h1><pre>{ex.Message}</pre>", "text/html", statusCode: 503);
+        return Results.Content($"<h1>Error</h1><pre>{Html(ex.Message)}</pre>", "text/html", statusCode: 503);
     }
 });
 

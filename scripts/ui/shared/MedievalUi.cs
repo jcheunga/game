@@ -12,6 +12,8 @@ public static class MedievalUi
     public static void Apply(Control root)
     {
         root.Theme = _theme ??= BuildTheme();
+        Callable.From(() => DressHeader(root)).CallDeferred();
+        if (root.IsInsideTree()) root.GetWindow().Title = "Crownroad — Siege of Ash";
     }
 
     public static void MarkBackdrop(CanvasItem item)
@@ -32,10 +34,10 @@ public static class MedievalUi
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 10);
         stack.AddChild(row);
-        var cancel = new Button { Text = "Keep playing", CustomMinimumSize = new Vector2(160f, 44f) };
+        var cancel = new RealmButton { Text = "Keep playing", CustomMinimumSize = new Vector2(160f, 44f) };
         cancel.Pressed += () => { veil.QueueFree(); center.QueueFree(); };
         row.AddChild(cancel);
-        var confirm = new Button { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
+        var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
         confirm.AddThemeColorOverride("font_color", new Color("ffd8c4"));
         confirm.Pressed += () => { veil.QueueFree(); center.QueueFree(); onConfirm?.Invoke(); };
         row.AddChild(confirm);
@@ -60,7 +62,7 @@ public static class MedievalUi
             (GameState.Instance.ShowHints ? "Field hints enabled" : "Field hints hidden");
         Button SettingButton(string text, Action action)
         {
-            var button = new Button { Text = text, CustomMinimumSize = new Vector2(0f, 40f) };
+            var button = new RealmButton { Text = text, CustomMinimumSize = new Vector2(0f, 40f) };
             button.Pressed += () => { action(); Refresh(); };
             stack.AddChild(button);
             return button;
@@ -69,10 +71,10 @@ public static class MedievalUi
         SettingButton("Music +", () => GameState.Instance.SetMusicVolumePercent(GameState.Instance.MusicVolumePercent + 10));
         SettingButton("Toggle sound", () => GameState.Instance.SetAudioMuted(!GameState.Instance.AudioMuted));
         SettingButton("Toggle field hints", () => GameState.Instance.SetShowHints(!GameState.Instance.ShowHints));
-        var advanced = new Button { Text = "Open full settings", CustomMinimumSize = new Vector2(0f, 42f) };
+        var advanced = new RealmButton { Text = "Open full settings", CustomMinimumSize = new Vector2(0f, 42f) };
         advanced.Pressed += () => SceneRouter.Instance.GoToSettings();
         stack.AddChild(advanced);
-        var close = new Button { Text = "Return to camp", CustomMinimumSize = new Vector2(0f, 40f) };
+        var close = new RealmButton { Text = "Return to camp", CustomMinimumSize = new Vector2(0f, 40f) };
         close.Pressed += () => { veil.QueueFree(); center.QueueFree(); };
         stack.AddChild(close);
         Refresh();
@@ -81,19 +83,23 @@ public static class MedievalUi
     private static Theme BuildTheme()
     {
         var theme = new Theme();
-        var ink = new Color("f4e7c3");
+        var ink = new Color("eae5d9");
         var gold = new Color("d9ad55");
         var goldLight = new Color("f3d78c");
-        var oak = new Color("2a1c19");
-        var oakLight = new Color("4b3027");
+        var oak = new Color("111d22");
+        var oakLight = new Color("203139");
 
         theme.SetColor("font_color", "Label", ink);
         theme.SetColor("font_shadow_color", "Label", new Color(0f, 0f, 0f, 0.7f));
         theme.SetConstant("shadow_offset_x", "Label", 1);
         theme.SetConstant("shadow_offset_y", "Label", 2);
-        theme.SetFontSize("font_size", "Label", 16);
-        theme.SetFontSize("font_size", "Button", 16);
-        theme.SetFontSize("font_size", "LineEdit", 16);
+        theme.SetFontSize("font_size", "Label", 20);
+        theme.SetFontSize("font_size", "Button", 20);
+        theme.SetFont("font", "Button", RealmUi.TitleFont);
+        theme.SetFontSize("font_size", "LineEdit", 20);
+        theme.SetFontSize("font_size", "OptionButton", 20);
+        theme.SetFontSize("font_size", "PopupMenu", 20);
+        theme.SetFontSize("font_size", "TooltipLabel", 18);
         theme.SetColor("font_color", "Button", ink);
         theme.SetColor("font_hover_color", "Button", goldLight);
         theme.SetColor("font_pressed_color", "Button", Colors.White);
@@ -101,17 +107,17 @@ public static class MedievalUi
         theme.SetColor("caret_color", "LineEdit", goldLight);
         theme.SetColor("font_color", "LineEdit", ink);
 
-        theme.SetStylebox("panel", "Panel", Box(oak, gold.Darkened(0.42f), 2, 10, 10));
-        theme.SetStylebox("panel", "PanelContainer", Box(new Color("201717e8"), new Color("8c6a3e"), 2, 12, 14));
-        theme.SetStylebox("normal", "Button", Box(oakLight, new Color("b78b48"), 1, 7, 10));
-        theme.SetStylebox("hover", "Button", Box(new Color("62412d"), goldLight, 2, 7, 10));
-        theme.SetStylebox("pressed", "Button", Box(new Color("1b1212"), gold, 2, 7, 10));
-        theme.SetStylebox("disabled", "Button", Box(new Color("241d1a"), new Color("544535"), 1, 7, 10));
+        theme.SetStylebox("panel", "Panel", Box(oak, gold.Darkened(0.42f), 1, 8, 10));
+        theme.SetStylebox("panel", "PanelContainer", Engraved("engraved_panel", 18, 14));
+        theme.SetStylebox("normal", "Button", Engraved("button", 18, 10));
+        theme.SetStylebox("hover", "Button", Engraved("button_hover", 18, 10));
+        theme.SetStylebox("pressed", "Button", Engraved("button_pressed", 18, 10));
+        theme.SetStylebox("disabled", "Button", Engraved("button_disabled", 18, 10));
         theme.SetStylebox("focus", "Button", Box(new Color(0f, 0f, 0f, 0f), goldLight, 2, 7, 9));
-        theme.SetStylebox("normal", "LineEdit", Box(new Color("171213"), new Color("8c6a3e"), 1, 6, 10));
+        theme.SetStylebox("normal", "LineEdit", Box(new Color("171213"), new Color("46514b"), 1, 6, 10));
         theme.SetStylebox("focus", "LineEdit", Box(new Color("201817"), goldLight, 2, 6, 9));
         theme.SetStylebox("read_only", "LineEdit", Box(new Color("171213"), new Color("5b4935"), 1, 6, 10));
-        theme.SetStylebox("panel", "ScrollContainer", new StyleBoxEmpty());
+        theme.SetStylebox("panel", "ScrollContainer", new StyleBoxEmpty { ContentMarginRight = 8 });
         theme.SetStylebox("scroll", "VScrollBar", Box(new Color("150f0f"), new Color("6d5334"), 1, 4, 2));
         theme.SetStylebox("grabber", "VScrollBar", Box(new Color("8a693d"), gold, 1, 4, 2));
         theme.SetStylebox("grabber_highlight", "VScrollBar", Box(gold, goldLight, 1, 4, 2));
@@ -121,6 +127,59 @@ public static class MedievalUi
         theme.SetConstant("separation", "HBoxContainer", 10);
         theme.SetConstant("separation", "GridContainer", 10);
         return theme;
+    }
+
+    public static StyleBoxTexture Engraved(string asset, float horizontal, float vertical)
+    {
+        var slice = asset == "engraved_panel" ? 30 : 16;
+        return new StyleBoxTexture
+        {
+            Texture = ResourceLoader.Load<Texture2D>($"res://assets/ui/frames/{asset}.svg"),
+            TextureMarginLeft = slice, TextureMarginRight = slice, TextureMarginTop = slice, TextureMarginBottom = slice,
+            ContentMarginLeft = horizontal, ContentMarginRight = horizontal, ContentMarginTop = vertical, ContentMarginBottom = vertical
+        };
+    }
+
+    private static void DressHeader(Control root)
+    {
+        if (!GodotObject.IsInstanceValid(root) || !root.IsInsideTree() || root.GetParent() is CanvasLayer) return;
+        foreach (var node in root.GetChildren())
+        {
+            if (node is not PanelContainer panel || panel.Position.Y > 30 || panel.Size.X < 1000) continue;
+            var label = FindFirstLabel(panel);
+            if (label == null) continue;
+            label.AddThemeFontOverride("font", RealmUi.TitleFont);
+            label.AddThemeFontSizeOverride("font_size", 32);
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            label.AddThemeColorOverride("font_color", new Color("f0d9a1"));
+            if (!label.HasMeta("heraldic_title"))
+            {
+                label.SetMeta("heraldic_title", true);
+                var parent = label.GetParent(); var index = label.GetIndex();
+                var group = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+                label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                parent.RemoveChild(label); parent.AddChild(group); parent.MoveChild(group, index);
+                group.AddChild(new HeraldicEmblem { Symbol = root.Name.ToString() switch
+                {
+                    "ShopMenu" => "sword", "ForgeMenu" => "hammer", "BountyMenu" => "flag",
+                    "ProfileMenu" => "shield", "CodexMenu" => "book", "SettingsMenu" => "gear",
+                    "CashShopMenu" => "gold", "GuildMenu" or "FriendsMenu" => "people",
+                    "EndlessMenu" => "flame", "TowerMenu" => "mountain", _ => "crown"
+                } });
+                group.AddChild(label);
+            }
+        }
+    }
+
+    private static Label FindFirstLabel(Node node)
+    {
+        if (node is Label label) return label;
+        foreach (var child in node.GetChildren())
+        {
+            var found = FindFirstLabel(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private static StyleBoxFlat Box(Color background, Color border, int borderWidth, int radius, int padding)

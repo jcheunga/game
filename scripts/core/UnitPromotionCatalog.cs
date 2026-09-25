@@ -49,6 +49,9 @@ public static class UnitPromotionCatalog
         new("player_necromancer", "Lich Lord", 1.10f, 1.20f, 1.0f, 2200, 5, "60ff80"),
         new("player_rogue", "Shadow Blade", 1.08f, 1.20f, 1.08f, 2000, 4, "303030"),
         new("player_berserker", "Warlord", 1.15f, 1.18f, 1.05f, 2200, 5, "cc0000"),
+        new("player_lantern_guard", "Dawn Sentinel", 1.16f, 1.08f, 1.0f, 2200, 5, "ffd080"),
+        new("player_ballista", "Siege Marshal", 1.10f, 1.16f, 1.0f, 2500, 5, "c08040"),
+        new("player_stormcaller", "Tempest Sage", 1.10f, 1.18f, 1.0f, 2600, 6, "80b0ff"),
     };
 
     private static readonly Dictionary<string, UnitPromotionDefinition> ById;

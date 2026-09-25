@@ -121,10 +121,10 @@ public partial class ForgeMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var backBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var backBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		backBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(backBtn);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
 	}
@@ -171,7 +171,7 @@ public partial class ForgeMenu : Control
 			label.AddThemeColorOverride("font_color", rarityColor);
 			row.AddChild(label);
 			var capturedId = relicId;
-			var btn = new Button { Text = "Dismantle", CustomMinimumSize = new Vector2(90f, 0f) };
+			var btn = new RealmButton { Text = "Dismantle", CustomMinimumSize = new Vector2(90f, 0f) };
 			btn.Pressed += () =>
 			{
 				if (GameState.Instance.TryDismantleRelic(capturedId, out var gained))
@@ -218,7 +218,7 @@ public partial class ForgeMenu : Control
 			if (relics.Count >= RelicForgeCatalog.RelicsRequiredForFusion)
 			{
 				var capturedRelics = relics.Take(3).ToArray();
-				var btn = new Button { Text = $"Fuse 3 {rarity} relics" };
+				var btn = new RealmButton { Text = $"Fuse 3 {rarity} relics" };
 				btn.Pressed += () =>
 				{
 					if (GameState.Instance.TryFuseRelics(capturedRelics, out var resultId))
@@ -268,7 +268,7 @@ public partial class ForgeMenu : Control
 
 			var canAfford = GameState.Instance.RelicShards >= recipe.ShardCost && GameState.Instance.Gold >= recipe.GoldCost;
 			var capturedId = equip.Id;
-			var btn = new Button { Text = "Craft", CustomMinimumSize = new Vector2(80f, 0f), Disabled = !canAfford };
+			var btn = new RealmButton { Text = "Craft", CustomMinimumSize = new Vector2(80f, 0f), Disabled = !canAfford };
 			btn.Pressed += () =>
 			{
 				if (GameState.Instance.TryForgeRelic(capturedId, out var msg))

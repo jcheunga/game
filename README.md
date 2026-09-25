@@ -15,27 +15,29 @@ godot --path .                  # run directly
 ./scripts/verify_all.sh           # build game + validate data + run server tests
 cd server
 dotnet run                      # start backend on port 5000
-dotnet run -- --test            # run 71 backend endpoint tests
-dotnet run -- --test-data ../data  # run 6437 game-data, locale, and store-config checks
-docker compose up -d            # deploy with Docker
+dotnet run -- --test            # run backend endpoint tests
+dotnet run -- --test-data ../data  # run game-data, locale, and store-config checks
+docker compose up -d            # local HTTP-only Docker run
 ```
 
-See `server/.env.example` for Stripe and CORS configuration.
+See `server/.env.example` for local configuration. For a public release, use
+the HTTPS deployment workflow in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), not
+the local Compose file.
 
 ## Current Status
 
 - Repo-side roadmap work is complete.
 - Primary local verification command: `./scripts/verify_all.sh`
-- Current verified state: game build `0 warnings / 0 errors`, server tests `71 passed`, data checks `6437 passed`
+- Current verified state: game build `0 warnings / 0 errors`, server tests `74 passed`, data checks `6398 passed`
 - Remaining work is external production only: art/audio assets, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
 ## Tests
 
 | Command | What | Count |
 |---------|------|-------|
-| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 71 |
-| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 6437 |
-| `./scripts/verify_all.sh` | Full local repo verification | game build + 71 server tests + 6437 data checks |
+| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 74 |
+| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 6398 |
+| `./scripts/verify_all.sh` | Full local repo verification | game build + 74 server tests + 6398 data checks |
 
 GitHub Actions also runs the game build plus the server/data validation workflow on `server/`, `data/`, `scripts/`, `scenes/`, and project/workflow changes, supports manual dispatch, and cancels stale in-progress runs per ref.
 
@@ -223,6 +225,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Upgrade owned units with gold
   - Preview unit stat gains before buying upgrades
   - Upgrade `War Wagon Plating`, `Caravan Stores`, `March Drum`, and `Rune Beacon`
+  - The wagon starts with an archer crew. In **War wagon**, upgrade its damage/range and install a ballista and firepot launcher; all installed mounts fire automatically together. Archers prioritize raiders/sappers, ballistas prioritize armor/bosses with a 50% damage bonus, and firepots target clusters.
+  - Learn automatic **Arrow Volley** (up to three targets, 17–13 seconds recovery) and **Emergency Repairs** (13–25% hull once per battle at 40% hull), or buy **Reinforced Axles** (6–30% less damage from enemy attacks on the wagon). All six new upgrades have five levels and persist in existing saves.
+  - Enemy strongholds defend their own side: castle/raider archers, harbor/citadel ballistas, foundry firepots, Thornwall frost sentries, and hex sentries in cursed districts. Shots have a 0.7-second aim warning; breached gates stop firing. Endless mode has wagon weapons but no enemy stronghold gun. Open **Battle intel** for weapon ranges, recovery, and skill readiness.
   - Review route intel, battlefield events, next exploration costs, and upcoming unit/spell unlocks while shopping
   - Return to the title screen, campaign map, or endless prep from the same screen
   - `Stage Briefing`: jump straight into the selected campaign loadout screen
@@ -307,7 +312,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Higher stages can spawn the `Grave Lord` boss enemy
   - Units and enemies attack the opposing base core repeatedly until it is destroyed
   - Mission stars are evaluated from stage-authored objective rules
-  - Win by reducing enemy gatehouse HP to 0
+  - Win scripted battles by breaching the gatehouse and defeating every wave; a gate rush cannot skip the commander
+  - Cleared waves grant a short recovery; crowded fronts hold the next wave, and boss phases show a reaction warning
+  - Cursed ground is a marked strip with safe deployment lanes, and frontliners hold nearby enemies before chasing support targets
   - Lose if war wagon hull reaches 0
 
 ## Project layout

@@ -59,12 +59,13 @@ public partial class CodexMenu : Control
 		_filterPanel = new PanelContainer { Position = new Vector2(24f, 112f), Size = new Vector2(1232f, 44f) };
 		AddChild(_filterPanel);
 		var filterRow = new HBoxContainer();
+        filterRow.SetMeta("realm_tabs", true);
 		filterRow.AddThemeConstantOverride("separation", 8);
 		_filterPanel.AddChild(filterRow);
 		foreach (var category in Categories)
 		{
 			var capturedCat = category;
-			var btn = new Button { Text = category, CustomMinimumSize = new Vector2(100f, 0f), ToggleMode = true, ButtonPressed = category == "All" };
+			var btn = new RealmButton { Text = category, CustomMinimumSize = new Vector2(100f, 0f), ToggleMode = true, ButtonPressed = category == "All" };
 			btn.Pressed += () =>
 			{
 				_activeCategory = capturedCat;
@@ -75,7 +76,7 @@ public partial class CodexMenu : Control
 		}
 
 		// Left panel: entry grid
-		_listPanel = new PanelContainer { Position = new Vector2(24f, 168f), Size = new Vector2(500f, 440f) };
+		_listPanel = new PanelContainer { Position = new Vector2(24f, 200f), Size = new Vector2(500f, 440f) };
 		AddChild(_listPanel);
 		var listOuter = new MarginContainer();
 		listOuter.AddThemeConstantOverride("margin_left", 8);
@@ -87,14 +88,14 @@ public partial class CodexMenu : Control
 		listInner.AddThemeConstantOverride("separation", 4);
 		listOuter.AddChild(listInner);
 		listInner.AddChild(new Label { Text = "Entries", HorizontalAlignment = HorizontalAlignment.Center });
-		var listScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 370f) };
+		var listScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 326f) };
 		listInner.AddChild(listScroll);
 		_entryStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_entryStack.AddThemeConstantOverride("separation", 4);
 		listScroll.AddChild(_entryStack);
 
 		// Right panel: detail view
-		_detailPanel = new PanelContainer { Position = new Vector2(540f, 168f), Size = new Vector2(716f, 440f) };
+		_detailPanel = new PanelContainer { Position = new Vector2(540f, 200f), Size = new Vector2(716f, 440f) };
 		AddChild(_detailPanel);
 		var detailOuter = new MarginContainer();
 		detailOuter.AddThemeConstantOverride("margin_left", 8);
@@ -115,10 +116,10 @@ public partial class CodexMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
-		var armoryBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(armoryBtn);
 	}
@@ -180,7 +181,7 @@ public partial class CodexMenu : Control
 				label.AddThemeColorOverride("font_color", new Color("38bdf8"));
 			row.AddChild(label);
 
-			var btn = new Button { Text = "View", CustomMinimumSize = new Vector2(60f, 0f), Disabled = !discovered };
+			var btn = new RealmButton { Text = "View", CustomMinimumSize = new Vector2(60f, 0f), Disabled = !discovered };
 			btn.Pressed += () =>
 			{
 				_selectedEntryId = capturedId;

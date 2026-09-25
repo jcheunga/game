@@ -76,7 +76,7 @@ public partial class BattleSummaryMenu : Control
 		_masteryPanel = BuildMasteryPanel(data);
 
 		// Continue button
-		_continueBtn = new Button
+		_continueBtn = new RealmButton
 		{
 			Text = "Continue",
 			Position = new Vector2(540f, 660f),
@@ -101,7 +101,7 @@ public partial class BattleSummaryMenu : Control
 		_rewardsPanel = new PanelContainer { Visible = false };
 		_masteryPanel = new PanelContainer { Visible = false };
 
-		_continueBtn = new Button
+		_continueBtn = new RealmButton
 		{
 			Text = "Continue",
 			Position = new Vector2(540f, 660f),

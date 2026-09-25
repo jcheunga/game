@@ -292,7 +292,7 @@ public static class StageObjectives
         var type = NormalizeType(objective.Type);
         return type switch
         {
-            "clear_route" => "Clear the route",
+            "clear_route" => stage.HasScriptedWaves ? "Breach the gate and rout all waves" : "Clear the route",
             "bus_hull_ratio" => $"Finish with war wagon hull >= {Mathf.RoundToInt(ResolveBusHullThreshold(stage, objective) * 100f)}%",
             "clear_within" => $"Clear within {ResolveTimeLimit(stage, objective):0}s",
             "deploy_limit" => $"Deploy no more than {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} units",

@@ -95,10 +95,10 @@ public partial class ExpeditionMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
-		var shopBtn = new Button { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
+		var shopBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
 		shopBtn.Pressed += () => SceneRouter.Instance.GoToShop();
 		bottomRow.AddChild(shopBtn);
 	}
@@ -157,7 +157,7 @@ public partial class ExpeditionMenu : Control
 			if (complete)
 			{
 				var capturedIndex = i;
-				var collectBtn = new Button { Text = "Collect Rewards" };
+				var collectBtn = new RealmButton { Text = "Collect Rewards" };
 				collectBtn.Pressed += () =>
 				{
 					if (GameState.Instance.TryCollectExpedition(capturedIndex, out var resultMsg))
@@ -218,7 +218,7 @@ public partial class ExpeditionMenu : Control
 
 					var capturedId = def.Id;
 					var capturedUnits = unitPick;
-					var sendBtn = new Button { Text = "Dispatch" };
+					var sendBtn = new RealmButton { Text = "Dispatch" };
 					sendBtn.Pressed += () =>
 					{
 						if (gs.TryStartExpedition(capturedId, capturedUnits, out var msg))

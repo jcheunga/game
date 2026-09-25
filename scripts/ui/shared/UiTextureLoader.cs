@@ -26,12 +26,13 @@ public static class UiTextureLoader
             }
         }
 
-        return TryLoad(ScreenBackgroundPath, normalizedScreenId);
+        return (normalizedScreenId == "main_menu" ? null : TryLoad(ScreenBackgroundPath, normalizedScreenId))
+            ?? TryLoad(ScreenBackgroundPath, "camp_evening");
     }
 
     public static Texture2D TryLoadMapBackground(string routeId)
     {
-        return TryLoad(MapBackgroundPath, AssetCoverageCatalog.NormalizeId(routeId));
+        return TryLoad(MapBackgroundPath, AssetCoverageCatalog.NormalizeId(routeId)) ?? TryLoad(MapBackgroundPath, "kingdom");
     }
 
     private static Texture2D TryLoad(string basePath, string id)

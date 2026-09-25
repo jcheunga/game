@@ -13,6 +13,10 @@ public static class StageMissionEvents
                 .ToArray();
         }
 
+        // Let the opening teach deployment, counters and the first commander before side objectives.
+        if (stage == null || stage.StageNumber <= 4)
+            return System.Array.Empty<StageMissionEventDefinition>();
+
         var fallback = BuildCampaignFallbackMission(stage);
         return fallback == null
             ? System.Array.Empty<StageMissionEventDefinition>()

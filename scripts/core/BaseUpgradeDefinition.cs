@@ -25,9 +25,21 @@ public static class BaseUpgradeCatalog
     public const string RelicVaultId = "relic_vault";
     public const string ProjectileWardId = "projectile_ward";
     public const string GateBreakerId = "gate_breaker";
+    public const string ArcherCrewId = "wagon_archers";
+    public const string BallistaId = "wagon_ballista";
+    public const string FirepotId = "wagon_firepot";
+    public const string ArrowVolleyId = "wagon_volley";
+    public const string EmergencyRepairId = "wagon_emergency_repair";
+    public const string ReinforcedArmorId = "wagon_armor";
 
     private static readonly BaseUpgradeDefinition[] Upgrades =
     {
+        new(ArcherCrewId, "Wagon Archer Crew", "Your starting ranged weapon. Prioritizes fast raiders and sappers; each level adds damage and range.", 5),
+        new(BallistaId, "Mounted Ballista", "Install a second weapon that prioritizes armored enemies and bosses, dealing 50% bonus damage to them. Fires alongside the archers.", 5),
+        new(FirepotId, "Firepot Launcher", "Install a third weapon that targets clustered enemies and burns the group on impact. Fires alongside other mounts.", 5),
+        new(ArrowVolleyId, "Arrow Volley", "Automatic skill: fires at up to three enemies in archer range when ready. Upgrades shorten recovery.", 5),
+        new(EmergencyRepairId, "Emergency Repairs", "Automatic skill: repair the wagon once per battle when hull falls to 40% or less. Upgrades restore more hull.", 5),
+        new(ReinforcedArmorId, "Reinforced Axles", "Reduce damage from enemy attacks against the wagon by 6% per level. Stacks with hull plating.", 5),
         new(
             HullPlatingId,
             "War Wagon Plating",
@@ -51,7 +63,7 @@ public static class BaseUpgradeCatalog
         new(
             RelicVaultId,
             "Relic Repository",
-            "Increase relic drop chance from boss kills by 12% per level.",
+            "Improve boss relic rarity: each level adds 4.8 percentage points to epic odds and 2.4 to rare odds.",
             5),
         new(
             ProjectileWardId,

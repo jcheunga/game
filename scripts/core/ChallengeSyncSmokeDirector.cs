@@ -25,6 +25,7 @@ public partial class ChallengeSyncSmokeDirector : Node
 	private string _endpoint = "";
 	private double _timeoutSeconds = DefaultTimeoutSeconds;
 	private double _elapsedSeconds;
+	private bool _playerSessionRefreshed;
 
 	public override void _Ready()
 	{
@@ -81,6 +82,25 @@ public partial class ChallengeSyncSmokeDirector : Node
 		GameState.Instance.SetChallengeSyncProvider(_providerId);
 		GameState.Instance.SetChallengeSyncEndpoint(_endpoint);
 		GameState.Instance.SetChallengeSyncAutoFlush(false);
+
+		if (!_playerSessionRefreshed && string.Equals(_providerId, ChallengeSyncProviderCatalog.HttpApiId, StringComparison.Ordinal))
+		{
+			if (!Uri.TryCreate(_endpoint, UriKind.Absolute, out var endpointUri))
+			{
+				Fail("HTTP smoke endpoint must be an absolute URL.");
+				return;
+			}
+
+			var backendEndpoint = endpointUri.GetLeftPart(UriPartial.Authority);
+			if (!PlayerProfileSyncService.RefreshProfileForBackendEndpoint(backendEndpoint, out var sessionMessage))
+			{
+				Fail($"failed to obtain secure player session: {sessionMessage}");
+				return;
+			}
+
+			_playerSessionRefreshed = true;
+		}
+
 		TransitionTo(SmokeState.QueueResult, "queue synthetic result");
 	}
 

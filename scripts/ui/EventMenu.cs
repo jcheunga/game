@@ -101,7 +101,7 @@ public partial class EventMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
 	}
@@ -174,7 +174,7 @@ public partial class EventMenu : Control
 			{
 				var capturedEventId = evt.Id;
 				var capturedIndex = i;
-				var btn = new Button { Text = "Deploy" };
+				var btn = new RealmButton { Text = "Deploy" };
 				btn.Pressed += () =>
 				{
 					gs.PrepareEventBattle(capturedEventId, capturedIndex);
@@ -238,7 +238,7 @@ public partial class EventMenu : Control
 			{
 				var capturedEventId = evt.Id;
 				var capturedIndex = i;
-				var btn = new Button { Text = "Claim" };
+				var btn = new RealmButton { Text = "Claim" };
 				btn.Pressed += () =>
 				{
 					if (gs.TryClaimEventReward(capturedEventId, capturedIndex, out var msg))

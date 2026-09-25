@@ -89,6 +89,9 @@ public static class UnitSkillTreeCatalog
 
 	private static readonly UnitSkillTree[] Trees =
 	{
+		MakeTree("player_lantern_guard", "Dawnwatch", 1.06f, 1.0f, 1f, 0f, 1.08f, 1f, 1f, 0f, 1.04f, 1.04f, 1f, 0f, 1.10f, 1f, 1f, 0f, 1.06f, 1.06f, 1f, 0f),
+		MakeTree("player_ballista", "Siegecraft", 1.04f, 1.04f, 1f, 0f, 1f, 1.08f, 1f, 0f, 1.06f, 1f, 1f, 0.02f, 1f, 1.10f, 1f, 0f, 1.08f, 1f, 1f, 0.03f),
+		MakeTree("player_stormcaller", "Tempest", 1.03f, 1.06f, 1f, 0f, 1f, 1.08f, 1f, 0.02f, 1.06f, 1f, 1f, 0f, 1f, 1.12f, 1f, 0.03f, 1.08f, 1f, 1f, 0f),
 		//                            unitId             theme         h1     d1     s1     c1     h2     d2     s2     c2     h3     d3     s3     c3     h4     d4     s4     c4     h5     d5     s5     c5
 		MakeTree("player_brawler",    "Valor",          1.04f, 1.03f, 1.0f,  0f,    1.06f, 1.0f,  1.0f,  0f,    1.0f,  1.06f, 1.0f,  0f,    1.08f, 1.0f,  1.0f,  0f,    1.0f,  1.08f, 1.0f,  0f),
 		MakeTree("player_shooter",    "Precision",      1.03f, 1.04f, 1.0f,  0f,    1.0f,  1.06f, 1.0f,  0f,    1.05f, 1.0f,  1.0f,  0.02f, 1.0f,  1.08f, 1.0f,  0f,    1.06f, 1.0f,  1.0f,  0.03f),

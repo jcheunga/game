@@ -35,7 +35,7 @@ public class StaleDataCleanup : BackgroundService
                     _logger.LogInformation("StaleDataCleanup: removed {Count} stale rows", cleaned);
                 }
 
-                if (DateTime.UtcNow - _lastBackupTime > BackupInterval)
+                if (Database.SupportsLocalBackups && DateTime.UtcNow - _lastBackupTime > BackupInterval)
                 {
                     var backupPath = Database.Backup();
                     Database.CleanupOldBackups();
@@ -67,9 +67,9 @@ public class StaleDataCleanup : BackgroundService
                 UPDATE rooms SET status = 'expired'
                 WHERE status IN ('lobby', 'racing')
                 AND updated_at > 0
-                AND updated_at < $cutoff
+                AND updated_at < @cutoff
             """;
-            cmd.Parameters.AddWithValue("$cutoff", now - StaleRoomAgeSeconds);
+            cmd.Parameters.AddWithValue("@cutoff", now - StaleRoomAgeSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
 
@@ -87,24 +87,24 @@ public class StaleDataCleanup : BackgroundService
         // Purge old telemetry data
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "DELETE FROM room_telemetry WHERE reported_at < $cutoff";
-            cmd.Parameters.AddWithValue("$cutoff", now - StaleTelemetryAgeSeconds);
+            cmd.CommandText = "DELETE FROM room_telemetry WHERE reported_at < @cutoff";
+            cmd.Parameters.AddWithValue("@cutoff", now - StaleTelemetryAgeSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
 
         // Purge very old reports (keep 90 days)
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "DELETE FROM room_reports WHERE reported_at < $cutoff";
-            cmd.Parameters.AddWithValue("$cutoff", now - StaleReportRetentionSeconds);
+            cmd.CommandText = "DELETE FROM room_reports WHERE reported_at < @cutoff";
+            cmd.Parameters.AddWithValue("@cutoff", now - StaleReportRetentionSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
 
         // Purge old analytics events (keep 30 days)
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "DELETE FROM analytics_events WHERE recorded_at < $cutoff";
-            cmd.Parameters.AddWithValue("$cutoff", now - StaleAnalyticsRetentionSeconds);
+            cmd.CommandText = "DELETE FROM analytics_events WHERE recorded_at < @cutoff";
+            cmd.Parameters.AddWithValue("@cutoff", now - StaleAnalyticsRetentionSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
 

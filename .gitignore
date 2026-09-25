@@ -1,15 +1,17 @@
 # Godot 4
 .godot/
 .import/
-export_presets.cfg
 *.translation
 
 # Build outputs
 bin/
 obj/
+android/
 
 # C# / .NET
 *.csproj.user
+*.csproj.old
+*.csproj.old.*
 *.suo
 *.user
 *.userosscache
@@ -23,3 +25,15 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+# Release credentials and local environment settings
+server/.env
+server/.env.production
+server/secrets/
+*.keystore
+*.jks
+*.p8
+*.mobileprovision
+
+# Local visual review captures
+artifacts/

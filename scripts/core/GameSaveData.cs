@@ -55,13 +55,17 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 39;
+    public int Version { get; set; } = 42;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 12;
     public int Scrap { get => Gold; set => Gold = value; }
     public int Fuel { get => Food; set => Food = value; }
     public int HighestUnlockedStage { get; set; } = 1;
     public int SelectedStage { get; set; } = 1;
+    public string[] VisitedAdventureSites { get; set; } = [];
+    public Dictionary<string, string> AdventureHeroNodes { get; set; } = new();
+    public Dictionary<string, float[]> AdventureHeroPositions { get; set; } = new();
+    public Dictionary<string, int[]> AdventureExploredCells { get; set; } = new();
     public string SelectedEndlessRouteId { get; set; } = "city";
     public string SelectedEndlessBoonId { get; set; } = EndlessBoonCatalog.SurplusCourageId;
     public string LastResultMessage { get; set; } = "Pick a district and clear the route.";
@@ -82,6 +86,8 @@ public sealed class GameSaveData
     public string[] OwnedPlayerUnitIds { get; set; } = [];
     public string[] OwnedPlayerSpellIds { get; set; } = [];
     public int[] StageStars { get; set; } = [];
+    public int[] ClaimedProgressionMilestones { get; set; } = [];
+    public int[] ClaimedStageMasteryRewards { get; set; } = [];
     public Dictionary<string, int> UnitLevels { get; set; } = new();
     public Dictionary<string, int> SpellLevels { get; set; } = new();
     public Dictionary<string, int> BaseUpgradeLevels { get; set; } = new();

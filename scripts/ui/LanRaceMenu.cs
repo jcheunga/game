@@ -123,9 +123,10 @@ public partial class LanRaceMenu : Control
 		_boardLabel = new Label
 		{
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(0f, 210f)
+			Visible = false
 		};
 		boardStack.AddChild(_boardLabel);
+		boardStack.AddChild(RealmUi.Button("book", "Board briefing", () => RealmUi.Details(this, "Board briefing", _boardLabel.Text)));
 		_boardDeckRow = new HBoxContainer();
 		_boardDeckRow.AddThemeConstantOverride("separation", 8);
 		boardStack.AddChild(_boardDeckRow);
@@ -149,7 +150,7 @@ public partial class LanRaceMenu : Control
 		controlRow.AddThemeConstantOverride("separation", 8);
 		boardStack.AddChild(controlRow);
 
-		_hostButton = new Button
+		_hostButton = new RealmButton
 		{
 			Text = "Host Current Board",
 			CustomMinimumSize = new Vector2(0f, 42f),
@@ -158,7 +159,7 @@ public partial class LanRaceMenu : Control
 		_hostButton.Pressed += HostBoard;
 		controlRow.AddChild(_hostButton);
 
-		_refreshButton = new Button
+		_refreshButton = new RealmButton
 		{
 			Text = "Broadcast Update",
 			CustomMinimumSize = new Vector2(0f, 42f),
@@ -171,7 +172,7 @@ public partial class LanRaceMenu : Control
 		joinRow.AddThemeConstantOverride("separation", 8);
 		boardStack.AddChild(joinRow);
 
-		_joinButton = new Button
+		_joinButton = new RealmButton
 		{
 			Text = "Join Host",
 			CustomMinimumSize = new Vector2(0f, 42f),
@@ -180,7 +181,7 @@ public partial class LanRaceMenu : Control
 		_joinButton.Pressed += JoinHost;
 		joinRow.AddChild(_joinButton);
 
-		_closeButton = new Button
+		_closeButton = new RealmButton
 		{
 			Text = "Close Room",
 			CustomMinimumSize = new Vector2(0f, 42f),
@@ -192,7 +193,7 @@ public partial class LanRaceMenu : Control
 		_statusLabel = new Label
 		{
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(0f, 118f)
+			MaxLinesVisible = -1
 		};
 		boardStack.AddChild(_statusLabel);
 
@@ -211,16 +212,17 @@ public partial class LanRaceMenu : Control
 		roomPadding.AddThemeConstantOverride("margin_bottom", 18);
 		roomPanel.AddChild(roomPadding);
 
-		var roomScroll = new ScrollContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
-		roomPadding.AddChild(roomScroll);
-
-		var roomStack = new VBoxContainer();
-		roomStack.AddThemeConstantOverride("separation", 12);
-		roomScroll.AddChild(roomStack);
+        var roomBody = new VBoxContainer();
+        roomPadding.AddChild(roomBody);
+        var pages = new Control[3];
+        RealmUi.Tabs(roomBody, index => { for (var i = 0; i < pages.Length; i++) pages[i].Visible = i == index; }, "Room", "Race", "Standings");
+        var stacks = new VBoxContainer[3];
+        for (var i = 0; i < pages.Length; i++)
+        {
+            var page = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill, Visible = i == 0 };
+            roomBody.AddChild(page); pages[i] = page; stacks[i] = RealmUi.Scroll(page);
+        }
+        var roomStack = stacks[0];
 
 		roomStack.AddChild(new Label
 		{
@@ -246,6 +248,7 @@ public partial class LanRaceMenu : Control
 		};
 		roomStack.AddChild(_readinessLabel);
 
+		roomStack = stacks[1];
 		roomStack.AddChild(new Label
 		{
 			Text = "Race Monitor"
@@ -270,6 +273,7 @@ public partial class LanRaceMenu : Control
 		};
 		roomStack.AddChild(_scoreboardLabel);
 
+		roomStack = stacks[2];
 		roomStack.AddChild(new Label
 		{
 			Text = "Session Standings"
@@ -294,7 +298,7 @@ public partial class LanRaceMenu : Control
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		bottomPanel.AddChild(bottomRow);
 
-		var backButton = new Button
+		var backButton = new RealmButton
 		{
 			Text = "Back To Multiplayer",
 			CustomMinimumSize = new Vector2(200f, 0f)
@@ -302,7 +306,7 @@ public partial class LanRaceMenu : Control
 		backButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
 		bottomRow.AddChild(backButton);
 
-		var settingsButton = new Button
+		var settingsButton = new RealmButton
 		{
 			Text = "Settings",
 			CustomMinimumSize = new Vector2(140f, 0f)
@@ -315,7 +319,7 @@ public partial class LanRaceMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		});
 
-		_readyButton = new Button
+		_readyButton = new RealmButton
 		{
 			Text = "Ready Up",
 			CustomMinimumSize = new Vector2(180f, 0f)
@@ -323,7 +327,7 @@ public partial class LanRaceMenu : Control
 		_readyButton.Pressed += ToggleReady;
 		bottomRow.AddChild(_readyButton);
 
-		_launchButton = new Button
+		_launchButton = new RealmButton
 		{
 			Text = "Launch LAN Race",
 			CustomMinimumSize = new Vector2(240f, 0f)
@@ -342,7 +346,7 @@ public partial class LanRaceMenu : Control
 		RebuildResourcesRow();
 		_challengeCodeLabel.Text = string.Empty;
 		var titleRow = _challengeCodeLabel.GetParent<HBoxContainer>();
-		while (titleRow.GetChildCount() > 3) titleRow.GetChild(titleRow.GetChildCount() - 1).QueueFree();
+		RealmUi.TrimChildren(titleRow, 3);
 		titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", challenge.Code, new Vector2(24f, 24f)));
 		var deckMode = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
 			? $"Locked LAN squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"

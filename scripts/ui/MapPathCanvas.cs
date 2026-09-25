@@ -1,402 +1,156 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
+/// <summary>Adventure terrain, persistent fog, pan/zoom and caravan travel. Rewards live in GameState.</summary>
 public partial class MapPathCanvas : Control
 {
-
-    public Dictionary<int, Vector2> StagePoints { get; } = new();
-    public Dictionary<int, string> StageMapIds { get; } = new();
-    public int HighestUnlockedStage { get; set; } = 1;
-    public int SelectedStage { get; set; } = 1;
-    public string ActiveMapId { get; set; } = "city";
-
-    private float _animTimer;
-
-    public override void _Process(double delta)
+    public event Action<AdventureMapNode> SiteSelected;
+    public event Action TravelStateChanged;
+    public string ActiveMapId { get; private set; } = "city";
+    public bool IsTravelling { get; private set; }
+    public float Zoom { get; private set; } = .78f;
+    public Vector2 MapOffset { get; private set; }
+    private readonly List<AdventureMapToken> _tokens = new();
+    private ShaderMaterial _fog;
+    private ColorRect _fogLayer;
+    private string _selectedId = "";
+    private Vector2 _heroPoint;
+    private bool _dragging;
+    private float _dragDistance;
+    private Tween _travelTween;
+    private float _time;
+    public override void _Ready()
     {
-        _animTimer += (float)delta;
+        ClipContents = true;
+        MouseDefaultCursorShape = CursorShape.Drag;
+        _fog = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://assets/map/adventure/fog.gdshader") };
+        _fogLayer = new ColorRect { Material = _fog, MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_fogLayer); _fogLayer.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Resized += UpdateView;
+    }
+    public void ShowMap(string mapId, string selectedId)
+    {
+        _travelTween?.Kill(); IsTravelling = false;
+        ActiveMapId = RouteCatalog.Normalize(mapId); _selectedId = selectedId;
+        foreach (var token in _tokens) { RemoveChild(token); token.QueueFree(); } _tokens.Clear();
+        foreach (var node in AdventureMapCatalog.ForMap(ActiveMapId))
+        {
+            var site = node;
+            var token = new AdventureMapToken { Site = site, Size = new Vector2(78,78) };
+            token.Pressed += () => { if (!IsTravelling) SiteSelected?.Invoke(site); };
+            AddChild(token); _tokens.Add(token);
+        }
+        _heroPoint = GameState.Instance.GetAdventureHeroPosition(ActiveMapId);
+        RefreshKnowledge();
+        FocusCaravan();
+        Callable.From(FocusCaravan).CallDeferred();
+    }
+    public void SelectSite(string id) { _selectedId = id; UpdateView(); }
+    public void RefreshKnowledge()
+    {
+        var areas = GameState.Instance.GetAdventureRevealAreas(ActiveMapId).Take(128).ToArray();
+        var packed = new Vector3[128]; Array.Copy(areas, packed, areas.Length);
+        _fog.SetShaderParameter("revealed", packed); _fog.SetShaderParameter("reveal_count", areas.Length);
+        UpdateView();
+    }
+    public void FocusCaravan() => FocusPoint(_heroPoint);
+    public void FocusPoint(Vector2 point) { MapOffset = Size / 2 - point * Zoom; UpdateView(); }
+    public void ChangeZoom(float factor, Vector2? around = null)
+    {
+        var anchor = around ?? Size / 2; var world = (anchor - MapOffset) / Zoom;
+        Zoom = Mathf.Clamp(Zoom * factor, Mathf.Max(Size.X / AdventureMapCatalog.WorldSize.X, Size.Y / AdventureMapCatalog.WorldSize.Y), 1.4f);
+        MapOffset = anchor - world * Zoom; UpdateView();
+    }
+    private void UpdateView()
+    {
+        if (_fog == null || Size.X < 1) return;
+        MapOffset = new Vector2(Mathf.Clamp(MapOffset.X, Math.Min(0, Size.X - AdventureMapCatalog.WorldSize.X * Zoom), 0), Mathf.Clamp(MapOffset.Y, Math.Min(0, Size.Y - AdventureMapCatalog.WorldSize.Y * Zoom), 0));
+        _fog.SetShaderParameter("canvas_size", Size); _fog.SetShaderParameter("map_offset", MapOffset); _fog.SetShaderParameter("map_zoom", Zoom);
+        foreach (var token in _tokens)
+        {
+            token.Position = token.Site.Point * Zoom + MapOffset - token.Size / 2;
+            token.Selected = token.Site.Id == _selectedId;
+            token.Visible = GameState.Instance.IsAdventureSiteDiscovered(token.Site.Id) && new Rect2(Vector2.Zero, Size).Encloses(new Rect2(token.Position, token.Size));
+            token.Disabled = IsTravelling;
+            token.QueueRedraw();
+        }
         QueueRedraw();
     }
-
+    public override void _GuiInput(InputEvent input)
+    {
+        if (input is InputEventMouseButton mouse)
+        {
+            if (mouse.ButtonIndex == MouseButton.WheelUp && mouse.Pressed) { ChangeZoom(1.12f, mouse.Position); AcceptEvent(); }
+            if (mouse.ButtonIndex == MouseButton.WheelDown && mouse.Pressed) { ChangeZoom(1 / 1.12f, mouse.Position); AcceptEvent(); }
+            if (mouse.ButtonIndex is MouseButton.Left or MouseButton.Middle)
+            {
+                if (mouse.Pressed) { _dragging = true; _dragDistance = 0; }
+                else
+                {
+                    var walk = _dragging && _dragDistance < 8 && mouse.ButtonIndex == MouseButton.Left;
+                    _dragging = false;
+                    if (walk) TravelToPoint((mouse.Position - MapOffset) / Zoom);
+                }
+                AcceptEvent();
+            }
+        }
+        if (input is InputEventMouseMotion motion && _dragging) { _dragDistance += motion.Relative.Length(); MapOffset += motion.Relative; UpdateView(); AcceptEvent(); }
+        if (input is InputEventScreenDrag drag) { _dragDistance += drag.Relative.Length(); MapOffset += drag.Relative; UpdateView(); AcceptEvent(); }
+        if (input is InputEventMagnifyGesture pinch) { ChangeZoom(pinch.Factor, pinch.Position); AcceptEvent(); }
+    }
+    public void TravelTo(AdventureMapNode destination, Action arrived)
+    {
+        if (IsTravelling || destination.MapId != ActiveMapId || !GameState.Instance.CanVisitAdventureSite(destination.Id)) return;
+        TravelToPoint(destination.Point, arrived);
+    }
+    public void TravelToPoint(Vector2 destination, Action arrived = null)
+    {
+        if (IsTravelling || !float.IsFinite(destination.X) || !float.IsFinite(destination.Y)) return;
+        destination = destination.Clamp(Vector2.Zero, AdventureMapCatalog.WorldSize - Vector2.One);
+        IsTravelling = true; _travelTween = CreateTween();
+        // The atlas is freely traversable: movement never visits or clears intervening encounters.
+        _travelTween.TweenMethod(Callable.From<Vector2>(point => {
+            _heroPoint = point;
+            GameState.Instance.MoveAdventureHero(ActiveMapId, point, false);
+            FocusPoint(point); RefreshKnowledge();
+        }), _heroPoint, destination, Mathf.Clamp(_heroPoint.DistanceTo(destination) / 600, .18, 2.6));
+        _travelTween.TweenCallback(Callable.From(() => {
+            IsTravelling = false;
+            GameState.Instance.MoveAdventureHero(ActiveMapId, _heroPoint);
+            arrived?.Invoke(); RefreshKnowledge(); TravelStateChanged?.Invoke();
+        }));
+        UpdateView(); TravelStateChanged?.Invoke();
+    }
+    public override void _ExitTree()
+    {
+        if (IsTravelling) GameState.Instance.MoveAdventureHero(ActiveMapId, _heroPoint);
+        _travelTween?.Kill();
+    }
+    public override void _Process(double delta) { _time += (float)delta; QueueRedraw(); }
     public override void _Draw()
     {
-        var route = RouteCatalog.Get(ActiveMapId);
-        DrawBackground(route);
-        DrawRouteDecor(route);
-        DrawRouteLines(route);
-        DrawStageNodes(route);
+        DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
+        DrawTextureRect(AdventureMapArt.TerrainForMap(ActiveMapId), new Rect2(Vector2.Zero, AdventureMapCatalog.WorldSize), false);
+        var stages = AdventureMapCatalog.ForMap(ActiveMapId).Where(x => x.Kind == AdventureSiteKind.Leader).ToArray();
+        var last = AdventureMapCatalog.ForMap(ActiveMapId)[0].Point;
+        foreach (var stage in stages)
+        {
+            if (!GameState.Instance.IsAdventureSiteDiscovered(stage.Id)) continue;
+            Trail(last, stage.Point); last = stage.Point;
+            foreach (var site in AdventureMapCatalog.ForMap(ActiveMapId).Where(x => x.Stage == stage.Stage && x.Kind is not AdventureSiteKind.Leader and not AdventureSiteKind.Camp && GameState.Instance.CanVisitAdventureSite(x.Id))) Trail(stage.Point, site.Point, true);
+        }
+        var hero = _heroPoint + new Vector2(-45, 35);
+        DrawCircle(hero + new Vector2(0,8), 22 / Zoom, new Color(0,0,0,.5f));
+        DrawTextureRect(AdventureMapArt.Piece(5), new Rect2(hero - new Vector2(31,47) / Zoom, new Vector2(62,70) / Zoom), false);
+        if (IsTravelling) DrawArc(hero, (23 + Mathf.Sin(_time * 8) * 2) / Zoom, 0, Mathf.Tau, 32, new Color("b6e9d4"), 2 / Zoom, true);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
-
-    private void DrawBackground(RouteDefinition route)
+    private void Trail(Vector2 from, Vector2 to, bool branch = false)
     {
-        DrawRect(new Rect2(Vector2.Zero, Size), route.BackgroundBottom, true);
-        DrawRect(new Rect2(0f, 0f, Size.X, Size.Y * 0.44f), route.BackgroundTop, true);
-
-        for (var i = 0; i < 10; i++)
-        {
-            var t = i / 9f;
-            var y = Mathf.Lerp(58f, Size.Y - 42f, t);
-            DrawLine(
-                new Vector2(32f, y),
-                new Vector2(Size.X - 32f, y),
-                new Color(route.RouteGlow, 0.045f + (i * 0.003f)),
-                1.2f,
-                true);
-        }
-    }
-
-    private void DrawRouteDecor(RouteDefinition route)
-    {
-        var mapId = NormalizeMapId(ActiveMapId);
-        if (mapId == "harbor")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 138f, Size.X, 98f), new Color("1b4965", 0.38f), true);
-            for (var i = 0; i < 5; i++)
-            {
-                var x = Mathf.Lerp(110f, Size.X - 110f, i / 4f);
-                DrawRect(new Rect2(x - 42f, 78f + (i % 2) * 28f, 84f, 20f), new Color(0f, 0f, 0f, 0.18f), true);
-                DrawRect(new Rect2(x - 18f, Size.Y - 174f + ((i + 1) % 2) * 14f, 36f, 54f), new Color(1f, 1f, 1f, 0.06f), true);
-            }
-        }
-        else if (mapId == "foundry")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 108f, Size.X, 52f), new Color("311d18", 0.46f), true);
-            for (var i = 0; i < 6; i++)
-            {
-                var x = Mathf.Lerp(72f, Size.X - 72f, i / 5f);
-                DrawLine(
-                    new Vector2(x - 36f, Size.Y - 132f),
-                    new Vector2(x + 48f, 112f + ((i % 2) * 24f)),
-                    new Color(1f, 0.62f, 0.2f, 0.08f),
-                    14f,
-                    true);
-                DrawRect(new Rect2(x - 28f, 84f + ((i + 1) % 2) * 36f, 56f, 16f), new Color(0f, 0f, 0f, 0.22f), true);
-            }
-
-            for (var i = 0; i < 5; i++)
-            {
-                var x = Mathf.Lerp(90f, Size.X - 90f, i / 4f);
-                DrawLine(
-                    new Vector2(x - 42f, Size.Y - 88f),
-                    new Vector2(x + 42f, Size.Y - 88f),
-                    new Color(1f, 0.7f, 0.32f, 0.28f),
-                    3f,
-                    true);
-            }
-        }
-        else if (mapId == "quarantine")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 124f, Size.X, 72f), new Color("183a37", 0.44f), true);
-
-            for (var i = 0; i < 7; i++)
-            {
-                var x = Mathf.Lerp(78f, Size.X - 78f, i / 6f);
-                DrawRect(new Rect2(x - 38f, 96f + ((i + 1) % 2) * 26f, 76f, 18f), new Color(1f, 0.96f, 0.62f, 0.12f), true);
-                DrawLine(
-                    new Vector2(x - 44f, Size.Y - 142f),
-                    new Vector2(x + 34f, Size.Y - 72f),
-                    new Color(0.85f, 1f, 0.78f, 0.08f),
-                    10f,
-                    true);
-            }
-
-            for (var i = 0; i < 10; i++)
-            {
-                var x = Mathf.Lerp(42f, Size.X - 42f, i / 9f);
-                var y = Size.Y - 110f;
-                DrawLine(
-                    new Vector2(x - 18f, y - 10f),
-                    new Vector2(x + 8f, y + 10f),
-                    new Color(1f, 0.95f, 0.55f, 0.26f),
-                    4f,
-                    true);
-            }
-        }
-        else if (mapId == "thornwall")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 132f, Size.X, 84f), new Color("223140", 0.54f), true);
-
-            for (var i = 0; i < 5; i++)
-            {
-                var left = Mathf.Lerp(-24f, Size.X - 180f, i / 4f);
-                var peak = left + 90f + ((i % 2) * 22f);
-                var right = left + 190f;
-                DrawColoredPolygon(
-                    new[]
-                    {
-                        new Vector2(left, Size.Y - 90f),
-                        new Vector2(peak, 118f + ((i % 2) * 26f)),
-                        new Vector2(right, Size.Y - 90f)
-                    },
-                    new Color("d8e2f0", 0.12f));
-                DrawLine(
-                    new Vector2(peak - 20f, 132f + ((i % 2) * 24f)),
-                    new Vector2(peak + 10f, 188f + ((i % 2) * 18f)),
-                    new Color(1f, 1f, 1f, 0.16f),
-                    4f,
-                    true);
-            }
-
-            for (var i = 0; i < 10; i++)
-            {
-                var x = Mathf.Lerp(54f, Size.X - 54f, i / 9f);
-                var y = 72f + ((i % 3) * 18f);
-                DrawLine(
-                    new Vector2(x - 16f, y),
-                    new Vector2(x + 8f, y + 22f),
-                    new Color("f1faee", 0.18f),
-                    3f,
-                    true);
-            }
-        }
-        else if (mapId == "basilica")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 128f, Size.X, 80f), new Color("2a241d", 0.56f), true);
-
-            for (var i = 0; i < 5; i++)
-            {
-                var x = Mathf.Lerp(92f, Size.X - 92f, i / 4f);
-                DrawArc(
-                    new Vector2(x, 132f + ((i % 2) * 18f)),
-                    44f,
-                    Mathf.Pi,
-                    Mathf.Tau,
-                    18,
-                    new Color("fef3c7", 0.12f),
-                    4f);
-                DrawLine(
-                    new Vector2(x - 44f, 132f + ((i % 2) * 18f)),
-                    new Vector2(x - 44f, Size.Y - 122f),
-                    new Color(1f, 0.97f, 0.86f, 0.08f),
-                    5f,
-                    true);
-                DrawLine(
-                    new Vector2(x + 44f, 132f + ((i % 2) * 18f)),
-                    new Vector2(x + 44f, Size.Y - 122f),
-                    new Color(1f, 0.97f, 0.86f, 0.08f),
-                    5f,
-                    true);
-            }
-
-            for (var i = 0; i < 12; i++)
-            {
-                var x = Mathf.Lerp(42f, Size.X - 42f, i / 11f);
-                DrawCircle(new Vector2(x, Size.Y - 92f - ((i % 2) * 8f)), 3f, new Color("ffd166", 0.55f));
-            }
-        }
-        else if (mapId == "mire")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 136f, Size.X, 92f), new Color("20331f", 0.58f), true);
-
-            for (var i = 0; i < 6; i++)
-            {
-                var x = Mathf.Lerp(76f, Size.X - 76f, i / 5f);
-                DrawCircle(new Vector2(x, Size.Y - 98f + ((i % 2) * 10f)), 38f, new Color("90be6d", 0.14f));
-                DrawRect(new Rect2(x - 8f, 104f + ((i % 2) * 22f), 16f, 86f), new Color(1f, 1f, 1f, 0.06f), true);
-            }
-
-            for (var i = 0; i < 10; i++)
-            {
-                var x = Mathf.Lerp(48f, Size.X - 48f, i / 9f);
-                DrawLine(
-                    new Vector2(x - 18f, Size.Y - 76f - ((i % 3) * 6f)),
-                    new Vector2(x + 18f, Size.Y - 82f - ((i % 3) * 6f)),
-                    new Color("ecf39e", 0.18f),
-                    3f,
-                    true);
-            }
-        }
-        else if (mapId == "steppe")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 126f, Size.X, 84f), new Color("4f311f", 0.56f), true);
-
-            for (var i = 0; i < 7; i++)
-            {
-                var x = Mathf.Lerp(62f, Size.X - 62f, i / 6f);
-                DrawLine(
-                    new Vector2(x - 26f, Size.Y - 92f + ((i % 2) * 8f)),
-                    new Vector2(x + 30f, Size.Y - 108f + ((i % 2) * 8f)),
-                    new Color("ffd166", 0.18f),
-                    6f,
-                    true);
-            }
-
-            for (var i = 0; i < 6; i++)
-            {
-                var x = Mathf.Lerp(90f, Size.X - 90f, i / 5f);
-                DrawRect(new Rect2(x - 10f, 94f + ((i % 2) * 20f), 20f, 78f), new Color(0f, 0f, 0f, 0.16f), true);
-                DrawLine(
-                    new Vector2(x, 94f + ((i % 2) * 20f)),
-                    new Vector2(x + 22f, 82f + ((i % 2) * 20f)),
-                    new Color(1f, 0.92f, 0.7f, 0.12f),
-                    4f,
-                    true);
-            }
-        }
-        else if (mapId == "gloamwood")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 130f, Size.X, 88f), new Color("251824", 0.58f), true);
-
-            for (var i = 0; i < 7; i++)
-            {
-                var x = Mathf.Lerp(70f, Size.X - 70f, i / 6f);
-                DrawLine(
-                    new Vector2(x, Size.Y - 50f),
-                    new Vector2(x - 18f, 92f + ((i % 3) * 16f)),
-                    new Color("b08968", 0.14f),
-                    8f,
-                    true);
-                DrawLine(
-                    new Vector2(x, 126f + ((i % 2) * 20f)),
-                    new Vector2(x + 26f, 92f + ((i % 2) * 14f)),
-                    new Color("dda15e", 0.12f),
-                    4f,
-                    true);
-            }
-
-            for (var i = 0; i < 8; i++)
-            {
-                var x = Mathf.Lerp(84f, Size.X - 84f, i / 7f);
-                DrawCircle(new Vector2(x, Size.Y - 94f - ((i % 2) * 8f)), 4f, new Color("f4a261", 0.38f));
-            }
-        }
-        else if (mapId == "citadel")
-        {
-            DrawRect(new Rect2(0f, Size.Y - 128f, Size.X, 86f), new Color("262c3d", 0.58f), true);
-
-            for (var i = 0; i < 5; i++)
-            {
-                var x = Mathf.Lerp(94f, Size.X - 94f, i / 4f);
-                DrawRect(new Rect2(x - 26f, 90f + ((i % 2) * 18f), 52f, 70f), new Color(0f, 0f, 0f, 0.18f), true);
-                for (var j = 0; j < 3; j++)
-                {
-                    DrawRect(new Rect2(x - 26f + (j * 18f), 84f + ((i % 2) * 18f), 12f, 10f), new Color("f8edff", 0.14f), true);
-                }
-            }
-
-            DrawLine(
-                new Vector2(52f, Size.Y - 86f),
-                new Vector2(Size.X - 52f, Size.Y - 86f),
-                new Color("cdb4db", 0.22f),
-                6f,
-                true);
-        }
-        else
-        {
-            for (var i = 0; i < 7; i++)
-            {
-                var x = Mathf.Lerp(64f, Size.X - 64f, i / 6f);
-                DrawLine(
-                    new Vector2(x - 42f, Size.Y - 104f),
-                    new Vector2(x + 18f, 96f),
-                    new Color(1f, 1f, 1f, 0.05f),
-                    18f,
-                    true);
-            }
-
-            DrawRect(new Rect2(0f, Size.Y - 92f, Size.X, 42f), new Color(0f, 0f, 0f, 0.12f), true);
-            for (var i = 0; i < 18; i++)
-            {
-                var x = Mathf.Lerp(32f, Size.X - 32f, i / 17f);
-                DrawRect(new Rect2(x - 7f, Size.Y - 74f, 14f, 4f), new Color(route.BannerAccent, 0.35f), true);
-            }
-        }
-    }
-
-    private void DrawRouteLines(RouteDefinition route)
-    {
-        var routeStages = GameData.GetStagesForMap(ActiveMapId);
-        for (var i = 0; i < routeStages.Count - 1; i++)
-        {
-            var fromStage = routeStages[i].StageNumber;
-            var toStage = routeStages[i + 1].StageNumber;
-
-            if (!StagePoints.TryGetValue(fromStage, out var from) || !StagePoints.TryGetValue(toStage, out var to))
-            {
-                continue;
-            }
-
-            if (!StageMapIds.TryGetValue(fromStage, out var fromMap) || !StageMapIds.TryGetValue(toStage, out var toMap))
-            {
-                continue;
-            }
-
-            if (!IsStageVisible(fromMap) || !IsStageVisible(toMap) || !fromMap.Equals(toMap, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var unlocked = fromStage < HighestUnlockedStage;
-            var lineColor = unlocked ? route.RouteColor : new Color(route.LockedNode, 0.55f);
-            var glowColor = unlocked ? route.RouteGlow : new Color(0f, 0f, 0f, 0.22f);
-
-            DrawLine(from, to, glowColor, 11f, true);
-            DrawLine(from, to, lineColor, 5f, true);
-        }
-    }
-
-    private void DrawStageNodes(RouteDefinition route)
-    {
-        foreach (var pair in StagePoints)
-        {
-            var stage = pair.Key;
-            var point = pair.Value;
-
-            if (StageMapIds.TryGetValue(stage, out var mapId) && !IsStageVisible(mapId))
-            {
-                continue;
-            }
-
-            var unlocked = stage <= HighestUnlockedStage;
-            var completed = stage < HighestUnlockedStage;
-            var isSelected = stage == SelectedStage;
-
-            var nodeColor = unlocked ? route.UnlockedNode : route.LockedNode;
-            if (isSelected)
-            {
-                nodeColor = route.SelectedNode;
-            }
-
-            if (completed)
-            {
-                DrawCircle(point, 44f, new Color(route.RouteGlow, 0.16f));
-            }
-
-            if (isSelected)
-            {
-                var pulse = 0.55f + (Mathf.Sin(_animTimer * 3.2f) * 0.2f);
-                var glowRadius = 50f + (Mathf.Sin(_animTimer * 2.4f) * 4f);
-                DrawArc(point, glowRadius, 0f, Mathf.Tau, 36, new Color(route.SelectedNode, pulse), 5f);
-                DrawCircle(point, glowRadius + 2f, new Color(route.SelectedNode, pulse * 0.12f));
-            }
-
-            DrawCircle(point, 38f, new Color(0f, 0f, 0f, 0.34f));
-            DrawCircle(point, 31f, nodeColor);
-            DrawCircle(point, 22f, nodeColor.Lightened(0.12f));
-
-            if (completed)
-            {
-                DrawRect(new Rect2(point + new Vector2(18f, -34f), new Vector2(10f, 10f)), route.Accent, true);
-            }
-
-            if (!unlocked)
-            {
-                var lockBob = Mathf.Sin(_animTimer * 1.5f + (stage * 0.7f)) * 2f;
-                var lockCenter = point + new Vector2(0f, 2f + lockBob);
-                DrawArc(lockCenter, 10f, Mathf.Pi, Mathf.Tau, 14, new Color(1f, 1f, 1f, 0.75f), 3f);
-                DrawRect(new Rect2(lockCenter + new Vector2(-8f, 0f), new Vector2(16f, 12f)), new Color(1f, 1f, 1f, 0.75f), true);
-            }
-        }
-    }
-
-    private bool IsStageVisible(string mapId)
-    {
-        return NormalizeMapId(mapId).Equals(NormalizeMapId(ActiveMapId), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string NormalizeMapId(string mapId)
-    {
-        return string.IsNullOrWhiteSpace(mapId) ? "city" : mapId.Trim().ToLowerInvariant();
+        DrawLine(from, to, new Color(.12f,.09f,.04f,.55f), (branch ? 4 : 8) / Zoom, true);
+        for (var d = 0f; d < from.DistanceTo(to); d += 19 / Zoom)
+            DrawCircle(from.MoveToward(to, d), (branch ? 1.5f : 2.4f) / Zoom, new Color("e1c383aa"));
     }
 }

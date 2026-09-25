@@ -16,6 +16,7 @@ public sealed class UnitSpriteSheet
 	public Texture2D Texture { get; set; }
 	public int FrameWidth { get; set; }
 	public int FrameHeight { get; set; }
+	public float DrawScale { get; set; } = 1f;
 	public Dictionary<UnitAnimState, SpriteAnimRange> Animations { get; set; } = new();
 }
 
@@ -50,6 +51,8 @@ public static class UnitSpriteLoader
 
 		if (!ResourceLoader.Exists(sheetPath))
 		{
+			var illustrated = TryLoadIllustrated(visualClass);
+			if (illustrated != null) return Cache[visualClass] = illustrated;
 			MissingIds.Add(visualClass);
 			return null;
 		}
@@ -82,6 +85,24 @@ public static class UnitSpriteLoader
 		Cache[visualClass] = sheet;
 		return sheet;
 	}
+
+    private static UnitSpriteSheet TryLoadIllustrated(string visualClass)
+    {
+        var index = visualClass switch { "fighter" => 0, "gunner" => 1, "shield" => 2, "walker" => 3, "runner" => 4, "brute" => 5, _ => -1 };
+        const string path = SpritePath + "warband_sprites.png";
+        if (index < 0 || !ResourceLoader.Exists(path)) return null;
+        var atlas = ResourceLoader.Load<Texture2D>(path);
+        var cell = atlas.GetSize() / new Vector2(3, 2);
+        var sheet = new UnitSpriteSheet
+        {
+            Texture = new AtlasTexture { Atlas = atlas, Region = new Rect2(new Vector2(index % 3 * cell.X, index / 3 * cell.Y), cell) },
+            FrameWidth = (int)cell.X, FrameHeight = (int)cell.Y, DrawScale = 1.8f
+        };
+        // Single painted poses use the renderer's movement bob and attack lunge.
+        foreach (UnitAnimState state in System.Enum.GetValues<UnitAnimState>())
+            sheet.Animations[state] = new SpriteAnimRange { StartFrame = 0, FrameCount = 1, Loop = true };
+        return sheet;
+    }
 
 	private static void TryLoadMeta(string path, UnitSpriteSheet sheet)
 	{

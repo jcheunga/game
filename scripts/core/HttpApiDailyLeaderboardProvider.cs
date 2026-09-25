@@ -51,7 +51,7 @@ public sealed class HttpApiDailyLeaderboardProvider
 		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/daily/complete");
-		request.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+		PlayerSessionHttp.Apply(request, profileId);
 		request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
 		using var response = Client.Send(request);

@@ -72,7 +72,7 @@ public partial class CrashReporter : Node
 			using var msg = new System.Net.Http.HttpRequestMessage(
 				System.Net.Http.HttpMethod.Post,
 				$"{endpoint.TrimEnd('/')}/crash-report");
-			msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
 			Client.Send(msg);
 		}

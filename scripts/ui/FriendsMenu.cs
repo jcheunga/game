@@ -101,7 +101,7 @@ public partial class FriendsMenu : Control
 		actionsInner.AddChild(addRow);
 		_addFriendInput = new LineEdit { PlaceholderText = "Enter profile ID...", SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		addRow.AddChild(_addFriendInput);
-		var addBtn = new Button { Text = "Add", CustomMinimumSize = new Vector2(80f, 0f) };
+		var addBtn = new RealmButton { Text = "Add", CustomMinimumSize = new Vector2(80f, 0f) };
 		addBtn.Pressed += OnAddFriendPressed;
 		addRow.AddChild(addBtn);
 
@@ -122,7 +122,7 @@ public partial class FriendsMenu : Control
 		var removeSectionLabel = new Label { Text = "Remove Friend" };
 		removeSectionLabel.AddThemeColorOverride("font_color", new Color("f472b6"));
 		actionsInner.AddChild(removeSectionLabel);
-		_removeBtn = new Button { Text = "Remove Selected Friend", Disabled = true, CustomMinimumSize = new Vector2(200f, 0f) };
+		_removeBtn = new RealmButton { Text = "Remove Selected Friend", Disabled = true, CustomMinimumSize = new Vector2(200f, 0f) };
 		_removeBtn.Pressed += OnRemoveFriendPressed;
 		actionsInner.AddChild(_removeBtn);
 
@@ -135,10 +135,10 @@ public partial class FriendsMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var profileBtn = new Button { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
+		var profileBtn = new RealmButton { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
 		profileBtn.Pressed += () => SceneRouter.Instance.GoToProfile();
 		bottomRow.AddChild(profileBtn);
-		var mapBtn = new Button { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
+		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
 		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		bottomRow.AddChild(mapBtn);
 	}
@@ -218,7 +218,7 @@ public partial class FriendsMenu : Control
 
 			var truncatedId = friendId.Length > 12 ? friendId[..12] + "..." : friendId;
 			row.AddChild(UiBadgeFactory.CreateMetaBadge("friends", truncatedId, new Vector2(28f, 28f)));
-			var selectBtn = new Button
+			var selectBtn = new RealmButton
 			{
 				Text = truncatedId,
 				SizeFlagsHorizontal = SizeFlags.ExpandFill,
@@ -228,7 +228,7 @@ public partial class FriendsMenu : Control
 			selectBtn.Pressed += () => OnFriendSelected(capturedId, selectBtn);
 			row.AddChild(selectBtn);
 
-			var giftBtn = new Button { Text = "Send Gift", CustomMinimumSize = new Vector2(100f, 0f) };
+			var giftBtn = new RealmButton { Text = "Send Gift", CustomMinimumSize = new Vector2(100f, 0f) };
 			// Disable if already sent 3 gifts today
 			if (giftsSentToday >= 3)
 			{

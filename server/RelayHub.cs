@@ -29,11 +29,33 @@ public static class RelayHub
 
         var profileId = context.Request.Headers["X-Convoy-Profile"].FirstOrDefault()
                         ?? context.Request.Query["profileId"].FirstOrDefault()
-                        ?? $"anon-{Guid.NewGuid().ToString("N")[..6]}";
+                        ?? "";
+        if (string.IsNullOrWhiteSpace(profileId) || !SessionAuth.TryAuthorize(context.Request, profileId, out _))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+
+        if (!HasActiveSeat(roomId, profileId))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
 
         using var ws = await context.WebSockets.AcceptWebSocketAsync();
         var roomPeers = Rooms.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, WebSocket>());
         var roomActivity = PeerLastActive.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, long>());
+        if (roomPeers.TryGetValue(profileId, out var previousSocket) && previousSocket != ws)
+        {
+            try
+            {
+                await previousSocket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "superseded by a new connection", CancellationToken.None);
+            }
+            catch
+            {
+                // The previous connection may already be gone.
+            }
+        }
         roomPeers[profileId] = ws;
         roomActivity[profileId] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -83,8 +105,13 @@ public static class RelayHub
         }
         finally
         {
-            roomPeers.TryRemove(profileId, out _);
-            roomActivity.TryRemove(profileId, out _);
+            // A reconnect may already have replaced this socket for the same
+            // profile. Never let the superseded socket evict its replacement.
+            if (roomPeers.TryGetValue(profileId, out var currentSocket) && currentSocket == ws)
+            {
+                roomPeers.TryRemove(profileId, out _);
+                roomActivity.TryRemove(profileId, out _);
+            }
 
             if (roomPeers.IsEmpty)
             {
@@ -178,4 +205,20 @@ public static class RelayHub
 
     public static int GetPeerCount(string roomId) =>
         Rooms.TryGetValue(roomId, out var peers) ? peers.Count : 0;
+
+    private static bool HasActiveSeat(string roomId, string profileId)
+    {
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT 1 FROM room_seats
+            WHERE room_id = @roomId AND profile_id = @profileId
+              AND status != 'left' AND expires_at > @now
+            LIMIT 1
+        """;
+        cmd.Parameters.AddWithValue("@roomId", roomId);
+        cmd.Parameters.AddWithValue("@profileId", profileId);
+        cmd.Parameters.AddWithValue("@now", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        return cmd.ExecuteScalar() != null;
+    }
 }

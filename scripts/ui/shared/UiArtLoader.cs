@@ -34,9 +34,23 @@ public static class UiArtLoader
         }
 
         var visualClass = AssetCoverageCatalog.NormalizeId(unit.VisualClass);
-        return string.IsNullOrWhiteSpace(visualClass)
-            ? null
-            : TryLoad(UnitIconPath, visualClass);
+        return TryLoad(UnitIconPath, visualClass) ?? LoadPortrait(unit.Id) ?? RealmUi.Icon(visualClass switch
+        { "shield" => "shield", "gunner" or "sniper" => "arrow", "support" => "heart", "boss" => "crown", _ => "sword" });
+    }
+
+    private static Texture2D LoadPortrait(string unitId)
+    {
+        var ids = new[] { "player_brawler", "player_shooter", "player_defender", "player_spear",
+            "player_ranger", "player_raider", "player_mechanic", "player_marksman",
+            "player_breacher", "player_grenadier", "player_coordinator", "enemy_boss" };
+        var index = Array.IndexOf(ids, unitId);
+        if (index < 0) return null;
+        var key = "portrait:" + unitId;
+        if (Cache.TryGetValue(key, out var cached)) return cached;
+        var atlas = ResourceLoader.Load<Texture2D>("res://assets/ui/portraits/warband_atlas.png");
+        if (atlas == null) return null;
+        var cell = atlas.GetSize() / new Vector2(4, 3);
+        return Cache[key] = new AtlasTexture { Atlas = atlas, Region = new Rect2(new Vector2(index % 4, index / 4) * cell, cell) };
     }
 
     public static Texture2D TryLoadSpellIcon(SpellDefinition spell)
@@ -59,7 +73,7 @@ public static class UiArtLoader
         var effectType = AssetCoverageCatalog.NormalizeId(spell.EffectType);
         return string.IsNullOrWhiteSpace(effectType)
             ? null
-            : TryLoad(SpellIconPath, effectType);
+            : TryLoad(SpellIconPath, effectType) ?? RealmUi.Icon(effectType.Contains("heal") ? "heart" : effectType.Contains("barrier") ? "shield" : effectType.Contains("fire") ? "flame" : "bolt");
     }
 
     public static Texture2D TryLoadRelicIcon(EquipmentDefinition relic)
@@ -130,7 +144,7 @@ public static class UiArtLoader
         var typeId = AssetCoverageCatalog.NormalizeId(rewardType);
         return string.IsNullOrWhiteSpace(typeId)
             ? null
-            : TryLoad(RewardIconPath, typeId);
+            : TryLoad(RewardIconPath, typeId) ?? RealmUi.Icon(typeId == "gold" ? "gold" : typeId == "food" ? "food" : typeId.Contains("star") ? "star" : "gift");
     }
 
     public static Texture2D TryLoadMetaIcon(string metaId)
@@ -138,7 +152,7 @@ public static class UiArtLoader
         var normalizedId = AssetCoverageCatalog.NormalizeId(metaId);
         return string.IsNullOrWhiteSpace(normalizedId)
             ? null
-            : TryLoad(MetaIconPath, normalizedId);
+            : TryLoad(MetaIconPath, normalizedId) ?? RealmUi.Icon(normalizedId.Contains("friend") || normalizedId.Contains("guild") ? "people" : "crown");
     }
 
     public static bool HasUnitIconAsset(UnitDefinition unit)

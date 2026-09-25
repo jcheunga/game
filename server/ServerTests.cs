@@ -13,17 +13,26 @@ namespace CrownroadServer.Tests;
 
 public static class ServerTests
 {
+    private const string TestAdminApiKey = "test-admin-api-key";
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
     };
 
+    private static readonly Dictionary<string, string> SessionTokens = new(StringComparer.Ordinal);
+
     public static async Task<int> RunAll()
     {
         var dbPath = Path.Combine(Path.GetTempPath(), $"crownroad_test_{Guid.NewGuid():N}.db");
-        Database.Configure($"Data Source={dbPath}");
+        var postgresConnectionString = Environment.GetEnvironmentVariable("CROWNROAD_TEST_POSTGRES_CONNECTION");
+        var usesPostgres = !string.IsNullOrWhiteSpace(postgresConnectionString);
+        Database.Configure(usesPostgres ? postgresConnectionString! : $"Data Source={dbPath}");
         Database.Initialize();
+        var previousTestClaims = Environment.GetEnvironmentVariable("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS");
+        var previousAdminApiKey = Environment.GetEnvironmentVariable("ADMIN_API_KEY");
+        Environment.SetEnvironmentVariable("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS", "1");
+        Environment.SetEnvironmentVariable("ADMIN_API_KEY", TestAdminApiKey);
 
         var passed = 0;
         var failed = 0;
@@ -37,6 +46,7 @@ public static class ServerTests
             {
                 ("PlayerProfile", () => TestPlayerProfile(client)),
                 ("ChallengeSync", () => TestChallengeSync(client)),
+                ("ChallengeSync_GameContract", () => TestChallengeSyncGameContract(client)),
                 ("ChallengeLeaderboard", () => TestChallengeLeaderboard(client)),
                 ("ChallengeFeed", () => TestChallengeFeed(client)),
                 ("RoomCreate", () => TestRoomCreate(client)),
@@ -53,7 +63,7 @@ public static class ServerTests
                 ("RoomSeatLease", () => TestRoomSeatLease(client)),
                 ("RoomDirectory", () => TestRoomDirectory(client)),
                 ("RoomAction_Reset", () => TestRoomActionReset(client)),
-                ("WebSocketRelay", () => TestWebSocketRelay(host)),
+                ("WebSocketRelay", () => TestWebSocketRelay(host, client)),
                 ("AchievementSync", () => TestAchievementSync(client)),
                 ("AchievementList", () => TestAchievementList(client)),
                 ("DailyComplete", () => TestDailyComplete(client)),
@@ -61,7 +71,9 @@ public static class ServerTests
                 ("PurchaseValidate", () => TestPurchaseValidate(client)),
                 ("PurchaseHistory", () => TestPurchaseHistory(client)),
                 ("PurchaseProducts", () => TestPurchaseProducts(client)),
+                ("Wallet", () => TestWallet(client)),
                 ("PurchaseDuplicate", () => TestPurchaseDuplicate(client)),
+                ("StoreVerifierFailsClosedWithoutCredentials", TestStoreVerifierFailsClosedWithoutCredentials),
                 ("PurchaseStarterOneTime", () => TestPurchaseStarterOneTime(client)),
                 ("StripeCheckoutNoKey", () => TestStripeCheckoutNoKey(client)),
                 ("StripeStatusNoKey", () => TestStripeStatusNoKey(client)),
@@ -73,6 +85,9 @@ public static class ServerTests
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
+                ("SessionRejectsProfileHijack", () => TestSessionRejectsProfileHijack(client)),
+                ("ChallengeSyncRejectsSessionlessProfile", () => TestChallengeSyncRejectsSessionlessProfile(client)),
+                ("AnalyticsRejectsSessionlessProfile", () => TestAnalyticsRejectsSessionlessProfile(client)),
                 ("ChallengeSync_EmptyBatch", () => TestChallengeSync_EmptyBatch(client)),
                 ("ChallengeSync_BoundsRejection", () => TestChallengeSync_BoundsRejection(client)),
                 ("ChallengeLeaderboard_MissingCode", () => TestChallengeLeaderboard_MissingCode(client)),
@@ -127,7 +142,10 @@ public static class ServerTests
         }
         finally
         {
-            if (File.Exists(dbPath)) File.Delete(dbPath);
+            Environment.SetEnvironmentVariable("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS", previousTestClaims);
+            Environment.SetEnvironmentVariable("ADMIN_API_KEY", previousAdminApiKey);
+            SessionTokens.Clear();
+            if (!usesPostgres && File.Exists(dbPath)) File.Delete(dbPath);
         }
 
         Console.WriteLine($"\n{passed} passed, {failed} failed, {passed + failed} total");
@@ -180,6 +198,7 @@ public static class ServerTests
                     endpoints.MapPost("/purchase/validate", Endpoints.PurchaseValidate);
                     endpoints.MapGet("/purchase/history", Endpoints.PurchaseHistory);
                     endpoints.MapGet("/purchase/products", Endpoints.PurchaseProducts);
+                    endpoints.MapGet("/wallet", Endpoints.Wallet);
                     endpoints.MapPost("/purchase/stripe-checkout", Endpoints.StripeCreateCheckout);
                     endpoints.MapPost("/purchase/stripe-webhook", Endpoints.StripeWebhook);
                     endpoints.MapGet("/purchase/stripe-status", Endpoints.StripeCheckoutStatus);
@@ -220,8 +239,11 @@ public static class ServerTests
     {
         var body = new { profile = new { playerProfileId = "TEST-01", playerCallsign = "TestRunner" } };
         var resp = await Post(client, "/player-profile", body, "TEST-01");
-        Assert(resp.RootElement.GetProperty("authState").GetString() == "verified", "expected verified auth");
+        Assert(resp.RootElement.GetProperty("authState").GetString() == "anonymous_authenticated", "expected anonymous authenticated session");
         Assert(resp.RootElement.GetProperty("playerProfileId").GetString() == "TEST-01", "wrong profile id");
+        var token = resp.RootElement.GetProperty("sessionToken").GetString() ?? "";
+        Assert(token.Length >= 32, "expected a secure session token");
+        SessionTokens["TEST-01"] = token;
     }
 
     private static async Task TestChallengeSync(HttpClient client)
@@ -239,6 +261,48 @@ public static class ServerTests
         };
         var resp = await Post(client, "/challenge-sync", body, "TEST-01");
         Assert(resp.RootElement.GetProperty("accepted").GetInt32() == 2, "expected 2 accepted");
+    }
+
+    private static async Task TestChallengeSyncGameContract(HttpClient client)
+    {
+        const string submissionId = "GAME-CONTRACT-SUBMISSION-01";
+        var body = new
+        {
+            batch = new
+            {
+                batchId = "GAME-CONTRACT-BATCH-01",
+                submissions = new[]
+                {
+                    new
+                    {
+                        submissionId,
+                        code = "GAME-CONTRACT-BOARD-01",
+                        score = 1320,
+                        won = true,
+                        starsEarned = 3,
+                        elapsedSeconds = 27.5,
+                        hullPercent = 78,
+                        enemyDefeats = 14
+                    }
+                }
+            }
+        };
+
+        var first = await Post(client, "/challenge-sync", body, "TEST-01");
+        Assert(first.RootElement.GetProperty("acceptedSubmissionIds")[0].GetString() == submissionId,
+            "expected the game submission ID to be acknowledged");
+
+        var second = await Post(client, "/challenge-sync", body, "TEST-01");
+        Assert(second.RootElement.GetProperty("acceptedSubmissionIds")[0].GetString() == submissionId,
+            "expected a retry to be acknowledged idempotently");
+
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM challenge_results WHERE submission_id = @submissionId AND board_code = @code AND score = @score";
+        cmd.Parameters.AddWithValue("@submissionId", submissionId);
+        cmd.Parameters.AddWithValue("@code", "GAME-CONTRACT-BOARD-01");
+        cmd.Parameters.AddWithValue("@score", 1320);
+        Assert(Database.ToInt64(cmd.ExecuteScalar()) == 1, "expected one durable PostgreSQL/SQLite challenge row");
     }
 
     private static async Task TestChallengeLeaderboard(HttpClient client)
@@ -287,7 +351,7 @@ public static class ServerTests
 
     private static async Task TestRoomSession(HttpClient client)
     {
-        var resp = await Get(client, $"/challenge-room-session?roomId={_testRoomId}");
+        var resp = await Get(client, $"/challenge-room-session?roomId={_testRoomId}&profileId=TEST-01");
         Assert(resp.RootElement.GetProperty("hasRoom").GetBoolean(), "expected hasRoom true");
         var peers = resp.RootElement.GetProperty("peers");
         Assert(peers.GetArrayLength() == 2, $"expected 2 peers, got {peers.GetArrayLength()}");
@@ -306,7 +370,7 @@ public static class ServerTests
         var resp = await Post(client, "/challenge-room-action", body, "TEST-01");
         Assert(resp.RootElement.GetProperty("status").GetString() == "ok", "expected ok");
 
-        var session = await Get(client, $"/challenge-room-session?roomId={_testRoomId}");
+        var session = await Get(client, $"/challenge-room-session?roomId={_testRoomId}&profileId=TEST-01");
         Assert(session.RootElement.GetProperty("status").GetString() == "racing", "expected racing status");
     }
 
@@ -374,26 +438,55 @@ public static class ServerTests
         var resp = await Post(client, "/challenge-room-action", body, "TEST-01");
         Assert(resp.RootElement.GetProperty("status").GetString() == "ok", "expected ok");
 
-        var session = await Get(client, $"/challenge-room-session?roomId={_testRoomId}");
+        var session = await Get(client, $"/challenge-room-session?roomId={_testRoomId}&profileId=TEST-01");
         Assert(session.RootElement.GetProperty("status").GetString() == "lobby", "expected lobby after reset");
     }
 
-    private static async Task TestWebSocketRelay(IHost host)
+    private static async Task TestWebSocketRelay(IHost host, HttpClient client)
     {
+        const string hostProfileId = "WS-PEER-1";
+        const string joinerProfileId = "WS-PEER-2";
+        var createBody = new
+        {
+            room = new
+            {
+                boardCode = "WS-BOARD-01",
+                boardTitle = "WebSocket Test Room",
+                playerProfileId = hostProfileId,
+                playerCallsign = "WebSocket Host",
+                region = "test",
+                usesLockedDeck = false
+            }
+        };
+        var createResponse = await Post(client, "/challenge-room-create", createBody, hostProfileId);
+        var roomId = createResponse.RootElement.GetProperty("roomId").GetString() ?? "";
+        Assert(!string.IsNullOrWhiteSpace(roomId), "expected relay test room id");
+
+        var joinBody = new
+        {
+            join = new
+            {
+                roomId,
+                playerProfileId = joinerProfileId,
+                playerCallsign = "WebSocket Joiner"
+            }
+        };
+        await Post(client, "/challenge-room-join", joinBody, joinerProfileId);
+
         var server = host.GetTestServer();
         var wsClient1 = server.CreateWebSocketClient();
         var wsClient2 = server.CreateWebSocketClient();
 
-        wsClient1.ConfigureRequest = req => req.Headers["X-Convoy-Profile"] = "WS-PEER-1";
-        wsClient2.ConfigureRequest = req => req.Headers["X-Convoy-Profile"] = "WS-PEER-2";
+        wsClient1.ConfigureRequest = req => ApplyWebSocketSession(req, hostProfileId);
+        wsClient2.ConfigureRequest = req => ApplyWebSocketSession(req, joinerProfileId);
 
-        var ws1 = await wsClient1.ConnectAsync(new Uri(server.BaseAddress, "/ws/relay/TEST-RELAY-ROOM"), CancellationToken.None);
+        var ws1 = await wsClient1.ConnectAsync(new Uri(server.BaseAddress, $"/ws/relay/{roomId}"), CancellationToken.None);
         Assert(ws1.State == System.Net.WebSockets.WebSocketState.Open, "ws1 should be open");
 
         // Small delay for join broadcast
         await Task.Delay(50);
 
-        var ws2 = await wsClient2.ConnectAsync(new Uri(server.BaseAddress, "/ws/relay/TEST-RELAY-ROOM"), CancellationToken.None);
+        var ws2 = await wsClient2.ConnectAsync(new Uri(server.BaseAddress, $"/ws/relay/{roomId}"), CancellationToken.None);
         Assert(ws2.State == System.Net.WebSockets.WebSocketState.Open, "ws2 should be open");
 
         // Read peer_joined message on ws1 (broadcast when ws2 joins)
@@ -412,15 +505,15 @@ public static class ServerTests
         Assert(received.Contains("10.5"), "expected elapsed value in relay");
 
         // Verify peer count
-        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 2, "expected 2 peers in relay room");
+        Assert(RelayHub.GetPeerCount(roomId) == 2, "expected 2 peers in relay room");
 
         await ws1.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
         await Task.Delay(50);
-        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 1, "expected 1 peer after ws1 close");
+        Assert(RelayHub.GetPeerCount(roomId) == 1, "expected 1 peer after ws1 close");
 
         await ws2.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
         await Task.Delay(50);
-        Assert(RelayHub.GetPeerCount("TEST-RELAY-ROOM") == 0, "expected 0 peers after both close");
+        Assert(RelayHub.GetPeerCount(roomId) == 0, "expected 0 peers after both close");
     }
 
     private static async Task TestAchievementSync(HttpClient client)
@@ -442,7 +535,7 @@ public static class ServerTests
         var syncBody = new { profileId = "TEST-ACH-02", achievementIds = new[] { "ach_explorer", "ach_collector" } };
         await Post(client, "/achievements/sync", syncBody, "TEST-ACH-02");
 
-        var resp = await Get(client, "/achievements/TEST-ACH-02");
+        var resp = await Get(client, "/achievements/TEST-ACH-02?profileId=TEST-ACH-02");
         var achievements = resp.RootElement.GetProperty("achievements");
         Assert(achievements.GetArrayLength() == 2, $"expected 2 achievements, got {achievements.GetArrayLength()}");
 
@@ -545,6 +638,13 @@ public static class ServerTests
         Assert(products.GetArrayLength() == 10, $"expected 10 products, got {products.GetArrayLength()}");
     }
 
+    private static async Task TestWallet(HttpClient client)
+    {
+        var resp = await Get(client, "/wallet?profileId=TEST-PUR-01");
+        Assert(resp.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected server wallet to hold 500 gold");
+        Assert(resp.RootElement.GetProperty("foodBalance").GetInt32() == 0, "expected server wallet to hold zero food");
+    }
+
     private static async Task TestPurchaseDuplicate(HttpClient client)
     {
         // First purchase should succeed
@@ -558,13 +658,35 @@ public static class ServerTests
         };
         await Post(client, "/purchase/validate", body, "TEST-PUR-DUP");
 
-        // Duplicate transaction should be rejected with 409
-        var json = System.Text.Json.JsonSerializer.Serialize(body, JsonOpts);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, "/purchase/validate");
-        msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", "TEST-PUR-DUP");
-        msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        var resp = await client.SendAsync(msg);
-        Assert(resp.StatusCode == HttpStatusCode.Conflict, $"expected 409, got {(int)resp.StatusCode}");
+        // Idempotent retry must not grant twice, but should tell a recovering
+        // client that it may safely finish its store transaction.
+        var duplicate = await Post(client, "/purchase/validate", body, "TEST-PUR-DUP");
+        Assert(duplicate.RootElement.GetProperty("status").GetString() == "already_recorded", "expected already_recorded retry status");
+    }
+
+    private static async Task TestStoreVerifierFailsClosedWithoutCredentials()
+    {
+        const string packageKey = "GOOGLE_PLAY_PACKAGE_NAME";
+        const string jsonKey = "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON";
+        const string pathKey = "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH";
+        var previousPackage = Environment.GetEnvironmentVariable(packageKey);
+        var previousJson = Environment.GetEnvironmentVariable(jsonKey);
+        var previousPath = Environment.GetEnvironmentVariable(pathKey);
+        try
+        {
+            Environment.SetEnvironmentVariable(packageKey, null);
+            Environment.SetEnvironmentVariable(jsonKey, null);
+            Environment.SetEnvironmentVariable(pathKey, null);
+            var result = await StorePurchaseVerification.VerifyAsync(
+                "google", "gold_pouch", "synthetic-token", "GPA.synthetic", "TEST-PUR-VERIFY");
+            Assert(!result.Verified && result.IsConfigurationError, "expected missing Play credentials to fail closed");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(packageKey, previousPackage);
+            Environment.SetEnvironmentVariable(jsonKey, previousJson);
+            Environment.SetEnvironmentVariable(pathKey, previousPath);
+        }
     }
 
     private static async Task TestPurchaseStarterOneTime(HttpClient client)
@@ -589,12 +711,7 @@ public static class ServerTests
             receiptToken = "receipt-starter-002",
             transactionId = "txn-starter-002"
         };
-        var json = System.Text.Json.JsonSerializer.Serialize(body2, JsonOpts);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, "/purchase/validate");
-        msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", "TEST-PUR-STARTER");
-        msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        var resp = await client.SendAsync(msg);
-        Assert(resp.StatusCode == HttpStatusCode.Conflict, $"expected 409 for second starter, got {(int)resp.StatusCode}");
+        await PostExpect(client, "/purchase/validate", body2, "TEST-PUR-STARTER", HttpStatusCode.Conflict);
     }
 
     private static async Task TestAnalyticsIngest(HttpClient client)
@@ -632,7 +749,8 @@ public static class ServerTests
             }
         }, "TEST-ANALYTICS-SUM");
 
-        var resp = await Get(client, "/analytics/summary?type=stage_end");
+        await GetExpect(client, "/analytics/summary?type=stage_end", HttpStatusCode.Unauthorized);
+        var resp = await GetAdmin(client, "/analytics/summary?type=stage_end");
         Assert(resp.RootElement.GetProperty("status").GetString() == "ok", "expected ok");
         var rows = resp.RootElement.GetProperty("rows");
         Assert(rows.GetArrayLength() >= 2, $"expected at least 2 rows, got {rows.GetArrayLength()}");
@@ -744,8 +862,8 @@ public static class ServerTests
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
-        var version = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert(version >= 2, $"expected schema version >= 2, got {version}");
+        var version = Database.ToInt64(cmd.ExecuteScalar());
+        Assert(version >= 4, $"expected schema version >= 4, got {version}");
         await Task.CompletedTask;
     }
 
@@ -859,6 +977,58 @@ public static class ServerTests
         await PostExpect(client, "/purchase/validate", new { profileId = "V-01", productId = "fake_product", platform = "stripe", receiptToken = "r" }, "V-01", HttpStatusCode.BadRequest);
     }
 
+    private static async Task TestSessionRejectsProfileHijack(HttpClient client)
+    {
+        var body = new
+        {
+            profileId = "TEST-PUR-01",
+            productId = "gold_pouch",
+            platform = "google",
+            receiptToken = "test-token-not-authorized",
+            transactionId = "txn-hijack"
+        };
+        var json = JsonSerializer.Serialize(body, JsonOpts);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/purchase/validate");
+        message.Headers.TryAddWithoutValidation("X-Convoy-Profile", "TEST-PUR-01");
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await client.SendAsync(message);
+        Assert(response.StatusCode == HttpStatusCode.Unauthorized, "expected unauthenticated profile claim to be rejected");
+    }
+
+    private static async Task TestChallengeSyncRejectsSessionlessProfile(HttpClient client)
+    {
+        var body = new
+        {
+            batch = new
+            {
+                submissions = new[] { new { submissionId = "UNAUTH-SCORE", code = "UNAUTH-BOARD", score = 100 } }
+            }
+        };
+        var json = JsonSerializer.Serialize(body, JsonOpts);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/challenge-sync");
+        message.Headers.TryAddWithoutValidation("X-Convoy-Profile", "TEST-01");
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await client.SendAsync(message);
+        Assert(response.StatusCode == HttpStatusCode.Unauthorized, "expected unauthenticated score submission to be rejected");
+    }
+
+    private static async Task TestAnalyticsRejectsSessionlessProfile(HttpClient client)
+    {
+        var body = new
+        {
+            profileId = "TEST-01",
+            clientVersion = 31,
+            platform = "desktop",
+            events = new[] { new { type = "forged_event", data = "blocked" } }
+        };
+        var json = JsonSerializer.Serialize(body, JsonOpts);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/analytics/ingest");
+        message.Headers.TryAddWithoutValidation("X-Convoy-Profile", "TEST-01");
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await client.SendAsync(message);
+        Assert(response.StatusCode == HttpStatusCode.Unauthorized, "expected unauthenticated analytics submission to be rejected");
+    }
+
     private static async Task TestPurchaseHistory_EmptyProfile(HttpClient client)
     {
         var resp = await Get(client, "/purchase/history?profileId=NEVER-PURCHASED");
@@ -878,8 +1048,9 @@ public static class ServerTests
     {
         var oversized = new string('x', 512 * 1024 + 100);
         var json = JsonSerializer.Serialize(new { profileId = "CS-BIG", saveData = oversized, saveVersion = 31 }, JsonOpts);
+        await EnsureSession(client, "CS-BIG");
         using var msg = new HttpRequestMessage(HttpMethod.Post, "/cloud-save/upload");
-        msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", "CS-BIG");
+        ApplySession(msg, "CS-BIG");
         msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
         var resp = await client.SendAsync(msg);
         Assert((int)resp.StatusCode == 413, $"expected 413 for oversized save, got {(int)resp.StatusCode}");
@@ -946,7 +1117,7 @@ public static class ServerTests
 
     private static async Task TestAchievementList_NonexistentProfile(HttpClient client)
     {
-        var resp = await Get(client, "/achievements/GHOST-PROFILE");
+        var resp = await Get(client, "/achievements/GHOST-PROFILE?profileId=GHOST-PROFILE");
         var achievements = resp.RootElement.GetProperty("achievements");
         Assert(achievements.GetArrayLength() == 0, "expected 0 achievements for nonexistent profile");
     }
@@ -1022,9 +1193,13 @@ public static class ServerTests
 
     private static async Task<JsonDocument> Post(HttpClient client, string url, object body, string profileId)
     {
+        if (!url.Equals("/player-profile", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(profileId))
+        {
+            await EnsureSession(client, profileId);
+        }
         var json = JsonSerializer.Serialize(body, JsonOpts);
         using var msg = new HttpRequestMessage(HttpMethod.Post, url);
-        msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+        ApplySession(msg, profileId);
         msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
         var resp = await client.SendAsync(msg);
         Assert(resp.StatusCode == HttpStatusCode.OK, $"HTTP {(int)resp.StatusCode} at {url}");
@@ -1034,9 +1209,13 @@ public static class ServerTests
 
     private static async Task<HttpStatusCode> PostExpect(HttpClient client, string url, object body, string profileId, HttpStatusCode expected)
     {
+        if (!url.Equals("/player-profile", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(profileId))
+        {
+            await EnsureSession(client, profileId);
+        }
         var json = JsonSerializer.Serialize(body, JsonOpts);
         using var msg = new HttpRequestMessage(HttpMethod.Post, url);
-        msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+        ApplySession(msg, profileId);
         msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
         var resp = await client.SendAsync(msg);
         Assert(resp.StatusCode == expected, $"expected {(int)expected} at {url}, got {(int)resp.StatusCode}");
@@ -1052,9 +1231,72 @@ public static class ServerTests
 
     private static async Task<JsonDocument> Get(HttpClient client, string url)
     {
-        var resp = await client.GetAsync(url);
+        var profileId = GetQueryValue(url, "profileId");
+        if (!string.IsNullOrWhiteSpace(profileId))
+        {
+            await EnsureSession(client, profileId);
+        }
+        using var msg = new HttpRequestMessage(HttpMethod.Get, url);
+        ApplySession(msg, profileId);
+        var resp = await client.SendAsync(msg);
         Assert(resp.StatusCode == HttpStatusCode.OK, $"HTTP {(int)resp.StatusCode} at {url}");
         var text = await resp.Content.ReadAsStringAsync();
         return JsonDocument.Parse(text);
+    }
+
+    private static async Task<JsonDocument> GetAdmin(HttpClient client, string url)
+    {
+        using var msg = new HttpRequestMessage(HttpMethod.Get, url);
+        msg.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+        var resp = await client.SendAsync(msg);
+        Assert(resp.StatusCode == HttpStatusCode.OK, $"HTTP {(int)resp.StatusCode} at {url}");
+        return JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+    }
+
+    private static async Task EnsureSession(HttpClient client, string profileId)
+    {
+        if (SessionTokens.ContainsKey(profileId)) return;
+
+        var body = new { profile = new { playerProfileId = profileId, playerCallsign = "TestRunner" } };
+        var json = JsonSerializer.Serialize(body, JsonOpts);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/player-profile");
+        message.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await client.SendAsync(message);
+        Assert(response.StatusCode == HttpStatusCode.OK, $"failed to establish test session for {profileId}");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var token = document.RootElement.GetProperty("sessionToken").GetString() ?? "";
+        Assert(!string.IsNullOrWhiteSpace(token), "expected session token");
+        SessionTokens[profileId] = token;
+    }
+
+    private static void ApplySession(HttpRequestMessage message, string profileId)
+    {
+        if (string.IsNullOrWhiteSpace(profileId)) return;
+        message.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+        if (SessionTokens.TryGetValue(profileId, out var token))
+        {
+            message.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+        }
+    }
+
+    private static void ApplyWebSocketSession(HttpRequest request, string profileId)
+    {
+        request.Headers["X-Convoy-Profile"] = profileId;
+        if (SessionTokens.TryGetValue(profileId, out var token))
+        {
+            request.Headers.Authorization = $"Bearer {token}";
+        }
+    }
+
+    private static string GetQueryValue(string url, string key)
+    {
+        var marker = $"{key}=";
+        var index = url.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (index < 0) return "";
+        var valueStart = index + marker.Length;
+        var valueEnd = url.IndexOf('&', valueStart);
+        var value = valueEnd < 0 ? url[valueStart..] : url[valueStart..valueEnd];
+        return Uri.UnescapeDataString(value);
     }
 }

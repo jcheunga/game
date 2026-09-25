@@ -140,17 +140,14 @@ public partial class SettingsMenu : Control
         };
         rootStack.AddChild(_returnLabel);
 
-        var bodyScroll = new ScrollContainer
+        var pages = new VBoxContainer[4];
+        RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, "Sound", "Gameplay", "Online", "Account");
+        for (int i = 0; i < pages.Length; i++)
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
-        };
-        rootStack.AddChild(bodyScroll);
-
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 16);
-        stack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        bodyScroll.AddChild(stack);
+            pages[i] = RealmUi.Scroll(rootStack);
+            pages[i].GetParent<ScrollContainer>().Visible = i == 0;
+        }
+        var stack = pages[0];
 
         var audioPanel = new PanelContainer();
         stack.AddChild(audioPanel);
@@ -229,7 +226,7 @@ public partial class SettingsMenu : Control
         audioStack.AddChild(_muteButton);
 
         var interfacePanel = new PanelContainer();
-        stack.AddChild(interfacePanel);
+        pages[1].AddChild(interfacePanel);
 
         var interfacePadding = new MarginContainer();
         interfacePadding.AddThemeConstantOverride("margin_left", 14);
@@ -270,7 +267,7 @@ public partial class SettingsMenu : Control
         };
         callsignRow.AddChild(_callsignEdit);
 
-        var callsignButton = new Button
+        var callsignButton = new RealmButton
         {
             Text = "Apply Callsign",
             CustomMinimumSize = new Vector2(180f, 40f)
@@ -282,7 +279,7 @@ public partial class SettingsMenu : Control
         };
         callsignRow.AddChild(callsignButton);
 
-        var interfaceRow = new HBoxContainer();
+        var interfaceRow = new GridContainer { Columns = 2 };
         interfaceRow.AddThemeConstantOverride("separation", 8);
         interfaceStack.AddChild(interfaceRow);
 
@@ -325,7 +322,7 @@ public partial class SettingsMenu : Control
         });
         interfaceRow.AddChild(langButton);
 
-        var accessRow = new HBoxContainer();
+        var accessRow = new GridContainer { Columns = 2 };
         accessRow.AddThemeConstantOverride("separation", 8);
         interfaceStack.AddChild(accessRow);
 
@@ -346,7 +343,7 @@ public partial class SettingsMenu : Control
         }));
 
         var difficultyPanel = new PanelContainer();
-        stack.AddChild(difficultyPanel);
+        pages[1].AddChild(difficultyPanel);
 
         var difficultyPadding = new MarginContainer();
         difficultyPadding.AddThemeConstantOverride("margin_left", 14);
@@ -389,7 +386,7 @@ public partial class SettingsMenu : Control
         difficultyStack.AddChild(_difficultyButton);
 
         var syncPanel = new PanelContainer();
-        stack.AddChild(syncPanel);
+        pages[2].AddChild(syncPanel);
 
         var syncPadding = new MarginContainer();
         syncPadding.AddThemeConstantOverride("margin_left", 14);
@@ -432,6 +429,7 @@ public partial class SettingsMenu : Control
             RefreshUi();
         });
         providerRow.AddChild(_syncProviderButton);
+		_syncProviderButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         _syncAutoFlushButton = BuildCompactButton("Toggle Auto Flush", () =>
         {
@@ -439,6 +437,7 @@ public partial class SettingsMenu : Control
             RefreshUi();
         });
         providerRow.AddChild(_syncAutoFlushButton);
+		_syncAutoFlushButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         var profileButton = BuildCompactButton("Refresh Profile", () =>
         {
@@ -457,8 +456,9 @@ public partial class SettingsMenu : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         endpointRow.AddChild(_syncEndpointEdit);
+		_syncEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
 
-        var endpointButton = new Button
+        var endpointButton = new RealmButton
         {
             Text = "Apply Endpoint",
             CustomMinimumSize = new Vector2(190f, 40f)
@@ -469,8 +469,9 @@ public partial class SettingsMenu : Control
             RefreshUi();
         };
         endpointRow.AddChild(endpointButton);
+		endpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
-        var defaultsButton = new Button
+        var defaultsButton = new RealmButton
         {
             Text = "Restore Defaults",
             CustomMinimumSize = new Vector2(0f, 46f)
@@ -498,8 +499,11 @@ public partial class SettingsMenu : Control
         };
         stack.AddChild(defaultsButton);
 
+        pages[3].AddChild(RealmUi.Button("close", "Reset campaign", () => MedievalUi.ShowConfirmation(this,
+            "Abandon this campaign?", "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
+            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.GoToMainMenu(); })));
         var purchasePanel = new PanelContainer();
-        stack.AddChild(purchasePanel);
+        pages[3].AddChild(purchasePanel);
 
         var purchasePadding = new MarginContainer();
         purchasePadding.AddThemeConstantOverride("margin_left", 14);
@@ -533,8 +537,9 @@ public partial class SettingsMenu : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         purchaseEndpointRow.AddChild(_purchaseEndpointEdit);
+		_purchaseEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
 
-        var purchaseEndpointButton = new Button
+        var purchaseEndpointButton = new RealmButton
         {
             Text = "Apply Endpoint",
             CustomMinimumSize = new Vector2(190f, 40f)
@@ -545,6 +550,7 @@ public partial class SettingsMenu : Control
             RefreshUi();
         };
         purchaseEndpointRow.AddChild(purchaseEndpointButton);
+		purchaseEndpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         _cloudSaveLabel = new Label
         {
@@ -604,12 +610,14 @@ public partial class SettingsMenu : Control
             () =>
             {
                 GameState.Instance.SetAnalyticsConsent(!GameState.Instance.AnalyticsConsent);
+                privacyLabel.Text = $"Analytics: {(GameState.Instance.AnalyticsConsent ? "Enabled" : "Disabled")}";
                 RefreshUi();
             });
+        analyticsButton.Pressed += () => analyticsButton.Text = GameState.Instance.AnalyticsConsent ? "Disable Analytics" : "Enable Analytics";
         purchaseStack.AddChild(analyticsButton);
 
         var achievementsPanel = new PanelContainer();
-        stack.AddChild(achievementsPanel);
+        pages[3].AddChild(achievementsPanel);
 
         var achievementsPadding = new MarginContainer();
         achievementsPadding.AddThemeConstantOverride("margin_left", 14);
@@ -637,14 +645,14 @@ public partial class SettingsMenu : Control
         bottomRow.AddThemeConstantOverride("separation", 12);
         rootStack.AddChild(bottomRow);
 
-        _backButton = new Button
+        _backButton = new RealmButton
         {
             CustomMinimumSize = new Vector2(220f, 48f)
         };
         _backButton.Pressed += () => SceneRouter.Instance.ReturnFromSettings();
         bottomRow.AddChild(_backButton);
 
-        _titleButton = new Button
+        _titleButton = new RealmButton
         {
             Text = "Back To Title",
             CustomMinimumSize = new Vector2(180f, 48f)
@@ -655,7 +663,7 @@ public partial class SettingsMenu : Control
 
     private static Button BuildCompactButton(string text, System.Action onPressed)
     {
-        var button = new Button
+        var button = new RealmButton
         {
             Text = text,
             CustomMinimumSize = new Vector2(0f, 40f),
@@ -688,7 +696,7 @@ public partial class SettingsMenu : Control
             $"Last profile sync: {(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds <= 0 ? "never" : System.DateTimeOffset.FromUnixTimeSeconds(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm:ss"))}\n" +
             $"Provider: {ChallengeSyncProviderCatalog.GetDisplayName(GameState.Instance.ChallengeSyncProviderId)}\n" +
             $"Auto flush: {(GameState.Instance.ChallengeSyncAutoFlush ? "On" : "Off")}\n" +
-            $"Endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.ChallengeSyncEndpoint) ? "not set" : GameState.Instance.ChallengeSyncEndpoint)}\n\n" +
+            $"Endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.ChallengeSyncEndpoint) ? "not set" : GameState.Instance.ChallengeSyncEndpoint)}{(GameState.Instance.IsReleaseBackendConfigured ? " (managed by release)" : "")}\n\n" +
             $"{PlayerProfileSyncService.BuildStatusSummary()}\n\n" +
             $"{(ChallengeSyncService.Instance?.BuildStatusSummary() ?? "Sync service unavailable.")}";
         _lifecycleLabel.Text = AppLifecycleService.Instance?.BuildStatusSummary() ?? "App lifecycle service unavailable.";
@@ -711,7 +719,7 @@ public partial class SettingsMenu : Control
             ? "Disable Auto Flush"
             : "Enable Auto Flush";
         _purchaseLabel.Text =
-            $"Purchase endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ? "not set (local mode)" : GameState.Instance.PurchaseValidationEndpoint)}\n" +
+            $"Purchase endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ? "not set (local mode)" : GameState.Instance.PurchaseValidationEndpoint)}{(GameState.Instance.IsReleaseBackendConfigured ? " (managed by release)" : "")}\n" +
             $"Total purchases: {GameState.Instance.TotalPurchaseCount}\n" +
             $"Platform: {DetectPurchasePlatform()}";
         if (!_purchaseEndpointEdit.HasFocus())

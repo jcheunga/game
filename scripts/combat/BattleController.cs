@@ -449,6 +449,7 @@ public partial class BattleController : Node2D
 	private bool _campaignRouteSupportReady;
 	private bool _campaignRouteSupportTriggered;
 	private bool _campaignBossPhaseTriggered;
+	private bool _gateBreachAnnounced;
 	private bool _campaignBossPressureActive;
 	private bool _campaignMissionAftermathReady;
 	private bool _campaignMissionAftermathQueued;
@@ -522,8 +523,10 @@ public partial class BattleController : Node2D
 	private float _impactShakeTimer;
 	private float _impactShakeStrength;
 	private float _defenseEncounterStartedAt;
-	private float _tunnelInvasionTimer;
+	private float _tunnelInvasionTimer = 16f;
+	private Vector2? _pendingTunnelInvasion;
 	private float _enemySignalJamTimer;
+	private float _enemySignalJamRecoveryUntil;
 	private float _enemySignalJamCourageGainScale = 1f;
 	private float _weatherSpeedScale = 1f;
 	private float _weatherAggroScale = 1f;
@@ -720,6 +723,7 @@ public partial class BattleController : Node2D
 		_playerBaseMaxHealth = GameState.Instance.ApplyPlayerBaseHealthUpgrade(_playerBaseMaxHealth);
 		_playerBaseHealth = _playerBaseMaxHealth;
 		_enemyBaseHealth = _enemyBaseMaxHealth;
+		InitializeBaseWeapons();
 		_campaignScoutCourageGainScale = 1f;
 		_campaignScoutBoostRemaining = 0f;
 		_campaignMomentumStacks = 0;
@@ -862,6 +866,7 @@ public partial class BattleController : Node2D
 			_campaignScoutCourageGainScale = GameState.Instance.GetCampaignScoutCourageGainScale(_stage);
 			_campaignScoutBoostRemaining = GameState.Instance.GetCampaignScoutDurationSeconds(_stage);
 		}
+		if (IsCampaignMode) _courage = Mathf.Min(_maxCourage, _courage + GameState.Instance.GetAdventureStartingCourageBonus(_stage));
 		if (IsCampaignMode && GameState.Instance.CampaignMomentumStacks > 0)
 		{
 			_campaignMomentumStacks = GameState.Instance.CampaignMomentumStacks;
@@ -989,9 +994,6 @@ public partial class BattleController : Node2D
 		else if (IsEndlessMode)
 		{
 			_spawnDirector.InitializeEndless(_activeRouteId, _stageData, _combat, GameData.GetEnemyUnits());
-			StartRouteForkFieldEvent(_endlessRouteForkId);
-			StartEndlessDirectiveSegment();
-			StartEndlessContactEvent();
 		}
 		else
 		{
@@ -1030,8 +1032,15 @@ public partial class BattleController : Node2D
 		InitializeStageMissions();
 
 		BuildUi();
+		if (IsEndlessMode)
+		{
+			StartRouteForkFieldEvent(_endlessRouteForkId);
+			StartEndlessDirectiveSegment();
+			StartEndlessContactEvent();
+		}
 		InitializeAmbientParticles();
-		var campaignIntro = "";
+		var campaignIntro = IsCampaignMode && GameState.Instance.GetAdventureStartingCourageBonus(_stage) > 0
+			? $" Shrine blessing: +{GameState.Instance.GetAdventureStartingCourageBonus(_stage)} starting courage." : "";
 		if (IsCampaignMode && _campaignScoutBoostRemaining > 0.05f)
 		{
 			campaignIntro += $" Scout bonus: +{GameState.Instance.GetCampaignScoutStartingCourageBonus(_stage)} courage and boosted courage gain for {GameState.Instance.GetCampaignScoutDurationSeconds(_stage):0}s.";
@@ -1160,6 +1169,7 @@ public partial class BattleController : Node2D
 		}
 
 		DrawTerrainDecoration();
+		DrawCursedGround();
 		DrawStageHazards();
 		DrawEndlessFieldEvent();
 		DrawEndlessContactEvent();
@@ -1169,8 +1179,11 @@ public partial class BattleController : Node2D
 
 		DrawPlayerBus(palette, route);
 		DrawEnemyBarricade(palette, route);
+		DrawBaseArmaments();
 		DrawCriticalHealthVignette();
 		DrawBossEntranceBanner();
+		DrawBossPhaseWarnings();
+		DrawTunnelInvasionWarning();
 	}
 
 	private void DrawIncomingWaveTelegraph(Color enemyColor, Color playerColor)
@@ -1311,12 +1324,12 @@ public partial class BattleController : Node2D
 			return true;
 		}
 
-		if (!_spawnDirector.UsesScriptedWaves || !_spawnDirector.TryGetNextScriptedWave(out var nextWave))
+		if (!_spawnDirector.UsesScriptedWaves || _spawnDirector.IsScriptedWaveHeld || !_spawnDirector.TryGetNextScriptedWave(out var nextWave))
 		{
 			return false;
 		}
 
-		countdown = Mathf.Max(0f, nextWave.TriggerTime - _elapsed);
+		countdown = Mathf.Max(0f, _spawnDirector.NextScriptedWaveTime - _elapsed);
 		if (countdown > ScriptedWaveTelegraphLeadSeconds)
 		{
 			return false;
@@ -2487,6 +2500,7 @@ public partial class BattleController : Node2D
 			if (_enemySignalJamTimer <= 0.001f)
 			{
 				_enemySignalJamCourageGainScale = 1f;
+				_enemySignalJamRecoveryUntil = _elapsed + 3f;
 			}
 		}
 
@@ -2527,6 +2541,7 @@ public partial class BattleController : Node2D
 		UpdateCampaignLateCondition();
 
 		SimulateUnits(deltaF);
+		TickBaseWeapons(deltaF);
 		ApplyFriendlyUnitSeparation(deltaF);
 		ExpireBarricades();
 		CleanupDeadUnits();
@@ -3110,7 +3125,7 @@ public partial class BattleController : Node2D
 		Engine.TimeScale = speed;
 		if (_speedButton != null)
 		{
-			_speedButton.Text = $"Speed: {BattleSpeedLabels[_battleSpeedIndex]}";
+			_speedButton.Text = $"{BattleSpeedLabels[_battleSpeedIndex]}";
 		}
 	}
 
@@ -3120,7 +3135,7 @@ public partial class BattleController : Node2D
 		Engine.TimeScale = 1f;
 		if (_speedButton != null)
 		{
-			_speedButton.Text = "Speed: 1x";
+			_speedButton.Text = "1x";
 		}
 	}
 
@@ -3134,693 +3149,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void BuildUi()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var canvasLayer = new CanvasLayer();
-		AddChild(canvasLayer);
-
-		var root = new Control();
-		root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		MedievalUi.Apply(root);
-		root.MouseFilter = Control.MouseFilterEnum.Ignore;
-		canvasLayer.AddChild(root);
-
-		var safeL = SafeAreaService.Instance?.MarginLeft ?? 0;
-		var safeT = SafeAreaService.Instance?.MarginTop ?? 0;
-		var safeR = SafeAreaService.Instance?.MarginRight ?? 0;
-		var safeB = SafeAreaService.Instance?.MarginBottom ?? 0;
-
-		_topHudPanel = new PanelContainer
-		{
-			Position = new Vector2(16f + safeL, 16f + safeT),
-			Size = new Vector2(540f, 290f)
-		};
-		_topHudPanel.SelfModulate = route.BannerPanel.Lightened(0.08f);
-		root.AddChild(_topHudPanel);
-
-		var topVBox = new VBoxContainer();
-		topVBox.AddThemeConstantOverride("separation", 5);
-		_topHudPanel.AddChild(topVBox);
-
-		_battleBannerLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		_battleBannerLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		topVBox.AddChild(_battleBannerLabel);
-
-		_battleSubtitleLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		topVBox.AddChild(_battleSubtitleLabel);
-
-		_battleMissionLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		_battleMissionLabel.AddThemeColorOverride("font_color", route.BannerAccent.Lightened(0.08f));
-		topVBox.AddChild(_battleMissionLabel);
-
-		_baseHealthLabel = new Label();
-		topVBox.AddChild(_baseHealthLabel);
-
-		_resourceLabel = new Label();
-		topVBox.AddChild(_resourceLabel);
-
-		_timerLabel = new Label();
-		topVBox.AddChild(_timerLabel);
-
-		_courageBar = new BattleHudBar { CustomMinimumSize = new Vector2(520f, 16f) };
-		_courageBar.Setup(new Color("ffd166"), new Color(1f, 1f, 1f, 0.2f), "Courage");
-		topVBox.AddChild(_courageBar);
-
-		_waveProgressBar = new BattleHudBar { CustomMinimumSize = new Vector2(520f, 12f) };
-		_waveProgressBar.Setup(route.BannerAccent, new Color(1f, 1f, 1f, 0.15f), "Waves");
-		topVBox.AddChild(_waveProgressBar);
-
-		var speedRow = new HBoxContainer();
-		speedRow.AddThemeConstantOverride("separation", 8);
-		topVBox.AddChild(speedRow);
-
-		_speedButton = new Button
-		{
-			Text = "Speed: 1x",
-			CustomMinimumSize = new Vector2(120f, 28f)
-		};
-		_speedButton.Pressed += CycleBattleSpeed;
-		speedRow.AddChild(_speedButton);
-
-		_statusLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-		};
-		speedRow.AddChild(_statusLabel);
-
-		_fpsLabel = new Label();
-		topVBox.AddChild(_fpsLabel);
-
-		_intelPanel = new PanelContainer
-		{
-			Position = new Vector2(572f + safeL, 16f + safeT),
-			Size = new Vector2(380f, 336f)
-		};
-		_intelPanel.SelfModulate = route.BannerPanel;
-		root.AddChild(_intelPanel);
-
-		var infoVBox = new VBoxContainer();
-		infoVBox.AddThemeConstantOverride("separation", 8);
-		_intelPanel.AddChild(infoVBox);
-
-		var infoHeaderLabel = new Label
-		{
-			Text = IsEndlessMode ? "War Wagon Orders" : IsChallengeMode ? "Challenge Orders" : "Siege Orders"
-		};
-		infoHeaderLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		infoVBox.AddChild(infoHeaderLabel);
-
-		infoVBox.AddChild(new Label
-		{
-			Text = IsEndlessMode
-				? "1) Pick a squad or spell card below.\n2) Click the battlefield.\n3) Survive escalating waves or retreat to bank recovered rewards."
-				: "1) Pick a squad or spell card below.\n2) Click the battlefield.\nCards spend courage and go on cooldown after use.",
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		});
-
-		_waveIntelLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		infoVBox.AddChild(_waveIntelLabel);
-
-		_objectiveStatusLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		infoVBox.AddChild(_objectiveStatusLabel);
-
-		var retreatButton = new Button
-		{
-			Text = IsEndlessMode ? "Retreat From Run" : "Retreat To Map",
-			Position = new Vector2(970f, 22f),
-			Size = new Vector2(292f, 44f)
-		};
-		ApplyBattleButtonTheme(retreatButton, route);
-		retreatButton.Pressed += RetreatToMap;
-		root.AddChild(retreatButton);
-
-		var settingsPanel = new PanelContainer
-		{
-			Position = new Vector2(970f, 76f),
-			Size = new Vector2(292f, 92f)
-		};
-		settingsPanel.SelfModulate = route.BannerPanel.Darkened(0.03f);
-		root.AddChild(settingsPanel);
-
-		var settingsVBox = new VBoxContainer();
-		settingsVBox.AddThemeConstantOverride("separation", 3);
-		settingsPanel.AddChild(settingsVBox);
-
-		var settingsLabel = new Label { Text = "UI Settings" };
-		settingsLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		settingsVBox.AddChild(settingsLabel);
-
-		_showDevUiToggle = new CheckBox
-		{
-			Text = "Show combat text [Tab]",
-			ButtonPressed = GameState.Instance.ShowDevUi
-		};
-		_showDevUiToggle.TooltipText = "Hide or show the battle text panels.";
-		_showDevUiToggle.Toggled += OnShowDevUiToggled;
-		settingsVBox.AddChild(_showDevUiToggle);
-
-		_showFpsToggle = new CheckBox
-		{
-			Text = "Show FPS counter",
-			ButtonPressed = GameState.Instance.ShowFpsCounter
-		};
-		_showFpsToggle.Toggled += OnShowFpsToggled;
-		settingsVBox.AddChild(_showFpsToggle);
-
-		var spawnPanel = new PanelContainer
-		{
-			Position = new Vector2(16f + safeL, 586f - safeB),
-			Size = new Vector2(1246f - safeL - safeR, _spellDeck.Roster.Count > 0 ? 188f : 114f)
-		};
-		spawnPanel.SelfModulate = route.BannerPanel.Darkened(0.02f);
-		root.AddChild(spawnPanel);
-
-		var spawnStack = new VBoxContainer();
-		spawnStack.AddThemeConstantOverride("separation", 8);
-		spawnPanel.AddChild(spawnStack);
-
-		var unitRow = new HBoxContainer();
-		unitRow.AddThemeConstantOverride("separation", 10);
-		spawnStack.AddChild(unitRow);
-
-		foreach (var definition in _deck.Roster)
-		{
-			var unit = definition;
-			var button = new Button
-			{
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				CustomMinimumSize = new Vector2(0f, 82f)
-			};
-			button.AddThemeColorOverride("font_color", Colors.White);
-			button.AddThemeColorOverride("font_hover_color", Colors.White);
-			button.AddThemeColorOverride("font_pressed_color", Colors.White);
-			button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
-			var (titleLabel, detailLabel) = AttachBattleCardContent(
-				button,
-				UiBadgeFactory.CreateUnitBadge(unit, new Vector2(48f, 48f)));
-			button.Pressed += () => ArmPlayerUnit(unit);
-			unitRow.AddChild(button);
-			_deploySlots.Add(new DeploySlot(unit, button, titleLabel, detailLabel));
-		}
-
-		if (_spellDeck.Roster.Count > 0)
-		{
-			var spellRow = new HBoxContainer();
-			spellRow.AddThemeConstantOverride("separation", 10);
-			spawnStack.AddChild(spellRow);
-
-			foreach (var definition in _spellDeck.Roster)
-			{
-				var spell = definition;
-				var button = new Button
-				{
-					SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-					CustomMinimumSize = new Vector2(0f, 64f)
-				};
-				button.AddThemeColorOverride("font_color", Colors.White);
-				button.AddThemeColorOverride("font_hover_color", Colors.White);
-				button.AddThemeColorOverride("font_pressed_color", Colors.White);
-				button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
-				var (titleLabel, detailLabel) = AttachBattleCardContent(
-					button,
-					UiBadgeFactory.CreateSpellBadge(spell, new Vector2(40f, 40f)));
-				button.Pressed += () => ArmSpell(spell);
-				spellRow.AddChild(button);
-				_spellSlots.Add(new SpellSlot(spell, button, titleLabel, detailLabel));
-			}
-		}
-
-		_pauseOverlay = new CenterContainer();
-		_pauseOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_pauseOverlay.Visible = false;
-		root.AddChild(_pauseOverlay);
-		var pauseBg = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
-		pauseBg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_pauseOverlay.AddChild(pauseBg);
-		var pauseLabel = new Label
-		{
-			Text =
-				"PAUSED\n\nPress Escape to resume\n\nHotkeys:\n  1-5  Select unit cards\n  Q-T  Select spell cards\n  Backspace/Delete  Cancel armed card\n  Right click       Cancel armed card\n" +
-				(IsCampaignMode ? $"  C      Convoy command ({_campaignConvoyCommandLabel}) when charged\n" : "") +
-				(IsCampaignMode ? $"  Z/X    Field order ({_campaignFieldOrderAssaultLabel} / {_campaignFieldOrderBulwarkLabel}) when unlocked\n" : "") +
-				(IsCampaignMode && _campaignAdaptiveWaveReady ? $"  V/B    Adaptive wave override ({CampaignAdaptiveWaveRescueLabel} / {CampaignAdaptiveWaveBreakthroughLabel}) when unlocked\n" : "") +
-				"  Tab    Hide/show combat text\n" +
-				"  Space  Cycle battle speed (1x / 1.5x / 2x / 3x)\n  F12    Screenshot\n\nTips:\n  Units with Lv4+ auto-trigger special abilities in combat\n  Deploy clicks snap toward nearby fronts for cleaner reinforcements\n  Stone Barricade blocks lanes | War Cry buffs all allies | Polymorph disables the toughest enemy\n  Equip relics in the Armory to boost unit stats",
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		pauseLabel.AddThemeFontSizeOverride("font_size", 28);
-		pauseLabel.AddThemeColorOverride("font_color", Colors.White);
-		_pauseOverlay.AddChild(pauseLabel);
-
-		_endCenter = new CenterContainer();
-		_endCenter.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_endCenter.Visible = false;
-		root.AddChild(_endCenter);
-
-		_endPanel = new PanelContainer
-		{
-			CustomMinimumSize = new Vector2(640f, 520f),
-			Visible = false
-		};
-		_endPanel.SelfModulate = route.BannerPanel.Lightened(0.04f);
-		_endCenter.AddChild(_endPanel);
-
-		var endPadding = new MarginContainer();
-		endPadding.AddThemeConstantOverride("margin_left", 20);
-		endPadding.AddThemeConstantOverride("margin_right", 20);
-		endPadding.AddThemeConstantOverride("margin_top", 20);
-		endPadding.AddThemeConstantOverride("margin_bottom", 20);
-		_endPanel.AddChild(endPadding);
-
-		var endVBox = new VBoxContainer();
-		endVBox.AddThemeConstantOverride("separation", 12);
-		endVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-		endPadding.AddChild(endVBox);
-
-		var endScroll = new ScrollContainer
-		{
-			SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-			CustomMinimumSize = new Vector2(0f, 340f),
-			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
-		};
-		endVBox.AddChild(endScroll);
-
-		_endLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-		};
-		_endLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		_endLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
-		endScroll.AddChild(_endLabel);
-
-		_endPrimaryButton = new Button
-		{
-			Text = IsEndlessMode
-				? "Restart Run"
-					: IsLanRaceMode
-						? "Room Rematch"
-						: IsOnlineRoomMode
-							? "Back To Online Room"
-						: IsChallengeMode
-							? "Retry Challenge"
-						: "Retry Stage",
-			CustomMinimumSize = new Vector2(0f, 48f)
-		};
-		ApplyBattleButtonTheme(_endPrimaryButton, route);
-		_endPrimaryButton.Pressed += HandleEndPanelPrimaryAction;
-		endVBox.AddChild(_endPrimaryButton);
-
-		_endSecondaryButton = new Button
-		{
-			Text = IsEndlessMode
-				? "Back To Endless Prep"
-					: IsLanRaceMode
-						? "Back To Multiplayer"
-						: IsOnlineRoomMode
-							? "Leave Online Room"
-						: IsChallengeMode
-							? "Back To Multiplayer"
-						: "Back To Map",
-			CustomMinimumSize = new Vector2(0f, 48f)
-		};
-		ApplyBattleButtonTheme(_endSecondaryButton, route);
-		_endSecondaryButton.Pressed += HandleEndPanelSecondaryAction;
-		endVBox.AddChild(_endSecondaryButton);
-
-		_draftCenter = new CenterContainer();
-		_draftCenter.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_draftCenter.Visible = false;
-		root.AddChild(_draftCenter);
-
-		_draftPanel = new PanelContainer
-		{
-			CustomMinimumSize = new Vector2(560f, 320f),
-			Visible = false
-		};
-		_draftPanel.SelfModulate = route.BannerPanel;
-		_draftCenter.AddChild(_draftPanel);
-
-		var draftPadding = new MarginContainer();
-		draftPadding.AddThemeConstantOverride("margin_left", 20);
-		draftPadding.AddThemeConstantOverride("margin_right", 20);
-		draftPadding.AddThemeConstantOverride("margin_top", 20);
-		draftPadding.AddThemeConstantOverride("margin_bottom", 20);
-		_draftPanel.AddChild(draftPadding);
-
-		var draftVBox = new VBoxContainer();
-		draftVBox.AddThemeConstantOverride("separation", 12);
-		draftPadding.AddChild(draftVBox);
-
-		_draftLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		_draftLabel.AddThemeColorOverride("font_color", route.BannerAccent);
-		draftVBox.AddChild(_draftLabel);
-
-		for (var i = 0; i < 3; i++)
-		{
-			var draftIndex = i;
-			var draftButton = new Button
-			{
-				CustomMinimumSize = new Vector2(0f, 56f)
-			};
-			ApplyBattleButtonTheme(draftButton, route);
-			draftButton.Pressed += () => ApplyEndlessDraftChoice(draftIndex);
-			draftVBox.AddChild(draftButton);
-			_draftButtons.Add(draftButton);
-		}
-
-		_topHudPanel.MouseFilter = Control.MouseFilterEnum.Ignore;
-		SetMouseFilterRecursive(topVBox, Control.MouseFilterEnum.Ignore);
-		_speedButton.MouseFilter = Control.MouseFilterEnum.Stop;
-		_intelPanel.MouseFilter = Control.MouseFilterEnum.Ignore;
-		SetMouseFilterRecursive(infoVBox, Control.MouseFilterEnum.Ignore);
-
-		ApplyDevUiSettings();
-	}
-
-	private void SetStatus(string text)
-	{
-		_statusLabel.Text = text;
-	}
-
-	private void TryShowTutorialHint(string context)
-	{
-		if (!GameState.Instance.ShowHints)
-		{
-			return;
-		}
-
-		var hints = TutorialHintCatalog.GetByContext(context);
-		foreach (var hint in hints)
-		{
-			if (GameState.Instance.HasSeenHint(hint.Id))
-			{
-				continue;
-			}
-
-			SetStatus($"[{hint.Title}] {hint.Body}");
-			GameState.Instance.MarkHintSeen(hint.Id);
-		}
-	}
-
-	private static void ApplyBattleButtonTheme(Button button, RouteDefinition route)
-	{
-		button.SelfModulate = route.BannerPanel.Lightened(0.04f);
-		button.AddThemeColorOverride("font_color", route.BannerAccent);
-		button.AddThemeColorOverride("font_hover_color", route.BannerAccent.Lightened(0.08f));
-		button.AddThemeColorOverride("font_pressed_color", Colors.White);
-		button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.45f));
-	}
-
-	private static (Label titleLabel, Label detailLabel) AttachBattleCardContent(Button button, Control badge)
-	{
-		button.Text = string.Empty;
-
-		var padding = new MarginContainer
-		{
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		padding.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		padding.AddThemeConstantOverride("margin_left", 10);
-		padding.AddThemeConstantOverride("margin_right", 10);
-		padding.AddThemeConstantOverride("margin_top", 8);
-		padding.AddThemeConstantOverride("margin_bottom", 8);
-		button.AddChild(padding);
-
-		var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding, badge, separation: 10, stackSpacing: 2);
-		var titleLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		titleLabel.AddThemeColorOverride("font_color", Colors.White);
-		stack.AddChild(titleLabel);
-
-		var detailLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		detailLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.84f));
-		stack.AddChild(detailLabel);
-
-		SetMouseFilterRecursive(padding, Control.MouseFilterEnum.Ignore);
-		return (titleLabel, detailLabel);
-	}
-
-	private static void SetMouseFilterRecursive(Control control, Control.MouseFilterEnum mouseFilter)
-	{
-		control.MouseFilter = mouseFilter;
-		foreach (var child in control.GetChildren())
-		{
-			if (child is Control childControl)
-			{
-				SetMouseFilterRecursive(childControl, mouseFilter);
-			}
-		}
-	}
-
-	private void UpdateHud()
-	{
-		_battleBannerLabel.Text = BuildBattleBannerTitle();
-		_battleSubtitleLabel.Text = BuildBattleBannerSubtitle();
-		_battleMissionLabel.Text = BuildBattleBannerStatusText();
-		_baseHealthLabel.Text = IsEndlessMode
-			? $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Route: {ResolveRouteLabel(_activeRouteId)} endless hold"
-			: IsChallengeMode
-				? $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Gatehouse: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}   |   Challenge {_challengeDefinition.Code}"
-				: $"War wagon hull: {Mathf.CeilToInt(_playerBaseHealth)}/{Mathf.CeilToInt(_playerBaseMaxHealth)}   |   Gatehouse: {Mathf.CeilToInt(_enemyBaseHealth)}/{Mathf.CeilToInt(_enemyBaseMaxHealth)}";
-		_resourceLabel.Text = IsEndlessMode
-			? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Endless wave {_spawnDirector.EndlessWaveNumber}   |   Best {GameState.Instance.BestEndlessWave}"
-			: IsChallengeMode
-				? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Challenge Stage {_stage}   |   Best {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}"
-				: $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Stage {_stage}";
-		if (IsCampaignMode && _campaignMomentumBoostRemaining > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Momentum x{_campaignMomentumStacks} ({Mathf.CeilToInt(_campaignMomentumBoostRemaining)}s)";
-		}
-		if (IsCampaignMode)
-		{
-			_resourceLabel.Text += _campaignReserveReady
-				? "   |   Reserve ready"
-				: _campaignReserveTriggered
-					? "   |   Reserve spent"
-					: "";
-			_resourceLabel.Text += _campaignConvoyCommandReady
-				? "   |   Command [C] ready"
-				: _campaignConvoyCommandTriggered
-					? "   |   Command spent"
-					: $"   |   Command {_campaignConvoyCommandChargeRemaining:0.0}s";
-			_resourceLabel.Text += _campaignFieldOrderReady
-				? "   |   Order [Z/X] ready"
-				: _campaignFieldOrderCommitted
-					? "   |   Order spent"
-					: "";
-			if (_campaignDoctrineThreshold > 0)
-			{
-				_resourceLabel.Text += $"   |   Doctrine {_campaignDoctrineDefeatProgress}/{_campaignDoctrineThreshold}";
-			}
-		}
-		if (IsCampaignMode && _campaignScoutBoostRemaining > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Scout +{Mathf.RoundToInt((_campaignScoutCourageGainScale - 1f) * 100f)}% ({Mathf.CeilToInt(_campaignScoutBoostRemaining)}s)";
-		}
-		if (IsChallengeMode && _challengeMutator.SignalJamIntervalSeconds > 0.05f && _enemySignalJamTimer <= 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Next blackout {_challengeMutatorNextJamTimer:0.0}s";
-		}
-		if (_enemySignalJamTimer > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Signal jam {_enemySignalJamTimer:0.0}s";
-		}
-		var waveStatus = _spawnDirector.IsEndlessMode
-			? $"   |   Pending surge: {Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed):0.0}s   |   Queued spawns: {_spawnDirector.PendingSpawnCount}"
-			: _spawnDirector.UsesScriptedWaves
-				? $"   |   Waves: {_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}   |   Queued spawns: {_spawnDirector.PendingSpawnCount}"
-				: "";
-		_timerLabel.Text =
-			$"Time: {_elapsed:0.0}s   |   Active enemies: {CountTeamUnits(Team.Enemy)}   |   Active allies: {CountTeamUnits(Team.Player)}{waveStatus}";
-		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
-		_courageBar.SetValue(
-			_maxCourage > 0.01f ? _courage / _maxCourage : 0f,
-			$"{Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}");
-		var waveRatio = _spawnDirector.IsEndlessMode
-			? 0f
-			: _spawnDirector.UsesScriptedWaves && _spawnDirector.TotalScriptedWaves > 0
-				? (float)_spawnDirector.NextScriptedWaveIndex / _spawnDirector.TotalScriptedWaves
-				: 0f;
-		_waveProgressBar.SetValue(
-			waveRatio,
-			_spawnDirector.IsEndlessMode
-				? $"Endless wave {_spawnDirector.EndlessWaveNumber}"
-				: _spawnDirector.UsesScriptedWaves
-					? $"{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
-					: "");
-		_waveProgressBar.Visible = _spawnDirector.UsesScriptedWaves || _spawnDirector.IsEndlessMode;
-		_waveIntelLabel.Text = BuildWaveIntelText();
-		if (IsEndlessMode)
-		{
-			_objectiveStatusLabel.Text = BuildEndlessStatusText();
-		}
-		else
-		{
-			var objectiveText = StageObjectives.BuildLiveSummary(_stageData, BuildStageBattleResult());
-			var missionText = BuildStageMissionEventText();
-			_objectiveStatusLabel.Text = string.IsNullOrWhiteSpace(missionText)
-				? objectiveText
-				: $"{objectiveText}\n{missionText}";
-		}
-
-		foreach (var slot in _deploySlots)
-		{
-			var cooldown = _deck.GetCooldownRemaining(slot.Definition.Id);
-			var isReady = cooldown <= 0.05f;
-			var hasCourage = _courage >= slot.Definition.Cost;
-			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
-			var level = GameState.Instance.GetUnitLevel(slot.Definition.Id);
-
-			var stateLabel = !isReady
-				? $"CD {cooldown:0.0}s"
-				: hasCourage
-					? "DEPLOY"
-					: $"NEED {slot.Definition.Cost - Mathf.FloorToInt(_courage)} more";
-			var marker = slot.Definition == _deck.ArmedUnit ? "> " : "";
-			slot.TitleLabel.Text = $"{marker}Lv{level} {slot.Definition.DisplayName}";
-			slot.DetailLabel.Text = $"{stateLabel}  |  {slot.Definition.Cost} courage";
-			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, slot.Definition == _deck.ArmedUnit);
-			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
-			var totalCd = ResolvePlayerDeployCooldown(slot.Definition);
-			var cdRatio = !isReady && totalCd > 0.1f ? cooldown / totalCd : 0f;
-			slot.CooldownOverlay.Visible = cdRatio > 0.01f;
-			if (cdRatio > 0.01f)
-			{
-				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(cdRatio, 0f, 1f);
-			}
-		}
-
-		foreach (var slot in _spellSlots)
-		{
-			var resolved = GameState.Instance.BuildSpellStats(slot.Definition);
-			var cooldown = _spellDeck.GetCooldownRemaining(slot.Definition.Id);
-			var isReady = cooldown <= 0.05f;
-			var hasCourage = _courage >= resolved.CourageCost;
-			var armed = _selectionMode == BattleSelectionMode.Spell && slot.Definition == _spellDeck.ArmedSpell;
-			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
-
-			var stateLabel = !isReady
-				? $"CD {cooldown:0.0}s"
-				: hasCourage
-					? "CAST"
-					: $"NEED {resolved.CourageCost - Mathf.FloorToInt(_courage)} more";
-			var marker = armed ? "* " : "";
-			slot.TitleLabel.Text = $"{marker}Lv{resolved.Level} {slot.Definition.DisplayName}";
-			slot.DetailLabel.Text = $"{stateLabel}  |  {resolved.CourageCost} courage";
-			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
-			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
-			var totalSpellCd = ResolvePlayerSpellCooldown(slot.Definition, resolved);
-			var spellCdRatio = !isReady && totalSpellCd > 0.1f ? cooldown / totalSpellCd : 0f;
-			slot.CooldownOverlay.Visible = spellCdRatio > 0.01f;
-			if (spellCdRatio > 0.01f)
-			{
-				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(spellCdRatio, 0f, 1f);
-			}
-		}
-	}
-
-	private string BuildBattleBannerTitle()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		return IsEndlessMode
-			? $"Endless Hold  |  {route.Title}"
-			: IsChallengeMode
-				? $"Challenge {_challengeDefinition.Code}  |  {route.Title}"
-				: $"Stage {_stage}  |  {route.Title}";
-	}
-
-	private string BuildBattleBannerSubtitle()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		return IsEndlessMode
-			? $"Frontline: {_stageData.StageName}\nPath: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Pressure: {route.PressureSummary}"
-			: $"{_stageData.StageName}\nPressure: {route.PressureSummary}";
-	}
-
-	private string BuildBattleBannerStatusText()
-	{
-		if (IsEndlessMode)
-		{
-			return $"Battlefield event: {_endlessBattlefieldEventLabel}\nCaravan support: {_endlessSupportEventLabel}";
-		}
-
-		var missionSummary = BuildStageMissionIntelText().Trim();
-		if (string.IsNullOrWhiteSpace(missionSummary))
-		{
-			missionSummary = $"Battlefield pressure: {StageEncounterIntel.BuildSupportPressureSummary(_stageData)}";
-		}
-
-		if (!IsChallengeMode)
-		{
-			return missionSummary;
-		}
-
-		var mutatorText = BuildChallengeMutatorText();
-		return string.IsNullOrWhiteSpace(mutatorText)
-			? missionSummary
-			: $"{mutatorText}\n{missionSummary}";
-	}
-
-	private void OnShowDevUiToggled(bool enabled)
-	{
-		GameState.Instance.SetShowDevUi(enabled);
-		ApplyDevUiSettings();
-	}
-
-	private void OnShowFpsToggled(bool enabled)
-	{
-		GameState.Instance.SetShowFpsCounter(enabled);
-		ApplyDevUiSettings();
-	}
-
-	private void ApplyDevUiSettings()
-	{
-		var showDevUi = GameState.Instance.ShowDevUi;
-		_topHudPanel.Visible = showDevUi;
-		_intelPanel.Visible = showDevUi;
-		_timerLabel.Visible = showDevUi;
-		_statusLabel.Visible = showDevUi;
-		_showFpsToggle.Disabled = !showDevUi;
-		_fpsLabel.Visible = showDevUi && GameState.Instance.ShowFpsCounter;
-		_showDevUiToggle.SetPressedNoSignal(showDevUi);
-	}
-
-	private void ToggleCombatIntel()
-	{
-		GameState.Instance.SetShowDevUi(!GameState.Instance.ShowDevUi);
-		ApplyDevUiSettings();
-	}
 
 	private int CountTeamUnits(Team team)
 	{
@@ -3933,14 +3261,6 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (_selectionMode == BattleSelectionMode.Unit && _deck.HasArmedUnit && _deck.ArmedUnit == definition)
-		{
-			_deck.Disarm();
-			SetStatus($"{definition.DisplayName} deployment cleared.");
-			UpdateHud();
-			return;
-		}
-
 		_selectionMode = BattleSelectionMode.Unit;
 		_deck.Arm(definition);
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
@@ -3954,15 +3274,6 @@ public partial class BattleController : Node2D
 	{
 		if (_battleEnded)
 		{
-			return;
-		}
-
-		if (_selectionMode == BattleSelectionMode.Spell && _spellDeck.HasArmedSpell && _spellDeck.ArmedSpell == definition)
-		{
-			_spellDeck.Disarm();
-			_selectionMode = BattleSelectionMode.Unit;
-			SetStatus($"{definition.DisplayName} cast cleared.");
-			UpdateHud();
 			return;
 		}
 
@@ -4173,23 +3484,33 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		_tunnelInvasionTimer = _rng.RandfRange(12f, 20f);
-
-		if (CountTeamUnits(Team.Enemy) >= 12)
+		if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies() ||
+			_units.Count(unit => !unit.IsDead && unit.Team == Team.Enemy && unit.DefinitionId == GameData.EnemyTunnelerId) >= 2)
 		{
+			_pendingTunnelInvasion = null;
+			_tunnelInvasionTimer = 4f;
 			return;
 		}
+
+		if (!_pendingTunnelInvasion.HasValue)
+		{
+			_pendingTunnelInvasion = new Vector2(
+				_rng.RandfRange(BattlefieldLeft + 180f, BattlefieldRight - 40f),
+				_rng.RandfRange(BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
+			_tunnelInvasionTimer = 2f;
+			SetStatus("Tunnel breach in 2 seconds. Guard the marked lane!");
+			return;
+		}
+
+		var spawnPosition = _pendingTunnelInvasion.Value;
+		_pendingTunnelInvasion = null;
+		_tunnelInvasionTimer = _rng.RandfRange(22f, 28f);
 
 		if (!_spawnDirector.TryBuildEnemyStats(GameData.EnemyTunnelerId, out var tunnelerStats))
 		{
 			return;
 		}
 
-		var spawnPosition = new Vector2(
-			_rng.RandfRange(BattlefieldLeft + 60f, BattlefieldRight - 40f),
-			_rng.RandfRange(
-				BattlefieldTop + SpawnVerticalPadding,
-				BattlefieldBottom - SpawnVerticalPadding));
 		SpawnEnemyUnit(tunnelerStats, spawnPosition);
 		SpawnEffect(spawnPosition, tunnelerStats.Color.Lightened(0.12f), 6f, 30f, 0.24f, false);
 		SpawnFloatText(spawnPosition + new Vector2(0f, -36f), "TUNNEL BREACH", tunnelerStats.Color.Lightened(0.2f), 0.56f);
@@ -4412,6 +3733,7 @@ public partial class BattleController : Node2D
 
 		if (attacker.Team == Team.Player)
 		{
+			if (_enemyBaseHealth <= 0f) return;
 			var gateBreakLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.GateBreakerId);
 			var baseDamage = attacker.BaseDamage * (1f + (gateBreakLevel * 0.08f));
 			_enemyBaseHealth -= baseDamage;
@@ -4425,7 +3747,7 @@ public partial class BattleController : Node2D
 		else
 		{
 			var busArmorScale = _endlessBusArmorScale > 1.001f ? (1f / _endlessBusArmorScale) : 1f;
-			var busDamage = Mathf.Max(1f, attacker.BaseDamage * busArmorScale);
+			var busDamage = Mathf.Max(1f, attacker.BaseDamage * busArmorScale * BaseWeaponCatalog.ArmorScale(_wagonArmorLevel));
 			_playerBaseHealth -= busDamage;
 			RegisterPlayerHullDamage(busDamage);
 			if (_endlessDamageReflectRatio > 0.01f && !attacker.IsDead)
@@ -4501,13 +3823,17 @@ public partial class BattleController : Node2D
 		ApplyCursedGroundAttrition(delta);
 		ApplyWeatherUnitModifiers();
 
-		foreach (var unit in _units)
+		// Reinforcements join on the next tick; summoning must not invalidate iteration.
+		var actingCount = _units.Count;
+		for (var unitIndex = 0; unitIndex < actingCount; unitIndex++)
 		{
+			var unit = _units[unitIndex];
 			if (unit.IsDead)
 			{
 				continue;
 			}
 
+			if (_pendingBossPhases.ContainsKey(unit)) continue;
 			unit.TickAttackTimer(delta);
 			unit.TickSpecialTimer(delta);
 			unit.TickActiveAbilityTimer(delta);
@@ -5403,6 +4729,8 @@ public partial class BattleController : Node2D
 		{
 			for (var i = 0; i < boss.SpecialSpawnCount; i++)
 			{
+				if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+				if (!CanAddBossReinforcement(boss, boss.SpecialSpawnUnitId)) break;
 				if (!_spawnDirector.TryBuildEnemyStats(boss.SpecialSpawnUnitId, out var escortStats))
 				{
 					break;
@@ -5422,13 +4750,15 @@ public partial class BattleController : Node2D
 		SpawnEffect(boss.Position, boss.Tint.Lightened(0.15f), 12f, Mathf.Max(56f, boss.SpecialBuffRadius * 0.55f), 0.28f, false);
 		SpawnFloatText(boss.Position + new Vector2(0f, -48f), "RALLY", boss.Tint.Lightened(0.26f), 0.6f);
 		SetStatus(
-			$"Grave Lord rally call: {buffedCount} undead surged forward" +
+			$"{boss.UnitName} rally call: {buffedCount} undead surged forward" +
 			(escortsSpawned > 0 ? $" and {escortsSpawned} escorts joined the push." : "."));
 		return true;
 	}
 
 	private bool TriggerEnemySignalJam(Unit jammer)
 	{
+		// Multiple hexers must not repeatedly delay every card or keep the economy locked forever.
+		if (_enemySignalJamTimer > 0f || _elapsed < _enemySignalJamRecoveryUntil) return false;
 		if (!jammer.TryTriggerSpecialAbility())
 		{
 			return false;
@@ -5454,7 +4784,8 @@ public partial class BattleController : Node2D
 		{
 			for (var i = 0; i < jammer.SpecialSpawnCount; i++)
 			{
-				if (!_spawnDirector.TryBuildEnemyStats(jammer.SpecialSpawnUnitId, out var escortStats))
+				if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+			if (!_spawnDirector.TryBuildEnemyStats(jammer.SpecialSpawnUnitId, out var escortStats))
 				{
 					break;
 				}
@@ -5502,6 +4833,8 @@ public partial class BattleController : Node2D
 		var spawned = 0;
 		for (var i = 0; i < lich.SpecialSpawnCount; i++)
 		{
+			if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+			if (!CanAddBossReinforcement(lich, lich.SpecialSpawnUnitId)) break;
 			if (!_spawnDirector.TryBuildEnemyStats(lich.SpecialSpawnUnitId, out var raisedStats))
 			{
 				break;
@@ -5902,6 +5235,10 @@ public partial class BattleController : Node2D
 		{
 			return "";
 		}
+
+		// An earned order remains useful in the finish, without opening another
+		// objective whose failure can prolong the boss fight with a counter-wave.
+		if (_enemyBaseHealth <= 0f || _units.Any(IsCampaignBossPhaseUnit)) return "";
 
 		_campaignFieldOrderBranchMissionAdded = true;
 		var mission = AddStageMission(
@@ -7879,13 +7216,16 @@ public partial class BattleController : Node2D
 
 	private void TryTriggerCampaignBossPhase()
 	{
-		if (!IsCampaignMode || _battleEnded || _enemyBaseHealth <= 0.01f)
+		if (!IsCampaignMode || _battleEnded)
 		{
 			return;
 		}
 
-		foreach (var unit in _units)
+		// Reinforcements join on the next tick; summoning must not invalidate iteration.
+		var actingCount = _units.Count;
+		for (var unitIndex = 0; unitIndex < actingCount; unitIndex++)
 		{
+			var unit = _units[unitIndex];
 			if (!IsCampaignBossPhaseUnit(unit) || _campaignBossPhaseTriggeredUnits.Contains(unit))
 			{
 				continue;
@@ -7896,6 +7236,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
+			if (!PrepareBossPhase(unit)) continue;
 			_campaignBossPhaseTriggeredUnits.Add(unit);
 			_campaignBossPhaseTriggered = true;
 			ApplyCampaignBossPhase(unit);
@@ -7946,7 +7287,7 @@ public partial class BattleController : Node2D
 
 	private void UpdateCampaignBossPressure()
 	{
-		if (!IsCampaignMode || !_campaignBossPressureActive || _battleEnded || _enemyBaseHealth <= 0.01f)
+		if (!IsCampaignMode || !_campaignBossPressureActive || _battleEnded)
 		{
 			return;
 		}
@@ -8191,10 +7532,10 @@ public partial class BattleController : Node2D
 				break;
 			case GameData.EnemyBossReliquaryId:
 			{
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, elite ? 2 : 1);
-				RepairEnemyBaseByRatio(elite ? 0.03f : 0.02f, color, "OSSUARY");
-				HealUnit(boss, boss.MaxHealth * (elite ? 0.06f : 0.04f), color, "BONE");
-				SetStatus($"{boss.UnitName} opens the ossuary again" + (escorts > 0 ? $" and {escorts} bone crews shamble into position." : "."));
+				// The normal raise timer supplies replacements. A second summon/repair loop
+				// erased progress and left no useful opening after defeating the artillery.
+				BuffUnitsNear(Team.Enemy, boss.Position, 160f, 1.08f, 1f, 4f, color, "OSSUARY");
+				SetStatus($"{boss.UnitName} rallies the surviving bone crews. Defeat them to open a path to the tyrant.");
 				break;
 			}
 			case GameData.EnemyBossAshenRegentId:
@@ -8873,6 +8214,8 @@ public partial class BattleController : Node2D
 		var spawned = 0;
 		for (var i = 0; i < count; i++)
 		{
+			if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+			if (!CanAddBossReinforcement(anchor, unitId)) break;
 			if (!_spawnDirector.TryBuildEnemyStats(unitId, out var escortStats))
 			{
 				break;
@@ -9086,7 +8429,7 @@ public partial class BattleController : Node2D
 		var tickDamage = dps * delta;
 		foreach (var unit in _units)
 		{
-			if (unit.IsDead || unit.Team != Team.Player)
+			if (unit.IsDead || unit.Team != Team.Player || !CursedGroundArea.HasPoint(unit.Position))
 			{
 				continue;
 			}
@@ -9308,7 +8651,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
-			if (!source.IsInAggroRange(candidate, _weatherAggroScale))
+			if (!(source.Team == Team.Player && _enemyBaseHealth <= 0f) && !source.IsInAggroRange(candidate, _weatherAggroScale))
 			{
 				continue;
 			}
@@ -9363,7 +8706,7 @@ public partial class BattleController : Node2D
 			!candidate.IsDead &&
 			candidate.Team != source.Team &&
 			!candidate.IsUntargetable &&
-			source.IsInAggroRange(candidate, _weatherAggroScale);
+			((source.Team == Team.Player && _enemyBaseHealth <= 0f) || source.IsInAggroRange(candidate, _weatherAggroScale));
 	}
 
 	private static float ResolveTargetDistanceScore(Unit source, Unit candidate)
@@ -9440,6 +8783,12 @@ public partial class BattleController : Node2D
 		if (source.Team != Team.Player)
 		{
 			return 5;
+		}
+
+		// Frontliners engage the enemy touching their line before chasing a distant support unit.
+		if (!source.UsesProjectile && source.SpecialAbilityId != "backstab" && source.CanAttack(candidate))
+		{
+			return -1;
 		}
 
 		return candidate.VisualClass switch
@@ -9685,6 +9034,11 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
 			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, deadUnit.VisualClass == "boss");
+			_pendingBossPhases.Remove(deadUnit);
+			_campaignBossPhaseTriggeredUnits.Remove(deadUnit);
+			foreach (var attacker in _targetLocks.Where(pair => pair.Value == deadUnit).Select(pair => pair.Key).ToArray())
+				_targetLocks.Remove(attacker);
+			_targetLocks.Remove(deadUnit);
 			_units.RemoveAt(i);
 			UnitPool.Release(deadUnit);
 		}
@@ -9980,19 +9334,20 @@ public partial class BattleController : Node2D
 			targetRarity = "common";
 
 		var candidates = GameData.GetAllEquipment()
-			.Where(e => string.Equals(e.Rarity, targetRarity, StringComparison.OrdinalIgnoreCase))
+			.Where(e => string.Equals(e.Rarity, targetRarity, StringComparison.OrdinalIgnoreCase) &&
+				(!IsCampaignMode || CampaignProgressionCatalog.IsCampaignRelic(e.Id)))
 			.ToList();
 		if (candidates.Count == 0)
 			return;
 
 		var relic = candidates[_rng.RandiRange(0, candidates.Count - 1)];
-		var isNew = GameState.Instance.TryGrantEquipment(relic.Id);
+		var isNew = GameState.Instance.GrantBossRelic(relic.Id, out var duplicateShards);
 		if (isNew)
 		{
 			_relicDropName = relic.DisplayName;
 			AudioDirector.Instance?.PlayRelicPickup();
 		}
-		var label = isNew ? $"RELIC: {relic.DisplayName}" : "RELIC (owned)";
+		var label = isNew ? $"RELIC: {relic.DisplayName}" : $"DUPLICATE RELIC: +{duplicateShards} SHARDS";
 		var color = isNew ? new Color("ffd700") : new Color("adb5bd");
 		SpawnFloatText(boss.Position + new Vector2(0f, -48f), label, color, 0.72f);
 
@@ -10157,7 +9512,7 @@ public partial class BattleController : Node2D
 			}
 
 			// And the shield wall is between the attacker and the target (X-wise)
-			if (candidate.Position.X > attacker.Position.X || candidate.Position.X < target.Position.X - 40f)
+			if (candidate.Position.X < attacker.Position.X || candidate.Position.X > target.Position.X + 40f)
 			{
 				continue;
 			}
@@ -10274,6 +9629,13 @@ public partial class BattleController : Node2D
 		{
 			return;
 		}
+
+		// A casualty may be replaced by the boss before death cleanup runs. Graveyard
+		// resurrection must respect the same artillery limit as its summon commands.
+		foreach (var commander in _units)
+			if (!commander.IsDead && commander.Team == Team.Enemy &&
+				!CanAddBossReinforcement(commander, deadUnit.DefinitionId))
+				return;
 
 		var chance = StageModifiers.ResolveLichGraveyardChance(_stageData);
 		if (_rng.Randf() >= chance)
@@ -11515,7 +10877,7 @@ public partial class BattleController : Node2D
 			return $"{modifierSummary}\n{weatherSummary}\n{hazardSummary}\n{missionSummary}{challengeHeaderText}{suffix}";
 		}
 
-		var countdown = Mathf.Max(0f, nextWave.TriggerTime - _elapsed);
+		var countdown = Mathf.Max(0f, _spawnDirector.NextScriptedWaveTime - _elapsed);
 		var label = string.IsNullOrWhiteSpace(nextWave.Label)
 			? $"Wave {_spawnDirector.NextScriptedWaveIndex + 1}"
 			: nextWave.Label;
@@ -11526,7 +10888,7 @@ public partial class BattleController : Node2D
 				missionSummary +
 				challengeHeaderText +
 				$"{BuildActiveEnemyPressureText()}\n" +
-				$"Next wave in {countdown:0.0}s: {label}\n" +
+				(_spawnDirector.IsScriptedWaveHeld ? $"Next wave waiting for the current push to thin: {label}\n" : $"Next wave in {countdown:0.0}s: {label}\n") +
 				$"{BuildWaveEntrySummary(nextWave)}\n" +
 				$"{StageEncounterIntel.BuildWavePressureSummary(nextWave)}";
 	}
@@ -16030,7 +15392,7 @@ public partial class BattleController : Node2D
 
 	private void RepairEnemyBaseByRatio(float ratio, Color color, string label = "")
 	{
-		if (ratio <= 0f)
+		if (ratio <= 0f || _enemyBaseHealth <= 0f)
 		{
 			return;
 		}
@@ -16099,15 +15461,27 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (_enemyBaseHealth <= 0f)
-		{
-			EndBattle(true);
-			return;
-		}
-
 		if (_playerBaseHealth <= 0f)
 		{
 			EndBattle(false);
+			return;
+		}
+
+		if (_enemyBaseHealth <= 0f)
+		{
+			_enemyBaseHealth = 0f;
+			if (_spawnDirector.UsesScriptedWaves &&
+				(_spawnDirector.NextScriptedWaveIndex < _spawnDirector.TotalScriptedWaves ||
+				 _spawnDirector.PendingSpawnCount > 0 || CountTeamUnits(Team.Enemy) > 0))
+			{
+				if (!_gateBreachAnnounced)
+				{
+					_gateBreachAnnounced = true;
+					SetStatus("Gate breached. Rout the remaining defenders to secure the route.");
+				}
+				return;
+			}
+			EndBattle(true);
 		}
 	}
 
@@ -16230,11 +15604,13 @@ public partial class BattleController : Node2D
 			var stageResult = BuildStageBattleResult();
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
 			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
-			var rewardGold = _stageData.RewardGold;
-			var rewardFood = _stageData.RewardFood;
+			var rewardGold = IsCampaignMode ? _stageData.RewardGold : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardGold ?? 0 : 0;
+			var rewardFood = IsCampaignMode ? _stageData.RewardFood : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardFood ?? 0 : 0;
 			ApplyCampaignCommendationVictoryReward(ref rewardGold, ref rewardFood);
 			ApplyCampaignAdaptiveWaveVictoryReward(ref rewardGold, ref rewardFood);
-			var districtRewardSummary = GameState.Instance.ApplyVictory(_stage, rewardGold, rewardFood, evaluation.StarsEarned);
+			var districtRewardSummary = IsCampaignMode
+				? GameState.Instance.ApplyVictory(_stage, rewardGold, rewardFood, evaluation.StarsEarned)
+				: "";
 			if (IsArenaMode && GameState.Instance.SelectedArenaOpponent != null)
 			{
 				GameState.Instance.ApplyArenaResult(true, GameState.Instance.SelectedArenaOpponent.ArenaRating);
@@ -16334,7 +15710,7 @@ public partial class BattleController : Node2D
 			{
 				_campaignAdaptiveWaveRewardLost = true;
 			}
-			GameState.Instance.ApplyDefeat(_stage);
+			if (IsCampaignMode) GameState.Instance.ApplyDefeat(_stage);
 			var momentumLine = IsCampaignMode ? $"\n{GameState.Instance.BuildCampaignMomentumStatusText()}" : "";
 			var convoyCommandLine = IsCampaignMode ? $"\n{BuildCampaignConvoyCommandDebriefText()}" : "";
 			var fieldOrderLine = IsCampaignMode ? $"\n{BuildCampaignFieldOrderDebriefText()}" : "";
@@ -16388,6 +15764,8 @@ public partial class BattleController : Node2D
 
 	private void RetreatToMap()
 	{
+		// Scene transitions must be able to animate when retreating from the pause menu.
+		if (_battlePaused) TogglePause();
 		if (IsEndlessMode)
 		{
 			if (!_battleEnded)
@@ -16460,7 +15838,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (!_battleEnded)
+		if (!_battleEnded && IsCampaignMode)
 		{
 			GameState.Instance.ApplyRetreat(_stage);
 		}

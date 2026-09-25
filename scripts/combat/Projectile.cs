@@ -14,6 +14,10 @@ public partial class Projectile : Node2D
     private Func<float, float> _applyImpact = null!;
     private Func<bool> _shouldCancel = null!;
     private CpuParticles2D _trail;
+    private BaseWeaponKind? _weaponVisual;
+    public Func<bool> ShouldPause { get; set; }
+
+    public void SetWeaponVisual(BaseWeaponKind kind) => _weaponVisual = kind;
 
     public override void _ExitTree()
     {
@@ -23,6 +27,9 @@ public partial class Projectile : Node2D
     public void ResetForPool()
     {
         _active = false;
+        _weaponVisual = null;
+        ShouldPause = null;
+        ProcessMode = ProcessModeEnum.Inherit;
         _target = null;
         _damage = 0f;
         _speed = 0f;
@@ -74,12 +81,13 @@ public partial class Projectile : Node2D
         _shouldCancel = shouldCancel;
         _onHit = onHit;
         _active = true;
+        Visible = true;
         _trail = BattleParticles.SpawnProjectileTrail(this, _color);
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        if (!_active)
+        if (!_active || (ShouldPause?.Invoke() ?? false))
         {
             return;
         }
@@ -128,6 +136,14 @@ public partial class Projectile : Node2D
 
     public override void _Draw()
     {
+        if (_weaponVisual is BaseWeaponKind.Arrows or BaseWeaponKind.Ballista)
+        {
+            var length = _weaponVisual == BaseWeaponKind.Ballista ? 25f : 17f;
+            var normal = _travelDirection.Orthogonal();
+            DrawLine(-_travelDirection * length, Vector2.Zero, _color, 2f, true);
+            DrawColoredPolygon(new[] { _travelDirection * 4, -_travelDirection * 6 + normal * 4, -_travelDirection * 6 - normal * 4 }, _color.Lightened(0.2f));
+            return;
+        }
         var tailEnd = -_travelDirection * (_radius * 2.2f);
         DrawLine(Vector2.Zero, tailEnd, new Color(_color, 0.55f), _radius * 1.2f, true);
         DrawCircle(Vector2.Zero, _radius, _color);

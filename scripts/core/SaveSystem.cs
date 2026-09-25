@@ -115,28 +115,27 @@ public partial class SaveSystem : Node
                 file.StoreString(json);
             }
 
-            // Verify the temp file is valid before replacing
-            using (var verify = FileAccess.Open(tempPath, FileAccess.ModeFlags.Read))
+            // Parse the complete staged save before touching the current save or backup.
+            if (!TryLoadFromPath(tempPath, out _))
             {
-                if (verify == null || string.IsNullOrWhiteSpace(verify.GetAsText()))
+                GD.PushError("Temp save file verification failed, keeping the current save.");
+                return;
+            }
+
+            // Copy first: a failed backup or replacement must leave the current save intact.
+            if (FileAccess.FileExists(saveFilePath) && TryLoadFromPath(saveFilePath, out _))
+            {
+                var backupError = DirAccess.CopyAbsolute(saveFilePath, backupPath);
+                if (backupError != Error.Ok)
                 {
-                    GD.PushError("Temp save file verification failed, aborting save.");
+                    GD.PushError($"Save backup failed ({backupError}); keeping the current save.");
                     return;
                 }
             }
+            var replaceError = DirAccess.RenameAbsolute(tempPath, saveFilePath);
+            if (replaceError != Error.Ok)
+                GD.PushError($"Save replacement failed ({replaceError}); previous save and backup retained.");
 
-            // Rotate backup: current save -> .bak
-            if (FileAccess.FileExists(saveFilePath))
-            {
-                if (FileAccess.FileExists(backupPath))
-                {
-                    DirAccess.RemoveAbsolute(backupPath);
-                }
-                DirAccess.RenameAbsolute(saveFilePath, backupPath);
-            }
-
-            // Atomic rename: .tmp -> save
-            DirAccess.RenameAbsolute(tempPath, saveFilePath);
         }
         catch (Exception ex)
         {

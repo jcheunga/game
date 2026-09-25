@@ -109,7 +109,7 @@ public static class AnalyticsService
 			var json = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/analytics/ingest");
-			msg.Headers.TryAddWithoutValidation("X-Convoy-Profile", profileId);
+			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
 			Client.Send(msg);
 		}

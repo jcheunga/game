@@ -119,11 +119,15 @@ public static class UiBadgeFactory
     {
         var frame = new PanelContainer
         {
-            CustomMinimumSize = size
+            CustomMinimumSize = size,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
         };
-        frame.SelfModulate = tint.Darkened(0.12f);
+        var style = RealmUi.Surface(new Color("142228"), new Color("687362"));
+        style.ContentMarginLeft = style.ContentMarginRight = style.ContentMarginTop = style.ContentMarginBottom = 1;
+        frame.AddThemeStyleboxOverride("panel", style);
 
-        var inner = new MarginContainer();
+        frame.MouseFilter = Control.MouseFilterEnum.Ignore;
+        var inner = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         inner.AddThemeConstantOverride("margin_left", 4);
         inner.AddThemeConstantOverride("margin_right", 4);
         inner.AddThemeConstantOverride("margin_top", 4);
@@ -135,6 +139,7 @@ public static class UiBadgeFactory
             var textureRect = new TextureRect
             {
                 Texture = texture,
+                MouseFilter = Control.MouseFilterEnum.Ignore,
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = large
                     ? TextureRect.StretchModeEnum.KeepAspectCovered

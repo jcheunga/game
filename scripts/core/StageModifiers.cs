@@ -244,7 +244,7 @@ public static class StageModifiers
             "swarm_density" => $"Swarm density (+{Mathf.Max(1, Mathf.RoundToInt(modifier.Value <= 0f ? 1f : modifier.Value))} enemy cap, faster pressure)",
             "elite_vanguard" => $"Elite vanguard ({ToPercent(modifier.Value, 1f)} enemy health and damage)",
             "rapid_assault" => $"Rapid assault ({ToPercent(modifier.Value, 1f)} wave interval)",
-            "cursed_ground" => $"Cursed ground ({(modifier.Value <= 0f ? 2.5f : modifier.Value):0.#} damage/s to deployed allies)",
+            "cursed_ground" => $"Cursed ground ({(modifier.Value <= 0f ? 2.5f : modifier.Value):0.#} damage/s inside the marked strip)",
             "fortified_deploy" => $"Fortified deploy (allies gain {Mathf.RoundToInt((1f - Mathf.Clamp(modifier.Value <= 0f ? 0.6f : modifier.Value, 0.3f, 0.9f)) * 100f)}% defense for 4s on deploy)",
             "mirror_pressure" => $"Mirror pressure (enemies reflect {Mathf.RoundToInt((modifier.Value <= 0f ? 0.15f : modifier.Value) * 100f)}% of damage back)",
             "lich_graveyard" => $"Lich graveyard (fallen enemies have {Mathf.RoundToInt((modifier.Value <= 0f ? 0.25f : modifier.Value) * 100f)}% chance to reanimate)",

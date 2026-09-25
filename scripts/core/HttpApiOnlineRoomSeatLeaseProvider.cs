@@ -48,7 +48,7 @@ public sealed class HttpApiOnlineRoomSeatLeaseProvider : IOnlineRoomSeatLeasePro
 		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
-		message.Headers.TryAddWithoutValidation("X-Convoy-Profile", request.PlayerProfileId);
+		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Headers.TryAddWithoutValidation("X-Join-Ticket", request.TicketId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 

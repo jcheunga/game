@@ -48,3 +48,52 @@
 		format json
 	}
 }
+
+# Public website: static files that scripts/tools/build_site.py renders from
+# site/ into site/dist, mounted read-only at /srv/site. It shares this Caddy
+# instance and its managed certificates with the API.
+{$CROWNROAD_SITE_DOMAIN} {
+	encode zstd gzip
+	root * /srv/site
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+	}
+
+	# Images, icons and CSS keep their names between releases, so cache them for
+	# a week; pages revalidate after five minutes so copy changes appear quickly.
+	@static path /assets/* /favicon.ico /favicon-32.png /apple-touch-icon.png
+	header @static Cache-Control "public, max-age=604800"
+	@pages not path /assets/* /favicon.ico /favicon-32.png /apple-touch-icon.png
+	header @pages Cache-Control "public, max-age=300, must-revalidate"
+	@manifest path *.webmanifest
+	header @manifest Content-Type "application/manifest+json"
+
+	# Clean URLs: /privacy serves privacy.html.
+	try_files {path} {path}.html {path}/index.html
+	file_server
+
+	handle_errors {
+		@notfound expression {err.status_code} == 404
+		handle @notfound {
+			rewrite * /404.html
+			file_server
+		}
+		respond "{err.status_code} {err.status_text}"
+	}
+
+	# No access log for the website: visitors' IP addresses and user agents
+	# aren't needed to serve static pages, and the privacy policy says so.
+}
+
+# Send www traffic to the bare domain. Point a www DNS record at this host so
+# Caddy can issue its certificate.
+www.{$CROWNROAD_SITE_DOMAIN} {
+	redir https://{$CROWNROAD_SITE_DOMAIN}{uri} permanent
+}

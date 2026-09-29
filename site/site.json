@@ -1,0 +1,13 @@
+{
+  "_readme": "Launch values for the public website. Fill every field, then run: python3 scripts/tools/build_site.py --strict. See docs/WEBSITE.md.",
+  "domain": "crownroad.game",
+  "legal_name": "",
+  "support_email": "",
+  "governing_law": "",
+  "effective_date": "",
+  "links": {
+    "app_store": "",
+    "google_play": "",
+    "web_play": ""
+  }
+}

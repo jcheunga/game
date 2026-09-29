@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--#include head.html -->
+<title>Support · Crownroad</title>
+<meta name="description" content="Get help with Crownroad: purchases, progress, online play, deleting your data, and reporting security issues.">
+<link rel="canonical" href="https://{{domain}}/support">
+<meta property="og:title" content="Crownroad Support">
+<meta property="og:image" content="https://{{domain}}/assets/img/og.jpg">
+</head>
+<body>
+<!--#include nav.html -->
+
+<main id="main" class="doc">
+  <div class="wrap">
+    <header>
+      <span class="eyebrow">Help</span>
+      <h1>Support</h1>
+      <p class="summary">Stuck on a purchase, lost progress, or found a bug? Email us and a person will reply.</p>
+      <div class="contact-card">
+        <span class="eyebrow">Email support</span>
+        <span class="address">{{support_email}}</span>
+        <p>Include your device and operating system, and your player ID. You'll find it in the game's Settings screen, shown as "Profile: CVY-…".</p>
+      </div>
+    </header>
+
+    <h2 id="purchases">Purchases</h2>
+    <div class="faq">
+      <details>
+        <summary>I paid but didn't get my item</summary>
+        <div>
+          <p>The game checks every purchase with our server before adding it, so a slow or dropped connection can delay it. Connect to the internet and restart the game. It checks unfinished purchases again when it starts.</p>
+          <p>If it still hasn't arrived after a few minutes, email us with your player ID and the order number from your store receipt.</p>
+        </div>
+      </details>
+      <details>
+        <summary>How do I get a refund?</summary>
+        <div>
+          <p>Refunds go through the store you paid with. For the App Store, use <a href="https://reportaproblem.apple.com" rel="noopener">reportaproblem.apple.com</a>. For Google Play, follow <a href="https://support.google.com/googleplay/answer/2479637" rel="noopener">Google's refund steps</a>. For desktop purchases made through Stripe, email us.</p>
+        </div>
+      </details>
+    </div>
+
+    <h2 id="progress">Progress and devices</h2>
+    <div class="faq">
+      <details>
+        <summary>Can I move my progress to a new device?</summary>
+        <div>
+          <p>Not yet. Your progress belongs to a player profile created on your device, and the game doesn't have account sign-in yet. Email us before you switch devices and we'll help where we can. See the <a href="/terms">Terms of Service</a> for details.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What does "Reset campaign" do?</summary>
+        <div>
+          <p>It clears your campaign and starts a new player ID on this device. Data linked to your old ID stays on our servers until you ask us to delete it, so note your old ID first if you want it removed.</p>
+        </div>
+      </details>
+    </div>
+
+    <h2 id="online">Online play</h2>
+    <div class="faq">
+      <details>
+        <summary>Challenges or online rooms won't connect</summary>
+        <div>
+          <p>Online features need an internet connection. The rest of the game works offline, and finished results upload the next time you're connected.</p>
+        </div>
+      </details>
+      <details>
+        <summary>How do LAN races work?</summary>
+        <div>
+          <p>Everyone must be on the same local network. The host starts a room and shares the local address shown on their screen, then the others type it in to join. Some public and office networks block device-to-device connections. If joining fails, try a home network or a phone hotspot.</p>
+        </div>
+      </details>
+      <details>
+        <summary>How do I change the name other players see?</summary>
+        <div>
+          <p>Change your caravan callsign in Settings. It can use letters, numbers, spaces, hyphens and underscores, up to 18 characters.</p>
+        </div>
+      </details>
+    </div>
+
+    <h2 id="delete-data">Delete your data</h2>
+    <p>You can ask us to delete everything linked to your player ID on our servers, including your profile, callsign, results, cloud save, crash reports and analytics.</p>
+    <ul>
+      <li>Email <a href="mailto:{{support_email}}">{{support_email}}</a> with the subject "Delete my data" and your player ID from Settings.</li>
+      <li>We may ask you to confirm a detail from the game on your device, so nobody else can delete your data.</li>
+      <li>We delete your data within 30 days and email you when it's done. We keep only the purchase records the law requires.</li>
+      <li>Deleting the game from your device removes the data stored on the device.</li>
+    </ul>
+    <p>The <a href="/privacy">Privacy Policy</a> explains what we collect and your other rights.</p>
+
+    <h2 id="security">Report a security issue</h2>
+    <p>If you find a vulnerability in the game, its servers or this website, email <a href="mailto:{{support_email}}">{{support_email}}</a> with "Security" in the subject and enough detail for us to reproduce it. We'll confirm we got it and keep you updated while we fix it.</p>
+    <p>Please don't access or change other players' data, degrade the service for others, or share the issue publicly until it's fixed. We won't take action against good-faith research that follows these rules.</p>
+  </div>
+</main>
+
+<!--#include footer.html -->
+</body>
+</html>

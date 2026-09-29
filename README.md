@@ -24,6 +24,18 @@ See `server/.env.example` for local configuration. For a public release, use
 the HTTPS deployment workflow in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), not
 the local Compose file.
 
+## Website
+
+The public site (home, support, privacy and terms pages) lives in `site/` and
+is deployed with the API. Preview it locally:
+
+```bash
+python3 scripts/tools/build_site.py --serve   # http://localhost:8000
+```
+
+Fill in `site/site.json` before launch. See [docs/WEBSITE.md](docs/WEBSITE.md)
+for the go-live checklist and store-listing URLs.
+
 ## Current Status
 
 - Repo-side roadmap work is complete.

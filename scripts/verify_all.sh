@@ -26,4 +26,8 @@ echo "--- Running server tests ---"
 )
 echo ""
 
+echo "--- Building public website ---"
+python3 scripts/tools/build_site.py
+echo ""
+
 echo "--- Done ---"

@@ -23,6 +23,9 @@ a large public launch.
   application environment variables.
 - An independent operator key for `/admin`, `/stats`, `/analytics/summary`,
   and `/admin/balance`.
+- The public website (home, support, privacy and terms pages) from `site/` on
+  `CROWNROAD_SITE_DOMAIN`, with `www.` redirecting to it. `deploy.sh` builds it
+  first and stops if any launch value is unset. See [WEBSITE.md](WEBSITE.md).
 
 The API never creates database dumps in its own container. Use PostgreSQL
 provider backups, point-in-time recovery, or encrypted off-host dumps and
@@ -33,13 +36,16 @@ rehearse a restore before releasing paid currency.
 1. Create a Linux VM and install Docker Engine plus the Docker Compose v2
    plugin. Use a non-root deployment account.
 2. Point an A (and, if used, AAAA) record such as `api.your-domain.example` at
-   the VM. Make ports 80 and 443 available from the public internet. Caddy uses
-   that reachability to provision and renew certificates.
+   the VM, plus records for the website domain and its `www.` alias. Make ports
+   80 and 443 available from the public internet. Caddy uses that reachability
+   to provision and renew certificates.
 3. Copy the release repository to the server and work from its `server/`
    directory.
 4. Copy `.env.production.example` to `.env.production`, then set the API
-   hostname, a monitored email address, and the exact browser origins. Do not
-   use `*` as an origin.
+   hostname, the website hostname (`CROWNROAD_SITE_DOMAIN`), a monitored email
+   address, and the exact browser origins. Do not use `*` as an origin. Fill in
+   `site/site.json` with the same website domain and the publisher details
+   described in [WEBSITE.md](WEBSITE.md).
 5. Provision the managed PostgreSQL database and create a least-privilege
    application role. Put its **pooled** PostgreSQL URL in `DATABASE_URL` in
    `.env.production`. It must use verified TLS, such as

@@ -11,6 +11,7 @@ public class StaleDataCleanup : BackgroundService
     private const long StaleTelemetryAgeSeconds = 3600 * 24;
     private const long StaleReportRetentionSeconds = 3600 * 24 * 90;
     private const long StaleAnalyticsRetentionSeconds = 3600 * 24 * 30;
+    private const long StaleCrashReportRetentionSeconds = 3600 * 24 * 90;
     private static readonly TimeSpan BackupInterval = TimeSpan.FromHours(6);
     private DateTime _lastBackupTime = DateTime.MinValue;
 
@@ -105,6 +106,14 @@ public class StaleDataCleanup : BackgroundService
         {
             cmd.CommandText = "DELETE FROM analytics_events WHERE recorded_at < @cutoff";
             cmd.Parameters.AddWithValue("@cutoff", now - StaleAnalyticsRetentionSeconds);
+            totalRemoved += cmd.ExecuteNonQuery();
+        }
+
+        // Purge old crash reports (keep 90 days; the privacy policy states this)
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "DELETE FROM crash_reports WHERE reported_at < @cutoff";
+            cmd.Parameters.AddWithValue("@cutoff", now - StaleCrashReportRetentionSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
 

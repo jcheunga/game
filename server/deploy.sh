@@ -24,6 +24,20 @@ fi
 
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 
+SITE_DOMAIN="$(sed -n 's/^CROWNROAD_SITE_DOMAIN=//p' "$ENV_FILE" | tail -n 1 | tr -d '[:space:]"'"'")"
+if [[ -z "$SITE_DOMAIN" ]]; then
+    echo "Set CROWNROAD_SITE_DOMAIN in $ENV_FILE to the public website hostname."
+    exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Python 3 is required to build the public website."
+    exit 1
+fi
+
+echo "Building the public website for $SITE_DOMAIN..."
+python3 ../scripts/tools/build_site.py --strict --domain "$SITE_DOMAIN"
+
 echo "Validating deployment configuration..."
 "${COMPOSE[@]}" config -q
 
@@ -36,8 +50,8 @@ echo "Running server verification..."
 dotnet run -- --test
 dotnet run -- --test-data ../data
 
-echo "Building and starting the private API and HTTPS proxy..."
+echo "Building and starting the private API, website and HTTPS proxy..."
 "${COMPOSE[@]}" up -d --build --remove-orphans
 "${COMPOSE[@]}" ps
 
-echo "Deployment started. Verify https://<your API domain>/health after DNS has propagated."
+echo "Deployment started. After DNS has propagated, verify https://<your API domain>/health and https://$SITE_DOMAIN/."

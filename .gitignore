@@ -37,3 +37,6 @@ server/secrets/
 
 # Local visual review captures
 artifacts/
+
+# Built public website (scripts/tools/build_site.py)
+site/dist/

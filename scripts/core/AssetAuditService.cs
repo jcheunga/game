@@ -37,6 +37,8 @@ public static class AssetAuditService
             .OrderBy(id => id)
             .ToArray();
         lines.Add(BuildCoverageLine("Unit sprites", expectedVisualClasses, id => HasPng(UnitSpritePath, id), $"{UnitSpritePath}{{visual_class}}.png"));
+        var unitIds = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Append(GameData.PlayerSkeletonId).Distinct().ToArray();
+        lines.Add(BuildCoverageLine("Individual unit sprites", unitIds, id => HasPng(UnitSpritePath, id), $"{UnitSpritePath}{{unit_id}}.png"));
 
         var terrainIds = GameData.Stages
             .Select(stage => AssetCoverageCatalog.NormalizeId(stage.TerrainId))
@@ -46,6 +48,10 @@ public static class AssetAuditService
             .ToArray();
         lines.Add(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasPng(BattleBackgroundPath, id), $"{BattleBackgroundPath}{{terrain_id}}.png"));
         lines.Add(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasPng(StructurePath, id), $"{StructurePath}{{structure_id}}.png"));
+        lines.Add(BuildCoverageLine("Caravan skins", WagonSkinCatalog.GetAll().Select(skin => skin.Id).ToArray(),
+            id => HasPng(StructurePath, id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + id), $"{StructurePath}war_wagon_skin_*.png"));
+        lines.Add(BuildCoverageLine("Weapon mounts", System.Enum.GetNames<BaseWeaponKind>().Select(id => id.ToLowerInvariant()).ToArray(),
+            id => HasPng(StructurePath, "mount_" + id), $"{StructurePath}mount_*.png"));
         lines.Add(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasPng(ParticlePath, id), $"{ParticlePath}{{particle_id}}.png"));
 
         lines.Add(BuildCoverageLine("Screen backgrounds", AssetCoverageCatalog.ScreenBackgroundIds, id => HasPng(ScreenBackgroundPath, id), $"{ScreenBackgroundPath}{{screen_id}}.png"));

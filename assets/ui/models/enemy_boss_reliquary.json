@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 2.6285714285714286,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.09,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "enemy_boss_reliquary",
+  "title": "Reliquary Tyrant",
+  "source": "art/blender/units/enemy_boss_reliquary.blend",
+  "anchorY": 0.7666342258453369,
+  "anchorX": 0.452731,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "royal-cleave",
+    "body": [
+      0.0,
+      -0.262874
+    ],
+    "contact": [
+      0.478739,
+      -0.28492
+    ]
+  }
+}

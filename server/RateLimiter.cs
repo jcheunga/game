@@ -1,71 +1,82 @@
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CrownroadServer;
 
-public class RateLimiter
+/// <summary>
+/// Applies route-aware limits. Authenticated traffic is partitioned by an
+/// opaque bearer token instead of public IP, so players sharing mobile/Wi-Fi
+/// egress do not throttle one another. Redis makes counters consistent across
+/// API replicas.
+/// </summary>
+public sealed class RateLimiter
 {
+    private static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
     private readonly RequestDelegate _next;
-    private const int MaxRequests = 60;
-    private const int WindowSeconds = 60;
-    private static readonly ConcurrentDictionary<string, ClientEntry> _clients = new();
-    private static readonly Timer _cleanupTimer = new(_ => Cleanup(), null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
+    private readonly IRateLimitStore _store;
 
-    public RateLimiter(RequestDelegate next)
+    public RateLimiter(RequestDelegate next, IRateLimitStore store)
     {
         _next = next;
+        _store = store;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var policy = SelectPolicy(context);
+        var lease = await _store.TryConsumeAsync(policy.Key, policy.Limit, Window);
 
-        var entry = _clients.GetOrAdd(ip, _ => new ClientEntry());
-
-        lock (entry)
+        context.Response.Headers["RateLimit-Limit"] = policy.Limit.ToString();
+        context.Response.Headers["RateLimit-Remaining"] = Math.Max(0, policy.Limit - lease.Count).ToString();
+        context.Response.Headers["RateLimit-Reset"] = lease.RetryAfterSeconds.ToString();
+        if (!lease.Allowed)
         {
-            // Slide the window: remove timestamps older than the window
-            while (entry.Timestamps.Count > 0 && entry.Timestamps.Peek() <= now - WindowSeconds)
-            {
-                entry.Timestamps.Dequeue();
-            }
-
-            if (entry.Timestamps.Count >= MaxRequests)
-            {
-                context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                context.Response.Headers["Retry-After"] = WindowSeconds.ToString();
-                return;
-            }
-
-            entry.Timestamps.Enqueue(now);
+            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.Response.Headers["Retry-After"] = lease.RetryAfterSeconds.ToString();
+            return;
         }
 
         await _next(context);
     }
 
-    private static void Cleanup()
+    private static RateLimitPolicy SelectPolicy(HttpContext context)
     {
-        var cutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - WindowSeconds;
+        var path = context.Request.Path;
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var bearerToken = ReadBearerToken(context.Request);
 
-        foreach (var kvp in _clients)
+        // A profile registration/recovery attempt has no established bearer
+        // yet, so it remains deliberately limited by source IP.
+        if (path.StartsWithSegments("/player-profile"))
         {
-            lock (kvp.Value)
-            {
-                while (kvp.Value.Timestamps.Count > 0 && kvp.Value.Timestamps.Peek() <= cutoff)
-                {
-                    kvp.Value.Timestamps.Dequeue();
-                }
-
-                if (kvp.Value.Timestamps.Count == 0)
-                {
-                    _clients.TryRemove(kvp.Key, out _);
-                }
-            }
+            return new RateLimitPolicy($"crownroad:rate:v1:registration:{Hash(ip)}", 20);
         }
+
+        if (!string.IsNullOrWhiteSpace(bearerToken))
+        {
+            var isWebSocket = path.StartsWithSegments("/ws");
+            return new RateLimitPolicy(
+                $"crownroad:rate:v1:session:{Hash(bearerToken)}",
+                isWebSocket ? 30 : 180);
+        }
+
+        return new RateLimitPolicy($"crownroad:rate:v1:ip:{Hash(ip)}", 60);
     }
 
-    private class ClientEntry
+    private static string ReadBearerToken(HttpRequest request)
     {
-        public Queue<long> Timestamps { get; } = new();
+        var value = request.Headers.Authorization.FirstOrDefault() ?? "";
+        const string prefix = "Bearer ";
+        var token = value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? value[prefix.Length..].Trim()
+            : "";
+        // Headers larger than this are malformed and should not create large
+        // keys or trigger costly hashing work.
+        return token.Length is > 0 and <= 512 ? token : "";
     }
+
+    private static string Hash(string value) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)))[..24];
+
+    private readonly record struct RateLimitPolicy(string Key, int Limit);
 }

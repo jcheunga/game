@@ -1,0 +1,62 @@
+{
+  "frameWidth": 192,
+  "frameHeight": 240,
+  "drawScale": 2.6570612414283037,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.06664,
+      "loop": false,
+      "contactFrame": 4
+    },
+    "hit": {
+      "start": 20,
+      "count": 2,
+      "duration": 0.09,
+      "loop": false
+    },
+    "death": {
+      "start": 22,
+      "count": 6,
+      "duration": 0.11,
+      "loop": false
+    },
+    "deploy": {
+      "start": 28,
+      "count": 4,
+      "duration": 0.1,
+      "loop": false
+    }
+  },
+  "assetId": "enemy_revenant_captain",
+  "title": "Revenant Captain",
+  "source": "art/blender/units/enemy_revenant_captain.blend",
+  "anchorY": 0.7637753039598465,
+  "anchorX": 0.453238,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "sword-cut",
+    "body": [
+      0.0,
+      -0.260055
+    ],
+    "contact": [
+      0.469993,
+      -0.293921
+    ]
+  },
+  "healthBarY": 0.59815
+}

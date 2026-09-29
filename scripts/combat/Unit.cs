@@ -285,6 +285,10 @@ public partial class Unit : Node2D
     private float _spriteAnimTimer;
     private int _spriteAnimFrame;
     private bool _spriteLoadAttempted;
+    private float _spriteAttackRemaining;
+    private float _spriteDeployRemaining;
+    private float _spriteWalkRemaining;
+    private readonly HealthBarMotion _healthBarMotion = new();
     private Vector2 _prevPosition;
     private float _currentAttackDamageScale = 1f;
     private float _currentSpeedScale = 1f;
@@ -298,11 +302,13 @@ public partial class Unit : Node2D
 
     public void Setup(Team team, UnitStats stats, Vector2 startPosition)
     {
+        ResetCombatMotion();
         Team = team;
         DefinitionId = stats.DefinitionId;
         UnitName = stats.Name;
         MaxHealth = stats.MaxHealth;
         Health = stats.MaxHealth;
+        _healthBarMotion.Reset();
         Speed = stats.Speed;
         AttackDamage = stats.AttackDamage;
         AttackRange = stats.AttackRange;
@@ -344,10 +350,13 @@ public partial class Unit : Node2D
             ? Mathf.Max(3f, SpecialCooldown * 0.55f)
             : 0f;
         Position = startPosition;
+        _prevPosition = startPosition;
+        _spriteDeployRemaining = 0.4f;
     }
 
     public void ResetForPool()
     {
+        ResetCombatMotion();
         Health = 0f;
         _attackTimer = 0f;
         _specialTimer = 0f;
@@ -369,6 +378,10 @@ public partial class Unit : Node2D
         _spriteAnimState = UnitAnimState.Idle;
         _spriteAnimFrame = 0;
         _spriteAnimTimer = 0f;
+        _spriteAttackRemaining = 0f;
+        _spriteDeployRemaining = 0f;
+        _spriteWalkRemaining = 0f;
+        _healthBarMotion.Reset();
         LastDamagedBy = null;
         Visible = false;
     }
@@ -460,6 +473,7 @@ public partial class Unit : Node2D
 
     public void TickAttackTimer(float delta)
     {
+        TickCombatMotion(delta);
         if (_attackTimer > 0f)
         {
             _attackTimer -= delta;
@@ -483,6 +497,7 @@ public partial class Unit : Node2D
 
         _specialTimer = SpecialCooldown;
         _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.18f);
+        BeginSpriteAttack();
         return true;
     }
 
@@ -521,6 +536,7 @@ public partial class Unit : Node2D
 
         _activeAbilityTimer = ActiveAbilityCooldown;
         _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.22f);
+        BeginSpriteAttack();
         return true;
     }
 
@@ -548,23 +564,26 @@ public partial class Unit : Node2D
 
     public bool TryBeginAttackPosition(Vector2 position, float targetRadius = 0f)
     {
-        if (_attackTimer > 0f || !CanAttackPosition(position, targetRadius))
+        if (IsDead || IsAttackCommitted || _attackTimer > 0f || !CanAttackPosition(position, targetRadius))
         {
             return false;
         }
 
         _attackTimer = AttackCooldown;
-        _attackFlashTimer = 0.14f;
+        _contactTarget = null;
+        FaceCombatPosition(position);
+        BeginSpriteAttack();
         return true;
     }
 
     public bool TryBeginAttack(Unit target)
     {
-        if (target.IsDead || !TryBeginAttackPosition(target.Position))
+        if (target.IsDead || target.IsUntargetable || !TryBeginAttackPosition(target.Position))
         {
             return false;
         }
 
+        FaceCombatTarget(target);
         return true;
     }
 
@@ -575,7 +594,11 @@ public partial class Unit : Node2D
             return false;
         }
 
-        target.TakeDamage(AttackDamage);
+        var lifetime = target.CombatLifetime;
+        ScheduleAttackImpact(() =>
+        {
+            if (CanResolveContact(target,lifetime,false)) target.TakeDamage(CurrentAttackDamage,UnitName);
+        });
         return true;
     }
 
@@ -629,7 +652,9 @@ public partial class Unit : Node2D
             LastDamagedBy = attackerName;
         }
 
-        _hitFlashTimer = 0.2f;
+        _hitFlashTimer = 0.12f;
+        // Normal impacts use a small additive flinch, not the authored full-body
+        // hit clip. Locomotion and committed swings keep playing underneath it.
         return Mathf.Max(0f, previousHealth - Health);
     }
 
@@ -648,97 +673,145 @@ public partial class Unit : Node2D
 
     public override void _Process(double delta)
     {
+        if (ShouldPausePresentation?.Invoke() ?? false) return;
         var deltaF = (float)delta;
+        if (GameState.Instance?.ReducedMotion ?? false) _hitReaction.Reset();
+        else _hitReaction.Advance(deltaF);
+        _healthBarMotion.Update(HealthRatio, deltaF, GameState.Instance?.ReducedMotion ?? false);
         _idleTimer += deltaF;
         _hitFlashTimer = Mathf.Max(0f, _hitFlashTimer - deltaF);
         _attackFlashTimer = Mathf.Max(0f, _attackFlashTimer - deltaF);
         _auraFlashTimer = Mathf.Max(0f, _auraFlashTimer - deltaF);
         _temporaryCombatBuffTimer = Mathf.Max(0f, _temporaryCombatBuffTimer - deltaF);
+        EnsureSpriteLoaded();
+        AdvanceSpriteAnimation(deltaF);
+        if (!_contactMotionActive) _spriteAttackRemaining = Mathf.Max(0f, _spriteAttackRemaining - deltaF);
+        _spriteDeployRemaining = Mathf.Max(0f, _spriteDeployRemaining - deltaF);
         QueueRedraw();
     }
 
     public override void _Draw()
     {
-        if (!_spriteLoadAttempted)
-        {
-            _spriteLoadAttempted = true;
-            _spriteSheet = UnitSpriteLoader.TryLoad(VisualClass);
-        }
+        EnsureSpriteLoaded();
 
         // Shadow
-        DrawSetTransform(new Vector2(0f, Radius * 0.9f), 0f, new Vector2(1.4f, 0.45f));
+        DrawSetTransform(new Vector2(0f, _spriteSheet == null ? Radius * 0.9f : 0f), 0f, new Vector2(1.4f, 0.45f));
         DrawCircle(Vector2.Zero, Radius * 0.82f, new Color(0f, 0f, 0f, 0.18f));
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
 
         if (_spriteSheet != null)
-        {
             DrawSpriteFrame();
-        }
         else
-        {
             DrawProceduralUnit();
-        }
-
         DrawHealthBar();
+    }
+
+    private void EnsureSpriteLoaded()
+    {
+        if (!_spriteLoadAttempted)
+        {
+            _spriteLoadAttempted = true;
+            _spriteSheet = UnitSpriteLoader.TryLoad(VisualClass, DefinitionId);
+        }
+    }
+
+    private float SpriteClipDuration(UnitAnimState state, float fallback)
+    {
+        return _spriteSheet != null && _spriteSheet.Animations.TryGetValue(state, out var clip)
+            ? clip.FrameCount * clip.FrameDuration : fallback;
+    }
+
+    private void BeginSpriteAttack()
+    {
+        EnsureSpriteLoaded();
+        _spriteAttackRemaining = SpriteClipDuration(UnitAnimState.Attack, 0.45f);
+        if (_spriteAnimState != UnitAnimState.Attack) return;
+        _spriteAnimFrame = 0;
+        _spriteAnimTimer = 0f;
+    }
+
+    private void AdvanceSpriteAnimation(float delta)
+    {
+        if (_spriteSheet == null) return;
+        UpdateSpriteAnimState(delta);
+        if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim)) return;
+        if (_contactMotionActive && _spriteAnimState == UnitAnimState.Attack)
+        {
+            _spriteAnimFrame = Mathf.Clamp((int)((_contactClock + .00001f) / AttackFrameSeconds(anim)),0,anim.FrameCount-1);
+            return;
+        }
+        _spriteAnimTimer += delta;
+        var duration = Mathf.Max(0.01f, anim.FrameDuration);
+        while (_spriteAnimTimer >= duration)
+        {
+            _spriteAnimTimer -= duration;
+            _spriteAnimFrame = anim.Loop ? (_spriteAnimFrame + 1) % anim.FrameCount
+                : Mathf.Min(_spriteAnimFrame + 1, anim.FrameCount - 1);
+        }
+    }
+
+    public void SpawnDeathVisual(Node parent)
+    {
+        EnsureSpriteLoaded();
+        if (_spriteSheet == null || !_spriteSheet.Animations.TryGetValue(UnitAnimState.Death, out var clip)
+            || clip.FrameCount < 2) return;
+        var width = Radius * 2f * VisualScale * _spriteSheet.DrawScale;
+        var visual = new UnitDeathVisual();
+        visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing());
+        parent.AddChild(visual);
+        visual.Position = Position;
+        visual.ZIndex = ZIndex;
     }
 
     private void DrawSpriteFrame()
     {
-        UpdateSpriteAnimState();
-
         if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim))
         {
             if (!_spriteSheet.Animations.TryGetValue(UnitAnimState.Idle, out anim))
                 return;
         }
 
-        _spriteAnimTimer += (float)GetProcessDeltaTime();
-        if (_spriteAnimTimer >= anim.FrameDuration)
-        {
-            _spriteAnimTimer -= anim.FrameDuration;
-            _spriteAnimFrame++;
-            if (_spriteAnimFrame >= anim.FrameCount)
-            {
-                _spriteAnimFrame = anim.Loop ? 0 : anim.FrameCount - 1;
-            }
-        }
-
-        var globalFrame = anim.StartFrame + _spriteAnimFrame;
+        var globalFrame = anim.StartFrame + Mathf.Min(_spriteAnimFrame, anim.FrameCount - 1);
         var srcRect = UnitSpriteLoader.GetFrameRect(_spriteSheet, globalFrame);
 
         var facing = GetFacing();
         var drawScale = (Radius * 2f) / _spriteSheet.FrameWidth * VisualScale * _spriteSheet.DrawScale;
-        var bobOffset = Mathf.Sin(_idleTimer * 5f + (Speed * 0.02f)) * Radius * 0.06f;
+        var bobOffset = _spriteAnimState == UnitAnimState.Idle ? Mathf.Sin(_idleTimer * 3f) * Radius * .025f : 0;
 
         var drawSize = new Vector2(_spriteSheet.FrameWidth * drawScale, _spriteSheet.FrameHeight * drawScale);
-        var lunge = _attackFlashTimer > 0f ? Radius * 0.25f : 0f;
-        var drawPos = new Vector2(-drawSize.X * 0.5f + lunge, -drawSize.Y + bobOffset);
+        var drawPos = new Vector2(-drawSize.X * _spriteSheet.AnchorX, -drawSize.Y * _spriteSheet.AnchorY + bobOffset);
+        var offset = ContactDrawOffset();
+        var reduced = GameState.Instance?.ReducedMotion ?? false;
+        var recoil = reduced ? 0 : _hitReaction.Amount;
 
         // Mirror around the unit's position; a negative destination width shifts AtlasTexture regions.
-        DrawSetTransform(Vector2.Zero, 0f, new Vector2(facing < 0 ? -1 : 1, 1));
+        DrawSetTransform(offset + new Vector2(recoil*1.1f,0), recoil*.022f, new Vector2(facing < 0 ? -1 : 1, 1));
 
         var modulate = Colors.White;
-        if (_hitFlashTimer > 0f)
+        if (_hitFlashTimer > 0f && !reduced)
         {
-            modulate = modulate.Lerp(Colors.White, Mathf.Clamp(_hitFlashTimer / 0.2f, 0f, 0.6f));
-            modulate.R = Mathf.Min(1f, modulate.R + 0.4f);
+            modulate = Colors.White.Lerp(new Color(1.25f,1.16f,1.08f),Mathf.Clamp(_hitFlashTimer/.12f,0,1));
         }
 
         DrawTextureRectRegion(_spriteSheet.Texture, new Rect2(drawPos, drawSize), srcRect, modulate);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 
-    private void UpdateSpriteAnimState()
+    private void UpdateSpriteAnimState(float delta)
     {
         var prevState = _spriteAnimState;
-        var moved = Position.DistanceTo(_prevPosition) > 0.5f;
+        var moved = Position.DistanceSquaredTo(_prevPosition) > 0.0025f;
         _prevPosition = Position;
+        // Rendering may run faster than physics; preserve walk between movement ticks.
+        _spriteWalkRemaining = moved ? 0.1f : Mathf.Max(0f, _spriteWalkRemaining - delta);
 
-        if (_hitFlashTimer > 0.05f)
-            _spriteAnimState = UnitAnimState.Hit;
-        else if (_attackFlashTimer > 0.05f)
+        if (_contactMotionActive)
             _spriteAnimState = UnitAnimState.Attack;
-        else if (moved)
+        else if (_spriteAttackRemaining > 0f)
+            _spriteAnimState = UnitAnimState.Attack;
+        else if (_spriteDeployRemaining > 0f)
+            _spriteAnimState = UnitAnimState.Deploy;
+        else if (_spriteWalkRemaining > 0f)
             _spriteAnimState = UnitAnimState.Walk;
         else
             _spriteAnimState = UnitAnimState.Idle;
@@ -1293,15 +1366,15 @@ public partial class Unit : Node2D
     private void DrawHealthBar()
     {
         var highContrast = GameState.Instance != null && GameState.Instance.HighContrast;
-        var hpBarWidth = Radius * (highContrast ? 2.5f : 2.15f);
-        var hpBarHeight = highContrast ? 7f : 5f;
-        var hpRatio = Mathf.Clamp(Health / MaxHealth, 0f, 1f);
-        var spriteHeight = _spriteSheet == null ? Radius + 16f : Radius * 2f * VisualScale * _spriteSheet.DrawScale + 6f;
-        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -spriteHeight);
-
-        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth, hpBarHeight)), new Color(0f, 0f, 0f, highContrast ? 0.8f : 0.55f), true);
-        var hpColor = Team == Team.Player ? new Color("80ed99") : new Color("ef476f");
-        DrawRect(new Rect2(barOrigin, new Vector2(hpBarWidth * hpRatio, hpBarHeight)), hpColor, true);
+        var boss = VisualClass == "boss";
+        var hpBarWidth = Mathf.Max(boss ? 62f : 34f, Radius * (highContrast ? 2.7f : 2.4f));
+        var hpBarHeight = (boss ? 13f : 10f) + (highContrast ? 2f : 0f);
+        var hpRatio = HealthRatio;
+        var spriteHeight = _spriteSheet == null ? Radius + 16f : Radius * 2f * VisualScale * _spriteSheet.DrawScale
+            * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth * _spriteSheet.HealthBarY + 6f;
+        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -spriteHeight - hpBarHeight + 4f) + ContactDrawOffset();
+        HealthBarPainter.Draw(this, new Rect2(barOrigin, new Vector2(hpBarWidth, hpBarHeight)), hpRatio,
+            _healthBarMotion.TrailRatio, Team == Team.Player, boss ? HealthBarKind.Boss : HealthBarKind.Unit, highContrast);
 
         if (Team == Team.Player)
         {
@@ -1388,13 +1461,13 @@ public partial class Unit : Node2D
             return baseColor;
         }
 
-        var flashStrength = Mathf.Clamp(_hitFlashTimer / 0.2f, 0f, 1f);
-        return baseColor.Lerp(Colors.White, 0.2f + (flashStrength * 0.45f));
+        var flashStrength = Mathf.Clamp(_hitFlashTimer / 0.12f, 0f, 1f);
+        return baseColor.Lerp(Colors.White, flashStrength * 0.28f);
     }
 
     private float GetFacing()
     {
-        return Team == Team.Player ? 1f : -1f;
+        return _facing != 0 ? _facing : Team == Team.Player ? 1f : -1f;
     }
 
     private void DrawFacingRect(float x, float y, float width, float height, Color color)

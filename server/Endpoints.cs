@@ -413,7 +413,7 @@ public static class Endpoints
 
     // ── Room Session ─────────────────────────────────────────
 
-    public static IResult RoomSession(HttpRequest request)
+    public static async Task<IResult> RoomSession(HttpRequest request)
     {
         var roomId = request.Query["roomId"].FirstOrDefault() ?? "";
         var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault()
@@ -422,25 +422,36 @@ public static class Endpoints
             return Results.BadRequest(new { error = "missing roomId" });
         if (string.IsNullOrWhiteSpace(profileId))
             return Results.BadRequest(new { error = "missing profileId" });
-        if (!RequireAuthenticatedProfile(request, profileId, out var authError))
-            return authError!;
+        if (await RequireAuthenticatedProfileAsync(request, profileId) is { } authError)
+            return authError;
 
-        using var conn = Database.Open();
-        var room = GetRoom(conn, roomId);
+        using var conn = await Database.OpenAsync(request.HttpContext.RequestAborted);
+        var room = await GetRoomAsync(conn, roomId, request.HttpContext.RequestAborted);
         if (room == null)
             return Results.NotFound(new { error = "room not found" });
-        if (!HasActiveRoomSeat(conn, roomId, profileId))
+        if (!await HasActiveRoomSeatAsync(conn, roomId, profileId, request.HttpContext.RequestAborted))
             return Results.Json(new { error = "not_a_room_participant" }, statusCode: StatusCodes.Status403Forbidden);
 
-        var peers = GetPeerSnapshots(conn, roomId);
+        var peers = await GetPeerSnapshotsAsync(conn, roomId, profileId, request.HttpContext.RequestAborted);
 
         return Results.Ok(new
         {
             hasRoom = true,
             roomId,
             title = room.Title,
+            roomTitle = room.Title,
             boardCode = room.BoardCode,
+            boardTitle = room.Title,
             status = room.Status,
+            message = "Room session and scoreboard snapshot fetched.",
+            includesScoreboard = true,
+            transportLabel = "Internet Relay",
+            roleLabel = "Online contender",
+            relayEndpoint = BuildRelayEndpoint(request, roomId),
+            usesLockedDeck = room.UsesLockedDeck,
+            selectedBoardDeckMode = room.UsesLockedDeck ? "locked shared squad" : "player squad",
+            roundLocked = room.Status is "countdown" or "racing",
+            roundComplete = room.Status == "complete",
             raceCountdownActive = room.Status == "countdown",
             raceCountdownRemainingSeconds = room.Status == "countdown" ? 3.0 : 0.0,
             peers,
@@ -1023,6 +1034,20 @@ public static class Endpoints
             string.IsNullOrWhiteSpace(deckStr) ? [] : deckStr.Split(','));
     }
 
+    private static async Task<RoomInfo?> GetRoomAsync(DbConnection conn, string roomId, CancellationToken cancellationToken)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT room_id, title, board_code, status, uses_locked_deck, locked_deck_unit_ids FROM rooms WHERE room_id = @rid";
+        cmd.Parameters.AddWithValue("@rid", roomId);
+        using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return null;
+        var deckStr = reader.GetString(5);
+        return new RoomInfo(
+            reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+            reader.GetInt32(4) == 1,
+            string.IsNullOrWhiteSpace(deckStr) ? [] : deckStr.Split(','));
+    }
+
     private static bool InsertSeat(DbConnection conn, DbTransaction tx, string roomId, string profileId, string callsign, string ticketId, string joinToken, string seatLabel, long now)
     {
         // Check for existing seat
@@ -1104,30 +1129,139 @@ public static class Endpoints
         cmd.ExecuteNonQuery();
     }
 
-    private static List<object> GetPeerSnapshots(DbConnection conn, string roomId)
+    private static List<object> GetPeerSnapshots(DbConnection conn, string roomId, string localProfileId)
     {
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT profile_id, callsign, seat_label, is_ready, race_status, score, elapsed_seconds, hull_remaining, enemy_defeats
             FROM room_seats WHERE room_id = @rid AND status != 'left'
+            ORDER BY score DESC, elapsed_seconds ASC, joined_at ASC
         """;
         cmd.Parameters.AddWithValue("@rid", roomId);
 
         var peers = new List<object>();
         using var reader = cmd.ExecuteReader();
+        var rank = 0;
         while (reader.Read())
         {
+            rank++;
+            var peerProfileId = reader.GetString(0);
+            var callsign = reader.GetString(1);
+            var seatLabel = reader.GetString(2);
+            var isReady = reader.GetInt32(3) == 1;
+            var raceStatus = reader.GetString(4);
+            var score = reader.GetInt32(5);
+            var elapsedSeconds = reader.GetDouble(6);
+            var hullRemaining = reader.GetDouble(7);
+            var enemyDefeats = reader.GetInt32(8);
+            var isRunner = !seatLabel.Equals("spectator", StringComparison.OrdinalIgnoreCase);
+            var isActive = raceStatus.Equals("racing", StringComparison.OrdinalIgnoreCase);
+            var isComplete = raceStatus.Equals("submitted", StringComparison.OrdinalIgnoreCase)
+                || raceStatus.Equals("complete", StringComparison.OrdinalIgnoreCase);
             peers.Add(new
             {
-                playerProfileId = reader.GetString(0),
-                callsign = reader.GetString(1),
-                seatLabel = reader.GetString(2),
-                isReady = reader.GetInt32(3) == 1,
-                raceStatus = reader.GetString(4),
-                score = reader.GetInt32(5),
-                elapsedSeconds = reader.GetDouble(6),
-                hullRemaining = reader.GetDouble(7),
-                enemyDefeats = reader.GetInt32(8)
+                // The canonical room-session shape is consumed by the Godot
+                // client, avoiding a second scoreboard request on each poll.
+                peerId = rank,
+                label = callsign,
+                isLocalPlayer = peerProfileId.Equals(localProfileId, StringComparison.Ordinal),
+                phase = raceStatus,
+                isReady,
+                isLoaded = isActive || isComplete,
+                isLaunchEligible = isRunner,
+                hasFullDeck = true,
+                monitorRank = rank,
+                raceElapsedSeconds = elapsedSeconds,
+                hullPercent = (int)Math.Round(hullRemaining),
+                enemyDefeats,
+                postedScore = score,
+                postedRank = score > 0 ? rank : 0,
+                presenceText = isRunner
+                    ? isReady ? "ready" : "waiting"
+                    : "spectating",
+                monitorText = isComplete
+                    ? $"#{rank}  {score} pts"
+                    : isActive ? $"racing  {elapsedSeconds:0.0}s" : "lobby",
+                deckText = "server-validated room seat",
+
+                // Retain the compact fields for older clients and external
+                // consumers during the rolling deployment.
+                playerProfileId = peerProfileId,
+                callsign,
+                seatLabel,
+                raceStatus,
+                score,
+                elapsedSeconds,
+                hullRemaining
+            });
+        }
+
+        return peers;
+    }
+
+    private static async Task<List<object>> GetPeerSnapshotsAsync(
+        DbConnection conn,
+        string roomId,
+        string localProfileId,
+        CancellationToken cancellationToken)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT profile_id, callsign, seat_label, is_ready, race_status, score, elapsed_seconds, hull_remaining, enemy_defeats
+            FROM room_seats WHERE room_id = @rid AND status != 'left'
+            ORDER BY score DESC, elapsed_seconds ASC, joined_at ASC
+        """;
+        cmd.Parameters.AddWithValue("@rid", roomId);
+
+        var peers = new List<object>();
+        using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        var rank = 0;
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rank++;
+            var peerProfileId = reader.GetString(0);
+            var callsign = reader.GetString(1);
+            var seatLabel = reader.GetString(2);
+            var isReady = reader.GetInt32(3) == 1;
+            var raceStatus = reader.GetString(4);
+            var score = reader.GetInt32(5);
+            var elapsedSeconds = reader.GetDouble(6);
+            var hullRemaining = reader.GetDouble(7);
+            var enemyDefeats = reader.GetInt32(8);
+            var isRunner = !seatLabel.Equals("spectator", StringComparison.OrdinalIgnoreCase);
+            var isActive = raceStatus.Equals("racing", StringComparison.OrdinalIgnoreCase);
+            var isComplete = raceStatus.Equals("submitted", StringComparison.OrdinalIgnoreCase)
+                || raceStatus.Equals("complete", StringComparison.OrdinalIgnoreCase);
+            peers.Add(new
+            {
+                peerId = rank,
+                label = callsign,
+                isLocalPlayer = peerProfileId.Equals(localProfileId, StringComparison.Ordinal),
+                phase = raceStatus,
+                isReady,
+                isLoaded = isActive || isComplete,
+                isLaunchEligible = isRunner,
+                hasFullDeck = true,
+                monitorRank = rank,
+                raceElapsedSeconds = elapsedSeconds,
+                hullPercent = (int)Math.Round(hullRemaining),
+                enemyDefeats,
+                postedScore = score,
+                postedRank = score > 0 ? rank : 0,
+                presenceText = isRunner
+                    ? isReady ? "ready" : "waiting"
+                    : "spectating",
+                monitorText = isComplete
+                    ? $"#{rank}  {score} pts"
+                    : isActive ? $"racing  {elapsedSeconds:0.0}s" : "lobby",
+                deckText = "server-validated room seat",
+                playerProfileId = peerProfileId,
+                callsign,
+                seatLabel,
+                raceStatus,
+                score,
+                elapsedSeconds,
+                hullRemaining
             });
         }
 
@@ -1161,6 +1295,16 @@ public static class Endpoints
         return false;
     }
 
+    private static async Task<IResult?> RequireAuthenticatedProfileAsync(HttpRequest request, string profileId)
+    {
+        if (await SessionAuth.TryAuthorizeAsync(request, profileId) != null)
+        {
+            return null;
+        }
+
+        return SessionAuth.Unauthorized();
+    }
+
     private static string BuildRelayEndpoint(HttpRequest request, string roomId)
     {
         var scheme = request.IsHttps ? "wss" : "ws";
@@ -1174,6 +1318,19 @@ public static class Endpoints
         cmd.Parameters.AddWithValue("@rid", roomId);
         cmd.Parameters.AddWithValue("@pid", profileId);
         return cmd.ExecuteScalar() != null;
+    }
+
+    private static async Task<bool> HasActiveRoomSeatAsync(
+        DbConnection conn,
+        string roomId,
+        string profileId,
+        CancellationToken cancellationToken)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT 1 FROM room_seats WHERE room_id = @rid AND profile_id = @pid AND status != 'left' LIMIT 1";
+        cmd.Parameters.AddWithValue("@rid", roomId);
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        return await cmd.ExecuteScalarAsync(cancellationToken) != null;
     }
 
     private static bool IsRoomHost(DbConnection conn, string roomId, string profileId)

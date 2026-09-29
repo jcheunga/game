@@ -99,12 +99,10 @@ public partial class BattleController
 			button.AddThemeColorOverride("font_hover_color", Colors.White);
 			button.AddThemeColorOverride("font_pressed_color", Colors.White);
 			button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
-			var (titleLabel, detailLabel) = AttachBattleCardContent(
-				button,
-				UiBadgeFactory.CreateUnitBadge(unit, new Vector2(48f, 48f)));
+			var card = AttachBattleCardContent(button, UiArtLoader.TryLoadUnitIcon(unit));
 			button.Pressed += () => ArmPlayerUnit(unit);
 			unitRow.AddChild(button);
-			_deploySlots.Add(new DeploySlot(unit, button, titleLabel, detailLabel));
+			_deploySlots.Add(new DeploySlot(unit, button, card));
 		}
 
 		if (_spellDeck.Roster.Count > 0)
@@ -123,12 +121,10 @@ public partial class BattleController
 				button.AddThemeColorOverride("font_hover_color", Colors.White);
 				button.AddThemeColorOverride("font_pressed_color", Colors.White);
 				button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
-				var (titleLabel, detailLabel) = AttachBattleCardContent(
-					button,
-					UiBadgeFactory.CreateSpellBadge(spell, new Vector2(40f, 40f)));
+				var card = AttachBattleCardContent(button, UiArtLoader.TryLoadSpellIcon(spell));
 				button.Pressed += () => ArmSpell(spell);
 				spellRow.AddChild(button);
-				_spellSlots.Add(new SpellSlot(spell, button, titleLabel, detailLabel));
+				_spellSlots.Add(new SpellSlot(spell, button, card));
 			}
 		}
 
@@ -143,7 +139,7 @@ public partial class BattleController
         _pauseOverlay.AddChild(pauseCard);
         var pauseStack = new VBoxContainer(); pauseCard.AddChild(pauseStack);
         pauseStack.AddChild(RealmUi.Heading("A moment of respite", 28));
-        pauseStack.AddChild(RealmUi.Label("1–5  Units     Q–T  Rites\nClick the field to deploy. Right-click to cancel.\nSpace  Speed     Tab  Intel     Escape  Pause", 16, true));
+        pauseStack.AddChild(RealmUi.Label("Drag a unit or magic card onto the field.\nRelease to use it; return to the cards to cancel.\n1–5  Units     Q–T  Rites\nScroll / Middle-drag / Arrow keys  Pan\nSpace  Speed     Tab  Intel     Escape  Pause", 16, true));
         pauseStack.AddChild(RealmUi.Button("arrow", "Resume battle", TogglePause, true));
         pauseStack.AddChild(RealmUi.Button("back", "Retreat", RetreatToMap));
 
@@ -271,6 +267,10 @@ public partial class BattleController
 		}
 
 
+		ConfigureBattleCamera(root);
+		ConfigureMobileBattleUi(root,topRow,titleStack,meters,spawnPanel,unitRow,messageScroll);
+		BuildFieldNavigation(root);
+		BuildCardDragPreview(root);
 		ApplyDevUiSettings();
 	}
 
@@ -308,54 +308,14 @@ public partial class BattleController
 		button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.45f));
 	}
 
-	private static (Label titleLabel, Label detailLabel) AttachBattleCardContent(Button button, Control badge)
+	private static BattleActionCard AttachBattleCardContent(Button button, Texture2D icon)
 	{
 		button.Text = string.Empty;
-
-		var padding = new MarginContainer
-		{
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		padding.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		padding.AddThemeConstantOverride("margin_left", 10);
-		padding.AddThemeConstantOverride("margin_right", 10);
-		padding.AddThemeConstantOverride("margin_top", 8);
-		padding.AddThemeConstantOverride("margin_bottom", 8);
-		button.AddChild(padding);
-
-		var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding, badge, separation: 10, stackSpacing: 2);
-		var titleLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		titleLabel.AddThemeFontSizeOverride("font_size", 18);
-        titleLabel.AddThemeColorOverride("font_color", Colors.White);
-		stack.AddChild(titleLabel);
-
-		var detailLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		detailLabel.AddThemeFontSizeOverride("font_size", 18);
-        detailLabel.AddThemeColorOverride("font_color", new Color(1f, 1f, 1f, 0.84f));
-		stack.AddChild(detailLabel);
-
-		SetMouseFilterRecursive(padding, Control.MouseFilterEnum.Ignore);
-		return (titleLabel, detailLabel);
-	}
-
-	private static void SetMouseFilterRecursive(Control control, Control.MouseFilterEnum mouseFilter)
-	{
-		control.MouseFilter = mouseFilter;
-		foreach (var child in control.GetChildren())
-		{
-			if (child is Control childControl)
-			{
-				SetMouseFilterRecursive(childControl, mouseFilter);
-			}
-		}
+		var card = new BattleActionCard();
+		button.AddChild(card);
+		card.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		card.SetIcon(icon);
+		return card;
 	}
 
 	private void UpdateHud()
@@ -438,7 +398,7 @@ public partial class BattleController
 			_spawnDirector.IsEndlessMode
 				? $"Endless wave {_spawnDirector.EndlessWaveNumber}"
 				: _spawnDirector.UsesScriptedWaves
-					? $"{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
+					? $"{(HasCampaignField && !MobilePresentation.Enabled ? _spawnDirector.CurrentEncounterArea + " · " : "")}{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
 					: "");
 		_waveProgressBar.Visible = _spawnDirector.UsesScriptedWaves || _spawnDirector.IsEndlessMode;
 		_waveIntelLabel.Text = BuildWaveIntelText();
@@ -463,23 +423,13 @@ public partial class BattleController
 			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
 			var level = GameState.Instance.GetUnitLevel(slot.Definition.Id);
 
-			var stateLabel = !isReady
-				? $"CD {cooldown:0.0}s"
-				: hasCourage
-					? "DEPLOY"
-					: $"NEED {slot.Definition.Cost - Mathf.FloorToInt(_courage)} more";
-			var marker = slot.Definition == _deck.ArmedUnit ? "> " : "";
-			slot.TitleLabel.Text = $"{marker}{slot.Definition.DisplayName}";
-			slot.DetailLabel.Text = $"{slot.Definition.Cost} courage · Lv{level}\n{stateLabel}";
-			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, slot.Definition == _deck.ArmedUnit);
+			var armed = _selectionMode == BattleSelectionMode.Unit && slot.Definition == _deck.ArmedUnit;
+			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, armed);
 			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
 			var totalCd = ResolvePlayerDeployCooldown(slot.Definition);
-			var cdRatio = !isReady && totalCd > 0.1f ? cooldown / totalCd : 0f;
-			slot.CooldownOverlay.Visible = cdRatio > 0.01f;
-			if (cdRatio > 0.01f)
-			{
-				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(cdRatio, 0f, 1f);
-			}
+			slot.Card.SetState(slot.Definition.Cost, _courage, cooldown, totalCd, armed, _battleEnded || _endlessCheckpointActive);
+			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {slot.Definition.Cost} courage";
+			slot.Button.AccessibilityDescription = $"Level {level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a position on the battlefield." : "Ready. Select to place on the battlefield.");
 		}
 
 		foreach (var slot in _spellSlots)
@@ -491,24 +441,14 @@ public partial class BattleController
 			var armed = _selectionMode == BattleSelectionMode.Spell && slot.Definition == _spellDeck.ArmedSpell;
 			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
 
-			var stateLabel = !isReady
-				? $"CD {cooldown:0.0}s"
-				: hasCourage
-					? "CAST"
-					: $"NEED {resolved.CourageCost - Mathf.FloorToInt(_courage)} more";
-			var marker = armed ? "* " : "";
-			slot.TitleLabel.Text = $"{marker}{slot.Definition.DisplayName}";
-			slot.DetailLabel.Text = $"{resolved.CourageCost} courage · Lv{resolved.Level}\n{stateLabel}";
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
 			var totalSpellCd = ResolvePlayerSpellCooldown(slot.Definition, resolved);
-			var spellCdRatio = !isReady && totalSpellCd > 0.1f ? cooldown / totalSpellCd : 0f;
-			slot.CooldownOverlay.Visible = spellCdRatio > 0.01f;
-			if (spellCdRatio > 0.01f)
-			{
-				slot.CooldownOverlay.AnchorRight = Mathf.Clamp(spellCdRatio, 0f, 1f);
-			}
+			slot.Card.SetState(resolved.CourageCost, _courage, cooldown, totalSpellCd, armed, _battleEnded || _endlessCheckpointActive);
+			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.CourageCost} courage";
+			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");
 		}
+		RefreshMobileHud();
 	}
 
 	private string BuildBattleBannerTitle()

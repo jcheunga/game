@@ -1,0 +1,62 @@
+{
+  "frameWidth": 192,
+  "frameHeight": 240,
+  "drawScale": 2.745249293133118,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.07907,
+      "loop": false,
+      "contactFrame": 4
+    },
+    "hit": {
+      "start": 20,
+      "count": 2,
+      "duration": 0.09,
+      "loop": false
+    },
+    "death": {
+      "start": 22,
+      "count": 6,
+      "duration": 0.11,
+      "loop": false
+    },
+    "deploy": {
+      "start": 28,
+      "count": 4,
+      "duration": 0.1,
+      "loop": false
+    }
+  },
+  "assetId": "player_breacher",
+  "title": "Halberdier",
+  "source": "art/blender/units/player_breacher.blend",
+  "anchorY": 0.7553018033504486,
+  "anchorX": 0.45474,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "axe-cleave",
+    "body": [
+      0.0,
+      -0.251701
+    ],
+    "contact": [
+      0.454895,
+      -0.279445
+    ]
+  },
+  "healthBarY": 0.414677
+}

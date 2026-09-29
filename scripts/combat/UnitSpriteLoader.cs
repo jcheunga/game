@@ -17,6 +17,12 @@ public sealed class UnitSpriteSheet
 	public int FrameWidth { get; set; }
 	public int FrameHeight { get; set; }
 	public float DrawScale { get; set; } = 1f;
+	public float AnchorY { get; set; } = 1f;
+	public float AnchorX { get; set; } = 0.5f;
+	public Vector2 BodyOffset { get; set; } = new(0,-.25f);
+	public Vector2 ContactOffset { get; set; } = new(.28f,-.25f);
+	public string MotionProfile { get; set; } = "sword-cut";
+	public float HealthBarY { get; set; } = 0.8f;
 	public Dictionary<UnitAnimState, SpriteAnimRange> Animations { get; set; } = new();
 }
 
@@ -26,41 +32,57 @@ public sealed class SpriteAnimRange
 	public int FrameCount { get; set; }
 	public float FrameDuration { get; set; } = 0.12f;
 	public bool Loop { get; set; } = true;
+	public int ContactFrame { get; set; } = 2;
 }
 
 public static class UnitSpriteLoader
 {
+	// Preview textures are owned by one viewer and explicitly released when it
+	// closes or changes character, rather than caching the whole roster in VRAM.
+	internal static UnitSpriteSheet LoadOwnedPreview(string unitId)
+	{
+		var path=$"res://assets/ui/models/{unitId}";
+		if(!ResourceLoader.Exists(path+".png") || !Godot.FileAccess.FileExists(path+".json")) return null;
+		var texture=ResourceLoader.Load<Texture2D>(path+".png",cacheMode:ResourceLoader.CacheMode.Ignore);
+		if(texture==null) return null;
+		var sheet=new UnitSpriteSheet {Texture=texture,FrameWidth=256,FrameHeight=320};
+		TryLoadMeta(path+".json",sheet);
+		return sheet;
+	}
+
 	private static readonly Dictionary<string, UnitSpriteSheet> Cache = new();
 	private static readonly HashSet<string> MissingIds = new();
 
 	private const string SpritePath = "res://assets/units/";
 
-	public static UnitSpriteSheet TryLoad(string visualClass)
+	public static UnitSpriteSheet TryLoad(string visualClass, string unitId = "")
 	{
 		if (string.IsNullOrWhiteSpace(visualClass))
 			return null;
 
-		if (Cache.TryGetValue(visualClass, out var cached))
+		var assetId = !string.IsNullOrWhiteSpace(unitId) && ResourceLoader.Exists($"{SpritePath}{unitId}.png")
+			? unitId : visualClass;
+		if (Cache.TryGetValue(assetId, out var cached))
 			return cached;
 
-		if (MissingIds.Contains(visualClass))
+		if (MissingIds.Contains(assetId))
 			return null;
 
-		var sheetPath = $"{SpritePath}{visualClass}.png";
-		var metaPath = $"{SpritePath}{visualClass}.json";
+		var sheetPath = $"{SpritePath}{assetId}.png";
+		var metaPath = $"{SpritePath}{assetId}.json";
 
 		if (!ResourceLoader.Exists(sheetPath))
 		{
 			var illustrated = TryLoadIllustrated(visualClass);
 			if (illustrated != null) return Cache[visualClass] = illustrated;
-			MissingIds.Add(visualClass);
+			MissingIds.Add(assetId);
 			return null;
 		}
 
 		var texture = ResourceLoader.Load<Texture2D>(sheetPath);
 		if (texture == null)
 		{
-			MissingIds.Add(visualClass);
+			MissingIds.Add(assetId);
 			return null;
 		}
 
@@ -82,7 +104,7 @@ public static class UnitSpriteLoader
 			ApplyDefaultLayout(sheet, texture);
 		}
 
-		Cache[visualClass] = sheet;
+		Cache[assetId] = sheet;
 		return sheet;
 	}
 
@@ -129,6 +151,22 @@ public static class UnitSpriteLoader
 				sheet.FrameWidth = fwVal;
 			if (root.TryGetProperty("frameHeight", out var fh) && fh.TryGetInt32(out var fhVal))
 				sheet.FrameHeight = fhVal;
+			if (root.TryGetProperty("drawScale", out var ds) && ds.TryGetSingle(out var dsVal))
+				sheet.DrawScale = Mathf.Clamp(dsVal, 0.1f, 6f);
+			if (root.TryGetProperty("anchorY", out var ay) && ay.TryGetSingle(out var ayVal))
+				sheet.AnchorY = Mathf.Clamp(ayVal, 0f, 1f);
+			if (root.TryGetProperty("anchorX", out var ax) && ax.TryGetSingle(out var axVal))
+				sheet.AnchorX = Mathf.Clamp(axVal, 0f, 1f);
+			if (root.TryGetProperty("motion", out var motion))
+			{
+				sheet.MotionProfile = motion.GetProperty("profile").GetString();
+				var body = motion.GetProperty("body");
+				var contact = motion.GetProperty("contact");
+				sheet.BodyOffset = new Vector2(body[0].GetSingle(), body[1].GetSingle());
+				sheet.ContactOffset = new Vector2(contact[0].GetSingle(), contact[1].GetSingle());
+			}
+			if (root.TryGetProperty("healthBarY", out var hy) && hy.TryGetSingle(out var hyVal))
+				sheet.HealthBarY = Mathf.Clamp(hyVal, 0.1f, 1f);
 
 			if (root.TryGetProperty("animations", out var anims) && anims.ValueKind == System.Text.Json.JsonValueKind.Object)
 			{
@@ -152,6 +190,7 @@ public static class UnitSpriteLoader
 						StartFrame = startFrame,
 						FrameCount = frameCount,
 						FrameDuration = frameDuration,
+						ContactFrame = prop.Value.TryGetProperty("contactFrame", out var contactFrame) ? contactFrame.GetInt32() : 2,
 						Loop = loop
 					};
 				}

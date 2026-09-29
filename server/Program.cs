@@ -1,6 +1,7 @@
 using CrownroadServer;
 using CrownroadServer.Tests;
 using Microsoft.AspNetCore.HttpOverrides;
+using StackExchange.Redis;
 
 if (args.Length > 0 && args[0] == "--test")
 {
@@ -18,6 +19,8 @@ var appEnvironment = builder.Environment;
 var configuredOrigins = (builder.Configuration["AllowedOrigins"] ?? "")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 var trustForwardedHeaders = builder.Configuration.GetValue<bool>("TrustForwardedHeaders");
+var redisConfiguration = builder.Configuration["Redis:Configuration"] ?? "";
+var redisPasswordFile = Environment.GetEnvironmentVariable("REDIS_PASSWORD_FILE") ?? "";
 
 if (appEnvironment.IsProduction())
 {
@@ -25,9 +28,32 @@ if (appEnvironment.IsProduction())
         throw new InvalidOperationException("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS must never be configured in production.");
     if (configuredOrigins.Length == 0 || configuredOrigins.Any(origin => origin == "*"))
         throw new InvalidOperationException("AllowedOrigins must contain explicit HTTPS origins in production.");
+    if (string.IsNullOrWhiteSpace(redisConfiguration))
+        throw new InvalidOperationException("Redis:Configuration must be configured in production for shared rate limits.");
+    if (string.IsNullOrWhiteSpace(redisPasswordFile) || !File.Exists(redisPasswordFile))
+        throw new InvalidOperationException("REDIS_PASSWORD_FILE must point to a readable Redis secret in production.");
 }
 
 builder.Services.AddLogging();
+if (!string.IsNullOrWhiteSpace(redisConfiguration))
+{
+    var redisOptions = ConfigurationOptions.Parse(redisConfiguration);
+    if (!string.IsNullOrWhiteSpace(redisPasswordFile))
+    {
+        if (!File.Exists(redisPasswordFile))
+            throw new InvalidOperationException("REDIS_PASSWORD_FILE does not point to a readable secret.");
+        redisOptions.Password = File.ReadAllText(redisPasswordFile).Trim();
+    }
+    redisOptions.AbortOnConnectFail = false;
+    redisOptions.ConnectRetry = 3;
+    redisOptions.ConnectTimeout = 5000;
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
+    builder.Services.AddSingleton<IRateLimitStore, RedisRateLimitStore>();
+}
+else
+{
+    builder.Services.AddSingleton<IRateLimitStore, InMemoryRateLimitStore>();
+}
 if (trustForwardedHeaders)
 {
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -60,11 +86,13 @@ builder.Services.AddHostedService<CrownroadServer.StaleDataCleanup>();
 var app = builder.Build();
 
 var databaseConnectionString = app.Configuration.GetConnectionString("Crownroad")
-    ?? app.Configuration["DatabaseConnectionString"];
+    ?? app.Configuration["DatabaseConnectionString"]
+    ?? app.Configuration["DATABASE_URL"]
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 if (appEnvironment.IsProduction())
 {
     if (string.IsNullOrWhiteSpace(databaseConnectionString))
-        throw new InvalidOperationException("ConnectionStrings:Crownroad must be configured with a PostgreSQL connection string in production.");
+        throw new InvalidOperationException("DATABASE_URL or ConnectionStrings:Crownroad must be configured with a PostgreSQL connection string in production.");
     Database.Configure(databaseConnectionString, Environment.GetEnvironmentVariable("DATABASE_PASSWORD_FILE"));
 }
 else
@@ -158,7 +186,18 @@ app.MapGet("/health", () =>
         cmd.CommandText = "SELECT 1";
         cmd.ExecuteScalar();
 
-        return Results.Ok(new { status = "healthy", relayRooms = CrownroadServer.RelayHub.GetRoomCount() });
+        var redis = app.Services.GetService<IConnectionMultiplexer>();
+        if (redis != null && !redis.IsConnected)
+        {
+            return Results.Json(new { status = "unhealthy", error = "redis unavailable" }, statusCode: 503);
+        }
+
+        return Results.Ok(new
+        {
+            status = "healthy",
+            relayRooms = CrownroadServer.RelayHub.GetRoomCount(),
+            redis = redis == null ? "local" : "connected"
+        });
     }
     catch (Exception ex)
     {

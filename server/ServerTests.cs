@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Hosting;
 using CrownroadServer;
+using Npgsql;
 
 namespace CrownroadServer.Tests;
 
@@ -123,6 +124,8 @@ public static class ServerTests
                 ("CrashReport_MissingDetails", () => TestCrashReport_MissingDetails(client)),
                 ("DatabaseBackup", () => TestDatabaseBackup(client)),
                 ("SchemaVersion", () => TestSchemaVersion()),
+                ("RateLimitStore", TestRateLimitStore),
+                ("DatabaseUrl", TestDatabaseUrl),
             };
 
             foreach (var (name, test) in tests)
@@ -353,8 +356,10 @@ public static class ServerTests
     {
         var resp = await Get(client, $"/challenge-room-session?roomId={_testRoomId}&profileId=TEST-01");
         Assert(resp.RootElement.GetProperty("hasRoom").GetBoolean(), "expected hasRoom true");
+        Assert(resp.RootElement.GetProperty("includesScoreboard").GetBoolean(), "expected combined session scoreboard");
         var peers = resp.RootElement.GetProperty("peers");
         Assert(peers.GetArrayLength() == 2, $"expected 2 peers, got {peers.GetArrayLength()}");
+        Assert(peers[0].TryGetProperty("postedScore", out _), "expected compact peer scoreboard fields");
     }
 
     private static async Task TestRoomActionSetReady(HttpClient client)
@@ -864,6 +869,31 @@ public static class ServerTests
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
         Assert(version >= 4, $"expected schema version >= 4, got {version}");
+        await Task.CompletedTask;
+    }
+
+    private static async Task TestRateLimitStore()
+    {
+        var store = new InMemoryRateLimitStore();
+        var window = TimeSpan.FromMinutes(1);
+        Assert((await store.TryConsumeAsync("test:player-a", 2, window)).Allowed, "first request should be allowed");
+        Assert((await store.TryConsumeAsync("test:player-a", 2, window)).Allowed, "second request should be allowed");
+        Assert(!(await store.TryConsumeAsync("test:player-a", 2, window)).Allowed, "third request should be limited");
+        Assert((await store.TryConsumeAsync("test:player-b", 2, window)).Allowed, "independent player key should not be throttled");
+    }
+
+    private static async Task TestDatabaseUrl()
+    {
+        var normalized = Database.NormalizePostgresConnectionString(
+            "postgresql://game_user:p%40ssword@db.example.test:6432/crownroad?sslmode=verify-full&sslrootcert=system&pooling=true&max_pool_size=40&application_name=crownroad-api");
+        var builder = new NpgsqlConnectionStringBuilder(normalized);
+        Assert(builder.Host == "db.example.test", "expected database URL host");
+        Assert(builder.Port == 6432, "expected database URL port");
+        Assert(builder.Database == "crownroad", "expected database URL name");
+        Assert(builder.Username == "game_user" && builder.Password == "p@ssword", "expected decoded database URL credentials");
+        Assert(builder.SslMode == SslMode.VerifyFull, "expected verified TLS from database URL");
+        Assert(string.IsNullOrWhiteSpace(builder.RootCertificate), "expected system trust store for sslrootcert=system");
+        Assert(builder.Pooling && builder.MaxPoolSize == 40, "expected database URL pool settings");
         await Task.CompletedTask;
     }
 

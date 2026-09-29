@@ -1,0 +1,98 @@
+{
+  "unit_sheets": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "unit_metadata": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "unit_sources": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "unit_icons": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "model_previews": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "model_preview_metadata": {
+    "present": 53,
+    "expected": 53,
+    "missing": []
+  },
+  "battlefields": {
+    "present": 31,
+    "expected": 31,
+    "missing": []
+  },
+  "structures": {
+    "present": 2,
+    "expected": 2,
+    "missing": []
+  },
+  "caravan_skins": {
+    "present": 8,
+    "expected": 8,
+    "missing": []
+  },
+  "weapon_mounts": {
+    "present": 5,
+    "expected": 5,
+    "missing": []
+  },
+  "particles": {
+    "present": 11,
+    "expected": 11,
+    "missing": []
+  },
+  "screen_backgrounds": {
+    "present": 25,
+    "expected": 25,
+    "missing": []
+  },
+  "district_maps": {
+    "present": 10,
+    "expected": 10,
+    "missing": []
+  },
+  "spell_icons": {
+    "present": 10,
+    "expected": 10,
+    "missing": []
+  },
+  "relic_icons": {
+    "present": 33,
+    "expected": 33,
+    "missing": []
+  },
+  "reward_icons": {
+    "present": 10,
+    "expected": 10,
+    "missing": []
+  },
+  "meta_icons": {
+    "present": 8,
+    "expected": 8,
+    "missing": []
+  },
+  "codex_icons": {
+    "present": 83,
+    "expected": 83,
+    "missing": []
+  },
+  "codex_portraits": {
+    "present": 83,
+    "expected": 83,
+    "missing": []
+  },
+  "scope": "Required visual assets. Existing procedural music/SFX retained. Route-specific menu overrides are optional."
+}

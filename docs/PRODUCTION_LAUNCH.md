@@ -29,6 +29,9 @@ Implemented in this repository:
   consuming a consumable and rechecks unfinished purchases after relaunch.
 - The iOS export has the app icon and In-App Purchase capability configured.
 - Store artwork is available in `assets/branding/`.
+- The deployment stack uses two API replicas by default, shared Redis rate
+  limits, PostgreSQL connection pooling, and a compact room-session response
+  that avoids an extra scoreboard request on every room refresh.
 
 ## Blocking work before submission
 
@@ -38,7 +41,7 @@ Implemented in this repository:
 | iOS StoreKit bridge | Engineering + Xcode | A StoreKit 2 plug-in submits the verified transaction ID/JWS and a deterministic `appAccountToken` to the backend, then calls `finish()` only after backend success. The current public wrapper finishes too early, so it is intentionally not included. |
 | Android device test | Release engineering | Install an internal-test AAB on a physical Play test device; purchase every consumable; force-close before and after validation; verify exactly one grant and eventual consume. |
 | iOS device test | Release engineering | Repeat the same interruption tests in StoreKit sandbox/TestFlight after the secure bridge is built. |
-| Server deployment | Operations | Follow [DEPLOYMENT.md](DEPLOYMENT.md): DNS and public ports are ready, the HTTPS stack is live, secrets are mounted, off-host backups and alerts have been tested, CORS is restricted, and `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` is absent. |
+| Server deployment | Operations | Follow [DEPLOYMENT.md](DEPLOYMENT.md): DNS and public ports are ready, the HTTPS stack is live, the managed PostgreSQL URL and Redis secrets are configured, provider backups and alerts have been tested, CORS is restricted, and `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` is absent. |
 | Store listings | Product/marketing | Legal name, support URL/email, privacy policy, age/content ratings, screenshots, localized copy, and pricing are entered in both consoles. |
 | In-game art and audio | Art + design | Replace the fallback atlas treatment with licensed final art/audio, or explicitly approve the fallback assets as final and update the coverage catalog. The current audit still reports many named unit, environment, icon, music, and SFX slots without dedicated assets. |
 | Real-time room transport | Engineering + QA | Connect battle simulation to the authenticated WebSocket relay, then prove reconnect, host migration/failure, latency, and duplicate-event handling on physical devices. The server relay is secure, but the game currently uses room polling and has no battle transport. |
@@ -97,29 +100,32 @@ use a real HTTPS return URL before enabling it outside development.
 
 ## Build and release steps
 
-1. Use Godot 4.7.2 Mono (the project is now configured for it): it supplies an
+1. Keep the `Verify Crownroad` GitHub workflow green. It builds the release
+   server and reruns backend security/contract and game-data validation on each
+   change; it does not replace a signed mobile export or physical-device test.
+2. Use Godot 4.7.2 Mono (the project is now configured for it): it supplies an
    API-36 Android template. Install the Android build template, Android SDK API
    36/platform and build tools, Java 17, and an Android upload signing key.
    The `android/` Gradle template is generated locally and intentionally not
    versioned. Export a signed release **AAB**, then upload it to Play internal
    testing. The checked local AAB is debug-signed only and must not be uploaded.
-2. Install full Xcode (not Command Line Tools), sign in with the Apple
+3. Install full Xcode (not Command Line Tools), sign in with the Apple
    Developer account, select the provisioning profile/team in
    `export_presets.cfg`, build the generated iOS Xcode project, and archive it
    for TestFlight.
-3. Set `AllowedOrigins` to the real HTTPS origin list. A production server with
+4. Set `AllowedOrigins` to the real HTTPS origin list. A production server with
    no origins does not expose a CORS policy.
-4. Set `crownroad/network/api_base_url` to the final HTTPS API origin before
+5. Set `crownroad/network/api_base_url` to the final HTTPS API origin before
    the release export. It locks the build to that backend and derives the
    online-sync and purchase-validation addresses; leaving it blank disables
    online play and paid grants on a new install.
-5. Run the verification suite from the project root:
+6. Run the verification suite from the project root:
 
    ```sh
    ./scripts/verify_all.sh
    ```
 
-6. Complete the physical purchase, restore, refund, offline, and interruption
+7. Complete the physical purchase, restore, refund, offline, and interruption
    checks in the gates above. Review live server logs and wallet ledger entries
    for every test transaction.
 

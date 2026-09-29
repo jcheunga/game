@@ -185,6 +185,7 @@ public static class OnlineRoomSessionService
 			Status = snapshot.Status,
 			Summary = snapshot.Summary,
 			FetchedAtUnixSeconds = snapshot.FetchedAtUnixSeconds,
+			IncludesScoreboard = snapshot.IncludesScoreboard,
 			RoomSnapshot = new MultiplayerRoomSnapshot
 			{
 				HasRoom = snapshot.RoomSnapshot.HasRoom,

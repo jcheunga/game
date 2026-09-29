@@ -86,6 +86,7 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 			Status = GetString(root, "status", "ok"),
 			Summary = GetString(root, "message", $"Fetched session snapshot for {ticket.RoomTitle}."),
 			FetchedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+			IncludesScoreboard = GetBool(root, "includesScoreboard", false),
 			RoomSnapshot = new MultiplayerRoomSnapshot
 			{
 				HasRoom = true,

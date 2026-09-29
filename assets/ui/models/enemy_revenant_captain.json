@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 2.6570612414283037,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.06664,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "enemy_revenant_captain",
+  "title": "Revenant Captain",
+  "source": "art/blender/units/enemy_revenant_captain.blend",
+  "anchorY": 0.7637753039598465,
+  "anchorX": 0.453238,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "sword-cut",
+    "body": [
+      0.0,
+      -0.260055
+    ],
+    "contact": [
+      0.469993,
+      -0.293921
+    ]
+  }
+}

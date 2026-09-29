@@ -41,8 +41,8 @@ public static class RealmUi
         button.AddThemeConstantOverride("h_separation", 10);
         if (primary)
         {
-            button.AddThemeStyleboxOverride("normal", MedievalUi.Engraved("button_primary", 18, 10));
-            button.AddThemeStyleboxOverride("hover", MedievalUi.Engraved("button_hover", 18, 10));
+            button.SetMeta("realm_primary", true);
+            MedievalUi.StyleButton(button, 18, 10);
             button.AddThemeColorOverride("font_color", new Color("fff4db"));
         }
         button.Pressed += () => action?.Invoke();
@@ -54,18 +54,11 @@ public static class RealmUi
         var button = Button(icon, "", action);
         button.TooltipText = hint;
         button.AccessibilityName = hint;
-        foreach (var state in new[] { "normal", "hover", "pressed", "disabled" })
-            button.AddThemeStyleboxOverride(state, MedievalUi.Engraved(state == "normal" ? "button" : "button_" + state, 8, 10));
+        MedievalUi.StyleButton(button, 8, 10);
         return button;
     }
 
-    public static StyleBoxFlat Surface(Color fill, Color border)
-    {
-        return new StyleBoxFlat { BgColor = fill, BorderColor = border,
-            BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
-            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
-            ContentMarginLeft = 16, ContentMarginRight = 16, ContentMarginTop = 12, ContentMarginBottom = 12 };
-    }
+    public static StyleBox Surface(Color fill, Color border) => new UiSurfaceStyle(fill, border);
 
     public static VBoxContainer Panel(Control host, Rect2 rect, out PanelContainer panel)
     {
@@ -105,8 +98,7 @@ public static class RealmUi
             int index = i;
             var button = new RealmButton { Text = labels[i], ToggleMode = true, ButtonGroup = group, ButtonPressed = i == 0,
                 CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-            foreach (var state in new[] { "normal", "hover", "pressed", "disabled" })
-                button.AddThemeStyleboxOverride(state, MedievalUi.Engraved(state == "normal" ? "button" : "button_" + state, 12, 10));
+            MedievalUi.StyleButton(button, 12, 10);
             button.Pressed += () => select(index);
             row.AddChild(button);
         }
@@ -126,6 +118,7 @@ public static class RealmUi
     public static void Details(Control host, string title, string text)
     {
         var dialog = new AcceptDialog { Title = title, DialogText = "", MinSize = new Vector2I(640, 360), Exclusive = true };
+        dialog.Theme = host.Theme;
         host.AddChild(dialog);
         var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(620, 330), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         dialog.AddChild(scroll);

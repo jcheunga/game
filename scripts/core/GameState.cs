@@ -6362,6 +6362,8 @@ public partial class GameState : Node
 				.ToArray(),
 			Objectives = stage.Objectives,
 			MissionEvents = stage.MissionEvents,
+			Battlefield = stage.Battlefield,
+			WeatherId = stage.WeatherId,
 			Waves = stage.Waves
 		};
 	}

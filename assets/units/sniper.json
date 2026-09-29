@@ -1,0 +1,62 @@
+{
+  "frameWidth": 192,
+  "frameHeight": 240,
+  "drawScale": 2.6285714285714286,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.085,
+      "loop": false,
+      "contactFrame": 4
+    },
+    "hit": {
+      "start": 20,
+      "count": 2,
+      "duration": 0.09,
+      "loop": false
+    },
+    "death": {
+      "start": 22,
+      "count": 6,
+      "duration": 0.11,
+      "loop": false
+    },
+    "deploy": {
+      "start": 28,
+      "count": 4,
+      "duration": 0.1,
+      "loop": false
+    }
+  },
+  "assetId": "player_marksman",
+  "title": "Mage",
+  "source": "art/blender/units/player_marksman.blend",
+  "anchorY": 0.7666342258453369,
+  "anchorX": 0.452731,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "staff-cast",
+    "body": [
+      0.0,
+      -0.262874
+    ],
+    "contact": [
+      0.327326,
+      -0.50463
+    ]
+  },
+  "healthBarY": 0.519759
+}

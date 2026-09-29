@@ -1,38 +1,38 @@
 services:
-  postgres:
-    image: postgres:17-alpine
+  redis:
+    image: redis:7.4-alpine
     restart: unless-stopped
-    env_file:
-      - .env.production
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env.production}
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env.production}
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"
     volumes:
-      - crownroad-postgres:/var/lib/postgresql/data
+      - crownroad-redis:/data
     secrets:
-      - source: postgres_password
-        target: postgres_password
+      - source: redis_password
+        target: redis_password
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$(cat /run/secrets/redis_password)\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 10s
 
   crownroad-server:
     build:
       context: .
     restart: unless-stopped
+    scale: ${CROWNROAD_SERVER_REPLICAS:-2}
     env_file:
       - .env.production
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Crownroad: Host=postgres;Port=5432;Database=${POSTGRES_DB:?set POSTGRES_DB in .env.production};Username=${POSTGRES_USER:?set POSTGRES_USER in .env.production};Ssl Mode=Disable;Pooling=true;Timeout=15;Command Timeout=15
-      DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env.production}
+      Redis__Configuration: redis:6379,abortConnect=false
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
       TrustForwardedHeaders: "true"
       ADMIN_API_KEY_FILE: /run/secrets/admin_api_key
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH: /run/secrets/google_play_service_account.json
@@ -40,8 +40,8 @@ services:
     expose:
       - "8080"
     secrets:
-      - source: postgres_password
-        target: postgres_password
+      - source: redis_password
+        target: redis_password
       - source: admin_api_key
         target: admin_api_key
       - source: google_play_service_account
@@ -60,7 +60,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      postgres:
+      redis:
         condition: service_healthy
 
   caddy:
@@ -83,13 +83,13 @@ services:
       - no-new-privileges:true
 
 volumes:
-  crownroad-postgres:
+  crownroad-redis:
   caddy-data:
   caddy-config:
 
 secrets:
-  postgres_password:
-    file: ${POSTGRES_PASSWORD_SOURCE:?set POSTGRES_PASSWORD_SOURCE in .env.production}
+  redis_password:
+    file: ${REDIS_PASSWORD_SOURCE:?set REDIS_PASSWORD_SOURCE in .env.production}
   admin_api_key:
     file: ${ADMIN_API_KEY_SOURCE:?set ADMIN_API_KEY_SOURCE in .env.production}
   google_play_service_account:

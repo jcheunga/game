@@ -27,6 +27,12 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--materials"))
+            { await ReviewMaterials(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--deployment-cards"))
+            { await ReviewDeploymentCards(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--drag-cards"))
+            { await ReviewCardDragging(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--progression"))
             { await ReviewProgression(); return; }
             Check(!LanChallengeService.Instance.HasRoom, "Offline multiplayer peer is not a LAN room");

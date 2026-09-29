@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="64" viewBox="0 0 256 16">
+  <defs>
+    <linearGradient id="enamel" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#bdd3c8"/><stop offset=".16" stop-color="#f1fff8"/>
+      <stop offset=".38" stop-color="#b3c7b9"/><stop offset=".62" stop-color="#96aa9c"/><stop offset="1" stop-color="#435e54"/>
+    </linearGradient>
+    <pattern id="grain" width="47" height="16" patternUnits="userSpaceOnUse">
+      <path d="M2 6H10M18 9H27M31 4H42M7 12H17M29 13H37" stroke="#152620" stroke-width=".65" opacity=".16"/>
+      <path d="M3 3H16M24 6H34M18 13H24M39 10H45" stroke="#f5fff9" stroke-width=".55" opacity=".2"/>
+      <path d="M13 8H14M35 8H37M4 10H5M22 4H23" stroke="#193328" stroke-width=".65" opacity=".18"/>
+    </pattern>
+  </defs>
+  <path fill="url(#enamel)" d="M0 0H256V16H0Z"/>
+  <path fill="url(#grain)" d="M0 0H256V16H0Z"/>
+  <path d="M0 .5H256" stroke="#fff" opacity=".75"/>
+  <path d="M0 15.5H256" stroke="#0b2119" opacity=".6"/>
+</svg>

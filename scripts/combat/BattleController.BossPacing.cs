@@ -33,11 +33,13 @@ public partial class BattleController
     private void DrawCursedGround()
     {
         if (!StageModifiers.HasCursedGround(_stageData)) return;
-        var area = CursedGroundArea;
+        foreach (var area in CursedGroundAreas())
+        {
         var color = new Color("c49be8");
         DrawRect(area, new Color(color, 0.13f));
         DrawRect(area, new Color(color, 0.55f), false, 2f);
-        DrawPreviewLabel(area.Position + new Vector2(8, 8), "CURSED GROUND · deploy in another lane", color);
+        DrawPreviewLabel(area.Position + new Vector2(8, 8), "CURSED GROUND · safe lanes above / below", color);
+        }
     }
 
     private bool PrepareBossPhase(Unit boss)

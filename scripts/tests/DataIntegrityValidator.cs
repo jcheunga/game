@@ -216,6 +216,25 @@ public static class DataIntegrityValidator
             Check(GetFloat(stage, "PlayerBaseHealth") > 0, $"Stage {num} has non-positive PlayerBaseHealth");
             Check(GetFloat(stage, "EnemyBaseHealth") > 0, $"Stage {num} has non-positive EnemyBaseHealth");
 
+            Check(stage.TryGetProperty("Battlefield", out var battlefield), $"Stage {num} is missing its expanded battlefield plan");
+            if (battlefield.ValueKind == JsonValueKind.Object)
+            {
+                Check(GetFloat(battlefield, "OutpostXRatio") is >= .3f and <= .5f, $"Stage {num} forward post lies outside the middle approach");
+                Check(GetFloat(battlefield, "SupplyXRatio") > GetFloat(battlefield, "OutpostXRatio") && GetFloat(battlefield, "SupplyXRatio") < .9f,
+                    $"Stage {num} supplies must lie beyond the forward post and before the gate");
+                Check(GetFloat(battlefield, "OutpostYRatio") is >= .15f and <= .85f && GetFloat(battlefield, "SupplyYRatio") is >= .15f and <= .85f,
+                    $"Stage {num} field objectives must leave room around their capture rings");
+                Check(GetInt(battlefield, "ForwardDeployments") is >= 1 and <= 6 && GetFloat(battlefield, "ForwardCooldown") >= 5 && GetFloat(battlefield, "CaptureSeconds") > 0,
+                    $"Stage {num} forward deployments must have bounded charges and recovery");
+                Check(GetStr(battlefield, "SupplyReward") is "courage" or "repair" or "siege", $"Stage {num} has an unsupported supply reward");
+                Check(GetStr(battlefield, "OutpostTitle").Length > 0 && GetStr(battlefield, "SupplyTitle").Length > 0, $"Stage {num} field objectives need names");
+                if (battlefield.TryGetProperty("CursePatches", out var patches))
+                    foreach (var patch in patches.EnumerateArray())
+                        Check(GetFloat(patch, "XRatio") is >= .2f and <= .85f && GetFloat(patch, "Width") is > 0 and <= 300 &&
+                            GetFloat(patch, "Height") is > 0 and <= 124 && GetFloat(patch, "YRatio") is >= .25f and <= .75f,
+                            $"Stage {num} cursed pockets must preserve safe lanes");
+            }
+
             // Check wave unit references
             var hasScriptedWaves = false;
             var containsExpectedBossWave = !postgameBossStages.ContainsKey(num);
@@ -231,6 +250,9 @@ public static class DataIntegrityValidator
                     Check(spawnInterval > 0f, $"Stage {num} has wave with non-positive SpawnInterval");
                     Check(triggerTime + 0.001f >= previousTriggerTime, $"Stage {num} has scripted waves out of order");
                     previousTriggerTime = triggerTime;
+                    Check(GetStr(wave, "Area") is "Approach" or "Crossroads" or "Gate", $"Stage {num} wave needs a named encounter area");
+                    Check(GetFloat(wave, "SpawnXRatio") is >= .2f and <= 1 && GetFloat(wave, "AdvanceTriggerXRatio") < GetFloat(wave, "SpawnXRatio"),
+                        $"Stage {num} encounter entry must be ahead of its advance trigger");
 
                     if (wave.TryGetProperty("Entries", out var entries) && entries.ValueKind == JsonValueKind.Array)
                     {

@@ -38,6 +38,7 @@ public sealed class StageDefinition
     public StageMissionEventDefinition[] MissionEvents { get; set; } = Array.Empty<StageMissionEventDefinition>();
     public StageWaveDefinition[] Waves { get; set; } = Array.Empty<StageWaveDefinition>();
     public string WeatherId { get; set; } = "";
+    public StageBattlefieldDefinition Battlefield { get; set; }
 
     public Vector2 MapPoint => new(MapX, MapY);
     public bool HasScriptedWaves => Waves.Length > 0;

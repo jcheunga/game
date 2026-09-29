@@ -1,0 +1,23 @@
+{
+  "id": "war_wagon",
+  "title": "Lantern Caravan",
+  "version": 1,
+  "source": "art/blender/lantern_caravan.blend",
+  "generator": "art/blender/build_caravan.py",
+  "output": "assets/structures/war_wagon.png",
+  "resolution": [1440, 1120],
+  "alpha": true,
+  "forward_axis": "+X",
+  "ground_axis": "Z",
+  "camera": "CAMERA • battle / locked 9:7",
+  "animation": "static",
+  "external_dependencies": [],
+  "palette": {
+    "oak": "#674a2e",
+    "iron": "#20272b",
+    "brass": "#947135",
+    "canvas": "#0e3432",
+    "lantern": "#ffb14c"
+  },
+  "notes": "Default caravan only. Existing runtime handles damage smoke and purchased weapon mounts. Source geometry remains separate for future variants."
+}

@@ -202,6 +202,14 @@ public partial class BattleController
 
     private void DrawBaseMount(Vector2 position, BaseWeaponDefinition weapon, float direction)
     {
+        var texture = BattlefieldTextureLoader.TryLoadStructure("mount_" + weapon.Kind.ToString().ToLowerInvariant());
+        if (texture != null)
+        {
+            DrawSetTransform(position, 0f, new Vector2(direction, 1));
+            DrawTextureRect(texture, new Rect2(-30f, -42f, 60f, 75f), false);
+            DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+            return;
+        }
         var wood = new Color("77563c");
         var iron = new Color("9b9987");
         var shade = new Color("302b26");

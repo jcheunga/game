@@ -3,12 +3,12 @@ using System;
 public sealed class CombatTuning
 {
 	public float PlayerBaseX { get; set; } = 96f;
-	public float EnemyBaseX { get; set; } = 1184f;
+	public float EnemyBaseX { get; set; } = 2464f;
 	public float PlayerSpawnX { get; set; } = 140f;
-	public float EnemySpawnX { get; set; } = 1140f;
+	public float EnemySpawnX { get; set; } = 2420f;
 
 	public float BattlefieldLeft { get; set; } = 84f;
-	public float BattlefieldRight { get; set; } = 1196f;
+	public float BattlefieldRight { get; set; } = 2476f;
 	public float BattlefieldTop { get; set; } = 96f;
 	public float BattlefieldBottom { get; set; } = 584f;
 	public float SpawnVerticalPadding { get; set; } = 12f;

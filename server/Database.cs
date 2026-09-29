@@ -34,10 +34,11 @@ public static class Database
         _postgresDataSource?.Dispose();
         _postgresDataSource = null;
 
-        if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+        var normalizedConnectionString = NormalizePostgresConnectionString(connectionString);
+        if (normalizedConnectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
         {
             _provider = Provider.Postgres;
-            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            var builder = new NpgsqlConnectionStringBuilder(normalizedConnectionString);
             if (!string.IsNullOrWhiteSpace(passwordFile))
             {
                 if (!File.Exists(passwordFile))
@@ -46,7 +47,7 @@ public static class Database
             }
 
             if (string.IsNullOrWhiteSpace(builder.Password))
-                throw new InvalidOperationException("A PostgreSQL password must be supplied through DATABASE_PASSWORD_FILE.");
+                throw new InvalidOperationException("A PostgreSQL password must be supplied in DATABASE_URL, ConnectionStrings:Crownroad, or DATABASE_PASSWORD_FILE.");
 
             _connectionString = builder.ConnectionString;
             _postgresDataSource = NpgsqlDataSource.Create(_connectionString);
@@ -55,12 +56,109 @@ public static class Database
 
 #if SQLITE_TEST
         _provider = Provider.Sqlite;
-        _connectionString = connectionString;
-        var dataSource = connectionString.Replace("Data Source=", "", StringComparison.OrdinalIgnoreCase).Trim();
+        _connectionString = normalizedConnectionString;
+        var dataSource = normalizedConnectionString.Replace("Data Source=", "", StringComparison.OrdinalIgnoreCase).Trim();
         if (!string.IsNullOrWhiteSpace(dataSource)) _dbFilePath = dataSource;
 #else
-        throw new InvalidOperationException("Production builds require a PostgreSQL connection string containing Host=.");
+        throw new InvalidOperationException("Production builds require a PostgreSQL DATABASE_URL or connection string.");
 #endif
+    }
+
+    /// <summary>
+    /// Normalizes standard postgres:// and postgresql:// URLs emitted by managed
+    /// providers into Npgsql's keyword connection-string format. Existing Npgsql
+    /// connection strings are returned unchanged.
+    /// </summary>
+    internal static string NormalizePostgresConnectionString(string connectionString)
+    {
+        var raw = connectionString?.Trim() ?? "";
+        if (!raw.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+            !raw.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            return raw;
+        }
+
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri) ||
+            (!uri.Scheme.Equals("postgres", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Scheme.Equals("postgresql", StringComparison.OrdinalIgnoreCase)) ||
+            string.IsNullOrWhiteSpace(uri.Host))
+        {
+            throw new InvalidOperationException("DATABASE_URL must be a valid postgres:// or postgresql:// URL.");
+        }
+
+        var database = Uri.UnescapeDataString(uri.AbsolutePath.Trim('/'));
+        if (string.IsNullOrWhiteSpace(database))
+        {
+            throw new InvalidOperationException("DATABASE_URL must include a database name in its path.");
+        }
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Database = database
+        };
+
+        if (!string.IsNullOrWhiteSpace(uri.UserInfo))
+        {
+            var credentials = uri.UserInfo.Split(':', 2);
+            builder.Username = Uri.UnescapeDataString(credentials[0]);
+            if (credentials.Length == 2)
+            {
+                builder.Password = Uri.UnescapeDataString(credentials[1]);
+            }
+        }
+
+        foreach (var pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var keyAndValue = pair.Split('=', 2);
+            var key = Uri.UnescapeDataString(keyAndValue[0]).Replace("_", "", StringComparison.Ordinal).ToLowerInvariant();
+            var value = keyAndValue.Length == 2 ? Uri.UnescapeDataString(keyAndValue[1]) : "";
+            ApplyPostgresUrlOption(builder, key, value);
+        }
+
+        return builder.ConnectionString;
+    }
+
+    private static void ApplyPostgresUrlOption(NpgsqlConnectionStringBuilder builder, string key, string value)
+    {
+        switch (key)
+        {
+            case "sslmode":
+                if (!Enum.TryParse<SslMode>(value.Replace("-", "", StringComparison.Ordinal), true, out var sslMode))
+                    throw new InvalidOperationException("DATABASE_URL has an unsupported sslmode value.");
+                builder.SslMode = sslMode;
+                break;
+            case "sslrootcert":
+                // libpq URLs use "system" to select the operating system's
+                // trust store. Npgsql does that when no custom CA path is set.
+                if (!value.Equals("system", StringComparison.OrdinalIgnoreCase))
+                    builder.RootCertificate = value;
+                break;
+            case "pooling":
+                if (bool.TryParse(value, out var pooling)) builder.Pooling = pooling;
+                break;
+            case "minpoolsize":
+            case "minimumpoolsize":
+                if (int.TryParse(value, out var minPoolSize)) builder.MinPoolSize = minPoolSize;
+                break;
+            case "maxpoolsize":
+            case "maximumpoolsize":
+                if (int.TryParse(value, out var maxPoolSize)) builder.MaxPoolSize = maxPoolSize;
+                break;
+            case "connecttimeout":
+                if (int.TryParse(value, out var timeout)) builder.Timeout = timeout;
+                break;
+            case "commandtimeout":
+                if (int.TryParse(value, out var commandTimeout)) builder.CommandTimeout = commandTimeout;
+                break;
+            case "applicationname":
+                builder.ApplicationName = value;
+                break;
+            case "sslnegotiation":
+                if (Enum.TryParse<SslNegotiation>(value, true, out var sslNegotiation)) builder.SslNegotiation = sslNegotiation;
+                break;
+        }
     }
 
     public static DbConnection Open()
@@ -79,6 +177,22 @@ public static class Database
         cmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
         cmd.ExecuteNonQuery();
         return conn;
+#else
+        throw new InvalidOperationException("SQLite is available only in Debug test builds.");
+#endif
+    }
+
+    public static async ValueTask<DbConnection> OpenAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsPostgres)
+        {
+            if (_postgresDataSource == null)
+                throw new InvalidOperationException("PostgreSQL database was not configured.");
+            return await _postgresDataSource.OpenConnectionAsync(cancellationToken);
+        }
+
+#if SQLITE_TEST
+        return Open();
 #else
         throw new InvalidOperationException("SQLite is available only in Debug test builds.");
 #endif
@@ -467,14 +581,26 @@ public static class Database
         try
         {
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition}";
+            // PostgreSQL can make this operation idempotent without emitting a
+            // database error on a fresh installation whose base schema already
+            // contains the column. SQLite test builds retain the compatible
+            // form and use the exception guard below for old databases.
+            cmd.CommandText = IsPostgres
+                ? $"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {definition}"
+                : $"ALTER TABLE {table} ADD COLUMN {column} {definition}";
             cmd.ExecuteNonQuery();
         }
-        catch (DbException)
+        catch (DbException ex) when (IsDuplicateColumnError(ex))
         {
-            // Column already exists — safe to ignore
+            // A legacy SQLite database may already have the column. Any other
+            // migration failure must stop startup rather than silently record
+            // a schema version that was never applied.
         }
     }
+
+    private static bool IsDuplicateColumnError(DbException exception) =>
+        exception.Message.Contains("duplicate column", StringComparison.OrdinalIgnoreCase) ||
+        exception.Message.Contains("column already exists", StringComparison.OrdinalIgnoreCase);
 
     public static string Backup()
     {

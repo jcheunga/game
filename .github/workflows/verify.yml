@@ -1,0 +1,37 @@
+name: Verify Crownroad
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server-and-data:
+    name: Production server and data
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore server dependencies
+        run: dotnet restore server/Server.csproj
+
+      - name: Build production server
+        run: dotnet build server/Server.csproj --configuration Release --no-restore
+
+      - name: Run backend contract and security tests
+        run: dotnet run --project server -- --test
+
+      - name: Validate game data and catalog coverage
+        run: dotnet run --project server -- --test-data

@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 2.4804788366764057,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.046,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "player_hound",
+  "title": "War Hound",
+  "source": "art/blender/units/player_hound.blend",
+  "anchorY": 0.7531240880489349,
+  "anchorX": 0.449909,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "pounce",
+    "body": [
+      0.0,
+      -0.155756
+    ],
+    "contact": [
+      0.31168,
+      -0.171952
+    ]
+  }
+}

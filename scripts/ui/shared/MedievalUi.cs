@@ -84,10 +84,7 @@ public static class MedievalUi
     {
         var theme = new Theme();
         var ink = new Color("eae5d9");
-        var gold = new Color("d9ad55");
         var goldLight = new Color("f3d78c");
-        var oak = new Color("111d22");
-        var oakLight = new Color("203139");
 
         theme.SetColor("font_color", "Label", ink);
         theme.SetColor("font_shadow_color", "Label", new Color(0f, 0f, 0f, 0.7f));
@@ -103,26 +100,68 @@ public static class MedievalUi
         theme.SetColor("font_color", "Button", ink);
         theme.SetColor("font_hover_color", "Button", goldLight);
         theme.SetColor("font_pressed_color", "Button", Colors.White);
-        theme.SetColor("font_disabled_color", "Button", new Color("8c806a"));
+        theme.SetColor("font_disabled_color", "Button", new Color("9aaba5"));
         theme.SetColor("caret_color", "LineEdit", goldLight);
         theme.SetColor("font_color", "LineEdit", ink);
 
-        theme.SetStylebox("panel", "Panel", Box(oak, gold.Darkened(0.42f), 1, 8, 10));
+        theme.SetStylebox("panel", "Panel", Engraved("inset", 10, 6));
         theme.SetStylebox("panel", "PanelContainer", Engraved("engraved_panel", 18, 14));
         theme.SetStylebox("normal", "Button", Engraved("button", 18, 10));
         theme.SetStylebox("hover", "Button", Engraved("button_hover", 18, 10));
         theme.SetStylebox("pressed", "Button", Engraved("button_pressed", 18, 10));
         theme.SetStylebox("disabled", "Button", Engraved("button_disabled", 18, 10));
-        theme.SetStylebox("focus", "Button", Box(new Color(0f, 0f, 0f, 0f), goldLight, 2, 7, 9));
-        theme.SetStylebox("normal", "LineEdit", Box(new Color("171213"), new Color("46514b"), 1, 6, 10));
-        theme.SetStylebox("focus", "LineEdit", Box(new Color("201817"), goldLight, 2, 6, 9));
-        theme.SetStylebox("read_only", "LineEdit", Box(new Color("171213"), new Color("5b4935"), 1, 6, 10));
+        theme.SetStylebox("hover_pressed", "Button", Engraved("button_hover_pressed", 18, 10));
+        theme.SetStylebox("focus", "Button", Engraved("focus", 9, 6));
+        theme.SetStylebox("normal", "LineEdit", Engraved("inset", 10, 6));
+        theme.SetStylebox("focus", "LineEdit", Engraved("input_focus", 9, 6));
+        theme.SetStylebox("read_only", "LineEdit", Engraved("input_disabled", 10, 6));
+        theme.SetColor("font_uneditable_color", "LineEdit", new Color("a2b2ad"));
+        theme.SetColor("selection_color", "LineEdit", new Color("516653"));
         theme.SetStylebox("panel", "ScrollContainer", new StyleBoxEmpty { ContentMarginRight = 8 });
-        theme.SetStylebox("scroll", "VScrollBar", Box(new Color("150f0f"), new Color("6d5334"), 1, 4, 2));
-        theme.SetStylebox("grabber", "VScrollBar", Box(new Color("8a693d"), gold, 1, 4, 2));
-        theme.SetStylebox("grabber_highlight", "VScrollBar", Box(gold, goldLight, 1, 4, 2));
+        foreach(var type in new[]{"VScrollBar","HScrollBar"})
+        {
+            var thumb=type=="HScrollBar" ? "scroll_thumb_horizontal" : "scroll_thumb";
+            theme.SetStylebox("scroll", type, Engraved("inset", 2, 6));
+            theme.SetStylebox("scroll_focus", type, Engraved("input_focus", 2, 6));
+            theme.SetStylebox("grabber", type, Engraved(thumb, 2, 6));
+            theme.SetStylebox("grabber_highlight", type, Engraved(thumb+"_hover", 2, 6));
+            theme.SetStylebox("grabber_pressed", type, Engraved(thumb+"_hover", 2, 6));
+        }
+        foreach(var type in new[]{"OptionButton","MenuButton"})
+        {
+            foreach(var state in new[]{"normal","hover","pressed","hover_pressed","disabled"})
+                theme.SetStylebox(state, type, Engraved(state=="normal"?"button":"button_"+state, 12, 6));
+            theme.SetStylebox("focus", type, Engraved("focus", 9, 6));
+            theme.SetColor("font_color", type, ink);
+            theme.SetColor("font_hover_color", type, goldLight);
+            theme.SetColor("font_pressed_color", type, Colors.White);
+            theme.SetColor("font_disabled_color", type, new Color("9aaba5"));
+        }
+        theme.SetIcon("arrow", "OptionButton", FrameTexture("dropdown"));
+        theme.SetStylebox("panel", "PopupMenu", Engraved("engraved_panel", 12, 10));
+        theme.SetStylebox("hover", "PopupMenu", Engraved("button_hover", 6, 4));
+        theme.SetColor("font_color", "PopupMenu", ink);
+        theme.SetColor("font_hover_color", "PopupMenu", goldLight);
+        theme.SetColor("font_disabled_color", "PopupMenu", new Color("9aaba5"));
+        theme.SetStylebox("panel", "AcceptDialog", Engraved("engraved_panel", 18, 14));
+        foreach(var type in new[]{"CheckBox","CheckButton"})
+        {
+            foreach(var icon in new[]{"checked","unchecked","radio_checked","radio_unchecked",
+                "checked_disabled","unchecked_disabled","radio_checked_disabled","radio_unchecked_disabled"})
+                theme.SetIcon(icon, type, FrameTexture(icon));
+            theme.SetStylebox("focus", type, Engraved("focus", 4, 4));
+            theme.SetColor("font_color", type, ink);
+        }
+        theme.SetStylebox("background", "ProgressBar", Engraved("meter_track", 0, 0));
+        var progressFill=Engraved("meter_fill", 0, 0); progressFill.ModulateColor=new Color("948759");
+        theme.SetStylebox("fill", "ProgressBar", progressFill);
+        theme.SetColor("font_color", "ProgressBar", ink);
+        theme.SetColor("font_outline_color", "ProgressBar", new Color("080e12"));
+        theme.SetConstant("outline_size", "ProgressBar", 2);
+        theme.SetStylebox("separator", "HSeparator", Engraved("separator", 0, 1));
+        theme.SetStylebox("separator", "PopupMenu", Engraved("separator", 0, 1));
         theme.SetColor("font_color", "TooltipLabel", ink);
-        theme.SetStylebox("panel", "TooltipPanel", Box(new Color("1d1515"), gold.Darkened(0.2f), 1, 6, 10));
+        theme.SetStylebox("panel", "TooltipPanel", Engraved("inset", 10, 6));
         theme.SetConstant("separation", "VBoxContainer", 10);
         theme.SetConstant("separation", "HBoxContainer", 10);
         theme.SetConstant("separation", "GridContainer", 10);
@@ -131,13 +170,35 @@ public static class MedievalUi
 
     public static StyleBoxTexture Engraved(string asset, float horizontal, float vertical)
     {
-        var slice = asset == "engraved_panel" ? 30 : 16;
+        var slice = asset switch { "engraved_panel"=>32,
+            "scroll_thumb" or "scroll_thumb_hover" or "scroll_thumb_horizontal" or "scroll_thumb_horizontal_hover"=>6,
+            "meter_track" or "meter_fill"=>4, "cost_badge"=>8, "separator"=>1, _=>16 };
+        var tileVertical=asset is "engraved_panel" or "inset" or "input_focus" or "input_disabled" or "surface_body" or "surface_rim";
         return new StyleBoxTexture
         {
-            Texture = ResourceLoader.Load<Texture2D>($"res://assets/ui/frames/{asset}.svg"),
+            Texture = FrameTexture(asset),
+            AxisStretchHorizontal = StyleBoxTexture.AxisStretchMode.Tile,
+            AxisStretchVertical = tileVertical ? StyleBoxTexture.AxisStretchMode.Tile : StyleBoxTexture.AxisStretchMode.Stretch,
             TextureMarginLeft = slice, TextureMarginRight = slice, TextureMarginTop = slice, TextureMarginBottom = slice,
             ContentMarginLeft = horizontal, ContentMarginRight = horizontal, ContentMarginTop = vertical, ContentMarginBottom = vertical
         };
+    }
+
+    public static Texture2D FrameTexture(string asset) => ResourceLoader.Load<Texture2D>($"res://assets/ui/frames/{asset}.svg");
+
+    public static void StyleButton(Button button,float horizontal,float vertical)
+    {
+        var primary=button.HasMeta("realm_primary");
+        foreach(var state in new[]{"normal","hover","pressed","hover_pressed","disabled"})
+        {
+            var asset=state=="normal"?"button":"button_"+state;
+            if(primary && state!="disabled") asset=state switch
+            {
+                "normal"=>"button_primary", "hover"=>"button_primary_hover", _=>"button_primary_pressed"
+            };
+            button.AddThemeStyleboxOverride(state,Engraved(asset,horizontal,vertical));
+        }
+        button.AddThemeStyleboxOverride("focus",Engraved("focus",horizontal,vertical));
     }
 
     private static void DressHeader(Control root)
@@ -180,31 +241,6 @@ public static class MedievalUi
             if (found != null) return found;
         }
         return null;
-    }
-
-    private static StyleBoxFlat Box(Color background, Color border, int borderWidth, int radius, int padding)
-    {
-        var box = new StyleBoxFlat
-        {
-            BgColor = background,
-            BorderColor = border,
-            BorderWidthLeft = borderWidth,
-            BorderWidthTop = borderWidth,
-            BorderWidthRight = borderWidth,
-            BorderWidthBottom = borderWidth,
-            CornerRadiusTopLeft = radius,
-            CornerRadiusTopRight = radius,
-            CornerRadiusBottomLeft = radius,
-            CornerRadiusBottomRight = radius,
-            ContentMarginLeft = padding,
-            ContentMarginTop = Mathf.Max(6, padding / 2),
-            ContentMarginRight = padding,
-            ContentMarginBottom = Mathf.Max(6, padding / 2),
-            ShadowColor = new Color(0f, 0f, 0f, 0.32f),
-            ShadowSize = 5,
-            ShadowOffset = new Vector2(0f, 2f)
-        };
-        return box;
     }
 
     private static VBoxContainer CreateModal(

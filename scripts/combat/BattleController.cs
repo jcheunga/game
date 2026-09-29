@@ -5,6 +5,8 @@ using Godot;
 
 public partial class BattleController : Node2D
 {
+	private readonly HealthBarMotion _playerHealthBarMotion = new();
+	private readonly HealthBarMotion _enemyHealthBarMotion = new();
 	private const string DefaultEndlessContactTradeoffLabel = "No contact tradeoff active.";
 	private const float LanRaceTelemetryIntervalSeconds = 1f;
 	private const float OnlineRoomTelemetryIntervalSeconds = 1f;
@@ -76,58 +78,30 @@ public partial class BattleController : Node2D
 
 	private sealed class DeploySlot
 	{
-		public DeploySlot(UnitDefinition definition, Button button, Label titleLabel, Label detailLabel)
+		public DeploySlot(UnitDefinition definition, Button button, BattleActionCard card)
 		{
 			Definition = definition;
 			Button = button;
-			TitleLabel = titleLabel;
-			DetailLabel = detailLabel;
-			CooldownOverlay = new ColorRect
-			{
-				Color = new Color(0f, 0f, 0f, 0.35f),
-				MouseFilter = Control.MouseFilterEnum.Ignore,
-				AnchorBottom = 1f,
-				AnchorRight = 0f,
-				OffsetBottom = 0f,
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				Visible = false
-			};
-			button.AddChild(CooldownOverlay);
+			Card = card;
 		}
 
 		public UnitDefinition Definition { get; }
 		public Button Button { get; }
-		public Label TitleLabel { get; }
-		public Label DetailLabel { get; }
-		public ColorRect CooldownOverlay { get; }
+		public BattleActionCard Card { get; }
 	}
 
 	private sealed class SpellSlot
 	{
-		public SpellSlot(SpellDefinition definition, Button button, Label titleLabel, Label detailLabel)
+		public SpellSlot(SpellDefinition definition, Button button, BattleActionCard card)
 		{
 			Definition = definition;
 			Button = button;
-			TitleLabel = titleLabel;
-			DetailLabel = detailLabel;
-			CooldownOverlay = new ColorRect
-			{
-				Color = new Color(0f, 0f, 0f, 0.35f),
-				MouseFilter = Control.MouseFilterEnum.Ignore,
-				AnchorBottom = 1f,
-				AnchorRight = 0f,
-				OffsetBottom = 0f,
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				Visible = false
-			};
-			button.AddChild(CooldownOverlay);
+			Card = card;
 		}
 
 		public SpellDefinition Definition { get; }
 		public Button Button { get; }
-		public Label TitleLabel { get; }
-		public Label DetailLabel { get; }
-		public ColorRect CooldownOverlay { get; }
+		public BattleActionCard Card { get; }
 	}
 
 	private enum BattleSelectionMode
@@ -520,6 +494,7 @@ public partial class BattleController : Node2D
 	private float _playerBaseFlashTimer;
 	private float _enemyBaseFlashTimer;
 	private float _bossEntranceBannerTimer;
+	private StyleBoxTexture _battleOverlaySurface;
 	private float _impactShakeTimer;
 	private float _impactShakeStrength;
 	private float _defenseEncounterStartedAt;
@@ -1028,6 +1003,7 @@ public partial class BattleController : Node2D
 				_spawnDirector.AdditionalEnemyDamageScale * _eventEnemyDamageScale);
 		}
 
+		_spawnDirector.EnableAdvanceEncounters(HasCampaignField);
 		InitializeStageHazards();
 		InitializeStageMissions();
 
@@ -1120,9 +1096,13 @@ public partial class BattleController : Node2D
 
 	public override void _ExitTree()
 	{
+		CleanupBattleCamera();
+		CleanupMobilePresentation();
 		Engine.TimeScale = 1f;
 		ResetImpactShake();
 		UnitPool.Clear();
+		UnitSpriteLoader.ClearCache();
+		BattlefieldTextureLoader.ClearCache();
 		ProjectilePool.Clear();
 		if (IsLanRaceMode && LanChallengeService.Instance != null)
 		{
@@ -1139,11 +1119,11 @@ public partial class BattleController : Node2D
 		var bgTexture = BattlefieldTextureLoader.TryLoadBackground(terrainId);
 		if (bgTexture != null)
 		{
-			DrawTextureRect(bgTexture, new Rect2(0f, 0f, 1280f, 720f), false);
+			DrawBattleBackground(bgTexture);
 		}
 		else
 		{
-			DrawRect(new Rect2(0f, 0f, 1280f, 720f), palette.SkyColor, true);
+			DrawRect(new Rect2(0f, 0f, BattleWorldWidth, BattleWorldHeight), palette.SkyColor, true);
 
 			DrawRect(
 				new Rect2(
@@ -1170,6 +1150,7 @@ public partial class BattleController : Node2D
 
 		DrawTerrainDecoration();
 		DrawCursedGround();
+		DrawCampaignFieldObjectives();
 		DrawStageHazards();
 		DrawEndlessFieldEvent();
 		DrawEndlessContactEvent();
@@ -1180,8 +1161,11 @@ public partial class BattleController : Node2D
 		DrawPlayerBus(palette, route);
 		DrawEnemyBarricade(palette, route);
 		DrawBaseArmaments();
+		// These warnings belong to the screen even while the battlefield pans or zooms.
+		DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
 		DrawCriticalHealthVignette();
 		DrawBossEntranceBanner();
+		DrawSetTransform(Vector2.Zero);
 		DrawBossPhaseWarnings();
 		DrawTunnelInvasionWarning();
 	}
@@ -1324,7 +1308,7 @@ public partial class BattleController : Node2D
 			return true;
 		}
 
-		if (!_spawnDirector.UsesScriptedWaves || _spawnDirector.IsScriptedWaveHeld || !_spawnDirector.TryGetNextScriptedWave(out var nextWave))
+		if (HasCampaignField || !_spawnDirector.UsesScriptedWaves || _spawnDirector.IsScriptedWaveHeld || !_spawnDirector.TryGetNextScriptedWave(out var nextWave))
 		{
 			return false;
 		}
@@ -1361,10 +1345,11 @@ public partial class BattleController : Node2D
 			: 0.5f + (0.5f * Mathf.Sin((_elapsed * 8f) + 0.4f));
 		var width = 460f + ((1f - appearRatio) * 36f);
 		var height = 74f;
-		var rect = new Rect2((1280f - width) * 0.5f, 88f, width, height);
+		var rect = new Rect2((GetViewportRect().Size.X - width) * 0.5f,
+			_mobileCamera != null ? _mobileFieldTop + 8f : 136f, width, height);
 		var fill = new Color(_bossEntranceBannerColor, 0.14f + (pulse * 0.07f));
 		var outline = new Color(_bossEntranceBannerColor.Lightened(0.12f), 0.72f);
-		DrawRect(rect, new Color(0f, 0f, 0f, 0.58f), true);
+		DrawStyleBox(_battleOverlaySurface ??= MedievalUi.Engraved("inset", 0, 0), rect);
 		DrawRect(rect, fill, true);
 		DrawRect(rect, outline, false, 3f);
 
@@ -1384,12 +1369,25 @@ public partial class BattleController : Node2D
 
 	private void DrawSelectionPreview()
 	{
-		if (_battleEnded || _battlePaused || _endlessCheckpointActive)
+		if (_battleEnded || _battlePaused || _endlessCheckpointActive || _mobileClearView)
 		{
 			return;
 		}
 
-		var mousePosition = GetGlobalMousePosition();
+		if (_cardPointerDown)
+		{
+			if (!_cardDragging || !CanDropCard(_cardPointerPosition)) return;
+			var target = ScreenToBattle(_cardPointerPosition);
+			if (_dragSpell != null) DrawSpellPreview(GameState.Instance.BuildSpellStats(_dragSpell), target);
+			else
+			{
+				DrawDeployPreview(_dragUnit, target.Y);
+				DrawDraggedUnitGhost(ResolvePlayerDeployPosition(target.Y));
+			}
+			return;
+		}
+
+		var mousePosition = GetLocalMousePosition();
 		if (!IsInBattlefield(mousePosition))
 		{
 			return;
@@ -1410,7 +1408,8 @@ public partial class BattleController : Node2D
 	private void DrawDeployPreview(UnitDefinition definition, float requestedY)
 	{
 		var previewY = ResolveDeployLaneY(requestedY, out var snapped);
-		var spawnPosition = new Vector2(PlayerSpawnX, previewY);
+		var spawnPosition = ResolvePlayerDeployPosition(requestedY);
+		previewY = spawnPosition.Y;
 		var cooldown = _deck.GetCooldownRemaining(definition.Id);
 		var isReady = cooldown <= 0.05f;
 		var hasCourage = _courage >= definition.Cost;
@@ -1418,7 +1417,7 @@ public partial class BattleController : Node2D
 		var alpha = isReady && hasCourage ? 0.9f : 0.45f;
 
 		DrawLine(
-			new Vector2(PlayerSpawnX + 18f, previewY),
+			new Vector2(spawnPosition.X + 18f, previewY),
 			new Vector2(BattlefieldRight - 24f, previewY),
 			new Color(color, 0.16f + (alpha * 0.28f)),
 			snapped ? 3f : 2f,
@@ -1497,7 +1496,9 @@ public partial class BattleController : Node2D
 
 	private void DrawPreviewLabel(Vector2 position, string text, Color color)
 	{
-		if (string.IsNullOrWhiteSpace(text))
+		// Drag instructions live in the screen-space card preview. Keep the
+		// world-space target rings, without duplicating text at camera zoom.
+		if (_cardDragging || string.IsNullOrWhiteSpace(text))
 		{
 			return;
 		}
@@ -1514,7 +1515,7 @@ public partial class BattleController : Node2D
 			Mathf.Clamp(position.X, BattlefieldLeft + 8f, BattlefieldRight - textSize.X - 20f),
 			Mathf.Clamp(position.Y, BattlefieldTop + 8f, BattlefieldBottom - textSize.Y - 18f));
 		var panelRect = new Rect2(panelPosition, textSize + new Vector2(14f, 10f));
-		DrawRect(panelRect, new Color(0f, 0f, 0f, 0.56f), true);
+		DrawStyleBox(_battleOverlaySurface ??= MedievalUi.Engraved("inset", 0, 0), panelRect);
 		DrawRect(panelRect, new Color(color, 0.72f), false, 2f);
 		DrawString(font, panelRect.Position + new Vector2(7f, textSize.Y + 3f), text, HorizontalAlignment.Left, -1f, fontSize, Colors.White);
 	}
@@ -2248,7 +2249,10 @@ public partial class BattleController : Node2D
 		var healthRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
 		var offset = GetBaseShakeOffset(true);
 
-		var wagonTexture = BattlefieldTextureLoader.TryLoadStructure("war_wagon");
+		var skinId = GameState.Instance.SelectedWagonSkinId;
+		var wagonTexture = skinId == WagonSkinCatalog.DefaultSkinId ? null
+			: BattlefieldTextureLoader.TryLoadStructure("war_wagon_" + skinId);
+		wagonTexture ??= BattlefieldTextureLoader.TryLoadStructure("war_wagon");
 		if (wagonTexture != null)
 		{
 			var drawRect = new Rect2(PlayerBaseX - 70f + offset.X, BaseCenterY - 80f + offset.Y, 180f, 140f);
@@ -2262,11 +2266,10 @@ public partial class BattleController : Node2D
 			DrawTextureRect(wagonTexture, drawRect, false, modulate);
 			DrawDamageSmoke(new Vector2(PlayerBaseX - 18f, BaseCenterY - 48f) + offset, healthRatio, palette.PlayerBaseColor);
 			DrawBaseHealthMeter(
-				new Vector2(PlayerBaseX + 8f, BaseCenterY - 58f) + offset,
+				new Vector2(PlayerBaseX + 8f + offset.X, drawRect.Position.Y - 20f),
 				132f,
 				healthRatio,
-				palette.PlayerBaseColor.Lightened(0.35f),
-				new Color("80ed99"));
+				true);
 			return;
 		}
 
@@ -2351,8 +2354,7 @@ public partial class BattleController : Node2D
 			new Vector2(PlayerBaseX + 8f, BaseCenterY - 58f) + offset,
 			132f,
 			healthRatio,
-			bodyColor.Lightened(0.35f),
-			new Color("80ed99"));
+			true);
 	}
 
 	private void DrawEnemyBarricade(TerrainPalette palette, RouteDefinition route)
@@ -2374,11 +2376,10 @@ public partial class BattleController : Node2D
 			DrawTextureRect(gatehouseTexture, drawRect, false, modulate);
 			DrawDamageSmoke(new Vector2(EnemyBaseX - 6f, BaseCenterY - 62f) + offset, healthRatio, palette.EnemyBaseColor);
 			DrawBaseHealthMeter(
-				new Vector2(EnemyBaseX - 18f, BaseCenterY + 60f) + offset,
+				new Vector2(EnemyBaseX + 10f + offset.X, drawRect.Position.Y - 20f),
 				132f,
 				healthRatio,
-				palette.EnemyBaseColor.Lightened(0.35f),
-				new Color("ef476f"));
+				false);
 			return;
 		}
 
@@ -2455,8 +2456,7 @@ public partial class BattleController : Node2D
 			new Vector2(EnemyBaseX - 10f, BaseCenterY - 112f) + offset,
 			124f,
 			healthRatio,
-			wallColor.Lightened(0.25f),
-			new Color("ff8fab"));
+			false);
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -2531,6 +2531,7 @@ public partial class BattleController : Node2D
 
 		_deck.TickCooldowns(deltaF);
 		_spellDeck.TickCooldowns(deltaF);
+		UpdateCampaignField(deltaF);
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
 		TickTunnelInvasion(deltaF);
 		UpdateEndlessFieldEvent(deltaF);
@@ -2570,6 +2571,13 @@ public partial class BattleController : Node2D
 
 	public override void _Process(double delta)
 	{
+		UpdateCardDragPreview();
+		UpdateMobileCamera((float)delta);
+		UpdateFieldNavigation();
+		var reducedMotion = IsReducedMotionEnabled();
+		_playerHealthBarMotion.Update(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), (float)delta, reducedMotion);
+		_enemyHealthBarMotion.Update(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), (float)delta, reducedMotion);
+		QueueRedraw();
 		if (!_battleEnded || !IsOnlineRoomMode)
 		{
 			return;
@@ -2959,6 +2967,7 @@ public partial class BattleController : Node2D
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
+		if (HandleBattleCameraInput(@event)) return;
 		if (@event is InputEventKey keyEvent && keyEvent.Pressed)
 		{
 			HandleKeyInput(keyEvent);
@@ -2970,11 +2979,13 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		if (BeginMobileGesture(@event)) return;
 		if (@event is InputEventScreenTouch touchEvent && touchEvent.Pressed)
 		{
-			if (IsInBattlefield(touchEvent.Position))
+			var worldPosition=ScreenToBattle(touchEvent.Position);
+			if (IsInBattlefield(worldPosition))
 			{
-				TryUseSelectionAt(touchEvent.Position);
+				TryUseSelectionAt(worldPosition);
 			}
 			return;
 		}
@@ -3000,9 +3011,10 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (IsInBattlefield(mouseButton.Position))
+		var mouseWorldPosition=ScreenToBattle(mouseButton.Position);
+		if (IsInBattlefield(mouseWorldPosition))
 		{
-			TryUseSelectionAt(mouseButton.Position);
+			TryUseSelectionAt(mouseWorldPosition);
 		}
 	}
 
@@ -3141,6 +3153,8 @@ public partial class BattleController : Node2D
 
 	private void TogglePause()
 	{
+		CancelCardDrag();
+		_mobilePointerDown = false;
 		_battlePaused = !_battlePaused;
 		GetTree().Paused = _battlePaused;
 		if (_pauseOverlay != null)
@@ -3266,7 +3280,9 @@ public partial class BattleController : Node2D
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
 		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}{doctrineSuffix}. Click the battlefield to deploy from the war wagon; nearby fronts snap automatically.");
+			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}{doctrineSuffix}. " +
+			(_cardDragging ? "Release on the battlefield" : "Drag the card or click the battlefield") +
+			$" to deploy from {(CanDeployForward ? "the forward post" : "the war wagon")}; nearby fronts snap automatically.");
 		UpdateHud();
 	}
 
@@ -3279,7 +3295,9 @@ public partial class BattleController : Node2D
 
 		_selectionMode = BattleSelectionMode.Spell;
 		_spellDeck.Arm(definition);
-		SetStatus($"Selected {definition.DisplayName}. Click the battlefield to cast it, or right-click to cancel.");
+		SetStatus($"Selected {definition.DisplayName}. " + (_cardDragging
+			? "Release on the battlefield to cast; return to the cards to cancel."
+			: "Drag the card or click the battlefield to cast; right-click to cancel."));
 		TryShowTutorialHint("first_spell_unlock");
 		UpdateHud();
 	}
@@ -3323,7 +3341,7 @@ public partial class BattleController : Node2D
 
 		if (!_deck.HasArmedUnit)
 		{
-			SetStatus("Pick a squad or spell card first, then click the battlefield.");
+			SetStatus("Drag a unit or magic card onto the battlefield and release.");
 			return;
 		}
 
@@ -3334,12 +3352,19 @@ public partial class BattleController : Node2D
 	{
 		if (!_deck.HasArmedUnit)
 		{
-			SetStatus("Pick a squad card first, then click the battlefield.");
+			SetStatus("Drag a unit card onto the battlefield and release.");
 			return;
 		}
 
-		var spawnY = ResolveDeployLaneY(clickY, out _);
-		TrySpawnPlayer(_deck.ArmedUnit, new Vector2(PlayerSpawnX, spawnY));
+		var forward = CanDeployForward;
+		var before = _playerDeployments;
+		TrySpawnPlayer(_deck.ArmedUnit, ResolvePlayerDeployPosition(clickY));
+		if (forward && _playerDeployments > before)
+		{
+			_forwardDeploymentsRemaining--;
+			_forwardDeploymentsUsed++;
+			_forwardCooldownRemaining = _stageData.Battlefield.ForwardCooldown;
+		}
 	}
 
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
@@ -3397,7 +3422,7 @@ public partial class BattleController : Node2D
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
 		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from the war wagon at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{commendationFeedback}{ghostDeployFeedback}");
+			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from {(spawnPosition.X > PlayerSpawnX + 50 ? "the forward post" : "the war wagon")} at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{commendationFeedback}{ghostDeployFeedback}");
 		UpdateHud();
 	}
 
@@ -3456,6 +3481,8 @@ public partial class BattleController : Node2D
 	{
 		var unit = UnitPool.Acquire();
 		unit.Setup(team, stats, position);
+		_campaignPeriodicSummons.Remove(unit);
+		unit.ShouldPausePresentation = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		unit.Visible = true;
 		if (team == Team.Player)
 		{
@@ -3520,10 +3547,18 @@ public partial class BattleController : Node2D
 	private void SpawnProjectile(Unit attacker, Unit target)
 	{
 		var projectile = ProjectilePool.Acquire();
-		projectile.GlobalPosition = attacker.GlobalPosition;
+		projectile.GlobalPosition = attacker.WeaponContactPosition;
+		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
+		if (attacker.MotionProfile == "bow-draw" || attacker.MotionProfile == "crossbow") projectile.SetWeaponVisual(BaseWeaponKind.Arrows);
+		else if (attacker.MotionProfile == "ballista") projectile.SetWeaponVisual(BaseWeaponKind.Ballista);
 
 		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 420f;
 		var color = attacker.Tint.Lightened(0.25f);
+		var shotTeam = attacker.Team;
+		var shotName = attacker.UnitName;
+		var shotTint = attacker.Tint;
+		var shotSplash = attacker.AttackSplashRadius;
+		var shotLifetime = attacker.CombatLifetime;
 
 		// Arrow Ward: reduce incoming projectile damage against player units
 		var projectileDamage = attacker.CurrentAttackDamage;
@@ -3545,13 +3580,13 @@ public partial class BattleController : Node2D
 				color,
 				_ =>
 				{
-					ApplySplashDamage(attacker.Team, target.GlobalPosition, projectileDamage, attacker.AttackSplashRadius, attacker.Tint, attacker.UnitName);
+					ApplySplashDamage(shotTeam, target.GlobalPosition, projectileDamage, shotSplash, shotTint, shotName);
 					return 0f;
 				},
 				() => !IsInstanceValid(target) || target.IsDead,
 				(position, _, hitColor) =>
 				{
-					SpawnEffect(position, hitColor.Lightened(0.14f), 8f, attacker.AttackSplashRadius, 0.2f, false);
+					SpawnEffect(position, hitColor.Lightened(0.14f), 8f, shotSplash, 0.2f, false);
 					SpawnFloatText(position + new Vector2(0f, -16f), "BLAST", hitColor.Lightened(0.25f), 0.48f);
 				});
 		}
@@ -3572,7 +3607,7 @@ public partial class BattleController : Node2D
 					{
 						TrackDamageDealt(attackerName, dmg);
 						SpawnDamageFeedback(pos, dmg, hitColor);
-						ApplyImpactKick(attacker, interceptor, dmg, true);
+						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, interceptor, dmg, true);
 						SpawnFloatText(pos + new Vector2(0f, -24f), "BLOCKED", new Color("adb5bd"), 0.44f);
 					});
 			}
@@ -3590,7 +3625,7 @@ public partial class BattleController : Node2D
 					{
 						TrackDamageDealt(attackerName2, dmg);
 						SpawnDamageFeedback(pos, dmg, hitColor);
-						ApplyImpactKick(attacker, target, dmg, true);
+						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, target, dmg, true);
 					});
 			}
 		}
@@ -3607,7 +3642,8 @@ public partial class BattleController : Node2D
 
 		var targetActor = _activeEndlessContactActor;
 		var projectile = ProjectilePool.Acquire();
-		projectile.GlobalPosition = attacker.GlobalPosition;
+		projectile.GlobalPosition = attacker.WeaponContactPosition;
+		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 400f;
 		var color = attacker.Tint.Lightened(0.18f);
 		projectile.Setup(
@@ -3647,7 +3683,8 @@ public partial class BattleController : Node2D
 
 		var targetActor = _activeEndlessContactActor;
 		var projectile = ProjectilePool.Acquire();
-		projectile.GlobalPosition = unit.GlobalPosition;
+		projectile.GlobalPosition = unit.WeaponContactPosition;
+		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		var speed = unit.ProjectileSpeed > 0f ? unit.ProjectileSpeed : 420f;
 		var color = unit.Tint.Lightened(0.24f);
 		projectile.Setup(
@@ -3730,6 +3767,13 @@ public partial class BattleController : Node2D
 		{
 			return;
 		}
+		attacker.ScheduleAttackImpact(() => ResolveAttackBase(attacker));
+	}
+
+	private void ResolveAttackBase(Unit attacker)
+	{
+		if (attacker.UsesProjectile)
+			ShowReleaseTraceTo(attacker,(attacker.Team==Team.Player?EnemyBaseCorePosition:PlayerBaseCorePosition)+new Vector2(0,-24));
 
 		if (attacker.Team == Team.Player)
 		{
@@ -3780,16 +3824,20 @@ public partial class BattleController : Node2D
 		{
 			if (unit.TryBeginAttackPosition(PlayerBaseCorePosition, supportRadius))
 			{
-				var repaired = Mathf.Min(unit.BusRepairAmount, _playerBaseMaxHealth - _playerBaseHealth);
-				if (repaired > 0.05f)
+				unit.ScheduleAttackImpact(() =>
 				{
-					_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repaired);
-					_playerBaseFlashTimer = 0.12f;
-					AudioDirector.Instance?.PlayBusRepair(repaired);
-					SpawnEffect(PlayerBaseCorePosition, unit.Tint.Lightened(0.12f), 7f, 22f, 0.18f);
-					SpawnFloatText(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
-					SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "REPAIR", unit.Tint.Lightened(0.18f), 0.42f);
-				}
+					if (_playerBaseHealth <= 0) return;
+					var repaired = Mathf.Min(unit.BusRepairAmount, _playerBaseMaxHealth - _playerBaseHealth);
+					if (repaired > 0.05f)
+					{
+						_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repaired);
+						_playerBaseFlashTimer = 0.12f;
+						AudioDirector.Instance?.PlayBusRepair(repaired);
+						SpawnEffect(PlayerBaseCorePosition, unit.Tint.Lightened(0.12f), 7f, 22f, 0.18f);
+						SpawnFloatText(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
+						SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "REPAIR", unit.Tint.Lightened(0.18f), 0.42f);
+					}
+				});
 			}
 
 			return;
@@ -3837,7 +3885,8 @@ public partial class BattleController : Node2D
 			unit.TickAttackTimer(delta);
 			unit.TickSpecialTimer(delta);
 			unit.TickActiveAbilityTimer(delta);
-			if (TryTriggerEnemySpecialAbility(unit))
+			if (unit.IsDead || unit.IsAttackCommitted) continue;
+			if (CanUseCampaignEnemySpecial(unit) && TryTriggerEnemySpecialAbility(unit))
 			{
 				continue;
 			}
@@ -3846,6 +3895,7 @@ public partial class BattleController : Node2D
 			{
 				TryTriggerPlayerActiveAbility(unit, target);
 			}
+			if (unit.IsAttackCommitted) continue;
 			var prioritizeContact = ShouldPrioritizeEndlessContact(unit, target);
 			var supportContact = ShouldSupportEndlessContact(unit, target);
 			var prioritizeObjectiveRaid = ShouldPrioritizeObjectiveRaid(unit, target);
@@ -3856,7 +3906,7 @@ public partial class BattleController : Node2D
 				{
 					if (unit.TryBeginAttack(target))
 					{
-						SpawnProjectile(unit, target);
+						QueueUnitStrike(unit, target);
 					}
 					else
 					{
@@ -3867,22 +3917,13 @@ public partial class BattleController : Node2D
 				{
 					if (unit.TryBeginAttack(target))
 					{
-						if (unit.AttackSplashRadius > 0.05f)
-						{
-							ApplySplashDamage(unit.Team, target.Position, unit.CurrentAttackDamage, unit.AttackSplashRadius, unit.Tint, unit.UnitName);
-							SpawnFloatText(target.Position + new Vector2(0f, -16f), "BLAST", unit.Tint.Lightened(0.22f), 0.46f);
-						}
-						else
-						{
-							var appliedDamage = target.TakeDamage(unit.CurrentAttackDamage, unit.UnitName);
-							TrackDamageDealt(unit, appliedDamage);
-							SpawnDamageFeedback(target.Position, appliedDamage, unit.Tint);
-							ApplyImpactKick(unit, target, appliedDamage, false);
-							ApplyDamageReflect(target, unit, appliedDamage);
-							ApplyMirrorPressureReflect(unit, target, appliedDamage);
-						}
+						QueueUnitStrike(unit, target);
 					}
 				}
+			}
+			else if (TryHoldCampaignFieldPoint(unit, target))
+			{
+				// Hold the current lane; nearby combat always takes priority.
 			}
 			else if (prioritizeContact)
 			{
@@ -4197,8 +4238,9 @@ public partial class BattleController : Node2D
 			Mathf.Clamp(nextPosition.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
 	}
 
-	private void ApplyImpactKick(Unit attacker, Unit target, float appliedDamage, bool ranged)
+	private void ApplyImpactReaction(Unit attacker, Unit target, float appliedDamage, bool ranged)
 	{
+		ShowWeaponContact(attacker,target,appliedDamage,ranged);
 		if (appliedDamage <= 0.05f ||
 			!IsInstanceValid(attacker) ||
 			!IsInstanceValid(target) ||
@@ -4208,33 +4250,11 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var direction = target.Position - attacker.Position;
-		if (direction.LengthSquared() <= 0.0001f)
-		{
-			direction = attacker.Team == Team.Player ? Vector2.Right : Vector2.Left;
-		}
-		else
-		{
-			direction = direction.Normalized();
-		}
-
+		// Routine hits must not shove a shared target out of another swing's
+		// contact range. Deliberate ability/hazard pushes remain separate.
 		var resistance = ResolveImpactResistance(target);
-		var kickStrength = Mathf.Clamp(
-			(ranged ? 0.68f : 1f) * (2.5f + (appliedDamage * 0.05f)) * resistance,
-			ranged ? 1.2f : 2f,
-			ranged ? 4.8f : 7.8f);
-		var targetKick = new Vector2(direction.X * kickStrength, direction.Y * kickStrength * 0.42f);
-		OffsetUnitWithinBattlefield(target, targetKick);
 		ApplyImpactStagger(attacker, target, appliedDamage, resistance, ranged);
-		TriggerImpactShake(appliedDamage, target.VisualClass, ranged);
-
-		if (!ranged)
-		{
-			var attackerKick = new Vector2(-direction.X * kickStrength * 0.26f, -direction.Y * kickStrength * 0.12f);
-			OffsetUnitWithinBattlefield(attacker, attackerKick);
-			SpawnEffect(target.Position, attacker.Tint.Lightened(0.18f), 6f, 18f + (appliedDamage * 0.22f), 0.12f, false);
-			BattleParticles.SpawnImpactSparks(this, target.Position, attacker.Tint, appliedDamage * 1.2f);
-		}
+		TriggerImpactShake(appliedDamage, ranged);
 	}
 
 	private static float ResolveImpactResistance(Unit target)
@@ -4265,25 +4285,15 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void TriggerImpactShake(float appliedDamage, string targetVisualClass, bool ranged)
+	private void TriggerImpactShake(float appliedDamage, bool ranged)
 	{
-		if (appliedDamage <= 0.5f || IsReducedMotionEnabled())
+		if (appliedDamage < 24f || IsReducedMotionEnabled())
 		{
 			return;
 		}
 
-		var strength = Mathf.Clamp(
-			appliedDamage * (ranged ? 0.16f : 0.24f),
-			ranged ? 0.9f : 1.4f,
-			ranged ? 2.8f : 4.4f);
-		if (targetVisualClass == "boss")
-		{
-			strength *= 1.22f;
-		}
-		else if (targetVisualClass is "crusher" or "brute")
-		{
-			strength *= 1.1f;
-		}
+		// A restrained accent for heavier blows, not a screen shake per sword tap.
+		var strength = Mathf.Clamp((appliedDamage-20f) * (ranged?.01f:.018f), 0, ranged?.35f:.65f);
 
 		_impactShakeStrength = Mathf.Max(_impactShakeStrength, strength);
 		_impactShakeTimer = Mathf.Max(_impactShakeTimer, ImpactShakeDurationSeconds * (ranged ? 0.82f : 1f));
@@ -4308,6 +4318,17 @@ public partial class BattleController : Node2D
 			SpawnFloatText(unit.Position + new Vector2(0f, -44f), unit.AbilityQuote, unit.Tint.Lightened(0.35f), 1.2f);
 		}
 
+		unit.FaceCombatTarget(target);
+		var targetLife = target.CombatLifetime;
+		unit.ScheduleAttackImpact(() =>
+		{
+			if (!IsInstanceValid(target) || target.CombatLifetime != targetLife) return;
+			ResolvePlayerActiveAbility(unit,target);
+		});
+	}
+
+	private void ResolvePlayerActiveAbility(Unit unit, Unit target)
+	{
 		switch (unit.ActiveAbilityId)
 		{
 			case "swordsman_cleave":
@@ -4418,10 +4439,12 @@ public partial class BattleController : Node2D
 
 	private void ActiveAbilityPiercingThrust(Unit unit, Unit target)
 	{
+		if (!unit.CanResolveContact(target,target.CombatLifetime,false)) return;
 		// Ignore defense: scale raw damage to cancel the target's DamageTakenScale
 		var rawDamage = unit.CurrentAttackDamage * 2f;
 		var compensated = rawDamage / Mathf.Max(0.05f, target.DamageTakenScale);
 		var applied = target.TakeDamage(compensated, unit.UnitName);
+		ShowWeaponContact(unit,target,applied,false);
 		SpawnDamageFeedback(target.Position, applied, unit.Tint);
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "THRUST", unit.Tint.Lightened(0.22f), 0.54f);
 	}
@@ -4449,6 +4472,8 @@ public partial class BattleController : Node2D
 		{
 			var damage = unit.CurrentAttackDamage * 3f;
 			var applied = farthest.TakeDamage(damage, unit.UnitName);
+			ShowReleaseTrace(unit,farthest);
+			ShowWeaponContact(unit,farthest,applied,true);
 			SpawnDamageFeedback(farthest.Position, applied, unit.Tint);
 			SpawnFloatText(unit.Position + new Vector2(0f, -32f), "SNIPE", unit.Tint.Lightened(0.22f), 0.54f);
 		}
@@ -4544,6 +4569,8 @@ public partial class BattleController : Node2D
 			}
 
 			var applied = enemy.TakeDamage(damagePerTarget, unit.UnitName);
+			ShowReleaseTrace(unit,enemy);
+			ShowWeaponContact(unit,enemy,applied,true);
 			SpawnDamageFeedback(enemy.Position, applied, unit.Tint);
 			hit++;
 		}
@@ -4566,10 +4593,18 @@ public partial class BattleController : Node2D
 
 	private void ActiveAbilityVolatileFlask(Unit unit, Unit target)
 	{
+		if (!unit.CanResolveContact(target,target.CombatLifetime,true)) return;
 		var damage = unit.CurrentAttackDamage * 2f;
 		var radius = Mathf.Max(48f, unit.AttackSplashRadius > 0.05f ? unit.AttackSplashRadius * 1.5f : 48f);
-		ApplySplashDamage(unit.Team, target.Position, damage, radius, unit.Tint, unit.UnitName);
-		SpawnEffect(target.Position, unit.Tint.Lightened(0.14f), 10f, radius, 0.26f, false);
+		var team=unit.Team; var tint=unit.Tint; var name=unit.UnitName;
+		var projectile=ProjectilePool.Acquire();
+		projectile.GlobalPosition=unit.WeaponContactPosition;
+		projectile.ShouldPause=()=>_battlePaused || _endlessCheckpointActive || _battleEnded;
+		projectile.Setup(target,damage,unit.ProjectileSpeed>0?unit.ProjectileSpeed:360,tint,
+			d=>{ ApplySplashDamage(team,target.Position,d,radius,tint,name); return d; },
+			()=>!IsInstanceValid(target) || target.IsDead,
+			(pos,_,color)=>SpawnEffect(pos,color.Lightened(.14f),10,radius,.26f,false));
+		AddChild(projectile);
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "VOLATILE FLASK", unit.Tint.Lightened(0.22f), 0.56f);
 	}
 
@@ -4730,7 +4765,7 @@ public partial class BattleController : Node2D
 			for (var i = 0; i < boss.SpecialSpawnCount; i++)
 			{
 				if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
-				if (!CanAddBossReinforcement(boss, boss.SpecialSpawnUnitId)) break;
+				if (!CanAddBossReinforcement(boss, boss.SpecialSpawnUnitId) || !CanAddCampaignPeriodicReinforcement(boss)) break;
 				if (!_spawnDirector.TryBuildEnemyStats(boss.SpecialSpawnUnitId, out var escortStats))
 				{
 					break;
@@ -4743,6 +4778,7 @@ public partial class BattleController : Node2D
 						BattlefieldTop + SpawnVerticalPadding,
 						BattlefieldBottom - SpawnVerticalPadding));
 				SpawnEnemyUnit(escortStats, escortPosition);
+				RecordCampaignPeriodicReinforcement(boss);
 				escortsSpawned++;
 			}
 		}
@@ -4785,7 +4821,8 @@ public partial class BattleController : Node2D
 			for (var i = 0; i < jammer.SpecialSpawnCount; i++)
 			{
 				if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
-			if (!_spawnDirector.TryBuildEnemyStats(jammer.SpecialSpawnUnitId, out var escortStats))
+				if (!CanAddCampaignPeriodicReinforcement(jammer)) break;
+				if (!_spawnDirector.TryBuildEnemyStats(jammer.SpecialSpawnUnitId, out var escortStats))
 				{
 					break;
 				}
@@ -4797,6 +4834,7 @@ public partial class BattleController : Node2D
 						BattlefieldTop + SpawnVerticalPadding,
 						BattlefieldBottom - SpawnVerticalPadding));
 				SpawnEnemyUnit(escortStats, escortPosition);
+				RecordCampaignPeriodicReinforcement(jammer);
 				escortsSpawned++;
 			}
 		}
@@ -4834,7 +4872,7 @@ public partial class BattleController : Node2D
 		for (var i = 0; i < lich.SpecialSpawnCount; i++)
 		{
 			if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
-			if (!CanAddBossReinforcement(lich, lich.SpecialSpawnUnitId)) break;
+			if (!CanAddBossReinforcement(lich, lich.SpecialSpawnUnitId) || !CanAddCampaignPeriodicReinforcement(lich)) break;
 			if (!_spawnDirector.TryBuildEnemyStats(lich.SpecialSpawnUnitId, out var raisedStats))
 			{
 				break;
@@ -4847,6 +4885,7 @@ public partial class BattleController : Node2D
 					BattlefieldTop + SpawnVerticalPadding,
 					BattlefieldBottom - SpawnVerticalPadding));
 			SpawnEnemyUnit(raisedStats, spawnPosition);
+			RecordCampaignPeriodicReinforcement(lich);
 			spawned++;
 		}
 
@@ -8429,7 +8468,7 @@ public partial class BattleController : Node2D
 		var tickDamage = dps * delta;
 		foreach (var unit in _units)
 		{
-			if (unit.IsDead || unit.Team != Team.Player || !CursedGroundArea.HasPoint(unit.Position))
+			if (unit.IsDead || unit.Team != Team.Player || !CursedGroundAreas().Any(area => area.HasPoint(unit.Position)))
 			{
 				continue;
 			}
@@ -8484,32 +8523,35 @@ public partial class BattleController : Node2D
 		{
 			if (unit.TryBeginAttackPosition(contactPosition, supportRadius))
 			{
-				var repairAmount = ResolvePlayerContactSupportRepair(unit);
-				var progressBoost = ResolvePlayerContactSupportProgress(unit);
-				var supportLabel = ResolvePlayerContactSupportLabel(unit);
-				if (unit.UsesProjectile)
+				var actor = _activeEndlessContactActor;
+				unit.ScheduleAttackImpact(() =>
 				{
-					SpawnContactSupportProjectile(unit, repairAmount, progressBoost, supportLabel);
-				}
-				else
-				{
-					var repaired = _activeEndlessContactActor.Repair(repairAmount);
-					_activeEndlessContact.Progress = Mathf.Min(
-						_activeEndlessContact.Definition.TargetSeconds,
-						_activeEndlessContact.Progress + progressBoost);
-					RegisterEndlessContactSupport(repaired, progressBoost);
-
-					if (repaired > 0.05f)
+					if (!CanInteractWithEndlessContactActor(actor)) return;
+					var repairAmount = ResolvePlayerContactSupportRepair(unit);
+					var progressBoost = ResolvePlayerContactSupportProgress(unit);
+					var supportLabel = ResolvePlayerContactSupportLabel(unit);
+					if (unit.UsesProjectile)
 					{
-						SpawnEffect(contactPosition, unit.Tint.Lightened(0.15f), 6f, 18f + (repaired * 0.2f), 0.16f, false);
+						SpawnContactSupportProjectile(unit, repairAmount, progressBoost, supportLabel);
 					}
-
-					SpawnFloatText(
-						contactPosition + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
-						supportLabel,
-						unit.Tint.Lightened(0.28f),
-						0.48f);
-				}
+					else
+					{
+						var repaired = actor.Repair(repairAmount);
+						_activeEndlessContact.Progress = Mathf.Min(
+							_activeEndlessContact.Definition.TargetSeconds,
+							_activeEndlessContact.Progress + progressBoost);
+						RegisterEndlessContactSupport(repaired, progressBoost);
+						if (repaired > 0.05f)
+						{
+							SpawnEffect(contactPosition, unit.Tint.Lightened(0.15f), 6f, 18f + (repaired * 0.2f), 0.16f, false);
+						}
+						SpawnFloatText(
+							contactPosition + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
+							supportLabel,
+							unit.Tint.Lightened(0.28f),
+							0.48f);
+					}
+				});
 			}
 
 			return;
@@ -8594,20 +8636,25 @@ public partial class BattleController : Node2D
 		{
 			if (unit.TryBeginAttackPosition(contactPosition, contactRadius))
 			{
-				if (unit.UsesProjectile)
+				var actor = _activeEndlessContactActor;
+				unit.ScheduleAttackImpact(() =>
 				{
-					SpawnContactPressureProjectile(unit);
-				}
-				else
-				{
-					var appliedDamage = _activeEndlessContactActor.ApplyPressureDamage(ResolveEnemyContactAttackDamage(unit));
-					RegisterEndlessContactPressure(appliedDamage);
-					if (appliedDamage > 0.05f)
+					if (!CanInteractWithEndlessContactActor(actor)) return;
+					if (unit.UsesProjectile)
 					{
-						SpawnEffect(contactPosition, unit.Tint, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
-						SpawnFloatText(contactPosition + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", unit.Tint.Lightened(0.22f), 0.46f);
+						SpawnContactPressureProjectile(unit);
 					}
-				}
+					else
+					{
+						var appliedDamage = actor.ApplyPressureDamage(ResolveEnemyContactAttackDamage(unit));
+						RegisterEndlessContactPressure(appliedDamage);
+						if (appliedDamage > 0.05f)
+						{
+							SpawnEffect(contactPosition, unit.Tint, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
+							SpawnFloatText(contactPosition + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", unit.Tint.Lightened(0.22f), 0.46f);
+						}
+					}
+				});
 			}
 
 			return;
@@ -8825,6 +8872,7 @@ public partial class BattleController : Node2D
 			}
 
 			var appliedDamage = candidate.TakeDamage(damage, attackerName);
+			candidate.ReactToContact(Mathf.Sign(candidate.Position.X-center.X),appliedDamage,ResolveImpactResistance(candidate));
 			if (attackerName != null)
 			{
 				TrackDamageDealt(attackerName, appliedDamage);
@@ -9034,6 +9082,7 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
 			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, deadUnit.VisualClass == "boss");
+			deadUnit.SpawnDeathVisual(this);
 			_pendingBossPhases.Remove(deadUnit);
 			_campaignBossPhaseTriggeredUnits.Remove(deadUnit);
 			foreach (var attacker in _targetLocks.Where(pair => pair.Value == deadUnit).Select(pair => pair.Key).ToArray())
@@ -9687,7 +9736,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		SpawnEffect(position, color.Lightened(0.12f), 4f, 18f + (damage * 0.18f), 0.14f, false);
+		SpawnEffect(position, color.Lightened(0.12f), 2f, Mathf.Clamp(6f + damage * .04f, 6f, 10f), .11f, false);
 		SpawnFloatText(
 			position + new Vector2(_rng.RandfRange(-6f, 6f), -8f),
 			$"-{Mathf.RoundToInt(damage)}",
@@ -9699,6 +9748,7 @@ public partial class BattleController : Node2D
 	private void SpawnFloatText(Vector2 position, string text, Color color, float lifetime = 0.5f)
 	{
 		var floatText = new BattleFloatText();
+		if (_mobileCamera != null) floatText.PresentationScale = () => MobilePresentation.HudScale / _mobileCamera.Zoom.X;
 		floatText.Position = position;
 		floatText.Setup(
 			text,
@@ -10166,12 +10216,13 @@ public partial class BattleController : Node2D
 		return dangerColor.Lerp(Colors.White, flashStrength * 0.5f);
 	}
 
-	private void DrawBaseHealthMeter(Vector2 center, float width, float healthRatio, Color frameColor, Color fillColor)
+	private void DrawBaseHealthMeter(Vector2 center, float width, float healthRatio, bool friendly)
 	{
+		var highContrast = GameState.Instance?.HighContrast ?? false;
 		var origin = center - new Vector2(width * 0.5f, 0f);
-		DrawRect(new Rect2(origin, new Vector2(width, 8f)), new Color(0f, 0f, 0f, 0.55f), true);
-		DrawRect(new Rect2(origin + new Vector2(1f, 1f), new Vector2((width - 2f) * healthRatio, 6f)), fillColor, true);
-		DrawRect(new Rect2(origin, new Vector2(width, 8f)), frameColor, false, 2f);
+		HealthBarPainter.Draw(this, new Rect2(origin, new Vector2(width, highContrast ? 18f : 16f)), healthRatio,
+			friendly ? _playerHealthBarMotion.TrailRatio : _enemyHealthBarMotion.TrailRatio,
+			friendly, HealthBarKind.Base, highContrast);
 	}
 
 	private void DrawCriticalHealthVignette()
@@ -10187,11 +10238,11 @@ public partial class BattleController : Node2D
 		var alpha = intensity * Mathf.Lerp(0.06f, 0.18f, pulse);
 		var vignetteColor = new Color(0.8f, 0.1f, 0.05f, alpha);
 		const float edgeWidth = 48f;
-
-		DrawRect(new Rect2(0f, 0f, edgeWidth, 720f), vignetteColor, true);
-		DrawRect(new Rect2(1280f - edgeWidth, 0f, edgeWidth, 720f), vignetteColor, true);
-		DrawRect(new Rect2(0f, 0f, 1280f, edgeWidth * 0.6f), vignetteColor, true);
-		DrawRect(new Rect2(0f, 720f - (edgeWidth * 0.6f), 1280f, edgeWidth * 0.6f), vignetteColor, true);
+		var viewport = GetViewportRect().Size;
+		DrawRect(new Rect2(0f, 0f, edgeWidth, viewport.Y), vignetteColor, true);
+		DrawRect(new Rect2(viewport.X - edgeWidth, 0f, edgeWidth, viewport.Y), vignetteColor, true);
+		DrawRect(new Rect2(0f, 0f, viewport.X, edgeWidth * 0.6f), vignetteColor, true);
+		DrawRect(new Rect2(0f, viewport.Y - (edgeWidth * 0.6f), viewport.X, edgeWidth * 0.6f), vignetteColor, true);
 	}
 
 	private void DrawDamageSmoke(Vector2 origin, float healthRatio, Color sourceColor)
@@ -10859,7 +10910,7 @@ public partial class BattleController : Node2D
 		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
 		var weatherSummary = WeatherCatalog.BuildStageSummary(_stageData);
 		var hazardSummary = BuildStageHazardIntelText();
-		var missionSummary = BuildStageMissionIntelText();
+		var missionSummary = BuildCampaignFieldIntelText() + BuildStageMissionIntelText();
 		var challengeHeaderText = IsChallengeMode
 			? $"{BuildChallengeMutatorText()}\n{BuildOnlineRoomRaceText()}{BuildChallengeGhostText()}\n"
 			: "";

@@ -37,7 +37,10 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "First rush",
@@ -48,7 +51,10 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.527,
+          "AdvanceTriggerXRatio": 0.237
         },
         {
           "Label": "Wayside shrine spill",
@@ -59,7 +65,10 @@
               "UnitId": "enemy_walker",
               "Count": 5
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.763,
+          "AdvanceTriggerXRatio": 0.473
         },
         {
           "Label": "Route cleanup",
@@ -70,9 +79,25 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 2.5,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 2,
@@ -128,7 +153,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Bridge break",
@@ -143,7 +171,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.527,
+          "AdvanceTriggerXRatio": 0.237
         },
         {
           "Label": "Raised-road patrol",
@@ -154,7 +185,10 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.763,
+          "AdvanceTriggerXRatio": 0.473
         },
         {
           "Label": "Runner pursuit",
@@ -169,9 +203,25 @@
               "UnitId": "enemy_walker",
               "Count": 4
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 2.5,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 3,
@@ -227,7 +277,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Lantern square hold",
@@ -246,7 +299,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Stair breach",
@@ -265,7 +321,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Heavy guard",
@@ -280,7 +339,10 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Caster rearguard",
@@ -299,9 +361,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 2.5,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 4,
@@ -357,7 +435,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Tunnel pressure",
@@ -376,7 +457,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Citadel spill",
@@ -391,7 +475,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Pressure line",
@@ -406,7 +493,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Grave Lord arrival",
@@ -421,7 +511,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Final spill",
@@ -436,9 +529,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 2.5,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 5,
@@ -504,7 +613,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Crateyard flank",
@@ -523,7 +635,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Winch jam",
@@ -542,7 +657,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Pier pressure",
@@ -565,7 +683,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Docks collapse",
@@ -584,9 +705,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 6,
@@ -649,7 +786,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Flooded bridge",
@@ -668,7 +808,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Blight spray",
@@ -683,7 +826,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Quayside crush",
@@ -706,7 +852,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Reedline swarm",
@@ -725,9 +874,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 7,
@@ -790,7 +955,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Winch collapse",
@@ -805,7 +973,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Hull break",
@@ -832,7 +1003,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Steel rain",
@@ -855,7 +1029,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Gauntlet close",
@@ -870,9 +1047,25 @@
               "UnitId": "enemy_crusher",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 8,
@@ -922,7 +1115,7 @@
         },
         {
           "Type": "clear_within",
-          "Value": 105.0
+          "Value": 165
         },
         {
           "Type": "enemy_defeats",
@@ -943,7 +1136,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Shipbreak pressure",
@@ -966,7 +1162,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Deck flood",
@@ -993,7 +1192,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Flagship breach",
@@ -1008,7 +1210,10 @@
               "UnitId": "enemy_crusher",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Tidecaller on deck",
@@ -1027,7 +1232,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last stand",
@@ -1054,9 +1262,25 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 9,
@@ -1089,12 +1313,12 @@
         {
           "Type": "rail_surge",
           "Label": "Rail Surge",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.58,
           "Radius": 66.0,
           "Interval": 9.5,
           "StartTime": 9.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 15.0,
           "ColorHex": "f8961e"
         }
@@ -1126,7 +1350,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Spur break",
@@ -1149,7 +1376,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Ore wagon crush",
@@ -1168,7 +1398,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Rail pit pressure",
@@ -1191,7 +1424,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Ore cart stampede",
@@ -1214,9 +1450,25 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 10,
@@ -1254,7 +1506,7 @@
           "Radius": 72.0,
           "Interval": 8.8,
           "StartTime": 8.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 16.0,
           "ColorHex": "f3722c"
         },
@@ -1266,7 +1518,7 @@
           "Radius": 60.0,
           "Interval": 10.5,
           "StartTime": 13.0,
-          "WarningDuration": 1.6,
+          "WarningDuration": 2,
           "Damage": 18.0,
           "ColorHex": "f9844a"
         }
@@ -1308,7 +1560,10 @@
               "UnitId": "enemy_bloater",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Vent spitters",
@@ -1327,7 +1582,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Furnace crews",
@@ -1346,7 +1604,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Breach fans",
@@ -1373,7 +1634,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Smelter surge",
@@ -1396,7 +1660,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Veteran rearguard",
@@ -1407,9 +1674,25 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 11,
@@ -1442,12 +1725,12 @@
         {
           "Type": "cinder_blast",
           "Label": "Cinder Blast",
-          "XRatio": 0.43,
+          "XRatio": 0.6,
           "YRatio": 0.48,
           "Radius": 74.0,
           "Interval": 8.6,
           "StartTime": 7.5,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 17.0,
           "ColorHex": "f94144"
         },
@@ -1459,7 +1742,7 @@
           "Radius": 62.0,
           "Interval": 11.0,
           "StartTime": 12.5,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 19.0,
           "ColorHex": "f3722c"
         }
@@ -1501,7 +1784,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Chain haul",
@@ -1524,7 +1810,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Cinder screen",
@@ -1547,7 +1836,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Crucible hold",
@@ -1562,7 +1854,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Heat spike",
@@ -1585,7 +1880,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Causeway shove",
@@ -1608,9 +1906,25 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 12,
@@ -1643,7 +1957,7 @@
         {
           "Type": "furnace_burst",
           "Label": "Furnace Burst",
-          "XRatio": 0.36,
+          "XRatio": 0.53,
           "YRatio": 0.62,
           "Radius": 80.0,
           "Interval": 10.0,
@@ -1706,7 +2020,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Burner screen",
@@ -1733,7 +2050,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Anvil hall",
@@ -1752,7 +2072,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Molten break",
@@ -1775,7 +2098,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Iron Warden ignition",
@@ -1798,7 +2124,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Furnace close",
@@ -1821,9 +2150,25 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 13,
@@ -1856,12 +2201,12 @@
         {
           "Type": "decon_sweep",
           "Label": "Purge Sweep",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.44,
           "Radius": 70.0,
           "Interval": 9.0,
           "StartTime": 7.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 18.0,
           "ColorHex": "95d5b2"
         },
@@ -1873,7 +2218,7 @@
           "Radius": 62.0,
           "Interval": 11.0,
           "StartTime": 12.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "d8f3dc"
         }
@@ -1919,7 +2264,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Wardbreaker breach",
@@ -1938,7 +2286,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Purge bell",
@@ -1961,7 +2312,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Leech-basin spill",
@@ -1988,7 +2342,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Checkpoint lock",
@@ -2011,7 +2368,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Sanctum fallback",
@@ -2038,9 +2398,25 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 14,
@@ -2078,7 +2454,7 @@
           "Radius": 76.0,
           "Interval": 8.5,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 19.0,
           "ColorHex": "a7f3d0"
         },
@@ -2090,7 +2466,7 @@
           "Radius": 64.0,
           "Interval": 9.5,
           "StartTime": 13.0,
-          "WarningDuration": 1.6,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "34d399"
         },
@@ -2102,7 +2478,7 @@
           "Radius": 58.0,
           "Interval": 12.0,
           "StartTime": 20.0,
-          "WarningDuration": 1.5,
+          "WarningDuration": 2,
           "Damage": 18.0,
           "ColorHex": "ecfccb"
         }
@@ -2144,7 +2520,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Wardfoam line",
@@ -2163,7 +2542,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Backdoor peel",
@@ -2178,7 +2560,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Cloister crush",
@@ -2197,7 +2582,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Washout surge",
@@ -2220,7 +2608,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Final purge",
@@ -2247,9 +2638,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 15,
@@ -2287,7 +2694,7 @@
           "Radius": 60.0,
           "Interval": 10.0,
           "StartTime": 9.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 19.0,
           "ColorHex": "99f6e4"
         },
@@ -2299,7 +2706,7 @@
           "Radius": 72.0,
           "Interval": 11.5,
           "StartTime": 16.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "bef264"
         }
@@ -2345,7 +2752,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Reliquary loose",
@@ -2368,7 +2778,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.408,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Leech hall collapse",
@@ -2391,7 +2804,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.527,
+          "AdvanceTriggerXRatio": 0.237
         },
         {
           "Label": "Lockseal lane",
@@ -2414,7 +2830,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Containment crack",
@@ -2441,7 +2860,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.763,
+          "AdvanceTriggerXRatio": 0.473
         },
         {
           "Label": "Leechcourt purge",
@@ -2468,7 +2890,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.882,
+          "AdvanceTriggerXRatio": 0.592
         },
         {
           "Label": "Veteran rearguard",
@@ -2479,9 +2904,25 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 16,
@@ -2520,7 +2961,7 @@
           "Radius": 84.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "22c55e"
         },
@@ -2532,19 +2973,19 @@
           "Radius": 66.0,
           "Interval": 10.2,
           "StartTime": 14.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "d9f99d"
         },
         {
           "Type": "blacksite_sweep",
           "Label": "Vault Sweep",
-          "XRatio": 0.5,
+          "XRatio": 0.67,
           "YRatio": 0.26,
           "Radius": 72.0,
           "Interval": 12.5,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "fef08a"
         }
@@ -2594,7 +3035,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Purge collapse",
@@ -2613,7 +3057,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Bell pack",
@@ -2636,7 +3083,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Vault breach",
@@ -2659,7 +3109,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Plague Archon breach",
@@ -2682,7 +3135,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Purge remnant",
@@ -2709,9 +3165,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 17,
@@ -2750,7 +3222,7 @@
           "Radius": 70.0,
           "Interval": 10.2,
           "StartTime": 11.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 18.0,
           "ColorHex": "bfdbfe"
         }
@@ -2788,7 +3260,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Goat path breach",
@@ -2807,7 +3282,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Rime horn",
@@ -2826,7 +3304,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Snowslide push",
@@ -2853,7 +3334,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Ascent hold",
@@ -2872,9 +3356,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 18,
@@ -2908,12 +3408,12 @@
         {
           "Type": "icefall",
           "Label": "Icefall",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.62,
           "Radius": 72.0,
           "Interval": 9.0,
           "StartTime": 8.5,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "c7d2fe"
         },
@@ -2925,7 +3425,7 @@
           "Radius": 64.0,
           "Interval": 11.4,
           "StartTime": 14.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 19.0,
           "ColorHex": "e0f2fe"
         }
@@ -2967,7 +3467,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Snow horn",
@@ -2986,7 +3489,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Axle raid",
@@ -3005,7 +3511,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Frozen spill",
@@ -3028,7 +3537,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Ridge collapse",
@@ -3059,9 +3571,25 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 19,
@@ -3099,7 +3627,7 @@
           "Radius": 82.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "e2e8f0"
         },
@@ -3111,7 +3639,7 @@
           "Radius": 66.0,
           "Interval": 10.8,
           "StartTime": 14.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "cbd5e1"
         }
@@ -3145,11 +3673,11 @@
           "Summary": "Hold the shrine dais long enough to silence the dead bells before the pass collapses again.",
           "RewardSummary": "Reward: +12 courage and cleaner deck recovery once the bells go quiet.",
           "PenaltySummary": "Risk: lose courage and card tempo if the shrine falls.",
-          "XRatio": 0.58,
+          "XRatio": 0.53,
           "YRatio": 0.48,
           "Radius": 80.0,
           "TargetSeconds": 7.5,
-          "StartTime": 24.0,
+          "StartTime": 18,
           "ColorHex": "fefae0"
         }
       ],
@@ -3171,7 +3699,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Bell drift",
@@ -3190,7 +3721,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Drift breach",
@@ -3213,7 +3747,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Avalanche wake",
@@ -3236,7 +3773,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Ridge warband",
@@ -3263,7 +3803,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Shrine overrun",
@@ -3290,9 +3833,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 20,
@@ -3330,19 +3889,19 @@
           "Radius": 70.0,
           "Interval": 9.4,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "fde68a"
         },
         {
           "Type": "icefall",
           "Label": "Icefall",
-          "XRatio": 0.38,
+          "XRatio": 0.55,
           "YRatio": 0.68,
           "Radius": 72.0,
           "Interval": 11.2,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "bfdbfe"
         }
@@ -3392,7 +3951,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Ladder rush",
@@ -3411,7 +3973,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.408,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Murder-slit blight",
@@ -3430,7 +3995,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.527,
+          "AdvanceTriggerXRatio": 0.237
         },
         {
           "Label": "Fort crush",
@@ -3457,7 +4025,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Watch horn",
@@ -3484,7 +4055,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.763,
+          "AdvanceTriggerXRatio": 0.473
         },
         {
           "Label": "High watch breach",
@@ -3507,7 +4081,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.882,
+          "AdvanceTriggerXRatio": 0.592
         },
         {
           "Label": "Veteran rearguard",
@@ -3518,9 +4095,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 3,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 21,
@@ -3554,12 +4147,12 @@
         {
           "Type": "avalanche_bell",
           "Label": "Avalanche Bell",
-          "XRatio": 0.28,
+          "XRatio": 0.45,
           "YRatio": 0.54,
           "Radius": 86.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "e2e8f0"
         },
@@ -3571,7 +4164,7 @@
           "Radius": 70.0,
           "Interval": 10.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "fde68a"
         },
@@ -3583,7 +4176,7 @@
           "Radius": 64.0,
           "Interval": 12.4,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "e0f2fe"
         }
@@ -3633,7 +4226,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Pass raiders",
@@ -3652,7 +4248,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Ice breach",
@@ -3675,7 +4274,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Gate snowfall",
@@ -3702,7 +4304,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Frosthorn warlord",
@@ -3729,7 +4334,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last ascent",
@@ -3756,9 +4364,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 22,
@@ -3792,12 +4416,12 @@
         {
           "Type": "censer_cloud",
           "Label": "Censer Cloud",
-          "XRatio": 0.42,
+          "XRatio": 0.59,
           "YRatio": 0.58,
           "Radius": 74.0,
           "Interval": 9.8,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 20.0,
           "ColorHex": "d9f99d"
         }
@@ -3847,7 +4471,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Choir stir",
@@ -3866,7 +4493,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Nave breach",
@@ -3893,7 +4523,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Censer roll",
@@ -3916,7 +4549,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Relic guard",
@@ -3939,9 +4575,25 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 23,
@@ -3980,7 +4632,7 @@
           "Radius": 70.0,
           "Interval": 9.2,
           "StartTime": 8.5,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "e7e5e4"
         },
@@ -3992,7 +4644,7 @@
           "Radius": 68.0,
           "Interval": 11.2,
           "StartTime": 14.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "ecfccb"
         }
@@ -4034,7 +4686,10 @@
               "UnitId": "enemy_walker",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Reliquary thieves",
@@ -4057,7 +4712,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Hex choir",
@@ -4080,7 +4738,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Saintfall",
@@ -4103,7 +4764,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Ossuary guard",
@@ -4126,7 +4790,10 @@
               "UnitId": "enemy_brute",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Court overrun",
@@ -4149,9 +4816,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 24,
@@ -4189,7 +4872,7 @@
           "Radius": 82.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "fef3c7"
         },
@@ -4201,7 +4884,7 @@
           "Radius": 72.0,
           "Interval": 10.6,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 21.0,
           "ColorHex": "d9f99d"
         }
@@ -4235,11 +4918,11 @@
           "Summary": "Hold the aisle long enough for the reliquary bearers to reach the war wagon.",
           "RewardSummary": "Reward: a repair burst and escort reinforcement once the relics clear the nave.",
           "PenaltySummary": "Risk: the war wagon takes a direct hit if the escort lane collapses.",
-          "XRatio": 0.56,
+          "XRatio": 0.53,
           "YRatio": 0.5,
           "Radius": 82.0,
           "TargetSeconds": 8.4,
-          "StartTime": 28.0,
+          "StartTime": 18,
           "ColorHex": "ffe5b4"
         }
       ],
@@ -4257,7 +4940,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Loft stir",
@@ -4276,7 +4962,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Curse aisle",
@@ -4299,7 +4988,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Escort press",
@@ -4326,7 +5018,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Choir collapse",
@@ -4349,7 +5044,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Sanctum hold",
@@ -4376,9 +5074,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 25,
@@ -4416,7 +5130,7 @@
           "Radius": 68.0,
           "Interval": 9.4,
           "StartTime": 10.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "fde68a"
         },
@@ -4428,7 +5142,7 @@
           "Radius": 74.0,
           "Interval": 11.0,
           "StartTime": 17.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "e7e5e4"
         }
@@ -4461,7 +5175,7 @@
         },
         {
           "Type": "clear_within",
-          "Value": 150.0
+          "Value": 190
         }
       ],
       "Waves": [
@@ -4482,7 +5196,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Urn break",
@@ -4501,7 +5218,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.408,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Hex procession",
@@ -4524,7 +5244,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.527,
+          "AdvanceTriggerXRatio": 0.237
         },
         {
           "Label": "Vault stairs",
@@ -4547,7 +5270,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Relic wardens",
@@ -4574,7 +5300,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.763,
+          "AdvanceTriggerXRatio": 0.473
         },
         {
           "Label": "Reliquary surge",
@@ -4597,7 +5326,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.882,
+          "AdvanceTriggerXRatio": 0.592
         },
         {
           "Label": "Veteran rearguard",
@@ -4608,9 +5340,25 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 26,
@@ -4643,12 +5391,12 @@
         {
           "Type": "choir_peal",
           "Label": "Choir Peal",
-          "XRatio": 0.3,
+          "XRatio": 0.47,
           "YRatio": 0.28,
           "Radius": 80.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "fef3c7"
         },
@@ -4660,7 +5408,7 @@
           "Radius": 70.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "fde68a"
         },
@@ -4672,7 +5420,7 @@
           "Radius": 72.0,
           "Interval": 12.6,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "ecfccb"
         }
@@ -4722,7 +5470,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Censer bearers",
@@ -4741,7 +5492,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Relic escort",
@@ -4764,7 +5518,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Choir of ash",
@@ -4787,7 +5544,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Sepulcher crown",
@@ -4814,7 +5574,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last liturgy",
@@ -4841,9 +5604,25 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 27,
@@ -4876,12 +5655,12 @@
         {
           "Type": "bog_sink",
           "Label": "Bog Sink",
-          "XRatio": 0.38,
+          "XRatio": 0.55,
           "YRatio": 0.64,
           "Radius": 76.0,
           "Interval": 9.6,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "84a98c"
         }
@@ -4923,7 +5702,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Causeway drag",
@@ -4942,7 +5724,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Rot mist",
@@ -4965,7 +5750,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Plank breach",
@@ -4988,7 +5776,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Swamp hold",
@@ -5011,9 +5802,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 28,
@@ -5051,7 +5858,7 @@
           "Radius": 82.0,
           "Interval": 9.0,
           "StartTime": 8.5,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "ecfccb"
         },
@@ -5063,7 +5870,7 @@
           "Radius": 72.0,
           "Interval": 11.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 22.0,
           "ColorHex": "90be6d"
         }
@@ -5113,7 +5920,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Chapel toll",
@@ -5132,7 +5942,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Rot choir",
@@ -5155,7 +5968,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Aisle collapse",
@@ -5178,7 +5994,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Drowned saints",
@@ -5201,9 +6020,25 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 29,
@@ -5241,19 +6076,19 @@
           "Radius": 70.0,
           "Interval": 9.4,
           "StartTime": 10.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "95d5b2"
         },
         {
           "Type": "plague_mist",
           "Label": "Plague Mist",
-          "XRatio": 0.32,
+          "XRatio": 0.49,
           "YRatio": 0.68,
           "Radius": 74.0,
           "Interval": 10.8,
           "StartTime": 16.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 23.0,
           "ColorHex": "90be6d"
         }
@@ -5307,7 +6142,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Ferry spill",
@@ -5322,7 +6160,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Hull drag",
@@ -5345,7 +6186,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Rot barge",
@@ -5368,7 +6212,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Ferry breach",
@@ -5391,9 +6238,38 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 30,
@@ -5431,7 +6307,7 @@
           "Radius": 78.0,
           "Interval": 9.0,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "84a98c"
         },
@@ -5443,7 +6319,7 @@
           "Radius": 74.0,
           "Interval": 11.2,
           "StartTime": 16.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "b5e48c"
         }
@@ -5485,7 +6361,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Marsh bells",
@@ -5504,7 +6383,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Mire pull",
@@ -5527,7 +6409,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Plague drift",
@@ -5550,7 +6435,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Saints' wake",
@@ -5573,7 +6461,10 @@
               "UnitId": "enemy_brute",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Veteran rearguard",
@@ -5584,9 +6475,25 @@
               "UnitId": "enemy_bloater",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 31,
@@ -5624,7 +6531,7 @@
           "Radius": 84.0,
           "Interval": 8.8,
           "StartTime": 8.0,
-          "WarningDuration": 1.9,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "ecfccb"
         },
@@ -5636,7 +6543,7 @@
           "Radius": 78.0,
           "Interval": 10.4,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "90be6d"
         },
@@ -5648,7 +6555,7 @@
           "Radius": 72.0,
           "Interval": 12.2,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "b5e48c"
         }
@@ -5698,7 +6605,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Drowned choir",
@@ -5717,7 +6627,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Rot ferry",
@@ -5740,7 +6653,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Grave mist",
@@ -5763,7 +6679,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Plague ferryman",
@@ -5786,7 +6705,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last toll",
@@ -5809,9 +6731,25 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 32,
@@ -5844,12 +6782,12 @@
         {
           "Type": "ember_shear",
           "Label": "Ember Shear",
-          "XRatio": 0.44,
+          "XRatio": 0.61,
           "YRatio": 0.34,
           "Radius": 74.0,
           "Interval": 9.4,
           "StartTime": 10.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "f4a261"
         }
@@ -5891,7 +6829,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Waystation horn",
@@ -5910,7 +6851,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Burn line",
@@ -5933,7 +6877,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Flank riders",
@@ -5956,7 +6903,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Road crush",
@@ -5979,9 +6929,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 33,
@@ -6014,12 +6980,12 @@
         {
           "Type": "dust_devils",
           "Label": "Dust Devils",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.62,
           "Radius": 72.0,
           "Interval": 9.0,
           "StartTime": 8.5,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "e9c46a"
         },
@@ -6031,7 +6997,7 @@
           "Radius": 68.0,
           "Interval": 10.8,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "f4a261"
         }
@@ -6077,7 +7043,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Horn chain",
@@ -6096,7 +7065,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Cinder pass",
@@ -6119,7 +7091,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Open flank",
@@ -6142,7 +7117,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Ash crush",
@@ -6161,9 +7139,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 34,
@@ -6201,7 +7195,7 @@
           "Radius": 78.0,
           "Interval": 9.2,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "ffb703"
         },
@@ -6213,7 +7207,7 @@
           "Radius": 70.0,
           "Interval": 10.6,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 24.0,
           "ColorHex": "f4a261"
         }
@@ -6263,7 +7257,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Breach train",
@@ -6278,7 +7275,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Cinder wagons",
@@ -6301,7 +7301,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Ring collapse",
@@ -6328,7 +7331,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Siege ring surge",
@@ -6347,9 +7353,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 35,
@@ -6382,12 +7404,12 @@
         {
           "Type": "fireline",
           "Label": "Fireline",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.62,
           "Radius": 80.0,
           "Interval": 8.8,
           "StartTime": 8.5,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 26.0,
           "ColorHex": "ffb703"
         },
@@ -6399,7 +7421,7 @@
           "Radius": 72.0,
           "Interval": 10.8,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "e9c46a"
         }
@@ -6441,7 +7463,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Ash breach",
@@ -6460,7 +7485,10 @@
               "UnitId": "enemy_brute",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Redoubt fire",
@@ -6483,7 +7511,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Wide charge",
@@ -6510,7 +7541,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Sunfall crush",
@@ -6529,7 +7563,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Veteran rearguard",
@@ -6540,9 +7577,25 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 36,
@@ -6580,7 +7633,7 @@
           "Radius": 82.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 26.0,
           "ColorHex": "ffb703"
         },
@@ -6592,19 +7645,19 @@
           "Radius": 74.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "f4a261"
         },
         {
           "Type": "dust_devils",
           "Label": "Dust Devils",
-          "XRatio": 0.5,
+          "XRatio": 0.67,
           "YRatio": 0.78,
           "Radius": 74.0,
           "Interval": 12.2,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 25.0,
           "ColorHex": "e9c46a"
         }
@@ -6650,7 +7703,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Warcamp breach",
@@ -6665,7 +7721,10 @@
               "UnitId": "enemy_runner",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Fire volleys",
@@ -6688,7 +7747,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Ash-rider ring",
@@ -6715,7 +7777,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Ash-rider khan",
@@ -6742,7 +7807,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last charge",
@@ -6765,9 +7833,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 37,
@@ -6800,12 +7884,12 @@
         {
           "Type": "thorn_snare",
           "Label": "Thorn Snare",
-          "XRatio": 0.36,
+          "XRatio": 0.53,
           "YRatio": 0.62,
           "Radius": 78.0,
           "Interval": 9.2,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 26.0,
           "ColorHex": "b08968"
         }
@@ -6851,7 +7935,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Hidden horns",
@@ -6870,7 +7957,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Snare break",
@@ -6893,7 +7983,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Curse brush",
@@ -6916,7 +8009,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Verge crush",
@@ -6939,9 +8035,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 38,
@@ -6979,7 +8091,7 @@
           "Radius": 80.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 27.0,
           "ColorHex": "dda15e"
         },
@@ -6991,7 +8103,7 @@
           "Radius": 72.0,
           "Interval": 10.8,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 26.0,
           "ColorHex": "b08968"
         }
@@ -7037,7 +8149,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Hex chorus",
@@ -7056,7 +8171,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Root breach",
@@ -7075,7 +8193,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Witchfire ring",
@@ -7098,7 +8219,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Circle crush",
@@ -7121,9 +8245,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 39,
@@ -7161,7 +8301,7 @@
           "Radius": 74.0,
           "Interval": 9.2,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 27.0,
           "ColorHex": "bc6c25"
         },
@@ -7173,7 +8313,7 @@
           "Radius": 72.0,
           "Interval": 10.6,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 27.0,
           "ColorHex": "dda15e"
         }
@@ -7215,7 +8355,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Road hex",
@@ -7234,7 +8377,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Blackbark crush",
@@ -7257,7 +8403,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Tree-line dive",
@@ -7280,7 +8429,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Road collapse",
@@ -7303,9 +8455,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 40,
@@ -7343,7 +8511,7 @@
           "Radius": 80.0,
           "Interval": 8.8,
           "StartTime": 8.5,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 28.0,
           "ColorHex": "b08968"
         },
@@ -7355,7 +8523,7 @@
           "Radius": 74.0,
           "Interval": 10.4,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 27.0,
           "ColorHex": "bc6c25"
         }
@@ -7397,7 +8565,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Grove hex",
@@ -7416,7 +8587,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Snare crush",
@@ -7439,7 +8613,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Witchfire lanes",
@@ -7462,7 +8639,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Grove overrun",
@@ -7485,7 +8665,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Veteran rearguard",
@@ -7496,9 +8679,25 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 41,
@@ -7537,7 +8736,7 @@
           "Radius": 82.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 28.0,
           "ColorHex": "dda15e"
         },
@@ -7549,7 +8748,7 @@
           "Radius": 78.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 28.0,
           "ColorHex": "b08968"
         },
@@ -7561,7 +8760,7 @@
           "Radius": 74.0,
           "Interval": 12.0,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 27.0,
           "ColorHex": "bc6c25"
         }
@@ -7607,7 +8806,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Hex procession",
@@ -7626,7 +8828,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Thorn breach",
@@ -7645,7 +8850,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Witchfire rush",
@@ -7668,7 +8876,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Thorn hexlord",
@@ -7695,7 +8906,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last snare",
@@ -7718,9 +8932,25 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 42,
@@ -7759,7 +8989,7 @@
           "Radius": 80.0,
           "Interval": 9.0,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 28.0,
           "ColorHex": "f4a261"
         }
@@ -7801,7 +9031,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Tower relay",
@@ -7820,7 +9053,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Bridge crush",
@@ -7843,7 +9079,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Breach climb",
@@ -7862,7 +9101,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Bastion hold",
@@ -7885,9 +9127,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 43,
@@ -7926,7 +9184,7 @@
           "Radius": 76.0,
           "Interval": 9.4,
           "StartTime": 10.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "e76f51"
         },
@@ -7938,7 +9196,7 @@
           "Radius": 72.0,
           "Interval": 10.8,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 28.0,
           "ColorHex": "cdb4db"
         }
@@ -7988,7 +9246,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Marshal relay",
@@ -8007,7 +9268,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Wall breach",
@@ -8030,7 +9294,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Rubble push",
@@ -8049,7 +9316,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Breach yard crush",
@@ -8068,9 +9338,38 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 44,
@@ -8108,7 +9407,7 @@
           "Radius": 80.0,
           "Interval": 8.8,
           "StartTime": 8.5,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "f4a261"
         },
@@ -8120,7 +9419,7 @@
           "Radius": 74.0,
           "Interval": 10.6,
           "StartTime": 15.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "ffb4a2"
         }
@@ -8154,11 +9453,11 @@
           "Summary": "Keep the charge line clear long enough for the crew to break the crownward gate braces.",
           "RewardSummary": "Reward: direct gatehouse damage when the breach charge lands.",
           "PenaltySummary": "Risk: the gatehouse regains footing and hull if the charge fails.",
-          "XRatio": 0.78,
+          "XRatio": 0.64,
           "YRatio": 0.48,
           "Radius": 76.0,
           "TargetSeconds": 7.8,
-          "StartTime": 32.0,
+          "StartTime": 24,
           "ColorHex": "ffd166"
         }
       ],
@@ -8180,7 +9479,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Citadel horns",
@@ -8199,7 +9501,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Gate crush",
@@ -8222,7 +9527,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Relay collapse",
@@ -8241,7 +9549,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Crownward push",
@@ -8264,9 +9575,25 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 45,
@@ -8299,12 +9626,12 @@
         {
           "Type": "masonry_fall",
           "Label": "Masonry Fall",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.64,
           "Radius": 76.0,
           "Interval": 9.2,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "cdb4db"
         },
@@ -8316,7 +9643,7 @@
           "Radius": 74.0,
           "Interval": 10.8,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "ffb4a2"
         }
@@ -8366,7 +9693,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Inner chorus",
@@ -8385,7 +9715,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Marshal line",
@@ -8408,7 +9741,10 @@
               "UnitId": "enemy_siegetower",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Keep breach",
@@ -8427,7 +9763,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Inner ring crush",
@@ -8450,7 +9789,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Veteran rearguard",
@@ -8461,9 +9803,25 @@
               "UnitId": "enemy_revenant_captain",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 46,
@@ -8501,7 +9859,7 @@
           "Radius": 82.0,
           "Interval": 8.8,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "f4a261"
         },
@@ -8513,7 +9871,7 @@
           "Radius": 78.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "cdb4db"
         },
@@ -8525,7 +9883,7 @@
           "Radius": 74.0,
           "Interval": 12.0,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "ffb4a2"
         }
@@ -8575,7 +9933,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Citadel command",
@@ -8594,7 +9955,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Breach marshals",
@@ -8613,7 +9977,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Inner collapse",
@@ -8632,7 +9999,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Crownbreaker marshal",
@@ -8659,7 +10029,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Last crownfall",
@@ -8686,9 +10059,25 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 47,
@@ -8721,12 +10110,12 @@
         {
           "Type": "bellfire",
           "Label": "Bellfire",
-          "XRatio": 0.48,
+          "XRatio": 0.65,
           "YRatio": 0.28,
           "Radius": 78.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "ffd166"
         },
@@ -8738,7 +10127,7 @@
           "Radius": 72.0,
           "Interval": 10.4,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 29.0,
           "ColorHex": "9bf6ff"
         }
@@ -8784,7 +10173,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Curse lanterns",
@@ -8803,7 +10195,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Market crush",
@@ -8822,7 +10217,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Road blaze",
@@ -8837,7 +10235,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Requiem rush",
@@ -8860,9 +10261,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 48,
@@ -8900,7 +10317,7 @@
           "Radius": 80.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "5bc0eb"
         },
@@ -8912,7 +10329,7 @@
           "Radius": 74.0,
           "Interval": 10.2,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "80ed99"
         }
@@ -8962,7 +10379,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Rot whistle",
@@ -8981,7 +10401,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Hull grind",
@@ -9000,7 +10423,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Flooded deck",
@@ -9019,7 +10445,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Armada close",
@@ -9042,9 +10471,25 @@
               "UnitId": "enemy_bloater",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 49,
@@ -9082,7 +10527,7 @@
           "Radius": 82.0,
           "Interval": 8.8,
           "StartTime": 9.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 31.0,
           "ColorHex": "ff9f1c"
         },
@@ -9094,7 +10539,7 @@
           "Radius": 76.0,
           "Interval": 10.4,
           "StartTime": 16.0,
-          "WarningDuration": 1.7,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "f77f00"
         }
@@ -9144,7 +10589,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Sapper chain",
@@ -9163,7 +10611,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Furnace guard",
@@ -9182,7 +10633,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Slag line",
@@ -9201,7 +10655,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Forge crown",
@@ -9224,9 +10681,38 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 50,
@@ -9264,7 +10750,7 @@
           "Radius": 84.0,
           "Interval": 8.8,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 31.0,
           "ColorHex": "22c55e"
         },
@@ -9276,7 +10762,7 @@
           "Radius": 78.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "d9f99d"
         },
@@ -9288,7 +10774,7 @@
           "Radius": 74.0,
           "Interval": 12.0,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 30.0,
           "ColorHex": "bef264"
         }
@@ -9330,7 +10816,7 @@
           "YRatio": 0.52,
           "Radius": 82.0,
           "TargetSeconds": 8.8,
-          "StartTime": 36.0,
+          "StartTime": 18,
           "ColorHex": "bbf7d0"
         }
       ],
@@ -9352,7 +10838,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Signal break",
@@ -9371,7 +10860,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Purge breach",
@@ -9390,7 +10882,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Containment storm",
@@ -9409,7 +10904,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Ashen remnant",
@@ -9432,7 +10930,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Dread Sovereign arrives",
@@ -9443,9 +10944,25 @@
               "UnitId": "enemy_boss_citadel",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 51,
@@ -9484,7 +11001,7 @@
           "Radius": 84.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 32.0,
           "ColorHex": "cfe8ff"
         },
@@ -9496,7 +11013,7 @@
           "Radius": 78.0,
           "Interval": 10.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 31.0,
           "ColorHex": "e0f2ff"
         }
@@ -9539,11 +11056,11 @@
           "Summary": "Hold the pyre long enough to smother the raider horns before the pass collapses again.",
           "RewardSummary": "Reward: +12 courage, cleaner card recovery, and a heavier shove through the pass.",
           "PenaltySummary": "Risk: the horns stay lit and a fast raid surge crashes into the wagon.",
-          "XRatio": 0.54,
+          "XRatio": 0.53,
           "YRatio": 0.46,
           "Radius": 82.0,
           "TargetSeconds": 8.0,
-          "StartTime": 26.0,
+          "StartTime": 18,
           "ColorHex": "e0f2ff"
         }
       ],
@@ -9561,7 +11078,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Horn line",
@@ -9580,7 +11100,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Ballista perch",
@@ -9599,7 +11122,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Collapsed switchback",
@@ -9618,7 +11144,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Whiteout bastion",
@@ -9645,9 +11174,25 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Pass Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Climber Supplies",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 52,
@@ -9686,7 +11231,7 @@
           "Radius": 82.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 32.0,
           "ColorHex": "e9c46a"
         },
@@ -9698,7 +11243,7 @@
           "Radius": 76.0,
           "Interval": 10.4,
           "StartTime": 16.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 32.0,
           "ColorHex": "fefae0"
         }
@@ -9741,11 +11286,11 @@
           "Summary": "Hold the cracked nave long enough for ward bearers to drag the reliquary chest back to the caravan.",
           "RewardSummary": "Reward: the ward chest patches the wagon and sanctified escorts reinforce the line.",
           "PenaltySummary": "Risk: the chest is shattered and the wagon takes a direct reliquary hit.",
-          "XRatio": 0.58,
+          "XRatio": 0.53,
           "YRatio": 0.5,
           "Radius": 82.0,
           "TargetSeconds": 8.6,
-          "StartTime": 30.0,
+          "StartTime": 18,
           "ColorHex": "fef3c7"
         }
       ],
@@ -9763,7 +11308,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Censer procession",
@@ -9782,7 +11330,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Vault artillery",
@@ -9801,7 +11352,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Sepulcher break",
@@ -9820,7 +11374,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Choir of dust",
@@ -9843,7 +11400,10 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Reliquary Tyrant arrives",
@@ -9854,9 +11414,38 @@
               "UnitId": "enemy_boss_reliquary",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Sanctuary Post",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Reliquary Stores",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 53,
@@ -9890,12 +11479,12 @@
         {
           "Type": "plague_wake",
           "Label": "Plague Wake",
-          "XRatio": 0.34,
+          "XRatio": 0.51,
           "YRatio": 0.72,
           "Radius": 86.0,
           "Interval": 8.6,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 33.0,
           "ColorHex": "90be6d"
         },
@@ -9907,7 +11496,7 @@
           "Radius": 76.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 32.0,
           "ColorHex": "ecf39e"
         }
@@ -9954,7 +11543,7 @@
           "YRatio": 0.66,
           "Radius": 80.0,
           "TargetSeconds": 8.4,
-          "StartTime": 30.0,
+          "StartTime": 18,
           "ColorHex": "90be6d"
         }
       ],
@@ -9976,7 +11565,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Bell drift",
@@ -9995,7 +11587,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Siege barge",
@@ -10014,7 +11609,10 @@
               "UnitId": "enemy_brute",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Blackwater crush",
@@ -10033,7 +11631,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Saintless tide",
@@ -10056,9 +11657,38 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Reed Beacon",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Ferryman Supplies",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "repair",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 54,
@@ -10092,12 +11722,12 @@
         {
           "Type": "ember_line",
           "Label": "Ember Line",
-          "XRatio": 0.3,
+          "XRatio": 0.47,
           "YRatio": 0.6,
           "Radius": 84.0,
           "Interval": 8.2,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 33.0,
           "ColorHex": "f4a261"
         },
@@ -10109,7 +11739,7 @@
           "Radius": 74.0,
           "Interval": 9.8,
           "StartTime": 14.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 32.0,
           "ColorHex": "ffb703"
         }
@@ -10148,11 +11778,11 @@
           "Summary": "Hold the relay lane long enough for outriders to drag the signal cart back through the ash.",
           "RewardSummary": "Reward: the relay lands and fast escorts join the route with a short speed surge.",
           "PenaltySummary": "Risk: the relay burns and a flank rush clips the wagon.",
-          "XRatio": 0.56,
+          "XRatio": 0.53,
           "YRatio": 0.44,
           "Radius": 80.0,
           "TargetSeconds": 8.2,
-          "StartTime": 28.0,
+          "StartTime": 18,
           "ColorHex": "ffb703"
         }
       ],
@@ -10174,7 +11804,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Dust relay",
@@ -10193,7 +11826,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Redline breach",
@@ -10212,7 +11848,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Warhorn crush",
@@ -10231,7 +11870,10 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Expanse collapse",
@@ -10258,9 +11900,25 @@
               "UnitId": "enemy_shieldwall",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Outrider Camp",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Warhorn Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 55,
@@ -10299,7 +11957,7 @@
           "Radius": 82.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 33.0,
           "ColorHex": "84a98c"
         },
@@ -10311,7 +11969,7 @@
           "Radius": 78.0,
           "Interval": 10.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 33.0,
           "ColorHex": "c77dff"
         }
@@ -10362,7 +12020,7 @@
           "YRatio": 0.58,
           "Radius": 80.0,
           "TargetSeconds": 8.6,
-          "StartTime": 28.0,
+          "StartTime": 18,
           "ColorHex": "c77dff"
         }
       ],
@@ -10384,7 +12042,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Witch lamps",
@@ -10403,7 +12064,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Mirror grove",
@@ -10422,7 +12086,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Root breach",
@@ -10441,7 +12108,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Moonless circle",
@@ -10468,9 +12138,38 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Witchlight Watch",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Moonfire Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 56,
@@ -10509,7 +12208,7 @@
           "Radius": 84.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 34.0,
           "ColorHex": "d62828"
         },
@@ -10521,7 +12220,7 @@
           "Radius": 80.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 34.0,
           "ColorHex": "fefae0"
         },
@@ -10533,7 +12232,7 @@
           "Radius": 76.0,
           "Interval": 11.8,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 33.0,
           "ColorHex": "c0c0ff"
         }
@@ -10572,11 +12271,11 @@
           "Summary": "Keep the throne-side breach lane open long enough for sappers to collapse the regent's cover wall.",
           "RewardSummary": "Reward: direct keep damage lands and the breach corridor stays marked open.",
           "PenaltySummary": "Risk: the throne wall recovers and elite guards reset the lane.",
-          "XRatio": 0.72,
+          "XRatio": 0.64,
           "YRatio": 0.52,
           "Radius": 80.0,
           "TargetSeconds": 8.4,
-          "StartTime": 34.0,
+          "StartTime": 24,
           "ColorHex": "fca5a5"
         }
       ],
@@ -10598,7 +12297,10 @@
               "UnitId": "enemy_walker",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Black relay",
@@ -10621,7 +12323,10 @@
               "UnitId": "enemy_runner",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Throne guard",
@@ -10640,7 +12345,10 @@
               "UnitId": "enemy_lich",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Final breach",
@@ -10663,7 +12371,10 @@
               "UnitId": "enemy_tunneler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Regent's command",
@@ -10686,7 +12397,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Ashen Regent arrives",
@@ -10697,9 +12411,25 @@
               "UnitId": "enemy_boss_ashen_regent",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Breach Camp",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Siege Powder",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 57,
@@ -10738,7 +12468,7 @@
           "Radius": 84.0,
           "Interval": 8.2,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 34.0,
           "ColorHex": "ffd166"
         },
@@ -10750,7 +12480,7 @@
           "Radius": 78.0,
           "Interval": 10.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 34.0,
           "ColorHex": "9bf6ff"
         }
@@ -10793,7 +12523,7 @@
           "YRatio": 0.48,
           "Radius": 78.0,
           "TargetSeconds": 8.4,
-          "StartTime": 26.0,
+          "StartTime": 18,
           "ColorHex": "fde68a"
         }
       ],
@@ -10811,7 +12541,10 @@
               "UnitId": "enemy_revenant_captain",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Signal pyres",
@@ -10830,7 +12563,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Market crush",
@@ -10849,7 +12585,10 @@
               "UnitId": "enemy_revenant_captain",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Dead parade",
@@ -10868,7 +12607,10 @@
               "UnitId": "enemy_runner",
               "Count": 3
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Bellgrave siege",
@@ -10891,9 +12633,25 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Lantern Watch",
+        "OutpostXRatio": 0.36,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Militia Stores",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "courage",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 58,
@@ -10932,7 +12690,7 @@
           "Radius": 86.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 35.0,
           "ColorHex": "5bc0eb"
         },
@@ -10944,7 +12702,7 @@
           "Radius": 80.0,
           "Interval": 10.2,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 34.0,
           "ColorHex": "80ed99"
         }
@@ -10987,7 +12745,7 @@
           "YRatio": 0.62,
           "Radius": 82.0,
           "TargetSeconds": 8.3,
-          "StartTime": 30.0,
+          "StartTime": 24,
           "ColorHex": "93c5fd"
         }
       ],
@@ -11009,7 +12767,10 @@
               "UnitId": "enemy_walker",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Chain gang",
@@ -11028,7 +12789,10 @@
               "UnitId": "enemy_plague_engine",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Hull breach",
@@ -11047,7 +12811,10 @@
               "UnitId": "enemy_bloater",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Black tide",
@@ -11070,7 +12837,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Flood command",
@@ -11093,7 +12863,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Harrow Tidemaster arrives",
@@ -11104,9 +12877,25 @@
               "UnitId": "enemy_boss_tidemaster",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Chainlift Post",
+        "OutpostXRatio": 0.385,
+        "OutpostYRatio": 0.34,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Harpoon Cache",
+        "SupplyXRatio": 0.58,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "siege",
+        "CursePatches": []
+      }
     },
     {
       "StageNumber": 59,
@@ -11140,12 +12929,12 @@
         {
           "Type": "furnace_lance",
           "Label": "Furnace Lance",
-          "XRatio": 0.32,
+          "XRatio": 0.49,
           "YRatio": 0.62,
           "Radius": 84.0,
           "Interval": 8.2,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 35.0,
           "ColorHex": "ff9f1c"
         },
@@ -11157,7 +12946,7 @@
           "Radius": 78.0,
           "Interval": 10.0,
           "StartTime": 14.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 35.0,
           "ColorHex": "f77f00"
         }
@@ -11196,11 +12985,11 @@
           "Summary": "Hold the crucible lane long enough for the furnace charge to rupture the molten wall.",
           "RewardSummary": "Reward: the blast lands, scorches the keep, and keeps the line open.",
           "PenaltySummary": "Risk: the wall resets and the foundry line hardens again.",
-          "XRatio": 0.66,
+          "XRatio": 0.64,
           "YRatio": 0.48,
           "Radius": 82.0,
           "TargetSeconds": 8.2,
-          "StartTime": 30.0,
+          "StartTime": 24,
           "ColorHex": "fb923c"
         }
       ],
@@ -11222,7 +13011,10 @@
               "UnitId": "enemy_spitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Forge gunners",
@@ -11241,7 +13033,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.467,
+          "AdvanceTriggerXRatio": 0.177
         },
         {
           "Label": "Ash hammer",
@@ -11260,7 +13055,10 @@
               "UnitId": "enemy_splitter",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.645,
+          "AdvanceTriggerXRatio": 0.355
         },
         {
           "Label": "Redline vents",
@@ -11279,7 +13077,10 @@
               "UnitId": "enemy_howler",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.823,
+          "AdvanceTriggerXRatio": 0.532
         },
         {
           "Label": "Molten ascension",
@@ -11302,9 +13103,38 @@
               "UnitId": "enemy_mirror",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Forge Relay",
+        "OutpostXRatio": 0.41,
+        "OutpostYRatio": 0.5,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Powder Stores",
+        "SupplyXRatio": 0.615,
+        "SupplyYRatio": 0.25,
+        "SupplyReward": "siege",
+        "CursePatches": [
+          {
+            "XRatio": 0.3,
+            "YRatio": 0.5,
+            "Width": 240,
+            "Height": 104
+          },
+          {
+            "XRatio": 0.68,
+            "YRatio": 0.5,
+            "Width": 280,
+            "Height": 104
+          }
+        ]
+      }
     },
     {
       "StageNumber": 60,
@@ -11343,7 +13173,7 @@
           "Radius": 84.0,
           "Interval": 8.4,
           "StartTime": 8.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 36.0,
           "ColorHex": "22c55e"
         },
@@ -11355,19 +13185,19 @@
           "Radius": 80.0,
           "Interval": 10.0,
           "StartTime": 15.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 35.0,
           "ColorHex": "d9f99d"
         },
         {
           "Type": "crown_gas",
           "Label": "Crown Gas",
-          "XRatio": 0.5,
+          "XRatio": 0.67,
           "YRatio": 0.8,
           "Radius": 76.0,
           "Interval": 11.6,
           "StartTime": 22.0,
-          "WarningDuration": 1.8,
+          "WarningDuration": 2,
           "Damage": 35.0,
           "ColorHex": "bef264"
         }
@@ -11414,7 +13244,7 @@
           "YRatio": 0.44,
           "Radius": 80.0,
           "TargetSeconds": 8.8,
-          "StartTime": 32.0,
+          "StartTime": 18,
           "ColorHex": "bef264"
         }
       ],
@@ -11436,7 +13266,10 @@
               "UnitId": "enemy_runner",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.29,
+          "AdvanceTriggerXRatio": -1
         },
         {
           "Label": "Signal rot",
@@ -11455,7 +13288,10 @@
               "UnitId": "enemy_saboteur",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Approach",
+          "SpawnXRatio": 0.432,
+          "AdvanceTriggerXRatio": 0.15
         },
         {
           "Label": "Quarantine crush",
@@ -11474,7 +13310,10 @@
               "UnitId": "enemy_jammer",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.574,
+          "AdvanceTriggerXRatio": 0.284
         },
         {
           "Label": "Seal failure",
@@ -11497,7 +13336,10 @@
               "UnitId": "enemy_spitter",
               "Count": 2
             }
-          ]
+          ],
+          "Area": "Crossroads",
+          "SpawnXRatio": 0.716,
+          "AdvanceTriggerXRatio": 0.426
         },
         {
           "Label": "Pale court",
@@ -11520,7 +13362,10 @@
               "UnitId": "enemy_crusher",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 0.858,
+          "AdvanceTriggerXRatio": 0.568
         },
         {
           "Label": "Plague Monarch arrives",
@@ -11531,9 +13376,25 @@
               "UnitId": "enemy_boss_plague_monarch",
               "Count": 1
             }
-          ]
+          ],
+          "Area": "Gate",
+          "SpawnXRatio": 1.0,
+          "AdvanceTriggerXRatio": 0.71
         }
-      ]
+      ],
+      "Battlefield": {
+        "OutpostTitle": "Ward Beacon",
+        "OutpostXRatio": 0.435,
+        "OutpostYRatio": 0.66,
+        "CaptureSeconds": 3.5,
+        "ForwardDeployments": 4,
+        "ForwardCooldown": 8,
+        "SupplyTitle": "Cleanwater Cache",
+        "SupplyXRatio": 0.65,
+        "SupplyYRatio": 0.75,
+        "SupplyReward": "repair",
+        "CursePatches": []
+      }
     }
   ]
 }

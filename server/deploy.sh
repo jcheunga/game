@@ -27,6 +27,11 @@ COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 echo "Validating deployment configuration..."
 "${COMPOSE[@]}" config -q
 
+echo "Validating HTTPS proxy configuration..."
+docker run --rm --env-file "$ENV_FILE" \
+    -v "$SCRIPT_DIR/Caddyfile:/etc/caddy/Caddyfile:ro" \
+    caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
 echo "Running server verification..."
 dotnet run -- --test
 dotnet run -- --test-data ../data

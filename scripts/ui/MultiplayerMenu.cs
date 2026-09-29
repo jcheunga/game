@@ -6,7 +6,10 @@ using Godot;
 
 public partial class MultiplayerMenu : Control
 {
-    private const float OnlineRoomAutoRefreshIntervalSeconds = 4f;
+    // The session payload carries the compact scoreboard too. Ten seconds is
+    // responsive enough for the prep monitor without turning every waiting
+    // player into a database poller.
+    private const float OnlineRoomAutoRefreshIntervalSeconds = 10f;
 
     private MenuBackdropSet _menuBackdrop = null!;
     private HBoxContainer _titleRow = null!;

@@ -1,0 +1,62 @@
+{
+  "frameWidth": 192,
+  "frameHeight": 240,
+  "drawScale": 2.8236767151435456,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.06936,
+      "loop": false,
+      "contactFrame": 4
+    },
+    "hit": {
+      "start": 20,
+      "count": 2,
+      "duration": 0.09,
+      "loop": false
+    },
+    "death": {
+      "start": 22,
+      "count": 6,
+      "duration": 0.11,
+      "loop": false
+    },
+    "deploy": {
+      "start": 28,
+      "count": 4,
+      "duration": 0.1,
+      "loop": false
+    }
+  },
+  "assetId": "enemy_howler",
+  "title": "Dread Herald",
+  "source": "art/blender/units/enemy_howler.blend",
+  "anchorY": 0.7482108175754547,
+  "anchorX": 0.455997,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "staff-strike",
+    "body": [
+      0.0,
+      -0.24471
+    ],
+    "contact": [
+      0.457379,
+      -0.36762
+    ]
+  },
+  "healthBarY": 0.560711
+}

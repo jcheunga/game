@@ -6,14 +6,16 @@ public sealed class BattleSpawnDirector
 {
     private sealed class PendingEnemySpawn
     {
-        public PendingEnemySpawn(UnitDefinition definition, float executeAt)
+        public PendingEnemySpawn(UnitDefinition definition, float executeAt, float spawnXRatio)
         {
             Definition = definition;
             ExecuteAt = executeAt;
+            SpawnXRatio = spawnXRatio;
         }
 
         public UnitDefinition Definition { get; }
         public float ExecuteAt { get; }
+        public float SpawnXRatio { get; }
     }
 
     private readonly PriorityQueue<PendingEnemySpawn, (float Time, long Order)> _pendingEnemySpawns = new();
@@ -21,6 +23,22 @@ public sealed class BattleSpawnDirector
     private float _nextPendingSpawnAt;
     private float _scriptedScheduleAdvance;
     private float _clearFieldSince = -1f;
+    private bool _advanceEncounters;
+    private float _frontlineX, _furthestAdvanceX;
+    private float _encounterReadyAt = -1f, _lastEncounterAt = -5f;
+    public bool EncounterWarningActive => _advanceEncounters && _encounterReadyAt >= 0;
+    public string CurrentEncounterArea { get; private set; } = "Approach";
+    public void EnableAdvanceEncounters(bool enabled) => _advanceEncounters = enabled;
+    public void SetPlayerFrontline(float x)
+    {
+        _frontlineX = x;
+        _furthestAdvanceX = Mathf.Max(_furthestAdvanceX, x);
+    }
+    public float NextEncounterSpawnX => TryGetNextScriptedWave(out var wave)
+        ? ResolveEncounterSpawnX(wave.SpawnXRatio) : _combat.EnemySpawnX;
+    private float ResolveEncounterSpawnX(float ratio) => !_advanceEncounters ? _combat.EnemySpawnX :
+        Mathf.Clamp(Mathf.Max(Mathf.Lerp(_combat.PlayerSpawnX, _combat.EnemySpawnX, ratio), _frontlineX + 180f),
+            _combat.PlayerSpawnX + 240f, _combat.EnemySpawnX);
     private readonly List<UnitDefinition> _enemyRoster = new();
     private readonly RandomNumberGenerator _rng;
 
@@ -116,10 +134,15 @@ public sealed class BattleSpawnDirector
         _scriptedScheduleAdvance = 0f;
         _clearFieldSince = -1f;
         IsScriptedWaveHeld = false;
+        _advanceEncounters = false;
+        _frontlineX = _furthestAdvanceX = _combat.PlayerSpawnX;
+        _encounterReadyAt = -1f;
+        _lastEncounterAt = -5f;
+        CurrentEncounterArea = "Approach";
     }
 
     public float NextScriptedWaveTime => TryGetNextScriptedWave(out var wave)
-        ? wave.TriggerTime - _scriptedScheduleAdvance : 0f;
+        ? (_encounterReadyAt >= 0f ? _encounterReadyAt : wave.TriggerTime - _scriptedScheduleAdvance) : 0f;
     public bool IsScriptedWaveHeld { get; private set; }
 
     public void Tick(
@@ -252,7 +275,7 @@ public sealed class BattleSpawnDirector
         while (NextScriptedWaveIndex < _stageData.Waves.Length)
         {
             var wave = _stageData.Waves[NextScriptedWaveIndex];
-            if (elapsed + _scriptedScheduleAdvance + 0.001f < wave.TriggerTime)
+            if (!_advanceEncounters && elapsed + _scriptedScheduleAdvance + 0.001f < wave.TriggerTime)
             {
                 return;
             }
@@ -265,7 +288,23 @@ public sealed class BattleSpawnDirector
                 return;
             }
 
+            if (_advanceEncounters)
+            {
+                if (_encounterReadyAt < 0f)
+                {
+                    var advanceX = Mathf.Lerp(_combat.PlayerSpawnX, _combat.EnemySpawnX, wave.AdvanceTriggerXRatio);
+                    var advanced = NextScriptedWaveIndex > 0 && wave.AdvanceTriggerXRatio >= 0 && _furthestAdvanceX >= advanceX;
+                    if (!advanced && elapsed + _scriptedScheduleAdvance < wave.TriggerTime - 2.5f) return;
+                    _encounterReadyAt = Mathf.Max(elapsed + 2.5f, _lastEncounterAt + 5f);
+                    setStatus($"{wave.Area}: {wave.Label} approaching. Watch the marked entry point.");
+                    return;
+                }
+                if (elapsed + .001f < _encounterReadyAt) return;
+            }
             QueueScriptedWave(elapsed, wave);
+            CurrentEncounterArea = string.IsNullOrEmpty(wave.Area) ? "Gate" : wave.Area;
+            _encounterReadyAt = -1f;
+            _lastEncounterAt = elapsed;
             var label = string.IsNullOrWhiteSpace(wave.Label)
                 ? $"Wave {NextScriptedWaveIndex + 1}"
                 : wave.Label;
@@ -279,7 +318,7 @@ public sealed class BattleSpawnDirector
         QueueScriptedWaveEntries(
             elapsed,
             Mathf.Max(0.1f, wave.SpawnInterval),
-            wave.Entries);
+            wave.Entries, wave.SpawnXRatio);
     }
 
     private void FlushPendingEnemySpawns(
@@ -300,7 +339,7 @@ public sealed class BattleSpawnDirector
             }
 
             var pendingSpawn = _pendingEnemySpawns.Dequeue();
-            SpawnDefinition(pendingSpawn.Definition, spawnEnemy);
+            SpawnDefinition(pendingSpawn.Definition, spawnEnemy, pendingSpawn.SpawnXRatio);
             // A full field must not turn an overdue wave into a single-frame burst.
             _nextPendingSpawnAt = elapsed + (_isEndlessMode ? 0.18f : 0.35f);
         }
@@ -616,9 +655,9 @@ public sealed class BattleSpawnDirector
         executeAt += spawnInterval * _rng.RandfRange(0.88f, 1.14f);
     }
 
-    private void EnqueueSpawn(UnitDefinition definition, float executeAt)
+    private void EnqueueSpawn(UnitDefinition definition, float executeAt, float spawnXRatio = 1f)
     {
-        _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(definition, executeAt), (executeAt, _spawnOrder++));
+        _pendingEnemySpawns.Enqueue(new PendingEnemySpawn(definition, executeAt, spawnXRatio), (executeAt, _spawnOrder++));
     }
 
     private void QueueRouteForkEventWave(int waveNumber, ref float executeAt, float spawnInterval)
@@ -726,7 +765,7 @@ public sealed class BattleSpawnDirector
         }
     }
 
-    private int QueueScriptedWaveEntries(float executeAt, float spawnInterval, IReadOnlyList<StageWaveEntryDefinition> entries)
+    private int QueueScriptedWaveEntries(float executeAt, float spawnInterval, IReadOnlyList<StageWaveEntryDefinition> entries, float spawnXRatio = 1f)
     {
         if (entries == null || entries.Count == 0)
         {
@@ -745,7 +784,7 @@ public sealed class BattleSpawnDirector
             var count = Math.Max(1, entry.Count);
             for (var i = 0; i < count; i++)
             {
-                EnqueueSpawn(enemyDefinition, executeAt);
+                EnqueueSpawn(enemyDefinition, executeAt, spawnXRatio);
                 executeAt += spawnInterval;
                 queued++;
             }
@@ -782,14 +821,14 @@ public sealed class BattleSpawnDirector
         }
     }
 
-    private void SpawnDefinition(UnitDefinition definition, Action<UnitStats, Vector2> spawnEnemy)
+    private void SpawnDefinition(UnitDefinition definition, Action<UnitStats, Vector2> spawnEnemy, float spawnXRatio = 1f)
     {
         var spawnY = _rng.RandfRange(
             _combat.BattlefieldTop + _combat.SpawnVerticalPadding,
             _combat.BattlefieldBottom - _combat.SpawnVerticalPadding);
         spawnEnemy(
             BuildEnemyStats(definition),
-            new Vector2(_combat.EnemySpawnX, spawnY));
+            new Vector2(ResolveEncounterSpawnX(spawnXRatio), spawnY));
     }
 
     private UnitStats BuildEnemyStats(UnitDefinition source)

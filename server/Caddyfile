@@ -15,9 +15,32 @@
 		Permissions-Policy "camera=(), geolocation=(), microphone=()"
 	}
 
-	reverse_proxy crownroad-server:8080 {
-		health_uri /health
-		health_interval 30s
+	# HTTP requests are balanced across every Compose API replica. Dynamic Docker
+	# DNS lookup means a scaled deployment is discovered without editing this
+	# file. Capture the room ID from the path and turn it into an internal header
+	# before load balancing. URI hashing would include a query string, which could
+	# otherwise send two players in the same room to different relay processes.
+	@room_relay path_regexp room_relay ^/ws/relay/([^/]+)$
+	request_header @room_relay X-Crownroad-Relay-Room "{re.room_relay.1}"
+	reverse_proxy @room_relay {
+		dynamic a crownroad-server 8080 {
+			refresh 10s
+		}
+		lb_policy header X-Crownroad-Relay-Room
+		header_up -X-Crownroad-Relay-Room
+		lb_retries 2
+		fail_duration 20s
+		max_fails 2
+	}
+
+	reverse_proxy {
+		dynamic a crownroad-server 8080 {
+			refresh 10s
+		}
+		lb_policy least_conn
+		lb_retries 2
+		fail_duration 20s
+		max_fails 2
 	}
 
 	log {

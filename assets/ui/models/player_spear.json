@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 3.758665682588662,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.07344,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "player_spear",
+  "title": "Spearman",
+  "source": "art/blender/units/player_spear.blend",
+  "anchorY": 0.6864669919013977,
+  "anchorX": 0.466943,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "spear-thrust",
+    "body": [
+      0.0,
+      -0.183837
+    ],
+    "contact": [
+      0.480112,
+      -0.188854
+    ]
+  }
+}

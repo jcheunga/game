@@ -29,8 +29,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.5f, new Color(color, 0.6f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.6f);
+		StartAndAutoFree(particles, 0.6f);
 		return particles;
 	}
 
@@ -58,8 +57,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.4f, new Color(color.Darkened(0.1f), 0.5f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.4f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, isBoss ? 0.8f : 0.6f);
+		StartAndAutoFree(particles, isBoss ? 0.8f : 0.6f);
 		return particles;
 	}
 
@@ -87,8 +85,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.3f, new Color(color.Lightened(0.3f), 0.7f));
 		gradient.AddPoint(1f, new Color(color, 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.4f);
+		StartAndAutoFree(particles, 0.4f);
 		return particles;
 	}
 
@@ -115,8 +112,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.3f, new Color(color.Darkened(0.2f), 0.5f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.5f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.7f);
+		StartAndAutoFree(particles, 0.7f);
 		return particles;
 	}
 
@@ -146,8 +142,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.75f, new Color(new Color(0.8f, 0.2f, 0.05f), 0.3f));
 		gradient.AddPoint(1f, new Color(new Color(0.2f, 0.1f, 0.05f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.7f);
+		StartAndAutoFree(particles, 0.7f);
 		return particles;
 	}
 
@@ -177,8 +172,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.7f, new Color(color, 0.35f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.1f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.8f);
+		StartAndAutoFree(particles, 0.8f);
 		return particles;
 	}
 
@@ -206,8 +200,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.5f, new Color(color, 0.45f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.7f);
+		StartAndAutoFree(particles, 0.7f);
 		return particles;
 	}
 
@@ -235,8 +228,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.6f, new Color(color, 0.4f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.45f);
+		StartAndAutoFree(particles, 0.45f);
 		return particles;
 	}
 
@@ -266,8 +258,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.8f, new Color(color.Lightened(0.08f), 0.2f));
 		gradient.AddPoint(1f, new Color(color, 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.9f);
+		StartAndAutoFree(particles, 0.9f);
 		return particles;
 	}
 
@@ -296,8 +287,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.7f, new Color(brown.Darkened(0.2f), 0.35f));
 		gradient.AddPoint(1f, new Color(brown.Darkened(0.4f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.7f);
+		StartAndAutoFree(particles, 0.7f);
 		return particles;
 	}
 
@@ -326,8 +316,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.6f, new Color(new Color(0.8f, 0.2f, 0.05f), 0.4f));
 		gradient.AddPoint(1f, new Color(redOrange.Darkened(0.4f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.8f);
+		StartAndAutoFree(particles, 0.8f);
 		return particles;
 	}
 
@@ -356,8 +345,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.65f, new Color(darkBrown.Darkened(0.2f), 0.35f));
 		gradient.AddPoint(1f, new Color(darkBrown.Darkened(0.5f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.75f);
+		StartAndAutoFree(particles, 0.75f);
 		return particles;
 	}
 
@@ -388,8 +376,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.6f, new Color(purple, 0.4f));
 		gradient.AddPoint(1f, new Color(purple.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.85f);
+		StartAndAutoFree(particles, 0.85f);
 		return particles;
 	}
 
@@ -418,8 +405,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.55f, new Color(golden.Darkened(0.1f), 0.5f));
 		gradient.AddPoint(1f, new Color(golden.Darkened(0.3f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.9f);
+		StartAndAutoFree(particles, 0.9f);
 		return particles;
 	}
 
@@ -447,8 +433,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.7f, new Color(color.Darkened(0.3f), 0.25f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.5f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.65f);
+		StartAndAutoFree(particles, 0.65f);
 		return particles;
 	}
 
@@ -486,6 +471,7 @@ public static class BattleParticles
 			particles.Texture = texture;
 		}
 
+		NormalizeTextureSize(particles);
 		parent.AddChild(particles);
 		return particles;
 	}
@@ -515,8 +501,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.8f, new Color(color.Darkened(0.2f), 0.2f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.4f), 0f));
 		particles.ColorRamp = gradient;
-		particles.Emitting = true;
-		AutoFree(particles, 0.9f);
+		StartAndAutoFree(particles, 0.9f);
 		return particles;
 	}
 
@@ -526,6 +511,7 @@ public static class BattleParticles
 		{
 			Amount = Mathf.Max(1, amount),
 			OneShot = true,
+			Emitting = false,
 			Position = position,
 			ZIndex = 100
 		};
@@ -540,17 +526,30 @@ public static class BattleParticles
 		return particles;
 	}
 
+	// The authored sizes are world-pixel diameters, not multiples of a 128px
+	// texture. Keep sparks and trails local to the weapon, even at close zoom.
+	private static void NormalizeTextureSize(CpuParticles2D particles)
+	{
+		if (particles.Texture == null) return;
+		var pixels = Mathf.Max(1, Mathf.Max(particles.Texture.GetWidth(), particles.Texture.GetHeight()));
+		particles.ScaleAmountMin /= pixels;
+		particles.ScaleAmountMax /= pixels;
+	}
+
 	private static bool IsReducedMotionEnabled()
 	{
 		return GameState.Instance != null && GameState.Instance.ReducedMotion;
 	}
 
-	private static async void AutoFree(CpuParticles2D particles, float delay)
+	private static async void StartAndAutoFree(CpuParticles2D particles, float delay)
 	{
 		if (!GodotObject.IsInstanceValid(particles))
 		{
 			return;
 		}
+
+		NormalizeTextureSize(particles);
+		particles.Emitting = true;
 
 		await particles.ToSignal(
 			particles.GetTree().CreateTimer(delay),

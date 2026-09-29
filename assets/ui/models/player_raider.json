@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 4.308741118596947,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.04896,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "player_raider",
+  "title": "Cavalry Rider",
+  "source": "art/blender/units/player_raider.blend",
+  "anchorY": 0.6660504639148712,
+  "anchorX": 0.470562,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "mounted-lance",
+    "body": [
+      0.0,
+      -0.248837
+    ],
+    "contact": [
+      0.427544,
+      -0.275568
+    ]
+  }
+}

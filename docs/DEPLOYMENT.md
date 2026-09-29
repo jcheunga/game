@@ -1,17 +1,24 @@
 # Crownroad backend deployment
 
-This is a production baseline for one region: Docker Compose runs PostgreSQL
-and the API on a private network, while Caddy serves the public HTTPS endpoint.
-The PostgreSQL data directory lives in a persistent Docker volume. It is
-appropriate for internal testing and a small, single-server launch; it is not a
-high-availability setup. Move the same API to a managed PostgreSQL provider
-before a large public launch.
+This is a production baseline for one region: Docker Compose runs Redis and two
+API replicas on a private network, while Caddy serves the public HTTPS endpoint.
+The API connects to a managed PostgreSQL provider through one `DATABASE_URL`.
+Redis lives in a persistent Docker volume. The API host and its local Redis
+remain single-host infrastructure; use managed Redis and multiple hosts before
+a large public launch.
 
 ## What this deploys
 
 - HTTPS with managed certificates and HTTP-to-HTTPS redirect.
-- A private API container: port 8080 is not exposed on the host.
-- Private PostgreSQL database, persistent storage, and health checks.
+- Two private API replicas by default: port 8080 is not exposed on the host.
+- A managed PostgreSQL connection supplied by `DATABASE_URL`; PostgreSQL never
+  shares the API container or Docker host.
+- Private Redis with a password-protected persistent volume. It keeps rate
+  limits consistent across API replicas, while authenticated players are
+  limited by session rather than shared public IP address.
+- Caddy balances ordinary HTTP traffic across replicas. Room WebSockets use
+  room-path affinity so the players in one room reach the same relay process,
+  even if a client later adds query parameters.
 - Docker-mounted provider credentials rather than credentials in images or
   application environment variables.
 - An independent operator key for `/admin`, `/stats`, `/analytics/summary`,
@@ -33,17 +40,25 @@ rehearse a restore before releasing paid currency.
 4. Copy `.env.production.example` to `.env.production`, then set the API
    hostname, a monitored email address, and the exact browser origins. Do not
    use `*` as an origin.
-5. Create `secrets/` (the repository path is `server/secrets/`) with owner-only permissions and add four files:
-   `postgres-password`, `admin-api-key`, `google-play-service-account.json`,
-   and the App Store private-key `.p8` file. Point the four `*_SOURCE` entries in
+5. Provision the managed PostgreSQL database and create a least-privilege
+   application role. Put its **pooled** PostgreSQL URL in `DATABASE_URL` in
+   `.env.production`. It must use verified TLS, such as
+   `sslmode=verify-full`; do not use `Ssl Mode=Disable` for a public provider.
+   Treat the populated environment file as a secret and do not commit it.
+6. Create `secrets/` (the repository path is `server/secrets/`) with owner-only permissions and add four files:
+   `redis-password`, `admin-api-key`, `google-play-service-account.json`, and
+   the App Store private-key `.p8` file. Point the four `*_SOURCE` entries in
    `.env.production` at those paths. Generate a unique, high-entropy admin key.
    Never commit this directory or the populated environment file.
-6. Set `POSTGRES_DB` and `POSTGRES_USER` to new, dedicated values; the password
-   exists only in `postgres-password`. Fill the Google Play and App Store
-   identifiers. Do not set
+7. Fill the Google Play and App Store identifiers. Do not set
    `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS`; the server rejects it in production.
    Leave Stripe keys empty unless a separately compliant desktop/web checkout
    is being launched.
+8. Keep `CROWNROAD_SERVER_REPLICAS=2` and the `max_pool_size=40` URL option for
+   the initial host. This caps the two API replicas at 80 pooled PostgreSQL
+   connections. If either value is raised, first confirm that the provider's
+   pooler, connection limit, memory, CPU, and monitoring capacity support the
+   new total.
 
 If iOS is not ready, do not fabricate an Apple key to make the deployment
 start. Finish the StoreKit bridge and configure its real App Store key before
@@ -57,10 +72,10 @@ From the server directory on the deployment VM:
 ./deploy.sh
 ```
 
-The command checks the production Compose configuration, runs the server and
-game-data checks, builds the image, then starts the API and Caddy. It does not
-create DNS records, buy a domain, upload store credentials, or configure your
-backup provider.
+The command checks the production Compose and Caddy configuration, runs the
+server and game-data checks, builds the image, then starts the API and Caddy.
+It does not create DNS records, buy a domain, upload store credentials, or
+configure your backup provider.
 
 After the hostname resolves, verify the public health endpoint:
 
@@ -76,8 +91,9 @@ not use the administrator credential in the game client.
 ## Operations after launch
 
 - Monitor HTTPS certificate renewal, `/health`, container restarts, API error
-  rate, payment-verification failures, and backup completion. Attach alerts to
-  an on-call destination before enabling paid purchases.
+  rate, PostgreSQL connection saturation, Redis availability,
+  payment-verification failures, and backup completion. Attach alerts to an
+  on-call destination before enabling paid purchases.
 - Enable encrypted PostgreSQL backups and point-in-time recovery with your
   hosting provider, or create encrypted off-host PostgreSQL dumps at least
   daily; retain the wallet ledger for reconciliation.
@@ -124,6 +140,13 @@ sign-in and recovery are required before a public paid launch. The game also
 does not yet connect its battle simulation to the authenticated WebSocket
 relay; keep internet rooms in closed testing until that client transport and
 real-device latency/reconnect testing are complete.
+
+Two API replicas improve capacity and remove a single application process as a
+failure point, while the managed database removes the local database volume as
+a failure domain. The API host and its local Redis volume remain single points
+of failure. A multi-host public launch needs managed Redis or an equivalent
+shared service, off-host observability, and a load balancer in front of more
+than one host.
 
 For the full mobile, store, assets, payments, and account checklist, see
 [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md).

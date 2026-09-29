@@ -119,6 +119,8 @@ public partial class CombatReviewSmoke
         infantry.Position = core;
         var hullBefore = Read<float>(battle, "_playerBaseHealth");
         Invoke(battle, "TryAttackBase", infantry);
+        Check(Mathf.IsEqualApprox(hullBefore,Read<float>(battle,"_playerBaseHealth")),"Base damage waits for weapon contact");
+        infantry.TickAttackTimer(infantry.AttackContactSeconds);
         Check(Mathf.IsEqualApprox(hullBefore - Read<float>(battle, "_playerBaseHealth"), infantry.BaseDamage * 0.7f),
             "Maximum axle armor reduces enemy base attacks by 30%");
         foreach (var unit in Read<List<Unit>>(battle, "_units").Where(x => x.Team == Team.Enemy)) unit.Position = core + new Vector2(600, 0);

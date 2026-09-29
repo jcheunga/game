@@ -18,6 +18,7 @@ public partial class SafeAreaService : Node
 
 	public override void _ExitTree()
 	{
+		GetViewport().SizeChanged -= UpdateSafeArea;
 		if (Instance == this)
 		{
 			Instance = null;
@@ -27,6 +28,7 @@ public partial class SafeAreaService : Node
 	public override void _Ready()
 	{
 		UpdateSafeArea();
+		GetViewport().SizeChanged += UpdateSafeArea;
 	}
 
 	public override void _Notification(int what)
@@ -59,16 +61,23 @@ public partial class SafeAreaService : Node
 			return;
 		}
 
-		MarginLeft = SafeArea.Position.X;
-		MarginTop = SafeArea.Position.Y;
-		MarginRight = windowSize.X - SafeArea.End.X;
-		MarginBottom = windowSize.Y - SafeArea.End.Y;
+		// Safe area is in physical screen pixels, while controls use stretched
+		// canvas coordinates. The inverse also accounts for letterbox padding.
+		var insets = LogicalInsets(SafeArea, GetViewport().GetScreenTransform(), GetViewport().GetVisibleRect().Size);
+		MarginLeft = Mathf.CeilToInt(insets.X);
+		MarginTop = Mathf.CeilToInt(insets.Y);
+		MarginRight = Mathf.CeilToInt(insets.Z);
+		MarginBottom = Mathf.CeilToInt(insets.W);
+	}
 
-		// Clamp to reasonable bounds
-		MarginLeft = Mathf.Clamp(MarginLeft, 0, 120);
-		MarginRight = Mathf.Clamp(MarginRight, 0, 120);
-		MarginTop = Mathf.Clamp(MarginTop, 0, 80);
-		MarginBottom = Mathf.Clamp(MarginBottom, 0, 80);
+	internal static Vector4 LogicalInsets(Rect2 safeArea, Transform2D canvasToScreen, Vector2 canvasSize)
+	{
+		if (safeArea.Size.X <= 0 || safeArea.Size.Y <= 0) return Vector4.Zero;
+		var inverse = canvasToScreen.AffineInverse();
+		var start = inverse * safeArea.Position;
+		var end = inverse * safeArea.End;
+		return new Vector4(Mathf.Clamp(start.X, 0, canvasSize.X / 3), Mathf.Clamp(start.Y, 0, canvasSize.Y / 3),
+			Mathf.Clamp(canvasSize.X-end.X, 0, canvasSize.X / 3), Mathf.Clamp(canvasSize.Y-end.Y, 0, canvasSize.Y / 3));
 	}
 
 	public void ApplyToControl(Control control)

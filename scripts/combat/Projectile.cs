@@ -15,6 +15,7 @@ public partial class Projectile : Node2D
     private Func<bool> _shouldCancel = null!;
     private CpuParticles2D _trail;
     private BaseWeaponKind? _weaponVisual;
+    private uint _targetLifetime;
     public Func<bool> ShouldPause { get; set; }
 
     public void SetWeaponVisual(BaseWeaponKind kind) => _weaponVisual = kind;
@@ -73,12 +74,15 @@ public partial class Projectile : Node2D
         Action<Vector2, float, Color> onHit = null)
     {
         _target = target;
+        _targetLifetime = target is Unit unit ? unit.CombatLifetime : 0;
         _damage = damage;
         _speed = speed;
         _color = color;
         _radius = damage >= 18f ? 6f : 5f;
         _applyImpact = applyImpact;
         _shouldCancel = shouldCancel;
+        var aim = target is Unit aimedUnit ? aimedUnit.BodyContactPosition : target.GlobalPosition;
+        _travelDirection = (aim-GlobalPosition).Normalized();
         _onHit = onHit;
         _active = true;
         Visible = true;
@@ -92,10 +96,9 @@ public partial class Projectile : Node2D
             return;
         }
 
-        if (!IsInstanceValid(_target) || (_shouldCancel != null && _shouldCancel()))
+        if (!IsInstanceValid(_target) || (_target is Unit pooled && pooled.CombatLifetime != _targetLifetime) || (_shouldCancel != null && _shouldCancel()))
         {
             // Target died mid-flight — spawn impact effect at current position instead of vanishing silently
-            _onHit?.Invoke(GlobalPosition, 0f, _color);
             if (GetParent() != null)
             {
                 BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition, _color, _damage * 0.5f);
@@ -105,12 +108,14 @@ public partial class Projectile : Node2D
         }
 
         var deltaF = (float)delta;
-        var toTarget = _target.GlobalPosition - GlobalPosition;
+        var targetPoint = _target is Unit victim ? victim.BodyContactPosition : _target.GlobalPosition;
+        var toTarget = targetPoint - GlobalPosition;
         var distance = toTarget.Length();
         var step = _speed * deltaF;
 
         if (distance <= step + _radius)
         {
+            GlobalPosition = targetPoint;
             var appliedDamage = _applyImpact?.Invoke(_damage) ?? 0f;
             _onHit?.Invoke(GlobalPosition, appliedDamage, _color);
             SpawnImpactEffect();

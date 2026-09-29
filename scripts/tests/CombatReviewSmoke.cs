@@ -53,7 +53,17 @@ public partial class CombatReviewSmoke : Node
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
             GameState.Instance.UnlockNextStage(59);
-            if (args.Contains("--economy-export")) ExportProgressionEconomy();
+            if (args.Contains("--reference-map"))
+            {
+                // Test-only comparison with the original one-screen layout; never write game data.
+                GameData.Combat.EnemyBaseX = 1184f;
+                GameData.Combat.EnemySpawnX = 1140f;
+                GameData.Combat.BattlefieldRight = 1196f;
+            }
+            if (args.Contains("--stage-layout")) ExportStageLayoutReview();
+            else if (args.Contains("--field-objectives")) await CheckCampaignFieldObjectives();
+            else if (args.Contains("--camera")) await CheckBattleCamera();
+            else if (args.Contains("--economy-export")) ExportProgressionEconomy();
             else if (args.Contains("--regressions")) await Regressions();
             else
             {
@@ -185,7 +195,7 @@ public partial class CombatReviewSmoke : Node
         var health = archer.Health;
         Invoke(battle, "ApplyCursedGroundAttrition", 1f);
         Check(archer.Health == health, "Cursed ground has safe deployment lanes");
-        archer.Position = new Vector2(500, 340);
+        archer.Position = ((IEnumerable<Rect2>)Invoke(battle, "CursedGroundAreas")).First().GetCenter();
         Invoke(battle, "ApplyCursedGroundAttrition", 1f);
         Check(archer.Health < health, "The marked cursed strip still applies attrition");
         if (OS.GetCmdlineUserArgs().Contains("--screenshots"))
@@ -299,6 +309,10 @@ public partial class CombatReviewSmoke : Node
         var bosses = new HashSet<string>();
         var snapshotTaken = false;
         var peak = 0;
+        var firstContact = -1f;
+        var firstGateDamage = -1f;
+        var waveTimes = new List<float>();
+        var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         var tick = 0;
         var limitArg = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--time-limit="));
         var timeLimit = limitArg == null ? 210 : Math.Clamp(int.Parse(limitArg.Split('=')[1]), 60, 600);
@@ -314,6 +328,18 @@ public partial class CombatReviewSmoke : Node
             {
                 var enemy = units.Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
                 var targetY = enemy?.Position.Y ?? 340;
+                if (OS.GetCmdlineUserArgs().Contains("--field-tactics"))
+                {
+                    var plan = Read<StageDefinition>(battle, "_stageData").Battlefield;
+                    var outpost = (Vector2)Invoke(battle, "FieldPoint", plan.OutpostXRatio, plan.OutpostYRatio);
+                    Write(battle, "_forwardDeploymentArmed", enemy == null || enemy.Position.X >= outpost.X - 140);
+                    if (enemy == null || enemy.Position.X > 600)
+                    {
+                        if (!Read<bool>(battle, "_outpostCaptured")) targetY = outpost.Y;
+                        else if (!Read<bool>(battle, "_supplyCollected"))
+                            targetY = ((Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio)).Y;
+                    }
+                }
                 var courage = Read<float>(battle, "_courage");
                 var savingForSpell = false;
                 if (tactical)
@@ -345,6 +371,11 @@ public partial class CombatReviewSmoke : Node
                 if (Read<bool>(battle, "_campaignConvoyCommandReady")) Invoke(battle, "TryActivateCampaignConvoyCommand");
             }
             battle._PhysicsProcess(1.0 / 60);
+            var elapsed = Read<float>(battle, "_elapsed");
+            if (director.NextScriptedWaveIndex > waveTimes.Count) waveTimes.Add(elapsed);
+            if (firstGateDamage < 0 && Read<float>(battle, "_enemyBaseHealth") < Read<float>(battle, "_enemyBaseMaxHealth")) firstGateDamage = elapsed;
+            if (firstContact < 0 && tick % 30 == 0 && units.Any(p => !p.IsDead && p.Team == Team.Player &&
+                units.Any(e => !e.IsDead && e.Team == Team.Enemy && p.Position.DistanceTo(e.Position) < 180))) firstContact = elapsed;
             if (!snapshotTaken && OS.GetCmdlineUserArgs().Contains("--screenshots") &&
                 (Read<Dictionary<Unit, float>>(battle, "_pendingBossPhases").Count > 0 || Read<float>(battle, "_elapsed") > 55))
             {
@@ -356,7 +387,17 @@ public partial class CombatReviewSmoke : Node
             peak = Math.Max(peak, units.Count(x => x.Team == Team.Enemy && !x.IsDead));
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
         }
+        var battleResult = (StageBattleResult)Invoke(battle, "BuildStageBattleResult");
+        var victory = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0 && Read<float>(battle, "_playerBaseHealth") > 0;
+        var evaluation = StageObjectives.EvaluateBattle(Read<StageDefinition>(battle, "_stageData"), battleResult, victory);
         GD.Print("COMBAT_SAMPLE: " + System.Text.Json.JsonSerializer.Serialize(new {
+            fieldTactics = OS.GetCmdlineUserArgs().Contains("--field-tactics"),
+            mapWidth = GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
+            outpostCaptured = Read<bool>(battle, "_outpostCaptured"), supplyCollected = Read<bool>(battle, "_supplyCollected"), forwardDeployments = Read<int>(battle, "_forwardDeploymentsUsed"),
+            firstContact, firstGateDamage, waveTimes, stars = evaluation.StarsEarned,
+            objectives = evaluation.Outcomes, battleResult.CompletedMissionEvents, battleResult.FailedMissionEvents,
+            battleResult.TotalMissionEvents, battleResult.PlayerHazardHits, battleResult.CampaignBossPressureTriggers,
+            battleResult.PlayerDeployments,
             milestoneRelics = OS.GetCmdlineUserArgs().Contains("--milestone-relics"), timeLimit,
             stage, level, tactical, seedOffset = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--seed-offset="))?.Split('=')[1] ?? "0", armaments = OS.GetCmdlineUserArgs().Contains("--armaments"), commonRelics = OS.GetCmdlineUserArgs().Contains("--common-relics"), investment, squad = string.Join(",", deck.Roster.Select(x => x.Id)), seconds = Math.Round(Read<float>(battle, "_elapsed"), 1),
             won = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0 && Read<float>(battle, "_playerBaseHealth") > 0,

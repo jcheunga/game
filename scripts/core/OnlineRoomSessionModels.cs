@@ -5,6 +5,7 @@ public sealed class OnlineRoomSessionSnapshot
 	public string Status { get; set; } = "";
 	public string Summary { get; set; } = "";
 	public long FetchedAtUnixSeconds { get; set; }
+	public bool IncludesScoreboard { get; set; }
 	public MultiplayerRoomSnapshot RoomSnapshot { get; set; } = new();
 }
 

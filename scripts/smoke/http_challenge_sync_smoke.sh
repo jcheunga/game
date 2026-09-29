@@ -36,19 +36,46 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length).decode("utf-8")
-        with open(request_log, "w", encoding="utf-8") as handle:
-            handle.write(body)
-
         payload = json.loads(body)
-        batch = payload.get("batch", {})
-        accepted = [entry.get("submissionId", "") for entry in batch.get("submissions", []) if entry.get("submissionId")]
-        response = {
-            "batchId": batch.get("batchId", ""),
-            "status": "accepted",
-            "message": "stub accepted batch",
-            "acceptedSubmissionIds": accepted,
-            "rejectedSubmissionIds": []
+        request = {
+            "path": self.path,
+            "authorization": self.headers.get("Authorization", ""),
+            "body": payload,
         }
+        requests = []
+        try:
+            with open(request_log, "r", encoding="utf-8") as handle:
+                requests = json.load(handle)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        requests.append(request)
+        with open(request_log, "w", encoding="utf-8") as handle:
+            json.dump(requests, handle)
+
+        if self.path == "/player-profile":
+            profile = payload.get("profile", {})
+            response = {
+                "status": "ok",
+                "message": "stub player session issued",
+                "playerProfileId": profile.get("playerProfileId", ""),
+                "playerCallsign": profile.get("playerCallsign", ""),
+                "authState": "verified",
+                "sessionToken": "token-sync-smoke",
+                "canSubmitChallenges": True,
+                "canJoinRooms": True,
+                "relayEnabled": True,
+                "syncedAtUnixSeconds": 1710003900,
+            }
+        else:
+            batch = payload.get("batch", {})
+            accepted = [entry.get("submissionId", "") for entry in batch.get("submissions", []) if entry.get("submissionId")]
+            response = {
+                "batchId": batch.get("batchId", ""),
+                "status": "accepted",
+                "message": "stub accepted batch",
+                "acceptedSubmissionIds": accepted,
+                "rejectedSubmissionIds": []
+            }
         encoded = json.dumps(response).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -61,7 +88,8 @@ class Handler(BaseHTTPRequestHandler):
 
 HTTPServer.allow_reuse_address = True
 server = HTTPServer(("127.0.0.1", port), Handler)
-server.handle_request()
+server.handle_request() # /player-profile session bootstrap
+server.handle_request() # /challenge-sync authenticated batch
 PY
 SERVER_PID=$!
 sleep 1
@@ -92,6 +120,18 @@ fi
 if [[ ! -s "$REQUEST_LOG" ]]; then
 	echo "HTTP stub did not capture a request."
 	cat "$SMOKE_LOG"
+	exit 1
+fi
+
+if ! grep -q '"path": "/player-profile"' "$REQUEST_LOG" || ! grep -q '"path": "/challenge-sync"' "$REQUEST_LOG"; then
+	echo "HTTP smoke did not complete the expected session bootstrap and challenge-sync requests."
+	cat "$REQUEST_LOG"
+	exit 1
+fi
+
+if ! grep -q '"authorization": "Bearer token-sync-smoke"' "$REQUEST_LOG"; then
+	echo "Challenge-sync request did not carry the issued bearer session."
+	cat "$REQUEST_LOG"
 	exit 1
 fi
 

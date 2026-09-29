@@ -34,14 +34,14 @@ port = int(sys.argv[1])
 request_log = sys.argv[2]
 
 class Handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        body = self.rfile.read(int(self.headers.get("Content-Length", "0") or "0")).decode("utf-8")
+    def do_GET(self):
         with open(request_log, "w", encoding="utf-8") as handle:
-            handle.write(body)
+            json.dump({"path": self.path, "joinTicket": self.headers.get("X-Join-Ticket", "")}, handle)
 
         response = {
             "status": "ok",
             "message": "stub room session fetched",
+            "includesScoreboard": True,
             "roomId": "ROOM-LOCK-02",
             "roomTitle": "Locked Squad Scrim",
             "boardCode": "CH-03-RAT-6222",
@@ -180,6 +180,12 @@ internal static class Program
             return 1;
         }
 
+        if (!snapshot.IncludesScoreboard)
+        {
+            Console.Error.WriteLine("expected combined session scoreboard marker");
+            return 1;
+        }
+
         var localPeer = snapshot.RoomSnapshot.Peers.FirstOrDefault(peer => peer.IsLocalPlayer);
         if (localPeer == null || localPeer.RaceElapsedSeconds < 12f || localPeer.HullPercent != 91 || localPeer.EnemyDefeats != 6)
         {
@@ -231,8 +237,14 @@ if [[ ! -s "$REQUEST_LOG" ]]; then
 	exit 1
 fi
 
-if ! grep -q '"joinToken"' "$REQUEST_LOG"; then
-	echo "Room session request payload did not include the expected joinToken field."
+if ! grep -q '"joinTicket": "JOIN-HTTP-01"' "$REQUEST_LOG"; then
+	echo "Room session request did not include the expected join-ticket header."
+	cat "$REQUEST_LOG"
+	exit 1
+fi
+
+if ! grep -q '"path": "/challenge-room-session?roomId=ROOM-LOCK-02"' "$REQUEST_LOG"; then
+	echo "Room session request did not include the expected roomId query."
 	cat "$REQUEST_LOG"
 	exit 1
 fi

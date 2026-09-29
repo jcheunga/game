@@ -101,6 +101,22 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 ## Prototype controls
 
+- Battlefield: the map is 2560 units wide (twice the original screen width). Scroll
+  the mouse wheel or trackpad to pan, middle-drag, or use Left/Right arrows. The
+  navigation bar or campaign minimap also pans the view; **Home / End** jump to
+  either base. Campaign arrow buttons find offscreen enemies, or the nearest
+  base when no enemies are hidden. On mobile, drag to explore and use **Map**
+  to see the entire battlefield.
+- Campaign field objectives: all 60 stages have a capturable forward post and an
+  optional supply cache. Hold the blue ring to earn 3–4 forward deployments;
+  the Post button switches between saving them and using them. Enemies block
+  the post, and it needs 8 seconds between deployments. Hold the gold ring for
+  2.5 seconds to claim courage, wagon repairs, or siege supplies. See the Field
+  briefing or battle intel for that stage's reward.
+- Encounters: advancing troops can trigger the next Approach, Crossroads, or
+  Gate pack, with a warning at its entry point. Enemy caps and time fallbacks
+  still apply. Cursed stages have two separated danger pockets with safe lanes.
+  [Expanded campaign design and all-stage results](docs/EXPANDED_CAMPAIGN.md).
 - Main menu:
   - Shows live caravan progress, unlocked-stage count, authored campaign progress, gold/food, next deployment, and active squad summary
   - `Start Campaign`: opens map

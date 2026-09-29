@@ -24,14 +24,14 @@ public static class TutorialHintCatalog
 		{
 			Id = "cooldown_basics",
 			Title = "Cooldowns",
-			Body = "Each unit card has a cooldown after deployment. The dark overlay shows remaining time.",
+			Body = "Drag a unit card onto the battlefield and release to deploy. Each card has a cooldown; the dark overlay shows remaining time.",
 			TriggerContext = "first_battle"
 		},
 		new()
 		{
 			Id = "spell_basics",
 			Title = "Spells",
-			Body = "Click a spell button then click the battlefield to cast. Spells cost courage and have cooldowns.",
+			Body = "Drag a magic card onto the battlefield. Aim with the preview and release to cast; return to the cards to cancel. Spells cost courage and have cooldowns.",
 			TriggerContext = "first_spell_unlock"
 		},
 		new()

@@ -18,6 +18,11 @@ public static class StageMissionEvents
             return System.Array.Empty<StageMissionEventDefinition>();
 
         var fallback = BuildCampaignFallbackMission(stage);
+        if (fallback != null && stage.Battlefield != null)
+        {
+            fallback.XRatio = Mathf.Min(fallback.XRatio, fallback.NormalizedType == "gate_breach" ? .64f : .53f);
+            fallback.StartTime = Mathf.Min(fallback.StartTime, fallback.NormalizedType == "gate_breach" ? 24f : 18f);
+        }
         return fallback == null
             ? System.Array.Empty<StageMissionEventDefinition>()
             : new[] { fallback };

@@ -1,7 +1,9 @@
+using System;
 using Godot;
 
 public partial class BattleFloatText : Label
 {
+    public Func<float> PresentationScale { get; set; }
     private Vector2 _velocity = new(0f, -42f);
     private float _lifetime = 0.5f;
     private float _elapsed;
@@ -22,6 +24,7 @@ public partial class BattleFloatText : Label
         AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.85f));
         AddThemeFontSizeOverride("font_size", 19);
         AddThemeConstantOverride("outline_size", 4);
+        Scale = Vector2.One * (PresentationScale?.Invoke() ?? 1f);
     }
 
     public override void _Process(double delta)
@@ -34,11 +37,12 @@ public partial class BattleFloatText : Label
             return;
         }
 
-        Position += _velocity * deltaF;
+        var scale = PresentationScale?.Invoke() ?? 1f;
+        Position += _velocity * deltaF * scale;
         _velocity *= 0.96f;
 
         var alpha = 1f - (_elapsed / _lifetime);
         Modulate = new Color(_baseColor, alpha);
-        Scale = Vector2.One * (1f + (0.08f * alpha));
+        Scale = Vector2.One * scale * (1f + (0.08f * alpha));
     }
 }

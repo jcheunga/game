@@ -27,6 +27,19 @@ public static class OnlineRoomScoreboardService
 			return false;
 		}
 
+		// The production room-session endpoint includes the ordered peer scores.
+		// Reuse a just-fetched session instead of immediately issuing a second
+		// scoreboard request; this cuts steady room polling in half.
+		var embeddedSnapshot = BuildEmbeddedSnapshot(ticket);
+		if (embeddedSnapshot != null)
+		{
+			_cachedSnapshot = embeddedSnapshot;
+			OnlineRoomSessionService.ApplyCachedScoreboardSnapshot();
+			_lastStatus = "Reused the combined room session snapshot.";
+			message = $"Updated room scoreboard for {ticket.RoomTitle} from the combined session snapshot.";
+			return true;
+		}
+
 		var provider = ResolveProvider();
 		try
 		{
@@ -103,6 +116,52 @@ public static class OnlineRoomScoreboardService
 		return providerId == ChallengeSyncProviderCatalog.HttpApiId
 			? new HttpApiOnlineRoomScoreboardProvider(BuildHttpEndpoint(GameState.Instance?.ChallengeSyncEndpoint ?? ""))
 			: LocalProvider;
+	}
+
+	private static OnlineRoomScoreboardSnapshot BuildEmbeddedSnapshot(OnlineRoomJoinTicket ticket)
+	{
+		var session = OnlineRoomSessionService.GetCachedSnapshot();
+		var room = session?.RoomSnapshot;
+		if (session == null || !session.IncludesScoreboard || room == null || !room.HasRoom ||
+			!string.Equals(room.RoomId, ticket.RoomId, StringComparison.OrdinalIgnoreCase) ||
+			DateTimeOffset.UtcNow.ToUnixTimeSeconds() - session.FetchedAtUnixSeconds > 15)
+		{
+			return null;
+		}
+
+		var rank = 0;
+		var entries = room.Peers
+			.Where(peer => peer.IsLaunchEligible)
+			.OrderByDescending(peer => peer.PostedScore)
+			.ThenBy(peer => peer.RaceElapsedSeconds < 0f ? float.MaxValue : peer.RaceElapsedSeconds)
+			.Select(peer => new OnlineRoomScoreboardEntry
+			{
+				Rank = ++rank,
+				RoomId = room.RoomId,
+				BoardCode = room.SharedChallengeCode,
+				PlayerCallsign = peer.Label,
+				Score = Math.Max(0, peer.PostedScore),
+				HullPercent = Math.Max(0, peer.HullPercent),
+				ElapsedSeconds = Math.Max(0f, peer.RaceElapsedSeconds),
+				EnemyDefeats = Math.Max(0, peer.EnemyDefeats),
+				Won = peer.Phase.Equals("submitted", StringComparison.OrdinalIgnoreCase) ||
+					peer.Phase.Equals("complete", StringComparison.OrdinalIgnoreCase),
+				Retreated = peer.Phase.Equals("retreated", StringComparison.OrdinalIgnoreCase),
+				SubmittedAtUnixSeconds = session.FetchedAtUnixSeconds
+			})
+			.ToList();
+
+		return new OnlineRoomScoreboardSnapshot
+		{
+			RoomId = room.RoomId,
+			BoardCode = room.SharedChallengeCode,
+			ProviderId = session.ProviderId,
+			ProviderDisplayName = session.ProviderDisplayName,
+			Status = "ok",
+			Summary = "Included in the current room session snapshot.",
+			FetchedAtUnixSeconds = session.FetchedAtUnixSeconds,
+			Entries = entries
+		};
 	}
 
 	private static string BuildHttpEndpoint(string syncEndpoint)

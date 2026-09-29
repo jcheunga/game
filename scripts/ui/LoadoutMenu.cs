@@ -15,6 +15,7 @@ public partial class LoadoutMenu : Control
 
     private void BuildUi()
     {
+        if(MobilePresentation.Enabled) { BuildMobileUi(); return; }
         var route = RouteCatalog.Get(_stage.MapId);
         MenuBackdropComposer.AddSolidBackdrop(this, "loadout", new Color("101d26"), route.Id);
         RealmUi.Header(this, $"{route.Title} / Stage {_stage.StageNumber:00}", _stage.StageName, () => SceneRouter.Instance.GoToMap());
@@ -42,7 +43,10 @@ public partial class LoadoutMenu : Control
             cards.AddChild(frame);
             var card = new VBoxContainer();
             frame.AddChild(card);
-            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(150, 140)));
+            var model=new UnitModelPreview {CustomMinimumSize=new Vector2(150,150)};
+            model.SetUnit(unit);
+            model.InspectRequested=()=>ModelShowcase.Show(this,GameState.Instance.GetActiveDeckUnits().ToArray(),unit.Id);
+            card.AddChild(model);
             card.AddChild(RealmUi.Label(unit.DisplayName, 17));
             card.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)} · {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}", 12, true));
             var stats = GameState.Instance.BuildPlayerUnitStats(unit);
@@ -92,7 +96,7 @@ public partial class LoadoutMenu : Control
         {
             0 => StageObjectives.BuildSummaryText(_stage, GameState.Instance.GetStageStars(_stage.StageNumber)),
             1 => StageEncounterIntel.BuildCampaignEncounterIntel(_stage),
-            2 => StageModifiers.BuildSummaryText(_stage) + "\n\n" + StageHazards.BuildSummaryText(_stage) + "\n\n" + GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber),
+            2 => (_stage.Battlefield == null ? "" : _stage.Battlefield.Briefing + "\n\n") + StageModifiers.BuildSummaryText(_stage) + "\n\n" + StageHazards.BuildSummaryText(_stage) + "\n\n" + GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber),
             _ => AdventureMapCatalog.Leader(_stage.StageNumber).Description + "\n\n" + _stage.Description + "\n\n" + StageMissionEvents.BuildCampaignSummaryText(_stage)
         };
         _briefing.AddChild(RealmUi.Label(text, 15));

@@ -79,6 +79,44 @@ public static class SessionAuth
         return true;
     }
 
+    public static async Task<Session?> TryAuthorizeAsync(HttpRequest request, string claimedProfileId)
+    {
+        if (string.IsNullOrWhiteSpace(claimedProfileId)) return null;
+
+        var token = ReadBearerToken(request);
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        using var conn = await Database.OpenAsync(request.HttpContext.RequestAborted);
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT session_id, profile_id, expires_at
+            FROM auth_sessions
+            WHERE token_hash = @hash AND revoked_at = 0 AND expires_at > @now
+            LIMIT 1
+        """;
+        cmd.Parameters.AddWithValue("@hash", Hash(token));
+        cmd.Parameters.AddWithValue("@now", now);
+
+        using var reader = await cmd.ExecuteReaderAsync(request.HttpContext.RequestAborted);
+        if (!await reader.ReadAsync(request.HttpContext.RequestAborted)) return null;
+
+        var profileId = reader.GetString(1);
+        if (!string.Equals(profileId, claimedProfileId, StringComparison.Ordinal)) return null;
+
+        var sessionId = reader.GetString(0);
+        var expiresAt = reader.GetInt64(2);
+        reader.Close();
+
+        using var touch = conn.CreateCommand();
+        touch.CommandText = "UPDATE auth_sessions SET last_seen_at = @now WHERE session_id = @sid";
+        touch.Parameters.AddWithValue("@now", now);
+        touch.Parameters.AddWithValue("@sid", sessionId);
+        await touch.ExecuteNonQueryAsync(request.HttpContext.RequestAborted);
+
+        return new Session(profileId, sessionId, expiresAt);
+    }
+
     public static bool PlayerExists(DbConnection conn, string profileId)
     {
         using var cmd = conn.CreateCommand();

@@ -1303,9 +1303,15 @@ public partial class ShopMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateUnitBadge(unit, new Vector2(126f, 154f)));
+        var modelColumn=new VBoxContainer {CustomMinimumSize=new Vector2(170,0)};
+        var model=new UnitModelPreview {CustomMinimumSize=new Vector2(170,210)};
+        model.SetUnit(unit);
+        model.InspectRequested=()=>ModelShowcase.Show(this,GameData.GetPlayerUnits().ToArray(),unit.Id);
+        modelColumn.AddChild(model);
+        var inspect=RealmUi.Button("eye","Inspect model",model.InspectRequested);
+        if(MobilePresentation.Enabled) MobilePresentation.TouchButton(inspect);
+        modelColumn.AddChild(inspect);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding,modelColumn);
 
         var statusLine = !available
             ? $"Locked until stage {unit.UnlockStage}"

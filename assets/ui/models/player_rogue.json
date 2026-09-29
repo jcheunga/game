@@ -1,0 +1,43 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "drawScale": 2.512131592422995,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.05304,
+      "loop": false,
+      "contactFrame": 4
+    }
+  },
+  "assetId": "player_rogue",
+  "title": "Rogue",
+  "source": "art/blender/units/player_rogue.blend",
+  "anchorY": 0.7789929956197739,
+  "anchorX": 0.45054,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "blade-stab",
+    "body": [
+      0.0,
+      -0.275058
+    ],
+    "contact": [
+      0.513588,
+      -0.269086
+    ]
+  }
+}

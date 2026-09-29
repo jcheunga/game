@@ -1,0 +1,62 @@
+{
+  "frameWidth": 192,
+  "frameHeight": 240,
+  "drawScale": 4.308741118596947,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "duration": 0.16,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "duration": 0.1,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 10,
+      "duration": 0.0816,
+      "loop": false,
+      "contactFrame": 4
+    },
+    "hit": {
+      "start": 20,
+      "count": 2,
+      "duration": 0.09,
+      "loop": false
+    },
+    "death": {
+      "start": 22,
+      "count": 6,
+      "duration": 0.11,
+      "loop": false
+    },
+    "deploy": {
+      "start": 28,
+      "count": 4,
+      "duration": 0.1,
+      "loop": false
+    }
+  },
+  "assetId": "enemy_boss_steppe",
+  "title": "Steppe Warlord",
+  "source": "art/blender/units/enemy_boss_steppe.blend",
+  "anchorY": 0.6660504639148712,
+  "anchorX": 0.470562,
+  "motion": {
+    "revision": "contact-v1",
+    "profile": "mounted-lance",
+    "body": [
+      0.0,
+      -0.248837
+    ],
+    "contact": [
+      0.140338,
+      0.015671
+    ]
+  },
+  "healthBarY": 0.462925
+}

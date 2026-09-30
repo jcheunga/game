@@ -158,16 +158,7 @@ public partial class BattleSummaryMenu : Control
 		stack.AddChild(CreateRewardSummaryRow("season_xp", "Season XP", data.SeasonXPEarned.ToString()));
 
 		// Star rating
-		var starText = "";
-		for (var i = 0; i < 3; i++)
-			starText += i < data.StarsEarned ? "\u2605" : "\u2606";
-		var starLabel = new Label
-		{
-			Text = starText,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		starLabel.AddThemeColorOverride("font_color", accentColor);
-		stack.AddChild(starLabel);
+		stack.AddChild(new StageStarRating { Stars = data.Won ? data.StarsEarned : 0 });
 
 		// Mutator gold multiplier
 		if (data.MutatorGoldMultiplier > 1f)

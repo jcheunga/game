@@ -1841,7 +1841,15 @@ public static class Endpoints
             return authError!;
         if (string.IsNullOrWhiteSpace(saveData))
             return Results.BadRequest(new { error = "missing saveData" });
-        if (saveData.Length > MaxSaveDataBytes)
+        if (System.Text.Encoding.UTF8.GetByteCount(saveData) > MaxSaveDataBytes)
+            return Results.Json(new { error = "save data too large" }, statusCode: 413);
+
+        try { saveData = CloudSavePrivacy.Sanitize(saveData); }
+        catch (JsonException)
+        {
+            return Results.BadRequest(new { error = "saveData must be a valid JSON object" });
+        }
+        if (System.Text.Encoding.UTF8.GetByteCount(saveData) > MaxSaveDataBytes)
             return Results.Json(new { error = "save data too large" }, statusCode: 413);
 
         var saveHash = ComputeHash(saveData);
@@ -1899,12 +1907,19 @@ public static class Endpoints
             return Results.Ok(new { status = "empty", message = "No cloud save found." });
         }
 
+        // Defense in depth for restored backups or rows written by an older replica.
+        string cleanSave;
+        try { cleanSave = CloudSavePrivacy.Sanitize(reader.GetString(0)); }
+        catch (JsonException)
+        {
+            return Results.Json(new { error = "Stored save requires repair." }, statusCode: 409);
+        }
         return Results.Ok(new
         {
             status = "ok",
-            saveData = reader.GetString(0),
+            saveData = cleanSave,
             saveVersion = reader.GetInt32(1),
-            saveHash = reader.GetString(2),
+            saveHash = ComputeHash(cleanSave),
             uploadedAtUnixSeconds = reader.GetInt64(3)
         });
     }

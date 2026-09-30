@@ -9,6 +9,7 @@
     <DefineConstants>$(DefineConstants);SQLITE_TEST</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\scripts\core\CloudSavePrivacy.cs" Link="CloudSavePrivacy.cs" />
     <Compile Include="..\scripts\core\AssetCoverageCatalog.cs" Link="AssetCoverageCatalog.cs" />
     <Compile Include="..\scripts\core\CodexCatalog.cs" Link="CodexCatalog.cs" />
     <Compile Include="..\scripts\tests\DataIntegrityValidator.cs" Link="DataIntegrityValidator.cs" />

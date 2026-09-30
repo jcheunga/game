@@ -188,7 +188,7 @@ public partial class TowerMenu : Control
 			if (capturedFloor == _selectedFloor)
 				floorLabel.AddThemeColorOverride("font_color", new Color("38bdf8"));
 			else if (isLocked)
-				floorLabel.AddThemeColorOverride("font_color", new Color("505860"));
+				floorLabel.AddThemeColorOverride("font_color", new Color("81918e"));
 			else if (isCleared)
 				floorLabel.AddThemeColorOverride("font_color", new Color("70c870"));
 

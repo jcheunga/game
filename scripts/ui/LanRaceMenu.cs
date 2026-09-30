@@ -99,7 +99,7 @@ public partial class LanRaceMenu : Control
 		var boardPanel = new PanelContainer
 		{
 			Position = new Vector2(24f, 122f),
-			Size = new Vector2(540f, 520f)
+            Size = new Vector2(540f, 480f)
 		};
 		AddChild(boardPanel);
 		_entrancePanels.Add(boardPanel);
@@ -111,9 +111,16 @@ public partial class LanRaceMenu : Control
 		boardPadding.AddThemeConstantOverride("margin_bottom", 18);
 		boardPanel.AddChild(boardPadding);
 
-		var boardStack = new VBoxContainer();
-		boardStack.AddThemeConstantOverride("separation", 12);
-		boardPadding.AddChild(boardStack);
+		var boardScroll = new ScrollContainer
+		{
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+		};
+		boardPadding.AddChild(boardScroll);
+		var boardStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		boardStack.AddThemeConstantOverride("separation", 8);
+		boardScroll.AddChild(boardStack);
 
 		boardStack.AddChild(new Label
 		{
@@ -127,12 +134,15 @@ public partial class LanRaceMenu : Control
 		};
 		boardStack.AddChild(_boardLabel);
 		boardStack.AddChild(RealmUi.Button("book", "Board briefing", () => RealmUi.Details(this, "Board briefing", _boardLabel.Text)));
+		var loadoutRow = new HBoxContainer();
+		loadoutRow.AddThemeConstantOverride("separation", 12);
+		boardStack.AddChild(loadoutRow);
 		_boardDeckRow = new HBoxContainer();
 		_boardDeckRow.AddThemeConstantOverride("separation", 8);
-		boardStack.AddChild(_boardDeckRow);
+		loadoutRow.AddChild(_boardDeckRow);
 		_boardSpellRow = new HBoxContainer();
 		_boardSpellRow.AddThemeConstantOverride("separation", 8);
-		boardStack.AddChild(_boardSpellRow);
+		loadoutRow.AddChild(_boardSpellRow);
 
 		boardStack.AddChild(new Label
 		{
@@ -196,11 +206,12 @@ public partial class LanRaceMenu : Control
 			MaxLinesVisible = -1
 		};
 		boardStack.AddChild(_statusLabel);
+		boardStack.MoveChild(_statusLabel, 1);
 
 		var roomPanel = new PanelContainer
 		{
 			Position = new Vector2(588f, 122f),
-			Size = new Vector2(668f, 520f)
+            Size = new Vector2(668f, 480f)
 		};
 		AddChild(roomPanel);
 		_entrancePanels.Add(roomPanel);
@@ -288,8 +299,8 @@ public partial class LanRaceMenu : Control
 
 		var bottomPanel = new PanelContainer
 		{
-			Position = new Vector2(24f, 660f),
-			Size = new Vector2(1232f, 56f)
+            Position = new Vector2(24f, 618f),
+            Size = new Vector2(1232f, 76f)
 		};
 		AddChild(bottomPanel);
 		_entrancePanels.Add(bottomPanel);

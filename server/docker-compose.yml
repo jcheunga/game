@@ -14,7 +14,9 @@ services:
       retries: 10
 
   crownroad-server:
-    build: .
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
     ports:
       - "8080:8080"
     environment:

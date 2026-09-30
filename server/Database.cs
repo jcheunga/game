@@ -16,7 +16,7 @@ public static class Database
 #endif
     private static NpgsqlDataSource? _postgresDataSource;
     private static Provider _provider = Provider.Postgres;
-    private const int CurrentSchemaVersion = 4;
+    private const int CurrentSchemaVersion = 5;
 
     private enum Provider
     {
@@ -573,6 +573,52 @@ public static class Database
             cmd.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS idx_challenge_results_submission ON challenge_results(submission_id) WHERE submission_id IS NOT NULL";
             cmd.ExecuteNonQuery();
             SetSchemaVersion(conn, 4);
+        }
+
+        if (version < 5)
+        {
+            ScrubCloudSaveDeviceState(conn);
+            SetSchemaVersion(conn, 5);
+        }
+    }
+
+    private static void ScrubCloudSaveDeviceState(DbConnection conn)
+    {
+        // Bound memory use. Compare the original contents on update so an upload
+        // or a second replica's migration cannot be overwritten by an older save.
+        string? after = null;
+        while (true)
+        {
+            var batch = new System.Collections.Generic.List<(string Profile, string Data)>();
+            using (var read = conn.CreateCommand())
+            {
+                read.CommandText = after == null
+                    ? "SELECT profile_id, save_data FROM cloud_saves ORDER BY profile_id LIMIT 100"
+                    : "SELECT profile_id, save_data FROM cloud_saves WHERE profile_id > @after ORDER BY profile_id LIMIT 100";
+                if (after != null) read.Parameters.AddWithValue("@after", after);
+                using var reader = read.ExecuteReader();
+                while (reader.Read()) batch.Add((reader.GetString(0), reader.GetString(1)));
+            }
+            if (batch.Count == 0) return;
+            foreach (var (profile, data) in batch)
+            {
+                string clean;
+                try { clean = CloudSavePrivacy.Sanitize(data); }
+                catch (System.Text.Json.JsonException)
+                {
+                    // Never delete progress or log a possibly credential-bearing blob.
+                    throw new InvalidOperationException("Cloud-save privacy migration found invalid JSON. Repair the affected save through a restricted database session before restarting.");
+                }
+                if (clean == data) continue;
+                using var update = conn.CreateCommand();
+                update.CommandText = "UPDATE cloud_saves SET save_data = @clean, save_hash = @hash WHERE profile_id = @pid AND save_data = @old";
+                update.Parameters.AddWithValue("@clean", clean);
+                update.Parameters.AddWithValue("@hash", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(clean))).ToLowerInvariant()[..16]);
+                update.Parameters.AddWithValue("@pid", profile);
+                update.Parameters.AddWithValue("@old", data);
+                update.ExecuteNonQuery();
+            }
+            after = batch[^1].Profile;
         }
     }
 

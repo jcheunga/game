@@ -34,7 +34,7 @@ public static class RealmUi
 
     public static Button Button(string icon, string label, Action action, bool primary = false)
     {
-        var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, TooltipText = label,
+        var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = !string.IsNullOrEmpty(label), TooltipText = label,
             CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, 20).X + 72, 48),
             Alignment = HorizontalAlignment.Center, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
         button.AddThemeConstantOverride("icon_max_width", 22);

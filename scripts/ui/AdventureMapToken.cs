@@ -5,18 +5,27 @@ public partial class AdventureMapToken : RealmButton
 {
     public AdventureMapNode Site { get; set; }
     public bool Selected { get; set; }
+    public Vector2 MarkerCenter => Site.Kind == AdventureSiteKind.Leader
+        ? new Vector2(Size.X / 2, Size.Y - 39) : Size / 2;
     public override void _Ready()
     {
         foreach (var state in new[] { "normal", "hover", "pressed", "disabled", "focus" }) AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-        TooltipText = Site.Kind == AdventureSiteKind.Leader ? $"{Site.Title}\nStage {Site.Stage} · {GameData.GetStage(Site.Stage).StageName}" : Site.Title;
-        AccessibilityName = Site.Title;
+        RefreshRating();
         MouseDefaultCursorShape = CursorShape.PointingHand;
         MouseEntered += QueueRedraw; MouseExited += QueueRedraw; FocusEntered += QueueRedraw; FocusExited += QueueRedraw;
+    }
+    public void RefreshRating()
+    {
+        var leader = Site.Kind == AdventureSiteKind.Leader;
+        var rating = leader ? $"{GameState.Instance.GetStageStars(Site.Stage)}/3 stars" : "";
+        TooltipText = leader ? $"{Site.Title}\nStage {Site.Stage} · {GameData.GetStage(Site.Stage).StageName}\nBest: {rating}\n\n{StageStarScore.RulesText}" : Site.Title;
+        AccessibilityName = leader ? $"{Site.Title}, stage {Site.Stage}, {rating}" : Site.Title;
+        QueueRedraw();
     }
     public override void _Draw()
     {
         if (Site == null) return;
-        var center = Size / 2;
+        var center = MarkerCenter;
         var leader = Site.Kind == AdventureSiteKind.Leader;
         var visited = GameState.Instance.HasVisitedAdventureSite(Site.Id);
         var locked = leader && !GameState.Instance.IsCampaignStageUnlocked(Site.Stage);
@@ -35,5 +44,6 @@ public partial class AdventureMapToken : RealmButton
         if (cleared || (visited && !leader)) DrawTextureRect(RealmUi.Icon("check"), new Rect2(center + new Vector2(10,9), new Vector2(19,19)), false, new Color("c4efb6"));
         if (locked) DrawTextureRect(RealmUi.Icon("lock"), new Rect2(center + new Vector2(9,8), new Vector2(22,22)), false, RealmUi.Gold);
         if (Selected || IsHovered() || HasFocus()) DrawArc(center, radius + 7, 0, Mathf.Tau, 48, new Color("ffe0a0"), 2, true);
+        if (leader) StageStarRating.DrawStars(this, new Rect2(center + new Vector2(-44, -88), new Vector2(88, 44)), GameState.Instance.GetStageStars(Site.Stage), archRise: 14f);
     }
 }

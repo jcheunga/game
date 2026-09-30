@@ -25,6 +25,7 @@ public partial class CrashReporter : Node
 
 	public override void _ExitTree()
 	{
+		AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
 		if (Instance == this) Instance = null;
 	}
 
@@ -43,6 +44,8 @@ public partial class CrashReporter : Node
 
 	public static void ReportError(string errorType, string errorMessage, string stackTrace)
 	{
+		if (GameState.Instance?.CrashReportingConsent != true) return;
+
 		var endpoint = GameState.Instance?.PurchaseValidationEndpoint ?? "";
 		if (string.IsNullOrWhiteSpace(endpoint)) return;
 
@@ -74,7 +77,7 @@ public partial class CrashReporter : Node
 				$"{endpoint.TrimEnd('/')}/crash-report");
 			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
-			Client.Send(msg);
+			using var response = Client.Send(msg);
 		}
 		catch
 		{

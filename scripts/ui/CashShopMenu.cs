@@ -81,7 +81,7 @@ public partial class CashShopMenu : Control
 		_resourcesRow.AddThemeConstantOverride("separation", 12);
 		titleRow.AddChild(_resourcesRow);
 
-        var body = new VBoxContainer { Position = new Vector2(24, 122), Size = new Vector2(1232, 510) };
+        var body = new VBoxContainer { Position = new Vector2(24, 122), Size = new Vector2(1232, 480) };
         body.AddThemeConstantOverride("separation", 12);
         AddChild(body);
         _categoryTabs = RealmUi.Tabs(body, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
@@ -100,8 +100,8 @@ public partial class CashShopMenu : Control
 		// Bottom nav
 		var bottomPanel = new PanelContainer
 		{
-			Position = new Vector2(24f, 660f),
-			Size = new Vector2(1232f, 56f)
+            Position = new Vector2(24f, 618f),
+            Size = new Vector2(1232f, 76f)
 		};
 		AddChild(bottomPanel);
 
@@ -212,11 +212,11 @@ public partial class CashShopMenu : Control
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         host.AddChild(panel);
         var card = new VBoxContainer();
-        card.AddThemeConstantOverride("separation", 12);
+        card.AddThemeConstantOverride("separation", 8);
         panel.AddChild(card);
-        card.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(64, 64), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
+        card.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(48, 48), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
         var title = RealmUi.Heading(product.DisplayName, 24);
-        title.CustomMinimumSize = new Vector2(0, 66);
+        title.CustomMinimumSize = new Vector2(0, 48);
         card.AddChild(title);
         card.AddChild(BuildProductRewardRow(product));
         card.AddChild(RealmUi.Label(product.Description));

@@ -22,7 +22,8 @@ services:
 
   crownroad-server:
     build:
-      context: .
+      context: ..
+      dockerfile: server/Dockerfile
     restart: unless-stopped
     scale: ${CROWNROAD_SERVER_REPLICAS:-2}
     env_file:

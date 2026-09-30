@@ -77,7 +77,7 @@ public partial class EndlessMenu : Control
         var missionPanel = new PanelContainer
         {
             Position = new Vector2(24f, 122f),
-            Size = new Vector2(520f, 520f)
+            Size = new Vector2(520f, 480f)
         };
         AddChild(missionPanel);
         _entrancePanels.Add(missionPanel);
@@ -156,13 +156,22 @@ public partial class EndlessMenu : Control
             _boonSelector.SetItemMetadata(index, boon.Id);
         }
 
+        var referenceActions = new HBoxContainer();
+        missionStack.AddChild(referenceActions);
+        var guideButton = RealmUi.Button("book", "Field guide", () => RealmUi.Details(this, "Endless march", _routeSummaryLabel.TooltipText + "\n\n" + _rulesLabel.Text));
+        guideButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        referenceActions.AddChild(guideButton);
+        var historyButton = RealmUi.Button("clock", "Run history", () => RealmUi.Details(this, "Run history", string.Join("\n", _historyStack.GetChildren().OfType<Label>().Select(x => x.Text))));
+        historyButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        referenceActions.AddChild(historyButton);
+
         _routeTitleLabel = new Label();
         missionStack.AddChild(_routeTitleLabel);
 
         _routeSummaryLabel = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 148f)
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         missionStack.AddChild(_routeSummaryLabel);
 
@@ -183,13 +192,11 @@ public partial class EndlessMenu : Control
         missionStack.AddChild(_historyStack);
         _historyStack.Visible = false;
         _rulesLabel.Visible = false;
-        missionStack.AddChild(RealmUi.Button("book", "Field guide", () => RealmUi.Details(this, "Endless march", _routeSummaryLabel.TooltipText + "\n\n" + _rulesLabel.Text)));
-        missionStack.AddChild(RealmUi.Button("clock", "Run history", () => RealmUi.Details(this, "Run history", string.Join("\n", _historyStack.GetChildren().OfType<Label>().Select(x => x.Text)))));
 
         var squadPanel = new PanelContainer
         {
             Position = new Vector2(568f, 122f),
-            Size = new Vector2(688f, 520f)
+            Size = new Vector2(688f, 480f)
         };
         AddChild(squadPanel);
         _entrancePanels.Add(squadPanel);
@@ -216,8 +223,8 @@ public partial class EndlessMenu : Control
 
         var bottomPanel = new PanelContainer
         {
-            Position = new Vector2(24f, 660f),
-            Size = new Vector2(1232f, 56f)
+            Position = new Vector2(24f, 618f),
+            Size = new Vector2(1232f, 76f)
         };
         AddChild(bottomPanel);
         _entrancePanels.Add(bottomPanel);
@@ -366,7 +373,9 @@ public partial class EndlessMenu : Control
     private void RebuildSquadPanels()
     {
         RealmUi.Clear(_squadStack);
-        _squadStack.AddChild(RealmUi.Heading("Your warband", 28));
+        var headingRow = new HBoxContainer(); _squadStack.AddChild(headingRow);
+        headingRow.AddChild(RealmUi.Heading("Your warband", 28));
+        headingRow.AddChild(RealmUi.Button("sword", "Edit warband", () => SceneRouter.Instance.GoToShop()));
         var cards = new HBoxContainer(); _squadStack.AddChild(cards);
         foreach (var unit in GameState.Instance.GetActiveDeckUnits())
         {
@@ -380,7 +389,6 @@ public partial class EndlessMenu : Control
         var spells = new HBoxContainer(); _squadStack.AddChild(spells);
         foreach (var spell in GameState.Instance.GetActiveDeckSpells())
             spells.AddChild(RealmUi.Button("bolt", spell.DisplayName, () => RealmUi.Details(this, spell.DisplayName, SpellText.BuildInlineSummary(spell))));
-        _squadStack.AddChild(RealmUi.Button("sword", "Edit warband", () => SceneRouter.Instance.GoToShop()));
         _deckStatusLabel = RealmUi.Label("", 14, true); _squadStack.AddChild(_deckStatusLabel);
     }
 

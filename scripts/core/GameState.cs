@@ -6,6 +6,7 @@ using Godot;
 
 public partial class GameState : Node
 {
+	public const int CurrentAnalyticsConsentVersion = 1;
 	private const int DefaultGold = 120;
 	private const int DefaultFood = 12;
 	private const int DefaultUnlockedStage = 1;
@@ -106,6 +107,7 @@ public partial class GameState : Node
 	public string Language { get; private set; } = DefaultLanguage;
 	public bool AnalyticsConsent { get; private set; }
 	public bool HasShownConsentPrompt { get; private set; }
+	public bool CrashReportingConsent { get; private set; }
 	public int FontSizeOffset { get; private set; }
 	public bool HighContrast { get; private set; }
 	public int PrestigeLevel { get; private set; }
@@ -326,6 +328,11 @@ public partial class GameState : Node
 	public void ReloadFromDisk()
 	{
 		LoadOrInitialize();
+	}
+
+	internal void RestoreCloudSave(GameSaveData restored)
+	{
+		LoadOrInitialize(restored, BuildSaveData());
 	}
 
 	public void SetSelectedStage(int stage)
@@ -883,7 +890,7 @@ public partial class GameState : Node
 		var enemy = GetCampaignAdaptiveWaveEnemyTitle(routeId);
 		var rescueFollowUp = GetCampaignAdaptiveWaveRescueFollowUpTitle(routeId);
 		var breakthroughFollowUp = GetCampaignAdaptiveWaveBreakthroughFollowUpTitle(routeId);
-		return $"Adaptive wave read: {friendly} / {enemy}. On scripted waves, lane control bends the first {charges} enemy spawn{(charges == 1 ? "" : "s")}: if the convoy is bending, route support clips the swell; if you own the road, the enemy hardens it instead. After the first read spends, [V] Rescue or [B] Breakthrough can force the next scripted wave read; Rescue biases escort screens and hunter counterpacks, while Breakthrough biases spearhead assaults and bastion counterpacks. That override now also splices a real branch into the next scripted wave: Rescue inserts a Hunter Branch, while Breakthrough inserts a Bastion Branch. Clearing that forced branch arms a small route reward on victory and opens {rescueFollowUp} or {breakthroughFollowUp} to upgrade it. The follow-up test is route-specific: some districts ask for a clean hold, others want the counterpush cut down, and siege routes demand real keep damage. By default, on scripted late routes, securing that follow-up is the third-star mastery check.";
+		return $"Adaptive wave read: {friendly} / {enemy}. On scripted waves, lane control bends the first {charges} enemy spawn{(charges == 1 ? "" : "s")}: if the convoy is bending, route support clips the swell; if you own the road, the enemy hardens it instead. After the first read spends, [V] Rescue or [B] Breakthrough can force the next scripted wave read; Rescue biases escort screens and hunter counterpacks, while Breakthrough biases spearhead assaults and bastion counterpacks. That override now also splices a real branch into the next scripted wave: Rescue inserts a Hunter Branch, while Breakthrough inserts a Bastion Branch. Clearing that forced branch arms a small route reward on victory and opens {rescueFollowUp} or {breakthroughFollowUp} to upgrade it. The follow-up test is route-specific: some districts ask for a clean hold, others want the counterpush cut down, and siege routes demand real keep damage. Securing that follow-up completes a battle objective. Star ratings depend on caravan health: complete without damage for 3 stars, finish with at least 70% health for 2, or complete the mission for 1.";
 	}
 
 	public bool HasCampaignLateCondition(int stage)
@@ -1780,6 +1787,13 @@ public partial class GameState : Node
 	{
 		AnalyticsConsent = consent;
 		HasShownConsentPrompt = true;
+		if (!consent) AnalyticsService.ClearPending();
+		Persist();
+	}
+
+	public void SetCrashReportingConsent(bool consent)
+	{
+		CrashReportingConsent = consent;
 		Persist();
 	}
 
@@ -4965,9 +4979,13 @@ public partial class GameState : Node
 		return GetPlayerSignalJamSuppressionMitigationAtLevel(GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId));
 	}
 
-	private void LoadOrInitialize()
+	private void LoadOrInitialize(GameSaveData restored = null, GameSaveData deviceState = null)
 	{
-		if (SaveSystem.Instance != null && SaveSystem.Instance.TryLoad(out var saved))
+		if (restored != null)
+		{
+			ApplySavedData(restored);
+		}
+		else if (SaveSystem.Instance != null && SaveSystem.Instance.TryLoad(out var saved))
 		{
 			ApplySavedData(saved);
 		}
@@ -4976,6 +4994,21 @@ public partial class GameState : Node
 			ApplyDefaults();
 		}
 
+		// Apply after save-format migration so even pre-session/pre-consent saves
+		// cannot replace this device's current identity or privacy choices.
+		if (deviceState != null)
+		{
+			PlayerProfileId = deviceState.PlayerProfileId;
+			PlayerAuthToken = deviceState.PlayerAuthToken;
+			LastPlayerProfileSyncAtUnixSeconds = deviceState.LastPlayerProfileSyncAtUnixSeconds;
+			ChallengeSyncProviderId = deviceState.ChallengeSyncProviderId;
+			ChallengeSyncEndpoint = deviceState.ChallengeSyncEndpoint;
+			ChallengeSyncAutoFlush = deviceState.ChallengeSyncAutoFlush;
+			_purchaseValidationEndpoint = deviceState.PurchaseValidationEndpoint;
+			AnalyticsConsent = deviceState.AnalyticsConsent;
+			HasShownConsentPrompt = deviceState.HasShownConsentPrompt;
+			CrashReportingConsent = deviceState.CrashReportingConsent;
+		}
 		ApplyReleaseBackendConfiguration();
 		ClampState();
 		Locale.SetLanguage(Language);
@@ -5018,6 +5051,8 @@ public partial class GameState : Node
 		Language = DefaultLanguage;
 		AnalyticsConsent = false;
 		HasShownConsentPrompt = false;
+		CrashReportingConsent = false;
+		AnalyticsService.ClearPending();
 		FontSizeOffset = 0;
 		HighContrast = false;
 		PrestigeLevel = 0;
@@ -5230,8 +5265,13 @@ public partial class GameState : Node
 			Language = saved.Version >= 31 && !string.IsNullOrWhiteSpace(saved.Language)
 				? saved.Language.Trim().ToLowerInvariant()
 				: DefaultLanguage;
-			AnalyticsConsent = saved.Version >= 31 && saved.AnalyticsConsent;
-			HasShownConsentPrompt = saved.Version >= 31 && saved.HasShownConsentPrompt;
+			// The original notice incorrectly described profile-linked events as anonymous.
+			// Ask again before accepting a choice made under that notice.
+			HasShownConsentPrompt = saved.Version >= 31 && saved.HasShownConsentPrompt
+				&& saved.AnalyticsConsentVersion == CurrentAnalyticsConsentVersion;
+			AnalyticsConsent = HasShownConsentPrompt && saved.AnalyticsConsent;
+			CrashReportingConsent = saved.CrashReportingConsent;
+			if (!AnalyticsConsent) AnalyticsService.ClearPending();
 			FontSizeOffset = saved.Version >= 31 ? Mathf.Clamp(saved.FontSizeOffset, -4, 8) : 0;
 			HighContrast = saved.Version >= 31 && saved.HighContrast;
 			PrestigeLevel = saved.Version >= 31 ? Mathf.Clamp(saved.PrestigeLevel, 0, MaxPrestigeLevel) : 0;
@@ -5937,7 +5977,7 @@ public partial class GameState : Node
 		}
 	}
 
-	private GameSaveData BuildSaveData()
+	internal GameSaveData BuildSaveData()
 	{
 		return new GameSaveData
 		{
@@ -5970,6 +6010,8 @@ public partial class GameState : Node
 			Language = Language ?? DefaultLanguage,
 			AnalyticsConsent = AnalyticsConsent,
 			HasShownConsentPrompt = HasShownConsentPrompt,
+			AnalyticsConsentVersion = HasShownConsentPrompt ? CurrentAnalyticsConsentVersion : 0,
+			CrashReportingConsent = CrashReportingConsent,
 			FontSizeOffset = FontSizeOffset,
 			HighContrast = HighContrast,
 			PrestigeLevel = PrestigeLevel,

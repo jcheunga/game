@@ -359,6 +359,7 @@ public partial class BattleController : Node2D
 	private string _endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
 
 	private float _playerBaseHealth;
+	private bool _playerHullTookDamage;
 	private float _playerBaseMaxHealth;
 	private float _enemyBaseHealth;
 	private float _enemyBaseMaxHealth;
@@ -697,6 +698,7 @@ public partial class BattleController : Node2D
 
 		_playerBaseMaxHealth = GameState.Instance.ApplyPlayerBaseHealthUpgrade(_playerBaseMaxHealth);
 		_playerBaseHealth = _playerBaseMaxHealth;
+		_playerHullTookDamage = false;
 		_enemyBaseHealth = _enemyBaseMaxHealth;
 		InitializeBaseWeapons();
 		_campaignScoutCourageGainScale = 1f;
@@ -2697,6 +2699,8 @@ public partial class BattleController : Node2D
 
 	private void RegisterPlayerHullDamage(float damageAmount)
 	{
+		// Even a tiny hit disqualifies a no-damage clear; repairs never reset this.
+		if (damageAmount > 0f) _playerHullTookDamage = true;
 		if (damageAmount <= 0.05f)
 		{
 			return;
@@ -15548,6 +15552,8 @@ public partial class BattleController : Node2D
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
 		SpawnBattleEndParticles(playerWon);
+		_endStarRating.Visible = !IsEndlessMode;
+		_endStarRating.Stars = StageStarScore.Evaluate(playerWon, _playerBaseHealth, _playerBaseMaxHealth, _playerHullTookDamage);
 
 		if (IsEndlessMode)
 		{
@@ -15962,6 +15968,7 @@ public partial class BattleController : Node2D
 		{
 			PlayerBaseHealth = _playerBaseHealth,
 			PlayerBaseMaxHealth = _playerBaseMaxHealth,
+			PlayerBaseTookDamage = _playerHullTookDamage,
 			Elapsed = _elapsed,
 			PlayerDeployments = _playerDeployments,
 			EnemyDefeats = _enemyDefeats,

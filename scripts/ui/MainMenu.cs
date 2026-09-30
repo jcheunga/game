@@ -67,7 +67,7 @@ public partial class MainMenu : Control
 
         stack.AddChild(new Label
         {
-            Text = "Crownroad can collect anonymous gameplay data to help improve balance, difficulty, and game quality.\n\nNo personal information is collected. You can change this at any time in Settings.",
+            Text = "Allow optional gameplay analytics to help improve balance and difficulty? Events include your player ID, game version, platform, and gameplay results.\n\nOnline features also use your player ID, saves, and purchase records to work. Crash reports are off unless you enable them separately in Settings. You can change either choice there at any time.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 

@@ -121,6 +121,8 @@ public sealed class GameSaveData
     public string Language { get; set; } = "en";
     public bool AnalyticsConsent { get; set; }
     public bool HasShownConsentPrompt { get; set; }
+    public int AnalyticsConsentVersion { get; set; }
+    public bool CrashReportingConsent { get; set; }
     public int FontSizeOffset { get; set; }
     public bool HighContrast { get; set; }
     public int PrestigeLevel { get; set; }

@@ -97,10 +97,21 @@ configuration. Update the page in the same change if any of these move:
 | API access logs rotate (5 × 20 MB) | `caddy` logging options in `server/docker-compose.production.yml` |
 | No website access logs | No `log` directive in the website block of `server/Caddyfile` |
 | Analytics off until the player opts in | `scripts/core/AnalyticsService.cs`, first-run prompt in `scripts/ui/MainMenu.cs` |
+| Crash reports off until a separate opt-in; withdrawing analytics discards queued events | `scripts/core/CrashReporter.cs`, `AnalyticsService.cs`, and the Account tab in `scripts/ui/SettingsMenu.cs` |
+| Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
 | No third-party analytics or ad SDKs | `Game.csproj`, `addons/` |
 
 Adding an SDK, a new data type, a new processor, or a website analytics tool
 means updating the policy and its effective date before release.
+
+The 2026-09-30 privacy changes require a new analytics choice from players who
+accepted the old inaccurate "anonymous / no personal information" notice.
+Crash reporting remains separately disabled until enabled in Settings. The
+local checks are documented in [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md).
+Before deploying this policy, complete the migration/backup steps in
+[DEPLOYMENT.md](DEPLOYMENT.md); old database backups may still contain raw
+session credentials. Publisher details, legal review and actual store privacy
+declarations remain release gates.
 
 ## Handling deletion requests
 

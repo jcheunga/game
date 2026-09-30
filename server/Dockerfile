@@ -1,8 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
-COPY Server.csproj .
+WORKDIR /src/server
+COPY server/Server.csproj .
 RUN dotnet restore
-COPY . .
+COPY server/*.cs ./
+COPY scripts/core/CloudSavePrivacy.cs scripts/core/AssetCoverageCatalog.cs scripts/core/CodexCatalog.cs /src/scripts/core/
+COPY scripts/tests/DataIntegrityValidator.cs /src/scripts/tests/
 RUN dotnet publish -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

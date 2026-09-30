@@ -21,7 +21,7 @@ public static class AnalyticsService
 	public static void Track(string eventType, string data = "")
 	{
 		if (string.IsNullOrWhiteSpace(eventType)) return;
-		if (GameState.Instance != null && !GameState.Instance.AnalyticsConsent) return;
+		if (GameState.Instance?.AnalyticsConsent != true) return;
 
 		lock (Queue)
 		{
@@ -83,6 +83,12 @@ public static class AnalyticsService
 
 	public static void TryFlush()
 	{
+		if (GameState.Instance?.AnalyticsConsent != true)
+		{
+			ClearPending();
+			return;
+		}
+
 		List<AnalyticsEvent> batch;
 		lock (Queue)
 		{
@@ -111,12 +117,17 @@ public static class AnalyticsService
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/analytics/ingest");
 			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
-			Client.Send(msg);
+			using var response = Client.Send(msg);
 		}
 		catch
 		{
 			// Silent — analytics should never block gameplay
 		}
+	}
+
+	public static void ClearPending()
+	{
+		lock (Queue) Queue.Clear();
 	}
 
 	private sealed class AnalyticsEvent

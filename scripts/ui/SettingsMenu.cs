@@ -127,17 +127,16 @@ public partial class SettingsMenu : Control
         rootStack.SizeFlagsVertical = SizeFlags.ExpandFill;
         content.AddChild(rootStack);
 
-        rootStack.AddChild(new Label
-        {
-            Text = "Settings",
-            HorizontalAlignment = HorizontalAlignment.Center
-        });
+        var title = RealmUi.Heading("Settings", 30);
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        rootStack.AddChild(title);
 
         _returnLabel = new Label
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
+        _returnLabel.AddThemeColorOverride("font_color", RealmUi.Muted);
         rootStack.AddChild(_returnLabel);
 
         var pages = new VBoxContainer[4];
@@ -600,7 +599,7 @@ public partial class SettingsMenu : Control
 
         var privacyLabel = new Label
         {
-            Text = $"Analytics: {(GameState.Instance.AnalyticsConsent ? "Enabled" : "Disabled")}\nAnonymous gameplay data helps improve balance and difficulty.",
+            Text = "Optional analytics sends gameplay events, player ID, game version, and platform to improve balance and difficulty. You can turn it off at any time.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         purchaseStack.AddChild(privacyLabel);
@@ -610,11 +609,21 @@ public partial class SettingsMenu : Control
             () =>
             {
                 GameState.Instance.SetAnalyticsConsent(!GameState.Instance.AnalyticsConsent);
-                privacyLabel.Text = $"Analytics: {(GameState.Instance.AnalyticsConsent ? "Enabled" : "Disabled")}";
                 RefreshUi();
             });
         analyticsButton.Pressed += () => analyticsButton.Text = GameState.Instance.AnalyticsConsent ? "Disable Analytics" : "Enable Analytics";
         purchaseStack.AddChild(analyticsButton);
+
+        purchaseStack.AddChild(new Label
+        {
+            Text = "Optional crash reports send error messages, technical traces, player ID, game version, platform, and the current screen to help fix bugs. You can turn them off at any time.",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+        var crashButton = BuildCompactButton(
+            GameState.Instance.CrashReportingConsent ? "Disable Crash Reports" : "Enable Crash Reports",
+            () => GameState.Instance.SetCrashReportingConsent(!GameState.Instance.CrashReportingConsent));
+        crashButton.Pressed += () => crashButton.Text = GameState.Instance.CrashReportingConsent ? "Disable Crash Reports" : "Enable Crash Reports";
+        purchaseStack.AddChild(crashButton);
 
         var achievementsPanel = new PanelContainer();
         pages[3].AddChild(achievementsPanel);

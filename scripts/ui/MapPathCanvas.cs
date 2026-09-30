@@ -38,7 +38,7 @@ public partial class MapPathCanvas : Control
         foreach (var node in AdventureMapCatalog.ForMap(ActiveMapId))
         {
             var site = node;
-            var token = new AdventureMapToken { Site = site, Size = new Vector2(78,78) };
+            var token = new AdventureMapToken { Site = site, Size = site.Kind == AdventureSiteKind.Leader ? new Vector2(94,128) : new Vector2(78,78) };
             token.Pressed += () => { if (!IsTravelling) SiteSelected?.Invoke(site); };
             AddChild(token); _tokens.Add(token);
         }
@@ -53,6 +53,7 @@ public partial class MapPathCanvas : Control
         var areas = GameState.Instance.GetAdventureRevealAreas(ActiveMapId).Take(128).ToArray();
         var packed = new Vector3[128]; Array.Copy(areas, packed, areas.Length);
         _fog.SetShaderParameter("revealed", packed); _fog.SetShaderParameter("reveal_count", areas.Length);
+        foreach (var token in _tokens) token.RefreshRating();
         UpdateView();
     }
     public void FocusCaravan() => FocusPoint(_heroPoint);
@@ -70,7 +71,7 @@ public partial class MapPathCanvas : Control
         _fog.SetShaderParameter("canvas_size", Size); _fog.SetShaderParameter("map_offset", MapOffset); _fog.SetShaderParameter("map_zoom", Zoom);
         foreach (var token in _tokens)
         {
-            token.Position = token.Site.Point * Zoom + MapOffset - token.Size / 2;
+            token.Position = token.Site.Point * Zoom + MapOffset - token.MarkerCenter;
             token.Selected = token.Site.Id == _selectedId;
             token.Visible = GameState.Instance.IsAdventureSiteDiscovered(token.Site.Id) && new Rect2(Vector2.Zero, Size).Encloses(new Rect2(token.Position, token.Size));
             token.Disabled = IsTravelling;

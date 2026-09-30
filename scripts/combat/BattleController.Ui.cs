@@ -4,6 +4,7 @@ using System.Linq;
 
 public partial class BattleController
 {
+    private StageStarRating _endStarRating;
     private Button _convoyOrderButton, _assaultOrderButton, _bulwarkOrderButton, _rescueOrderButton, _breakthroughOrderButton;
 	private void BuildUi()
 	{
@@ -167,6 +168,8 @@ public partial class BattleController
 		endVBox.AddThemeConstantOverride("separation", 12);
 		endVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 		endPadding.AddChild(endVBox);
+		_endStarRating = new StageStarRating { Visible = false };
+		endVBox.AddChild(_endStarRating);
 
 		var endScroll = new ScrollContainer
 		{

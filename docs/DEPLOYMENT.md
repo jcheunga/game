@@ -67,8 +67,11 @@ rehearse a restore before releasing paid currency.
    new total.
 
 If iOS is not ready, do not fabricate an Apple key to make the deployment
-start. Finish the StoreKit bridge and configure its real App Store key before
-you offer iOS purchases.
+start. The checked-in production Compose file currently requires both store
+credential files at startup. An Android-only launch therefore needs a code
+change to make the Apple secret mount optional, or real Apple credentials
+provisioned even while iOS purchases remain disabled. Finish the StoreKit
+bridge before you offer iOS purchases.
 
 ## Release command
 
@@ -83,6 +86,14 @@ server and game-data checks, builds the image, then starts the API and Caddy.
 It does not create DNS records, buy a domain, upload store credentials, or
 configure your backup provider.
 
+The API image now builds from the repository root so linked C# sources are
+available. Compose selects `server/Dockerfile` automatically. For a manual
+build, run `docker build -f server/Dockerfile .` from the repository root.
+`server/Dockerfile.dockerignore` allows only the required source files into
+the build context; populated environment files, databases and secrets are
+excluded. A release publish using those inputs was checked locally on
+2026-09-30; an actual container build/start still needs a running Docker daemon.
+
 After the hostname resolves, verify the public health endpoint:
 
 ```sh
@@ -93,6 +104,34 @@ Opening `https://api.your-domain.example/admin` displays a browser credential
 prompt. Use any username and the `admin-api-key` file’s value as the password.
 For an API client, send that value in an `X-Admin-Api-Key` request header. Do
 not use the administrator credential in the game client.
+
+## Privacy upgrade: schema 5
+
+The 2026-09-30 update removes session credentials, connection settings and
+consent choices from cloud saves. New uploads are filtered on both sides;
+downloads are filtered even if a backup or older server introduced a legacy
+row. Migration 5 rewrites existing cloud-save JSON and its hash while retaining
+progress, the save format version and upload time. It leaves the purchase
+ledger and active authentication sessions unchanged.
+
+1. Rehearse against a separate restored PostgreSQL database first. The local
+   migration tests use SQLite and do not certify the production provider.
+2. Back up the database and stop old API replicas during the upgrade so they
+   cannot write unfiltered saves while the migration runs. Start the new API
+   version, confirm schema version 5, then restore traffic.
+3. Invalid legacy JSON stops startup with a privacy-migration error and does
+   not mark schema 5 applied. The original row is retained for repair through
+   a restricted database session. Do not paste save blobs into logs or issues;
+   they can contain credentials. Repair from a verified save and retry; the
+   migration safely resumes already-cleaned rows.
+4. Verify current-client upload/restore with an existing account: progress
+   returns, the active session remains valid, and local consent choices remain
+   unchanged. The new client asks again if analytics was enabled under the old
+   inaccurate notice; crash reporting remains a separate opt-in.
+5. Backups and snapshots are not rewritten by this migration. Keep them
+   restricted and handle them under the approved retention/incident procedure.
+   Restoring a pre-upgrade database requires migration 5 again. Avoid rolling
+   back to a server that writes unfiltered save credentials.
 
 ## Operations after launch
 

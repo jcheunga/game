@@ -114,7 +114,7 @@ public partial class MultiplayerMenu : Control
         var missionPanel = new PanelContainer
         {
             Position = new Vector2(24f, 122f),
-            Size = new Vector2(520f, 520f)
+            Size = new Vector2(520f, 480f)
         };
         AddChild(missionPanel);
         _entrancePanels.Add(missionPanel);
@@ -282,7 +282,7 @@ public partial class MultiplayerMenu : Control
         var squadPanel = new PanelContainer
         {
             Position = new Vector2(568f, 122f),
-            Size = new Vector2(688f, 520f)
+            Size = new Vector2(688f, 480f)
         };
         AddChild(squadPanel);
         _entrancePanels.Add(squadPanel);
@@ -312,8 +312,8 @@ public partial class MultiplayerMenu : Control
 
         var bottomPanel = new PanelContainer
         {
-            Position = new Vector2(24f, 660f),
-            Size = new Vector2(1232f, 56f)
+            Position = new Vector2(24f, 618f),
+            Size = new Vector2(1232f, 76f)
         };
         AddChild(bottomPanel);
         _entrancePanels.Add(bottomPanel);

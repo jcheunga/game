@@ -38,6 +38,8 @@ public partial class UiReviewSmoke : Node
             Check(!LanChallengeService.Instance.HasRoom, "Offline multiplayer peer is not a LAN room");
             if (OS.GetCmdlineUserArgs().Contains("--adventure"))
             { await ReviewAdventure(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--stage-stars"))
+            { await ReviewStageStars(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--typography-advanced"))
             {
                 _output = ProjectSettings.GlobalizePath("res://artifacts/typography-advanced");
@@ -218,6 +220,11 @@ public partial class UiReviewSmoke : Node
     {
         var viewport = new Rect2(0, 0, 1280, 720);
         var panels = Walk(GetTree().CurrentScene).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
+        foreach (var panel in panels)
+        {
+            if (!viewport.Grow(2).Encloses(panel.GetGlobalRect()))
+            { GD.Print($"PANEL_OUTSIDE_VIEWPORT {screen}: {panel.GetPath()} {panel.GetGlobalRect()}"); _failures++; }
+        }
         for (var i = 0; i < panels.Length; i++) for (var j = i + 1; j < panels.Length; j++)
         {
             var overlap = panels[i].GetGlobalRect().Intersection(panels[j].GetGlobalRect());

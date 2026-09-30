@@ -61,6 +61,7 @@ public partial class CombatReviewSmoke : Node
                 GameData.Combat.BattlefieldRight = 1196f;
             }
             if (args.Contains("--stage-layout")) ExportStageLayoutReview();
+            else if (args.Contains("--stage-stars")) await CheckStageStars();
             else if (args.Contains("--field-objectives")) await CheckCampaignFieldObjectives();
             else if (args.Contains("--camera")) await CheckBattleCamera();
             else if (args.Contains("--economy-export")) ExportProgressionEconomy();
@@ -82,6 +83,7 @@ public partial class CombatReviewSmoke : Node
     {
         CheckSpawnScheduling();
         CheckProgressionRewards();
+        await CheckStageStars();
         await CheckBaseWeapons();
         await CheckFinishPacing();
         var battle = await OpenBattle(12);

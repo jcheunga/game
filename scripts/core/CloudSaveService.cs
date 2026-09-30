@@ -69,11 +69,12 @@ public static class CloudSaveService
 				return false;
 			}
 
+			using var saveDocument = JsonDocument.Parse(saveData);
 			var requestBody = new
 			{
 				profileId,
 				saveData,
-				saveVersion = 31
+				saveVersion = GetInt(saveDocument.RootElement, "Version", 0)
 			};
 			var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
 
@@ -161,7 +162,7 @@ public static class CloudSaveService
 				return false;
 			}
 
-			var parsed = JsonSerializer.Deserialize<GameSaveData>(saveData, SaveJsonOptions);
+			var parsed = JsonSerializer.Deserialize<GameSaveData>(CloudSavePrivacy.Sanitize(saveData), SaveJsonOptions);
 			if (parsed == null)
 			{
 				message = "Failed to parse cloud save data.";
@@ -169,8 +170,12 @@ public static class CloudSaveService
 				return false;
 			}
 
-			SaveSystem.Instance?.Save(parsed);
-			GameState.Instance?.ReloadFromDisk();
+			if (GameState.Instance == null || SaveSystem.Instance == null)
+				throw new InvalidOperationException("Local save system is unavailable.");
+			if (GameState.Instance.PlayerProfileId != profileId)
+				throw new InvalidOperationException("The active player changed during restore.");
+
+			GameState.Instance.RestoreCloudSave(parsed);
 
 			_lastSyncTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 			_lastStatus = "Restored from cloud.";
@@ -238,7 +243,8 @@ public static class CloudSaveService
 		if (!FileAccess.FileExists(path)) return "";
 
 		using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-		return file?.GetAsText() ?? "";
+		var json = file?.GetAsText() ?? "";
+		return string.IsNullOrWhiteSpace(json) ? "" : CloudSavePrivacy.Sanitize(json);
 	}
 
 	private static string GetString(JsonElement el, string prop, string fallback) =>

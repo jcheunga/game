@@ -64,9 +64,19 @@ public partial class UiReviewSmoke
         await ChooseAdventureSite("leader-2"); await Press("Prepare battle"); await Wait(1.5);
         Check(GetTree().CurrentScene is LoadoutMenu && state.SelectedStage == 2, "Rival leader opens the matching battle preparation");
         await Capture("05-leader-challenge"); AuditText("Adventure / leader preparation");
-        await Press("Deploy");
+        // The first wave warning can replace the intro during Press's animation wait.
+        // Observe the ready signal so the assertion checks the actual initial banner.
+        var shrineIntroSeen = false;
+        void ObserveBattleIntro(Node node)
+        {
+            if (node is BattleController battle)
+                battle.Ready += () => shrineIntroSeen = Walk(battle).OfType<Label>().Any(x => x.Text.Contains("Shrine blessing: +3"));
+        }
+        GetTree().NodeAdded += ObserveBattleIntro;
+        try { await Press("Deploy"); }
+        finally { GetTree().NodeAdded -= ObserveBattleIntro; }
         Check(GetTree().CurrentScene is BattleController, "Leader challenge enters a real battle");
-        Check(Walk(GetTree().CurrentScene).OfType<Label>().Any(x => x.Text.Contains("Shrine blessing: +3")), "Battle receives the district shrine blessing");
+        Check(shrineIntroSeen, "Battle receives the district shrine blessing");
         var courage = (float)typeof(BattleController).GetField("_courage", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(GetTree().CurrentScene)!;
         Check(courage >= GameData.Combat.CourageStart + state.GetCampaignScoutStartingCourageBonus(2) + 3, "Shrine adds real starting courage to combat");
         await Capture("06-blessed-battle");

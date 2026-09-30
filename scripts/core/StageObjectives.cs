@@ -7,6 +7,7 @@ public sealed class StageBattleResult
 {
     public float PlayerBaseHealth { get; init; }
     public float PlayerBaseMaxHealth { get; init; }
+    public bool PlayerBaseTookDamage { get; init; }
     public float Elapsed { get; init; }
     public int PlayerDeployments { get; init; }
     public int EnemyDefeats { get; init; }
@@ -82,9 +83,8 @@ public static class StageObjectives
         return new StageObjectiveEvaluation
         {
             Outcomes = outcomes,
-            StarsEarned = playerWon
-                ? Mathf.Clamp(outcomes.Count(outcome => outcome.Completed), 1, 3)
-                : 0
+            StarsEarned = StageStarScore.Evaluate(playerWon, result.PlayerBaseHealth,
+                ResolvePlayerBaseReference(stage, result), result.PlayerBaseTookDamage)
         };
     }
 
@@ -92,15 +92,18 @@ public static class StageObjectives
     {
         var objectives = ResolveObjectives(stage);
         var builder = new StringBuilder();
-        builder.AppendLine("Objectives:");
+        builder.AppendLine("Star rating:");
+        builder.AppendLine(StageStarScore.RulesText);
+        builder.AppendLine($"Best: {Mathf.Clamp(bestStars, 0, 3)}/3");
+        builder.AppendLine();
+        builder.AppendLine("Battle objectives:");
 
         for (var i = 0; i < objectives.Length; i++)
         {
-            builder.AppendLine($"{i + 1}* {BuildObjectiveLabel(stage, objectives[i])}");
+            builder.AppendLine($"• {BuildObjectiveLabel(stage, objectives[i])}");
         }
 
-        builder.Append($"Best: {(bestStars > 0 ? $"{bestStars}/3" : "none")}");
-        return builder.ToString();
+        return builder.ToString().TrimEnd();
     }
 
     public static string BuildResultSummary(
@@ -141,6 +144,9 @@ public static class StageObjectives
     {
         var liveStatuses = EvaluateLive(stage, result);
         var builder = new StringBuilder();
+        var stars = StageStarScore.Evaluate(true, result.PlayerBaseHealth,
+            ResolvePlayerBaseReference(stage, result), result.PlayerBaseTookDamage);
+        builder.AppendLine($"Caravan rating on victory: {stars}/3");
         builder.AppendLine("Live objectives:");
 
         for (var i = 0; i < liveStatuses.Length; i++)

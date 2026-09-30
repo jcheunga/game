@@ -83,6 +83,9 @@ public static class ServerTests
                 ("CloudSaveUpload", () => TestCloudSaveUpload(client)),
                 ("CloudSaveDownload", () => TestCloudSaveDownload(client)),
                 ("CloudSaveInfo", () => TestCloudSaveInfo(client)),
+                ("CloudSavePrivacy", () => TestCloudSavePrivacy(client)),
+                ("CloudSaveRejectsInvalidJson", () => TestCloudSaveRejectsInvalidJson(client)),
+                ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
@@ -800,6 +803,108 @@ public static class ServerTests
         Assert(resp.RootElement.GetProperty("sizeBytes").GetInt64() > 0, "expected non-zero size");
     }
 
+    private static async Task TestCloudSavePrivacy(HttpClient client)
+    {
+        const string profile = "TEST-CLOUD-PRIVATE";
+        const string legacy = """
+            {"Version":42,"Gold":321,"PlayerAuthToken":"secret-raw-token","playerauthtoken":"second-token",
+             "AnalyticsConsent":true,"CrashReportingConsent":true,"PurchaseValidationEndpoint":"https://old.invalid",
+             "AdventureExploredCells":{"city":[1,2]},"Nested":[{"sessionToken":"nested-token","Score":7}]}
+            """;
+        var upload = await Post(client, "/cloud-save/upload", new { profileId = profile, saveData = legacy, saveVersion = 42 }, profile);
+        using (var conn = Database.Open())
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT save_data FROM cloud_saves WHERE profile_id = @pid";
+            cmd.Parameters.AddWithValue("@pid", profile);
+            var stored = (string)cmd.ExecuteScalar()!;
+            Assert(!stored.Contains("token", StringComparison.OrdinalIgnoreCase), "credentials must not reach database storage");
+            Assert(!stored.Contains("Consent") && !stored.Contains("Endpoint"), "device choices must not be stored in cloud save");
+        }
+        var download = await Get(client, $"/cloud-save/download?profileId={profile}");
+        using var restored = JsonDocument.Parse(download.RootElement.GetProperty("saveData").GetString()!);
+        Assert(restored.RootElement.GetProperty("Gold").GetInt32() == 321, "progress must survive sanitization");
+        Assert(restored.RootElement.GetProperty("AdventureExploredCells").GetProperty("city").GetArrayLength() == 2, "nested progression must survive");
+        Assert(upload.RootElement.GetProperty("saveHash").GetString() == download.RootElement.GetProperty("saveHash").GetString(), "upload/download hashes must describe the sanitized data");
+
+        // A restored backup or old replica may reintroduce an old-format row.
+        using (var conn = Database.Open())
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "UPDATE cloud_saves SET save_data = @data WHERE profile_id = @pid";
+            cmd.Parameters.AddWithValue("@data", legacy);
+            cmd.Parameters.AddWithValue("@pid", profile);
+            cmd.ExecuteNonQuery();
+        }
+        var legacyDownload = await Get(client, $"/cloud-save/download?profileId={profile}");
+        Assert(!legacyDownload.RootElement.GetProperty("saveData").GetString()!.Contains("token", StringComparison.OrdinalIgnoreCase), "legacy download must not return credentials");
+    }
+
+    private static async Task TestCloudSaveRejectsInvalidJson(HttpClient client)
+    {
+        foreach (var invalid in new[] { "not json", "[]", "null", "42", "{\"Version\":42" })
+            await PostExpect(client, "/cloud-save/upload", new { profileId = "TEST-CLOUD-INVALID", saveData = invalid, saveVersion = 42 }, "TEST-CLOUD-INVALID", HttpStatusCode.BadRequest);
+
+        // Less than 512K characters, but larger than the byte limit in UTF-8.
+        var multibyte = "{\"note\":\"" + new string('\uac00', 180000) + "\"}";
+        await PostExpect(client, "/cloud-save/upload", new { profileId = "TEST-CLOUD-INVALID", saveData = multibyte, saveVersion = 42 }, "TEST-CLOUD-INVALID", HttpStatusCode.RequestEntityTooLarge);
+    }
+
+    private static Task TestCloudSavePrivacyMigration()
+    {
+        using var conn = Database.Open();
+        // More than one migration page, plus a corrupt row: a failed upgrade
+        // must preserve progress and remain retryable without claiming success.
+        for (var i = 0; i < 105; i++)
+        {
+            using var seed = conn.CreateCommand();
+            seed.CommandText = "INSERT INTO cloud_saves (profile_id, save_data) VALUES (@pid, @data)";
+            seed.Parameters.AddWithValue("@pid", $"PRIVACY-MIGRATION-{i:D3}");
+            seed.Parameters.AddWithValue("@data", "{\"Gold\":123,\"PlayerAuthToken\":\"legacy-secret\"}");
+            seed.ExecuteNonQuery();
+        }
+        using (var corrupt = conn.CreateCommand())
+        {
+            corrupt.CommandText = "INSERT INTO cloud_saves (profile_id, save_data) VALUES ('ZZ-INVALID-PRIVACY', 'invalid-json')";
+            corrupt.ExecuteNonQuery();
+        }
+        using (var reset = conn.CreateCommand())
+        {
+            reset.CommandText = "DELETE FROM schema_version WHERE version >= 5";
+            reset.ExecuteNonQuery();
+        }
+        var rejected = false;
+        try { Database.Initialize(); }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("privacy migration")) { rejected = true; }
+        Assert(rejected, "invalid legacy data must stop migration instead of deleting progress");
+        using (var check = conn.CreateCommand())
+        {
+            check.CommandText = "SELECT MAX(version) FROM schema_version";
+            Assert(Database.ToInt64(check.ExecuteScalar()) == 4, "failed privacy migration must not record version 5");
+            check.CommandText = "SELECT save_data FROM cloud_saves WHERE profile_id = 'ZZ-INVALID-PRIVACY'";
+            Assert((string)check.ExecuteScalar()! == "invalid-json", "unreadable legacy save must be preserved for operator repair");
+            check.CommandText = "UPDATE cloud_saves SET save_data = '{}' WHERE profile_id = 'ZZ-INVALID-PRIVACY'";
+            check.ExecuteNonQuery();
+        }
+        Database.Initialize();
+        Database.Initialize(); // The upgrade must be safe to repeat.
+        using (var check = conn.CreateCommand())
+        {
+            check.CommandText = "SELECT COUNT(*) FROM cloud_saves WHERE profile_id LIKE 'PRIVACY-MIGRATION-%' AND save_data = '{\"Gold\":123}'";
+            Assert(Database.ToInt64(check.ExecuteScalar()) == 105, "migration must sanitize every page without losing progress");
+        }
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT save_data, save_hash FROM cloud_saves WHERE profile_id = 'TEST-CLOUD-PRIVATE'";
+        using var reader = cmd.ExecuteReader();
+        Assert(reader.Read(), "legacy progress must remain after migration");
+        var json = reader.GetString(0);
+        Assert(!json.Contains("token", StringComparison.OrdinalIgnoreCase), "migration must remove stored credentials");
+        Assert(json.Contains("321"), "migration must retain progress");
+        var expectedHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(json))).ToLowerInvariant()[..16];
+        Assert(reader.GetString(1) == expectedHash, "migration must update the save hash");
+        return Task.CompletedTask;
+    }
+
     private static async Task TestStripeCheckoutNoKey(HttpClient client)
     {
         var body = new
@@ -868,7 +973,7 @@ public static class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 4, $"expected schema version >= 4, got {version}");
+        Assert(version >= 5, $"expected schema version >= 5, got {version}");
         await Task.CompletedTask;
     }
 

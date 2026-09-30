@@ -1,147 +1,317 @@
-# Crownroad production launch gate
+# Crownroad production launch runbook
 
-## Current status
+Last implementation update: 2026-09-30; baseline repository audit: 2026-09-29.
+This is the release gate for an Android/iOS
+launch with paid consumables and internet rooms. Repository checks do **not**
+prove that a signed store build, physical-device flow, or live deployment works.
+Do not submit or enable purchases until every applicable unchecked gate below
+has an owner and passing evidence. If a feature is removed from launch scope,
+hide it in the release build and store copy; do not mark its gate complete.
 
-The game can build and its backend tests pass, but it is **not ready to submit
-to either store today**. Paid currency is deliberately fail-closed until the
-store credentials below are installed. This protects players from an accidental
-charge without a durable server grant.
+## Where we stand
 
-Implemented in this repository:
-
-- A server-issued player session is required for every player-owned,
-  competitive, social, cloud-save, commerce, and room-relay route. A relay
-  connection also needs a live seat in that room.
-- Challenge sync uses the game’s camel-case payload contract, acknowledges
-  individual submission IDs, and records each ID only once. The real Godot
-  smoke flow obtains a session before it submits, and has been verified against
-  PostgreSQL.
-- Every paid grant is recorded in a server wallet and immutable per-purchase
-  ledger. Replayed receipts are idempotent; a recovery retry can finish a
-  previously granted Play purchase without crediting it again.
-- The server verifies Google Play products directly with the Android Publisher
-  API, and verifies App Store transactions through the App Store Server API
-  once credentials are present. No store token is kept in plaintext.
-- Android is configured for API level 36/AAB delivery and includes the official
-  Godot Google Play Billing 3.3.0 plug-in. A local debug AAB builds with the
-  expected `com.crownroad.game` package and billing dependency, while excluding
-  backend source and internal documentation. It validates with the server before
-  consuming a consumable and rechecks unfinished purchases after relaunch.
-- The iOS export has the app icon and In-App Purchase capability configured.
-- Store artwork is available in `assets/branding/`.
-- The deployment stack uses two API replicas by default, shared Redis rate
-  limits, PostgreSQL connection pooling, and a compact room-session response
-  that avoids an extra scoreboard request on every room refresh.
-
-## Blocking work before submission
-
-| Gate | Owner | Definition of done |
+| Area | Verified in this repository | Still needed for public release |
 | --- | --- | --- |
-| Real player account/recovery | Product + engineering | Sign in with Apple/Google or an equivalent account is implemented. The present device-backed anonymous session is not sufficient to recover paid currency after a lost device. |
-| iOS StoreKit bridge | Engineering + Xcode | A StoreKit 2 plug-in submits the verified transaction ID/JWS and a deterministic `appAccountToken` to the backend, then calls `finish()` only after backend success. The current public wrapper finishes too early, so it is intentionally not included. |
-| Android device test | Release engineering | Install an internal-test AAB on a physical Play test device; purchase every consumable; force-close before and after validation; verify exactly one grant and eventual consume. |
-| iOS device test | Release engineering | Repeat the same interruption tests in StoreKit sandbox/TestFlight after the secure bridge is built. |
-| Server deployment | Operations | Follow [DEPLOYMENT.md](DEPLOYMENT.md): DNS and public ports are ready, the HTTPS stack is live, the managed PostgreSQL URL and Redis secrets are configured, provider backups and alerts have been tested, CORS is restricted, and `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` is absent. |
-| Store listings | Product/marketing | Legal name, support URL/email, privacy policy, age/content ratings, screenshots, localized copy, and pricing are entered in both consoles. |
-| In-game art and audio | Art + design | Replace the fallback atlas treatment with licensed final art/audio, or explicitly approve the fallback assets as final and update the coverage catalog. The current audit still reports many named unit, environment, icon, music, and SFX slots without dedicated assets. |
-| Real-time room transport | Engineering + QA | Connect battle simulation to the authenticated WebSocket relay, then prove reconnect, host migration/failure, latency, and duplicate-event handling on physical devices. The server relay is secure, but the game currently uses room polling and has no battle transport. |
-| Economy and abuse review | Design + engineering | Reconcile all premium grants/spends from server state, tune score plausibility checks with live telemetry, and complete a fraud/moderation review before public competitive play. |
+| Build and tests | Game build, 7,492 data checks and 82 server tests pass locally; the privacy smoke test also exercises consent and cloud restore in Godot. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
+| Backend | .NET API, server-issued anonymous sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. | Deploy and operate the stack, prove restore/alerts/load capacity, and add recoverable player identity. The Compose host and its local Redis remain single points of failure. |
+| Payments | Server-side Play/App Store verification and Android billing bridge are present; paid grants fail closed without valid store verification. | Real store configuration and device tests, secure iOS StoreKit 2 bridge, refund/void reconciliation, and production support procedures. |
+| Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
+| Art and audio | The current coverage audit reports full coverage for unit sprites, battle/screen backgrounds, structures, particles, icons, codex art, and district-map art. Branding files below exist. | Approve visual quality/rights. The catalog still reports **0/17 music tracks**, **0/34 SFX overrides**, and **0/10** for each of five route-specific screen-override groups. Decide whether the fallbacks are final or add the missing assets. |
+| Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
 
-## Store assets
+## Implementation progress and next work
 
-| Asset | File | Ready for |
+Checked items here mean **implemented and verified locally**, not deployed or
+approved by a store. The broader release gates below stay open until their
+remaining requirements have evidence.
+
+- [x] Correct the first-run analytics notice: disclose player-linked events
+  and require a fresh choice from users who accepted the old inaccurate notice.
+  Analytics defaults off, requires consent at collection and sending, and
+  discards queued events when consent is withdrawn.
+- [x] Add a separate crash-reporting opt-in in Settings, disabled by default;
+  opting into analytics does not enable crash reports. Update website wording
+  to describe both choices and the data sent.
+- [x] Remove session credentials, connection settings and consent choices
+  from cloud-save uploads on the client and API. Filter legacy downloads;
+  restore gameplay while keeping the current device's profile, active token,
+  endpoints and consent. Report the actual save version instead of hardcoded 31.
+- [x] Add schema migration 5 to scrub existing cloud-save rows and recompute
+  hashes without deleting progress. Test pagination, repeat runs, and recovery
+  after an invalid row prevents migration completion.
+- [x] Correct Docker build inputs to include linked server/game sources.
+  A release publish from those exact copied sources passes. Actual container
+  build/start remains unverified because the local Docker daemon is unavailable.
+
+| Order | Next deliverable | Completion evidence / dependency |
 | --- | --- | --- |
-| iOS master icon | `assets/branding/crownroad-app-icon-1024.png` | App Store Connect (1024 × 1024) |
-| Google Play icon | `assets/branding/crownroad-play-icon-512.png` | Play Console (512 × 512) |
-| Google Play feature graphic | `assets/branding/crownroad-play-feature-1024x500.png` | Play Console (1024 × 500) |
+| 1 | Choose a recoverable identity method and implement account linking/session recovery | Lost-device and account-switch tests restore the server wallet and progress; publisher chooses provider/account model before external configuration. |
+| 2 | Implement authenticated deletion and support handling | In-app request, public request page, session revocation, documented financial-record retention and end-to-end deletion evidence. |
+| 3 | Deploy the privacy update to staging | Schema 5 migration and backup restore on PostgreSQL, container build/start, and device tests of updated consent/cloud restore. Follow the migration notes in DEPLOYMENT.md. |
+| 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, implement the iOS bridge if included, and test refund/void reconciliation. |
+| 5 | Complete release infrastructure and feature acceptance | Measured load/alerts/restore; multiplayer decision; signed store-delivered device matrix and creative/localization sign-off. |
 
-The icon and feature graphic are original generated launch artwork. Screenshots
-are still required: capture the actual running game on each target device, with
-no mock UI or unsupported text overlays. Use the final 16:9/phone layout and
-show campaign, combat, progression, and the shop only after it is connected to
-the appropriate store sandbox.
+The owner decisions below remain unconfirmed. No platform, provider, legal
+publisher, rollout date or live account has been selected by this work.
 
-## Payments configuration
+### Local evidence for the privacy update
 
-Copy `server/.env.example` into the deployment secret store. Do not commit a
-filled `.env` file, service-account JSON, `.p8` key, keystore, or provisioning
-profile.
+- `./scripts/verify_all.sh`: game build, **7,492 data checks**, **82 server
+  tests**, and public-site preview/link validation. Backend tests use a
+  temporary SQLite database; this does not certify PostgreSQL deployment.
+- `./scripts/smoke/privacy_smoke.sh`: **23 passing checks** in Godot 4.6.1
+  Mono using a unique test save and loopback HTTP service. Covers independent
+  opt-ins, withdrawal, stale consent, credential-free upload bodies,
+  authenticated requests and restores from current/legacy save formats.
+  `--capture` additionally passed two consent/settings layout checks and writes
+  screenshots and a log to ignored `artifacts/privacy-review/`.
+- A release publish from only the Dockerfile's copied source inputs passes.
+  Neither a running Docker stack nor a production PostgreSQL instance was
+  used. Re-run the backend suite against an **isolated test database** via
+  `CROWNROAD_TEST_POSTGRES_CONNECTION` before staging; the tests mutate data.
+- Website preview still has unset publisher/contact/legal/effective-date
+  fields. It is not a production website sign-off.
 
-### Google Play
+The project declares Godot **4.6** in `project.godot`; the local audited editor
+was **4.6.1 Mono**. Do not assume a 4.7.2 toolchain or call it a project
+requirement until a migration and both signed exports have been verified.
 
-1. Create the Play Console app using package ID `com.crownroad.game` and keep
-   its upload key outside the repository.
-2. Create all ten one-time consumable products with the exact Google IDs in
-   `data/shop_products.json`.
-3. Link a Google Cloud service account to Play Console with Android Publisher
-   permission. Mount its JSON key securely and set:
-   `GOOGLE_PLAY_PACKAGE_NAME` and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH`.
-4. Add license testers and exercise internal testing. Never test with a
-   production buyer account.
+## Decisions and access the owner must provide
 
-### App Store
+- [ ] Choose the first release scope: Android, iOS, or both; whether internet
+  rooms and desktop/web checkout are included. Record target countries, age
+  audience, languages, launch date, and a rollback decision-maker.
+- [ ] Provide legal publisher name, support contact, public website/domain,
+  privacy-policy URL, terms/support/refund process, and rights/approval for all
+  code, art, music, fonts, and marketing copy. Have an appropriate reviewer
+  check privacy and consumer-law obligations in the launch countries.
+- [ ] Establish the Apple Developer/App Store Connect and Google Play Console
+  accounts. For paid products, complete each store's applicable agreements,
+  payments profile, tax, and banking setup. Grant release staff least-privilege
+  console access; do not share owner passwords.
+- [ ] Provide a production domain and hosting account, a managed PostgreSQL
+  provider with a pooled verified-TLS URL, a VM or equivalent Docker host,
+  monitored backup/restore capability, and an on-call alert destination.
+- [ ] Provide Android upload-key custody, a Mac with full Xcode and Apple
+  signing/provisioning access, and representative physical Android/iOS test
+  devices plus store sandbox/tester accounts. Keep keys and certificates out of
+  Git, issue trackers, and chat.
 
-1. Register the App ID `com.crownroad.game`, enable In-App Purchase, and create
-   matching consumable product IDs from `data/shop_products.json`.
-2. Create an App Store Server API In-App Purchase key and configure
-   `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_KEY_ID`, `APPLE_IAP_BUNDLE_ID`, and the
-   mounted `APPLE_IAP_PRIVATE_KEY_PATH`.
-3. Finish and device-test the secure StoreKit bridge described above before
-   enabling any App Store product for sale.
-4. Add App Store Server Notifications v2 before a subscription, refund, or
-   entitlement product is introduced. This launch catalog is consumable-only.
+## Engineering gates, in dependency order
 
-### Stripe
+### 1. Recoverable identity, privacy, and support
 
-Stripe is retained for desktop/web checkout only. It must not be presented as a
-way to buy virtual currency from the mobile apps. Configure both
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, test webhook signatures, and
-use a real HTTPS return URL before enabling it outside development.
+- [ ] Replace the current device-bound anonymous account with a recoverable
+  account path before taking public paid purchases. Implement provider sign-in
+  or another reviewed recovery method, secure account linking, session
+  rotation/revocation, and cross-device restore of the **server wallet and
+  progression**. A store's consumable purchase history is not a substitute for
+  restoring a player's spent balance. Test lost-device and account-switch cases.
+- [ ] Implement an in-app account-deletion request/path and a public web
+  deletion-request page when account creation is offered. Define retention
+  exceptions for financial/fraud records, revoke sessions, and verify the
+  deletion workflow end to end. Apple and Google publish account-deletion
+  requirements; review the current rules before submission.
+- [ ] Audit the actual data collected by the client, API, crash/analytics
+  paths, logs, and third-party SDKs. Make in-app consent and privacy wording
+  accurate, publish a privacy policy in-app and on the web, and make the App
+  Privacy and Play Data safety answers match it. Review retention, encryption,
+  access controls, and a way for support to handle data requests.
+  The website in `site/` publishes `/privacy`, `/terms`, `/support` and a web
+  deletion-request section (`/support#delete-data`), written from a code audit
+  on 2026-09-29 and updated for the privacy changes on 2026-09-30.
+  [WEBSITE.md](WEBSITE.md) lists the launch values to fill in, store-listing
+  URLs, and code each policy statement depends on. The inaccurate consent
+  notice, unconditional crash uploads, and cloud-save credential fields are
+  fixed locally as recorded above. Still open: staging/device verification,
+  public and in-app policy availability, legal/store disclosure review,
+  retention/backup handling and authenticated deletion/support.
+- [ ] Define customer-support flows for a missing purchase, duplicate grant,
+  account recovery, refund, abuse report, and outage. Give support a safe way
+  to inspect ledger entries without exposing tokens or an admin key to the
+  client.
 
-## Build and release steps
+### 2. Store commerce and ledger safety
 
-1. Keep the `Verify Crownroad` GitHub workflow green. It builds the release
-   server and reruns backend security/contract and game-data validation on each
-   change; it does not replace a signed mobile export or physical-device test.
-2. Use Godot 4.7.2 Mono (the project is now configured for it): it supplies an
-   API-36 Android template. Install the Android build template, Android SDK API
-   36/platform and build tools, Java 17, and an Android upload signing key.
-   The `android/` Gradle template is generated locally and intentionally not
-   versioned. Export a signed release **AAB**, then upload it to Play internal
-   testing. The checked local AAB is debug-signed only and must not be uploaded.
-3. Install full Xcode (not Command Line Tools), sign in with the Apple
-   Developer account, select the provisioning profile/team in
-   `export_presets.cfg`, build the generated iOS Xcode project, and archive it
-   for TestFlight.
-4. Set `AllowedOrigins` to the real HTTPS origin list. A production server with
-   no origins does not expose a CORS policy.
-5. Set `crownroad/network/api_base_url` to the final HTTPS API origin before
-   the release export. It locks the build to that backend and derives the
-   online-sync and purchase-validation addresses; leaving it blank disables
-   online play and paid grants on a new install.
-6. Run the verification suite from the project root:
+- [ ] Reconcile all **ten** products in `data/shop_products.json` with the
+  exact Apple/Google product IDs, product types, entitlements, pricing regions,
+  and store-localized display prices. Review the once-per-account `starter_kit`
+  semantics (it grants currency and a unit unlock) with the chosen store type.
+  Do not rely on the catalog's USD fallback as a localized mobile price.
+- [ ] Google Play: link the service account to the Play Console app with
+  Android Publisher access; create/activate products; configure license
+  testers. Test `PENDING` versus `PURCHASED`, validation-before-consume,
+  interruptions, re-query on relaunch, duplicate tokens, and the one-time
+  starter-kit limit. Do not grant a pending purchase.
+- [ ] iOS: build a **secure StoreKit 2 bridge** that sets the deterministic
+  `appAccountToken` on the StoreKit purchase, sends the transaction ID and
+  verification payload to the backend, observes unfinished transactions on
+  launch, and calls `finish()` only after the durable server grant. The public
+  wrapper that finishes too early is intentionally not shipped. Test
+  sandbox/TestFlight purchases, interrupted validation, retry, and account
+  mismatch.
+- [ ] Implement a refund/void signal and reconciliation path for **these
+  consumables**, not just future subscriptions: App Store Server Notifications
+  v2 (including `REFUND`) and Google Play voided-purchase notifications/API,
+  or a documented, tested alternative with an owner and response time. Make
+  ledger adjustments idempotent and auditable; decide how already-spent
+  currency is handled. Reconcile store reports against grants regularly.
+- [ ] Keep Stripe **off mobile** for this release. If desktop/web checkout is
+  in scope, separately configure its keys, signed webhook, return URL, policy
+  review, and end-to-end tests; otherwise leave it disabled.
 
-   ```sh
-   ./scripts/verify_all.sh
-   ```
+### 3. Production backend and resilience
 
-7. Complete the physical purchase, restore, refund, offline, and interruption
-   checks in the gates above. Review live server logs and wallet ledger entries
-   for every test transaction.
+- [ ] Follow [DEPLOYMENT.md](DEPLOYMENT.md) to deploy a staging stack first,
+  then production. Copy `server/.env.production.example` to the untracked
+  `server/.env.production` **on the deployment host** and set `DATABASE_URL` to
+  the provider's pooled PostgreSQL URL with verified TLS. The database is
+  **not** in the API/Redis/Caddy Docker Compose stack. Restrict `AllowedOrigins`
+  to real browser origins; never use `*` for production.
+- [ ] Provision DNS, ports 80/443, HTTPS, managed-PostgreSQL role/connection
+  limits, private Redis secret, operator key, and real store credentials in
+  owner-readable secret files. `server/deploy.sh` validates the Compose/Caddy
+  config, runs server/data checks, and starts the stack. The current Compose
+  file mounts **both** Apple and Google credential files: an Android-only
+  deployment still needs those mounts made optional in code or real credentials
+  provisioned; do not insert a fake Apple key merely to make Compose start.
+  Never set `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` in production.
+- [ ] Configure provider backups/PITR or encrypted off-host dumps and perform
+  a timed restore drill into a separate database. Define retention, migration,
+  rollback, incident, and secret-rotation procedures. Preserve the wallet and
+  purchase ledger across releases; never roll a database backward blindly.
+- [ ] Monitor and alert on public `/health`, TLS renewal, API 5xx/latency,
+  container restarts, Redis, PostgreSQL connections/storage, purchase
+  verification failures, wallet anomalies, and backup failures. Test alerts
+  reaching the on-call owner. Keep the admin key server-side only.
+- [ ] Load-test the **deployed** API with a realistic mix of room polling,
+  authentication, writes, WebSockets, and purchases, then set a measured
+  concurrent-player target and alert thresholds. Two API replicas do not
+  establish a player-capacity number. For multi-host availability/scale,
+  replace host-local Redis with managed/shared Redis and put a load balancer
+  in front; validate WebSocket room affinity across hosts.
+- [ ] Before each signed client build, set
+  `crownroad/network/api_base_url` to the final HTTPS API origin. It is blank
+  by default; a blank release disables new-install online play and paid grants.
+  Verify no production secret or admin endpoint is embedded in the client.
 
-Godot's C# mobile exporter remains experimental. Treat the local AAB as a
-build-pipeline check, not device certification; test the exact signed release
-on representative Android hardware before promotion.
+### 4. Multiplayer, gameplay, and creative sign-off
 
-## Launch-day controls
+- [ ] If internet rooms are in scope, connect the battle simulation to the
+  authenticated WebSocket relay and test duplicate/out-of-order events,
+  reconnect, seat loss, host/process failure, latency, and abusive clients on
+  real devices. Otherwise hide/disable internet rooms and remove promises of
+  live multiplayer from the listing. LAN/async features need their own device
+  acceptance tests if advertised.
+- [ ] Decide whether current visual assets are final. Replace or approve
+  fallback music/SFX and optional route-specific screens; confirm commercial
+  rights and attribution obligations. Check full-screen/cropped art on target
+  devices, accessibility/legibility, touch controls, performance, battery,
+  memory, cold launch, and no network/offline UX.
+- [ ] Have native speakers review all advertised localizations and store copy.
+  Run the data validator for missing keys/format placeholders; do not advertise
+  a language based solely on machine-complete keys.
+- [ ] Review economy balance, premium-grant/spend reconciliation, score
+  plausibility, fraud/moderation response, crash handling, and support tools.
 
-- Start with internal testing, then closed testing/TestFlight; do not launch
-  both stores to the public at once.
-- Keep a remote kill switch or remove the commerce endpoint when verification,
-  wallet, or store API alerts fire. The client already refuses to charge when
-  native billing or backend validation is unavailable.
-- Back up the database before each release; retain purchase and wallet ledger
-  records for support/refund reconciliation.
-- Publish privacy policy, support contact, terms, and age ratings before review.
-- Set up on-call ownership for payment failures, refund requests, crashes, and
-  server availability.
+## Signing, store listings, and submission
+
+### Android / Google Play
+
+- [ ] Create the Play Console app for `com.crownroad.game`; complete developer
+  verification and Play App Signing, secure the upload keystore, and create
+  the ten one-time products from the catalog. The preset targets API 36, but
+  recheck [Google's current target-API rule](https://support.google.com/googleplay/android-developer/answer/11926878)
+  at submission time.
+- [ ] Use a tested Godot Mono version with matching Android export templates,
+  SDK/platform/build tools, Java, and billing plug-in. Increment the Android
+  `version/code` for each uploaded build. Export a **release-signed AAB** and
+  inspect its package ID, target API, billing dependency, permissions, native
+  architectures, size, and excluded internal files. A local debug AAB is only
+  a build-pipeline check, never the store artifact.
+- [ ] Upload to Play internal testing, install **from Play** on physical
+  devices, and complete the payment/interruption matrix below. Move through
+  any required closed-testing and production-access steps shown in the
+  Console; do not assume internal-test success grants production access.
+- [ ] Complete app content/policy declarations, age/content rating, ads and
+  data-safety forms, account-deletion link, support/privacy links, countries,
+  pricing, and store listing. Use the original
+  `assets/branding/crownroad-play-icon-512.png` and
+  `assets/branding/crownroad-play-feature-1024x500.png`; capture real game
+  screenshots for the required device types/locales. Check the Console's live
+  asset specifications before upload.
+
+### iOS / App Store
+
+- [ ] Create the App ID and App Store Connect record for `com.crownroad.game`,
+  enable In-App Purchase, accept the Paid Apps Agreement, and complete tax/
+  banking details. Create the ten matching IAP products with localizations,
+  pricing, and review metadata. Apple's [first IAP of a type must be submitted
+  with a new app version](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/).
+- [ ] Finish the secure StoreKit bridge first. On a Mac with full Xcode,
+  configure team/provisioning in `export_presets.cfg`, use a verified Godot
+  Mono iOS export setup, increment iOS version/build, archive a **release**
+  build, and upload it to App Store Connect. The preset's team/profile fields
+  are currently blank; the icon and IAP capability are configured.
+- [ ] Test the exact TestFlight build and sandbox products on physical iPhone
+  and any supported iPad size. Complete App Privacy, age rating, export-
+  compliance questions, support/privacy URLs, countries/pricing, reviewer
+  notes/test access, localized listing text, and actual-device screenshots.
+  Use `assets/branding/crownroad-app-icon-1024.png`; confirm live screenshot
+  requirements in [App Store Connect Help](https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots/).
+
+### Physical-device acceptance matrix — both stores
+
+Record device/OS, build hash, store environment, tester, transaction ID,
+server ledger ID, and result for each case. Do not treat simulator, local
+receipt stub, or a backend unit test as store certification.
+
+- [ ] Fresh install, update, offline launch, low-memory/background/resume,
+  slow/failed API, and accessibility/touch/orientation checks.
+- [ ] Every catalog product: localized price/description, completed purchase,
+  exact one-time server grant, balance refresh, and receipt/support record.
+- [ ] Pending/canceled/declined purchase: no grant. Kill before store callback,
+  before backend response, after grant but before acknowledge/consume/finish,
+  and on relaunch; no lost charge or duplicate grant.
+- [ ] Repeat/replay purchase token or transaction ID, account mismatch,
+  lost-device login, account switch, starter-kit repurchase, refund/void, and
+  support recovery. Confirm the chosen refund policy appears in the ledger.
+- [ ] Verify an unavailable store or backend yields a clear recoverable state,
+  never a silent lost charge, and that no mobile flow opens Stripe. Watch
+  server logs/alerts during the tests.
+
+## Final go/no-go and launch day
+
+1. Freeze the release commit and record Godot/export-template/SDK versions,
+   signed artifact hashes, backend image digest, schema version, and product
+   catalog. Run `./scripts/verify_all.sh`; keep the `Verify Crownroad` workflow
+   green. Neither currently builds or certifies a mobile store artifact.
+2. Verify the production hostname and `/health`, restore drill, alerts,
+   purchase verification, real `DATABASE_URL`, restricted origins, and absence
+   of test-claim flags. Make an off-host backup before migration/deploy.
+3. Use the exact store-delivered build that passed the device matrix. Submit
+   complete listing/IAP metadata with reviewer notes; start in internal/closed
+   testing or TestFlight, then stage a controlled public rollout.
+4. Assign on-call coverage for API/store errors, crashes, failed payments,
+   refunds, moderation, and support. Keep a tested commerce-disable path. Do
+   not disable the API without accounting for already-charged purchases and
+   unfinished store transactions.
+5. Define rollback triggers and the previous known-good client/server versions.
+   Preserve the current database before any rollback; use a forward repair
+   when schema or ledger changes cannot be safely reversed. Reconcile every
+   test and early-live purchase with the server ledger.
+
+## Official policy/reference checks
+
+Store rules change. Recheck these sources at submission rather than treating
+this dated runbook as legal or store-policy approval:
+
+- [Apple App Store Connect workflow and paid-app setup](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-workflow/),
+  [App Privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/),
+  [account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app),
+  and [StoreKit transaction finishing](https://developer.apple.com/documentation/storekit/transaction/finish%28%29).
+- [Apple refund notifications](https://developer.apple.com/documentation/appstoreservernotifications/notificationtype)
+  and [Google Play voided-purchase notifications](https://developer.android.com/google/play/billing/rtdn-reference).
+- [Google Play user-data policy](https://support.google.com/googleplay/android-developer/answer/10144311),
+  [account deletion](https://support.google.com/googleplay/android-developer/answer/13327111),
+  and [signed App Bundle testing](https://developer.android.com/guide/app-bundle/test).

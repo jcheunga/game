@@ -1,0 +1,14 @@
+# Build from the repository root, sending only explicitly required sources.
+**
+!server/
+!server/Dockerfile
+!server/Dockerfile.dockerignore
+!server/Server.csproj
+!server/*.cs
+!scripts/
+!scripts/core/
+!scripts/core/CloudSavePrivacy.cs
+!scripts/core/AssetCoverageCatalog.cs
+!scripts/core/CodexCatalog.cs
+!scripts/tests/
+!scripts/tests/DataIntegrityValidator.cs

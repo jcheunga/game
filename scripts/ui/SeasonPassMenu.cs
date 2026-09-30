@@ -16,8 +16,8 @@ public partial class SeasonPassMenu : Control
 
 	private static readonly Color ColorClaimed = new("22c55e");
 	private static readonly Color ColorCurrent = new("eab308");
-	private static readonly Color ColorFuture = new("555566");
-	private static readonly Color ColorPremiumLocked = new("44444a");
+	private static readonly Color ColorFuture = new("aab5b2");
+	private static readonly Color ColorPremiumLocked = new("9b9da8");
 	private static readonly Color ColorFreeReward = new("3b82f6");
 	private static readonly Color ColorPremiumReward = new("a855f7");
 
@@ -235,6 +235,7 @@ public partial class SeasonPassMenu : Control
 			if (freeClaimed)
 			{
 				freeBtn.AddThemeColorOverride("font_color", ColorClaimed);
+				freeBtn.AddThemeColorOverride("font_disabled_color", ColorClaimed);
 			}
 			else if (freeUnlocked)
 			{
@@ -242,7 +243,7 @@ public partial class SeasonPassMenu : Control
 			}
 			else
 			{
-				freeBtn.AddThemeColorOverride("font_color", ColorFuture);
+				freeBtn.AddThemeColorOverride("font_disabled_color", ColorFuture);
 			}
 
 			var capturedTierFree = tier.Tier;
@@ -265,10 +266,11 @@ public partial class SeasonPassMenu : Control
 			if (premClaimed)
 			{
 				premBtn.AddThemeColorOverride("font_color", ColorClaimed);
+				premBtn.AddThemeColorOverride("font_disabled_color", ColorClaimed);
 			}
 			else if (!gs.HasPremiumPass)
 			{
-				premBtn.AddThemeColorOverride("font_color", ColorPremiumLocked);
+				premBtn.AddThemeColorOverride("font_disabled_color", ColorPremiumLocked);
 			}
 			else if (premUnlocked)
 			{
@@ -276,7 +278,7 @@ public partial class SeasonPassMenu : Control
 			}
 			else
 			{
-				premBtn.AddThemeColorOverride("font_color", ColorFuture);
+				premBtn.AddThemeColorOverride("font_disabled_color", ColorFuture);
 			}
 
 			var capturedTierPrem = tier.Tier;

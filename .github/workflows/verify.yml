@@ -30,6 +30,9 @@ jobs:
       - name: Build production server
         run: dotnet build server/Server.csproj --configuration Release --no-restore
 
+      - name: Build backend container from its release inputs
+        run: docker build --file server/Dockerfile --tag crownroad:verify .
+
       - name: Run backend contract and security tests
         run: dotnet run --project server -- --test
 

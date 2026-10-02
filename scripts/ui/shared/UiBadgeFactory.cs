@@ -122,6 +122,7 @@ public static class UiBadgeFactory
             CustomMinimumSize = size,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
         };
+        frame.SetMeta("realm_badge", true); frame.SetMeta("badge_tint", tint);
         var style = RealmUi.Surface(new Color("142228"), new Color("687362"));
         style.ContentMarginLeft = style.ContentMarginRight = style.ContentMarginTop = style.ContentMarginBottom = 1;
         frame.AddThemeStyleboxOverride("panel", style);

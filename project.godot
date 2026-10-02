@@ -40,8 +40,8 @@ DeepLinkHandler="*res://scenes/autoload/DeepLinkHandler.tscn"
 
 [crownroad]
 
-# Leave blank for local development. Set the final HTTPS API origin here before
-# a store export, for example: https://api.your-domain.example
+; Leave blank for local development. Set the final HTTPS API origin here before
+; a store export, for example: https://api.your-domain.example
 network/api_base_url=""
 
 [display]

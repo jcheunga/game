@@ -115,6 +115,7 @@ app.Map("/ws/relay/{roomId}", async (HttpContext context, string roomId) =>
     await RelayHub.HandleConnection(context, roomId);
 });
 
+AccountAuth.Map(app);
 app.MapPost("/player-profile", Endpoints.PlayerProfile);
 app.MapPost("/challenge-sync", Endpoints.ChallengeSync);
 app.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);

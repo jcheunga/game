@@ -40,16 +40,17 @@ for the go-live checklist and store-listing URLs.
 
 - Repo-side roadmap work is complete.
 - Primary local verification command: `./scripts/verify_all.sh`
-- Current verified state: game build `0 warnings / 0 errors`, server tests `74 passed`, data checks `6398 passed`
-- Remaining work is external production only: art/audio assets, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
+- Current verified state: game build `0 warnings / 0 errors`, server tests `86 passed`, data checks `7492 passed`
+- The playtest update adds original music/SFX, account sign-in, a Swordsman-only starter squad, six unit/five spell slots, paid isometric discovery, food recharge and a simpler battle UI. See [PLAYER_FEEDBACK_UPDATE.md](docs/PLAYER_FEEDBACK_UPDATE.md) for balance and account setup.
+- Production still requires translations, deployment secrets, email/Google credentials, store signing/credentials, and manual device playtesting.
 
 ## Tests
 
 | Command | What | Count |
 |---------|------|-------|
-| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 74 |
-| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 6398 |
-| `./scripts/verify_all.sh` | Full local repo verification | game build + 74 server tests + 6398 data checks |
+| `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 86 |
+| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 7492 |
+| `./scripts/verify_all.sh` | Full local repo verification | game build + server tests + data checks |
 
 GitHub Actions also runs the game build plus the server/data validation workflow on `server/`, `data/`, `scripts/`, `scenes/`, and project/workflow changes, supports manual dispatch, and cancels stale in-progress runs per ref.
 
@@ -115,28 +116,24 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 - Battlefield: the map is 2560 units wide (twice the original screen width). Scroll
   the mouse wheel or trackpad to pan, middle-drag, or use Left/Right arrows. The
-  navigation bar or campaign minimap also pans the view; **Home / End** jump to
-  either base. Campaign arrow buttons find offscreen enemies, or the nearest
-  base when no enemies are hidden. On mobile, drag to explore and use **Map**
+  **Home / End** jump to either base. On mobile, drag to explore and use **Map**
   to see the entire battlefield.
-- Campaign field objectives: all 60 stages have a capturable forward post and an
-  optional supply cache. Hold the blue ring to earn 3–4 forward deployments;
-  the Post button switches between saving them and using them. Enemies block
-  the post, and it needs 8 seconds between deployments. Hold the gold ring for
-  2.5 seconds to claim courage, wagon repairs, or siege supplies. See the Field
-  briefing or battle intel for that stage's reward.
+- Campaign victory occurs when either base is destroyed. Deployments always
+  start at the wagon. Capture posts, supply rings, the minimap and battle speed
+  controls have been removed.
 - Encounters: advancing troops can trigger the next Approach, Crossroads, or
   Gate pack, with a warning at its entry point. Enemy caps and time fallbacks
   still apply. Cursed stages have two separated danger pockets with safe lanes.
   [Expanded campaign design and all-stage results](docs/EXPANDED_CAMPAIGN.md).
 - Main menu:
-  - Shows live caravan progress, unlocked-stage count, authored campaign progress, gold/food, next deployment, and active squad summary
-  - `Start Campaign`: opens map
-  - `Caravan Armory`: opens the dedicated unit/base upgrade screen
-  - `Endless Run`: opens the survival-mode prep screen
-  - `Multiplayer Challenge`: opens the async challenge prep screen
-  - `Settings`: opens the shared audio/interface settings screen
-  - `Reset Progress`: restores stage unlock/resource defaults
+  - Opens directly onto the active zone map, with gold, food and stars at the top left and settings at the top right
+  - King's Road has a complete painted coastal landscape; brass and enamel controls use illustrated medallion tabs and resource icons
+  - Zones open close to the caravan and require panning; travel lifts fog of war over the landscape and discoveries
+  - Bottom tabs: `Map`, `Warband`, `Spells`, `Upgrades`, `Codex`, and `More`; armory shortcuts open the matching page
+  - Select a site to open its floating overview/intel panel; close it to see the unobstructed map
+  - Defeat a zone boss to reveal the next zone. The pager displays one zone at a time and retains access to areas already played in existing saves
+  - `More` contains Adventure, Caravan and Community destinations, account sign-in, achievements and quit
+  - See [home map layout and verification](docs/HOME_MAP_UI.md)
 - Settings:
   - Adjust persistent SFX level, ambience level, mute state, combat intel visibility, and FPS counter visibility
   - Refresh the current player profile against the active local/HTTP multiplayer provider and review cached auth/session status
@@ -181,7 +178,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Caravan call signs are now persisted in Settings and used across LAN room labels, ready states, and scoreboards
   - LAN room summaries now also show live peer race state, so the lobby can tell who is still in prep, who is currently in battle, and who has already submitted a result
   - Player-deck LAN boards now also sync each peer's current squad and active deck synergy into the room summary before launch
-  - Changing cards in a LAN room now clears that runner's ready state, and player-deck boards will not launch until every synced runner has a full 3-card squad
+  - Changing cards in a LAN room clears that runner's ready state; player-deck boards accept any nonempty squad
   - Active LAN races now also stream low-bandwidth live telemetry back into the room, so racing peers show current time, hull, and defeats before the final scoreboard submission lands
   - The LAN screen now has a dedicated race monitor panel separate from the final scoreboard, so live progress and completed submissions stay readable during a room race
   - LAN races now also use a shared load barrier and countdown, so combat does not start until every runner has finished loading into battle
@@ -233,10 +230,10 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - `Begin Endless March`: start the endless survival battle
   - `Caravan Armory`: buy upgrades and edit the active squad before the run
 - Campaign map:
-  - Switch between `King's Road`, `Saltwake Docks`, `Emberforge March`, `Ashen Ward`, `Thornwall Pass`, `Hollow Basilica`, `Mire of Saints`, `Sunfall Steppe`, `Gloamwood Verge`, and `Crownfall Citadel` in the map selector
+  - Shares the home layout; use the zone pager to visit unlocked areas, beginning with `King's Road`
   - Review route banner progress, district buildout status, earned stars, and route-specific stage styling on the map
   - Route, map, and stage panels now tint to the selected district so each front reads like its own campaign space instead of a shared generic menu
-  - Hover stage nodes for threat and star intel before selecting them
+  - Select discovered leaders to view threat and star intel
   - Review caravan readiness, active squad summary, and route-specific exploration costs
   - Spend food to explore the next stage and to begin stage deployments
   - `Open Caravan Armory`: jump into the dedicated shop screen
@@ -249,7 +246,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - The `Action Board` now also reacts to authored battlefield events like ritual holds, relic escorts, and breach charges
   - Buy new units with gold once their shop stage is explored
   - Scribe new spells with gold once their route stage is explored
-  - Equip up to 2 active spell cards alongside the 3-card squad
+  - Equip up to five spell cards alongside six unit cards; one unit is enough to deploy
   - Upgrade owned units with gold
   - Preview unit stat gains before buying upgrades
   - Upgrade `War Wagon Plating`, `Caravan Stores`, `March Drum`, and `Rune Beacon`

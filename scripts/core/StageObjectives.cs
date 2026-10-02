@@ -114,7 +114,7 @@ public static class StageObjectives
         int bestStars)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"Reward: +{rewardGold} gold, +{rewardFood} food.");
+        builder.AppendLine(rewardFood > 0 ? $"Reward: +{rewardGold} gold, +{rewardFood} food." : $"Reward: +{rewardGold} gold.");
         builder.AppendLine($"Stars earned: {evaluation.StarsEarned}/3   |   Best: {bestStars}/3");
         builder.Append(BuildOutcomeSummary(evaluation));
         return builder.ToString().TrimEnd();
@@ -298,7 +298,7 @@ public static class StageObjectives
         var type = NormalizeType(objective.Type);
         return type switch
         {
-            "clear_route" => stage.HasScriptedWaves ? "Breach the gate and rout all waves" : "Clear the route",
+            "clear_route" => "Destroy the enemy base",
             "bus_hull_ratio" => $"Finish with war wagon hull >= {Mathf.RoundToInt(ResolveBusHullThreshold(stage, objective) * 100f)}%",
             "clear_within" => $"Clear within {ResolveTimeLimit(stage, objective):0}s",
             "deploy_limit" => $"Deploy no more than {Mathf.RoundToInt(Mathf.Max(1f, objective.Value))} units",

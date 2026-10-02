@@ -368,7 +368,7 @@ public partial class LanChallengeService : Node
 
 		if (!HasSharedLockedDeck() && !ResolvePeerDeckIsFull(Multiplayer.GetUniqueId()))
 		{
-			message = $"Fill a {GameState.Instance.DeckSizeLimit}-card squad before readying for LAN launch.";
+			message = $"Equip at least one unit before readying for LAN launch.";
 			return false;
 		}
 
@@ -1162,7 +1162,7 @@ public partial class LanChallengeService : Node
 
 	private bool HasSharedLockedDeck()
 	{
-		return _sharedLockedDeckUnitIds.Count >= GameState.Instance.DeckSizeLimit;
+		return _sharedLockedDeckUnitIds.Count >= 3;
 	}
 
 	private string BuildPeerDeckSummaryLine(int peerId)
@@ -1179,7 +1179,7 @@ public partial class LanChallengeService : Node
 		}
 
 		var deckNames = string.Join(", ", deckUnits.Select(unit => unit.DisplayName));
-		if (deckUnits.Count < GameState.Instance.DeckSizeLimit)
+		if (deckUnits.Count == 0)
 		{
 			return $"{ResolvePeerLabel(peerId)}: {deckNames}  |  incomplete deck ({deckUnits.Count}/{GameState.Instance.DeckSizeLimit})";
 		}
@@ -1247,7 +1247,7 @@ public partial class LanChallengeService : Node
 	{
 		return _peerDecks.TryGetValue(peerId, out var deckIds) &&
 			deckIds != null &&
-			deckIds.Length >= GameState.Instance.DeckSizeLimit;
+			deckIds.Length > 0;
 	}
 
 	private void NotifyStateChanged()

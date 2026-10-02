@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 public partial class AudioDirector : Node
@@ -58,6 +59,7 @@ public partial class AudioDirector : Node
 
 	public static AudioDirector Instance { get; private set; }
 
+	private readonly List<Control> _touchControls = new();
 	private readonly Dictionary<string, AudioStreamWav> _cues = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, double> _lastCueTimes = new(StringComparer.OrdinalIgnoreCase);
 	private readonly RandomNumberGenerator _rng = new();
@@ -109,6 +111,15 @@ public partial class AudioDirector : Node
 
 	public override void _Process(double delta)
 	{
+        // Touch UI uses visible labels and accessible names instead of hover tooltips.
+        for (var i = _touchControls.Count - 1; i >= 0; i--)
+        {
+            var control = _touchControls[i];
+            if (!IsInstanceValid(control)) { _touchControls.RemoveAt(i); continue; }
+            if (control.TooltipText.Length == 0) continue;
+            if (control.AccessibilityName.Length == 0) control.AccessibilityName = control.TooltipText;
+            control.TooltipText = "";
+        }
 		UpdateSceneContext();
 	}
 
@@ -203,7 +214,7 @@ public partial class AudioDirector : Node
 			"resurrect" => 1.06f,
 			_ => 1f
 		};
-		PlayCue(SpellCastCueId, -9f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.1f, "spell_cast");
+		PlayCue(_authoredOverrides.ContainsKey($"spell_{effectType}") ? $"spell_{effectType}" : SpellCastCueId, -13f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.1f, "spell_cast");
 	}
 
 	public void PlayBossSpawn()
@@ -270,6 +281,7 @@ public partial class AudioDirector : Node
 
 	private void OnTreeNodeAdded(Node node)
 	{
+		if (node is Control control && !_touchControls.Contains(control)) _touchControls.Add(control);
 		if (node is Button button)
 		{
 			BindButton(button);
@@ -278,6 +290,7 @@ public partial class AudioDirector : Node
 
 	private void BindButtonsRecursive(Node node)
 	{
+		if (node is Control control && !_touchControls.Contains(control)) _touchControls.Add(control);
 		if (node is Button button)
 		{
 			BindButton(button);
@@ -298,8 +311,6 @@ public partial class AudioDirector : Node
 		}
 
 		button.SetMeta(audioBoundMeta, true);
-		button.MouseEntered += () => PlayUiHover();
-		button.FocusEntered += () => PlayUiHover();
 		button.Pressed += () => PlayUiConfirm();
 	}
 
@@ -550,6 +561,7 @@ public partial class AudioDirector : Node
 
 		AudioStream stream = _authoredOverrides.TryGetValue(cueId, out var authored) ? authored : cue;
 
+		if (GetChildren().OfType<AudioStreamPlayer>().Count(p => p.Playing) >= 16) return;
 		var player = new AudioStreamPlayer
 		{
 			Stream = stream,
@@ -689,6 +701,8 @@ public partial class AudioDirector : Node
 			new ToneLayer(110f, 114f, 1f, true),
 			new ToneLayer(220f, 228f, 0.24f),
 			new ToneLayer(330f, 342f, 0.1f)));
+        foreach (var effect in new[] { "fireball", "heal", "frost_burst", "lightning_strike", "barrier_ward" })
+            RegisterCue($"spell_{effect}", _cues[SpellCastCueId]);
 	}
 
 	private static readonly string[] SfxExtensions = { ".ogg", ".mp3", ".wav" };

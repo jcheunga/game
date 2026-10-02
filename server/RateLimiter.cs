@@ -47,6 +47,12 @@ public sealed class RateLimiter
 
         // A profile registration/recovery attempt has no established bearer
         // yet, so it remains deliberately limited by source IP.
+        if (path.StartsWithSegments("/auth"))
+        {
+            var poll = path.StartsWithSegments("/auth/google/poll");
+            return new RateLimitPolicy($"crownroad:rate:v1:auth:{(poll ? "poll" : "attempt")}:{Hash(ip)}", poll ? 40 : 10);
+        }
+
         if (path.StartsWithSegments("/player-profile"))
         {
             return new RateLimitPolicy($"crownroad:rate:v1:registration:{Hash(ip)}", 20);

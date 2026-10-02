@@ -8,10 +8,10 @@ public partial class GameState : Node
 {
 	public const int CurrentAnalyticsConsentVersion = 1;
 	private const int DefaultGold = 120;
-	private const int DefaultFood = 12;
+	private const int DefaultFood = 24;
 	private const int DefaultUnlockedStage = 1;
-	private const int MaxDeckSize = 3;
-	private const int MaxSpellDeckSize = 3;
+	private const int MaxDeckSize = 6;
+	private const int MaxSpellDeckSize = 5;
 	private const int DefaultUnitLevel = 1;
 	private const int UnitDoctrineUnlockLevelValue = 3;
 	private const int UnitDoctrineRetrainGoldCost = 75;
@@ -30,8 +30,8 @@ public partial class GameState : Node
 	private const bool DefaultChallengeSyncAutoFlush = false;
 	private const string DefaultPlayerAuthToken = "";
 	private const string DefaultDifficultyId = DifficultyCatalog.NormalId;
-	private const bool DefaultShowDevUi = true;
-	private const bool DefaultShowFpsCounter = true;
+	private const bool DefaultShowDevUi = false;
+	private const bool DefaultShowFpsCounter = false;
 	private const bool DefaultAudioMuted = false;
 	private const int DefaultEffectsVolumePercent = 85;
 	private const int DefaultAmbienceVolumePercent = 65;
@@ -65,14 +65,11 @@ public partial class GameState : Node
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
 	{
-		GameData.PlayerBrawlerId,
-		GameData.PlayerShooterId,
-		GameData.PlayerDefenderId
+		GameData.PlayerBrawlerId
 	};
 	private static readonly string[] DefaultDeckSpellIds =
 	{
-		GameData.SpellFireballId,
-		GameData.SpellHealId
+
 	};
 
 	public static GameState Instance { get; private set; }
@@ -147,7 +144,7 @@ public partial class GameState : Node
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
 	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
 	public bool HasAnySpellEquipped => _activeDeckSpellIds.Count > 0;
-	public bool HasSelectedAsyncChallengeLockedDeck => _selectedAsyncChallengeLockedDeckUnitIds.Count >= MaxDeckSize;
+	public bool HasSelectedAsyncChallengeLockedDeck => _selectedAsyncChallengeLockedDeckUnitIds.Count >= 3;
 
 	private readonly List<string> _activeDeckUnitIds = new();
 	private readonly List<string> _activeDeckSpellIds = new();
@@ -388,6 +385,7 @@ public partial class GameState : Node
 	public void ClearPlayerProfileSession()
 	{
 		PlayerAuthToken = DefaultPlayerAuthToken;
+        AccountProvider = ""; AccountLabel = "";
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		Persist();
 		PlayerProfileSyncService.InvalidateFromState("Cleared cached profile session.");
@@ -1753,6 +1751,8 @@ public partial class GameState : Node
 		AudioMuted = muted;
 		Persist();
 		AudioDirector.Instance?.RefreshMixFromState();
+        if (muted) MusicPlayer.Instance?.StopAll();
+        else MusicPlayer.Instance?.PlayForScene(GetTree().CurrentScene?.SceneFilePath ?? SceneRouter.MainMenuScene);
 	}
 
 	public void SetEffectsVolumePercent(int percent)
@@ -2025,7 +2025,7 @@ public partial class GameState : Node
 			if (_ownedPlayerUnitIds.Contains(id)) validDeck.Add(id);
 		}
 		_activeDeckUnitIds.Clear();
-		_activeDeckUnitIds.AddRange(validDeck.Count >= 3 ? validDeck.GetRange(0, 3) : validDeck);
+		_activeDeckUnitIds.AddRange(validDeck.Take(MaxDeckSize));
 		if (_activeDeckUnitIds.Count == 0)
 		{
 			_activeDeckUnitIds.AddRange(DefaultDeckUnitIds);
@@ -4736,9 +4736,9 @@ public partial class GameState : Node
 
 	public bool CanStartBattle(out string message)
 	{
-		if (_activeDeckUnitIds.Count < MaxDeckSize)
+		if (_activeDeckUnitIds.Count == 0)
 		{
-			message = $"Fill all {MaxDeckSize} squad cards in Caravan Armory before deploying.";
+			message = "Equip a unit to deploy.";
 			return false;
 		}
 
@@ -4761,6 +4761,7 @@ public partial class GameState : Node
 			return false;
 		}
 
+		RefreshFoodRecharge();
 		var foodCost = GetStageEntryFoodCost(stage);
 		if (Food < foodCost)
 		{
@@ -4785,6 +4786,7 @@ public partial class GameState : Node
 		}
 
 		var foodCost = GetStageEntryFoodCost(stage);
+		RefreshFoodRecharge();
 		Food -= foodCost;
 		LastResultMessage = $"Caravan dispatched to stage {stage}. -{foodCost} food.";
 		Persist();
@@ -5000,6 +5002,7 @@ public partial class GameState : Node
 		{
 			PlayerProfileId = deviceState.PlayerProfileId;
 			PlayerAuthToken = deviceState.PlayerAuthToken;
+            AccountProvider = deviceState.AccountProvider; AccountLabel = deviceState.AccountLabel;
 			LastPlayerProfileSyncAtUnixSeconds = deviceState.LastPlayerProfileSyncAtUnixSeconds;
 			ChallengeSyncProviderId = deviceState.ChallengeSyncProviderId;
 			ChallengeSyncEndpoint = deviceState.ChallengeSyncEndpoint;
@@ -5011,6 +5014,7 @@ public partial class GameState : Node
 		}
 		ApplyReleaseBackendConfiguration();
 		ClampState();
+		RefreshFoodRecharge();
 		Locale.SetLanguage(Language);
 		MusicPlayer.Instance?.SetVolumeScale(MusicVolumePercent / 100f);
 		ApplyFontSizeOffset();
@@ -5024,6 +5028,7 @@ public partial class GameState : Node
 		ResetProgressionRewards();
 		Gold = DefaultGold;
 		Food = DefaultFood;
+		FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 		ResetAdventureProgress();
 		HighestUnlockedStage = DefaultUnlockedStage;
 		SelectedStage = DefaultUnlockedStage;
@@ -5034,6 +5039,7 @@ public partial class GameState : Node
 		PlayerCallsign = DefaultPlayerCallsign;
 		PlayerProfileId = GeneratePlayerProfileId();
 		PlayerAuthToken = DefaultPlayerAuthToken;
+        AccountProvider = ""; AccountLabel = "";
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		LastChallengeSyncAtUnixSeconds = 0L;
 		LastDailyDate = "";
@@ -5184,8 +5190,10 @@ public partial class GameState : Node
 	private void ApplySavedData(GameSaveData saved)
 	{
 		LoadProgressionRewards(saved);
+        AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? "";
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
+		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
 		HighestUnlockedStage = saved.HighestUnlockedStage;
 		LoadAdventureProgress(saved);
 		SelectedStage = saved.SelectedStage;
@@ -5317,7 +5325,7 @@ public partial class GameState : Node
 		}
 
 		_ownedPlayerUnitIds.Clear();
-		if (saved.Version >= 8 && saved.OwnedPlayerUnitIds != null && saved.OwnedPlayerUnitIds.Length > 0)
+		if (saved.Version >= 8 && saved.OwnedPlayerUnitIds != null)
 		{
 			foreach (var unitId in saved.OwnedPlayerUnitIds)
 			{
@@ -5339,7 +5347,7 @@ public partial class GameState : Node
 		}
 
 		_ownedPlayerSpellIds.Clear();
-		if (saved.Version >= 21 && saved.OwnedPlayerSpellIds != null && saved.OwnedPlayerSpellIds.Length > 0)
+		if (saved.Version >= 21 && saved.OwnedPlayerSpellIds != null)
 		{
 			foreach (var spellId in saved.OwnedPlayerSpellIds)
 			{
@@ -5983,11 +5991,14 @@ public partial class GameState : Node
 		{
 			Gold = Gold,
 			Food = Food,
+			FoodRechargedAtUnixSeconds = FoodRechargedAtUnixSeconds,
 			HighestUnlockedStage = HighestUnlockedStage,
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
 			AdventureHeroNodes = new Dictionary<string, string>(_adventureHeroNodes),
 			AdventureHeroPositions = _adventureHeroPositions.ToDictionary(x => x.Key, x => new[] { x.Value.X, x.Value.Y }),
 			AdventureExploredCells = _adventureExploredCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
+            AdventureTravelledCells = _adventureTravelledCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
+            ClaimedAdventureDiscoveries = _claimedAdventureDiscoveries.OrderBy(id => id).ToArray(),
 			SelectedStage = SelectedStage,
 			SelectedAsyncChallengeCode = SelectedAsyncChallengeCode,
 			SelectedAsyncChallengeLockedDeckUnitIds = _selectedAsyncChallengeLockedDeckUnitIds.ToArray(),
@@ -5997,6 +6008,7 @@ public partial class GameState : Node
 			PlayerCallsign = PlayerCallsign,
 			PlayerProfileId = PlayerProfileId,
 			PlayerAuthToken = PlayerAuthToken,
+            AccountProvider = AccountProvider, AccountLabel = AccountLabel,
 			LastPlayerProfileSyncAtUnixSeconds = LastPlayerProfileSyncAtUnixSeconds,
 			ChallengeSyncProviderId = ChallengeSyncProviderId,
 			ChallengeSyncEndpoint = ChallengeSyncEndpoint,
@@ -6491,7 +6503,7 @@ public partial class GameState : Node
 
 		foreach (var defaultId in DefaultDeckUnitIds)
 		{
-			if (_activeDeckUnitIds.Count >= MaxDeckSize)
+			if (_activeDeckUnitIds.Count > 0)
 			{
 				break;
 			}
@@ -6892,14 +6904,14 @@ public partial class GameState : Node
 			}
 
 			normalized.Add(unitId);
-			if (normalized.Count >= MaxDeckSize)
+			if (normalized.Count >= 3)
 			{
 				break;
 			}
 		}
 
 		_selectedAsyncChallengeLockedDeckUnitIds.Clear();
-		if (normalized.Count == MaxDeckSize)
+		if (normalized.Count == 3)
 		{
 			_selectedAsyncChallengeLockedDeckUnitIds.AddRange(normalized);
 		}

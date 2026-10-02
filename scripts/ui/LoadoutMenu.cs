@@ -6,6 +6,8 @@ public partial class LoadoutMenu : Control
     private StageDefinition _stage;
     private VBoxContainer _briefing;
     private Label _status;
+    private Button _deployButton;
+    public override void _Process(double delta) { if (_deployButton != null) _deployButton.Disabled = !GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out _); }
 
     public override void _Ready()
     {
@@ -24,7 +26,7 @@ public partial class LoadoutMenu : Control
         mission.AddChild(RealmUi.Heading(AdventureMapCatalog.Leader(_stage.StageNumber).Title, 25));
         var rewards = new HBoxContainer();
         rewards.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", $"+{_stage.RewardGold}", new Vector2(26,26)));
-        rewards.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", $"+{_stage.RewardFood}", new Vector2(26,26)));
+
         mission.AddChild(rewards);
         RealmUi.Tabs(mission, ShowBriefing, "Goals", "Foes", "Field", "Brief");
         _briefing = RealmUi.Scroll(mission);
@@ -35,25 +37,20 @@ public partial class LoadoutMenu : Control
         heading.AddChild(RealmUi.Heading("Your warband", 27));
         heading.AddChild(RealmUi.Button("sword", "Edit squad", () => SceneRouter.Instance.GoToShop()));
         roster.AddChild(heading);
-        var cards = new HBoxContainer();
-        roster.AddChild(cards);
+        var cardScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled }; roster.AddChild(cardScroll);
+        var cards = new HBoxContainer(); cardScroll.AddChild(cards);
         foreach (var unit in GameState.Instance.GetActiveDeckUnits())
         {
-            var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var frame = new PanelContainer { CustomMinimumSize = new Vector2(180, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
             cards.AddChild(frame);
             var card = new VBoxContainer();
             frame.AddChild(card);
-            var model=new UnitModelPreview {CustomMinimumSize=new Vector2(150,150)};
-            model.SetUnit(unit);
-            model.InspectRequested=()=>ModelShowcase.Show(this,GameState.Instance.GetActiveDeckUnits().ToArray(),unit.Id);
-            card.AddChild(model);
+            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(140, 120)));
             card.AddChild(RealmUi.Label(unit.DisplayName, 17));
-            card.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)} · {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}", 12, true));
+            card.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)}", 12, true));
             var stats = GameState.Instance.BuildPlayerUnitStats(unit);
             var statRow = new HBoxContainer();
             card.AddChild(statRow);
-            AddStat(statRow, "heart", $"{stats.MaxHealth:0}", "Health");
-            AddStat(statRow, "sword", $"{stats.AttackDamage:0}", "Attack");
             AddStat(statRow, "bolt", $"{unit.Cost}", "Courage cost");
             card.AddChild(RealmUi.Button("eye", "Details", () => RealmUi.Details(this, unit.DisplayName,
                 $"{GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}\nHealth {stats.MaxHealth:0} · Attack {stats.AttackDamage:0.#} · Gate damage {stats.BaseDamage}\nSpeed {stats.Speed:0.#} · Range {stats.AttackRange:0.#} · Attack interval {stats.AttackCooldown:0.##}s\nDeploy recovery {GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown):0.#}s\n{UnitStatText.BuildInlineTraits(stats)}")));
@@ -67,14 +64,10 @@ public partial class LoadoutMenu : Control
                 () => RealmUi.Details(this, spell.DisplayName, SpellText.BuildInlineSummary(spell)));
             magic.AddChild(button);
         }
-        if (!GameState.Instance.GetActiveDeckSpells().Any()) magic.AddChild(RealmUi.Label("Equip magic in the armory", 13, true));
-        var synergy = RealmUi.Button("people", "Squad bonuses", () => RealmUi.Details(this, "Warband bonuses",
-            GameState.Instance.BuildActiveDeckSynergySummary() + "\n\n" + GameState.Instance.BuildCampaignReadinessDetailedSummary(_stage.StageNumber)));
-        magic.AddChild(synergy);
         var footer = RealmUi.Panel(this, new Rect2(28, 616, 1224, 78), out _);
         var row = new HBoxContainer();
         footer.AddChild(row);
-        _status = RealmUi.Label("Select a card, then click the battlefield to deploy.", 14, true);
+        _status = RealmUi.Label("Destroy the enemy base to win.", 14, true);
         row.AddChild(_status);
         var canDeploy = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var reason);
         var deploy = RealmUi.Button("flag", $"Deploy  ·  {GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food", () =>
@@ -84,7 +77,7 @@ public partial class LoadoutMenu : Control
             SceneRouter.Instance.GoToBattle();
         }, true);
         deploy.CustomMinimumSize = new Vector2(260, 50);
-        deploy.Disabled = !canDeploy;
+        deploy.Disabled = !canDeploy; _deployButton = deploy;
         if (!canDeploy) _status.Text = reason;
         row.AddChild(deploy);
     }
@@ -94,7 +87,7 @@ public partial class LoadoutMenu : Control
         RealmUi.Clear(_briefing);
         var text = tab switch
         {
-            0 => StageObjectives.BuildSummaryText(_stage, GameState.Instance.GetStageStars(_stage.StageNumber)),
+            0 => "Destroy the enemy base.\n\n★★★ No wagon damage\n★★ Keep 70% health\n★ Win the battle",
             1 => StageEncounterIntel.BuildCampaignEncounterIntel(_stage),
             2 => (_stage.Battlefield == null ? "" : _stage.Battlefield.Briefing + "\n\n") + StageModifiers.BuildSummaryText(_stage) + "\n\n" + StageHazards.BuildSummaryText(_stage) + "\n\n" + GameState.Instance.BuildCampaignDirectiveStatusText(_stage.StageNumber),
             _ => AdventureMapCatalog.Leader(_stage.StageNumber).Description + "\n\n" + _stage.Description + "\n\n" + StageMissionEvents.BuildCampaignSummaryText(_stage)
@@ -107,7 +100,7 @@ public partial class LoadoutMenu : Control
         var metric = new HBoxContainer { TooltipText = hint, MouseFilter = MouseFilterEnum.Stop, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         metric.AddThemeConstantOverride("separation", 6);
         metric.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), CustomMinimumSize = new Vector2(16, 16), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
-        metric.AddChild(RealmUi.Label(value, 13));
+        var number = RealmUi.Label(value, 18); number.AutowrapMode = TextServer.AutowrapMode.Off; metric.AddChild(number);
         row.AddChild(metric);
     }
 }

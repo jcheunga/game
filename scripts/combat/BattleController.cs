@@ -424,7 +424,6 @@ public partial class BattleController : Node2D
 	private bool _campaignRouteSupportReady;
 	private bool _campaignRouteSupportTriggered;
 	private bool _campaignBossPhaseTriggered;
-	private bool _gateBreachAnnounced;
 	private bool _campaignBossPressureActive;
 	private bool _campaignMissionAftermathReady;
 	private bool _campaignMissionAftermathQueued;
@@ -516,10 +515,6 @@ public partial class BattleController : Node2D
 	private bool _defenseEncounterActive;
 	private bool _defenseEncounterHullDamaged;
 	private int _defenseEncounterPeakPressure;
-	private int _battleSpeedIndex;
-	private static readonly float[] BattleSpeedOptions = { 1f, 1.5f, 2f, 3f };
-	private static readonly string[] BattleSpeedLabels = { "1x", "1.5x", "2x", "3x" };
-	private Button _speedButton;
 	private CenterContainer _pauseOverlay;
 	private bool _endlessCheckpointActive;
 	private float _endlessContactCourageGainScale = 1f;
@@ -1017,68 +1012,9 @@ public partial class BattleController : Node2D
 			StartEndlessContactEvent();
 		}
 		InitializeAmbientParticles();
-		var campaignIntro = IsCampaignMode && GameState.Instance.GetAdventureStartingCourageBonus(_stage) > 0
-			? $" Shrine blessing: +{GameState.Instance.GetAdventureStartingCourageBonus(_stage)} starting courage." : "";
-		if (IsCampaignMode && _campaignScoutBoostRemaining > 0.05f)
-		{
-			campaignIntro += $" Scout bonus: +{GameState.Instance.GetCampaignScoutStartingCourageBonus(_stage)} courage and boosted courage gain for {GameState.Instance.GetCampaignScoutDurationSeconds(_stage):0}s.";
-		}
-		if (IsCampaignMode && _campaignMomentumBoostRemaining > 0.05f)
-		{
-			campaignIntro += $" Momentum x{_campaignMomentumStacks}: opening march active for {GameState.Instance.GetCampaignMomentumDurationSeconds():0}s.";
-		}
-		if (IsCampaignMode && _campaignReserveReady)
-		{
-			campaignIntro += $" Emergency reserve armed at {Mathf.RoundToInt(GameState.Instance.GetCampaignReserveThresholdRatio() * 100f)}% hull.";
-		}
-		if (IsCampaignMode && !string.IsNullOrWhiteSpace(_campaignConvoyCommandLabel))
-		{
-			campaignIntro += $" Convoy command charging: {_campaignConvoyCommandLabel} will arm under pressure. Press C once ready.";
-		}
-		if (IsCampaignMode && !string.IsNullOrWhiteSpace(_campaignFieldOrderAssaultLabel) && !string.IsNullOrWhiteSpace(_campaignFieldOrderBulwarkLabel))
-		{
-			campaignIntro += $" Field order locked: after the first battlefield event resolves, choose Z {_campaignFieldOrderAssaultLabel} or X {_campaignFieldOrderBulwarkLabel} to arm a follow-up objective and swing the next reinforcement beat.";
-		}
-		if (IsCampaignMode && _campaignRouteSupportReady)
-		{
-			campaignIntro += $" District tactic armed: {GameState.Instance.GetCampaignRouteSupportTitle(_activeRouteId)}.";
-		}
-		if (IsCampaignMode && _campaignMissionAftermathReady)
-		{
-			campaignIntro += $" Objective branch armed: secure the battlefield event for {GameState.Instance.GetCampaignMissionFollowThroughTitle(_activeRouteId)}; lose it and {GameState.Instance.GetCampaignMissionBacklashTitle(_activeRouteId)} answers.";
-		}
-		var bossPhaseTitle = IsCampaignMode ? StageEncounterIntel.GetBossPhaseTitleForStage(_stageData) : "";
-		if (!string.IsNullOrWhiteSpace(bossPhaseTitle))
-		{
-			campaignIntro += $" Boss phase armed: {bossPhaseTitle} near {Mathf.RoundToInt(CampaignBossPhaseThresholdRatio * 100f)}% HP.";
-		}
-		if (IsCampaignMode && !string.IsNullOrWhiteSpace(_campaignBossPressureLabel) && _campaignBossPressureIntervalSeconds > 0f)
-		{
-			campaignIntro += $" Boss command armed: {_campaignBossPressureLabel} every {_campaignBossPressureIntervalSeconds:0.#}s after the phase.";
-		}
-		if (IsCampaignMode && _campaignDoctrineThreshold > 0)
-		{
-			campaignIntro += $" District doctrine armed: {GameState.Instance.GetCampaignRouteDoctrineTitle(_activeRouteId)} every {_campaignDoctrineThreshold} defeats.";
-		}
-		if (IsCampaignMode && _campaignCounterSurgeReady && !string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel))
-		{
-			campaignIntro += $" Counter-surge risk: securing the battlefield objective provokes {_campaignCounterSurgeLabel}.";
-		}
-		if (IsCampaignMode && _campaignAdaptiveWaveReady)
-		{
-			var adaptiveCharges = _stage >= CampaignAdaptiveWaveEliteStage ? 3 : 2;
-			campaignIntro += $" Adaptive wave read armed: scripted waves bend with lane control, modifying the first {adaptiveCharges} spawn{(adaptiveCharges == 1 ? "" : "s")} of each late swell. After the first read spends, press V for {CampaignAdaptiveWaveRescueLabel} or B for {CampaignAdaptiveWaveBreakthroughLabel} to force the next wave read; Rescue biases {BuildCampaignAdaptiveWaveDirectivePackageSummary(CampaignAdaptiveWaveDirective.Rescue)} and splices in {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(CampaignAdaptiveWaveDirective.Rescue)}, while Breakthrough biases {BuildCampaignAdaptiveWaveDirectivePackageSummary(CampaignAdaptiveWaveDirective.Breakthrough)} and splices in {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(CampaignAdaptiveWaveDirective.Breakthrough)} before the follow-up window opens.";
-		}
-		if (IsCampaignMode && _campaignLateConditionActive && !string.IsNullOrWhiteSpace(_campaignLateConditionLabel))
-		{
-			campaignIntro += $" Late district condition armed: {_campaignLateConditionLabel} cycles every {_campaignLateConditionIntervalSeconds:0}s.";
-		}
-		SetStatus(
-			IsEndlessMode
-				? $"Select a squad or spell card, click the battlefield, and hold against escalating waves. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())}"
-				: IsChallengeMode
-					? $"Challenge {_challengeDefinition.Code}: deploy from the war wagon, cast support cards when needed, and post the best score you can. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())} {(HasChallengeGhostRun() ? "Local ghost benchmark armed." : "No local ghost benchmark saved yet.")}"
-				: $"Select a squad or spell card, then click the battlefield. {GameState.Instance.BuildBattleDeckSynergyInlineSummary()} {GameState.Instance.BuildSpellSummary(GameState.Instance.GetBattleDeckSpells())}{campaignIntro}");
+		SetStatus(IsEndlessMode ? "Defend your wagon."
+			: IsChallengeMode ? $"Challenge {_challengeDefinition.Code}"
+			: "Choose a card, then tap the ground.");
 		TryShowTutorialHint("first_battle");
 		if (IsEndlessMode)
 		{
@@ -1102,6 +1038,8 @@ public partial class BattleController : Node2D
 		CleanupMobilePresentation();
 		Engine.TimeScale = 1f;
 		ResetImpactShake();
+		_groundTexture?.Dispose(); _groundTexture = null;
+		_stageArtwork = null;
 		UnitPool.Clear();
 		UnitSpriteLoader.ClearCache();
 		BattlefieldTextureLoader.ClearCache();
@@ -1118,39 +1056,7 @@ public partial class BattleController : Node2D
 		var route = RouteCatalog.Get(_activeRouteId);
 		var terrainId = (_stageData?.TerrainId ?? "urban").ToLowerInvariant();
 
-		var bgTexture = BattlefieldTextureLoader.TryLoadBackground(terrainId);
-		if (bgTexture != null)
-		{
-			DrawBattleBackground(bgTexture);
-		}
-		else
-		{
-			DrawRect(new Rect2(0f, 0f, BattleWorldWidth, BattleWorldHeight), palette.SkyColor, true);
-
-			DrawRect(
-				new Rect2(
-					BattlefieldLeft,
-					BattlefieldTop,
-					BattlefieldRight - BattlefieldLeft,
-					BattlefieldBottom - BattlefieldTop),
-				palette.GroundColor,
-				true);
-
-			const int stripeCount = 6;
-			for (var i = 0; i <= stripeCount; i++)
-			{
-				var t = i / (float)stripeCount;
-				var y = Mathf.Lerp(BattlefieldTop, BattlefieldBottom, t);
-				DrawLine(
-					new Vector2(BattlefieldLeft, y),
-					new Vector2(BattlefieldRight, y),
-					palette.AccentColor,
-					1.2f,
-					true);
-			}
-		}
-
-		DrawTerrainDecoration();
+		DrawPlayableTerrain(palette);
 		DrawCursedGround();
 		DrawCampaignFieldObjectives();
 		DrawStageHazards();
@@ -3045,12 +2951,6 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (keyEvent.Keycode == Key.Space)
-		{
-			CycleBattleSpeed();
-			return;
-		}
-
 		if (keyEvent.Keycode == Key.F12)
 		{
 			ScreenshotCapture.Capture("battle");
@@ -3111,6 +3011,7 @@ public partial class BattleController : Node2D
 			Key.Key3 => 2,
 			Key.Key4 => 3,
 			Key.Key5 => 4,
+			Key.Key6 => 5,
 			_ => -1
 		};
 		if (unitIndex >= 0 && unitIndex < _deploySlots.Count)
@@ -3134,26 +3035,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void CycleBattleSpeed()
-	{
-		_battleSpeedIndex = (_battleSpeedIndex + 1) % BattleSpeedOptions.Length;
-		var speed = BattleSpeedOptions[_battleSpeedIndex];
-		Engine.TimeScale = speed;
-		if (_speedButton != null)
-		{
-			_speedButton.Text = $"{BattleSpeedLabels[_battleSpeedIndex]}";
-		}
-	}
-
-	private void ResetBattleSpeed()
-	{
-		_battleSpeedIndex = 0;
-		Engine.TimeScale = 1f;
-		if (_speedButton != null)
-		{
-			_speedButton.Text = "1x";
-		}
-	}
+	private void ResetBattleSpeed() => Engine.TimeScale = 1f;
 
 	private void TogglePause()
 	{
@@ -3281,12 +3163,7 @@ public partial class BattleController : Node2D
 
 		_selectionMode = BattleSelectionMode.Unit;
 		_deck.Arm(definition);
-		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
-		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
-		SetStatus(
-			$"Selected Lv{GameState.Instance.GetUnitLevel(definition.Id)} {definition.DisplayName}{doctrineSuffix}. " +
-			(_cardDragging ? "Release on the battlefield" : "Drag the card or click the battlefield") +
-			$" to deploy from {(CanDeployForward ? "the forward post" : "the war wagon")}; nearby fronts snap automatically.");
+		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to deploy" : "Drag to deploy")}");
 		UpdateHud();
 	}
 
@@ -3299,9 +3176,7 @@ public partial class BattleController : Node2D
 
 		_selectionMode = BattleSelectionMode.Spell;
 		_spellDeck.Arm(definition);
-		SetStatus($"Selected {definition.DisplayName}. " + (_cardDragging
-			? "Release on the battlefield to cast; return to the cards to cancel."
-			: "Drag the card or click the battlefield to cast; right-click to cancel."));
+		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to cast" : "Drag to cast")}");
 		TryShowTutorialHint("first_spell_unlock");
 		UpdateHud();
 	}
@@ -3812,6 +3687,7 @@ public partial class BattleController : Node2D
 			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, attacker.Tint);
 			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", attacker.Tint.Lightened(0.18f), 0.44f);
 		}
+		CheckBattleEnd();
 	}
 
 	private bool ShouldRepairBus(Unit unit)
@@ -3887,9 +3763,17 @@ public partial class BattleController : Node2D
 
 			if (_pendingBossPhases.ContainsKey(unit)) continue;
 			unit.TickAttackTimer(delta);
+			if (_battleEnded) return;
 			unit.TickSpecialTimer(delta);
 			unit.TickActiveAbilityTimer(delta);
 			if (unit.IsDead || unit.IsAttackCommitted) continue;
+			var defendingBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
+			if (!(IsEndlessMode && unit.Team == Team.Player) && unit.IsAttackingPosition(defendingBase) &&
+				unit.CanAttackPosition(defendingBase, BaseCoreRadius) && !ShouldRepairBus(unit))
+			{
+				TryAttackBase(unit);
+				continue;
+			}
 			if (CanUseCampaignEnemySpecial(unit) && TryTriggerEnemySpecialAbility(unit))
 			{
 				continue;
@@ -3912,10 +3796,7 @@ public partial class BattleController : Node2D
 					{
 						QueueUnitStrike(unit, target);
 					}
-					else
-					{
-						SimulateRangedPositioning(unit, target, delta, true);
-					}
+
 				}
 				else
 				{
@@ -4009,7 +3890,7 @@ public partial class BattleController : Node2D
 		for (var i = 0; i < _units.Count; i++)
 		{
 			var unitA = _units[i];
-			if (unitA.IsDead)
+			if (unitA.IsDead || IsHoldingAttackPosition(unitA))
 			{
 				continue;
 			}
@@ -4017,7 +3898,7 @@ public partial class BattleController : Node2D
 			for (var j = i + 1; j < _units.Count; j++)
 			{
 				var unitB = _units[j];
-				if (unitB.IsDead || unitA.Team != unitB.Team)
+				if (unitB.IsDead || IsHoldingAttackPosition(unitB) || unitA.Team != unitB.Team)
 				{
 					continue;
 				}
@@ -4059,46 +3940,15 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private bool IsHoldingAttackPosition(Unit unit) => unit.IsAttackCommitted ||
+		(_targetLocks.TryGetValue(unit, out var target) && IsValidCombatTarget(unit, target) && unit.CanAttack(target)) ||
+		unit.CanAttackPosition(unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition, BaseCoreRadius);
+
 	private void SimulateRangedPositioning(Unit unit, Unit target, float delta, bool targetInRange)
 	{
-		if (!IsInstanceValid(unit) || !IsInstanceValid(target) || unit.IsDead || target.IsDead)
-		{
-			return;
-		}
-
-		var currentDistance = unit.Position.DistanceTo(target.Position);
-		var standOffDistance = Mathf.Clamp(
-			unit.AttackRange * 0.82f,
-			Mathf.Max(42f, unit.Radius + target.Radius + 18f),
-			Mathf.Max(52f, unit.AttackRange * 0.96f));
-		var retreatDistance = standOffDistance * 0.72f;
-		var engageDistance = Mathf.Max(unit.AttackRange * 0.97f, standOffDistance + 12f);
-		var verticalDelta = Mathf.Abs(target.Position.Y - unit.Position.Y);
-		var desiredX = target.Position.X + ((unit.Team == Team.Player ? -1f : 1f) * standOffDistance);
-		var desiredY = Mathf.Lerp(unit.Position.Y, target.Position.Y, 0.38f);
-		var anchor = new Vector2(
-			Mathf.Clamp(desiredX, BattlefieldLeft + 24f, BattlefieldRight - 24f),
-			Mathf.Clamp(desiredY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-
-		var hasRetreatRoom = unit.Team == Team.Player
-			? unit.Position.X > BattlefieldLeft + 54f
-			: unit.Position.X < BattlefieldRight - 54f;
-		var shouldRetreat = currentDistance < retreatDistance && hasRetreatRoom;
-		var shouldAdvance = currentDistance > engageDistance;
-		var shouldRecenterLane = !targetInRange && verticalDelta > Mathf.Max(26f, unit.AggroRangeY * 0.42f);
-
-		if (!shouldRetreat && !shouldAdvance && !shouldRecenterLane)
-		{
-			return;
-		}
-
-		unit.MoveToward(
-			anchor,
-			delta * (shouldRetreat ? 1.18f : 1f),
-			BattlefieldLeft,
-			BattlefieldRight,
-			BattlefieldTop + SpawnVerticalPadding,
-			BattlefieldBottom - SpawnVerticalPadding);
+		if (targetInRange || unit.IsDead || target.IsDead || unit.CanAttack(target)) return;
+		unit.MoveToward(target.Position, delta, BattlefieldLeft, BattlefieldRight,
+			BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
 	}
 
 	private bool TryHoldFormation(Unit unit, float delta)
@@ -8683,6 +8533,7 @@ public partial class BattleController : Node2D
 
 		if (_targetLocks.TryGetValue(source, out var lockedTarget) && IsValidCombatTarget(source, lockedTarget))
 		{
+			if (source.CanAttack(lockedTarget)) return lockedTarget;
 			hasLockedTarget = true;
 			bestTarget = lockedTarget;
 			bestPriority = ResolveTargetPriority(source, lockedTarget);
@@ -8702,7 +8553,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
-			if (!(source.Team == Team.Player && _enemyBaseHealth <= 0f) && !source.IsInAggroRange(candidate, _weatherAggroScale))
+			if (!source.IsInAggroRange(candidate, _weatherAggroScale))
 			{
 				continue;
 			}
@@ -8757,7 +8608,7 @@ public partial class BattleController : Node2D
 			!candidate.IsDead &&
 			candidate.Team != source.Team &&
 			!candidate.IsUntargetable &&
-			((source.Team == Team.Player && _enemyBaseHealth <= 0f) || source.IsInAggroRange(candidate, _weatherAggroScale));
+			source.IsInAggroRange(candidate, _weatherAggroScale);
 	}
 
 	private static float ResolveTargetDistanceScore(Unit source, Unit candidate)
@@ -9845,7 +9696,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var speedScale = definition.UsesProjectile ? 1.18f : DeployMomentumSpeedScale;
+		var speedScale = 1f;
 		unit.ApplyTemporaryCombatBuff(1f, speedScale, DeployMomentumDurationSeconds);
 		unit.ApplyTemporaryDefenseModifier(DeployMomentumDefenseScale, DeployMomentumDurationSeconds);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.08f), 8f, 24f, 0.2f, false);
@@ -15525,17 +15376,6 @@ public partial class BattleController : Node2D
 		if (_enemyBaseHealth <= 0f)
 		{
 			_enemyBaseHealth = 0f;
-			if (_spawnDirector.UsesScriptedWaves &&
-				(_spawnDirector.NextScriptedWaveIndex < _spawnDirector.TotalScriptedWaves ||
-				 _spawnDirector.PendingSpawnCount > 0 || CountTeamUnits(Team.Enemy) > 0))
-			{
-				if (!_gateBreachAnnounced)
-				{
-					_gateBreachAnnounced = true;
-					SetStatus("Gate breached. Rout the remaining defenders to secure the route.");
-				}
-				return;
-			}
 			EndBattle(true);
 		}
 	}

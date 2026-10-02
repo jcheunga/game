@@ -17,8 +17,28 @@ public sealed record AdventureMapNode(string Id, string MapId, int Stage, Advent
 /// <summary>Stable node IDs are save keys. Exploration layout is independent of battle balance.</summary>
 public static class AdventureMapCatalog
 {
-    public static readonly Vector2 WorldSize = new(1536, 1024);
-    private static readonly Vector2[] LeaderPoints = { new(330, 780), new(310, 490), new(655, 300), new(820, 560), new(1090, 435), new(1220, 185) };
+    public static Vector2 WorldSize => AdventureTerrain.WorldSize;
+    private static readonly Vector2I[] LeaderCells = { new(7,17), new(15,20), new(9,9), new(22,14), new(19,4), new(29,3) };
+    private static readonly Vector2I[] SupplyCells = { new(3,14), new(11,22), new(3,6), new(25,21), new(15,7), new(29,10) };
+    private static readonly Vector2I[] LandmarkCells = { new(8,21), new(18,17), new(7,3), new(17,11), new(26,7), new(25,2) };
+    private static readonly string[] Maps = { "city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mire", "steppe", "gloamwood", "citadel" };
+    public static Vector2 LayoutPoint(string map, Vector2I grid)
+    {
+        var index = Math.Max(0, Array.IndexOf(Maps,map));
+        if ((index & 1) != 0) grid.X = AdventureTerrain.Columns - 1 - grid.X;
+        if ((index & 2) != 0) grid.Y = AdventureTerrain.Rows - 1 - grid.Y;
+        if (index >= 4) { grid.X += index % 3 - 1; grid.Y += index / 3 % 3 - 1; }
+        return AdventureTerrain.Point(AdventureTerrain.Index(grid.X,grid.Y));
+    }
+    public static int LegacyCell(AdventureMapNode node)
+    {
+        if (node.Kind == AdventureSiteKind.Camp) return 73;
+        if (node.Id.StartsWith("hidden-")) return 89;
+        var stages = GameData.GetStagesForMap(node.MapId).OrderBy(s => s.StageNumber).ToArray();
+        var index = Array.FindIndex(stages,s => s.StageNumber == node.Stage);
+        var cell = new[] { 74,38,17,54,45,10 }[Math.Max(0,index) % 6];
+        return node.Id.StartsWith("supply-") ? cell + (index == 5 ? 12 : -12) : node.Id.StartsWith("landmark-") ? cell + 1 : cell;
+    }
     private static readonly string[][] Names = {
         new[] { "Rolf", "Isolde", "Aldric", "Mora", "Varr", "Osric" },
         new[] { "Brann", "Selene", "Garrick", "Neris", "Korr", "Mordain" },
@@ -49,19 +69,19 @@ public static class AdventureMapCatalog
         var stages = GameData.GetStagesForMap(mapId).OrderBy(x => x.StageNumber).ToArray();
         var nodes = new List<AdventureMapNode>();
         if (stages.Length == 0) return nodes;
-        nodes.Add(new($"camp-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Camp, new(170, 880), "Lantern camp", "Your foothold in this district. Travel between discovered sites without spending food."));
+        nodes.Add(new($"camp-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Camp, LayoutPoint(mapId,new Vector2I(3,20)), "Lantern camp", "Your foothold in this district. Walked routes are free. Entering new terrain costs food."));
         for (var i = 0; i < stages.Length; i++)
         {
-            var stage = stages[i].StageNumber; var point = LeaderPoints[i % LeaderPoints.Length];
-            var faction = Array.IndexOf(new[] { "city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mire", "steppe", "gloamwood", "citadel" }, mapId);
+            var stage = stages[i].StageNumber; var point = LayoutPoint(mapId,LeaderCells[i % LeaderCells.Length]);
+            var faction = Array.IndexOf(Maps, mapId);
             nodes.Add(new($"leader-{stage}", mapId, stage, AdventureSiteKind.Leader, point, $"{Names[faction][i % 6]} {Titles[i % 6]}", LeaderDescriptions[i % 6], i % 6));
             var resource = i % 2 == 0 ? AdventureSiteKind.Gold : AdventureSiteKind.Food;
-            nodes.Add(new($"supply-{stage}", mapId, stage, resource, point + new Vector2(-125, -105), resource == AdventureSiteKind.Gold ? "Abandoned treasury" : "Supply wagon", "Supplies left beside the road. Gather this cache once; its contents belong to your caravan."));
+            nodes.Add(new($"supply-{stage}", mapId, stage, resource, LayoutPoint(mapId,SupplyCells[i % 6]), resource == AdventureSiteKind.Gold ? "Abandoned treasury" : "Supply wagon", "Supplies hidden off the main approaches. Gather this cache once; its contents belong to your caravan."));
             var bonus = i % 2 == 0 ? AdventureSiteKind.Watchtower : AdventureSiteKind.Shrine;
-            nodes.Add(new($"landmark-{stage}", mapId, stage, bonus, point + new Vector2(130, 85), bonus == AdventureSiteKind.Shrine ? "Shrine of resolve" : "Old watchtower", bonus == AdventureSiteKind.Shrine ? "Light the brazier. Your warband gains +3 starting courage in every campaign battle in this district." : "Climb the tower to lift the fog over a much wider area. Your first tower also reveals a hidden treasury."));
+            nodes.Add(new($"landmark-{stage}", mapId, stage, bonus, LayoutPoint(mapId,LandmarkCells[i % 6]), bonus == AdventureSiteKind.Shrine ? "Shrine of resolve" : "Old watchtower", bonus == AdventureSiteKind.Shrine ? "Light the brazier. Your warband gains +3 starting courage in every campaign battle in this district." : "Climb the tower to lift the fog over a much wider area. Your first tower also opens the search for a forgotten treasury."));
         }
-        nodes.Add(new($"hidden-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Gold, new(620,840), "Forgotten treasury",
-            "Your scouts spotted this hidden cache from the watchtower. Gather its gold for your caravan.", RequiredVisit: $"landmark-{stages[0].StageNumber}"));
+        nodes.Add(new($"hidden-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Gold, LayoutPoint(mapId,new Vector2I(2,2)), "Forgotten treasury",
+            "Your scouts heard of a forgotten cache beyond the watchtower. Explore to find it and gather its gold.", RequiredVisit: $"landmark-{stages[0].StageNumber}"));
         foreach (var node in nodes) ById[node.Id] = node;
         return Cache[mapId] = nodes;
     }

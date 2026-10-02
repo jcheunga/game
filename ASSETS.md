@@ -63,7 +63,14 @@ Both paths print the current asset coverage and the exact IDs still missing.
 |-----------|---------------|-------|
 | Unit sprite sheet | `assets/units/{unit_id}.png` | Matching `.json`; falls back to `{visual_class}.png` |
 | Animated model preview | `assets/ui/models/{unit_id}.png` | Original-resolution Idle/Walk/Attack sheet and `.json`; falls back to the battle sheet |
-| Battle terrain | `assets/backgrounds/{terrain_id}.png` | Full-frame battlefield backdrop |
+| Individual battle scene | `assets/world/battles/stage-{number:00}.png` | One image per campaign stage; clear floor fitted to exact movement bounds |
+| Isometric zone map | `assets/world/zones/{route_id}.png` | Original zone illustrations, used when no painted overworld override exists |
+| Painted overworld | `assets/world/overworld/{route_id}-painted-v2.png` | Full continuous map illustration; King's Road override is included |
+| Painted home icons | `assets/ui/home/painted-icons-v2.png` | Transparent 3 × 3 atlas for tabs and stats |
+| Painted map scenery | `assets/world/overworld/painted-scenery-v2.png` | Water, rocks, bridges and reeds; shown as terrain is charted |
+| Home artwork prompts | `assets/ui/home/generated-art-v2.json` | Built-in image tool prompts and provenance for the visual update |
+| World art prompts | `assets/world/manifest.json` | Built-in image generation provenance and all 70 prompts; layout/review notes in `assets/world/README.md` |
+| Legacy battle terrain | `assets/backgrounds/{terrain_id}.png` | Retained for the legacy terrain pipeline |
 | Structures | `assets/structures/{structure_id}.png` | `war_wagon`, `gatehouse`, `war_wagon_skin_*`, `mount_*` |
 | Particle texture | `assets/particles/{particle_id}.png` | Battle VFX sprite used by CPU particle bursts/trails |
 | Screen background | `assets/ui/backgrounds/{screen_id}.png` | Shared full-screen menu background |
@@ -93,6 +100,7 @@ Both paths print the current asset coverage and the exact IDs still missing.
 - Unit sheets: PNG, authored facing right
 - Unit metadata: JSON, see `assets/units/_example.json`
 - Menu, map, and battle backgrounds: PNG, target `1280x720`
+- Individual stage scenes: panoramic PNG, at least `1280x600`; zone scenes: landscape PNG, at least `1280x900`. Runtime world dimensions and safe floor crops are documented in `assets/world/README.md`.
 - Structures: PNG, authored against transparent background
 - Particle textures: PNG with transparency, target `64x64` to `256x256`
 - Unit/spell/relic icons: PNG, target `128x128`
@@ -368,3 +376,17 @@ sizes. See `docs/UI_MATERIALS.md` for regeneration and visual-review commands.
 Battle deployment cards reuse the authored unit/spell PNG icons at a larger size,
 with the new `cost_badge.svg` brass plate in the top-right. Transparent padding is
 cropped only in the UI; the original artwork is unchanged.
+
+## Painted home modal assets
+
+`assets/ui/modal/materials-v1.png` is a 2 × 2 atlas containing walnut planks,
+violet arcane cloth, golden parchment, and burnished copper. The 3 × 2
+`illustrations-v1.png` atlas supplies warband, spell, forge, adventure, caravan,
+and community vignettes. Both were generated with the built-in image tool;
+the complete prompts and provenance are in `generated-art-v1.json` in the same
+folder. `ModalArt` selects regions at runtime without altering the originals.
+
+`ModalSurface` draws scalable silver bevels, rivets, coloured tabs and action
+plates around these materials. Text and actions remain native controls. The
+editable `slider-thumb-v1.svg` supplies the carved amber audio handle. Existing
+animated units and spell icons remain the source of the actual roster previews.

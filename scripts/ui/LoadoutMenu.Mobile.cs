@@ -34,18 +34,16 @@ public partial class LoadoutMenu
             var card=new VBoxContainer(); frame.AddChild(card);
             var name=RealmUi.Label(unit.DisplayName,20); name.ClipText=true;
             name.AutowrapMode=TextServer.AutowrapMode.Off; card.AddChild(name);
-            var model=new UnitModelPreview {CustomMinimumSize=new Vector2(0,150)};
-            model.SetUnit(unit); model.InspectRequested=()=>ModelShowcase.Show(this,roster,unit.Id);
-            card.AddChild(model);
+            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(140, 150)));
             var level=RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)} · {unit.Cost} courage",20,true);
             card.AddChild(level);
-            var inspect=RealmUi.Button("eye","Inspect model",()=>ModelShowcase.Show(this,roster,unit.Id));
+            var inspect=RealmUi.Button("eye","Details",()=>ModelShowcase.Show(this,roster,unit.Id));
             MobilePresentation.TouchButton(inspect); card.AddChild(inspect);
         }
 
         var footer=new HBoxContainer(); footer.AddThemeConstantOverride("separation",12); stack.AddChild(footer);
         var spells=string.Join(" · ",GameState.Instance.GetActiveDeckSpells().Select(s=>s.DisplayName));
-        _status=RealmUi.Label(string.IsNullOrEmpty(spells)?"Tap a model to inspect it":$"Rites: {spells}",20,true);
+        _status=RealmUi.Label(string.IsNullOrEmpty(spells)?"Ready":$"Rites: {spells}",20,true);
         _status.VerticalAlignment=VerticalAlignment.Center; footer.AddChild(_status);
         var canDeploy=GameState.Instance.CanStartCampaignBattle(_stage.StageNumber,out var reason);
         var deploy=RealmUi.Button("flag",$"Deploy · {GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food",()=>
@@ -53,7 +51,7 @@ public partial class LoadoutMenu
             if(!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber,out var message)) {_status.Text=message;return;}
             GameState.Instance.PrepareCampaignBattle(); SceneRouter.Instance.GoToBattle();
         },true);
-        MobilePresentation.TouchButton(deploy); deploy.Disabled=!canDeploy; footer.AddChild(deploy);
+        MobilePresentation.TouchButton(deploy); deploy.Disabled=!canDeploy; _deployButton=deploy; footer.AddChild(deploy);
         if(!canDeploy) _status.Text=reason;
     }
 

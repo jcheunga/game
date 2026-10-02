@@ -463,6 +463,7 @@ public static class Database
         cmd.CommandText = NormalizeSchemaSql(schemaSql);
         cmd.ExecuteNonQuery();
         RunMigrations(conn);
+        AccountAuth.Initialize(conn);
         SeedDefaultFeed(conn);
     }
 

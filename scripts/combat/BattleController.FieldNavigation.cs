@@ -10,40 +10,7 @@ public partial class BattleController
 
     private void BuildFieldNavigation(Control root)
     {
-        if (!HasCampaignField) return;
-        _fieldNavigation = new HBoxContainer { Name = "CampaignFieldNavigation" };
-        _fieldNavigation.AddThemeConstantOverride("separation", 5);
-        root.AddChild(_fieldNavigation);
-        root.MoveChild(_fieldNavigation, 0);
-        _fieldLeftThreats = new Button { CustomMinimumSize = new Vector2(56, 36), TooltipText = "View enemies to the left, or the wagon" };
-        _fieldLeftThreats.Pressed += () => JumpToFieldPoint(_leftThreatX);
-        _fieldNavigation.AddChild(_fieldLeftThreats);
-        _fieldOverview = new Control { CustomMinimumSize = new Vector2(180, 36), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            MouseFilter = Control.MouseFilterEnum.Stop, MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-            TooltipText = "Click or tap to pan · Green: allies · Red: enemies · Blue post: forward deployments · Gold supplies: optional reward" };
-        _fieldOverview.Draw += DrawFieldOverview;
-        _fieldOverview.GuiInput += input =>
-        {
-            if (input is InputEventMouseButton mouse && mouse.Pressed && mouse.ButtonIndex == MouseButton.Left)
-            { JumpToFieldPoint(mouse.Position.X / _fieldOverview.Size.X * BattleWorldWidth); _fieldOverview.AcceptEvent(); }
-            else if (input is InputEventScreenTouch touch && touch.Pressed)
-            { JumpToFieldPoint(touch.Position.X / _fieldOverview.Size.X * BattleWorldWidth); _fieldOverview.AcceptEvent(); }
-        };
-        _fieldNavigation.AddChild(_fieldOverview);
-        _fieldRightThreats = new Button { CustomMinimumSize = new Vector2(56, 36), TooltipText = "View enemies to the right, or the gate" };
-        _fieldRightThreats.Pressed += () => JumpToFieldPoint(_rightThreatX);
-        _fieldNavigation.AddChild(_fieldRightThreats);
-        _fieldDeployButton = new Button { CustomMinimumSize = new Vector2(160, 36), TooltipText = _stageData.Battlefield.Briefing };
-        _fieldDeployButton.Pressed += () =>
-        {
-            if (_battlePaused || _battleEnded || _endlessCheckpointActive) return;
-            if (!_outpostCaptured) JumpToFieldPoint(OutpostPosition.X);
-            else _forwardDeploymentArmed = !_forwardDeploymentArmed;
-            UpdateFieldNavigation();
-        };
-        _fieldNavigation.AddChild(_fieldDeployButton);
-        if (_battleScrollBar != null) ((Control)_battleScrollBar.GetParent()).Hide();
-        UpdateFieldNavigation();
+        // Camera panning is available directly on the field.
     }
 
     private void JumpToFieldPoint(float x)

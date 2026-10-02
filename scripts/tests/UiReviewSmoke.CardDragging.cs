@@ -14,6 +14,10 @@ public partial class UiReviewSmoke
         const BindingFlags hidden=BindingFlags.Instance|BindingFlags.NonPublic;
         try
         {
+            var fixture = GameState.Instance.BuildSaveData();
+            fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
+            fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
+            GameState.Instance.RestoreCloudSave(fixture);
             foreach(var touch in new[]{false,true})
             {
                 var mode=touch?"phone-touch":"desktop-mouse";
@@ -173,8 +177,9 @@ public partial class UiReviewSmoke
                 Up(point); await Wait(.05);
                 unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);
                 Check(Read<int>("_playerDeployments")==count+1 && unit.Position.DistanceTo(spawn)<.01
-                    && Read<int>("_forwardDeploymentsRemaining")==1 && Read<float>("_forwardCooldownRemaining")>0,
-                    mode+": forward-post drops use the existing spawn, charge budget and recovery");
+                    && Mathf.IsEqualApprox(spawn.X,GameData.Combat.PlayerSpawnX)
+                    && Read<int>("_forwardDeploymentsRemaining")==2 && Read<float>("_forwardCooldownRemaining")==0,
+                    mode+": stale post state cannot snap deployments away from the wagon");
             }
         }
         finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }

@@ -7,7 +7,6 @@ public partial class BattleController
     // Match the existing left-side margin at the far end of the field.
     private float BattleWorldWidth => BattlefieldRight + BattlefieldLeft;
     private Camera2D _battleCamera;
-    private HScrollBar _battleScrollBar;
     private bool _battleCameraDragging;
     private Vector2 _battleCameraPointer;
 
@@ -23,32 +22,6 @@ public partial class BattleController
         AddChild(_battleCamera);
         _battleCamera.MakeCurrent();
 
-        var navigation = new HBoxContainer
-        {
-            Name = "BattlefieldNavigation",
-            Position = new Vector2(440, 100),
-            Size = new Vector2(360, 28)
-        };
-        navigation.AddThemeConstantOverride("separation", 8);
-        root.AddChild(navigation);
-        // Keep reports and modal overlays above navigation.
-        root.MoveChild(navigation, 0);
-        var wagon = new Button { Text = "Wagon", TooltipText = "View the war wagon [Home]" };
-        wagon.Pressed += () => SetBattleCameraX(0);
-        navigation.AddChild(wagon);
-        _battleScrollBar = new HScrollBar
-        {
-            CustomMinimumSize = new Vector2(190, 24),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            Step = 0,
-            TooltipText = "Scroll to pan · Middle-drag · Left / Right arrows",
-            AccessibilityName = "Battlefield horizontal view"
-        };
-        navigation.AddChild(_battleScrollBar);
-        _battleScrollBar.ValueChanged += value => SetBattleCameraX((float)value + GetViewportRect().Size.X * .5f);
-        var gate = new Button { Text = "Gate", TooltipText = "View the enemy end [End]" };
-        gate.Pressed += () => SetBattleCameraX(BattleWorldWidth);
-        navigation.AddChild(gate);
         GetViewport().SizeChanged += RefreshBattleCamera;
         RefreshBattleCamera();
     }
@@ -60,9 +33,6 @@ public partial class BattleController
         _battleCameraDragging = false;
         ClampBattleCamera(_battleCamera);
         _battleCamera.ForceUpdateScroll();
-        _battleScrollBar.MaxValue = BattleWorldWidth;
-        _battleScrollBar.Page = Mathf.Min(BattleWorldWidth, GetViewportRect().Size.X);
-        _battleScrollBar.SetValueNoSignal(_battleCamera.Position.X - GetViewportRect().Size.X * .5f);
     }
 
     private void ClampBattleCamera(Camera2D camera)
@@ -80,7 +50,6 @@ public partial class BattleController
         _battleCamera.Position = new Vector2(x, _battleCamera.Position.Y);
         ClampBattleCamera(_battleCamera);
         _battleCamera.ForceUpdateScroll();
-        _battleScrollBar.SetValueNoSignal(_battleCamera.Position.X - GetViewportRect().Size.X * .5f);
     }
 
     private bool HandleBattleCameraInput(InputEvent input)

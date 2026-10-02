@@ -46,10 +46,12 @@ public partial class ShopMenu : Control
 
     public override void _Ready()
     {
-        BuildUi();
+        _embedded = RealmModal.Embedded(this);
+        if (_embedded) BuildModalUi(); else BuildUi();
         RefreshUi();
+        SelectArmoryTab(SceneRouter.Instance.ConsumeInitialShopTab());
         TryShowMenuHint();
-        AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel, _relicsPanel });
+        if (!_embedded) AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel, _relicsPanel });
     }
 
     private void TryShowMenuHint()
@@ -91,7 +93,21 @@ public partial class ShopMenu : Control
     private VBoxContainer _unitDetail;
     private string _selectedRosterId = "";
     private bool _showSpells;
-    private int _rosterPage;
+    private HBoxContainer _armoryTabs;
+
+    private void SelectArmoryTab(int index)
+    {
+        _unitsPanel.Visible = index < 2;
+        _basePanel.Visible = index == 2;
+        _relicsPanel.Visible = index == 3;
+        _summaryPanel.Visible = index == 4;
+        _armoryTabs.GetChild<Button>(index).ButtonPressed = true;
+        if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; RebuildUnitPanels(); }
+        if (_embedded) {
+            RealmModal.UpdateHeading(this, index == 0 ? "Warband" : index == 1 ? "Spells" : index == 2 ? "War wagon" : index == 3 ? "Relics" : "Caravan adviser");
+            _statusLabel.Text = index < 2 ? "Select a portrait to inspect, equip or train." : index == 2 ? "Wagon upgrades carry into every battle." : index == 3 ? "Assign owned relics to your allies." : "Plan your squad and prepare for the next rival.";
+        }
+    }
 
     private void BuildUi()
     {
@@ -110,19 +126,12 @@ public partial class ShopMenu : Control
         titleRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
         var tabsHost = new VBoxContainer { Position = new Vector2(28, 104), Size = new Vector2(1224, 44) };
         AddChild(tabsHost);
-        RealmUi.Tabs(tabsHost, index =>
-        {
-            _unitsPanel.Visible = index < 2;
-            _basePanel.Visible = index == 2;
-            _relicsPanel.Visible = index == 3;
-            _summaryPanel.Visible = index == 4;
-            if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; _rosterPage = 0; RebuildUnitPanels(); }
-        }, "Warband", "Battle rites", "War wagon", "Relics", "Adviser");
+        _armoryTabs = RealmUi.Tabs(tabsHost, SelectArmoryTab, "Warband", "Battle rites", "War wagon", "Relics", "Adviser");
 
         var units = RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _unitsPanel);
         var split = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         units.AddChild(split);
-        var rosterHost = new VBoxContainer { CustomMinimumSize = new Vector2(350, 0) };
+        var rosterHost = new VBoxContainer { CustomMinimumSize = new Vector2(520, 0) };
         split.AddChild(rosterHost);
         _unitStack = RealmUi.Scroll(rosterHost);
         var detailHost = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -145,12 +154,13 @@ public partial class ShopMenu : Control
         row.AddChild(RealmUi.IconButton("flag", "Expeditions", () => SceneRouter.Instance.GoToExpeditions()));
         row.AddChild(RealmUi.Button("map", "Map", () => SceneRouter.Instance.GoToMap()));
         var prepare = RealmUi.Button("arrow", "Prepare battle", () => SceneRouter.Instance.GoToLoadout(), true);
-        prepare.Disabled = GameState.Instance.SelectedStage > GameState.Instance.HighestUnlockedStage;
+        prepare.Disabled = !GameState.Instance.IsCampaignStageUnlocked(GameState.Instance.SelectedStage);
         row.AddChild(prepare);
     }
 
     private void RefreshUi()
     {
+        if (_embedded) { RefreshModalUi(); return; }
         ApplyRouteTheme();
         RebuildResourcesRow();
         _summaryLabel.Text = BuildSummaryText();
@@ -167,7 +177,7 @@ public partial class ShopMenu : Control
         RealmUi.Clear(_resourcesRow);
 
         _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(new FoodBalance());
     }
 
     private void ApplyRouteTheme()
@@ -202,7 +212,7 @@ public partial class ShopMenu : Control
             $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
             "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" +
-            "- Food pays for battle entry. Map travel is free.\n\n" +
+            "- Food pays for battles and new terrain. +2 every 5 minutes, up to 24.\n\n" +
             nextExploreLine;
     }
 
@@ -371,7 +381,7 @@ public partial class ShopMenu : Control
                         () =>
                         {
                             GameState.Instance.ToggleDeckUnit(reserveUnit.Id, out var message);
-                            _statusLabel.Text = $"Last report:\n{message}";
+                            _statusLabel.Text = $"{message}";
                         }));
             }
         }
@@ -392,7 +402,7 @@ public partial class ShopMenu : Control
                     () =>
                     {
                         GameState.Instance.ToggleCampaignDirective(stage.StageNumber, out var message);
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     }));
         }
 
@@ -842,7 +852,7 @@ public partial class ShopMenu : Control
                     () =>
                     {
                         GameState.Instance.TryPurchaseUnit(unit.Id, out var message);
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     },
                     GameState.Instance.Gold < purchaseCost));
         }
@@ -860,7 +870,7 @@ public partial class ShopMenu : Control
                     () =>
                     {
                         GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     }));
         }
 
@@ -881,7 +891,7 @@ public partial class ShopMenu : Control
                         {
                             AudioDirector.Instance?.PlayUpgradeConfirm();
                         }
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     },
                     GameState.Instance.Gold < upgradeCost));
         }
@@ -924,7 +934,7 @@ public partial class ShopMenu : Control
                 () =>
                 {
                     GameState.Instance.TrySelectUnitDoctrine(unit.Id, doctrine.Id, out var message);
-                    _statusLabel.Text = $"Last report:\n{message}";
+                    _statusLabel.Text = $"{message}";
                 },
                 retrainCost > 0 && GameState.Instance.Gold < retrainCost));
     }
@@ -961,7 +971,7 @@ public partial class ShopMenu : Control
                     () =>
                     {
                         GameState.Instance.TryPurchaseSpell(spell.Id, out var message);
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     },
                     GameState.Instance.Gold < purchaseCost));
         }
@@ -979,7 +989,7 @@ public partial class ShopMenu : Control
                     () =>
                     {
                         GameState.Instance.ToggleDeckSpell(spell.Id, out var message);
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     }));
         }
 
@@ -1001,7 +1011,7 @@ public partial class ShopMenu : Control
                         {
                             AudioDirector.Instance?.PlayUpgradeConfirm();
                         }
-                        _statusLabel.Text = $"Last report:\n{message}";
+                        _statusLabel.Text = $"{message}";
                     },
                     GameState.Instance.Gold < upgradeCost));
         }
@@ -1038,7 +1048,7 @@ public partial class ShopMenu : Control
                     {
                         AudioDirector.Instance?.PlayUpgradeConfirm();
                     }
-                    _statusLabel.Text = $"Last report:\n{message}";
+                    _statusLabel.Text = $"{message}";
                 },
                 GameState.Instance.Gold < cost));
     }
@@ -1231,17 +1241,16 @@ public partial class ShopMenu : Control
 
     private void RebuildUnitPanels()
     {
+        if (_embedded) { RebuildModalRoster(); return; }
         RealmUi.Clear(_unitStack);
         _unitStack.AddChild(RealmUi.Label(_showSpells
             ? $"RITES  ·  {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} equipped"
             : $"WARBAND  ·  {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} equipped", 13, true));
-        var grid = new GridContainer { Columns = 2 };
+        var grid = new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _unitStack.AddChild(grid);
         var entries = (_showSpells ? GameData.GetPlayerSpells().Select(x => (x.Id, x.DisplayName)) : GameData.GetPlayerUnits().Select(x => (x.Id, x.DisplayName))).ToArray();
-        var pageCount = Mathf.Max(1, (entries.Length + 3) / 4);
-        _rosterPage = Mathf.Clamp(_rosterPage, 0, pageCount - 1);
         if (string.IsNullOrEmpty(_selectedRosterId)) _selectedRosterId = entries.FirstOrDefault().Id ?? "";
-        foreach (var (id, name) in entries.Skip(_rosterPage * 4).Take(4))
+        foreach (var (id, name) in entries.OrderByDescending(x => _showSpells ? GameState.Instance.IsSpellInActiveDeck(x.Id) : GameState.Instance.IsUnitInActiveDeck(x.Id)))
         {
             bool equipped = _showSpells ? GameState.Instance.IsSpellInActiveDeck(id) : GameState.Instance.IsUnitInActiveDeck(id);
             var button = new RealmButton { CustomMinimumSize = new Vector2(156, 104 + ThemeDB.FallbackFont.GetMultilineStringSize(name, HorizontalAlignment.Center, 144, 18).Y), TooltipText = name + (equipped ? " · Equipped" : ""), AccessibilityName = name };
@@ -1255,16 +1264,18 @@ public partial class ShopMenu : Control
             content.AddChild(art);
             var label = new Label { Text = name, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
             label.AddThemeFontSizeOverride("font_size", 18); content.AddChild(label);
-            if (id == _selectedRosterId) button.AddThemeStyleboxOverride("normal", RealmUi.Surface(new Color("33433c"), RealmUi.Gold));
+            bool owned = _showSpells ? GameState.Instance.IsSpellOwned(id) : GameState.Instance.IsUnitOwned(id);
+            bool available = _showSpells ? GameState.Instance.IsSpellAvailableForPurchase(id) : GameState.Instance.IsUnitAvailableForPurchase(id);
+            var stateLabel = new Label { Text = equipped ? "✓ Squad" : owned ? "Reserve" : available ? "Recruit" : "Locked",
+                HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+            stateLabel.AddThemeFontSizeOverride("font_size", 16);
+            stateLabel.AddThemeColorOverride("font_color", equipped ? new Color("9ee4b2") : RealmUi.Muted);
+            content.AddChild(stateLabel); button.CustomMinimumSize += new Vector2(0, 24);
+            if (!owned) art.Modulate = available ? new Color(.82f,.82f,.82f) : new Color(.55f,.55f,.55f);
+            button.AddThemeStyleboxOverride("normal", RealmUi.Surface(id == _selectedRosterId ? new Color("3e4a40") : new Color("1b282c"),
+                id == _selectedRosterId ? RealmUi.Gold : equipped ? new Color("79ba91") : new Color("44524c")));
             button.Pressed += () => { _selectedRosterId = id; RebuildUnitPanels(); };
         }
-        var paging = new HBoxContainer(); _unitStack.AddChild(paging);
-        var previous = RealmUi.IconButton("back", "Previous roster page", () => { _rosterPage--; RebuildUnitPanels(); });
-        previous.Disabled = _rosterPage == 0; paging.AddChild(previous);
-        var pageNumber = RealmUi.Label($"{_rosterPage + 1} / {pageCount}", 18, true);
-        pageNumber.HorizontalAlignment = HorizontalAlignment.Center; pageNumber.VerticalAlignment = VerticalAlignment.Center; paging.AddChild(pageNumber);
-        var next = RealmUi.IconButton("arrow", "Next roster page", () => { _rosterPage++; RebuildUnitPanels(); });
-        next.Disabled = _rosterPage >= pageCount - 1; paging.AddChild(next);
         RealmUi.Clear(_unitDetail);
         if (!string.IsNullOrEmpty(_selectedRosterId))
             _unitDetail.AddChild(_showSpells ? BuildSpellPanel(GameData.GetSpell(_selectedRosterId)) : BuildUnitPanel(GameData.GetUnit(_selectedRosterId)));
@@ -1303,23 +1314,15 @@ public partial class ShopMenu : Control
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
 
-        var modelColumn=new VBoxContainer {CustomMinimumSize=new Vector2(170,0)};
-        var model=new UnitModelPreview {CustomMinimumSize=new Vector2(170,210)};
-        model.SetUnit(unit);
-        model.InspectRequested=()=>ModelShowcase.Show(this,GameData.GetPlayerUnits().ToArray(),unit.Id);
-        modelColumn.AddChild(model);
-        var inspect=RealmUi.Button("eye","Inspect model",model.InspectRequested);
-        if(MobilePresentation.Enabled) MobilePresentation.TouchButton(inspect);
-        modelColumn.AddChild(inspect);
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding,modelColumn);
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding, UiBadgeFactory.CreateUnitBadge(unit, new Vector2(120, 150)));
 
         var statusLine = !available
             ? $"Locked until stage {unit.UnlockStage}"
             : !owned
                 ? $"For sale: {purchaseCost} gold"
                 : inDeck
-                    ? $"Owned  |  Lv{level}  |  In active deck"
-                    : $"Owned  |  Lv{level}  |  Reserve";
+                    ? $"Level {level} · Squad"
+                    : $"Level {level} · Reserve";
 
         stack.AddChild(RealmUi.Heading(unit.DisplayName, 28));
         stack.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag), 18, true));
@@ -1362,7 +1365,7 @@ public partial class ShopMenu : Control
         {
             GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
             GameState.Instance.SetSelectedStage(GameState.Instance.SelectedStage);
-            _statusLabel.Text = $"Last report:\n{message}";
+            _statusLabel.Text = $"{message}";
             RefreshUi();
         };
         row.AddChild(deckButton);
@@ -1384,7 +1387,7 @@ public partial class ShopMenu : Control
             actionButton.Pressed += () =>
             {
                 GameState.Instance.TryPurchaseUnit(unit.Id, out var message);
-                _statusLabel.Text = $"Last report:\n{message}";
+                _statusLabel.Text = $"{message}";
                 RefreshUi();
             };
         }
@@ -1402,7 +1405,7 @@ public partial class ShopMenu : Control
                     {
                         AudioDirector.Instance?.PlayUpgradeConfirm();
                     }
-                    _statusLabel.Text = $"Last report:\n{message}";
+                    _statusLabel.Text = $"{message}";
                     RefreshUi();
                 };
             }
@@ -1432,7 +1435,7 @@ public partial class ShopMenu : Control
                 {
                     AudioDirector.Instance?.PlayUpgradeConfirm();
                 }
-                _statusLabel.Text = $"Last report:\n{message}";
+                _statusLabel.Text = $"{message}";
                 RefreshUi();
             };
         }
@@ -1504,7 +1507,7 @@ public partial class ShopMenu : Control
                 doctrineButton.Pressed += () =>
                 {
                     GameState.Instance.TrySelectUnitDoctrine(unit.Id, doctrine.Id, out var message);
-                    _statusLabel.Text = $"Last report:\n{message}";
+                    _statusLabel.Text = $"{message}";
                     RefreshUi();
                 };
                 doctrineRow.AddChild(doctrineButton);
@@ -1547,10 +1550,7 @@ public partial class ShopMenu : Control
                     ? $"Owned  |  Equipped  |  {spellLevelLabel}"
                     : $"Owned  |  Reserve  |  {spellLevelLabel}";
 
-        stack.AddChild(new Label
-        {
-            Text = $"{spell.DisplayName}  |  Magic Card"
-        });
+        stack.AddChild(RealmUi.Heading(spell.DisplayName, 28));
 
         stack.AddChild(new Label
         {
@@ -1558,17 +1558,8 @@ public partial class ShopMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        stack.AddChild(new Label
-        {
-            Text = SpellText.BuildInlineSummary(spell),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text = spell.Description,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
+        stack.AddChild(RealmUi.Button("book", "Effects & training", () => RealmUi.Details(this, spell.DisplayName,
+            SpellText.BuildInlineSummary(spell) + "\n\n" + spell.Description)));
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -1587,7 +1578,7 @@ public partial class ShopMenu : Control
         deckButton.Pressed += () =>
         {
             GameState.Instance.ToggleDeckSpell(spell.Id, out var message);
-            _statusLabel.Text = $"Last report:\n{message}";
+            _statusLabel.Text = $"{message}";
             RefreshUi();
         };
         row.AddChild(deckButton);
@@ -1609,7 +1600,7 @@ public partial class ShopMenu : Control
             actionButton.Pressed += () =>
             {
                 GameState.Instance.TryPurchaseSpell(spell.Id, out var message);
-                _statusLabel.Text = $"Last report:\n{message}";
+                _statusLabel.Text = $"{message}";
                 RefreshUi();
             };
         }
@@ -1627,7 +1618,7 @@ public partial class ShopMenu : Control
                     {
                         AudioDirector.Instance?.PlayUpgradeConfirm();
                     }
-                    _statusLabel.Text = $"Last report:\n{message}";
+                    _statusLabel.Text = $"{message}";
                     RefreshUi();
                 };
             }
@@ -1651,16 +1642,16 @@ public partial class ShopMenu : Control
             Text = "War Wagon Upgrades"
         });
 
-        _baseStack.AddChild(RealmUi.Label("Your wagon starts with archers. Install weapons to fire together automatically; train skills and reinforce defenses below. Upgrades carry into every battle.", 16));
+        _baseStack.AddChild(RealmUi.Label(_embedded ? "Train your wagon’s weapons, skills and defenses." : "Your wagon starts with archers. Install weapons to fire together automatically; train skills and reinforce defenses below. Upgrades carry into every battle.", 16));
 
-        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
-        {
-            _baseStack.AddChild(BuildBaseUpgradePanel(upgrade));
-        }
+        var upgradesHost = (Control)_baseStack;
+        if (_embedded) { var grid = new GridContainer { Columns = 2, SizeFlagsHorizontal = SizeFlags.ExpandFill }; grid.AddThemeConstantOverride("h_separation", 14); grid.AddThemeConstantOverride("v_separation", 14); _baseStack.AddChild(grid); upgradesHost = grid; }
+        foreach (var upgrade in BaseUpgradeCatalog.GetAll()) upgradesHost.AddChild(BuildBaseUpgradePanel(upgrade));
     }
 
     private Control BuildBaseUpgradePanel(BaseUpgradeDefinition upgrade)
     {
+        if (_embedded) return BuildModalUpgrade(upgrade);
         var level = GameState.Instance.GetBaseUpgradeLevel(upgrade.Id);
         var isMaxLevel = level >= upgrade.MaxLevel;
         var cost = GameState.Instance.GetBaseUpgradeCost(upgrade.Id);
@@ -1708,7 +1699,7 @@ public partial class ShopMenu : Control
             {
                 AudioDirector.Instance?.PlayUpgradeConfirm();
             }
-            _statusLabel.Text = $"Last report:\n{message}";
+            _statusLabel.Text = $"{message}";
             RefreshUi();
         };
         stack.AddChild(button);
@@ -1843,7 +1834,7 @@ public partial class ShopMenu : Control
             unequipButton.Pressed += () =>
             {
                 GameState.Instance.UnequipItem(capturedUnitId);
-                _statusLabel.Text = $"Last report:\nUnequipped {relic.DisplayName} from {equippedByUnitName}.";
+                _statusLabel.Text = $"Unequipped {relic.DisplayName} from {equippedByUnitName}.";
                 RefreshUi();
             };
             stack.AddChild(unequipButton);
@@ -1870,7 +1861,7 @@ public partial class ShopMenu : Control
             equipButton.Pressed += () =>
             {
                 GameState.Instance.TryEquipItem(capturedUnitId, relic.Id);
-                _statusLabel.Text = $"Last report:\nEquipped {relic.DisplayName} on {capturedUnitName}.";
+                _statusLabel.Text = $"Equipped {relic.DisplayName} on {capturedUnitName}.";
                 RefreshUi();
             };
             equipRow.AddChild(equipButton);

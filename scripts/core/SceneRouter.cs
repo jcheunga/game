@@ -33,6 +33,7 @@ public partial class SceneRouter : Node
 
     public static SceneRouter Instance { get; private set; }
     public string SettingsReturnLabel => ResolveSceneLabel(_settingsReturnScenePath);
+    public int InitialShopTab { get; private set; }
 
     private string _settingsReturnScenePath = MainMenuScene;
     private CanvasLayer _fadeLayer;
@@ -93,9 +94,19 @@ public partial class SceneRouter : Node
         ChangeScene(MapScene);
     }
 
-    public void GoToShop()
+    public void GoToShop(int tab = 0)
     {
+        InitialShopTab = Mathf.Clamp(tab, 0, 4);
         ChangeScene(ShopScene);
+    }
+
+    public void SetInitialShopTab(int tab) => InitialShopTab = Mathf.Clamp(tab, 0, 4);
+
+    public int ConsumeInitialShopTab()
+    {
+        var tab = InitialShopTab;
+        InitialShopTab = 0;
+        return tab;
     }
 
     public void GoToMultiplayer()
@@ -222,6 +233,7 @@ public partial class SceneRouter : Node
 
     public void ReturnFromSettings()
     {
+        if (GetTree().CurrentScene is MapMenu home && home.HasHomeModal) { home.BackHomeModal(); return; }
         ChangeScene(_settingsReturnScenePath);
     }
 
@@ -230,8 +242,11 @@ public partial class SceneRouter : Node
         ChangeScene(BattleScene);
     }
 
-    private async void ChangeScene(string path)
+    public void ReloadHome() => ChangeScene(MainMenuScene, false);
+
+    private async void ChangeScene(string path, bool allowOverlay = true)
     {
+        if (allowOverlay && GetTree().CurrentScene is MapMenu home && home.OpenHomeDestination(path)) return;
         if (_transitioning)
         {
             return;
@@ -279,6 +294,7 @@ public partial class SceneRouter : Node
     {
         return path switch
         {
+            MainMenuScene => "Home",
             MapScene => "Campaign Map",
             ShopScene => "Caravan Armory",
             CashShopScene => "Royal Storehouse",

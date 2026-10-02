@@ -12,7 +12,7 @@ using Npgsql;
 
 namespace CrownroadServer.Tests;
 
-public static class ServerTests
+public static partial class ServerTests
 {
     private const string TestAdminApiKey = "test-admin-api-key";
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -46,6 +46,10 @@ public static class ServerTests
             var tests = new (string Name, Func<Task> Test)[]
             {
                 ("PlayerProfile", () => TestPlayerProfile(client)),
+                ("AccountEmail", () => TestAccountEmail(client)),
+                ("AccountCodeSecurity", () => TestAccountCodeSecurity(client)),
+                ("AccountProviderAvailability", () => TestAccountProviderAvailability(client)),
+                ("AccountGoogleChallenge", () => TestAccountGoogleChallenge(client)),
                 ("ChallengeSync", () => TestChallengeSync(client)),
                 ("ChallengeSync_GameContract", () => TestChallengeSyncGameContract(client)),
                 ("ChallengeLeaderboard", () => TestChallengeLeaderboard(client)),
@@ -181,6 +185,7 @@ public static class ServerTests
                     });
                     app.UseEndpoints(endpoints =>
                     {
+                        AccountAuth.Map(endpoints);
                         endpoints.MapPost("/player-profile", Endpoints.PlayerProfile);
                         endpoints.MapPost("/challenge-sync", Endpoints.ChallengeSync);
                         endpoints.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);

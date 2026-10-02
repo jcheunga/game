@@ -42,14 +42,13 @@ public partial class BattleController
         var topButtons=topRow.GetChildren().OfType<Button>().ToArray();
         foreach(var button in topButtons) { button.CustomMinimumSize=Vector2.Zero; MobilePresentation.TouchButton(button); }
         topButtons.Last().Hide(); // Retreat remains available inside Pause.
-        _speedButton.Icon=null;
         _timerLabel.Reparent(_battleSubtitleLabel.GetParent());
         _mobileViewButton=new Button { Text="Map", TooltipText="Show the whole battlefield" };
         MobilePresentation.TouchButton(_mobileViewButton);
         _mobileViewButton.AccessibilityName="Battlefield overview or follow combat";
         _mobileViewButton.Pressed+=ToggleMobileOverview;
         topRow.AddChild(_mobileViewButton); topRow.MoveChild(_mobileViewButton,topRow.GetChildCount()-3);
-        _mobileZoomButton=new Button { Text=$"{_mobileCombatZoom:0.0}×", CustomMinimumSize=new Vector2(72,56),
+        _mobileZoomButton=new Button { Text="Zoom", CustomMinimumSize=new Vector2(72,56),
             TooltipText="Change close-up: 2.2×, 2.8×, 3.4×", AccessibilityName="Change combat zoom" };
         MobilePresentation.TouchButton(_mobileZoomButton);
         _mobileZoomButton.Pressed+=CycleMobileZoom;
@@ -80,7 +79,7 @@ public partial class BattleController
         // Horizontal scrolling supports unusually large decks without shrinking cards.
         var cardScroll=new ScrollContainer { HorizontalScrollMode=ScrollContainer.ScrollMode.Auto,
             VerticalScrollMode=ScrollContainer.ScrollMode.Disabled, CustomMinimumSize=new Vector2(0,102) };
-        var cardParent=cardRow.GetParent(); cardRow.Reparent(cardScroll); cardParent.AddChild(cardScroll);
+        var oldScroll=(ScrollContainer)cardRow.GetParent(); var cardParent=oldScroll.GetParent(); cardRow.Reparent(cardScroll); cardParent.AddChild(cardScroll); oldScroll.QueueFree();
         cardRow.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         foreach(var button in cardRow.GetChildren().OfType<Button>())
         {
@@ -155,7 +154,7 @@ public partial class BattleController
         var armed=_selectionMode==BattleSelectionMode.Spell ? _spellDeck.ArmedSpell?.DisplayName : _deck.ArmedUnit?.DisplayName;
         _mobilePlacementHint.Text=_mobileClearView?"View only · Drag to explore · Tap Cards to deploy":
             _cardDragging?"Release on the field · Return to the cards to cancel":
-            string.IsNullOrEmpty(armed)?"Drag a unit or magic card onto the field":$"{armed} · Drag its card onto the field";
+            string.IsNullOrEmpty(armed)?"":$"{armed} · Drag to deploy";
         _mobileCancelButton.Visible=!_mobileClearView && !string.IsNullOrEmpty(armed);
         if(_mobileOrders!=null) _mobileOrders.Visible=!_mobileClearView;
     }
@@ -190,7 +189,6 @@ public partial class BattleController
         _mobileCombatZoom=_mobileCombatZoom<2.5f?2.8f:_mobileCombatZoom<3.1f?3.4f:2.2f;
         _mobileCamera.Zoom=Vector2.One*_mobileCombatZoom;
         _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/_mobileCombatZoom;
-        _mobileZoomButton.Text=$"{_mobileCombatZoom:0.0}×";
         ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
     }
 

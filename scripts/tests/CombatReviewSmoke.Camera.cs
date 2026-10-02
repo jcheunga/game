@@ -53,10 +53,9 @@ public partial class CombatReviewSmoke
             Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "Scrolling over the HUD does not pan the battlefield");
             GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 330) }, true);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            var scroll = Read<HScrollBar>(battle, "_battleScrollBar");
-            Check(Mathf.IsEqualApprox((float)(scroll.Value + scroll.Page), width), "Navigation thumb tracks the visible far end");
-            scroll.Value = 600;
-            Check(Mathf.IsEqualApprox(camera.Position.X, half + 600), "Dragging navigation scrolls the camera");
+            Check(!battle.FindChildren("*", "Control", true, false).Any(n => n.Name == "BattlefieldNavigation" || n.Name == "CampaignFieldNavigation"),
+                "Battle has no navigation strip or minimap");
+            Invoke(battle, "SetBattleCameraX", half + 600);
             battle._UnhandledInput(new InputEventPanGesture { Delta = new Vector2(2, .1f) });
             Check(Mathf.IsEqualApprox(camera.Position.X, half + 696), "Trackpad horizontal gestures pan the map");
             await CaptureCamera("desktop-middle");
@@ -96,14 +95,6 @@ public partial class CombatReviewSmoke
             deck.ReduceCooldowns(100);
             Write(battle, "_courage", 100f);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            var overview = Read<Control>(battle, "_fieldOverview");
-            var overviewClick = overview.GetGlobalTransformWithCanvas() * new Vector2(overview.Size.X * .55f, overview.Size.Y * .5f);
-            var beforeMapClick = Read<int>(battle, "_playerDeployments");
-            GetViewport().PushInput(new InputEventMouseMotion { Position = overviewClick }, true);
-            GetViewport().PushInput(new InputEventMouseButton { Position = overviewClick, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true }, true);
-            GetViewport().PushInput(new InputEventMouseButton { Position = overviewClick, ButtonIndex = MouseButton.Left, Pressed = false }, true);
-            Check(Mathf.Abs(camera.Position.X - width * .55f) < 1 && Read<int>(battle, "_playerDeployments") == beforeMapClick,
-                "Clicking the minimap pans to that location without deploying the armed card");
             // An ultrawide viewport must center a smaller world, not invert clamp limits.
             camera.Zoom = Vector2.One * .25f;
             Invoke(battle, "RefreshBattleCamera");
@@ -131,11 +122,8 @@ public partial class CombatReviewSmoke
                 gateScreen.Y >= Read<float>(battle, "_mobileFieldTop") && gateScreen.Y <= Read<float>(battle, "_mobileFieldBottom"),
                 "Overview keeps both bases inside the unobstructed field");
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            var navigation = Read<HBoxContainer>(battle, "_fieldNavigation");
-            var navRect = navigation.GetGlobalTransformWithCanvas() * new Rect2(Vector2.Zero, navigation.Size);
-            Check(navRect.End.X <= viewport.X + 1 && navRect.Position.X >= 0, "Touch field navigation fits inside the viewport");
-            Check(navigation.GetChildren().OfType<Control>().All(c => c.Position.X + c.Size.X <= navigation.Size.X + 1),
-                "Post controls and minimap do not overflow on mobile");
+            Check(!battle.FindChildren("*", "Control", true, false).Any(n => n.Name == "CampaignFieldNavigation"),
+                "Phone combat has no capture controls or minimap");
             await CaptureCamera("mobile-overview");
             var oldWindowSize = GetWindow().Size;
             GetWindow().Size = new Vector2I(1000, 600);
@@ -150,12 +138,6 @@ public partial class CombatReviewSmoke
             deck = Read<BattleDeckState>(battle, "_deck");
             Invoke(battle, "ArmPlayerUnit", deck.Roster[0]);
             Write(battle, "_courage", 100f);
-            overview = Read<Control>(battle, "_fieldOverview");
-            overviewClick = overview.GetGlobalTransformWithCanvas() * new Vector2(overview.Size.X * .25f, overview.Size.Y * .5f);
-            GetViewport().PushInput(new InputEventScreenTouch { Index = 0, Pressed = true, Position = overviewClick }, true);
-            GetViewport().PushInput(new InputEventScreenTouch { Index = 0, Pressed = false, Position = overviewClick }, true);
-            Check(Mathf.Abs(camera.Position.X - width * .25f) < 1 && Read<int>(battle, "_playerDeployments") == count,
-                "Touching the minimap pans to that location without deploying the armed card");
             await CloseBattle(battle);
         }
         finally { MobilePresentation.TestOverride = null; }

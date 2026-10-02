@@ -57,8 +57,7 @@ public partial class CombatMotionReview : Node
                 Check(hits==1 && Read<int>(attacker,"_spriteAnimFrame")==4,id+" damage coincides with contact pose");
                 if (!attacker.UsesProjectile && attacker.AttackRange>0)
                 {
-                    var expected=target.BodyContactPosition-new Vector2(target.Radius*.28f,0);
-                    Check(attacker.WeaponContactPosition.DistanceTo(expected)<1.1f,id+" weapon reaches target surface");
+                    Check((Vector2)Call(attacker,"ContactDrawOffset")==Vector2.Zero,id+" keeps its feet fixed through contact");
                 }
                 attacker.TickAttackTimer(2); attacker.TickAttackTimer(2);
                 Check(hits==1 && !attacker.IsAttackCommitted,id+" fires once and exits recovery after a large step");

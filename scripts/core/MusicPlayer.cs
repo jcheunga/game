@@ -61,6 +61,8 @@ public partial class MusicPlayer : Node
 		_playerB = new AudioStreamPlayer { Bus = "Master", VolumeDb = -80f };
 		AddChild(_playerA);
 		AddChild(_playerB);
+        SetVolumeScale((GameState.Instance?.MusicVolumePercent ?? 50) / 100f);
+        PlayForScene(SceneRouter.MainMenuScene);
 	}
 
 	public override void _Process(double delta)
@@ -73,8 +75,8 @@ public partial class MusicPlayer : Node
 		var activePlayer = _isPlayerA ? _playerA : _playerB;
 		var fadingPlayer = _isPlayerA ? _playerB : _playerA;
 
-		activePlayer.VolumeDb = Mathf.Lerp(-80f, ResolveVolumeDb(), t);
-		fadingPlayer.VolumeDb = Mathf.Lerp(ResolveVolumeDb(), -80f, t);
+		activePlayer.VolumeDb = t <= .001f ? -80 : ResolveVolumeDb() + Mathf.LinearToDb(t);
+		fadingPlayer.VolumeDb = t >= .999f ? -80 : ResolveVolumeDb() + Mathf.LinearToDb(1-t);
 
 		if (t >= 1f)
 		{
@@ -102,7 +104,7 @@ public partial class MusicPlayer : Node
 			return;
 		}
 
-		var stream = TryLoadTrack(trackId);
+		var stream = TryLoadTrack(trackId) ?? TryLoadTrack(scenePath == SceneRouter.BattleScene ? "battle" : scenePath == SceneRouter.ShopScene || scenePath == SceneRouter.CashShopScene ? "shop" : "campaign");
 		if (stream == null)
 		{
 			return;
@@ -190,7 +192,9 @@ public partial class MusicPlayer : Node
 			if (ResourceLoader.Exists(path))
 			{
 				var stream = ResourceLoader.Load<AudioStream>(path);
-				if (stream != null) return stream;
+				if (stream is AudioStreamOggVorbis ogg) ogg.Loop = true;
+                if (stream is AudioStreamWav wav) wav.LoopMode = AudioStreamWav.LoopModeEnum.Forward;
+                if (stream != null) return stream;
 			}
 		}
 

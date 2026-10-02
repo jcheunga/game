@@ -55,9 +55,10 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 42;
+    public int Version { get; set; } = 44;
     public int Gold { get; set; } = 120;
-    public int Food { get; set; } = 12;
+    public int Food { get; set; } = 24;
+    public long FoodRechargedAtUnixSeconds { get; set; }
     public int Scrap { get => Gold; set => Gold = value; }
     public int Fuel { get => Food; set => Food = value; }
     public int HighestUnlockedStage { get; set; } = 1;
@@ -66,11 +67,15 @@ public sealed class GameSaveData
     public Dictionary<string, string> AdventureHeroNodes { get; set; } = new();
     public Dictionary<string, float[]> AdventureHeroPositions { get; set; } = new();
     public Dictionary<string, int[]> AdventureExploredCells { get; set; } = new();
+    public Dictionary<string, int[]> AdventureTravelledCells { get; set; } = new();
+    public string[] ClaimedAdventureDiscoveries { get; set; } = [];
     public string SelectedEndlessRouteId { get; set; } = "city";
     public string SelectedEndlessBoonId { get; set; } = EndlessBoonCatalog.SurplusCourageId;
     public string LastResultMessage { get; set; } = "Pick a district and clear the route.";
     public string PlayerCallsign { get; set; } = "Lantern";
     public string PlayerProfileId { get; set; } = "";
+    public string AccountProvider { get; set; } = "";
+    public string AccountLabel { get; set; } = "";
     public string PlayerAuthToken { get; set; } = "";
     public long LastPlayerProfileSyncAtUnixSeconds { get; set; }
     public string ChallengeSyncProviderId { get; set; } = ChallengeSyncProviderCatalog.LocalJournalId;

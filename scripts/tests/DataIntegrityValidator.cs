@@ -207,11 +207,11 @@ public static class DataIntegrityValidator
             var damageScale = GetFloat(stage, "EnemyDamageScale");
 
             Check(rewardGold > 0, $"Stage {num} has non-positive RewardGold");
-            Check(rewardFood > 0, $"Stage {num} has non-positive RewardFood");
+            Check(rewardFood >= 0, $"Stage {num} has negative RewardFood");
             Check(entryFood > 0, $"Stage {num} has non-positive EntryFoodCost");
             Check(healthScale > 0, $"Stage {num} has non-positive EnemyHealthScale");
             Check(damageScale > 0, $"Stage {num} has non-positive EnemyDamageScale");
-            Check(rewardFood > entryFood, $"Stage {num} RewardFood ({rewardFood}) <= EntryFoodCost ({entryFood})");
+            Check(entryFood == 4, $"Stage {num} must cost 4 food, including bosses");
 
             Check(GetFloat(stage, "PlayerBaseHealth") > 0, $"Stage {num} has non-positive PlayerBaseHealth");
             Check(GetFloat(stage, "EnemyBaseHealth") > 0, $"Stage {num} has non-positive EnemyBaseHealth");

@@ -20,6 +20,7 @@ public partial class CodexMenu : Control
 
 	public override void _Ready()
 	{
+		if (RealmModal.Embedded(this)) { BuildBookUi(); RefreshBook(); return; }
 		BuildUi();
 		RefreshUi();
 		AnimateEntrance(new Control[] { _titlePanel, _filterPanel, _listPanel, _detailPanel });
@@ -152,7 +153,7 @@ public partial class CodexMenu : Control
 
 		var entries = _activeCategory == "All"
 			? CodexCatalog.GetAll()
-			: CodexCatalog.GetByCategory(_activeCategory);
+			: CodexCatalog.GetByCategory(CategoryKey(_activeCategory));
 
 		var gs = GameState.Instance;
 

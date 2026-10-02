@@ -8,7 +8,7 @@ namespace CrownroadServer;
 /// <summary>
 /// Server-owned authentication for anonymous device accounts. A profile ID is an
 /// identifier only; every state-changing request must also carry one of these
-/// random bearer sessions. Account-provider login can be layered on top later.
+/// random bearer sessions. Email and Google accounts issue these same scoped sessions.
 /// </summary>
 public static class SessionAuth
 {

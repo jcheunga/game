@@ -47,6 +47,10 @@ public static class AssetAuditService
             .OrderBy(id => id)
             .ToArray();
         lines.Add(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasPng(BattleBackgroundPath, id), $"{BattleBackgroundPath}{{terrain_id}}.png"));
+        lines.Add(BuildCoverageLine("Individual stage environments", GameData.Stages.Select(stage => $"stage-{stage.StageNumber:00}").ToArray(),
+            id => HasPng(WorldEnvironmentArt.BattleDirectory, id), $"{WorldEnvironmentArt.BattleDirectory}stage-{{number}}.png"));
+        lines.Add(BuildCoverageLine("Isometric zone environments", AssetCoverageCatalog.RouteIds,
+            id => HasPng(WorldEnvironmentArt.ZoneDirectory, id), $"{WorldEnvironmentArt.ZoneDirectory}{{route_id}}.png"));
         lines.Add(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasPng(StructurePath, id), $"{StructurePath}{{structure_id}}.png"));
         lines.Add(BuildCoverageLine("Caravan skins", WagonSkinCatalog.GetAll().Select(skin => skin.Id).ToArray(),
             id => HasPng(StructurePath, id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + id), $"{StructurePath}war_wagon_skin_*.png"));

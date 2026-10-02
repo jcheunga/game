@@ -6,6 +6,7 @@ public partial class Unit
 {
     public uint CombatLifetime { get; private set; }
     public bool IsAttackCommitted => _contactMotionActive;
+    public bool IsAttackingPosition(Vector2 position) => _contactTarget == null && _contactDuration > 0 && _aimPosition.DistanceSquaredTo(position) < .01f;
     public Func<bool> ShouldPausePresentation { get; set; }
     private Action _contactAction;
     private bool _contactMotionActive;
@@ -110,24 +111,7 @@ public partial class Unit
         QueueRedraw();
     }
 
-    private Vector2 ContactDrawOffset()
-    {
-        if (!_contactMotionActive || UsesProjectile) return Vector2.Zero;
-        if (_contactClock <= _contactTime)
-        {
-            var target = _contactTarget;
-            var point = _aimPosition + new Vector2(0,-Radius*.9f);
-            if (IsInstanceValid(target) && target.CombatLifetime == _contactTargetLifetime && !target.IsDead)
-                point = target.BodyContactPosition - new Vector2(GetFacing()*target.Radius*.28f,0);
-            var tip = _spriteSheet?.ContactOffset ?? new Vector2(.28f,-.25f);
-            var nativeTip = GlobalPosition + new Vector2(tip.X*SpriteDrawSize.X*GetFacing(),tip.Y*SpriteDrawSize.Y);
-            _contactOffset = (point-nativeTip).LimitLength(Mathf.Min(48,AttackRange+8));
-        }
-        var weight = _contactClock <= _contactTime
-            ? Mathf.SmoothStep(0,1,Mathf.Clamp((_contactClock/_contactTime-.4f)/.6f,0,1))
-            : 1-Mathf.SmoothStep(0,1,Mathf.Clamp((_contactClock-_contactTime)/Mathf.Max(.01f,_contactDuration-_contactTime),0,1));
-        return _contactOffset * weight;
-    }
+    private Vector2 ContactDrawOffset() => Vector2.Zero;
 
     private void ResetCombatMotion()
     {

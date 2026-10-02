@@ -234,6 +234,7 @@ public static class MedievalUi
 
     private static Label FindFirstLabel(Node node)
     {
+        if (node is BaseButton) return null;
         if (node is Label label) return label;
         foreach (var child in node.GetChildren())
         {

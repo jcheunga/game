@@ -623,7 +623,8 @@ public partial class Unit : Node2D
         }
 
         var effectiveSpeed = Speed * Mathf.Max(0.4f, _currentSpeedScale);
-        Position += offset.Normalized() * effectiveSpeed * delta;
+        FaceCombatPosition(target);
+        Position = Position.MoveToward(target, effectiveSpeed * delta);
         Position = new Vector2(
             Mathf.Clamp(Position.X, minX, maxX),
             Mathf.Clamp(Position.Y, minY, maxY));
@@ -632,6 +633,7 @@ public partial class Unit : Node2D
     public void Advance(float delta, float minX, float maxX, float minY, float maxY)
     {
         var direction = Team == Team.Player ? 1f : -1f;
+        _facing = direction;
         Position += new Vector2(direction * Speed * Mathf.Max(0.4f, _currentSpeedScale) * delta, 0f);
         Position = new Vector2(
             Mathf.Clamp(Position.X, minX, maxX),
@@ -785,7 +787,7 @@ public partial class Unit : Node2D
         var recoil = reduced ? 0 : _hitReaction.Amount;
 
         // Mirror around the unit's position; a negative destination width shifts AtlasTexture regions.
-        DrawSetTransform(offset + new Vector2(recoil*1.1f,0), recoil*.022f, new Vector2(facing < 0 ? -1 : 1, 1));
+        DrawSetTransform(Vector2.Zero, 0, new Vector2(facing < 0 ? -1 : 1, 1));
 
         var modulate = Colors.White;
         if (_hitFlashTimer > 0f && !reduced)

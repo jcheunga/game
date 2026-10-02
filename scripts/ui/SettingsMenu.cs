@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 public partial class SettingsMenu : Control
 {
+    private readonly List<(HSlider Slider, Label Amount, string Channel)> _volumes = new();
     private Label _audioLabel = null!;
     private Label _interfaceLabel = null!;
     private Label _callsignLabel = null!;
@@ -47,7 +49,9 @@ public partial class SettingsMenu : Control
 
         if (keyEvent.Keycode == Key.Escape)
         {
-            SceneRouter.Instance.ReturnFromSettings();
+            if (RealmModal.Embedded(this) && GetTree().CurrentScene is MapMenu home) home.CloseHomeModal();
+            else SceneRouter.Instance.ReturnFromSettings();
+            GetViewport().SetInputAsHandled();
         }
     }
 
@@ -75,7 +79,7 @@ public partial class SettingsMenu : Control
 
     private void AnimateEntrance()
     {
-        if (_mainPanel == null) return;
+        if (_mainPanel == null || GameState.Instance.ReducedMotion) return;
         _mainPanel.Modulate = new Color(1f, 1f, 1f, 0f);
         _mainPanel.Scale = new Vector2(0.97f, 0.97f);
         _mainPanel.PivotOffset = _mainPanel.Size * 0.5f;
@@ -99,9 +103,10 @@ public partial class SettingsMenu : Control
 
     private void BuildUi()
     {
-        MenuBackdropComposer.AddSolidBackdrop(this, "settings", new Color("14213d"));
+        var embedded = RealmModal.Embedded(this);
+        if (!embedded) MenuBackdropComposer.AddSolidBackdrop(this, "settings", new Color("14213d"));
 
-        var center = new CenterContainer();
+        Container center = embedded ? new MarginContainer() : new CenterContainer();
         center.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(center);
 
@@ -112,14 +117,15 @@ public partial class SettingsMenu : Control
                 Mathf.Clamp(viewportSize.X - 48f, 560f, 760f),
                 Mathf.Clamp(viewportSize.Y - 48f, 560f, 860f))
         };
+        if (embedded) { panel.CustomMinimumSize = Vector2.Zero; panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty()); }
         center.AddChild(panel);
         _mainPanel = panel;
 
         var content = new MarginContainer();
-        content.AddThemeConstantOverride("margin_left", 24);
-        content.AddThemeConstantOverride("margin_top", 24);
-        content.AddThemeConstantOverride("margin_right", 24);
-        content.AddThemeConstantOverride("margin_bottom", 24);
+        content.AddThemeConstantOverride("margin_left", embedded ? 0 : 24);
+        content.AddThemeConstantOverride("margin_top", embedded ? 0 : 24);
+        content.AddThemeConstantOverride("margin_right", embedded ? 0 : 24);
+        content.AddThemeConstantOverride("margin_bottom", embedded ? 0 : 24);
         panel.AddChild(content);
 
         var rootStack = new VBoxContainer();
@@ -129,7 +135,9 @@ public partial class SettingsMenu : Control
 
         var title = RealmUi.Heading("Settings", 30);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        rootStack.AddChild(title);
+        rootStack.AddChild(title); title.Visible = !embedded;
+        var account = RealmUi.Button("people", "Account", () => AccountDialog.Show(this));
+        rootStack.AddChild(account); account.Visible = !embedded;
 
         _returnLabel = new Label
         {
@@ -137,7 +145,7 @@ public partial class SettingsMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         _returnLabel.AddThemeColorOverride("font_color", RealmUi.Muted);
-        rootStack.AddChild(_returnLabel);
+        rootStack.AddChild(_returnLabel); _returnLabel.Visible = !embedded;
 
         var pages = new VBoxContainer[4];
         RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, "Sound", "Gameplay", "Online", "Account");
@@ -171,47 +179,21 @@ public partial class SettingsMenu : Control
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        audioStack.AddChild(_audioLabel);
+        audioStack.AddChild(_audioLabel); _audioLabel.Visible = false;
 
-        var audioRow = new HBoxContainer();
-        audioRow.AddThemeConstantOverride("separation", 8);
-        audioStack.AddChild(audioRow);
-
-        audioRow.AddChild(BuildCompactButton("SFX -", () =>
+        void Volume(string label, string icon, int initial, Action<int> apply)
         {
-            GameState.Instance.SetEffectsVolumePercent(GameState.Instance.EffectsVolumePercent - 10);
-            RefreshUi();
-        }));
-        audioRow.AddChild(BuildCompactButton("SFX +", () =>
-        {
-            GameState.Instance.SetEffectsVolumePercent(GameState.Instance.EffectsVolumePercent + 10);
-            RefreshUi();
-        }));
-        audioRow.AddChild(BuildCompactButton("Amb -", () =>
-        {
-            GameState.Instance.SetAmbienceVolumePercent(GameState.Instance.AmbienceVolumePercent - 10);
-            RefreshUi();
-        }));
-        audioRow.AddChild(BuildCompactButton("Amb +", () =>
-        {
-            GameState.Instance.SetAmbienceVolumePercent(GameState.Instance.AmbienceVolumePercent + 10);
-            RefreshUi();
-        }));
-
-        var musicRow = new HBoxContainer();
-        musicRow.AddThemeConstantOverride("separation", 8);
-        audioStack.AddChild(musicRow);
-
-        musicRow.AddChild(BuildCompactButton("Music -", () =>
-        {
-            GameState.Instance.SetMusicVolumePercent(GameState.Instance.MusicVolumePercent - 10);
-            RefreshUi();
-        }));
-        musicRow.AddChild(BuildCompactButton("Music +", () =>
-        {
-            GameState.Instance.SetMusicVolumePercent(GameState.Instance.MusicVolumePercent + 10);
-            RefreshUi();
-        }));
+            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 16); audioStack.AddChild(row);
+            row.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), CustomMinimumSize = new Vector2(32, 32), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered });
+            var name = RealmUi.Label(label, 20); name.CustomMinimumSize = new Vector2(112, 0); name.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; name.VerticalAlignment = VerticalAlignment.Center; row.AddChild(name);
+            var slider = new HSlider { MinValue = 0, MaxValue = 100, Step = 1, Value = initial, CustomMinimumSize = new Vector2(0, 44), SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = label + " volume" }; row.AddChild(slider);
+            var amount = RealmUi.Label(initial + "%", 18); amount.CustomMinimumSize = new Vector2(54, 0); amount.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; amount.VerticalAlignment = VerticalAlignment.Center; row.AddChild(amount);
+            slider.ValueChanged += value => { apply((int)value); amount.Text = $"{value:0}%"; RefreshUi(); };
+            slider.SetMeta("volume_channel", label); _volumes.Add((slider, amount, label));
+        }
+        Volume("Music", "star", GameState.Instance.MusicVolumePercent, GameState.Instance.SetMusicVolumePercent);
+        Volume("Effects", "flame", GameState.Instance.EffectsVolumePercent, GameState.Instance.SetEffectsVolumePercent);
+        Volume("Ambience", "mountain", GameState.Instance.AmbienceVolumePercent, GameState.Instance.SetAmbienceVolumePercent);
 
         _muteButton = BuildCompactButton("Mute", () =>
         {
@@ -303,6 +285,12 @@ public partial class SettingsMenu : Control
         });
         interfaceRow.AddChild(_showHintsButton);
 
+        Button motionButton = null!;
+        motionButton = BuildCompactButton(GameState.Instance.ReducedMotion ? "Motion reduced" : "Full motion", () => {
+            GameState.Instance.SetReducedMotion(!GameState.Instance.ReducedMotion);
+            motionButton.Text = GameState.Instance.ReducedMotion ? "Motion reduced" : "Full motion";
+        });
+        interfaceRow.AddChild(motionButton);
         var langButton = BuildCompactButton("Language", () =>
         {
             var supported = Locale.GetSupportedLanguages();
@@ -413,7 +401,7 @@ public partial class SettingsMenu : Control
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        syncStack.AddChild(_lifecycleLabel);
+        syncStack.AddChild(_lifecycleLabel); _lifecycleLabel.Visible = !embedded;
 
         var providerRow = new HBoxContainer();
         providerRow.AddThemeConstantOverride("separation", 8);
@@ -468,6 +456,11 @@ public partial class SettingsMenu : Control
             RefreshUi();
         };
         endpointRow.AddChild(endpointButton);
+        if (embedded) {
+            endpointRow.Hide(); providerRow.Hide();
+            syncStack.AddChild(RealmUi.Button("gear", "Connection details", () => { endpointRow.Visible = !endpointRow.Visible; providerRow.Visible = endpointRow.Visible; }));
+            syncStack.AddChild(RealmUi.Button("people", "Refresh profile", () => { PlayerProfileSyncService.RefreshProfile(out _); RefreshUi(); }));
+        }
 		endpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         var defaultsButton = new RealmButton
@@ -498,9 +491,10 @@ public partial class SettingsMenu : Control
         };
         stack.AddChild(defaultsButton);
 
+        if (embedded) pages[3].AddChild(RealmUi.Button("people", "Manage account", () => AccountDialog.Show(this)));
         pages[3].AddChild(RealmUi.Button("close", "Reset campaign", () => MedievalUi.ShowConfirmation(this,
             "Abandon this campaign?", "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
-            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.GoToMainMenu(); })));
+            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); })));
         var purchasePanel = new PanelContainer();
         pages[3].AddChild(purchasePanel);
 
@@ -549,6 +543,7 @@ public partial class SettingsMenu : Control
             RefreshUi();
         };
         purchaseEndpointRow.AddChild(purchaseEndpointButton);
+        if (embedded) { purchaseEndpointRow.Hide(); purchaseStack.AddChild(RealmUi.Button("gear", "Payment connection details", () => purchaseEndpointRow.Visible = !purchaseEndpointRow.Visible)); }
 		purchaseEndpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         _cloudSaveLabel = new Label
@@ -571,8 +566,9 @@ public partial class SettingsMenu : Control
 
         var downloadButton = BuildCompactButton("Restore Save", () =>
         {
-            CloudSaveService.Download(out var msg);
+            var restored = CloudSaveService.Download(out var msg);
             _cloudSaveLabel.Text = msg;
+            if (restored && RealmModal.Embedded(this)) { SceneRouter.Instance.ReloadHome(); return; }
             RefreshUi();
         });
         cloudSaveRow.AddChild(downloadButton);
@@ -652,7 +648,7 @@ public partial class SettingsMenu : Control
 
         var bottomRow = new HBoxContainer();
         bottomRow.AddThemeConstantOverride("separation", 12);
-        rootStack.AddChild(bottomRow);
+        rootStack.AddChild(bottomRow); bottomRow.Visible = !embedded;
 
         _backButton = new RealmButton
         {
@@ -668,6 +664,7 @@ public partial class SettingsMenu : Control
         };
         _titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
         bottomRow.AddChild(_titleButton);
+        if (embedded) RealmModal.Polish(rootStack);
     }
 
     private static Button BuildCompactButton(string text, System.Action onPressed)
@@ -684,6 +681,10 @@ public partial class SettingsMenu : Control
 
     private void RefreshUi()
     {
+        foreach (var (slider, amount, channel) in _volumes) {
+            int value = channel == "Music" ? GameState.Instance.MusicVolumePercent : channel == "Effects" ? GameState.Instance.EffectsVolumePercent : GameState.Instance.AmbienceVolumePercent;
+            slider.SetValueNoSignal(value); amount.Text = value + "%";
+        }
         _returnLabel.Text = $"Return target: {SceneRouter.Instance.SettingsReturnLabel}";
         _audioLabel.Text =
             $"Effects: {GameState.Instance.EffectsVolumePercent}%  |  Ambience: {GameState.Instance.AmbienceVolumePercent}%  |  Music: {GameState.Instance.MusicVolumePercent}%\n" +
@@ -738,7 +739,13 @@ public partial class SettingsMenu : Control
         var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
         _backButton.Text = $"Back To {returnLabel}";
         _titleButton.Visible = !returnLabel.Equals("Title", StringComparison.OrdinalIgnoreCase);
-        _achievementsLabel.Text = BuildAchievementsText();
+        if (RealmModal.Embedded(this)) {
+            _interfaceLabel.Text = "Adjust readability, hints and battle information.";
+            _callsignLabel.Text = "Caravan name · used in rooms and shared rankings";
+            _syncLabel.Text = string.IsNullOrEmpty(GameState.Instance.AccountProvider) ? "Playing locally. Sign in from Account to connect your caravan." : $"Connected with {GameState.Instance.AccountProvider}. Refresh your profile to check the latest progress.";
+            _purchaseLabel.Text = $"Purchases completed: {GameState.Instance.TotalPurchaseCount}\nPayments: {DetectPurchasePlatform()}";
+        }
+        _achievementsLabel.Text = $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} completed. Open Achievements from the home dock to view objectives and claim rewards.";
     }
 
     private static string BuildAchievementsText()

@@ -34,7 +34,7 @@ public static class RealmUi
 
     public static Button Button(string icon, string label, Action action, bool primary = false)
     {
-        var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = !string.IsNullOrEmpty(label), TooltipText = label,
+        var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = true, TooltipText = label,
             CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, 20).X + 72, 48),
             Alignment = HorizontalAlignment.Center, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
         button.AddThemeConstantOverride("icon_max_width", 22);
@@ -82,7 +82,7 @@ public static class RealmUi
         titles.AddChild(Heading(title, 27));
         row.AddChild(titles);
         row.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24, 24)));
-        row.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24, 24)));
+        row.AddChild(new FoodBalance());
         row.AddChild(IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
         return row;
     }

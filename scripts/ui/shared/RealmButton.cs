@@ -1,62 +1,58 @@
 using Godot;
 
-/// <summary>Buttons share readable, width-bounded tooltips instead of unwrapped native text.</summary>
+/// <summary>Centers an icon and label as one group without changing style margins.</summary>
 public partial class RealmButton : Button
 {
-    // Godot aligns the icon and text independently. For navigation buttons we
-    // center their combined width by adjusting only the stylebox content inset.
     public bool CenterIconAndText { get; set; }
-    private string _measuredText;
-    private float _measuredWidth = -1f;
-
+    private TextureRect _groupIcon;
+    private Label _groupLabel;
+    private Color _normalInk, _disabledInk;
+    private Color _iconInk = Colors.White;
+    private bool? _lastDisabled;
+    public void SetPresentation(Font font, Color ink, Color disabled)
+    {
+        _normalInk = ink; _disabledInk = disabled; _lastDisabled = null;
+        _iconInk = ink.R < .5f ? ink : Colors.White;
+        if (_groupLabel != null)
+        {
+            _groupLabel.AddThemeFontOverride("font", font);
+            _groupLabel.AddThemeFontSizeOverride("font_size", 20);
+            return;
+        }
+        foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) AddThemeColorOverride(key, ink);
+        AddThemeColorOverride("font_disabled_color", disabled);
+    }
     public override void _Ready()
     {
         if (!CenterIconAndText) return;
-        Alignment = HorizontalAlignment.Left;
-        IconAlignment = HorizontalAlignment.Left;
-        Resized += UpdateContentInset;
-        CallDeferred(nameof(UpdateContentInset));
+        _normalInk = GetThemeColor("font_color"); _disabledInk = GetThemeColor("font_disabled_color");
+        foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color",
+            "icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color" })
+            AddThemeColorOverride(key, Colors.Transparent);
+        var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(center); center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 10); center.AddChild(row);
+        _groupIcon = new TextureRect { CustomMinimumSize = new Vector2(22,22), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore };
+        row.AddChild(_groupIcon);
+        _groupLabel = new Label { MouseFilter = MouseFilterEnum.Ignore, VerticalAlignment = VerticalAlignment.Center };
+        _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
+        _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size")); row.AddChild(_groupLabel);
+        RefreshGroup();
     }
-
-    public override void _Process(double delta)
+    public override void _Process(double delta) { if (_groupLabel != null) RefreshGroup(); }
+    private void RefreshGroup()
     {
-        if (CenterIconAndText && (_measuredText != Text || !Mathf.IsEqualApprox(_measuredWidth, Size.X)))
-            UpdateContentInset();
-    }
-
-    private void UpdateContentInset()
-    {
-        if (!IsInsideTree() || Icon == null || string.IsNullOrEmpty(Text) || Size.X <= 0f) return;
-        var font = GetThemeFont("font");
-        var fontSize = GetThemeFontSize("font_size");
-        var textWidth = font.GetStringSize(Text, HorizontalAlignment.Left, -1, fontSize).X;
-        var iconLimit = GetThemeConstant("icon_max_width");
-        var iconWidth = iconLimit > 0 ? Mathf.Min(Icon.GetWidth(), iconLimit) : Icon.GetWidth();
-        var groupWidth = iconWidth + GetThemeConstant("h_separation") + textWidth;
-        var inset = Mathf.Max(18f, Mathf.Floor((Size.X - groupWidth) * 0.5f));
-
-        foreach (var state in new[] { "normal", "hover", "pressed", "hover_pressed", "disabled" })
+        if (_groupLabel.Text != Text) _groupLabel.Text = Text;
+        _groupLabel.Visible = Text.Length > 0;
+        if (_groupIcon.Texture != Icon) _groupIcon.Texture = Icon;
+        _groupIcon.Visible = Icon != null;
+        if (_lastDisabled != Disabled)
         {
-            if (GetThemeStylebox(state) is not StyleBoxTexture style) continue;
-            if (Mathf.IsEqualApprox(style.ContentMarginLeft, inset)) continue;
-            var centered = (StyleBoxTexture)style.Duplicate();
-            centered.ContentMarginLeft = inset;
-            AddThemeStyleboxOverride(state, centered);
+            _lastDisabled = Disabled;
+            _groupLabel.AddThemeColorOverride("font_color", Disabled ? _disabledInk : _normalInk);
+            _groupIcon.Modulate = Disabled ? new Color(1,1,1,.4f) : _iconInk;
         }
-        _measuredText = Text;
-        _measuredWidth = Size.X;
-    }
-
-    public override Control _MakeCustomTooltip(string forText)
-    {
-        const int size = 18;
-        var font = ThemeDB.FallbackFont;
-        var width = Mathf.Clamp(font.GetStringSize(forText, HorizontalAlignment.Left, -1, size).X, 220, 420);
-        while (width < 760 && font.GetMultilineStringSize(forText, HorizontalAlignment.Left, width, size).Y > 530)
-            width += 80;
-        var label = new Label { Text = forText, CustomMinimumSize = new Vector2(width, 0), AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        label.SetMeta("realm_tooltip", true);
-        label.AddThemeFontSizeOverride("font_size", size);
-        return label;
     }
 }

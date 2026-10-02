@@ -1,6 +1,6 @@
 # Crownroad production launch runbook
 
-Last implementation update: 2026-09-30; baseline repository audit: 2026-09-29.
+Last implementation update: 2026-10-01; baseline repository audit: 2026-09-29.
 This is the release gate for an Android/iOS
 launch with paid consumables and internet rooms. Repository checks do **not**
 prove that a signed store build, physical-device flow, or live deployment works.
@@ -12,11 +12,11 @@ hide it in the release build and store copy; do not mark its gate complete.
 
 | Area | Verified in this repository | Still needed for public release |
 | --- | --- | --- |
-| Build and tests | Game build, 7,492 data checks and 82 server tests pass locally; the privacy smoke test also exercises consent and cloud restore in Godot. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
-| Backend | .NET API, server-issued anonymous sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. | Deploy and operate the stack, prove restore/alerts/load capacity, and add recoverable player identity. The Compose host and its local Redis remain single points of failure. |
+| Build and tests | Game build, 7,492 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
+| Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
 | Payments | Server-side Play/App Store verification and Android billing bridge are present; paid grants fail closed without valid store verification. | Real store configuration and device tests, secure iOS StoreKit 2 bridge, refund/void reconciliation, and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
-| Art and audio | The current coverage audit reports full coverage for unit sprites, battle/screen backgrounds, structures, particles, icons, codex art, and district-map art. Branding files below exist. | Approve visual quality/rights. The catalog still reports **0/17 music tracks**, **0/34 SFX overrides**, and **0/10** for each of five route-specific screen-override groups. Decide whether the fallbacks are final or add the missing assets. |
+| Art and audio | 60 distinct stage backgrounds and 10 distinct zone main maps are connected and pass desktop/phone preview checks. Existing sprites, structures, icons and branding remain present. Four original looping music arrangements and 20 authored SFX files are implemented. | Approve visual quality/rights and test the signed build on physical devices. Some route/menu music, ambience and screen variants still use shared or procedural fallbacks; decide which are final for launch. Artwork provenance and all 70 prompts are in `assets/world/manifest.json`. |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
 
 ## Implementation progress and next work
@@ -42,17 +42,111 @@ remaining requirements have evidence.
 - [x] Correct Docker build inputs to include linked server/game sources.
   A release publish from those exact copied sources passes. Actual container
   build/start remains unverified because the local Docker daemon is unavailable.
+- [x] Implement email-code and Google browser sign-in in the game and backend.
+  Persist provider identities and challenges, link a verified identity to an
+  authenticated guest, issue existing API sessions, revoke the current session
+  on online sign-out, and protect local progress during account switching.
+  Provider credentials, live delivery/consent and mobile recovery remain open
+  in the [login rollout gates](#email-and-google-login-rollout) below.
+- [x] Create and connect individual artwork for all 60 campaign stages and
+  all 10 zone main maps. Fit clear battle ground to the simulation bounds;
+  map continuous zone ground and progressive fog to the same isometric tiles
+  used for picking and travel. `WorldArtReview.tscn` passes on desktop and
+  phone previews, including distinct files, imported resolution, every zone's
+  live map/battle screens and captures of fresh/explored maps. See
+  [world artwork notes](../assets/world/README.md). This does not replace
+  physical-device or public-release creative approval.
+
+- [x] Expand every zone to 768 tiles, spread landmarks and bosses across the
+  district, and conceal unknown land with animated smoke. Add 40 sparse tile
+  discoveries per zone and step-by-step food payments. Save revision 44 keeps
+  old site claims and relocates caravans onto the new terrain. Local rendered
+  desktop and phone-preview checks cover rewards, exhaustion and migration.
+  See [expansion notes](EXPANSIVE_EXPLORATION.md).
 
 | Order | Next deliverable | Completion evidence / dependency |
 | --- | --- | --- |
-| 1 | Choose a recoverable identity method and implement account linking/session recovery | Lost-device and account-switch tests restore the server wallet and progress; publisher chooses provider/account model before external configuration. |
+| 1 | Activate and verify the implemented email/Google account recovery | Provision SMTP and Google OAuth, deploy to staging, and pass real-device lost-device/account-switch checks for the server wallet and uploaded progress. Decide cloud-upload behavior and cross-provider linking support before launch. |
 | 2 | Implement authenticated deletion and support handling | In-app request, public request page, session revocation, documented financial-record retention and end-to-end deletion evidence. |
 | 3 | Deploy the privacy update to staging | Schema 5 migration and backup restore on PostgreSQL, container build/start, and device tests of updated consent/cloud restore. Follow the migration notes in DEPLOYMENT.md. |
 | 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, implement the iOS bridge if included, and test refund/void reconciliation. |
 | 5 | Complete release infrastructure and feature acceptance | Measured load/alerts/restore; multiplayer decision; signed store-delivered device matrix and creative/localization sign-off. |
 
-The owner decisions below remain unconfirmed. No platform, provider, legal
-publisher, rollout date or live account has been selected by this work.
+The owner decisions below remain unconfirmed. The login implementation uses
+email codes and Google OAuth; provider accounts and credentials have not been
+provisioned by this work. No launch platform, legal publisher or rollout date has been
+selected by this work.
+
+### Email and Google login rollout
+
+**Status: connected to the backend and tested locally; production rollout and
+live provider operation remain unverified.** The release API origin is currently
+unset. The title/Settings
+Account screen uses `AccountSignIn` to call the same .NET API as purchases and
+cloud saves. `AccountAuth.Map(app)` registers the routes; database startup
+creates `account_identities` and `account_challenges` in the shared database.
+Successful sign-in uses `SessionAuth.Issue`, so the returned session authorizes
+the existing protected APIs rather than a separate account service.
+
+| Flow | Backend routes | Implemented behavior |
+| --- | --- | --- |
+| Availability | `GET /auth/providers` | Disable sign-in options whose server credentials are missing. |
+| Email | `POST /auth/email/start`, `POST /auth/email/verify` | TLS email delivery, six-digit code, ten-minute expiry, five attempts and single-use verification. |
+| Google | `POST /auth/google/start`, `GET /auth/google/callback`, `POST /auth/google/poll` | Browser OAuth with PKCE/state; the server exchanges the code with Google and verifies the identity; a separate device secret retrieves the session once. |
+| Sign-out | `POST /auth/signout` | Revoke the current server session when online; local sign-out remains available offline. |
+| Progress and wallet | Existing `/player-profile`, `/wallet` and `/cloud-save/*` | Register an offline guest before linking; recover the same provider's profile and wallet; download available cloud progress before switching local identity. |
+
+- [ ] Provision a TLS-capable email service and set `SMTP_HOST`, `SMTP_PORT`
+  (default `587`), `SMTP_FROM`, `SMTP_USER`, and `SMTP_PASSWORD` in the untracked
+  deployment environment. Verify sender/domain delivery and failure handling
+  with real inboxes. The code uses SMTP STARTTLS; choose a compatible service.
+- [ ] Provision a Google OAuth **Web application** client. Set
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
+  Register the exact callback `https://<API-host>/auth/google/callback` with
+  Google; replace the example URI in `server/.env.production.example`.
+  Complete the provider's production access/consent setup and test with the
+  intended audience. OAuth and SMTP secrets stay on the server.
+- [ ] Deploy the updated API to staging using the existing
+  `server/docker-compose.production.yml`. Its `env_file` passes the login
+  variables through to the API; database startup adds the account tables.
+  Verify them on PostgreSQL, preservation of existing wallets/cloud saves,
+  and challenges completing across both API replicas. Repeat the backend
+  suite against an isolated PostgreSQL test database before rollout.
+- [ ] Set `crownroad/network/api_base_url` to the final HTTPS API origin in
+  every signed release. Confirm `GET /auth/providers` reports the enabled
+  methods and that sign-in, wallet and cloud-save requests use that origin.
+  Development can use the endpoint in Settings; do not rely on a player's
+  saved endpoint for production configuration.
+- [ ] Test email delivery/verification and the complete Google browser
+  callback/poll flow on signed Android/iOS builds included in launch scope.
+  Cover background/resume, cancellation, expired/wrong/reused codes, failed
+  delivery/network, unavailable providers, rate limits and revoked sessions.
+- [ ] Test guest-to-account linking, reinstall/lost-device recovery and
+  account switching with real server wallet balances and uploaded saves.
+  Confirm a failed cloud download keeps the current local account intact,
+  and sign-out/account switches create a local progress backup. Current
+  cloud uploads are **manual in Settings**: decide whether to retain this
+  behavior and explain it to players or add/test automatic uploads. Signing
+  in cannot recover progress that was never uploaded.
+- [ ] Confirm the cross-provider account policy. An unused email or Google
+  identity can link to the currently authenticated profile. Matching email
+  addresses do not silently merge identities, and existing accounts/wallets
+  are not merged. Test adding a second provider and an identity already tied
+  to another account; define any support recovery/merge procedure.
+- [ ] Complete the existing deletion/privacy/support gates below for the
+  new account records and local backups before public account creation.
+  Record the staging/device evidence, deployment version and rollout owner;
+  then repeat provider/recovery checks against the production origin.
+
+Local evidence: the **86-test backend suite** covers email guest linking,
+same-identity recovery, wallet authorization, challenge expiry/attempts/replay,
+Google PKCE/state/poll secrets, unavailable providers and session revocation.
+Google success is simulated after provider verification, and email delivery
+is captured by a test sender; these do not prove live provider operation.
+`FeedbackReview.tscn` passes **42 checks on desktop and 42 on phone**, including
+account availability/UI, guest preservation, authenticated cloud download and
+failed-switch protection using a loopback service. See
+[PLAYER_FEEDBACK_UPDATE.md](PLAYER_FEEDBACK_UPDATE.md) for implementation notes.
 
 ### Local evidence for the privacy update
 
@@ -101,12 +195,13 @@ requirement until a migration and both signed exports have been verified.
 
 ### 1. Recoverable identity, privacy, and support
 
-- [ ] Replace the current device-bound anonymous account with a recoverable
-  account path before taking public paid purchases. Implement provider sign-in
-  or another reviewed recovery method, secure account linking, session
-  rotation/revocation, and cross-device restore of the **server wallet and
-  progression**. A store's consumable purchase history is not a substitute for
-  restoring a player's spent balance. Test lost-device and account-switch cases.
+- [ ] Complete the [email/Google rollout](#email-and-google-login-rollout)
+  before taking public paid purchases. Provider sign-in, guest linking and
+  current-session revocation are implemented locally; production credentials,
+  session lifecycle review, and real cross-device restore of the **server
+  wallet and uploaded progression** still need evidence. A store's consumable
+  purchase history is not a substitute for restoring a player's spent balance.
+  Test lost-device and account-switch cases.
 - [ ] Implement an in-app account-deletion request/path and a public web
   deletion-request page when account creation is offered. Define retention
   exceptions for financial/fraud records, revoke sessions, and verify the

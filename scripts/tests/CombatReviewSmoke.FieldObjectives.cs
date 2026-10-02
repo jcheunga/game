@@ -16,53 +16,30 @@ public partial class CombatReviewSmoke
         Invoke(battle, "UpdateCampaignField", 4f);
         Check(!Read<bool>(battle, "_outpostCaptured"), "Contested post cannot be captured");
         enemy.Position = new Vector2(2400, 340);
-        Check((bool)Invoke(battle, "TryHoldCampaignFieldPoint", ally, enemy), "Troops hold a nearby post when combat is distant");
-        enemy.Position = point + new Vector2(130, 0);
-        Check(!(bool)Invoke(battle, "TryHoldCampaignFieldPoint", ally, enemy), "Nearby combat takes priority over capturing");
-        enemy.Position = new Vector2(2400, 340);
+        var allyStart = ally.Position;
+        Check(!(bool)Invoke(battle, "TryHoldCampaignFieldPoint", ally, enemy), "Removed posts cannot hold or snap troops");
         Invoke(battle, "UpdateCampaignField", plan.CaptureSeconds + .01f);
-        Check(Read<bool>(battle, "_outpostCaptured") && Read<int>(battle, "_forwardDeploymentsRemaining") == plan.ForwardDeployments,
-            "Holding the post grants the authored deployment budget");
+        Check(!Read<bool>(battle, "_outpostCaptured") && Read<int>(battle, "_forwardDeploymentsRemaining") == 0,
+            "Standing near a removed post never creates forward deployments");
+        Check(ally.Position == allyStart, "Field updates leave troop positions unchanged");
         var deck = Read<BattleDeckState>(battle, "_deck");
         var card = deck.Roster[0];
         Invoke(battle, "ArmPlayerUnit", card);
-        Write(battle, "_courage", 0f);
-        Invoke(battle, "TryDeployAtY", point.Y);
-        Check(Read<int>(battle, "_forwardDeploymentsRemaining") == plan.ForwardDeployments,
-            "Unaffordable deployments cannot consume post charges");
         Write(battle, "_courage", 100f);
         var preview = (Vector2)Invoke(battle, "ResolvePlayerDeployPosition", point.Y - 200);
         Invoke(battle, "TryDeployAtY", point.Y - 200);
         var spawned = Read<List<Unit>>(battle, "_units").Last();
-        Check(spawned.Position == preview && Mathf.IsEqualApprox(preview.X, point.X - 48) && preview.Y >= point.Y - 90,
-            "Forward deployment exactly matches the preview and stays near its lane");
-        Check(Read<int>(battle, "_forwardDeploymentsRemaining") == plan.ForwardDeployments - 1 && deck.GetCooldownRemaining(card.Id) > 0 && Read<float>(battle, "_courage") < 100,
-            "Forward deployment consumes one charge and the normal courage and cooldown");
-        Check(((Vector2)Invoke(battle, "ResolvePlayerDeployPosition", point.Y)).X == GameData.Combat.PlayerSpawnX,
-            "Post recovery visibly falls back to the wagon");
-        Write(battle, "_forwardCooldownRemaining", 0f);
-        enemy.Position = point;
-        Check(((Vector2)Invoke(battle, "ResolvePlayerDeployPosition", point.Y)).X == GameData.Combat.PlayerSpawnX,
-            "Enemy occupation blocks forward deployments");
-        enemy.Position = new Vector2(2400, 340);
-        Write(battle, "_forwardDeploymentArmed", false);
-        Check(((Vector2)Invoke(battle, "ResolvePlayerDeployPosition", point.Y)).X == GameData.Combat.PlayerSpawnX,
-            "Players can save post charges by choosing the wagon");
-        Write(battle, "_forwardDeploymentsRemaining", 0);
-        Invoke(battle, "UpdateCampaignField", 30f);
-        Check(Read<int>(battle, "_forwardDeploymentsRemaining") == 0, "Captured posts never refill their limited charges");
+        Check(spawned.Position == preview && Mathf.IsEqualApprox(preview.X, GameData.Combat.PlayerSpawnX),
+            "Deployment matches its preview and always begins at the wagon");
+        Check(deck.GetCooldownRemaining(card.Id) > 0 && Read<float>(battle, "_courage") < 100,
+            "Deployment consumes the normal courage and cooldown");
         ally.Position = (Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio);
         var gate = Read<float>(battle, "_enemyBaseHealth");
         Invoke(battle, "UpdateCampaignField", 3f);
-        Check(Read<bool>(battle, "_supplyCollected") && Read<float>(battle, "_enemyBaseHealth") < gate &&
-            Read<float>(battle, "_fieldSummonSuppressionRemaining") == 18, "Siege supplies damage the gate and suppress summons");
-        gate = Read<float>(battle, "_enemyBaseHealth");
-        Invoke(battle, "CollectCampaignSupplies");
-        Check(Read<float>(battle, "_enemyBaseHealth") == gate, "Supply rewards cannot be collected twice");
+        Check(!Read<bool>(battle, "_supplyCollected") && Read<float>(battle, "_enemyBaseHealth") == gate,
+            "Standing near a removed supply cache grants no capture reward");
         var summoner = Spawn("enemy_lich", Team.Enemy, ally.Position + new Vector2(50, 0));
-        Check(!(bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "Siege supply suppression interrupts nearby summoners");
-        Write(battle, "_fieldSummonSuppressionRemaining", 0f);
-        Check((bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "An engaged summoner resumes pressure after suppression expires");
+        Check((bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "An engaged summoner can create a finite reinforcement wave");
         for (var i = 0; i < 3; i++)
         {
             summoner.TickSpecialTimer(100);
@@ -87,10 +64,6 @@ public partial class CombatReviewSmoke
             battle = await OpenBattle(stageNumber);
             Write(battle, "_courage", 0f);
             Write(battle, "_playerBaseHealth", 1f);
-            Invoke(battle, "CollectCampaignSupplies");
-            if (stageNumber == 1) Check(Read<float>(battle, "_courage") == 25, "Courage supplies grant their stated reward");
-            if (stageNumber == 13) Check(Read<float>(battle, "_playerBaseHealth") > 1 && Read<float>(battle, "_courage") == 8,
-                "Repair supplies restore hull and courage");
             if (stageNumber == 49)
             {
                 var patches = ((IEnumerable<Rect2>)Invoke(battle, "CursedGroundAreas")).ToArray();

@@ -13,6 +13,11 @@ public partial class UiReviewSmoke
         const BindingFlags hidden=BindingFlags.Instance|BindingFlags.NonPublic;
         try
         {
+            // Exercise every action state independently of the one-unit starter save.
+            var fixture = GameState.Instance.BuildSaveData();
+            fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
+            fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
+            GameState.Instance.RestoreCloudSave(fixture);
             foreach(var mobile in new[]{false,true})
             {
                 var prefix=mobile?"phone":"desktop";
@@ -44,7 +49,7 @@ public partial class UiReviewSmoke
                         && new Rect2(Vector2.Zero,art.Size).Encloses(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),
                         $"{prefix}: textured cost badge fits the top-right corner");
                     Check(button.Text=="" && art.StatusLabel.Text=="",$"{prefix}: ready cards show no name/action/state clutter");
-                    Check(!string.IsNullOrWhiteSpace(button.AccessibilityName) && !string.IsNullOrWhiteSpace(button.TooltipText),
+                    Check(!string.IsNullOrWhiteSpace(button.AccessibilityName) && string.IsNullOrWhiteSpace(button.TooltipText),
                         $"{prefix}: unit/spell identification remains available");
                     Check(Walk(art).OfType<Control>().All(c=>c.MouseFilter==Control.MouseFilterEnum.Ignore),
                         $"{prefix}: portrait, badge and status pass taps through to the button");

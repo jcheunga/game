@@ -21,9 +21,7 @@ public sealed class StageBattlefieldDefinition
         "siege" => "Deal 12% gate damage and interrupt enemy summons for 18s",
         _ => "Gain 25 courage and refresh unit cards by 3s"
     };
-    public string Briefing => $"Capture {OutpostTitle} by holding its ring for {CaptureSeconds:0.#}s. " +
-        $"It offers {ForwardDeployments} forward deployments, {ForwardCooldown:0}s apart; nearby enemies block it. " +
-        $"Optional: secure {SupplyTitle}. {RewardSummary}. Advance through Approach, Crossroads, and Gate encounters; incoming packs are marked before they arrive.";
+    public string Briefing => "Destroy the enemy stronghold. Deploy from the wagon and avoid marked hazards.";
 }
 
 public sealed class StageFieldPatchDefinition

@@ -190,11 +190,20 @@ public partial class CashShopMenu : Control
 		RealmUi.Clear(_resourcesRow);
 
 		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+		_resourcesRow.AddChild(new FoodBalance());
 	}
 
     private void RebuildGoldPacks() => RebuildCategory(_goldStack, "gold");
-    private void RebuildFoodPacks() => RebuildCategory(_foodStack, "food");
+    private void RebuildFoodPacks()
+    {
+        RebuildCategory(_foodStack, "food");
+        var refill = RealmUi.Button("food", "10 food · 100 gold", () => {
+            GameState.Instance.TryBuyFoodRefill(out var message); _statusLabel.Text = message; RefreshUi();
+        }, true);
+        _foodStack.AddChild(refill); _foodStack.MoveChild(refill, 0);
+        var recharge = RealmUi.Label("+2 food every 5 minutes · Up to 24", 18, true);
+        _foodStack.AddChild(recharge); _foodStack.MoveChild(recharge, 1);
+    }
     private void RebuildMixedPacks() => RebuildCategory(_mixedStack, "mixed");
 
     private void RebuildCategory(VBoxContainer stack, string category)

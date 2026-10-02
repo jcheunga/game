@@ -27,6 +27,8 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--home-map"))
+            { await ReviewHomeMap(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--materials"))
             { await ReviewMaterials(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--deployment-cards"))
@@ -49,7 +51,7 @@ public partial class UiReviewSmoke : Node
                 BattleSummaryData.Current = new BattleSummaryData { Won = true, Stage = 60, StarsEarned = 3, BattleMode = "Campaign", ElapsedSeconds = 123, EnemiesDefeated = 145, UnitsDeployed = 35, UnitsLost = 12, SpellsCast = 7, TotalDamageDealt = 123456, TotalDamageTaken = 12345, GoldEarned = 1250, FoodEarned = 12, SeasonXPEarned = 100, MasteryXPPerUnit = GameData.GetPlayerUnits().ToDictionary(x => x.Id, _ => 250) };
                 await Open("BattleSummaryMenu"); AuditText("Populated battle summary"); await Capture("type-populated-summary");
                 GameState.Instance.UnlockNextStage(GameState.Instance.MaxStage - 1);
-                await Open("MainMenu"); await Press("Caravan"); AuditText("MainMenu / all unlocks"); await Capture("type-main-unlocked");
+                await Open("MainMenu"); await PressHint("More"); await Press("Caravan"); AuditText("MainMenu / all unlocks"); await Capture("type-main-unlocked");
                 foreach (var stage in GameData.Stages)
                 {
                     GameState.Instance.SetSelectedStage(stage.StageNumber);
@@ -71,7 +73,7 @@ public partial class UiReviewSmoke : Node
                     await Open(scene);
                     await Capture("type-" + scene);
                     AuditText(scene);
-                    var tabs = Walk(GetTree().CurrentScene).OfType<HBoxContainer>().Where(x => x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>()).Select(x => x.Text).ToArray();
+                    var tabs = Walk(GetTree().CurrentScene).OfType<HBoxContainer>().Where(x => x.IsVisibleInTree() && x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>()).Select(x => x.Text).ToArray();
                     foreach (var tab in tabs.Skip(1))
                     {
                         await Press(tab);
@@ -129,11 +131,13 @@ public partial class UiReviewSmoke : Node
                 GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
             }
             await Open("MainMenu");
-            Check(!Walk(GetTree().CurrentScene).OfType<ScrollContainer>().Any(), "Home has no scrolling regions");
+            Check(!Walk(GetTree().CurrentScene).OfType<ScrollContainer>().Any(x => x.IsVisibleInTree()), "Home has no visible scrolling regions");
             await Capture("01-camp");
+            await PressHint("More");
             await Press("Caravan"); await Capture("02-camp-caravan");
             await Press("Community"); await Capture("03-camp-community");
-            await Open("MapMenu"); await Capture("04-map");
+            GameState.Instance.MoveAdventureHero("city", AdventureMapCatalog.Leader(1).Point);
+            await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
             await Press("Intel"); await Capture("05-map-intel");
             await Press("Prepare battle"); Check(GetTree().CurrentScene is LoadoutMenu, "Map opens preparation");
             await Capture("06-loadout");
@@ -148,6 +152,18 @@ public partial class UiReviewSmoke : Node
             var upgradeCost = GameState.Instance.GetUnitUpgradeCost(GameData.PlayerBrawlerId);
             await Press("Upgrade");
             Check(GameState.Instance.Gold == oldGold - upgradeCost && GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId) == oldLevel + 1, "Armory upgrade charges once and increases level");
+            if (GameState.Instance.ActiveDeckUnitIds.Count == 1)
+            {
+                await Press("Unequip");
+                Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "The last starter unit remains equipped");
+                // The equip round trip needs a second unit now that new games
+                // start with only a swordsman. Keep this fixture in the test save.
+                var squadFixture = GameState.Instance.BuildSaveData();
+                squadFixture.OwnedPlayerUnitIds = squadFixture.OwnedPlayerUnitIds.Append(GameData.PlayerShooterId).Distinct().ToArray();
+                squadFixture.ActiveDeckUnitIds = squadFixture.ActiveDeckUnitIds.Append(GameData.PlayerShooterId).Distinct().ToArray();
+                typeof(GameState).GetMethod("ApplySavedData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(GameState.Instance, new object[] { squadFixture });
+                await Open("ShopMenu");
+            }
             await Press("Unequip"); Check(!GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can leave squad");
             await Press("Equip"); Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can return to squad");
             await Press("Battle rites"); await Capture("08-rites");
@@ -246,6 +262,7 @@ public partial class UiReviewSmoke : Node
             for (var parent = control.GetParent(); parent != null; parent = parent.GetParent())
             {
                 if (parent is not ScrollContainer scroll) continue;
+                if (scroll.HorizontalScrollMode != ScrollContainer.ScrollMode.Disabled) break; // This content intentionally extends beyond its nearest horizontal scroller.
                 var rect = control.GetGlobalRect(); var clip = scroll.GetGlobalRect().Grow(3);
                 if (scroll.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled && (rect.Position.X < clip.Position.X || rect.End.X > clip.End.X))
                 { GD.Print($"SCROLL_TEXT_CLIP {screen}: {control.GetPath()} {rect} outside {clip}"); _failures++; break; }
@@ -296,7 +313,7 @@ public partial class UiReviewSmoke : Node
     }
     private async Task PressHint(string hint)
     {
-        var button = Walk(GetTree().CurrentScene).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && x.TooltipText == hint);
+        var button = Walk(GetTree().CurrentScene).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && (x.TooltipText == hint || x.AccessibilityName == hint));
         if (button == null) throw new InvalidOperationException($"Missing icon button: {hint}");
         if (button.ToggleMode) button.ButtonPressed = true;
         button.EmitSignal(BaseButton.SignalName.Pressed);
@@ -305,6 +322,7 @@ public partial class UiReviewSmoke : Node
     private async Task Capture(string name)
     {
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        foreach (var item in Walk(GetTree().CurrentScene).OfType<CanvasItem>()) item.QueueRedraw();
         RenderingServer.ForceDraw(); // Hidden macOS windows may stop emitting automatic draw signals.
         GetViewport().GetTexture().GetImage().SavePng($"{_output}/{name}.png");
         var viewport = new Rect2(0, 0, 1280, 720);
@@ -320,7 +338,7 @@ public partial class UiReviewSmoke : Node
     private static bool Clipped(Control control)
     {
         for (var p = control.GetParent(); p != null; p = p.GetParent())
-            if (p is ScrollContainer) return true;
+            if (p is ScrollContainer || p is Control { ClipContents: true }) return true;
         return false;
     }
     private void Check(bool condition, string label)

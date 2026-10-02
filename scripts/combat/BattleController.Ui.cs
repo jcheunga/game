@@ -36,7 +36,6 @@ public partial class BattleController
         _waveProgressBar = new BattleHudBar { CustomMinimumSize = new Vector2(250, 26) };
         _waveProgressBar.Setup(new Color("86b4a0"), new Color("ffffff22"), "Waves"); meters.AddChild(_waveProgressBar);
         _timerLabel = RealmUi.Label("", 14); topRow.AddChild(_timerLabel);
-        _speedButton = RealmUi.Button("clock", "1x", CycleBattleSpeed); topRow.AddChild(_speedButton);
         topRow.AddChild(RealmUi.IconButton("eye", "Battle intel [Tab]", ToggleCombatIntel));
         topRow.AddChild(RealmUi.IconButton("pause", "Pause [Escape]", TogglePause));
         topRow.AddChild(RealmUi.IconButton("back", "Retreat", RetreatToMap));
@@ -86,7 +85,8 @@ public partial class BattleController
 
 		var unitRow = new HBoxContainer();
 		unitRow.AddThemeConstantOverride("separation", 10);
-		spawnStack.AddChild(unitRow);
+		var cardScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 130) };
+        spawnStack.AddChild(cardScroll); cardScroll.AddChild(unitRow);
 
 		foreach (var definition in _deck.Roster)
 		{
@@ -94,7 +94,7 @@ public partial class BattleController
 			var button = new RealmButton
 			{
 				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				CustomMinimumSize = new Vector2(0f, 124f)
+				CustomMinimumSize = new Vector2(112f, 124f)
 			};
 			button.AddThemeColorOverride("font_color", Colors.White);
 			button.AddThemeColorOverride("font_hover_color", Colors.White);
@@ -116,7 +116,7 @@ public partial class BattleController
 				var button = new RealmButton
 				{
 					SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-					CustomMinimumSize = new Vector2(0f, 124f)
+					CustomMinimumSize = new Vector2(112f, 124f)
 				};
 				button.AddThemeColorOverride("font_color", Colors.White);
 				button.AddThemeColorOverride("font_hover_color", Colors.White);
@@ -140,7 +140,7 @@ public partial class BattleController
         _pauseOverlay.AddChild(pauseCard);
         var pauseStack = new VBoxContainer(); pauseCard.AddChild(pauseStack);
         pauseStack.AddChild(RealmUi.Heading("A moment of respite", 28));
-        pauseStack.AddChild(RealmUi.Label("Drag a unit or magic card onto the field.\nRelease to use it; return to the cards to cancel.\n1–5  Units     Q–T  Rites\nScroll / Middle-drag / Arrow keys  Pan\nSpace  Speed     Tab  Intel     Escape  Pause", 16, true));
+        pauseStack.AddChild(RealmUi.Label("Drag a unit or magic card onto the field.\nRelease to use it; return to the cards to cancel.\n1–6  Units     Q–T  Rites\nScroll / Middle-drag / Arrow keys  Pan\nTab  Intel     Escape  Pause", 16, true));
         pauseStack.AddChild(RealmUi.Button("arrow", "Resume battle", TogglePause, true));
         pauseStack.AddChild(RealmUi.Button("back", "Retreat", RetreatToMap));
 

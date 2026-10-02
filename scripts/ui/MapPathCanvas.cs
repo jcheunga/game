@@ -28,6 +28,8 @@ public partial class MapPathCanvas : Control
     public override void _Ready()
     {
         ClipContents = true;
+        TextureFilter = TextureFilterEnum.LinearWithMipmaps;
+        TextureRepeat = TextureRepeatEnum.Enabled;
         MouseDefaultCursorShape = CursorShape.Drag;
         Resized += UpdateView;
         GameState.Instance.AdventureDiscoveryFound += OnDiscovery;
@@ -37,6 +39,7 @@ public partial class MapPathCanvas : Control
         _travelSerial++; _travelTween?.Kill(); IsTravelling = false;
         ActiveMapId = RouteCatalog.Normalize(mapId); _selectedId = selectedId;
         _tiles = AdventureTileCatalog.ForMap(ActiveMapId);
+        BuildAtlasMaterials();
         BuildLandscapeScenery();
         _zoneArtwork = WorldEnvironmentArt.LoadZone(ActiveMapId);
         foreach (var token in _tokens) { RemoveChild(token); token.QueueFree(); } _tokens.Clear();
@@ -175,6 +178,9 @@ public partial class MapPathCanvas : Control
     {
         _travelSerial++; _travelTween?.Kill();
         GameState.Instance.AdventureDiscoveryFound -= OnDiscovery;
+        _atlasMist?.Dispose(); _atlasMist = null;
+        _atlasVignette?.Dispose(); _atlasVignette = null;
+        _zoneArtwork = null;
     }
     public override void _Process(double delta)
     {
@@ -187,7 +193,9 @@ public partial class MapPathCanvas : Control
         DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
         DrawLandscapeBackground();
         DrawAtlasTiles();
-        DrawCaravan(_heroPoint + new Vector2(50, 18), IsTravelling);
+        var caravanBob = IsTravelling && !GameState.Instance.ReducedMotion ? Mathf.Sin(_time * 9) * 1.3f : 0;
+        var caravanPoint = _heroPoint + new Vector2(50, 18 + caravanBob);
+        if (!DrawPaintedSprite(24, caravanPoint, 45)) DrawCaravan(caravanPoint, IsTravelling);
         foreach (var burst in _rewardBursts)
         {
             var tile = AdventureTileCatalog.Find(ActiveMapId, burst.Reward.Id);
@@ -197,5 +205,6 @@ public partial class MapPathCanvas : Control
             DrawString(ThemeDB.FallbackFont, p, burst.Reward.RewardText, fontSize: 20, modulate: new Color("fff1be") { A = Mathf.Clamp((2.4f - age) * 1.5f, 0, 1) });
         }
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        if (_atlasVignette != null) DrawTextureRect(_atlasVignette, new Rect2(Vector2.Zero, Size), false);
     }
 }

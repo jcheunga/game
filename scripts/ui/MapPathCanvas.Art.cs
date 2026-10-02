@@ -28,6 +28,11 @@ public partial class MapPathCanvas
     {
         if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !GameState.Instance.HasVisitedAdventureSite(tile.Site.RequiredVisit)) return;
         var p = tile.Point + new Vector2(0, 14); var roof = TileRoofColor();
+        if (tile.Site?.Kind == AdventureSiteKind.Leader
+            && DrawPaintedSprite(GameState.Instance.IsAdventureBoss(tile.Site.Stage) ? 16 : 15, p, GameState.Instance.IsAdventureBoss(tile.Site.Stage) ? 126 : 92)) return;
+        if (tile.Site?.Kind == AdventureSiteKind.Camp && DrawPaintedSprite(19, p, 70)) return;
+        if (tile.Site?.Kind == AdventureSiteKind.Watchtower && DrawPaintedSprite(17, p, 83)) return;
+        if (tile.Site?.Kind == AdventureSiteKind.Shrine && DrawPaintedSprite(18, p, 76)) return;
         if (tile.Site?.Kind == AdventureSiteKind.Leader)
         {
             var boss = GameState.Instance.IsAdventureBoss(tile.Site.Stage);
@@ -56,6 +61,8 @@ public partial class MapPathCanvas
         }
         else if (!complete && (tile.Site != null || tile.Discovery != null))
         {
+            var foodCache = tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food;
+            if (DrawPaintedSprite(foodCache ? 21 : 20, p, foodCache ? 41 : 31)) return;
             if (tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food) DrawSupplyWagon(p);
             else
             {

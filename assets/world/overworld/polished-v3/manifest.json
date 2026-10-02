@@ -1,0 +1,60 @@
+{
+  "mode": "built-in image_gen",
+  "created": "2026-10-02",
+  "assets": [
+    {
+      "path": "assets/world/overworld/polished-v3/terrain-materials.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "layout": "3x3 row-major",
+      "cells": [
+        "meadow",
+        "forest",
+        "earth",
+        "coast",
+        "marsh",
+        "ash",
+        "snow",
+        "cobbles",
+        "water"
+      ],
+      "prompt": "Use case: stylized-concept.\nAsset type: production terrain-material atlas for the medieval fantasy strategy game Crownroad.\nCreate one precisely aligned 3 by 3 atlas of nine equally sized square ground texture swatches. Square canvas, ideally 2048 by 2048. Every square is fully opaque and filled edge to edge. Each swatch must be individually seamlessly tileable, with no frame or gutter. Exact row-major order:\n1. Lush meadow grass, olive and sage-green blades with fine earth showing through.\n2. Mossy forest floor, deep green moss, tiny fern traces and scattered dry leaf litter.\n3. Warm compacted sandy earth, small limestone gravel and fine worn footpath grain.\n4. Coastal soil, pale sand and scattered muted pebbles.\n5. Marsh earth, damp olive peat, short grasses and subtle wet patches.\n6. Volcanic ash and basalt gravel, charcoal and warm brown, subdued ember traces.\n7. Snow-covered stony earth, ivory frost and faint blue-grey stone showing through.\n8. Weathered medieval cobblestones, irregular honey-grey stones with moss between them.\n9. Deep blue-green water, fine soft painted ripples and depth variation, no shore.\nStyle: premium hand-painted 2D game environment textures, crisp miniature brushwork, believable natural material detail, gentle broad tonal variation, high production finish. Orthographic overhead surface view. Restrained natural palette, coherent warm light from upper left, low contrast so buildings and map pins remain readable above it. Detail must remain useful at 128 to 512 pixels per terrain patch.\nConstraints: surface textures only; no buildings, trees, mountains, paths forming a map, isolated objects, characters, dramatic spot lighting, text, labels, numbers, UI, borders, grid lines, checkerboard or watermark. Exactly nine equal square cells, not a landscape illustration.",
+      "sha256": "0bc7a09b1cf16380932e659062c56b9239d8d54fafb1e3f25e0f7f3a22fa9643"
+    },
+    {
+      "path": "assets/world/overworld/polished-v3/medieval-scenery.png",
+      "size": [
+        1402,
+        1122
+      ],
+      "transparent_background": true,
+      "layout": "five columns, four rows; runtime uses fitted per-sprite source rectangles",
+      "cells": [
+        "oak",
+        "beech",
+        "pine",
+        "snow-pine",
+        "dead-tree",
+        "boulders",
+        "limestone-ridge",
+        "snow-ridge",
+        "ash-ridge",
+        "cottage",
+        "windmill",
+        "dock",
+        "forge",
+        "ruined-arch",
+        "reeds",
+        "gatehouse",
+        "keep",
+        "watchtower",
+        "shrine",
+        "camp"
+      ],
+      "prompt": "Use case: stylized-concept.\nAsset type: production scenery sprite atlas for the medieval fantasy strategy game Crownroad, genuine transparent background.\nCreate one precisely aligned atlas with FIVE columns and FOUR rows, twenty equal square cells. Wide 5:4 canvas, ideally 2500 by 2000. Every asset is separate, centered in its cell, with 12 percent transparent gutters on all sides. Full silhouettes and their soft contact shadows must stay inside their own cell. No ground tile or pedestal beneath the sprites. The base of each object is near the lower quarter of its cell. Consistent elevated orthographic isometric camera, about 35 degrees above the ground, warm lighting from upper left.\nExact left-to-right row-major order:\nRow 1: (1) mature rounded oak tree with richly textured green foliage; (2) slender leafy beech tree, sage-green leaves; (3) tall layered evergreen pine; (4) snow-dusted evergreen pine; (5) weathered bare dead tree.\nRow 2: (6) small moss-covered limestone boulder cluster; (7) rugged miniature limestone mountain ridge with several natural peaks and grassy lower slopes; (8) rugged snow-capped mountain ridge; (9) dark basalt and ash mountain ridge with subdued warm cracks; (10) medieval timber-and-stone cottage with clay roof and garden detail.\nRow 3: (11) charming old timber windmill with four linen sails; (12) short wooden harbor pier with mooring posts and a small furled sailboat; (13) medieval forge workshop with stone chimney and warm furnace; (14) ruined ivy-covered stone arch; (15) lush marsh reeds and grasses with stones.\nRow 4: (16) small fortified medieval gatehouse with walls and blue roof accents; (17) substantial medieval castle keep with turrets and muted blue banners; (18) old stone watchtower with wood lookout platform; (19) ancient stone shrine arch with a subtle warm brazier; (20) medieval camp with two linen tents and a small lantern, no people.\nStyle: premium hand-painted 2D strategy game environment assets, detailed sculpted volume, natural layered foliage, chipped stone, individual roof tiles, textured bark and timber, rich but restrained color, cohesive miniature scale, crisp purposeful silhouette, readable at 64 to 160 pixels. Polished illustrative realism with expressive brushwork. Avoid simple flat polygons, low-poly 3D, vector symbols, oversaturated cartoon gloss, hard black outlines.\nConstraints: exactly twenty assets in exactly five columns and four rows; no duplicate or missing cells; no text, labels, numbers, UI, grid lines, checkerboard, opaque background, large ground platforms, people, characters or watermark. Preserve true transparency outside each asset and its soft shadow.",
+      "sha256": "bc83c3449d4ec2c01d4258fb2663fd958e58901df86e2ae9f3d2d1b14ca79fbd"
+    }
+  ]
+}

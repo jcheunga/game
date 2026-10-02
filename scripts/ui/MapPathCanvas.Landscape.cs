@@ -51,7 +51,7 @@ public partial class MapPathCanvas
             var bounds = new Rect2(outline[0], Vector2.Zero);
             foreach (var point in outline) bounds = bounds.Expand(point);
             var tileSeed = AdventureTerrain.Hash(seed, tile.Column + tile.Row * 9);
-            for (var i = 0; i < 62; i++)
+            for (var i = 0; i < 48; i++)
             {
                 var hash = AdventureTerrain.Hash(tileSeed, i + 1100);
                 var p = bounds.Position + new Vector2(hash % 1009 / 1009f * bounds.Size.X, (hash >> 12) % 1009 / 1009f * bounds.Size.Y);
@@ -71,7 +71,8 @@ public partial class MapPathCanvas
                 { kind = 1; size = 10 + hash % 12; }
                 else if (i % 17 == 0 && roadDistance < 80)
                 { kind = 3; size = 1; }
-                else { kind = 4; size = 5 + hash % 7; }
+                else if (i % 4 == 0) { kind = 4; size = 5 + hash % 7; }
+                else continue;
                 _landscapeProps.Add(new(tile, p, kind, size, hash));
             }
             // Villages, outworks and farms give stage sites a medieval setting.
@@ -90,15 +91,37 @@ public partial class MapPathCanvas
             var owner = _tiles.FirstOrDefault(tile => AdventureAtlasLandscape.Contains(tile, point));
             if (owner != null) _landscapeBridges.Add((owner, point));
         }
+        if (ActiveMapId == "harbor")
+            foreach (var index in new[] { 18, 34, 50, 67 })
+            {
+                var point = river[index];
+                var direction = (river[index + 1] - river[index - 1]).Normalized();
+                var normal = new Vector2(-direction.Y, direction.X);
+                var bankPoint = point + normal * (AdventureAtlasLandscape.WaterWidth(ActiveMapId) * .5f + 9);
+                var owner = _tiles.FirstOrDefault(tile => AdventureAtlasLandscape.Contains(tile, bankPoint));
+                if (owner != null && _tiles.All(tile => tile.Point.DistanceTo(bankPoint) > 60))
+                    _landscapeProps.Add(new(owner, bankPoint, 6, 1, seed));
+            }
         _landscapeProps.Sort((a, b) => a.Point.Y.CompareTo(b.Point.Y));
     }
     private void DrawLandscapeBackground()
     {
         if (_zoneArtwork == null) return;
-        var world = new Rect2(Vector2.Zero, AdventureTileCatalog.WorldSize);
-        // The painted landscape provides quiet context around the playable coastline.
-        DrawTextureRect(_zoneArtwork, world, false, new Color(.72f, .76f, .71f, 1));
-        DrawRect(world, TileMistColor() with { A = .43f });
+        // Screen-sized framing preserves the painted detail instead of enlarging it across the entire world.
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        var travel = AdventureTileCatalog.WorldSize * Zoom - Size;
+        var parallax = new Vector2(
+            Mathf.Clamp(MapOffset.X / Math.Max(1, travel.X), -1, 0) + .5f,
+            Mathf.Clamp(MapOffset.Y / Math.Max(1, travel.Y), -1, 0) + .5f);
+        var backdrop = new Rect2(-Size * .05f + parallax * Size * .08f, Size * 1.1f);
+        var sourceSize = _zoneArtwork.GetSize();
+        var crop = sourceSize;
+        var aspect = backdrop.Size.X / backdrop.Size.Y;
+        if (sourceSize.X / sourceSize.Y > aspect) crop.X = sourceSize.Y * aspect;
+        else crop.Y = sourceSize.X / aspect;
+        DrawTextureRectRegion(_zoneArtwork, backdrop, new Rect2((sourceSize - crop) * .5f, crop), new Color(.83f, .87f, .84f, 1));
+        DrawRect(new Rect2(Vector2.Zero, Size), TileMistColor() with { A = .48f });
+        DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
     }
     private void DrawAtlasTiles()
     {
@@ -107,8 +130,10 @@ public partial class MapPathCanvas
         var ground = TileGroundColor(); var mist = TileMistColor();
         var coast = AdventureAtlasLandscape.Coast(ActiveMapId);
         var shoreline = coast.Append(coast[0]).ToArray();
-        DrawPolyline(shoreline.Select(p => p + new Vector2(0, 15)).ToArray(), new Color(0, 0, 0, .16f), 30, true);
-        DrawPolyline(shoreline, mist.Lightened(.1f), 18, true);
+        DrawPolyline(shoreline.Select(p => p + new Vector2(0, 17)).ToArray(), new Color(0, 0, 0, .12f), 34, true);
+        DrawPolyline(shoreline.Select(p => p + new Vector2(0, 9)).ToArray(), new Color(0, 0, 0, .14f), 21, true);
+        DrawPolyline(shoreline, ground.Darkened(.13f), 15, true);
+        DrawPolyline(shoreline, ground.Lightened(.15f) with { A = .65f }, 4, true);
         if (_zoneArtwork == null) DrawOcean(view, coast);
         foreach (var tile in _tiles)
         {
@@ -117,9 +142,20 @@ public partial class MapPathCanvas
             if (!state.IsAdventureTileOpen(tile)) continue;
             var hash = AdventureTerrain.Hash(AdventureTerrain.Seed(ActiveMapId), tile.Row * 9 + tile.Column);
             DrawColoredPolygon(outline, ground.Lightened((hash % 7 - 3f) * .01f));
-            if (_zoneArtwork != null)
-                DrawPolygon(outline, new[] { new Color(1, 1, 1, .29f) }, outline.Select(point => point / AdventureTileCatalog.WorldSize).ToArray(), _zoneArtwork);
+            var groundTint = ActiveMapId switch {
+                "gloamwood" => new Color(.71f, .85f, .79f, 1), "citadel" => new Color(.77f, .8f, .94f, 1),
+                "quarantine" => new Color(.89f, .94f, .83f, 1), _ => Colors.White };
+            groundTint.A = .8f;
+            DrawAtlasMaterial(outline, AdventureAtlasArt.GroundMaterial(ActiveMapId), ActiveMapId == "thornwall" ? 235 : 180, groundTint);
             DrawRegionGeography(tile);
+        }
+        // Keep boundary ink on the ground so foliage and architecture have natural depth above it.
+        foreach (var tile in _tiles)
+        {
+            if (!state.IsAdventureTileOpen(tile)) continue;
+            var outline = AdventureAtlasLandscape.Outline(tile);
+            if (!view.Intersects(PolygonBounds(outline))) continue;
+            DrawPolyline(outline.Append(outline[0]).ToArray(), ground.Darkened(.65f) with { A = .25f }, 1.1f / Zoom, true);
         }
         foreach (var bridge in _landscapeBridges)
             if (state.IsAdventureTileOpen(bridge.Tile) && view.HasPoint(bridge.Point)) DrawLandscapeBridge(bridge.Point);
@@ -137,14 +173,6 @@ public partial class MapPathCanvas
         }
         while (siteIndex < landmarks.Length)
         { var tile = landmarks[siteIndex++]; DrawTileLandmark(tile, state.IsAdventureTileComplete(tile)); }
-        // A fine ink line makes curved tile edges readable without overpowering the landscape.
-        foreach (var tile in _tiles)
-        {
-            if (!state.IsAdventureTileOpen(tile)) continue;
-            var outline = AdventureAtlasLandscape.Outline(tile);
-            if (!view.Intersects(PolygonBounds(outline))) continue;
-            DrawPolyline(outline.Append(outline[0]).ToArray(), ground.Darkened(.6f) with { A = .22f }, 1.1f / Zoom, true);
-        }
         // Draw fog last so the backdrop and neighboring trees cannot show through hidden regions.
         foreach (var tile in _tiles)
         {
@@ -152,11 +180,10 @@ public partial class MapPathCanvas
             var outline = AdventureAtlasLandscape.Outline(tile);
             if (!view.Intersects(PolygonBounds(outline))) continue;
             DrawColoredPolygon(outline, mist.Lightened(.055f) with { A = 1 });
-            var hash = AdventureTerrain.Hash(AdventureTerrain.Seed(ActiveMapId), tile.Row * 9 + tile.Column);
-            for (var cloud = 0; cloud < 3; cloud++)
+            if (_atlasMist != null)
             {
-                var drift = state.ReducedMotion ? 0 : Mathf.Sin(_time * .2f + hash % 17 + cloud) * 8;
-                DrawLine(tile.Point + new Vector2(-45 + drift, cloud * 13 - 15), tile.Point + new Vector2(53 + drift, cloud * 13 - 15), new Color(.65f, .75f, .79f, .025f), 9, true);
+                var drift = state.ReducedMotion ? Vector2.Zero : new Vector2(_time * .002f, _time * .0008f);
+                DrawPolygon(outline, new[] { Colors.White }, outline.Select(point => point / 900 + drift).ToArray(), _atlasMist);
             }
         }
         foreach (var frontier in _landscapeFrontier)
@@ -182,12 +209,23 @@ public partial class MapPathCanvas
     {
         var water = RiverColor(); var bank = RiverBankColor();
         foreach (var polygon in AdventureAtlasLandscape.Roads(tile))
-        { DrawColoredPolygon(polygon, TileGroundColor().Darkened(.12f)); DrawPolyline(polygon.Append(polygon[0]).ToArray(), TileGroundColor().Lightened(.14f), 1.5f, true); }
-        foreach (var polygon in AdventureAtlasLandscape.Banks(tile)) DrawColoredPolygon(polygon, bank);
+        {
+            DrawColoredPolygon(polygon, new Color("a48d64"));
+            DrawAtlasMaterial(polygon, 2, 180, new Color(1, .98f, .89f, .93f));
+            DrawPolyline(polygon.Append(polygon[0]).ToArray(), new Color("79644344"), 3, true);
+        }
+        foreach (var polygon in AdventureAtlasLandscape.Banks(tile))
+        {
+            DrawColoredPolygon(polygon, bank);
+            DrawAtlasMaterial(polygon, ActiveMapId == "thornwall" ? 6 : 3, 130, new Color(1, 1, 1, .73f));
+        }
         foreach (var polygon in AdventureAtlasLandscape.Water(tile))
         {
             DrawColoredPolygon(polygon, water.Darkened(.12f));
-            DrawPolyline(polygon.Append(polygon[0]).ToArray(), water.Lightened(.23f), 1.4f, true);
+            var drift = GameState.Instance.ReducedMotion ? Vector2.Zero : new Vector2(_time * .004f, -_time * .001f);
+            var tint = ActiveMapId == "foundry" ? new Color(1, .64f, .32f, .65f) : new Color(.85f, 1, 1, .9f);
+            DrawAtlasMaterial(polygon, 8, 330, tint, drift);
+            DrawPolyline(polygon.Append(polygon[0]).ToArray(), water.Lightened(.4f) with { A = .45f }, 2, true);
         }
         var river = AdventureAtlasLandscape.River(ActiveMapId);
         for (var i = 3; i < river.Length - 3; i += 5)
@@ -215,6 +253,7 @@ public partial class MapPathCanvas
     }
     private void DrawLandscapeProp(LandscapeProp prop)
     {
+        if (DrawPaintedProp(prop)) return;
         var p = prop.Point; var hash = prop.Seed; var forest = ForestColor();
         switch (prop.Kind)
         {
@@ -306,6 +345,7 @@ public partial class MapPathCanvas
     }
     private void DrawLandscapeBridge(Vector2 p)
     {
+        if (DrawPaintedSprite(ActiveMapId == "mire" ? 23 : 22, p + new Vector2(0, 4), AdventureAtlasLandscape.WaterWidth(ActiveMapId) * .65f + 40, anchor: .53f)) return;
         var stone = new Color("a8a388");
         var direction = new Vector2(.86f, .5f); var side = new Vector2(-.5f, .86f) * 9;
         var length = AdventureAtlasLandscape.WaterWidth(ActiveMapId) * .6f + 17;

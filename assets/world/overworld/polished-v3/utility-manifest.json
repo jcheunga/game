@@ -1,0 +1,20 @@
+{
+  "mode": "built-in image_gen",
+  "created": "2026-10-02",
+  "path": "assets/world/overworld/polished-v3/utility-scenery.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "transparent_background": true,
+  "cells": [
+    "treasure",
+    "supplies",
+    "stone-bridge",
+    "wood-bridge",
+    "caravan",
+    "farm"
+  ],
+  "prompt": "Use case: stylized-concept.\nAsset type: premium medieval fantasy strategy game utility scenery sprite atlas, true transparent background.\nCreate one precisely aligned THREE-column by TWO-row atlas, six separate equal square cells. Wide 3:2 canvas, ideally 1800 by 1200. Transparent 15 percent gutters. Each entire silhouette and its soft ground contact shadow must remain within its own cell.\nConsistent elevated orthographic isometric camera at 35 degrees, warm light from upper left, high quality hand-painted illustrative realism, textured timber, chipped natural stone, individual roof and paving detail, sculpted volume, restrained natural colors. Match detailed painted miniature oak trees, limestone ridges, blue-roofed medieval gatehouses and stone cottages. Readable at 50 to 110 pixels.\nExact row-major order:\n1. A small open wooden treasure chest with brass bands and a modest scatter of gold coins.\n2. A medieval supply wagon with linen canvas cover, barrels and food baskets, no horses.\n3. An old limestone bridge with one graceful arch, parapets and textured paving, bridge runs diagonally from upper left to lower right. Isolated bridge only, no water or terrain beneath.\n4. A small wooden footbridge with simple rails running diagonally from upper left to lower right, isolated, no water.\n5. A medieval caravan wagon with blue cloth roof and a warm small hanging lantern, two wheels visible, no characters or horses.\n6. A small rectangular medieval farm plot with short golden wheat rows, a timber fence on one side and a few sacks, no building.\nNo text, labels, numbering, grid lines, UI, checkerboard, opaque background, cartoon symbols, low-poly geometry, characters or watermark. Exactly six separated sprites in three columns and two rows.",
+  "sha256": "ea3a36907b775c0acccee83f92f3826c8820fb7a815677e7f910e37b576f8610"
+}

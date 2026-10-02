@@ -1,5 +1,12 @@
 # Crownroad stage and zone artwork
 
+The current completion-driven home map uses the painted material and scenery
+atlases in [overworld/polished-v3](overworld/polished-v3/README.md), plus the
+existing zone paintings as sharp, framed backdrops. See
+[Adventure map](../../docs/ADVENTURE_MAP.md) for the current rendering and
+progression rules. The 32 × 24 walking layout described below is retained as
+the historical version 44 implementation used by save migration.
+
 The campaign has 60 individual battle backgrounds in `battles/stage-01.png`
 through `battles/stage-60.png`, and 10 main-map backgrounds in `zones/`:
 city, harbor, foundry, quarantine, thornwall, basilica, mire, steppe,

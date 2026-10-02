@@ -1,12 +1,16 @@
 # Adventure map
 
-The campaign is an isometric medieval atlas with one stage, resource or landmark per terrain region. The ten zones keep their own terrain, roofs, foliage and atmosphere. Existing painted zone art textures native forests, mountains, villages, forts, shrines, supply wagons and a lantern caravan.
+The campaign is an isometric medieval atlas with one stage, resource or landmark per terrain region. The ten zones keep their own ground materials, foliage and atmosphere. Painted scenery sprites provide forests, mountains, villages, forts, shrines, supply wagons and the lantern caravan.
 
 ## Landscape
 
 Regions have varied sizes and curved shared boundaries around unevenly spaced sites. An irregular coastline, winding riverbanks and mountain ridges break up the map footprint. Explored regions have subtle thin borders that stay the same screen width when zooming; selecting a site adds a stronger outline around its dry land. Unexplored borders remain beneath opaque fog, whose edge follows the explored territory. Clicks use the same terrain polygons as the drawing, while water rejects land selection.
 
-Each zone's painting also fills the backdrop around the playable coast, with subdued colours so the active sites remain readable. Undiscovered regions receive a fully opaque fog layer after landscape scenery is drawn; neither the background nor neighboring tree crowns can show through those areas.
+Each zone's painting fills the backdrop with aspect-preserving, screen-sized framing and gentle camera parallax. Subdued colours and a soft vignette keep active sites readable. Undiscovered regions receive a fully opaque, textured cloud layer after landscape scenery is drawn; neither the background nor neighboring tree crowns can show through those areas. Reduced motion freezes the cloud and water drift.
+
+World-aligned painted materials cover meadow, forest floor, earth, coast, marsh, ash, snow and cobbles. Roads use worn earth, banks use finer shoreline textures, and rivers have layered water detail. Mipmaps keep textures and scenery smooth at wider zoom levels. Scenery and buildings sort by ground height, with clearings around sites; harbor docks sit at riverbanks. Terrain borders remain beneath foliage, while selected sites keep their stronger outline.
+
+Source artwork, exact generation prompts and hashes live in `assets/world/overworld/polished-v3/`. `AdventureAtlasArt` fits each scenery sprite to its source silhouette and caches the material textures; `MapPathCanvas.Materials` applies theme tints, animated surfaces and atmosphere.
 
 Forest clusters, boulders and grasses fill the landscape around clearings for landmarks. The main stages follow a winding road, with stone bridges across the river. King's Road has farmsteads and windmills; Saltwake has docks and sails; Emberforge has furnaces, chimneys and ash ridges; Thornwall has snowy pines and peaks. The remaining zones add graves, ruined arches, reeds, fields and citadel outworks in their own palettes.
 

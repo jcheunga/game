@@ -26,6 +26,7 @@ public partial class GameState
         // Stage numbers span districts, so HighestUnlockedStage is not a zone gate.
         return maps.Skip(index).Any(map => GameData.GetStagesForMap(map).Any(stage => GetStageStars(stage.StageNumber) > 0)
             || AdventureMapCatalog.ForMap(map).Any(site => site.Kind != AdventureSiteKind.Camp && HasVisitedAdventureSite(site.Id))
+            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Site?.Kind != AdventureSiteKind.Camp && _reachedAdventureTiles.Contains(tile.Id))
             || _adventureTravelledCells.TryGetValue(map, out var cells)
                 && cells.Any(cell => cell != AdventureTerrain.Cell(AdventureMapCatalog.ForMap(map).First().Point)));
     }
@@ -40,7 +41,7 @@ public partial class GameState
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit));
     public bool IsAdventureSiteDiscovered(string id) => AdventureMapCatalog.Find(id) is { } node &&
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit)) &&
-        IsAdventureCellRevealed(node.MapId, AdventureTerrain.Cell(node.Point));
+        IsAdventureTileOpen(AdventureTileCatalog.Find(node.MapId, node.Id));
     public bool IsAdventureCellRevealed(string mapId, int cell)
     {
         if (cell < 0 || cell >= AdventureTerrain.CellCount) return false;
@@ -143,14 +144,17 @@ public partial class GameState
                 : "This site has not been discovered.";
             return false;
         }
-        MoveAdventureHero(node.MapId, node.Point, false);
+        var tile = AdventureTileCatalog.Find(node.MapId, node.Id);
+        if (!HasReachedAdventureTile(id) || GetAdventureCaravanTile(node.MapId).Id != id)
+        { message = "Travel to this tile first."; return false; }
+        _adventureHeroPositions[node.MapId] = node.Point;
         _adventureHeroNodes[node.MapId] = id;
         if (node.Kind == AdventureSiteKind.Leader) SelectedStage = node.Stage;
         var firstVisit = _visitedAdventureSites.Add(id);
         if (firstVisit)
         {
             Gold += node.GoldReward; Food += node.FoodReward;
-            if (node.Kind == AdventureSiteKind.Watchtower) RevealAdventurePoint(node.MapId,node.Point,6);
+            if (node.Kind != AdventureSiteKind.Leader) OpenSurroundingAdventureTiles(tile, node.Kind == AdventureSiteKind.Watchtower ? 2 : 1);
         }
         message = node.Kind switch
         {
@@ -169,7 +173,8 @@ public partial class GameState
     private void ResetAdventureProgress()
     {
         _visitedAdventureSites.Clear(); _adventureHeroNodes.Clear(); _adventureHeroPositions.Clear(); _adventureExploredCells.Clear();
-        _adventureTravelledCells.Clear(); _claimedAdventureDiscoveries.Clear(); AdventureKnowledgeRevision++;
+        _adventureTravelledCells.Clear(); _claimedAdventureDiscoveries.Clear();
+        _openAdventureTiles.Clear(); _reachedAdventureTiles.Clear(); _adventureCaravanTiles.Clear(); AdventureKnowledgeRevision++;
     }
     private void LoadAdventureProgress(GameSaveData saved)
     {
@@ -206,5 +211,6 @@ public partial class GameState
             }
             RevealAdventurePoint(map,GetAdventureHeroPosition(map));
         }
+        LoadAdventureTiles(saved);
     }
 }

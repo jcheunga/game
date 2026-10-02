@@ -28,7 +28,53 @@ public partial class UiReviewSmoke : Node
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
             if (OS.GetCmdlineUserArgs().Contains("--home-map"))
-            { await ReviewHomeMap(); return; }
+            { await ReviewTileMap(includeHome: true); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--developer"))
+            {
+                _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");
+                System.IO.Directory.CreateDirectory(_output);
+                GameState.Instance.ResetProgress();
+                GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
+                await Open("MainMenu");
+                await ReviewDeveloperMode((MapMenu)GetTree().CurrentScene);
+                System.IO.File.WriteAllText(_output + "/developer-text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                GD.Print($"DEVELOPER_REVIEW_RESULT: {_failures} failures");
+                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--map-notices"))
+            {
+                GameState.Instance.ResetProgress();
+                GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
+                await Open("MainMenu");
+                var menu = (MapMenu)GetTree().CurrentScene;
+                await ReviewMapNotices(menu, Walk(menu).OfType<MapPathCanvas>().Single());
+                GD.Print($"MAP_NOTICE_REVIEW_RESULT: {_failures} failures");
+                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--storehouse"))
+            {
+                _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");
+                System.IO.Directory.CreateDirectory(_output);
+                GameState.Instance.ResetProgress(); await Open("MainMenu");
+                await ReviewStorehouse((MapMenu)GetTree().CurrentScene);
+                System.IO.File.WriteAllText(_output + "/storehouse-text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                GD.Print($"STOREHOUSE_REVIEW_RESULT: {_failures} failures");
+                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--map-rewards"))
+            {
+                _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");
+                System.IO.Directory.CreateDirectory(_output);
+                GameState.Instance.ResetProgress();
+                GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
+                await Open("MainMenu");
+                var menu = (MapMenu)GetTree().CurrentScene;
+                await ReviewMapRewards(menu, Walk(menu).OfType<MapPathCanvas>().Single());
+                GD.Print($"MAP_REWARD_REVIEW_RESULT: {_failures} failures");
+                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--poi-map") || OS.GetCmdlineUserArgs().Contains("--atlas-geometry"))
+            { await ReviewTileMap(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--materials"))
             { await ReviewMaterials(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--deployment-cards"))
@@ -39,7 +85,7 @@ public partial class UiReviewSmoke : Node
             { await ReviewProgression(); return; }
             Check(!LanChallengeService.Instance.HasRoom, "Offline multiplayer peer is not a LAN room");
             if (OS.GetCmdlineUserArgs().Contains("--adventure"))
-            { await ReviewAdventure(); return; }
+            { await ReviewTileMap(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--stage-stars"))
             { await ReviewStageStars(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--typography-advanced"))

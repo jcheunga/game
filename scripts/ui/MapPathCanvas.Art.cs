@@ -1,149 +1,145 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
 public partial class MapPathCanvas
 {
-    private readonly List<(Vector2[] Shore, int[] Cells)> _waterContours = new();
-    private Texture2D _sceneryAtlas;
-    private AtlasTexture _rockScenery, _bridgeScenery, _reedScenery;
-
-    private void BuildWaterContours()
+    private Color TileMistColor() => new(ActiveMapId switch {
+        "foundry" => "282a2e", "quarantine" => "202f30", "thornwall" => "28333d", "basilica" => "282f39",
+        "mire" => "1e3030", "steppe" => "323138", "gloamwood" => "1d2b35", "citadel" => "252b36", _ => "21343e" });
+    private Color TileGroundColor() => new(ActiveMapId switch {
+        "harbor" => "8c9e91", "foundry" => "9b7250", "quarantine" => "7f8d72", "thornwall" => "a4aaa0",
+        "basilica" => "b4ab8e", "mire" => "647e62", "steppe" => "b29e66", "gloamwood" => "657d70", "citadel" => "8b8d96", _ => "8f9f69" });
+    private Color TileRoofColor() => new(ActiveMapId switch {
+        "harbor" => "4b7376", "foundry" => "763f2a", "quarantine" => "526357", "thornwall" => "546475",
+        "basilica" => "a39a77", "mire" => "514f42", "steppe" => "97613d", "gloamwood" => "475578", "citadel" => "665d75", _ => "8c5741" });
+    private void DrawTree(Vector2 p, Color color, float height, uint hash)
     {
-        _waterContours.Clear();
-        var artPath = "res://assets/world/overworld/painted-scenery-v2.png";
-        if (ResourceLoader.Exists(artPath))
+        DrawColoredPolygon(new[] { p + new Vector2(-12, 3), p + new Vector2(12, 3), p + new Vector2(24, 9), p + new Vector2(0, 12) }, new Color(0, 0, 0, .15f));
+        DrawLine(p, p - new Vector2(0, height * .7f), color.Darkened(.45f), 3, true);
+        for (var tier = 0; tier < 3; tier++)
         {
-            _sceneryAtlas = ResourceLoader.Load<Texture2D>(artPath);
-            var size = _sceneryAtlas.GetSize() / 2;
-            AtlasTexture Piece(int column, int row) => new() { Atlas = _sceneryAtlas, Region = new Rect2(new Vector2(column, row) * size, size) };
-            _rockScenery = Piece(1, 0); _bridgeScenery = Piece(0, 1); _reedScenery = Piece(1, 1);
-        }
-        var edges = new HashSet<(Vector2 From, Vector2 To)>();
-        foreach (var cell in Enumerable.Range(0, AdventureTerrain.CellCount))
-        {
-            if (AdventureTerrain.Ground(ActiveMapId, cell) is not (AdventureGroundKind.Water or AdventureGroundKind.Bridge)) continue;
-            var diamond = AdventureTerrain.Diamond(cell);
-            for (var i = 0; i < 4; i++)
-            {
-                var edge = (diamond[i], diamond[(i + 1) % 4]);
-                if (!edges.Remove((edge.Item2, edge.Item1))) edges.Add(edge);
-            }
-        }
-        var outgoing = edges.GroupBy(edge => edge.From).ToDictionary(group => group.Key, group => group.Select(edge => edge.To).ToArray());
-        while (edges.Count > 0)
-        {
-            var first = edges.First();
-            var from = first.From; var to = first.To;
-            var loop = new List<Vector2> { from };
-            var remaining = edges.Count + 1;
-            while (remaining-- > 0 && edges.Remove((from, to)))
-            {
-                loop.Add(to);
-                if (to == first.From) break;
-                var candidates = outgoing[to].Where(next => edges.Contains((to, next))).ToArray();
-                if (candidates.Length == 0) break;
-                var incoming = to - from;
-                var next = candidates.MinBy(candidate => Mathf.PosMod((candidate - to).Angle() - incoming.Angle(), Mathf.Tau));
-                from = to; to = next;
-            }
-            if (loop.Count < 4 || loop[^1] != loop[0]) continue;
-            loop.RemoveAt(loop.Count - 1);
-            // Preserve collision-aligned shorelines, rounding only their corners.
-            var corners = loop.Where((point, i) => Math.Abs((point - loop[(i + loop.Count - 1) % loop.Count]).Cross(loop[(i + 1) % loop.Count] - point)) > .1f).ToArray();
-            var smooth = new List<Vector2>();
-            for (var i = 0; i < corners.Length; i++)
-            {
-                var point = corners[i];
-                var previous = corners[(i + corners.Length - 1) % corners.Length];
-                var next = corners[(i + 1) % corners.Length];
-                var rounding = Mathf.Min(point.DistanceTo(previous), point.DistanceTo(next)) * .42f;
-                var before = point.MoveToward(previous, rounding);
-                var after = point.MoveToward(next, rounding);
-                for (var step = 0; step <= 4; step++)
-                {
-                    var t = step / 4f;
-                    smooth.Add(before * (1 - t) * (1 - t) + point * 2 * (1 - t) * t + after * t * t);
-                }
-            }
-            if (smooth.Count >= 3)
-            {
-                var shore = smooth.ToArray();
-                var cells = Enumerable.Range(0, AdventureTerrain.CellCount)
-                    .Where(cell => AdventureTerrain.Ground(ActiveMapId, cell) is AdventureGroundKind.Water or AdventureGroundKind.Bridge)
-                    .Where(cell => Geometry2D.IsPointInPolygon(AdventureTerrain.Point(cell), shore)).ToArray();
-                _waterContours.Add((shore, cells));
-            }
+            var y = -height + tier * height * .22f; var w = height * (.28f + tier * .1f);
+            DrawColoredPolygon(new[] { p + new Vector2(0, y), p + new Vector2(w, y + height * .43f), p + new Vector2(-w, y + height * .43f) }, color.Lightened(tier * .055f));
+            DrawLine(p + new Vector2(0, y), p + new Vector2(-w, y + height * .43f), color.Lightened(.19f), 1, true);
         }
     }
-
-    private void DrawTerrainScenery()
+    private void DrawTileLandmark(AdventureTile tile, bool complete)
     {
-        var view = new Rect2((-MapOffset - new Vector2(100, 100)) / Zoom, (Size + new Vector2(200, 200)) / Zoom);
-        var state = GameState.Instance;
-        foreach (var patch in _waterContours)
+        if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !GameState.Instance.HasVisitedAdventureSite(tile.Site.RequiredVisit)) return;
+        var p = tile.Point + new Vector2(0, 14); var roof = TileRoofColor();
+        if (tile.Site?.Kind == AdventureSiteKind.Leader)
         {
-            if (!patch.Cells.Any(cell => state.IsAdventureCellRevealed(ActiveMapId, cell))) continue;
-            var shore = patch.Shore;
-            var closed = shore.Append(shore[0]).ToArray();
-            DrawPolyline(closed, new Color("49613c66"), 25, true);
-            DrawColoredPolygon(shore, new Color("358f9e"));
-            if (_sceneryAtlas != null)
-            {
-                var bounds = new Rect2(shore[0], Vector2.Zero);
-                foreach (var point in shore) bounds = bounds.Expand(point);
-                var uv = shore.Select(point => new Vector2(.065f, .065f) + (point - bounds.Position) / bounds.Size * .36f).ToArray();
-                DrawPolygon(shore, new[] { Colors.White }, uv, _sceneryAtlas);
-            }
-            DrawPolyline(closed, new Color("c6b67caa"), 10, true);
-            DrawPolyline(closed, new Color("f1e0b266"), 3, true);
-            if (_reedScenery != null)
-                for (var point = 0; point < shore.Length; point += 35)
-                    DrawTextureRect(_reedScenery, new Rect2(shore[point] - new Vector2(40, 50), new Vector2(80, 80)), false);
+            var boss = GameState.Instance.IsAdventureBoss(tile.Site.Stage);
+            DrawFort(p, roof, boss, complete);
         }
-        foreach (var cell in AdventureTerrain.DrawOrder)
+        else if (tile.Site?.Kind == AdventureSiteKind.Camp)
         {
-            var point = AdventureTerrain.Point(cell);
-            if (!view.HasPoint(point) || !state.IsAdventureCellRevealed(ActiveMapId, cell)) continue;
-            switch (AdventureTerrain.Ground(ActiveMapId, cell))
+            DrawTent(p + new Vector2(-24, 4), new Color("d0bd8e"));
+            DrawTent(p + new Vector2(29, -6), new Color("bca97e"));
+            DrawCircle(p + new Vector2(0, 17), 7, new Color("7c4a2c"));
+            DrawColoredPolygon(new[] { p + new Vector2(-4, 18), p + new Vector2(0, 5), p + new Vector2(6, 18) }, new Color("e4ae59"));
+            DrawBanner(p + new Vector2(29, -25), new Color("476a85"));
+        }
+        else if (tile.Site?.Kind == AdventureSiteKind.Watchtower)
+        {
+            DrawTower(p, 60, roof);
+            DrawBanner(p - new Vector2(0, 69), new Color("bd9b58"));
+        }
+        else if (tile.Site?.Kind == AdventureSiteKind.Shrine)
+        {
+            DrawIsoBlock(p, 29, 16, 7, new Color("797e6c"));
+            DrawIsoBlock(p + new Vector2(-18, -4), 6, 5, 38, new Color("a4a28b"));
+            DrawIsoBlock(p + new Vector2(18, -4), 6, 5, 38, new Color("a4a28b"));
+            DrawIsoBlock(p - new Vector2(0, 39), 24, 6, 8, new Color("beb99b"));
+            DrawCircle(p - new Vector2(0, 15), 6, new Color(complete ? "aacd8e" : "9aaea0"));
+        }
+        else if (!complete && (tile.Site != null || tile.Discovery != null))
+        {
+            if (tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food) DrawSupplyWagon(p);
+            else
             {
-                case AdventureGroundKind.Water:
-                    var drift = GameState.Instance.ReducedMotion ? 0 : Mathf.Sin(_time + cell) * 3;
-                    DrawArc(point + new Vector2(4, 7 + drift), 21, .1f, 2.8f, 12, new Color("bae3da66"), 1.5f, true);
-                    DrawLine(point + new Vector2(-16, -7 - drift), point + new Vector2(13, -7 - drift), new Color("d0f0e955"), 1.3f, true);
-                    break;
-                case AdventureGroundKind.Bridge:
-                    if (_bridgeScenery != null)
-                    {
-                        var alongRow = AdventureTerrain.Neighbors(cell).Any(next => Math.Abs(next - cell) == AdventureTerrain.Columns && AdventureTerrain.Ground(ActiveMapId, next) == AdventureGroundKind.Bridge);
-                        var bridge = new Rect2(point - new Vector2(85, 60), new Vector2(170, 120));
-                        if (alongRow) { bridge.Position += new Vector2(bridge.Size.X, 0); bridge.Size = new Vector2(-bridge.Size.X, bridge.Size.Y); }
-                        DrawTextureRect(_bridgeScenery, bridge, false);
-                        break;
-                    }
-                    DrawLine(point + new Vector2(-35, -8), point + new Vector2(35, 8), new Color("493d2d"), 17, true);
-                    for (var plank = -4; plank <= 4; plank++)
-                        DrawLine(point + new Vector2(plank * 8, -8 + plank * 2), point + new Vector2(plank * 8, 8 + plank * 2), new Color(plank % 2 == 0 ? "c9af78" : "aa8b58"), 6, true);
-                    DrawLine(point + new Vector2(-38, -15), point + new Vector2(38, 5), new Color("edd4a1"), 3, true);
-                    DrawLine(point + new Vector2(-38, 5), point + new Vector2(38, 25), new Color("745234"), 3, true);
-                    break;
-                case AdventureGroundKind.Rock:
-                    if (_rockScenery != null)
-                    {
-                        DrawTextureRect(_rockScenery, new Rect2(point - new Vector2(75, 66), new Vector2(150, 120)), false);
-                        break;
-                    }
-                    DrawCircle(point + new Vector2(0, 10), 36, new Color("263b2d55"));
-                    for (var rock = 0; rock < 3; rock++)
-                    {
-                        var center = point + new Vector2((rock - 1) * 23, rock % 2 * 10 - 7);
-                        var shape = new[] { center + new Vector2(-22, 7), center + new Vector2(-15, -14), center + new Vector2(6, -25), center + new Vector2(24, -7), center + new Vector2(21, 10), center + new Vector2(-3, 18) };
-                        DrawPolygon(shape, new[] { new Color("536663"), new Color("a1b1a0"), new Color("c7ceb3"), new Color("8b9c90"), new Color("586f6b"), new Color("687e71") });
-                        DrawLine(center + new Vector2(-15, -14), center + new Vector2(6, -25), new Color("e2ddba"), 2, true);
-                    }
-                    break;
+                DrawIsoBlock(p + new Vector2(-11, 2), 20, 12, 16, new Color("816044"));
+                DrawIsoBlock(p + new Vector2(22, -5), 11, 7, 12, new Color("9c7951"));
+                DrawLine(p + new Vector2(-21, -15), p + new Vector2(-2, -6), new Color("c0ad75"), 3, true);
+                if (tile.Discovery?.Kind is AdventureDiscoveryKind.Tomes or AdventureDiscoveryKind.Essence or AdventureDiscoveryKind.Survey)
+                    DrawCircle(p + new Vector2(-7, -23), 4, new Color(tile.Discovery.Kind == AdventureDiscoveryKind.Essence ? "98b6be" : "c6b388"));
             }
         }
+        else if (complete && (tile.Site == null || tile.Site.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food))
+        {
+            DrawLine(p + new Vector2(-18, 1), p + new Vector2(15, 15), TileGroundColor().Darkened(.25f), 2, true);
+            DrawLine(p + new Vector2(-6, -3), p + new Vector2(19, 6), TileGroundColor().Darkened(.18f), 2, true);
+        }
+    }
+    private void DrawIsoBlock(Vector2 p, float w, float d, float h, Color color)
+    {
+        var a = p + new Vector2(-w, 0); var b = p + new Vector2(0, d); var c = p + new Vector2(w, 0); var e = p - new Vector2(0, d);
+        var lift = new Vector2(0, h);
+        DrawColoredPolygon(new[] { a, b, b - lift, a - lift }, color.Darkened(.22f));
+        DrawColoredPolygon(new[] { b, c, c - lift, b - lift }, color.Darkened(.38f));
+        DrawColoredPolygon(new[] { a - lift, b - lift, c - lift, e - lift }, color.Lightened(.13f));
+        DrawPolyline(new[] { a - lift, e - lift, c - lift }, color.Lightened(.28f), 1, true);
+    }
+    private void DrawTower(Vector2 p, float height, Color roof)
+    {
+        var stone = new Color(ActiveMapId is "foundry" or "citadel" ? "817b73" : "b7b299");
+        DrawIsoBlock(p, 16, 10, height, stone);
+        var top = p - new Vector2(0, height);
+        DrawColoredPolygon(new[] { top + new Vector2(-22, 1), top + new Vector2(0, -23), top + new Vector2(22, 1), top + new Vector2(0, 11) }, roof);
+        DrawLine(top + new Vector2(-22, 1), top - new Vector2(0, 23), roof.Lightened(.28f), 1.5f, true);
+        DrawLine(p + new Vector2(4, -height * .65f), p + new Vector2(4, -height * .48f), new Color("313a35"), 5, true);
+        for (var i = 1; i <= 3; i++) DrawLine(p + new Vector2(-14, -i * height / 5), p + new Vector2(-1, 8 - i * height / 5), stone.Darkened(.32f), 1, true);
+    }
+    private void DrawFort(Vector2 p, Color roof, bool boss, bool complete)
+    {
+        var stone = new Color(ActiveMapId is "foundry" or "citadel" ? "7d7871" : "aaa78d");
+        DrawColoredPolygon(new[] { p + new Vector2(-69, 9), p + new Vector2(0, -27), p + new Vector2(75, 12), p + new Vector2(4, 48) }, new Color(0, 0, 0, .17f));
+        DrawIsoBlock(p, 54, 29, 22, stone);
+        DrawIsoBlock(p - new Vector2(0, 10), 30, 18, boss ? 62 : 45, stone);
+        var top = p - new Vector2(0, boss ? 72 : 55);
+        DrawColoredPolygon(new[] { top + new Vector2(-35, 0), top + new Vector2(0, -24), top + new Vector2(35, 0), top + new Vector2(0, 20) }, roof);
+        DrawLine(top - new Vector2(35, 0), top - new Vector2(0, 24), roof.Lightened(.32f), 2, true);
+        DrawTower(p + new Vector2(-46, 1), boss ? 57 : 40, roof);
+        DrawTower(p + new Vector2(46, 1), boss ? 57 : 40, roof);
+        DrawLine(p + new Vector2(6, 20), p + new Vector2(6, 0), new Color("343b35"), 10, true);
+        DrawLine(p + new Vector2(3, -32), p + new Vector2(3, -19), new Color("39433c"), 4, true);
+        DrawBanner(p + new Vector2(-33, -20), complete ? new Color("577a8b") : new Color("874e40"));
+        if (ActiveMapId == "foundry")
+        {
+            DrawIsoBlock(p + new Vector2(25, -19), 6, 4, 59, new Color("504f48"));
+            DrawCircle(p + new Vector2(25, -80), 8, new Color("a1846355"));
+            DrawCircle(p + new Vector2(32, -93), 10, new Color("a1846333"));
+        }
+    }
+    private void DrawBanner(Vector2 p, Color color)
+    {
+        DrawLine(p + new Vector2(0, 16), p - new Vector2(0, 25), new Color("65543b"), 2, true);
+        DrawColoredPolygon(new[] { p - new Vector2(0, 25), p + new Vector2(23, -18), p + new Vector2(20, -4), p + new Vector2(0, -10) }, color);
+        DrawLine(p + new Vector2(3, -22), p + new Vector2(20, -17), color.Lightened(.25f), 1, true);
+    }
+    private void DrawTent(Vector2 p, Color color)
+    {
+        DrawColoredPolygon(new[] { p + new Vector2(-27, 8), p + new Vector2(0, -34), p + new Vector2(30, 8), p + new Vector2(0, 22) }, color);
+        DrawColoredPolygon(new[] { p + new Vector2(0, -34), p + new Vector2(30, 8), p + new Vector2(0, 22) }, color.Darkened(.25f));
+        DrawColoredPolygon(new[] { p + new Vector2(-10, 16), p + new Vector2(0, -6), p + new Vector2(9, 15) }, color.Darkened(.55f));
+    }
+    private void DrawSupplyWagon(Vector2 p)
+    {
+        DrawIsoBlock(p, 27, 13, 12, new Color("816445"));
+        DrawColoredPolygon(new[] { p + new Vector2(-28, -10), p + new Vector2(-9, -30), p + new Vector2(25, -13), p + new Vector2(27, 0), p + new Vector2(1, 7) }, new Color("c0b18c"));
+        foreach (var x in new[] { -19, 20 }) { DrawCircle(p + new Vector2(x, 12), 8, new Color("463f32")); DrawCircle(p + new Vector2(x, 12), 5, new Color("93805a")); DrawLine(p + new Vector2(x - 4, 12), p + new Vector2(x + 4, 12), new Color("554637"), 1, true); }
+    }
+    private void DrawCaravan(Vector2 p, bool moving)
+    {
+        var bob = moving && !GameState.Instance.ReducedMotion ? Mathf.Sin(_time * 14) * 2 : 0;
+        p.Y += bob;
+        DrawColoredPolygon(new[] { p + new Vector2(-22, 10), p + new Vector2(6, -3), p + new Vector2(32, 12), p + new Vector2(5, 26) }, new Color(0, 0, 0, .3f));
+        DrawIsoBlock(p, 20, 12, 14, new Color("6b563e"));
+        DrawColoredPolygon(new[] { p + new Vector2(-21, -13), p + new Vector2(-4, -29), p + new Vector2(22, -14), p + new Vector2(22, 1), p + new Vector2(0, 10) }, new Color("c9b992"));
+        DrawBanner(p + new Vector2(-13, -14), new Color("456f8b"));
+        DrawCircle(p + new Vector2(-14, 11), 7, new Color("332f29")); DrawCircle(p + new Vector2(17, 11), 7, new Color("332f29"));
+        DrawCircle(p + new Vector2(-14, 11), 3, new Color("b39a65")); DrawCircle(p + new Vector2(17, 11), 3, new Color("b39a65"));
+        DrawCircle(p + new Vector2(21, -4), 3, new Color("f0cb73"));
     }
 }

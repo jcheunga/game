@@ -17,7 +17,7 @@ public partial class MapMenu
             CloseHomeModal(); return true;
         }
         if (path == SceneRouter.BattleScene || path == SceneRouter.BattleSummaryScene) return false;
-        _sitePanel.Hide();
+        CloseSiteDetails();
         if (_modal == null)
         {
             _modalReturnFocus = GetViewport().GuiGetFocusOwner();
@@ -34,7 +34,7 @@ public partial class MapMenu
         content.SetMeta("home_modal", true);
         _modal.Content.AddChild(content);
         content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        if (content is not ShopMenu && content is not SettingsMenu && content is not CodexMenu && path != "achievements" && path != "more")
+        if (content is not ShopMenu && content is not SettingsMenu && content is not CodexMenu && content is not CashShopMenu && path != "achievements" && path != "more")
             RealmModal.AdaptActivity(content);
         var title = path switch {
             SceneRouter.ShopScene => tab == 0 ? "Warband" : tab == 1 ? "Spells" : "Upgrades",

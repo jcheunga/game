@@ -1240,6 +1240,7 @@ public partial class GameState : Node
 		Food += rewardFood;
 		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
 		var bestStars = RecordStageStars(stage, starsEarned);
+		if (CurrentBattleMode == BattleRunMode.Campaign) RevealAdventureStageVictory(stage);
 		var progressionRewardSummary = ClaimCampaignProgressionRewards(stage, starsEarned);
 		if (CurrentBattleMode == BattleRunMode.Campaign) UnlockNextStageInternal(stage);
 		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
@@ -1250,7 +1251,7 @@ public partial class GameState : Node
 		var boss = GameData.GetStagesForMap(GameData.GetStage(stage).MapId).Max(x => x.StageNumber);
 		var nextStageHint = GetAdventureBossRemainingLeaders(boss) == 0 && GetStageStars(boss) == 0
 			? " The district boss gate is open. Challenge its ruler when you are ready."
-			: " Explore freely or challenge another leader when you are ready.";
+			: " Nearby tiles are now open. Choose another encounter or gather supplies.";
 		LastResultMessage =
 			$"Stage {stage} cleared. +{Math.Max(0, rewardGold)} gold, +{Math.Max(0, rewardFood)} food. Stars: {bestStars}/3." +
 			(string.IsNullOrWhiteSpace(extraRewardSummary) ? "" : $" {extraRewardSummary}") +
@@ -4797,7 +4798,7 @@ public partial class GameState : Node
 	public bool CanExploreNextStage(out StageDefinition nextStage, out string message)
 	{
 		nextStage = GameData.Stages.FirstOrDefault(x => IsCampaignStageUnlocked(x.StageNumber) && GetStageStars(x.StageNumber) == 0);
-		message = nextStage == null ? "Every leader has been defeated. You can replay any encounter." : "Explore freely and challenge leaders in any order. Travel is free.";
+		message = nextStage == null ? "Every leader has been defeated. You can replay any encounter." : "Complete stages or collect supplies to reveal nearby tiles. New destinations cost 1 food.";
 		return nextStage != null;
 	}
 
@@ -5049,6 +5050,7 @@ public partial class GameState : Node
 		ChallengeSyncAutoFlush = DefaultChallengeSyncAutoFlush;
 		DifficultyId = DefaultDifficultyId;
 		ShowDevUi = DefaultShowDevUi;
+		DeveloperModeEnabled = false;
 		ShowFpsCounter = DefaultShowFpsCounter;
 		AudioMuted = DefaultAudioMuted;
 		EffectsVolumePercent = DefaultEffectsVolumePercent;
@@ -5251,6 +5253,7 @@ public partial class GameState : Node
 		_campaignMomentumStacks = saved.Version >= 39
 			? Mathf.Clamp(saved.CampaignMomentumStacks, 0, MaxCampaignMomentumStacks)
 			: 0;
+		DeveloperModeEnabled = saved.DeveloperModeEnabled && DeveloperModeAvailable;
 		if (saved.Version >= 2)
 		{
 			ShowDevUi = saved.ShowDevUi;
@@ -5996,6 +5999,9 @@ public partial class GameState : Node
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
 			AdventureHeroNodes = new Dictionary<string, string>(_adventureHeroNodes),
 			AdventureHeroPositions = _adventureHeroPositions.ToDictionary(x => x.Key, x => new[] { x.Value.X, x.Value.Y }),
+			AdventureOpenTiles = _openAdventureTiles.OrderBy(id => id).ToArray(),
+            AdventureReachedTiles = _reachedAdventureTiles.OrderBy(id => id).ToArray(),
+            AdventureCaravanTiles = new Dictionary<string, string>(_adventureCaravanTiles),
 			AdventureExploredCells = _adventureExploredCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
             AdventureTravelledCells = _adventureTravelledCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
             ClaimedAdventureDiscoveries = _claimedAdventureDiscoveries.OrderBy(id => id).ToArray(),
@@ -6014,6 +6020,7 @@ public partial class GameState : Node
 			ChallengeSyncEndpoint = ChallengeSyncEndpoint,
 			ChallengeSyncAutoFlush = ChallengeSyncAutoFlush,
 			ShowDevUi = ShowDevUi,
+			DeveloperModeEnabled = DeveloperModeEnabled,
 			ShowFpsCounter = ShowFpsCounter,
 			AudioMuted = AudioMuted,
 			EffectsVolumePercent = EffectsVolumePercent,

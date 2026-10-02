@@ -1,6 +1,9 @@
 from pathlib import Path
 import numpy as np
-import wave, subprocess
+import wave, subprocess, argparse
+parser=argparse.ArgumentParser(description='Generate Crownroad music and sound cues.')
+parser.add_argument('--ui-only',action='store_true',help='Regenerate only selection and menu-transition sounds.')
+args=parser.parse_args()
 R=32000
 rng=np.random.default_rng(905)
 base=Path(__file__).resolve().parents[2]/'assets'
@@ -58,6 +61,24 @@ def music(name,bpm,mode):
  dry=out.copy()
  for delay,g in [(0.071,.13),(.137,.12),(.229,.08),(.389,.05),(.613,.025)]:out+=np.roll(dry,int(delay*R),axis=0)[:,::-1]*g
  save(base/'music'/f'{name}.ogg',out,True)
+def ui_tap(navigation=False):
+ # Damped, slightly inharmonic wood resonances keep frequent selections warm.
+ duration,frequency,gain=(.18,196,.3) if navigation else (.13,240,.28)
+ t=np.arange(int(duration*R))/R
+ y=sum(weight*np.sin(2*np.pi*frequency*ratio*t)*np.exp(-t*decay)
+       for ratio,weight,decay in [(1,.72,32),(1.62,.21,48),(2.55,.07,68)])
+ # A quiet, low-pass contact transient adds texture without a sharp click.
+ noise=np.random.default_rng(1493).uniform(-1,1,len(t))
+ alpha=1-np.exp(-2*np.pi*1000/R);filtered=0
+ for i in range(len(noise)):
+  filtered+=alpha*(noise[i]-filtered);noise[i]=filtered
+ y+=noise*.06*np.exp(-t*90)
+ attack=.5-.5*np.cos(np.pi*np.minimum(t/.004,1))
+ release=np.clip((duration-1/R-t)/.025,0,1)
+ return y*gain*attack*release
+if args.ui_only:
+ for name in ['ui_confirm','scene_change']:save(base/'sfx'/f'{name}.ogg',ui_tap(name=='scene_change'))
+ print('Created warm selection and menu-transition cues.');raise SystemExit
 for spec in [('title',84,'title'),('campaign',92,'travel'),('shop',88,'shop'),('battle',116,'battle')]:music(*spec)
 # Layered physical impacts, short interface clicks and elemental spell cues.
 def metal(heavy=False):
@@ -74,6 +95,7 @@ for name,heavy in [('impact_light',False),('impact_heavy',True),('bus_hit',True)
 for name in ['deploy','ui_confirm','scene_change','upgrade_confirm','repair','relic_pickup','achievement_unlock']:
  y=note(62 if name=='deploy' else 81,.32,'lute')*.22
  if name in ['upgrade_confirm','repair','achievement_unlock']:y+=note(88,.32,'bell')*.14
+ if name in ['ui_confirm','scene_change']:y=ui_tap(name=='scene_change')
  save(base/'sfx'/f'{name}.ogg',y)
 for kind in ['fireball','heal','frost_burst','lightning_strike','barrier_ward']:save(base/'sfx'/f'spell_{kind}.ogg',sweep(kind))
 for name,notes in [('victory',[62,65,69,74]),('defeat',[62,58,55,50]),('boss_spawn',[38,45,50]),('boss_death',[50,57,62])]:

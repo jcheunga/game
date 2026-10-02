@@ -19,14 +19,32 @@ public partial class CashShopMenu : Control
 	private VBoxContainer _foodStack = null!;
 	private VBoxContainer _mixedStack = null!;
 	private HBoxContainer _categoryTabs = null!;
+	private Label _noticeLabel = null!;
+	private Button _cancelConfirmButton = null!;
+	private bool _embedded;
+	private int _selectedCategory;
 	private string _pendingConfirmProductId = "";
 	private Button _pendingConfirmButton;
 
 	public override void _Ready()
 	{
-		BuildUi();
+		_embedded = RealmModal.Embedded(this);
+		if (_embedded) BuildModalUi(); else BuildUi();
 		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _goldPanel, _foodPanel, _mixedPanel, _statusPanel });
+		if (!_embedded) AnimateEntrance(new Control[] { _titlePanel, _goldPanel, _foodPanel, _mixedPanel, _statusPanel });
+	}
+
+	private void BuildModalUi()
+	{
+		var root = new VBoxContainer { Name = "StorehouseLayout" };
+		root.AddThemeConstantOverride("separation", 10);
+		AddChild(root);
+		root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_resourcesRow = new HBoxContainer();
+		_resourcesRow.AddThemeConstantOverride("separation", 16);
+		root.AddChild(_resourcesRow);
+		BuildCatalog(root);
+		RealmModal.Polish(root);
 	}
 
 	private void AnimateEntrance(Control[] panels)
@@ -81,21 +99,10 @@ public partial class CashShopMenu : Control
 		_resourcesRow.AddThemeConstantOverride("separation", 12);
 		titleRow.AddChild(_resourcesRow);
 
-        var body = new VBoxContainer { Position = new Vector2(24, 122), Size = new Vector2(1232, 480) };
+        var body = new VBoxContainer { Name = "StorehouseLayout", Position = new Vector2(24, 122), Size = new Vector2(1232, 480) };
         body.AddThemeConstantOverride("separation", 12);
         AddChild(body);
-        _categoryTabs = RealmUi.Tabs(body, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
-        var pages = new Control { SizeFlagsVertical = SizeFlags.ExpandFill };
-        body.AddChild(pages);
-        _goldStack = CreateCatalogPage(pages, out _goldPanel);
-        _foodStack = CreateCatalogPage(pages, out _foodPanel);
-        _mixedStack = CreateCatalogPage(pages, out _mixedPanel);
-        var info = CreateCatalogPage(pages, out _statusPanel);
-        var statusStack = RealmUi.Scroll(info);
-        statusStack.AddChild(RealmUi.Heading("The merchant's ledger"));
-        _statusLabel = RealmUi.Label("");
-        statusStack.AddChild(_statusLabel);
-        SelectCategory(0);
+        BuildCatalog(body);
 
 		// Bottom nav
 		var bottomPanel = new PanelContainer
@@ -155,9 +162,39 @@ public partial class CashShopMenu : Control
 		bottomRow.AddChild(multiplayerButton);
 	}
 
+    private void BuildCatalog(VBoxContainer body)
+    {
+        _categoryTabs = RealmUi.Tabs(body, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
+        // The pages take the remaining space; purchase actions stay inside each card.
+        var pages = new Control { Name = "CatalogPages", SizeFlagsVertical = SizeFlags.ExpandFill };
+        body.AddChild(pages);
+        _goldStack = CreateCatalogPage(pages, out _goldPanel);
+        _foodStack = CreateCatalogPage(pages, out _foodPanel);
+        _mixedStack = CreateCatalogPage(pages, out _mixedPanel);
+        var info = CreateCatalogPage(pages, out _statusPanel);
+        var statusStack = RealmUi.Scroll(info);
+        statusStack.AddChild(RealmUi.Heading("The merchant's ledger"));
+        _statusLabel = RealmUi.Label("");
+        statusStack.AddChild(_statusLabel);
+
+        var notice = new HBoxContainer { CustomMinimumSize = new Vector2(0, 40) };
+        notice.AddThemeConstantOverride("separation", 12);
+        body.AddChild(notice);
+        _noticeLabel = RealmUi.Label("Choose a pack. Tap Buy twice to confirm.", 18, true);
+        _noticeLabel.Name = "PurchaseNotice";
+        _noticeLabel.VerticalAlignment = VerticalAlignment.Center;
+        notice.AddChild(_noticeLabel);
+        _cancelConfirmButton = new RealmButton { Text = "Cancel", Visible = false, CustomMinimumSize = new Vector2(88, 40) };
+        _cancelConfirmButton.Pressed += () => CancelPendingPurchase();
+        notice.AddChild(_cancelConfirmButton);
+        SelectCategory(0);
+    }
+
     private static VBoxContainer CreateCatalogPage(Control host, out PanelContainer panel)
     {
         panel = new PanelContainer();
+        panel.SetMeta("modal_unframed", true);
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         host.AddChild(panel);
         panel.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var stack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
@@ -167,14 +204,16 @@ public partial class CashShopMenu : Control
 
     private void SelectCategory(int index)
     {
+        if (index != _selectedCategory) CancelPendingPurchase();
+        _selectedCategory = index;
         var pages = new[] { _goldPanel, _foodPanel, _mixedPanel, _statusPanel };
         for (var i = 0; i < pages.Length; i++) pages[i].Visible = i == index;
+        _categoryTabs.GetChild<Button>(index).ButtonPressed = true;
     }
 
 	private void RefreshUi(bool preserveStatus = false)
 	{
-		_pendingConfirmButton = null;
-		_pendingConfirmProductId = "";
+		CancelPendingPurchase(resetNotice: !preserveStatus);
 		RebuildResourcesRow();
 		RebuildGoldPacks();
 		RebuildFoodPacks();
@@ -191,29 +230,39 @@ public partial class CashShopMenu : Control
 
 		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
 		_resourcesRow.AddChild(new FoodBalance());
+		if (_embedded) RealmModal.Polish(_resourcesRow);
 	}
 
     private void RebuildGoldPacks() => RebuildCategory(_goldStack, "gold");
     private void RebuildFoodPacks()
     {
         RebuildCategory(_foodStack, "food");
+        var refillRow = new HBoxContainer();
+        refillRow.AddThemeConstantOverride("separation", 16);
         var refill = RealmUi.Button("food", "10 food · 100 gold", () => {
-            GameState.Instance.TryBuyFoodRefill(out var message); _statusLabel.Text = message; RefreshUi();
+            GameState.Instance.TryBuyFoodRefill(out var message);
+            RefreshUi();
+            _noticeLabel.Text = message;
         }, true);
-        _foodStack.AddChild(refill); _foodStack.MoveChild(refill, 0);
+        refillRow.AddChild(refill);
         var recharge = RealmUi.Label("+2 food every 5 minutes · Up to 24", 18, true);
-        _foodStack.AddChild(recharge); _foodStack.MoveChild(recharge, 1);
+        recharge.VerticalAlignment = VerticalAlignment.Center;
+        refillRow.AddChild(recharge);
+        _foodStack.AddChild(refillRow); _foodStack.MoveChild(refillRow, 0);
+        if (_embedded) RealmModal.Polish(refillRow);
     }
     private void RebuildMixedPacks() => RebuildCategory(_mixedStack, "mixed");
 
     private void RebuildCategory(VBoxContainer stack, string category)
     {
         ClearChildren(stack);
+        stack.AddThemeConstantOverride("separation", 8);
         var row = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         row.AddThemeConstantOverride("separation", 12);
         stack.AddChild(row);
         foreach (var product in ShopProductCatalog.GetByCategory(category))
             AddProductCard(row, product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id));
+        if (_embedded) RealmModal.Polish(row);
     }
 
     private void AddProductCard(Control host, ShopProduct product, bool forceDisabled)
@@ -221,18 +270,31 @@ public partial class CashShopMenu : Control
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         host.AddChild(panel);
         var card = new VBoxContainer();
-        card.AddThemeConstantOverride("separation", 8);
+        card.AddThemeConstantOverride("separation", 6);
         panel.AddChild(card);
-        card.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(48, 48), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
-        var title = RealmUi.Heading(product.DisplayName, 24);
-        title.CustomMinimumSize = new Vector2(0, 48);
+        var top = new HBoxContainer();
+        card.AddChild(top);
+        top.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(40, 40) });
+        top.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        var details = new RealmButton { Text = "Details", CustomMinimumSize = new Vector2(82, 40), AccessibilityName = product.DisplayName + " details", TooltipText = product.DisplayName + " details" };
+        details.Pressed += () => RealmUi.Details(this, product.DisplayName,
+            $"{product.FormattedReward}\n\n{product.Description}\n\nPrice: {LocalizedPrice(product)}" + (product.OneTimePurchase ? "\nAvailable once per account." : ""));
+        top.AddChild(details);
+        var title = RealmUi.Heading(product.DisplayName, 18);
+        title.CustomMinimumSize = new Vector2(0, 56);
+        title.VerticalAlignment = VerticalAlignment.Center;
         card.AddChild(title);
         card.AddChild(BuildProductRewardRow(product));
-        card.AddChild(RealmUi.Label(product.Description));
+        var extra = product.GrantsUnitUnlock ? "+ Unit unlock" : product.BonusAmount > 0 ? $"Includes {product.BonusAmount:N0} bonus" : "";
+        var bonus = RealmUi.Label(extra, 18, true);
+        bonus.CustomMinimumSize = new Vector2(0, 24);
+        card.AddChild(bonus);
         card.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
-        card.AddChild(RealmUi.Label(string.IsNullOrWhiteSpace(product.ValueLabel) ? "For the road ahead" : product.ValueLabel, 18, true));
-        var localizedPrice = NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
+        var localizedPrice = LocalizedPrice(product);
         var purchaseButton = new RealmButton { Text = forceDisabled ? "Purchased" : $"Buy — {localizedPrice}", CustomMinimumSize = new Vector2(0, 48), Disabled = forceDisabled };
+        purchaseButton.SetMeta("realm_primary", true);
+        purchaseButton.SetMeta("store_product_id", product.Id);
+        purchaseButton.AccessibilityName = $"Buy {product.DisplayName} for {localizedPrice}";
         purchaseButton.Pressed += () => OnPurchasePressed(product.Id, purchaseButton);
         card.AddChild(purchaseButton);
     }
@@ -244,37 +306,38 @@ public partial class CashShopMenu : Control
 
 		if (product.CurrencyType.Equals("gold", StringComparison.OrdinalIgnoreCase))
 		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(34f, 34f)));
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(28f, 28f)));
 		}
 		else if (product.CurrencyType.Equals("food", StringComparison.OrdinalIgnoreCase))
 		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", product.FormattedReward, new Vector2(34f, 34f)));
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", product.FormattedReward, new Vector2(28f, 28f)));
 		}
 		else if (product.CurrencyType.Equals("mixed", StringComparison.OrdinalIgnoreCase))
 		{
-			if (product.GoldAmount > 0)
-			{
-				row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{product.GoldAmount} Gold", new Vector2(34f, 34f)));
-			}
-			if (product.FoodAmount > 0)
-			{
-				row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{product.FoodAmount} Food", new Vector2(34f, 34f)));
-			}
+			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(28f, 28f)));
 		}
 
-		if (product.GrantsUnitUnlock)
-		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("unit", "", "Unit Unlock", new Vector2(34f, 34f)));
-		}
-
-		row.AddChild(new Label
-		{
-			Text = product.FormattedReward,
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		});
+		var reward = RealmUi.Label(product.CurrencyType == "mixed"
+			? $"{product.GoldAmount:N0} gold · {product.FoodAmount:N0} food"
+			: $"{product.TotalCurrencyAmount:N0} {product.CurrencyType}", 24);
+		reward.VerticalAlignment = VerticalAlignment.Center;
+		row.AddChild(reward);
 		return row;
+	}
+
+	private static string LocalizedPrice(ShopProduct product) => NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
+
+	private void CancelPendingPurchase(bool resetNotice = true)
+	{
+		if (GodotObject.IsInstanceValid(_pendingConfirmButton))
+		{
+			var product = ShopProductCatalog.GetById(_pendingConfirmProductId);
+			if (product != null) _pendingConfirmButton.Text = $"Buy — {LocalizedPrice(product)}";
+		}
+		_pendingConfirmProductId = "";
+		_pendingConfirmButton = null;
+		_cancelConfirmButton.Hide();
+		if (resetNotice) _noticeLabel.Text = "Choose a pack. Tap Buy twice to confirm.";
 	}
 
 	private void OnPurchasePressed(string productId, Button button)
@@ -282,28 +345,22 @@ public partial class CashShopMenu : Control
 		if (_pendingConfirmProductId == productId)
 		{
 			SelectCategory(3);
-			_categoryTabs.GetChild<Button>(3).ButtonPressed = true;
+			_noticeLabel.Text = "Your purchase status is shown above.";
 			ExecutePurchase(productId);
 			_pendingConfirmProductId = "";
 			_pendingConfirmButton = null;
 			return;
 		}
 
-		// Reset previous confirm
-		if (_pendingConfirmButton != null)
-		{
-			var prevProduct = ShopProductCatalog.GetById(_pendingConfirmProductId);
-			if (prevProduct != null)
-			{
-				_pendingConfirmButton.Text = $"Buy — {prevProduct.FormattedPrice}";
-			}
-		}
+		CancelPendingPurchase();
 
 		// Show confirm state
 		_pendingConfirmProductId = productId;
 		_pendingConfirmButton = button;
-		button.Text = "Confirm purchase";
-		_statusLabel.Text = "Tap the purchase button a second time to confirm.";
+		var selected = ShopProductCatalog.GetById(productId);
+		button.Text = $"Confirm — {LocalizedPrice(selected)}";
+		_noticeLabel.Text = $"{selected.DisplayName} · {LocalizedPrice(selected)}. Tap Confirm to purchase.";
+		_cancelConfirmButton.Show();
 	}
 
 	private void ExecutePurchase(string productId)
@@ -457,7 +514,7 @@ public partial class CashShopMenu : Control
 		}
 
 		lines.Add("");
-		lines.Add("All packs are consumable and credit your account immediately.");
+		lines.Add("Packs credit your account after payment is verified. The Adventurer's Kit is available once per account.");
 
 		_statusLabel.Text = string.Join("\n", lines);
 	}

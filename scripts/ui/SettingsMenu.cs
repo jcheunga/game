@@ -35,6 +35,7 @@ public partial class SettingsMenu : Control
             AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
         }
         BuildUi();
+        GameState.Instance.DeveloperStateChanged += RefreshUi;
         RefreshUi();
         TryShowMenuHint();
         AnimateEntrance();
@@ -95,6 +96,7 @@ public partial class SettingsMenu : Control
 
     public override void _ExitTree()
     {
+        if (GameState.Instance != null) GameState.Instance.DeveloperStateChanged -= RefreshUi;
         if (AppLifecycleService.Instance != null)
         {
             AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
@@ -147,13 +149,17 @@ public partial class SettingsMenu : Control
         _returnLabel.AddThemeColorOverride("font_color", RealmUi.Muted);
         rootStack.AddChild(_returnLabel); _returnLabel.Visible = !embedded;
 
-        var pages = new VBoxContainer[4];
-        RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, "Sound", "Gameplay", "Online", "Account");
+        var pages = new VBoxContainer[GameState.DeveloperModeAvailable ? 5 : 4];
+        var tabTitles = GameState.DeveloperModeAvailable
+            ? new[] { "Sound", "Gameplay", "Online", "Account", "Developer" }
+            : new[] { "Sound", "Gameplay", "Online", "Account" };
+        RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, tabTitles);
         for (int i = 0; i < pages.Length; i++)
         {
             pages[i] = RealmUi.Scroll(rootStack);
             pages[i].GetParent<ScrollContainer>().Visible = i == 0;
         }
+        if (GameState.DeveloperModeAvailable) BuildDeveloperPage(pages[4]);
         var stack = pages[0];
 
         var audioPanel = new PanelContainer();
@@ -480,6 +486,7 @@ public partial class SettingsMenu : Control
             GameState.Instance.SetFontSizeOffset(0);
             GameState.Instance.SetHighContrast(false);
             GameState.Instance.SetShowDevUi(true);
+            GameState.Instance.SetDeveloperMode(false);
             GameState.Instance.SetShowFpsCounter(true);
             GameState.Instance.SetChallengeSyncProvider(ChallengeSyncProviderCatalog.LocalJournalId);
             GameState.Instance.SetChallengeSyncEndpoint("");
@@ -681,6 +688,7 @@ public partial class SettingsMenu : Control
 
     private void RefreshUi()
     {
+        RefreshDeveloperPage();
         foreach (var (slider, amount, channel) in _volumes) {
             int value = channel == "Music" ? GameState.Instance.MusicVolumePercent : channel == "Effects" ? GameState.Instance.EffectsVolumePercent : GameState.Instance.AmbienceVolumePercent;
             slider.SetValueNoSignal(value); amount.Text = value + "%";

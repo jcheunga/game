@@ -31,6 +31,9 @@ public partial class UiReviewSmoke
         Check(canvas.ActiveMapId == "city", "Locked zone switching is rejected");
         AuditText("Home / fresh");
         await Capture("01-home");
+        await ReviewDeveloperMode(menu);
+        await ReviewMapNotices(menu, canvas);
+        await ReviewMapRewards(menu, canvas);
 
         var offsetBeforePan = canvas.MapOffset;
         var foodBeforePan = state.Food;
@@ -127,6 +130,7 @@ public partial class UiReviewSmoke
         Check(GetTree().CurrentScene == menu && canvas.MapOffset == mapBeforeModal, "Browsing menus preserves the map and camera");
 
         await ReviewModalActions(menu, canvas);
+        await ReviewStorehouse(menu);
 
         // District stage numbers are interleaved: beating a late numbered rival
         // must not reveal every other zone through HighestUnlockedStage.
@@ -167,6 +171,7 @@ public partial class UiReviewSmoke
         await Capture("05-explored-zone");
         foreach (var site in AdventureMapCatalog.ForMap("city"))
         {
+            if (site.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food) continue; // Caches gather on selection instead of opening details.
             typeof(MapMenu).GetMethod("SelectSite", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(menu, new object[] { site });
             await Wait(.05);
             AuditText("Home / site " + site.Id);

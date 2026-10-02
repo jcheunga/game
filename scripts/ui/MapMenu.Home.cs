@@ -16,15 +16,18 @@ public partial class MapMenu
         AddChild(_mapCanvas);
         _mapCanvas.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _mapCanvas.SiteSelected += SelectSite;
+        _mapCanvas.DiscoverySelected += SelectDiscovery;
         _mapCanvas.TravelStateChanged += RefreshUi;
-        _mapCanvas.TravelFeedback += message => { _message = message; RefreshUi(); };
+        _mapCanvas.TravelFeedback += _ => RefreshUi();
         GameState.Instance.FoodChanged += RefreshUi;
+        GameState.Instance.DeveloperStateChanged += RefreshUi;
 
         _hud = new Control { Name = "HomeHud", MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_hud);
         _hud.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         SafeAreaService.Instance?.ApplyToControl(_hud);
         BuildResources();
+        BuildDeveloperControls();
         BuildZoneHeading();
         var settings = HomeMapUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings());
         _hud.AddChild(settings);
@@ -129,27 +132,19 @@ public partial class MapMenu
         tools.AddChild(HomeMapUi.IconButton("flag", "Find my caravan", () => _mapCanvas.FocusCaravan()));
         tools.AddChild(HomeMapUi.IconButton("plus", "Zoom in", () => _mapCanvas.ChangeZoom(1.2f)));
         tools.AddChild(HomeMapUi.IconButton("minus", "Zoom out", () => _mapCanvas.ChangeZoom(1 / 1.2f)));
-        _scout = RealmUi.Button("eye", "Explore", ScoutNextArea, true);
+        _scout = RealmUi.Button("map", "Map guide", ShowExplorationHelp, true);
         _scout.CustomMinimumSize = new Vector2(206, 52);
         HomeMapUi.StyleButton(_scout, true);
         _hud.AddChild(_scout);
         HomeMapUi.Place(_scout, 1, 1, new Rect2(-228, -190, 206, 52));
 
-        var hint = RealmUi.Label("Tap to travel · Drag to pan", 18, true);
+        var hint = RealmUi.Label("Clear a site to open nearby tiles · Drag to pan", 18, true);
         hint.HorizontalAlignment = HorizontalAlignment.Center;
         hint.MouseFilter = MouseFilterEnum.Ignore;
         _hud.AddChild(hint);
         HomeMapUi.Place(hint, .5f, 1, new Rect2(-230, -175, 460, 26));
         hint.AddThemeColorOverride("font_color", new Color("ffefc5"));
 
-        _feedbackPanel = new PanelContainer { Name = "TravelNotice", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
-        _feedbackPanel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 12));
-        _hud.AddChild(_feedbackPanel);
-        HomeMapUi.Place(_feedbackPanel, .5f, 1, new Rect2(-260, -254, 520, 66));
-        _feedback = RealmUi.Label("", 18);
-        _feedback.HorizontalAlignment = HorizontalAlignment.Center;
-        _feedback.MouseFilter = MouseFilterEnum.Ignore;
-        _feedbackPanel.AddChild(_feedback);
     }
 
     private void BuildSitePanel()
@@ -171,7 +166,7 @@ public partial class MapMenu
         _siteEyebrow = RealmUi.Label("", 18, true);
         _siteEyebrow.VerticalAlignment = VerticalAlignment.Center;
         header.AddChild(_siteEyebrow);
-        header.AddChild(HomeMapUi.IconButton("close", "Close site details", () => _sitePanel.Hide()));
+        header.AddChild(HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails));
         var encounter = new HBoxContainer();
         encounter.AddThemeConstantOverride("separation", 12);
         side.AddChild(encounter);
@@ -227,8 +222,8 @@ public partial class MapMenu
         if (index >= 0 && index < maps.Length) SwitchRegion(maps[index]);
     }
 
-    private void ShowExplorationHelp() => RealmUi.Details(this, "Explore the fallen kingdom",
-        "Tap the ground to travel. Drag to pan; pinch or scroll to zoom.\n\nEntering a new tile costs 1 food. Walked routes are free. Water and rock block movement; bridges can be crossed.\n\nExplore the mist to uncover landmarks and rewards. Reach a discovery to gather its reward. Select a landmark or rival to open its details.\n\nDefeat the five rivals in a zone to challenge its boss. Defeating that boss reveals the next zone. You can return to earlier zones.\n\nFood restores by 2 every 5 minutes, up to 24. Tap your food balance to refill in the store.");
+    private void ShowExplorationHelp() => RealmUi.Details(this, "Reclaim the fallen kingdom",
+        "Each tile holds one stage, landmark or resource. Tap a site to select it; drag to pan and pinch or scroll to zoom.\n\nTravel to a new destination costs 1 food. Returning to a reached tile is free. Stage entry has a separate food cost, shown before battle. The caravan moves automatically when you choose a destination.\n\nClearing a stage or collecting a resource opens the eight surrounding tiles. Arriving, losing or retreating does not reveal more tiles. Watchtowers and survey charts open a wider area.\n\nDefeat the five rivals to open the boss gate. Defeat the boss to reveal the next zone.\n\nFood restores by 2 every 5 minutes, up to 24. Tap your food balance to refill in the storehouse.");
 
     private void ShowMore() => OpenHomeDestination("more");
 
@@ -291,7 +286,7 @@ public partial class MapMenu
     {
         if (input is not InputEventKey { Pressed: true, Keycode: Key.Escape }) return;
         if (HasHomeModal) CloseHomeModal();
-        else if (_sitePanel.Visible) _sitePanel.Hide();
+        else if (_sitePanel.Visible) CloseSiteDetails();
         else return;
         GetViewport().SetInputAsHandled();
     }

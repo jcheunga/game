@@ -55,7 +55,7 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 44;
+    public int Version { get; set; } = 45;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 24;
     public long FoodRechargedAtUnixSeconds { get; set; }
@@ -68,6 +68,9 @@ public sealed class GameSaveData
     public Dictionary<string, float[]> AdventureHeroPositions { get; set; } = new();
     public Dictionary<string, int[]> AdventureExploredCells { get; set; } = new();
     public Dictionary<string, int[]> AdventureTravelledCells { get; set; } = new();
+    public string[] AdventureOpenTiles { get; set; } = [];
+    public string[] AdventureReachedTiles { get; set; } = [];
+    public Dictionary<string, string> AdventureCaravanTiles { get; set; } = new();
     public string[] ClaimedAdventureDiscoveries { get; set; } = [];
     public string SelectedEndlessRouteId { get; set; } = "city";
     public string SelectedEndlessBoonId { get; set; } = EndlessBoonCatalog.SurplusCourageId;
@@ -82,6 +85,7 @@ public sealed class GameSaveData
     public string ChallengeSyncEndpoint { get; set; } = "";
     public bool ChallengeSyncAutoFlush { get; set; }
     public bool ShowDevUi { get; set; } = true;
+    public bool DeveloperModeEnabled { get; set; }
     public bool ShowFpsCounter { get; set; } = true;
     public bool AudioMuted { get; set; }
     public int EffectsVolumePercent { get; set; } = 85;

@@ -157,11 +157,12 @@ public partial class DebugConsole : CanvasLayer
 
 		return cmd switch
 		{
-			"help" => "Commands: help, gold <n>, food <n>, unlock <stage>, unlockall, reset, stage <n>, " +
+			"help" => "Commands: help, dev on|off, gold <n>, food <n>, unlock <stage>, unlockall, reset, stage <n>, " +
 				"difficulty <id>, speed <1-3>, stats, units, spells, stages, achievement <id>, " +
 				"relic <id>, equip <unitId> <relicId>, assets, cloud upload, cloud download, analytics flush, screenshot, generate sprites",
 			"gold" => SetGold(args),
 			"food" => SetFood(args),
+			"dev" => SetDeveloperMode(args),
 			"unlock" => UnlockStage(args),
 			"unlockall" => UnlockAll(),
 			"reset" => ResetProgress(),
@@ -191,12 +192,9 @@ public partial class DebugConsole : CanvasLayer
 			return "Usage: gold <amount>";
 		var gs = GameState.Instance;
 		if (gs == null) return "GameState not available.";
-		// Use the purchase reward system to add gold
-		gs.TryApplyPurchaseReward(new PurchaseValidationResult
-		{
-			Status = "ok", ProductId = "debug_gold", GoldCredited = amount
-		});
-		return $"Added {amount} gold. Total: {gs.Gold}";
+		return gs.TryAddDeveloperResources(amount, 0)
+			? $"Added {amount} gold. Total: {gs.Gold}"
+			: "Enable developer mode with 'dev on' and use a positive amount within the balance limit.";
 	}
 
 	private static string SetFood(string[] args)
@@ -205,11 +203,19 @@ public partial class DebugConsole : CanvasLayer
 			return "Usage: food <amount>";
 		var gs = GameState.Instance;
 		if (gs == null) return "GameState not available.";
-		gs.TryApplyPurchaseReward(new PurchaseValidationResult
-		{
-			Status = "ok", ProductId = "debug_food", FoodCredited = amount
-		});
-		return $"Added {amount} food. Total: {gs.Food}";
+		return gs.TryAddDeveloperResources(0, amount)
+			? $"Added {amount} food. Total: {gs.Food}"
+			: "Enable developer mode with 'dev on' and use a positive amount within the balance limit.";
+	}
+
+	private static string SetDeveloperMode(string[] args)
+	{
+		if (args.Length != 1 || (args[0] != "on" && args[0] != "off")) return "Usage: dev on|off";
+		if (!GameState.DeveloperModeAvailable) return "Developer mode is available in debug builds.";
+		var gs = GameState.Instance;
+		if (gs == null) return "GameState not available.";
+		gs.SetDeveloperMode(args[0] == "on");
+		return gs.DeveloperModeEnabled ? "Developer mode enabled." : "Developer mode disabled.";
 	}
 
 	private static string UnlockStage(string[] args)

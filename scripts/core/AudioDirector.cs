@@ -125,17 +125,17 @@ public partial class AudioDirector : Node
 
 	public void PlayUiHover()
 	{
-		PlayCue(UiHoverCueId, -22f, 1.02f + _rng.RandfRange(-0.04f, 0.04f), 0.045f);
+		PlayCue(UiHoverCueId, -26f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.045f);
 	}
 
 	public void PlayUiConfirm()
 	{
-		PlayCue(UiConfirmCueId, -15f, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.06f);
+		PlayCue(UiConfirmCueId, -19f, 1f + _rng.RandfRange(-0.025f, 0.025f), 0.06f);
 	}
 
 	public void PlaySceneChange()
 	{
-		PlayCue(SceneChangeCueId, -14f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.08f);
+		PlayCue(SceneChangeCueId, -21f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.08f);
 	}
 
 	public void PlayDeploy(UnitDefinition definition)
@@ -577,15 +577,9 @@ public partial class AudioDirector : Node
 	private void BuildCueLibrary()
 	{
 		_cues.Clear();
-		RegisterCue(UiHoverCueId, CreateCue(0.06f, 0.004f, 0.04f, 0.34f, 0.02f, 0f, 0f, 0f,
-			new ToneLayer(960f, 1260f, 1f),
-			new ToneLayer(1440f, 1680f, 0.18f)));
-		RegisterCue(UiConfirmCueId, CreateCue(0.12f, 0.005f, 0.08f, 0.42f, 0.01f, 0f, 0f, 0f,
-			new ToneLayer(520f, 760f, 1f, true),
-			new ToneLayer(780f, 1040f, 0.45f)));
-		RegisterCue(SceneChangeCueId, CreateCue(0.22f, 0.01f, 0.14f, 0.36f, 0.01f, 4.5f, 0.008f, 0f,
-			new ToneLayer(300f, 560f, 1f),
-			new ToneLayer(480f, 860f, 0.34f)));
+		RegisterCue(UiHoverCueId, CreateUiTapCue(0.08f, 280f, 0.14f));
+		RegisterCue(UiConfirmCueId, CreateUiTapCue(0.13f, 240f, 0.28f));
+		RegisterCue(SceneChangeCueId, CreateUiTapCue(0.18f, 196f, 0.3f));
 		RegisterCue(DeployCueId, CreateCue(0.18f, 0.005f, 0.09f, 0.46f, 0.015f, 0f, 0f, 0f,
 			new ToneLayer(180f, 320f, 1f, true),
 			new ToneLayer(320f, 480f, 0.34f)));
@@ -735,6 +729,37 @@ public partial class AudioDirector : Node
 	}
 
 	private readonly Dictionary<string, AudioStream> _authoredOverrides = new(StringComparer.OrdinalIgnoreCase);
+
+	private AudioStreamWav CreateUiTapCue(float duration, float frequency, float gain)
+	{
+		// Damped wood resonances and a filtered contact transient avoid a beeping tone.
+		var sampleCount = Mathf.RoundToInt(duration * SampleRate);
+		var pcmData = new byte[sampleCount * sizeof(short)];
+		var noiseAlpha = 1f - Mathf.Exp(-Mathf.Tau * 1000f / SampleRate);
+		var filteredNoise = 0f;
+		for (var i = 0; i < sampleCount; i++)
+		{
+			var t = i / (float)SampleRate;
+			var phase = Mathf.Tau * frequency * t;
+			var sample = 0.72f * Mathf.Sin(phase) * Mathf.Exp(-t * 32f)
+				+ 0.21f * Mathf.Sin(phase * 1.62f) * Mathf.Exp(-t * 48f)
+				+ 0.07f * Mathf.Sin(phase * 2.55f) * Mathf.Exp(-t * 68f);
+			filteredNoise += noiseAlpha * (_rng.RandfRange(-1f, 1f) - filteredNoise);
+			sample += filteredNoise * 0.06f * Mathf.Exp(-t * 90f);
+			var attack = 0.5f - 0.5f * Mathf.Cos(Mathf.Pi * Mathf.Min(t / 0.004f, 1f));
+			var release = Mathf.Clamp(((sampleCount - 1 - i) / (float)SampleRate) / 0.025f, 0f, 1f);
+			var value = (short)Mathf.RoundToInt(Mathf.Tanh(sample * gain * attack * release * 0.9f) * short.MaxValue);
+			pcmData[i * 2] = (byte)(value & 0xff);
+			pcmData[i * 2 + 1] = (byte)((value >> 8) & 0xff);
+		}
+		return new AudioStreamWav
+		{
+			Data = pcmData,
+			Format = AudioStreamWav.FormatEnum.Format16Bits,
+			MixRate = SampleRate,
+			Stereo = false
+		};
+	}
 
 	private AudioStreamWav CreateCue(
 		float durationSeconds,

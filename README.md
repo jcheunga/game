@@ -127,9 +127,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   [Expanded campaign design and all-stage results](docs/EXPANDED_CAMPAIGN.md).
 - Main menu:
   - Opens directly onto the active zone map, with gold, food and stars at the top left and settings at the top right
-  - King's Road has a complete painted coastal landscape; brass and enamel controls use illustrated medallion tabs and resource icons
-  - Zones open close to the caravan and require panning; travel lifts fog of war over the landscape and discoveries
-  - Bottom tabs: `Map`, `Warband`, `Spells`, `Upgrades`, `Codex`, and `More`; armory shortcuts open the matching page
+  - Each zone has irregular medieval terrain regions with dense forests, mountains, winding rivers, villages, forts and resource caches; brass and enamel controls use illustrated medallion tabs and resource icons
+  - Clearing a stage or collecting a resource reveals surrounding tiles; new destinations cost 1 food and stage entry has its own cost
+  - Bottom tabs: `Warband`, `Spells`, `Upgrades`, `Achievements`, `Codex`, and `More`; armory shortcuts open the matching page
   - Select a site to open its floating overview/intel panel; close it to see the unobstructed map
   - Defeat a zone boss to reveal the next zone. The pager displays one zone at a time and retains access to areas already played in existing saves
   - `More` contains Adventure, Caravan and Community destinations, account sign-in, achievements and quit

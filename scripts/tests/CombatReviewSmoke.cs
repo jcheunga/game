@@ -121,19 +121,18 @@ public partial class CombatReviewSmoke : Node
         catch (TargetInvocationException ex) { Check(false, $"Boss phase: {ex.InnerException?.Message}"); }
         await CloseBattle(battle);
 
+        // Destroying a base ends the battle at once, regardless of remaining waves or defenders.
         battle = await OpenBattle(4);
-        Write(battle, "_enemyBaseHealth", 0f);
-        Invoke(battle, "CheckBattleEnd");
-        Check(!Read<bool>(battle, "_battleEnded"), "Breaching the gate cannot skip the waves or boss");
         director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
-        for (var i = 0; i < 100; i++) director.Tick(1, 200 + i, () => 0, (_, _) => { }, _ => { });
         director.TryBuildEnemyStats("enemy_boss", out var bossStats);
         boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(900, 340));
         Invoke(battle, "CheckBattleEnd");
-        Check(!Read<bool>(battle, "_battleEnded"), "A living commander blocks victory after the gate falls");
-        boss.TakeDamage(boss.MaxHealth * 10);
+        Check(!Read<bool>(battle, "_battleEnded"), "The battle continues while the gate stands");
+        Write(battle, "_enemyBaseHealth", 0f);
         Invoke(battle, "CheckBattleEnd");
-        Check(Read<bool>(battle, "_battleEnded"), "Routed defenders and breached gate allow victory");
+        Check(Read<bool>(battle, "_battleEnded") && director.NextScriptedWaveIndex < director.TotalScriptedWaves,
+            "Breaching the gate wins immediately, regardless of remaining waves");
+        Check(!boss.IsDead, "A living commander does not block victory after the gate falls");
         await CloseBattle(battle);
 
         battle = await OpenBattle(52);
@@ -172,6 +171,8 @@ public partial class CombatReviewSmoke : Node
         shield.Position = new Vector2(560, 340);
         var swordsman = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_brawler")), new Vector2(540, 340));
         Check(ReferenceEquals(Invoke(battle, "FindClosestEnemy", swordsman), shield), "Melee troops engage nearby blockers before chasing support enemies");
+        // Aggro is local: keep the caster inside the archer's range, with the shield still nearer.
+        archer.Position = new Vector2(caster.Position.X - archer.AggroRangeX + 10f, 340);
         Check(ReferenceEquals(Invoke(battle, "FindClosestEnemy", archer), caster), "Ranged troops retain support targeting");
         await CloseBattle(battle);
 
@@ -213,8 +214,9 @@ public partial class CombatReviewSmoke : Node
         state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
         state.SetDifficulty(DifficultyCatalog.NormalId);
         var battle = await OpenBattle(1);
-        Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), GameData.Combat.CourageStart + state.GetCampaignScoutStartingCourageBonus(1)),
-            "Slower courage generation preserves the opening deployment budget and scout bonus");
+        Check(Read<float>(battle, "_courage") == 0f && state.HasCampaignScoutBonus(1) &&
+            Mathf.IsEqualApprox(Read<float>(battle, "_campaignScoutCourageGainScale"), state.GetCampaignScoutCourageGainScale(1)),
+            "Battles open at zero courage; the first-clear scout bonus speeds regeneration instead");
         var swordsman = Read<BattleDeckState>(battle, "_deck").Roster.Single(unit => unit.Id == "player_brawler");
         Write(battle, "_courage", 0f);
         Invoke(battle, "ArmPlayerUnit", swordsman);

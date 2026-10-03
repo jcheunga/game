@@ -53,6 +53,12 @@ public partial class MobilePresentationReview : Node
             if(!OS.GetCmdlineUserArgs().Any(x=>x.StartsWith("--save-suffix=mobile-review-")))
                 throw new InvalidOperationException("Requires isolated mobile-review save.");
             GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
+            // New games start with one swordsman and no spells. This review needs unit and spell cards
+            // and a multi-unit squad for the inspector, so seed a three-unit, two-spell squad.
+            var squad=GameState.Instance.BuildSaveData();
+            squad.OwnedPlayerUnitIds=GameData.PlayerRosterIds.Take(3).ToArray(); squad.ActiveDeckUnitIds=squad.OwnedPlayerUnitIds.ToArray();
+            squad.OwnedPlayerSpellIds=GameData.PlayerSpellIds.Take(2).ToArray(); squad.ActiveDeckSpellIds=squad.OwnedPlayerSpellIds.ToArray();
+            GameState.Instance.RestoreCloudSave(squad); GameState.Instance.SetShowHints(false);
             CheckParticleSizes();
             var insets=SafeAreaService.LogicalInsets(new Rect2(150,0,3540,2100),new Transform2D(0,Vector2.One*3,0,Vector2.Zero),new Vector2(1280,720));
             Check(insets.DistanceTo(new Vector4(50,0,50,20))<.01,"Notch and home-indicator pixels convert to logical canvas margins");
@@ -215,22 +221,28 @@ public partial class MobilePresentationReview : Node
         {
             MobilePresentation.TestOverride=mobile;
             var loadout=GD.Load<PackedScene>("res://scenes/LoadoutMenu.tscn").Instantiate<LoadoutMenu>();
-            AddChild(loadout); await Settle(10); await Capture(mobile?"phone-loadout":"desktop-loadout-at-phone-size");
-            var previews=loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().ToArray();
-            Check(previews.Length==GameState.Instance.GetActiveDeckUnits().Count,"Preparation displays an animated model for each squad member");
+            Node host=loadout;
+            if(mobile)
+            {   // Phones show preparation inside the map's scaled pop-up window (MapMenu.Modals.cs).
+                var modal=new RealmModal(); AddChild(modal); modal.UseMobileCanvas();
+                loadout.SetMeta("home_modal",true); modal.Content.AddChild(loadout);
+                loadout.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+                modal.Present(SceneRouter.LoadoutScene,"Prepare for battle","",false); host=modal;
+            }
+            else AddChild(loadout);
+            await Settle(10); await Capture(mobile?"phone-loadout":"desktop-loadout-at-phone-size");
+            var inspectors=loadout.FindChildren("*","Button",true,false).OfType<Button>()
+                .Where(b=>b.Text=="Details" || (b.AccessibilityName??"").StartsWith("View ")).ToArray();
+            Check(inspectors.Length==GameState.Instance.GetActiveDeckUnits().Count && !loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
+                "Preparation shows an icon card that opens the model inspector for each squad member");
             if(mobile)
                 foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
                 {
                     var rect=button.GetGlobalTransformWithCanvas()*new Rect2(Vector2.Zero,button.Size);
-                    Check(rect.End.X<=1281 && rect.End.Y<=721 && button.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
+                    Check(rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
                 }
-            var preview=previews.First();
-            preview._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=new Vector2(20,20)});
-            preview._GuiInput(new InputEventMouseMotion {Position=new Vector2(60,20)});
-            preview._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=new Vector2(60,20)});
-            Check(preview.MouseFilter==Control.MouseFilterEnum.Pass && !loadout.GetChildren().OfType<ModelShowcase>().Any(),
-                "Dragging a model passes through to the card scroller without opening inspection");
-            preview.InspectRequested(); await Settle(6);
+            if(inspectors.Length==0) { host.QueueFree(); await Settle(); continue; }
+            inspectors[0].EmitSignal(BaseButton.SignalName.Pressed); await Settle(6);
             var gallery=loadout.GetChildren().OfType<ModelShowcase>().Single();
             var model=gallery.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
             Check(!loadout.GetChildren().OfType<Unit>().Any(),"Inspecting models spawns no combat units");
@@ -245,12 +257,17 @@ public partial class MobilePresentationReview : Node
             Check(model.GlobalFrame==frame,"Reduced motion shows a still authored pose");
             GameState.Instance.SetReducedMotion(false);
             gallery.QueueFree(); await Settle();
-            loadout.QueueFree(); await Settle();
+            host.QueueFree(); await Settle();
         }
         MobilePresentation.TestOverride=true;
         var shop=GD.Load<PackedScene>("res://scenes/ShopMenu.tscn").Instantiate<ShopMenu>();
         AddChild(shop); await Settle(20);
         var shopModel=shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
+        shopModel._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=new Vector2(20,20)});
+        shopModel._GuiInput(new InputEventMouseMotion {Position=new Vector2(60,20)});
+        shopModel._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=new Vector2(60,20)});
+        Check(shopModel.MouseFilter==Control.MouseFilterEnum.Pass && !shop.GetChildren().OfType<ModelShowcase>().Any(),
+            "Dragging the armory model does not open inspection");
         shopModel.InspectRequested(); await Settle();
         Check(shop.GetChildren().OfType<ModelShowcase>().Any(),"Armory opens the large model inspector");
         shop.QueueFree(); await Settle();

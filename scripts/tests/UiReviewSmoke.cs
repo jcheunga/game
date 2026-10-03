@@ -192,13 +192,13 @@ public partial class UiReviewSmoke : Node
             await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
             Check(!Walk(GetTree().CurrentScene).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details show rewards without an Intel tab");
             await Capture("05-map-rewards");
-            await Press("Prepare battle"); Check(GetTree().CurrentScene is LoadoutMenu, "Map opens preparation");
+            // Preparation opens as a modal over the map once the caravan arrives, not as its own scene.
+            await Press("Prepare battle"); await FinishTravel();
+            Check(Walk(GetTree().CurrentScene).OfType<LoadoutMenu>().Any(x => x.IsVisibleInTree()), "Map opens preparation");
             await Capture("06-loadout");
             await Press("Details");
-            var detailDialog = Walk(GetTree().CurrentScene).OfType<AcceptDialog>().FirstOrDefault(x => x.Visible);
-            Check(detailDialog != null, "Unit details open on demand");
-            detailDialog?.EmitSignal(AcceptDialog.SignalName.Confirmed);
-            await Wait(0.1);
+            Check(Walk(GetTree().CurrentScene).OfType<ModelShowcase>().Any(), "Unit details open on demand");
+            await Press("Close");
             await Open("ShopMenu"); await Capture("07-armory");
             var oldGold = GameState.Instance.Gold;
             var oldLevel = GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId);
@@ -233,6 +233,13 @@ public partial class UiReviewSmoke : Node
             Check(GetTree().CurrentScene is BattleController, "Deployment opens battle");
             Check(GameState.Instance.Food == food - cost, "Deployment charges food once");
             await Capture("13-battle");
+            // Battles open at zero courage, so let it build until the first card is affordable.
+            var hidden = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var battleScene = (BattleController)GetTree().CurrentScene;
+            var firstSlot = ((System.Collections.IList)typeof(BattleController).GetField("_deploySlots", hidden)!.GetValue(battleScene)!)[0]!;
+            var firstCard = (UnitDefinition)firstSlot.GetType().GetProperty("Definition")!.GetValue(firstSlot)!;
+            var courage = typeof(BattleController).GetField("_courage", hidden)!;
+            for (var i = 0; i < 80 && (float)courage.GetValue(battleScene)! < firstCard.Cost; i++) await Wait(0.25);
             Send(new InputEventKey { Keycode = Key.Key1, Pressed = true });
             await Wait(0.1);
             Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = new Vector2(350, 380), GlobalPosition = new Vector2(350, 380) });

@@ -41,7 +41,8 @@ public partial class ForgeMenu : Control
 
 	private void BuildUi()
 	{
-		MenuBackdropComposer.AddSplitBackdrop(this, "forge", new Color("1a1a2e"), new Color("16213e"), new Color("a855f7"), 104f);
+
+        MedievalUi.Apply(this);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);

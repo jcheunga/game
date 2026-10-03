@@ -47,11 +47,4 @@ public partial class GameState
         Gold -= 100; Food += 10;
         Persist(); FoodChanged?.Invoke(); message = "+10 food"; return true;
     }
-
-    private bool TrySpendExplorationFood(int cost)
-    {
-        RefreshFoodRecharge();
-        if (Food < cost) return false;
-        Food -= cost; Persist(); FoodChanged?.Invoke(); return true;
-    }
 }

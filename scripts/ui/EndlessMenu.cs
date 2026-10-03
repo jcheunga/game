@@ -4,7 +4,7 @@ using Godot;
 
 public partial class EndlessMenu : Control
 {
-    private MenuBackdropSet _menuBackdrop = null!;
+
     private OptionButton _routeSelector = null!;
     private OptionButton _boonSelector = null!;
     private HBoxContainer _resourcesRow = null!;
@@ -49,7 +49,8 @@ public partial class EndlessMenu : Control
     private void BuildUi()
     {
         var route = RouteCatalog.Get(_selectedRouteId);
-        _menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "endless", route.BackgroundTop, route.Id);
+
+        MedievalUi.Apply(this);
 
         var titlePanel = new PanelContainer
         {
@@ -282,8 +283,7 @@ public partial class EndlessMenu : Control
         var routeStages = GameData.GetStagesForMap(_selectedRouteId);
         var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);
         var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_selectedRouteId);
-        _menuBackdrop.PrimaryRect.Color = route.BackgroundTop;
-        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("endless", route.Id));
+
         _routeTitleLabel.Text = $"{templateStage.MapName} Endless Run";
         _routeSummaryLabel.Text =
             $"{BuildRouteDescription(_selectedRouteId)}\n\n" +

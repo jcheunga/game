@@ -33,7 +33,6 @@ public sealed class ArenaOpponentSnapshot
 
 public static class ArenaCatalog
 {
-	public const int DefaultRating = 1000;
 	public const int EloK = 32;
 	public const int MinRequiredStage = 20;
 

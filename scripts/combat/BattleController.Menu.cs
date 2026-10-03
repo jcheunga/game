@@ -10,7 +10,6 @@ public partial class BattleController
     private Button _hudSettingsButton, _restartButton, _resumeButton;
     private RealmModal _battleSettingsModal;
     private Control _battleHudRoot;
-    private PanelContainer _deploymentRail;
     private Action _hudLayout;
     private bool _restartPending;
 
@@ -44,25 +43,14 @@ public partial class BattleController
         _hudSettingsButton = RealmUi.IconButton("gear", "Battle menu [Escape]", TogglePause);
         _hudSettingsButton.CustomMinimumSize = new Vector2(56, 56); root.AddChild(_hudSettingsButton);
 
-        // Keep diagnostic data available to review tools, outside the live battle UI.
-        _intelPanel = new PanelContainer { Visible = false }; root.AddChild(_intelPanel);
-        var diagnostics = new VBoxContainer(); _intelPanel.AddChild(diagnostics);
-        Label Diagnostic() { var label = new Label(); diagnostics.AddChild(label); return label; }
-        _battleBannerLabel = Diagnostic(); _baseHealthLabel = Diagnostic(); _timerLabel = Diagnostic();
-        _statusLabel = Diagnostic(); _battleSubtitleLabel = Diagnostic(); _baseWeaponsIntel = Diagnostic();
-        _battleMissionLabel = Diagnostic(); _resourceLabel = Diagnostic(); _waveIntelLabel = Diagnostic();
-        _objectiveStatusLabel = Diagnostic();
-        _waveProgressBar = new BattleHudBar { Visible = false }; diagnostics.AddChild(_waveProgressBar);
-        _showDevUiToggle = new CheckBox { Visible = false }; diagnostics.AddChild(_showDevUiToggle);
-        _showFpsToggle = new CheckBox { Visible = false }; diagnostics.AddChild(_showFpsToggle);
-        _showDevUiToggle.Toggled += OnShowDevUiToggled; _showFpsToggle.Toggled += OnShowFpsToggled;
+        _statusLabel = new Label { Visible = false };
+        root.AddChild(_statusLabel);
         _fpsLabel = new Label { MouseFilter = Control.MouseFilterEnum.Ignore };
         _fpsLabel.AddThemeFontSizeOverride("font_size", 14); root.AddChild(_fpsLabel);
     }
 
     private void ConfigureCompactHudLayout(PanelContainer cards, HBoxContainer row)
     {
-        _deploymentRail = cards;
         cards.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         _hudLayout = () =>
         {
@@ -84,8 +72,6 @@ public partial class BattleController
             var height = MobilePresentation.Enabled ? 124 : 148;
             cards.Position = new Vector2(Mathf.Max(left + 80, (size.X - width) / 2), size.Y - bottom - height);
             cards.Size = new Vector2(width, height);
-            if (_convoyOrderButton != null)
-                ((Control)_convoyOrderButton.GetParent()).Position = new Vector2(left, top + 94);
             _battleSettingsModal?.FitToArea(size);
         };
         GetViewport().SizeChanged += _hudLayout;

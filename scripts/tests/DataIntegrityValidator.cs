@@ -598,7 +598,7 @@ public static class DataIntegrityValidator
         var particleDir = Path.Combine(assetsDir, "particles");
         var musicDir = Path.Combine(assetsDir, "music");
         var sfxDir = Path.Combine(assetsDir, "sfx");
-        var screenBackgroundDir = Path.Combine(assetsDir, "ui", "backgrounds");
+
         var unitIconDir = Path.Combine(assetsDir, "ui", "icons", "units");
         var spellIconDir = Path.Combine(assetsDir, "ui", "icons", "spells");
         var relicIconDir = Path.Combine(assetsDir, "ui", "icons", "relics");
@@ -606,7 +606,6 @@ public static class DataIntegrityValidator
         var metaIconDir = Path.Combine(assetsDir, "ui", "icons", "meta");
         var codexIconDir = Path.Combine(assetsDir, "ui", "icons", "codex");
         var codexPortraitDir = Path.Combine(assetsDir, "ui", "portraits", "codex");
-        var mapBackgroundDir = Path.Combine(assetsDir, "map", "backgrounds");
 
         var visualClasses = units
             .Select(unit => AssetCoverageCatalog.NormalizeId(GetStr(unit, "VisualClass")))
@@ -625,8 +624,7 @@ public static class DataIntegrityValidator
         Console.WriteLine(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasAnyFile(battleBackgroundDir, id, ".png"), "assets/backgrounds/{terrain_id}.png"));
         Console.WriteLine(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasAnyFile(structureDir, id, ".png"), "assets/structures/{structure_id}.png"));
         Console.WriteLine(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasAnyFile(particleDir, id, ".png"), "assets/particles/{particle_id}.png"));
-        Console.WriteLine(BuildCoverageLine("Screen backgrounds", AssetCoverageCatalog.ScreenBackgroundIds, id => HasAnyFile(screenBackgroundDir, id, ".png"), "assets/ui/backgrounds/{screen_id}.png"));
-        Console.WriteLine(BuildCoverageLine("District map art", AssetCoverageCatalog.RouteIds, id => HasAnyFile(mapBackgroundDir, id, ".png"), "assets/map/backgrounds/{route_id}.png"));
+
         Console.WriteLine(BuildCoverageLine(
             "Unit icons",
             units.Select(unit => GetStr(unit, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
@@ -665,17 +663,6 @@ public static class DataIntegrityValidator
         Console.WriteLine(BuildCoverageLine("Music tracks", AssetCoverageCatalog.MusicTrackIds, id => HasAnyFile(musicDir, id, ".ogg", ".mp3", ".wav"), "assets/music/{track_id}.(ogg|mp3|wav)"));
         Console.WriteLine(BuildCoverageLine("SFX overrides", AssetCoverageCatalog.SfxCueIds, id => HasAnyFile(sfxDir, id, ".ogg", ".mp3", ".wav"), "assets/sfx/{cue_id}.(ogg|mp3|wav)"));
 
-        foreach (var screenId in AssetCoverageCatalog.ScreenBackgroundIds.Where(id => id is "map" or "loadout" or "shop" or "endless" or "multiplayer"))
-        {
-            var routeVariants = AssetCoverageCatalog.RouteIds
-                .Select(routeId => AssetCoverageCatalog.BuildScreenVariantId(screenId, routeId))
-                .ToArray();
-            Console.WriteLine(BuildCoverageLine(
-                $"{screenId} route overrides",
-                routeVariants,
-                id => HasAnyFile(screenBackgroundDir, id, ".png"),
-                $"assets/ui/backgrounds/{screenId}_{{route_id}}.png"));
-        }
     }
 
     private static string BuildCoverageLine(string label, IReadOnlyList<string> expectedIds, Func<string, bool> exists, string pattern)

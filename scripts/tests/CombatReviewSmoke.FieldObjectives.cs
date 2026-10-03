@@ -14,12 +14,10 @@ public partial class CombatReviewSmoke
         var ally = Spawn("player_defender", Team.Player, point);
         var enemy = Spawn("enemy_walker", Team.Enemy, point + new Vector2(50, 0));
         Invoke(battle, "UpdateCampaignField", 4f);
-        Check(!Read<bool>(battle, "_outpostCaptured"), "Contested post cannot be captured");
         enemy.Position = new Vector2(2400, 340);
         var allyStart = ally.Position;
-        Check(!(bool)Invoke(battle, "TryHoldCampaignFieldPoint", ally, enemy), "Removed posts cannot hold or snap troops");
         Invoke(battle, "UpdateCampaignField", plan.CaptureSeconds + .01f);
-        Check(!Read<bool>(battle, "_outpostCaptured") && Read<int>(battle, "_forwardDeploymentsRemaining") == 0,
+        Check(typeof(BattleController).GetField("_outpostCaptured",System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null,
             "Standing near a removed post never creates forward deployments");
         Check(ally.Position == allyStart, "Field updates leave troop positions unchanged");
         var deck = Read<BattleDeckState>(battle, "_deck");
@@ -36,7 +34,7 @@ public partial class CombatReviewSmoke
         ally.Position = (Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio);
         var gate = Read<float>(battle, "_enemyBaseHealth");
         Invoke(battle, "UpdateCampaignField", 3f);
-        Check(!Read<bool>(battle, "_supplyCollected") && Read<float>(battle, "_enemyBaseHealth") == gate,
+        Check(Read<float>(battle, "_enemyBaseHealth") == gate,
             "Standing near a removed supply cache grants no capture reward");
         var summoner = Spawn("enemy_lich", Team.Enemy, ally.Position + new Vector2(50, 0));
         Check((bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "An engaged summoner can create a finite reinforcement wave");

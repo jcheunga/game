@@ -203,7 +203,7 @@ public partial class MobilePresentationReview : Node
 
     private async Task CheckModelPreviews()
     {
-        foreach(var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Append(GameData.PlayerSkeletonId).Distinct())
+        foreach(var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
         {
             var source=UnitSpriteLoader.LoadOwnedPreview(id);
             Check(source!=null && source.FrameWidth==256 && source.FrameHeight==320 && source.Animations.Count==3,

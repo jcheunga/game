@@ -206,7 +206,7 @@ public partial class BattleController
         var valid = CanDropCard(_cardPointerPosition);
         _cardDragPortrait.Modulate = valid ? new Color("d8ffebcc") : new Color("ffb5a2aa");
         _cardDragHint.Text = !DragCardAffordable() ? "Unavailable · cancel" : !valid ? "Move onto the battlefield" :
-            _dragUnit != null ? (CanDeployForward ? "Release · forward post" : "Release · caravan lane") : "Release · " + _dragSpell.DisplayName;
+            _dragUnit != null ? "Release · caravan lane" : "Release · " + _dragSpell.DisplayName;
         var scale = _mobileHud != null ? 1.4f : 1f;
         _cardDragGhost.Scale = Vector2.One * scale;
         var size = _cardDragGhost.Size * scale;

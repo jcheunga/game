@@ -19,7 +19,6 @@ public partial class BattleController
     private int _wagonVolleyLevel, _wagonRepairLevel, _wagonArmorLevel;
     private float _wagonVolleyRecovery;
     private bool _wagonRepairUsed;
-    private Label _baseWeaponsIntel;
 
     private void InitializeBaseWeapons()
     {
@@ -174,15 +173,6 @@ public partial class BattleController
                 SpawnDamageFeedback(ToLocal(position), dealt, color);
             });
         SpawnEffect(projectile.Position, weapon.Color, 3, 15, 0.16f, false);
-    }
-
-    private string BuildBaseWeaponsIntel()
-    {
-        var mounts = string.Join("\n", _wagonMounts.Select(m => $"{m.Weapon.Title}: {m.Weapon.Damage:0} damage, {m.Weapon.Range:0} range, {m.Recovery:0.0}s"));
-        var skills = _wagonVolleyLevel > 0 ? $"\nVolley: {(_wagonVolleyRecovery <= 0 ? "Ready" : $"{_wagonVolleyRecovery:0}s")}" : "";
-        if (_wagonRepairLevel > 0) skills += $"\nEmergency repairs: {(_wagonRepairUsed ? "Spent" : "Armed at 40% hull")}";
-        return "WAGON ARMAMENTS\n" + mounts + skills + $"\nArmor: {(1 - BaseWeaponCatalog.ArmorScale(_wagonArmorLevel)) * 100:0}% attack reduction" +
-            (_strongholdMount == null ? "" : $"\n\nSTRONGHOLD\n{_strongholdMount.Weapon.Title}: {(_enemyBaseHealth <= 0 ? "Destroyed" : $"{_strongholdMount.Weapon.Range:0} range · {_strongholdMount.Weapon.Cooldown:0.#}s recovery")}");
     }
 
     private void DrawBaseArmaments(CanvasItem canvas, bool player)

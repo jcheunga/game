@@ -5,61 +5,30 @@ using Godot;
 
 public partial class ShopMenu : Control
 {
-    private sealed class ShopRecommendation
-    {
-        public ShopRecommendation(string id, string title, string summary, string actionLabel, Action execute, bool disabled = false)
-        {
-            Id = id;
-            Title = title;
-            Summary = summary;
-            ActionLabel = actionLabel;
-            Execute = execute;
-            Disabled = disabled;
-        }
-
-        public string Id { get; }
-        public string Title { get; }
-        public string Summary { get; }
-        public string ActionLabel { get; }
-        public Action Execute { get; }
-        public bool Disabled { get; }
-    }
-
-    private ColorRect _backgroundTop = null!;
-    private ColorRect _backgroundBottom = null!;
-    private ColorRect _accentBand = null!;
-    private MenuBackdropSet _menuBackdrop = null!;
-    private PanelContainer _titlePanel = null!;
-    private PanelContainer _summaryPanel = null!;
-    private PanelContainer _unitsPanel = null!;
-    private PanelContainer _basePanel = null!;
-    private PanelContainer _relicsPanel = null!;
-    private Container _resourcesRow = null!;
+    private PanelContainer _summaryPanel = null !;
+    private PanelContainer _unitsPanel = null !;
+    private PanelContainer _basePanel = null !;
+    private PanelContainer _relicsPanel = null !;
+    private Container _resourcesRow = null !;
     private GameState _resourceState;
-    private Label _statusLabel = null!;
-    private Label _summaryLabel = null!;
-    private Label _deckLabel = null!;
-    private Label _routeIntelLabel = null!;
-    private VBoxContainer _recommendationStack = null!;
-    private VBoxContainer _unitStack = null!;
-    private VBoxContainer _baseStack = null!;
-    private VBoxContainer _relicsStack = null!;
-
+    private Label _statusLabel = null !;
+    private VBoxContainer _recommendationStack = null !;
+    private VBoxContainer _baseStack = null !;
+    private VBoxContainer _relicsStack = null !;
     public override void _Ready()
     {
-        _embedded = RealmModal.Embedded(this);
-        if (_embedded) BuildModalUi(); else BuildUi();
+        BuildModalUi();
         _resourceState = GameState.Instance;
         _resourceState.FoodChanged += RebuildResourcesRow;
         RefreshUi();
         SelectArmoryTab(SceneRouter.Instance.ConsumeInitialShopTab());
         TryShowMenuHint();
-        if (!_embedded) AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel, _relicsPanel });
     }
 
     public override void _ExitTree()
     {
-        if (_resourceState != null) _resourceState.FoodChanged -= RebuildResourcesRow;
+        if (_resourceState != null)
+            _resourceState.FoodChanged -= RebuildResourcesRow;
     }
 
     private void TryShowMenuHint()
@@ -82,27 +51,10 @@ public partial class ShopMenu : Control
         }
     }
 
-    private void AnimateEntrance(Control[] panels)
-    {
-        for (var i = 0; i < panels.Length; i++)
-        {
-            var panel = panels[i];
-            if (panel == null) continue;
-            panel.Modulate = new Color(1f, 1f, 1f, 0f);
-            var delay = 0.06f + (i * 0.05f);
-            var tween = CreateTween();
-            tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-                .SetDelay(delay)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
-        }
-    }
-
     private VBoxContainer _unitDetail;
     private string _selectedRosterId = "";
     private bool _showSpells;
     private HBoxContainer _armoryTabs;
-
     private void SelectArmoryTab(int index)
     {
         _unitsPanel.Visible = index < 2;
@@ -110,113 +62,53 @@ public partial class ShopMenu : Control
         _relicsPanel.Visible = index == 3;
         _summaryPanel.Visible = index == 4;
         _armoryTabs.GetChild<Button>(index).ButtonPressed = true;
-        if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; _profileExpanded = false; RebuildUnitPanels(); }
-        if (_embedded) {
+        if (index < 2)
+        {
+            _showSpells = index == 1;
+            _selectedRosterId = "";
+            _profileExpanded = false;
+            RebuildUnitPanels();
+        }
+
+        {
             RealmModal.UpdateHeading(this, index == 0 ? "Warband" : index == 1 ? "Spells" : index == 2 ? "War wagon" : index == 3 ? "Relics" : "Caravan adviser");
             _statusLabel.Text = index < 2 ? "" : index == 2 ? "Wagon upgrades carry into every battle." : index == 3 ? "Assign owned relics to your allies." : "Plan your squad and prepare for the next rival.";
         }
     }
 
-    private void BuildUi()
-    {
-        var route = RouteCatalog.Get(GameData.GetStage(GameState.Instance.SelectedStage).MapId);
-        _menuBackdrop = MenuBackdropComposer.AddSplitBackdrop(this, "shop", route.BackgroundTop, route.BackgroundBottom, route.BannerAccent, 92, route.Id);
-        _backgroundTop = _menuBackdrop.PrimaryRect;
-        _backgroundBottom = _menuBackdrop.SecondaryRect;
-        _accentBand = _menuBackdrop.AccentBand;
-        var header = RealmUi.Panel(this, new Rect2(28, 20, 1224, 72), out _titlePanel);
-        var titleRow = new HBoxContainer();
-        header.AddChild(titleRow);
-        titleRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
-        titleRow.AddChild(RealmUi.Heading("The armory", 28));
-        _resourcesRow = new HBoxContainer();
-        titleRow.AddChild(_resourcesRow);
-        titleRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
-        var tabsHost = new VBoxContainer { Position = new Vector2(28, 104), Size = new Vector2(1224, 44) };
-        AddChild(tabsHost);
-        _armoryTabs = RealmUi.Tabs(tabsHost, SelectArmoryTab, "Warband", "Spells", "War wagon", "Relics", "Adviser");
-
-        var units = RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _unitsPanel);
-        var split = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        units.AddChild(split);
-        var rosterHost = new VBoxContainer { CustomMinimumSize = new Vector2(520, 0) };
-        split.AddChild(rosterHost);
-        _unitStack = RealmUi.Scroll(rosterHost);
-        var detailHost = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        split.AddChild(detailHost);
-        _unitDetail = RealmUi.Scroll(detailHost);
-        _baseStack = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _basePanel));
-        _relicsStack = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _relicsPanel));
-        var summary = RealmUi.Scroll(RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _summaryPanel));
-        _summaryLabel = RealmUi.Label(""); summary.AddChild(_summaryLabel);
-        _deckLabel = RealmUi.Label(""); summary.AddChild(_deckLabel);
-        _routeIntelLabel = RealmUi.Label(""); summary.AddChild(_routeIntelLabel);
-        _recommendationStack = new VBoxContainer(); summary.AddChild(_recommendationStack);
-        _basePanel.Visible = _relicsPanel.Visible = _summaryPanel.Visible = false;
-        var footer = RealmUi.Panel(this, new Rect2(28, 618, 1224, 76), out _);
-        var row = new HBoxContainer(); footer.AddChild(row);
-        _statusLabel = RealmUi.Label("Select a portrait to equip, recruit or upgrade.", 14, true);
-        row.AddChild(_statusLabel);
-        row.AddChild(RealmUi.IconButton("gold", "Royal storehouse", () => SceneRouter.Instance.GoToCashShop()));
-        row.AddChild(RealmUi.IconButton("hammer", "Relic forge", () => SceneRouter.Instance.GoToForge()));
-        row.AddChild(RealmUi.IconButton("flag", "Expeditions", () => SceneRouter.Instance.GoToExpeditions()));
-        row.AddChild(RealmUi.Button("map", "Map", () => SceneRouter.Instance.GoToMap()));
-        var prepare = RealmUi.Button("arrow", "Prepare battle", () => SceneRouter.Instance.GoToLoadout(), true);
-        prepare.Disabled = !GameState.Instance.IsCampaignStageUnlocked(GameState.Instance.SelectedStage);
-        row.AddChild(prepare);
-    }
-
     private void RefreshUi()
     {
-        if (_embedded) { RefreshModalUi(); return; }
-        ApplyRouteTheme();
-        RebuildResourcesRow();
-        _summaryLabel.Text = BuildSummaryText();
-        _deckLabel.Text = BuildDeckSummaryText();
-        _routeIntelLabel.Text = BuildRouteIntelText();
-        RebuildRecommendations();
-        RebuildUnitPanels();
-        RebuildBaseUpgradePanels();
-        RebuildRelicPanels();
+        {
+            RefreshModalUi();
+            return;
+        }
     }
 
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_resourcesRow);
         var state = GameState.Instance;
-        if (_embedded)
         {
-            foreach (var (icon, name, amount) in new[] {
-                ("gold", "Gold", state.Gold), ("food", "Rations", state.Food),
-                ("sigils", "Sigils", state.Sigils), ("tomes", "Tomes", state.Tomes),
-                ("shards", "Shards", state.RelicShards), ("essence", "Essence", state.Essence)
-            })
+            foreach (var(icon, name, amount)in new[]
+            {
+                ("gold", "Gold", state.Gold),
+                ("food", "Rations", state.Food),
+                ("sigils", "Sigils", state.Sigils),
+                ("tomes", "Tomes", state.Tomes),
+                ("shards", "Shards", state.RelicShards),
+                ("essence", "Essence", state.Essence)
+            }
+
+            )
             {
                 var balance = HomeResourceUi.Amount(icon, amount.ToString("N0"), $"{name}: {amount:N0}");
                 balance.Name = "Balance" + icon;
                 balance.SizeFlagsVertical = SizeFlags.ShrinkCenter;
                 _resourcesRow.AddChild(balance);
             }
+
             return;
         }
-
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", state.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourcesRow.AddChild(new FoodBalance());
-    }
-
-    private void ApplyRouteTheme()
-    {
-        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
-        var route = RouteCatalog.Get(stage.MapId);
-        _backgroundTop.Color = route.BackgroundTop;
-        _backgroundBottom.Color = route.BackgroundBottom;
-        _accentBand.Color = route.BannerAccent;
-        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("shop", route.Id));
-        _titlePanel.SelfModulate = Colors.White;
-        _summaryPanel.SelfModulate = Colors.White;
-        _unitsPanel.SelfModulate = Colors.White;
-        _basePanel.SelfModulate = Colors.White;
-        _relicsPanel.SelfModulate = Colors.White;
     }
 
     private string BuildSummaryText()
@@ -224,41 +116,15 @@ public partial class ShopMenu : Control
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits().Count;
         var ownedSpells = GameState.Instance.GetOwnedPlayerSpells().Count;
         GameState.Instance.CanExploreNextStage(out _, out var nextExploreLine);
-
-        return
-            $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" +
-            $"Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" +
-            $"Heroic directives secured: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" +
-            $"{GameState.Instance.BuildCampaignReadinessInlineSummary(GameState.Instance.SelectedStage)}\n" +
-            $"War wagon plating level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Stores level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" +
-            $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
-            "Economy rules:\n" +
-            "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" +
-            "- Rations pay for battle entry and restarts. +2 every 5 minutes, up to 24.\n\n" +
-            nextExploreLine;
+        return $"Owned units: {ownedUnits}/{GameData.PlayerRosterIds.Length}\n" + $"Owned spells: {ownedSpells}/{GameData.PlayerSpellIds.Length}\n" + $"Heroic directives secured: {GameState.Instance.ClaimedCampaignDirectiveCount}/{GameState.Instance.MaxStage}\n" + $"{GameState.Instance.BuildCampaignReadinessInlineSummary(GameState.Instance.SelectedStage)}\n" + $"War wagon plating level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.HullPlatingId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" + $"Stores level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.PantryId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" + $"March drum level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.DispatchConsoleId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n" + $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" + "Economy rules:\n" + "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" + "- Rations pay for battle entry and restarts. +2 every 5 minutes, up to 24.\n\n" + nextExploreLine;
     }
 
     private string BuildRouteIntelText()
     {
         var selectedStage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         var route = RouteCatalog.Get(selectedStage.MapId);
-        var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId)
-            .Where(stage => stage.StageNumber >= selectedStage.StageNumber)
-            .Take(3)
-            .ToArray();
-
-        var intel =
-            $"Selected route: {route.Title}\n" +
-            $"{route.CampaignSubtitle}\n" +
-            $"Pressure profile: {route.PressureSummary}\n" +
-            $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" +
-            $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" +
-            $"{GameState.Instance.BuildCampaignDirectiveStatusText(selectedStage.StageNumber)}\n" +
-            $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(selectedStage.StageNumber)}\n" +
-            $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
-
+        var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId).Where(stage => stage.StageNumber >= selectedStage.StageNumber).Take(3).ToArray();
+        var intel = $"Selected route: {route.Title}\n" + $"{route.CampaignSubtitle}\n" + $"Pressure profile: {route.PressureSummary}\n" + $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" + $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food  |  Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" + $"{GameState.Instance.BuildCampaignDirectiveStatusText(selectedStage.StageNumber)}\n" + $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(selectedStage.StageNumber)}\n" + $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
         {
             intel += $"\nNext route exploration: Stage {nextRouteStage.StageNumber}";
@@ -274,45 +140,30 @@ public partial class ShopMenu : Control
             foreach (var stage in upcomingStages)
             {
                 var unlocked = stage.StageNumber <= GameState.Instance.HighestUnlockedStage ? "Ready" : "Locked";
-                intel +=
-                    $"\nS{stage.StageNumber} {stage.StageName}  |  {unlocked}" +
-                    $"\n  Entry {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food  |  Reward +{stage.RewardGold}g / +{stage.RewardFood}f";
+                intel += $"\nS{stage.StageNumber} {stage.StageName}  |  {unlocked}" + $"\n  Entry {GameState.Instance.GetStageEntryFoodCost(stage.StageNumber)} food  |  Reward +{stage.RewardGold}g / +{stage.RewardFood}f";
             }
         }
 
-        var pendingUnits = GameData.GetPlayerUnits()
-            .Where(unit => !GameState.Instance.IsUnitOwned(unit.Id))
-            .OrderBy(unit => unit.UnlockStage)
-            .Take(2)
-            .ToArray();
-
+        var pendingUnits = GameData.GetPlayerUnits().Where(unit => !GameState.Instance.IsUnitOwned(unit.Id)).OrderBy(unit => unit.UnlockStage).Take(2).ToArray();
         if (pendingUnits.Length > 0)
         {
             intel += "\n\nNext unit unlocks:";
             foreach (var unit in pendingUnits)
             {
                 var unlockStage = GameData.GetStage(Mathf.Clamp(unit.UnlockStage, 1, GameState.Instance.MaxStage));
-                var unlockState = GameState.Instance.IsUnitAvailableForPurchase(unit.Id)
-                    ? $"Shop unlocked  |  {GameState.Instance.GetUnitPurchaseCost(unit.Id)} gold"
-                    : $"Win stage {unit.UnlockStage - 1}+";
+                var unlockState = GameState.Instance.IsUnitAvailableForPurchase(unit.Id) ? $"Shop unlocked  |  {GameState.Instance.GetUnitPurchaseCost(unit.Id)} gold" : $"Win stage {unit.UnlockStage - 1}+";
                 intel += $"\n{unit.DisplayName} - {unlockStage.MapName} S{unit.UnlockStage}  |  {unlockState}";
             }
         }
 
-        var pendingSpells = GameData.GetPlayerSpells()
-            .Where(spell => !GameState.Instance.IsSpellOwned(spell.Id))
-            .OrderBy(spell => spell.UnlockStage)
-            .Take(2)
-            .ToArray();
+        var pendingSpells = GameData.GetPlayerSpells().Where(spell => !GameState.Instance.IsSpellOwned(spell.Id)).OrderBy(spell => spell.UnlockStage).Take(2).ToArray();
         if (pendingSpells.Length > 0)
         {
             intel += "\n\nNext spell unlocks:";
             foreach (var spell in pendingSpells)
             {
                 var unlockStage = GameData.GetStage(Mathf.Clamp(spell.UnlockStage, 1, GameState.Instance.MaxStage));
-                var unlockState = GameState.Instance.IsSpellAvailableForPurchase(spell.Id)
-                    ? $"Archive open  |  {GameState.Instance.GetSpellPurchaseCost(spell.Id)} gold"
-                    : $"Win stage {spell.UnlockStage - 1}+";
+                var unlockState = GameState.Instance.IsSpellAvailableForPurchase(spell.Id) ? $"Archive open  |  {GameState.Instance.GetSpellPurchaseCost(spell.Id)} gold" : $"Win stage {spell.UnlockStage - 1}+";
                 intel += $"\n{spell.DisplayName} - {unlockStage.MapName} S{spell.UnlockStage}  |  {unlockState}";
             }
         }
@@ -337,919 +188,27 @@ public partial class ShopMenu : Control
         return false;
     }
 
-    private void RebuildRecommendations()
-    {
-        RealmUi.Clear(_recommendationStack);
-
-        var recommendations = BuildRecommendations();
-        if (recommendations.Count == 0)
-        {
-            _recommendationStack.AddChild(new Label
-            {
-                Text = "No urgent armory actions. The caravan is broadly ready for the selected stage.",
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            });
-            return;
-        }
-
-        foreach (var recommendation in recommendations)
-        {
-            _recommendationStack.AddChild(BuildRecommendationPanel(recommendation));
-        }
-    }
-
-    private List<ShopRecommendation> BuildRecommendations()
-    {
-        var stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
-        var recommendations = new List<ShopRecommendation>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var counts = BuildStageEnemyCounts(stage);
-        var runnerCount = counts.TryGetValue(GameData.EnemyRunnerId, out var runnerValue) ? runnerValue : 0;
-        var saboteurCount = counts.TryGetValue(GameData.EnemySaboteurId, out var saboteurValue) ? saboteurValue : 0;
-        var howlerCount = counts.TryGetValue(GameData.EnemyHowlerId, out var howlerValue) ? howlerValue : 0;
-        var jammerCount = counts.TryGetValue(GameData.EnemyJammerId, out var jammerValue) ? jammerValue : 0;
-        var spitterCount = counts.TryGetValue(GameData.EnemySpitterId, out var spitterValue) ? spitterValue : 0;
-        var splitterCount = counts.TryGetValue(GameData.EnemySplitterId, out var splitterValue) ? splitterValue : 0;
-        var walkerCount = counts.TryGetValue(GameData.EnemyWalkerId, out var walkerValue) ? walkerValue : 0;
-        var lichCount = counts.TryGetValue(GameData.EnemyLichId, out var lichValue) ? lichValue : 0;
-        var busSensitiveObjective = stage.Objectives.Any(objective =>
-            objective != null &&
-            objective.Type.Equals("bus_hull_ratio", StringComparison.OrdinalIgnoreCase));
-        var hazardHeavyStage = StageHazards.HasHazards(stage);
-        var primaryMissionEvent = StageMissionEvents.GetPrimaryEvent(stage);
-        var primaryMissionType = primaryMissionEvent?.NormalizedType ?? "";
-        var barricadeHeavyStage =
-            stage.EnemyBaseHealth >= 680f ||
-            stage.Modifiers.Any(modifier =>
-                modifier != null &&
-                modifier.Type.Equals("reinforced_barricade", StringComparison.OrdinalIgnoreCase));
-        var heavyCount =
-            (counts.TryGetValue(GameData.EnemyBruteId, out var bruteValue) ? bruteValue : 0) +
-            (counts.TryGetValue(GameData.EnemyCrusherId, out var crusherValue) ? crusherValue : 0) +
-            (counts.TryGetValue(GameData.EnemyBossId, out var bossValue) ? bossValue : 0);
-
-        if (!GameState.Instance.HasFullDeck)
-        {
-            var reserveUnit = GameState.Instance.GetOwnedPlayerUnits()
-                .FirstOrDefault(unit => !GameState.Instance.IsUnitInActiveDeck(unit.Id));
-            if (reserveUnit != null)
-            {
-                TryAddRecommendation(
-                    recommendations,
-                    seen,
-                    new ShopRecommendation(
-                        $"deck:{reserveUnit.Id}",
-                        "Fill the active squad",
-                        $"{reserveUnit.DisplayName} is already owned and can fill the empty squad slot immediately.",
-                        $"Add {reserveUnit.DisplayName}",
-                        () =>
-                        {
-                            GameState.Instance.ToggleDeckUnit(reserveUnit.Id, out var message);
-                            _statusLabel.Text = $"{message}";
-                        }));
-            }
-        }
-
-        var directive = GameState.Instance.GetCampaignDirective(stage.StageNumber);
-        if (GameState.Instance.IsCampaignDirectiveUnlocked(stage.StageNumber) &&
-            directive != null &&
-            !GameState.Instance.IsCampaignDirectiveArmed(stage.StageNumber))
-        {
-            TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"directive:{stage.StageNumber}",
-                    $"Arm {directive.Title}",
-                    $"{directive.Summary}\n{CampaignDirectiveCatalog.BuildRewardSummary(directive)}",
-                    "Arm directive",
-                    () =>
-                    {
-                        GameState.Instance.ToggleCampaignDirective(stage.StageNumber, out var message);
-                        _statusLabel.Text = $"{message}";
-                    }));
-        }
-
-        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
-        {
-            if (recommendations.Count >= 3)
-            {
-                break;
-            }
-
-            var targetDoctrineId = ResolveRecommendedDoctrineId(
-                unit,
-                supportPressure: howlerCount > 0 || jammerCount > 0 || spitterCount > 0,
-                breachPressure: barricadeHeavyStage || heavyCount > 0,
-                hullSensitive: busSensitiveObjective || hazardHeavyStage,
-                crowdPressure: splitterCount >= 2 || walkerCount >= 8,
-                rushPressure: runnerCount >= 3 || saboteurCount > 0);
-            if (string.IsNullOrWhiteSpace(targetDoctrineId))
-            {
-                continue;
-            }
-
-            TryAddDoctrineRecommendation(
-                recommendations,
-                seen,
-                unit,
-                targetDoctrineId,
-                stage);
-        }
-
-        switch (primaryMissionType)
-        {
-            case "ritual_site":
-                TryAddUnitRecommendation(
-                    recommendations,
-                    seen,
-                    GameData.PlayerCoordinatorId,
-                    "Hold the ritual circle",
-                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} needs steady allied presence. Battle Monk helps stacked defenders trade better while the caravan sits on the circle.");
-
-                TryAddSpellRecommendation(
-                    recommendations,
-                    seen,
-                    GameData.SpellBarrierWardId,
-                    "Fortify the ritual hold",
-                    "Barrier Ward buys time on shrine and seal circles where the caravan has to hold ground instead of only racing the next wave.");
-                break;
-            case "relic_escort":
-                TryAddUnitRecommendation(
-                    recommendations,
-                    seen,
-                    GameData.PlayerDefenderId,
-                    "Anchor the escort lane",
-                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} rewards a stable hold more than raw burst. Shield Knight gives the escort lane a frontline that can actually stand in the aisle.");
-
-                TryAddSpellRecommendation(
-                    recommendations,
-                    seen,
-                    GameData.SpellHealId,
-                    "Patch the escort lane",
-                    "Heal keeps the war wagon and escort window alive when the relic convoy needs one more clean push.");
-                break;
-            case "gate_breach":
-                TryAddUnitRecommendation(
-                    recommendations,
-                    seen,
-                    GameData.PlayerBreacherId,
-                    "Exploit the breach window",
-                    $"{StageMissionEvents.ResolveTitle(primaryMissionEvent)} turns lane control into direct siege progress. Halberdier converts that window into real gatehouse damage.");
-
-                TryAddBaseRecommendation(
-                    recommendations,
-                    seen,
-                    BaseUpgradeCatalog.DispatchConsoleId,
-                    "Cycle the breach line faster",
-                    "March Drum helps the caravan refill the breach lane before the wall team loses its opening.");
-                break;
-        }
-
-        if (spitterCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerMarksmanId,
-                "Counter ranged pressure",
-                $"Stage {stage.StageNumber} fields {spitterCount} blight caster contacts. A long-range card helps clean them up before they chip the war wagon.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerRangerId,
-                "Add mobile ranged support",
-                "Crossbowman gives the caravan another projectile unit for stages that stack blight casters and mixed backline pressure.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellLightningStrikeId,
-                "Crack priority backliners",
-                "Lightning Strike tags ranged or support threats before they sit safely behind the front.");
-        }
-
-        if (howlerCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerMarksmanId,
-                "Delete support heralds early",
-                $"Stage {stage.StageNumber} includes {howlerCount} dread herald contacts that buff nearby undead speed and damage. Mage helps remove them before the lane spikes.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerRangerId,
-                "Pressure the howl lane",
-                "Crossbowman gives the caravan a second fast ranged answer when support undead sit behind heavier bodies.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellLightningStrikeId,
-                "Punish exposed supports",
-                "Lightning Strike gives the caravan a direct answer when dread heralds or hexers hide behind heavier bodies.");
-        }
-
-        if (howlerCount > 0 ||
-            jammerCount > 0 ||
-            (spitterCount >= 3 && heavyCount >= 2) ||
-            stage.MapId.Equals(RouteCatalog.QuarantineId, StringComparison.OrdinalIgnoreCase))
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerCoordinatorId,
-                "Force-multiply the caravan",
-                stage.MapId.Equals(RouteCatalog.QuarantineId, StringComparison.OrdinalIgnoreCase)
-                    ? "Ashen Ward stages pile ranged support and breach dives into the same lane. Battle Monk buffs nearby allies so the caravan trades better through long late-game pushes."
-                    : "Battle Monk adds a live attack and speed aura, which helps the whole lane keep up once support undead and heavy bodies start stacking together.");
-        }
-
-        if (jammerCount > 0)
-        {
-            TryAddBaseRecommendation(
-                recommendations,
-                seen,
-                BaseUpgradeCatalog.SignalRelayId,
-                "Harden caravan wards",
-                $"Stage {stage.StageNumber} includes {jammerCount} hexer contacts that stall courage flow and drag card recovery. Rune Beacon cuts jam uptime and blunts the suppression window.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerMarksmanId,
-                "Remove hexers early",
-                "Mage helps pick off hexer supports before they chain signal disruption into the next surge.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellBarrierWardId,
-                "Stabilize a jammed lane",
-                "Barrier Ward buys time through suppression windows when the caravan cannot answer immediately with normal deploy tempo.");
-        }
-
-        if (splitterCount >= 2 || walkerCount >= 8 || (howlerCount > 0 && splitterCount > 0))
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerGrenadierId,
-                "Break clustered waves",
-                $"Stage {stage.StageNumber} stacks grouped contacts and support bodies. Alchemist splash helps clear bone nests and buffed crowds before they snowball.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellFireballId,
-                "Burn down crowd spikes",
-                "Fireball is the fastest answer when grouped waves start stacking faster than the unit line can chew through them.");
-        }
-
-        if (heavyCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerDefenderId,
-                "Brace for heavy undead",
-                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Shield Knight upgrades help the line survive bone juggernauts and grave brutes.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerSpearId,
-                "Trade safely into heavies",
-                "Spearman reach lets the frontline trade with brutes and juggernauts at a safer distance than shorter melee cards.");
-
-            TryAddBaseRecommendation(
-                recommendations,
-                seen,
-                BaseUpgradeCatalog.HullPlatingId,
-                "Reinforce the war wagon",
-                "War Wagon Plating buys more margin against heavy pressure and missed contact pickups.");
-        }
-
-        if (barricadeHeavyStage)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerBreacherId,
-                "Punch through the gatehouse",
-                "This district hardens the enemy objective. Halberdier gives the caravan a stronger base-damage card for reinforced late-game stages.");
-        }
-
-        if (busSensitiveObjective || StageEncounterIntel.ResolveThreatRating(stage) is "Severe" or "Extreme")
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerMechanicId,
-                "Protect the war wagon hull",
-                "This stage cares about hull preservation. Siege Engineer can patch the war wagon between surges when the lane is briefly stable.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellHealId,
-                "Patch the caravan on demand",
-                "Heal lets the run recover a cracked lane or war wagon hull immediately instead of waiting for a safe Siege Engineer window.");
-        }
-
-        if (hazardHeavyStage)
-        {
-            TryAddBaseRecommendation(
-                recommendations,
-                seen,
-                BaseUpgradeCatalog.HullPlatingId,
-                "Buffer hazard pulses",
-                "This stage has live battlefield hazards. Extra hull buys time when vents or bursts clip the caravan line.");
-
-            TryAddSpellRecommendation(
-                recommendations,
-                seen,
-                GameData.SpellFrostBurstId,
-                "Slow hazard pileups",
-                "Frost Burst holds dense pushes in telegraphed hazard zones so the caravan has more time to reposition and recover.");
-        }
-
-        if (runnerCount >= 3 || saboteurCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerBrawlerId,
-                "Meet fast rushes early",
-                saboteurCount > 0
-                    ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts that dive the war wagon. Swordsman upgrades help intercept them before they cash in base damage."
-                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. Swordsman upgrades stabilize the front line.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerSpearId,
-                "Extend the intercept line",
-                "Spearman reach lets the frontline catch runners and sappers further up the lane before they slip past shorter melee cards.");
-
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerRaiderId,
-                "Add a fast skirmisher",
-                saboteurCount > 0
-                    ? "Cavalry Rider helps run down sappers and peel pressure off the war wagon before they convert into gatehouse damage."
-                    : "Cavalry Rider helps cover ghoul-heavy stages and rotate pressure away from the war wagon.");
-        }
-
-        if (runnerCount >= 3 || saboteurCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerHoundId,
-                "Cheap tempo against fast rushes",
-                saboteurCount > 0
-                    ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts. War Hound is a cheap tempo unit to bait fast attackers before they reach the war wagon."
-                    : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. War Hound is a cheap tempo unit to bait fast attackers and buy time for heavier drops.");
-        }
-
-        if (spitterCount > 0 || jammerCount > 0 || lichCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerRogueId,
-                "Assassinate rear support",
-                lichCount > 0
-                    ? $"Stage {stage.StageNumber} includes {lichCount} lich contacts that raise fallen undead. Rogue bypasses the frontline to eliminate rear support before they snowball."
-                    : "Rogue bypasses the frontline to eliminate rear support like blight casters and hexers before they chip the caravan.");
-        }
-
-        if (heavyCount > 0)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerBerserkerId,
-                "Ramp damage against heavies",
-                $"Stage {stage.StageNumber} includes {heavyCount} heavy contacts. Berserker damage scales up as health drops, making it a strong answer to brutes and armored bodies.");
-        }
-
-        if (GameState.Instance.GetActiveDeckUnits().Count(unit => GameData.GetUnit(unit.Id).SquadTag.Equals(SquadSynergyCatalog.FrontlineTag, StringComparison.OrdinalIgnoreCase)) >= 2)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerBannerId,
-                "Buff the melee frontline",
-                "The active squad already runs multiple melee units. Banner Knight aura buffer pairs well with frontline troops and improves trades across the whole lane.");
-        }
-
-        TryAddBaseRecommendation(
-            recommendations,
-            seen,
-            BaseUpgradeCatalog.DispatchConsoleId,
-            "Speed up card recovery",
-            "March Drum shortens card recovery so the caravan can answer waves with fewer dead turns.");
-
-        TryAddBaseRecommendation(
-            recommendations,
-            seen,
-            BaseUpgradeCatalog.PantryId,
-            "Expand courage economy",
-            "Caravan Stores let the caravan front-load bigger defenses and recover faster after expensive drops.");
-
-        if (recommendations.Count < 3)
-        {
-            foreach (var unit in GameState.Instance.GetActiveDeckUnits().OrderBy(unit => GameState.Instance.GetUnitLevel(unit.Id)))
-            {
-                if (!TryAddUnitRecommendation(
-                    recommendations,
-                    seen,
-                    unit.Id,
-                    $"Sharpen {unit.DisplayName}",
-                    $"{unit.DisplayName} is already in the active squad, so upgrading it has immediate value on the next deployment."))
-                {
-                    continue;
-                }
-
-                if (recommendations.Count >= 3)
-                {
-                    break;
-                }
-            }
-        }
-
-        return recommendations.Take(3).ToList();
-    }
-
-    private Control BuildRecommendationPanel(ShopRecommendation recommendation)
-    {
-        var panel = new PanelContainer
-        {
-            SelfModulate = new Color("22333b")
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 12);
-        padding.AddThemeConstantOverride("margin_right", 12);
-        padding.AddThemeConstantOverride("margin_top", 10);
-        padding.AddThemeConstantOverride("margin_bottom", 10);
-        panel.AddChild(padding);
-
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 6);
-        padding.AddChild(stack);
-
-        stack.AddChild(new Label
-        {
-            Text = recommendation.Title
-        });
-
-        stack.AddChild(new Label
-        {
-            Text = recommendation.Summary,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        var actionButton = new RealmButton
-        {
-            Text = recommendation.ActionLabel,
-            Disabled = recommendation.Disabled,
-            CustomMinimumSize = new Vector2(0f, 34f)
-        };
-        actionButton.Pressed += () =>
-        {
-            recommendation.Execute();
-            RefreshUi();
-        };
-        stack.AddChild(actionButton);
-
-        return panel;
-    }
-
-    private bool TryAddUnitRecommendation(
-        List<ShopRecommendation> recommendations,
-        HashSet<string> seen,
-        string unitId,
-        string title,
-        string rationale)
-    {
-        var unit = GameData.GetUnit(unitId);
-        var available = GameState.Instance.IsUnitAvailableForPurchase(unit.Id);
-        var owned = GameState.Instance.IsUnitOwned(unit.Id);
-        var inDeck = owned && GameState.Instance.IsUnitInActiveDeck(unit.Id);
-        var level = GameState.Instance.GetUnitLevel(unit.Id);
-        var canAddToDeck = owned && !inDeck && !GameState.Instance.HasFullDeck;
-
-        if (!available)
-        {
-            return false;
-        }
-
-        if (!owned)
-        {
-            var purchaseCost = GameState.Instance.GetUnitPurchaseCost(unit.Id);
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"buy:{unit.Id}",
-                    title,
-                    $"{rationale}\nCost: {purchaseCost} gold.",
-                    $"Buy {unit.DisplayName}",
-                    () =>
-                    {
-                        GameState.Instance.TryPurchaseUnit(unit.Id, out var message);
-                        _statusLabel.Text = $"{message}";
-                    },
-                    GameState.Instance.Gold < purchaseCost));
-        }
-
-        if (canAddToDeck)
-        {
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"deck:{unit.Id}",
-                    title,
-                    $"{rationale}\n{unit.DisplayName} is owned and ready to slot into the active squad.",
-                    $"Add {unit.DisplayName}",
-                    () =>
-                    {
-                        GameState.Instance.ToggleDeckUnit(unit.Id, out var message);
-                        _statusLabel.Text = $"{message}";
-                    }));
-        }
-
-        if (level < GameState.Instance.MaxUnitLevel)
-        {
-            var upgradeCost = GameState.Instance.GetUnitUpgradeCost(unit.Id);
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"upgrade_unit:{unit.Id}",
-                    title,
-                    $"{rationale}\nUpgrade cost: {upgradeCost} gold.",
-                    $"Upgrade {unit.DisplayName}",
-                    () =>
-                    {
-                        if (GameState.Instance.TryUpgradeUnit(unit.Id, out var message))
-                        {
-                            AudioDirector.Instance?.PlayUpgradeConfirm();
-                        }
-                        _statusLabel.Text = $"{message}";
-                    },
-                    GameState.Instance.Gold < upgradeCost));
-        }
-
-        return false;
-    }
-
-    private bool TryAddDoctrineRecommendation(
-        List<ShopRecommendation> recommendations,
-        HashSet<string> seen,
-        UnitDefinition unit,
-        string doctrineId,
-        StageDefinition stage)
-    {
-        if (unit == null ||
-            !GameState.Instance.IsUnitDoctrineUnlocked(unit.Id) ||
-            GameState.Instance.GetUnitDoctrineId(unit.Id).Equals(doctrineId, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var doctrine = UnitDoctrineCatalog.GetOrNull(doctrineId);
-        if (doctrine == null)
-        {
-            return false;
-        }
-
-        var retrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
-        return TryAddRecommendation(
-            recommendations,
-            seen,
-            new ShopRecommendation(
-                $"doctrine:{unit.Id}:{doctrine.Id}",
-                $"Forge {doctrine.Title}",
-                $"Stage {stage.StageNumber} pressure favors {doctrine.Title} on {unit.DisplayName}. {doctrine.Summary}\n" +
-                (retrainCost > 0
-                    ? $"Retrain cost: {retrainCost} gold."
-                    : "First doctrine choice is ready."),
-                retrainCost > 0 ? $"Retrain {unit.DisplayName}" : $"Forge {unit.DisplayName}",
-                () =>
-                {
-                    GameState.Instance.TrySelectUnitDoctrine(unit.Id, doctrine.Id, out var message);
-                    _statusLabel.Text = $"{message}";
-                },
-                retrainCost > 0 && GameState.Instance.Gold < retrainCost));
-    }
-
-    private bool TryAddSpellRecommendation(
-        List<ShopRecommendation> recommendations,
-        HashSet<string> seen,
-        string spellId,
-        string title,
-        string rationale)
-    {
-        var spell = GameData.GetSpell(spellId);
-        var available = GameState.Instance.IsSpellAvailableForPurchase(spell.Id);
-        var owned = GameState.Instance.IsSpellOwned(spell.Id);
-        var equipped = owned && GameState.Instance.IsSpellInActiveDeck(spell.Id);
-        var canEquip = owned && !equipped && GameState.Instance.ActiveDeckSpellIds.Count < GameState.Instance.SpellDeckSizeLimit;
-
-        if (!available)
-        {
-            return false;
-        }
-
-        if (!owned)
-        {
-            var purchaseCost = GameState.Instance.GetSpellPurchaseCost(spell.Id);
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"buy_spell:{spell.Id}",
-                    title,
-                    $"{rationale}\nCost: {purchaseCost} gold.",
-                    $"Scribe {spell.DisplayName}",
-                    () =>
-                    {
-                        GameState.Instance.TryPurchaseSpell(spell.Id, out var message);
-                        _statusLabel.Text = $"{message}";
-                    },
-                    GameState.Instance.Gold < purchaseCost));
-        }
-
-        if (canEquip)
-        {
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"deck_spell:{spell.Id}",
-                    title,
-                    $"{rationale}\n{spell.DisplayName} is owned and can fill an empty spell slot immediately.",
-                    $"Equip {spell.DisplayName}",
-                    () =>
-                    {
-                        GameState.Instance.ToggleDeckSpell(spell.Id, out var message);
-                        _statusLabel.Text = $"{message}";
-                    }));
-        }
-
-        var spellLevel = GameState.Instance.GetSpellLevel(spell.Id);
-        if (owned && spellLevel < GameState.Instance.MaxSpellLevel)
-        {
-            var upgradeCost = GameState.Instance.GetSpellUpgradeCost(spell.Id);
-            return TryAddRecommendation(
-                recommendations,
-                seen,
-                new ShopRecommendation(
-                    $"upgrade_spell:{spell.Id}",
-                    title,
-                    $"{rationale}\nLv{spellLevel} -> Lv{spellLevel + 1} upgrade costs {upgradeCost} gold.",
-                    $"Upgrade {spell.DisplayName}",
-                    () =>
-                    {
-                        if (GameState.Instance.TryUpgradeSpell(spell.Id, out var message))
-                        {
-                            AudioDirector.Instance?.PlayUpgradeConfirm();
-                        }
-                        _statusLabel.Text = $"{message}";
-                    },
-                    GameState.Instance.Gold < upgradeCost));
-        }
-
-        return false;
-    }
-
-    private bool TryAddBaseRecommendation(
-        List<ShopRecommendation> recommendations,
-        HashSet<string> seen,
-        string upgradeId,
-        string title,
-        string rationale)
-    {
-        var definition = BaseUpgradeCatalog.Get(upgradeId);
-        var level = GameState.Instance.GetBaseUpgradeLevel(upgradeId);
-        if (level >= definition.MaxLevel)
-        {
-            return false;
-        }
-
-        var cost = GameState.Instance.GetBaseUpgradeCost(upgradeId);
-        return TryAddRecommendation(
-            recommendations,
-            seen,
-            new ShopRecommendation(
-                $"upgrade_base:{upgradeId}",
-                title,
-                $"{rationale}\nUpgrade cost: {cost} gold.",
-                $"Upgrade {definition.Title}",
-                () =>
-                {
-                    if (GameState.Instance.TryUpgradeBase(upgradeId, out var message))
-                    {
-                        AudioDirector.Instance?.PlayUpgradeConfirm();
-                    }
-                    _statusLabel.Text = $"{message}";
-                },
-                GameState.Instance.Gold < cost));
-    }
-
-    private static bool TryAddRecommendation(
-        List<ShopRecommendation> recommendations,
-        HashSet<string> seen,
-        ShopRecommendation recommendation)
-    {
-        if (!seen.Add(recommendation.Id))
-        {
-            return false;
-        }
-
-        recommendations.Add(recommendation);
-        return true;
-    }
-
-    private static string ResolveRecommendedDoctrineId(
-        UnitDefinition unit,
-        bool supportPressure,
-        bool breachPressure,
-        bool hullSensitive,
-        bool crowdPressure,
-        bool rushPressure)
-    {
-        var tag = SquadSynergyCatalog.NormalizeTag(unit?.SquadTag);
-        if (string.IsNullOrWhiteSpace(tag))
-        {
-            return "";
-        }
-
-        if (hullSensitive)
-        {
-            return tag switch
-            {
-                SquadSynergyCatalog.FrontlineTag => "frontline_bastion",
-                SquadSynergyCatalog.SupportTag => "support_ward_circle",
-                SquadSynergyCatalog.BreachTag => "breach_iron_vanguard",
-                SquadSynergyCatalog.ReconTag => "recon_trailblazer",
-                _ => ""
-            };
-        }
-
-        if (supportPressure || breachPressure)
-        {
-            return tag switch
-            {
-                SquadSynergyCatalog.FrontlineTag => "frontline_duelist",
-                SquadSynergyCatalog.SupportTag => "support_quick_chant",
-                SquadSynergyCatalog.BreachTag => "breach_siegebreaker",
-                SquadSynergyCatalog.ReconTag => "recon_deadeye",
-                _ => ""
-            };
-        }
-
-        if (crowdPressure || rushPressure)
-        {
-            return tag switch
-            {
-                SquadSynergyCatalog.FrontlineTag => "frontline_bastion",
-                SquadSynergyCatalog.SupportTag => "support_quick_chant",
-                SquadSynergyCatalog.BreachTag => "breach_iron_vanguard",
-                SquadSynergyCatalog.ReconTag => "recon_trailblazer",
-                _ => ""
-            };
-        }
-
-        return "";
-    }
-
-    private static Dictionary<string, int> BuildStageEnemyCounts(StageDefinition stage)
-    {
-        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        if (stage?.Waves == null)
-        {
-            return counts;
-        }
-
-        foreach (var wave in stage.Waves)
-        {
-            foreach (var entry in wave.Entries)
-            {
-                if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId))
-                {
-                    continue;
-                }
-
-                counts[entry.UnitId] = counts.TryGetValue(entry.UnitId, out var current)
-                    ? current + Mathf.Max(1, entry.Count)
-                    : Mathf.Max(1, entry.Count);
-            }
-        }
-
-        return counts;
-    }
-
-    private string BuildDeckSummaryText()
-    {
-        var deckUnits = GameState.Instance.GetActiveDeckUnits();
-        var deckSpells = GameState.Instance.GetActiveDeckSpells();
-        if (deckUnits.Count == 0)
-        {
-            return "No units in the active deck.";
-        }
-
-        var lines =
-            $"Cards: {deckUnits.Count}/{GameState.Instance.DeckSizeLimit}\n" +
-            $"Synergy: {GameState.Instance.BuildActiveDeckSynergyInlineSummary()}\n" +
-            $"Magic: {(deckSpells.Count == 0 ? "none equipped" : string.Join(", ", deckSpells.Select(spell => spell.DisplayName)))}\n" +
-            $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(GameState.Instance.SelectedStage)}";
-        for (var i = 0; i < deckUnits.Count; i++)
-        {
-            var unit = deckUnits[i];
-            lines +=
-                $"\n{i + 1}. {unit.DisplayName} Lv{GameState.Instance.GetUnitLevel(unit.Id)}" +
-                $"  |  {SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}" +
-                $"  |  {GameState.Instance.BuildUnitDoctrineInlineText(unit.Id)}";
-        }
-
-        return lines;
-    }
-
     private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
     {
         var armamentEffect = BaseWeaponCatalog.UpgradeEffect(upgrade.Id, level);
-        if (armamentEffect != null) return armamentEffect;
+        if (armamentEffect != null)
+            return armamentEffect;
         return upgrade.Id switch
         {
-            BaseUpgradeCatalog.HullPlatingId =>
-                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerBaseHealthScaleAtLevel(level) - 1f) * 100f)}% war wagon hull",
-            BaseUpgradeCatalog.PantryId =>
-                $"+{GameState.Instance.GetPlayerCourageMaxBonusAtLevel(level):0} max courage  |  " +
-                $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerCourageGainScaleAtLevel(level) - 1f) * 100f)}% gain",
-            BaseUpgradeCatalog.DispatchConsoleId =>
-                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% card recovery",
-            BaseUpgradeCatalog.SignalRelayId =>
-                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamDurationScaleAtLevel(level)) * 100f)}% jam time  |  " +
-                $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamCooldownPenaltyScaleAtLevel(level)) * 100f)}% jam cooldown hit  |  " +
-                $"+{Mathf.RoundToInt(GameState.Instance.GetPlayerSignalJamSuppressionMitigationAtLevel(level) * 100f)}% jam resist",
+            BaseUpgradeCatalog.HullPlatingId => $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerBaseHealthScaleAtLevel(level) - 1f) * 100f)}% war wagon hull",
+            BaseUpgradeCatalog.PantryId => $"+{GameState.Instance.GetPlayerCourageMaxBonusAtLevel(level):0} max courage  |  " + $"+{Mathf.RoundToInt((GameState.Instance.GetPlayerCourageGainScaleAtLevel(level) - 1f) * 100f)}% gain",
+            BaseUpgradeCatalog.DispatchConsoleId => $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerDeployCooldownScaleAtLevel(level)) * 100f)}% card recovery",
+            BaseUpgradeCatalog.SignalRelayId => $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamDurationScaleAtLevel(level)) * 100f)}% jam time  |  " + $"-{Mathf.RoundToInt((1f - GameState.Instance.GetPlayerSignalJamCooldownPenaltyScaleAtLevel(level)) * 100f)}% jam cooldown hit  |  " + $"+{Mathf.RoundToInt(GameState.Instance.GetPlayerSignalJamSuppressionMitigationAtLevel(level) * 100f)}% jam resist",
             _ => upgrade.Summary
         };
     }
 
     private void RebuildUnitPanels()
     {
-        if (_embedded) { RebuildModalRoster(); return; }
-        RealmUi.Clear(_unitStack);
-        _unitStack.AddChild(RealmUi.Label(_showSpells
-            ? $"RITES  ·  {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} equipped"
-            : $"WARBAND  ·  {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} equipped", 13, true));
-        var grid = new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _unitStack.AddChild(grid);
-        var entries = (_showSpells ? GameData.GetPlayerSpells().Select(x => (x.Id, x.DisplayName)) : GameData.GetPlayerUnits().Select(x => (x.Id, x.DisplayName))).ToArray();
-        if (string.IsNullOrEmpty(_selectedRosterId)) _selectedRosterId = entries.FirstOrDefault().Id ?? "";
-        foreach (var (id, name) in entries.OrderByDescending(x => _showSpells ? GameState.Instance.IsSpellInActiveDeck(x.Id) : GameState.Instance.IsUnitInActiveDeck(x.Id)))
         {
-            bool equipped = _showSpells ? GameState.Instance.IsSpellInActiveDeck(id) : GameState.Instance.IsUnitInActiveDeck(id);
-            var button = new RealmButton { CustomMinimumSize = new Vector2(156, 104 + ThemeDB.FallbackFont.GetMultilineStringSize(name, HorizontalAlignment.Center, 144, 18).Y), TooltipText = name + (equipped ? " · Equipped" : ""), AccessibilityName = name };
-            grid.AddChild(button);
-            var content = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            button.AddChild(content);
-            content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-            content.OffsetLeft = 6; content.OffsetTop = 6; content.OffsetRight = -6; content.OffsetBottom = -6;
-            var art = _showSpells ? UiBadgeFactory.CreateSpellBadge(GameData.GetSpell(id), new Vector2(138, 82))
-                : UiBadgeFactory.CreateUnitBadge(GameData.GetUnit(id), new Vector2(138, 82));
-            content.AddChild(art);
-            var label = new Label { Text = name, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            label.AddThemeFontSizeOverride("font_size", 18); content.AddChild(label);
-            bool owned = _showSpells ? GameState.Instance.IsSpellOwned(id) : GameState.Instance.IsUnitOwned(id);
-            bool available = _showSpells ? GameState.Instance.IsSpellAvailableForPurchase(id) : GameState.Instance.IsUnitAvailableForPurchase(id);
-            var stateLabel = new Label { Text = equipped ? "✓ Squad" : owned ? "Reserve" : available ? "Recruit" : "Locked",
-                HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            stateLabel.AddThemeFontSizeOverride("font_size", 18);
-            stateLabel.AddThemeColorOverride("font_color", equipped ? new Color("9ee4b2") : RealmUi.Muted);
-            content.AddChild(stateLabel);
-            void FitPortrait() => button.CustomMinimumSize = new Vector2(156, content.GetCombinedMinimumSize().Y + 12);
-            content.MinimumSizeChanged += FitPortrait;
-            FitPortrait();
-            if (!owned) art.Modulate = available ? new Color(.82f,.82f,.82f) : new Color(.55f,.55f,.55f);
-            button.AddThemeStyleboxOverride("normal", RealmUi.Surface(id == _selectedRosterId ? new Color("3e4a40") : new Color("1b282c"),
-                id == _selectedRosterId ? RealmUi.Gold : equipped ? new Color("79ba91") : new Color("44524c")));
-            button.Pressed += () => { _selectedRosterId = id; _profileExpanded = false; RebuildUnitPanels(); };
+            RebuildModalRoster();
+            return;
         }
-        RealmUi.Clear(_unitDetail);
-        if (!string.IsNullOrEmpty(_selectedRosterId))
-            _unitDetail.AddChild(_showSpells ? BuildSpellPanel(GameData.GetSpell(_selectedRosterId)) : BuildUnitPanel(GameData.GetUnit(_selectedRosterId)));
     }
 
     private Control BuildUnitPanel(UnitDefinition unit)
@@ -1265,26 +224,25 @@ public partial class ShopMenu : Control
         var currentDoctrineId = GameState.Instance.GetUnitDoctrineId(unit.Id);
         var doctrineUnlocked = owned && GameState.Instance.IsUnitDoctrineUnlocked(unit.Id);
         var doctrineRetrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
-
         var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
         var statusLine = owned ? $"Lv {level} · {role} · {(inDeck ? "Equipped" : "Reserve")}" : $"{role} · {(available ? "Recruit" : $"Stage {unit.UnlockStage:00}")}";
         var panel = DetailShell(unit.DisplayName, statusLine, unit.Id, false, out var stack);
         stack.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit)));
         var extra = UnitExtraDetails(stack, unit, owned, level, isMaxLevel);
-
-        var row = new HBoxContainer { Name = "RosterActions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var row = new HBoxContainer
+        {
+            Name = "RosterActions",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
-
         var deckButton = new RealmButton
         {
-            Text = !owned
-                ? "Buy First"
-                : inDeck
-                    ? "Unequip"
-                    : "Equip",
-            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            Disabled = !owned, Visible = owned
+            Text = !owned ? "Buy First" : inDeck ? "Unequip" : "Equip",
+            CustomMinimumSize = new Vector2(0, 48),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = !owned,
+            Visible = owned
         };
         deckButton.Pressed += () =>
         {
@@ -1294,12 +252,11 @@ public partial class ShopMenu : Control
             RefreshUi();
         };
         row.AddChild(deckButton);
-
         var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill
+            CustomMinimumSize = new Vector2(0, 48),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-
         if (!available)
         {
             actionButton.Text = $"Explore S{unit.UnlockStage}";
@@ -1330,6 +287,7 @@ public partial class ShopMenu : Control
                     {
                         AudioDirector.Instance?.PlayUpgradeConfirm();
                     }
+
                     _statusLabel.Text = $"{message}";
                     RefreshUi();
                 };
@@ -1345,7 +303,11 @@ public partial class ShopMenu : Control
             if (tree != null && owned)
             {
                 var unlockedCount = GameState.Instance.GetUnlockedSkillNodes(unit.Id).Count;
-                var talentBtn = new RealmButton { Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})", CustomMinimumSize = new Vector2(130f, 0f) };
+                var talentBtn = new RealmButton
+                {
+                    Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})",
+                    CustomMinimumSize = new Vector2(130f, 0f)
+                };
                 talentBtn.Pressed += () => SceneRouter.Instance.GoToSkillTree();
                 extra.AddChild(talentBtn);
             }
@@ -1360,24 +322,21 @@ public partial class ShopMenu : Control
                 {
                     AudioDirector.Instance?.PlayUpgradeConfirm();
                 }
+
                 _statusLabel.Text = $"{message}";
                 RefreshUi();
             };
         }
 
         row.AddChild(actionButton);
-
         if (owned)
         {
             var prestigeVariants = PrestigeColorCatalog.GetUnlockedVariants(unit.Id);
             if (prestigeVariants.Count > 0)
             {
                 var currentPrestige = GameState.Instance.GetUnitPrestigeIndex(unit.Id);
-                var currentVariant = currentPrestige > 0
-                    ? PrestigeColorCatalog.GetVariant(unit.Id, currentPrestige)
-                    : null;
+                var currentVariant = currentPrestige > 0 ? PrestigeColorCatalog.GetVariant(unit.Id, currentPrestige) : null;
                 var colorLabel = currentVariant != null ? currentVariant.Title : "Default";
-
                 var colorButton = new RealmButton
                 {
                     Text = $"Color: {colorLabel}",
@@ -1416,17 +375,12 @@ public partial class ShopMenu : Control
             doctrineRow.AddThemeConstantOverride("separation", 8);
             extra.AddChild(RealmUi.Label("Doctrine", 18, true));
             extra.AddChild(doctrineRow);
-
             foreach (var doctrine in doctrineOptions)
             {
                 var isSelected = currentDoctrineId.Equals(doctrine.Id, StringComparison.OrdinalIgnoreCase);
                 var doctrineButton = new RealmButton
                 {
-                    Text = isSelected
-                        ? $"{doctrine.Title} Selected"
-                        : string.IsNullOrWhiteSpace(currentDoctrineId)
-                            ? $"Choose {doctrine.Title}"
-                            : $"{doctrine.Title} ({doctrineRetrainCost} gold)",
+                    Text = isSelected ? $"{doctrine.Title} Selected" : string.IsNullOrWhiteSpace(currentDoctrineId) ? $"Choose {doctrine.Title}" : $"{doctrine.Title} ({doctrineRetrainCost} gold)",
                     Disabled = isSelected || (doctrineRetrainCost > 0 && GameState.Instance.Gold < doctrineRetrainCost),
                     SizeFlagsHorizontal = SizeFlags.ExpandFill
                 };
@@ -1449,13 +403,13 @@ public partial class ShopMenu : Control
         var available = GameState.Instance.IsSpellAvailableForPurchase(spell.Id);
         var equipped = owned && GameState.Instance.IsSpellInActiveDeck(spell.Id);
         var purchaseCost = GameState.Instance.GetSpellPurchaseCost(spell.Id);
-
         var resolved = GameState.Instance.BuildSpellStats(spell);
         var role = ArmoryDetailUi.SpellRole(spell.EffectType);
         var statusLine = owned ? $"Lv {resolved.Level:00} · {role} · {(equipped ? "Equipped" : "Reserve")}" : $"{role} · {(available ? "Ready to scribe" : $"Stage {spell.UnlockStage:00}")}";
         var panel = DetailShell(spell.DisplayName, statusLine, spell.Id, true, out var stack);
         var purpose = RealmUi.Label(ArmoryDetailUi.SpellPurpose(spell.EffectType), 18, true);
-        purpose.AddThemeFontSizeOverride("font_size", 18); stack.AddChild(purpose);
+        purpose.AddThemeFontSizeOverride("font_size", 18);
+        stack.AddChild(purpose);
         var metrics = ArmoryDetailUi.SpellStats(resolved);
         stack.AddChild(ArmoryDetailUi.Stats(metrics, metrics.Count <= 4 ? 2 : 3));
         var extra = ArmoryDetailUi.Disclosure(stack, "Effects & training", _profileExpanded, value => _profileExpanded = value);
@@ -1467,19 +421,20 @@ public partial class ShopMenu : Control
             extra.AddChild(ArmoryDetailUi.Stats(next, next.Count <= 4 ? 2 : 3));
         }
 
-        var row = new HBoxContainer { Name = "RosterActions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var row = new HBoxContainer
+        {
+            Name = "RosterActions",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
-
         var deckButton = new RealmButton
         {
-            Text = !owned
-                ? "Scribe First"
-                : equipped
-                    ? "Remove Spell"
-                    : "Equip Spell",
-            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            Disabled = !owned, Visible = owned
+            Text = !owned ? "Scribe First" : equipped ? "Remove Spell" : "Equip Spell",
+            CustomMinimumSize = new Vector2(0, 48),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = !owned,
+            Visible = owned
         };
         deckButton.Pressed += () =>
         {
@@ -1488,12 +443,11 @@ public partial class ShopMenu : Control
             RefreshUi();
         };
         row.AddChild(deckButton);
-
         var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill
+            CustomMinimumSize = new Vector2(0, 48),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-
         if (!available)
         {
             actionButton.Text = $"Explore S{spell.UnlockStage}";
@@ -1501,8 +455,10 @@ public partial class ShopMenu : Control
         }
         else if (!owned)
         {
-            if (purchaseCost > 0) ArmoryDetailUi.GoldAction(actionButton, "Scribe", purchaseCost);
-            else actionButton.Text = "Prepare Spell";
+            if (purchaseCost > 0)
+                ArmoryDetailUi.GoldAction(actionButton, "Scribe", purchaseCost);
+            else
+                actionButton.Text = "Prepare Spell";
             actionButton.Disabled = GameState.Instance.Gold < purchaseCost;
             actionButton.Pressed += () =>
             {
@@ -1525,6 +481,7 @@ public partial class ShopMenu : Control
                     {
                         AudioDirector.Instance?.PlayUpgradeConfirm();
                     }
+
                     _statusLabel.Text = $"{message}";
                     RefreshUi();
                 };
@@ -1543,103 +500,43 @@ public partial class ShopMenu : Control
     private void RebuildBaseUpgradePanels()
     {
         RealmUi.Clear(_baseStack);
-
-        _baseStack.AddChild(new Label
-        {
-            Text = "War Wagon Upgrades"
-        });
-
-        _baseStack.AddChild(RealmUi.Label(_embedded ? "Train your wagon’s weapons, skills and defenses." : "Your wagon starts with archers. Install weapons to fire together automatically; train skills and reinforce defenses below. Upgrades carry into every battle.", 16));
-
+        _baseStack.AddChild(new Label { Text = "War Wagon Upgrades" });
+        _baseStack.AddChild(RealmUi.Label("Train your wagon’s weapons, skills and defenses.", 16));
         var upgradesHost = (Control)_baseStack;
-        if (_embedded) { var grid = new GridContainer { Columns = 2, SizeFlagsHorizontal = SizeFlags.ExpandFill }; grid.AddThemeConstantOverride("h_separation", 14); grid.AddThemeConstantOverride("v_separation", 14); _baseStack.AddChild(grid); upgradesHost = grid; }
-        foreach (var upgrade in BaseUpgradeCatalog.GetAll()) upgradesHost.AddChild(BuildBaseUpgradePanel(upgrade));
+        {
+            var grid = new GridContainer
+            {
+                Columns = 2,
+                SizeFlagsHorizontal = SizeFlags.ExpandFill
+            };
+            grid.AddThemeConstantOverride("h_separation", 14);
+            grid.AddThemeConstantOverride("v_separation", 14);
+            _baseStack.AddChild(grid);
+            upgradesHost = grid;
+        }
+
+        foreach (var upgrade in BaseUpgradeCatalog.GetAll())
+            upgradesHost.AddChild(BuildBaseUpgradePanel(upgrade));
     }
 
     private Control BuildBaseUpgradePanel(BaseUpgradeDefinition upgrade)
     {
-        if (_embedded) return BuildModalUpgrade(upgrade);
-        var level = GameState.Instance.GetBaseUpgradeLevel(upgrade.Id);
-        var isMaxLevel = level >= upgrade.MaxLevel;
-        var cost = GameState.Instance.GetBaseUpgradeCost(upgrade.Id);
-
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(0f, 150f),
-            SelfModulate = new Color("264653")
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 12);
-        padding.AddThemeConstantOverride("margin_bottom", 12);
-        panel.AddChild(padding);
-
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 8);
-        padding.AddChild(stack);
-
-        stack.AddChild(new Label
-        {
-            Text = $"{upgrade.Title}  |  Lv{level}/{upgrade.MaxLevel}"
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"{upgrade.Summary}\n" +
-                $"Current: {BuildBaseUpgradeEffectText(upgrade, level)}" +
-                (isMaxLevel ? "\nNext: maxed" : $"\nNext Lv{level + 1}: {BuildBaseUpgradeEffectText(upgrade, level + 1)}"),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        var button = new RealmButton
-        {
-            Text = isMaxLevel ? "Maxed" : $"Upgrade {cost} gold",
-            Disabled = isMaxLevel || GameState.Instance.Gold < cost,
-            CustomMinimumSize = new Vector2(0f, 38f)
-        };
-        button.Pressed += () =>
-        {
-            if (GameState.Instance.TryUpgradeBase(upgrade.Id, out var message))
-            {
-                AudioDirector.Instance?.PlayUpgradeConfirm();
-            }
-            _statusLabel.Text = $"{message}";
-            RefreshUi();
-        };
-        stack.AddChild(button);
-
-        return panel;
+        return BuildModalUpgrade(upgrade);
     }
 
     private void RebuildRelicPanels()
     {
         RealmUi.Clear(_relicsStack);
-
-        _relicsStack.AddChild(new Label
-        {
-            Text = "Relics"
-        });
-
+        _relicsStack.AddChild(new Label { Text = "Relics" });
         var ownedRelicIds = GameState.Instance.GetOwnedEquipment();
         var allEquipment = GameData.GetAllEquipment();
-
         if (ownedRelicIds.Count == 0)
         {
-            _relicsStack.AddChild(new Label
-            {
-                Text = "No relics acquired yet.",
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            });
+            _relicsStack.AddChild(new Label { Text = "No relics acquired yet.", AutowrapMode = TextServer.AutowrapMode.WordSmart });
             return;
         }
 
-        var ownedRelics = allEquipment
-            .Where(eq => ownedRelicIds.Contains(eq.Id))
-            .ToArray();
-
+        var ownedRelics = allEquipment.Where(eq => ownedRelicIds.Contains(eq.Id)).ToArray();
         foreach (var relic in ownedRelics)
         {
             _relicsStack.AddChild(BuildRelicPanel(relic));
@@ -1651,7 +548,6 @@ public partial class ShopMenu : Control
         var ownedUnits = GameState.Instance.GetOwnedPlayerUnits();
         var equippedByUnitId = "";
         var equippedByUnitName = "";
-
         foreach (var unit in ownedUnits)
         {
             var unitEquip = GameState.Instance.GetUnitEquipment(unit.Id);
@@ -1668,32 +564,20 @@ public partial class ShopMenu : Control
             "legendary" => new Color("ffd166"),
             "epic" => new Color("bb86fc"),
             "rare" => new Color("64b5f6"),
-            _ => new Color("90a4ae")
-        };
-
+            _ => new Color("90a4ae")};
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(0f, 170f),
             SelfModulate = rarityColor.Darkened(0.65f)
         };
-
         var padding = new MarginContainer();
         padding.AddThemeConstantOverride("margin_left", 14);
         padding.AddThemeConstantOverride("margin_right", 14);
         padding.AddThemeConstantOverride("margin_top", 12);
         padding.AddThemeConstantOverride("margin_bottom", 12);
         panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateRelicBadge(relic, new Vector2(68f, 68f)),
-            stackSpacing: 6);
-
-        stack.AddChild(new Label
-        {
-            Text = $"{relic.DisplayName}  |  {relic.Rarity}"
-        });
-
+        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding, UiBadgeFactory.CreateRelicBadge(relic, new Vector2(68f, 68f)), stackSpacing: 6);
+        stack.AddChild(new Label { Text = $"{relic.DisplayName}  |  {relic.Rarity}" });
         var statParts = new List<string>();
         if (Mathf.Abs(relic.HealthScale - 1f) > 0.001f)
             statParts.Add($"HP x{relic.HealthScale:0.##}");
@@ -1705,31 +589,11 @@ public partial class ShopMenu : Control
             statParts.Add($"SPD x{relic.SpeedScale:0.##}");
         if (relic.BaseDamageBonus != 0)
             statParts.Add($"Base +{relic.BaseDamageBonus}");
-
         var statLine = statParts.Count > 0 ? string.Join("  |  ", statParts) : "No stat bonuses";
-
-        stack.AddChild(new Label
-        {
-            Text = statLine,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text = relic.Description,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        var statusText = string.IsNullOrEmpty(equippedByUnitId)
-            ? "Unequipped"
-            : $"Equipped on {equippedByUnitName}";
-
-        stack.AddChild(new Label
-        {
-            Text = statusText,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
+        stack.AddChild(new Label { Text = statLine, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        stack.AddChild(new Label { Text = relic.Description, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        var statusText = string.IsNullOrEmpty(equippedByUnitId) ? "Unequipped" : $"Equipped on {equippedByUnitName}";
+        stack.AddChild(new Label { Text = statusText, AutowrapMode = TextServer.AutowrapMode.WordSmart });
         if (!string.IsNullOrEmpty(equippedByUnitId))
         {
             var unequipButton = new RealmButton
@@ -1750,13 +614,11 @@ public partial class ShopMenu : Control
         var equipRow = new HBoxContainer();
         equipRow.AddThemeConstantOverride("separation", 6);
         stack.AddChild(equipRow);
-
         foreach (var unit in ownedUnits)
         {
             var currentEquip = GameState.Instance.GetUnitEquipment(unit.Id);
             if (currentEquip != null && currentEquip.Id == relic.Id)
                 continue;
-
             var equipButton = new RealmButton
             {
                 Text = $"Equip {unit.DisplayName}",

@@ -3,18 +3,10 @@ using System.Collections.Generic;
 
 public static class AdventureMapArt
 {
-    private static readonly Dictionary<string, Texture2D> Terrains = new();
     private static Texture2D _portraits;
     private static Texture2D _miniatures;
     private static readonly Texture2D[] Pieces = new Texture2D[6];
     private static readonly Texture2D[] Leaders = new Texture2D[6];
-    public static Texture2D TerrainForMap(string mapId)
-    {
-        var biome = mapId switch { "harbor" => "coast", "foundry" or "citadel" => "ashlands",
-            "thornwall" => "highlands", "quarantine" or "mire" or "gloamwood" => "marsh", _ => "kingdom_overworld" };
-        if (!Terrains.TryGetValue(biome, out var terrain)) Terrains[biome] = terrain = ResourceLoader.Load<Texture2D>($"res://assets/map/adventure/{biome}.png");
-        return terrain;
-    }
     public static Texture2D Miniature(AdventureSiteKind kind) => Piece(kind switch {
         AdventureSiteKind.Gold => 0, AdventureSiteKind.Food => 1, AdventureSiteKind.Watchtower => 2,
         AdventureSiteKind.Shrine => 3, AdventureSiteKind.Camp => 4, _ => 5 });

@@ -60,13 +60,6 @@ public sealed class GuildSnapshot
 	public string WeeklyGoalType { get; set; } = "";
 }
 
-public sealed class GuildMemberInfo
-{
-	public string ProfileId { get; set; } = "";
-	public string Callsign { get; set; } = "";
-	public int ContributionPoints { get; set; }
-}
-
 public readonly struct GuildBonus
 {
 	public float HealthScale { get; }

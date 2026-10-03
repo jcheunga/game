@@ -99,7 +99,6 @@ public static class GameData
     public const string PlayerLanternGuardId = "player_lantern_guard";
     public const string PlayerBallistaId = "player_ballista";
     public const string PlayerStormcallerId = "player_stormcaller";
-    public const string PlayerSkeletonId = "player_skeleton";
     public const string SpellFireballId = "spell_fireball";
     public const string SpellHealId = "spell_heal";
     public const string SpellFrostBurstId = "spell_frost_burst";

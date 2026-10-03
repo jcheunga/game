@@ -182,8 +182,8 @@ def audit():
         'caravan_skins':['assets/structures/war_wagon.png']+[f'assets/structures/war_wagon_skin_{i}.png' for i in ('iron','royal','bone','flame','shadow','guild','legendary')],
         'weapon_mounts':[f'assets/structures/mount_{i}.png' for i in ('arrows','ballista','firepot','frost','hex')],
         'particles':[f'assets/particles/{i}.png' for i in catalog_array('ParticleTextureIds')],
-        'screen_backgrounds':[f'assets/ui/backgrounds/{i}.png' for i in catalog_array('ScreenBackgroundIds')],
-        'district_maps':[f'assets/map/backgrounds/{i}.png' for i in catalog_array('RouteIds')],
+        'stage_environments':[f'assets/world/battles/stage-{s["StageNumber"]:02}.png' for s in STAGES],
+        'map_atlases':[f'assets/world/overworld/polished-v3/{i}.png' for i in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery')],
         'spell_icons':[f'assets/ui/icons/spells/{s["Id"]}.png' for s in SPELLS],
         'relic_icons':[f'assets/ui/icons/relics/{r["Id"]}.png' for r in RELICS],
         'reward_icons':[f'assets/ui/icons/rewards/{i}.png' for i in catalog_array('RewardIconIds')],
@@ -195,7 +195,7 @@ def audit():
     for group,paths in groups.items():
         missing=[p for p in paths if not (ROOT/p).exists()]
         report[group]={'present':len(paths)-len(missing),'expected':len(paths),'missing':missing}
-    report['scope']='Required visual assets. Existing procedural music/SFX retained. Route-specific menu overrides are optional.'
+    report['scope']='Required visual assets. Existing procedural music/SFX retained.'
     (ART/'coverage.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps({k:f'{v["present"]}/{v["expected"]}' for k,v in report.items() if isinstance(v,dict)},indent=2))
     return report
@@ -218,8 +218,7 @@ if __name__=='__main__':
                             ('relics',[(r['DisplayName'],ROOT/'assets/ui/icons/relics'/f'{r["Id"]}.png') for r in RELICS]),
                             ('spells',[(s['DisplayName'],ROOT/'assets/ui/icons/spells'/f'{s["Id"]}.png') for s in SPELLS]),
                             ('battlefields',[(i,ROOT/'assets/backgrounds'/f'{i}.png') for i in sorted({s['TerrainId'] for s in STAGES})]),
-                            ('maps',[(i,ROOT/'assets/map/backgrounds'/f'{i}.png') for i in catalog_array('RouteIds')]),
-                            ('menus',[(i,ROOT/'assets/ui/backgrounds'/f'{i}.png') for i in catalog_array('ScreenBackgroundIds')]),
+                            ('map-atlases',[(i,ROOT/'assets/world/overworld/polished-v3'/f'{i}.png') for i in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery')]),
                             ('caravans',[('standard',ROOT/'assets/structures/war_wagon.png')]+[(i,ROOT/'assets/structures'/f'war_wagon_skin_{i}.png') for i in ('iron','royal','bone','flame','shadow','guild','legendary')]),
                             ('mounts',[(i,ROOT/'assets/structures'/f'mount_{i}.png') for i in ('arrows','ballista','firepot','frost','hex')]),
                             ('particles',[(i.replace('particle_',''),ROOT/'assets/particles'/f'{i}.png') for i in catalog_array('ParticleTextureIds')])]:

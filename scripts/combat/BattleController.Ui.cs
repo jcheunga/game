@@ -5,7 +5,6 @@ using System.Linq;
 public partial class BattleController
 {
     private StageStarRating _endStarRating;
-    private Button _convoyOrderButton, _assaultOrderButton, _bulwarkOrderButton, _rescueOrderButton, _breakthroughOrderButton;
 	private void BuildUi()
 	{
 		var route = RouteCatalog.Get(_activeRouteId);
@@ -133,7 +132,6 @@ public partial class BattleController
 		_endLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		endScroll.AddChild(_endLabel);
 
-
 		_endPrimaryButton = new RealmButton
 		{
 			Text = IsEndlessMode
@@ -215,11 +213,9 @@ public partial class BattleController
 			_draftButtons.Add(draftButton);
 		}
 
-
 		ConfigureBattleCamera(root);
 		ConfigureMobileBattleUi(root,spawnPanel,unitRow);
         ConfigureCompactHudLayout(spawnPanel,unitRow);
-		BuildFieldNavigation(root);
 		BuildCardDragPreview(root);
 		ApplyDevUiSettings();
 	}
@@ -270,71 +266,6 @@ public partial class BattleController
 
 	private void UpdateHud()
 	{
-        if (_convoyOrderButton != null)
-        {
-            _convoyOrderButton.Visible = _campaignConvoyCommandReady && !_campaignConvoyCommandTriggered;
-            _convoyOrderButton.Disabled = !_campaignConvoyCommandReady || _campaignConvoyCommandTriggered;
-            _convoyOrderButton.TooltipText = _campaignConvoyCommandTriggered ? "Caravan command spent" :
-                _campaignConvoyCommandReady ? "Rally your troops [C]" : $"Caravan command ready in {_campaignConvoyCommandChargeRemaining:0}s";
-            _assaultOrderButton.Visible = _bulwarkOrderButton.Visible = _campaignFieldOrderReady && !_campaignFieldOrderCommitted;
-            _rescueOrderButton.Visible = _breakthroughOrderButton.Visible = _campaignAdaptiveWaveChoiceReady && !_campaignAdaptiveWaveChoiceUsed;
-        }
-		_baseWeaponsIntel.Text = BuildBaseWeaponsIntel();
-		_battleBannerLabel.Text = IsEndlessMode ? $"Endless · Wave {_spawnDirector.EndlessWaveNumber}" : $"{_stage:00} · {_stageData.StageName}";
-		_battleSubtitleLabel.Text = BuildBattleBannerSubtitle();
-		_battleMissionLabel.Text = BuildBattleBannerStatusText();
-        _baseHealthLabel.Text = $"Wagon  {Mathf.CeilToInt(_playerBaseHealth)} / {Mathf.CeilToInt(_playerBaseMaxHealth)}" +
-            (IsEndlessMode ? "" : $"     Gate  {(_enemyBaseHealth <= 0 ? "Breached" : $"{Mathf.CeilToInt(_enemyBaseHealth)} / {Mathf.CeilToInt(_enemyBaseMaxHealth)}")}");
-		_resourceLabel.Text = IsEndlessMode
-			? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Endless wave {_spawnDirector.EndlessWaveNumber}   |   Best {GameState.Instance.BestEndlessWave}"
-			: IsChallengeMode
-				? $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Challenge Stage {_stage}   |   Best {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}"
-				: $"Courage: {Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}   |   Stage {_stage}";
-		if (IsCampaignMode && _campaignMomentumBoostRemaining > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Momentum x{_campaignMomentumStacks} ({Mathf.CeilToInt(_campaignMomentumBoostRemaining)}s)";
-		}
-		if (IsCampaignMode)
-		{
-			_resourceLabel.Text += _campaignReserveReady
-				? "   |   Reserve ready"
-				: _campaignReserveTriggered
-					? "   |   Reserve spent"
-					: "";
-			_resourceLabel.Text += _campaignConvoyCommandReady
-				? "   |   Command [C] ready"
-				: _campaignConvoyCommandTriggered
-					? "   |   Command spent"
-					: $"   |   Command {_campaignConvoyCommandChargeRemaining:0.0}s";
-			_resourceLabel.Text += _campaignFieldOrderReady
-				? "   |   Order [Z/X] ready"
-				: _campaignFieldOrderCommitted
-					? "   |   Order spent"
-					: "";
-			if (_campaignDoctrineThreshold > 0)
-			{
-				_resourceLabel.Text += $"   |   Doctrine {_campaignDoctrineDefeatProgress}/{_campaignDoctrineThreshold}";
-			}
-		}
-		if (IsCampaignMode && _campaignScoutBoostRemaining > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Scout +{Mathf.RoundToInt((_campaignScoutCourageGainScale - 1f) * 100f)}% ({Mathf.CeilToInt(_campaignScoutBoostRemaining)}s)";
-		}
-		if (IsChallengeMode && _challengeMutator.SignalJamIntervalSeconds > 0.05f && _enemySignalJamTimer <= 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Next blackout {_challengeMutatorNextJamTimer:0.0}s";
-		}
-		if (_enemySignalJamTimer > 0.05f)
-		{
-			_resourceLabel.Text += $"   |   Signal jam {_enemySignalJamTimer:0.0}s";
-		}
-		var waveStatus = _spawnDirector.IsEndlessMode
-			? $"   |   Pending surge: {Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed):0.0}s   |   Queued spawns: {_spawnDirector.PendingSpawnCount}"
-			: _spawnDirector.UsesScriptedWaves
-				? $"   |   Waves: {_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}   |   Queued spawns: {_spawnDirector.PendingSpawnCount}"
-				: "";
-		_timerLabel.Text =
-			$"{(int)_elapsed / 60:00}:{(int)_elapsed % 60:00}";
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
         _healthBar.SetValue(_playerBaseMaxHealth > 0 ? _playerBaseHealth / _playerBaseMaxHealth : 0,
             $"{Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} / {Mathf.CeilToInt(_playerBaseMaxHealth)}");
@@ -344,33 +275,6 @@ public partial class BattleController
 		_courageBar.SetValue(
 			_maxCourage > 0.01f ? _courage / _maxCourage : 0f,
 			$"{Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}");
-		var waveRatio = _spawnDirector.IsEndlessMode
-			? 0f
-			: _spawnDirector.UsesScriptedWaves && _spawnDirector.TotalScriptedWaves > 0
-				? (float)_spawnDirector.NextScriptedWaveIndex / _spawnDirector.TotalScriptedWaves
-				: 0f;
-		_waveProgressBar.SetValue(
-			waveRatio,
-			_spawnDirector.IsEndlessMode
-				? $"Endless wave {_spawnDirector.EndlessWaveNumber}"
-				: _spawnDirector.UsesScriptedWaves
-					? $"{(HasCampaignField && !MobilePresentation.Enabled ? _spawnDirector.CurrentEncounterArea + " · " : "")}{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
-					: "");
-		_waveProgressBar.Visible = false;
-		_waveIntelLabel.Text = BuildWaveIntelText();
-		if (IsEndlessMode)
-		{
-			_objectiveStatusLabel.Text = BuildEndlessStatusText();
-		}
-		else
-		{
-			var objectiveText = StageObjectives.BuildLiveSummary(_stageData, BuildStageBattleResult());
-			var missionText = BuildStageMissionEventText();
-			_objectiveStatusLabel.Text = string.IsNullOrWhiteSpace(missionText)
-				? objectiveText
-				: $"{objectiveText}\n{missionText}";
-		}
-
 		foreach (var slot in _deploySlots)
 		{
 			var cooldown = _deck.GetCooldownRemaining(slot.Definition.Id);
@@ -407,78 +311,11 @@ public partial class BattleController
 		_hudLayout?.Invoke();
         RefreshMobileHud();
 	}
-
-	private string BuildBattleBannerTitle()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		return IsEndlessMode
-			? $"Endless Hold  |  {route.Title}"
-			: IsChallengeMode
-				? $"Challenge {_challengeDefinition.Code}  |  {route.Title}"
-				: $"Stage {_stage}  |  {route.Title}";
-	}
-
-	private string BuildBattleBannerSubtitle()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		return IsEndlessMode
-			? $"Frontline: {_stageData.StageName}\nPath: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Pressure: {route.PressureSummary}"
-			: $"{_stageData.StageName}\nPressure: {route.PressureSummary}";
-	}
-
-	private string BuildBattleBannerStatusText()
-	{
-		if (IsEndlessMode)
-		{
-			return $"Battlefield event: {_endlessBattlefieldEventLabel}\nCaravan support: {_endlessSupportEventLabel}";
-		}
-
-		var missionSummary = BuildStageMissionIntelText().Trim();
-		if (string.IsNullOrWhiteSpace(missionSummary))
-		{
-			missionSummary = $"Battlefield pressure: {StageEncounterIntel.BuildSupportPressureSummary(_stageData)}";
-		}
-
-		if (!IsChallengeMode)
-		{
-			return missionSummary;
-		}
-
-		var mutatorText = BuildChallengeMutatorText();
-		return string.IsNullOrWhiteSpace(mutatorText)
-			? missionSummary
-			: $"{mutatorText}\n{missionSummary}";
-	}
-
-	private void OnShowDevUiToggled(bool enabled)
-	{
-		GameState.Instance.SetShowDevUi(enabled);
-        _combatIntelExpanded = enabled;
-		ApplyDevUiSettings();
-	}
-
-	private void OnShowFpsToggled(bool enabled)
-	{
-		GameState.Instance.SetShowFpsCounter(enabled);
-		ApplyDevUiSettings();
-	}
-
-    private bool _combatIntelExpanded;
     private void ApplyDevUiSettings()
     {
         _topHudPanel.Visible = true;
-        _intelPanel.Visible = false;
-        _timerLabel.Visible = false;
         _statusLabel.Visible = false;
-        _waveProgressBar.Visible = false;
         _fpsLabel.Visible = GameState.Instance.ShowFpsCounter;
-        _showDevUiToggle.SetPressedNoSignal(_combatIntelExpanded);
-    }
-
-    private void ToggleCombatIntel()
-    {
-        _combatIntelExpanded = false;
-        ApplyDevUiSettings();
     }
 
 }

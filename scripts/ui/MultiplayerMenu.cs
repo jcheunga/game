@@ -11,7 +11,6 @@ public partial class MultiplayerMenu : Control
     // player into a database poller.
     private const float OnlineRoomAutoRefreshIntervalSeconds = 10f;
 
-    private MenuBackdropSet _menuBackdrop = null!;
     private HBoxContainer _titleRow = null!;
     private OptionButton _stageSelector = null!;
     private OptionButton _mutatorSelector = null!;
@@ -86,7 +85,8 @@ public partial class MultiplayerMenu : Control
     private void BuildUi()
     {
         var route = RouteCatalog.Get(GameData.GetStage(Mathf.Clamp(_selectedStage, 1, GameState.Instance.MaxStage)).MapId);
-        _menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "multiplayer", route.BackgroundTop, route.Id);
+
+        MedievalUi.Apply(this);
 
         var titlePanel = new PanelContainer
         {
@@ -128,7 +128,6 @@ public partial class MultiplayerMenu : Control
 
         var missionStack = RealmUi.Scroll(missionPadding);
         missionStack.AddThemeConstantOverride("separation", 12);
-
 
         missionStack.AddChild(new Label
         {
@@ -344,8 +343,7 @@ public partial class MultiplayerMenu : Control
         var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
         var route = RouteCatalog.Get(stage.MapId);
-        _menuBackdrop.PrimaryRect.Color = route.BackgroundTop;
-        _menuBackdrop.SetTexture(UiTextureLoader.TryLoadScreenBackground("multiplayer", route.Id));
+
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         var ghostRun = GameState.Instance.GetChallengeGhostRun(challenge.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
         RealmUi.TrimChildren(_titleRow, 2);

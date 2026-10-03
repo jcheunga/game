@@ -68,11 +68,14 @@ source_paths += [ART/'items'/f'{i}.blend' for i in catalog_array('RewardIconIds'
 source_paths += [ART/'particles'/f'{i}.blend' for i in catalog_array('ParticleTextureIds')]
 for category,folder,ids,size in (
     ('battlefields','backgrounds',sorted({s['TerrainId'] for s in STAGES}),(1280,720)),
-    ('maps','map/backgrounds',catalog_array('RouteIds'),(1280,960)),
-    ('menus','ui/backgrounds',[i for i in catalog_array('ScreenBackgroundIds') if i not in ('main_menu','map')],(1280,720))):
+):
     for ident in ids:
         check(ROOT/'assets'/folder/f'{ident}.png',size,opaque=True)
         source_paths.append(ART/category/f'{ident}.blend')
+for stage in STAGES:
+    check(ROOT/'assets/world/battles'/f'stage-{stage["StageNumber"]:02}.png',opaque=True)
+for atlas in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery'):
+    check(ROOT/'assets/world/overworld/polished-v3'/f'{atlas}.png')
 for path in source_paths:
     if not path.exists() or path.stat().st_size<1000:failures.append(f'Missing/empty source: {path.relative_to(ROOT)}')
 

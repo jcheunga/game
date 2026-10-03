@@ -168,8 +168,7 @@ public partial class UiReviewSmoke
                     scroll.ScrollHorizontal=0; await Wait(.1);
                 }
 
-                Ready(); Write("_outpostCaptured",true); Write("_forwardDeploymentArmed",true);
-                Write("_forwardDeploymentsRemaining",2); Write("_forwardCooldownRemaining",0f);
+                Ready();
                 point=FieldPoint(); Down(CardPoint(0)); Move(point);
                 Check(Read<bool>("_cardDragging") && !Read<bool>("_cardScrolling"),
                     mode+": diagonal lift out of an overflowing card bar remains a card drag");
@@ -177,9 +176,8 @@ public partial class UiReviewSmoke
                 Up(point); await Wait(.05);
                 unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);
                 Check(Read<int>("_playerDeployments")==count+1 && unit.Position.DistanceTo(spawn)<.01
-                    && Mathf.IsEqualApprox(spawn.X,GameData.Combat.PlayerSpawnX)
-                    && Read<int>("_forwardDeploymentsRemaining")==2 && Read<float>("_forwardCooldownRemaining")==0,
-                    mode+": stale post state cannot snap deployments away from the wagon");
+                    && Mathf.IsEqualApprox(spawn.X,GameData.Combat.PlayerSpawnX),
+                    mode+": a dropped unit deploys at the wagon");
             }
         }
         finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }

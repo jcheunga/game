@@ -29,10 +29,7 @@ http://localhost:8000 with the same clean URLs Caddy uses (`/privacy` serves
 
 1. **Fill in `site/site.json`.** The deploy refuses to build the site until
    every field below is set:
-   - `domain`: the bare hostname, for example `crownroad.game`. The game's
-     rating prompt already opens `https://crownroad.game` on desktop
-     (`scripts/core/AppRatingPrompt.cs`), so change that too if you use a
-     different domain.
+   - `domain`: the bare hostname, for example `crownroad.game`.
    - `legal_name`: the person or company that publishes the game. It appears in
      the footer and as the data controller in the privacy policy.
    - `support_email`: a monitored inbox. It receives player support, data

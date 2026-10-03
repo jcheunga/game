@@ -60,11 +60,10 @@ GitHub Actions also runs the game build plus the server/data validation workflow
 |-----------|---------------|--------|
 | Unit sprites | `assets/units/{visual_class}.png` | Sprite sheet + optional `.json` metadata |
 | Backgrounds | `assets/backgrounds/{terrain_id}.png` | 1280x720 full-viewport image |
+| Map art | `assets/world/overworld/polished-v3/` | Terrain and medieval scenery atlases |
+| Menu materials | `assets/ui/modal/`, `assets/ui/frames/` | Shared modal and interface textures |
 | Structures | `assets/structures/war_wagon.png`, `gatehouse.png` | Single image per structure |
 | Particle textures | `assets/particles/{particle_id}.png` | Battle burst/trail sprites for deploy, impact, spell, and boss VFX |
-| UI backgrounds | `assets/ui/backgrounds/{screen_id}.png` | Shared menu backgrounds for all supported screen IDs in `ASSETS.md` |
-| Route UI overrides | `assets/ui/backgrounds/{screen_id}_{route_id}.png` | Optional route-specific menu art |
-| District map art | `assets/map/backgrounds/{route_id}.png` | Campaign map panel background |
 | Unit icons | `assets/ui/icons/units/{unit_id}.png` | Optional shared fallback: `{visual_class}.png` |
 | Spell icons | `assets/ui/icons/spells/{spell_id}.png` | Optional shared fallback: `{effect_type}.png` |
 | Relic icons | `assets/ui/icons/relics/{relic_id}.png` | Used in armory/loadout cards |

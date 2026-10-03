@@ -34,8 +34,8 @@ public partial class UiReviewSmoke
             GetTree().Root.AddChild(battle); GetTree().CurrentScene = battle; battle.SetPhysicsProcess(false);
             Check(Read<float>(battle, "_courage") == 0, mode + " starts with zero courage");
             await Wait(.1);
-            Check(Read<System.Collections.ICollection>(battle, "_stageHazards").Count == 0
-                && Read<System.Collections.ICollection>(battle, "_stageMissions").Count == 0, mode + " has no scripted hazard or mission props");
+            Check(typeof(BattleController).GetField("_stageHazards", hidden) == null,
+                mode + " has no retired hazard system");
             return battle;
         }
         foreach (var mode in Enum.GetValues<BattleRunMode>()) await Battle(mode);
@@ -56,9 +56,8 @@ public partial class UiReviewSmoke
         Check(!deck.HasArmedUnit, "Unowned units outside the warband cannot be selected");
         Check(UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerNecromancerId) == null
             && UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerMechanicId) == null, "Abilities cannot summon additional allied units");
-        typeof(BattleController).GetMethod("SpawnSupportUnit", hidden, null, new[] { typeof(string), typeof(float?) }, null)!
-            .Invoke(fight, new object[] { GameData.PlayerLanternGuardId, null });
-        Check(Read<List<Unit>>(fight, "_units").Count(unit => unit.Team == Team.Player) == 1, "Automatic support cannot add a Lantern Guard");
+        Check(typeof(BattleController).GetMethods(hidden).All(method => method.Name != "SpawnSupportUnit"),
+            "Automatic allied support spawning is removed");
         Call(fight, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit(GameData.EnemyRunnerId)), new Vector2(650, 200));
         var spawned = Read<List<Unit>>(fight, "_units").Last();
         Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= 58,
@@ -120,7 +119,7 @@ public partial class UiReviewSmoke
         await Capture("04-endless-return");
         foreach (var destination in typeof(SceneRouter).GetFields(BindingFlags.Public | BindingFlags.Static)
             .Where(field => field.IsLiteral && field.FieldType == typeof(string)).Select(field => (string)field.GetRawConstantValue()!)
-            .Where(path => path is not (SceneRouter.MainMenuScene or SceneRouter.MapScene or SceneRouter.BattleScene or SceneRouter.BattleSummaryScene)))
+            .Where(path => path is not (SceneRouter.MainMenuScene or SceneRouter.MapScene or SceneRouter.BattleScene)))
         {
             fight = await Battle();
             Call(SceneRouter.Instance, "ChangeScene", destination, true); await Wait(.65);

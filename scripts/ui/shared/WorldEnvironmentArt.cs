@@ -4,31 +4,13 @@ using Godot;
 public static class WorldEnvironmentArt
 {
     public const string BattleDirectory = "res://assets/world/battles/";
-    public const string ZoneDirectory = "res://assets/world/zones/";
-    public const string OverworldDirectory = "res://assets/world/overworld/";
+
     public static readonly Rect2 BattleFloorSource = new(.08f, .27f, .84f, .43f);
-    // Keep the walkable field inside clear illustrated ground, away from perimeter cliffs and buildings.
-    public static readonly Vector2[] ZoneFloorSource = {
-        new(.46f,.29f), new(.81f,.47f), new(.64f,.64f), new(.28f,.44f)
-    };
-
     public static string BattlePath(int stage) => $"{BattleDirectory}stage-{stage:00}.png";
-    public static string ZonePath(string zone) => $"{ZoneDirectory}{RouteCatalog.Normalize(zone)}.png";
-    public static Texture2D LoadBattle(int stage) => Load(BattlePath(stage));
-    public static string OverworldPath(string zone) => $"{OverworldDirectory}{RouteCatalog.Normalize(zone)}-painted-v2.png";
-    public static Texture2D LoadZone(string zone) => Load(OverworldPath(zone)) ?? Load(ZonePath(zone));
-    private static Texture2D Load(string path) => ResourceLoader.Exists(path) ? ResourceLoader.Load<Texture2D>(path) : null;
 
-    public static Vector2 ZoneGroundUv(Vector2 point)
-    {
-        var grid = AdventureTerrain.GridPoint(point);
-        var column = (grid.X + .5f) / AdventureTerrain.Columns;
-        var row = (grid.Y + .5f) / AdventureTerrain.Rows;
-        return ZoneFloorSource[0] * (1-column) * (1-row)
-            + ZoneFloorSource[1] * column * (1-row)
-            + ZoneFloorSource[2] * column * row
-            + ZoneFloorSource[3] * (1-column) * row;
-    }
+    public static Texture2D LoadBattle(int stage) => Load(BattlePath(stage));
+
+    private static Texture2D Load(string path) => ResourceLoader.Exists(path) ? ResourceLoader.Load<Texture2D>(path) : null;
 
     public static void DrawBattle(CanvasItem canvas, Texture2D texture, Rect2 ground)
     {

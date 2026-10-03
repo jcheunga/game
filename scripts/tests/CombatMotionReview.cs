@@ -33,7 +33,7 @@ public partial class CombatMotionReview : Node
                 throw new InvalidOperationException("Requires isolated motion-review save.");
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
-            foreach (var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Append(GameData.PlayerSkeletonId).Distinct())
+            foreach (var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
             {
                 var attacker=Spawn(id,Team.Player,new Vector2(400,340));
                 var target=Spawn("enemy_walker",Team.Enemy,new Vector2(400+Mathf.Max(0,attacker.AttackRange-1),340));
@@ -181,29 +181,6 @@ public partial class CombatMotionReview : Node
         mechanic.TickAttackTimer(mechanic.AttackContactSeconds);
         Check(Read<float>(battle,"_playerBaseHealth")>hull,"Tool contact repairs the caravan");
 
-        var point=new Vector2(600,350);
-        var actor=new EndlessContactActor(); actor.Setup("relay_signal",Colors.White,50,100); battle.AddChild(actor); actor.Position=point;
-        var definition=new EndlessContactDefinition("relay_signal","","","","","","","forward_presence",50,10);
-        var stateType=typeof(BattleController).GetNestedType("EndlessContactState",BindingFlags.NonPublic)!;
-        var state=Activator.CreateInstance(stateType,new object[]{definition,point,Colors.White})!;
-        Write(battle,"_activeEndlessContactActor",actor); Write(battle,"_activeEndlessContact",state);
-        var enemy=(Unit)Call(battle,"SpawnUnit",Team.Enemy,new UnitStats(GameData.GetUnit("enemy_brute")),point);
-        Call(battle,"SimulateEnemyContactPressure",enemy,1f/60);
-        Check(actor.Health==100,"Objective strike waits for contact");
-        enemy.TickAttackTimer(enemy.AttackContactSeconds);
-        Check(actor.Health<100,"Objective receives contact damage");
-        var support=(Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_brawler")),point);
-        var hp=actor.Health;
-        Call(battle,"SimulatePlayerContactSupport",support,1f/60);
-        Check(actor.Health==hp,"Objective support waits for its action beat");
-        support.TickAttackTimer(support.AttackContactSeconds);
-        Check((int)stateType.GetProperty("PlayerSupportActions")!.GetValue(state)! == 1,"Objective support resolves once at contact");
-        enemy.TickAttackTimer(3);
-        Call(battle,"SimulateEnemyContactPressure",enemy,1f/60);
-        hp=actor.Health;
-        stateType.GetProperty("Completed")!.SetValue(state,true);
-        enemy.TickAttackTimer(enemy.AttackContactSeconds);
-        Check(actor.Health==hp,"Completed objectives cancel queued strikes");
         battle.QueueFree(); await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
         UnitPool.Clear(); ProjectilePool.Clear();
     }

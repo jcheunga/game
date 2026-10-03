@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.4350462574228686,
+  "drawScale": 3.714730576698824,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_ballista",
   "title": "Ballista Crew",
-  "source": "art/blender/units/player_ballista.blend",
-  "anchorY": 0.7578468024730682,
-  "anchorX": 0.448974,
+  "source": "art/remaster/units/player_ballista.py",
+  "anchorY": 0.6083025336265564,
+  "anchorX": 0.480765,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
       0.0,
-      -0.158662
+      -0.111063
     ],
     "contact": [
-      0.317495,
-      -0.231825
+      0.157344,
+      -0.11584
     ]
-  }
+  },
+  "healthBarY": 0.289553
 }

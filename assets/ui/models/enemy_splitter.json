@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 1.5999999999999999,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0646,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_splitter",
   "title": "Bone Nest",
-  "source": "art/blender/units/enemy_splitter.blend",
-  "anchorY": 0.767992839217186,
-  "anchorX": 0.446967,
+  "source": "art/remaster/units/enemy_splitter.py",
+  "anchorY": 0.6826854050159454,
+  "anchorX": 0.455343,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "nest-pulse",
     "body": [
-      0.0,
-      -0.164905
+      -0.0,
+      -0.154713
     ],
     "contact": [
-      0.329989,
-      -0.240947
+      0.378019,
+      -0.096489
     ]
-  }
+  },
+  "healthBarY": 0.388935
 }

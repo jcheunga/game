@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.419422651134363,
+  "drawScale": 2.7609454178662034,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0612,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "player_brawler",
   "title": "Swordsman",
-  "source": "art/blender/units/player_brawler.blend",
-  "anchorY": 0.789683610200882,
-  "anchorX": 0.448645,
+  "source": "art/remaster/units/player_brawler.py",
+  "anchorY": 0.7254123985767365,
+  "anchorX": 0.474121,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
       0.0,
-      -0.285598
+      -0.221157
     ],
     "contact": [
-      0.516156,
-      -0.32279
+      0.323469,
+      -0.13921
     ]
   },
-  "healthBarY": 0.455309
+  "healthBarY": 0.425412
 }

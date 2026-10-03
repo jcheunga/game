@@ -162,8 +162,9 @@ public partial class BlenderAssetSmoke : Node
         foreach (var entry in CodexCatalog.GetAll()) GameState.Instance.DiscoverCodexEntry(entry.Id);
         var menu = GD.Load<PackedScene>("res://scenes/CodexMenu.tscn").Instantiate();
         AddChild(menu);
+        menu.GetType().GetField("_activeCategory", Hidden)!.SetValue(menu, "Bosses");
         menu.GetType().GetField("_selectedEntryId", Hidden)!.SetValue(menu, "boss_dread_sovereign");
-        menu.GetType().GetMethod("RebuildDetailView", Hidden)!.Invoke(menu, null);
+        menu.GetType().GetMethod("RefreshBook", Hidden)!.Invoke(menu, null);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         var output = ProjectSettings.GlobalizePath("res://artifacts/blender/codex-in-game.png");

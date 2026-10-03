@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.1909804906904324,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.09,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_boss_citadel",
   "title": "Dread Sovereign",
-  "source": "art/blender/units/enemy_boss_citadel.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/enemy_boss_citadel.py",
+  "anchorY": 0.6950345039367676,
+  "anchorX": 0.477608,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
-      0.0,
-      -0.262874
+      -0.0,
+      -0.191352
     ],
     "contact": [
-      0.250121,
-      0.02907
+      -0.000705,
+      0.105799
     ]
-  }
+  },
+  "healthBarY": 0.42941
 }

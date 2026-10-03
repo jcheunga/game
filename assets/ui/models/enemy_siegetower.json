@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.2700807596585757,
+  "drawScale": 2.6285714285714286,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_siegetower",
   "title": "Siege Tower",
-  "source": "art/blender/units/enemy_siegetower.blend",
-  "anchorY": 0.6920041143894196,
-  "anchorX": 0.462004,
+  "source": "art/remaster/units/enemy_siegetower.py",
+  "anchorY": 0.8309374302625656,
+  "anchorX": 0.472818,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "siege-deploy",
     "body": [
-      0.0,
-      -0.210976
+      -0.0,
+      -0.292984
     ],
     "contact": [
-      0.236421,
-      -0.172627
+      0.226929,
+      -0.305513
     ]
-  }
+  },
+  "healthBarY": 0.712187
 }

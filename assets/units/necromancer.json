@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.1610656228865155,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "player_necromancer",
   "title": "Necromancer",
-  "source": "art/blender/units/player_necromancer.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/player_necromancer.py",
+  "anchorY": 0.6968802213668823,
+  "anchorX": 0.477397,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.262874
+      -0.198384
     ],
     "contact": [
-      0.327326,
-      -0.50463
+      0.206281,
+      -0.361519
     ]
   },
-  "healthBarY": 0.519759
+  "healthBarY": 0.39063
 }

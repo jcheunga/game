@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.3597204996191934,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.09,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_boss_tidemaster",
   "title": "Harrow Tidemaster",
-  "source": "art/blender/units/enemy_boss_tidemaster.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/enemy_boss_tidemaster.py",
+  "anchorY": 0.6852390170097351,
+  "anchorX": 0.478733,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.262874
+      -0.17683
     ],
     "contact": [
-      0.478739,
-      -0.28492
+      -0.062506,
+      0.079629
     ]
-  }
+  },
+  "healthBarY": 0.350864
 }

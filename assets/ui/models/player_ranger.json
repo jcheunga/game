@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.368978795057498,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0816,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_ranger",
   "title": "Crossbowman",
-  "source": "art/blender/units/player_ranger.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/player_ranger.py",
+  "anchorY": 0.7627086937427521,
+  "anchorX": 0.469839,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "crossbow",
     "body": [
       0.0,
-      -0.294931
+      -0.257749
     ],
     "contact": [
-      0.376814,
-      -0.250785
+      0.089365,
+      -0.347095
     ]
-  }
+  },
+  "healthBarY": 0.481459
 }

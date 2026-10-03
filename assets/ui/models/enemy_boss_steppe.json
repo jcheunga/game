@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 4.308741118596947,
+  "drawScale": 4.365034281096843,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0816,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_boss_steppe",
   "title": "Steppe Warlord",
-  "source": "art/blender/units/enemy_boss_steppe.blend",
-  "anchorY": 0.6660504639148712,
-  "anchorX": 0.470562,
+  "source": "art/remaster/units/enemy_boss_steppe.py",
+  "anchorY": 0.699286550283432,
+  "anchorX": 0.483631,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "mounted-lance",
     "body": [
-      0.0,
-      -0.248837
+      -0.0,
+      -0.239442
     ],
     "contact": [
-      0.140338,
-      0.015671
+      0.472088,
+      -0.083101
     ]
-  }
+  },
+  "healthBarY": 0.368037
 }

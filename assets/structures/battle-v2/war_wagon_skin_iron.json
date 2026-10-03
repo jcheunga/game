@@ -1,56 +1,56 @@
 {
-  "source": "art/blender/caravans/war_wagon_skin_iron.blend",
-  "generator": "art/blender/render_battle_structures.py",
+  "source": "art/remaster/blend/structures/battle-v2/war_wagon_skin_iron.blend",
+  "generator": "art/remaster/build_battle_structures.py",
   "cameraElevation": 22,
   "anchor": [
     0.5,
-    0.800554
+    0.811922
   ],
   "mounts": [
     [
-      0.348485,
-      0.391116
+      0.275758,
+      0.39339
     ],
     [
-      0.5,
-      0.391116
+      0.427273,
+      0.39339
     ],
     [
-      0.651515,
-      0.391116
+      0.578788,
+      0.39339
     ]
   ],
   "contacts": [
     [
-      0.301212,
-      0.709613
+      0.286667,
+      0.693698
     ],
     [
-      0.672121,
-      0.709613
+      0.701212,
+      0.693698
     ],
     [
-      0.301212,
-      0.800554
+      0.286667,
+      0.811922
     ],
     [
-      0.672121,
-      0.800554
+      0.701212,
+      0.811922
     ]
   ],
   "width": 210,
   "lights": [
     [
-      0.137576,
-      0.801919
+      0.133398,
+      0.803927
     ],
     [
-      0.830909,
-      0.801919
+      0.817142,
+      0.800043
     ]
   ],
   "smoke": [
-    0.469697,
-    0.431513
+    0.439394,
+    0.424824
   ]
 }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.2101029105808423,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0476,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_runner",
   "title": "Ghoul",
-  "source": "art/blender/units/enemy_runner.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/enemy_runner.py",
+  "anchorY": 0.7815938144922256,
+  "anchorX": 0.467671,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
       0.0,
-      -0.294931
+      -0.247159
     ],
     "contact": [
-      0.254741,
-      -0.365479
+      0.301739,
+      -0.230486
     ]
   },
-  "healthBarY": 0.527276
+  "healthBarY": 0.412844
 }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 2.589600722982276,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_boss_mire",
   "title": "Mire Behemoth",
-  "source": "art/blender/units/enemy_boss_mire.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/enemy_boss_mire.py",
+  "anchorY": 0.7403271198272705,
+  "anchorX": 0.472409,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
       0.0,
-      -0.262874
+      -0.197188
     ],
     "contact": [
-      0.138136,
-      -0.113893
+      0.25752,
+      -0.196709
     ]
-  }
+  },
+  "healthBarY": 0.362202
 }

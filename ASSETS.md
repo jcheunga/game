@@ -6,7 +6,14 @@ The game already supports incremental art/audio replacement. Missing files do no
 
 ## Blender source assets
 
-The Blender visual asset pass covers the current unit roster, environments, structures, wagon cosmetics, weapon mounts, icons, portraits, and particle textures. Editable scenes and reproducible build instructions live in [`art/blender/README.md`](art/blender/README.md); [`art/blender/coverage.json`](art/blender/coverage.json) records required-file coverage. The game loads rendered PNGs, not live 3D models. The authoring folder is excluded from Godot import. Existing painted main-menu/map art, vector UI, fonts, and procedural music/SFX are retained.
+The shipped unit sprites, model previews, unit icons and Codex portraits, item icons, caravan skins,
+battle-v2 bases, weapon mounts, gatehouse, particles and fallback battle backgrounds come from the
+remaster pipeline in [`art/remaster/README.md`](art/remaster/README.md): sculpted, skinned characters,
+modelled equipment and lighting matched to the battle renderer. It writes the same runtime contracts
+described below; `python3 art/remaster/pack.py stage` then `apply` refreshes `assets/` and only ever
+replaces files the game already ships. The original library below remains the source for older art.
+
+The original Blender visual asset pass covers the current unit roster, environments, structures, wagon cosmetics, weapon mounts, icons, portraits, and particle textures. Editable scenes and reproducible build instructions live in [`art/blender/README.md`](art/blender/README.md); [`art/blender/coverage.json`](art/blender/coverage.json) records required-file coverage. The game loads rendered PNGs, not live 3D models. The authoring folder is excluded from Godot import. Existing painted main-menu/map art, vector UI, fonts, and procedural music/SFX are retained.
 
 The material/lighting finish is defined in [`art/blender/ART_DIRECTION.md`](art/blender/ART_DIRECTION.md). `polish_assets.py` applies editable procedural surfaces and a consistent light rig to saved models, preserving their geometry and animation contracts. Preview first, publish explicitly, then repack the complete animation atlases. The heavier Blender shaders are baked into the images; they add no runtime shader work.
 

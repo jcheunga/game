@@ -1,44 +1,44 @@
 {
-  "source": "art/blender/gatehouse/gatehouse.blend",
-  "generator": "art/blender/render_battle_structures.py",
+  "source": "art/remaster/blend/structures/battle-v2/gatehouse.blend",
+  "generator": "art/remaster/build_battle_structures.py",
   "cameraElevation": 22,
   "anchor": [
     0.5,
-    0.938747
+    0.948423
   ],
   "mounts": [
     [
-      0.514127,
-      0.32662
+      0.577045,
+      0.420363
     ]
   ],
   "contacts": [
     [
-      0.380263,
-      0.755625
+      0.378919,
+      0.735499
     ],
     [
-      0.492936,
-      0.835118
+      0.468093,
+      0.806084
     ],
     [
-      0.60561,
-      0.914612
+      0.597326,
+      0.887033
     ]
   ],
   "width": 216,
   "lights": [
     [
-      0.250776,
-      0.778054
+      0.259755,
+      0.794617
     ],
     [
-      0.483634,
-      0.94234
+      0.376935,
+      0.87729
     ]
   ],
   "smoke": [
-    0.467094,
-    0.393164
+    0.469506,
+    0.271868
   ]
 }

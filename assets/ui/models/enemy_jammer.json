@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.8236767151435456,
+  "drawScale": 3.0863360588594992,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.06528,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_jammer",
   "title": "Hexer",
-  "source": "art/blender/units/enemy_jammer.blend",
-  "anchorY": 0.7482108175754547,
-  "anchorX": 0.455997,
+  "source": "art/remaster/units/enemy_jammer.py",
+  "anchorY": 0.7016472816467285,
+  "anchorX": 0.476849,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
       0.0,
-      -0.24471
+      -0.202532
     ],
     "contact": [
-      0.457379,
-      -0.36762
+      0.369107,
+      -0.202123
     ]
-  }
+  },
+  "healthBarY": 0.404772
 }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.444817570567493,
+  "drawScale": 2.141596219554451,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.08527,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_brute",
   "title": "Grave Brute",
-  "source": "art/blender/units/enemy_brute.blend",
-  "anchorY": 0.7866746187210083,
-  "anchorX": 0.449178,
+  "source": "art/remaster/units/enemy_brute.py",
+  "anchorY": 0.7906016111373901,
+  "anchorX": 0.466637,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "heavy-smash",
     "body": [
-      0.0,
-      -0.282631
+      -0.0,
+      -0.276777
     ],
     "contact": [
-      0.514722,
-      -0.306335
+      0.095584,
+      0.098795
     ]
   },
-  "healthBarY": 0.505425
+  "healthBarY": 0.496852
 }

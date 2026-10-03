@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.2938961938301228,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_grenadier",
   "title": "Alchemist",
-  "source": "art/blender/units/player_grenadier.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/player_grenadier.py",
+  "anchorY": 0.7713075131177902,
+  "anchorX": 0.468852,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "flask-toss",
     "body": [
-      0.0,
-      -0.294931
+      -0.0,
+      -0.266185
     ],
     "contact": [
-      0.279006,
-      -0.331811
+      0.130889,
+      -0.430972
     ]
-  }
+  },
+  "healthBarY": 0.486933
 }

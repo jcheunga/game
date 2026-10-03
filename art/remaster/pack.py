@@ -149,6 +149,10 @@ def pack_structures():
 
 
 def pack_simple(folder, rel, size):
+    if not (ROOT / rel).exists():
+        # The game no longer ships this category (e.g. menu/map backdrops were retired).
+        print(json.dumps({folder: 'skipped: ' + rel + ' is not part of the game'}))
+        return
     n = 0
     src_dir = REVIEW / folder
     for src in sorted(src_dir.glob('*.png')) if src_dir.exists() else []:
@@ -180,23 +184,30 @@ def pack_codex():
     print(json.dumps({'codex_entries': len(CODEX) - len(missing), 'codex_unresolved_in_stage': len(missing)}))
 
 
-def apply():
-    # Only shipped art/metadata; never Godot .import sidecars (they carry UIDs).
+def apply(allow_new=False):
+    # Only shipped art/metadata; never Godot .import sidecars (they carry UIDs). By default only
+    # files the game already ships are replaced, so retired assets are never resurrected.
     files = [p for p in STAGE.rglob('*') if p.is_file() and p.suffix in ('.png', '.json')]
+    applied, skipped = 0, []
     for p in files:
         target = ROOT / p.relative_to(STAGE)
+        if not target.exists() and not allow_new:
+            skipped.append(str(p.relative_to(STAGE)))
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(p, target)
-    print(json.dumps({'applied_files': len(files)}))
+        applied += 1
+    print(json.dumps({'applied_files': applied, 'skipped_not_in_game': len(skipped), 'examples': skipped[:5]}))
 
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('action', choices=['stage', 'apply'])
     ap.add_argument('--only', default='units,items,structures,particles,menus,battlefields,maps,codex')
+    ap.add_argument('--allow-new', action='store_true', help='also create files the game does not ship yet')
     a = ap.parse_args()
     if a.action == 'apply':
-        apply()
+        apply(a.allow_new)
     else:
         only = a.only.split(',')
         if 'units' in only:

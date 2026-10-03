@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.2646726288410446,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0544,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_tunneler",
   "title": "Tunneler",
-  "source": "art/blender/units/enemy_tunneler.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/enemy_tunneler.py",
+  "anchorY": 0.7748084962368011,
+  "anchorX": 0.46845,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
-      0.0,
-      -0.294931
+      -0.0,
+      -0.236364
     ],
     "contact": [
-      0.25792,
-      -0.363116
+      0.361298,
+      -0.014079
     ]
   },
-  "healthBarY": 0.527276
+  "healthBarY": 0.412308
 }

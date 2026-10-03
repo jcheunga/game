@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.6123154977834,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.07344,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "player_mechanic",
   "title": "Siege Engineer",
-  "source": "art/blender/units/player_mechanic.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/player_mechanic.py",
+  "anchorY": 0.7382374107837677,
+  "anchorX": 0.472648,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "hammer-command",
     "body": [
       0.0,
-      -0.294931
+      -0.23374
     ],
     "contact": [
-      0.28528,
-      -0.406254
+      0.147616,
+      -0.040399
     ]
   },
-  "healthBarY": 0.471026
+  "healthBarY": 0.428862
 }

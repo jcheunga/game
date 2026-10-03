@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.444817570567493,
+  "drawScale": 2.2653119164223994,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.09,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_catacomb_giant",
   "title": "Catacomb Giant",
-  "source": "art/blender/units/enemy_catacomb_giant.blend",
-  "anchorY": 0.7866746187210083,
-  "anchorX": 0.449178,
+  "source": "art/remaster/units/enemy_catacomb_giant.py",
+  "anchorY": 0.7747309505939484,
+  "anchorX": 0.468459,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "heavy-smash",
     "body": [
       0.0,
-      -0.282631
+      -0.261897
     ],
     "contact": [
-      0.26892,
-      0.031255
+      -0.041936,
+      0.114978
     ]
-  }
+  },
+  "healthBarY": 0.512231
 }

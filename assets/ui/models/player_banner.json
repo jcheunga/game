@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.3506665170562933,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.068,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_banner",
   "title": "Banner Knight",
-  "source": "art/blender/units/player_banner.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/player_banner.py",
+  "anchorY": 0.6857395470142365,
+  "anchorX": 0.478676,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
-      0.0,
-      -0.262874
+      -0.0,
+      -0.182233
     ],
     "contact": [
-      0.475087,
-      -0.297107
+      0.289714,
+      -0.113895
     ]
-  }
+  },
+  "healthBarY": 0.50449
 }

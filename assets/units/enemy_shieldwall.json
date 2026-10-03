@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.419422651134363,
+  "drawScale": 2.5129858381259518,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0748,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_shieldwall",
   "title": "Shield Wall",
-  "source": "art/blender/units/enemy_shieldwall.blend",
-  "anchorY": 0.789683610200882,
-  "anchorX": 0.448645,
+  "source": "art/remaster/units/enemy_shieldwall.py",
+  "anchorY": 0.747654139995575,
+  "anchorX": 0.471567,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
       0.0,
-      -0.285598
+      -0.242979
     ],
     "contact": [
-      0.516156,
-      -0.32279
+      0.284844,
+      -0.07361
     ]
   },
-  "healthBarY": 0.455309
+  "healthBarY": 0.453904
 }

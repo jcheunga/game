@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.419422651134363,
+  "drawScale": 2.853663774750988,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.0646,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_mirror",
   "title": "Mirror Knight",
-  "source": "art/blender/units/enemy_mirror.blend",
-  "anchorY": 0.789683610200882,
-  "anchorX": 0.448645,
+  "source": "art/remaster/units/enemy_mirror.py",
+  "anchorY": 0.7180885076522827,
+  "anchorX": 0.474962,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
       0.0,
-      -0.285598
+      -0.213971
     ],
     "contact": [
-      0.516156,
-      -0.32279
+      0.328361,
+      -0.131327
     ]
-  }
+  },
+  "healthBarY": 0.421214
 }

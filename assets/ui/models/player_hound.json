@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.4804788366764057,
+  "drawScale": 2.1120157301055715,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.046,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_hound",
   "title": "War Hound",
-  "source": "art/blender/units/player_hound.blend",
-  "anchorY": 0.7531240880489349,
-  "anchorX": 0.449909,
+  "source": "art/remaster/units/player_hound.py",
+  "anchorY": 0.6644425988197327,
+  "anchorX": 0.466169,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "pounce",
     "body": [
       0.0,
-      -0.155756
+      -0.161484
     ],
     "contact": [
-      0.31168,
-      -0.171952
+      0.361344,
+      -0.278666
     ]
-  }
+  },
+  "healthBarY": 0.276943
 }

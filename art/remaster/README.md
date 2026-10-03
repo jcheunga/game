@@ -60,8 +60,10 @@ python3 art/remaster/pack.py apply
 godot --headless --editor --path . --import
 ```
 
-`pack.py apply` overwrites shipped PNG/JSON files in `assets/` and never touches Godot `.import` files;
-git keeps the originals (`git checkout -- assets` reverts).
+`pack.py apply` replaces shipped PNG/JSON files in `assets/` and never touches Godot `.import` files.
+It only replaces files the game already ships (pass `--allow-new` to create new ones), so retired
+assets are never brought back. The game has since retired menu backgrounds and district-map panels;
+their builders (`build_menus.py`, `build_maps.py`) remain for reference and `pack.py` skips them.
 
 ## Editing a unit
 

@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.7554563910765486,
+  "drawScale": 3.6837531913141284,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.09,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_boss_pass",
   "title": "Thornwall Chieftain",
-  "source": "art/blender/units/enemy_boss_pass.blend",
-  "anchorY": 0.7543560862541199,
-  "anchorX": 0.454908,
+  "source": "art/remaster/units/enemy_boss_pass.py",
+  "anchorY": 0.6689448952674866,
+  "anchorX": 0.480604,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "axe-cleave",
     "body": [
       0.0,
-      -0.250769
+      -0.161235
     ],
     "contact": [
-      0.238603,
-      0.027732
+      -0.061167,
+      0.105503
     ]
   },
-  "healthBarY": 0.485606
+  "healthBarY": 0.393945
 }

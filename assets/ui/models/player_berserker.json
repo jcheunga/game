@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.745249293133118,
+  "drawScale": 3.5323477679898274,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.06357,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_berserker",
   "title": "Berserker",
-  "source": "art/blender/units/player_berserker.blend",
-  "anchorY": 0.7553018033504486,
-  "anchorX": 0.45474,
+  "source": "art/remaster/units/player_berserker.py",
+  "anchorY": 0.6761862933635712,
+  "anchorX": 0.479772,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "axe-cleave",
     "body": [
       0.0,
-      -0.251701
+      -0.168188
     ],
     "contact": [
-      0.454895,
-      -0.279445
+      0.105541,
+      0.03256
     ]
-  }
+  },
+  "healthBarY": 0.363686
 }

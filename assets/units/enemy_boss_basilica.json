@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.8587805971186215,
+  "drawScale": 2.5412843834539376,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_boss_basilica",
   "title": "Bone Pontiff",
-  "source": "art/blender/units/enemy_boss_basilica.blend",
-  "anchorY": 0.7451629638671875,
-  "anchorX": 0.456537,
+  "source": "art/remaster/units/enemy_boss_basilica.py",
+  "anchorY": 0.7448963820934296,
+  "anchorX": 0.471884,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
-      0.0,
-      -0.241705
+      -0.0,
+      -0.246707
     ],
     "contact": [
-      0.264772,
-      -0.002272
+      0.454023,
+      0.033207
     ]
   },
-  "healthBarY": 0.479538
+  "healthBarY": 0.548021
 }

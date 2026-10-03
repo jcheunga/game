@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.5121114357658056,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "enemy_boss_docks",
   "title": "Tidecaller",
-  "source": "art/blender/units/enemy_boss_docks.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/enemy_boss_docks.py",
+  "anchorY": 0.6772014796733856,
+  "anchorX": 0.479656,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.262874
+      -0.178555
     ],
     "contact": [
-      0.336052,
-      -0.499265
+      0.202438,
+      -0.378355
     ]
   },
-  "healthBarY": 0.519759
+  "healthBarY": 0.392826
 }

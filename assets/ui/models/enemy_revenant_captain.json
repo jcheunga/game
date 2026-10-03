@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6570612414283037,
+  "drawScale": 2.921345774431406,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.06664,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_revenant_captain",
   "title": "Revenant Captain",
-  "source": "art/blender/units/enemy_revenant_captain.blend",
-  "anchorY": 0.7637753039598465,
-  "anchorX": 0.453238,
+  "source": "art/remaster/units/enemy_revenant_captain.py",
+  "anchorY": 0.7130358219146729,
+  "anchorX": 0.475542,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
-      0.0,
-      -0.260055
+      -0.0,
+      -0.209014
     ],
     "contact": [
-      0.469993,
-      -0.293921
+      0.3398,
+      -0.126162
     ]
-  }
+  },
+  "healthBarY": 0.478661
 }

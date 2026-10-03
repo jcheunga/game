@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "drawScale": 3.2322605944568323,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.07208,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "player_coordinator",
   "title": "Battle Monk",
-  "source": "art/blender/units/player_coordinator.blend",
-  "anchorY": 0.7666342258453369,
-  "anchorX": 0.452731,
+  "source": "art/remaster/units/player_coordinator.py",
+  "anchorY": 0.6925436556339264,
+  "anchorX": 0.477894,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.262874
+      -0.194014
     ],
     "contact": [
-      0.327326,
-      -0.50463
+      0.191519,
+      -0.35313
     ]
-  }
+  },
+  "healthBarY": 0.376919
 }

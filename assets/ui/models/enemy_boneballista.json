@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.4350462574228686,
+  "drawScale": 1.8285714285714287,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,26 +18,27 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.085,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     }
   },
   "assetId": "enemy_boneballista",
   "title": "Bone Ballista",
-  "source": "art/blender/units/enemy_boneballista.blend",
-  "anchorY": 0.7578468024730682,
-  "anchorX": 0.448974,
+  "source": "art/remaster/units/enemy_boneballista.py",
+  "anchorY": 0.7200158834457397,
+  "anchorX": 0.460925,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
-      0.0,
-      -0.158662
+      -0.0,
+      -0.225624
     ],
     "contact": [
-      0.317495,
-      -0.231825
+      0.319643,
+      -0.235327
     ]
-  }
+  },
+  "healthBarY": 0.582516
 }

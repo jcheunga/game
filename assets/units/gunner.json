@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.3428571428571425,
+  "drawScale": 2.469651410298318,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.068,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "player_shooter",
   "title": "Archer",
-  "source": "art/blender/units/player_shooter.blend",
-  "anchorY": 0.7991506010293961,
-  "anchorX": 0.446966,
+  "source": "art/remaster/units/player_shooter.py",
+  "anchorY": 0.7519996613264084,
+  "anchorX": 0.471068,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "bow-draw",
     "body": [
-      0.0,
-      -0.294931
+      -0.0,
+      -0.24056
     ],
     "contact": [
-      0.376814,
-      -0.250785
+      0.185658,
+      -0.326339
     ]
   },
-  "healthBarY": 0.474151
+  "healthBarY": 0.467625
 }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.419422651134363,
+  "drawScale": 2.627745511368935,
   "animations": {
     "idle": {
       "start": 0,
@@ -18,7 +18,7 @@
     "attack": {
       "start": 10,
       "count": 10,
-      "duration": 0.06392,
+      "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
@@ -43,20 +43,20 @@
   },
   "assetId": "player_lantern_guard",
   "title": "Lantern Guard",
-  "source": "art/blender/units/player_lantern_guard.blend",
-  "anchorY": 0.789683610200882,
-  "anchorX": 0.448645,
+  "source": "art/remaster/units/player_lantern_guard.py",
+  "anchorY": 0.7368384897708893,
+  "anchorX": 0.472809,
   "motion": {
-    "revision": "contact-v1",
+    "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
       0.0,
-      -0.285598
+      -0.232367
     ],
     "contact": [
-      0.516156,
-      -0.32279
+      0.258798,
+      -0.158139
     ]
   },
-  "healthBarY": 0.455309
+  "healthBarY": 0.436838
 }

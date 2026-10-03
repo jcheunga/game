@@ -12,6 +12,16 @@ public partial class BattleAmbientParticles : Node2D
 	private CpuParticles2D _weatherSecondary;
 	private ColorRect _weatherOverlay;
 
+	private void AddEmitter(CpuParticles2D particles)
+	{
+		particles.Texture = ParticleTextureLoader.SoftTexture;
+		var diameter = Mathf.Max(particles.Texture.GetWidth(), particles.Texture.GetHeight());
+		particles.ScaleAmountMin /= diameter;
+		particles.ScaleAmountMax /= diameter;
+		particles.TextureFilter = TextureFilterEnum.Linear;
+		AddChild(particles);
+	}
+
 	public void Setup(string terrainId, float left, float right, float top, float bottom)
 	{
 		var width = right - left;
@@ -101,7 +111,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.6f, new Color(1f, 0.35f, 0.05f, 0.5f));
 		gradient.AddPoint(1f, new Color(0.6f, 0.15f, 0.05f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -130,7 +140,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.7f, new Color(0.9f, 0.94f, 1f, 0.3f));
 		gradient.AddPoint(1f, new Color(0.9f, 0.94f, 1f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -159,7 +169,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.5f, new Color(0.8f, 0.9f, 0.82f, 0.06f));
 		gradient.AddPoint(1f, new Color(0.8f, 0.9f, 0.82f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -188,7 +198,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.6f, new Color(1f, 0.94f, 0.8f, 0.15f));
 		gradient.AddPoint(1f, new Color(1f, 0.94f, 0.8f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -217,7 +227,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.6f, new Color(0.5f, 0.48f, 0.45f, 0.2f));
 		gradient.AddPoint(1f, new Color(0.4f, 0.38f, 0.35f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -246,7 +256,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.5f, new Color(0.7f, 0.6f, 0.25f, 0.35f));
 		gradient.AddPoint(1f, new Color(0.65f, 0.5f, 0.2f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -275,7 +285,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.5f, new Color(0.8f, 0.7f, 0.5f, 0.12f));
 		gradient.AddPoint(1f, new Color(0.8f, 0.7f, 0.5f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -305,7 +315,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.85f, new Color(0.65f, 0.9f, 0.35f, 0.2f));
 		gradient.AddPoint(1f, new Color(0.6f, 0.85f, 0.3f, 0f));
 		p.ColorRamp = gradient;
-		AddChild(p);
+		AddEmitter(p);
 		return p;
 	}
 
@@ -370,7 +380,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.7f, new Color(0.68f, 0.76f, 0.88f, 0.25f));
 		gradient.AddPoint(1f, new Color(0.65f, 0.74f, 0.86f, 0f));
 		_weatherPrimary.ColorRamp = gradient;
-		AddChild(_weatherPrimary);
+		AddEmitter(_weatherPrimary);
 
 		// Add ground-level mist layer
 		_weatherSecondary = new CpuParticles2D
@@ -396,7 +406,7 @@ public partial class BattleAmbientParticles : Node2D
 		mistGradient.AddPoint(0.6f, new Color(0.68f, 0.75f, 0.84f, 0.05f));
 		mistGradient.AddPoint(1f, new Color(0.68f, 0.75f, 0.84f, 0f));
 		_weatherSecondary.ColorRamp = mistGradient;
-		AddChild(_weatherSecondary);
+		AddEmitter(_weatherSecondary);
 	}
 
 	private void ApplyFogWeather(Vector2 center, float width, float height)
@@ -432,7 +442,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.85f, new Color(0.78f, 0.82f, 0.8f, 0.06f));
 		gradient.AddPoint(1f, new Color(0.75f, 0.8f, 0.78f, 0f));
 		_weatherPrimary.ColorRamp = gradient;
-		AddChild(_weatherPrimary);
+		AddEmitter(_weatherPrimary);
 
 		// Add fog tint overlay
 		_weatherOverlay = new ColorRect
@@ -484,7 +494,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.5f, new Color(0.5f, 0.42f, 0.35f, 0.3f));
 		gradient.AddPoint(1f, new Color(0.4f, 0.35f, 0.3f, 0f));
 		_weatherPrimary.ColorRamp = gradient;
-		AddChild(_weatherPrimary);
+		AddEmitter(_weatherPrimary);
 
 		// Add choking ash haze
 		_weatherSecondary = new CpuParticles2D
@@ -510,7 +520,7 @@ public partial class BattleAmbientParticles : Node2D
 		hazeGradient.AddPoint(0.6f, new Color(0.48f, 0.43f, 0.37f, 0.04f));
 		hazeGradient.AddPoint(1f, new Color(0.45f, 0.4f, 0.35f, 0f));
 		_weatherSecondary.ColorRamp = hazeGradient;
-		AddChild(_weatherSecondary);
+		AddEmitter(_weatherSecondary);
 	}
 
 	private void ApplyBlizzardWeather(Vector2 center, float width, float height)
@@ -546,7 +556,7 @@ public partial class BattleAmbientParticles : Node2D
 		gradient.AddPoint(0.5f, new Color(0.9f, 0.94f, 1f, 0.35f));
 		gradient.AddPoint(1f, new Color(0.88f, 0.92f, 0.98f, 0f));
 		_weatherPrimary.ColorRamp = gradient;
-		AddChild(_weatherPrimary);
+		AddEmitter(_weatherPrimary);
 
 		// Add wind-driven ground frost
 		_weatherSecondary = new CpuParticles2D
@@ -572,6 +582,6 @@ public partial class BattleAmbientParticles : Node2D
 		windGradient.AddPoint(0.5f, new Color(0.85f, 0.9f, 0.98f, 0.1f));
 		windGradient.AddPoint(1f, new Color(0.82f, 0.88f, 0.96f, 0f));
 		_weatherSecondary.ColorRamp = windGradient;
-		AddChild(_weatherSecondary);
+		AddEmitter(_weatherSecondary);
 	}
 }

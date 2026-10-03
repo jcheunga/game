@@ -15,7 +15,7 @@ dest_files=["res://.godot/imported/stage-31.png-a67ac72aff1cfba60c233e7f6296be3d
 
 [params]
 
-compress/mode=1
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.85
 compress/uastc_level=0

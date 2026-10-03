@@ -41,6 +41,8 @@ public partial class CombatReviewSmoke
         Invoke(battle, "TickBaseWeapons", 0.1f);
         Check(Shots().Length == 1, "Starting wagon fires one ranged shot");
         var shotPosition = Shots()[0].Position;
+        Check(shotPosition.Y < core.Y - 65 && Shots()[0].ZIndex > 0,
+            "Base projectiles launch from the roof above grounded actors");
         Write(battle, "_endlessCheckpointActive", true);
         ResolveShots();
         Check(Shots()[0].Position == shotPosition && runner.Health == runner.MaxHealth, "Wagon projectiles freeze during checkpoint choices");

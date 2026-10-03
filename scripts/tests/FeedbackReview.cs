@@ -59,14 +59,14 @@ public partial class FeedbackReview : Node
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Cell(AdventureTerrain.Point(c)) == c), "Drawn isometric tile centers match movement coordinates");
             var cost = state.GetAdventureTravelFoodCost("city", path);
             Check(!state.TryBeginAdventureTravel("city", new[] { from, to }, out _) && state.Food == 24, "Invalid routes cannot move the hero or spend food");
-            Check(cost > 0 && state.TryBeginAdventureTravel("city", path, out _) && state.Food == 24, "Exploration spends food progressively rather than charging the whole route");
+            Check(cost == 0 && state.TryBeginAdventureTravel("city", path, out _) && state.Food == 24, "Exploration is free before walking the route");
             foreach (var cell in path.Skip(1)) { state.TryPayAdventureStep("city",cell,out _); state.CompleteAdventureStep("city",cell); }
-            Check(state.Food == 24 - cost + discovery.Amount, "Entering tiles spends food and reaching provisions restores it");
+            Check(state.Food == 24 + discovery.Amount, "Entering tiles is free and reaching provisions grants their full amount");
             var blocked = Enumerable.Range(0,AdventureTerrain.CellCount).First(c => !AdventureTerrain.Walkable("city",c));
             Check(state.GetAdventureTravelFoodCost("city", path) == 0 && !state.MoveAdventureHero("city", AdventureTerrain.Point(blocked)), "Walked routes are free and obstacles cannot be crossed");
             var save = state.BuildSaveData(); state.ReloadFromDisk();
             Check(state.GetOwnedPlayerSpells().Count == 0, "Reloading does not grant free starter spells");
-            Check(state.GetAdventureHeroPosition("city") == new Vector2(save.AdventureHeroPositions["city"][0], save.AdventureHeroPositions["city"][1]) && state.Food == save.Food, "Exploration costs persist across reload");
+            Check(state.GetAdventureHeroPosition("city") == new Vector2(save.AdventureHeroPositions["city"][0], save.AdventureHeroPositions["city"][1]) && state.Food == save.Food, "Exploration progress and food balance persist across reload");
             state.ResetProgress(); state.SetShowHints(false);
             var menu = await Open<MainMenu>("MainMenu"); await Capture("01-title");
             AccountDialog.Show(menu); await Wait(.5);
@@ -80,7 +80,7 @@ public partial class FeedbackReview : Node
             var shop = await Open<ShopMenu>("ShopMenu"); await Capture("03-squad");
             Check(Walk(shop).OfType<GridContainer>().Any(g => g.Columns == 3 && g.GetChildCount() == GameData.GetPlayerUnits().Count), "Squad browser displays every unit in one scrolling grid");
             Check(!Walk(shop).OfType<UnitModelPreview>().Any(), "Squad browser uses portraits instead of side-facing models");
-            var rites = Walk(shop).OfType<Button>().Single(b => b.Text == "Battle rites"); rites.ButtonPressed = true; rites.EmitSignal(BaseButton.SignalName.Pressed); await Wait();
+            var rites = Walk(shop).OfType<Button>().Single(b => b.Text == "Spells"); rites.ButtonPressed = true; rites.EmitSignal(BaseButton.SignalName.Pressed); await Wait();
             Check(Walk(shop).OfType<GridContainer>().Any(g => g.Columns == 3 && g.GetChildCount() == GameData.GetPlayerSpells().Count), "Spell browser also displays its full inventory grid");
             await Capture("03b-spells");
             shop.QueueFree(); await Wait();

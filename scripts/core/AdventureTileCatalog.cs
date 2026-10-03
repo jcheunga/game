@@ -4,7 +4,8 @@ using System.Linq;
 using Godot;
 
 /// <summary>One persistent point of interest per atlas tile. Legacy terrain coordinates remain save-compatible.</summary>
-public sealed record AdventureTile(string MapId, int Column, int Row, AdventureMapNode Site = null, AdventureDiscovery Discovery = null)
+public sealed record AdventureTile(string MapId, int Column, int Row, AdventureMapNode Site = null, AdventureDiscovery Discovery = null,
+    string RetiredSiteId = "")
 {
     public string Id => Site?.Id ?? Discovery?.Id ?? $"ground-{MapId}-{Column}-{Row}";
     public Vector2 Point => AdventureAtlasLandscape.SitePoint(MapId, Column, Row);
@@ -16,28 +17,33 @@ public sealed record AdventureTile(string MapId, int Column, int Row, AdventureM
 public static class AdventureTileCatalog
 {
     public const int Columns = 9, Rows = 7;
-    public const float HalfWidth = 176, HalfHeight = 88;
-    public static readonly Vector2 Origin = new(1744, 352);
-    public static Vector2 WorldSize => AdventureTerrain.WorldSize;
+    // Compact the atlas without changing persistent tiles or the 2:1 ground perspective.
+    public const float LayoutScale = .8f;
+    public const float HalfWidth = 176 * LayoutScale, HalfHeight = 88 * LayoutScale;
+    public static readonly Vector2 Origin = new Vector2(1744, 352) * LayoutScale;
+    public static Vector2 WorldSize => AdventureTerrain.WorldSize * LayoutScale;
     private static readonly Dictionary<string, IReadOnlyList<AdventureTile>> Cache = new();
-    private static readonly Vector2I[] Leaders = { new(2,5), new(3,4), new(4,3), new(5,2), new(6,2), new(7,1) };
+    private static readonly Vector2I[] Leaders = { new(1,5), new(3,4), new(4,3), new(5,2), new(6,2), new(7,1) };
     private static readonly Vector2I[] Supplies = { new(1,4), new(2,4), new(3,3), new(4,2), new(6,3), new(8,1) };
     private static readonly Vector2I[] Landmarks = { new(2,6), new(3,5), new(4,4), new(5,3), new(6,1), new(7,0) };
     public static IReadOnlyList<AdventureTile> ForMap(string mapId)
     {
         mapId = RouteCatalog.Normalize(mapId);
         if (Cache.TryGetValue(mapId, out var cached)) return cached;
-        var sites = AdventureMapCatalog.ForMap(mapId);
         var stages = GameData.GetStagesForMap(mapId).OrderBy(stage => stage.StageNumber).ToArray();
         var tiles = new List<AdventureTile>();
         void Add(AdventureMapNode site, Vector2I at) => tiles.Add(new(mapId, at.X, at.Y, site));
-        Add(sites.First(), new(1,5));
+        // Retire Lantern Camp as plain terrain without shifting existing discovery tiles.
+        tiles.Add(new(mapId, 2, 5, RetiredSiteId: $"camp-{mapId}"));
         for (var i = 0; i < stages.Length; i++)
         {
             var stage = stages[i].StageNumber;
             Add(AdventureMapCatalog.Find($"leader-{stage}"), Leaders[i]);
             Add(AdventureMapCatalog.Find($"supply-{stage}"), Supplies[i]);
-            Add(AdventureMapCatalog.Find($"landmark-{stage}"), Landmarks[i]);
+            var landmark = AdventureMapCatalog.Find($"landmark-{stage}");
+            // Preserve retired shrine regions without shifting existing discovery tiles.
+            if (landmark.Kind == AdventureSiteKind.Shrine)
+                tiles.Add(new(mapId, Landmarks[i].X, Landmarks[i].Y, RetiredSiteId: landmark.Id));
         }
         Add(AdventureMapCatalog.Find($"hidden-{mapId}"), new(0,3));
         // Keep discovery IDs and amounts; only their atlas presentation changes.
@@ -49,6 +55,8 @@ public static class AdventureTileCatalog
         return Cache[mapId] = tiles.OrderBy(tile => tile.Column + tile.Row).ThenBy(tile => tile.Column).ToArray();
     }
     public static AdventureTile Find(string mapId, string id) => ForMap(mapId).FirstOrDefault(tile => tile.Id == id);
+    public static AdventureTile Starting(string mapId) => ForMap(mapId).Where(tile => tile.Site?.Kind == AdventureSiteKind.Leader)
+        .OrderBy(tile => tile.Site.Stage).First();
     public static AdventureTile At(string mapId, Vector2 point)
     {
         if (!float.IsFinite(point.X) || !float.IsFinite(point.Y) || AdventureAtlasLandscape.IsWater(mapId, point)) return null;

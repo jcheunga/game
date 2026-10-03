@@ -46,9 +46,9 @@ public partial class CombatReviewSmoke
             Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "Horizontal wheel reaches and clamps at the far edge");
             Check(Read<int>(battle, "_playerDeployments") == deployments, "Scrolling with a card armed never deploys");
             Check(Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect() == hud, "HUD stays fixed while the battlefield scrolls");
-            GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 40) }, true);
-            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Factor = 1, Pressed = true, Position = new Vector2(600, 40) }, true);
-            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = false, Position = new Vector2(600, 40) }, true);
+            GetViewport().PushInput(new InputEventMouseMotion { Position = Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect().GetCenter() }, true);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Factor = 1, Pressed = true, Position = Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect().GetCenter() }, true);
+            GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = false, Position = Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect().GetCenter() }, true);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "Scrolling over the HUD does not pan the battlefield");
             GetViewport().PushInput(new InputEventMouseMotion { Position = new Vector2(600, 330) }, true);

@@ -144,6 +144,10 @@ public partial class BattleController
             damage *= Mathf.Clamp(_stageData.EnemyDamageScale, 0.75f, 1.8f) *
                 (1f - GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.ProjectileWardId) * 0.08f);
         var projectile = ProjectilePool.Acquire();
+        AddChild(projectile);
+        projectile.SetWeaponVisual(weapon.Kind);
+        var mountIndex = Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind));
+        projectile.Position = BaseMountPosition(team == Team.Player, mountIndex);
         projectile.ProcessMode = ProcessModeEnum.Pausable;
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive;
         projectile.Setup(victim, damage, weapon.Speed, weapon.Color,
@@ -169,10 +173,6 @@ public partial class BattleController
                 if (team == Team.Player) TrackDamageDealt(weapon.Title, dealt);
                 SpawnDamageFeedback(ToLocal(position), dealt, color);
             });
-        projectile.SetWeaponVisual(weapon.Kind);
-        AddChild(projectile);
-        var mountIndex = Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind));
-        projectile.Position = origin + (team == Team.Player ? new Vector2(-20 + mountIndex * 27, -38) : new Vector2(32, -62));
         SpawnEffect(projectile.Position, weapon.Color, 3, 15, 0.16f, false);
     }
 
@@ -185,29 +185,33 @@ public partial class BattleController
             (_strongholdMount == null ? "" : $"\n\nSTRONGHOLD\n{_strongholdMount.Weapon.Title}: {(_enemyBaseHealth <= 0 ? "Destroyed" : $"{_strongholdMount.Weapon.Range:0} range · {_strongholdMount.Weapon.Cooldown:0.#}s recovery")}");
     }
 
-    private void DrawBaseArmaments()
+    private void DrawBaseArmaments(CanvasItem canvas, bool player)
     {
-        if (_playerBaseHealth > 0)
+        if (player && _playerBaseHealth > 0)
             for (var i = 0; i < _wagonMounts.Count; i++)
-                DrawBaseMount(PlayerBaseCorePosition + new Vector2(-20 + i * 27, -38), _wagonMounts[i].Weapon, 1);
-        if (_strongholdMount != null && _enemyBaseHealth > 0)
-            DrawBaseMount(EnemyBaseCorePosition + new Vector2(32, -62), _strongholdMount.Weapon, -1);
+                DrawBaseMount(canvas, BaseMountPosition(true, i), _wagonMounts[i].Weapon, 1);
+        if (!player && _strongholdMount != null && _enemyBaseHealth > 0)
+            DrawBaseMount(canvas, BaseMountPosition(false), _strongholdMount.Weapon, -1);
+    }
+
+    private void DrawStrongholdAim()
+    {
         if (_strongholdAim != null && IsInstanceValid(_strongholdAim) && !_strongholdAim.IsDead && _enemyBaseHealth > 0)
         {
             var color = new Color(_strongholdMount.Weapon.Color, 0.6f);
             DrawArc(_strongholdAim.Position, Mathf.Max(22, _strongholdMount.Weapon.SplashRadius), 0, Mathf.Tau, 32, color, 2, true);
-            DrawLine(EnemyBaseCorePosition + new Vector2(32, -62), _strongholdAim.Position, new Color(color, 0.25f), 1, true);
+            DrawLine(BaseMountPosition(false), _strongholdAim.Position, new Color(color, 0.25f), 1, true);
         }
     }
 
-    private void DrawBaseMount(Vector2 position, BaseWeaponDefinition weapon, float direction)
+    private void DrawBaseMount(CanvasItem canvas, Vector2 position, BaseWeaponDefinition weapon, float direction)
     {
         var texture = BattlefieldTextureLoader.TryLoadStructure("mount_" + weapon.Kind.ToString().ToLowerInvariant());
         if (texture != null)
         {
-            DrawSetTransform(position, 0f, new Vector2(direction, 1));
-            DrawTextureRect(texture, new Rect2(-30f, -42f, 60f, 75f), false);
-            DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+            canvas.DrawSetTransform(position - ((Node2D)canvas).Position, 0f, new Vector2(direction, 1));
+            canvas.DrawTextureRect(texture, new Rect2(-30f, -59f, 60f, 75f), false, FieldLighting.Tint);
+            canvas.DrawSetTransform(-((Node2D)canvas).Position, 0f, Vector2.One);
             return;
         }
         var wood = new Color("77563c");
@@ -216,32 +220,32 @@ public partial class BattleController
         var accent = weapon.Color.Darkened(0.3f);
         Vector2 Point(float x, float y) => position + new Vector2(x * direction, y);
         // Timber supports seat each crew or weapon on the wagon roof / battlement.
-        DrawLine(Point(-5, 8), Point(-8, 24), shade, 4, true);
-        DrawLine(Point(5, 8), Point(8, 24), wood, 3, true);
-        DrawLine(Point(-11, 9), Point(11, 9), wood, 4, true);
+        canvas.DrawLine(Point(-5, 8), Point(-8, 24), shade, 4, true);
+        canvas.DrawLine(Point(5, 8), Point(8, 24), wood, 3, true);
+        canvas.DrawLine(Point(-11, 9), Point(11, 9), wood, 4, true);
         if (weapon.Kind == BaseWeaponKind.Arrows)
         {
-            DrawLine(Point(-4, 6), Point(-4, -5), accent, 6, true);
-            DrawCircle(Point(-4, -10), 4, new Color("b8a082"));
-            DrawArc(Point(-4, -10), 5, Mathf.Pi, Mathf.Tau, 8, iron, 2, true);
-            DrawLine(Point(-3, -3), Point(8, -2), iron, 2, true);
-            DrawPolyline(new[] { Point(8, -14), Point(14, -3), Point(8, 8) }, wood.Lightened(0.2f), 2, true);
-            DrawLine(Point(8, -14), Point(8, 8), new Color("cabd98"), 1, true);
-            DrawLine(Point(2, -3), Point(20, -3), iron, 1, true);
+            canvas.DrawLine(Point(-4, 6), Point(-4, -5), accent, 6, true);
+            canvas.DrawCircle(Point(-4, -10), 4, new Color("b8a082"));
+            canvas.DrawArc(Point(-4, -10), 5, Mathf.Pi, Mathf.Tau, 8, iron, 2, true);
+            canvas.DrawLine(Point(-3, -3), Point(8, -2), iron, 2, true);
+            canvas.DrawPolyline(new[] { Point(8, -14), Point(14, -3), Point(8, 8) }, wood.Lightened(0.2f), 2, true);
+            canvas.DrawLine(Point(8, -14), Point(8, 8), new Color("cabd98"), 1, true);
+            canvas.DrawLine(Point(2, -3), Point(20, -3), iron, 1, true);
         }
         else if (weapon.Kind == BaseWeaponKind.Ballista)
         {
-            DrawLine(Point(-12, 3), Point(23, -3), wood, 5, true);
-            DrawPolyline(new[] { Point(9, -14), Point(17, -2), Point(9, 11) }, iron, 3, true);
-            DrawPolyline(new[] { Point(9, -14), Point(-5, 1), Point(9, 11) }, new Color("b8ab89"), 1, true);
-            DrawLine(Point(-6, 0), Point(27, -4), iron.Lightened(0.2f), 2, true);
+            canvas.DrawLine(Point(-12, 3), Point(23, -3), wood, 5, true);
+            canvas.DrawPolyline(new[] { Point(9, -14), Point(17, -2), Point(9, 11) }, iron, 3, true);
+            canvas.DrawPolyline(new[] { Point(9, -14), Point(-5, 1), Point(9, 11) }, new Color("b8ab89"), 1, true);
+            canvas.DrawLine(Point(-6, 0), Point(27, -4), iron.Lightened(0.2f), 2, true);
         }
         else
         {
-            DrawLine(Point(-4, 6), Point(9, -9), shade, 12, true);
-            DrawLine(Point(-4, 6), Point(9, -9), iron.Darkened(0.3f), 8, true);
-            DrawCircle(Point(9, -9), 4, accent);
-            DrawCircle(Point(9, -9), 2, weapon.Color);
+            canvas.DrawLine(Point(-4, 6), Point(9, -9), shade, 12, true);
+            canvas.DrawLine(Point(-4, 6), Point(9, -9), iron.Darkened(0.3f), 8, true);
+            canvas.DrawCircle(Point(9, -9), 4, accent);
+            canvas.DrawCircle(Point(9, -9), 2, weapon.Color);
         }
     }
 }

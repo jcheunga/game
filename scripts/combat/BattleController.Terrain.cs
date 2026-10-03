@@ -5,20 +5,28 @@ public partial class BattleController
     private NoiseTexture2D _groundTexture;
     private Texture2D _stageArtwork;
     private bool _stageArtworkChecked;
+    private BattleTerrainCanvas _terrainCanvas;
     private void DrawPlayableTerrain(TerrainPalette palette)
     {
         if (!_stageArtworkChecked)
         {
             _stageArtwork = WorldEnvironmentArt.LoadBattle(_stageData?.StageNumber ?? 1);
             _stageArtworkChecked = true;
+            // The legacy fallback is painted on the parent. Its shadow layer must
+            // follow that paint, while authored terrain lives behind both passes.
+            if (_shadowCanvas != null) _shadowCanvas.ZIndex = _stageArtwork != null ? -5 : 0;
         }
         if (_stageArtwork != null)
         {
-            DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
-            DrawRect(GetViewportRect(), palette.SkyColor.Darkened(.55f));
-            DrawSetTransform(Vector2.Zero);
-            WorldEnvironmentArt.DrawBattle(this, _stageArtwork, new Vector2(BattleWorldWidth, BattleWorldHeight),
-                new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop));
+            if (_terrainCanvas == null)
+            {
+                _terrainCanvas = new BattleTerrainCanvas { Name = "BattleTerrain", ShowBehindParent = true, ZIndex = -10,
+                    TextureFilter = TextureFilterEnum.LinearWithMipmaps, Artwork = _stageArtwork,
+                    Backdrop = palette.SkyColor.Darkened(.55f),
+                    Ground = new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop) };
+                AddChild(_terrainCanvas); _terrainCanvas.AddGroundDetail(_activeRouteId, _stage);
+            }
+            _terrainCanvas.QueueRedraw();
             return;
         }
         var background = BattlefieldTextureLoader.TryLoadBackground((_stageData?.TerrainId ?? "urban").ToLowerInvariant());

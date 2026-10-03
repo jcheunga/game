@@ -53,8 +53,17 @@ public partial class AchievementsPanel : VBoxContainer
             var (value, target) = Progress(entry.Id);
             var progress = new ProgressBar { MaxValue = target, Value = done ? target : value, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 8) }; ModalUi.StyleProgress(progress, done ? new Color("8dd274") : accent.Lightened(.25f)); stack.AddChild(progress);
             var reward = AchievementRewardCatalog.GetForAchievement(entry.Id);
-            var text = claimed ? "✓ Completed · claimed" : done ? "Claim " + (reward?.RewardLabel ?? "reward") : target > 1 ? $"{value}/{target} · {reward?.RewardLabel ?? "Objective"}" : "In progress · " + (reward?.RewardLabel ?? "Objective");
+            var amount = reward == null ? "" : $"+{reward.RewardAmount:N0}";
+            var text = claimed ? $"Claimed · {amount}" : done ? "Claim " + amount : target > 1 ? $"{value}/{target} · {amount}" : amount;
             var button = RealmUi.Button(done && !claimed ? "gift" : claimed ? "star" : "lock", text, () => { state.TryClaimAchievementReward(entry.Id, out var message); _status.Text = message; Refresh(); }, done && !claimed);
+            if (reward != null)
+            {
+                button.Icon = UiArtLoader.TryLoadRewardIcon(reward.RewardType, reward.RewardItemId);
+                button.SetMeta("painted_resource_icon", true);
+                button.AddThemeConstantOverride("icon_max_width", 30);
+                button.AccessibilityName = $"{entry.Title}, {reward.RewardLabel}, {(claimed ? "claimed" : done ? "ready to claim" : "in progress")}";
+                button.TooltipText = button.AccessibilityName;
+            }
             button.CustomMinimumSize = new Vector2(0, 40); button.Disabled = !done || claimed || reward == null; ModalUi.StyleButton(button, done && !claimed); stack.AddChild(button);
             if (claimed) button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Tab, 8, new Color("5e9971"), true));
             RealmModal.Polish(description);

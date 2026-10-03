@@ -61,9 +61,11 @@ public partial class CombatReviewSmoke : Node
                 GameData.Combat.BattlefieldRight = 1196f;
             }
             if (args.Contains("--stage-layout")) ExportStageLayoutReview();
+            else if (args.Contains("--courage-pacing")) await CheckCouragePacing();
             else if (args.Contains("--stage-stars")) await CheckStageStars();
             else if (args.Contains("--field-objectives")) await CheckCampaignFieldObjectives();
             else if (args.Contains("--camera")) await CheckBattleCamera();
+            else if (args.Contains("--base-weapons")) await CheckBaseWeapons();
             else if (args.Contains("--economy-export")) ExportProgressionEconomy();
             else if (args.Contains("--regressions")) await Regressions();
             else
@@ -220,6 +222,40 @@ public partial class CombatReviewSmoke : Node
         Write(battle, "_elapsed", 3.1f);
         Check((bool)Invoke(battle, "TriggerEnemySignalJam", jammer), "Hexer pressure resumes after recovery");
         await CloseBattle(battle);
+        await CheckCouragePacing();
+    }
+
+    private async Task CheckCouragePacing()
+    {
+        var state = GameState.Instance;
+        var saved = state.BuildSaveData();
+        state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
+        state.SetDifficulty(DifficultyCatalog.NormalId);
+        var battle = await OpenBattle(1);
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), GameData.Combat.CourageStart + state.GetCampaignScoutStartingCourageBonus(1)),
+            "Slower courage generation preserves the opening deployment budget and scout bonus");
+        var swordsman = Read<BattleDeckState>(battle, "_deck").Roster.Single(unit => unit.Id == "player_brawler");
+        Write(battle, "_courage", 0f);
+        Invoke(battle, "ArmPlayerUnit", swordsman);
+        for (var tick = 0; tick < 300; tick++) battle._PhysicsProcess(1.0 / 60);
+        Invoke(battle, "TryDeployAtY", 340f);
+        Check(Read<int>(battle, "_playerDeployments") == 0 && Read<float>(battle, "_courage") < swordsman.Cost,
+            "An empty courage bar cannot fund another Swordsman within five seconds, even with the first-clear boost");
+        var pausedCourage = Read<float>(battle, "_courage");
+        Write(battle, "_battlePaused", true);
+        for (var tick = 0; tick < 300; tick++) battle._PhysicsProcess(1.0 / 60);
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), pausedCourage), "Paused battles do not regenerate courage");
+        Write(battle, "_battlePaused", false);
+        for (var tick = 0; tick < 120; tick++) battle._PhysicsProcess(1.0 / 60);
+        var available = Read<float>(battle, "_courage");
+        Invoke(battle, "TryDeployAtY", 340f);
+        Check(Read<int>(battle, "_playerDeployments") == 1 && Mathf.IsEqualApprox(Read<float>(battle, "_courage"), available - swordsman.Cost),
+            "Seven seconds of regeneration enables one Swordsman and charges its normal cost");
+        Write(battle, "_courage", Read<float>(battle, "_maxCourage") - 1f);
+        for (var tick = 0; tick < 60; tick++) battle._PhysicsProcess(1.0 / 60);
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_courage"), Read<float>(battle, "_maxCourage")), "Slower regeneration still respects maximum courage");
+        await CloseBattle(battle);
+        Invoke(state, "ApplySavedData", saved);
     }
 
     private void CheckSpawnScheduling()
@@ -394,6 +430,7 @@ public partial class CombatReviewSmoke : Node
         var evaluation = StageObjectives.EvaluateBattle(Read<StageDefinition>(battle, "_stageData"), battleResult, victory);
         GD.Print("COMBAT_SAMPLE: " + System.Text.Json.JsonSerializer.Serialize(new {
             fieldTactics = OS.GetCmdlineUserArgs().Contains("--field-tactics"),
+            baseCouragePerSecond = GameData.Combat.CourageGainPerSecond,
             mapWidth = GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
             outpostCaptured = Read<bool>(battle, "_outpostCaptured"), supplyCollected = Read<bool>(battle, "_supplyCollected"), forwardDeployments = Read<int>(battle, "_forwardDeploymentsUsed"),
             firstContact, firstGateDamage, waveTimes, stars = evaluation.StarsEarned,

@@ -75,7 +75,7 @@ public static class HomeMapUi
             Text = title, HorizontalAlignment = HorizontalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
-        label.AddThemeFontSizeOverride("font_size", 18);
+        label.AddThemeFontSizeOverride("font_size", 16);
         label.AddThemeFontOverride("font", RealmUi.TitleFont);
         label.AddThemeColorOverride("font_color", active ? new Color("ffe5a8") : new Color("f1e7d2"));
         label.AddThemeColorOverride("font_shadow_color", new Color("0b171c"));

@@ -25,8 +25,8 @@ Checked items here mean **implemented and verified locally**, not deployed or
 approved by a store. The broader release gates below stay open until their
 remaining requirements have evidence.
 
-- [x] Correct the first-run analytics notice: disclose player-linked events
-  and require a fresh choice from users who accepted the old inaccurate notice.
+- [x] Disclose player-linked analytics in Settings, with no startup modal.
+  Invalidate choices accepted under the old inaccurate notice.
   Analytics defaults off, requires consent at collection and sending, and
   discards queued events when consent is withdrawn.
 - [x] Add a separate crash-reporting opt-in in Settings, disabled by default;
@@ -157,7 +157,8 @@ failed-switch protection using a loopback service. See
   Mono using a unique test save and loopback HTTP service. Covers independent
   opt-ins, withdrawal, stale consent, credential-free upload bodies,
   authenticated requests and restores from current/legacy save formats.
-  `--capture` additionally passed two consent/settings layout checks and writes
+  `--capture` additionally checks prompt-free startup, disabled defaults and
+  available Settings choices, and writes
   screenshots and a log to ignored `artifacts/privacy-review/`.
 - A release publish from only the Dockerfile's copied source inputs passes.
   Neither a running Docker stack nor a production PostgreSQL instance was

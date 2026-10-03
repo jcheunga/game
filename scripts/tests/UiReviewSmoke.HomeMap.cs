@@ -47,8 +47,7 @@ public partial class UiReviewSmoke
         Check(canvas.MapOffset.DistanceTo(offsetBeforePan) > 200, "Dragging pans across the larger zone");
         Check(state.Food == foodBeforePan && state.AdventureKnowledgeRevision == knowledgeBeforePan, "Panning does not travel, spend food or reveal fog");
         await Capture("01b-panned-fog");
-        await PressHint("Find my caravan");
-        Check(canvas.MapOffset.DistanceTo(offsetBeforePan) < 1, "Find caravan returns to the explored foothold");
+        canvas.FocusCurrentTile();
 
         var token = Walk(menu).OfType<AdventureMapToken>().Single(button => button.Visible);
         token.EmitSignal(BaseButton.SignalName.Pressed);
@@ -56,19 +55,14 @@ public partial class UiReviewSmoke
         Check(menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "A landmark opens its floating details");
         AuditText("Home / camp details");
         await Capture("02-landmark");
-        await Press("Intel");
-        AuditText("Home / camp intel");
+        Check(!Walk(menu.GetNode<PanelContainer>("HomeHud/SelectedSite")).OfType<Button>().Any(button => button.Text == "Intel"), "Landmark details do not need an Intel page");
         await PressHint("Close site details");
         Check(!menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Details close to restore the clear map");
         var originalZoom = canvas.Zoom;
-        await PressHint("Zoom in");
-        Check(canvas.Zoom > originalZoom, "Floating map controls zoom in");
-        await PressHint("Zoom out");
-        Check(Math.Abs(canvas.Zoom - originalZoom) < .01f, "Floating map controls restore zoom");
         canvas.ChangeZoom(.01f);
         Check(AdventureTerrain.WorldSize.X * canvas.Zoom > canvas.Size.X * 1.5f, "Zooming out still requires panning through the zone");
-        canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCaravan();
-        canvas.ChangeZoom(3f); canvas.FocusCaravan();
+        canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
+        canvas.ChangeZoom(3f); canvas.FocusCurrentTile();
         var neighbor = AdventureTerrain.Neighbors(AdventureTerrain.Cell(state.GetAdventureHeroPosition("city")))
             .First(cell => AdventureTerrain.Walkable("city", cell));
         var point = AdventureTerrain.Point(neighbor);
@@ -78,15 +72,15 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = click, GlobalPosition = click });
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = click, GlobalPosition = click });
         await FinishTravel();
-        Check(state.GetAdventureHeroPosition("city").DistanceTo(point) < 1 && state.Food == foodBefore - 1, "The floating HUD allows real map clicks and a single travel charge");
+        Check(state.GetAdventureHeroPosition("city").DistanceTo(point) < 1 && state.Food == foodBefore, "The floating HUD allows real map clicks without spending food");
         Check(Enumerable.Range(0, AdventureTerrain.CellCount).Count(cell => state.IsAdventureCellRevealed("city", cell)) > chartedBefore, "Travel uncovers more terrain in the fog knowledge mask");
-        canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCaravan();
+        canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
         await Capture("02b-first-travel");
         var firstDiscovery = AdventureDiscoveryCatalog.ForMap("city").First();
         canvas.TravelToPoint(firstDiscovery.Point);
         await FinishTravel();
         Check(state.HasClaimedAdventureDiscovery(firstDiscovery.Id), "Exploration reaches and claims the first discovery");
-        canvas.FocusCaravan();
+        canvas.FocusCurrentTile();
         await Capture("02c-first-discovery");
 
         await PressHint("More");
@@ -106,7 +100,7 @@ public partial class UiReviewSmoke
         foreach (var tab in new[] { "Gameplay", "Online", "Account" }) { await Press(tab); AuditText("Home / settings " + tab); }
         SceneRouter.Instance.ReturnFromSettings(); await Wait(.2);
         Check(GetTree().CurrentScene == menu && !menu.HasHomeModal && canvas.MapOffset == mapBeforeModal, "Closing settings preserves the map camera");
-        foreach (var entry in new[] { ("Warband", "Warband"), ("Spells", "Battle rites"), ("Upgrades", "War wagon") })
+        foreach (var entry in new[] { ("Warband", "Warband"), ("Spells", "Spells"), ("Upgrades", "War wagon") })
         {
             await PressHint(entry.Item1);
             Check(GetTree().CurrentScene == menu && menu.HomeModalDestination == SceneRouter.ShopScene && Walk(menu).OfType<Button>().Any(button => button.Text == entry.Item2 && button.ButtonPressed), entry.Item1 + " opens its matching overlay page");

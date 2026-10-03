@@ -1,8 +1,8 @@
 # Crownroad stage and zone artwork
 
 The current completion-driven home map uses the painted material and scenery
-atlases in [overworld/polished-v3](overworld/polished-v3/README.md), plus the
-existing zone paintings as sharp, framed backdrops. See
+atlases in [overworld/polished-v3](overworld/polished-v3/README.md), with quiet
+water surroundings on the same ground plane as the playable terrain. See
 [Adventure map](../../docs/ADVENTURE_MAP.md) for the current rendering and
 progression rules. The 32 × 24 walking layout described below is retained as
 the historical version 44 implementation used by save migration.
@@ -16,14 +16,14 @@ gloamwood and citadel. Every image is generated separately for its location.
 
 `WorldEnvironmentArt` selects a battle image by stage number and a main-map
 image by route ID. Textures load on demand and leave the screen when it closes.
-The original PNGs are preserved; Godot imports them with lossy compression at
-0.85 quality and mipmaps for zoomed views.
-
-Battle scenes use nine regions of the original image. The clear central ground
-is fitted to the simulation's exact movement rectangle, from `(84, 96)` to
-`(2476, 584)` in a `2560 × 720` world. Decorative scenery occupies the eight
-surrounding regions. The normalized source floor is `(0.08, 0.36, 0.84, 0.28)`.
-The image is neither mirrored nor repeated across the field.
+The original PNGs are preserved. Battle imports now use lossless compression
+with mipmaps. Each panorama keeps its original proportions and places the start
+of its clear floor at `(84, 96)` in the `2560 × 720` world; perimeter scenery
+is cropped naturally. The movement rectangle still ends at `(2476, 584)`.
+The stage image is neither mirrored nor repeated across the field. Fine,
+zone-specific ground detail comes from the new
+[battle material atlas](battles/polished-v2/README.md), blended into the stage's
+floor without stretching its texture over the full battlefield.
 
 Each zone uses its own illustrated backdrop and ground material. The source
 ground quadrilateral has normalized top/right/bottom/left points

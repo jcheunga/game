@@ -500,10 +500,16 @@ public partial class MultiplayerMenu : Control
         dailyStack.AddThemeConstantOverride("separation", 8);
         dailyPadding.AddChild(dailyStack);
 
-        dailyStack.AddChild(UiBadgeFactory.CreateMetaMetric(
+        var dailyHeading = UiBadgeFactory.CreateMetaMetric(
             "challenge",
             $"{dailyChallenge.Date}  |  {dailyChallenge.BoardLabel}  |  {dailyStage.MapName} S{dailyStage.StageNumber}",
-            new Vector2(24f, 24f)));
+            new Vector2(24f, 24f));
+        foreach (var label in dailyHeading.GetChildren().OfType<Label>())
+        {
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        }
+        dailyStack.AddChild(dailyHeading);
 
         var dailySquadLine = dailyChallenge.LockedSquad && dailyChallenge.LockedDeckUnitIds.Length > 0
             ? $"Locked squad: {string.Join(", ", dailyChallenge.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"

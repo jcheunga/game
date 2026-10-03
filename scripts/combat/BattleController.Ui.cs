@@ -23,53 +23,7 @@ public partial class BattleController
 		var safeR = SafeAreaService.Instance?.MarginRight ?? 0;
 		var safeB = SafeAreaService.Instance?.MarginBottom ?? 0;
 
-        var topVBox = RealmUi.Panel(root, new Rect2(16 + safeL, 12 + safeT, 1248 - safeL - safeR, 76), out _topHudPanel);
-        var topRow = new HBoxContainer(); topVBox.AddChild(topRow);
-        var titleStack = new VBoxContainer { CustomMinimumSize = new Vector2(380, 0) };
-        titleStack.AddThemeConstantOverride("separation", 2); topRow.AddChild(titleStack);
-        _battleBannerLabel = RealmUi.Label("", 17); titleStack.AddChild(_battleBannerLabel);
-        _baseHealthLabel = RealmUi.Label("", 13, true); titleStack.AddChild(_baseHealthLabel);
-        var meters = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        meters.AddThemeConstantOverride("separation", 4); topRow.AddChild(meters);
-        _courageBar = new BattleHudBar { CustomMinimumSize = new Vector2(250, 26) };
-        _courageBar.Setup(RealmUi.Gold, new Color("ffffff33"), "Courage"); meters.AddChild(_courageBar);
-        _waveProgressBar = new BattleHudBar { CustomMinimumSize = new Vector2(250, 26) };
-        _waveProgressBar.Setup(new Color("86b4a0"), new Color("ffffff22"), "Waves"); meters.AddChild(_waveProgressBar);
-        _timerLabel = RealmUi.Label("", 14); topRow.AddChild(_timerLabel);
-        topRow.AddChild(RealmUi.IconButton("eye", "Battle intel [Tab]", ToggleCombatIntel));
-        topRow.AddChild(RealmUi.IconButton("pause", "Pause [Escape]", TogglePause));
-        topRow.AddChild(RealmUi.IconButton("back", "Retreat", RetreatToMap));
-        _statusLabel = new Label { Position = new Vector2(28, 510), Size = new Vector2(1220, 40),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore };
-        _statusLabel.AddThemeFontSizeOverride("font_size", 18); var messageScroll = new ScrollContainer { Position = new Vector2(28, 490), Size = new Vector2(1220, 60), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        root.AddChild(messageScroll); _statusLabel.Position = Vector2.Zero; _statusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill; messageScroll.AddChild(_statusLabel);
-        var infoVBox = RealmUi.Panel(root, new Rect2(786, 102, 478, 436), out _intelPanel);
-        infoVBox.AddChild(RealmUi.Label("FIELD INTELLIGENCE", 12, true));
-        var report = RealmUi.Scroll(infoVBox);
-        _battleSubtitleLabel = RealmUi.Label("", 14); report.AddChild(_battleSubtitleLabel);
-        _baseWeaponsIntel = RealmUi.Label("", 14); report.AddChild(_baseWeaponsIntel);
-        _battleMissionLabel = RealmUi.Label("", 14); report.AddChild(_battleMissionLabel);
-        _resourceLabel = RealmUi.Label("", 14); report.AddChild(_resourceLabel);
-        _waveIntelLabel = RealmUi.Label("", 14); report.AddChild(_waveIntelLabel);
-        _objectiveStatusLabel = RealmUi.Label("", 14); report.AddChild(_objectiveStatusLabel);
-        _fpsLabel = RealmUi.Label("", 12, true); report.AddChild(_fpsLabel);
-        _showDevUiToggle = new CheckBox { Text = "Battle intel", Visible = false };
-        _showFpsToggle = new CheckBox { Text = "FPS", Visible = false };
-        root.AddChild(_showDevUiToggle); root.AddChild(_showFpsToggle);
-        _showDevUiToggle.Toggled += OnShowDevUiToggled;
-        _showFpsToggle.Toggled += OnShowFpsToggled;
-        if (IsCampaignMode)
-        {
-            var orders = new HBoxContainer { Position = new Vector2(18, 102) };
-            root.AddChild(orders);
-            _convoyOrderButton = RealmUi.IconButton("crown", "Caravan command [C]", () => TryActivateCampaignConvoyCommand());
-            _assaultOrderButton = RealmUi.IconButton("sword", "Assault order [Z]", () => TryCommitCampaignFieldOrder(true));
-            _bulwarkOrderButton = RealmUi.IconButton("shield", "Bulwark order [X]", () => TryCommitCampaignFieldOrder(false));
-            _rescueOrderButton = RealmUi.IconButton("heart", "Rescue directive [V]", () => TryCommitCampaignAdaptiveWaveDirective(false));
-            _breakthroughOrderButton = RealmUi.IconButton("bolt", "Breakthrough directive [B]", () => TryCommitCampaignAdaptiveWaveDirective(true));
-            foreach (var button in new[] { _convoyOrderButton, _assaultOrderButton, _bulwarkOrderButton, _rescueOrderButton, _breakthroughOrderButton })
-                orders.AddChild(button);
-        }
+        BuildCompactHud(root);
 
 		var spawnPanel = new PanelContainer
 		{
@@ -93,7 +47,7 @@ public partial class BattleController
 			var unit = definition;
 			var button = new RealmButton
 			{
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				SizeFlagsHorizontal = Control.SizeFlags.Fill,
 				CustomMinimumSize = new Vector2(112f, 124f)
 			};
 			button.AddThemeColorOverride("font_color", Colors.White);
@@ -129,20 +83,7 @@ public partial class BattleController
 			}
 		}
 
-		_pauseOverlay = new CenterContainer();
-		_pauseOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_pauseOverlay.Visible = false;
-		root.AddChild(_pauseOverlay);
-		var pauseBg = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
-		pauseBg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		_pauseOverlay.AddChild(pauseBg);
-        var pauseCard = new PanelContainer { CustomMinimumSize = new Vector2(440, 0) };
-        _pauseOverlay.AddChild(pauseCard);
-        var pauseStack = new VBoxContainer(); pauseCard.AddChild(pauseStack);
-        pauseStack.AddChild(RealmUi.Heading("A moment of respite", 28));
-        pauseStack.AddChild(RealmUi.Label("Drag a unit or magic card onto the field.\nRelease to use it; return to the cards to cancel.\n1–6  Units     Q–T  Rites\nScroll / Middle-drag / Arrow keys  Pan\nTab  Intel     Escape  Pause", 16, true));
-        pauseStack.AddChild(RealmUi.Button("arrow", "Resume battle", TogglePause, true));
-        pauseStack.AddChild(RealmUi.Button("back", "Retreat", RetreatToMap));
+        BuildBattleMenu(root);
 
 		_endCenter = new CenterContainer();
 		_endCenter.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -158,6 +99,7 @@ public partial class BattleController
 		_endCenter.AddChild(_endPanel);
 
 		var endPadding = new MarginContainer();
+		_endPadding = endPadding;
 		endPadding.AddThemeConstantOverride("margin_left", 20);
 		endPadding.AddThemeConstantOverride("margin_right", 20);
 		endPadding.AddThemeConstantOverride("margin_top", 20);
@@ -165,6 +107,7 @@ public partial class BattleController
 		_endPanel.AddChild(endPadding);
 
 		var endVBox = new VBoxContainer();
+		_endContent = endVBox;
 		endVBox.AddThemeConstantOverride("separation", 12);
 		endVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 		endPadding.AddChild(endVBox);
@@ -177,6 +120,7 @@ public partial class BattleController
 			CustomMinimumSize = new Vector2(0f, 260f),
 			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
 		};
+		_endReportScroll = endScroll;
 		endVBox.AddChild(endScroll);
 
 		_endLabel = new Label
@@ -205,6 +149,8 @@ public partial class BattleController
 		};
 		ApplyBattleButtonTheme(_endPrimaryButton, route);
 		_endPrimaryButton.Pressed += HandleEndPanelPrimaryAction;
+        if (!IsLanRaceMode && !IsOnlineRoomMode) StyleRestartButton(_endPrimaryButton);
+        _endRetryMessage = RealmUi.Label("", 18, true); _endRetryMessage.Visible = false; endVBox.AddChild(_endRetryMessage);
 		endVBox.AddChild(_endPrimaryButton);
 
 		_endSecondaryButton = new RealmButton
@@ -217,7 +163,7 @@ public partial class BattleController
 							? "Leave Online Room"
 						: IsChallengeMode
 							? "Back To Multiplayer"
-						: "Back To Map",
+						: IsTowerMode ? "Back To Tower" : IsArenaMode ? "Back To Arena" : IsSeasonalEventMode ? "Back To Event" : "Back To Map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		ApplyBattleButtonTheme(_endSecondaryButton, route);
@@ -271,7 +217,8 @@ public partial class BattleController
 
 
 		ConfigureBattleCamera(root);
-		ConfigureMobileBattleUi(root,topRow,titleStack,meters,spawnPanel,unitRow,messageScroll);
+		ConfigureMobileBattleUi(root,spawnPanel,unitRow);
+        ConfigureCompactHudLayout(spawnPanel,unitRow);
 		BuildFieldNavigation(root);
 		BuildCardDragPreview(root);
 		ApplyDevUiSettings();
@@ -325,6 +272,7 @@ public partial class BattleController
 	{
         if (_convoyOrderButton != null)
         {
+            _convoyOrderButton.Visible = _campaignConvoyCommandReady && !_campaignConvoyCommandTriggered;
             _convoyOrderButton.Disabled = !_campaignConvoyCommandReady || _campaignConvoyCommandTriggered;
             _convoyOrderButton.TooltipText = _campaignConvoyCommandTriggered ? "Caravan command spent" :
                 _campaignConvoyCommandReady ? "Rally your troops [C]" : $"Caravan command ready in {_campaignConvoyCommandChargeRemaining:0}s";
@@ -388,6 +336,11 @@ public partial class BattleController
 		_timerLabel.Text =
 			$"{(int)_elapsed / 60:00}:{(int)_elapsed % 60:00}";
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
+        _healthBar.SetValue(_playerBaseMaxHealth > 0 ? _playerBaseHealth / _playerBaseMaxHealth : 0,
+            $"{Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} / {Mathf.CeilToInt(_playerBaseMaxHealth)}");
+        _goldAmount.Text = GameState.Instance.Gold.ToString("N0");
+        _healthBar.AccessibilityName = $"War wagon health, {Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} of {Mathf.CeilToInt(_playerBaseMaxHealth)}";
+        _courageBar.AccessibilityName = $"Courage, {Mathf.FloorToInt(_courage)} of {Mathf.FloorToInt(_maxCourage)}";
 		_courageBar.SetValue(
 			_maxCourage > 0.01f ? _courage / _maxCourage : 0f,
 			$"{Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}");
@@ -403,7 +356,7 @@ public partial class BattleController
 				: _spawnDirector.UsesScriptedWaves
 					? $"{(HasCampaignField && !MobilePresentation.Enabled ? _spawnDirector.CurrentEncounterArea + " · " : "")}{_spawnDirector.NextScriptedWaveIndex}/{_spawnDirector.TotalScriptedWaves}"
 					: "");
-		_waveProgressBar.Visible = _spawnDirector.UsesScriptedWaves || _spawnDirector.IsEndlessMode;
+		_waveProgressBar.Visible = false;
 		_waveIntelLabel.Text = BuildWaveIntelText();
 		if (IsEndlessMode)
 		{
@@ -451,7 +404,8 @@ public partial class BattleController
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.CourageCost} courage";
 			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");
 		}
-		RefreshMobileHud();
+		_hudLayout?.Invoke();
+        RefreshMobileHud();
 	}
 
 	private string BuildBattleBannerTitle()
@@ -513,16 +467,17 @@ public partial class BattleController
     private void ApplyDevUiSettings()
     {
         _topHudPanel.Visible = true;
-        _intelPanel.Visible = _combatIntelExpanded;
-        _timerLabel.Visible = true;
-        _statusLabel.Visible = true;
+        _intelPanel.Visible = false;
+        _timerLabel.Visible = false;
+        _statusLabel.Visible = false;
+        _waveProgressBar.Visible = false;
         _fpsLabel.Visible = GameState.Instance.ShowFpsCounter;
         _showDevUiToggle.SetPressedNoSignal(_combatIntelExpanded);
     }
 
     private void ToggleCombatIntel()
     {
-        _combatIntelExpanded = !_combatIntelExpanded;
+        _combatIntelExpanded = false;
         ApplyDevUiSettings();
     }
 

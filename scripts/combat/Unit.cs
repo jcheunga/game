@@ -299,10 +299,16 @@ public partial class Unit : Node2D
     private float _temporaryDamageTakenScale = 1f;
     private bool _hasAuraBuff;
     private Color _bodyColor = Colors.White;
+    public Color EnvironmentTint { get; set; } = Colors.White;
+    public Color LocalLightTint { get; set; } = Colors.White;
+    public bool GroundShadowsManaged { get; set; }
 
     public void Setup(Team team, UnitStats stats, Vector2 startPosition)
     {
         ResetCombatMotion();
+        EnvironmentTint = Colors.White;
+        LocalLightTint = Colors.White;
+        GroundShadowsManaged = false;
         Team = team;
         DefinitionId = stats.DefinitionId;
         UnitName = stats.Name;
@@ -357,6 +363,9 @@ public partial class Unit : Node2D
     public void ResetForPool()
     {
         ResetCombatMotion();
+        EnvironmentTint = Colors.White;
+        LocalLightTint = Colors.White;
+        GroundShadowsManaged = false;
         Health = 0f;
         _attackTimer = 0f;
         _specialTimer = 0f;
@@ -696,10 +705,7 @@ public partial class Unit : Node2D
     {
         EnsureSpriteLoaded();
 
-        // Shadow
-        DrawSetTransform(new Vector2(0f, _spriteSheet == null ? Radius * 0.9f : 0f), 0f, new Vector2(1.4f, 0.45f));
-        DrawCircle(Vector2.Zero, Radius * 0.82f, new Color(0f, 0f, 0f, 0.18f));
-        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+        if (!GroundShadowsManaged) DrawGroundShadow(this, BattleLighting.ForZone("city"));
 
         if (_spriteSheet != null)
             DrawSpriteFrame();
@@ -715,6 +721,22 @@ public partial class Unit : Node2D
             _spriteLoadAttempted = true;
             _spriteSheet = UnitSpriteLoader.TryLoad(VisualClass, DefinitionId);
         }
+    }
+
+    public void DrawGroundShadow(CanvasItem ground, BattleLighting lighting)
+    {
+        EnsureSpriteLoaded();
+        var feet = ground == this ? Vector2.Zero : Position;
+        lighting.DrawContact(ground, feet, new Vector2(Radius * .48f, Radius * .16f), .8f);
+        if (_spriteSheet == null) return;
+        if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim) &&
+            !_spriteSheet.Animations.TryGetValue(UnitAnimState.Idle, out anim)) return;
+        var width = Radius * 2 * VisualScale * _spriteSheet.DrawScale;
+        var size = new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth);
+        var rect = new Rect2(new Vector2(-size.X * _spriteSheet.AnchorX, -size.Y * _spriteSheet.AnchorY), size);
+        lighting.DrawShadow(ground, _spriteSheet.Texture,
+            UnitSpriteLoader.GetFrameRect(_spriteSheet, anim.StartFrame + Mathf.Min(_spriteAnimFrame, anim.FrameCount - 1)),
+            rect, feet, GetFacing(), .85f);
     }
 
     private float SpriteClipDuration(UnitAnimState state, float fallback)
@@ -759,7 +781,7 @@ public partial class Unit : Node2D
             || clip.FrameCount < 2) return;
         var width = Radius * 2f * VisualScale * _spriteSheet.DrawScale;
         var visual = new UnitDeathVisual();
-        visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing());
+        visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing(), EnvironmentTint * LocalLightTint, GroundShadowsManaged);
         parent.AddChild(visual);
         visual.Position = Position;
         visual.ZIndex = ZIndex;
@@ -789,10 +811,10 @@ public partial class Unit : Node2D
         // Mirror around the unit's position; a negative destination width shifts AtlasTexture regions.
         DrawSetTransform(Vector2.Zero, 0, new Vector2(facing < 0 ? -1 : 1, 1));
 
-        var modulate = Colors.White;
+        var modulate = EnvironmentTint * LocalLightTint;
         if (_hitFlashTimer > 0f && !reduced)
         {
-            modulate = Colors.White.Lerp(new Color(1.25f,1.16f,1.08f),Mathf.Clamp(_hitFlashTimer/.12f,0,1));
+            modulate = modulate.Lerp(new Color(1.25f,1.16f,1.08f),Mathf.Clamp(_hitFlashTimer/.12f,0,1));
         }
 
         DrawTextureRectRegion(_spriteSheet.Texture, new Rect2(drawPos, drawSize), srcRect, modulate);
@@ -1449,7 +1471,7 @@ public partial class Unit : Node2D
 
     private Color ResolveBodyColor()
     {
-        var baseColor = _bodyColor;
+        var baseColor = _bodyColor * EnvironmentTint * LocalLightTint;
 
         if (GameState.Instance != null && GameState.Instance.HighContrast)
         {

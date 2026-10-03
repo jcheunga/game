@@ -22,9 +22,6 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseMotion { ButtonMask = MouseButtonMask.Left, Relative = new Vector2(-65, 0), Position = dragFrom + new Vector2(-65,0), GlobalPosition = dragFrom + new Vector2(-65,0) });
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = dragFrom + new Vector2(-65,0), GlobalPosition = dragFrom + new Vector2(-65,0) });
         await Wait(.1); Check(canvas.MapOffset != panStart, "Dragging the terrain pans the map");
-        var originalZoom = canvas.Zoom;
-        await PressHint("Zoom in"); Check(canvas.Zoom > originalZoom, "Map zooms in");
-        await PressHint("Zoom out"); Check(Math.Abs(canvas.Zoom - originalZoom) < .01, "Map zooms back out");
         await ChooseAdventureSite("supply-1"); await FinishTravel();
         Check(state.Gold == initialGold + 38 && state.Food == initialFood, "Treasury credits the advertised reward once");
         await Capture("02-treasury-collected"); AuditText("Adventure / treasury");
@@ -201,7 +198,7 @@ public partial class UiReviewSmoke
     private async Task FinishTravel()
     {
         for (var i = 0; i < 60 && Walk(GetTree().CurrentScene).OfType<MapPathCanvas>().Any(x => x.IsTravelling); i++) await Wait(.1);
-        Check(!Walk(GetTree().CurrentScene).OfType<MapPathCanvas>().Any(x => x.IsTravelling), "Caravan reaches the chosen site");
+        Check(!Walk(GetTree().CurrentScene).OfType<MapPathCanvas>().Any(x => x.IsTravelling), "Tile travel has completed");
         await Wait(.1);
     }
 }

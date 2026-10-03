@@ -13,6 +13,8 @@ public partial class RealmModal : Control
     private PanelContainer _frame;
     private PanelContainer _header;
     private TextureRect _emblem;
+    private float _preferredWidth = 1120;
+    private bool _mobileCanvas;
 
     public override void _Ready()
     {
@@ -39,16 +41,19 @@ public partial class RealmModal : Control
         ModalUi.StyleButton(_close, material: ModalMaterial.Ruby);
         Content = new Control { Name = "Content", SizeFlagsVertical = SizeFlags.ExpandFill, ClipContents = true };
         stack.AddChild(Content);
+        Resized += FitToOwnArea;
     }
 
     public void Present(string destination, string title, string subtitle, bool hasBack, float width = 1120)
     {
+        _preferredWidth = width;
         _close.GrabFocus();
         Destination = destination; _title.Text = title; _subtitle.Text = subtitle; _back.Visible = hasBack;
         ApplyIdentity(title);
         _frame.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
         _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
         _frame.OffsetTop = -322; _frame.OffsetBottom = 290;
+        FitToOwnArea();
         if (!(GameState.Instance?.ReducedMotion ?? false)) RealmUi.FadeIn(_frame);
     }
 
@@ -56,6 +61,44 @@ public partial class RealmModal : Control
     {
         for (var parent = child.GetParent(); parent != null; parent = parent.GetParent())
             if (parent is RealmModal modal) { if (title != null) { modal._title.Text = title; modal.ApplyIdentity(title); } if (subtitle != null) modal._subtitle.Text = subtitle; return; }
+    }
+
+    public void FitToArea(Vector2 area)
+    {
+        var width = Mathf.Min(_preferredWidth, area.X - 32);
+        var height = Mathf.Min(612, area.Y - 32);
+        _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
+        _frame.OffsetTop = -height / 2; _frame.OffsetBottom = height / 2;
+        var compact = area.Y < 500;
+        _subtitle.Visible = !compact;
+        _title.AddThemeFontSizeOverride("font_size", compact ? 22 : 28);
+        _title.ClipText = true;
+        _title.AutowrapMode = TextServer.AutowrapMode.Off;
+        _title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _emblem.CustomMinimumSize = new Vector2(compact ? 36 : 52, compact ? 36 : 52);
+    }
+
+    private void FitToOwnArea() { if (_frame != null && Size.X > 0 && Size.Y > 0) FitToArea(Size); }
+
+    public void UseMobileCanvas()
+    {
+        if (_mobileCanvas) return;
+        _mobileCanvas = true;
+        SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft);
+        GetViewport().SizeChanged += ResizeMobileCanvas;
+        ResizeMobileCanvas();
+    }
+
+    private void ResizeMobileCanvas()
+    {
+        Scale = Vector2.One * MobilePresentation.HudScale;
+        Size = GetViewportRect().Size / MobilePresentation.HudScale;
+        FitToOwnArea();
+    }
+
+    public override void _ExitTree()
+    {
+        if (_mobileCanvas) GetViewport().SizeChanged -= ResizeMobileCanvas;
     }
 
     private void ApplyIdentity(string title)
@@ -104,10 +147,13 @@ public partial class RealmModal : Control
         foreach (var child in children) child.Hide();
         var root = new VBoxContainer(); root.AddThemeConstantOverride("separation", 12); menu.AddChild(root); root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var stack = RealmUi.Scroll(root);
+        ((ScrollContainer)stack.GetParent()).SetMeta("modal_min_height", 0);
         stack.AddThemeConstantOverride("separation", 14); stack.SizeFlagsVertical = SizeFlags.ExpandFill;
         foreach (var band in body.GroupBy(child => Math.Round(child.Position.Y / 24)).OrderBy(group => group.Key))
         {
-            var row = new HBoxContainer { SizeFlagsVertical = band.Any(child => child is PanelContainer && child.Size.Y > 150) ? SizeFlags.ExpandFill : SizeFlags.Fill }; row.AddThemeConstantOverride("separation", 14); stack.AddChild(row);
+            BoxContainer row = MobilePresentation.Enabled ? new VBoxContainer() : new HBoxContainer();
+            row.SizeFlagsVertical = band.Any(child => child is PanelContainer && child.Size.Y > 150) ? SizeFlags.ExpandFill : SizeFlags.Fill;
+            row.AddThemeConstantOverride("separation", 14); stack.AddChild(row);
             foreach (var child in band.OrderBy(child => child.Position.X))
             {
                 var weight = Math.Max(1, child.Size.X);
@@ -129,9 +175,20 @@ public partial class RealmModal : Control
             menu.RemoveChild(footer); root.AddChild(footer); footer.Show(); RelaxMinimums(footer);
             footer.SizeFlagsHorizontal = SizeFlags.ExpandFill; footer.SizeFlagsVertical = SizeFlags.Fill;
             MarkLaunchActions(footer);
+            if (MobilePresentation.Enabled) CompactFooter(footer);
         }
         MarkLaunchActions(root); Polish(root);
         var upkeep = new ModalActivityLayout { Body = root }; menu.AddChild(upkeep);
+    }
+
+    private static void CompactFooter(Node node)
+    {
+        if (node is Button button)
+        {
+            if (button.Text.StartsWith("Back ") || button.Text is "Settings" or "Caravan Armory") button.Hide();
+            else { button.CustomMinimumSize = new Vector2(0, 48); button.AddThemeFontSizeOverride("font_size", 18); }
+        }
+        foreach (var child in node.GetChildren()) CompactFooter(child);
     }
 
     private static void MarkLaunchActions(Node node)
@@ -143,7 +200,8 @@ public partial class RealmModal : Control
     internal static void RelaxMinimums(Control control)
     {
         if (control is BaseButton || control is TextureRect || control is HeraldicEmblem || (control is PanelContainer && control.MouseFilter == Control.MouseFilterEnum.Ignore)) return;
-        control.CustomMinimumSize = new Vector2(0, control is ScrollContainer ? 280 : 0);
+        var minHeight = control is ScrollContainer ? (int)control.GetMeta("modal_min_height", 280) : 0;
+        control.CustomMinimumSize = new Vector2((int)control.GetMeta("modal_min_width", 0), minHeight);
         if (control is Label label && (label.AutowrapMode != TextServer.AutowrapMode.Off || label.Text.Length > 70 || label.Text.Contains('\n'))) {
             label.AutowrapMode = TextServer.AutowrapMode.WordSmart; label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         }

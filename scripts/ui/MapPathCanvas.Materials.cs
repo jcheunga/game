@@ -32,15 +32,39 @@ public partial class MapPathCanvas
     private void DrawAtlasMaterial(Vector2[] polygon, int material, float scale, Color color, Vector2 drift = default)
     {
         if (AdventureAtlasArt.Material(material) is not { } texture) return;
-        DrawPolygon(polygon, new[] { color }, polygon.Select(point => point / scale + drift).ToArray(), texture);
+        // Undo the map's 2:1 ground projection so surface detail lies on the same plane as the buildings.
+        Vector2 GroundUv(Vector2 point) => new Vector2(point.X + point.Y * 2, -point.X + point.Y * 2) / (scale * Mathf.Sqrt(5));
+        DrawPolygon(polygon, new[] { color }, polygon.Select(point => GroundUv(point) + drift).ToArray(), texture);
     }
-    private bool DrawPaintedSprite(int index, Vector2 point, float height, Color? tint = null, float anchor = .89f)
+    private bool DrawPaintedSprite(int index, Vector2 point, float height, Color? tint = null, float groundShear = 0)
     {
         if (AdventureAtlasArt.Sprite(index) is not { } texture) return false;
         var size = texture.GetSize(); size *= height / size.Y;
-        DrawTextureRect(texture, new Rect2(point - new Vector2(size.X * .5f, size.Y * anchor), size), false,
-            tint ?? AdventureAtlasArt.SceneryTint(ActiveMapId));
+        var anchor = AdventureAtlasArt.GroundAnchor(index) * size;
+        if (Math.Abs(groundShear) > .001f)
+        {
+            // Follow the local crossing without tilting upright stonework or bridge posts.
+            DrawSetTransformMatrix(new Transform2D(new Vector2(Zoom, groundShear * Zoom), new Vector2(0, Zoom), MapOffset + point * Zoom));
+            DrawTextureRect(texture, new Rect2(-anchor, size), false, tint ?? AdventureAtlasArt.SceneryTint(ActiveMapId));
+            DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
+        }
+        else DrawTextureRect(texture, new Rect2(point - anchor, size), false, tint ?? AdventureAtlasArt.SceneryTint(ActiveMapId));
         return true;
+    }
+
+    private void DrawLandmarkFootprint(AdventureTile tile)
+    {
+        if (!tile.HasInterest || tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !GameState.Instance.HasVisitedAdventureSite(tile.Site.RequiredVisit)) return;
+        var complete = GameState.Instance.IsAdventureTileComplete(tile);
+        var resource = tile.Discovery != null || tile.Site?.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
+        if (resource && complete) return;
+        var hot = tile.Id == _selectedId
+            || _tokens.Any(token => token.Site.Id == tile.Id && (token.IsHovered() || token.HasFocus()))
+            || _discoveries.Any(token => token.Discovery.Id == tile.Id && (token.IsHovered() || token.HasFocus()));
+        var radius = resource ? 31 : tile.Site?.Kind == AdventureSiteKind.Leader && GameState.Instance.IsAdventureBoss(tile.Site.Stage) ? 68 : 48;
+        var ellipse = Enumerable.Range(0, 48).Select(i => tile.Point + new Vector2(Mathf.Cos(i * Mathf.Tau / 48) * radius, Mathf.Sin(i * Mathf.Tau / 48) * radius * .5f)).ToArray();
+        DrawColoredPolygon(ellipse, hot ? new Color("d5b36d1a") : new Color("26342212"));
+        if (hot) DrawPolyline(ellipse.Append(ellipse[0]).ToArray(), new Color("ead19ca6"), 1.5f / Zoom, true);
     }
     private bool DrawPaintedProp(LandscapeProp prop)
     {

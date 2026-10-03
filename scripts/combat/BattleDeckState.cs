@@ -23,7 +23,7 @@ public sealed class BattleDeckState
             _cooldowns[unit.Id] = 0f;
         }
 
-        ArmedUnit = _roster.FirstOrDefault()!;
+        ArmedUnit = null!;
     }
 
     public void TickCooldowns(float delta)
@@ -50,7 +50,7 @@ public sealed class BattleDeckState
 
     public void Arm(UnitDefinition definition)
     {
-        ArmedUnit = definition;
+        ArmedUnit = _roster.FirstOrDefault(unit => unit.Id == definition.Id)!;
     }
 
     public void Disarm()
@@ -64,6 +64,12 @@ public sealed class BattleDeckState
         if (battleEnded)
         {
             reason = "Battle is already over.";
+            return false;
+        }
+
+        if (!_roster.Any(unit => unit.Id == definition.Id))
+        {
+            reason = "This unit is not in your warband.";
             return false;
         }
 
@@ -89,7 +95,7 @@ public sealed class BattleDeckState
             ? cooldownDuration
             : definition.DeployCooldown;
         _cooldowns[definition.Id] = Mathf.Max(0f, appliedCooldown);
-        AutoArmNextReadyUnit(definition);
+        Disarm();
     }
 
     public void ReduceCooldowns(float amount)
@@ -120,23 +126,4 @@ public sealed class BattleDeckState
         }
     }
 
-    private void AutoArmNextReadyUnit(UnitDefinition deployedUnit)
-    {
-        if (ArmedUnit != deployedUnit)
-        {
-            return;
-        }
-
-        for (var i = 0; i < _roster.Count; i++)
-        {
-            var unit = _roster[i];
-            if (GetCooldownRemaining(unit.Id) > 0.05f)
-            {
-                continue;
-            }
-
-            ArmedUnit = unit;
-            return;
-        }
-    }
 }

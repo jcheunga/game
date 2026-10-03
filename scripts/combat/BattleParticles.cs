@@ -465,7 +465,7 @@ public static class BattleParticles
 		gradient.AddPoint(0.5f, new Color(color, 0.3f));
 		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
 		particles.ColorRamp = gradient;
-		var texture = ParticleTextureLoader.TryLoad("particle_trail");
+		var texture = ParticleTextureLoader.TryLoad("particle_trail") ?? ParticleTextureLoader.SoftTexture;
 		if (texture != null)
 		{
 			particles.Texture = texture;
@@ -516,7 +516,7 @@ public static class BattleParticles
 			ZIndex = 100
 		};
 
-		var texture = ParticleTextureLoader.TryLoad(textureId);
+		var texture = ParticleTextureLoader.TryLoad(textureId) ?? ParticleTextureLoader.SoftTexture;
 		if (texture != null)
 		{
 			particles.Texture = texture;

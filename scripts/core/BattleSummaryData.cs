@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+public sealed record BattleReward(string Kind, string ItemId, int Amount);
+
 public sealed class BattleSummaryData
 {
 	public bool Won { get; set; }
@@ -19,6 +21,7 @@ public sealed class BattleSummaryData
 	public string BattleMode { get; set; } = "";
 	public int Stage { get; set; }
 	public float MutatorGoldMultiplier { get; set; } = 1f;
+	public List<BattleReward> Rewards { get; set; } = new();
 
 	public static BattleSummaryData Current { get; set; }
 }

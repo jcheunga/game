@@ -73,13 +73,6 @@ public static class UnitActiveAbilityCatalog
             10f,
             4),
         new(
-            "engineer_turret",
-            "player_mechanic",
-            "Deploy Turret",
-            "Spawn a temporary stationary turret unit.",
-            18f,
-            4),
-        new(
             "mage_beam",
             "player_marksman",
             "Arcane Beam",
@@ -120,13 +113,6 @@ public static class UnitActiveAbilityCatalog
             "Inspire",
             "Double aura effect for 6s.",
             16f,
-            4),
-        new(
-            "necro_mass_raise",
-            "player_necromancer",
-            "Mass Raise",
-            "Spawn 3 skeletons at once.",
-            20f,
             4),
         new(
             "rogue_vanish",

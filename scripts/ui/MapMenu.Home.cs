@@ -33,8 +33,6 @@ public partial class MapMenu
         _hud.AddChild(settings);
         HomeMapUi.Place(settings, 1, 0, new Rect2(-74, 20, 52, 52));
         BuildSitePanel();
-        BuildMapControls();
-        _sitePanel.VisibilityChanged += () => _scout.Visible = !_sitePanel.Visible;
         BuildDock();
     }
 
@@ -123,30 +121,6 @@ public partial class MapMenu
         tabs.AddChild(HomeMapUi.Tab("people", "More", ShowMore));
     }
 
-    private void BuildMapControls()
-    {
-        var tools = new VBoxContainer { Name = "MapTools" };
-        tools.AddThemeConstantOverride("separation", 8);
-        _hud.AddChild(tools);
-        HomeMapUi.Place(tools, 0, 1, new Rect2(22, -296, 48, 160));
-        tools.AddChild(HomeMapUi.IconButton("flag", "Find my caravan", () => _mapCanvas.FocusCaravan()));
-        tools.AddChild(HomeMapUi.IconButton("plus", "Zoom in", () => _mapCanvas.ChangeZoom(1.2f)));
-        tools.AddChild(HomeMapUi.IconButton("minus", "Zoom out", () => _mapCanvas.ChangeZoom(1 / 1.2f)));
-        _scout = RealmUi.Button("map", "Map guide", ShowExplorationHelp, true);
-        _scout.CustomMinimumSize = new Vector2(206, 52);
-        HomeMapUi.StyleButton(_scout, true);
-        _hud.AddChild(_scout);
-        HomeMapUi.Place(_scout, 1, 1, new Rect2(-228, -190, 206, 52));
-
-        var hint = RealmUi.Label("Clear a site to open nearby tiles · Drag to pan", 18, true);
-        hint.HorizontalAlignment = HorizontalAlignment.Center;
-        hint.MouseFilter = MouseFilterEnum.Ignore;
-        _hud.AddChild(hint);
-        HomeMapUi.Place(hint, .5f, 1, new Rect2(-230, -175, 460, 26));
-        hint.AddThemeColorOverride("font_color", new Color("ffefc5"));
-
-    }
-
     private void BuildSitePanel()
     {
         _sitePanel = new PanelContainer { Name = "SelectedSite", Visible = false };
@@ -156,46 +130,46 @@ public partial class MapMenu
         _sitePanel.AnchorBottom = 1;
         _sitePanel.OffsetLeft = -382;
         _sitePanel.OffsetRight = -22;
-        _sitePanel.OffsetTop = 154;
-        _sitePanel.OffsetBottom = -168;
+        _sitePanel.OffsetTop = 136;
+        _sitePanel.OffsetBottom = -156;
         var side = new VBoxContainer();
-        side.AddThemeConstantOverride("separation", 10);
+        side.AddThemeConstantOverride("separation", 8);
         _sitePanel.AddChild(side);
         var header = new HBoxContainer();
         side.AddChild(header);
         _siteEyebrow = RealmUi.Label("", 18, true);
         _siteEyebrow.VerticalAlignment = VerticalAlignment.Center;
         header.AddChild(_siteEyebrow);
-        header.AddChild(HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails));
+        var close = HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails);
+        close.CustomMinimumSize = new Vector2(40, 40);
+        header.AddChild(close);
         var encounter = new HBoxContainer();
         encounter.AddThemeConstantOverride("separation", 12);
         side.AddChild(encounter);
         _portrait = new TextureRect
         {
-            CustomMinimumSize = new Vector2(64, 72), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            CustomMinimumSize = new Vector2(56, 64), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkBegin
         };
         encounter.AddChild(_portrait);
+        var names = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        names.AddThemeConstantOverride("separation", 4);
+        encounter.AddChild(names);
         _siteName = RealmUi.Heading("", 22);
         _siteName.VerticalAlignment = VerticalAlignment.Center;
-        encounter.AddChild(_siteName);
+        names.AddChild(_siteName);
         _siteStatus = RealmUi.Label("", 18, true);
-        side.AddChild(_siteStatus);
-        _tabs = RealmUi.Tabs(side, SelectPage, "Overview", "Intel");
-        foreach (var tab in _tabs.GetChildren().OfType<Button>()) HomeMapUi.StyleButton(tab);
+        names.AddChild(_siteStatus);
         _overview = RealmUi.Scroll(side);
         _overview.AddThemeConstantOverride("separation", 10);
+        _rewards = new VBoxContainer { Name = "SiteRewards" };
+        _rewards.AddThemeConstantOverride("separation", 10);
+        _overview.AddChild(_rewards);
         _description = RealmUi.Label("");
         _overview.AddChild(_description);
-        _rewardText = RealmUi.Label("", 20);
-        _rewardText.AddThemeColorOverride("font_color", RealmUi.Gold);
-        _overview.AddChild(_rewardText);
-        _intel = RealmUi.Scroll(side);
-        _intel.GetParent<ScrollContainer>().Hide();
-        _intelText = RealmUi.Label("", 20);
-        _intel.AddChild(_intelText);
         _directive = RealmUi.Button("shield", "Heroic directive", ToggleDirective);
-        _intel.AddChild(_directive);
+        HomeMapUi.StyleButton(_directive);
+        side.AddChild(_directive);
         _action = RealmUi.Button("flag", "Prepare battle", VisitSelected, true);
         HomeMapUi.StyleButton(_action, true);
         side.AddChild(_action);
@@ -221,9 +195,6 @@ public partial class MapMenu
         var index = Array.IndexOf(maps, _activeMapId) + direction;
         if (index >= 0 && index < maps.Length) SwitchRegion(maps[index]);
     }
-
-    private void ShowExplorationHelp() => RealmUi.Details(this, "Reclaim the fallen kingdom",
-        "Each tile holds one stage, landmark or resource. Tap a site to select it; drag to pan and pinch or scroll to zoom.\n\nTravel to a new destination costs 1 food. Returning to a reached tile is free. Stage entry has a separate food cost, shown before battle. The caravan moves automatically when you choose a destination.\n\nClearing a stage or collecting a resource opens the eight surrounding tiles. Arriving, losing or retreating does not reveal more tiles. Watchtowers and survey charts open a wider area.\n\nDefeat the five rivals to open the boss gate. Defeat the boss to reveal the next zone.\n\nFood restores by 2 every 5 minutes, up to 24. Tap your food balance to refill in the storehouse.");
 
     private void ShowMore() => OpenHomeDestination("more");
 

@@ -102,15 +102,17 @@ public static class AdventureAtlasLandscape
         var river = RiverSkeleton(map);
         var water = Ribbon(river, WaterWidth(map));
         var banks = Ribbon(river, WaterWidth(map) + 22);
-        var route = new[] { tiles.Single(tile => tile.Site?.Kind == AdventureSiteKind.Camp).Point }
-            .Concat(tiles.Where(tile => tile.Site?.Kind == AdventureSiteKind.Leader).OrderBy(tile => tile.Site.Stage).Select(tile => tile.Point + new Vector2(0, 31))).ToArray();
+        var route = tiles.Where(tile => tile.Site?.Kind == AdventureSiteKind.Leader)
+            .OrderBy(tile => tile.Site.Stage).Select(tile => tile.Point + new Vector2(0, 31)).ToArray();
         var roadPath = Smooth(route, 15);
         var roads = Ribbon(roadPath, 15);
         var regions = new Dictionary<string, Region>();
         var sitePoints = tiles.Select(tile => tile.Point).ToArray();
+        var minimum = Vector2.One * (100 * AdventureTileCatalog.LayoutScale);
+        var maximum = AdventureTileCatalog.WorldSize - minimum;
         foreach (var tile in tiles)
         {
-            var bounds = new[] { new Vector2(100, 100), new Vector2(3868, 100), new Vector2(3868, 2076), new Vector2(100, 2076) };
+            var bounds = new[] { minimum, new Vector2(maximum.X, minimum.Y), maximum, new Vector2(minimum.X, maximum.Y) };
             foreach (var other in tiles)
             {
                 if (other.Id == tile.Id) continue;

@@ -1,0 +1,44 @@
+{
+  "source": "art/blender/gatehouse/gatehouse.blend",
+  "generator": "art/blender/render_battle_structures.py",
+  "cameraElevation": 22,
+  "anchor": [
+    0.5,
+    0.938747
+  ],
+  "mounts": [
+    [
+      0.514127,
+      0.32662
+    ]
+  ],
+  "contacts": [
+    [
+      0.380263,
+      0.755625
+    ],
+    [
+      0.492936,
+      0.835118
+    ],
+    [
+      0.60561,
+      0.914612
+    ]
+  ],
+  "width": 216,
+  "lights": [
+    [
+      0.250776,
+      0.778054
+    ],
+    [
+      0.483634,
+      0.94234
+    ]
+  ],
+  "smoke": [
+    0.467094,
+    0.393164
+  ]
+}

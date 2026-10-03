@@ -19,8 +19,7 @@ public partial class BattleController
     private Action _mobileResize;
     private float _mobileFieldTop, _mobileFieldBottom;
 
-    private void ConfigureMobileBattleUi(Control root, HBoxContainer topRow, VBoxContainer title,
-        VBoxContainer meters, PanelContainer cards, HBoxContainer cardRow, ScrollContainer messages)
+    private void ConfigureMobileBattleUi(Control root, PanelContainer cards, HBoxContainer cardRow)
     {
         if (!MobilePresentation.Enabled) return;
         _mobileHud=root;
@@ -29,44 +28,12 @@ public partial class BattleController
         _mobileCamera=new Camera2D { Name="MobileBattleCamera", Zoom=Vector2.One*MobilePresentation.BattleZoom,
             Position=new Vector2(0,350), PositionSmoothingEnabled=false };
         AddChild(_mobileCamera); _mobileCamera.MakeCurrent();
-
-        title.CustomMinimumSize=new Vector2(200,0);
-        _battleBannerLabel.AutowrapMode=TextServer.AutowrapMode.Off;
-        _battleBannerLabel.ClipText=true;
-        _battleBannerLabel.AddThemeFontSizeOverride("font_size",20);
-        _baseHealthLabel.AddThemeFontSizeOverride("font_size",18);
-        _baseHealthLabel.AutowrapMode=TextServer.AutowrapMode.Off;
-        _baseHealthLabel.ClipText=true;
-        foreach(var bar in new[] {_courageBar,_waveProgressBar}) bar.CustomMinimumSize=new Vector2(170,28);
-        meters.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        var topButtons=topRow.GetChildren().OfType<Button>().ToArray();
-        foreach(var button in topButtons) { button.CustomMinimumSize=Vector2.Zero; MobilePresentation.TouchButton(button); }
-        topButtons.Last().Hide(); // Retreat remains available inside Pause.
-        _timerLabel.Reparent(_battleSubtitleLabel.GetParent());
-        _mobileViewButton=new Button { Text="Map", TooltipText="Show the whole battlefield" };
-        MobilePresentation.TouchButton(_mobileViewButton);
-        _mobileViewButton.AccessibilityName="Battlefield overview or follow combat";
-        _mobileViewButton.Pressed+=ToggleMobileOverview;
-        topRow.AddChild(_mobileViewButton); topRow.MoveChild(_mobileViewButton,topRow.GetChildCount()-3);
-        _mobileZoomButton=new Button { Text="Zoom", CustomMinimumSize=new Vector2(72,56),
-            TooltipText="Change close-up: 2.2×, 2.8×, 3.4×", AccessibilityName="Change combat zoom" };
-        MobilePresentation.TouchButton(_mobileZoomButton);
-        _mobileZoomButton.Pressed+=CycleMobileZoom;
-        topRow.AddChild(_mobileZoomButton);
-        _mobileClearButton=new Button { Text="View", CustomMinimumSize=new Vector2(70,56),
-            TooltipText="Hide deployment cards for a clear view", AccessibilityName="Toggle clear combat view" };
-        MobilePresentation.TouchButton(_mobileClearButton);
-        _mobileClearButton.Pressed+=ToggleMobileClearView;
-        topRow.AddChild(_mobileClearButton);
-        topRow.AddThemeConstantOverride("separation",6);
-        _topHudPanel.AddThemeStyleboxOverride("panel",MedievalUi.Engraved("engraved_panel",10,4));
-
-        // Long tactical messages belong in the expandable report, not over combat.
-        _statusLabel.Reparent(_battleSubtitleLabel.GetParent());
-        _statusLabel.Position=Vector2.Zero;
-        _statusLabel.CustomMinimumSize=Vector2.Zero;
-        _statusLabel.AddThemeFontSizeOverride("font_size",20);
-        messages.QueueFree();
+        var views = new HBoxContainer(); views.AddThemeConstantOverride("separation", 6); root.AddChild(views);
+        _mobileViewButton=RealmUi.IconButton("map", "Battlefield overview or follow combat", ToggleMobileOverview);
+        _mobileZoomButton=RealmUi.IconButton("eye", "Change combat zoom", CycleMobileZoom);
+        _mobileClearButton=RealmUi.IconButton("people", "Toggle clear combat view", ToggleMobileClearView);
+        foreach(var button in new[] {_mobileViewButton,_mobileZoomButton,_mobileClearButton})
+        { MobilePresentation.TouchButton(button); views.AddChild(button); }
         _mobilePlacementHint=new Label { MouseFilter=Control.MouseFilterEnum.Ignore, ClipText=true };
         _mobilePlacementHint.AddThemeFontSizeOverride("font_size",20);
         root.AddChild(_mobilePlacementHint);
@@ -74,7 +41,7 @@ public partial class BattleController
         MobilePresentation.TouchButton(_mobileCancelButton);
         _mobileCancelButton.Pressed+=ClearArmedSelection;
         root.AddChild(_mobileCancelButton);
-        cards.AddThemeStyleboxOverride("panel",MedievalUi.Engraved("engraved_panel",8,8));
+        cards.AddThemeStyleboxOverride("panel",new StyleBoxEmpty());
         cardRow.AddThemeConstantOverride("separation",6);
         // Horizontal scrolling supports unusually large decks without shrinking cards.
         var cardScroll=new ScrollContainer { HorizontalScrollMode=ScrollContainer.ScrollMode.Auto,
@@ -91,8 +58,6 @@ public partial class BattleController
             _mobileOrders=(Control)_convoyOrderButton.GetParent();
             foreach(var button in _convoyOrderButton.GetParent().GetChildren().OfType<Button>()) MobilePresentation.TouchButton(button);
         }
-        var pauseText=_pauseOverlay.FindChildren("*","Label",true,false).OfType<Label>().LastOrDefault();
-        if(pauseText!=null) pauseText.Text="Drag a unit or magic card onto the field and release.\nDrag the terrain to look around.\nView hides cards; Map shows both bases.";
         foreach(var button in _pauseOverlay.FindChildren("*","Button",true,false).OfType<Button>()) MobilePresentation.TouchButton(button);
         _endPanel.CustomMinimumSize=new Vector2(680,380);
         MobilePresentation.TouchButton(_endPrimaryButton); MobilePresentation.TouchButton(_endSecondaryButton);
@@ -125,11 +90,11 @@ public partial class BattleController
             var top=(SafeAreaService.Instance?.MarginTop ?? 0)/scale+8;
             var bottom=(SafeAreaService.Instance?.MarginBottom ?? 0)/scale+8;
             var width=root.Size.X-left-right;
-            _topHudPanel.Position=new Vector2(left,top); _topHudPanel.Size=new Vector2(width,68);
-            cards.Position=new Vector2(left,root.Size.Y-bottom-118); cards.Size=new Vector2(width,118);
+            _hudLayout?.Invoke();
+            views.Position=new Vector2(root.Size.X-right-views.GetCombinedMinimumSize().X,top+50);
             cards.Visible=!_mobileClearView;
             _mobilePlacementHint.Position=new Vector2(left,_mobileClearView?root.Size.Y-bottom-28:cards.Position.Y-29);
-            _mobilePlacementHint.Size=new Vector2(_mobileClearView?width:width-112,26);
+            _mobilePlacementHint.Size=new Vector2(width-120,26);
             _mobileCancelButton.Position=new Vector2(root.Size.X-right-102,cards.Position.Y-60);
             _mobileCancelButton.Size=new Vector2(102,56);
             _intelPanel.Position=new Vector2(root.Size.X-right-Mathf.Min(460,width),top+74);
@@ -169,7 +134,7 @@ public partial class BattleController
             _mobileCamera.Position=_mobileClosePosition;
         }
         else { _mobileClosePosition=_mobileCamera.Position; _mobileOverview=true; }
-        _mobileViewButton.Text=_mobileOverview?"Fight":"Map";
+        _mobileViewButton.Icon=RealmUi.Icon(_mobileOverview?"sword":"map");
         _mobileViewButton.TooltipText=_mobileOverview?"Return to close combat":"Show the whole battlefield";
         _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:_mobileCombatZoom);
         if (_mobileOverview) _mobileCamera.Position=new Vector2(BattleWorldWidth,BattleWorldHeight)*.5f;
@@ -196,7 +161,7 @@ public partial class BattleController
     {
         var focus=ScreenToBattle(MobileVisibleCenter);
         _mobileClearView=!_mobileClearView;
-        _mobileClearButton.Text=_mobileClearView?"Cards":"View";
+        _mobileClearButton.Icon=RealmUi.Icon(_mobileClearView?"people":"eye");
         _mobileClearButton.TooltipText=_mobileClearView?"Restore deployment cards":"Hide cards for a clear view";
         _mobileResize(); RefreshMobileHud();
         if(!_mobileOverview)
@@ -244,6 +209,7 @@ public partial class BattleController
 
     public override void _Input(InputEvent input)
     {
+        if (HandleBattleMenuInput(input)) return;
         if(HandleCardDragInput(input)) return;
         if(ContinueBattleCameraDrag(input)) return;
         if(!_mobilePointerDown || _mobileCamera==null) return;

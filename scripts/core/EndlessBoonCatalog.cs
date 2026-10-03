@@ -30,7 +30,7 @@ public static class EndlessBoonCatalog
         new(
             SurplusCourageId,
             "Surplus Courage",
-            "Start the run with +25 courage so the opening lane stabilizes faster."),
+            "Courage recovers 20% faster during the run."),
         new(
             ReinforcedBusId,
             "Reinforced Wagon",
@@ -43,10 +43,6 @@ public static class EndlessBoonCatalog
             RelicForgeId,
             "Relic Forge",
             "Grant a random relic at this checkpoint."),
-        new(
-            CorpseHoardId,
-            "Corpse Hoard",
-            "Necromancer skeletons gain +30% health for the rest of the run."),
         new(
             BerserkerBloodId,
             "Berserker Blood",

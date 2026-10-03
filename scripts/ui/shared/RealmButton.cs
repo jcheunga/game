@@ -12,7 +12,7 @@ public partial class RealmButton : Button
     public void SetPresentation(Font font, Color ink, Color disabled)
     {
         _normalInk = ink; _disabledInk = disabled; _lastDisabled = null;
-        _iconInk = ink.R < .5f ? ink : Colors.White;
+        _iconInk = !HasMeta("painted_resource_icon") && ink.R < .5f ? ink : Colors.White;
         if (_groupLabel != null)
         {
             _groupLabel.AddThemeFontOverride("font", font);
@@ -33,12 +33,14 @@ public partial class RealmButton : Button
         AddChild(center); center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 10); center.AddChild(row);
-        _groupIcon = new TextureRect { CustomMinimumSize = new Vector2(22,22), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+        var iconSize = GetThemeConstant("icon_max_width");
+        _groupIcon = new TextureRect { CustomMinimumSize = new Vector2(iconSize,iconSize), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore };
-        row.AddChild(_groupIcon);
         _groupLabel = new Label { MouseFilter = MouseFilterEnum.Ignore, VerticalAlignment = VerticalAlignment.Center };
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
-        _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size")); row.AddChild(_groupLabel);
+        _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+        if (IconAlignment == HorizontalAlignment.Right) { row.AddChild(_groupLabel); row.AddChild(_groupIcon); }
+        else { row.AddChild(_groupIcon); row.AddChild(_groupLabel); }
         RefreshGroup();
     }
     public override void _Process(double delta) { if (_groupLabel != null) RefreshGroup(); }

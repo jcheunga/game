@@ -169,16 +169,19 @@ public partial class PrivacyReview : Node
         var main = GD.Load<PackedScene>("res://scenes/MainMenu.tscn").Instantiate<Control>();
         AddChild(main);
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
-        var modal = main.GetChildren().OfType<CenterContainer>().Single().GetChild<PanelContainer>(0);
-        Check(main.GetViewportRect().Encloses(modal.GetGlobalRect()), "Consent notice and both choices fit the viewport");
-        await Capture("consent");
+        Check(!main.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.Text == "Allow Analytics" || button.Text == "No Thanks")
+            && !main.GetChildren().OfType<CenterContainer>().Any(), "A fresh startup opens the map without an analytics modal");
+        Check(!state.AnalyticsConsent && !state.CrashReportingConsent, "Opening home without a prompt keeps optional uploads disabled");
+        await Capture("startup");
         main.QueueFree();
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
         var settings = GD.Load<PackedScene>("res://scenes/SettingsMenu.tscn").Instantiate<Control>();
         AddChild(settings);
-        settings.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text == "Account").EmitSignal(Button.SignalName.Pressed);
+        settings.FindChildren("*", "Button", true, false).OfType<Button>()
+            .Single(button => button.Text == "Account" && button.GetParent().HasMeta("realm_tabs")).EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
+        Check(settings.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Enable Analytics"), "Analytics remains an optional choice in Settings");
         var crash = settings.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text == "Enable Crash Reports");
         Node ancestor = crash.GetParent();
         while (ancestor is not ScrollContainer) ancestor = ancestor.GetParent();

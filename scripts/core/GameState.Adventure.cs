@@ -26,7 +26,8 @@ public partial class GameState
         // Stage numbers span districts, so HighestUnlockedStage is not a zone gate.
         return maps.Skip(index).Any(map => GameData.GetStagesForMap(map).Any(stage => GetStageStars(stage.StageNumber) > 0)
             || AdventureMapCatalog.ForMap(map).Any(site => site.Kind != AdventureSiteKind.Camp && HasVisitedAdventureSite(site.Id))
-            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Site?.Kind != AdventureSiteKind.Camp && _reachedAdventureTiles.Contains(tile.Id))
+            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Site?.Kind != AdventureSiteKind.Camp
+                && tile.RetiredSiteId != $"camp-{map}" && _reachedAdventureTiles.Contains(tile.Id))
             || _adventureTravelledCells.TryGetValue(map, out var cells)
                 && cells.Any(cell => cell != AdventureTerrain.Cell(AdventureMapCatalog.ForMap(map).First().Point)));
     }
@@ -37,6 +38,7 @@ public partial class GameState
     public bool IsCampaignStageUnlocked(int stage) => stage >= 1 && stage <= MaxStage &&
         (!IsAdventureBoss(stage) || GetStageStars(stage) > 0 || GetAdventureBossRemainingLeaders(stage) == 0);
     public bool CanVisitAdventureSite(string id) => AdventureMapCatalog.Find(id) is { } node &&
+        node.Kind is not (AdventureSiteKind.Watchtower or AdventureSiteKind.Camp or AdventureSiteKind.Shrine) &&
         (node.Kind != AdventureSiteKind.Leader || IsCampaignStageUnlocked(node.Stage)) &&
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit));
     public bool IsAdventureSiteDiscovered(string id) => AdventureMapCatalog.Find(id) is { } node &&
@@ -56,7 +58,7 @@ public partial class GameState
         return cell == AdventureTerrain.Cell(AdventureMapCatalog.ForMap(mapId).First().Point) ||
             (_adventureTravelledCells.TryGetValue(mapId,out var cells) && cells.Contains(cell));
     }
-    public int GetAdventureTravelFoodCost(string mapId, IReadOnlyList<int> path) => path == null ? 0 : path.Distinct().Count(c => !IsAdventureCellTravelled(mapId,c));
+    public int GetAdventureTravelFoodCost(string mapId, IReadOnlyList<int> path) => 0;
     public bool TryBeginAdventureTravel(string mapId, IReadOnlyList<int> path, out string message)
     {
         mapId = RouteCatalog.Normalize(mapId);
@@ -64,12 +66,9 @@ public partial class GameState
             path.Any(cell => !AdventureTerrain.Walkable(mapId, cell)) ||
             path.Zip(path.Skip(1)).Any(pair => !AdventureTerrain.Neighbors(pair.First).Contains(pair.Second)))
         { message = "Choose a connected ground tile."; return false; }
-        RefreshFoodRecharge();
-        if (GetAdventureTravelFoodCost(mapId,path) > 0 && Food < 1)
-        { message = "Need food to explore. Recharge or refill in the store."; return false; }
         message = ""; return true;
     }
-    // Pay as each new step starts. Finding provisions on the way can extend a journey.
+    // Legacy movement records explored routes without spending food.
     public bool TryPayAdventureStep(string mapId, int cell, out string message)
     {
         mapId = RouteCatalog.Normalize(mapId);
@@ -77,10 +76,8 @@ public partial class GameState
         if (!AdventureTerrain.Walkable(mapId,cell) || (cell != from && !AdventureTerrain.Neighbors(from).Contains(cell)))
         { message = "Choose a connected ground tile."; return false; }
         if (IsAdventureCellTravelled(mapId,cell)) { message = ""; return true; }
-        RefreshFoodRecharge();
-        if (Food < 1) { message = "Out of food · recharge or refill to continue."; return false; }
         if (!_adventureTravelledCells.TryGetValue(mapId,out var cells)) _adventureTravelledCells[mapId] = cells = new();
-        cells.Add(cell); Food--; Persist(); FoodChanged?.Invoke(); message = ""; return true;
+        cells.Add(cell); Persist(); message = ""; return true;
     }
     public bool CompleteAdventureStep(string mapId, int cell)
     {
@@ -110,8 +107,8 @@ public partial class GameState
     }
     public Vector2 GetAdventureHeroPosition(string mapId) => _adventureHeroPositions.TryGetValue(RouteCatalog.Normalize(mapId), out var point)
         ? point : GetAdventureHeroNode(mapId).Point;
-    public int GetAdventureStartingCourageBonus(int stage) => AdventureMapCatalog.ForMap(GameData.GetStage(stage).MapId)
-        .Count(x => x.Kind == AdventureSiteKind.Shrine && HasVisitedAdventureSite(x.Id)) * 3;
+    // Compatibility for legacy callers; retired shrines no longer grant battle bonuses.
+    public int GetAdventureStartingCourageBonus(int stage) => 0;
     public IReadOnlyList<Vector3> GetAdventureRevealAreas(string mapId) => Enumerable.Range(0,AdventureTerrain.CellCount)
         .Where(c => IsAdventureCellRevealed(mapId,c)).Select(c => new Vector3(AdventureTerrain.Point(c).X,AdventureTerrain.Point(c).Y,80)).ToArray();
     public bool MoveAdventureHero(string mapId, Vector2 point, bool persist = true)
@@ -154,17 +151,15 @@ public partial class GameState
         if (firstVisit)
         {
             Gold += node.GoldReward; Food += node.FoodReward;
-            if (node.Kind != AdventureSiteKind.Leader) OpenSurroundingAdventureTiles(tile, node.Kind == AdventureSiteKind.Watchtower ? 2 : 1);
+            if (node.Kind != AdventureSiteKind.Leader) OpenSurroundingAdventureTiles(tile);
         }
         message = node.Kind switch
         {
             AdventureSiteKind.Leader => $"You face {node.Title}. Prepare your warband to challenge this leader.",
-            AdventureSiteKind.Camp => "The caravan has returned to camp.",
             _ when !firstVisit => "Already visited. These rewards have been collected.",
             AdventureSiteKind.Gold => $"Treasury secured · +{node.GoldReward} gold",
             AdventureSiteKind.Food => $"Supplies secured · +{node.FoodReward} food",
-            AdventureSiteKind.Shrine => $"Shrine kindled · +3 starting courage in {RouteCatalog.Get(node.MapId).Title}",
-            _ => "Watchtower charted · the surrounding fog has lifted."
+            _ => "Nearby tiles opened."
         };
         LastResultMessage = message;
         if (firstVisit && node.FoodReward > 0) FoodChanged?.Invoke();

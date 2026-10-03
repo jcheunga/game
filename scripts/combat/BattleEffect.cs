@@ -19,6 +19,7 @@ public partial class BattleEffect : Node2D
     private float _elapsed;
     private bool _filled = true;
     private BattleEffectStyle _style = BattleEffectStyle.Pulse;
+    public bool GroundProjected { get; set; }
 
     public void Setup(
         Color color,
@@ -54,6 +55,9 @@ public partial class BattleEffect : Node2D
         var radius = Mathf.Lerp(_startRadius, _endRadius, t);
         var alpha = 1f - t;
         var color = new Color(_color, alpha * 0.75f);
+
+        if (GroundProjected && _style != BattleEffectStyle.LightningStrike)
+            DrawSetTransform(Vector2.Zero, 0, new Vector2(1f, BattleGroundPlane.DepthScale));
 
         switch (_style)
         {
@@ -184,6 +188,7 @@ public partial class BattleEffect : Node2D
             boltColor,
             width * 0.42f,
             true);
+        if (GroundProjected) DrawSetTransform(Vector2.Zero, 0, new Vector2(1f, BattleGroundPlane.DepthScale));
         DrawArc(Vector2.Zero, radius * 0.22f, 0f, Mathf.Tau, 18, color, Mathf.Lerp(4f, 1.4f, t));
     }
 

@@ -595,6 +595,9 @@ public partial class BattleController : Node2D
 	public override void _Ready()
 	{
 		ProcessMode = ProcessModeEnum.Always;
+		YSortEnabled = true;
+		_battleRewardStart = GameState.Instance.BuildSaveData();
+		BattleSummaryData.Current = null;
 		_restingScenePosition = Position;
 		_combat = GameData.Combat;
 		_battleMode = GameState.Instance.CurrentBattleMode;
@@ -831,18 +834,15 @@ public partial class BattleController : Node2D
 
 		var baseCourageMax = _combat.CourageMax + (IsChallengeMode ? _challengeMutator.CourageMaxBonus : 0f);
 		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(baseCourageMax);
-		_courage = Mathf.Min(_maxCourage, Mathf.Max(0f, _combat.CourageStart + (IsChallengeMode ? _challengeMutator.CourageMaxBonus * 0.35f : 0f)));
+		_courage = 0f;
 		if (IsCampaignMode && GameState.Instance.HasCampaignScoutBonus(_stage))
 		{
-			_courage = Mathf.Min(_maxCourage, _courage + GameState.Instance.GetCampaignScoutStartingCourageBonus(_stage));
 			_campaignScoutCourageGainScale = GameState.Instance.GetCampaignScoutCourageGainScale(_stage);
 			_campaignScoutBoostRemaining = GameState.Instance.GetCampaignScoutDurationSeconds(_stage);
 		}
-		if (IsCampaignMode) _courage = Mathf.Min(_maxCourage, _courage + GameState.Instance.GetAdventureStartingCourageBonus(_stage));
 		if (IsCampaignMode && GameState.Instance.CampaignMomentumStacks > 0)
 		{
 			_campaignMomentumStacks = GameState.Instance.CampaignMomentumStacks;
-			_courage = Mathf.Min(_maxCourage, _courage + GameState.Instance.GetCampaignMomentumStartingCourageBonus());
 			_campaignMomentumAttackScale = GameState.Instance.GetCampaignMomentumAttackScale();
 			_campaignMomentumSpeedScale = GameState.Instance.GetCampaignMomentumSpeedScale();
 			_campaignMomentumBoostRemaining = GameState.Instance.GetCampaignMomentumDurationSeconds();
@@ -936,7 +936,7 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		_deck.Initialize(GameState.Instance.GetBattleDeckUnits());
+		_deck.Initialize(GameState.Instance.GetBattleDeckUnits().Where(unit => GameState.Instance.IsUnitOwned(unit.Id)));
 		_spellDeck.Initialize(GameState.Instance.GetBattleDeckSpells());
 		_selectionMode = BattleSelectionMode.Unit;
 		if (IsArenaMode)
@@ -1004,6 +1004,7 @@ public partial class BattleController : Node2D
 		InitializeStageHazards();
 		InitializeStageMissions();
 
+		InitializeBattlePresentation();
 		BuildUi();
 		if (IsEndlessMode)
 		{
@@ -1034,6 +1035,7 @@ public partial class BattleController : Node2D
 
 	public override void _ExitTree()
 	{
+		if (_hudLayout != null) GetViewport().SizeChanged -= _hudLayout;
 		CleanupBattleCamera();
 		CleanupMobilePresentation();
 		Engine.TimeScale = 1f;
@@ -1043,6 +1045,8 @@ public partial class BattleController : Node2D
 		UnitPool.Clear();
 		UnitSpriteLoader.ClearCache();
 		BattlefieldTextureLoader.ClearCache();
+		BattleStructureArt.ClearCache();
+		BattleLighting.ClearCache();
 		ProjectilePool.Clear();
 		if (IsLanRaceMode && LanChallengeService.Instance != null)
 		{
@@ -1053,8 +1057,6 @@ public partial class BattleController : Node2D
 	public override void _Draw()
 	{
 		var palette = ResolveTerrainPalette();
-		var route = RouteCatalog.Get(_activeRouteId);
-		var terrainId = (_stageData?.TerrainId ?? "urban").ToLowerInvariant();
 
 		DrawPlayableTerrain(palette);
 		DrawCursedGround();
@@ -1063,12 +1065,10 @@ public partial class BattleController : Node2D
 		DrawEndlessFieldEvent();
 		DrawEndlessContactEvent();
 		DrawChallengeGhostMarkers();
-		DrawIncomingWaveTelegraph(palette.EnemyCoreColor, palette.PlayerCoreColor);
+		// Enemy arrival timing stays hidden to preserve suspense.
 		DrawSelectionPreview();
 
-		DrawPlayerBus(palette, route);
-		DrawEnemyBarricade(palette, route);
-		DrawBaseArmaments();
+		DrawStrongholdAim();
 		// These warnings belong to the screen even while the battlefield pans or zooms.
 		DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
 		DrawCriticalHealthVignette();
@@ -1365,9 +1365,10 @@ public partial class BattleController : Node2D
 			radius = 34f;
 		}
 
-		DrawCircle(previewPosition, radius, new Color(color, 0.08f));
+		DrawSetTransform(previewPosition, 0, new Vector2(1f, BattleGroundPlane.DepthScale));
+		DrawCircle(Vector2.Zero, radius, new Color(color, 0.08f));
 		DrawArc(
-			previewPosition,
+			Vector2.Zero,
 			radius,
 			0f,
 			Mathf.Tau,
@@ -1375,7 +1376,7 @@ public partial class BattleController : Node2D
 			new Color(color, 0.62f),
 			2.6f);
 		DrawArc(
-			previewPosition,
+			Vector2.Zero,
 			Mathf.Max(12f, radius * 0.58f),
 			0f,
 			Mathf.Tau,
@@ -1384,18 +1385,20 @@ public partial class BattleController : Node2D
 			1.8f,
 			true);
 
+		DrawSetTransform(Vector2.Zero);
+
 		if (spell.EffectType is "fireball" or "frost_burst" or "lightning_strike" or "earthquake" or "polymorph")
 		{
 			foreach (var enemy in GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy))
 			{
-				DrawArc(enemy.Position, enemy.Radius + 8f, 0f, Mathf.Tau, 20, new Color(color, 0.45f), 2f);
+				BattleGroundPlane.Ring(this, enemy.Position, enemy.Radius + 8f, new Color(color, .45f));
 			}
 		}
 		else if (spell.EffectType is "heal" or "barrier_ward")
 		{
 			foreach (var ally in GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player))
 			{
-				DrawArc(ally.Position, ally.Radius + 8f, 0f, Mathf.Tau, 20, new Color(color, 0.45f), 2f);
+				BattleGroundPlane.Ring(this, ally.Position, ally.Radius + 8f, new Color(color, .45f));
 			}
 		}
 
@@ -2152,29 +2155,29 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void DrawPlayerBus(TerrainPalette palette, RouteDefinition route)
+	private void DrawPlayerBus(CanvasItem canvas, TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
-		var offset = GetBaseShakeOffset(true);
 
 		var skinId = GameState.Instance.SelectedWagonSkinId;
-		var wagonTexture = skinId == WagonSkinCatalog.DefaultSkinId ? null
-			: BattlefieldTextureLoader.TryLoadStructure("war_wagon_" + skinId);
+		var art = WagonArt;
+		var wagonTexture = art?.Texture ?? (skinId == WagonSkinCatalog.DefaultSkinId ? null
+			: BattlefieldTextureLoader.TryLoadStructure("war_wagon_" + skinId));
 		wagonTexture ??= BattlefieldTextureLoader.TryLoadStructure("war_wagon");
 		if (wagonTexture != null)
 		{
-			var drawRect = new Rect2(PlayerBaseX - 70f + offset.X, BaseCenterY - 80f + offset.Y, 180f, 140f);
-			var modulate = Colors.White;
+			var drawRect = art?.At(PlayerBaseCorePosition) ?? new Rect2(PlayerBaseX - 90f, BaseCenterY - 128f, 180f, 140f);
+			var modulate = FieldLighting.Tint;
 			if (_playerBaseFlashTimer > 0f)
 			{
 				modulate.R = Mathf.Min(1f, 1f + 0.3f);
 				modulate.G = Mathf.Max(0.7f, 1f - 0.2f);
 				modulate.B = Mathf.Max(0.7f, 1f - 0.2f);
 			}
-			DrawTextureRect(wagonTexture, drawRect, false, modulate);
-			DrawDamageSmoke(new Vector2(PlayerBaseX - 18f, BaseCenterY - 48f) + offset, healthRatio, palette.PlayerBaseColor);
-			DrawBaseHealthMeter(
-				new Vector2(PlayerBaseX + 8f + offset.X, drawRect.Position.Y - 20f),
+			canvas.DrawTextureRect(wagonTexture, drawRect, false, modulate);
+			DrawDamageSmoke(canvas, (art?.Point(PlayerBaseCorePosition, art.Smoke) ?? new Vector2(PlayerBaseX - 18f, BaseCenterY - 80f)), healthRatio, palette.PlayerBaseColor);
+			DrawBaseHealthMeter(canvas,
+				new Vector2(PlayerBaseX, drawRect.Position.Y + drawRect.Size.Y * .07f - 20f),
 				132f,
 				healthRatio,
 				true);
@@ -2192,99 +2195,99 @@ public partial class BattleController : Node2D
 		var cabinRect = new Rect2(PlayerBaseX + 44f, BaseCenterY - 24f, 34f, 34f);
 		var bumperRect = new Rect2(PlayerBaseX - 58f, BaseCenterY + 10f, 16f, 12f);
 
-		DrawRect(OffsetRect(bodyRect, offset), bodyColor, true);
-		DrawRect(OffsetRect(cabinRect, offset), cabinColor, true);
-		DrawRect(OffsetRect(bumperRect, offset), cabinColor.Darkened(0.2f), true);
-		DrawRect(
-			OffsetRect(new Rect2(PlayerBaseX - 34f, BaseCenterY - 44f, 66f, 10f), offset),
+		canvas.DrawRect(bodyRect, bodyColor, true);
+		canvas.DrawRect(cabinRect, cabinColor, true);
+		canvas.DrawRect(bumperRect, cabinColor.Darkened(0.2f), true);
+		canvas.DrawRect(
+			new Rect2(PlayerBaseX - 34f, BaseCenterY - 44f, 66f, 10f),
 			bodyColor.Darkened(0.18f),
 			true);
-		DrawLine(
-			new Vector2(PlayerBaseX - 20f, BaseCenterY - 34f) + offset,
-			new Vector2(PlayerBaseX - 20f, BaseCenterY - 8f) + offset,
+		canvas.DrawLine(
+			new Vector2(PlayerBaseX - 20f, BaseCenterY - 34f),
+			new Vector2(PlayerBaseX - 20f, BaseCenterY - 8f),
 			trimShadow,
 			3f,
 			true);
-		DrawLine(
-			new Vector2(PlayerBaseX + 18f, BaseCenterY - 34f) + offset,
-			new Vector2(PlayerBaseX + 18f, BaseCenterY - 8f) + offset,
+		canvas.DrawLine(
+			new Vector2(PlayerBaseX + 18f, BaseCenterY - 34f),
+			new Vector2(PlayerBaseX + 18f, BaseCenterY - 8f),
 			trimShadow,
 			3f,
 			true);
-		DrawColoredPolygon(
+		canvas.DrawColoredPolygon(
 			new[]
 			{
-				new Vector2(PlayerBaseX - 30f, BaseCenterY - 34f) + offset,
-				new Vector2(PlayerBaseX - 4f, BaseCenterY - 62f) + offset,
-				new Vector2(PlayerBaseX + 30f, BaseCenterY - 34f) + offset
+				new Vector2(PlayerBaseX - 30f, BaseCenterY - 34f),
+				new Vector2(PlayerBaseX - 4f, BaseCenterY - 62f),
+				new Vector2(PlayerBaseX + 30f, BaseCenterY - 34f)
 			},
 			bodyColor.Lightened(0.18f));
-		DrawLine(
-			new Vector2(PlayerBaseX + 10f, BaseCenterY - 62f) + offset,
-			new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f) + offset,
+		canvas.DrawLine(
+			new Vector2(PlayerBaseX + 10f, BaseCenterY - 62f),
+			new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f),
 			trimShadow,
 			4f,
 			true);
-		DrawColoredPolygon(
+		canvas.DrawColoredPolygon(
 			new[]
 			{
-				new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f) + offset,
-				new Vector2(PlayerBaseX + 46f, BaseCenterY - 100f) + offset,
-				new Vector2(PlayerBaseX + 24f, BaseCenterY - 88f) + offset,
-				new Vector2(PlayerBaseX + 46f, BaseCenterY - 74f) + offset,
-				new Vector2(PlayerBaseX + 10f, BaseCenterY - 80f) + offset
+				new Vector2(PlayerBaseX + 10f, BaseCenterY - 108f),
+				new Vector2(PlayerBaseX + 46f, BaseCenterY - 100f),
+				new Vector2(PlayerBaseX + 24f, BaseCenterY - 88f),
+				new Vector2(PlayerBaseX + 46f, BaseCenterY - 74f),
+				new Vector2(PlayerBaseX + 10f, BaseCenterY - 80f)
 			},
 			trimColor);
-		DrawLine(
-			new Vector2(PlayerBaseX - 42f, BaseCenterY + 10f) + offset,
-			new Vector2(PlayerBaseX + 62f, BaseCenterY + 10f) + offset,
+		canvas.DrawLine(
+			new Vector2(PlayerBaseX - 42f, BaseCenterY + 10f),
+			new Vector2(PlayerBaseX + 62f, BaseCenterY + 10f),
 			bodyColor.Darkened(0.24f),
 			4f,
 			true);
-		DrawRect(
-			OffsetRect(new Rect2(PlayerBaseX - 2f, BaseCenterY - 14f, 18f, 20f), offset),
+		canvas.DrawRect(
+			new Rect2(PlayerBaseX - 2f, BaseCenterY - 14f, 18f, 20f),
 			trimColor.Darkened(0.22f),
 			true);
-		DrawRect(
-			OffsetRect(new Rect2(PlayerBaseX - 26f, BaseCenterY - 20f, 44f, 18f), offset),
+		canvas.DrawRect(
+			new Rect2(PlayerBaseX - 26f, BaseCenterY - 20f, 44f, 18f),
 			new Color(1f, 1f, 1f, 0.18f + ((_playerBaseFlashTimer > 0f) ? 0.12f : 0f)),
 			true);
-		DrawCircle(new Vector2(PlayerBaseX - 12f, BaseCenterY + 28f) + offset, 12f, new Color("1f2933"));
-		DrawCircle(new Vector2(PlayerBaseX + 42f, BaseCenterY + 28f) + offset, 12f, new Color("1f2933"));
+		canvas.DrawCircle(new Vector2(PlayerBaseX - 12f, BaseCenterY + 28f), 12f, new Color("1f2933"));
+		canvas.DrawCircle(new Vector2(PlayerBaseX + 42f, BaseCenterY + 28f), 12f, new Color("1f2933"));
 
 		var warningLight = healthRatio < 0.45f && Mathf.Sin(_elapsed * 10f) > 0f
 			? new Color(1f, 0.34f, 0.28f, 0.95f)
 			: new Color(1f, 0.96f, 0.62f, 0.95f);
-		DrawCircle(new Vector2(PlayerBaseX + 72f, BaseCenterY - 8f) + offset, 4f, warningLight);
+		canvas.DrawCircle(new Vector2(PlayerBaseX + 72f, BaseCenterY - 8f), 4f, warningLight);
 
-		DrawDamageSmoke(new Vector2(PlayerBaseX - 18f, BaseCenterY - 48f) + offset, healthRatio, bodyColor);
-		DrawBaseHealthMeter(
-			new Vector2(PlayerBaseX + 8f, BaseCenterY - 58f) + offset,
+		DrawDamageSmoke(canvas, new Vector2(PlayerBaseX - 18f, BaseCenterY - 48f), healthRatio, bodyColor);
+		DrawBaseHealthMeter(canvas,
+			new Vector2(PlayerBaseX + 8f, BaseCenterY - 58f),
 			132f,
 			healthRatio,
 			true);
 	}
 
-	private void DrawEnemyBarricade(TerrainPalette palette, RouteDefinition route)
+	private void DrawEnemyBarricade(CanvasItem canvas, TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), 0f, 1f);
-		var offset = GetBaseShakeOffset(false);
 
-		var gatehouseTexture = BattlefieldTextureLoader.TryLoadStructure("gatehouse");
+		var art = CastleArt;
+		var gatehouseTexture = art?.Texture ?? BattlefieldTextureLoader.TryLoadStructure("gatehouse");
 		if (gatehouseTexture != null)
 		{
-			var drawRect = new Rect2(EnemyBaseX - 80f + offset.X, BaseCenterY - 100f + offset.Y, 180f, 160f);
-			var modulate = Colors.White;
+			var drawRect = art?.At(EnemyBaseCorePosition) ?? new Rect2(EnemyBaseX - 90f, BaseCenterY - 148f, 180f, 160f);
+			var modulate = FieldLighting.Tint;
 			if (_enemyBaseFlashTimer > 0f)
 			{
 				modulate.R = Mathf.Min(1f, 1f + 0.3f);
 				modulate.G = Mathf.Max(0.7f, 1f - 0.2f);
 				modulate.B = Mathf.Max(0.7f, 1f - 0.2f);
 			}
-			DrawTextureRect(gatehouseTexture, drawRect, false, modulate);
-			DrawDamageSmoke(new Vector2(EnemyBaseX - 6f, BaseCenterY - 62f) + offset, healthRatio, palette.EnemyBaseColor);
-			DrawBaseHealthMeter(
-				new Vector2(EnemyBaseX + 10f + offset.X, drawRect.Position.Y - 20f),
+			canvas.DrawTextureRect(gatehouseTexture, drawRect, false, modulate);
+			DrawDamageSmoke(canvas, (art?.Point(EnemyBaseCorePosition, art.Smoke) ?? new Vector2(EnemyBaseX - 6f, BaseCenterY - 100f)), healthRatio, palette.EnemyBaseColor);
+			DrawBaseHealthMeter(canvas,
+				new Vector2(EnemyBaseX, drawRect.Position.Y + drawRect.Size.Y * .08f - 20f),
 				132f,
 				healthRatio,
 				false);
@@ -2295,55 +2298,55 @@ public partial class BattleController : Node2D
 		var coreColor = ResolveBaseCoreColor(palette.EnemyCoreColor, _enemyBaseFlashTimer, healthRatio);
 		var bannerColor = coreColor.Lerp(route.BannerAccent, 0.28f);
 		var wallBaseX = EnemyBaseX - 52f;
-		DrawRect(OffsetRect(new Rect2(wallBaseX, BaseCenterY - 54f, 76f, 112f), offset), wallColor, true);
-		DrawRect(OffsetRect(new Rect2(wallBaseX - 18f, BaseCenterY - 12f, 18f, 72f), offset), coreColor.Darkened(0.1f), true);
-		DrawRect(OffsetRect(new Rect2(wallBaseX + 76f, BaseCenterY - 36f, 18f, 94f), offset), coreColor.Darkened(0.15f), true);
-		DrawRect(OffsetRect(new Rect2(wallBaseX + 12f, BaseCenterY - 72f, 22f, 18f), offset), coreColor, true);
-		DrawRect(OffsetRect(new Rect2(wallBaseX + 40f, BaseCenterY - 84f, 22f, 30f), offset), coreColor, true);
+		canvas.DrawRect(new Rect2(wallBaseX, BaseCenterY - 54f, 76f, 112f), wallColor, true);
+		canvas.DrawRect(new Rect2(wallBaseX - 18f, BaseCenterY - 12f, 18f, 72f), coreColor.Darkened(0.1f), true);
+		canvas.DrawRect(new Rect2(wallBaseX + 76f, BaseCenterY - 36f, 18f, 94f), coreColor.Darkened(0.15f), true);
+		canvas.DrawRect(new Rect2(wallBaseX + 12f, BaseCenterY - 72f, 22f, 18f), coreColor, true);
+		canvas.DrawRect(new Rect2(wallBaseX + 40f, BaseCenterY - 84f, 22f, 30f), coreColor, true);
 		for (var i = 0; i < 4; i++)
 		{
-			DrawRect(
-				OffsetRect(new Rect2(wallBaseX + 4f + (i * 18f), BaseCenterY - 68f - ((i % 2) * 4f), 12f, 14f), offset),
+			canvas.DrawRect(
+				new Rect2(wallBaseX + 4f + (i * 18f), BaseCenterY - 68f - ((i % 2) * 4f), 12f, 14f),
 				coreColor.Darkened(0.04f),
 				true);
 		}
 
 		var gateRect = new Rect2(wallBaseX + 20f, BaseCenterY - 4f, 24f, 54f);
-		DrawRect(OffsetRect(gateRect, offset), wallColor.Darkened(0.28f), true);
+		canvas.DrawRect(gateRect, wallColor.Darkened(0.28f), true);
 		for (var i = 0; i < 4; i++)
 		{
 			var x = gateRect.Position.X + 4f + (i * 5f);
-			DrawLine(
-				new Vector2(x, gateRect.Position.Y + 4f) + offset,
-				new Vector2(x, gateRect.End.Y - 2f) + offset,
+			canvas.DrawLine(
+				new Vector2(x, gateRect.Position.Y + 4f),
+				new Vector2(x, gateRect.End.Y - 2f),
 				coreColor.Lightened(0.16f),
 				2f,
 				true);
 		}
 
-		DrawLine(
-			new Vector2(wallBaseX + 52f, BaseCenterY - 84f) + offset,
-			new Vector2(wallBaseX + 52f, BaseCenterY - 122f) + offset,
+		canvas.DrawLine(
+			new Vector2(wallBaseX + 52f, BaseCenterY - 84f),
+			new Vector2(wallBaseX + 52f, BaseCenterY - 122f),
 			coreColor.Darkened(0.08f),
 			4f,
 			true);
-		DrawColoredPolygon(
+		canvas.DrawColoredPolygon(
 			new[]
 			{
-				new Vector2(wallBaseX + 52f, BaseCenterY - 122f) + offset,
-				new Vector2(wallBaseX + 16f, BaseCenterY - 114f) + offset,
-				new Vector2(wallBaseX + 38f, BaseCenterY - 102f) + offset,
-				new Vector2(wallBaseX + 18f, BaseCenterY - 86f) + offset,
-				new Vector2(wallBaseX + 52f, BaseCenterY - 92f) + offset
+				new Vector2(wallBaseX + 52f, BaseCenterY - 122f),
+				new Vector2(wallBaseX + 16f, BaseCenterY - 114f),
+				new Vector2(wallBaseX + 38f, BaseCenterY - 102f),
+				new Vector2(wallBaseX + 18f, BaseCenterY - 86f),
+				new Vector2(wallBaseX + 52f, BaseCenterY - 92f)
 			},
 			bannerColor);
-		DrawCircle(new Vector2(EnemyBaseX - 10f, BaseCenterY - 26f) + offset, 7f, new Color(1f, 0.45f, 0.2f, 0.9f));
+		canvas.DrawCircle(new Vector2(EnemyBaseX - 10f, BaseCenterY - 26f), 7f, new Color(1f, 0.45f, 0.2f, 0.9f));
 
 		if (healthRatio < 0.75f)
 		{
-			DrawLine(
-				new Vector2(wallBaseX + 16f, BaseCenterY - 22f) + offset,
-				new Vector2(wallBaseX + 42f, BaseCenterY + 16f) + offset,
+			canvas.DrawLine(
+				new Vector2(wallBaseX + 16f, BaseCenterY - 22f),
+				new Vector2(wallBaseX + 42f, BaseCenterY + 16f),
 				coreColor.Lightened(0.25f),
 				3f,
 				true);
@@ -2351,17 +2354,17 @@ public partial class BattleController : Node2D
 
 		if (healthRatio < 0.45f)
 		{
-			DrawLine(
-				new Vector2(wallBaseX + 48f, BaseCenterY - 44f) + offset,
-				new Vector2(wallBaseX + 18f, BaseCenterY + 6f) + offset,
+			canvas.DrawLine(
+				new Vector2(wallBaseX + 48f, BaseCenterY - 44f),
+				new Vector2(wallBaseX + 18f, BaseCenterY + 6f),
 				new Color(1f, 0.68f, 0.38f, 0.8f),
 				4f,
 				true);
 		}
 
-		DrawDamageSmoke(new Vector2(EnemyBaseX - 14f, BaseCenterY - 88f) + offset, healthRatio, wallColor);
-		DrawBaseHealthMeter(
-			new Vector2(EnemyBaseX - 10f, BaseCenterY - 112f) + offset,
+		DrawDamageSmoke(canvas, new Vector2(EnemyBaseX - 14f, BaseCenterY - 88f), healthRatio, wallColor);
+		DrawBaseHealthMeter(canvas,
+			new Vector2(EnemyBaseX - 10f, BaseCenterY - 112f),
 			124f,
 			healthRatio,
 			false);
@@ -2441,32 +2444,15 @@ public partial class BattleController : Node2D
 		_spellDeck.TickCooldowns(deltaF);
 		UpdateCampaignField(deltaF);
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
-		TickTunnelInvasion(deltaF);
-		UpdateEndlessFieldEvent(deltaF);
-		UpdateStageHazards();
 		UpdateChallengeGhost(deltaF);
-		UpdateCampaignAdaptiveWaveRead();
-		UpdateCampaignAdaptiveWaveChallenge(deltaF);
-		UpdateCampaignLateCondition();
 
 		SimulateUnits(deltaF);
 		TickBaseWeapons(deltaF);
 		ApplyFriendlyUnitSeparation(deltaF);
 		ExpireBarricades();
 		CleanupDeadUnits();
-		TryTriggerCampaignReserve();
-		UpdateCampaignConvoyCommand(deltaF);
-		TryTriggerCampaignRouteSupport();
 		TryTriggerCampaignBossPhase();
-		UpdateCampaignBossPressure();
-		UpdateStageMissions(deltaF);
-		TryTriggerCampaignFieldOrderResponse();
-		TryTriggerCampaignMissionAftermath();
-		TryTriggerCampaignCounterSurge();
-		TryTriggerCampaignBonusObjectivePressure();
 		UpdateDefenseMomentumRewards();
-		UpdateEndlessDirectiveState();
-		UpdateEndlessContactEvent(deltaF);
 		MaybeOpenEndlessDraft();
 		UpdateLanRaceTelemetry(deltaF);
 		UpdateOnlineRoomTelemetry(deltaF);
@@ -2479,6 +2465,7 @@ public partial class BattleController : Node2D
 
 	public override void _Process(double delta)
 	{
+		UpdateActorLighting();
 		UpdateCardDragPreview();
 		UpdateMobileCamera((float)delta);
 		UpdateFieldNavigation();
@@ -2974,35 +2961,6 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (keyEvent.Keycode == Key.C && IsCampaignMode)
-		{
-			TryActivateCampaignConvoyCommand();
-			return;
-		}
-
-		if (IsCampaignMode && keyEvent.Keycode == Key.Z)
-		{
-			TryCommitCampaignFieldOrder(true);
-			return;
-		}
-
-		if (IsCampaignMode && keyEvent.Keycode == Key.X)
-		{
-			TryCommitCampaignFieldOrder(false);
-			return;
-		}
-
-		if (IsCampaignMode && keyEvent.Keycode == Key.V)
-		{
-			TryCommitCampaignAdaptiveWaveDirective(false);
-			return;
-		}
-
-		if (IsCampaignMode && keyEvent.Keycode == Key.B)
-		{
-			TryCommitCampaignAdaptiveWaveDirective(true);
-			return;
-		}
 
 		var unitIndex = keyEvent.Keycode switch
 		{
@@ -3039,6 +2997,8 @@ public partial class BattleController : Node2D
 
 	private void TogglePause()
 	{
+		if (_restartPending || _battleEnded || _endlessCheckpointActive) return;
+		if (_battleSettingsModal != null) { CloseBattleSettings(); return; }
 		CancelCardDrag();
 		_mobilePointerDown = false;
 		_battlePaused = !_battlePaused;
@@ -3046,6 +3006,8 @@ public partial class BattleController : Node2D
 		if (_pauseOverlay != null)
 		{
 			_pauseOverlay.Visible = _battlePaused;
+			if (_battlePaused) { _restartMessage.Hide(); _resumeButton.GrabFocus(); }
+			else _hudSettingsButton.GrabFocus();
 		}
 	}
 
@@ -3162,6 +3124,7 @@ public partial class BattleController : Node2D
 		}
 
 		_selectionMode = BattleSelectionMode.Unit;
+		_spellDeck.Disarm();
 		_deck.Arm(definition);
 		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to deploy" : "Drag to deploy")}");
 		UpdateHud();
@@ -3175,6 +3138,7 @@ public partial class BattleController : Node2D
 		}
 
 		_selectionMode = BattleSelectionMode.Spell;
+		_deck.Disarm();
 		_spellDeck.Arm(definition);
 		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to cast" : "Drag to cast")}");
 		TryShowTutorialHint("first_spell_unlock");
@@ -3268,7 +3232,7 @@ public partial class BattleController : Node2D
 
 	private void TrySpawnPlayer(UnitDefinition definition, Vector2 spawnPosition)
 	{
-		if (_battleEnded)
+		if (_battleEnded || _selectionMode != BattleSelectionMode.Unit || _deck.ArmedUnit?.Id != definition.Id)
 		{
 			return;
 		}
@@ -3327,6 +3291,8 @@ public partial class BattleController : Node2D
 
 	private void SpawnEnemyUnit(UnitStats stats, Vector2 position)
 	{
+		// All reinforcements leave the stronghold, including scripted waves and boss escorts.
+		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BaseCenterY - 58f, BaseCenterY + 58f));
 		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
 		var unit = SpawnUnit(Team.Enemy, stats, position);
 		ApplyCampaignPressureEchoToEnemySpawn(unit);
@@ -3360,6 +3326,9 @@ public partial class BattleController : Node2D
 	{
 		var unit = UnitPool.Acquire();
 		unit.Setup(team, stats, position);
+		unit.EnvironmentTint = FieldLighting.Tint;
+		unit.GroundShadowsManaged = true;
+		unit.TextureFilter = TextureFilterEnum.LinearWithMipmaps;
 		_campaignPeriodicSummons.Remove(unit);
 		unit.ShouldPausePresentation = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		unit.Visible = true;
@@ -3424,8 +3393,12 @@ public partial class BattleController : Node2D
 	}
 
 	private void SpawnProjectile(Unit attacker, Unit target)
+		=> SpawnProjectileDamage(attacker, target, 1f);
+
+	private void SpawnProjectileDamage(Unit attacker, Unit target, float damageScale)
 	{
 		var projectile = ProjectilePool.Acquire();
+		AddChild(projectile);
 		projectile.GlobalPosition = attacker.WeaponContactPosition;
 		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		if (attacker.MotionProfile == "bow-draw" || attacker.MotionProfile == "crossbow") projectile.SetWeaponVisual(BaseWeaponKind.Arrows);
@@ -3440,7 +3413,7 @@ public partial class BattleController : Node2D
 		var shotLifetime = attacker.CombatLifetime;
 
 		// Arrow Ward: reduce incoming projectile damage against player units
-		var projectileDamage = attacker.CurrentAttackDamage;
+		var projectileDamage = attacker.CurrentAttackDamage * damageScale;
 		if (attacker.Team == Team.Enemy && target.Team == Team.Player)
 		{
 			var wardLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.ProjectileWardId);
@@ -3509,7 +3482,6 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		AddChild(projectile);
 	}
 
 	private void SpawnContactPressureProjectile(Unit attacker)
@@ -3652,28 +3624,36 @@ public partial class BattleController : Node2D
 	private void ResolveAttackBase(Unit attacker)
 	{
 		if (attacker.UsesProjectile)
-			ShowReleaseTraceTo(attacker,(attacker.Team==Team.Player?EnemyBaseCorePosition:PlayerBaseCorePosition)+new Vector2(0,-24));
+		{
+			SpawnUnitBaseProjectile(attacker);
+			return;
+		}
+		ApplyUnitBaseHit(attacker.Team, attacker.BaseDamage, attacker.Tint, attacker, attacker.CombatLifetime);
+	}
 
-		if (attacker.Team == Team.Player)
+	private void ApplyUnitBaseHit(Team team, float damage, Color tint, Unit attacker, uint attackerLifetime)
+	{
+		if (_battleEnded) return;
+		if (team == Team.Player)
 		{
 			if (_enemyBaseHealth <= 0f) return;
 			var gateBreakLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.GateBreakerId);
-			var baseDamage = attacker.BaseDamage * (1f + (gateBreakLevel * 0.08f));
+			var baseDamage = damage * (1f + (gateBreakLevel * 0.08f));
 			_enemyBaseHealth -= baseDamage;
 			RegisterEnemyBaseDamage(baseDamage);
 			_enemyBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(false, baseDamage);
-			SpawnEffect(EnemyBaseCorePosition, attacker.Tint, 8f, 26f, 0.18f);
-			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, attacker.Tint);
-			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(baseDamage)}", attacker.Tint.Lightened(0.18f), 0.44f);
+			SpawnEffect(EnemyBaseCorePosition, tint, 8f, 26f, 0.18f);
+			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, tint);
+			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(baseDamage)}", tint.Lightened(0.18f), 0.44f);
 		}
 		else
 		{
 			var busArmorScale = _endlessBusArmorScale > 1.001f ? (1f / _endlessBusArmorScale) : 1f;
-			var busDamage = Mathf.Max(1f, attacker.BaseDamage * busArmorScale * BaseWeaponCatalog.ArmorScale(_wagonArmorLevel));
+			var busDamage = Mathf.Max(1f, damage * busArmorScale * BaseWeaponCatalog.ArmorScale(_wagonArmorLevel));
 			_playerBaseHealth -= busDamage;
 			RegisterPlayerHullDamage(busDamage);
-			if (_endlessDamageReflectRatio > 0.01f && !attacker.IsDead)
+			if (_endlessDamageReflectRatio > 0.01f && IsInstanceValid(attacker) && attacker.CombatLifetime == attackerLifetime && !attacker.IsDead)
 			{
 				var reflected = attacker.TakeDamage(busDamage * _endlessDamageReflectRatio);
 				if (reflected > 0.5f)
@@ -3683,9 +3663,9 @@ public partial class BattleController : Node2D
 			}
 			_playerBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(true, busDamage);
-			SpawnEffect(PlayerBaseCorePosition, attacker.Tint, 8f, 26f, 0.18f);
-			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, attacker.Tint);
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", attacker.Tint.Lightened(0.18f), 0.44f);
+			SpawnEffect(PlayerBaseCorePosition, tint, 8f, 26f, 0.18f);
+			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, tint);
+			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", tint.Lightened(0.18f), 0.44f);
 		}
 		CheckBattleEnd();
 	}
@@ -4203,9 +4183,6 @@ public partial class BattleController : Node2D
 			case "cavalry_charge":
 				ActiveAbilityCharge(unit);
 				break;
-			case "engineer_turret":
-				ActiveAbilityDeployTurret(unit);
-				break;
 			case "mage_beam":
 				ActiveAbilityArcaneBeam(unit);
 				break;
@@ -4223,9 +4200,6 @@ public partial class BattleController : Node2D
 				break;
 			case "banner_inspire":
 				ActiveAbilityInspire(unit);
-				break;
-			case "necro_mass_raise":
-				ActiveAbilityMassRaise(unit);
 				break;
 			case "rogue_vanish":
 				ActiveAbilityVanish(unit);
@@ -4324,6 +4298,11 @@ public partial class BattleController : Node2D
 
 		if (farthest != null)
 		{
+			if (unit.MotionProfile == "ballista")
+			{
+				SpawnProjectileDamage(unit, farthest, 3f);
+				return;
+			}
 			var damage = unit.CurrentAttackDamage * 3f;
 			var applied = farthest.TakeDamage(damage, unit.UnitName);
 			ShowReleaseTrace(unit,farthest);
@@ -4378,28 +4357,6 @@ public partial class BattleController : Node2D
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "CHARGE", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
-	private void ActiveAbilityDeployTurret(Unit unit)
-	{
-		var turretDef = GameData.GetUnit("player_skeleton");
-		if (turretDef == null)
-		{
-			// Fallback: deal direct damage if turret definition unavailable
-			ApplySplashDamage(unit.Team, unit.Position, unit.CurrentAttackDamage * 2f, 64f, unit.Tint);
-			SpawnFloatText(unit.Position + new Vector2(0f, -32f), "TURRET BLAST", unit.Tint.Lightened(0.22f), 0.54f);
-			return;
-		}
-
-		var spawnPos = new Vector2(
-			Mathf.Clamp(unit.Position.X - 20f, BattlefieldLeft + 20f, BattlefieldRight - 20f),
-			Mathf.Clamp(
-				unit.Position.Y + _rng.RandfRange(-24f, 24f),
-				BattlefieldTop + SpawnVerticalPadding,
-				BattlefieldBottom - SpawnVerticalPadding));
-		var stats = new UnitStats(turretDef);
-		SpawnUnit(Team.Player, stats, spawnPos);
-		SpawnEffect(spawnPos, unit.Tint.Lightened(0.12f), 10f, 36f, 0.24f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "DEPLOY TURRET", unit.Tint.Lightened(0.22f), 0.56f);
-	}
 
 	private void ActiveAbilityArcaneBeam(Unit unit)
 	{
@@ -4525,29 +4482,6 @@ public partial class BattleController : Node2D
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "INSPIRE", unit.Tint.Lightened(0.26f), 0.56f);
 	}
 
-	private void ActiveAbilityMassRaise(Unit unit)
-	{
-		var skeletonDef = GameData.GetUnit(GameData.PlayerSkeletonId);
-		if (skeletonDef == null)
-		{
-			return;
-		}
-
-		for (var i = 0; i < 3; i++)
-		{
-			var stats = new UnitStats(skeletonDef, healthScale: _endlessSkeletonHealthScale);
-			var spawnPos = new Vector2(
-				Mathf.Clamp(unit.Position.X + _rng.RandfRange(-30f, 30f), BattlefieldLeft + 20f, BattlefieldRight - 20f),
-				Mathf.Clamp(
-					unit.Position.Y + _rng.RandfRange(-40f, 40f),
-					BattlefieldTop + SpawnVerticalPadding,
-					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnUnit(Team.Player, stats, spawnPos);
-		}
-
-		SpawnEffect(unit.Position, unit.Tint.Lightened(0.1f), 10f, 48f, 0.26f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "MASS RAISE", unit.Tint.Lightened(0.22f), 0.56f);
-	}
 
 	private void ActiveAbilityVanish(Unit unit)
 	{
@@ -4998,28 +4932,7 @@ public partial class BattleController : Node2D
 
 	private void TryCommitCampaignFieldOrder(bool assault)
 	{
-		if (!IsCampaignMode || _battleEnded || _endlessCheckpointActive || _battlePaused)
-		{
-			return;
-		}
-
-		if (_campaignFieldOrderCommitted)
-		{
-			var spentLabel = _campaignFieldOrderUsedAssault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel;
-			SetStatus($"Field order already spent: {spentLabel}.");
-			return;
-		}
-
-		if (!_campaignFieldOrderReady)
-		{
-			SetStatus("Field order locked: resolve the first battlefield event before issuing Z/X orders.");
-			return;
-		}
-
-		_campaignFieldOrderReady = false;
-		_campaignFieldOrderCommitted = true;
-		_campaignFieldOrderUsedAssault = assault;
-		ApplyCampaignFieldOrder(assault);
+		return;
 	}
 
 	private string QueueCampaignFieldOrderResponse(bool assault)
@@ -5409,26 +5322,7 @@ public partial class BattleController : Node2D
 
 	private void TryActivateCampaignConvoyCommand()
 	{
-		if (!IsCampaignMode || _battleEnded || _endlessCheckpointActive || _battlePaused)
-		{
-			return;
-		}
-
-		if (_campaignConvoyCommandTriggered)
-		{
-			SetStatus($"Convoy command already spent: {_campaignConvoyCommandLabel}.");
-			return;
-		}
-
-		if (!_campaignConvoyCommandReady)
-		{
-			SetStatus($"Convoy command charging: {_campaignConvoyCommandLabel} ({_campaignConvoyCommandChargeRemaining:0.0}s).");
-			return;
-		}
-
-		_campaignConvoyCommandReady = false;
-		_campaignConvoyCommandTriggered = true;
-		ApplyCampaignConvoyCommand();
+		return;
 	}
 
 	private void ApplyCampaignConvoyCommand()
@@ -5755,51 +5649,7 @@ public partial class BattleController : Node2D
 
 	private void TryCommitCampaignAdaptiveWaveDirective(bool breakthrough)
 	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady)
-		{
-			return;
-		}
-
-		if (_campaignAdaptiveWaveChoiceUsed)
-		{
-			var spentLabel = string.IsNullOrWhiteSpace(_campaignAdaptiveWaveChoiceLabel)
-				? "adaptive wave override"
-				: _campaignAdaptiveWaveChoiceLabel;
-			SetStatus($"Adaptive wave override already spent: {spentLabel}.");
-			return;
-		}
-
-		if (!_campaignAdaptiveWaveChoiceReady)
-		{
-			SetStatus($"Adaptive wave override locked: spend the first adaptive read before choosing {CampaignAdaptiveWaveRescueLabel} or {CampaignAdaptiveWaveBreakthroughLabel}.");
-			return;
-		}
-
-		_campaignAdaptiveWaveChoiceReady = false;
-		_campaignAdaptiveWaveChoiceUsed = true;
-		_campaignAdaptiveWaveOverrideQueued = true;
-		_campaignAdaptiveWaveQueuedDirective = breakthrough
-			? CampaignAdaptiveWaveDirective.Breakthrough
-			: CampaignAdaptiveWaveDirective.Rescue;
-		_campaignAdaptiveWaveChoiceLabel = breakthrough
-			? CampaignAdaptiveWaveBreakthroughLabel
-			: CampaignAdaptiveWaveRescueLabel;
-
-		if (breakthrough)
-		{
-			_courage = Mathf.Min(_maxCourage, _courage + 4f);
-			BuffAllPlayerUnits(1.04f, 1.06f, 5f);
-			SetStatus($"Adaptive wave override queued: {_campaignAdaptiveWaveChoiceLabel} will drive the next scripted wave with {BuildCampaignAdaptiveWaveDirectivePackageSummary(_campaignAdaptiveWaveQueuedDirective)} and splice in {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(_campaignAdaptiveWaveQueuedDirective)}. The caravan banks +4 courage and surges forward.");
-		}
-		else
-		{
-			RepairBusByRatio(0.015f);
-			_deck.ReduceCooldowns(0.14f);
-			_spellDeck.ReduceCooldowns(0.14f);
-			SetStatus($"Adaptive wave override queued: {_campaignAdaptiveWaveChoiceLabel} will steady the next scripted wave with {BuildCampaignAdaptiveWaveDirectivePackageSummary(_campaignAdaptiveWaveQueuedDirective)} and splice in {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(_campaignAdaptiveWaveQueuedDirective)}. The wagon patches hull and the hand quickens.");
-		}
-
-		UpdateHud();
+		return;
 	}
 
 	private static string ResolveCampaignAdaptiveWaveDirectiveBranchTitle(CampaignAdaptiveWaveDirective directive)
@@ -8931,8 +8781,7 @@ public partial class BattleController : Node2D
 
 			TriggerDeathBurst(deadUnit);
 			TriggerSpawnOnDeath(deadUnit);
-			TriggerNecromancerRaise(deadUnit);
-			TriggerDamageReflectOnDeath(deadUnit);
+				TriggerDamageReflectOnDeath(deadUnit);
 			TryLichGraveyardReanimate(deadUnit);
 			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
@@ -9324,63 +9173,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void TriggerNecromancerRaise(Unit deadUnit)
-	{
-		if (deadUnit.Team != Team.Enemy)
-		{
-			return;
-		}
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead || unit.Team != Team.Player)
-			{
-				continue;
-			}
-
-			if (!string.Equals(unit.SpecialAbilityId, "raise_dead", StringComparison.OrdinalIgnoreCase))
-			{
-				continue;
-			}
-
-			if (unit.SpecialCooldown <= 0.05f || string.IsNullOrWhiteSpace(unit.SpecialSpawnUnitId))
-			{
-				continue;
-			}
-
-			if (!unit.TryTriggerSpecialAbility())
-			{
-				continue;
-			}
-
-			var searchRadius = Mathf.Max(80f, unit.SpecialBuffRadius);
-			if (deadUnit.Position.DistanceTo(unit.Position) > searchRadius)
-			{
-				continue;
-			}
-
-			var skeletonDef = GameData.GetUnit(unit.SpecialSpawnUnitId);
-			if (skeletonDef == null)
-			{
-				continue;
-			}
-
-			for (var s = 0; s < unit.SpecialSpawnCount; s++)
-			{
-				var stats = new UnitStats(skeletonDef, healthScale: _endlessSkeletonHealthScale);
-				var spawnPos = new Vector2(
-					Mathf.Clamp(deadUnit.Position.X + _rng.RandfRange(-14f, 14f), BattlefieldLeft + 20f, BattlefieldRight - 20f),
-					Mathf.Clamp(deadUnit.Position.Y + _rng.RandfRange(-18f, 18f),
-						BattlefieldTop + SpawnVerticalPadding,
-						BattlefieldBottom - SpawnVerticalPadding));
-				SpawnUnit(Team.Player, stats, spawnPos);
-			}
-
-			SpawnEffect(deadUnit.Position, unit.Tint.Lightened(0.12f), 8f, 32f, 0.24f, false);
-			SpawnFloatText(deadUnit.Position + new Vector2(0f, -32f), "RAISE", unit.Tint.Lightened(0.22f), 0.54f);
-			break;
-		}
-	}
 
 	private Unit FindProjectileShieldInterceptor(Unit attacker, Unit target)
 	{
@@ -9581,6 +9373,7 @@ public partial class BattleController : Node2D
 		var effect = new BattleEffect();
 		effect.Position = position;
 		effect.Setup(color, startRadius, endRadius, lifetime, filled, style);
+		effect.GroundProjected = true;
 		AddChild(effect);
 	}
 
@@ -10014,7 +9807,7 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		if (resurrectDef == null)
+		if (resurrectDef == null || !_deck.Roster.Any(unit => unit.Id == resurrectDef.Id) || !GameState.Instance.IsUnitOwned(resurrectDef.Id))
 		{
 			SpawnEffect(targetPosition, color, 8f, 28f, 0.22f, false);
 			return "Resurrect could not restore the fallen unit.";
@@ -10037,26 +9830,6 @@ public partial class BattleController : Node2D
 		return $"Resurrect restored {resurrectDef.DisplayName} at {Mathf.RoundToInt(spell.Power * 100f)}% health.";
 	}
 
-	private Rect2 OffsetRect(Rect2 rect, Vector2 offset)
-	{
-		return new Rect2(rect.Position + offset, rect.Size);
-	}
-
-	private Vector2 GetBaseShakeOffset(bool playerBase)
-	{
-		var flashTimer = playerBase ? _playerBaseFlashTimer : _enemyBaseFlashTimer;
-		if (flashTimer <= 0f)
-		{
-			return Vector2.Zero;
-		}
-
-		var strength = Mathf.Clamp(flashTimer / 0.22f, 0f, 1f) * 4f;
-		var phase = (_elapsed * 56f) + (playerBase ? 0f : 1.8f);
-		return new Vector2(
-			Mathf.Sin(phase) * strength,
-			Mathf.Cos(phase * 1.37f) * strength * 0.38f);
-	}
-
 	private Color ResolveBaseBodyColor(Color source, float flashTimer, float healthRatio)
 	{
 		var wornColor = source.Lerp(new Color("4a4e69"), (1f - healthRatio) * 0.28f);
@@ -10071,11 +9844,11 @@ public partial class BattleController : Node2D
 		return dangerColor.Lerp(Colors.White, flashStrength * 0.5f);
 	}
 
-	private void DrawBaseHealthMeter(Vector2 center, float width, float healthRatio, bool friendly)
+	private void DrawBaseHealthMeter(CanvasItem canvas, Vector2 center, float width, float healthRatio, bool friendly)
 	{
 		var highContrast = GameState.Instance?.HighContrast ?? false;
 		var origin = center - new Vector2(width * 0.5f, 0f);
-		HealthBarPainter.Draw(this, new Rect2(origin, new Vector2(width, highContrast ? 18f : 16f)), healthRatio,
+		HealthBarPainter.Draw(canvas, new Rect2(origin, new Vector2(width, highContrast ? 18f : 16f)), healthRatio,
 			friendly ? _playerHealthBarMotion.TrailRatio : _enemyHealthBarMotion.TrailRatio,
 			friendly, HealthBarKind.Base, highContrast);
 	}
@@ -10100,7 +9873,7 @@ public partial class BattleController : Node2D
 		DrawRect(new Rect2(0f, viewport.Y - (edgeWidth * 0.6f), viewport.X, edgeWidth * 0.6f), vignetteColor, true);
 	}
 
-	private void DrawDamageSmoke(Vector2 origin, float healthRatio, Color sourceColor)
+	private void DrawDamageSmoke(CanvasItem canvas, Vector2 origin, float healthRatio, Color sourceColor)
 	{
 		if (healthRatio >= 0.7f)
 		{
@@ -10109,8 +9882,8 @@ public partial class BattleController : Node2D
 
 		var smokeStrength = Mathf.Clamp((0.7f - healthRatio) / 0.7f, 0f, 1f);
 		var plumeOffset = Mathf.Sin(_elapsed * 1.8f) * 6f;
-		DrawCircle(origin + new Vector2(plumeOffset, -12f), 10f + (smokeStrength * 5f), new Color(sourceColor.Darkened(0.7f), 0.18f + (smokeStrength * 0.12f)));
-		DrawCircle(origin + new Vector2(-4f + (plumeOffset * 0.4f), -24f), 14f + (smokeStrength * 6f), new Color(0f, 0f, 0f, 0.12f + (smokeStrength * 0.12f)));
+		canvas.DrawCircle(origin + new Vector2(plumeOffset, -12f), 10f + (smokeStrength * 5f), new Color(sourceColor.Darkened(0.7f), 0.18f + (smokeStrength * 0.12f)));
+		canvas.DrawCircle(origin + new Vector2(-4f + (plumeOffset * 0.4f), -24f), 14f + (smokeStrength * 6f), new Color(0f, 0f, 0f, 0.12f + (smokeStrength * 0.12f)));
 	}
 
 	private void DrawEndlessFieldEvent()
@@ -11037,49 +10810,11 @@ public partial class BattleController : Node2D
 	private void InitializeStageHazards()
 	{
 		_stageHazards.Clear();
-		if (_stageData?.Hazards == null)
-		{
-			return;
-		}
-
-		foreach (var hazard in _stageData.Hazards)
-		{
-			if (hazard == null)
-			{
-				continue;
-			}
-
-			var anchor = new Vector2(
-				Mathf.Lerp(BattlefieldLeft + 48f, BattlefieldRight - 48f, Mathf.Clamp(hazard.XRatio, 0f, 1f)),
-				Mathf.Lerp(BattlefieldTop + 32f, BattlefieldBottom - 32f, Mathf.Clamp(hazard.YRatio, 0f, 1f)));
-			_stageHazards.Add(new StageHazardState(
-				hazard,
-				anchor,
-				Mathf.Max(1.5f, hazard.StartTime),
-				hazard.GetTint()));
-		}
 	}
 
 	private void InitializeStageMissions()
 	{
 		_stageMissions.Clear();
-		if (IsEndlessMode || _stageData?.MissionEvents == null)
-		{
-			return;
-		}
-
-		var missionDefinitions = IsCampaignMode
-			? StageMissionEvents.GetCampaignMissionEvents(_stageData)
-			: _stageData.MissionEvents;
-		foreach (var mission in missionDefinitions)
-		{
-			if (mission == null || string.IsNullOrWhiteSpace(mission.Type))
-			{
-				continue;
-			}
-
-			AddStageMission(mission);
-		}
 	}
 
 	private StageMissionState AddStageMission(
@@ -13523,7 +13258,6 @@ public partial class BattleController : Node2D
 			"shock_drill",
 			"field_tonic",
 			"salvage_contract",
-			"skeleton_surplus",
 			"relic_spark",
 			"berserk_ritual",
 			"mirror_ward",
@@ -13636,10 +13370,6 @@ public partial class BattleController : Node2D
 					_endlessGoldScale *= 1.15f;
 				}
 				break;
-			case "skeleton_surplus":
-				SpawnSupportUnit(GameData.PlayerSkeletonId);
-				SpawnSupportUnit(GameData.PlayerSkeletonId);
-				break;
 			case "relic_spark":
 			{
 				_endlessRunUpgrades.Add(optionId);
@@ -13678,7 +13408,6 @@ public partial class BattleController : Node2D
 			"shock_drill" => new EndlessDraftOption("shock_drill", "Shock Drill", "Future deployed units deal 12% more damage for the rest of the run."),
 			"field_tonic" => new EndlessDraftOption("field_tonic", "Field Tonic", "Future deployed units gain 18% more health for the rest of the run."),
 				"salvage_contract" => new EndlessDraftOption("salvage_contract", "Quartermaster Ledger", "Increase final gold payout by 15% for the rest of the run."),
-			"skeleton_surplus" => new EndlessDraftOption("skeleton_surplus", "Skeleton Surplus", "Summon 2 skeleton allies at this checkpoint."),
 			"relic_spark" => new EndlessDraftOption("relic_spark", "Relic Spark", "Grant a random common relic."),
 			"berserk_ritual" => new EndlessDraftOption("berserk_ritual", "Berserk Ritual", "All deployed units gain +15% attack damage for 60 seconds."),
 			"mirror_ward" => new EndlessDraftOption("mirror_ward", "Mirror Ward", "War wagon reflects 20% of damage taken for the next 45 seconds."),
@@ -13731,71 +13460,12 @@ public partial class BattleController : Node2D
 
 	private void StartRouteForkFieldEvent(string routeForkId)
 	{
-		var normalizedForkId = EndlessRouteForkCatalog.Normalize(routeForkId);
-		_activeEndlessFieldEvent = normalizedForkId switch
-		{
-			EndlessRouteForkCatalog.MainlinePushId => new EndlessFieldEvent(
-				"mainline_push",
-				"Rapid flares sweep the forward lanes and detonate around the rush line.",
-				new[]
-				{
-					new Vector2(EnemySpawnX - 150f, BattlefieldTop + 96f),
-					new Vector2(EnemySpawnX - 210f, BaseCenterY),
-					new Vector2(EnemySpawnX - 150f, BattlefieldBottom - 96f)
-				},
-				18f,
-				2.8f,
-				54f,
-				new Color("ffd166")),
-			EndlessRouteForkCatalog.ScavengeDetourId => new EndlessFieldEvent(
-				"scavenge_detour",
-					"Supply caches pulse courage and quick repairs from the caravan sidelines.",
-				new[]
-				{
-					new Vector2(PlayerSpawnX + 40f, BattlefieldTop + 118f),
-					new Vector2(PlayerSpawnX + 40f, BattlefieldBottom - 118f)
-				},
-				20f,
-				4.2f,
-				44f,
-				new Color("80ed99")),
-			_ => new EndlessFieldEvent(
-				"fortified_block",
-					"A ward turret scans the block and suppresses enemies near the caravan.",
-				new[]
-				{
-					new Vector2(PlayerBaseX + 124f, BaseCenterY - 34f)
-				},
-				22f,
-				2.7f,
-				320f,
-				new Color("9bf6ff"))
-		};
-
-		_endlessBattlefieldEventLabel = _activeEndlessFieldEvent.Label;
+		_activeEndlessFieldEvent = null;
 	}
 
 	private void StartEndlessDirectiveSegment()
 	{
-		if (!IsEndlessMode)
-		{
-			return;
-		}
-
-		var definition = EndlessDirectiveCatalog.GetForRouteFork(_endlessRouteForkId);
-		var targetCount = ResolveDirectiveTargetCount(definition);
-		var targetRatio = ResolveDirectiveTargetRatio(definition);
-		var currentBusRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
-		_activeEndlessDirective = new EndlessDirectiveState(
-			definition,
-			Math.Max(1, _spawnDirector.EndlessWaveNumber + 1),
-			_spawnDirector.EndlessWaveNumber + 5,
-			targetCount,
-			targetRatio,
-			_enemyDefeats,
-			_playerDeployments,
-			currentBusRatio);
-		SetStatus($"Caravan directive issued: {definition.Title}. {definition.Summary}");
+		_activeEndlessDirective = null;
 	}
 
 	private void UpdateEndlessDirectiveState()
@@ -14132,33 +13802,7 @@ public partial class BattleController : Node2D
 
 	private void StartEndlessContactEvent()
 	{
-		if (!IsEndlessMode)
-		{
-			return;
-		}
-
-		ResetEndlessContactTradeoffs();
-
-		var definition = EndlessContactCatalog.GetForRouteFork(_endlessRouteForkId);
-		if (IsInstanceValid(_activeEndlessContactActor))
-		{
-			_activeEndlessContactActor.QueueFree();
-		}
-
-		_activeEndlessContact = new EndlessContactState(
-			definition,
-			ResolveEndlessContactAnchor(definition.Id),
-			ResolveEndlessContactColor(definition.Id));
-		_activeEndlessContact.ResponseTimer = ResolveEndlessContactResponseCadence(definition.Id);
-		_activeEndlessContact.ResponseWaveLimit = ResolveEndlessContactResponseLimit(definition.Id);
-		_activeEndlessContactActor = new EndlessContactActor();
-		_activeEndlessContactActor.Position = _activeEndlessContact.Anchor;
-		_activeEndlessContactActor.Setup(
-			definition.Id,
-			_activeEndlessContact.Color,
-			definition.Radius,
-			ResolveEndlessContactMaxHealth(definition.Id));
-		AddChild(_activeEndlessContactActor);
+		_activeEndlessContact = null;
 	}
 
 	private Vector2 ResolveEndlessContactAnchor(string contactId)
@@ -15234,31 +14878,7 @@ public partial class BattleController : Node2D
 
 	private void SpawnSupportUnit(string unitId, float? preferredY)
 	{
-		if (string.IsNullOrWhiteSpace(unitId))
-		{
-			return;
-		}
-
-		var definition = GameData.GetUnit(unitId);
-		if (!definition.IsPlayerSide)
-		{
-			return;
-		}
-
-		var anchorY = preferredY.HasValue
-			? Mathf.Clamp(preferredY.Value, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding)
-			: BaseCenterY;
-		var spawnPosition = new Vector2(
-			PlayerSpawnX + _rng.RandfRange(-10f, 10f),
-			Mathf.Clamp(
-				anchorY + _rng.RandfRange(-42f, 42f),
-				BattlefieldTop + SpawnVerticalPadding,
-				BattlefieldBottom - SpawnVerticalPadding));
-
-		var stats = BuildPlayerUnitStatsForBattle(definition);
-		SpawnUnit(Team.Player, stats, spawnPosition);
-		SpawnEffect(spawnPosition, stats.Color.Lightened(0.15f), 12f, 32f, 0.24f);
-		SpawnFloatText(spawnPosition + new Vector2(0f, -22f), $"+ {stats.Name}", stats.Color.Lightened(0.35f), 0.54f);
+		// Automatic reinforcements are retired; allies are deployed from the selected warband card.
 	}
 
 	private void RepairBusByRatio(float ratio)
@@ -15387,6 +15007,8 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		// Rations recharged during play are not battle loot.
+		_battleRewardStart.Food = GameState.Instance.Food;
 		_battleEnded = true;
 		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
@@ -15486,6 +15108,7 @@ public partial class BattleController : Node2D
 					: onlineRoomResultSubmitted
 						? "Online room failure recorded. Return to multiplayer for the shared room board."
 					: "Challenge failed. Refit the approach and try the same code again.");
+			if (playerWon) PresentVictoryRewards();
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
 			RefreshLanRaceEndPanel();
@@ -15500,14 +15123,11 @@ public partial class BattleController : Node2D
 			ResolveCampaignAdaptiveWaveChallengeOnVictory();
 			var stageResult = BuildStageBattleResult();
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
-			var bestStars = Mathf.Max(GameState.Instance.GetStageStars(_stage), evaluation.StarsEarned);
 			var rewardGold = IsCampaignMode ? _stageData.RewardGold : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardGold ?? 0 : 0;
 			var rewardFood = IsCampaignMode ? _stageData.RewardFood : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardFood ?? 0 : 0;
 			ApplyCampaignCommendationVictoryReward(ref rewardGold, ref rewardFood);
 			ApplyCampaignAdaptiveWaveVictoryReward(ref rewardGold, ref rewardFood);
-			var districtRewardSummary = IsCampaignMode
-				? GameState.Instance.ApplyVictory(_stage, rewardGold, rewardFood, evaluation.StarsEarned)
-				: "";
+			if (IsCampaignMode) GameState.Instance.ApplyVictory(_stage, rewardGold, rewardFood, evaluation.StarsEarned);
 			if (IsArenaMode && GameState.Instance.SelectedArenaOpponent != null)
 			{
 				GameState.Instance.ApplyArenaResult(true, GameState.Instance.SelectedArenaOpponent.ArenaRating);
@@ -15543,54 +15163,8 @@ public partial class BattleController : Node2D
 			}
 			var busHealthRatio = _playerBaseMaxHealth > 0f ? _playerBaseHealth / _playerBaseMaxHealth : 0f;
 			GameState.Instance.CheckCombatAchievements(busHealthRatio, _elapsed, _triggeredComboPairIds.Count, 0);
-			var achievementLine = GameState.Instance.ConsumeAchievementNotification();
-			var relicLine = string.IsNullOrEmpty(_relicDropName) ? "" : $"\nRelic acquired: {_relicDropName}";
-			var momentumLine = IsCampaignMode ? $"\n{GameState.Instance.BuildCampaignMomentumStatusText()}" : "";
-			var convoyCommandLine = IsCampaignMode ? $"\n{BuildCampaignConvoyCommandDebriefText()}" : "";
-			var fieldOrderLine = IsCampaignMode ? $"\n{BuildCampaignFieldOrderDebriefText()}" : "";
-			var fieldOrderResponseLine = IsCampaignMode ? $"\n{BuildCampaignFieldOrderResponseDebriefText()}" : "";
-			var doctrineLine = IsCampaignMode ? $"\n{BuildCampaignRouteDoctrineDebriefText()}" : "";
-			var missionAftermathLine = IsCampaignMode ? $"\n{BuildCampaignMissionAftermathDebriefText()}" : "";
-			var counterSurgeLine = IsCampaignMode ? $"\n{BuildCampaignCounterSurgeDebriefText()}" : "";
-			var bonusObjectivePressureLine = IsCampaignMode ? $"\n{BuildCampaignBonusObjectivePressureDebriefText()}" : "";
-			var pressureEchoLine = IsCampaignMode ? $"\n{BuildCampaignPressureEchoDebriefText()}" : "";
-			var bossPressureLine = IsCampaignMode ? $"\n{BuildCampaignBossPressureDebriefText()}" : "";
-			var adaptiveWaveLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveDebriefText()}" : "";
-			var adaptiveWaveChoiceLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveChoiceDebriefText()}" : "";
-			var adaptiveWaveChallengeLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveChallengeDebriefText()}" : "";
-			var lateConditionLine = IsCampaignMode ? $"\n{BuildCampaignLateConditionDebriefText()}" : "";
-			var commendationLine = IsCampaignMode ? $"\n{BuildCampaignCommendationDebriefText()}" : "";
-			var reserveLine = IsCampaignMode ? $"\n{BuildCampaignReserveDebriefText()}" : "";
-			var routeSupportLine = IsCampaignMode ? $"\n{BuildCampaignRouteSupportDebriefText()}" : "";
-			var bossPhaseLine = IsCampaignMode ? $"\n{BuildCampaignBossPhaseDebriefText()}" : "";
-			var statsBreakdown = BuildBattleStatsBreakdown();
-			_endLabel.Text =
-				$"Victory on stage {_stage}: {_stageData.StageName}.\n" +
-				$"{BuildStageBattleStatsText(stageResult)}\n" +
-				$"{StageObjectives.BuildResultSummary(_stageData, evaluation, rewardGold, rewardFood, bestStars)}\n" +
-				$"{BuildStageMissionDebriefText()}" +
-				momentumLine +
-				convoyCommandLine +
-				fieldOrderLine +
-				fieldOrderResponseLine +
-				doctrineLine +
-				missionAftermathLine +
-				counterSurgeLine +
-				bonusObjectivePressureLine +
-				pressureEchoLine +
-				bossPressureLine +
-				adaptiveWaveLine +
-				adaptiveWaveChoiceLine +
-				adaptiveWaveChallengeLine +
-				lateConditionLine +
-				commendationLine +
-				reserveLine +
-				routeSupportLine +
-				bossPhaseLine +
-				(string.IsNullOrWhiteSpace(districtRewardSummary) ? "" : $"\n{districtRewardSummary}") +
-				relicLine +
-				(string.IsNullOrEmpty(achievementLine) ? "" : $"\n{achievementLine}") +
-				(string.IsNullOrWhiteSpace(statsBreakdown) ? "" : $"\n{statsBreakdown}");
+			GameState.Instance.ConsumeAchievementNotification();
+			PresentVictoryRewards();
 			SetStatus("Gatehouse shattered. Route secured.");
 		}
 		else
@@ -15671,10 +15245,9 @@ public partial class BattleController : Node2D
 				_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 				_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
 				FinalizeEndlessRun(true);
-				return;
 			}
 
-			SceneRouter.Instance.GoToEndless();
+			SceneRouter.Instance.GoToMap();
 			return;
 		}
 
@@ -15724,14 +15297,9 @@ public partial class BattleController : Node2D
 				}
 			}
 
-			if (IsLanRaceMode)
-			{
-				SceneRouter.Instance.GoToLanRace();
-			}
-			else
-			{
-				SceneRouter.Instance.GoToMultiplayer();
-			}
+			_battleEnded = true;
+			if (IsOnlineRoomMode) OnlineRoomActionService.LeaveRoom(out _);
+			SceneRouter.Instance.GoToMap();
 			return;
 		}
 
@@ -15739,7 +15307,7 @@ public partial class BattleController : Node2D
 		{
 			GameState.Instance.ApplyRetreat(_stage);
 		}
-
+		_battleEnded = true;
 		SceneRouter.Instance.GoToMap();
 	}
 
@@ -15762,7 +15330,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		SceneRouter.Instance.RetryBattle();
+		TryRestartBattle();
 	}
 
 	private void HandleEndPanelSecondaryAction()
@@ -15796,7 +15364,10 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		SceneRouter.Instance.GoToMap();
+		if (IsTowerMode) SceneRouter.Instance.GoToTower();
+		else if (IsArenaMode) SceneRouter.Instance.GoToArena();
+		else if (IsSeasonalEventMode) SceneRouter.Instance.GoToEvent();
+		else SceneRouter.Instance.GoToMap();
 	}
 
 	private StageBattleResult BuildStageBattleResult()
@@ -16183,7 +15754,7 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayDefeat();
 		}
 
-		ShowEndPanelAnimated();
+		if (!retreated) ShowEndPanelAnimated();
 		UpdateHud();
 	}
 
@@ -16371,7 +15942,7 @@ public partial class BattleController : Node2D
 				_playerBaseHealth = _playerBaseMaxHealth;
 				break;
 			case EndlessBoonCatalog.SurplusCourageId:
-				_courage = Mathf.Min(_maxCourage, _courage + 25f);
+				_courageGainPerSecond *= 1.2f;
 				break;
 			case EndlessBoonCatalog.RelicForgeId:
 			{
@@ -16383,9 +15954,6 @@ public partial class BattleController : Node2D
 				}
 				break;
 			}
-			case EndlessBoonCatalog.CorpseHoardId:
-				_endlessSkeletonHealthScale = 1.3f;
-				break;
 			case EndlessBoonCatalog.BerserkerBloodId:
 				_endlessBerserkerBlood = true;
 				break;

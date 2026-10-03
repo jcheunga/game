@@ -14,9 +14,9 @@
     "BaseCoreRadius": 44.0,
     "BaseApproachDistance": 170.0,
 
-    "CourageStart": 45.0,
+    "CourageStart": 0.0,
     "CourageMax": 100.0,
-    "CourageGainPerSecond": 4.5,
+    "CourageGainPerSecond": 3.0,
 
     "InitialEnemySpawnDelay": 2.8,
     "EnemySpawnPressureTimeScale": 180.0,

@@ -34,7 +34,8 @@ public partial class ShopMenu : Control
     private PanelContainer _unitsPanel = null!;
     private PanelContainer _basePanel = null!;
     private PanelContainer _relicsPanel = null!;
-    private HBoxContainer _resourcesRow = null!;
+    private Container _resourcesRow = null!;
+    private GameState _resourceState;
     private Label _statusLabel = null!;
     private Label _summaryLabel = null!;
     private Label _deckLabel = null!;
@@ -48,10 +49,17 @@ public partial class ShopMenu : Control
     {
         _embedded = RealmModal.Embedded(this);
         if (_embedded) BuildModalUi(); else BuildUi();
+        _resourceState = GameState.Instance;
+        _resourceState.FoodChanged += RebuildResourcesRow;
         RefreshUi();
         SelectArmoryTab(SceneRouter.Instance.ConsumeInitialShopTab());
         TryShowMenuHint();
         if (!_embedded) AnimateEntrance(new Control[] { _titlePanel, _summaryPanel, _unitsPanel, _basePanel, _relicsPanel });
+    }
+
+    public override void _ExitTree()
+    {
+        if (_resourceState != null) _resourceState.FoodChanged -= RebuildResourcesRow;
     }
 
     private void TryShowMenuHint()
@@ -102,10 +110,10 @@ public partial class ShopMenu : Control
         _relicsPanel.Visible = index == 3;
         _summaryPanel.Visible = index == 4;
         _armoryTabs.GetChild<Button>(index).ButtonPressed = true;
-        if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; RebuildUnitPanels(); }
+        if (index < 2) { _showSpells = index == 1; _selectedRosterId = ""; _profileExpanded = false; RebuildUnitPanels(); }
         if (_embedded) {
             RealmModal.UpdateHeading(this, index == 0 ? "Warband" : index == 1 ? "Spells" : index == 2 ? "War wagon" : index == 3 ? "Relics" : "Caravan adviser");
-            _statusLabel.Text = index < 2 ? "Select a portrait to inspect, equip or train." : index == 2 ? "Wagon upgrades carry into every battle." : index == 3 ? "Assign owned relics to your allies." : "Plan your squad and prepare for the next rival.";
+            _statusLabel.Text = index < 2 ? "" : index == 2 ? "Wagon upgrades carry into every battle." : index == 3 ? "Assign owned relics to your allies." : "Plan your squad and prepare for the next rival.";
         }
     }
 
@@ -126,7 +134,7 @@ public partial class ShopMenu : Control
         titleRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
         var tabsHost = new VBoxContainer { Position = new Vector2(28, 104), Size = new Vector2(1224, 44) };
         AddChild(tabsHost);
-        _armoryTabs = RealmUi.Tabs(tabsHost, SelectArmoryTab, "Warband", "Battle rites", "War wagon", "Relics", "Adviser");
+        _armoryTabs = RealmUi.Tabs(tabsHost, SelectArmoryTab, "Warband", "Spells", "War wagon", "Relics", "Adviser");
 
         var units = RealmUi.Panel(this, new Rect2(28, 162, 1224, 440), out _unitsPanel);
         var split = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
@@ -175,8 +183,24 @@ public partial class ShopMenu : Control
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_resourcesRow);
+        var state = GameState.Instance;
+        if (_embedded)
+        {
+            foreach (var (icon, name, amount) in new[] {
+                ("gold", "Gold", state.Gold), ("food", "Rations", state.Food),
+                ("sigils", "Sigils", state.Sigils), ("tomes", "Tomes", state.Tomes),
+                ("shards", "Shards", state.RelicShards), ("essence", "Essence", state.Essence)
+            })
+            {
+                var balance = HomeResourceUi.Amount(icon, amount.ToString("N0"), $"{name}: {amount:N0}");
+                balance.Name = "Balance" + icon;
+                balance.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+                _resourcesRow.AddChild(balance);
+            }
+            return;
+        }
 
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
+        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", state.Gold.ToString("N0"), new Vector2(24f, 24f)));
         _resourcesRow.AddChild(new FoodBalance());
     }
 
@@ -212,7 +236,7 @@ public partial class ShopMenu : Control
             $"Rune beacon level: {GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId)}/{GameState.Instance.MaxBaseUpgradeLevel}\n\n" +
             "Economy rules:\n" +
             "- Gold buys units, spells, unit levels, spell levels, and war wagon upgrades.\n" +
-            "- Food pays for battles and new terrain. +2 every 5 minutes, up to 24.\n\n" +
+            "- Rations pay for battle entry and restarts. +2 every 5 minutes, up to 24.\n\n" +
             nextExploreLine;
     }
 
@@ -237,7 +261,7 @@ public partial class ShopMenu : Control
 
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
         {
-            intel += $"\nNext route exploration: Stage {nextRouteStage.StageNumber} for {GameState.Instance.GetStageExploreFoodCost(nextRouteStage.StageNumber)} food";
+            intel += $"\nNext route exploration: Stage {nextRouteStage.StageNumber}";
         }
         else
         {
@@ -692,16 +716,6 @@ public partial class ShopMenu : Control
                 saboteurCount > 0
                     ? $"Stage {stage.StageNumber} includes {saboteurCount} sapper contacts. War Hound is a cheap tempo unit to bait fast attackers before they reach the war wagon."
                     : $"Stage {stage.StageNumber} opens with {runnerCount} fast contacts. War Hound is a cheap tempo unit to bait fast attackers and buy time for heavier drops.");
-        }
-
-        if (splitterCount >= 2 || walkerCount >= 8)
-        {
-            TryAddUnitRecommendation(
-                recommendations,
-                seen,
-                GameData.PlayerNecromancerId,
-                "Raise skeletons from swarm corpses",
-                $"Stage {stage.StageNumber} stacks grouped walker and splitter contacts. Necromancer raises skeletons from enemy corpses to overwhelm the undead with their own numbers.");
         }
 
         if (spitterCount > 0 || jammerCount > 0 || lichCount > 0)
@@ -1172,52 +1186,6 @@ public partial class ShopMenu : Control
         return lines;
     }
 
-    private string BuildUnitPreviewText(UnitDefinition unit, bool owned, int level, bool isMaxLevel)
-    {
-        var currentStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level);
-        var effectiveDeployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown);
-        var summary =
-            $"HP {Mathf.RoundToInt(currentStats.MaxHealth)}  |  ATK {currentStats.AttackDamage:0.#}  |  Range {currentStats.AttackRange:0.#}\n" +
-            $"Deploy CD {effectiveDeployCooldown:0.#}s  |  Base {currentStats.BaseDamage}" +
-            UnitStatText.BuildInlineTraits(currentStats);
-        var doctrineSummary = owned
-            ? GameState.Instance.BuildUnitDoctrineStatusText(unit.Id)
-            : $"Doctrine unlocks at Lv{GameState.Instance.UnitDoctrineUnlockLevel}.";
-
-        var ability = UnitActiveAbilityCatalog.GetForUnit(unit.Id);
-        var abilityLine = "";
-        if (ability != null && level >= ability.UnlockLevel - 1)
-        {
-            var abilityPrefix = level >= ability.UnlockLevel ? "Ability" : $"Lv{ability.UnlockLevel}+ Ability";
-            abilityLine = $"\n{abilityPrefix}: {ability.Title} — {ability.Description} (CD: {ability.CooldownSeconds:0.#}s)";
-        }
-
-        if (!owned)
-        {
-            return summary + abilityLine + $"\n{doctrineSummary}";
-        }
-
-        if (isMaxLevel)
-        {
-            return summary + "\nNext upgrade: max level reached." + abilityLine + $"\n{doctrineSummary}";
-        }
-
-        var nextStats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unit, level + 1);
-        summary +=
-            $"\nNext Lv{level + 1}: " +
-            $"HP +{Mathf.RoundToInt(nextStats.MaxHealth - currentStats.MaxHealth)}  |  " +
-            $"ATK +{(nextStats.AttackDamage - currentStats.AttackDamage):0.#}  |  " +
-            $"Base +{nextStats.BaseDamage - currentStats.BaseDamage}" +
-            (currentStats.AttackSplashRadius > 0.05f || nextStats.AttackSplashRadius > 0.05f
-                ? $"  |  Splash {nextStats.AttackSplashRadius:0.#}"
-                : "") +
-            (currentStats.BusRepairAmount > 0.05f || nextStats.BusRepairAmount > 0.05f
-                ? $"  |  Repair +{(nextStats.BusRepairAmount - currentStats.BusRepairAmount):0.#}"
-                : "") +
-            (UnitStatText.HasAura(nextStats) ? $"  |  {UnitStatText.BuildAuraSummary(nextStats)}" : "");
-        return summary + abilityLine + $"\n{doctrineSummary}";
-    }
-
     private string BuildBaseUpgradeEffectText(BaseUpgradeDefinition upgrade, int level)
     {
         var armamentEffect = BaseWeaponCatalog.UpgradeEffect(upgrade.Id, level);
@@ -1268,13 +1236,16 @@ public partial class ShopMenu : Control
             bool available = _showSpells ? GameState.Instance.IsSpellAvailableForPurchase(id) : GameState.Instance.IsUnitAvailableForPurchase(id);
             var stateLabel = new Label { Text = equipped ? "✓ Squad" : owned ? "Reserve" : available ? "Recruit" : "Locked",
                 HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            stateLabel.AddThemeFontSizeOverride("font_size", 16);
+            stateLabel.AddThemeFontSizeOverride("font_size", 18);
             stateLabel.AddThemeColorOverride("font_color", equipped ? new Color("9ee4b2") : RealmUi.Muted);
-            content.AddChild(stateLabel); button.CustomMinimumSize += new Vector2(0, 24);
+            content.AddChild(stateLabel);
+            void FitPortrait() => button.CustomMinimumSize = new Vector2(156, content.GetCombinedMinimumSize().Y + 12);
+            content.MinimumSizeChanged += FitPortrait;
+            FitPortrait();
             if (!owned) art.Modulate = available ? new Color(.82f,.82f,.82f) : new Color(.55f,.55f,.55f);
             button.AddThemeStyleboxOverride("normal", RealmUi.Surface(id == _selectedRosterId ? new Color("3e4a40") : new Color("1b282c"),
                 id == _selectedRosterId ? RealmUi.Gold : equipped ? new Color("79ba91") : new Color("44524c")));
-            button.Pressed += () => { _selectedRosterId = id; RebuildUnitPanels(); };
+            button.Pressed += () => { _selectedRosterId = id; _profileExpanded = false; RebuildUnitPanels(); };
         }
         RealmUi.Clear(_unitDetail);
         if (!string.IsNullOrEmpty(_selectedRosterId))
@@ -1290,64 +1261,18 @@ public partial class ShopMenu : Control
         var purchaseCost = GameState.Instance.GetUnitPurchaseCost(unit.Id);
         var upgradeCost = GameState.Instance.GetUnitUpgradeCost(unit.Id);
         var isMaxLevel = level >= GameState.Instance.MaxUnitLevel;
-        var stats = GameState.Instance.BuildPlayerUnitStats(unit);
-        var effectiveDeployCooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown);
         var doctrineOptions = GameState.Instance.GetUnitDoctrineOptions(unit.Id);
         var currentDoctrineId = GameState.Instance.GetUnitDoctrineId(unit.Id);
         var doctrineUnlocked = owned && GameState.Instance.IsUnitDoctrineUnlocked(unit.Id);
         var doctrineRetrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
 
-        var prestigeColor = PrestigeColorCatalog.ResolvePrestigeColor(
-            unit.Id, GameState.Instance.GetUnitPrestigeIndex(unit.Id));
-        var panelTint = prestigeColor ?? unit.GetTint();
+        var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
+        var statusLine = owned ? $"Lv {level} · {role} · {(inDeck ? "Equipped" : "Reserve")}" : $"{role} · {(available ? "Recruit" : $"Stage {unit.UnlockStage:00}")}";
+        var panel = DetailShell(unit.DisplayName, statusLine, unit.Id, false, out var stack);
+        stack.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit)));
+        var extra = UnitExtraDetails(stack, unit, owned, level, isMaxLevel);
 
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(0f, doctrineUnlocked ? 228f : 190f),
-            SelfModulate = Colors.White
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 12);
-        padding.AddThemeConstantOverride("margin_bottom", 12);
-        panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(padding, UiBadgeFactory.CreateUnitBadge(unit, new Vector2(120, 150)));
-
-        var statusLine = !available
-            ? $"Locked until stage {unit.UnlockStage}"
-            : !owned
-                ? $"For sale: {purchaseCost} gold"
-                : inDeck
-                    ? $"Level {level} · Squad"
-                    : $"Level {level} · Reserve";
-
-        stack.AddChild(RealmUi.Heading(unit.DisplayName, 28));
-        stack.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag), 18, true));
-
-        stack.AddChild(new Label
-        {
-            Text = statusLine,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        var statistics = new HBoxContainer();
-        stack.AddChild(statistics);
-        foreach (var (icon, label, value) in new[] { ("heart", "Health", $"{stats.MaxHealth:0}"), ("sword", "Attack", $"{stats.AttackDamage:0.#}"), ("shield", "Gate damage", $"{stats.BaseDamage:0.#}") })
-        {
-            var stat = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            var number = new HBoxContainer();
-            number.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(24, 24) });
-            number.AddChild(RealmUi.Heading(value, 28)); stat.AddChild(number);
-            stat.AddChild(RealmUi.Label(label, 18, true)); statistics.AddChild(stat);
-        }
-        var trainingDetails = BuildUnitPreviewText(unit, owned, level, isMaxLevel) + "\n\n" +
-            $"Move {stats.Speed:0.#} · Attack interval {stats.AttackCooldown:0.##}s · Deploy recovery {effectiveDeployCooldown:0.#}s" + UnitStatText.BuildInlineTraits(stats);
-        stack.AddChild(RealmUi.Button("book", "Training & traits", () => RealmUi.Details(this, unit.DisplayName, trainingDetails)));
-
-        var row = new HBoxContainer();
+        var row = new HBoxContainer { Name = "RosterActions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
@@ -1358,8 +1283,8 @@ public partial class ShopMenu : Control
                 : inDeck
                     ? "Unequip"
                     : "Equip",
-            CustomMinimumSize = new Vector2(130f, 0f),
-            Disabled = !owned
+            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = !owned, Visible = owned
         };
         deckButton.Pressed += () =>
         {
@@ -1372,7 +1297,7 @@ public partial class ShopMenu : Control
 
         var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(150f, 0f)
+            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
 
         if (!available)
@@ -1382,7 +1307,7 @@ public partial class ShopMenu : Control
         }
         else if (!owned)
         {
-            actionButton.Text = $"Buy {purchaseCost} gold";
+            ArmoryDetailUi.GoldAction(actionButton, "Buy", purchaseCost);
             actionButton.Disabled = GameState.Instance.Gold < purchaseCost;
             actionButton.Pressed += () =>
             {
@@ -1422,12 +1347,12 @@ public partial class ShopMenu : Control
                 var unlockedCount = GameState.Instance.GetUnlockedSkillNodes(unit.Id).Count;
                 var talentBtn = new RealmButton { Text = $"Talents ({unlockedCount}/{tree.Nodes.Length})", CustomMinimumSize = new Vector2(130f, 0f) };
                 talentBtn.Pressed += () => SceneRouter.Instance.GoToSkillTree();
-                stack.AddChild(talentBtn);
+                extra.AddChild(talentBtn);
             }
         }
         else
         {
-            actionButton.Text = $"Upgrade {upgradeCost} gold";
+            ArmoryDetailUi.GoldAction(actionButton, "Upgrade", upgradeCost);
             actionButton.Disabled = GameState.Instance.Gold < upgradeCost;
             actionButton.Pressed += () =>
             {
@@ -1481,7 +1406,7 @@ public partial class ShopMenu : Control
                     GameState.Instance.SetUnitPrestigeIndex(unit.Id, next);
                     RefreshUi();
                 };
-                row.AddChild(colorButton);
+                extra.AddChild(colorButton);
             }
         }
 
@@ -1489,7 +1414,8 @@ public partial class ShopMenu : Control
         {
             var doctrineRow = new HBoxContainer();
             doctrineRow.AddThemeConstantOverride("separation", 8);
-            stack.AddChild(doctrineRow);
+            extra.AddChild(RealmUi.Label("Doctrine", 18, true));
+            extra.AddChild(doctrineRow);
 
             foreach (var doctrine in doctrineOptions)
             {
@@ -1524,44 +1450,24 @@ public partial class ShopMenu : Control
         var equipped = owned && GameState.Instance.IsSpellInActiveDeck(spell.Id);
         var purchaseCost = GameState.Instance.GetSpellPurchaseCost(spell.Id);
 
-        var panel = new PanelContainer
+        var resolved = GameState.Instance.BuildSpellStats(spell);
+        var role = ArmoryDetailUi.SpellRole(spell.EffectType);
+        var statusLine = owned ? $"Lv {resolved.Level:00} · {role} · {(equipped ? "Equipped" : "Reserve")}" : $"{role} · {(available ? "Ready to scribe" : $"Stage {spell.UnlockStage:00}")}";
+        var panel = DetailShell(spell.DisplayName, statusLine, spell.Id, true, out var stack);
+        var purpose = RealmUi.Label(ArmoryDetailUi.SpellPurpose(spell.EffectType), 18, true);
+        purpose.AddThemeFontSizeOverride("font_size", 18); stack.AddChild(purpose);
+        var metrics = ArmoryDetailUi.SpellStats(resolved);
+        stack.AddChild(ArmoryDetailUi.Stats(metrics, metrics.Count <= 4 ? 2 : 3));
+        var extra = ArmoryDetailUi.Disclosure(stack, "Effects & training", _profileExpanded, value => _profileExpanded = value);
+        extra.AddChild(RealmUi.Label(spell.Description, 18));
+        if (owned && resolved.Level < GameState.Instance.MaxSpellLevel)
         {
-            CustomMinimumSize = new Vector2(0f, 158f),
-            SelfModulate = spell.GetTint().Darkened(0.12f)
-        };
+            extra.AddChild(RealmUi.Label($"Next level · {resolved.Level + 1}", 18, true));
+            var next = ArmoryDetailUi.SpellStats(new ResolvedSpellStats(spell, resolved.Level + 1));
+            extra.AddChild(ArmoryDetailUi.Stats(next, next.Count <= 4 ? 2 : 3));
+        }
 
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 12);
-        padding.AddThemeConstantOverride("margin_bottom", 12);
-        panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateSpellBadge(spell, new Vector2(72f, 72f)));
-
-        var spellLevelLabel = owned ? $"Lv{GameState.Instance.GetSpellLevel(spell.Id)}/{GameState.Instance.MaxSpellLevel}" : "";
-        var statusLine = !available
-            ? $"Locked until stage {spell.UnlockStage}"
-            : !owned
-                ? $"Archive price: {purchaseCost} gold"
-                : equipped
-                    ? $"Owned  |  Equipped  |  {spellLevelLabel}"
-                    : $"Owned  |  Reserve  |  {spellLevelLabel}";
-
-        stack.AddChild(RealmUi.Heading(spell.DisplayName, 28));
-
-        stack.AddChild(new Label
-        {
-            Text = statusLine,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(RealmUi.Button("book", "Effects & training", () => RealmUi.Details(this, spell.DisplayName,
-            SpellText.BuildInlineSummary(spell) + "\n\n" + spell.Description)));
-
-        var row = new HBoxContainer();
+        var row = new HBoxContainer { Name = "RosterActions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
 
@@ -1572,8 +1478,8 @@ public partial class ShopMenu : Control
                 : equipped
                     ? "Remove Spell"
                     : "Equip Spell",
-            CustomMinimumSize = new Vector2(130f, 0f),
-            Disabled = !owned
+            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = !owned, Visible = owned
         };
         deckButton.Pressed += () =>
         {
@@ -1585,7 +1491,7 @@ public partial class ShopMenu : Control
 
         var actionButton = new RealmButton
         {
-            CustomMinimumSize = new Vector2(150f, 0f)
+            CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
 
         if (!available)
@@ -1595,7 +1501,8 @@ public partial class ShopMenu : Control
         }
         else if (!owned)
         {
-            actionButton.Text = purchaseCost > 0 ? $"Scribe {purchaseCost} gold" : "Prepare Spell";
+            if (purchaseCost > 0) ArmoryDetailUi.GoldAction(actionButton, "Scribe", purchaseCost);
+            else actionButton.Text = "Prepare Spell";
             actionButton.Disabled = GameState.Instance.Gold < purchaseCost;
             actionButton.Pressed += () =>
             {
@@ -1610,7 +1517,7 @@ public partial class ShopMenu : Control
             if (spellLevel < GameState.Instance.MaxSpellLevel)
             {
                 var upgradeCost = GameState.Instance.GetSpellUpgradeCost(spell.Id);
-                actionButton.Text = $"Upgrade Lv{spellLevel + 1}  {upgradeCost} gold";
+                ArmoryDetailUi.GoldAction(actionButton, $"Upgrade Lv{spellLevel + 1}", upgradeCost);
                 actionButton.Disabled = GameState.Instance.Gold < upgradeCost;
                 actionButton.Pressed += () =>
                 {

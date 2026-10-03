@@ -42,6 +42,12 @@ public partial class BattleSummaryMenu : Control
 			BuildNullState();
 			return;
 		}
+		if (data.Won)
+		{
+			MenuBackdropComposer.AddSplitBackdrop(this, "battle_summary", new Color("1a1a2e"), new Color("16213e"), new Color("c4a065"), 104f);
+			BuildVictoryUi(data);
+			return;
+		}
 
 		var victoryColor = new Color("22c55e");
 		var defeatColor = new Color("ef4444");
@@ -109,6 +115,40 @@ public partial class BattleSummaryMenu : Control
 		};
 		_continueBtn.Pressed += () => SceneRouter.Instance.GoToMap();
 		AddChild(_continueBtn);
+	}
+
+	private void BuildVictoryUi(BattleSummaryData data)
+	{
+		var compact = MobilePresentation.Enabled;
+		Control host = this;
+		if (compact)
+		{
+			var canvas = new ResponsiveUiCanvas(); AddChild(canvas); host = canvas.Content;
+		}
+		var center = new CenterContainer(); host.AddChild(center);
+		center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_titlePanel = new PanelContainer { CustomMinimumSize = new Vector2(compact ? 680 : 760, compact ? 340 : 400) };
+		_titlePanel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, compact ? 12 : 24));
+		center.AddChild(_titlePanel);
+		var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", compact ? 8 : 14); _titlePanel.AddChild(stack);
+		var rating = new StageStarRating { Stars = data.StarsEarned }; stack.AddChild(rating);
+		rating.CustomMinimumSize = new Vector2(132, compact ? 36 : 48);
+		var rewards = data.Rewards.ToList();
+		if (rewards.Count == 0)
+		{
+			rewards.Add(new("gold", "", data.GoldEarned));
+			rewards.Add(new("food", "", data.FoodEarned));
+			rewards.Add(new("season_xp", "", data.SeasonXPEarned));
+			rewards.AddRange(data.MasteryXPPerUnit.Select(pair => new BattleReward("mastery", pair.Key, pair.Value)));
+		}
+		_titlePanel.CustomMinimumSize = new Vector2(compact ? 680 : 760, BattleRewardUi.PanelHeight(rewards.Count(reward => reward.Amount > 0), compact));
+		var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill,
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, compact ? 96 : 160) };
+		stack.AddChild(scroll); scroll.AddChild(BattleRewardUi.Cards(rewards, compact));
+		_continueBtn = RealmUi.Button("map", "Continue", () => SceneRouter.Instance.GoToMap(), true);
+		if (compact) MobilePresentation.TouchButton(_continueBtn);
+		ModalUi.StyleButton(_continueBtn, material: ModalMaterial.Gold);
+		stack.AddChild(_continueBtn);
 	}
 
 	private PanelContainer BuildCombatPanel(BattleSummaryData data)

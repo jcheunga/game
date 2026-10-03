@@ -142,6 +142,9 @@ public static class UiArtLoader
         }
 
         var typeId = AssetCoverageCatalog.NormalizeId(rewardType);
+        // Currency rewards share the painted icons used by the home map.
+        if (typeId is "gold" or "food") return HomeMapArt.Icon(typeId);
+        if (typeId is "tomes" or "essence") return HomeMapArt.Icon(typeId == "tomes" ? "book" : "flame");
         return string.IsNullOrWhiteSpace(typeId)
             ? null
             : TryLoad(RewardIconPath, typeId) ?? RealmUi.Icon(typeId == "gold" ? "gold" : typeId == "food" ? "food" : typeId.Contains("star") ? "star" : "gift");

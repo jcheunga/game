@@ -69,7 +69,9 @@ public static class AdventureMapCatalog
         var stages = GameData.GetStagesForMap(mapId).OrderBy(x => x.StageNumber).ToArray();
         var nodes = new List<AdventureMapNode>();
         if (stages.Length == 0) return nodes;
-        nodes.Add(new($"camp-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Camp, LayoutPoint(mapId,new Vector2I(3,20)), "Lantern camp", "Your foothold in this district. Travel to a new tile costs 1 food; returning to a reached tile is free. Complete stages and gather supplies to open nearby tiles."));
+        // Retain legacy camp coordinates for saved exploration and deterministic discovery IDs.
+        // The playable atlas uses plain terrain at its former location.
+        nodes.Add(new($"camp-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Camp, LayoutPoint(mapId,new Vector2I(3,20)), "Lantern camp", "Retired camp retained for older saves."));
         for (var i = 0; i < stages.Length; i++)
         {
             var stage = stages[i].StageNumber; var point = LayoutPoint(mapId,LeaderCells[i % LeaderCells.Length]);
@@ -78,10 +80,11 @@ public static class AdventureMapCatalog
             var resource = i % 2 == 0 ? AdventureSiteKind.Gold : AdventureSiteKind.Food;
             nodes.Add(new($"supply-{stage}", mapId, stage, resource, LayoutPoint(mapId,SupplyCells[i % 6]), resource == AdventureSiteKind.Gold ? "Abandoned treasury" : "Supply wagon", "Supplies hidden off the main approaches. Gather this cache once; its contents belong to your caravan."));
             var bonus = i % 2 == 0 ? AdventureSiteKind.Watchtower : AdventureSiteKind.Shrine;
-            nodes.Add(new($"landmark-{stage}", mapId, stage, bonus, LayoutPoint(mapId,LandmarkCells[i % 6]), bonus == AdventureSiteKind.Shrine ? "Shrine of resolve" : "Old watchtower", bonus == AdventureSiteKind.Shrine ? "Light the brazier. Your warband gains +3 starting courage in every campaign battle in this district." : "Climb the tower to reveal two rings of surrounding tiles. Your first tower also opens the search for a forgotten treasury."));
+            // Retired towers and shrines retain legacy coordinates/IDs for saves and discovery placement.
+            nodes.Add(new($"landmark-{stage}", mapId, stage, bonus, LayoutPoint(mapId,LandmarkCells[i % 6]), bonus == AdventureSiteKind.Shrine ? "Shrine of resolve" : "Old watchtower", "Retired landmark retained for older saves."));
         }
         nodes.Add(new($"hidden-{mapId}", mapId, stages[0].StageNumber, AdventureSiteKind.Gold, LayoutPoint(mapId,new Vector2I(2,2)), "Forgotten treasury",
-            "Your scouts heard of a forgotten cache beyond the watchtower. Explore to find it and gather its gold.", RequiredVisit: $"landmark-{stages[0].StageNumber}"));
+            "A forgotten cache lies beyond the nearby roads. Open its tile and gather its gold."));
         foreach (var node in nodes) ById[node.Id] = node;
         return Cache[mapId] = nodes;
     }

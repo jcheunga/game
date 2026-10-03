@@ -34,12 +34,18 @@ public partial class SceneRouter : Node
     public static SceneRouter Instance { get; private set; }
     public string SettingsReturnLabel => ResolveSceneLabel(_settingsReturnScenePath);
     public int InitialShopTab { get; private set; }
+    public bool IsTransitioning => _transitioning;
 
     private string _settingsReturnScenePath = MainMenuScene;
     private CanvasLayer _fadeLayer;
     private ColorRect _fadeRect;
     private Label _tipLabel;
     private bool _transitioning;
+
+    private static bool IsHomeActivity(string path) => path is ShopScene or MultiplayerScene or LanRaceScene
+        or EndlessScene or LoadoutScene or SettingsScene or CashShopScene or ForgeScene or ExpeditionScene
+        or EventScene or CodexScene or SkillTreeScene or ArenaScene or GuildScene or ProfileScene or RaidScene
+        or BountyScene or TowerScene or FriendsScene or LoginCalendarScene or LeaderboardScene or SeasonPassScene;
 
     public override void _EnterTree()
     {
@@ -233,6 +239,7 @@ public partial class SceneRouter : Node
 
     public void ReturnFromSettings()
     {
+        if (GetTree().CurrentScene is BattleController battle) { battle.CloseBattleSettings(); return; }
         if (GetTree().CurrentScene is MapMenu home && home.HasHomeModal) { home.BackHomeModal(); return; }
         ChangeScene(_settingsReturnScenePath);
     }
@@ -272,8 +279,14 @@ public partial class SceneRouter : Node
             await ToSignal(fadeOut, Tween.SignalName.Finished);
         }
 
-        GetTree().ChangeSceneToFile(path);
-        MusicPlayer.Instance?.PlayForScene(path);
+        var homeActivity = allowOverlay && IsHomeActivity(path);
+        var scenePath = homeActivity ? MainMenuScene : path;
+        GetTree().ChangeSceneToFile(scenePath);
+        // A destination opened from battle uses the same map and modal as a home click.
+        await ToSignal(GetTree(), SceneTree.SignalName.SceneChanged);
+        if (homeActivity && GetTree().CurrentScene is MapMenu destinationHome)
+            destinationHome.OpenHomeDestination(path);
+        MusicPlayer.Instance?.PlayForScene(scenePath);
 
         if (_fadeRect != null)
         {

@@ -7,7 +7,8 @@ public partial class ModelShowcase : CanvasLayer
     private UnitDefinition[] _units;
     private int _index;
     private UnitModelPreview _preview;
-    private Label _title, _details, _page;
+    private Label _title, _page;
+    private VBoxContainer _details;
     private Button[] _animationButtons;
     public static ModelShowcase Show(Control host, UnitDefinition[] units, string selectedId)
     {
@@ -31,9 +32,10 @@ public partial class ModelShowcase : CanvasLayer
         stage.AddThemeStyleboxOverride("panel",MedievalUi.Engraved("engraved_panel",12,8));
         _preview=new UnitModelPreview { CustomMinimumSize=new Vector2(250,150),MouseFilter=Control.MouseFilterEnum.Ignore };
         stage.AddChild(_preview);
-        var report=new ScrollContainer { CustomMinimumSize=new Vector2(240,0),
+        var report=new ScrollContainer { CustomMinimumSize=new Vector2(320,0),
             HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled }; body.AddChild(report);
-        _details=RealmUi.Label(""); _details.CustomMinimumSize=new Vector2(220,0); report.AddChild(_details);
+        _details=new VBoxContainer { SizeFlagsHorizontal=Control.SizeFlags.ExpandFill };
+        _details.AddThemeConstantOverride("separation",12); report.AddChild(_details);
         var footer=new HBoxContainer(); footer.AddThemeConstantOverride("separation",8); stack.AddChild(footer);
         var previous=RealmUi.IconButton("back","Previous model",()=>Select(-1)); MobilePresentation.TouchButton(previous); footer.AddChild(previous);
         _page=RealmUi.Label("",20,true); _page.VerticalAlignment=VerticalAlignment.Center; footer.AddChild(_page);
@@ -52,11 +54,18 @@ public partial class ModelShowcase : CanvasLayer
         _index=(_index+direction+_units.Length)%_units.Length;
         var unit=_units[_index]; _preview.SetUnit(unit); _title.Text=unit.DisplayName;
         _page.Text=$"{_index+1} / {_units.Length}";
-        var stats=unit.Side=="Player"?GameState.Instance.BuildPlayerUnitStats(unit):new UnitStats(unit);
-        _details.Text=$"{SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag)}\n\n"+
-            $"Health  {stats.MaxHealth:0}\nAttack  {stats.AttackDamage:0.#}\nCourage  {unit.Cost}\n\n"+
-            "Original animated game model\n\nChoose Idle, Walk or Attack to inspect the poses."+
-            ((GameState.Instance?.ReducedMotion??false)?"\n\nReduced motion: still poses.":"");
+        var stats=unit.IsPlayerSide?GameState.Instance.BuildPlayerUnitStats(unit):new UnitStats(unit);
+        RealmUi.Clear(_details);
+        _details.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag),18,true));
+        _details.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit),2));
+        var extra=ArmoryDetailUi.Disclosure(_details,"More stats",false);
+        extra.AddChild(ArmoryDetailUi.Stats(new[] {
+            new ArmoryDetailUi.Stat("arrow","Move speed",$"{stats.Speed:0.#}"),
+            new ArmoryDetailUi.Stat("clock","Attack interval",$"{stats.AttackCooldown:0.##}s")
+        },2));
+        var traits=UnitStatText.BuildInlineTraits(stats).Trim(' ','|');
+        if(traits.Length>0) extra.AddChild(RealmUi.Label(traits,18));
+        RealmModal.Polish(_details);
         Play(UnitAnimState.Idle);
     }
 

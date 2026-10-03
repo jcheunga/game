@@ -245,7 +245,6 @@ public partial class MobilePresentationReview : Node
             Check(model.GlobalFrame==frame,"Reduced motion shows a still authored pose");
             GameState.Instance.SetReducedMotion(false);
             gallery.QueueFree(); await Settle();
-            if(mobile) {Call(loadout,"ShowMobileBriefing"); await Settle(); await Capture("phone-briefing");}
             loadout.QueueFree(); await Settle();
         }
         MobilePresentation.TestOverride=true;

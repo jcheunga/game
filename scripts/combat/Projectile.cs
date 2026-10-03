@@ -16,6 +16,8 @@ public partial class Projectile : Node2D
     private CpuParticles2D _trail;
     private BaseWeaponKind? _weaponVisual;
     private uint _targetLifetime;
+    private float _flightLength, _distanceTravelled;
+    public Vector2 TargetOffset { get; set; }
     public Func<bool> ShouldPause { get; set; }
 
     public void SetWeaponVisual(BaseWeaponKind kind) => _weaponVisual = kind;
@@ -29,6 +31,8 @@ public partial class Projectile : Node2D
     {
         _active = false;
         _weaponVisual = null;
+        TargetOffset = Vector2.Zero;
+        _distanceTravelled = 0f;
         ShouldPause = null;
         ProcessMode = ProcessModeEnum.Inherit;
         _target = null;
@@ -76,17 +80,22 @@ public partial class Projectile : Node2D
         _target = target;
         _targetLifetime = target is Unit unit ? unit.CombatLifetime : 0;
         _damage = damage;
-        _speed = speed;
-        _color = color;
-        _radius = damage >= 18f ? 6f : 5f;
+        _speed = _weaponVisual == BaseWeaponKind.Ballista ? Mathf.Min(speed, 620f) : speed;
+        _color = _weaponVisual == BaseWeaponKind.Ballista ? new Color("aaa393") : color;
+        _radius = _weaponVisual == BaseWeaponKind.Ballista ? 10f : damage >= 18f ? 6f : 5f;
         _applyImpact = applyImpact;
         _shouldCancel = shouldCancel;
-        var aim = target is Unit aimedUnit ? aimedUnit.BodyContactPosition : target.GlobalPosition;
+        var aim = target is Unit aimedUnit ? aimedUnit.BodyContactPosition : target.GlobalPosition + TargetOffset;
+        _flightLength = Mathf.Max(1f, GlobalPosition.DistanceTo(aim));
+        _distanceTravelled = 0f;
         _travelDirection = (aim-GlobalPosition).Normalized();
         _onHit = onHit;
         _active = true;
+        // Flight is above grounded actors; impact effects remain above projectiles.
+        ZIndex = 10;
         Visible = true;
-        _trail = BattleParticles.SpawnProjectileTrail(this, _color);
+        if (_weaponVisual is not (BaseWeaponKind.Arrows or BaseWeaponKind.Ballista))
+            _trail = BattleParticles.SpawnProjectileTrail(this, _color);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -108,7 +117,7 @@ public partial class Projectile : Node2D
         }
 
         var deltaF = (float)delta;
-        var targetPoint = _target is Unit victim ? victim.BodyContactPosition : _target.GlobalPosition;
+        var targetPoint = _target is Unit victim ? victim.BodyContactPosition : _target.GlobalPosition + TargetOffset;
         var toTarget = targetPoint - GlobalPosition;
         var distance = toTarget.Length();
         var step = _speed * deltaF;
@@ -131,6 +140,7 @@ public partial class Projectile : Node2D
         {
             _travelDirection = toTarget / distance;
             GlobalPosition += _travelDirection * step;
+            _distanceTravelled += step;
         }
     }
 
@@ -141,9 +151,24 @@ public partial class Projectile : Node2D
 
     public override void _Draw()
     {
-        if (_weaponVisual is BaseWeaponKind.Arrows or BaseWeaponKind.Ballista)
+        if (_weaponVisual == BaseWeaponKind.Ballista)
         {
-            var length = _weaponVisual == BaseWeaponKind.Ballista ? 25f : 17f;
+            var progress = Mathf.Clamp(_distanceTravelled / _flightLength, 0f, 1f);
+            var lift = Mathf.Sin(progress * Mathf.Pi) * Mathf.Min(64f, _flightLength * .14f);
+            DrawSetTransform(new Vector2(0, 16), 0, new Vector2(1, .35f));
+            DrawCircle(Vector2.Zero, _radius * .85f, new Color("11182045"));
+            DrawSetTransform(new Vector2(0, -lift), progress * 3f);
+            DrawColoredPolygon(new[] { new Vector2(-10,-3), new Vector2(-5,-10), new Vector2(4,-9),
+                new Vector2(11,-2), new Vector2(8,7), new Vector2(-1,10), new Vector2(-9,5) }, _color.Darkened(.25f));
+            DrawColoredPolygon(new[] { new Vector2(-10,-3), new Vector2(-5,-10), new Vector2(4,-9),
+                new Vector2(2,-1), new Vector2(-4,3) }, _color.Lightened(.16f));
+            DrawColoredPolygon(new[] { new Vector2(2,-1), new Vector2(4,-9), new Vector2(11,-2), new Vector2(8,7) }, _color);
+            DrawLine(new Vector2(-4,3), new Vector2(2,-1), _color.Darkened(.45f), 1.5f, true);
+            return;
+        }
+        if (_weaponVisual == BaseWeaponKind.Arrows)
+        {
+            var length = 17f;
             var normal = _travelDirection.Orthogonal();
             DrawLine(-_travelDirection * length, Vector2.Zero, _color, 2f, true);
             DrawColoredPolygon(new[] { _travelDirection * 4, -_travelDirection * 6 + normal * 4, -_travelDirection * 6 - normal * 4 }, _color.Lightened(0.2f));

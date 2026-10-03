@@ -16,7 +16,6 @@ public partial class SettingsMenu : Control
     private Label _cloudSaveLabel = null!;
     private LineEdit _purchaseEndpointEdit = null!;
     private Button _muteButton = null!;
-    private Button _showDevUiButton = null!;
     private Button _showFpsButton = null!;
     private Button _showHintsButton = null!;
     private Button _syncProviderButton = null!;
@@ -153,6 +152,7 @@ public partial class SettingsMenu : Control
         var tabTitles = GameState.DeveloperModeAvailable
             ? new[] { "Sound", "Gameplay", "Online", "Account", "Developer" }
             : new[] { "Sound", "Gameplay", "Online", "Account" };
+        if (HasMeta("battle_modal")) tabTitles = new[] { "Sound", "Gameplay" };
         RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, tabTitles);
         for (int i = 0; i < pages.Length; i++)
         {
@@ -269,13 +269,6 @@ public partial class SettingsMenu : Control
         var interfaceRow = new GridContainer { Columns = 2 };
         interfaceRow.AddThemeConstantOverride("separation", 8);
         interfaceStack.AddChild(interfaceRow);
-
-        _showDevUiButton = BuildCompactButton("Toggle Combat Intel", () =>
-        {
-            GameState.Instance.SetShowDevUi(!GameState.Instance.ShowDevUi);
-            RefreshUi();
-        });
-        interfaceRow.AddChild(_showDevUiButton);
 
         _showFpsButton = BuildCompactButton("Toggle FPS Counter", () =>
         {
@@ -698,7 +691,6 @@ public partial class SettingsMenu : Control
             $"Effects: {GameState.Instance.EffectsVolumePercent}%  |  Ambience: {GameState.Instance.AmbienceVolumePercent}%  |  Music: {GameState.Instance.MusicVolumePercent}%\n" +
             $"Muted: {(GameState.Instance.AudioMuted ? "Yes" : "No")}";
         _interfaceLabel.Text =
-            $"Combat intel panels: {(GameState.Instance.ShowDevUi ? "Shown" : "Hidden")}\n" +
             $"FPS counter: {(GameState.Instance.ShowFpsCounter ? "Shown" : "Hidden")}\n" +
             $"Tutorial hints: {(GameState.Instance.ShowHints ? "Shown" : "Hidden")}\n" +
             $"Language: {GameState.Instance.Language}\n" +
@@ -727,7 +719,6 @@ public partial class SettingsMenu : Control
             _syncEndpointEdit.Text = GameState.Instance.ChallengeSyncEndpoint;
         }
         _muteButton.Text = GameState.Instance.AudioMuted ? "Unmute" : "Mute";
-        _showDevUiButton.Text = GameState.Instance.ShowDevUi ? "Hide Combat Intel" : "Show Combat Intel";
         _showFpsButton.Text = GameState.Instance.ShowFpsCounter ? "Hide FPS Counter" : "Show FPS Counter";
         _showHintsButton.Text = GameState.Instance.ShowHints ? "Hide Hints" : "Show Hints";
         _syncProviderButton.Text = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
@@ -748,7 +739,7 @@ public partial class SettingsMenu : Control
         _backButton.Text = $"Back To {returnLabel}";
         _titleButton.Visible = !returnLabel.Equals("Title", StringComparison.OrdinalIgnoreCase);
         if (RealmModal.Embedded(this)) {
-            _interfaceLabel.Text = "Adjust readability, hints and battle information.";
+            _interfaceLabel.Text = "Adjust readability and hints.";
             _callsignLabel.Text = "Caravan name · used in rooms and shared rankings";
             _syncLabel.Text = string.IsNullOrEmpty(GameState.Instance.AccountProvider) ? "Playing locally. Sign in from Account to connect your caravan." : $"Connected with {GameState.Instance.AccountProvider}. Refresh your profile to check the latest progress.";
             _purchaseLabel.Text = $"Purchases completed: {GameState.Instance.TotalPurchaseCount}\nPayments: {DetectPurchasePlatform()}";

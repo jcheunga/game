@@ -60,7 +60,7 @@ A follow-up direct input review uses the actual game window, cards, spells, and 
 ./scripts/verify_all.sh
 ```
 
-Logs and rendered checks are written under `artifacts/combat-review/`. `CombatReviewSmoke` accepts `--stages=...`, `--tactical`, and `--squad=unit_id,unit_id,unit_id`. Every invocation requires a unique `--save-suffix=combat-review-...`; rendered checks use a graphical run with `--regressions --screenshots`.
+Logs and rendered checks are written under `artifacts/combat-review/`. `CombatReviewSmoke` accepts `--stages=...`, `--tactical`, and `--squad=unit_id,unit_id,unit_id`. Use `--courage-pacing` for the focused regeneration and deployment checks. Every invocation requires a unique `--save-suffix=combat-review-...`; rendered checks use a graphical run with `--regressions --screenshots`.
 
 The pacing changes apply to scripted encounters, including challenge boards. Endless retains its checkpoint structure, with chronological reinforcement handling and bounded attack-speed growth. Existing challenge scores from older tuning should not be treated as comparable balance benchmarks.
 
@@ -78,3 +78,130 @@ The pacing changes apply to scripted encounters, including challenge boards. End
 - Using an earned field order while a boss is alive or after the gate is breached still grants its combat effects and reinforcements. It no longer starts an additional branch objective at that point. This prevents an order used to finish a boss from creating a new failure penalty and counter-wave. Earlier branch objectives retain their normal behavior.
 - Tidemaster's rally calls and phase summons now share the siege-artillery check: two living plague engines suppress further boss engine spawns, and casualties can be replaced. Existing authored enemies are counted, not removed. Other escort types retain their normal behavior. Encounter intel explains this opening.
 - The expanded real-engine suite verifies both the ordinary and late field-order paths, their reinforcements, existing siege units, replacement after a casualty, phase summons, and unrelated escorts.
+
+## October 2 courage pacing
+
+Passive courage generation is now 3 per second, down from 4.5 (33% slower).
+The authored configuration and fallback tuning agree. At this review, starting
+courage was 45 and maximum courage remained 100; earned bonuses, upgrades, stage modifiers
+and difficulty scales continue to apply. Before bonuses, a 20-courage Swordsman
+takes about 6.7 seconds to fund from empty, compared with 4.4 seconds previously.
+
+The build passed without warnings or errors. Five native pacing checks passed:
+the opening budget and scout bonus, delayed affordability, pause behavior,
+successful deployment with its normal cost and the maximum-courage cap. A
+Swordsman/Archer/Shield Knight tactical squad cleared the sampled stages 1, 6,
+12 and 21 at the new rate. These automated samples verify playable paths,
+not human win rates or complete campaign balance.
+
+The wider combat suite passes 611 checks and still fails three existing checks
+for early gate completion, living-commanders blocking victory and ranged support
+targeting. All three were reproduced at the original 4.5 rate before the new
+pacing checks ran. The old rate also fails the new affordability checks, as
+expected. Benchmark shutdown reports retained resources at both rates; the
+focused native pacing review exits cleanly. Logs are in
+`artifacts/courage-pacing/`.
+
+## October 3 battle screen polish
+
+The live battle HUD now shows wagon health and courage at the upper left and
+gold at the upper right. Deployment cards sit individually over the scene;
+the full-width HUD and card-panel backgrounds are removed. Wave counts, wave
+progress, elapsed time, forecasts and the combat-intel panel stay hidden.
+Immediate hazard and boss warnings still provide feedback during combat.
+
+The bottom-left gear opens a paused menu with Resume, Restart, Game settings
+and Quit battle. Restart shows a ration icon and the normal stage-entry price.
+Both menu restarts and result-screen retries charge once, reject insufficient
+rations without replacing the battle, and release the scene-tree pause before
+the transition. Shared matches cannot restart individually. Settings opens
+inside the paused battle, offers Sound and Gameplay, and returns to the same
+pause menu. Keyboard focus stays inside the menu and phone settings refits
+when the window changes size.
+
+Stage panoramas now render without changing their proportions, with natural
+perimeter cropping instead of squeezed scenery strips. The 60 originals use
+lossless imports. A new nine-material atlas adds world-sized fine ground
+detail for all ten zone themes, with mipmaps, blended variation and feathered
+edges. Movement, spawning, aiming and camera bounds are unchanged. Asset
+provenance and the exact built-in generation prompt are in
+`assets/world/battles/polished-v2/`.
+
+The build passes with zero warnings/errors. `UiReviewSmoke --battle-polish`
+passes 61 native checks across desktop, a smaller window and phone layouts,
+and captures one battlefield for each of the ten zone themes. The deployment
+card review passes 89 checks, the drag review passes 81, and the camera review
+passes 27. Captures and logs are in `artifacts/battle-background-polish/`.
+The verbose card-review shutdown still reports two retained title-music
+resources (`title.ogg` and its Ogg packet sequence); these are audio shutdown
+diagnostics, with no UI assertion failures. The final drag run also reports six
+retained resources at shutdown; all 81 interaction assertions pass. The focused
+battle-polish and camera runs finish without engine diagnostics.
+
+## October 3 actor lighting and perspective
+
+The caravan, its seven skins and the enemy gatehouse use new renders of their
+editable 3D sources, with a shared 22-degree orthographic view. The gate faces
+left into the battle. Projected ground anchors put wheels and foundations on
+the terrain; roof weapons and their projectile origins use projected sockets.
+
+Soft cast shadows follow the current animation silhouette, with denser contact
+shadows under feet, wheels and stonework. Shadows render above terrain and
+below actors. Ground-position sorting resolves overlaps between troops and
+bases, while projectiles remain above them. Zone light color and restrained
+lantern/torch light apply to bodies and death poses; health bars retain their
+UI colors. Pooled troops clear all environmental and local light state.
+
+`UiReviewSmoke --battle-lighting` captures both bases in all ten zones and the
+phone close/overview layouts, and compares actual rendered pixels with the
+shadow layer hidden to verify that shadows reach the visible terrain.
+`CombatReviewSmoke --base-weapons` exercises targeting, mounted shots, pooling,
+upgrades, pause, destruction and endless mode. Native captures and logs are in
+`artifacts/battle-lighting/`. Render sources and repro steps are in
+`assets/structures/battle-v2/README.md`.
+
+The build passes with zero warnings/errors. The lighting review passes 43
+checks, weapon checks pass 39, the 53-unit animation review passes 119, camera
+checks pass 27 and battle-menu/layout checks pass 61. Some focused test runs
+report retained resources at engine shutdown; their assertions all pass.
+
+## October 3 battle simplification and return screens
+
+Every mode starts at zero courage, including Endless opening boons and campaign
+bonuses. Surplus Courage increases regeneration instead of granting an opening
+budget. Deployment requires an explicitly selected owned warband card; a
+successful deployment clears that selection. Summoning abilities, automatic
+allied reinforcements and their Endless options are retired. Resurrection can
+restore an owned member of the current battle roster.
+
+All enemy entries use the enemy stronghold, including advance-triggered waves
+and commander reinforcements. Bellfire, Market Collapse, tunnel attacks,
+scripted side-objective actors and automatic field events are removed. Normal
+enemy encounters, commander phases, base weapons and Endless checkpoints
+remain. Map exploration and travel are free; battle entry and restart retain
+their ration costs.
+
+Ballistas launch shaded, arcing boulders for ordinary attacks, base attacks and
+Anchor Shot. Ranged base damage applies once when its projectile arrives.
+Spell previews, area rings and ground effects share the battlefield projection.
+Ambient and weather particles use transparent soft textures at their intended
+size, with a generated fallback if a texture cannot load. Pause contains only
+its menu actions, without the old keyboard-instruction paragraph.
+
+Campaign victory presents earned stars and icon reward cards instead of the
+text report. The cards use actual awarded resource, experience and mastery
+deltas, including unlocks and upgrades. Presenting the result twice cannot
+award it twice. Quitting returns directly to the map; Endless banks its payout
+once without opening a preparation or report modal. Explicit preparation
+returns use the current home modal, including Endless, Tower, Arena, events and
+challenges. Phone launch actions remain outside scrolling bodies.
+
+The build passes without warnings or errors. `UiReviewSmoke --battle-cleanup`
+passes 120 checks at both desktop and smaller-window sizes, including all 22
+home activity destinations and phone preparation/Endless returns.
+`UiReviewSmoke --drag-cards` passes 81 interaction checks. The combat star suite
+passes 487 checks and mounted weapons pass 39. Native victory reviews pass 20
+checks at each window size, including a full squad's rewards and payout
+idempotency. Logs and captures are in
+`artifacts/battle-cleanup/` and `artifacts/stage-stars/`. Some reward/weapon
+fixtures retain existing resource-cleanup diagnostics at engine shutdown.

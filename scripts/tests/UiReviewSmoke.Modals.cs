@@ -30,7 +30,7 @@ public partial class UiReviewSmoke
         Check(state.GetSpellLevel(spell.Id) == spellLevel + 1, "Spell training works inside the modal");
         AuditText("Modal / trained spells"); await Capture("14-trained-spells"); menu.CloseHomeModal();
         state.TryUnlockAchievement("first_blood"); menu.OpenHomeDestination("achievements"); await Wait(.2);
-        gold = state.Gold; await Press("Claim +100 gold");
+        gold = state.Gold; await Press("Claim +100");
         Check(state.HasClaimedAchievementReward("first_blood") && state.Gold == gold + 100, "Achievement reward claims once from its card");
         Check(!state.TryClaimAchievementReward("first_blood", out _), "A claimed achievement cannot pay a second reward");
         AuditText("Modal / claimed achievements"); await Capture("15-achievement-claimed"); menu.CloseHomeModal();

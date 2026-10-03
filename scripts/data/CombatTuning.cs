@@ -16,9 +16,9 @@ public sealed class CombatTuning
 	public float BaseCoreRadius { get; set; } = 44f;
 	public float BaseApproachDistance { get; set; } = 170f;
 
-	public float CourageStart { get; set; } = 45f;
+	public float CourageStart { get; set; } = 0f;
 	public float CourageMax { get; set; } = 100f;
-	public float CourageGainPerSecond { get; set; } = 4.5f;
+	public float CourageGainPerSecond { get; set; } = 3f;
 
 	public float InitialEnemySpawnDelay { get; set; } = 2.8f;
 	public float EnemySpawnPressureTimeScale { get; set; } = 180f;

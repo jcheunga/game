@@ -27,8 +27,16 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--battle-cleanup"))
+            { await ReviewBattleCleanup(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--battle-lighting"))
+            { await ReviewBattleLighting(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--battle-polish"))
+            { await ReviewBattlePolish(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--home-map"))
             { await ReviewTileMap(includeHome: true); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--armory-details"))
+            { await ReviewArmoryDetails(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--developer"))
             {
                 _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");
@@ -93,7 +101,7 @@ public partial class UiReviewSmoke : Node
                 _output = ProjectSettings.GlobalizePath("res://artifacts/typography-advanced");
                 System.IO.Directory.CreateDirectory(_output);
                 await Open("ShopMenu"); await AuditArmoryPages();
-                await Press("Battle rites"); await AuditArmoryPages();
+                await Press("Spells"); await AuditArmoryPages();
                 BattleSummaryData.Current = new BattleSummaryData { Won = true, Stage = 60, StarsEarned = 3, BattleMode = "Campaign", ElapsedSeconds = 123, EnemiesDefeated = 145, UnitsDeployed = 35, UnitsLost = 12, SpellsCast = 7, TotalDamageDealt = 123456, TotalDamageTaken = 12345, GoldEarned = 1250, FoodEarned = 12, SeasonXPEarned = 100, MasteryXPPerUnit = GameData.GetPlayerUnits().ToDictionary(x => x.Id, _ => 250) };
                 await Open("BattleSummaryMenu"); AuditText("Populated battle summary"); await Capture("type-populated-summary");
                 GameState.Instance.UnlockNextStage(GameState.Instance.MaxStage - 1);
@@ -184,7 +192,8 @@ public partial class UiReviewSmoke : Node
             await Press("Community"); await Capture("03-camp-community");
             GameState.Instance.MoveAdventureHero("city", AdventureMapCatalog.Leader(1).Point);
             await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
-            await Press("Intel"); await Capture("05-map-intel");
+            Check(!Walk(GetTree().CurrentScene).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details show rewards without an Intel tab");
+            await Capture("05-map-rewards");
             await Press("Prepare battle"); Check(GetTree().CurrentScene is LoadoutMenu, "Map opens preparation");
             await Capture("06-loadout");
             await Press("Details");
@@ -212,7 +221,7 @@ public partial class UiReviewSmoke : Node
             }
             await Press("Unequip"); Check(!GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can leave squad");
             await Press("Equip"); Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can return to squad");
-            await Press("Battle rites"); await Capture("08-rites");
+            await Press("Spells"); await Capture("08-rites");
             await Press("War wagon"); await Capture("09-wagon");
             await Press("Relics"); await Capture("10-relics");
             await Open("MultiplayerMenu"); await Capture("18-challenges");
@@ -233,11 +242,11 @@ public partial class UiReviewSmoke : Node
             await Wait(2);
             Check(Walk(GetTree().CurrentScene).OfType<Unit>().Any(x => x.Team == Team.Player && !x.IsDead), "Unit card deploys a live ally");
             await Capture("14-deployed");
-            await PressHint("Pause [Escape]"); await Capture("15-paused");
-            await Press("Resume battle");
-            await PressHint("Battle intel [Tab]"); await Capture("16-battle-intel");
-            await PressHint("Battle intel [Tab]");
-            await PressHint("Retreat"); await Capture("17-retreat");
+            await PressHint("Battle menu [Escape]"); await Capture("15-paused");
+            await Press("Game settings"); await Capture("16-battle-settings");
+            ((BattleController)GetTree().CurrentScene).CloseBattleSettings();
+            await Press("Resume");
+            await PressHint("Battle menu [Escape]"); await Press("Quit battle"); await Capture("17-retreat");
             Check(SaveSystem.Instance.TryLoad(out _), "Isolated save reloads");
             GD.Print($"UI_REVIEW_RESULT: {_failures} failures");
             GetTree().Quit(_failures == 0 ? 0 : 1);
@@ -280,6 +289,7 @@ public partial class UiReviewSmoke : Node
     private readonly List<object> _textAudit = new();
     private void AuditText(string screen)
     {
+        if (OS.GetCmdlineUserArgs().Contains("--scroll-spacing")) AuditScrollSpacing(screen);
         var viewport = new Rect2(0, 0, 1280, 720);
         var panels = Walk(GetTree().CurrentScene).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
         foreach (var panel in panels)
@@ -314,13 +324,18 @@ public partial class UiReviewSmoke : Node
                 { GD.Print($"SCROLL_TEXT_CLIP {screen}: {control.GetPath()} {rect} outside {clip}"); _failures++; break; }
             }
         }
+        var homeDock = GetTree().CurrentScene.GetNodeOrNull<PanelContainer>("HomeHud/HomeTabs");
         foreach (var label in Walk(GetTree().CurrentScene).OfType<Label>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && !string.IsNullOrWhiteSpace(x.Text)))
         {
             var font = label.GetThemeFontSize("font_size");
             var issues = new List<string>();
-            if (font < 18) issues.Add("small text");
+            var minimumFont = homeDock != null && homeDock.IsAncestorOf(label) ? 16 : 18;
+            if (font < minimumFont) issues.Add("small text");
             if (label.GetVisibleLineCount() < label.GetLineCount()) issues.Add("hidden lines");
-            if (label.ClipText || label.MaxLinesVisible > 0) issues.Add("text limit");
+            var hiddenLines = label.GetVisibleLineCount() < label.GetLineCount();
+            var limitedWidth = label.ClipText && label.AutowrapMode == TextServer.AutowrapMode.Off
+                && label.Text.Split('\n').Any(line => label.GetThemeFont("font").GetStringSize(line, fontSize: font).X > label.Size.X + 3);
+            if (limitedWidth || (label.MaxLinesVisible > 0 && hiddenLines)) issues.Add("text limit");
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
             {
                 if (parent is Button owner && !owner.GetGlobalRect().Grow(2).Encloses(label.GetGlobalRect()))
@@ -339,6 +354,35 @@ public partial class UiReviewSmoke : Node
             if (issues.Count > 0)
             { _failures++; GD.Print($"TEXT_ISSUE {screen}: {string.Join(", ", issues)} | {label.Text.Replace("\n", " ")[..Math.Min(100, label.Text.Length)]}"); }
         }
+    }
+
+    private void AuditScrollSpacing(string screen)
+    {
+        var areas = 0; var rails = 0;
+        foreach (var scroll in Walk(GetTree().CurrentScene).OfType<ScrollContainer>().Where(area => area.IsVisibleInTree()))
+        {
+            areas++;
+            var vertical = scroll.GetVScrollBar(); var horizontal = scroll.GetHScrollBar();
+            foreach (var content in scroll.GetChildren().OfType<Control>().Where(child => child.IsVisibleInTree() && child is not ScrollBar))
+            {
+                // The other axis may intentionally extend beyond the viewport in card strips or trees.
+                if (vertical.Visible && !horizontal.Visible)
+                {
+                    rails++;
+                    var gap = vertical.GetGlobalRect().Position.X - content.GetGlobalRect().End.X;
+                    if (gap < 10)
+                    { _failures++; GD.Print($"SCROLL_SPACING_ISSUE {screen}: {scroll.GetPath()} has {gap:0.#}px beside its vertical rail"); }
+                }
+                if (horizontal.Visible && !vertical.Visible)
+                {
+                    rails++;
+                    var gap = horizontal.GetGlobalRect().Position.Y - content.GetGlobalRect().End.Y;
+                    if (gap < 8)
+                    { _failures++; GD.Print($"SCROLL_SPACING_ISSUE {screen}: {scroll.GetPath()} has {gap:0.#}px above its horizontal rail"); }
+                }
+            }
+        }
+        GD.Print($"SCROLL_SPACING_REVIEW {screen}: {areas} areas, {rails} visible rails");
     }
 
     private void Send(InputEvent input) => GetViewport().PushInput(input, true);

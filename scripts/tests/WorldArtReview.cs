@@ -57,9 +57,9 @@ public partial class WorldArtReview : Node
                 Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(ProjectSettings.GlobalizePath(path))))), zone + " is a distinct image");
             }
             var ground = new Rect2(84,96,2392,488); var world = new Vector2(2560,720);
-            var slices = WorldEnvironmentArt.BattleSlices(new Vector2(1984,800),world,ground);
-            Check(slices[4].Target == ground && slices.Where((_,i) => i != 4).All(s => !s.Target.Intersects(ground)), "Battle scenery stays outside the exact movement rectangle");
-            Check(Mathf.IsEqualApprox(slices.Sum(s => s.Target.Size.X * s.Target.Size.Y),world.X*world.Y), "Scene mapping covers the complete battle world without repeated panels");
+            var sourceSize = new Vector2(1984,800); var scene = WorldEnvironmentArt.BattleSceneRect(sourceSize,ground);
+            Check(Mathf.IsEqualApprox(scene.Size.X / sourceSize.X, scene.Size.Y / sourceSize.Y), "Battle scenery preserves its authored proportions");
+            Check(scene.Encloses(new Rect2(Vector2.Zero,world)), "Scene mapping covers the complete battle world without repeated panels");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).SelectMany(AdventureTerrain.Diamond).Select(WorldEnvironmentArt.ZoneGroundUv).All(uv => uv.X >= 0 && uv.X <= 1 && uv.Y >= 0 && uv.Y <= 1), "Zone ground UVs remain inside the authored texture");
             foreach (var zone in AssetCoverageCatalog.RouteIds)

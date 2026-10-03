@@ -1,34 +1,37 @@
 # Map home screen
 
-The home and campaign scenes share a full-screen atlas. Gold, food and stars sit at the top left, settings at the top right, a compact zone title at the top center, and six illustrated tabs along the bottom. Map controls float at the lower left; Map guide sits at the lower right. Shaded enamel panels have brass rims and inset highlights; navigation icons sit in circular medallions.
+The home and campaign scenes share a full-screen atlas. Gold, food and stars sit at the top left, settings at the top right, a compact zone title at the top center, and six illustrated tabs along the bottom. Shaded enamel panels have brass rims and inset highlights; navigation icons sit in circular medallions. The Map guide and persistent tutorial sentence are removed.
 
-Each zone presents a medieval landscape with one point of interest per irregular terrain region. Curved boundaries, uneven site spacing, natural coastlines, winding rivers and mountain ridges replace the visible square lattice. Existing zone paintings texture the ground; native forest clusters, villages, farmsteads, docks, forge structures, forts, shrine arches, towers and supply wagons use zone-specific colours. Snowy highlands, marsh reeds and ruined arches give the districts distinct scenery. Roads and stone bridges connect the landscape around the lantern caravan. Explored regions have subtle thin borders, while selected sites have a stronger outline around their dry land. Stage pins show earned stars after completion. Resource markers show their reward and travel price, then disappear after collection. Unopened terrain uses a continuous dark veil whose edge follows the explored territory.
+Each zone presents a medieval landscape with one point of interest per irregular terrain region. Curved boundaries, uneven site spacing, natural coastlines, winding rivers and mountain ridges replace the visible square lattice. Existing zone paintings texture the ground; native forest clusters, villages, farmsteads, docks, forge structures, forts, ruined arches, towers and supply wagons use zone-specific colours. Snowy highlands, marsh reeds and ruined arches give the districts distinct scenery. Roads and stone bridges connect the landscape. Explored regions have subtle thin borders, while selected sites have a stronger outline around their dry land. Stage markers show earned stars after completion. Resource markers expose rewards through tooltips, then disappear after collection. Unopened terrain uses a continuous dark veil whose edge follows the explored territory.
 
-A fresh zone opens at the camp with the eight neighboring tiles revealed. Completing a stage or gathering a resource opens the eight surrounding tiles; towers and survey charts open two rings. Travelling and preparing, losing or retreating from a stage do not reveal new tiles. Empty ground no longer moves the player. Selecting a destination animates the caravan directly there, with reduced motion skipping the animation. Drag, zoom and Find Caravan remain available.
+A fresh zone opens on its first stage with only that tile visible. Completing a stage or gathering a resource opens one ring of surrounding tiles. Scout towers are removed, and survey charts follow the same neighboring-tile rule. Travelling and preparing, losing or retreating from a stage do not reveal new tiles. Travel is free; battle entry costs food. Empty ground cannot initiate travel. The player cart and its travel animation are removed; reaching a destination is immediate. Dragging pans the map, and scrolling or pinching zooms it. The left-side zoom and current-position buttons are removed.
 
-The zone painting fills the surrounding background in subdued colours, with sharp screen-sized framing, preserved proportions, gentle parallax and a soft vignette. Undiscovered regions use a fully opaque textured cloud layer drawn over the background and landscape scenery, keeping hidden terrain and points of interest covered until those regions open.
+Quiet textured water fills the surroundings on the same 2:1 ground plane, world scale and camera as the zone map. A shallow shore connects it to the terrain; separate scenic paintings, parallax and raised-map shadows are removed. A soft vignette frames the view. Undiscovered regions use a fully opaque textured cloud layer drawn over the background and landscape scenery, keeping hidden terrain and points of interest covered until those regions open.
 
-The polished map uses nine painted surface materials and 26 detailed scenery sprites. Foliage, mountain ridges, gatehouses, keeps, shrines, cottages, workshops, bridges, caches and the caravan share consistent painted lighting and materials. Textures follow world coordinates across region boundaries, while mipmaps smooth distant detail. Forest clearings and restrained texture contrast preserve marker readability. Harbor docks sit at the water's edge, and terrain borders pass beneath foreground scenery. Reduced motion freezes cloud drift, water drift and caravan bobbing. Source PNGs, submitted prompts and hashes are preserved in `assets/world/overworld/polished-v3/`.
+The polished map uses nine painted surface materials and detailed scenery sprites. Foliage, mountain ridges, gatehouses, keeps, cottages, workshops, bridges and caches share consistent painted lighting and materials. Textures follow the 2:1 ground plane across region boundaries, while mipmaps smooth distant detail. Forest clearings and restrained texture contrast preserve marker readability. Harbor docks sit at the water's edge, bridges follow their crossing angles, and terrain borders pass beneath foreground scenery. Reduced motion freezes cloud drift and water drift. Source PNGs, submitted prompts and hashes are preserved in `assets/world/overworld/polished-v3/`.
 
-Travel to a new destination costs 1 food; returns to reached tiles are free. Stage entry keeps its existing separate food charge on deployment. The stage details show both costs, and new-stage travel requires enough food for travel and entry. Costs and arrival commit only when the animation finishes. Leaving earlier cancels without spending travel food or claiming rewards. Blocked cache selection displays the food requirement inside site details.
+Painted world objects serve as the site markers, with earned stars above cleared forts and no labels beneath any point of interest. Inventory medallions and floating pin shapes are removed from the map. Per-sprite ground anchors and shared zoom scaling keep buildings and hit targets aligned. Tile borders, selected-region outlines and low elliptical selection footprints are drawn beneath roads, rivers, bridges, buildings and foliage. Gold, provisions, books, essence and survey charts each have distinct painted art.
 
-Save version 45 persists open tile IDs, reached tile IDs and the current caravan tile. Existing stars, claims, shrine bonuses and zone gates remain intact. Older known sites translate to their new tiles; victories and collected resources reveal neighbors without granting rewards again. Legacy terrain data remains available for migration.
+Native tooltips and site details retain point-of-interest names, rewards and stage entry costs at every scale. The map has no persistent captions, including during hover, focus and selection. Travel cost labels and accessibility descriptions are removed.
+
+Travel to every open destination and resource collection are free, including with zero rations. Stage entry keeps its existing food charge on deployment, with one battle entry cost shown in stage details. Reaching a tile records the destination before collection or preparation without spending food. Insufficient entry rations are explained in stage details and cannot start a battle; resources remain collectible.
+
+Save version 45 persists open tile IDs, reached tile IDs and the current caravan tile. Existing stars, claims and zone gates remain intact. Lantern Camp and Shrines of Resolve become ordinary terrain, with their revealed areas retained; retired destinations return to the first stage. Shrine courage bonuses are removed. Older known sites translate to their new tiles; victories and collected resources reveal neighbors without granting rewards again. Legacy terrain data remains available for migration.
 
 The transparent 3 × 3 icon atlas is `assets/ui/home/painted-icons-v2.png`; runtime atlas regions preserve the generated alpha. Backgrounds and icon artwork were generated with the built-in image tool. Exact prompts and provenance are recorded in `assets/ui/home/generated-art-v2.json`. Terrain regions and the additional landscape scenery are drawn natively at runtime.
 
-The bottom tabs open Warband, Spells, Upgrades, Achievements, Codex and More. Warband, Spells and Upgrades select their corresponding armory pages. More preserves the Adventure, Caravan and Community destinations, account entry and quit. Startup analytics consent and challenge deep links remain in the main scene.
+The bottom tabs open Warband, Spells, Upgrades, Achievements, Codex and More. Warband, Spells and Upgrades select their corresponding armory pages. More preserves the Adventure, Caravan and Community destinations, account entry and quit. The main scene handles challenge deep links and opens directly into the map. Optional analytics and crash reporting are configured in Settings; there is no startup analytics modal.
 
-Site details start closed. Selecting a landmark opens a floating panel with Overview, Intel and the existing travel/battle action. Boss gate and other battle entry requirements appear inside these details. Closing the panel or pressing Escape restores the map. The map has no bottom message popup for travel, discoveries, rewards, food requirements or other notices. Resource balances and site details still refresh when actions complete. Escape also closes More. HUD controls use safe-area insets and anchored positions.
+Site details start closed. Selecting a stage opens a single floating panel with rewards, its battle entry cost and preparation action. The Overview and Intel tabs are removed. Victory gold, supplies and the entry ration cost use painted resource icons beside their amounts. Preparation presents rewards and the active warband, without briefing tabs or star-rating explanations. Compact unit cards and painted spell buttons keep the main preparation screen free of vertical scrolling, with spells and Deploy in the fixed action bar. Collection bursts and the Deploy cost use the same painted resource icons. Shared currency badges in activity menus and achievement rewards also use this artwork. Accessibility names retain the resource names. Boss gate and other battle entry requirements appear inside these details. Closing the panel or pressing Escape restores the map. The map has no bottom message popup for travel, discoveries, rewards, food requirements or other notices. Resource balances and site details still refresh when actions complete. Escape also closes More. HUD controls use safe-area insets and anchored positions.
 
-Selecting a discovered gold or food cache sends the caravan to gather it in one
-action. Its marker disappears after successful collection, using the existing
+Selecting a discovered gold or food cache immediately reaches and gathers it in
+one action. Its marker disappears after successful collection, using the existing
 saved visit flag so it stays gone after reloading. Collected caches cannot be
 selected again, and gathering leaves no site-details panel open. Unreached
-rewards remain available if travel is interrupted or food runs out. Tile
-discoveries also disappear after collection; camps, shrines, watchtowers and
-rival markers remain available on the map.
+resources can also be collected with zero rations. Tile
+discoveries also disappear after collection; rival markers remain available on the map.
 
-Only King's Road is available in a new campaign's zone navigation. Defeating a zone's boss reveals the next zone, which replaces the current map. Earlier areas remain reachable. Existing saves retain their played zones and preceding areas, based on victories, visited landmarks or paid exploration. Stage numbers cross district boundaries, so a high stage number by itself does not reveal other zones. This gate controls home/map navigation; encounter rules and other game modes retain their existing behavior.
+Only King's Road is available in a new campaign's zone navigation. Defeating a zone's boss reveals the next zone, which replaces the current map. Earlier areas remain reachable. Existing saves retain their played zones and preceding areas, based on victories, visited landmarks or recorded exploration. Stage numbers cross district boundaries, so a high stage number by itself does not reveal other zones. This gate controls home/map navigation; encounter rules and other game modes retain their existing behavior.
 
 In editor and debug builds, Settings has a Developer tab. Developer mode starts
 off. Enabling it offers +1,000/+10,000 gold and +10/+100 food in Settings,
@@ -57,6 +60,14 @@ other battle starts still enter the real battle scene. Account changes and save
 restores explicitly reload home. Keyboard focus remains inside an open panel;
 Escape and the outer veil dismiss it.
 
+Returning to an activity from battle creates the map shell before opening the
+same modal used by home navigation. Quitting battle returns directly to the map;
+Endless still banks its earned rewards once. Results can explicitly reopen
+Endless, Tower, Arena, seasonal events or challenge preparation. Creating the
+home shell preserves the selected battle stage even when its campaign zone is
+locked. Phone modals use the shared HUD scale, a compact header, scrolling bodies
+and fixed launch actions that fit inside the content area.
+
 The panels have a separate material language from the teal map HUD: walnut and
 steel for the warband, violet cloth for spells and relics, copper for wagon
 upgrades, and an illustrated parchment spread for the codex. Bolted silver
@@ -70,6 +81,17 @@ The control palette uses weathered iron and aged brass. Inactive tabs stay
 close to charcoal and brown; selected states retain subdued slate, plum, ochre,
 forest and oxblood pigments. Metal highlights are soft and thin, keeping the
 painted illustrations as the richest colours in the panels.
+
+Unit and spell profiles use a compact collection sidebar, a tall painted preview
+and icon stat cards. Equip and training actions stay outside the details scroller.
+Traits, doctrines, talents, colour variants and next-level values are available
+through an optional disclosure. Spell cards show effect-specific values from the
+trained spell rather than the base definition. Battle preparation opens the same
+visual unit and spell inspectors without changing the loadout.
+
+The shared theme reserves an 18-pixel gutter beside vertical scrollbars and a
+12-pixel gutter above horizontal scrollbars. This spacing is separate from panel
+padding and applies to menus, overlays, inspectors, dialogs and battle UI.
 
 The Royal Storehouse has a dedicated layout with compact pack cards. Each card
 shows its name, total supplies, included bonus and a purchase button fixed at
@@ -95,7 +117,7 @@ dotnet build Game.csproj
 godot --path . --windowed --disable-render-loop --rendering-method gl_compatibility res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-home-UNIQUE --home-map
 ```
 
-Add `--small-window` for a 1024 × 768 window. Captures and typography audits are written to `artifacts/tile-map/{desktop,small}`. The review exercises tile revelation through completion, travel and entry charges, native resource collection, actual drag panning, zoom, details, settings return, armory actions, codex, sequential zone access, save persistence and existing-save compatibility. A charted test fixture provides an explored-area visual review and checks all site panel text without changing the player's save or granting discovery rewards.
+Add `--small-window` for a 1024 × 768 window. Captures and typography audits are written to `artifacts/tile-map/{desktop,small}`. The review exercises tile revelation through completion, free travel, entry-only charges, native resource collection with zero rations, actual drag panning, zoom, details, settings return, armory actions, codex, sequential zone access, save persistence and existing-save compatibility. A charted test fixture provides an explored-area visual review and checks all site panel text without changing the player's save or granting discovery rewards.
 
 Use `--map-notices` in place of `--home-map` for the focused boss-warning and
 message-removal regression. The full home review includes it as well. It checks
@@ -113,6 +135,17 @@ Use `--map-rewards` for native cache and tile-reward selection checks, also
 included in the full home review. It verifies the advertised resource amounts,
 marker removal, saved claims, duplicate prevention, interrupted and blocked
 travel, and permanent landmark visibility at either window size.
+
+Use `--armory-details` for the focused profile review. It covers every unit and
+spell, current trained stats, native upgrades, promotion, doctrine selection,
+optional details, fixed actions and both preparation inspectors. Add
+`--small-window` for the smaller layout. Captures and typography audits are in
+`artifacts/armory-details/{desktop,small}`.
+
+Add `--scroll-spacing` to a home or typography review to measure content clearance
+from visible scrollbar rails. The audit checks actual laid-out content rather than
+the theme settings. `--typography` covers standalone menus and their tabs;
+`--home-map` covers their home overlays. Use `--small-window` for the smaller size.
 
 The standard UI and world-art fixtures explicitly select/open sites or unlock the district under review. Full repository verification remains `./scripts/verify_all.sh`.
 
@@ -164,3 +197,29 @@ Medieval landscape follow-up verified on 2026-10-02: the build passed without wa
 Background and opaque fog follow-up verified on 2026-10-02: the build passed without warnings or errors. The desktop tile review passed 119 behavior checks and 241 text checks. The full smaller-window home review passed 295 behavior checks and 1,580 text checks, with no failures, text issues or runtime errors. Fresh-map captures at both sizes and the Saltwake background were visually inspected. The shorter smaller-window run completed its behavior checks but reported resources still in use during immediate shutdown after battle; the full home review returned to the map and exited cleanly. Logs are in `artifacts/map-background/`.
 
 Painted map polish verified on 2026-10-02: the build passed without warnings or errors. Desktop and smaller-window home reviews each passed 295 behavior checks and 1,580 text checks with zero failures, text issues or runtime errors. The review exercised all ten zones; fresh exploration, Saltwake, Emberforge, snowy Thornwall and smaller-window stage costs were visually inspected. Terrain materials, fitted scenery, textured waterways, opaque cloud fog and the sharper parallax background preserve existing exploration and food costs. Captures are in `artifacts/tile-map/`; final logs are in `artifacts/polished-map/`.
+
+Grounded site markers verified on 2026-10-02: the build passed without warnings or errors. Desktop and smaller-window home reviews each passed 297 behavior checks and 1,468 text checks with zero failures, text issues or runtime errors. Checks include the removed Map guide, native selection of a painted fort after zooming and panning, every pickup type, duplicate prevention and battle launch. The first review exposed a transparent landmark margin intercepting a neighboring gold pickup; fitted alpha hit masks fixed that interaction, and both final reviews passed. Fresh exploration, earned stage stars, Saltwake, snowy Thornwall, overview label density and smaller-window stage costs were visually inspected. Final logs are in `artifacts/grounded-map/`; captures remain in `artifacts/tile-map/`.
+
+Shared background plane verified on 2026-10-02: the build passed without warnings or errors. Desktop and smaller-window home reviews each passed 297 behavior checks and 1,468 text checks with zero failures, text issues or runtime errors. The scenic backdrop, separate parallax and offset coastal shadows are removed. Surrounding water uses the zone's world transform and the river material's 2:1 projection and scale. Fresh exploration, Saltwake, Emberforge, snowy Thornwall and smaller-window stage details were visually inspected. Final logs and the stable preview are in `artifacts/map-plane/`; all ten zone captures remain in `artifacts/tile-map/`.
+
+Resource icons and single-page details verified on 2026-10-02: the build passed without warnings or errors. Desktop and smaller-window home reviews each passed 303 behavior checks and 1,521 text checks with zero failures, text issues, runtime errors or shutdown warnings in the final runs. Native checks cover the removed Intel tab, configured victory rewards, separate ration costs, accessible directive toggles, every pickup type, blocked claims, achievement claims and real battle deployment. Stage details, blocked supplies, the achievement reward cards and the deployment button were visually inspected. Final logs and a stable stage-panel preview are in `artifacts/resource-icons/`.
+
+Unit and spell profiles redesigned on 2026-10-02: the build passed without warnings or errors. Desktop and smaller-window home reviews each passed 303 behavior checks and 1,543 text checks. The focused profile reviews each passed 42 behavior checks and 1,613 text checks, with no failures, text issues, runtime errors or shutdown warnings. Native checks cover every unit and spell, current trained values, upgrades, promotion, doctrine selection, optional training details, fixed actions and visual battle-preparation inspectors. Unit, healing spell, trained Fireball and both preparation inspectors were visually inspected. Final logs, focused captures and stable unit/spell previews are in `artifacts/armory-details/`.
+
+Scroll spacing verified on 2026-10-02: the build passed without warnings or errors.
+At each window size, 56 standalone menu states and 59 home-overlay states covered
+130 scrolling regions and 62 visible rails, with no spacing failures. Standalone
+reviews each passed 1,528 text checks; home reviews each passed 303 behavior checks
+and 1,543 text checks, with no layout failures or runtime errors. The wider review
+also fixed undersized armory portrait captions and a daily-challenge heading that
+forced its scrolling panel outside the screen. Player profile and daily challenge
+captures were visually inspected. The standalone review retains existing
+CanvasItem cleanup warnings at process exit; home reviews exit cleanly. Logs and
+stable profile previews are in `artifacts/scroll-spacing/`.
+
+Startup analytics modal removed on 2026-10-02. A fresh save opens directly into
+the map, while optional upload choices stay disabled until enabled in Settings.
+The build passed without warnings or errors, and the native privacy review passed
+all 27 checks, including startup and Settings captures. The capture fixture retains
+its existing resource-cleanup diagnostics at process exit. Evidence is in
+`artifacts/privacy-review/`.

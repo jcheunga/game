@@ -27,12 +27,10 @@ public partial class MapPathCanvas
     private void DrawTileLandmark(AdventureTile tile, bool complete)
     {
         if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !GameState.Instance.HasVisitedAdventureSite(tile.Site.RequiredVisit)) return;
-        var p = tile.Point + new Vector2(0, 14); var roof = TileRoofColor();
-        if (tile.Site?.Kind == AdventureSiteKind.Leader
-            && DrawPaintedSprite(GameState.Instance.IsAdventureBoss(tile.Site.Stage) ? 16 : 15, p, GameState.Instance.IsAdventureBoss(tile.Site.Stage) ? 126 : 92)) return;
-        if (tile.Site?.Kind == AdventureSiteKind.Camp && DrawPaintedSprite(19, p, 70)) return;
-        if (tile.Site?.Kind == AdventureSiteKind.Watchtower && DrawPaintedSprite(17, p, 83)) return;
-        if (tile.Site?.Kind == AdventureSiteKind.Shrine && DrawPaintedSprite(18, p, 76)) return;
+        var p = tile.Point; var roof = TileRoofColor();
+        var resource = tile.Discovery != null || tile.Site?.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
+        if (tile.HasInterest && (!resource || !complete)
+            && DrawPaintedSprite(AdventureAtlasArt.LandmarkSprite(tile), p, AdventureAtlasArt.LandmarkHeight(tile))) return;
         if (tile.Site?.Kind == AdventureSiteKind.Leader)
         {
             var boss = GameState.Instance.IsAdventureBoss(tile.Site.Stage);
@@ -61,8 +59,6 @@ public partial class MapPathCanvas
         }
         else if (!complete && (tile.Site != null || tile.Discovery != null))
         {
-            var foodCache = tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food;
-            if (DrawPaintedSprite(foodCache ? 21 : 20, p, foodCache ? 41 : 31)) return;
             if (tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food) DrawSupplyWagon(p);
             else
             {
@@ -136,17 +132,5 @@ public partial class MapPathCanvas
         DrawIsoBlock(p, 27, 13, 12, new Color("816445"));
         DrawColoredPolygon(new[] { p + new Vector2(-28, -10), p + new Vector2(-9, -30), p + new Vector2(25, -13), p + new Vector2(27, 0), p + new Vector2(1, 7) }, new Color("c0b18c"));
         foreach (var x in new[] { -19, 20 }) { DrawCircle(p + new Vector2(x, 12), 8, new Color("463f32")); DrawCircle(p + new Vector2(x, 12), 5, new Color("93805a")); DrawLine(p + new Vector2(x - 4, 12), p + new Vector2(x + 4, 12), new Color("554637"), 1, true); }
-    }
-    private void DrawCaravan(Vector2 p, bool moving)
-    {
-        var bob = moving && !GameState.Instance.ReducedMotion ? Mathf.Sin(_time * 14) * 2 : 0;
-        p.Y += bob;
-        DrawColoredPolygon(new[] { p + new Vector2(-22, 10), p + new Vector2(6, -3), p + new Vector2(32, 12), p + new Vector2(5, 26) }, new Color(0, 0, 0, .3f));
-        DrawIsoBlock(p, 20, 12, 14, new Color("6b563e"));
-        DrawColoredPolygon(new[] { p + new Vector2(-21, -13), p + new Vector2(-4, -29), p + new Vector2(22, -14), p + new Vector2(22, 1), p + new Vector2(0, 10) }, new Color("c9b992"));
-        DrawBanner(p + new Vector2(-13, -14), new Color("456f8b"));
-        DrawCircle(p + new Vector2(-14, 11), 7, new Color("332f29")); DrawCircle(p + new Vector2(17, 11), 7, new Color("332f29"));
-        DrawCircle(p + new Vector2(-14, 11), 3, new Color("b39a65")); DrawCircle(p + new Vector2(17, 11), 3, new Color("b39a65"));
-        DrawCircle(p + new Vector2(21, -4), 3, new Color("f0cb73"));
     }
 }

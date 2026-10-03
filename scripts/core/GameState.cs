@@ -4795,10 +4795,20 @@ public partial class GameState : Node
 		return true;
 	}
 
+    public bool TrySpendBattleRestartFood(int stage, out string message)
+    {
+        RefreshFoodRecharge();
+        var cost = GetStageEntryFoodCost(stage);
+        if (Food < cost) { message = $"Need {cost} rations to restart."; return false; }
+        Food -= cost;
+        LastResultMessage = $"Battle restarted. -{cost} rations.";
+        Persist(); message = LastResultMessage; return true;
+    }
+
 	public bool CanExploreNextStage(out StageDefinition nextStage, out string message)
 	{
 		nextStage = GameData.Stages.FirstOrDefault(x => IsCampaignStageUnlocked(x.StageNumber) && GetStageStars(x.StageNumber) == 0);
-		message = nextStage == null ? "Every leader has been defeated. You can replay any encounter." : "Complete stages or collect supplies to reveal nearby tiles. New destinations cost 1 food.";
+		message = nextStage == null ? "Every leader has been defeated. You can replay any encounter." : "Complete stages or collect supplies to reveal nearby tiles.";
 		return nextStage != null;
 	}
 
@@ -4819,8 +4829,7 @@ public partial class GameState : Node
 
 	public int GetStageExploreFoodCost(int stage)
 	{
-		var definition = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
-		return Math.Max(1, definition.ExploreFoodCost);
+		return 0;
 	}
 
 	public bool ToggleDeckUnit(string unitId, out string message)

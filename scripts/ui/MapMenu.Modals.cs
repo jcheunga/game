@@ -22,6 +22,7 @@ public partial class MapMenu
         {
             _modalReturnFocus = GetViewport().GuiGetFocusOwner();
             _modal = new RealmModal(); AddChild(_modal);
+            if (MobilePresentation.Enabled) _modal.UseMobileCanvas();
             _modal.Closed = CloseHomeModal; _modal.Back = BackHomeModal;
         }
         var tab = path == SceneRouter.ShopScene ? SceneRouter.Instance.InitialShopTab : 0;
@@ -34,7 +35,8 @@ public partial class MapMenu
         content.SetMeta("home_modal", true);
         _modal.Content.AddChild(content);
         content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        if (content is not ShopMenu && content is not SettingsMenu && content is not CodexMenu && content is not CashShopMenu && path != "achievements" && path != "more")
+        if (content is not ShopMenu && content is not SettingsMenu && content is not CodexMenu && content is not CashShopMenu
+            && !(content is LoadoutMenu && MobilePresentation.Enabled) && path != "achievements" && path != "more")
             RealmModal.AdaptActivity(content);
         var title = path switch {
             SceneRouter.ShopScene => tab == 0 ? "Warband" : tab == 1 ? "Spells" : "Upgrades",
@@ -85,7 +87,6 @@ public partial class MapMenu
         var footer = new HBoxContainer(); footer.AddThemeConstantOverride("separation", 12); root.AddChild(footer);
         footer.AddChild(RealmUi.Button("people", "Account", () => AccountDialog.Show(this)));
         footer.AddChild(RealmUi.Button("star", "Player profile", () => SceneRouter.Instance.GoToProfile()));
-        footer.AddChild(RealmUi.Button("book", "How to explore", ShowExplorationHelp));
         footer.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         footer.AddChild(HomeMapUi.IconButton("close", "Quit game", () => MedievalUi.ShowConfirmation(this, "Leave Crownroad?", "Your progress is saved.", "Quit", () => GetTree().Quit())));
         RealmModal.Polish(footer); ShowDestinations(0); return root;

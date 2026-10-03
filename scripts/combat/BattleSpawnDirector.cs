@@ -36,9 +36,7 @@ public sealed class BattleSpawnDirector
     }
     public float NextEncounterSpawnX => TryGetNextScriptedWave(out var wave)
         ? ResolveEncounterSpawnX(wave.SpawnXRatio) : _combat.EnemySpawnX;
-    private float ResolveEncounterSpawnX(float ratio) => !_advanceEncounters ? _combat.EnemySpawnX :
-        Mathf.Clamp(Mathf.Max(Mathf.Lerp(_combat.PlayerSpawnX, _combat.EnemySpawnX, ratio), _frontlineX + 180f),
-            _combat.PlayerSpawnX + 240f, _combat.EnemySpawnX);
+    private float ResolveEncounterSpawnX(float ratio) => _combat.EnemySpawnX;
     private readonly List<UnitDefinition> _enemyRoster = new();
     private readonly RandomNumberGenerator _rng;
 

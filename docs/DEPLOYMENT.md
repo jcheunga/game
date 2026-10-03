@@ -126,8 +126,8 @@ ledger and active authentication sessions unchanged.
    migration safely resumes already-cleaned rows.
 4. Verify current-client upload/restore with an existing account: progress
    returns, the active session remains valid, and local consent choices remain
-   unchanged. The new client asks again if analytics was enabled under the old
-   inaccurate notice; crash reporting remains a separate opt-in.
+   unchanged. Analytics enabled under the old inaccurate notice is disabled
+   until the player opts in through Settings; crash reporting is a separate opt-in.
 5. Backups and snapshots are not rewritten by this migration. Keep them
    restricted and handle them under the approved retention/incident procedure.
    Restoring a pre-upgrade database requires migration 5 again. Avoid rolling

@@ -118,6 +118,9 @@ public static class MedievalUi
         theme.SetColor("font_uneditable_color", "LineEdit", new Color("a2b2ad"));
         theme.SetColor("selection_color", "LineEdit", new Color("516653"));
         theme.SetStylebox("panel", "ScrollContainer", new StyleBoxEmpty { ContentMarginRight = 8 });
+        // Panel padding sits outside the rail; reserve a separate gutter beside content.
+        theme.SetConstant("scrollbar_h_separation", "ScrollContainer", 18);
+        theme.SetConstant("scrollbar_v_separation", "ScrollContainer", 12);
         foreach(var type in new[]{"VScrollBar","HScrollBar"})
         {
             var thumb=type=="HScrollBar" ? "scroll_thumb_horizontal" : "scroll_thumb";

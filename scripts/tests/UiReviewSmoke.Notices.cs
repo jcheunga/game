@@ -53,6 +53,6 @@ public partial class UiReviewSmoke
         canvas.ShowMap("city", camp.Id);
         close.EmitSignal(BaseButton.SignalName.Pressed);
         refresh.Invoke(menu, null);
-        await Wait(.15); // Let ShowMap's deferred caravan focus finish before the next drag check.
+        await Wait(.15); // Let ShowMap's deferred tile focus finish before the next drag check.
     }
 }

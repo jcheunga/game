@@ -1049,23 +1049,6 @@
       "AbilityQuote": "Overcharge!"
     },
     {
-      "Id": "player_skeleton",
-      "DisplayName": "Risen Thrall",
-      "Side": "Player",
-      "Cost": 0,
-      "MaxHealth": 30.0,
-      "Speed": 70.0,
-      "AttackDamage": 7.0,
-      "AttackRange": 28.0,
-      "AttackCooldown": 0.9,
-      "VisualClass": "walker",
-      "VisualScale": 0.86,
-      "AggroRangeX": 150,
-      "AggroRangeY": 80.0,
-      "BaseDamage": 8,
-      "ColorHex": "adb5bd"
-    },
-    {
       "Id": "enemy_shieldwall",
       "DisplayName": "Shield Wall",
       "Side": "Enemy",

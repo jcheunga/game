@@ -16,7 +16,7 @@ public partial class MapMenu
             if (!HasHomeModal) return false;
             CloseHomeModal(); return true;
         }
-        if (path == SceneRouter.BattleScene || path == SceneRouter.BattleSummaryScene) return false;
+        if (path == SceneRouter.BattleScene) return false;
         CloseSiteDetails();
         if (_modal == null)
         {

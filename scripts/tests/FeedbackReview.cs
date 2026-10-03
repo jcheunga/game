@@ -97,7 +97,6 @@ public partial class FeedbackReview : Node
             Check(archer.Position == before, "Ranged units hold their firing position at close range");
             archer.FaceCombatTarget(enemy); archer.TryAttack(enemy); archer.TickAttackTimer(archer.AttackContactSeconds);
             Check(archer.Position == before && (Vector2)Call(archer,"ContactDrawOffset") == Vector2.Zero, "Attack animation cannot shift a unit's feet");
-            Check(!(bool)Call(battle,"TryHoldCampaignFieldPoint",archer,null), "Removed posts cannot hold or snap troops");
             var swordsman = (Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_brawler")),new Vector2(500,400));
             swordsman.MoveToward(new Vector2(400,400),.1f,84,2476,108,572);
             Check((float)Call(swordsman,"GetFacing") == -1 && swordsman.Speed == 60, "The slower swordsman turns while walking back");

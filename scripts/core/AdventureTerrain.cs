@@ -11,7 +11,6 @@ public static class AdventureTerrain
     public const float HalfWidth = 64, HalfHeight = 32;
     public static readonly Vector2 Origin = new(Rows * HalfWidth + 192, 192);
     public static readonly Vector2 WorldSize = new((Columns + Rows) * HalfWidth + 384, (Columns + Rows) * HalfHeight + 384);
-    public static readonly int[] DrawOrder = Enumerable.Range(0, CellCount).OrderBy(c => c % Columns + c / Columns).ToArray();
     private static readonly Dictionary<string, AdventureGroundKind[]> Terrain = new();
     public static int Index(int column, int row) => column >= 0 && column < Columns && row >= 0 && row < Rows ? row * Columns + column : -1;
     public static Vector2 Point(int cell) => Origin + new Vector2((cell % Columns - cell / Columns) * HalfWidth, (cell % Columns + cell / Columns) * HalfHeight);

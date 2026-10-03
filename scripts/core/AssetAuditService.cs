@@ -10,7 +10,7 @@ public static class AssetAuditService
     private const string ParticlePath = "res://assets/particles/";
     private const string MusicPath = "res://assets/music/";
     private const string SfxPath = "res://assets/sfx/";
-    private const string ScreenBackgroundPath = "res://assets/ui/backgrounds/";
+
     private const string UnitIconPath = "res://assets/ui/icons/units/";
     private const string SpellIconPath = "res://assets/ui/icons/spells/";
     private const string RelicIconPath = "res://assets/ui/icons/relics/";
@@ -18,7 +18,6 @@ public static class AssetAuditService
     private const string MetaIconPath = "res://assets/ui/icons/meta/";
     private const string CodexIconPath = "res://assets/ui/icons/codex/";
     private const string CodexPortraitPath = "res://assets/ui/portraits/codex/";
-    private const string MapBackgroundPath = "res://assets/map/backgrounds/";
 
     public static string BuildSummary()
     {
@@ -29,7 +28,6 @@ public static class AssetAuditService
 
         var expectedVisualClasses = GameData.PlayerRosterIds
             .Concat(GameData.EnemyRosterIds)
-            .Append(GameData.PlayerSkeletonId)
             .Select(GameData.GetUnit)
             .Select(unit => AssetCoverageCatalog.NormalizeId(unit.VisualClass))
             .Where(id => !string.IsNullOrWhiteSpace(id))
@@ -37,7 +35,7 @@ public static class AssetAuditService
             .OrderBy(id => id)
             .ToArray();
         lines.Add(BuildCoverageLine("Unit sprites", expectedVisualClasses, id => HasPng(UnitSpritePath, id), $"{UnitSpritePath}{{visual_class}}.png"));
-        var unitIds = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Append(GameData.PlayerSkeletonId).Distinct().ToArray();
+        var unitIds = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct().ToArray();
         lines.Add(BuildCoverageLine("Individual unit sprites", unitIds, id => HasPng(UnitSpritePath, id), $"{UnitSpritePath}{{unit_id}}.png"));
 
         var terrainIds = GameData.Stages
@@ -49,8 +47,8 @@ public static class AssetAuditService
         lines.Add(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasPng(BattleBackgroundPath, id), $"{BattleBackgroundPath}{{terrain_id}}.png"));
         lines.Add(BuildCoverageLine("Individual stage environments", GameData.Stages.Select(stage => $"stage-{stage.StageNumber:00}").ToArray(),
             id => HasPng(WorldEnvironmentArt.BattleDirectory, id), $"{WorldEnvironmentArt.BattleDirectory}stage-{{number}}.png"));
-        lines.Add(BuildCoverageLine("Isometric zone environments", AssetCoverageCatalog.RouteIds,
-            id => HasPng(WorldEnvironmentArt.ZoneDirectory, id), $"{WorldEnvironmentArt.ZoneDirectory}{{route_id}}.png"));
+        lines.Add(BuildCoverageLine("Map atlas", new[] { "terrain-materials", "medieval-scenery", "utility-scenery", "resource-scenery" },
+            id => HasPng(AdventureAtlasArt.Directory, id), AdventureAtlasArt.Directory + "{atlas}.png"));
         lines.Add(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasPng(StructurePath, id), $"{StructurePath}{{structure_id}}.png"));
         lines.Add(BuildCoverageLine("Caravan skins", WagonSkinCatalog.GetAll().Select(skin => skin.Id).ToArray(),
             id => HasPng(StructurePath, id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + id), $"{StructurePath}war_wagon_skin_*.png"));
@@ -58,8 +56,6 @@ public static class AssetAuditService
             id => HasPng(StructurePath, "mount_" + id), $"{StructurePath}mount_*.png"));
         lines.Add(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasPng(ParticlePath, id), $"{ParticlePath}{{particle_id}}.png"));
 
-        lines.Add(BuildCoverageLine("Screen backgrounds", AssetCoverageCatalog.ScreenBackgroundIds, id => HasPng(ScreenBackgroundPath, id), $"{ScreenBackgroundPath}{{screen_id}}.png"));
-        lines.Add(BuildCoverageLine("District map art", AssetCoverageCatalog.RouteIds, id => HasPng(MapBackgroundPath, id), $"{MapBackgroundPath}{{route_id}}.png"));
         lines.Add(BuildCoverageLine(
             "Unit icons",
             GameData.GetPlayerUnits().Concat(GameData.GetEnemyUnits()).Select(unit => unit.Id).Distinct().OrderBy(id => id).ToArray(),
@@ -97,21 +93,6 @@ public static class AssetAuditService
             $"{CodexPortraitPath}{{entry_id}}.png"));
         lines.Add(BuildCoverageLine("Music tracks", AssetCoverageCatalog.MusicTrackIds, id => HasAudio(MusicPath, id), $"{MusicPath}{{track_id}}.(ogg|mp3|wav)"));
         lines.Add(BuildCoverageLine("SFX overrides", AssetCoverageCatalog.SfxCueIds, id => HasAudio(SfxPath, id), $"{SfxPath}{{cue_id}}.(ogg|mp3|wav)"));
-
-        var routeVariantCoverage = AssetCoverageCatalog.ScreenBackgroundIds
-            .Where(screenId => screenId is "map" or "loadout" or "shop" or "endless" or "multiplayer")
-            .ToArray();
-        foreach (var screenId in routeVariantCoverage)
-        {
-            var expectedVariantIds = AssetCoverageCatalog.RouteIds
-                .Select(routeId => AssetCoverageCatalog.BuildScreenVariantId(screenId, routeId))
-                .ToArray();
-            lines.Add(BuildCoverageLine(
-                $"{screenId} route overrides",
-                expectedVariantIds,
-                id => HasPng(ScreenBackgroundPath, id),
-                $"{ScreenBackgroundPath}{screenId}_{{route_id}}.png"));
-        }
 
         lines.Add("Use the same IDs in the file names. Missing assets fall back automatically.");
         return string.Join("\n", lines);

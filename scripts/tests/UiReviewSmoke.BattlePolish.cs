@@ -40,9 +40,10 @@ public partial class UiReviewSmoke
             Check(health.GetGlobalRect().Position.X < 50 && health.GetGlobalRect().Position.Y < 50, tag + ": health and courage stay top left");
             Check(gold.GetGlobalRect().Position.X > battle.GetViewportRect().Size.X * .7f, tag + ": gold stays top right");
             Check(menu.GetGlobalRect().Position.Y > battle.GetViewportRect().Size.Y * .7f, tag + ": settings stays bottom left");
-            state.SetShowDevUi(true); Call(battle, "ToggleCombatIntel"); Call(battle, "UpdateHud");
-            Check(!Read<PanelContainer>(battle, "_intelPanel").IsVisibleInTree() && !Read<BattleHudBar>(battle, "_waveProgressBar").IsVisibleInTree()
-                && !Read<Label>(battle, "_timerLabel").IsVisibleInTree() && !Read<Label>(battle, "_statusLabel").IsVisibleInTree(), tag + ": wave forecasts and countdowns stay hidden");
+            state.SetShowDevUi(true); Call(battle, "UpdateHud");
+            Check(!Walk(battle).OfType<Label>().Any(l => l.IsVisibleInTree() &&
+                (l.Text.Contains("Wave") || l.Text.Contains("surge") || l.Text.Contains("Courage:"))),
+                tag + ": wave forecasts and countdowns are absent");
             Check(Walk(battle).OfType<BattleTerrainCanvas>().Any() && BattleTerrainCanvas.GroundMaterial("city") != null, tag + ": authored scene and fine terrain both render");
             Call(battle, "ClearArmedSelection");
             foreach (var (unit, index) in GameData.PlayerRosterIds.Take(3).Select((unit, index) => (unit, index)))

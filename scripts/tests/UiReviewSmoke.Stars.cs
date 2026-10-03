@@ -85,11 +85,6 @@ public partial class UiReviewSmoke
             "Showing the reward panel again cannot award the victory twice");
         AuditText("Victory rewards");
         await Capture("04-victory-rating");
-        BattleSummaryData.Current = new BattleSummaryData { Won = true, StarsEarned = 2, Stage = 2 };
-        await Open("BattleSummaryMenu");
-        Check(Walk(GetTree().CurrentScene).OfType<StageStarRating>().Single().Stars == 2,
-            "Battle summary uses the same textured star rating");
-        await Capture("05-battle-summary");
         await Open("MainMenu");
         GD.Print($"STAGE_STAR_UI_RESULT: {_failures} failures");
         GetTree().Quit(_failures == 0 ? 0 : 1);

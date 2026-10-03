@@ -48,7 +48,8 @@ public partial class TowerMenu : Control
 
 	private void BuildUi()
 	{
-		MenuBackdropComposer.AddSplitBackdrop(this, "tower", new Color("1a1a2e"), new Color("16213e"), new Color("38bdf8"), 104f);
+
+        MedievalUi.Apply(this);
 
 		// Title panel
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };

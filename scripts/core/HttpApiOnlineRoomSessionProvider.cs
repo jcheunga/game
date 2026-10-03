@@ -11,13 +11,6 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomSessionProvider(string endpointUrl)

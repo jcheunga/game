@@ -25,14 +25,6 @@ public sealed class ChallengeLeaderboardSnapshot
 	public List<ChallengeLeaderboardEntry> Entries { get; set; } = [];
 }
 
-public sealed class ChallengeLeaderboardApiResponse
-{
-	public string Code { get; set; } = "";
-	public string Status { get; set; } = "ok";
-	public string Message { get; set; } = "";
-	public ChallengeLeaderboardEntry[] Entries { get; set; } = [];
-}
-
 public interface IChallengeLeaderboardProvider
 {
 	string Id { get; }

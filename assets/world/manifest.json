@@ -11,26 +11,6 @@
     2476,
     584
   ],
-  "zoneWorldSize": [
-    3968,
-    2176
-  ],
-  "zoneGrid": {
-    "columns": 32,
-    "rows": 24,
-    "origin": [
-      1728,
-      192
-    ],
-    "columnStep": [
-      64,
-      32
-    ],
-    "rowStep": [
-      -64,
-      32
-    ]
-  },
   "assets": [
     {
       "id": "stage-01",
@@ -931,146 +911,6 @@
       ],
       "sha256": "12ddf079cb6851425c0aa3d782ebc97a952e4a9f254902b6094331fe67b26314",
       "sourceArtifact": "exec-94d0681b-e75d-4225-8c57-03a7fdb721c0.png"
-    },
-    {
-      "id": "zone-city",
-      "kind": "zone",
-      "zone": "city",
-      "title": "King's Road",
-      "path": "assets/world/zones/city.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: King's Road. Surrounding scene: outer farms, market walls and medieval bell towers. Materials/palette: honey-colored limestone, weathered farm lanes, dusty olive greens and royal blue cloth. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "e81e1b2fc13d97ec204c0df03cd632701d348a23c5579bce81931c0513e37654",
-      "sourceArtifact": "exec-cf4afc3a-60a7-4a73-a385-8eb822edba06.png"
-    },
-    {
-      "id": "zone-harbor",
-      "kind": "zone",
-      "zone": "harbor",
-      "title": "Saltwake Docks",
-      "path": "assets/world/zones/harbor.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Saltwake Docks. Surrounding scene: medieval quays, ruined sailing ships, rope winches and sea forts. Materials/palette: blue-gray quay stone, salt-worn oak, oxidized bronze, sea mist and muted teal water. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "5c77eff14a8c51212ad5c1c89403d09f0f6b69cc6b751c9d9517a13db8563cf5",
-      "sourceArtifact": "exec-4ebfac41-758f-4b46-a11f-ffa700358d8b.png"
-    },
-    {
-      "id": "zone-foundry",
-      "kind": "zone",
-      "zone": "foundry",
-      "title": "Emberforge March",
-      "path": "assets/world/zones/foundry.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Emberforge March. Surrounding scene: medieval forge halls, smelter chimneys, coal carts and ironwork. Materials/palette: dark basalt, charcoal dust, copper slag and restrained amber furnace light. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "cba04901e3727774f1d65317195b9b03e7c55fe958456bc5c222f704f9ef9ba0",
-      "sourceArtifact": "exec-fdb5d5d0-bb4b-4b9a-bcfd-f3b1b5ccb953.png"
-    },
-    {
-      "id": "zone-quarantine",
-      "kind": "zone",
-      "zone": "quarantine",
-      "title": "Ashen Ward",
-      "path": "assets/world/zones/quarantine.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Ashen Ward. Surrounding scene: sealed plague cloisters, apothecary courtyards and warded vaults. Materials/palette: pale limestone, faded sage linen, ashen earth and muted green ritual lanterns. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "500a1576bec98a95836658b637bdb0ef27c4572c43e7e526312bc7dd4169f6c3",
-      "sourceArtifact": "exec-69fa0a3e-47ad-4bba-a238-03c3773da738.png"
-    },
-    {
-      "id": "zone-thornwall",
-      "kind": "zone",
-      "zone": "thornwall",
-      "title": "Thornwall Pass",
-      "path": "assets/world/zones/thornwall.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Thornwall Pass. Surrounding scene: mountain ramparts, alpine pines, remote shrines and snowy bastions. Materials/palette: slate, gray-blue granite, patchy frost and pale lichen. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "7a5805812ac90d76bf1fd708718978f0cf755323f7e32c9edb0b86ee8b6d2eae",
-      "sourceArtifact": "exec-f0e78499-a06d-4473-b6e2-d2756ca20cb6.png"
-    },
-    {
-      "id": "zone-basilica",
-      "kind": "zone",
-      "zone": "basilica",
-      "title": "Hollow Basilica",
-      "path": "assets/world/zones/basilica.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Hollow Basilica. Surrounding scene: ruined gothic naves, ossuary courts, reliquaries and broken saint statues. Materials/palette: warm ivory stone, worn gold, charcoal shadows and faded burgundy. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "dc29dabc56edd777cc101920e71360b6bad11c20285d777521eff218cb3ce464",
-      "sourceArtifact": "exec-43ecba07-7822-46e2-b41b-ecd8bc250da0.png"
-    },
-    {
-      "id": "zone-mire",
-      "kind": "zone",
-      "zone": "mire",
-      "title": "Mire of Saints",
-      "path": "assets/world/zones/mire.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Mire of Saints. Surrounding scene: broad drained causeways, drowned chapels, chained ferries and reed beds. Materials/palette: peat brown, moss green, weathered planks and cool blackwater. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "3461b80f2b7ab4f95e9130458993fe90ada346672f3510d171f6924c3d0bedec",
-      "sourceArtifact": "exec-3e3fdeca-b0cd-4f0b-964a-8ba8324e6690.png"
-    },
-    {
-      "id": "zone-steppe",
-      "kind": "zone",
-      "zone": "steppe",
-      "title": "Sunfall Steppe",
-      "path": "assets/world/zones/steppe.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Sunfall Steppe. Surrounding scene: wide steppe redoubts, scorched shelters, war tents and distant horn towers. Materials/palette: ochre earth, ash grass, dusty gold and crimson cloth. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "913c9960d2911919b823c0b60e628c6543d183d309807cacac07d6fe3a2a5285",
-      "sourceArtifact": "exec-03243fbf-4ca0-47ed-aae7-041e72860299.png"
-    },
-    {
-      "id": "zone-gloamwood",
-      "kind": "zone",
-      "zone": "gloamwood",
-      "title": "Gloamwood Verge",
-      "path": "assets/world/zones/gloamwood.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Gloamwood Verge. Surrounding scene: forest clearings, blackbark timber roads, standing stones and thorn canopies. Materials/palette: deep moss, dark oak, plum twilight and small witchfire accents. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "8615b8eab8aa3fb03d2d5d76ee0eddbb9b114ac1724c95ac75166d9d55497f64",
-      "sourceArtifact": "exec-95f67108-d038-4d45-b8a4-8fdb7c22cd82.png"
-    },
-    {
-      "id": "zone-citadel",
-      "kind": "zone",
-      "zone": "citadel",
-      "title": "Crownfall Citadel",
-      "path": "assets/world/zones/citadel.png",
-      "prompt": "Use case: stylized-concept. Asset type: original production zone overworld artwork for Crownroad, a medieval dark-fantasy isometric exploration game. Landscape canvas exactly 1536 by 1024. Style: road-worn crafted miniature diorama, warm-neutral upper-left key light, cool fill, atmospheric painted 3D detail, quiet ground. Orthographic 2:1 isometric camera, no vanishing point. Critical composition: the central traversable land is ONE broad flat parallelogram with exact four corners (720,116), (1488,500), (976,756), (208,372). Its interior is textured terrain with no buildings, trees, pools, cliffs or obstructing objects: a 12-column by 8-row game tile grid and fog will be drawn over it at runtime. Do not draw the grid or tile outlines. Decorative architecture, vegetation, cliffs and water belong exclusively outside those corners, following the land silhouette. Show soil depth on the outward-facing edges and a rich surrounding environment. No painted roads/path lines, icons, pins, labels, people, caravans, game UI, logos or watermarks. Zone: Crownfall Citadel. Surrounding scene: royal bridge forts, breached courtyards, inner ramparts and a fallen crown keep. Materials/palette: blue-gray dressed stone, ash, antique brass and restrained embers. Give this zone a distinctive silhouette, landscape and perimeter architecture. Leave every part of the central traversable parallelogram open and coherent, with textured ground matching this biome.",
-      "resolution": [
-        1536,
-        1024
-      ],
-      "sha256": "545951d41847568d448307973722a28bf981a502e28d7b935322918d5aca14a3",
-      "sourceArtifact": "exec-8cd808f9-1e9c-40b9-a4fa-356ba91eebd9.png"
     }
   ],
   "battleFloorSource": [
@@ -1079,46 +919,9 @@
     0.84,
     0.28
   ],
-  "zoneFloorSource": [
-    [
-      0.46,
-      0.26
-    ],
-    [
-      0.85,
-      0.47
-    ],
-    [
-      0.65,
-      0.68
-    ],
-    [
-      0.2,
-      0.44
-    ]
-  ],
   "import": {
     "compression": "lossy",
     "quality": 0.85,
     "mipmaps": true
-  },
-  "zoneRuntimeLayoutRevision": 44,
-  "zoneGroundQuadrilateral": [
-    [
-      0.46,
-      0.29
-    ],
-    [
-      0.81,
-      0.47
-    ],
-    [
-      0.64,
-      0.64
-    ],
-    [
-      0.28,
-      0.44
-    ]
-  ]
+  }
 }

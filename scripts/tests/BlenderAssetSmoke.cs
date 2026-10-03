@@ -26,8 +26,8 @@ public partial class BlenderAssetSmoke : Node
                 throw new InvalidOperationException("Requires an isolated blender-review save suffix.");
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
-            var ids = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Append(GameData.PlayerSkeletonId).Distinct().ToArray();
-            Check(ids.Length == 53, "All 53 unit definitions covered");
+            var ids = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct().ToArray();
+            Check(ids.Length == 52, "All 52 active unit definitions covered");
             foreach (var id in ids)
             {
                 var def = GameData.GetUnit(id);
@@ -53,7 +53,7 @@ public partial class BlenderAssetSmoke : Node
                     Check(BattlefieldTextureLoader.TryLoadStructure(skin.Id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + skin.Id) != null, skin.Id + " caravan loads");
                 foreach (var kind in Enum.GetValues<BaseWeaponKind>())
                     Check(BattlefieldTextureLoader.TryLoadStructure("mount_" + kind.ToString().ToLowerInvariant()) != null, kind + " mount loads");
-                foreach (var folder in new[] { "backgrounds", "structures", "units", "particles", "map/backgrounds", "ui/backgrounds", "ui/icons", "ui/portraits" })
+                foreach (var folder in new[] { "backgrounds", "structures", "units", "particles", "map/adventure", "world/battles", "world/overworld", "ui/icons", "ui/portraits" })
                 {
                     var count = 0;
                     var directory = ProjectSettings.GlobalizePath("res://assets/" + folder);

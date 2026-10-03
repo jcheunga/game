@@ -39,7 +39,8 @@ public partial class EventMenu : Control
 	{
 		var evt = GameState.Instance.GetActiveEvent();
 		var bannerColor = evt != null ? new Color(evt.BannerColorHex) : new Color("cc6622");
-		MenuBackdropComposer.AddSplitBackdrop(this, "event", new Color("1a1a2e"), new Color("16213e"), bannerColor, 104f);
+
+        MedievalUi.Apply(this);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);

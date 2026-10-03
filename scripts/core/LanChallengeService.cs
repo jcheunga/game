@@ -1214,11 +1214,6 @@ public partial class LanChallengeService : Node
 		return _loadedPeers.TryGetValue(peerId, out var loaded) && loaded;
 	}
 
-	private bool IsActiveRacePeer(int peerId)
-	{
-		return ResolvePeerPhase(peerId) != PeerPhaseSpectating;
-	}
-
 	private bool HasInFlightRace()
 	{
 		return RaceCountdownActive ||

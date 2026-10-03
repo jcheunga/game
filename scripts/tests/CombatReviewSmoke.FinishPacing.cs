@@ -43,7 +43,6 @@ public partial class CombatReviewSmoke
         {
             forge.TickSpecialTimer(100);
             Invoke(battle, "TryTriggerEnemySpecialAbility", forge);
-            Invoke(battle, "ApplyCampaignBossPressure", forge);
         }
         Check(units.Count(u => !u.IsDead && u.DefinitionId == forge.SpecialSpawnUnitId) == 2,
             "Iron Warden's rally and phase pressure share a two-heavy-escort limit");
@@ -55,28 +54,5 @@ public partial class CombatReviewSmoke
             "Iron Warden can replace a defeated escort without accumulating more");
         await CloseBattle(battle);
 
-        foreach (var finish in new[] { "ordinary", "breached", "boss" })
-        {
-            battle = await OpenBattle(52);
-            var missions = Read<IList>(battle, "_stageMissions");
-            var count = missions.Count;
-            Write(battle, "_campaignFieldOrderMissionResolved", true);
-            Write(battle, "_campaignFieldOrderMissionSucceeded", true);
-            Write(battle, "_campaignFieldOrderResponseAssault", true);
-            Write(battle, "_campaignFieldOrderResponseLaneY", 220f);
-            if (finish == "breached") Write(battle, "_enemyBaseHealth", 0f);
-            if (finish == "boss")
-            {
-                director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
-                director.TryBuildEnemyStats(GameData.EnemyBossReliquaryId, out stats);
-                Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(950, 220));
-            }
-            Invoke(battle, "ApplyCampaignFieldOrderResponse");
-            Check(missions.Count == count + (finish == "ordinary" ? 1 : 0),
-                $"Field-order follow-up adds a bonus only before the finish ({finish})");
-            Check(Read<List<Unit>>(battle, "_units").Any(unit => unit.Team == Team.Player && !unit.IsDead),
-                $"Earned field-order reinforcements still arrive ({finish})");
-            await CloseBattle(battle);
-        }
     }
 }

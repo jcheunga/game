@@ -1,32 +1,32 @@
 {
   "unit_sheets": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "unit_metadata": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "unit_sources": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "unit_icons": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "model_previews": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "model_preview_metadata": {
-    "present": 53,
-    "expected": 53,
+    "present": 52,
+    "expected": 52,
     "missing": []
   },
   "battlefields": {
@@ -54,14 +54,14 @@
     "expected": 11,
     "missing": []
   },
-  "screen_backgrounds": {
-    "present": 25,
-    "expected": 25,
+  "stage_environments": {
+    "present": 60,
+    "expected": 60,
     "missing": []
   },
-  "district_maps": {
-    "present": 10,
-    "expected": 10,
+  "map_atlases": {
+    "present": 4,
+    "expected": 4,
     "missing": []
   },
   "spell_icons": {
@@ -94,5 +94,5 @@
     "expected": 83,
     "missing": []
   },
-  "scope": "Required visual assets. Existing procedural music/SFX retained. Route-specific menu overrides are optional."
+  "scope": "Required visual assets. Existing procedural music/SFX retained."
 }

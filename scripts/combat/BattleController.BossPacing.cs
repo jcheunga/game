@@ -20,16 +20,6 @@ public partial class BattleController
     private Rect2 CursedGroundArea => new(BattlefieldLeft + 200f, BaseCenterY - 62f,
         BattlefieldRight - BattlefieldLeft - 340f, 124f);
 
-    private void DrawTunnelInvasionWarning()
-    {
-        if (!_pendingTunnelInvasion.HasValue) return;
-        var position = _pendingTunnelInvasion.Value;
-        var color = new Color("ffb454");
-        DrawCircle(position, 42f, new Color(color, 0.16f));
-        DrawArc(position, 42f, 0, Mathf.Tau, 36, color, 3f, true);
-        DrawPreviewLabel(position + new Vector2(-70, -65), $"TUNNEL BREACH · {Mathf.Max(0f, _tunnelInvasionTimer):0.0}s", color);
-    }
-
     private void DrawCursedGround()
     {
         if (!StageModifiers.HasCursedGround(_stageData)) return;

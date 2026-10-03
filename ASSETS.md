@@ -14,7 +14,7 @@ The material/lighting finish is defined in [`art/blender/ART_DIRECTION.md`](art/
 
 ### Combat animation
 
-All 53 character atlases now contain 32 poses: idle 0–3, walk 4–9, attack 10–19,
+All 52 character atlases now contain 32 poses: idle 0–3, walk 4–9, attack 10–19,
 hit 20–21, death 22–27 and deploy 28–31. Atlas dimensions are unchanged. Attacks
 use 20 shared weapon/creature motion profiles, with contact/release at local frame
 4. The metadata includes `anchorX`, `motion.profile`, normalized `motion.body`
@@ -36,7 +36,7 @@ frames remain available in the source/atlas. See
 ### Model-inspection previews
 
 Preparation and armory model viewers use original-resolution 256×320 Blender
-frames, packed separately from the smaller battle sprites. All 53 characters have
+frames, packed separately from the smaller battle sprites. All 52 characters have
 Idle, Walk, and Attack clips in `assets/ui/models/{unit_id}.png` with matching
 metadata. Run `python3 art/blender/pack_assets.py previews` after updating the
 source renders; `units` and `all` also refresh them. Textures are loaded per
@@ -64,7 +64,6 @@ Both paths print the current asset coverage and the exact IDs still missing.
 | Unit sprite sheet | `assets/units/{unit_id}.png` | Matching `.json`; falls back to `{visual_class}.png` |
 | Animated model preview | `assets/ui/models/{unit_id}.png` | Original-resolution Idle/Walk/Attack sheet and `.json`; falls back to the battle sheet |
 | Individual battle scene | `assets/world/battles/stage-{number:00}.png` | One image per campaign stage; clear floor fitted to exact movement bounds |
-| Isometric zone map | `assets/world/zones/{route_id}.png` | Original zone illustrations, used when no painted overworld override exists |
 | Painted overworld | `assets/world/overworld/{route_id}-painted-v2.png` | Full continuous map illustration; King's Road override is included |
 | Painted home icons | `assets/ui/home/painted-icons-v2.png` | Transparent 3 × 3 atlas for tabs and stats |
 | Painted map scenery | `assets/world/overworld/painted-scenery-v2.png` | Water, rocks, bridges and reeds; shown as terrain is charted |
@@ -73,9 +72,6 @@ Both paths print the current asset coverage and the exact IDs still missing.
 | Legacy battle terrain | `assets/backgrounds/{terrain_id}.png` | Retained for the legacy terrain pipeline |
 | Structures | `assets/structures/{structure_id}.png` | `war_wagon`, `gatehouse`, `war_wagon_skin_*`, `mount_*` |
 | Particle texture | `assets/particles/{particle_id}.png` | Battle VFX sprite used by CPU particle bursts/trails |
-| Screen background | `assets/ui/backgrounds/{screen_id}.png` | Shared full-screen menu background |
-| Route-specific screen override | `assets/ui/backgrounds/{screen_id}_{route_id}.png` | Optional override for route-aware screens |
-| District map art | `assets/map/backgrounds/{route_id}.png` | Campaign map panel art |
 | Unit icon | `assets/ui/icons/units/{unit_id}.png` | Optional fallback: `{visual_class}.png` |
 | Spell icon | `assets/ui/icons/spells/{spell_id}.png` | Optional fallback: `{effect_type}.png` |
 | Relic icon | `assets/ui/icons/relics/{relic_id}.png` | Armory/loadout card art |
@@ -89,7 +85,7 @@ Both paths print the current asset coverage and the exact IDs still missing.
 ## Fallback Rules
 
 - Missing unit sprites fall back to the procedural silhouettes already used in battle.
-- Missing terrain, structure, map, and menu backgrounds fall back to the current color-block/procedural presentation.
+- Missing terrain and structure images fall back to the current color-block/procedural presentation.
 - Missing particle textures fall back to the existing built-in Godot particle quads.
 - Missing unit/spell/relic/codex/reward images fall back to generated badges with initials, so the UI still stays readable.
 - Missing music and SFX fall back to the procedural audio already shipped in the repo.
@@ -99,8 +95,8 @@ Both paths print the current asset coverage and the exact IDs still missing.
 
 - Unit sheets: PNG, authored facing right
 - Unit metadata: JSON, see `assets/units/_example.json`
-- Menu, map, and battle backgrounds: PNG, target `1280x720`
-- Individual stage scenes: panoramic PNG, at least `1280x600`; zone scenes: landscape PNG, at least `1280x900`. Runtime world dimensions and safe floor crops are documented in `assets/world/README.md`.
+- Fallback battle backgrounds: PNG, target `1280x720`
+- Individual stage scenes: panoramic PNG, at least `1280x600`. Runtime world dimensions and safe floor crops are documented in `assets/world/README.md`.
 - Structures: PNG, authored against transparent background
 - Particle textures: PNG with transparency, target `64x64` to `256x256`
 - Unit/spell/relic icons: PNG, target `128x128`
@@ -108,51 +104,12 @@ Both paths print the current asset coverage and the exact IDs still missing.
 - Codex portraits: PNG, target `512x512` or larger portrait crop
 - Music/SFX: loopable `ogg` preferred, `mp3`/`wav` also supported
 
-## Screen IDs
+## Menu and map presentation
 
-These are the generic menu background slots:
-
-- `main_menu`
-- `map`
-- `loadout`
-- `shop`
-- `cash_shop`
-- `endless`
-- `multiplayer`
-- `lan_race`
-- `arena`
-- `battle_summary`
-- `bounty`
-- `codex`
-- `event`
-- `expedition`
-- `forge`
-- `friends`
-- `guild`
-- `leaderboard`
-- `login_calendar`
-- `profile`
-- `raid`
-- `season_pass`
-- `skill_tree`
-- `settings`
-- `tower`
-
-These screens also support optional route-specific variants:
-
-- `map_{route_id}`
-- `loadout_{route_id}`
-- `shop_{route_id}`
-- `endless_{route_id}`
-- `multiplayer_{route_id}`
-
-Example:
-
-```text
-assets/ui/backgrounds/map.png
-assets/ui/backgrounds/map_thornwall.png
-assets/ui/backgrounds/loadout_citadel.png
-```
+Menus use the shared modal materials in `assets/ui/modal/` and vector surfaces
+in `assets/ui/frames/`. The completion-driven map uses the four texture atlases
+in `assets/world/overworld/polished-v3/`. Retired standalone menu backgrounds
+and the earlier district-map illustrations have been removed.
 
 ## Route IDs
 
@@ -357,8 +314,8 @@ Ambience:
 2. `assets/backgrounds`
 3. `assets/structures`
 4. `assets/particles`
-5. `assets/ui/backgrounds`
-6. `assets/map/backgrounds`
+5. `assets/ui/modal` and `assets/ui/frames`
+6. `assets/world/overworld/polished-v3`
 7. `assets/music`
 8. `assets/sfx`
 

@@ -4,7 +4,7 @@ using Godot;
 
 public partial class LanRaceMenu : Control
 {
-	private MenuBackdropSet _menuBackdrop = null!;
+
 	private HBoxContainer _resourcesRow = null!;
 	private Label _challengeCodeLabel = null!;
 	private Label _boardLabel = null!;
@@ -63,7 +63,8 @@ public partial class LanRaceMenu : Control
 
 	private void BuildUi()
 	{
-		_menuBackdrop = MenuBackdropComposer.AddSolidBackdrop(this, "lan_race", new Color("14213d"));
+
+        MedievalUi.Apply(this);
 
 		var titlePanel = new PanelContainer
 		{

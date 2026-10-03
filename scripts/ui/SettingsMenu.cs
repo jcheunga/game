@@ -105,7 +105,7 @@ public partial class SettingsMenu : Control
     private void BuildUi()
     {
         var embedded = RealmModal.Embedded(this);
-        if (!embedded) MenuBackdropComposer.AddSolidBackdrop(this, "settings", new Color("14213d"));
+        MedievalUi.Apply(this);
 
         Container center = embedded ? new MarginContainer() : new CenterContainer();
         center.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -745,21 +745,6 @@ public partial class SettingsMenu : Control
             _purchaseLabel.Text = $"Purchases completed: {GameState.Instance.TotalPurchaseCount}\nPayments: {DetectPurchasePlatform()}";
         }
         _achievementsLabel.Text = $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} completed. Open Achievements from the home dock to view objectives and claim rewards.";
-    }
-
-    private static string BuildAchievementsText()
-    {
-        var all = AchievementCatalog.GetAll();
-        var unlocked = GameState.Instance.GetUnlockedAchievementCount();
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"{unlocked}/{all.Count} unlocked");
-        foreach (var achievement in all)
-        {
-            var done = GameState.Instance.IsAchievementUnlocked(achievement.Id);
-            var marker = done ? "[x]" : "[ ]";
-            sb.AppendLine($"{marker} {achievement.Title} - {achievement.Description}");
-        }
-        return sb.ToString().TrimEnd();
     }
 
     private static string DetectPurchasePlatform()

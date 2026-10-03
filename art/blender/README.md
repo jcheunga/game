@@ -28,8 +28,8 @@ Finish previews and per-asset publish records are in `artifacts/blender/polish-v
 Resume skips only matching finish-code and sample-count records. Normal geometry
 generators must be followed by this finish pass to reproduce the upgraded look.
 
-The completed finish covers **192 scenes**: 53 characters, 8 caravans, 5 mounts,
-the gatehouse, 31 battlefields, 10 maps, 23 menu environments and 61 item/icon scenes.
+The completed finish covers **158 scenes**: 52 characters, 8 caravans, 5 mounts,
+the gatehouse, 31 fallback battlefields and 61 item/icon scenes.
 All 1,484 character animation frames were re-rendered and packed. The original
 203-source library remains intact, including the 11 unchanged particle sources.
 See [verification](VERIFICATION.md) for the final image, native-scene and engine checks.
@@ -37,7 +37,7 @@ See [verification](VERIFICATION.md) for the final image, native-scene and engine
 ## Contact-driven combat animation
 
 `animate_combat.py` edits the finished named-joint rigs in place. It adds ten-pose
-attacks across the 53 characters, grouped into equipment/creature motion profiles:
+attacks across the 52 characters, grouped into equipment/creature motion profiles:
 blade cuts/stabs, guarded cuts, heavy cleaves, downward boss strikes, spear/lance
 thrusts, bow draw, crossbow recoil, staff casting/striking, flask toss, hammer
 command, hound pounce, claw rake, ballista/bombard recoil and siege/nest motion.
@@ -70,9 +70,9 @@ a separate source before rerunning the authoring script.
 
 ## Scope
 
-53 characters (including 14 bosses), six animation clips per character, 31 battle terrains across 60 stages, 10 district maps, 23 additional menu backgrounds, 33 relics, 10 spells, 10 reward badges, 8 meta badges, 83 Codex entries, 11 particle textures, 8 caravan looks, 5 weapon types and an enemy gatehouse.
+52 characters (including 14 bosses), six animation clips per character, 31 fallback battle terrains, 60 stage illustrations, four map atlases, 33 relics, 10 spells, 10 reward badges, 8 meta badges, 83 Codex entries, 11 particle textures, 8 caravan looks, 5 weapon types and an enemy gatehouse.
 
-Existing painted main-menu/map backgrounds, navigation illustrations, vector UI and fonts remain in place. Existing procedural music and sound effects remain active; Blender is not the audio pipeline. Optional route-specific menu overrides are unnecessary for complete coverage. Collision sizes, combat stats, cooldowns and progression rules are unchanged.
+Current map atlases, modal illustrations, vector UI and fonts remain in place. Existing procedural music and sound effects remain active; Blender is not the audio pipeline. Collision sizes, combat stats, cooldowns and progression rules are unchanged.
 
 ## Editable sources
 
@@ -84,8 +84,6 @@ Existing painted main-menu/map backgrounds, navigation illustrations, vector UI 
 | `gatehouse/` | Enemy gatehouse |
 | `mounts/` | Archers, ballista, firepot, frost and hex sentries |
 | `battlefields/` | Every campaign terrain |
-| `maps/` | Ten district-map establishing scenes |
-| `menus/` | 23 additional menu establishing scenes |
 | `items/` | Relic, spell, reward and meta-icon models |
 | `particles/` | Eleven tintable effect-texture scenes |
 | `coverage.json` | Catalog-derived required visual coverage |
@@ -108,7 +106,7 @@ python3 art/blender/verify_assets.py
 
 The pack/verify steps require Pillow. They only pack, resize and validate native renders. Rendering uses Cycles with Metal when available and CPU otherwise. Rebuilding **overwrites generated scenes and PNGs**: save manual Blender edits under a different filename first.
 
-Units, worlds and items support `--ids id_a,id_b` for targeted revisions and `--resume` to skip existing complete work. Do not use resume after changing a generator. Units additionally support `--portrait-only`. Worlds accept `--category battlefields|maps|menus|gatehouse`; items accept `--category icons|particles`; caravan variants accept `--category skins|mounts`.
+Units, worlds and items support `--ids id_a,id_b` for targeted revisions and `--resume` to skip existing complete work. Do not use resume after changing a generator. Units additionally support `--portrait-only`. Worlds accept `--category battlefields|gatehouse`; items accept `--category icons|particles`; caravan variants accept `--category skins|mounts`.
 
 ## Runtime contracts
 

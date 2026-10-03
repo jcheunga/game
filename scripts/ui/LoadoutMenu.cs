@@ -18,7 +18,8 @@ public partial class LoadoutMenu : Control
     {
         if(MobilePresentation.Enabled) { BuildMobileUi(); return; }
         var route = RouteCatalog.Get(_stage.MapId);
-        MenuBackdropComposer.AddSolidBackdrop(this, "loadout", new Color("101d26"), route.Id);
+
+        MedievalUi.Apply(this);
         RealmUi.Header(this, $"{route.Title} / Stage {_stage.StageNumber:00}", _stage.StageName, () => SceneRouter.Instance.GoToMap());
         var mission = RealmUi.Panel(this, new Rect2(28, 108, 438, 490), out _);
         mission.AddChild(RealmUi.Label("CHALLENGE THE LEADER", 12, true));

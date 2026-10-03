@@ -7,17 +7,13 @@ public partial class BattleController : Node2D
 {
 	private readonly HealthBarMotion _playerHealthBarMotion = new();
 	private readonly HealthBarMotion _enemyHealthBarMotion = new();
-	private const string DefaultEndlessContactTradeoffLabel = "No contact tradeoff active.";
 	private const float LanRaceTelemetryIntervalSeconds = 1f;
 	private const float OnlineRoomTelemetryIntervalSeconds = 1f;
 	private const float OnlineRoomMonitorRefreshIntervalSeconds = 2f;
 	private const float OnlineRoomEndRefreshIntervalSeconds = 2.5f;
 	private const float DeployLaneSnapDistance = 30f;
 	private const float DeployMomentumDurationSeconds = 1.2f;
-	private const float DeployMomentumSpeedScale = 1.26f;
 	private const float DeployMomentumDefenseScale = 0.88f;
-	private const float ScriptedWaveTelegraphLeadSeconds = 3f;
-	private const float EndlessWaveTelegraphLeadSeconds = 2.2f;
 	private const float FormationLaneTolerance = 132f;
 	private const float FormationBacklineCatchupThreshold = 70f;
 	private const float ImpactShakeDurationSeconds = 0.09f;
@@ -27,8 +23,6 @@ public partial class BattleController : Node2D
 	private const float TargetFinisherScoreBonus = 2600f;
 	private const float CampaignBossPhaseThresholdRatio = 0.55f;
 	private const float CampaignConvoyCommandBaseChargeSeconds = 10f;
-	private const float CampaignFieldOrderResponseLeadSeconds = 2.2f;
-	private const float CampaignFieldOrderBranchMissionLeadSeconds = 1.15f;
 	private const float CampaignMissionAftermathLeadSeconds = 2.1f;
 	private const float CampaignCounterSurgeTelegraphLeadSeconds = 2.8f;
 	private const float CampaignBonusObjectivePressureLeadSeconds = 2.2f;
@@ -42,7 +36,6 @@ public partial class BattleController : Node2D
 	private const string CampaignAdaptiveWaveChallengeModeBaseDamage = "base_damage";
 	private const int CampaignBonusObjectivePressureVeteranStage = 36;
 	private const int CampaignBonusObjectivePressureEliteStage = 51;
-	private const int CampaignPressureEchoBaseCharges = 2;
 	private const float CampaignCommendationGoldRewardScale = 0.18f;
 	private const int CampaignCommendationLateFoodStage = 18;
 	private const int CampaignCommendationEliteFoodStage = 48;
@@ -135,58 +128,6 @@ public partial class BattleController : Node2D
 		public float Remaining { get; set; }
 	}
 
-	private sealed class EndlessFieldEvent
-	{
-		public EndlessFieldEvent(
-			string type,
-			string label,
-			Vector2[] anchors,
-			float duration,
-			float interval,
-			float radius,
-			Color color)
-		{
-			Type = type;
-			Label = label;
-			Anchors = anchors;
-			Remaining = duration;
-			PulseTimer = interval;
-			Interval = interval;
-			Radius = radius;
-			Color = color;
-		}
-
-		public string Type { get; }
-		public string Label { get; }
-		public Vector2[] Anchors { get; }
-		public float Remaining { get; set; }
-		public float PulseTimer { get; set; }
-		public float Interval { get; }
-		public float Radius { get; }
-		public Color Color { get; }
-	}
-
-	private sealed class StageHazardState
-	{
-		public StageHazardState(
-			StageHazardDefinition definition,
-			Vector2 anchor,
-			float nextTriggerTime,
-			Color color)
-		{
-			Definition = definition;
-			Anchor = anchor;
-			NextTriggerTime = nextTriggerTime;
-			Color = color;
-		}
-
-		public StageHazardDefinition Definition { get; }
-		public Vector2 Anchor { get; }
-		public float NextTriggerTime { get; set; }
-		public bool WarningIssued { get; set; }
-		public Color Color { get; }
-	}
-
 	private sealed class StageMissionState
 	{
 		public StageMissionState(
@@ -211,7 +152,6 @@ public partial class BattleController : Node2D
 		public bool CountsTowardStageObjectives { get; }
 		public bool IsBonusObjective { get; }
 		public bool UsesAdaptiveWaveProgress { get; }
-		public EndlessContactActor Actor { get; set; } = null!;
 		public float Progress { get; set; }
 		public bool Started { get; set; }
 		public bool SupportMomentTriggered { get; set; }
@@ -219,73 +159,6 @@ public partial class BattleController : Node2D
 		public bool EnemyInside { get; set; }
 		public bool Completed { get; set; }
 		public bool Failed { get; set; }
-	}
-
-	private sealed class EndlessDirectiveState
-	{
-		public EndlessDirectiveState(
-			EndlessDirectiveDefinition definition,
-			int startWave,
-			int checkpointWave,
-			int targetCount,
-			float targetRatio,
-			int startEnemyDefeats,
-			int startDeployments,
-			float startBusHullRatio)
-		{
-			Definition = definition;
-			StartWave = startWave;
-			CheckpointWave = checkpointWave;
-			TargetCount = targetCount;
-			TargetRatio = targetRatio;
-			StartEnemyDefeats = startEnemyDefeats;
-			StartDeployments = startDeployments;
-			LowestBusHullRatio = startBusHullRatio;
-		}
-
-		public EndlessDirectiveDefinition Definition { get; }
-		public int StartWave { get; }
-		public int CheckpointWave { get; }
-		public int TargetCount { get; }
-		public float TargetRatio { get; }
-		public int StartEnemyDefeats { get; }
-		public int StartDeployments { get; }
-		public float LowestBusHullRatio { get; set; }
-		public bool Completed { get; set; }
-		public bool Failed { get; set; }
-		public bool RewardGranted { get; set; }
-	}
-
-	private sealed class EndlessContactState
-	{
-		public EndlessContactState(
-			EndlessContactDefinition definition,
-			Vector2 anchor,
-			Color color)
-		{
-			Definition = definition;
-			Anchor = anchor;
-			Color = color;
-		}
-
-		public EndlessContactDefinition Definition { get; }
-		public Vector2 Anchor { get; }
-		public Color Color { get; }
-		public float Progress { get; set; }
-		public bool PlayerInside { get; set; }
-		public bool EnemyInside { get; set; }
-		public int PlayerSupportActions { get; set; }
-		public int EnemyPressureActions { get; set; }
-		public float PlayerSupportRepairTotal { get; set; }
-		public float EnemyPressureDamageTotal { get; set; }
-		public float PlayerSupportProgressTotal { get; set; }
-		public float ResponseTimer { get; set; }
-		public int ResponseWavesTriggered { get; set; }
-		public int ResponseWaveLimit { get; set; }
-		public bool SupportMomentTriggered { get; set; }
-		public bool Completed { get; set; }
-		public bool Failed { get; set; }
-		public bool RewardGranted { get; set; }
 	}
 
 	private readonly struct EndlessDraftOption
@@ -305,7 +178,6 @@ public partial class BattleController : Node2D
 	private CombatTuning _combat = new();
 
 	private readonly List<Unit> _units = new();
-	private readonly List<StageHazardState> _stageHazards = new();
 	private readonly List<StageMissionState> _stageMissions = new();
 	private readonly BattleDeckState _deck = new();
 	private readonly BattleSpellState _spellDeck = new();
@@ -316,22 +188,11 @@ public partial class BattleController : Node2D
 	private BattleRunMode _battleMode;
 	private float _eventEnemyHealthScale = 1f;
 	private float _eventEnemyDamageScale = 1f;
-
-	private Label _baseHealthLabel = null!;
-	private Label _resourceLabel = null!;
-	private Label _timerLabel = null!;
 	private BattleHudBar _courageBar = null!;
-	private BattleHudBar _waveProgressBar = null!;
 	private Label _statusLabel = null!;
-	private Label _battleBannerLabel = null!;
-	private Label _battleSubtitleLabel = null!;
-	private Label _battleMissionLabel = null!;
-	private Label _waveIntelLabel = null!;
-	private Label _objectiveStatusLabel = null!;
 	private Label _fpsLabel = null!;
 	private Label _endLabel = null!;
 	private PanelContainer _topHudPanel = null!;
-	private PanelContainer _intelPanel = null!;
 	private PanelContainer _endPanel = null!;
 	private CenterContainer _endCenter = null!;
 	private Button _endPrimaryButton = null!;
@@ -339,8 +200,6 @@ public partial class BattleController : Node2D
 	private CenterContainer _draftCenter = null!;
 	private PanelContainer _draftPanel = null!;
 	private Label _draftLabel = null!;
-	private CheckBox _showDevUiToggle = null!;
-	private CheckBox _showFpsToggle = null!;
 	private readonly List<DeploySlot> _deploySlots = new();
 	private readonly List<SpellSlot> _spellSlots = new();
 	private readonly List<Button> _draftButtons = new();
@@ -356,7 +215,6 @@ public partial class BattleController : Node2D
 	private string _endlessRouteForkId = EndlessRouteForkCatalog.MainlinePushId;
 	private string _endlessSupportEventLabel = "No caravan support event yet.";
 	private string _endlessBattlefieldEventLabel = "No battlefield event active.";
-	private string _endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
 
 	private float _playerBaseHealth;
 	private bool _playerHullTookDamage;
@@ -375,26 +233,16 @@ public partial class BattleController : Node2D
 	private int _campaignDoctrineThreshold;
 	private int _campaignDoctrineDefeatProgress;
 	private int _campaignDoctrineTriggerCount;
-	private float _campaignConvoyCommandChargeRemaining;
-	private float _campaignFieldOrderLaneY;
-	private float _campaignFieldOrderResponseTriggerAt;
-	private float _campaignFieldOrderResponseLaneY;
-	private float _campaignMissionAftermathTriggerAt;
 	private float _campaignMissionAftermathLaneY;
-	private float _campaignCounterSurgeTriggerAt;
 	private float _campaignCounterSurgeLaneY;
-	private float _campaignBonusObjectivePressureTriggerAt;
 	private float _campaignBonusObjectivePressureLaneY;
-	private float _campaignBossPressureTriggerAt;
 	private float _campaignBossPressureIntervalSeconds;
-	private float _campaignLateConditionTriggerAt;
 	private float _campaignLateConditionIntervalSeconds;
 	private float _campaignAdaptiveWaveChallengeTimer;
 	private float _campaignAdaptiveWaveChallengeDuration;
 	private float _campaignAdaptiveWaveChallengeTarget;
 	private float _campaignAdaptiveWaveChallengeProgress;
 	private int _campaignAdaptiveWaveChallengeStartEnemyDefeats;
-	private int _campaignAdaptiveWaveObservedScriptedWaveIndex;
 	private int _campaignAdaptiveWaveChargesRemaining;
 	private int _campaignAdaptiveWaveBranchSpawnCount;
 	private int _campaignAdaptiveWaveTriggerCount;
@@ -407,28 +255,15 @@ public partial class BattleController : Node2D
 	private int _campaignPressureEchoTriggerCount;
 	private int _campaignBossPressureTriggerCount;
 	private int _campaignLateConditionTriggerCount;
-	private bool _campaignReserveReady;
-	private bool _campaignReserveTriggered;
 	private bool _campaignConvoyCommandReady;
-	private bool _campaignConvoyCommandTriggered;
 	private bool _campaignLateConditionActive;
 	private bool _campaignFieldOrderReady;
 	private bool _campaignFieldOrderCommitted;
-	private bool _campaignFieldOrderUsedAssault;
-	private bool _campaignFieldOrderMissionResolved;
 	private bool _campaignFieldOrderMissionSucceeded;
-	private bool _campaignFieldOrderResponseQueued;
-	private bool _campaignFieldOrderResponseTriggered;
-	private bool _campaignFieldOrderResponseAssault;
-	private bool _campaignFieldOrderBranchMissionAdded;
-	private bool _campaignRouteSupportReady;
-	private bool _campaignRouteSupportTriggered;
 	private bool _campaignBossPhaseTriggered;
-	private bool _campaignBossPressureActive;
 	private bool _campaignMissionAftermathReady;
 	private bool _campaignMissionAftermathQueued;
 	private bool _campaignMissionAftermathTriggered;
-	private bool _campaignMissionAftermathFriendly;
 	private bool _campaignCounterSurgeReady;
 	private bool _campaignCounterSurgeQueued;
 	private bool _campaignCounterSurgeTriggered;
@@ -439,15 +274,12 @@ public partial class BattleController : Node2D
 	private bool _campaignAdaptiveWaveOverrideQueued;
 	private bool _campaignAdaptiveWaveRewardReady;
 	private bool _campaignAdaptiveWaveRewardSecured;
-	private bool _campaignAdaptiveWaveRewardLost;
 	private bool _campaignAdaptiveWaveChallengeActive;
 	private bool _campaignAdaptiveWaveChallengeCompleted;
 	private bool _campaignAdaptiveWaveChallengeFailed;
 	private bool _campaignBonusObjectivePressureQueued;
 	private bool _campaignBonusObjectivePressureTriggered;
 	private bool _campaignBonusObjectivePressureFriendly;
-	private bool _campaignBonusObjectivePressureOffensive;
-	private bool _campaignPressureEchoCompleted;
 	private bool _campaignPressureEchoFriendly;
 	private bool _campaignPressureEchoOffensive;
 	private bool _campaignCommendationReady;
@@ -464,12 +296,9 @@ public partial class BattleController : Node2D
 	private int _activeAbilitiesTriggered;
 	private string _lastDeadPlayerUnitId = "";
 	private Vector2 _lastDeadPlayerPosition;
-	private string _relicDropName = "";
-	private string _campaignConvoyCommandLabel = "";
 	private string _campaignFieldOrderAssaultLabel = "";
 	private string _campaignFieldOrderBulwarkLabel = "";
 	private string _campaignFieldOrderMissionLabel = "";
-	private string _campaignFieldOrderResponseLabel = "";
 	private string _campaignMissionAftermathLabel = "";
 	private string _campaignCounterSurgeLabel = "";
 	private string _campaignAdaptiveWaveLabel = "";
@@ -481,12 +310,9 @@ public partial class BattleController : Node2D
 	private string _campaignAdaptiveWaveChallengeMode = "";
 	private string _campaignBonusObjectivePressureLabel = "";
 	private string _campaignPressureEchoLabel = "";
-	private string _campaignBossPressureLabel = "";
-	private string _campaignLateConditionLabel = "";
 	private string _campaignCommendationLabel = "";
 	private string _campaignCommendationSquadName = "";
 	private CampaignAdaptiveWaveDirective _campaignAdaptiveWaveDirective;
-	private CampaignAdaptiveWaveDirective _campaignAdaptiveWaveQueuedDirective;
 	private readonly List<(Unit unit, float expiresAt)> _barricades = new();
 	private int _playerHazardHits;
 	private float _playerSignalJamSeconds;
@@ -498,8 +324,6 @@ public partial class BattleController : Node2D
 	private float _impactShakeTimer;
 	private float _impactShakeStrength;
 	private float _defenseEncounterStartedAt;
-	private float _tunnelInvasionTimer = 16f;
-	private Vector2? _pendingTunnelInvasion;
 	private float _enemySignalJamTimer;
 	private float _enemySignalJamRecoveryUntil;
 	private float _enemySignalJamCourageGainScale = 1f;
@@ -517,26 +341,17 @@ public partial class BattleController : Node2D
 	private int _defenseEncounterPeakPressure;
 	private CenterContainer _pauseOverlay;
 	private bool _endlessCheckpointActive;
-	private float _endlessContactCourageGainScale = 1f;
 	private float _endlessUnitHealthScale = 1f;
 	private float _endlessUnitDamageScale = 1f;
 	private float _endlessGoldScale = 1f;
-	private float _endlessSkeletonHealthScale = 1f;
 	private bool _endlessBerserkerBlood;
 	private float _endlessBusArmorScale = 1f;
 	private float _endlessDamageReflectRatio;
 	private float _endlessDamageReflectExpiry;
 	private float _endlessTempDamageScale = 1f;
 	private float _endlessTempDamageExpiry;
-	private int _endlessDirectiveGoldBonus;
-	private int _endlessDirectiveFoodBonus;
-	private int _endlessContactGoldBonus;
-	private int _endlessContactFoodBonus;
 	private int _campaignCommendationBonusGold;
 	private int _campaignCommendationBonusFood;
-	private float _endlessContactGoldScale = 1f;
-	private float _endlessContactTempDamageScale = 1f;
-	private float _endlessContactTempDamageExpiry;
 	private Unit _campaignCommendationUnit;
 	private StageMissionState _campaignAdaptiveWaveChallengeMission;
 	private int _endlessBossGoldBonus;
@@ -548,10 +363,6 @@ public partial class BattleController : Node2D
 	private string[] _draftOptionIds = Array.Empty<string>();
 	private bool _draftingRouteFork;
 	private BattleSelectionMode _selectionMode = BattleSelectionMode.Unit;
-	private EndlessFieldEvent _activeEndlessFieldEvent = null!;
-	private EndlessDirectiveState _activeEndlessDirective = null!;
-	private EndlessContactState _activeEndlessContact = null!;
-	private EndlessContactActor _activeEndlessContactActor = null!;
 	private ChallengeRunRecord _challengeGhostRun = null!;
 	private int _challengeGhostNextIndex;
 	private float _lanRaceTelemetryTimer;
@@ -561,7 +372,6 @@ public partial class BattleController : Node2D
 	private bool _lanStartBarrierActive;
 	private bool _onlineRoomStartBarrierActive;
 	private float _onlineRoomStartCountdownRemaining;
-	private string _onlineRoomRaceSummary = "";
 	private string _lanChallengeEndBaseText = "";
 
 	private bool IsEndlessMode => _battleMode == BattleRunMode.Endless;
@@ -621,7 +431,6 @@ public partial class BattleController : Node2D
 		_lanStartBarrierActive = IsLanRaceMode;
 		_onlineRoomStartBarrierActive = false;
 		_onlineRoomStartCountdownRemaining = 0f;
-		_onlineRoomRaceSummary = "";
 		_lanChallengeEndBaseText = "";
 
 		if (IsEndlessMode)
@@ -708,26 +517,16 @@ public partial class BattleController : Node2D
 		_campaignDoctrineThreshold = IsCampaignMode ? GameState.Instance.GetCampaignRouteDoctrineThreshold(_stage) : 0;
 		_campaignDoctrineDefeatProgress = 0;
 		_campaignDoctrineTriggerCount = 0;
-		_campaignConvoyCommandChargeRemaining = IsCampaignMode ? CampaignConvoyCommandBaseChargeSeconds : 0f;
-		_campaignFieldOrderLaneY = BaseCenterY;
-		_campaignFieldOrderResponseTriggerAt = 0f;
-		_campaignFieldOrderResponseLaneY = BaseCenterY;
-		_campaignMissionAftermathTriggerAt = 0f;
 		_campaignMissionAftermathLaneY = BaseCenterY;
-		_campaignCounterSurgeTriggerAt = 0f;
 		_campaignCounterSurgeLaneY = BaseCenterY;
-		_campaignBonusObjectivePressureTriggerAt = 0f;
 		_campaignBonusObjectivePressureLaneY = BaseCenterY;
 		_campaignLateConditionIntervalSeconds = IsCampaignMode && GameState.Instance.HasCampaignLateCondition(_stage)
 			? GameState.Instance.GetCampaignLateConditionIntervalSeconds(_stage)
 			: 0f;
-		_campaignLateConditionTriggerAt = _campaignLateConditionIntervalSeconds;
 		_campaignBossPressureIntervalSeconds = IsCampaignMode && !string.IsNullOrWhiteSpace(StageEncounterIntel.GetBossPressureTitleForStage(_stageData))
 			? StageEncounterIntel.GetBossPressureIntervalSeconds(_stage)
 			: 0f;
-		_campaignBossPressureTriggerAt = 0f;
 		_campaignPressureEchoChargesRemaining = 0;
-		_campaignAdaptiveWaveObservedScriptedWaveIndex = 0;
 		_campaignAdaptiveWaveChargesRemaining = 0;
 		_campaignAdaptiveWaveBranchSpawnCount = 0;
 		_campaignAdaptiveWaveTriggerCount = 0;
@@ -744,22 +543,10 @@ public partial class BattleController : Node2D
 		_campaignPressureEchoTriggerCount = 0;
 		_campaignBossPressureTriggerCount = 0;
 		_campaignLateConditionTriggerCount = 0;
-		_campaignReserveReady = IsCampaignMode;
-		_campaignReserveTriggered = false;
 		_campaignConvoyCommandReady = false;
-		_campaignConvoyCommandTriggered = false;
-		_campaignConvoyCommandLabel = IsCampaignMode
-			? GameState.Instance.GetCampaignConvoyCommandTitle(_activeRouteId)
-			: "";
 		_campaignFieldOrderReady = false;
 		_campaignFieldOrderCommitted = false;
-		_campaignFieldOrderUsedAssault = false;
-		_campaignFieldOrderMissionResolved = false;
 		_campaignFieldOrderMissionSucceeded = false;
-		_campaignFieldOrderResponseQueued = false;
-		_campaignFieldOrderResponseTriggered = false;
-		_campaignFieldOrderResponseAssault = false;
-		_campaignFieldOrderBranchMissionAdded = false;
 		_campaignFieldOrderAssaultLabel = IsCampaignMode
 			? GameState.Instance.GetCampaignFieldOrderAssaultTitle(_activeRouteId)
 			: "";
@@ -767,18 +554,10 @@ public partial class BattleController : Node2D
 			? GameState.Instance.GetCampaignFieldOrderBulwarkTitle(_activeRouteId)
 			: "";
 		_campaignFieldOrderMissionLabel = "";
-		_campaignFieldOrderResponseLabel = "";
-		_campaignRouteSupportReady = IsCampaignMode;
-		_campaignRouteSupportTriggered = false;
 		_campaignBossPhaseTriggered = false;
-		_campaignBossPressureActive = false;
-		_campaignBossPressureLabel = IsCampaignMode
-			? StageEncounterIntel.GetBossPressureTitleForStage(_stageData)
-			: "";
 		_campaignMissionAftermathReady = IsCampaignMode;
 		_campaignMissionAftermathQueued = false;
 		_campaignMissionAftermathTriggered = false;
-		_campaignMissionAftermathFriendly = false;
 		_campaignMissionAftermathLabel = "";
 		_campaignCounterSurgeReady = IsCampaignMode;
 		_campaignCounterSurgeQueued = false;
@@ -795,7 +574,6 @@ public partial class BattleController : Node2D
 		_campaignAdaptiveWaveOverrideQueued = false;
 		_campaignAdaptiveWaveRewardReady = false;
 		_campaignAdaptiveWaveRewardSecured = false;
-		_campaignAdaptiveWaveRewardLost = false;
 		_campaignAdaptiveWaveChallengeActive = false;
 		_campaignAdaptiveWaveChallengeCompleted = false;
 		_campaignAdaptiveWaveChallengeFailed = false;
@@ -807,20 +585,14 @@ public partial class BattleController : Node2D
 		_campaignAdaptiveWaveChallengeLabel = "";
 		_campaignAdaptiveWaveChallengeMode = "";
 		_campaignAdaptiveWaveDirective = CampaignAdaptiveWaveDirective.None;
-		_campaignAdaptiveWaveQueuedDirective = CampaignAdaptiveWaveDirective.None;
 		_campaignBonusObjectivePressureQueued = false;
 		_campaignBonusObjectivePressureTriggered = false;
 		_campaignBonusObjectivePressureFriendly = false;
-		_campaignBonusObjectivePressureOffensive = false;
 		_campaignBonusObjectivePressureLabel = "";
-		_campaignPressureEchoCompleted = false;
 		_campaignPressureEchoFriendly = false;
 		_campaignPressureEchoOffensive = false;
 		_campaignPressureEchoLabel = "";
 		_campaignLateConditionActive = IsCampaignMode && GameState.Instance.HasCampaignLateCondition(_stage);
-		_campaignLateConditionLabel = _campaignLateConditionActive
-			? GameState.Instance.GetCampaignLateConditionTitle(_activeRouteId)
-			: "";
 		_campaignCommendationReady = false;
 		_campaignCommendationTriggered = false;
 		_campaignCommendationBroken = false;
@@ -873,25 +645,15 @@ public partial class BattleController : Node2D
 		_playerHazardHits = 0;
 		_playerSignalJamSeconds = 0f;
 		_endlessCheckpointActive = false;
-		_endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
-		_endlessContactCourageGainScale = 1f;
 		_endlessUnitHealthScale = 1f;
 		_endlessUnitDamageScale = 1f;
 		_endlessGoldScale = 1f;
-		_endlessSkeletonHealthScale = 1f;
 		_endlessBerserkerBlood = false;
 		_endlessBusArmorScale = 1f;
 		_endlessDamageReflectRatio = 0f;
 		_endlessDamageReflectExpiry = 0f;
 		_endlessTempDamageScale = 1f;
 		_endlessTempDamageExpiry = 0f;
-		_endlessDirectiveGoldBonus = 0;
-		_endlessDirectiveFoodBonus = 0;
-		_endlessContactGoldBonus = 0;
-		_endlessContactFoodBonus = 0;
-		_endlessContactGoldScale = 1f;
-		_endlessContactTempDamageScale = 1f;
-		_endlessContactTempDamageExpiry = 0f;
 		_endlessBossGoldBonus = 0;
 		_endlessBossFoodBonus = 0;
 		_lastEndlessBossCheckpointWave = 0;
@@ -915,10 +677,6 @@ public partial class BattleController : Node2D
 		_endlessBattlefieldEventLabel = IsEndlessMode
 			? "Initial route event is arming."
 			: "No battlefield event active.";
-		_activeEndlessFieldEvent = null;
-		_activeEndlessDirective = null;
-		_activeEndlessContact = null;
-		_activeEndlessContactActor = null;
 		_challengeGhostRun = IsChallengeMode
 			? GameState.Instance.GetChallengeGhostRun(_challengeDefinition.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck)
 			: null;
@@ -926,9 +684,6 @@ public partial class BattleController : Node2D
 		{
 			var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
 			var roomTitle = OnlineRoomJoinService.GetCachedTicket()?.RoomTitle;
-			_onlineRoomRaceSummary = string.IsNullOrWhiteSpace(roomTitle)
-				? $"Online room board {_challengeDefinition.Code}"
-				: $"Online room: {roomTitle}";
 			if (roomSnapshot?.HasRoom == true && roomSnapshot.RaceCountdownActive && roomSnapshot.RaceCountdownRemainingSeconds > 0.05f)
 			{
 				_onlineRoomStartBarrierActive = true;
@@ -1001,16 +756,11 @@ public partial class BattleController : Node2D
 		}
 
 		_spawnDirector.EnableAdvanceEncounters(HasCampaignField);
-		InitializeStageHazards();
-		InitializeStageMissions();
 
 		InitializeBattlePresentation();
 		BuildUi();
 		if (IsEndlessMode)
 		{
-			StartRouteForkFieldEvent(_endlessRouteForkId);
-			StartEndlessDirectiveSegment();
-			StartEndlessContactEvent();
 		}
 		InitializeAmbientParticles();
 		SetStatus(IsEndlessMode ? "Defend your wagon."
@@ -1060,10 +810,6 @@ public partial class BattleController : Node2D
 
 		DrawPlayableTerrain(palette);
 		DrawCursedGround();
-		DrawCampaignFieldObjectives();
-		DrawStageHazards();
-		DrawEndlessFieldEvent();
-		DrawEndlessContactEvent();
 		DrawChallengeGhostMarkers();
 		// Enemy arrival timing stays hidden to preserve suspense.
 		DrawSelectionPreview();
@@ -1075,163 +821,6 @@ public partial class BattleController : Node2D
 		DrawBossEntranceBanner();
 		DrawSetTransform(Vector2.Zero);
 		DrawBossPhaseWarnings();
-		DrawTunnelInvasionWarning();
-	}
-
-	private void DrawIncomingWaveTelegraph(Color enemyColor, Color playerColor)
-	{
-		if (!TryGetIncomingWaveTelegraph(out var label, out var countdown, out var intensity, out var playerSide))
-		{
-			return;
-		}
-
-		var reducedMotion = IsReducedMotionEnabled();
-		var color = (playerSide ? playerColor : enemyColor).Lightened(0.2f);
-		var pulse = reducedMotion
-			? 0.35f
-			: 0.5f + (0.5f * Mathf.Sin((_elapsed * 9f) + 0.6f));
-		var lineX = playerSide ? PlayerSpawnX + 26f : EnemySpawnX - 26f;
-		var top = BattlefieldTop + 34f;
-		var bottom = BattlefieldBottom - 34f;
-		var fillAlpha = 0.05f + (intensity * 0.08f);
-		DrawRect(new Rect2(lineX - 8f, top, 16f, bottom - top), new Color(color, fillAlpha), true);
-
-		for (var i = 0; i < 3; i++)
-		{
-			var t = i / 2f;
-			var y = Mathf.Lerp(top + 42f, bottom - 42f, t);
-			var lineLength = 52f + (pulse * 18f);
-			DrawLine(
-				playerSide ? new Vector2(lineX - 22f, y) : new Vector2(lineX - lineLength, y),
-				playerSide ? new Vector2(lineX + lineLength, y) : new Vector2(lineX + 22f, y),
-				new Color(color, 0.28f + (intensity * 0.42f)),
-				2.2f + (pulse * 1.4f),
-				true);
-		}
-
-		DrawArc(
-			new Vector2(playerSide ? lineX + 10f : lineX - 10f, BaseCenterY),
-			44f + (pulse * 8f),
-			playerSide ? Mathf.Pi - 1.2f : -1.2f,
-			playerSide ? Mathf.Pi + 1.2f : 1.2f,
-			18,
-			new Color(color, 0.38f + (intensity * 0.34f)),
-			2.4f,
-			true);
-
-		DrawPreviewLabel(
-			playerSide
-				? new Vector2(PlayerSpawnX + 40f, BattlefieldTop + 24f)
-				: new Vector2(EnemySpawnX - 290f, BattlefieldTop + 24f),
-			$"{label}  |  {countdown:0.0}s",
-			color);
-	}
-
-	private bool TryGetIncomingWaveTelegraph(out string label, out float countdown, out float intensity, out bool playerSide)
-	{
-		label = "";
-		countdown = 0f;
-		intensity = 0f;
-		playerSide = false;
-
-		if (IsCampaignMode && _campaignMissionAftermathQueued)
-		{
-			countdown = Mathf.Max(0f, _campaignMissionAftermathTriggerAt - _elapsed);
-			if (countdown <= CampaignMissionAftermathLeadSeconds)
-			{
-				label = _campaignMissionAftermathFriendly
-					? $"Follow-Through: {_campaignMissionAftermathLabel}"
-					: $"Backlash: {_campaignMissionAftermathLabel}";
-				intensity = 1f - Mathf.Clamp(countdown / CampaignMissionAftermathLeadSeconds, 0f, 1f);
-				playerSide = _campaignMissionAftermathFriendly;
-				return true;
-			}
-		}
-
-		if (IsCampaignMode && _campaignFieldOrderResponseQueued)
-		{
-			countdown = Mathf.Max(0f, _campaignFieldOrderResponseTriggerAt - _elapsed);
-			if (countdown <= CampaignFieldOrderResponseLeadSeconds)
-			{
-				label = $"Order Follow-Up: {_campaignFieldOrderResponseLabel}";
-				intensity = 1f - Mathf.Clamp(countdown / CampaignFieldOrderResponseLeadSeconds, 0f, 1f);
-				playerSide = true;
-				return true;
-			}
-		}
-
-		if (IsCampaignMode && _campaignCounterSurgeQueued)
-		{
-			countdown = Mathf.Max(0f, _campaignCounterSurgeTriggerAt - _elapsed);
-			if (countdown <= CampaignCounterSurgeTelegraphLeadSeconds)
-			{
-				label = string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel)
-					? "Counter-Surge incoming"
-					: $"Counter-Surge: {_campaignCounterSurgeLabel}";
-				intensity = 1f - Mathf.Clamp(countdown / CampaignCounterSurgeTelegraphLeadSeconds, 0f, 1f);
-				return true;
-			}
-		}
-
-		if (IsCampaignMode && _campaignBonusObjectivePressureQueued)
-		{
-			countdown = Mathf.Max(0f, _campaignBonusObjectivePressureTriggerAt - _elapsed);
-			if (countdown <= CampaignBonusObjectivePressureLeadSeconds)
-			{
-				var telegraphLabel = ResolveCampaignBonusObjectivePressureTelegraphLabel(_campaignBonusObjectivePressureFriendly);
-				label = string.IsNullOrWhiteSpace(_campaignBonusObjectivePressureLabel)
-					? telegraphLabel
-					: $"{telegraphLabel}: {_campaignBonusObjectivePressureLabel}";
-				intensity = 1f - Mathf.Clamp(countdown / CampaignBonusObjectivePressureLeadSeconds, 0f, 1f);
-				playerSide = _campaignBonusObjectivePressureFriendly;
-				return true;
-			}
-		}
-
-		if (IsEndlessMode)
-		{
-			if (_spawnDirector.EndlessCheckpointPending)
-			{
-				return false;
-			}
-
-			countdown = Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed);
-			if (countdown > EndlessWaveTelegraphLeadSeconds)
-			{
-				return false;
-			}
-
-			var nextWaveNumber = _spawnDirector.EndlessWaveNumber + 1;
-			if (EndlessBossCheckpointCatalog.IsBossCheckpointWave(nextWaveNumber))
-			{
-				var definition = EndlessBossCheckpointCatalog.GetForWave(nextWaveNumber, _activeRouteId);
-				label = $"Boss Surge: {definition.Title}";
-			}
-			else
-			{
-				label = $"Wave {nextWaveNumber} incoming";
-			}
-
-			intensity = 1f - Mathf.Clamp(countdown / EndlessWaveTelegraphLeadSeconds, 0f, 1f);
-			return true;
-		}
-
-		if (HasCampaignField || !_spawnDirector.UsesScriptedWaves || _spawnDirector.IsScriptedWaveHeld || !_spawnDirector.TryGetNextScriptedWave(out var nextWave))
-		{
-			return false;
-		}
-
-		countdown = Mathf.Max(0f, _spawnDirector.NextScriptedWaveTime - _elapsed);
-		if (countdown > ScriptedWaveTelegraphLeadSeconds)
-		{
-			return false;
-		}
-
-		label = string.IsNullOrWhiteSpace(nextWave.Label)
-			? $"Wave {_spawnDirector.NextScriptedWaveIndex + 1} incoming"
-			: nextWave.Label;
-		intensity = 1f - Mathf.Clamp(countdown / ScriptedWaveTelegraphLeadSeconds, 0f, 1f);
-		return true;
 	}
 
 	private void DrawBossEntranceBanner()
@@ -1725,436 +1314,6 @@ public partial class BattleController : Node2D
 		};
 	}
 
-	private void DrawTerrainDecoration()
-	{
-		var terrainId = (_stageData?.TerrainId ?? "urban").ToLowerInvariant();
-		switch (terrainId)
-		{
-			case "highway":
-				for (var i = 0; i < 14; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 42f, BattlefieldRight - 42f, i / 13f);
-					DrawRect(new Rect2(x - 8f, BaseCenterY - 3f, 16f, 6f), new Color(1f, 0.92f, 0.52f, 0.4f), true);
-				}
-				break;
-			case "night":
-				DrawCircle(new Vector2(BattlefieldLeft + 180f, BattlefieldTop + 54f), 38f, new Color(0.4f, 0.7f, 1f, 0.09f));
-				DrawCircle(new Vector2(BattlefieldRight - 220f, BattlefieldBottom - 62f), 46f, new Color(1f, 0.4f, 0.7f, 0.08f));
-				break;
-			case "industrial":
-				DrawRect(new Rect2(BattlefieldLeft + 170f, BattlefieldTop + 30f, 84f, 24f), new Color(0f, 0f, 0f, 0.25f), true);
-				DrawRect(new Rect2(BattlefieldRight - 294f, BattlefieldBottom - 60f, 84f, 24f), new Color(0f, 0f, 0f, 0.25f), true);
-				DrawRect(new Rect2(BattlefieldRight - 198f, BattlefieldBottom - 60f, 84f, 24f), new Color(0f, 0f, 0f, 0.2f), true);
-				break;
-			case "swamp":
-				DrawCircle(new Vector2(BattlefieldLeft + 270f, BattlefieldBottom - 58f), 30f, new Color(0.13f, 0.25f, 0.17f, 0.45f));
-				DrawCircle(new Vector2(BattlefieldRight - 290f, BattlefieldTop + 62f), 24f, new Color(0.13f, 0.25f, 0.17f, 0.45f));
-				break;
-			case "shipyard":
-				DrawRect(new Rect2(BattlefieldLeft, BattlefieldBottom - 46f, BattlefieldRight - BattlefieldLeft, 22f), new Color(0.2f, 0.35f, 0.5f, 0.45f), true);
-				for (var i = 0; i < 7; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 6f);
-					DrawLine(
-						new Vector2(x - 20f, BattlefieldTop + 36f),
-						new Vector2(x + 20f, BattlefieldTop + 72f),
-						new Color(1f, 1f, 1f, 0.12f),
-						2f,
-						true);
-				}
-				break;
-			case "railyard":
-				for (var i = 0; i < 3; i++)
-				{
-					var y = BaseCenterY - 56f + (i * 42f);
-					DrawLine(
-						new Vector2(BattlefieldLeft + 48f, y),
-						new Vector2(BattlefieldRight - 48f, y),
-						new Color(0.95f, 0.72f, 0.42f, 0.16f),
-						2f,
-						true);
-
-					for (var j = 0; j < 11; j++)
-					{
-						var x = Mathf.Lerp(BattlefieldLeft + 86f, BattlefieldRight - 86f, j / 10f);
-						DrawRect(new Rect2(x - 6f, y - 7f, 12f, 14f), new Color(0f, 0f, 0f, 0.24f), true);
-					}
-				}
-				break;
-			case "smelter":
-				DrawRect(new Rect2(BattlefieldLeft + 120f, BattlefieldBottom - 58f, 180f, 18f), new Color(1f, 0.42f, 0.1f, 0.34f), true);
-				DrawRect(new Rect2(BattlefieldRight - 310f, BattlefieldTop + 42f, 168f, 16f), new Color(1f, 0.54f, 0.18f, 0.28f), true);
-				DrawCircle(new Vector2(BattlefieldLeft + 210f, BattlefieldTop + 62f), 26f, new Color(1f, 0.4f, 0.15f, 0.1f));
-				DrawCircle(new Vector2(BattlefieldRight - 196f, BattlefieldBottom - 68f), 34f, new Color(1f, 0.55f, 0.2f, 0.1f));
-				break;
-			case "foundry":
-				for (var i = 0; i < 5; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 104f, BattlefieldRight - 104f, i / 4f);
-					DrawRect(new Rect2(x - 12f, BattlefieldTop + 26f, 24f, 92f), new Color(0f, 0f, 0f, 0.18f), true);
-					DrawRect(new Rect2(x - 26f, BattlefieldTop + 112f, 52f, 12f), new Color(0.95f, 0.58f, 0.2f, 0.16f), true);
-				}
-
-				DrawRect(new Rect2(BattlefieldLeft + 160f, BattlefieldBottom - 52f, BattlefieldRight - BattlefieldLeft - 320f, 20f), new Color(1f, 0.48f, 0.14f, 0.18f), true);
-				break;
-			case "checkpoint":
-				for (var i = 0; i < 7; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 84f, BattlefieldRight - 84f, i / 6f);
-					DrawRect(new Rect2(x - 42f, BattlefieldBottom - 52f, 84f, 14f), new Color(1f, 0.95f, 0.58f, 0.16f), true);
-					DrawRect(new Rect2(x - 12f, BattlefieldTop + 42f + ((i % 2) * 18f), 24f, 52f), new Color(0.85f, 1f, 0.85f, 0.08f), true);
-				}
-				break;
-			case "decon":
-				for (var i = 0; i < 3; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
-					DrawArc(
-						new Vector2(x, BaseCenterY - 8f),
-						54f,
-						Mathf.Pi,
-						Mathf.Tau,
-						20,
-						new Color(0.76f, 1f, 0.84f, 0.18f),
-						4f);
-					DrawLine(
-						new Vector2(x - 54f, BaseCenterY - 8f),
-						new Vector2(x - 54f, BattlefieldBottom - 42f),
-						new Color(0.82f, 1f, 0.86f, 0.12f),
-						4f,
-						true);
-					DrawLine(
-						new Vector2(x + 54f, BaseCenterY - 8f),
-						new Vector2(x + 54f, BattlefieldBottom - 42f),
-						new Color(0.82f, 1f, 0.86f, 0.12f),
-						4f,
-						true);
-				}
-				break;
-			case "lab":
-				for (var i = 0; i < 5; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 4f);
-					DrawRect(new Rect2(x - 28f, BattlefieldTop + 28f, 56f, 28f), new Color(0.8f, 1f, 0.94f, 0.1f), true);
-					DrawRect(new Rect2(x - 18f, BattlefieldTop + 62f, 36f, 8f), new Color(0.9f, 1f, 0.72f, 0.12f), true);
-				}
-				DrawLine(
-					new Vector2(BattlefieldLeft + 82f, BattlefieldBottom - 52f),
-					new Vector2(BattlefieldRight - 82f, BattlefieldBottom - 52f),
-					new Color(0.84f, 1f, 0.74f, 0.16f),
-					3f,
-					true);
-				break;
-			case "blacksite":
-				for (var i = 0; i < 6; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 92f, BattlefieldRight - 92f, i / 5f);
-					DrawRect(new Rect2(x - 10f, BattlefieldTop + 18f, 20f, 118f), new Color(0f, 0f, 0f, 0.2f), true);
-					DrawRect(new Rect2(x - 34f, BattlefieldTop + 132f, 68f, 10f), new Color(0.94f, 0.98f, 0.62f, 0.12f), true);
-				}
-
-				for (var i = 0; i < 9; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 54f, BattlefieldRight - 54f, i / 8f);
-					DrawLine(
-						new Vector2(x - 18f, BattlefieldBottom - 64f),
-						new Vector2(x + 6f, BattlefieldBottom - 44f),
-						new Color(1f, 0.94f, 0.58f, 0.22f),
-						4f,
-						true);
-				}
-				break;
-			case "pass":
-					for (var i = 0; i < 4; i++)
-					{
-						var left = Mathf.Lerp(BattlefieldLeft - 22f, BattlefieldRight - 220f, i / 3f);
-						var peak = left + 96f + ((i % 2) * 18f);
-						var right = left + 198f;
-						DrawColoredPolygon(
-							new[]
-							{
-								new Vector2(left, BattlefieldBottom - 36f),
-								new Vector2(peak, BattlefieldTop + 56f + ((i % 2) * 18f)),
-								new Vector2(right, BattlefieldBottom - 36f)
-							},
-							new Color(0.92f, 0.96f, 1f, 0.08f));
-					}
-
-					for (var i = 0; i < 9; i++)
-					{
-						var x = Mathf.Lerp(BattlefieldLeft + 72f, BattlefieldRight - 72f, i / 8f);
-						DrawLine(
-							new Vector2(x - 12f, BattlefieldTop + 36f + ((i % 3) * 12f)),
-							new Vector2(x + 8f, BattlefieldTop + 60f + ((i % 3) * 12f)),
-							new Color(1f, 1f, 1f, 0.16f),
-							2f,
-							true);
-					}
-					break;
-				case "shrine":
-					for (var i = 0; i < 3; i++)
-					{
-						var x = Mathf.Lerp(BattlefieldLeft + 160f, BattlefieldRight - 160f, i / 2f);
-						DrawCircle(new Vector2(x, BaseCenterY - 12f), 34f, new Color(0.94f, 0.97f, 0.86f, 0.08f));
-						DrawRect(new Rect2(x - 8f, BaseCenterY - 52f, 16f, 80f), new Color(1f, 1f, 1f, 0.08f), true);
-						DrawRect(new Rect2(x - 28f, BaseCenterY + 22f, 56f, 10f), new Color(0.92f, 0.95f, 0.82f, 0.1f), true);
-					}
-					break;
-				case "watchfort":
-					for (var i = 0; i < 4; i++)
-					{
-						var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 3f);
-						DrawRect(new Rect2(x - 30f, BattlefieldTop + 28f, 60f, 92f), new Color(0f, 0f, 0f, 0.16f), true);
-						for (var j = 0; j < 3; j++)
-						{
-							DrawRect(new Rect2(x - 30f + (j * 20f), BattlefieldTop + 22f, 14f, 10f), new Color(0.94f, 0.98f, 1f, 0.12f), true);
-						}
-					}
-
-					DrawLine(
-						new Vector2(BattlefieldLeft + 62f, BattlefieldBottom - 58f),
-						new Vector2(BattlefieldRight - 62f, BattlefieldBottom - 58f),
-						new Color(0.88f, 0.93f, 1f, 0.18f),
-						4f,
-						true);
-					break;
-			case "cathedral":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 120f, BattlefieldRight - 120f, i / 3f);
-					DrawArc(
-						new Vector2(x, BattlefieldTop + 132f + ((i % 2) * 10f)),
-						44f,
-						Mathf.Pi,
-						Mathf.Tau,
-						20,
-						new Color(1f, 0.96f, 0.82f, 0.12f),
-						4f);
-					DrawLine(
-						new Vector2(x - 44f, BattlefieldTop + 132f + ((i % 2) * 10f)),
-						new Vector2(x - 44f, BattlefieldBottom - 46f),
-						new Color(1f, 0.96f, 0.86f, 0.08f),
-						4f,
-						true);
-					DrawLine(
-						new Vector2(x + 44f, BattlefieldTop + 132f + ((i % 2) * 10f)),
-						new Vector2(x + 44f, BattlefieldBottom - 46f),
-						new Color(1f, 0.96f, 0.86f, 0.08f),
-						4f,
-						true);
-				}
-
-				for (var i = 0; i < 8; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 72f, BattlefieldRight - 72f, i / 7f);
-					DrawCircle(new Vector2(x, BattlefieldBottom - 54f - ((i % 2) * 6f)), 3f, new Color(1f, 0.84f, 0.46f, 0.65f));
-				}
-				break;
-			case "ossuary":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 132f, BattlefieldRight - 132f, i / 3f);
-					DrawCircle(new Vector2(x - 18f, BattlefieldBottom - 54f), 18f, new Color(1f, 0.98f, 0.94f, 0.08f));
-					DrawCircle(new Vector2(x + 14f, BattlefieldBottom - 48f), 22f, new Color(0.88f, 1f, 0.9f, 0.08f));
-					DrawRect(new Rect2(x - 8f, BattlefieldTop + 34f, 16f, 86f), new Color(0f, 0f, 0f, 0.14f), true);
-				}
-				break;
-			case "reliquary":
-				for (var i = 0; i < 3; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
-					DrawRect(new Rect2(x - 30f, BattlefieldTop + 32f, 60f, 90f), new Color(1f, 0.95f, 0.74f, 0.08f), true);
-					DrawRect(new Rect2(x - 10f, BattlefieldTop + 18f, 20f, 118f), new Color(0f, 0f, 0f, 0.16f), true);
-					DrawLine(
-						new Vector2(x, BattlefieldTop + 18f),
-						new Vector2(x, BattlefieldBottom - 42f),
-						new Color(1f, 0.9f, 0.56f, 0.12f),
-						3f,
-						true);
-				}
-				break;
-			case "marsh":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 120f, BattlefieldRight - 120f, i / 3f);
-					DrawCircle(new Vector2(x, BattlefieldBottom - 52f + ((i % 2) * 10f)), 34f, new Color(0.56f, 0.75f, 0.43f, 0.14f));
-					DrawCircle(new Vector2(x - 18f, BattlefieldBottom - 44f + ((i % 2) * 10f)), 18f, new Color(0.3f, 0.44f, 0.2f, 0.18f));
-				}
-
-				for (var i = 0; i < 7; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 84f, BattlefieldRight - 84f, i / 6f);
-					DrawRect(new Rect2(x - 4f, BattlefieldTop + 34f + ((i % 2) * 14f), 8f, 76f), new Color(0.88f, 0.96f, 0.82f, 0.08f), true);
-				}
-				break;
-			case "chapel":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 128f, BattlefieldRight - 128f, i / 3f);
-					DrawArc(
-						new Vector2(x, BattlefieldTop + 128f),
-						38f,
-						Mathf.Pi,
-						Mathf.Tau,
-						18,
-						new Color(1f, 0.96f, 0.82f, 0.12f),
-						4f);
-					DrawRect(new Rect2(x - 10f, BattlefieldTop + 34f, 20f, 94f), new Color(0f, 0f, 0f, 0.14f), true);
-				}
-				break;
-			case "ferry":
-				DrawRect(new Rect2(BattlefieldLeft, BattlefieldBottom - 54f, BattlefieldRight - BattlefieldLeft, 26f), new Color(0.22f, 0.4f, 0.36f, 0.32f), true);
-				for (var i = 0; i < 6; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 96f, BattlefieldRight - 96f, i / 5f);
-					DrawRect(new Rect2(x - 34f, BattlefieldTop + 30f + ((i % 2) * 12f), 68f, 12f), new Color(0f, 0f, 0f, 0.16f), true);
-					DrawLine(
-						new Vector2(x, BattlefieldTop + 42f + ((i % 2) * 12f)),
-						new Vector2(x, BattlefieldBottom - 58f),
-						new Color(0.86f, 0.96f, 0.9f, 0.1f),
-						3f,
-						true);
-				}
-				break;
-			case "grassland":
-				for (var i = 0; i < 8; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 64f, BattlefieldRight - 64f, i / 7f);
-					DrawLine(
-						new Vector2(x - 16f, BattlefieldBottom - 46f),
-						new Vector2(x + 12f, BattlefieldBottom - 64f),
-						new Color(1f, 0.86f, 0.48f, 0.16f),
-						3f,
-						true);
-				}
-				break;
-			case "waystation":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 140f, BattlefieldRight - 140f, i / 3f);
-					DrawRect(new Rect2(x - 24f, BattlefieldTop + 38f, 48f, 68f), new Color(0f, 0f, 0f, 0.16f), true);
-					DrawLine(
-						new Vector2(x - 26f, BattlefieldTop + 38f),
-						new Vector2(x, BattlefieldTop + 18f),
-						new Color(1f, 0.92f, 0.74f, 0.1f),
-						4f,
-						true);
-					DrawLine(
-						new Vector2(x + 26f, BattlefieldTop + 38f),
-						new Vector2(x, BattlefieldTop + 18f),
-						new Color(1f, 0.92f, 0.74f, 0.1f),
-						4f,
-						true);
-				}
-				break;
-			case "siegecamp":
-				for (var i = 0; i < 5; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 110f, BattlefieldRight - 110f, i / 4f);
-					DrawRect(new Rect2(x - 18f, BattlefieldTop + 54f + ((i % 2) * 10f), 36f, 56f), new Color(0f, 0f, 0f, 0.16f), true);
-					DrawLine(
-						new Vector2(x - 22f, BattlefieldTop + 54f + ((i % 2) * 10f)),
-						new Vector2(x, BattlefieldTop + 30f + ((i % 2) * 10f)),
-						new Color(1f, 0.82f, 0.54f, 0.12f),
-						4f,
-						true);
-					DrawLine(
-						new Vector2(x + 22f, BattlefieldTop + 54f + ((i % 2) * 10f)),
-						new Vector2(x, BattlefieldTop + 30f + ((i % 2) * 10f)),
-						new Color(1f, 0.82f, 0.54f, 0.12f),
-						4f,
-						true);
-				}
-				break;
-			case "grove":
-				for (var i = 0; i < 6; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 88f, BattlefieldRight - 88f, i / 5f);
-					DrawLine(
-						new Vector2(x, BattlefieldBottom - 42f),
-						new Vector2(x - 12f, BattlefieldTop + 78f + ((i % 2) * 14f)),
-						new Color(0.72f, 0.54f, 0.4f, 0.2f),
-						8f,
-						true);
-					DrawCircle(new Vector2(x - 18f, BattlefieldTop + 68f + ((i % 2) * 14f)), 20f, new Color(0.9f, 0.76f, 0.62f, 0.08f));
-				}
-				break;
-			case "witchcircle":
-				for (var i = 0; i < 3; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
-					DrawCircle(new Vector2(x, BaseCenterY - 14f), 38f, new Color(1f, 0.92f, 0.78f, 0.08f));
-					for (var j = 0; j < 6; j++)
-					{
-						var angle = (Mathf.Tau / 6f) * j;
-						DrawCircle(
-							new Vector2(x, BaseCenterY - 14f) + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 32f,
-							4f,
-							new Color(0.96f, 0.84f, 0.62f, 0.5f));
-					}
-				}
-				break;
-			case "timberroad":
-				for (var i = 0; i < 5; i++)
-				{
-					var y = BaseCenterY - 62f + (i * 30f);
-					DrawLine(
-						new Vector2(BattlefieldLeft + 52f, y),
-						new Vector2(BattlefieldRight - 52f, y),
-						new Color(0.76f, 0.46f, 0.2f, 0.14f),
-						4f,
-						true);
-				}
-				break;
-			case "bridgefort":
-				for (var i = 0; i < 5; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 94f, BattlefieldRight - 94f, i / 4f);
-					DrawRect(new Rect2(x - 22f, BattlefieldTop + 34f, 44f, 82f), new Color(0f, 0f, 0f, 0.18f), true);
-					for (var j = 0; j < 2; j++)
-					{
-						DrawRect(new Rect2(x - 22f + (j * 22f), BattlefieldTop + 28f, 14f, 10f), new Color(0.98f, 0.94f, 1f, 0.14f), true);
-					}
-				}
-
-				DrawLine(
-					new Vector2(BattlefieldLeft + 52f, BattlefieldBottom - 62f),
-					new Vector2(BattlefieldRight - 52f, BattlefieldBottom - 62f),
-					new Color(0.9f, 0.84f, 1f, 0.18f),
-					6f,
-					true);
-				break;
-			case "breachyard":
-				for (var i = 0; i < 4; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 130f, BattlefieldRight - 130f, i / 3f);
-					DrawRect(new Rect2(x - 32f, BattlefieldBottom - 66f - ((i % 2) * 8f), 64f, 18f), new Color(0.8f, 0.72f, 0.9f, 0.12f), true);
-					DrawLine(
-						new Vector2(x - 34f, BattlefieldBottom - 50f - ((i % 2) * 8f)),
-						new Vector2(x + 18f, BattlefieldBottom - 86f - ((i % 2) * 8f)),
-						new Color(0f, 0f, 0f, 0.16f),
-						5f,
-						true);
-				}
-				break;
-			case "innerkeep":
-				for (var i = 0; i < 3; i++)
-				{
-					var x = Mathf.Lerp(BattlefieldLeft + 180f, BattlefieldRight - 180f, i / 2f);
-					DrawArc(
-						new Vector2(x, BattlefieldTop + 130f),
-						42f,
-						Mathf.Pi,
-						Mathf.Tau,
-						20,
-						new Color(0.98f, 0.94f, 1f, 0.12f),
-						4f);
-					DrawRect(new Rect2(x - 8f, BattlefieldTop + 34f, 16f, 96f), new Color(0f, 0f, 0f, 0.16f), true);
-				}
-				break;
-		}
-	}
-
 	private void DrawPlayerBus(CanvasItem canvas, TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
@@ -2415,7 +1574,7 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		_courage += (_courageGainPerSecond * _campaignScoutCourageGainScale * _endlessContactCourageGainScale * _enemySignalJamCourageGainScale) * deltaF;
+		_courage += (_courageGainPerSecond * _campaignScoutCourageGainScale * _enemySignalJamCourageGainScale) * deltaF;
 		if (_courage > _maxCourage)
 		{
 			_courage = _maxCourage;
@@ -2468,7 +1627,6 @@ public partial class BattleController : Node2D
 		UpdateActorLighting();
 		UpdateCardDragPreview();
 		UpdateMobileCamera((float)delta);
-		UpdateFieldNavigation();
 		var reducedMotion = IsReducedMotionEnabled();
 		_playerHealthBarMotion.Update(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), (float)delta, reducedMotion);
 		_enemyHealthBarMotion.Update(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), (float)delta, reducedMotion);
@@ -2944,12 +2102,6 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (keyEvent.Keycode == Key.Tab)
-		{
-			ToggleCombatIntel();
-			return;
-		}
-
 		if (keyEvent.Keycode == Key.Backspace || keyEvent.Keycode == Key.Delete)
 		{
 			ClearArmedSelection();
@@ -2960,7 +2112,6 @@ public partial class BattleController : Node2D
 		{
 			return;
 		}
-
 
 		var unitIndex = keyEvent.Keycode switch
 		{
@@ -3011,7 +2162,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-
 	private int CountTeamUnits(Team team)
 	{
 		var count = 0;
@@ -3024,96 +2174,6 @@ public partial class BattleController : Node2D
 		}
 
 		return count;
-	}
-
-	private string BuildActiveEnemyPressureText()
-	{
-		var howlers = 0;
-		var jammers = 0;
-		var saboteurs = 0;
-		var spitters = 0;
-		var bosses = 0;
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead || unit.Team != Team.Enemy)
-			{
-				continue;
-			}
-
-			switch (unit.VisualClass)
-			{
-				case "howler":
-					howlers++;
-					break;
-				case "jammer":
-					jammers++;
-					break;
-				case "saboteur":
-					saboteurs++;
-					break;
-				case "spitter":
-					spitters++;
-					break;
-				case "boss":
-					bosses++;
-					break;
-			}
-		}
-
-		var parts = new List<string>();
-		if (howlers > 0)
-		{
-			parts.Add($"Dread Herald x{howlers}");
-		}
-
-		if (jammers > 0)
-		{
-			parts.Add($"Hexer x{jammers}");
-		}
-
-		if (saboteurs > 0)
-		{
-			parts.Add($"Sapper x{saboteurs}");
-		}
-
-		if (spitters > 0)
-		{
-			parts.Add($"Blight Caster x{spitters}");
-		}
-
-		if (bosses > 0)
-		{
-			parts.Add($"Grave Lord x{bosses}");
-		}
-
-		if (_enemySignalJamTimer > 0.05f)
-		{
-			parts.Add($"Signal jam {_enemySignalJamTimer:0.0}s");
-		}
-
-		return parts.Count == 0
-			? "Active pressure: standard front."
-			: $"Active pressure: {string.Join(", ", parts)}";
-	}
-
-	private bool HasTeamUnitInRadius(Team team, Vector2 anchor, float radius)
-	{
-		var radiusSquared = radius * radius;
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead || unit.Team != team)
-			{
-				continue;
-			}
-
-			if (unit.Position.DistanceSquaredTo(anchor) <= radiusSquared)
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private void ArmPlayerUnit(UnitDefinition definition)
@@ -3199,15 +2259,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var forward = CanDeployForward;
-		var before = _playerDeployments;
 		TrySpawnPlayer(_deck.ArmedUnit, ResolvePlayerDeployPosition(clickY));
-		if (forward && _playerDeployments > before)
-		{
-			_forwardDeploymentsRemaining--;
-			_forwardDeploymentsUsed++;
-			_forwardCooldownRemaining = _stageData.Battlefield.ForwardCooldown;
-		}
 	}
 
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
@@ -3346,52 +2398,6 @@ public partial class BattleController : Node2D
 		return unit;
 	}
 
-	private void TickTunnelInvasion(float delta)
-	{
-		if (!StageModifiers.HasTunnelInvasion(_stageData))
-		{
-			return;
-		}
-
-		_tunnelInvasionTimer -= delta;
-		if (_tunnelInvasionTimer > 0f)
-		{
-			return;
-		}
-
-		if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies() ||
-			_units.Count(unit => !unit.IsDead && unit.Team == Team.Enemy && unit.DefinitionId == GameData.EnemyTunnelerId) >= 2)
-		{
-			_pendingTunnelInvasion = null;
-			_tunnelInvasionTimer = 4f;
-			return;
-		}
-
-		if (!_pendingTunnelInvasion.HasValue)
-		{
-			_pendingTunnelInvasion = new Vector2(
-				_rng.RandfRange(BattlefieldLeft + 180f, BattlefieldRight - 40f),
-				_rng.RandfRange(BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-			_tunnelInvasionTimer = 2f;
-			SetStatus("Tunnel breach in 2 seconds. Guard the marked lane!");
-			return;
-		}
-
-		var spawnPosition = _pendingTunnelInvasion.Value;
-		_pendingTunnelInvasion = null;
-		_tunnelInvasionTimer = _rng.RandfRange(22f, 28f);
-
-		if (!_spawnDirector.TryBuildEnemyStats(GameData.EnemyTunnelerId, out var tunnelerStats))
-		{
-			return;
-		}
-
-		SpawnEnemyUnit(tunnelerStats, spawnPosition);
-		SpawnEffect(spawnPosition, tunnelerStats.Color.Lightened(0.12f), 6f, 30f, 0.24f, false);
-		SpawnFloatText(spawnPosition + new Vector2(0f, -36f), "TUNNEL BREACH", tunnelerStats.Color.Lightened(0.2f), 0.56f);
-		SetStatus("A tunneler has emerged from an unexpected position.");
-	}
-
 	private void SpawnProjectile(Unit attacker, Unit target)
 		=> SpawnProjectileDamage(attacker, target, 1f);
 
@@ -3482,128 +2488,6 @@ public partial class BattleController : Node2D
 			}
 		}
 
-	}
-
-	private void SpawnContactPressureProjectile(Unit attacker)
-	{
-		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
-		{
-			return;
-		}
-
-		var targetActor = _activeEndlessContactActor;
-		var projectile = ProjectilePool.Acquire();
-		projectile.GlobalPosition = attacker.WeaponContactPosition;
-		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
-		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 400f;
-		var color = attacker.Tint.Lightened(0.18f);
-		projectile.Setup(
-			targetActor,
-			ResolveEnemyContactAttackDamage(attacker),
-			speed,
-			color,
-			damage =>
-			{
-				if (!CanInteractWithEndlessContactActor(targetActor))
-				{
-					return 0f;
-				}
-
-				var appliedDamage = targetActor.ApplyPressureDamage(damage);
-				RegisterEndlessContactPressure(appliedDamage);
-				return appliedDamage;
-			},
-			() => !CanInteractWithEndlessContactActor(targetActor),
-			(position, appliedDamage, hitColor) =>
-			{
-				if (appliedDamage > 0.05f)
-				{
-					SpawnEffect(position, hitColor, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
-					SpawnFloatText(position + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", hitColor.Lightened(0.22f), 0.46f);
-				}
-			});
-		AddChild(projectile);
-	}
-
-	private void SpawnContactSupportProjectile(Unit unit, float repairAmount, float progressBoost, string supportLabel)
-	{
-		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
-		{
-			return;
-		}
-
-		var targetActor = _activeEndlessContactActor;
-		var projectile = ProjectilePool.Acquire();
-		projectile.GlobalPosition = unit.WeaponContactPosition;
-		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
-		var speed = unit.ProjectileSpeed > 0f ? unit.ProjectileSpeed : 420f;
-		var color = unit.Tint.Lightened(0.24f);
-		projectile.Setup(
-			targetActor,
-			repairAmount,
-			speed,
-			color,
-			_ =>
-			{
-				if (!CanInteractWithEndlessContactActor(targetActor))
-				{
-					return 0f;
-				}
-
-				var repaired = targetActor.Repair(repairAmount);
-				_activeEndlessContact.Progress = Mathf.Min(
-					_activeEndlessContact.Definition.TargetSeconds,
-					_activeEndlessContact.Progress + progressBoost);
-				RegisterEndlessContactSupport(repaired, progressBoost);
-				SpawnFloatText(
-					targetActor.Position + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
-					supportLabel,
-					color.Lightened(0.2f),
-					0.48f);
-				return repaired;
-			},
-			() => !CanInteractWithEndlessContactActor(targetActor),
-			(position, appliedRepair, hitColor) =>
-			{
-				if (appliedRepair > 0.05f)
-				{
-					SpawnEffect(position, hitColor, 6f, 18f + (appliedRepair * 0.2f), 0.16f, false);
-				}
-			});
-		AddChild(projectile);
-	}
-
-	private bool CanInteractWithEndlessContactActor(EndlessContactActor actor)
-	{
-		return IsInstanceValid(actor) &&
-			IsInstanceValid(_activeEndlessContactActor) &&
-			ReferenceEquals(_activeEndlessContactActor, actor) &&
-			_activeEndlessContact != null &&
-			!_activeEndlessContact.Completed &&
-			!_activeEndlessContact.Failed;
-	}
-
-	private void RegisterEndlessContactSupport(float repaired, float progressBoost)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return;
-		}
-
-		_activeEndlessContact.PlayerSupportActions++;
-		_activeEndlessContact.PlayerSupportRepairTotal += Mathf.Max(0f, repaired);
-		_activeEndlessContact.PlayerSupportProgressTotal += Mathf.Max(0f, progressBoost);
-	}
-
-	private void RegisterEndlessContactPressure(float appliedDamage)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return;
-		}
-
-		_activeEndlessContact.EnemyPressureActions++;
-		_activeEndlessContact.EnemyPressureDamageTotal += Mathf.Max(0f, appliedDamage);
 	}
 
 	private void TryAttackBase(Unit attacker)
@@ -3764,8 +2648,6 @@ public partial class BattleController : Node2D
 				TryTriggerPlayerActiveAbility(unit, target);
 			}
 			if (unit.IsAttackCommitted) continue;
-			var prioritizeContact = ShouldPrioritizeEndlessContact(unit, target);
-			var supportContact = ShouldSupportEndlessContact(unit, target);
 			var prioritizeObjectiveRaid = ShouldPrioritizeObjectiveRaid(unit, target);
 
 			if (target != null && !prioritizeObjectiveRaid && unit.CanAttack(target))
@@ -3785,18 +2667,6 @@ public partial class BattleController : Node2D
 						QueueUnitStrike(unit, target);
 					}
 				}
-			}
-			else if (TryHoldCampaignFieldPoint(unit, target))
-			{
-				// Hold the current lane; nearby combat always takes priority.
-			}
-			else if (prioritizeContact)
-			{
-				SimulateEnemyContactPressure(unit, delta);
-			}
-			else if (supportContact)
-			{
-				SimulatePlayerContactSupport(unit, delta);
 			}
 			else if (target != null && !prioritizeObjectiveRaid)
 			{
@@ -4357,7 +3227,6 @@ public partial class BattleController : Node2D
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "CHARGE", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
-
 	private void ActiveAbilityArcaneBeam(Unit unit)
 	{
 		var damagePerTarget = unit.CurrentAttackDamage * 4f / 2f;
@@ -4481,7 +3350,6 @@ public partial class BattleController : Node2D
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.18f), 10f, 52f, 0.28f, false);
 		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "INSPIRE", unit.Tint.Lightened(0.26f), 0.56f);
 	}
-
 
 	private void ActiveAbilityVanish(Unit unit)
 	{
@@ -4830,96 +3698,14 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void TryTriggerCampaignReserve()
-	{
-		if (!IsCampaignMode || !_campaignReserveReady || _battleEnded || _enemyBaseHealth <= 0.01f || _playerBaseMaxHealth <= 0.01f)
-		{
-			return;
-		}
-
-		var hullRatio = _playerBaseHealth / _playerBaseMaxHealth;
-		if (hullRatio > GameState.Instance.GetCampaignReserveThresholdRatio())
-		{
-			return;
-		}
-
-		_campaignReserveReady = false;
-		_campaignReserveTriggered = true;
-
-		var courageGain = GameState.Instance.GetCampaignReserveCourageBonus();
-		var repairRatio = GameState.Instance.GetCampaignReserveHullRepairRatio();
-		var repairAmount = _playerBaseMaxHealth * repairRatio;
-		var cooldownRecovery = GameState.Instance.GetCampaignReserveCooldownRecoverySeconds();
-		var rallyDuration = GameState.Instance.GetCampaignReserveRallyDurationSeconds();
-		var reserveColor = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.14f);
-
-		_playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repairAmount);
-		_courage = Mathf.Min(_maxCourage, _courage + courageGain);
-		_deck.ReduceCooldowns(cooldownRecovery);
-		_spellDeck.ReduceCooldowns(cooldownRecovery);
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead || unit.Team != Team.Player)
-			{
-				continue;
-			}
-
-			unit.ApplyTemporaryCombatBuff(
-				GameState.Instance.GetCampaignReserveRallyAttackScale(),
-				GameState.Instance.GetCampaignReserveRallySpeedScale(),
-				rallyDuration);
-		}
-
-		SpawnEffect(PlayerBaseCorePosition, reserveColor, 12f, 44f, 0.3f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -58f), "RESERVE", reserveColor.Lightened(0.22f), 0.7f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -82f), $"+{courageGain} COURAGE", reserveColor.Lightened(0.3f), 0.62f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -104f), $"+{Mathf.RoundToInt(repairRatio * 100f)}% HULL", reserveColor.Lightened(0.36f), 0.56f);
-		SetStatus(
-			$"Emergency reserve deployed: +{courageGain} courage, {cooldownRecovery:0.0}s cooldown recovery, {Mathf.RoundToInt(repairRatio * 100f)}% hull patch, and a rally burst.");
-	}
-
-	private void UpdateCampaignConvoyCommand(float delta)
-	{
-		if (!IsCampaignMode || _campaignConvoyCommandReady || _campaignConvoyCommandTriggered || _battleEnded || _enemyBaseHealth <= 0.01f)
-		{
-			return;
-		}
-
-		var pressure = CountTeamUnits(Team.Enemy) + _spawnDirector.PendingSpawnCount;
-		if (pressure <= 0 && _elapsed < 8f)
-		{
-			return;
-		}
-
-		var chargeRate = pressure <= 0
-			? 0.4f
-			: Mathf.Clamp(0.55f + (pressure * 0.08f), 0.55f, 1.35f);
-		_campaignConvoyCommandChargeRemaining = Mathf.Max(0f, _campaignConvoyCommandChargeRemaining - (delta * chargeRate));
-		if (_campaignConvoyCommandChargeRemaining > 0.001f)
-		{
-			return;
-		}
-
-		_campaignConvoyCommandChargeRemaining = 0f;
-		_campaignConvoyCommandReady = true;
-		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.14f);
-		SpawnEffect(PlayerBaseCorePosition, color, 12f, 38f, 0.24f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -58f), "COMMAND READY", color.Lightened(0.22f), 0.66f);
-		SetStatus($"Convoy command ready: {_campaignConvoyCommandLabel}. Press C to commit it.");
-	}
-
 	private void ArmCampaignFieldOrder(StageMissionState mission, bool succeeded)
 	{
 		if (!IsCampaignMode || _campaignFieldOrderReady || _campaignFieldOrderCommitted)
 		{
 			return;
 		}
-
-		_campaignFieldOrderMissionResolved = true;
 		_campaignFieldOrderMissionSucceeded = succeeded;
 		_campaignFieldOrderMissionLabel = mission == null ? "Battlefield event" : StageMissionEvents.ResolveTitle(mission.Definition);
-		_campaignFieldOrderLaneY = mission?.Anchor.Y ?? BaseCenterY;
 		_campaignFieldOrderReady = true;
 		var anchor = mission?.Anchor ?? new Vector2(PlayerBaseX + 90f, BaseCenterY);
 		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.12f);
@@ -4930,703 +3716,9 @@ public partial class BattleController : Node2D
 			$"[Z] {_campaignFieldOrderAssaultLabel} or [X] {_campaignFieldOrderBulwarkLabel}.");
 	}
 
-	private void TryCommitCampaignFieldOrder(bool assault)
-	{
-		return;
-	}
-
-	private string QueueCampaignFieldOrderResponse(bool assault)
-	{
-		if (!IsCampaignMode || _campaignFieldOrderResponseQueued || _campaignFieldOrderResponseTriggered)
-		{
-			return "";
-		}
-
-		_campaignFieldOrderResponseQueued = true;
-		_campaignFieldOrderResponseAssault = assault;
-		_campaignFieldOrderResponseTriggerAt = _elapsed + CampaignFieldOrderResponseLeadSeconds;
-		_campaignFieldOrderResponseLaneY = _campaignFieldOrderMissionResolved
-			? _campaignFieldOrderLaneY
-			: ResolveCampaignConvoyCommandLaneY();
-		_campaignFieldOrderResponseLabel = assault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel;
-		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.12f);
-		var anchor = new Vector2(PlayerSpawnX + 22f, Mathf.Clamp(_campaignFieldOrderResponseLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-		SpawnEffect(anchor, color, 10f, 38f, 0.22f, false);
-		SpawnFloatText(anchor + new Vector2(0f, -34f), "FOLLOW-UP", color.Lightened(0.18f), 0.58f);
-		return $"{_campaignFieldOrderResponseLabel} follow-up is lining up in {CampaignFieldOrderResponseLeadSeconds:0.0}s.";
-	}
-
-	private void TryTriggerCampaignFieldOrderResponse()
-	{
-		if (!IsCampaignMode || !_campaignFieldOrderResponseQueued || _battleEnded)
-		{
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignFieldOrderResponseTriggerAt)
-		{
-			return;
-		}
-
-		_campaignFieldOrderResponseQueued = false;
-		_campaignFieldOrderResponseTriggered = true;
-		ApplyCampaignFieldOrderResponse();
-	}
-
-	private void ApplyCampaignFieldOrderResponse()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var laneY = Mathf.Clamp(_campaignFieldOrderResponseLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.48f), laneY);
-		var nearEnemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY), 360f)?.Position
-			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY);
-		var succeeded = _campaignFieldOrderMissionResolved && _campaignFieldOrderMissionSucceeded;
-		var label = string.IsNullOrWhiteSpace(_campaignFieldOrderResponseLabel)
-			? (_campaignFieldOrderResponseAssault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel)
-			: _campaignFieldOrderResponseLabel;
-		SpawnEffect(laneAnchor, color, 12f, 48f, 0.28f, false);
-		SpawnFloatText(laneAnchor + new Vector2(0f, -46f), label.ToUpperInvariant(), color.Lightened(0.22f), 0.66f);
-		string statusText;
-
-		if (_campaignFieldOrderResponseAssault)
-		{
-			SpawnSupportUnit(ResolveCampaignFieldOrderResponseSupportUnitId(true, succeeded), laneY);
-			if (succeeded)
-			{
-				SpawnSupportUnit(ResolveCampaignFieldOrderResponseSupportUnitId(true, false), laneY);
-				DamageEnemiesNear(nearEnemyAnchor, 96f, 20f, color, "PURSUIT");
-				BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.08f, 1.08f, 5.8f, color);
-				DamageEnemyBaseByRatio(0.02f, color, "");
-				statusText = $"{label} follow-up hit: the convoy converted the opening into a pursuit surge.";
-			}
-			else
-			{
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				_deck.ReduceCooldowns(0.7f);
-				_spellDeck.ReduceCooldowns(0.7f);
-				DamageEnemiesNear(nearEnemyAnchor, 82f, 18f, color, "SALVAGE");
-				statusText = $"{label} follow-up hit: the convoy salvaged tempo back into the lane.";
-			}
-		}
-		else
-		{
-			SpawnSupportUnit(ResolveCampaignFieldOrderResponseSupportUnitId(false, succeeded), laneY);
-			RepairBusByRatio(succeeded ? 0.03f : 0.05f);
-			BuffAllPlayerUnits(1.03f, 1.06f, succeeded ? 5.5f : 6.2f, succeeded ? 0.86f : 0.82f);
-			SlowEnemiesNear(nearEnemyAnchor, 100f, succeeded ? 0.64f : 0.56f, succeeded ? 3.2f : 3.8f, color, succeeded ? "STALL" : "RECOVER");
-			if (!succeeded)
-			{
-				_deck.ReduceCooldowns(0.8f);
-				_spellDeck.ReduceCooldowns(0.8f);
-			}
-
-			statusText = succeeded
-				? $"{label} follow-up hit: the convoy consolidated the lane before the counter-push."
-				: $"{label} follow-up hit: the convoy stabilized the lane after the collapse.";
-		}
-
-		var branchMissionStatus = TryAddCampaignFieldOrderBranchMission();
-		if (!string.IsNullOrWhiteSpace(branchMissionStatus))
-		{
-			statusText += $" {branchMissionStatus}";
-		}
-
-		SetStatus(statusText);
-	}
-
-	private string TryAddCampaignFieldOrderBranchMission()
-	{
-		if (!IsCampaignMode || _campaignFieldOrderBranchMissionAdded || !_campaignFieldOrderMissionResolved)
-		{
-			return "";
-		}
-
-		// An earned order remains useful in the finish, without opening another
-		// objective whose failure can prolong the boss fight with a counter-wave.
-		if (_enemyBaseHealth <= 0f || _units.Any(IsCampaignBossPhaseUnit)) return "";
-
-		_campaignFieldOrderBranchMissionAdded = true;
-		var mission = AddStageMission(
-			BuildCampaignFieldOrderBranchMissionDefinition(
-				_campaignFieldOrderResponseAssault,
-				_campaignFieldOrderMissionSucceeded,
-				_campaignFieldOrderResponseLaneY),
-			countsTowardStageObjectives: false,
-			isBonusObjective: true);
-		SpawnEffect(mission.Anchor, mission.Color.Lightened(0.06f), 12f, mission.Definition.Radius * 0.62f, 0.24f, false);
-		SpawnFloatText(mission.Anchor + new Vector2(0f, -44f), "BONUS OBJECTIVE", mission.Color.Lightened(0.22f), 0.62f);
-		return $"{BuildStageMissionDisplayTitle(mission)} arms in {Mathf.Max(0f, mission.Definition.StartTime - _elapsed):0.0}s.";
-	}
-
-	private StageMissionEventDefinition BuildCampaignFieldOrderBranchMissionDefinition(bool assault, bool succeeded, float laneY)
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var routePrefix = ResolveCampaignFieldOrderBranchMissionPrefix();
-		var clampedLaneY = Mathf.Clamp(laneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var yRatio = Mathf.Clamp(Mathf.InverseLerp(BattlefieldTop + 48f, BattlefieldBottom - 48f, clampedLaneY), 0.12f, 0.88f);
-		var startTime = _elapsed + CampaignFieldOrderBranchMissionLeadSeconds;
-		var colorHex = route.BannerAccent.ToHtml(false);
-
-		if (assault)
-		{
-			return succeeded
-				? new StageMissionEventDefinition
-				{
-					Type = "mainline_push",
-					Title = $"{routePrefix} Pushline",
-					Summary = "Exploit the opening and keep the lane open while the vanguard surges through it.",
-					RewardSummary = "Reward: the convoy keeps the road open and the forward line surges deeper.",
-					PenaltySummary = "Risk: the enemy slams the road shut and the opening is lost.",
-					XRatio = 0.62f,
-					YRatio = yRatio,
-					Radius = 78f,
-					TargetSeconds = 8f,
-					StartTime = startTime,
-					ColorHex = colorHex
-				}
-				: new StageMissionEventDefinition
-				{
-					Type = "gate_breach",
-					Title = $"{routePrefix} Countercharge",
-					Summary = "Force a salvage breach through the stalled lane before the enemy resets.",
-					RewardSummary = "Reward: the convoy steals tempo back and cracks the pressure wave.",
-					PenaltySummary = "Risk: the salvage charge stalls and the enemy keeps the initiative.",
-					XRatio = 0.58f,
-					YRatio = yRatio,
-					Radius = 78f,
-					TargetSeconds = 8.1f,
-					StartTime = startTime,
-					ColorHex = colorHex
-				};
-		}
-
-		return succeeded
-			? new StageMissionEventDefinition
-			{
-				Type = "relic_escort",
-				Title = $"{routePrefix} Holdfast",
-				Summary = "Screen the reserve wagons while the line resets behind the win.",
-				RewardSummary = "Reward: reserve wagons slip through with repairs and fresh support.",
-				PenaltySummary = "Risk: the reserve train is scattered and the counter-push sharpens.",
-				XRatio = 0.42f,
-				YRatio = yRatio,
-				Radius = 76f,
-				TargetSeconds = 8.4f,
-				StartTime = startTime,
-				ColorHex = colorHex
-			}
-			: new StageMissionEventDefinition
-			{
-				Type = "rescue_hold",
-				Title = $"{routePrefix} Rescue Hold",
-				Summary = "Hold the fallback block long enough to pull routed crews and survivors behind the line.",
-				RewardSummary = "Reward: the rescue line holds and fresh hands reinforce the wagon.",
-				PenaltySummary = "Risk: the rescue block collapses and the wagon takes direct pressure.",
-				XRatio = 0.32f,
-				YRatio = yRatio,
-				Radius = 78f,
-				TargetSeconds = 8.6f,
-				StartTime = startTime,
-				ColorHex = colorHex
-			};
-	}
-
-	private string ResolveCampaignFieldOrderBranchMissionPrefix()
-	{
-		return RouteCatalog.Normalize(_activeRouteId) switch
-		{
-			RouteCatalog.CityId => "Lantern",
-			RouteCatalog.HarborId => "Breakwater",
-			RouteCatalog.FoundryId => "Furnace",
-			RouteCatalog.QuarantineId => "Ward",
-			RouteCatalog.ThornwallId => "Stone",
-			RouteCatalog.BasilicaId => "Sanctum",
-			RouteCatalog.MireId => "Bog",
-			RouteCatalog.SteppeId => "Outrider",
-			RouteCatalog.GloamwoodId => "Witchlight",
-			RouteCatalog.CitadelId => "Bastion",
-			_ => "Convoy"
-		};
-	}
-
-	private void ApplyCampaignFieldOrder(bool assault)
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var succeeded = _campaignFieldOrderMissionResolved && _campaignFieldOrderMissionSucceeded;
-		var laneY = _campaignFieldOrderMissionResolved
-			? Mathf.Clamp(_campaignFieldOrderLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding)
-			: ResolveCampaignConvoyCommandLaneY();
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.46f), laneY);
-		var nearEnemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.6f), laneY), 360f)?.Position
-			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.6f), laneY);
-		var label = assault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel;
-		SpawnEffect(laneAnchor, color, 12f, 52f, 0.28f, false);
-		SpawnFloatText(laneAnchor + new Vector2(0f, -48f), label.ToUpperInvariant(), color.Lightened(0.22f), 0.68f);
-
-		if (assault)
-		{
-			_courage = Mathf.Min(_maxCourage, _courage + (succeeded ? 8f : 10f));
-			BuffAllPlayerUnits(succeeded ? 1.1f : 1.12f, succeeded ? 1.08f : 1.1f, succeeded ? 6.5f : 6.8f);
-			if (succeeded)
-			{
-				DamageEnemyBaseByRatio(0.03f, color, "");
-				if (_campaignMissionAftermathQueued && _campaignMissionAftermathFriendly)
-				{
-					_campaignMissionAftermathTriggerAt = Mathf.Min(_campaignMissionAftermathTriggerAt, _elapsed + 0.45f);
-					SpawnFloatText(new Vector2(PlayerSpawnX + 24f, laneY - 36f), "PRESS", color.Lightened(0.18f), 0.58f);
-				}
-			}
-			else
-			{
-				DamageEnemiesNear(nearEnemyAnchor, 88f, 18f, color, "SALVAGE");
-				_deck.ReduceCooldowns(0.7f);
-				_spellDeck.ReduceCooldowns(0.7f);
-			}
-
-			switch (_activeRouteId)
-			{
-				case RouteCatalog.CityId:
-					SpawnSupportUnit(GameData.PlayerBannerId, laneY);
-					_deck.ReduceCooldowns(0.8f);
-					_spellDeck.ReduceCooldowns(0.8f);
-					break;
-				case RouteCatalog.HarborId:
-					DamageEnemiesNear(nearEnemyAnchor, 90f, 20f, color, "TIDECUT");
-					SlowEnemiesNear(nearEnemyAnchor, 90f, 0.64f, 3.2f, color);
-					break;
-				case RouteCatalog.FoundryId:
-					DamageEnemiesNear(nearEnemyAnchor, 104f, 24f, color, "FURNACE PUSH");
-					break;
-				case RouteCatalog.QuarantineId:
-					_enemySignalJamTimer = 0f;
-					_enemySignalJamCourageGainScale = 1f;
-					break;
-				case RouteCatalog.ThornwallId:
-					PushEnemiesFromPoint(nearEnemyAnchor, 112f, 18f, 0.58f, 3f, color, "AVALANCHE PUSH");
-					break;
-				case RouteCatalog.BasilicaId:
-					RepairBusByRatio(0.02f);
-					SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-					break;
-				case RouteCatalog.MireId:
-					SlowEnemiesNear(nearEnemyAnchor, 104f, 0.58f, 3.6f, color, "BOG HUNT");
-					break;
-				case RouteCatalog.SteppeId:
-					SpawnSupportUnit(GameData.PlayerRaiderId, laneY);
-					break;
-				case RouteCatalog.GloamwoodId:
-				{
-					var target = FindHighestHealthEnemy();
-					if (target != null)
-					{
-						var appliedDamage = target.TakeDamage(30f, label);
-						SpawnDamageFeedback(target.Position, appliedDamage, color);
-						target.ApplyTemporarySpeedModifier(0.56f, 3.8f);
-					}
-
-					break;
-				}
-				case RouteCatalog.CitadelId:
-					SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
-					break;
-			}
-
-			var responseStatus = QueueCampaignFieldOrderResponse(true);
-			var statusText = succeeded
-				? $"{label} committed after {_campaignFieldOrderMissionLabel} held: the convoy pressed the opening before the enemy could reset."
-				: $"{label} committed after {_campaignFieldOrderMissionLabel} fell: the convoy forced a salvage push to steal tempo back.";
-			if (!string.IsNullOrWhiteSpace(responseStatus))
-			{
-				statusText += $" {responseStatus}";
-			}
-
-			SetStatus(statusText);
-			return;
-		}
-
-		RepairBusByRatio(succeeded ? 0.04f : 0.06f);
-		_deck.ReduceCooldowns(succeeded ? 0.9f : 1.05f);
-		_spellDeck.ReduceCooldowns(succeeded ? 0.9f : 1.05f);
-		BuffAllPlayerUnits(succeeded ? 1.04f : 1.02f, 1.08f, succeeded ? 6.5f : 7f, succeeded ? 0.84f : 0.82f);
-		if (succeeded && _campaignCounterSurgeQueued)
-		{
-			_campaignCounterSurgeTriggerAt += 1.2f;
-			SpawnFloatText(new Vector2(EnemySpawnX - 24f, laneY - 36f), "STALL", color.Lightened(0.18f), 0.58f);
-		}
-		else if (!succeeded && _campaignMissionAftermathQueued && !_campaignMissionAftermathFriendly)
-		{
-			_campaignMissionAftermathTriggerAt += 1.4f;
-			SpawnFloatText(new Vector2(EnemySpawnX - 24f, laneY - 36f), "FALL BACK", color.Lightened(0.18f), 0.58f);
-		}
-
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				SpawnSupportUnit(GameData.PlayerDefenderId, laneY);
-				break;
-			case RouteCatalog.HarborId:
-				SlowEnemiesNear(nearEnemyAnchor, 100f, 0.58f, 3.4f, color, "BREAKWATER");
-				break;
-			case RouteCatalog.FoundryId:
-				SpawnSupportUnit(GameData.PlayerMechanicId, laneY);
-				break;
-			case RouteCatalog.QuarantineId:
-				_enemySignalJamTimer = 0f;
-				_enemySignalJamCourageGainScale = 1f;
-				SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-				break;
-			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(laneAnchor, 118f, 18f, 0.54f, 3.2f, color, "STONE BRACE");
-				break;
-			case RouteCatalog.BasilicaId:
-				SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-				HealUnit(FindHighestHealthPlayer(), 24f, color, "HOLD");
-				break;
-			case RouteCatalog.MireId:
-				SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-				SlowEnemiesNear(nearEnemyAnchor, 100f, 0.56f, 3.4f, color, "REED BASTION");
-				break;
-			case RouteCatalog.SteppeId:
-				SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-				_courage = Mathf.Min(_maxCourage, _courage + 4f);
-				break;
-			case RouteCatalog.GloamwoodId:
-			{
-				var target = FindHighestHealthEnemy();
-				if (target != null)
-				{
-					target.ApplyTemporarySpeedModifier(0.52f, 4f);
-					DamageEnemiesNear(target.Position, 68f, 14f, color, "VEIL");
-				}
-
-				break;
-			}
-			case RouteCatalog.CitadelId:
-				SpawnSupportUnit(GameData.PlayerMarksmanId, laneY);
-				break;
-		}
-
-		var bulwarkResponseStatus = QueueCampaignFieldOrderResponse(false);
-		var bulwarkStatusText = succeeded
-			? $"{label} committed after {_campaignFieldOrderMissionLabel} held: the convoy consolidated the line and blunted the coming counter-push."
-			: $"{label} committed after {_campaignFieldOrderMissionLabel} fell: the convoy bought emergency time to recover from the collapse.";
-		if (!string.IsNullOrWhiteSpace(bulwarkResponseStatus))
-		{
-			bulwarkStatusText += $" {bulwarkResponseStatus}";
-		}
-
-		SetStatus(bulwarkStatusText);
-	}
-
 	private void TryActivateCampaignConvoyCommand()
 	{
 		return;
-	}
-
-	private void ApplyCampaignConvoyCommand()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var laneY = ResolveCampaignConvoyCommandLaneY();
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.48f), laneY);
-		var nearEnemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY), 360f)?.Position
-			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY);
-		var label = string.IsNullOrWhiteSpace(_campaignConvoyCommandLabel) ? "Convoy Command" : _campaignConvoyCommandLabel;
-		SpawnEffect(PlayerBaseCorePosition + new Vector2(0f, laneY - BaseCenterY), color, 12f, 48f, 0.28f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), label.ToUpperInvariant(), color.Lightened(0.22f), 0.7f);
-		var statusText = $"{label} triggered.";
-
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				SpawnSupportUnit(GameData.PlayerBannerId, laneY);
-				SpawnSupportUnit(GameData.PlayerCoordinatorId, laneY);
-				_courage = Mathf.Min(_maxCourage, _courage + 10f);
-				_deck.ReduceCooldowns(0.9f);
-				_spellDeck.ReduceCooldowns(0.9f);
-				BuffUnitsNear(Team.Player, laneAnchor, 150f, 1.08f, 1.06f, 6f, color, "LANTERN CALL");
-				statusText = $"{label} rallied the active lane with a banner push, +10 courage, and cooldown relief.";
-				break;
-			case RouteCatalog.HarborId:
-				DamageEnemiesNear(nearEnemyAnchor, 104f, 28f, color, "HARPOON BREAK");
-				SlowEnemiesNear(nearEnemyAnchor, 104f, 0.54f, 3.8f, color);
-				PushEnemiesFromPoint(nearEnemyAnchor, 104f, 20f, 0.62f, 3f, color, "");
-				statusText = $"{label} snapped chains across the lane and broke the nearest enemy push.";
-				break;
-			case RouteCatalog.FoundryId:
-				DamageEnemiesNear(nearEnemyAnchor + new Vector2(-24f, -24f), 76f, 22f, color, "FIRE");
-				DamageEnemiesNear(nearEnemyAnchor + new Vector2(18f, 0f), 92f, 26f, color, "MISSION");
-				DamageEnemiesNear(nearEnemyAnchor + new Vector2(-18f, 28f), 76f, 22f, color, "");
-				DamageEnemyBaseByRatio(0.03f, color, "FIRE MISSION");
-				statusText = $"{label} walked a furnace barrage through the frontline and clipped the keep.";
-				break;
-			case RouteCatalog.QuarantineId:
-				_enemySignalJamTimer = 0f;
-				_enemySignalJamCourageGainScale = 1f;
-				RepairBusByRatio(0.05f);
-				_deck.ReduceCooldowns(0.8f);
-				_spellDeck.ReduceCooldowns(0.8f);
-				BuffAllPlayerUnits(1.06f, 1.08f, 6.5f, 0.84f);
-				statusText = $"{label} cleared signal pressure, patched hull, and hardened the convoy line.";
-				break;
-			case RouteCatalog.ThornwallId:
-				DamageEnemiesNear(nearEnemyAnchor, 96f, 24f, color, "STONEFALL");
-				PushEnemiesFromPoint(nearEnemyAnchor, 120f, 24f, 0.48f, 3.5f, color, "");
-				statusText = $"{label} dropped a heavy stonefall across the pass and opened breathing room.";
-				break;
-			case RouteCatalog.BasilicaId:
-				RepairBusByRatio(0.05f);
-				BuffAllPlayerUnits(1.1f, 1.08f, 6.5f);
-				SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-				HealUnit(FindHighestHealthPlayer(), 30f, color, "OATH");
-				statusText = $"{label} blessed the line, patched the wagon, and restored the leading defender.";
-				break;
-			case RouteCatalog.MireId:
-				DamageEnemiesNear(nearEnemyAnchor, 96f, 20f, color, "FEN LURE");
-				SlowEnemiesNear(nearEnemyAnchor, 112f, 0.52f, 4f, color);
-				SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-				statusText = $"{label} dragged the nearest enemy knot into the bog and sprung a hound chase.";
-				break;
-			case RouteCatalog.SteppeId:
-				SpawnSupportUnit(GameData.PlayerRaiderId, laneY);
-				SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-				_courage = Mathf.Min(_maxCourage, _courage + 8f);
-				BuffAllPlayerUnits(1.05f, 1.16f, 6.5f);
-				statusText = $"{label} sent outriders through the lane with a fast attack surge.";
-				break;
-			case RouteCatalog.GloamwoodId:
-			{
-				var target = FindHighestHealthEnemy();
-				if (target != null)
-				{
-					var appliedDamage = target.TakeDamage(42f, label);
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
-					target.ApplyTemporarySpeedModifier(0.42f, 4.2f);
-					DamageEnemiesNear(target.Position, 72f, 18f, color, "NIGHT MARK");
-				}
-
-				_deck.ReduceCooldowns(0.8f);
-				_spellDeck.ReduceCooldowns(0.8f);
-				statusText = $"{label} hexed the heaviest threat and quickened the convoy response.";
-				break;
-			}
-			case RouteCatalog.CitadelId:
-				SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
-				DamageEnemyBaseByRatio(0.06f, color, "COUNTERBATTERY");
-				DamageEnemiesNear(nearEnemyAnchor, 104f, 24f, color, "");
-				statusText = $"{label} corrected convoy guns onto the keep and frontline.";
-				break;
-			default:
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				BuffAllPlayerUnits(1.05f, 1.05f, 5.5f);
-				statusText = $"{label} steadied the convoy with a one-time rally.";
-				break;
-		}
-
-		SetStatus(statusText);
-	}
-
-	private void TryTriggerCampaignRouteSupport()
-	{
-		if (!IsCampaignMode || !_campaignRouteSupportReady || _battleEnded || _enemyBaseHealth <= 0.01f || _elapsed < 8f)
-		{
-			return;
-		}
-
-		var activeEnemies = CountTeamUnits(Team.Enemy);
-		var pressure = activeEnemies + _spawnDirector.PendingSpawnCount;
-		if (activeEnemies < 4 || pressure < ResolveCampaignRouteSupportPressureThreshold())
-		{
-			return;
-		}
-
-		_campaignRouteSupportReady = false;
-		_campaignRouteSupportTriggered = true;
-		ApplyCampaignRouteSupport();
-	}
-
-	private int ResolveCampaignRouteSupportPressureThreshold()
-	{
-		return Mathf.Clamp(5 + (_stage / 12), 5, 9);
-	}
-
-	private void ApplyCampaignRouteSupport()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent;
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				SpawnSupportUnit(GameData.PlayerBannerId);
-				_courage = Mathf.Min(_maxCourage, _courage + 8f);
-				_deck.ReduceCooldowns(0.8f);
-				_spellDeck.ReduceCooldowns(0.8f);
-				SpawnEffect(PlayerBaseCorePosition, color, 10f, 34f, 0.24f, false);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "MILITIA SURGE", color.Lightened(0.2f), 0.66f);
-				SetStatus("King's Road support arrived: militia banner deployed, +8 courage, and quick card recovery.");
-				break;
-			case RouteCatalog.HarborId:
-			{
-				var anchor = FindClosestEnemyToPoint(PlayerBaseCorePosition + new Vector2(120f, 0f), 260f)?.Position ?? EnemyBaseCorePosition;
-				DamageEnemiesNear(anchor, 92f, 24f, color, "CHAIN SNARE");
-				SlowEnemiesNear(anchor, 92f, 0.58f, 3.5f, color);
-				SetStatus("Saltwake dock chains snapped shut across the nearest push.");
-				break;
-			}
-			case RouteCatalog.FoundryId:
-			{
-				var anchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), BaseCenterY), 420f)?.Position ?? EnemyBaseCorePosition;
-				DamageEnemiesNear(anchor, 104f, 30f, color, "FURNACE VOLLEY");
-				SetStatus("Emberforge guns walked a furnace volley into the densest enemy pack.");
-				break;
-			}
-			case RouteCatalog.QuarantineId:
-				_enemySignalJamTimer = 0f;
-				_enemySignalJamCourageGainScale = 1f;
-				RepairBusByRatio(0.05f);
-				BuffAllPlayerUnits(1f, 1.04f, 6f, 0.84f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "WARD LANTERNS", color.Lightened(0.22f), 0.66f);
-				SetStatus("Ashen Ward lanterns broke the curse pressure and hardened the line.");
-				break;
-			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(PlayerBaseCorePosition, 220f, 24f, 0.54f, 3.5f, color, "AVALANCHE HORN");
-				SetStatus("Thornwall wardens sounded the avalanche horn and shoved the line downhill.");
-				break;
-			case RouteCatalog.BasilicaId:
-				SpawnSupportUnit(GameData.PlayerLanternGuardId);
-				RepairBusByRatio(0.04f);
-				BuffAllPlayerUnits(1.06f, 1.06f, 6f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "RELIQUARY VOW", color.Lightened(0.22f), 0.66f);
-				SetStatus("Basilica reliquaries opened and sanctified escorts reinforced the caravan.");
-				break;
-			case RouteCatalog.MireId:
-				RepairBusByRatio(0.04f);
-				SlowEnemiesNear(PlayerBaseCorePosition + new Vector2(90f, 0f), 180f, 0.68f, 4.2f, color, "FEN DRAG");
-				SetStatus("Mire bog fire seized the nearest advance and bought repair time.");
-				break;
-			case RouteCatalog.SteppeId:
-				SpawnSupportUnit(GameData.PlayerRaiderId);
-				SpawnSupportUnit(GameData.PlayerHoundId);
-				BuffAllPlayerUnits(1.04f, 1.12f, 6f);
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "OUTRIDER SWEEP", color.Lightened(0.22f), 0.66f);
-				SetStatus("Sunfall outriders swept in from the flank and quickened the march.");
-				break;
-			case RouteCatalog.GloamwoodId:
-			{
-				var target = FindHighestHealthEnemy();
-				if (target != null)
-				{
-					var appliedDamage = target.TakeDamage(48f, "Witchlight Ambush");
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
-					target.ApplyTemporarySpeedModifier(0.42f, 4f);
-					DamageEnemiesNear(target.Position, 72f, 20f, color, "WITCHLIGHT");
-				}
-				else
-				{
-					_deck.ReduceCooldowns(0.8f);
-					_spellDeck.ReduceCooldowns(0.8f);
-				}
-
-				SetStatus("Gloamwood witchlights caught the heaviest threat in an ambush.");
-				break;
-			}
-			case RouteCatalog.CitadelId:
-				DamageEnemyBaseByRatio(0.05f, color, "CITADEL CANNON");
-				DamageEnemiesNear(EnemyBaseCorePosition + new Vector2(-90f, 0f), 100f, 28f, color, "VOLLEY");
-				SetStatus("Citadel gunners landed a siege volley on the keep and frontline.");
-				break;
-			default:
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				_deck.ReduceCooldowns(0.6f);
-				_spellDeck.ReduceCooldowns(0.6f);
-				SetStatus("District support triggered and steadied the caravan.");
-				break;
-		}
-	}
-
-	private void UpdateCampaignLateCondition()
-	{
-		if (!IsCampaignMode || !_campaignLateConditionActive || _battleEnded || _enemyBaseHealth <= 0.01f || _playerBaseHealth <= 0.01f)
-		{
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignLateConditionTriggerAt)
-		{
-			return;
-		}
-
-		_campaignLateConditionTriggerAt = _elapsed + _campaignLateConditionIntervalSeconds;
-		_campaignLateConditionTriggerCount++;
-		ApplyCampaignLateCondition();
-	}
-
-	private void UpdateCampaignAdaptiveWaveRead()
-	{
-		if (!IsCampaignMode ||
-			!_campaignAdaptiveWaveReady ||
-			_battleEnded ||
-			!_spawnDirector.UsesScriptedWaves)
-		{
-			return;
-		}
-
-		var observedWaveIndex = _spawnDirector.NextScriptedWaveIndex;
-		if (observedWaveIndex <= 0 || observedWaveIndex <= _campaignAdaptiveWaveObservedScriptedWaveIndex)
-		{
-			return;
-		}
-
-		_campaignAdaptiveWaveObservedScriptedWaveIndex = observedWaveIndex;
-		_campaignAdaptiveWaveChargesRemaining = HasCampaignAdaptiveWaveEliteIntensity() ? 3 : 2;
-		if (_campaignAdaptiveWaveOverrideQueued)
-		{
-			_campaignAdaptiveWaveFriendly = true;
-			_campaignAdaptiveWaveDirective = _campaignAdaptiveWaveQueuedDirective;
-			_campaignAdaptiveWaveQueuedDirective = CampaignAdaptiveWaveDirective.None;
-			_campaignAdaptiveWaveOverrideQueued = false;
-			_campaignAdaptiveWaveChoiceReady = false;
-			_campaignAdaptiveWaveLabel = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough
-				? CampaignAdaptiveWaveBreakthroughLabel
-				: CampaignAdaptiveWaveRescueLabel;
-		}
-		else
-		{
-			_campaignAdaptiveWaveFriendly = ResolveCampaignAdaptiveWaveFriendlyRead();
-			_campaignAdaptiveWaveDirective = CampaignAdaptiveWaveDirective.None;
-			_campaignAdaptiveWaveLabel = _campaignAdaptiveWaveFriendly
-				? GameState.Instance.GetCampaignAdaptiveWaveFriendlyTitle(_activeRouteId)
-				: GameState.Instance.GetCampaignAdaptiveWaveEnemyTitle(_activeRouteId);
-		}
-		var triggeredWave = _stageData?.Waves != null && observedWaveIndex - 1 >= 0 && observedWaveIndex - 1 < _stageData.Waves.Length
-			? _stageData.Waves[observedWaveIndex - 1]
-			: null;
-		_campaignAdaptiveWaveWaveLabel = string.IsNullOrWhiteSpace(triggeredWave?.Label)
-			? $"Wave {observedWaveIndex}"
-			: triggeredWave.Label;
-		_campaignAdaptiveWaveWaveCount++;
-		var branchSummary = QueueCampaignAdaptiveWaveScriptBranch(triggeredWave);
-
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var laneY = ResolveCampaignLateConditionLaneY();
-		var anchor = new Vector2(
-			_campaignAdaptiveWaveFriendly ? PlayerSpawnX + 22f : EnemySpawnX - 22f,
-			Mathf.Clamp(laneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-		SpawnEffect(anchor, color, 10f, 40f, 0.22f, false);
-		SpawnFloatText(
-			anchor + new Vector2(0f, -36f),
-			(_campaignAdaptiveWaveFriendly ? "INTERCEPT" : "HARDEN"),
-			color.Lightened(0.18f),
-			0.58f);
-		SetStatus(
-			(_campaignAdaptiveWaveFriendly
-				? $"{_campaignAdaptiveWaveLabel} armed: the first {_campaignAdaptiveWaveChargesRemaining} spawn{(_campaignAdaptiveWaveChargesRemaining == 1 ? "" : "s")} of {_campaignAdaptiveWaveWaveLabel} will be clipped."
-				: $"{_campaignAdaptiveWaveLabel} armed: the first {_campaignAdaptiveWaveChargesRemaining} spawn{(_campaignAdaptiveWaveChargesRemaining == 1 ? "" : "s")} of {_campaignAdaptiveWaveWaveLabel} will harden.") +
-			(string.IsNullOrWhiteSpace(branchSummary) ? "" : $" {branchSummary}"));
 	}
 
 	private void TryUnlockCampaignAdaptiveWaveChoice()
@@ -5645,174 +3737,6 @@ public partial class BattleController : Node2D
 
 		_campaignAdaptiveWaveChoiceReady = true;
 		SetStatus($"Adaptive wave choice ready: [V] {CampaignAdaptiveWaveRescueLabel} or [B] {CampaignAdaptiveWaveBreakthroughLabel} for the next scripted wave.");
-	}
-
-	private void TryCommitCampaignAdaptiveWaveDirective(bool breakthrough)
-	{
-		return;
-	}
-
-	private static string ResolveCampaignAdaptiveWaveDirectiveBranchTitle(CampaignAdaptiveWaveDirective directive)
-	{
-		return directive switch
-		{
-			CampaignAdaptiveWaveDirective.Rescue => "Hunter Branch",
-			CampaignAdaptiveWaveDirective.Breakthrough => "Bastion Branch",
-			_ => "Wave Branch"
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveDirectiveBranchSecondaryEnemyUnitId(CampaignAdaptiveWaveDirective directive)
-	{
-		if (directive == CampaignAdaptiveWaveDirective.Breakthrough)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyBruteId,
-				RouteCatalog.HarborId => GameData.EnemyShieldWallId,
-				RouteCatalog.FoundryId => GameData.EnemyBruteId,
-				RouteCatalog.QuarantineId => GameData.EnemyJammerId,
-				RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
-				RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-				RouteCatalog.MireId => GameData.EnemySpitterId,
-				RouteCatalog.SteppeId => GameData.EnemySaboteurId,
-				RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
-				RouteCatalog.CitadelId => GameData.EnemyCrusherId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyHowlerId,
-			RouteCatalog.HarborId => GameData.EnemyRunnerId,
-			RouteCatalog.FoundryId => GameData.EnemySpitterId,
-			RouteCatalog.QuarantineId => GameData.EnemyRunnerId,
-			RouteCatalog.ThornwallId => GameData.EnemyHowlerId,
-			RouteCatalog.BasilicaId => GameData.EnemySplitterId,
-			RouteCatalog.MireId => GameData.EnemyBloaterId,
-			RouteCatalog.SteppeId => GameData.EnemyRunnerId,
-			RouteCatalog.GloamwoodId => GameData.EnemyJammerId,
-			RouteCatalog.CitadelId => GameData.EnemySpitterId,
-			_ => ""
-		};
-	}
-
-	private StageWaveEntryDefinition[] BuildCampaignAdaptiveWaveDirectiveBranchEntries(CampaignAdaptiveWaveDirective directive)
-	{
-		if (directive == CampaignAdaptiveWaveDirective.None)
-		{
-			return Array.Empty<StageWaveEntryDefinition>();
-		}
-
-		var entries = new List<StageWaveEntryDefinition>();
-		var primaryEnemyUnitId = ResolveCampaignAdaptiveWaveDirectiveEnemyPackageUnitId(directive);
-		if (!string.IsNullOrWhiteSpace(primaryEnemyUnitId))
-		{
-			entries.Add(new StageWaveEntryDefinition
-			{
-				UnitId = primaryEnemyUnitId,
-				Count = directive == CampaignAdaptiveWaveDirective.Breakthrough ? 2 : (HasCampaignAdaptiveWaveEliteIntensity() ? 3 : 2)
-			});
-		}
-
-		var secondaryEnemyUnitId = ResolveCampaignAdaptiveWaveDirectiveBranchSecondaryEnemyUnitId(directive);
-		if (!string.IsNullOrWhiteSpace(secondaryEnemyUnitId))
-		{
-			entries.Add(new StageWaveEntryDefinition
-			{
-				UnitId = secondaryEnemyUnitId,
-				Count = directive == CampaignAdaptiveWaveDirective.Rescue && HasCampaignAdaptiveWaveEliteIntensity() ? 2 : 1
-			});
-		}
-
-		var eliteEnemyUnitId = ResolveCampaignAdaptiveWaveDirectiveEnemyPackageEliteUnitId(directive);
-		if (!string.IsNullOrWhiteSpace(eliteEnemyUnitId))
-		{
-			entries.Add(new StageWaveEntryDefinition
-			{
-				UnitId = eliteEnemyUnitId,
-				Count = 1
-			});
-		}
-
-		return entries.ToArray();
-	}
-
-	private string QueueCampaignAdaptiveWaveScriptBranch(StageWaveDefinition triggeredWave)
-	{
-		if (triggeredWave == null || _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.None)
-		{
-			return "";
-		}
-
-		var branchEntries = BuildCampaignAdaptiveWaveDirectiveBranchEntries(_campaignAdaptiveWaveDirective);
-		if (branchEntries.Length == 0)
-		{
-			return "";
-		}
-
-		var branchLeadScale = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough ? 1.35f : 0.95f;
-		var branchIntervalScale = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough ? 1.08f : 0.92f;
-		var branchExecuteAt = Mathf.Max(_elapsed, triggeredWave.TriggerTime) + (Mathf.Max(0.1f, triggeredWave.SpawnInterval) * branchLeadScale);
-		var branchSpawnInterval = Mathf.Clamp(triggeredWave.SpawnInterval * branchIntervalScale, 0.16f, 1.2f);
-		var queued = _spawnDirector.QueueScriptedWaveSupplement(branchExecuteAt, branchSpawnInterval, branchEntries);
-		if (queued <= 0)
-		{
-			return "";
-		}
-
-		_campaignAdaptiveWaveBranchLabel = ResolveCampaignAdaptiveWaveDirectiveBranchTitle(_campaignAdaptiveWaveDirective);
-		_campaignAdaptiveWaveBranchWaveLabel = _campaignAdaptiveWaveWaveLabel;
-		_campaignAdaptiveWaveBranchSpawnCount = queued;
-		return $"{_campaignAdaptiveWaveBranchLabel} spliced {queued} scripted spawn{(queued == 1 ? "" : "s")} into {_campaignAdaptiveWaveBranchWaveLabel}.";
-	}
-
-	private string BuildCampaignAdaptiveWaveBranchClause()
-	{
-		if (_campaignAdaptiveWaveBranchSpawnCount <= 0 ||
-			string.IsNullOrWhiteSpace(_campaignAdaptiveWaveBranchLabel) ||
-			string.IsNullOrWhiteSpace(_campaignAdaptiveWaveBranchWaveLabel))
-		{
-			return "";
-		}
-
-		return $" {_campaignAdaptiveWaveBranchLabel} spliced {_campaignAdaptiveWaveBranchSpawnCount} scripted spawn{(_campaignAdaptiveWaveBranchSpawnCount == 1 ? "" : "s")} into {_campaignAdaptiveWaveBranchWaveLabel}.";
-	}
-
-	private void UpdateCampaignAdaptiveWaveChallenge(float delta)
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveChallengeActive || _battleEnded)
-		{
-			return;
-		}
-
-		_campaignAdaptiveWaveChallengeTimer = Mathf.Max(0f, _campaignAdaptiveWaveChallengeTimer - delta);
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold)
-		{
-			if (_campaignAdaptiveWaveChallengeTimer <= 0.001f)
-			{
-				CompleteCampaignAdaptiveWaveChallenge();
-			}
-
-			return;
-		}
-
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats)
-		{
-			_campaignAdaptiveWaveChallengeProgress = Mathf.Max(0f, _enemyDefeats - _campaignAdaptiveWaveChallengeStartEnemyDefeats);
-		}
-
-		if (_campaignAdaptiveWaveChallengeProgress + 0.05f >= _campaignAdaptiveWaveChallengeTarget)
-		{
-			CompleteCampaignAdaptiveWaveChallenge();
-			return;
-		}
-
-		if (_campaignAdaptiveWaveChallengeTimer <= 0.001f)
-		{
-			FailCampaignAdaptiveWaveChallenge(BuildCampaignAdaptiveWaveChallengeFailureText());
-		}
 	}
 
 	private string ResolveCampaignAdaptiveWaveChallengeMode()
@@ -5899,17 +3823,6 @@ public partial class BattleController : Node2D
 		};
 	}
 
-	private string BuildCampaignAdaptiveWaveChallengeFailureText()
-	{
-		return _campaignAdaptiveWaveChallengeMode switch
-		{
-			CampaignAdaptiveWaveChallengeModeHold => $"{_campaignAdaptiveWaveChallengeLabel} broke before the hold stabilized the route.",
-			CampaignAdaptiveWaveChallengeModeDefeats => $"{_campaignAdaptiveWaveChallengeLabel} slipped before the counterpush was cut down.",
-			CampaignAdaptiveWaveChallengeModeBaseDamage => $"{_campaignAdaptiveWaveChallengeLabel} slipped before the keep cracked wide enough.",
-			_ => $"{_campaignAdaptiveWaveChallengeLabel} slipped before the route could convert it."
-		};
-	}
-
 	private string ResolveCampaignAdaptiveWaveChallengeMissionType()
 	{
 		return _campaignAdaptiveWaveChallengeMode switch
@@ -5987,591 +3900,6 @@ public partial class BattleController : Node2D
 		SpawnEffect(_campaignAdaptiveWaveChallengeMission.Anchor, color.Lightened(0.06f), 12f, _campaignAdaptiveWaveChallengeMission.Definition.Radius * 0.58f, 0.24f, false);
 		SpawnFloatText(_campaignAdaptiveWaveChallengeMission.Anchor + new Vector2(0f, -44f), "FOLLOW-UP", color.Lightened(0.22f), 0.6f);
 		return $"{StageMissionEvents.ResolveTitle(_campaignAdaptiveWaveChallengeMission.Definition)} arms in {Mathf.Max(0f, _campaignAdaptiveWaveChallengeMission.Definition.StartTime - _elapsed):0.0}s.";
-	}
-
-	private bool IsCampaignAdaptiveWaveChallengeOffensive()
-	{
-		return _campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats ||
-			_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage;
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeSupportUnitId()
-	{
-		var offensive = IsCampaignAdaptiveWaveChallengeOffensive();
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => offensive ? GameData.PlayerBannerId : GameData.PlayerDefenderId,
-			RouteCatalog.HarborId => offensive ? GameData.PlayerRangerId : GameData.PlayerMarksmanId,
-			RouteCatalog.FoundryId => offensive ? GameData.PlayerBallistaId : GameData.PlayerMechanicId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => offensive ? GameData.PlayerRangerId : GameData.PlayerDefenderId,
-			RouteCatalog.BasilicaId => offensive ? GameData.PlayerBannerId : GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerHoundId,
-			RouteCatalog.SteppeId => offensive ? GameData.PlayerRaiderId : GameData.PlayerHoundId,
-			RouteCatalog.GloamwoodId => offensive ? GameData.PlayerCoordinatorId : GameData.PlayerCoordinatorId,
-			RouteCatalog.CitadelId => offensive ? GameData.PlayerBallistaId : GameData.PlayerMarksmanId,
-			_ => offensive ? GameData.PlayerRangerId : GameData.PlayerDefenderId
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeSecondarySupportUnitId()
-	{
-		var offensive = IsCampaignAdaptiveWaveChallengeOffensive();
-		if (offensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerCoordinatorId,
-				RouteCatalog.HarborId => GameData.PlayerMarksmanId,
-				RouteCatalog.FoundryId => GameData.PlayerMechanicId,
-				RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-				RouteCatalog.SteppeId => GameData.PlayerHoundId,
-				RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.HarborId => GameData.PlayerDefenderId,
-			RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
-			RouteCatalog.MireId => GameData.PlayerCoordinatorId,
-			RouteCatalog.SteppeId => GameData.PlayerRaiderId,
-			RouteCatalog.GloamwoodId => GameData.PlayerLanternGuardId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeEliteSupportUnitId()
-	{
-		if (!HasCampaignAdaptiveWaveEliteIntensity())
-		{
-			return "";
-		}
-
-		var offensive = IsCampaignAdaptiveWaveChallengeOffensive();
-		if (offensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerStormcallerId,
-				RouteCatalog.HarborId => GameData.PlayerBallistaId,
-				RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-				RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-				RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-				RouteCatalog.BasilicaId => GameData.PlayerNecromancerId,
-				RouteCatalog.MireId => GameData.PlayerNecromancerId,
-				RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-				RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-				RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.PlayerBannerId,
-			RouteCatalog.HarborId => GameData.PlayerBallistaId,
-			RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-			RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerNecromancerId,
-			RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-			RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-			RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeEnemyUnitId()
-	{
-		var aggressive = !IsCampaignAdaptiveWaveChallengeOffensive();
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => aggressive ? GameData.EnemyRunnerId : GameData.EnemyHowlerId,
-			RouteCatalog.HarborId => aggressive ? GameData.EnemyBruteId : GameData.EnemySpitterId,
-			RouteCatalog.FoundryId => aggressive ? GameData.EnemyBruteId : GameData.EnemyShieldWallId,
-			RouteCatalog.QuarantineId => aggressive ? GameData.EnemyRunnerId : GameData.EnemyJammerId,
-			RouteCatalog.ThornwallId => aggressive ? GameData.EnemyRunnerId : GameData.EnemyBruteId,
-			RouteCatalog.BasilicaId => aggressive ? GameData.EnemySplitterId : GameData.EnemyHowlerId,
-			RouteCatalog.MireId => aggressive ? GameData.EnemyBloaterId : GameData.EnemySpitterId,
-			RouteCatalog.SteppeId => aggressive ? GameData.EnemyRunnerId : GameData.EnemySaboteurId,
-			RouteCatalog.GloamwoodId => aggressive ? GameData.EnemyMirrorId : GameData.EnemyJammerId,
-			RouteCatalog.CitadelId => aggressive ? GameData.EnemyCrusherId : GameData.EnemyShieldWallId,
-			_ => GameData.EnemyRunnerId
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeSecondaryEnemyUnitId()
-	{
-		if (_stage < CampaignAdaptiveWaveStage)
-		{
-			return "";
-		}
-
-		var aggressive = !IsCampaignAdaptiveWaveChallengeOffensive();
-		if (aggressive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyHowlerId,
-				RouteCatalog.HarborId => GameData.EnemySpitterId,
-				RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
-				RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-				RouteCatalog.MireId => GameData.EnemySpitterId,
-				RouteCatalog.CitadelId => GameData.EnemySpitterId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.QuarantineId => GameData.EnemySpitterId,
-			RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
-			RouteCatalog.SteppeId => GameData.EnemyRunnerId,
-			RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
-			RouteCatalog.CitadelId => GameData.EnemyCrusherId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveChallengeEliteEnemyUnitId()
-	{
-		if (!HasCampaignAdaptiveWaveEliteIntensity())
-		{
-			return "";
-		}
-
-		var aggressive = !IsCampaignAdaptiveWaveChallengeOffensive();
-		if (aggressive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-				RouteCatalog.FoundryId => GameData.EnemySiegeTowerId,
-				RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-				RouteCatalog.BasilicaId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-				RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-			RouteCatalog.FoundryId => GameData.EnemySiegeTowerId,
-			RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-			RouteCatalog.BasilicaId => GameData.EnemyLichId,
-			RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-			RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-			_ => ""
-		};
-	}
-
-	private static string ResolveCampaignAdaptiveWaveDirectiveSupportPackageTitle(CampaignAdaptiveWaveDirective directive)
-	{
-		return directive switch
-		{
-			CampaignAdaptiveWaveDirective.Rescue => "Escort Package",
-			CampaignAdaptiveWaveDirective.Breakthrough => "Spearhead Package",
-			_ => "Support Package"
-		};
-	}
-
-	private static string ResolveCampaignAdaptiveWaveDirectiveEnemyPackageTitle(CampaignAdaptiveWaveDirective directive)
-	{
-		return directive switch
-		{
-			CampaignAdaptiveWaveDirective.Rescue => "Hunter Package",
-			CampaignAdaptiveWaveDirective.Breakthrough => "Bastion Package",
-			_ => "Enemy Package"
-		};
-	}
-
-	private static string BuildCampaignAdaptiveWaveDirectivePackageSummary(CampaignAdaptiveWaveDirective directive)
-	{
-		return directive switch
-		{
-			CampaignAdaptiveWaveDirective.Rescue => "escort screens and hunter counterpacks",
-			CampaignAdaptiveWaveDirective.Breakthrough => "spearhead assaults and bastion counterpacks",
-			_ => "route pressure packages"
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveDirectiveSupportPackageUnitId(CampaignAdaptiveWaveDirective directive)
-	{
-		if (directive == CampaignAdaptiveWaveDirective.Breakthrough)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerRaiderId,
-				RouteCatalog.HarborId => GameData.PlayerGrenadierId,
-				RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-				RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
-				RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-				RouteCatalog.BasilicaId => GameData.PlayerBannerId,
-				RouteCatalog.MireId => GameData.PlayerRogueId,
-				RouteCatalog.SteppeId => GameData.PlayerRaiderId,
-				RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-				RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-				_ => GameData.PlayerRangerId
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.PlayerDefenderId,
-			RouteCatalog.HarborId => GameData.PlayerMarksmanId,
-			RouteCatalog.FoundryId => GameData.PlayerMechanicId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => GameData.PlayerDefenderId,
-			RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerHoundId,
-			RouteCatalog.SteppeId => GameData.PlayerHoundId,
-			RouteCatalog.GloamwoodId => GameData.PlayerCoordinatorId,
-			RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
-			_ => GameData.PlayerDefenderId
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveDirectiveSupportPackageEliteUnitId(CampaignAdaptiveWaveDirective directive)
-	{
-		if (!HasCampaignAdaptiveWaveEliteIntensity())
-		{
-			return "";
-		}
-
-		if (directive == CampaignAdaptiveWaveDirective.Breakthrough)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerStormcallerId,
-				RouteCatalog.HarborId => GameData.PlayerBallistaId,
-				RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-				RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-				RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-				RouteCatalog.BasilicaId => GameData.PlayerNecromancerId,
-				RouteCatalog.MireId => GameData.PlayerNecromancerId,
-				RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-				RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-				RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.PlayerBannerId,
-			RouteCatalog.HarborId => GameData.PlayerBallistaId,
-			RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => GameData.PlayerRangerId,
-			RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerNecromancerId,
-			RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-			RouteCatalog.GloamwoodId => GameData.PlayerLanternGuardId,
-			RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveDirectiveEnemyPackageUnitId(CampaignAdaptiveWaveDirective directive)
-	{
-		if (directive == CampaignAdaptiveWaveDirective.Breakthrough)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyHowlerId,
-				RouteCatalog.HarborId => GameData.EnemyBruteId,
-				RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
-				RouteCatalog.QuarantineId => GameData.EnemySpitterId,
-				RouteCatalog.ThornwallId => GameData.EnemyBruteId,
-				RouteCatalog.BasilicaId => GameData.EnemySplitterId,
-				RouteCatalog.MireId => GameData.EnemyBloaterId,
-				RouteCatalog.SteppeId => GameData.EnemyRunnerId,
-				RouteCatalog.GloamwoodId => GameData.EnemyJammerId,
-				RouteCatalog.CitadelId => GameData.EnemyShieldWallId,
-				_ => GameData.EnemyBruteId
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyRunnerId,
-			RouteCatalog.HarborId => GameData.EnemySaboteurId,
-			RouteCatalog.FoundryId => GameData.EnemyBruteId,
-			RouteCatalog.QuarantineId => GameData.EnemyJammerId,
-			RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
-			RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-			RouteCatalog.MireId => GameData.EnemySpitterId,
-			RouteCatalog.SteppeId => GameData.EnemySaboteurId,
-			RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
-			RouteCatalog.CitadelId => GameData.EnemyCrusherId,
-			_ => GameData.EnemyRunnerId
-		};
-	}
-
-	private string ResolveCampaignAdaptiveWaveDirectiveEnemyPackageEliteUnitId(CampaignAdaptiveWaveDirective directive)
-	{
-		if (!HasCampaignAdaptiveWaveEliteIntensity())
-		{
-			return "";
-		}
-
-		if (directive == CampaignAdaptiveWaveDirective.Breakthrough)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-				RouteCatalog.FoundryId => GameData.EnemySiegeTowerId,
-				RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-				RouteCatalog.BasilicaId => GameData.EnemyLichId,
-				RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-				RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-			RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
-			RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-			RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-			RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-			RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-			_ => ""
-		};
-	}
-
-	private string ApplyCampaignAdaptiveWaveDirectiveSupportPackage(StageMissionState mission, bool openingBeat, Color color, ref int spawned)
-	{
-		if (mission == null || _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.None)
-		{
-			return "";
-		}
-
-		var laneY = Mathf.Clamp(mission.Anchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var packageTitle = ResolveCampaignAdaptiveWaveDirectiveSupportPackageTitle(_campaignAdaptiveWaveDirective);
-		var primarySupportUnitId = ResolveCampaignAdaptiveWaveDirectiveSupportPackageUnitId(_campaignAdaptiveWaveDirective);
-		if (!string.IsNullOrWhiteSpace(primarySupportUnitId))
-		{
-			SpawnSupportUnit(primarySupportUnitId, laneY);
-			spawned++;
-		}
-
-		var eliteSupportUnitId = ResolveCampaignAdaptiveWaveDirectiveSupportPackageEliteUnitId(_campaignAdaptiveWaveDirective);
-		if (!string.IsNullOrWhiteSpace(eliteSupportUnitId) && (!openingBeat || _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough))
-		{
-			SpawnSupportUnit(eliteSupportUnitId, laneY);
-			spawned++;
-		}
-
-		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue)
-		{
-			RepairBusByRatio(openingBeat ? 0.008f : 0.012f);
-			_deck.ReduceCooldowns(openingBeat ? 0.08f : 0.12f);
-			_spellDeck.ReduceCooldowns(openingBeat ? 0.08f : 0.12f);
-			SlowEnemiesNear(mission.Anchor, openingBeat ? 84f : 96f, openingBeat ? 0.82f : 0.76f, openingBeat ? 2.2f : 2.8f, color, openingBeat ? "SCREEN" : "RESCUE");
-		}
-		else
-		{
-			DamageEnemiesNear(mission.Anchor, openingBeat ? 72f : 88f, openingBeat ? 10f : 14f, color, openingBeat ? "MARK" : "SPEAR");
-			DamageEnemyBaseByRatio(openingBeat ? 0.004f : 0.008f, color, openingBeat ? "SIGHTS" : "CRACK");
-			_courage = Mathf.Min(_maxCourage, _courage + (openingBeat ? 2f : 3f));
-		}
-
-		return $"{packageTitle} backed the lane.";
-	}
-
-	private string ApplyCampaignAdaptiveWaveDirectiveEnemyPackage(StageMissionState mission, bool openingBeat, Color color, ref int spawned)
-	{
-		if (mission == null || _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.None)
-		{
-			return "";
-		}
-
-		var laneY = Mathf.Clamp(mission.Anchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var enemyAnchor = new Vector2(EnemySpawnX - 18f, laneY);
-		var packageTitle = ResolveCampaignAdaptiveWaveDirectiveEnemyPackageTitle(_campaignAdaptiveWaveDirective);
-		var primaryEnemyUnitId = ResolveCampaignAdaptiveWaveDirectiveEnemyPackageUnitId(_campaignAdaptiveWaveDirective);
-		if (!string.IsNullOrWhiteSpace(primaryEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(primaryEnemyUnitId, 1, laneY);
-		}
-
-		var eliteEnemyUnitId = ResolveCampaignAdaptiveWaveDirectiveEnemyPackageEliteUnitId(_campaignAdaptiveWaveDirective);
-		if (!string.IsNullOrWhiteSpace(eliteEnemyUnitId) && (!openingBeat || _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough))
-		{
-			spawned += SpawnEnemySurgeUnits(eliteEnemyUnitId, 1, laneY);
-		}
-
-		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue)
-		{
-			DamageBusByRatio(openingBeat ? 0.004f : 0.007f, color, openingBeat ? "HUNT" : "CHASE");
-			SlowPlayersNear(mission.Anchor, openingBeat ? 84f : 96f, openingBeat ? 0.88f : 0.82f, openingBeat ? 2f : 2.6f, color, openingBeat ? "TRACK" : "SNARE");
-		}
-		else
-		{
-			RepairEnemyBaseByRatio(openingBeat ? 0.004f : 0.007f, color, openingBeat ? "BRACE" : "BASTION");
-			BuffUnitsNear(Team.Enemy, enemyAnchor, 132f, 1.04f, 1.06f, openingBeat ? 4f : 4.8f, color, openingBeat ? "LOCK" : "HOLD");
-		}
-
-		return $"{packageTitle} answered the lane.";
-	}
-
-	private string TriggerCampaignAdaptiveWaveChallengeOpeningBeat(StageMissionState mission)
-	{
-		return IsCampaignAdaptiveWaveChallengeOffensive()
-			? ApplyCampaignAdaptiveWaveChallengeEnemyBeat(mission, true)
-			: ApplyCampaignAdaptiveWaveChallengeSupportBeat(mission, true);
-	}
-
-	private string TriggerCampaignAdaptiveWaveChallengeMidpointBeat(StageMissionState mission)
-	{
-		return IsCampaignAdaptiveWaveChallengeOffensive()
-			? ApplyCampaignAdaptiveWaveChallengeSupportBeat(mission, false)
-			: ApplyCampaignAdaptiveWaveChallengeEnemyBeat(mission, false);
-	}
-
-	private string ApplyCampaignAdaptiveWaveChallengeSupportBeat(StageMissionState mission, bool openingBeat)
-	{
-		if (mission == null)
-		{
-			return "";
-		}
-
-		var laneY = Mathf.Clamp(mission.Anchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var color = mission.Color.Lightened(0.06f);
-		var title = ResolveCampaignBonusObjectivePressureTitle(true);
-		var spawned = 0;
-		var primarySupportUnitId = ResolveCampaignAdaptiveWaveChallengeSupportUnitId();
-		if (!string.IsNullOrWhiteSpace(primarySupportUnitId))
-		{
-			var primaryCount = !openingBeat && HasCampaignAdaptiveWaveEliteIntensity() ? 2 : 1;
-			for (var i = 0; i < primaryCount; i++)
-			{
-				SpawnSupportUnit(primarySupportUnitId, laneY);
-				spawned++;
-			}
-		}
-
-		if (!openingBeat || _stage >= CampaignAdaptiveWaveStage)
-		{
-			var secondarySupportUnitId = ResolveCampaignAdaptiveWaveChallengeSecondarySupportUnitId();
-			if (!string.IsNullOrWhiteSpace(secondarySupportUnitId))
-			{
-				SpawnSupportUnit(secondarySupportUnitId, laneY);
-				spawned++;
-			}
-		}
-
-		var eliteSupportUnitId = ResolveCampaignAdaptiveWaveChallengeEliteSupportUnitId();
-		if (!string.IsNullOrWhiteSpace(eliteSupportUnitId) && !openingBeat)
-		{
-			SpawnSupportUnit(eliteSupportUnitId, laneY);
-			spawned++;
-		}
-
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold)
-		{
-			RepairBusByRatio(openingBeat ? 0.014f : 0.022f);
-			_courage = Mathf.Min(_maxCourage, _courage + (openingBeat ? 2f : 4f));
-			BuffUnitsNear(Team.Player, mission.Anchor, 144f, 1.03f, 1.05f, openingBeat ? 4.6f : 5.8f, color, openingBeat ? "SCREEN" : "STAND");
-		}
-		else if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage)
-		{
-			DamageEnemyBaseByRatio(openingBeat ? 0.008f : 0.014f, color, openingBeat ? "SIGHTS" : "BREACH");
-			BuffUnitsNear(Team.Player, mission.Anchor, 150f, 1.05f, 1.08f, openingBeat ? 4.8f : 6f, color, openingBeat ? "RANGE" : "PUSH");
-		}
-		else
-		{
-			DamageEnemiesNear(mission.Anchor, openingBeat ? 82f : 96f, openingBeat ? 12f : 18f, color, openingBeat ? "CUTDOWN" : "BREAK");
-			_courage = Mathf.Min(_maxCourage, _courage + (openingBeat ? 2f : 3f));
-			BuffUnitsNear(Team.Player, mission.Anchor, 148f, 1.04f, 1.08f, openingBeat ? 4.8f : 5.8f, color, openingBeat ? "CHASE" : "COLLAPSE");
-		}
-
-		var directivePackageStatus = ApplyCampaignAdaptiveWaveDirectiveSupportPackage(mission, openingBeat, color, ref spawned);
-
-		SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), title.ToUpperInvariant(), color.Lightened(0.18f), 0.58f);
-		return openingBeat
-			? $"{title} hit the lane with {spawned} allied reinforcements.{(string.IsNullOrWhiteSpace(directivePackageStatus) ? "" : $" {directivePackageStatus}")}"
-			: $"{title} pushed through the midpoint with {spawned} allied reinforcements.{(string.IsNullOrWhiteSpace(directivePackageStatus) ? "" : $" {directivePackageStatus}")}";
-	}
-
-	private string ApplyCampaignAdaptiveWaveChallengeEnemyBeat(StageMissionState mission, bool openingBeat)
-	{
-		if (mission == null)
-		{
-			return "";
-		}
-
-		var laneY = Mathf.Clamp(mission.Anchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var color = mission.Color.Lightened(0.04f);
-		var title = ResolveCampaignBonusObjectivePressureTitle(false);
-		var enemyAnchor = new Vector2(EnemySpawnX - 18f, laneY);
-		var spawned = 0;
-		var primaryEnemyUnitId = ResolveCampaignAdaptiveWaveChallengeEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(primaryEnemyUnitId))
-		{
-			var primaryCount = openingBeat
-				? (HasCampaignAdaptiveWaveEliteIntensity() ? 3 : 2)
-				: (HasCampaignAdaptiveWaveEliteIntensity() ? 2 : 1);
-			spawned += SpawnEnemySurgeUnits(primaryEnemyUnitId, primaryCount, laneY);
-		}
-
-		var secondaryEnemyUnitId = ResolveCampaignAdaptiveWaveChallengeSecondaryEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(secondaryEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(secondaryEnemyUnitId, 1, laneY);
-		}
-
-		var eliteEnemyUnitId = ResolveCampaignAdaptiveWaveChallengeEliteEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(eliteEnemyUnitId) && (!openingBeat || _campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage))
-		{
-			spawned += SpawnEnemySurgeUnits(eliteEnemyUnitId, 1, laneY);
-		}
-
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold)
-		{
-			BuffUnitsNear(Team.Enemy, enemyAnchor, 148f, 1.04f, 1.1f, openingBeat ? 4.6f : 5.4f, color, openingBeat ? "CRASH" : "BREAK");
-			SlowPlayersNear(mission.Anchor, 92f, 0.86f, openingBeat ? 2.1f : 2.8f, color, openingBeat ? "PRESS" : "PIN");
-		}
-		else if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage)
-		{
-			RepairEnemyBaseByRatio(openingBeat ? 0.008f : 0.012f, color, openingBeat ? "BRACE" : "RESET");
-			BuffUnitsNear(Team.Enemy, enemyAnchor, 140f, 1.03f, 1.08f, openingBeat ? 4.2f : 5f, color, openingBeat ? "LOCK" : "WALL");
-		}
-		else
-		{
-			BuffUnitsNear(Team.Enemy, enemyAnchor, 136f, 1.04f, 1.06f, openingBeat ? 4.2f : 5f, color, openingBeat ? "COUNTER" : "REFORM");
-			SlowPlayersNear(mission.Anchor, 88f, 0.88f, openingBeat ? 1.8f : 2.4f, color, openingBeat ? "STALL" : "LOCK");
-		}
-
-		var directivePackageStatus = ApplyCampaignAdaptiveWaveDirectiveEnemyPackage(mission, openingBeat, color, ref spawned);
-
-		SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), title.ToUpperInvariant(), color.Lightened(0.2f), 0.58f);
-		return openingBeat
-			? $"{title} rushed the lane with {spawned} enemy defenders.{(string.IsNullOrWhiteSpace(directivePackageStatus) ? "" : $" {directivePackageStatus}")}"
-			: $"{title} slammed the lane with {spawned} enemy reprisals.{(string.IsNullOrWhiteSpace(directivePackageStatus) ? "" : $" {directivePackageStatus}")}";
 	}
 
 	private void ResolveCampaignAdaptiveWaveUpgradeBonus(out int goldBonus, out int foodBonus)
@@ -6691,120 +4019,9 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void ResolveCampaignAdaptiveWaveChallengeOnVictory()
-	{
-		if (!_campaignAdaptiveWaveChallengeActive)
-		{
-			return;
-		}
-
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats)
-		{
-			_campaignAdaptiveWaveChallengeProgress = Mathf.Max(0f, _enemyDefeats - _campaignAdaptiveWaveChallengeStartEnemyDefeats);
-		}
-
-		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold ||
-			(_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage &&
-				(_enemyBaseHealth <= 0.01f || _campaignAdaptiveWaveChallengeProgress + 0.05f >= _campaignAdaptiveWaveChallengeTarget)) ||
-			(_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats &&
-				_campaignAdaptiveWaveChallengeProgress + 0.05f >= _campaignAdaptiveWaveChallengeTarget))
-		{
-			CompleteCampaignAdaptiveWaveChallenge(true);
-		}
-	}
-
 	private bool HasCampaignAdaptiveWaveEliteIntensity()
 	{
 		return _stage >= CampaignAdaptiveWaveEliteStage;
-	}
-
-	private bool ResolveCampaignAdaptiveWaveFriendlyRead()
-	{
-		var playerFrontX = float.MinValue;
-		var enemyFrontX = float.MaxValue;
-		var activePlayers = 0;
-		var activeEnemies = 0;
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead)
-			{
-				continue;
-			}
-
-			if (unit.Team == Team.Player)
-			{
-				activePlayers++;
-				if (unit.Position.X > playerFrontX)
-				{
-					playerFrontX = unit.Position.X;
-				}
-			}
-			else if (unit.Team == Team.Enemy)
-			{
-				activeEnemies++;
-				if (unit.Position.X < enemyFrontX)
-				{
-					enemyFrontX = unit.Position.X;
-				}
-			}
-		}
-
-		var hullRatio = _playerBaseMaxHealth > 0f ? _playerBaseHealth / _playerBaseMaxHealth : 1f;
-		var centerX = Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.5f);
-		var dangerX = Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.28f);
-		var advantageX = Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f);
-
-		if (activePlayers <= 0)
-		{
-			return true;
-		}
-
-		if (activeEnemies <= 0 && activePlayers > 0)
-		{
-			return false;
-		}
-
-		if (hullRatio < 0.7f)
-		{
-			return true;
-		}
-
-		if (enemyFrontX < float.MaxValue && enemyFrontX <= dangerX)
-		{
-			return true;
-		}
-
-		if (playerFrontX > float.MinValue && enemyFrontX < float.MaxValue)
-		{
-			var contestX = (playerFrontX + enemyFrontX) * 0.5f;
-			if (contestX < centerX - 42f)
-			{
-				return true;
-			}
-
-			if (contestX > centerX + 48f && activePlayers + 1 >= activeEnemies)
-			{
-				return false;
-			}
-		}
-
-		if (activeEnemies >= activePlayers + 2)
-		{
-			return true;
-		}
-
-		if (playerFrontX > float.MinValue && playerFrontX >= advantageX)
-		{
-			return false;
-		}
-
-		return activeEnemies > activePlayers;
-	}
-
-	private bool HasCampaignLateConditionEliteIntensity()
-	{
-		return _campaignLateConditionIntervalSeconds > 0f && _campaignLateConditionIntervalSeconds <= 15.1f;
 	}
 
 	private float ResolveCampaignLateConditionLaneY()
@@ -6839,122 +4056,6 @@ public partial class BattleController : Node2D
 				?? leadingEnemy?.Position.Y
 				?? BaseCenterY;
 		return Mathf.Clamp(laneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-	}
-
-	private void ApplyCampaignLateCondition()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.1f);
-		var elite = HasCampaignLateConditionEliteIntensity();
-		var laneY = ResolveCampaignLateConditionLaneY();
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.46f), laneY);
-		var enemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY), 320f)?.Position
-			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY);
-		var label = string.IsNullOrWhiteSpace(_campaignLateConditionLabel)
-			? "Late District Condition"
-			: _campaignLateConditionLabel;
-
-		SpawnEffect(laneAnchor, color, 12f, 52f, 0.28f, false);
-		SpawnFloatText(laneAnchor + new Vector2(0f, -46f), label.ToUpperInvariant(), color.Lightened(0.22f), 0.66f);
-
-		var statusText = $"{label} shifted the lane.";
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				_courage = Mathf.Min(_maxCourage, _courage + (elite ? 4f : 3f));
-				_deck.ReduceCooldowns(elite ? 0.24f : 0.16f);
-				_spellDeck.ReduceCooldowns(elite ? 0.24f : 0.16f);
-				BuffUnitsNear(Team.Player, laneAnchor, 156f, 1.05f, elite ? 1.12f : 1.08f, elite ? 6.2f : 5.2f, color, "RIOT");
-				statusText = $"{label} rolled down the road: militia tempo surged through the active lane.";
-				break;
-			case RouteCatalog.HarborId:
-				DamageEnemiesNear(enemyAnchor, elite ? 104f : 88f, elite ? 20f : 16f, color, "UNDERTOW");
-				SlowEnemiesNear(enemyAnchor, elite ? 112f : 96f, elite ? 0.56f : 0.66f, elite ? 4f : 3.2f, color, "BELL");
-				PushEnemiesFromPoint(enemyAnchor, elite ? 96f : 80f, elite ? 14f : 10f, 0.78f, 2.4f, color, "");
-				statusText = $"{label} tore through the active harbor lane and dragged the push backward.";
-				break;
-			case RouteCatalog.FoundryId:
-				DamageEnemiesNear(enemyAnchor + new Vector2(-24f, -22f), 74f, elite ? 20f : 16f, color, "SLAG");
-				DamageEnemiesNear(enemyAnchor + new Vector2(16f, 8f), 88f, elite ? 24f : 18f, color, "FRONT");
-				DamageEnemiesNear(enemyAnchor + new Vector2(-14f, 28f), 74f, elite ? 20f : 16f, color, "");
-				statusText = $"{label} walked fresh slag shells across the frontline.";
-				break;
-			case RouteCatalog.QuarantineId:
-			{
-				var patient = FindHighestHealthPlayer();
-				if (patient != null)
-				{
-					HealUnit(patient, elite ? 24f : 18f, color, "WARD");
-				}
-
-				_enemySignalJamTimer = Mathf.Max(0f, _enemySignalJamTimer - (elite ? 2.4f : 1.8f));
-				if (_enemySignalJamTimer <= 0.05f)
-				{
-					_enemySignalJamTimer = 0f;
-					_enemySignalJamCourageGainScale = 1f;
-				}
-
-				RepairBusByRatio(elite ? 0.02f : 0.01f);
-				BuffUnitsNear(Team.Player, laneAnchor, 144f, 1.04f, 1.05f, elite ? 5.6f : 4.8f, color, "SWEEP");
-				statusText = $"{label} cut through the curse haze and stabilized the lane.";
-				break;
-			}
-			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(laneAnchor + new Vector2(20f, 0f), elite ? 148f : 126f, elite ? 20f : 16f, 0.58f, elite ? 3.8f : 3f, color, "ROCKFALL");
-				statusText = $"{label} crashed downhill and shoved the pass back open.";
-				break;
-			case RouteCatalog.BasilicaId:
-			{
-				var champion = FindHighestHealthPlayer();
-				if (champion != null)
-				{
-					HealUnit(champion, elite ? 22f : 16f, color, "TOLL");
-				}
-
-				RepairBusByRatio(elite ? 0.02f : 0.01f);
-				BuffUnitsNear(Team.Player, laneAnchor, 152f, 1.06f, 1.05f, elite ? 6f : 5f, color, "PEAL");
-				statusText = $"{label} tolled through the lane and blessed the frontline.";
-				break;
-			}
-			case RouteCatalog.MireId:
-				DamageEnemiesNear(enemyAnchor, elite ? 98f : 82f, elite ? 18f : 14f, color, "ROT");
-				SlowEnemiesNear(enemyAnchor, elite ? 112f : 96f, elite ? 0.54f : 0.62f, elite ? 4f : 3.4f, color, "TIDE");
-				statusText = $"{label} dragged the nearest enemy knot into the bog.";
-				break;
-			case RouteCatalog.SteppeId:
-				_courage = Mathf.Min(_maxCourage, _courage + (elite ? 4f : 3f));
-				BuffUnitsNear(Team.Player, laneAnchor, 156f, 1.03f, elite ? 1.18f : 1.12f, elite ? 6f : 5f, color, "WIND");
-				statusText = $"{label} opened a fast windlane and kicked the active push forward.";
-				break;
-			case RouteCatalog.GloamwoodId:
-			{
-				var target = FindHighestHealthEnemy();
-				if (target != null)
-				{
-					var appliedDamage = target.TakeDamage(elite ? 36f : 28f, label);
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
-					target.ApplyTemporarySpeedModifier(elite ? 0.42f : 0.52f, elite ? 4.2f : 3.4f);
-					DamageEnemiesNear(target.Position, 76f, elite ? 18f : 14f, color, "HEX");
-				}
-
-				_deck.ReduceCooldowns(elite ? 0.2f : 0.12f);
-				_spellDeck.ReduceCooldowns(elite ? 0.2f : 0.12f);
-				statusText = $"{label} fell across the field and hexed the heaviest enemy.";
-				break;
-			}
-			case RouteCatalog.CitadelId:
-				DamageEnemyBaseByRatio(elite ? 0.03f : 0.02f, color, "CROSSFIRE");
-				DamageEnemiesNear(enemyAnchor, elite ? 112f : 92f, elite ? 22f : 18f, color, "WINDOW");
-				statusText = $"{label} opened convoy crossfire on the lane and keep.";
-				break;
-			default:
-				_courage = Mathf.Min(_maxCourage, _courage + 3f);
-				BuffUnitsNear(Team.Player, laneAnchor, 144f, 1.04f, 1.06f, 4.8f, color, "SURGE");
-				statusText = $"{label} pulsed through the route and steadied the line.";
-				break;
-		}
-
-		SetStatus(statusText);
 	}
 
 	private void TryTriggerCampaignBossPhase()
@@ -7009,52 +4110,6 @@ public partial class BattleController : Node2D
 		{
 			return;
 		}
-
-		_campaignBossPressureLabel = title;
-		_campaignBossPressureActive = true;
-		_campaignBossPressureTriggerAt = _elapsed + _campaignBossPressureIntervalSeconds;
-	}
-
-	private Unit ResolveCampaignBossPressureUnit()
-	{
-		foreach (var candidate in _campaignBossPhaseTriggeredUnits)
-		{
-			if (candidate != null && !candidate.IsDead && candidate.Team == Team.Enemy)
-			{
-				return candidate;
-			}
-		}
-
-		return null;
-	}
-
-	private void UpdateCampaignBossPressure()
-	{
-		if (!IsCampaignMode || !_campaignBossPressureActive || _battleEnded)
-		{
-			return;
-		}
-
-		var boss = ResolveCampaignBossPressureUnit();
-		if (boss == null)
-		{
-			_campaignBossPressureActive = false;
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignBossPressureTriggerAt)
-		{
-			return;
-		}
-
-		_campaignBossPressureTriggerCount++;
-		_campaignBossPressureTriggerAt = _elapsed + _campaignBossPressureIntervalSeconds;
-		ApplyCampaignBossPressure(boss);
-	}
-
-	private bool HasCampaignBossPressureEliteIntensity()
-	{
-		return _stage >= 51;
 	}
 
 	private void ApplyCampaignBossPhase(Unit boss)
@@ -7192,127 +4247,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void ApplyCampaignBossPressure(Unit boss)
-	{
-		var label = string.IsNullOrWhiteSpace(_campaignBossPressureLabel)
-			? "Boss Command"
-			: _campaignBossPressureLabel;
-		var color = boss.Tint.Lightened(0.04f);
-		var elite = HasCampaignBossPressureEliteIntensity();
-		SpawnEffect(boss.Position, color, 10f, 42f, 0.22f, false);
-		SpawnFloatText(boss.Position + new Vector2(0f, -42f), label.ToUpperInvariant(), color.Lightened(0.18f), 0.56f);
-
-		switch (boss.DefinitionId)
-		{
-			case GameData.EnemyBossDocksId:
-				DamagePlayersNear(boss.Position + new Vector2(-14f, 0f), elite ? 92f : 78f, elite ? 16f : 12f, color, "RIPTIDE");
-				SlowPlayersNear(boss.Position, elite ? 104f : 92f, elite ? 0.78f : 0.84f, elite ? 3.4f : 2.8f, color, "TOLL");
-				PushPlayersFromPoint(boss.Position, elite ? 96f : 84f, elite ? 16f : 12f, elite ? 0.82f : 0.88f, elite ? 2.6f : 2.1f, color, "");
-				SetStatus($"{boss.UnitName} tolls the tide again and drags the lane backward.");
-				break;
-			case GameData.EnemyBossForgeId:
-			{
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, elite ? 2 : 1);
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 128f : 118f, 1.08f, elite ? 1.12f : 1.08f, elite ? 5.4f : 4.4f, color, "CRUCIBLE");
-				DamagePlayersNear(boss.Position, elite ? 86f : 74f, elite ? 14f : 10f, color, "SPARK");
-				SetStatus($"{boss.UnitName} barks crucible orders" + (escorts > 0 ? $" and {escorts} forge escorts crash into the breach." : "."));
-				break;
-			}
-			case GameData.EnemyBossWardId:
-				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, elite ? 4.8f : 3.8f);
-				_enemySignalJamCourageGainScale = Mathf.Min(_enemySignalJamCourageGainScale, elite ? 0.56f : 0.68f);
-				_deck.IncreaseCooldowns(elite ? 0.6f : 0.4f);
-				_spellDeck.IncreaseCooldowns(elite ? 0.6f : 0.4f);
-				SlowPlayersNear(boss.Position, elite ? 112f : 96f, elite ? 0.74f : 0.82f, elite ? 3.6f : 3f, color, "ECLIPSE");
-				SetStatus($"{boss.UnitName} renews the signal eclipse and stalls the caravan response.");
-				break;
-			case GameData.EnemyBossPassId:
-			{
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, elite ? 2 : 1);
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 134f : 122f, 1.06f, elite ? 1.18f : 1.12f, elite ? 5.4f : 4.6f, color, "HORN");
-				PushPlayersFromPoint(boss.Position, elite ? 92f : 82f, elite ? 12f : 9f, elite ? 0.84f : 0.9f, elite ? 2.2f : 1.8f, color, "");
-				SetStatus($"{boss.UnitName} sounds the pack horn" + (escorts > 0 ? $" and {escorts} runners spill into the lane." : "."));
-				break;
-			}
-			case GameData.EnemyBossBasilicaId:
-				HealUnit(boss, boss.MaxHealth * (elite ? 0.07f : 0.05f), color, "TOLL");
-				RepairEnemyBaseByRatio(elite ? 0.03f : 0.02f, color, "VOW");
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 120f : 108f, 1.06f, 1.04f, elite ? 5f : 4.2f, color, "CHOIR");
-				SetStatus($"{boss.UnitName} tolls another grave vow and the keep regains its footing.");
-				break;
-			case GameData.EnemyBossMireId:
-				DamagePlayersNear(boss.Position, elite ? 96f : 82f, elite ? 18f : 14f, color, "BLIGHT");
-				SlowPlayersNear(boss.Position, elite ? 112f : 98f, elite ? 0.72f : 0.8f, elite ? 3.8f : 3f, color, "UNDERTOW");
-				HealUnit(boss, boss.MaxHealth * (elite ? 0.06f : 0.04f), color, "ROT");
-				SetStatus($"{boss.UnitName} rolls another blight undertow through the defenders.");
-				break;
-			case GameData.EnemyBossSteppeId:
-			{
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, elite ? 2 : 1);
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 136f : 124f, 1.06f, elite ? 1.18f : 1.12f, elite ? 5.4f : 4.6f, color, "HUNT");
-				SetStatus($"{boss.UnitName} calls the hunt again" + (escorts > 0 ? $" and {escorts} riders break into the lane." : "."));
-				break;
-			}
-			case GameData.EnemyBossVergeId:
-			{
-				var target = FindHighestHealthPlayer();
-				if (target != null)
-				{
-					var appliedDamage = target.TakeDamage(elite ? 28f : 22f, boss.UnitName);
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
-					target.ApplyTemporarySpeedModifier(elite ? 0.54f : 0.64f, elite ? 3.8f : 3.1f);
-					DamagePlayersNear(target.Position, 68f, elite ? 14f : 10f, color, "MOONHEX");
-				}
-
-				SetStatus($"{boss.UnitName} drops Moonhex on the strongest defender and thickens the screen.");
-				break;
-			}
-			case GameData.EnemyBossCitadelId:
-				RepairEnemyBaseByRatio(elite ? 0.03f : 0.02f, color, "IRON");
-				DamagePlayersNear(boss.Position, elite ? 92f : 78f, elite ? 16f : 12f, color, "SALVO");
-				BuffUnitsNear(Team.Enemy, EnemyBaseCorePosition + new Vector2(-64f, 0f), elite ? 124f : 112f, 1.08f, 1.04f, elite ? 5.2f : 4.4f, color, "IRON");
-				SetStatus($"{boss.UnitName} calls an iron salvo and the keep answers with covering fire.");
-				break;
-			case GameData.EnemyBossReliquaryId:
-			{
-				// The normal raise timer supplies replacements. A second summon/repair loop
-				// erased progress and left no useful opening after defeating the artillery.
-				BuffUnitsNear(Team.Enemy, boss.Position, 160f, 1.08f, 1f, 4f, color, "OSSUARY");
-				SetStatus($"{boss.UnitName} rallies the surviving bone crews. Defeat them to open a path to the tyrant.");
-				break;
-			}
-			case GameData.EnemyBossAshenRegentId:
-				DamagePlayersNear(boss.Position, elite ? 102f : 88f, elite ? 20f : 15f, color, "EMBER");
-				PushPlayersFromPoint(boss.Position, elite ? 102f : 90f, elite ? 14f : 10f, elite ? 0.82f : 0.88f, elite ? 2.6f : 2f, color, "");
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 126f : 114f, 1.08f, 1.06f, elite ? 5.2f : 4.4f, color, "DECREE");
-				SetStatus($"{boss.UnitName} issues another ember decree and hammers the frontline with ash.");
-				break;
-			case GameData.EnemyBossTidemasterId:
-				DamagePlayersNear(boss.Position + new Vector2(-16f, 0f), elite ? 104f : 90f, elite ? 20f : 15f, color, "SURGE");
-				SlowPlayersNear(boss.Position, elite ? 114f : 100f, elite ? 0.72f : 0.8f, elite ? 3.8f : 3.2f, color, "TOLL");
-				PushPlayersFromPoint(boss.Position, elite ? 104f : 92f, elite ? 16f : 12f, elite ? 0.8f : 0.86f, elite ? 2.8f : 2.2f, color, "");
-				RepairEnemyBaseByRatio(elite ? 0.02f : 0.015f, color, "");
-				SetStatus($"{boss.UnitName} rings another surge toll and floods the lane with tide pressure.");
-				break;
-			case GameData.EnemyBossPlagueMonarchId:
-			{
-				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, elite ? 5f : 4f);
-				_enemySignalJamCourageGainScale = Mathf.Min(_enemySignalJamCourageGainScale, elite ? 0.52f : 0.64f);
-				_deck.IncreaseCooldowns(elite ? 0.68f : 0.48f);
-				_spellDeck.IncreaseCooldowns(elite ? 0.68f : 0.48f);
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, elite ? 2 : 1);
-				SlowPlayersNear(boss.Position, elite ? 114f : 100f, elite ? 0.72f : 0.8f, elite ? 3.8f : 3.1f, color, "BLOOM");
-				SetStatus($"{boss.UnitName} blooms another blackout" + (escorts > 0 ? $" while {escorts} plague escorts press the lane." : "."));
-				break;
-			}
-			case GameData.EnemyBossId:
-			default:
-				BuffUnitsNear(Team.Enemy, boss.Position, elite ? 124f : 112f, 1.08f, 1.08f, elite ? 5.2f : 4.4f, color, "ORDERS");
-				SetStatus($"{boss.UnitName} repeats its warlord orders and the undead line surges again.");
-				break;
-		}
-	}
-
 	private string QueueCampaignMissionAftermath(StageMissionState mission, bool succeeded)
 	{
 		if (!IsCampaignMode || !_campaignMissionAftermathReady || _campaignMissionAftermathQueued || _campaignMissionAftermathTriggered)
@@ -7322,8 +4256,6 @@ public partial class BattleController : Node2D
 
 		_campaignMissionAftermathReady = false;
 		_campaignMissionAftermathQueued = true;
-		_campaignMissionAftermathFriendly = succeeded;
-		_campaignMissionAftermathTriggerAt = _elapsed + CampaignMissionAftermathLeadSeconds;
 		_campaignMissionAftermathLaneY = mission?.Anchor.Y ?? BaseCenterY;
 		_campaignMissionAftermathLabel = succeeded
 			? GameState.Instance.GetCampaignMissionFollowThroughTitle(_activeRouteId)
@@ -7343,235 +4275,6 @@ public partial class BattleController : Node2D
 			: $"{_campaignMissionAftermathLabel} is rolling back down the lane in {CampaignMissionAftermathLeadSeconds:0.0}s.";
 	}
 
-	private void TryTriggerCampaignMissionAftermath()
-	{
-		if (!IsCampaignMode || !_campaignMissionAftermathQueued || _battleEnded)
-		{
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignMissionAftermathTriggerAt)
-		{
-			return;
-		}
-
-		_campaignMissionAftermathQueued = false;
-		_campaignMissionAftermathTriggered = true;
-		ApplyCampaignMissionAftermath();
-	}
-
-	private void ApplyCampaignMissionAftermath()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var laneY = Mathf.Clamp(_campaignMissionAftermathLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var playerAnchor = new Vector2(PlayerSpawnX + 18f, laneY);
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerSpawnX, EnemySpawnX, 0.42f), laneY);
-		var enemyAnchor = new Vector2(EnemySpawnX - 18f, laneY);
-		var label = string.IsNullOrWhiteSpace(_campaignMissionAftermathLabel)
-			? (_campaignMissionAftermathFriendly ? "Objective Follow-Through" : "Objective Backlash")
-			: _campaignMissionAftermathLabel;
-		var effectAnchor = _campaignMissionAftermathFriendly ? playerAnchor : enemyAnchor;
-		SpawnEffect(effectAnchor, color, 12f, 54f, 0.28f, false);
-		SpawnFloatText(effectAnchor + new Vector2(0f, -46f), label.ToUpperInvariant(), color.Lightened(0.22f), 0.68f);
-
-		if (_campaignMissionAftermathFriendly)
-		{
-			var statusText = $"{label} reinforced the convoy.";
-			switch (_activeRouteId)
-			{
-				case RouteCatalog.CityId:
-					SpawnSupportUnit(GameData.PlayerBannerId, laneY);
-					SpawnSupportUnit(GameData.PlayerDefenderId, laneY);
-					_courage = Mathf.Min(_maxCourage, _courage + 6f);
-					PushEnemiesFromPoint(laneAnchor, 144f, 18f, 0.56f, 2.8f, color, "LANTERN BREAK");
-					BuffUnitsNear(Team.Player, laneAnchor + new Vector2(-58f, 0f), 144f, 1.06f, 1.05f, 5.6f, color);
-					statusText = $"{label} hit the lane: militia banners pressed into the opening.";
-					break;
-				case RouteCatalog.HarborId:
-				{
-					SpawnSupportUnit(GameData.PlayerRangerId, laneY);
-					SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
-					var anchor = FindClosestEnemyToPoint(enemyAnchor + new Vector2(-88f, 0f), 260f)?.Position ?? (enemyAnchor + new Vector2(-88f, 0f));
-					DamageEnemiesNear(anchor, 92f, 24f, color, "DOCKBREAK");
-					SlowEnemiesNear(anchor, 92f, 0.62f, 3.2f, color);
-					statusText = $"{label} raked the lane with dock guns and pinned the push in place.";
-					break;
-				}
-				case RouteCatalog.FoundryId:
-					SpawnSupportUnit(GameData.PlayerMechanicId, laneY);
-					SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
-					DamageEnemyBaseByRatio(0.04f, color, "SIEGE WINCH");
-					DamageEnemiesNear(EnemyBaseCorePosition + new Vector2(-86f, 0f), 98f, 22f, color, "");
-					statusText = $"{label} hauled fresh iron into range and cracked the keep again.";
-					break;
-				case RouteCatalog.QuarantineId:
-					SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-					_enemySignalJamTimer = 0f;
-					_enemySignalJamCourageGainScale = 1f;
-					RepairBusByRatio(0.04f);
-					BuffAllPlayerUnits(1.05f, 1.06f, 6f, 0.88f);
-					SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "LANTERN CORRIDOR", color.Lightened(0.22f), 0.64f);
-					statusText = $"{label} cleared the curse haze, patched hull, and steadied the convoy.";
-					break;
-				case RouteCatalog.ThornwallId:
-					SpawnSupportUnit(GameData.PlayerDefenderId, laneY);
-					SpawnSupportUnit(GameData.PlayerRangerId, laneY);
-					PushEnemiesFromPoint(laneAnchor + new Vector2(14f, 0f), 160f, 22f, 0.56f, 3.2f, color, "PASS HOLD");
-					BuffUnitsNear(Team.Player, laneAnchor + new Vector2(-60f, 0f), 150f, 1.05f, 1.08f, 5.8f, color);
-					statusText = $"{label} locked the slope down and gave the frontline room to reform.";
-					break;
-				case RouteCatalog.BasilicaId:
-					SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
-					SpawnSupportUnit(GameData.PlayerBannerId, laneY);
-					RepairBusByRatio(0.03f);
-					BuffAllPlayerUnits(1.08f, 1.05f, 6f);
-					SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "SANCTIFIED ADVANCE", color.Lightened(0.22f), 0.64f);
-					statusText = $"{label} sanctified the lane and sent fresh escorts into the push.";
-					break;
-				case RouteCatalog.MireId:
-				{
-					SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-					var anchor = FindClosestEnemyToPoint(laneAnchor + new Vector2(70f, 0f), 260f)?.Position ?? (laneAnchor + new Vector2(70f, 0f));
-					DamageEnemiesNear(anchor, 90f, 20f, color, "FEN AMBUSH");
-					SlowEnemiesNear(anchor, 90f, 0.6f, 3.6f, color);
-					RepairBusByRatio(0.02f);
-					statusText = $"{label} sprang from the reeds and dragged the nearest enemy knot into the bog.";
-					break;
-				}
-				case RouteCatalog.SteppeId:
-					SpawnSupportUnit(GameData.PlayerRaiderId, laneY);
-					SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-					_courage = Mathf.Min(_maxCourage, _courage + 6f);
-					BuffAllPlayerUnits(1.04f, 1.14f, 6f);
-					DamageEnemiesNear(laneAnchor + new Vector2(86f, 0f), 76f, 18f, color, "CHASE");
-					statusText = $"{label} broke across the flank and turned the opening into a chase.";
-					break;
-				case RouteCatalog.GloamwoodId:
-				{
-					var target = FindHighestHealthEnemy();
-					if (target != null)
-					{
-						var appliedDamage = target.TakeDamage(36f, label);
-						SpawnDamageFeedback(target.Position, appliedDamage, color);
-						target.ApplyTemporarySpeedModifier(0.52f, 4f);
-						DamageEnemiesNear(target.Position, 72f, 16f, color, "WITCHLANE");
-					}
-
-					_deck.ReduceCooldowns(0.8f);
-					_spellDeck.ReduceCooldowns(0.8f);
-					statusText = $"{label} sealed the route with witchlights and isolated the heaviest threat.";
-					break;
-				}
-				case RouteCatalog.CitadelId:
-					SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
-					SpawnSupportUnit(GameData.PlayerMarksmanId, laneY);
-					DamageEnemyBaseByRatio(0.06f, color, "RANGE FIX");
-					DamageEnemiesNear(EnemyBaseCorePosition + new Vector2(-88f, 0f), 104f, 24f, color, "");
-					statusText = $"{label} corrected the convoy guns onto the keep and frontline.";
-					break;
-				default:
-					_courage = Mathf.Min(_maxCourage, _courage + 6f);
-					_deck.ReduceCooldowns(0.6f);
-					_spellDeck.ReduceCooldowns(0.6f);
-					break;
-			}
-
-			SetStatus(statusText);
-			return;
-		}
-
-		var bonusCount = _stage >= 55 ? 2 : _stage >= 35 ? 1 : 0;
-		var spawned = 0;
-		var backlashStatus = $"{label} hit the lane.";
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyHowlerId, 1, laneY);
-				_courage = Mathf.Max(0f, _courage - 4f);
-				BuffUnitsNear(Team.Enemy, enemyAnchor, 148f, 1.04f, 1.12f, 5.2f, color, "STREET PANIC");
-				backlashStatus = $"{label} flooded the lane with {spawned} raiders and rattled caravan morale.";
-				break;
-			case RouteCatalog.HarborId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1 + (bonusCount / 2), laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1 + bonusCount, laneY);
-				SlowPlayersNear(laneAnchor, 90f, 0.82f, 2.8f, color, "RIPTIDE");
-				backlashStatus = $"{label} rolled back with {spawned} boarders and tide drag.";
-				break;
-			case RouteCatalog.FoundryId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyShieldWallId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				BuffUnitsNear(Team.Enemy, enemyAnchor, 144f, 1.08f, 1.04f, 5.4f, color, "MOLTEN LINE");
-				backlashStatus = $"{label} rebuilt the breach with {spawned} heavy forge reinforcements.";
-				break;
-			case RouteCatalog.QuarantineId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyJammerId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 1 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, 3.4f);
-				_enemySignalJamCourageGainScale = Mathf.Min(_enemySignalJamCourageGainScale, 0.72f);
-				_deck.IncreaseCooldowns(0.6f);
-				_spellDeck.IncreaseCooldowns(0.6f);
-				backlashStatus = $"{label} relapsed into blackout pressure with {spawned} cursed reinforcements.";
-				break;
-			case RouteCatalog.ThornwallId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 3 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1, laneY);
-				PushPlayersFromPoint(laneAnchor + new Vector2(42f, 0f), 100f, 14f, 0.84f, 2.6f, color, "ROCKFALL");
-				backlashStatus = $"{label} came downhill with {spawned} attackers and a fresh shove.";
-				break;
-			case RouteCatalog.BasilicaId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySplitterId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyHowlerId, 1, laneY);
-				RepairEnemyBaseByRatio(0.03f, color, "CRYPT");
-				backlashStatus = $"{label} returned with {spawned} ritual escorts and restored the keep.";
-				break;
-			case RouteCatalog.MireId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBloaterId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				SlowPlayersNear(laneAnchor, 96f, 0.76f, 2.9f, color, "BLIGHT");
-				backlashStatus = $"{label} surged back with {spawned} mire creatures and choking sludge.";
-				break;
-			case RouteCatalog.SteppeId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySaboteurId, 1, laneY);
-				BuffUnitsNear(Team.Enemy, enemyAnchor, 150f, 1.02f, 1.16f, 5.6f, color, "ENCIRCLEMENT");
-				backlashStatus = $"{label} looped back with {spawned} flank riders and fresh tempo.";
-				break;
-			case RouteCatalog.GloamwoodId:
-			{
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyJammerId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyMirrorId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1 + (bonusCount / 2), laneY);
-				var target = FindHighestHealthPlayer();
-				if (target != null)
-				{
-					var appliedDamage = target.TakeDamage(18f, label);
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
-					target.ApplyTemporarySpeedModifier(0.72f, 3f);
-				}
-
-				backlashStatus = $"{label} answered with {spawned} hexers and a mark on the heaviest defender.";
-				break;
-			}
-			case RouteCatalog.CitadelId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyShieldWallId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyCrusherId, 1 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				RepairEnemyBaseByRatio(0.04f, color, "LOCKDOWN");
-				backlashStatus = $"{label} sealed the lane with {spawned} armored reprisals.";
-				break;
-			default:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				backlashStatus = $"{label} hit the lane with {spawned} enemy reinforcements.";
-				break;
-		}
-
-		SetStatus(backlashStatus);
-	}
-
 	private string QueueCampaignCounterSurge(StageMissionState mission)
 	{
 		if (!IsCampaignMode || !_campaignCounterSurgeReady || _campaignCounterSurgeQueued || _campaignCounterSurgeTriggered)
@@ -7581,7 +4284,6 @@ public partial class BattleController : Node2D
 
 		_campaignCounterSurgeReady = false;
 		_campaignCounterSurgeQueued = true;
-		_campaignCounterSurgeTriggerAt = _elapsed + CampaignCounterSurgeTelegraphLeadSeconds;
 		_campaignCounterSurgeLaneY = mission?.Anchor.Y ?? BaseCenterY;
 		_campaignCounterSurgeLabel = GameState.Instance.GetCampaignCounterSurgeTitle(_activeRouteId);
 		SpawnEffect(new Vector2(EnemySpawnX - 22f, _campaignCounterSurgeLaneY), RouteCatalog.Get(_activeRouteId).BannerAccent, 10f, 42f, 0.22f, false);
@@ -7589,138 +4291,6 @@ public partial class BattleController : Node2D
 		return string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel)
 			? "Enemy reserves are forming for a counter-surge."
 			: $"Enemy reserves are forming: {_campaignCounterSurgeLabel} in {CampaignCounterSurgeTelegraphLeadSeconds:0.0}s.";
-	}
-
-	private void TryTriggerCampaignCounterSurge()
-	{
-		if (!IsCampaignMode || !_campaignCounterSurgeQueued || _battleEnded || _enemyBaseHealth <= 0.01f)
-		{
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignCounterSurgeTriggerAt)
-		{
-			return;
-		}
-
-		_campaignCounterSurgeQueued = false;
-		_campaignCounterSurgeTriggered = true;
-		ApplyCampaignCounterSurge();
-	}
-
-	private void ApplyCampaignCounterSurge()
-	{
-		var route = RouteCatalog.Get(_activeRouteId);
-		var color = route.BannerAccent.Lightened(0.08f);
-		var laneY = Mathf.Clamp(_campaignCounterSurgeLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var surgeAnchor = new Vector2(EnemySpawnX - 18f, laneY);
-		var bonusCount = _stage >= 55 ? 2 : _stage >= 35 ? 1 : 0;
-		var spawned = 0;
-
-		switch (_activeRouteId)
-		{
-			case RouteCatalog.CityId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyHowlerId, 1, laneY);
-				BuffUnitsNear(Team.Enemy, surgeAnchor, 150f, 1.04f, 1.12f, 5.2f, color, "PRESS-GANG");
-				break;
-			case RouteCatalog.HarborId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 2 + (bonusCount / 2), laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1 + bonusCount, laneY);
-				SlowPlayersNear(surgeAnchor + new Vector2(-46f, 0f), 84f, 0.82f, 2.6f, color, "BOARDERS");
-				break;
-			case RouteCatalog.FoundryId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyShieldWallId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				BuffUnitsNear(Team.Enemy, surgeAnchor, 144f, 1.08f, 1.04f, 5.4f, color, "SMELTER GUARD");
-				break;
-			case RouteCatalog.QuarantineId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyJammerId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1 + (bonusCount / 2), laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 1 + bonusCount, laneY);
-				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, 2.8f);
-				_enemySignalJamCourageGainScale = Mathf.Min(_enemySignalJamCourageGainScale, 0.78f);
-				break;
-			case RouteCatalog.ThornwallId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 3 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBruteId, 1, laneY);
-				PushPlayersFromPoint(surgeAnchor + new Vector2(-26f, 0f), 96f, 12f, 0.86f, 2.4f, color, "STAMPEDE");
-				break;
-			case RouteCatalog.BasilicaId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySplitterId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyHowlerId, 1, laneY);
-				RepairEnemyBaseByRatio(0.02f, color, "PROCESSION");
-				break;
-			case RouteCatalog.MireId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyBloaterId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				SlowPlayersNear(surgeAnchor + new Vector2(-44f, 0f), 92f, 0.78f, 2.8f, color, "ROT FLOOD");
-				break;
-			case RouteCatalog.SteppeId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySaboteurId, 1, laneY);
-				BuffUnitsNear(Team.Enemy, surgeAnchor, 152f, 1.02f, 1.16f, 5.6f, color, "FLANK RIDERS");
-				break;
-			case RouteCatalog.GloamwoodId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyJammerId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyMirrorId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1 + (bonusCount / 2), laneY);
-				var marked = FindHighestHealthPlayer();
-				if (marked != null)
-				{
-					var appliedDamage = marked.TakeDamage(16f, _campaignCounterSurgeLabel);
-					SpawnDamageFeedback(marked.Position, appliedDamage, color);
-					marked.ApplyTemporarySpeedModifier(0.76f, 2.8f);
-				}
-				break;
-			case RouteCatalog.CitadelId:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyShieldWallId, 1, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyCrusherId, 1 + bonusCount, laneY);
-				spawned += SpawnEnemySurgeUnits(GameData.EnemySpitterId, 1, laneY);
-				RepairEnemyBaseByRatio(0.03f, color, "IRON LINE");
-				break;
-			default:
-				spawned += SpawnEnemySurgeUnits(GameData.EnemyRunnerId, 2 + bonusCount, laneY);
-				break;
-		}
-
-		SpawnEffect(surgeAnchor, color, 12f, 54f, 0.28f, false);
-		if (!string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel))
-		{
-			SpawnFloatText(surgeAnchor + new Vector2(0f, -46f), _campaignCounterSurgeLabel.ToUpperInvariant(), color.Lightened(0.22f), 0.68f);
-		}
-
-		var label = string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel) ? "Counter-surge" : _campaignCounterSurgeLabel;
-		SetStatus($"{label} hit the lane with {spawned} enemy reinforcements.");
-	}
-
-	private int SpawnEnemySurgeUnits(string unitId, int count, float laneY)
-	{
-		if (string.IsNullOrWhiteSpace(unitId) || count <= 0)
-		{
-			return 0;
-		}
-
-		var spawned = 0;
-		for (var i = 0; i < count; i++)
-		{
-			if (!_spawnDirector.TryBuildEnemyStats(unitId, out var stats))
-			{
-				break;
-			}
-
-			var spawnPosition = new Vector2(
-				Mathf.Clamp(EnemySpawnX + _rng.RandfRange(-14f, 18f), BattlefieldLeft + 20f, BattlefieldRight - 20f),
-				Mathf.Clamp(
-					laneY + _rng.RandfRange(-58f, 58f),
-					BattlefieldTop + SpawnVerticalPadding,
-					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyUnit(stats, spawnPosition);
-			spawned++;
-		}
-
-		return spawned;
 	}
 
 	private void DamageEnemiesNear(Vector2 center, float radius, float damage, Color color, string label)
@@ -7912,41 +4482,6 @@ public partial class BattleController : Node2D
 		return best;
 	}
 
-	private float ResolveCampaignConvoyCommandLaneY()
-	{
-		var forwardPressure = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.5f), BaseCenterY), 520f);
-		if (forwardPressure != null)
-		{
-			return Mathf.Clamp(forwardPressure.Position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		}
-
-		var toughestEnemy = FindHighestHealthEnemy();
-		if (toughestEnemy != null)
-		{
-			return Mathf.Clamp(toughestEnemy.Position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		}
-
-		return BaseCenterY;
-	}
-
-	private string ResolveCampaignFieldOrderResponseSupportUnitId(bool assault, bool succeeded)
-	{
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => assault ? GameData.PlayerBannerId : GameData.PlayerDefenderId,
-			RouteCatalog.HarborId => assault ? GameData.PlayerRangerId : (succeeded ? GameData.PlayerMarksmanId : GameData.PlayerDefenderId),
-			RouteCatalog.FoundryId => assault ? GameData.PlayerBallistaId : GameData.PlayerMechanicId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => assault ? GameData.PlayerRangerId : GameData.PlayerDefenderId,
-			RouteCatalog.BasilicaId => assault ? GameData.PlayerBannerId : GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerHoundId,
-			RouteCatalog.SteppeId => assault ? GameData.PlayerRaiderId : GameData.PlayerHoundId,
-			RouteCatalog.GloamwoodId => assault ? GameData.PlayerStormcallerId : GameData.PlayerCoordinatorId,
-			RouteCatalog.CitadelId => assault ? GameData.PlayerBallistaId : GameData.PlayerMarksmanId,
-			_ => assault ? GameData.PlayerRangerId : GameData.PlayerDefenderId
-		};
-	}
-
 	private int SpawnEnemyEscortsNear(Unit anchor, string unitId, int count, float xSpread = 32f, float ySpread = 58f)
 	{
 		if (anchor == null || anchor.IsDead || string.IsNullOrWhiteSpace(unitId) || count <= 0)
@@ -8051,28 +4586,6 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		// Temp damage scale from contact reward (Ritual Disruption)
-		if (_endlessContactTempDamageExpiry > 0f)
-		{
-			_endlessContactTempDamageExpiry -= delta;
-			if (_endlessContactTempDamageExpiry <= 0f)
-			{
-				_endlessContactTempDamageScale = 1f;
-			}
-		}
-
-		if (_endlessContactTempDamageScale > 1.001f)
-		{
-			foreach (var unit in _units)
-			{
-				if (unit.IsDead || unit.Team != Team.Player)
-				{
-					continue;
-				}
-
-				unit.ApplyTemporaryCombatBuff(_endlessContactTempDamageScale, 1f, 0.2f);
-			}
-		}
 	}
 
 	private void ApplyComboPairBonuses()
@@ -8181,196 +4694,11 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private bool ShouldSupportEndlessContact(Unit unit, Unit directTarget)
-	{
-		if (!IsEndlessMode ||
-			unit.Team != Team.Player ||
-			_activeEndlessContact == null ||
-			!IsInstanceValid(_activeEndlessContactActor) ||
-			_activeEndlessContact.Completed ||
-			_activeEndlessContact.Failed)
-		{
-			return false;
-		}
-
-		var contactPosition = _activeEndlessContactActor.Position;
-		var distanceToContact = unit.Position.DistanceTo(contactPosition);
-		if (distanceToContact > Mathf.Max(210f, unit.AggroRangeX * _weatherAggroScale * 1.3f))
-		{
-			return false;
-		}
-
-		if (directTarget == null)
-		{
-			return true;
-		}
-
-		if (unit.CanAttack(directTarget))
-		{
-			return false;
-		}
-
-		var targetDistance = unit.Position.DistanceTo(directTarget.Position);
-		return distanceToContact + 14f <= targetDistance;
-	}
-
-	private void SimulatePlayerContactSupport(Unit unit, float delta)
-	{
-		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
-		{
-			return;
-		}
-
-		var contactPosition = _activeEndlessContactActor.Position;
-		var supportRadius = ResolveEndlessContactSupportRadius();
-		if (unit.CanAttackPosition(contactPosition, supportRadius))
-		{
-			if (unit.TryBeginAttackPosition(contactPosition, supportRadius))
-			{
-				var actor = _activeEndlessContactActor;
-				unit.ScheduleAttackImpact(() =>
-				{
-					if (!CanInteractWithEndlessContactActor(actor)) return;
-					var repairAmount = ResolvePlayerContactSupportRepair(unit);
-					var progressBoost = ResolvePlayerContactSupportProgress(unit);
-					var supportLabel = ResolvePlayerContactSupportLabel(unit);
-					if (unit.UsesProjectile)
-					{
-						SpawnContactSupportProjectile(unit, repairAmount, progressBoost, supportLabel);
-					}
-					else
-					{
-						var repaired = actor.Repair(repairAmount);
-						_activeEndlessContact.Progress = Mathf.Min(
-							_activeEndlessContact.Definition.TargetSeconds,
-							_activeEndlessContact.Progress + progressBoost);
-						RegisterEndlessContactSupport(repaired, progressBoost);
-						if (repaired > 0.05f)
-						{
-							SpawnEffect(contactPosition, unit.Tint.Lightened(0.15f), 6f, 18f + (repaired * 0.2f), 0.16f, false);
-						}
-						SpawnFloatText(
-							contactPosition + new Vector2(_rng.RandfRange(-10f, 10f), -18f),
-							supportLabel,
-							unit.Tint.Lightened(0.28f),
-							0.48f);
-					}
-				});
-			}
-
-			return;
-		}
-
-		unit.MoveToward(
-			contactPosition,
-			delta,
-			BattlefieldLeft,
-			BattlefieldRight,
-			BattlefieldTop + SpawnVerticalPadding,
-			BattlefieldBottom - SpawnVerticalPadding);
-	}
-
-	private bool ShouldPrioritizeEndlessContact(Unit unit, Unit directTarget)
-	{
-		if (!IsEndlessMode ||
-			unit.Team != Team.Enemy ||
-			!CanEnemyUnitPressureContact(unit) ||
-			_activeEndlessContact == null ||
-			!IsInstanceValid(_activeEndlessContactActor) ||
-			_activeEndlessContact.Completed ||
-			_activeEndlessContact.Failed)
-		{
-			return false;
-		}
-
-		var contactPosition = _activeEndlessContactActor.Position;
-		var distanceToContact = unit.Position.DistanceTo(contactPosition);
-		if (distanceToContact > Mathf.Max(220f, unit.AggroRangeX * _weatherAggroScale * 1.35f))
-		{
-			return false;
-		}
-
-		if (directTarget == null)
-		{
-			return true;
-		}
-
-		if (unit.CanAttack(directTarget))
-		{
-			return false;
-		}
-
-		var targetDistance = unit.Position.DistanceTo(directTarget.Position);
-		return distanceToContact + 18f < targetDistance || unit.Position.X <= contactPosition.X + 96f;
-	}
-
-	private bool CanEnemyUnitPressureContact(Unit unit)
-	{
-		return unit.VisualClass switch
-		{
-			"spitter" => true,
-			"walker" => true,
-			"runner" => true,
-			"saboteur" => true,
-			"brute" => true,
-			"crusher" => true,
-			"splitter" => true,
-			"boss" => true,
-			_ => false
-		};
-	}
-
 	private static bool ShouldPrioritizeObjectiveRaid(Unit unit, Unit directTarget)
 	{
 		return unit.Team == Team.Enemy &&
 			unit.VisualClass == "saboteur" &&
 			(directTarget == null || !unit.CanAttack(directTarget));
-	}
-
-	private void SimulateEnemyContactPressure(Unit unit, float delta)
-	{
-		if (!IsInstanceValid(_activeEndlessContactActor) || _activeEndlessContact == null)
-		{
-			return;
-		}
-
-		var contactPosition = _activeEndlessContactActor.Position;
-		var contactRadius = ResolveEndlessContactAttackRadius();
-		if (unit.CanAttackPosition(contactPosition, contactRadius))
-		{
-			if (unit.TryBeginAttackPosition(contactPosition, contactRadius))
-			{
-				var actor = _activeEndlessContactActor;
-				unit.ScheduleAttackImpact(() =>
-				{
-					if (!CanInteractWithEndlessContactActor(actor)) return;
-					if (unit.UsesProjectile)
-					{
-						SpawnContactPressureProjectile(unit);
-					}
-					else
-					{
-						var appliedDamage = actor.ApplyPressureDamage(ResolveEnemyContactAttackDamage(unit));
-						RegisterEndlessContactPressure(appliedDamage);
-						if (appliedDamage > 0.05f)
-						{
-							SpawnEffect(contactPosition, unit.Tint, 6f, 18f + (appliedDamage * 0.2f), 0.16f, false);
-							SpawnFloatText(contactPosition + new Vector2(_rng.RandfRange(-8f, 8f), -10f), $"-{Mathf.RoundToInt(appliedDamage)}", unit.Tint.Lightened(0.22f), 0.46f);
-						}
-					}
-				});
-			}
-
-			return;
-		}
-
-		unit.MoveToward(
-			contactPosition,
-			delta,
-			BattlefieldLeft,
-			BattlefieldRight,
-			BattlefieldTop + SpawnVerticalPadding,
-			BattlefieldBottom - SpawnVerticalPadding);
 	}
 
 	private Unit FindClosestEnemy(Unit source)
@@ -9097,7 +5425,6 @@ public partial class BattleController : Node2D
 		var isNew = GameState.Instance.GrantBossRelic(relic.Id, out var duplicateShards);
 		if (isNew)
 		{
-			_relicDropName = relic.DisplayName;
 			AudioDirector.Instance?.PlayRelicPickup();
 		}
 		var label = isNew ? $"RELIC: {relic.DisplayName}" : $"DUPLICATE RELIC: +{duplicateShards} SHARDS";
@@ -9172,7 +5499,6 @@ public partial class BattleController : Node2D
 			SpawnEnemyUnit(spawnedStats, spawnPosition);
 		}
 	}
-
 
 	private Unit FindProjectileShieldInterceptor(Unit attacker, Unit target)
 	{
@@ -9886,71 +6212,6 @@ public partial class BattleController : Node2D
 		canvas.DrawCircle(origin + new Vector2(-4f + (plumeOffset * 0.4f), -24f), 14f + (smokeStrength * 6f), new Color(0f, 0f, 0f, 0.12f + (smokeStrength * 0.12f)));
 	}
 
-	private void DrawEndlessFieldEvent()
-	{
-		if (!IsEndlessMode || _activeEndlessFieldEvent == null)
-		{
-			return;
-		}
-
-		var alpha = Mathf.Clamp(_activeEndlessFieldEvent.Remaining / 4f, 0.18f, 0.65f);
-		for (var i = 0; i < _activeEndlessFieldEvent.Anchors.Length; i++)
-		{
-			var anchor = _activeEndlessFieldEvent.Anchors[i];
-			DrawArc(
-				anchor,
-				_activeEndlessFieldEvent.Radius,
-				0f,
-				Mathf.Tau,
-				24,
-				new Color(_activeEndlessFieldEvent.Color, alpha),
-				3f);
-			DrawCircle(anchor, 7f, new Color(_activeEndlessFieldEvent.Color, alpha + 0.1f));
-		}
-	}
-
-	private void DrawEndlessContactEvent()
-	{
-		if (!IsEndlessMode || _activeEndlessContact == null)
-		{
-			return;
-		}
-
-		var definition = _activeEndlessContact.Definition;
-		var progressRatio = Mathf.Clamp(_activeEndlessContact.Progress / Mathf.Max(0.01f, definition.TargetSeconds), 0f, 1f);
-		var baseAlpha = _activeEndlessContact.Completed
-			? 0.72f
-			: _activeEndlessContact.Failed
-				? 0.2f
-				: 0.38f + (Mathf.Sin(_elapsed * 4.4f) * 0.08f);
-		var drawColor = _activeEndlessContact.Color
-			.Lightened(_activeEndlessContact.PlayerInside ? 0.08f : 0f)
-			.Darkened(_activeEndlessContact.EnemyInside ? 0.12f : 0f);
-		var color = new Color(drawColor, Mathf.Clamp(baseAlpha, 0.16f, 0.78f));
-		var anchor = _activeEndlessContact.Anchor;
-		var fillAlpha = _activeEndlessContact.Completed
-			? 0.16f
-			: _activeEndlessContact.Failed
-				? 0.05f
-				: _activeEndlessContact.EnemyInside
-					? 0.08f
-					: 0.12f;
-
-		DrawCircle(anchor, definition.Radius, new Color(drawColor, fillAlpha));
-
-		DrawArc(anchor, definition.Radius, 0f, Mathf.Tau, 32, color, 3f);
-		DrawCircle(anchor, 8f, color.Lightened(0.1f));
-
-		if (!_activeEndlessContact.Failed)
-		{
-			var progressRadius = Mathf.Lerp(18f, definition.Radius - 8f, progressRatio);
-			DrawArc(anchor, progressRadius, -Mathf.Pi * 0.5f, -Mathf.Pi * 0.5f + (Mathf.Tau * progressRatio), 32, color.Lightened(0.18f), 5f);
-		}
-
-		DrawLine(anchor + new Vector2(-10f, 0f), anchor + new Vector2(10f, 0f), color, 2f, true);
-		DrawLine(anchor + new Vector2(0f, -10f), anchor + new Vector2(0f, 10f), color, 2f, true);
-	}
-
 	private Color ResolveDeployButtonTint(UnitDefinition definition, bool isReady, bool hasCourage, bool armed)
 	{
 		var tint = definition.GetTint();
@@ -10029,662 +6290,12 @@ public partial class BattleController : Node2D
 		return Mathf.Max(2f, cooldown);
 	}
 
-	private string BuildStageMissionIntelText()
-	{
-		var directiveText = BuildCampaignDirectiveBattleText();
-		if (_stageMissions.Count == 0)
-		{
-			return
-				(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
-				BuildCampaignConvoyCommandIntelLine() +
-				BuildCampaignFieldOrderIntelLine() +
-				BuildCampaignMissionAftermathIntelLine() +
-				BuildCampaignBonusObjectivePressureIntelLine() +
-				BuildCampaignPressureEchoIntelLine() +
-				BuildCampaignBossPressureIntelLine() +
-				BuildCampaignAdaptiveWaveIntelLine() +
-				BuildCampaignAdaptiveWaveChoiceIntelLine() +
-				BuildCampaignAdaptiveWaveChallengeIntelLine() +
-				BuildCampaignLateConditionIntelLine() +
-				BuildCampaignCommendationIntelLine();
-		}
-
-		var mission = _stageMissions.FirstOrDefault(candidate => !candidate.Completed && !candidate.Failed);
-		if (mission == null)
-		{
-			return
-				(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
-				BuildCampaignConvoyCommandIntelLine() +
-				BuildCampaignFieldOrderIntelLine() +
-				BuildCampaignMissionAftermathIntelLine() +
-				BuildCampaignBonusObjectivePressureIntelLine() +
-				BuildCampaignPressureEchoIntelLine() +
-				BuildCampaignBossPressureIntelLine() +
-				BuildCampaignAdaptiveWaveIntelLine() +
-				BuildCampaignAdaptiveWaveChoiceIntelLine() +
-				BuildCampaignAdaptiveWaveChallengeIntelLine() +
-				BuildCampaignLateConditionIntelLine() +
-				BuildCampaignCommendationIntelLine() +
-				"Mission event: all authored battlefield objectives are resolved.\n" +
-				BuildCampaignCounterSurgeIntelLine();
-		}
-
-		var title = BuildStageMissionDisplayTitle(mission);
-		if (!mission.Started)
-		{
-			return
-				(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
-				BuildCampaignConvoyCommandIntelLine() +
-				BuildCampaignFieldOrderIntelLine() +
-				BuildCampaignMissionAftermathIntelLine() +
-				BuildCampaignBonusObjectivePressureIntelLine() +
-				BuildCampaignPressureEchoIntelLine() +
-				BuildCampaignBossPressureIntelLine() +
-				BuildCampaignAdaptiveWaveIntelLine() +
-				BuildCampaignAdaptiveWaveChoiceIntelLine() +
-				BuildCampaignAdaptiveWaveChallengeIntelLine() +
-				BuildCampaignLateConditionIntelLine() +
-				BuildCampaignCommendationIntelLine() +
-				$"Mission event standby: {title} arms in {Mathf.Max(0f, mission.Definition.StartTime - _elapsed):0.0}s.\n";
-		}
-
-		return
-			(string.IsNullOrWhiteSpace(directiveText) ? "" : $"{directiveText}\n") +
-			BuildCampaignConvoyCommandIntelLine() +
-			BuildCampaignFieldOrderIntelLine() +
-			BuildCampaignMissionAftermathIntelLine() +
-			BuildCampaignBonusObjectivePressureIntelLine() +
-			BuildCampaignPressureEchoIntelLine() +
-			BuildCampaignBossPressureIntelLine() +
-			BuildCampaignAdaptiveWaveIntelLine() +
-			BuildCampaignAdaptiveWaveChoiceIntelLine() +
-			BuildCampaignAdaptiveWaveChallengeIntelLine() +
-			BuildCampaignLateConditionIntelLine() +
-			BuildCampaignCommendationIntelLine() +
-			$"Mission event active: {title}  |  {BuildStageMissionProgressText(mission)}\n" +
-			BuildCampaignCounterSurgeIntelLine();
-	}
-
-	private string BuildStageMissionEventText()
-	{
-		if (_stageMissions.Count == 0)
-		{
-			return "";
-		}
-
-		var lines = new List<string>
-		{
-			"Battlefield events:"
-		};
-
-		foreach (var mission in _stageMissions)
-		{
-			var prefix = mission.Completed
-				? "[OK]"
-				: mission.Failed
-					? "[X]"
-					: mission.Started
-						? "[..]"
-						: "[--]";
-			lines.Add($"{prefix} {BuildStageMissionDisplayTitle(mission)}  |  {BuildStageMissionProgressText(mission)}");
-		}
-
-		return string.Join("\n", lines);
-	}
-
-	private string BuildStageMissionProgressText(StageMissionState mission)
-	{
-		if (mission == null)
-		{
-			return "No mission event.";
-		}
-
-		if (!mission.Started)
-		{
-			return $"Arms at {mission.Definition.StartTime:0.0}s";
-		}
-
-		var progress = mission.Progress;
-		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
-		return mission.Definition.NormalizedType switch
-		{
-			"ritual_site" => $"Cleanse {progress:0.0}/{target:0.0}s at the shrine circle",
-			"relic_escort" => $"Escort window {progress:0.0}/{target:0.0}s around the relic route",
-			"gate_breach" => $"Breach timer {progress:0.0}/{target:0.0}s on the wall charge",
-			"rescue_hold" => $"Hold timer {progress:0.0}/{target:0.0}s around the rescue block",
-			"mainline_push" => $"Push window {progress:0.0}/{target:0.0}s through the broken lane",
-			_ => $"{progress:0.0}/{target:0.0}s secured"
-		};
-	}
-
-	private string BuildCampaignCounterSurgeIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel))
-		{
-			return "";
-		}
-
-		if (_campaignCounterSurgeQueued)
-		{
-			return $"Counter-surge incoming: {_campaignCounterSurgeLabel} in {Mathf.Max(0f, _campaignCounterSurgeTriggerAt - _elapsed):0.0}s.\n";
-		}
-
-		if (_campaignCounterSurgeTriggered)
-		{
-			return $"Counter-surge spent: {_campaignCounterSurgeLabel} already hit the lane.\n";
-		}
-
-		if (_campaignCounterSurgeReady)
-		{
-			return $"Counter-surge risk: securing the battlefield objective provokes {_campaignCounterSurgeLabel}.\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignMissionAftermathIntelLine()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		if (_campaignMissionAftermathQueued)
-		{
-			return
-				(_campaignMissionAftermathFriendly ? "Objective follow-through incoming" : "Objective backlash incoming") +
-				$": {_campaignMissionAftermathLabel} in {Mathf.Max(0f, _campaignMissionAftermathTriggerAt - _elapsed):0.0}s.\n";
-		}
-
-		if (_campaignMissionAftermathTriggered)
-		{
-			return
-				(_campaignMissionAftermathFriendly ? "Objective follow-through spent" : "Objective backlash spent") +
-				$": {_campaignMissionAftermathLabel} already hit the lane.\n";
-		}
-
-		if (_campaignMissionAftermathReady)
-		{
-			return
-				$"Objective branch: secure the battlefield event for {GameState.Instance.GetCampaignMissionFollowThroughTitle(_activeRouteId)}; " +
-				$"lose it and {GameState.Instance.GetCampaignMissionBacklashTitle(_activeRouteId)} answers.\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignBonusObjectivePressureIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignBonusObjectivePressureLabel))
-		{
-			return "";
-		}
-
-		if (_campaignBonusObjectivePressureQueued)
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? $"Reserve beat incoming: {_campaignBonusObjectivePressureLabel} in {Mathf.Max(0f, _campaignBonusObjectivePressureTriggerAt - _elapsed):0.0}s.{BuildCampaignBonusObjectivePressureIntelSuffix()}\n"
-				: $"Reprisal beat incoming: {_campaignBonusObjectivePressureLabel} in {Mathf.Max(0f, _campaignBonusObjectivePressureTriggerAt - _elapsed):0.0}s.{BuildCampaignBonusObjectivePressureIntelSuffix()}\n";
-		}
-
-		if (_campaignBonusObjectivePressureTriggered)
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? $"Reserve beat spent: {_campaignBonusObjectivePressureLabel} already hit the lane.{BuildCampaignBonusObjectivePressureIntelSuffix()}\n"
-				: $"Reprisal beat spent: {_campaignBonusObjectivePressureLabel} already hit the lane.{BuildCampaignBonusObjectivePressureIntelSuffix()}\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignPressureEchoIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignPressureEchoLabel))
-		{
-			return "";
-		}
-
-		if (_campaignPressureEchoChargesRemaining > 0)
-		{
-			return _campaignPressureEchoFriendly
-				? $"Pressure echo armed: {_campaignPressureEchoLabel} will answer the next {_campaignPressureEchoChargesRemaining} enemy spawn{(_campaignPressureEchoChargesRemaining == 1 ? "" : "s")}.\n"
-				: $"Pressure echo armed: {_campaignPressureEchoLabel} will harden the next {_campaignPressureEchoChargesRemaining} enemy spawn{(_campaignPressureEchoChargesRemaining == 1 ? "" : "s")}.\n";
-		}
-
-		if (_campaignPressureEchoTriggerCount > 0)
-		{
-			return _campaignPressureEchoCompleted
-				? $"Pressure echo spent: {_campaignPressureEchoLabel} fully cashed out on the last enemy swell.\n"
-				: $"Pressure echo spent: {_campaignPressureEchoLabel} triggered x{_campaignPressureEchoTriggerCount} on the last enemy swell.\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignLateConditionIntelLine()
-	{
-		if (!IsCampaignMode || !_campaignLateConditionActive || string.IsNullOrWhiteSpace(_campaignLateConditionLabel))
-		{
-			return "";
-		}
-
-		var timeRemaining = Mathf.Max(0f, _campaignLateConditionTriggerAt - _elapsed);
-		return _campaignLateConditionTriggerCount > 0
-			? $"Late condition cycling: {_campaignLateConditionLabel} again in {timeRemaining:0.0}s (x{_campaignLateConditionTriggerCount} triggered).\n"
-			: $"Late condition armed: {_campaignLateConditionLabel} in {timeRemaining:0.0}s.\n";
-	}
-
-	private string BuildCampaignBossPressureIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignBossPressureLabel))
-		{
-			return "";
-		}
-
-		var phaseTitle = StageEncounterIntel.GetBossPhaseTitleForStage(_stageData);
-		if (!_campaignBossPhaseTriggered)
-		{
-			return string.IsNullOrWhiteSpace(phaseTitle)
-				? ""
-				: $"Boss command standby: {_campaignBossPressureLabel} begins cycling every {_campaignBossPressureIntervalSeconds:0.#}s after {phaseTitle}.\n";
-		}
-
-		if (_campaignBossPressureActive)
-		{
-			var timeRemaining = Mathf.Max(0f, _campaignBossPressureTriggerAt - _elapsed);
-			return _campaignBossPressureTriggerCount > 0
-				? $"Boss command cycling: {_campaignBossPressureLabel} again in {timeRemaining:0.0}s (x{_campaignBossPressureTriggerCount} triggered).\n"
-				: $"Boss command armed: {_campaignBossPressureLabel} in {timeRemaining:0.0}s.\n";
-		}
-
-		if (_campaignBossPressureTriggerCount > 0)
-		{
-			return $"Boss command spent: {_campaignBossPressureLabel} triggered x{_campaignBossPressureTriggerCount} before the route ended.\n";
-		}
-
-		return $"Boss command spent: {_campaignBossPressureLabel} armed but never completed a full cycle.\n";
-	}
-
-	private string BuildCampaignAdaptiveWaveIntelLine()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady)
-		{
-			return "";
-		}
-
-		if (_campaignAdaptiveWaveChargesRemaining > 0)
-		{
-			return _campaignAdaptiveWaveFriendly
-				? $"Adaptive wave active: {_campaignAdaptiveWaveLabel} will clip the next {_campaignAdaptiveWaveChargesRemaining} spawn{(_campaignAdaptiveWaveChargesRemaining == 1 ? "" : "s")} of {_campaignAdaptiveWaveWaveLabel}.\n"
-				: $"Adaptive wave active: {_campaignAdaptiveWaveLabel} will harden the next {_campaignAdaptiveWaveChargesRemaining} spawn{(_campaignAdaptiveWaveChargesRemaining == 1 ? "" : "s")} of {_campaignAdaptiveWaveWaveLabel}.\n";
-		}
-
-		if (_campaignAdaptiveWaveWaveCount > 0)
-		{
-			return _campaignAdaptiveWaveFriendly
-				? $"Adaptive wave spent: {_campaignAdaptiveWaveLabel} clipped the opening of {_campaignAdaptiveWaveWaveLabel}.\n"
-				: $"Adaptive wave spent: {_campaignAdaptiveWaveLabel} hardened the opening of {_campaignAdaptiveWaveWaveLabel}.\n";
-		}
-
-		return $"Adaptive wave read: late scripted waves bend with lane control from stage {CampaignAdaptiveWaveStage} onward.\n";
-	}
-
-	private string BuildCampaignAdaptiveWaveChoiceIntelLine()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady)
-		{
-			return "";
-		}
-
-		if (_campaignAdaptiveWaveRewardSecured)
-		{
-			return $"Adaptive wave payoff secured: {_campaignAdaptiveWaveChoiceLabel} banked {BuildCampaignAdaptiveWaveRewardText()}.{BuildCampaignAdaptiveWaveBranchClause()}\n";
-		}
-
-		if (_campaignAdaptiveWaveRewardReady)
-		{
-			return $"Adaptive wave payoff ready: {_campaignAdaptiveWaveChoiceLabel} can secure {BuildCampaignAdaptiveWaveRewardText()} on victory.{BuildCampaignAdaptiveWaveBranchClause()}\n";
-		}
-
-		if (_campaignAdaptiveWaveOverrideQueued)
-		{
-			return $"Adaptive wave override queued: {_campaignAdaptiveWaveChoiceLabel} will force the next scripted wave read with {BuildCampaignAdaptiveWaveDirectivePackageSummary(_campaignAdaptiveWaveQueuedDirective)} and splice in {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(_campaignAdaptiveWaveQueuedDirective)}.\n";
-		}
-
-		if (_campaignAdaptiveWaveChoiceReady)
-		{
-			return $"Adaptive wave override ready: [V] {CampaignAdaptiveWaveRescueLabel} or [B] {CampaignAdaptiveWaveBreakthroughLabel} for the next scripted wave.\n";
-		}
-
-		if (_campaignAdaptiveWaveChoiceUsed)
-		{
-			return $"Adaptive wave override spent: {_campaignAdaptiveWaveChoiceLabel} already committed.{BuildCampaignAdaptiveWaveBranchClause()}\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignAdaptiveWaveChallengeIntelLine()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady || string.IsNullOrWhiteSpace(_campaignAdaptiveWaveChallengeLabel))
-		{
-			return "";
-		}
-
-		ResolveCampaignAdaptiveWaveUpgradeBonus(out var previewGold, out var previewFood);
-		var previewText = BuildCampaignAdaptiveWaveRewardText(previewGold, previewFood);
-		if (_campaignAdaptiveWaveChallengeCompleted)
-		{
-			return $"Adaptive wave follow-up secured: {_campaignAdaptiveWaveChallengeLabel} upgraded the payout by {BuildCampaignAdaptiveWaveUpgradeText()}.\n";
-		}
-
-		if (_campaignAdaptiveWaveChallengeActive)
-		{
-			if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold)
-			{
-				return $"Adaptive wave follow-up active: {_campaignAdaptiveWaveChallengeLabel} holds for {_campaignAdaptiveWaveChallengeTimer:0.0}s more. Keep the wagon untouched to gain {previewText}.\n";
-			}
-
-			if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats)
-			{
-				return $"Adaptive wave follow-up active: {_campaignAdaptiveWaveChallengeLabel} needs {Mathf.RoundToInt(_campaignAdaptiveWaveChallengeProgress)}/{Mathf.RoundToInt(_campaignAdaptiveWaveChallengeTarget)} enemy defeats in {_campaignAdaptiveWaveChallengeTimer:0.0}s to gain {previewText}.\n";
-			}
-
-			return $"Adaptive wave follow-up active: {_campaignAdaptiveWaveChallengeLabel} needs {Mathf.RoundToInt(_campaignAdaptiveWaveChallengeProgress)}/{Mathf.RoundToInt(_campaignAdaptiveWaveChallengeTarget)} keep damage in {_campaignAdaptiveWaveChallengeTimer:0.0}s to gain {previewText}.\n";
-		}
-
-		if (_campaignAdaptiveWaveChallengeFailed)
-		{
-			return $"Adaptive wave follow-up failed: {_campaignAdaptiveWaveChallengeLabel} slipped, so only the base payout remains.\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignCommendationIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignCommendationLabel))
-		{
-			return "";
-		}
-
-		if (_campaignCommendationRewardSecured)
-		{
-			return $"Commendation secured: {ResolveCampaignCommendationSquadLabel()} held for {BuildCampaignCommendationRewardText()}.\n";
-		}
-
-		if (_campaignCommendationReady)
-		{
-			return $"Commendation ready: {_campaignCommendationLabel} can secure {BuildCampaignCommendationRewardText()} on the next deployed squad.\n";
-		}
-
-		if (_campaignCommendationBroken)
-		{
-			return $"Commendation broken: {ResolveCampaignCommendationSquadLabel()} fell before securing {BuildCampaignCommendationRewardText()}.\n";
-		}
-
-		if (HasActiveCampaignCommendationUnit())
-		{
-			return $"Commendation active: keep {ResolveCampaignCommendationSquadLabel()} alive for {BuildCampaignCommendationRewardText()}.\n";
-		}
-
-		if (_campaignCommendationTriggered)
-		{
-			return $"Commendation spent: {_campaignCommendationLabel} already empowered {ResolveCampaignCommendationSquadLabel()}.\n";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignConvoyCommandIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignConvoyCommandLabel))
-		{
-			return "";
-		}
-
-		if (_campaignConvoyCommandReady)
-		{
-			return $"Convoy command ready: {_campaignConvoyCommandLabel}. Press C to commit it.\n";
-		}
-
-		if (_campaignConvoyCommandTriggered)
-		{
-			return $"Convoy command spent: {_campaignConvoyCommandLabel} already hit the lane.\n";
-		}
-
-		return $"Convoy command charging: {_campaignConvoyCommandLabel} ({_campaignConvoyCommandChargeRemaining:0.0}s).\n";
-	}
-
-	private string BuildCampaignFieldOrderIntelLine()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignFieldOrderAssaultLabel) || string.IsNullOrWhiteSpace(_campaignFieldOrderBulwarkLabel))
-		{
-			return "";
-		}
-
-		if (_campaignFieldOrderReady)
-		{
-			var outcomeText = _campaignFieldOrderMissionResolved
-				? _campaignFieldOrderMissionSucceeded
-					? $"{_campaignFieldOrderMissionLabel} secured"
-					: $"{_campaignFieldOrderMissionLabel} lost"
-				: "battlefield event unresolved";
-			return $"Field order ready: {outcomeText}. [Z] {_campaignFieldOrderAssaultLabel} or [X] {_campaignFieldOrderBulwarkLabel} to arm the next objective and reinforcement beat.\n";
-		}
-
-		if (_campaignFieldOrderCommitted)
-		{
-			if (_campaignFieldOrderResponseQueued)
-			{
-				return $"Field order follow-up incoming: {_campaignFieldOrderResponseLabel} in {Mathf.Max(0f, _campaignFieldOrderResponseTriggerAt - _elapsed):0.0}s.\n";
-			}
-
-			if (_campaignFieldOrderResponseTriggered)
-			{
-				return $"Field order follow-up spent: {_campaignFieldOrderResponseLabel} already hit the lane.\n";
-			}
-
-			var outcomeText = _campaignFieldOrderMissionResolved
-				? _campaignFieldOrderMissionSucceeded
-					? "after a secured event"
-					: "after a failed event"
-				: "after the event window";
-			return $"Field order spent: {(_campaignFieldOrderUsedAssault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel)} committed {outcomeText}.\n";
-		}
-
-		return "Field order locked: resolve the first battlefield event to open Z/X orders, the follow-up objective, and its reinforcement beat.\n";
-	}
-
-	private string BuildWaveIntelText()
-	{
-		if (IsEndlessMode)
-		{
-			if (_spawnDirector.EndlessCheckpointPending)
-			{
-				var remainingEnemies = CountTeamUnits(Team.Enemy) + _spawnDirector.PendingSpawnCount;
-				var checkpointLabel = IsRouteForkCheckpoint()
-					? "route fork"
-					: "upgrade";
-				if (_spawnDirector.EndlessBossCheckpointPending)
-				{
-					var bossCheckpoint = EndlessBossCheckpointCatalog.GetForWave(_spawnDirector.EndlessWaveNumber, _activeRouteId);
-					return remainingEnemies > 0
-						? $"Boss checkpoint active: {bossCheckpoint.Title}. Clear {remainingEnemies} remaining enemies to open the {checkpointLabel} draft.\n{BuildEndlessBossCheckpointText()}"
-						: $"Boss checkpoint secured: {bossCheckpoint.Title} broken. Choose a {checkpointLabel} to resume the caravan.\n{BuildEndlessBossCheckpointCheckpointSummary()}";
-				}
-
-				return remainingEnemies > 0
-					? $"Checkpoint wave active: clear {remainingEnemies} remaining enemies to open the {checkpointLabel} draft."
-					: $"Checkpoint ready: choose a {checkpointLabel} to resume the caravan.";
-			}
-
-			var endlessCountdown = Mathf.Max(0f, _spawnDirector.NextEndlessWaveTime - _elapsed);
-			return
-				$"Endless intel: {ResolveRouteLabel(_activeRouteId)} surge route  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
-				$"Current wave: {_spawnDirector.EndlessWaveNumber}  |  Next surge in {endlessCountdown:0.0}s  |  Queued: {_spawnDirector.PendingSpawnCount}\n" +
-				$"{BuildActiveEnemyPressureText()}\n" +
-				$"Pressure profile: {BuildEndlessPressureText()}\n" +
-				$"Segment event: {_spawnDirector.EndlessSegmentEventLabel}\n" +
-				$"{BuildEndlessBossCheckpointText()}\n" +
-			$"{BuildEndlessDirectiveText()}\n" +
-			$"{BuildEndlessContactText()}\n" +
-			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
-			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
-			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
-			$"Caravan support: {_endlessSupportEventLabel}";
-		}
-
-		var modifierSummary = $"Modifiers: {StageModifiers.BuildInlineSummary(_stageData)}";
-		var weatherSummary = WeatherCatalog.BuildStageSummary(_stageData);
-		var hazardSummary = BuildStageHazardIntelText();
-		var missionSummary = BuildCampaignFieldIntelText() + BuildStageMissionIntelText();
-		var challengeHeaderText = IsChallengeMode
-			? $"{BuildChallengeMutatorText()}\n{BuildOnlineRoomRaceText()}{BuildChallengeGhostText()}\n"
-			: "";
-
-		if (!_spawnDirector.UsesScriptedWaves)
-		{
-			return $"{modifierSummary}\n{weatherSummary}\n{hazardSummary}\n{missionSummary}{challengeHeaderText}Encounter intel: dynamic pressure spawns are active on this route.";
-		}
-
-		if (!_spawnDirector.TryGetNextScriptedWave(out var nextWave))
-		{
-			var suffix = _spawnDirector.PendingSpawnCount > 0
-				? $"Encounter intel: {_spawnDirector.PendingSpawnCount} enemies still queued from the active scripted wave."
-				: "Encounter intel: all scripted waves have deployed. Finish the route.";
-			return $"{modifierSummary}\n{weatherSummary}\n{hazardSummary}\n{missionSummary}{challengeHeaderText}{suffix}";
-		}
-
-		var countdown = Mathf.Max(0f, _spawnDirector.NextScriptedWaveTime - _elapsed);
-		var label = string.IsNullOrWhiteSpace(nextWave.Label)
-			? $"Wave {_spawnDirector.NextScriptedWaveIndex + 1}"
-			: nextWave.Label;
-			return
-				$"{modifierSummary}\n" +
-				$"{weatherSummary}\n" +
-				$"{hazardSummary}\n" +
-				missionSummary +
-				challengeHeaderText +
-				$"{BuildActiveEnemyPressureText()}\n" +
-				(_spawnDirector.IsScriptedWaveHeld ? $"Next wave waiting for the current push to thin: {label}\n" : $"Next wave in {countdown:0.0}s: {label}\n") +
-				$"{BuildWaveEntrySummary(nextWave)}\n" +
-				$"{StageEncounterIntel.BuildWavePressureSummary(nextWave)}";
-	}
-
-	private string BuildChallengeMutatorText()
-	{
-		if (!IsChallengeMode)
-		{
-			return "";
-		}
-
-		if (_challengeMutator.SignalJamIntervalSeconds <= 0.05f)
-		{
-			return $"Mutator: {_challengeMutator.Title}";
-		}
-
-		var status = _enemySignalJamTimer > 0.05f
-			? $"Blackout active ({_enemySignalJamTimer:0.0}s jam)"
-			: $"Next blackout {_challengeMutatorNextJamTimer:0.0}s";
-		return
-			$"Mutator: {_challengeMutator.Title}  |  {status}  |  Cadence {_challengeMutator.SignalJamIntervalSeconds:0.0}s";
-	}
-
-	private string BuildOnlineRoomRaceText()
-	{
-		if (!IsOnlineRoomMode)
-		{
-			return "";
-		}
-
-		if (AppLifecycleService.Instance?.ShouldPauseOnlineRoomTraffic == true)
-		{
-			return $"{_onlineRoomRaceSummary}  |  room sync paused\nResume the app to refresh room telemetry.\n";
-		}
-
-		if (_onlineRoomStartBarrierActive)
-		{
-			return $"{_onlineRoomRaceSummary}  |  Launch sync {_onlineRoomStartCountdownRemaining:0.0}s\n";
-		}
-
-		return $"{_onlineRoomRaceSummary}  |  Room race live\n{BuildOnlineRoomMonitorText()}\n";
-	}
-
-	private string BuildOnlineRoomMonitorText()
-	{
-		var roomSnapshot = OnlineRoomSessionService.GetCachedSnapshot()?.RoomSnapshot;
-		if (roomSnapshot == null || !roomSnapshot.HasRoom)
-		{
-			return "Room monitor: waiting for joined-room telemetry.";
-		}
-
-		var lines = new List<string>
-		{
-			MultiplayerRoomFormatter.BuildCompactRacePaceSummary(roomSnapshot)
-		};
-		var localPeer = roomSnapshot.Peers.FirstOrDefault(peer => peer.IsLocalPlayer) ??
-			roomSnapshot.Peers.FirstOrDefault(peer =>
-				!string.IsNullOrWhiteSpace(roomSnapshot.LocalCallsign) &&
-				peer.Label.Equals(roomSnapshot.LocalCallsign, StringComparison.OrdinalIgnoreCase));
-		if (localPeer != null && !string.IsNullOrWhiteSpace(localPeer.MonitorText))
-		{
-			lines.Add(localPeer.MonitorText);
-		}
-
-		foreach (var peer in roomSnapshot.Peers
-			.Where(peer => localPeer == null || !peer.Label.Equals(localPeer.Label, StringComparison.OrdinalIgnoreCase))
-			.OrderBy(peer => peer.MonitorRank)
-			.Take(2))
-		{
-			if (!string.IsNullOrWhiteSpace(peer.MonitorText))
-			{
-				lines.Add(peer.MonitorText);
-			}
-		}
-
-		if (lines.Count == 0)
-		{
-			return "Room monitor: waiting for peer activity.";
-		}
-
-		return string.Join("\n", lines);
-	}
-
 	private bool HasChallengeGhostRun()
 	{
 		return IsChallengeMode &&
 			_challengeGhostRun != null &&
 			_challengeGhostRun.Deployments != null &&
 			_challengeGhostRun.Deployments.Count > 0;
-	}
-
-	private string BuildChallengeGhostText()
-	{
-		var summary = GameState.Instance.BuildChallengeGhostSummary(_challengeGhostRun);
-		if (!HasChallengeGhostRun())
-		{
-			return summary;
-		}
-
-		var ghostDeploysElapsed = CountChallengeGhostDeploymentsElapsed(_elapsed);
-		var deployDelta = _playerDeployments - ghostDeploysElapsed;
-		var paceLabel = deployDelta switch
-		{
-			> 0 => $"Deploy pace: {FormatSignedInt(deployDelta)} ahead of the ghost timeline",
-			< 0 => $"Deploy pace: {FormatSignedInt(deployDelta)} behind the ghost timeline",
-			_ => "Deploy pace: matched to the ghost timeline"
-		};
-
-		if (_challengeGhostNextIndex >= _challengeGhostRun.Deployments.Count)
-		{
-			return $"{summary}\n{paceLabel}\nGhost timeline: benchmark run has finished all recorded drops.";
-		}
-
-		var nextDeployment = _challengeGhostRun.Deployments[_challengeGhostNextIndex];
-		var unit = GameData.GetUnit(nextDeployment.UnitId);
-		var remaining = Mathf.Max(0f, nextDeployment.TimeSeconds - _elapsed);
-		return $"{summary}\n{paceLabel}\nNext ghost deploy in {remaining:0.0}s: {unit.DisplayName}@{nextDeployment.LanePercent}%";
 	}
 
 	private void UpdateChallengeGhost(float delta)
@@ -10807,16 +6418,6 @@ public partial class BattleController : Node2D
 			BattlefieldBottom);
 	}
 
-	private void InitializeStageHazards()
-	{
-		_stageHazards.Clear();
-	}
-
-	private void InitializeStageMissions()
-	{
-		_stageMissions.Clear();
-	}
-
 	private StageMissionState AddStageMission(
 		StageMissionEventDefinition definition,
 		bool countsTowardStageObjectives = true,
@@ -10859,272 +6460,6 @@ public partial class BattleController : Node2D
 			: title;
 	}
 
-	private void UpdateStageMissions(float delta)
-	{
-		if (IsEndlessMode || _stageMissions.Count == 0 || _battleEnded)
-		{
-			return;
-		}
-
-		foreach (var mission in _stageMissions)
-		{
-			if (!mission.Started)
-			{
-				if (_elapsed + 0.001f >= mission.Definition.StartTime)
-				{
-					StartStageMission(mission);
-				}
-				else
-				{
-					continue;
-				}
-			}
-
-			if (!CanInteractWithStageMission(mission))
-			{
-				continue;
-			}
-
-			var playerInside = HasTeamUnitInRadius(Team.Player, mission.Anchor, mission.Definition.Radius);
-			var enemyInside = HasTeamUnitInRadius(Team.Enemy, mission.Anchor, mission.Definition.Radius);
-			mission.PlayerInside = playerInside;
-			mission.EnemyInside = enemyInside;
-
-			if (mission.UsesAdaptiveWaveProgress)
-			{
-				UpdateCampaignAdaptiveWaveStageMission(mission);
-				continue;
-			}
-
-			if (playerInside && !enemyInside)
-			{
-				mission.Actor.Repair(ResolveStageMissionPresenceRepairRate(mission.Definition) * delta);
-			}
-			else if (enemyInside)
-			{
-				mission.Actor.ApplyPressureDamage(ResolveStageMissionPressureRate(mission.Definition) * delta);
-			}
-
-			switch (mission.Definition.NormalizedType)
-			{
-				case "ritual_site":
-					if (playerInside && !enemyInside)
-					{
-						mission.Progress += delta * 1.18f;
-					}
-					else if (playerInside)
-					{
-						mission.Progress += delta * 0.44f;
-					}
-					else if (enemyInside)
-					{
-						mission.Progress -= delta * 0.72f;
-					}
-					else
-					{
-						mission.Progress -= delta * 0.22f;
-					}
-					break;
-				case "relic_escort":
-					if (!enemyInside)
-					{
-						mission.Progress += playerInside ? delta * 1.14f : delta * 0.68f;
-					}
-					else
-					{
-						mission.Progress -= delta * 0.94f;
-					}
-					break;
-				case "gate_breach":
-					if (playerInside && !enemyInside)
-					{
-						mission.Progress += delta * 1.28f;
-					}
-					else if (playerInside)
-					{
-						mission.Progress += delta * 0.52f;
-					}
-					else if (enemyInside)
-					{
-						mission.Progress -= delta * 0.86f;
-					}
-					else
-					{
-						mission.Progress -= delta * 0.34f;
-					}
-					break;
-				case "rescue_hold":
-					if (!enemyInside)
-					{
-						mission.Progress += playerInside ? delta * 1.18f : delta * 0.85f;
-					}
-					else
-					{
-						mission.Progress -= delta * 1.05f;
-					}
-					break;
-				case "mainline_push":
-					if (playerInside && !enemyInside)
-					{
-						mission.Progress += delta * 1.24f;
-					}
-					else if (playerInside)
-					{
-						mission.Progress += delta * 0.48f;
-					}
-					else if (enemyInside)
-					{
-						mission.Progress -= delta * 0.76f;
-					}
-					else
-					{
-						mission.Progress -= delta * 0.18f;
-					}
-					break;
-			}
-
-			mission.Progress = Mathf.Clamp(
-				mission.Progress,
-				0f,
-				Mathf.Max(1f, mission.Definition.TargetSeconds));
-			mission.Actor.UpdateState(
-				mission.Progress / Mathf.Max(1f, mission.Definition.TargetSeconds),
-				playerInside,
-				enemyInside,
-				false,
-				false);
-
-			if (mission.Actor.Health <= 0.01f)
-			{
-				FailStageMission(mission, $"{BuildStageMissionDisplayTitle(mission)} collapsed before the caravan secured it.");
-				continue;
-			}
-
-			TryTriggerStageMissionSupportMoment(mission);
-
-			if (mission.Progress + 0.001f >= mission.Definition.TargetSeconds)
-			{
-				CompleteStageMission(mission);
-			}
-		}
-	}
-
-	private void UpdateCampaignAdaptiveWaveStageMission(StageMissionState mission)
-	{
-		if (mission == null || !mission.UsesAdaptiveWaveProgress)
-		{
-			return;
-		}
-
-		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
-		var progress = _campaignAdaptiveWaveChallengeMode switch
-		{
-			CampaignAdaptiveWaveChallengeModeHold => _campaignAdaptiveWaveChallengeDuration - _campaignAdaptiveWaveChallengeTimer,
-			_ => _campaignAdaptiveWaveChallengeProgress
-		};
-		mission.Progress = Mathf.Clamp(progress, 0f, target);
-		mission.Actor.UpdateState(
-			mission.Progress / target,
-			mission.PlayerInside,
-			mission.EnemyInside,
-			false,
-			false);
-		TryTriggerStageMissionSupportMoment(mission);
-	}
-
-	private void StartStageMission(StageMissionState mission)
-	{
-		if (mission.Started)
-		{
-			return;
-		}
-
-		mission.Started = true;
-		mission.Actor = new EndlessContactActor();
-		mission.Actor.Position = mission.Anchor;
-		mission.Actor.Setup(
-			mission.Definition.NormalizedType,
-			mission.Color,
-			mission.Definition.Radius,
-			ResolveStageMissionMaxHealth(mission.Definition));
-		mission.Actor.UpdateState(0f, false, false, false, false);
-		AddChild(mission.Actor);
-		var statusText = $"{BuildStageMissionDisplayTitle(mission)} active. {StageMissionEvents.ResolveSummary(mission.Definition)}";
-		if (mission.UsesAdaptiveWaveProgress)
-		{
-			var openingBeatStatus = TriggerCampaignAdaptiveWaveChallengeOpeningBeat(mission);
-			if (!string.IsNullOrWhiteSpace(openingBeatStatus))
-			{
-				statusText += $" {openingBeatStatus}";
-			}
-		}
-
-		SetStatus(statusText);
-	}
-
-	private bool CanInteractWithStageMission(StageMissionState mission)
-	{
-		return mission != null &&
-			mission.Started &&
-			!mission.Completed &&
-			!mission.Failed &&
-			IsInstanceValid(mission.Actor);
-	}
-
-	private void TryTriggerStageMissionSupportMoment(StageMissionState mission)
-	{
-		if (mission.SupportMomentTriggered ||
-			mission.Progress + 0.001f < (Mathf.Max(1f, mission.Definition.TargetSeconds) * 0.5f))
-		{
-			return;
-		}
-
-		mission.SupportMomentTriggered = true;
-		var title = BuildStageMissionDisplayTitle(mission);
-		if (mission.UsesAdaptiveWaveProgress)
-		{
-			var adaptiveStatus = TriggerCampaignAdaptiveWaveChallengeMidpointBeat(mission);
-			SpawnEffect(mission.Anchor, mission.Color.Lightened(0.08f), 10f, mission.Definition.Radius * 0.58f, 0.22f, false);
-			if (!string.IsNullOrWhiteSpace(adaptiveStatus))
-			{
-				SetStatus($"{title} midpoint hit. {adaptiveStatus}");
-			}
-			return;
-		}
-
-		switch (mission.Definition.NormalizedType)
-		{
-			case "ritual_site":
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "WARD FLARE", mission.Color.Lightened(0.2f), 0.58f);
-				SetStatus($"{title} flared and steadied the caravan. Courage surged.");
-				break;
-			case "relic_escort":
-				RepairBusByRatio(0.03f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "RELIC PASS", mission.Color.Lightened(0.2f), 0.58f);
-				SetStatus($"{title} reached cover and bought the war wagon time to patch the line.");
-				break;
-			case "gate_breach":
-				DamageEnemyBaseByRatio(0.05f, mission.Color, "CRACKED");
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "WALL CRACK", mission.Color.Lightened(0.2f), 0.58f);
-				SetStatus($"{title} opened the first cracks in the gatehouse.");
-				break;
-			case "rescue_hold":
-				RepairBusByRatio(0.02f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "RESCUE MOVING", mission.Color.Lightened(0.2f), 0.58f);
-				SetStatus($"{title} slipped survivors behind the line and bought the caravan breathing room.");
-				break;
-			case "mainline_push":
-				_courage = Mathf.Min(_maxCourage, _courage + 4f);
-				BuffUnitsNear(Team.Player, mission.Anchor, 144f, 1.04f, 1.08f, 4.4f, mission.Color);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -56f), "PUSHLINE OPEN", mission.Color.Lightened(0.2f), 0.58f);
-				SetStatus($"{title} cracked the lane open and the vanguard surged forward.");
-				break;
-		}
-
-		SpawnEffect(mission.Anchor, mission.Color.Lightened(0.08f), 10f, mission.Definition.Radius * 0.58f, 0.22f, false);
-	}
-
 	private void CompleteStageMission(StageMissionState mission)
 	{
 		if (mission.Completed || mission.Failed)
@@ -11133,11 +6468,6 @@ public partial class BattleController : Node2D
 		}
 
 		mission.Completed = true;
-		if (IsInstanceValid(mission.Actor))
-		{
-			mission.Actor.Repair(mission.Actor.MaxHealth);
-			mission.Actor.UpdateState(1f, true, false, true, false);
-		}
 
 		SpawnEffect(mission.Anchor, mission.Color, 12f, mission.Definition.Radius * 0.72f, 0.28f, false);
 		if (mission.UsesAdaptiveWaveProgress)
@@ -11167,7 +6497,6 @@ public partial class BattleController : Node2D
 				break;
 			case "relic_escort":
 				RepairBusByRatio(0.06f);
-				SpawnSupportUnit(ResolveStageMissionSupportUnitId());
 				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RELICS THROUGH", mission.Color.Lightened(0.18f), 0.64f);
 				break;
 			case "gate_breach":
@@ -11177,7 +6506,6 @@ public partial class BattleController : Node2D
 			case "rescue_hold":
 				RepairBusByRatio(0.04f);
 				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				SpawnSupportUnit(ResolveStageMissionSupportUnitId(), mission.Anchor.Y);
 				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RESCUED", mission.Color.Lightened(0.18f), 0.64f);
 				break;
 			case "mainline_push":
@@ -11231,15 +6559,6 @@ public partial class BattleController : Node2D
 		}
 
 		mission.Failed = true;
-		if (IsInstanceValid(mission.Actor))
-		{
-			mission.Actor.UpdateState(
-				mission.Progress / Mathf.Max(1f, mission.Definition.TargetSeconds),
-				mission.PlayerInside,
-				mission.EnemyInside,
-				false,
-				true);
-		}
 
 		if (mission.UsesAdaptiveWaveProgress)
 		{
@@ -11335,14 +6654,11 @@ public partial class BattleController : Node2D
 				case RouteCatalog.CityId:
 					if (offensiveObjective)
 					{
-						SpawnSupportUnit(GameData.PlayerBannerId, laneY);
 						_deck.ReduceCooldowns(0.7f);
 						_spellDeck.ReduceCooldowns(0.7f);
 						BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.06f, 1.08f, 5.2f, color, "LEVY PUSH");
 						return "City levies flooded the lane and sped the next hand.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerDefenderId, laneY);
 					RepairBusByRatio(0.03f);
 					_courage = Mathf.Min(_maxCourage, _courage + 4f);
 					return "City shield crews pulled the line back together.";
@@ -11353,8 +6669,6 @@ public partial class BattleController : Node2D
 						SlowEnemiesNear(enemyAnchor, 96f, 0.58f, 3.2f, color);
 						return "Dock chains caught the lane and held the breach open.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerMarksmanId, laneY);
 					PushEnemiesFromPoint(enemyAnchor, 96f, 14f, 0.66f, 3f, color, "BREAKWATER");
 					return "Harbor crews locked the fallback block behind a breakwater snap.";
 				case RouteCatalog.FoundryId:
@@ -11365,8 +6679,6 @@ public partial class BattleController : Node2D
 						DamageEnemyBaseByRatio(0.03f, color, "");
 						return "Foundry fire teams widened the opening with slag bursts.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerMechanicId, laneY);
 					RepairBusByRatio(0.04f);
 					return "Mechanics locked the fallback route and patched the wagon.";
 				case RouteCatalog.QuarantineId:
@@ -11379,13 +6691,11 @@ public partial class BattleController : Node2D
 					}
 
 					RepairBusByRatio(0.03f);
-					SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
 					return "Ward lanterns covered the rescue lane and reset signal pressure.";
 				case RouteCatalog.ThornwallId:
 					if (offensiveObjective)
 					{
 						PushEnemiesFromPoint(enemyAnchor, 112f, 20f, 0.54f, 3.2f, color, "STONEFALL");
-						SpawnSupportUnit(GameData.PlayerDefenderId, laneY);
 						return "Mountain wardens broke the line wider down the pass.";
 					}
 
@@ -11395,45 +6705,34 @@ public partial class BattleController : Node2D
 				case RouteCatalog.BasilicaId:
 					if (offensiveObjective)
 					{
-						SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
 						HealUnit(FindHighestHealthPlayer(), 24f, color, "VOW");
 						BuffAllPlayerUnits(1.06f, 1.04f, 5.5f);
 						return "Reliquary keepers sanctified the push and steadied the line.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerLanternGuardId, laneY);
 					RepairBusByRatio(0.03f);
 					HealUnit(FindHighestHealthPlayer(), 30f, color, "SHELTER");
 					return "Sanctified escorts pulled the rescue block back into order.";
 				case RouteCatalog.MireId:
 					if (offensiveObjective)
 					{
-						SpawnSupportUnit(GameData.PlayerHoundId, laneY);
 						DamageEnemiesNear(enemyAnchor, 88f, 18f, color, "FEN LURE");
 						SlowEnemiesNear(enemyAnchor, 104f, 0.56f, 3.8f, color);
 						return "Fen lures dragged the enemy off the open road.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerHoundId, laneY);
 					RepairBusByRatio(0.03f);
 					SlowEnemiesNear(enemyAnchor, 100f, 0.6f, 3.6f, color, "BOG HOLD");
 					return "Mire runners bought space and pulled stragglers through the block.";
 				case RouteCatalog.SteppeId:
 					if (offensiveObjective)
 					{
-						SpawnSupportUnit(GameData.PlayerRaiderId, laneY);
 						BuffAllPlayerUnits(1.04f, 1.14f, 5.5f);
 						_courage = Mathf.Min(_maxCourage, _courage + 4f);
 						return "Outriders turned the opening into a running chase.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerHoundId, laneY);
-					SpawnSupportUnit(GameData.PlayerRaiderId, laneY);
 					BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.02f, 1.12f, 5.2f, color, "SCREEN");
 					return "Steppe scouts screened the rescue lane and pulled survivors through.";
 				case RouteCatalog.GloamwoodId:
 				{
-					SpawnSupportUnit(GameData.PlayerCoordinatorId, laneY);
 					var target = FindHighestHealthEnemy();
 					if (target != null)
 					{
@@ -11449,13 +6748,10 @@ public partial class BattleController : Node2D
 				case RouteCatalog.CitadelId:
 					if (offensiveObjective)
 					{
-						SpawnSupportUnit(GameData.PlayerBallistaId, laneY);
 						DamageEnemyBaseByRatio(0.04f, color, "RANGE FIX");
 						DamageEnemiesNear(enemyAnchor, 104f, 22f, color, "SHELL");
 						return "Citadel spotters corrected the guns onto the breach.";
 					}
-
-					SpawnSupportUnit(GameData.PlayerMarksmanId, laneY);
 					DamageEnemiesNear(enemyAnchor, 88f, 18f, color, "COVER");
 					BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.04f, 1.06f, 5f, color, "SCREEN");
 					return "Citadel spotters covered the retreat lane with disciplined fire.";
@@ -11532,8 +6828,6 @@ public partial class BattleController : Node2D
 
 		_campaignBonusObjectivePressureQueued = true;
 		_campaignBonusObjectivePressureFriendly = succeeded;
-		_campaignBonusObjectivePressureOffensive = mission.Definition.NormalizedType == "mainline_push" || mission.Definition.NormalizedType == "gate_breach";
-		_campaignBonusObjectivePressureTriggerAt = _elapsed + CampaignBonusObjectivePressureLeadSeconds;
 		_campaignBonusObjectivePressureLaneY = mission.Anchor.Y;
 		_campaignBonusObjectivePressureLabel = ResolveCampaignBonusObjectivePressureTitle(succeeded);
 		var color = mission.Color.Lightened(0.06f);
@@ -11549,117 +6843,6 @@ public partial class BattleController : Node2D
 		return succeeded
 			? $"{_campaignBonusObjectivePressureLabel} is rolling into the lane in {CampaignBonusObjectivePressureLeadSeconds:0.0}s.{BuildCampaignBonusObjectivePressureStatusSuffix()}"
 			: $"{_campaignBonusObjectivePressureLabel} is forming beyond the keep in {CampaignBonusObjectivePressureLeadSeconds:0.0}s.{BuildCampaignBonusObjectivePressureStatusSuffix()}";
-	}
-
-	private void TryTriggerCampaignBonusObjectivePressure()
-	{
-		if (!IsCampaignMode || !_campaignBonusObjectivePressureQueued || _battleEnded)
-		{
-			return;
-		}
-
-		if (_elapsed + 0.001f < _campaignBonusObjectivePressureTriggerAt)
-		{
-			return;
-		}
-
-		_campaignBonusObjectivePressureQueued = false;
-		_campaignBonusObjectivePressureTriggered = true;
-		ApplyCampaignBonusObjectivePressure();
-	}
-
-	private void ApplyCampaignBonusObjectivePressure()
-	{
-		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.08f);
-		var laneY = Mathf.Clamp(_campaignBonusObjectivePressureLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.48f), laneY);
-		var enemyAnchor = new Vector2(EnemySpawnX - 18f, laneY);
-		var label = string.IsNullOrWhiteSpace(_campaignBonusObjectivePressureLabel)
-			? (_campaignBonusObjectivePressureFriendly ? "Reserve Beat" : "Reprisal Beat")
-			: _campaignBonusObjectivePressureLabel;
-
-		if (_campaignBonusObjectivePressureFriendly)
-		{
-			var supportUnitId = ResolveCampaignBonusObjectivePressureSupportUnitId();
-			var supportCount = ResolveCampaignBonusObjectivePressureSupportCount();
-			for (var i = 0; i < supportCount; i++)
-			{
-				if (!string.IsNullOrWhiteSpace(supportUnitId))
-				{
-					SpawnSupportUnit(supportUnitId, laneY);
-				}
-			}
-
-			var secondarySupportUnitId = ResolveCampaignBonusObjectivePressureSecondarySupportUnitId();
-			if (!string.IsNullOrWhiteSpace(secondarySupportUnitId))
-			{
-				SpawnSupportUnit(secondarySupportUnitId, laneY);
-			}
-
-			var tertiarySupportUnitId = ResolveCampaignBonusObjectivePressureTertiarySupportUnitId();
-			if (!string.IsNullOrWhiteSpace(tertiarySupportUnitId))
-			{
-				SpawnSupportUnit(tertiarySupportUnitId, laneY);
-			}
-
-			var eliteSupportUnitId = ResolveCampaignBonusObjectivePressureEliteSupportUnitId();
-			if (!string.IsNullOrWhiteSpace(eliteSupportUnitId))
-			{
-				SpawnSupportUnit(eliteSupportUnitId, laneY);
-			}
-
-			if (_campaignBonusObjectivePressureOffensive)
-			{
-				BuffUnitsNear(Team.Player, laneAnchor, 150f, 1.04f, 1.08f, 5.2f, color, "RESERVES");
-				_courage = Mathf.Min(_maxCourage, _courage + 4f);
-			}
-			else
-			{
-				RepairBusByRatio(0.02f);
-				BuffUnitsNear(Team.Player, laneAnchor, 144f, 1.03f, 1.05f, 5f, color, "SCREEN");
-			}
-
-			var echoStatus = ArmCampaignPressureEcho();
-			SetStatus($"{label} hit the lane with fresh district reserves.{BuildCampaignBonusObjectivePressureArrivalSuffix()}{(string.IsNullOrWhiteSpace(echoStatus) ? "" : $" {echoStatus}")}");
-			return;
-		}
-
-		var primaryEnemyUnitId = ResolveCampaignBonusObjectivePressureEnemyUnitId();
-		var spawned = 0;
-		if (!string.IsNullOrWhiteSpace(primaryEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(primaryEnemyUnitId, ResolveCampaignBonusObjectivePressureEnemyCount(), laneY);
-		}
-
-		var secondaryEnemyUnitId = ResolveCampaignBonusObjectivePressureSecondaryEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(secondaryEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(secondaryEnemyUnitId, 1, laneY);
-		}
-
-		var tertiaryEnemyUnitId = ResolveCampaignBonusObjectivePressureTertiaryEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(tertiaryEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(tertiaryEnemyUnitId, 1, laneY);
-		}
-
-		var eliteEnemyUnitId = ResolveCampaignBonusObjectivePressureEliteEnemyUnitId();
-		if (!string.IsNullOrWhiteSpace(eliteEnemyUnitId))
-		{
-			spawned += SpawnEnemySurgeUnits(eliteEnemyUnitId, 1, laneY);
-		}
-
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			BuffUnitsNear(Team.Enemy, enemyAnchor, 148f, 1.04f, 1.1f, 5f, color, "REPRISAL");
-		}
-		else
-		{
-			SlowPlayersNear(laneAnchor, 90f, 0.84f, 2.6f, color, "LOCKDOWN");
-		}
-
-		var enemyEchoStatus = ArmCampaignPressureEcho();
-		SetStatus($"{label} hit the lane with {spawned} enemy reinforcements.{BuildCampaignBonusObjectivePressureArrivalSuffix()}{(string.IsNullOrWhiteSpace(enemyEchoStatus) ? "" : $" {enemyEchoStatus}")}");
 	}
 
 	private string ResolveCampaignBonusObjectivePressureTitle(bool friendly)
@@ -11687,279 +6870,6 @@ public partial class BattleController : Node2D
 			(RouteCatalog.CitadelId, true) => "Gun Cover",
 			(RouteCatalog.CitadelId, false) => "Iron Recall",
 			_ => friendly ? "Reserve Beat" : "Reprisal Beat"
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureSupportUnitId()
-	{
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerBannerId : GameData.PlayerDefenderId,
-			RouteCatalog.HarborId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerRangerId : GameData.PlayerMarksmanId,
-			RouteCatalog.FoundryId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerBallistaId : GameData.PlayerMechanicId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerRangerId : GameData.PlayerDefenderId,
-			RouteCatalog.BasilicaId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerBannerId : GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerHoundId,
-			RouteCatalog.SteppeId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerRaiderId : GameData.PlayerHoundId,
-			RouteCatalog.GloamwoodId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerCoordinatorId : GameData.PlayerCoordinatorId,
-			RouteCatalog.CitadelId => _campaignBonusObjectivePressureOffensive ? GameData.PlayerBallistaId : GameData.PlayerMarksmanId,
-			_ => _campaignBonusObjectivePressureOffensive ? GameData.PlayerRangerId : GameData.PlayerDefenderId
-		};
-	}
-
-	private int ResolveCampaignBonusObjectivePressureSupportCount()
-	{
-		return _campaignBonusObjectivePressureOffensive
-			? 1
-			: _stage >= 55
-				? 2
-				: 1;
-	}
-
-	private string ResolveCampaignBonusObjectivePressureSecondarySupportUnitId()
-	{
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerCoordinatorId,
-				RouteCatalog.HarborId => GameData.PlayerMarksmanId,
-				RouteCatalog.FoundryId => GameData.PlayerMechanicId,
-				RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-				RouteCatalog.SteppeId => GameData.PlayerHoundId,
-				RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.HarborId => GameData.PlayerDefenderId,
-			RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
-			RouteCatalog.MireId => GameData.PlayerCoordinatorId,
-			RouteCatalog.SteppeId => GameData.PlayerRaiderId,
-			RouteCatalog.GloamwoodId => GameData.PlayerLanternGuardId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureTertiarySupportUnitId()
-	{
-		if (!HasCampaignBonusObjectivePressureVeteranEscalation())
-		{
-			return "";
-		}
-
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerRaiderId,
-				RouteCatalog.HarborId => GameData.PlayerGrenadierId,
-				RouteCatalog.FoundryId => GameData.PlayerMechanicId,
-				RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
-				RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-				RouteCatalog.BasilicaId => GameData.PlayerBannerId,
-				RouteCatalog.MireId => GameData.PlayerRogueId,
-				RouteCatalog.SteppeId => GameData.PlayerRaiderId,
-				RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-				RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.PlayerDefenderId,
-			RouteCatalog.HarborId => GameData.PlayerMarksmanId,
-			RouteCatalog.FoundryId => GameData.PlayerMechanicId,
-			RouteCatalog.QuarantineId => GameData.PlayerCoordinatorId,
-			RouteCatalog.ThornwallId => GameData.PlayerDefenderId,
-			RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerHoundId,
-			RouteCatalog.SteppeId => GameData.PlayerRaiderId,
-			RouteCatalog.GloamwoodId => GameData.PlayerCoordinatorId,
-			RouteCatalog.CitadelId => GameData.PlayerMarksmanId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureEliteSupportUnitId()
-	{
-		if (!HasCampaignBonusObjectivePressureEliteEscalation())
-		{
-			return "";
-		}
-
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.PlayerStormcallerId,
-				RouteCatalog.HarborId => GameData.PlayerBallistaId,
-				RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-				RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-				RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-				RouteCatalog.BasilicaId => GameData.PlayerNecromancerId,
-				RouteCatalog.MireId => GameData.PlayerNecromancerId,
-				RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-				RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-				RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.PlayerBannerId,
-			RouteCatalog.HarborId => GameData.PlayerBallistaId,
-			RouteCatalog.FoundryId => GameData.PlayerBallistaId,
-			RouteCatalog.QuarantineId => GameData.PlayerLanternGuardId,
-			RouteCatalog.ThornwallId => GameData.PlayerBerserkerId,
-			RouteCatalog.BasilicaId => GameData.PlayerLanternGuardId,
-			RouteCatalog.MireId => GameData.PlayerNecromancerId,
-			RouteCatalog.SteppeId => GameData.PlayerStormcallerId,
-			RouteCatalog.GloamwoodId => GameData.PlayerNecromancerId,
-			RouteCatalog.CitadelId => GameData.PlayerBallistaId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureEnemyUnitId()
-	{
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyRunnerId : GameData.EnemyHowlerId,
-			RouteCatalog.HarborId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyBruteId : GameData.EnemySpitterId,
-			RouteCatalog.FoundryId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyBruteId : GameData.EnemyShieldWallId,
-			RouteCatalog.QuarantineId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyRunnerId : GameData.EnemyJammerId,
-			RouteCatalog.ThornwallId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyRunnerId : GameData.EnemyBruteId,
-			RouteCatalog.BasilicaId => _campaignBonusObjectivePressureOffensive ? GameData.EnemySplitterId : GameData.EnemyHowlerId,
-			RouteCatalog.MireId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyBloaterId : GameData.EnemySpitterId,
-			RouteCatalog.SteppeId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyRunnerId : GameData.EnemySaboteurId,
-			RouteCatalog.GloamwoodId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyMirrorId : GameData.EnemyJammerId,
-			RouteCatalog.CitadelId => _campaignBonusObjectivePressureOffensive ? GameData.EnemyCrusherId : GameData.EnemyShieldWallId,
-			_ => GameData.EnemyRunnerId
-		};
-	}
-
-	private int ResolveCampaignBonusObjectivePressureEnemyCount()
-	{
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _stage >= 55 ? 3 : 2;
-		}
-
-		return _stage >= 55 ? 2 : 1;
-	}
-
-	private string ResolveCampaignBonusObjectivePressureSecondaryEnemyUnitId()
-	{
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyHowlerId,
-				RouteCatalog.HarborId => GameData.EnemySpitterId,
-				RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
-				RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-				RouteCatalog.MireId => GameData.EnemySpitterId,
-				RouteCatalog.CitadelId => GameData.EnemySpitterId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.QuarantineId => GameData.EnemySpitterId,
-			RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
-			RouteCatalog.SteppeId => GameData.EnemyRunnerId,
-			RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
-			RouteCatalog.CitadelId => GameData.EnemyCrusherId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureTertiaryEnemyUnitId()
-	{
-		if (!HasCampaignBonusObjectivePressureVeteranEscalation())
-		{
-			return "";
-		}
-
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemySaboteurId,
-				RouteCatalog.HarborId => GameData.EnemySaboteurId,
-				RouteCatalog.FoundryId => GameData.EnemyShieldWallId,
-				RouteCatalog.QuarantineId => GameData.EnemyJammerId,
-				RouteCatalog.ThornwallId => GameData.EnemyBruteId,
-				RouteCatalog.BasilicaId => GameData.EnemyHowlerId,
-				RouteCatalog.MireId => GameData.EnemySpitterId,
-				RouteCatalog.SteppeId => GameData.EnemySaboteurId,
-				RouteCatalog.GloamwoodId => GameData.EnemyMirrorId,
-				RouteCatalog.CitadelId => GameData.EnemyShieldWallId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyRunnerId,
-			RouteCatalog.HarborId => GameData.EnemyBruteId,
-			RouteCatalog.FoundryId => GameData.EnemySpitterId,
-			RouteCatalog.QuarantineId => GameData.EnemySpitterId,
-			RouteCatalog.ThornwallId => GameData.EnemyRunnerId,
-			RouteCatalog.BasilicaId => GameData.EnemySplitterId,
-			RouteCatalog.MireId => GameData.EnemyBloaterId,
-			RouteCatalog.SteppeId => GameData.EnemyRunnerId,
-			RouteCatalog.GloamwoodId => GameData.EnemySpitterId,
-			RouteCatalog.CitadelId => GameData.EnemyCrusherId,
-			_ => ""
-		};
-	}
-
-	private string ResolveCampaignBonusObjectivePressureEliteEnemyUnitId()
-	{
-		if (!HasCampaignBonusObjectivePressureEliteEscalation())
-		{
-			return "";
-		}
-
-		if (_campaignBonusObjectivePressureOffensive)
-		{
-			return _activeRouteId switch
-			{
-				RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-				RouteCatalog.FoundryId => GameData.EnemySiegeTowerId,
-				RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-				RouteCatalog.BasilicaId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-				RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-				RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-				RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-				_ => ""
-			};
-		}
-
-		return _activeRouteId switch
-		{
-			RouteCatalog.CityId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.HarborId => GameData.EnemyBoneBallistaId,
-			RouteCatalog.FoundryId => GameData.EnemySiegeTowerId,
-			RouteCatalog.QuarantineId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.ThornwallId => GameData.EnemyCatacombGiantId,
-			RouteCatalog.BasilicaId => GameData.EnemyLichId,
-			RouteCatalog.MireId => GameData.EnemyPlagueEngineId,
-			RouteCatalog.SteppeId => GameData.EnemyRevenantCaptainId,
-			RouteCatalog.GloamwoodId => GameData.EnemyLichId,
-			RouteCatalog.CitadelId => GameData.EnemyBoneBallistaId,
-			_ => ""
 		};
 	}
 
@@ -12005,75 +6915,6 @@ public partial class BattleController : Node2D
 		}
 
 		return "";
-	}
-
-	private string BuildCampaignBonusObjectivePressureIntelSuffix()
-	{
-		if (HasCampaignBonusObjectivePressureEliteEscalation())
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? " Elite reserves attached."
-				: " Elite reprisal attached.";
-		}
-
-		if (HasCampaignBonusObjectivePressureVeteranEscalation())
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? " Veteran reserves attached."
-				: " Hardened reprisal attached.";
-		}
-
-		return "";
-	}
-
-	private string BuildCampaignBonusObjectivePressureArrivalSuffix()
-	{
-		if (HasCampaignBonusObjectivePressureEliteEscalation())
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? " Elite district assets came with it."
-				: " Elite district assets came with it.";
-		}
-
-		if (HasCampaignBonusObjectivePressureVeteranEscalation())
-		{
-			return _campaignBonusObjectivePressureFriendly
-				? " Veteran district assets came with it."
-				: " Veteran district assets came with it.";
-		}
-
-		return "";
-	}
-
-	private string ArmCampaignPressureEcho()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		_campaignPressureEchoFriendly = _campaignBonusObjectivePressureFriendly;
-		_campaignPressureEchoOffensive = _campaignBonusObjectivePressureOffensive;
-		_campaignPressureEchoChargesRemaining = ResolveCampaignPressureEchoChargeCount();
-		_campaignPressureEchoTriggerCount = 0;
-		_campaignPressureEchoCompleted = false;
-		_campaignPressureEchoLabel = ResolveCampaignPressureEchoTitle(_campaignPressureEchoFriendly);
-		return _campaignPressureEchoFriendly
-			? $"{_campaignPressureEchoLabel} is waiting on the next {_campaignPressureEchoChargesRemaining} enemy spawn{(_campaignPressureEchoChargesRemaining == 1 ? "" : "s")}."
-			: $"{_campaignPressureEchoLabel} will harden the next {_campaignPressureEchoChargesRemaining} enemy spawn{(_campaignPressureEchoChargesRemaining == 1 ? "" : "s")}.";
-	}
-
-	private int ResolveCampaignPressureEchoChargeCount()
-	{
-		return CampaignPressureEchoBaseCharges + (HasCampaignBonusObjectivePressureEliteEscalation() ? 1 : 0);
-	}
-
-	private string ResolveCampaignPressureEchoTitle(bool friendly)
-	{
-		var prefix = ResolveCampaignFieldOrderBranchMissionPrefix();
-		return friendly
-			? $"{prefix} Counterline"
-			: $"{prefix} Aftershock";
 	}
 
 	private void ApplyCampaignPressureEchoToEnemySpawn(Unit unit)
@@ -12157,7 +6998,6 @@ public partial class BattleController : Node2D
 		ResolveCampaignAdaptiveWaveVictoryBonus(out _campaignAdaptiveWaveBonusGold, out _campaignAdaptiveWaveBonusFood);
 		_campaignAdaptiveWaveRewardReady = true;
 		_campaignAdaptiveWaveRewardSecured = false;
-		_campaignAdaptiveWaveRewardLost = false;
 
 		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue)
 		{
@@ -12208,18 +7048,6 @@ public partial class BattleController : Node2D
 	private string BuildCampaignAdaptiveWaveUpgradeText()
 	{
 		return BuildCampaignAdaptiveWaveRewardText(_campaignAdaptiveWaveUpgradeGold, _campaignAdaptiveWaveUpgradeFood);
-	}
-
-	private void ApplyCampaignAdaptiveWaveVictoryReward(ref int rewardGold, ref int rewardFood)
-	{
-		if (!_campaignAdaptiveWaveRewardReady)
-		{
-			return;
-		}
-
-		_campaignAdaptiveWaveRewardSecured = true;
-		rewardGold += _campaignAdaptiveWaveBonusGold;
-		rewardFood += _campaignAdaptiveWaveBonusFood;
 	}
 
 	private void ApplyFriendlyCampaignAdaptiveWave(Unit unit, Vector2 laneAnchor, Color color)
@@ -12369,7 +7197,6 @@ public partial class BattleController : Node2D
 
 	private string ResolveCampaignPressureEchoCompletion(Unit unit, Vector2 laneAnchor, Color color)
 	{
-		_campaignPressureEchoCompleted = true;
 		SpawnFloatText(unit.Position + new Vector2(0f, -74f), "ECHO CASHED", color.Lightened(0.26f), 0.58f);
 		if (_campaignPressureEchoFriendly)
 		{
@@ -12493,18 +7320,6 @@ public partial class BattleController : Node2D
 		}
 
 		return $"+{_campaignCommendationBonusGold} gold";
-	}
-
-	private void ApplyCampaignCommendationVictoryReward(ref int rewardGold, ref int rewardFood)
-	{
-		if (!HasActiveCampaignCommendationUnit())
-		{
-			return;
-		}
-
-		_campaignCommendationRewardSecured = true;
-		rewardGold += _campaignCommendationBonusGold;
-		rewardFood += _campaignCommendationBonusFood;
 	}
 
 	private string TryApplyCampaignCommendation(Unit unit, Vector2 spawnPosition)
@@ -12820,178 +7635,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private float ResolveStageMissionMaxHealth(StageMissionEventDefinition mission)
-	{
-		return mission.NormalizedType switch
-		{
-			"ritual_site" => 84f,
-			"relic_escort" => 104f,
-			"gate_breach" => 116f,
-			"rescue_hold" => 98f,
-			"mainline_push" => 108f,
-			_ => 88f
-		};
-	}
-
-	private static float ResolveStageMissionPresenceRepairRate(StageMissionEventDefinition mission)
-	{
-		return mission.NormalizedType switch
-		{
-			"ritual_site" => 2.1f,
-			"relic_escort" => 1.9f,
-			"gate_breach" => 1.7f,
-			"rescue_hold" => 2f,
-			"mainline_push" => 1.8f,
-			_ => 1.8f
-		};
-	}
-
-	private static float ResolveStageMissionPressureRate(StageMissionEventDefinition mission)
-	{
-		return mission.NormalizedType switch
-		{
-			"ritual_site" => 7.8f,
-			"relic_escort" => 8.6f,
-			"gate_breach" => 9.4f,
-			"rescue_hold" => 8.8f,
-			"mainline_push" => 9.1f,
-			_ => 8f
-		};
-	}
-
-	private string ResolveStageMissionSupportUnitId()
-	{
-		if (GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId))
-		{
-			return GameData.PlayerCoordinatorId;
-		}
-
-		if (GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId))
-		{
-			return GameData.PlayerDefenderId;
-		}
-
-		return GameData.PlayerBrawlerId;
-	}
-
-	private void UpdateStageHazards()
-	{
-		foreach (var hazard in _stageHazards)
-		{
-			var warningStart = hazard.NextTriggerTime - Mathf.Max(0.35f, hazard.Definition.WarningDuration);
-			if (!hazard.WarningIssued &&
-				_elapsed + 0.001f >= warningStart &&
-				_elapsed + 0.001f < hazard.NextTriggerTime)
-			{
-				hazard.WarningIssued = true;
-				AudioDirector.Instance?.PlayHazardWarning();
-				SetStatus($"Hazard priming: {ResolveStageHazardLabel(hazard.Definition)}.");
-			}
-
-			if (_elapsed + 0.001f < hazard.NextTriggerTime)
-			{
-				continue;
-			}
-
-			TriggerStageHazard(hazard);
-			hazard.NextTriggerTime += Mathf.Max(2.5f, hazard.Definition.Interval);
-			hazard.WarningIssued = false;
-		}
-	}
-
-	private void TriggerStageHazard(StageHazardState hazard)
-	{
-		AudioDirector.Instance?.PlayHazardStrike();
-		SpawnEffect(
-			hazard.Anchor,
-			hazard.Color.Lightened(0.08f),
-			12f,
-			Mathf.Max(26f, hazard.Definition.Radius),
-			0.24f,
-			false);
-		SpawnFloatText(
-			hazard.Anchor + new Vector2(0f, -Mathf.Min(72f, hazard.Definition.Radius + 10f)),
-			ResolveStageHazardLabel(hazard.Definition).ToUpperInvariant(),
-			hazard.Color.Lightened(0.18f),
-			0.54f);
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead || unit.Position.DistanceTo(hazard.Anchor) > hazard.Definition.Radius)
-			{
-				continue;
-			}
-
-			var appliedDamage = unit.TakeDamage(hazard.Definition.Damage);
-			SpawnDamageFeedback(unit.Position, appliedDamage, hazard.Color);
-			if (unit.Team == Team.Player && appliedDamage > 0.05f)
-			{
-				_playerHazardHits++;
-			}
-		}
-
-		if (CanInteractWithEndlessContactActor(_activeEndlessContactActor) &&
-			_activeEndlessContactActor.Position.DistanceTo(hazard.Anchor) <= hazard.Definition.Radius)
-		{
-			var appliedDamage = _activeEndlessContactActor.ApplyPressureDamage(hazard.Definition.Damage * 0.85f);
-			RegisterEndlessContactPressure(appliedDamage);
-		}
-
-		foreach (var mission in _stageMissions)
-		{
-			if (!CanInteractWithStageMission(mission) ||
-				mission.Anchor.DistanceTo(hazard.Anchor) > hazard.Definition.Radius)
-			{
-				continue;
-			}
-
-			mission.Actor.ApplyPressureDamage(hazard.Definition.Damage * 0.55f);
-			if (mission.Actor.Health <= 0.01f)
-			{
-				FailStageMission(
-					mission,
-					$"{BuildStageMissionDisplayTitle(mission)} was shattered by {ResolveStageHazardLabel(hazard.Definition).ToLowerInvariant()}.");
-			}
-		}
-	}
-
-	private void DrawStageHazards()
-	{
-		foreach (var hazard in _stageHazards)
-		{
-			var radius = Mathf.Max(20f, hazard.Definition.Radius);
-			var warningDuration = Mathf.Max(0.35f, hazard.Definition.WarningDuration);
-			var timeUntil = Mathf.Max(0f, hazard.NextTriggerTime - _elapsed);
-			var warningRatio = timeUntil <= warningDuration
-				? 1f - Mathf.Clamp(timeUntil / warningDuration, 0f, 1f)
-				: 0f;
-			var pulse = 0.5f + (0.5f * Mathf.Sin((_elapsed + hazard.Anchor.X * 0.002f) * 5.5f));
-
-			DrawCircle(hazard.Anchor, radius, new Color(hazard.Color, 0.04f + (warningRatio * 0.12f)));
-			DrawArc(
-				hazard.Anchor,
-				radius + 4f + (warningRatio * 4f),
-				0f,
-				Mathf.Tau,
-				36,
-				new Color(hazard.Color, 0.16f + (warningRatio * 0.5f)),
-				2f + (warningRatio * 2f));
-
-			if (warningRatio > 0.01f && pulse > 0.45f)
-			{
-				DrawArc(
-					hazard.Anchor,
-					radius * (0.64f + (warningRatio * 0.18f)),
-					0f,
-					Mathf.Tau,
-					28,
-					new Color(hazard.Color.Lightened(0.2f), 0.24f + (warningRatio * 0.38f)),
-					2f,
-					true);
-			}
-		}
-	}
-
 	private string BuildChallengeGhostDeployFeedback(UnitDefinition definition, Vector2 spawnPosition)
 	{
 		if (!HasChallengeGhostRun())
@@ -13054,27 +7697,6 @@ public partial class BattleController : Node2D
 			: $" Ghost split {deploymentIndex + 1}: swapped {definition.DisplayName} for {ghostUnit.DisplayName}, timing {FormatSignedSeconds(timeDelta)}, lane {FormatSignedInt(laneDelta)}%.";
 	}
 
-	private int CountChallengeGhostDeploymentsElapsed(float elapsed)
-	{
-		if (!HasChallengeGhostRun())
-		{
-			return 0;
-		}
-
-		var count = 0;
-		foreach (var deployment in _challengeGhostRun.Deployments)
-		{
-			if (deployment.TimeSeconds > elapsed + 0.001f)
-			{
-				break;
-			}
-
-			count++;
-		}
-
-		return count;
-	}
-
 	private string BuildChallengeGhostResultSummary(int finalScore, int starsEarned)
 	{
 		if (_challengeGhostRun == null)
@@ -13098,33 +7720,6 @@ public partial class BattleController : Node2D
 			$"Ghost comparison: {FormatSignedInt(scoreDelta)} pts  |  {timeText}  |  Hull {FormatSignedInt(hullDelta)}%  |  Deploys {FormatSignedInt(deployDelta)}  |  Stars {FormatSignedInt(starDelta)}";
 	}
 
-	private string BuildStageHazardIntelText()
-	{
-		if (_stageHazards.Count == 0)
-		{
-			return "Hazards: none";
-		}
-
-		var parts = new List<string>();
-		for (var i = 0; i < _stageHazards.Count && i < 2; i++)
-		{
-			var hazard = _stageHazards[i];
-			parts.Add($"{ResolveStageHazardLabel(hazard.Definition)} {Mathf.Max(0f, hazard.NextTriggerTime - _elapsed):0.0}s");
-		}
-
-		if (_stageHazards.Count > 2)
-		{
-			parts.Add($"+{_stageHazards.Count - 2} more");
-		}
-
-		return "Hazards: " + string.Join("  |  ", parts);
-	}
-
-	private static string ResolveStageHazardLabel(StageHazardDefinition hazard)
-	{
-		return string.IsNullOrWhiteSpace(hazard?.Label) ? "Hazard pulse" : hazard.Label;
-	}
-
 	private string BuildWaveEntrySummary(StageWaveDefinition wave)
 	{
 		var parts = new List<string>();
@@ -13145,72 +7740,6 @@ public partial class BattleController : Node2D
 			: "No enemy composition data.";
 	}
 
-	private string BuildEndlessStatusText()
-	{
-		var projectedGold = CalculateEndlessGoldReward();
-		var projectedFood = CalculateEndlessFoodReward();
-		return
-			"Endless run:\n" +
-			$"Wave: {_spawnDirector.EndlessWaveNumber}  |  Defeats: {_enemyDefeats}  |  Time: {_elapsed:0.0}s\n" +
-			$"Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}  |  Upgrades: {_endlessRunUpgrades.Count}\n" +
-			$"\nPayout: +{projectedGold} gold / +{projectedFood} food\n" +
-			$"  Directives: {FormatSignedInt(_endlessDirectiveGoldBonus)} gold / {FormatSignedInt(_endlessDirectiveFoodBonus)} food\n" +
-			$"  Contacts: {FormatSignedInt(_endlessContactGoldBonus)} gold / {FormatSignedInt(_endlessContactFoodBonus)} food\n" +
-			$"  Bosses: {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
-			$"\nSegment: {_spawnDirector.EndlessSegmentEventLabel}\n" +
-			$"{BuildEndlessBossCheckpointText()}\n" +
-			$"{BuildEndlessDirectiveText()}\n" +
-			$"{BuildEndlessContactText()}\n" +
-			$"Contact tradeoff: {_endlessContactTradeoffLabel}\n" +
-			$"Contact telemetry:\n{BuildEndlessContactTelemetryText()}\n" +
-			$"Battlefield: {_endlessBattlefieldEventLabel}\n" +
-			$"Support: {_endlessSupportEventLabel}\n" +
-			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
-	}
-
-	private string BuildEndlessContactTelemetryText()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return "Telemetry standby.";
-		}
-
-		var healthPercent = IsInstanceValid(_activeEndlessContactActor)
-			? Mathf.RoundToInt(_activeEndlessContactActor.HealthRatio * 100f)
-			: 0;
-		var state = _activeEndlessContact.Completed
-			? "Secured"
-			: _activeEndlessContact.Failed
-				? "Lost"
-				: _activeEndlessContact.EnemyInside
-					? "Contested"
-					: _activeEndlessContact.PlayerInside
-					? "Supported"
-						: "Open";
-		var supportMomentState = _activeEndlessContact.SupportMomentTriggered
-			? "Used"
-			: "Standby";
-		return
-			$"  State: {state}  |  Hull: {healthPercent}%\n" +
-			$"  Support: {_activeEndlessContact.PlayerSupportActions} actions ({Mathf.RoundToInt(_activeEndlessContact.PlayerSupportRepairTotal)} repair / +{_activeEndlessContact.PlayerSupportProgressTotal:0.0}s progress)\n" +
-			$"  Pressure: {_activeEndlessContact.EnemyPressureActions} attacks ({Mathf.RoundToInt(_activeEndlessContact.EnemyPressureDamageTotal)} damage)  |  Responses: {_activeEndlessContact.ResponseWavesTriggered}/{_activeEndlessContact.ResponseWaveLimit}  |  Assist: {supportMomentState}";
-	}
-
-	private string BuildEndlessPressureText()
-	{
-		var routeText = RouteCatalog.Get(_activeRouteId).PressureSummary;
-
-		var forkText = _endlessRouteForkId switch
-		{
-			EndlessRouteForkCatalog.MainlinePushId => "Current fork speeds up the line and raises ranged pressure.",
-			EndlessRouteForkCatalog.ScavengeDetourId => "Current fork slows the surge slightly but adds heavier supply lanes.",
-			EndlessRouteForkCatalog.FortifiedBlockId => "Current fork softens pressure at the cost of lower gold efficiency.",
-			_ => ""
-		};
-
-		return $"{routeText} {forkText}".Trim();
-	}
-
 	private void MaybeOpenEndlessDraft()
 	{
 		if (!IsEndlessMode || _endlessCheckpointActive || !_spawnDirector.EndlessCheckpointPending)
@@ -13224,14 +7753,12 @@ public partial class BattleController : Node2D
 		}
 
 		ResolveEndlessBossCheckpoint();
-		ResolveEndlessDirectiveCheckpoint();
-		ResolveEndlessContactCheckpoint();
 		_endlessCheckpointActive = true;
 		_draftingRouteFork = IsRouteForkCheckpoint();
 		_draftOptionIds = _draftingRouteFork ? BuildRouteForkOptions() : BuildDraftOptions();
 		_draftLabel.Text = _draftingRouteFork
-			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the caravan rolls out.\n{BuildEndlessBossCheckpointCheckpointSummary()}\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}"
-			: $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose one run upgrade before the next surge.\n{BuildEndlessBossCheckpointCheckpointSummary()}\n{BuildEndlessDirectiveCheckpointSummary()}\n{BuildEndlessContactCheckpointSummary()}\nTradeoff report: {_endlessContactTradeoffLabel}\n{BuildEndlessContactTelemetryText()}";
+			? $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose the next route segment before the caravan rolls out.\n{BuildEndlessBossCheckpointCheckpointSummary()}"
+			: $"Checkpoint secure on wave {_spawnDirector.EndlessWaveNumber}.\nChoose one run upgrade before the next surge.\n{BuildEndlessBossCheckpointCheckpointSummary()}";
 
 		for (var i = 0; i < _draftButtons.Count; i++)
 		{
@@ -13324,9 +7851,6 @@ public partial class BattleController : Node2D
 		_draftPanel.Visible = false;
 		_draftOptionIds = Array.Empty<string>();
 		_draftingRouteFork = false;
-		StartRouteForkFieldEvent(_endlessRouteForkId);
-		StartEndlessDirectiveSegment();
-		StartEndlessContactEvent();
 		_spawnDirector.ResumeEndlessAfterCheckpoint(_elapsed);
 		UpdateHud();
 	}
@@ -13426,7 +7950,6 @@ public partial class BattleController : Node2D
 	{
 		_endlessRouteForkId = EndlessRouteForkCatalog.Normalize(optionId);
 		_spawnDirector.SetEndlessRouteFork(_endlessRouteForkId);
-		StartRouteForkFieldEvent(_endlessRouteForkId);
 
 		TriggerRouteForkSupportEvent(_endlessRouteForkId);
 	}
@@ -13442,216 +7965,14 @@ public partial class BattleController : Node2D
 				_spellDeck.ReduceCooldowns(3f);
 				break;
 			case EndlessRouteForkCatalog.ScavengeDetourId:
-					_endlessSupportEventLabel = "Forager escort arrived: cavalry reinforcement deployed and the war wagon was patched.";
+					_endlessSupportEventLabel = "Supplies recovered: the war wagon was repaired.";
 				RepairBusByRatio(0.1f);
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
-					? GameData.PlayerRaiderId
-					: GameData.PlayerBrawlerId);
 				break;
 			case EndlessRouteForkCatalog.FortifiedBlockId:
-				_endlessSupportEventLabel = "Safehouse militia joined: shield knight reinforcement and war wagon repairs secured the block.";
+				_endlessSupportEventLabel = "Fortifications secured: the war wagon was repaired.";
 				RepairBusByRatio(0.12f);
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
-					? GameData.PlayerDefenderId
-					: GameData.PlayerBrawlerId);
 				break;
 		}
-	}
-
-	private void StartRouteForkFieldEvent(string routeForkId)
-	{
-		_activeEndlessFieldEvent = null;
-	}
-
-	private void StartEndlessDirectiveSegment()
-	{
-		_activeEndlessDirective = null;
-	}
-
-	private void UpdateEndlessDirectiveState()
-	{
-		if (!IsEndlessMode || _activeEndlessDirective == null || _battleEnded)
-		{
-			return;
-		}
-
-		var currentBusRatio = Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f);
-		_activeEndlessDirective.LowestBusHullRatio = Mathf.Min(_activeEndlessDirective.LowestBusHullRatio, currentBusRatio);
-
-		if (_activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
-		{
-			return;
-		}
-
-		switch (_activeEndlessDirective.Definition.Type)
-		{
-			case "enemy_defeats":
-				if (GetDirectiveEnemyDefeatProgress() >= _activeEndlessDirective.TargetCount)
-				{
-					CompleteEndlessDirective("Threat lane cleared ahead of schedule.");
-				}
-				break;
-			case "deploy_limit":
-				if (GetDirectiveDeploymentCount() > _activeEndlessDirective.TargetCount)
-				{
-						FailEndlessDirective("The sweep went loud. The supply window collapsed.");
-				}
-				break;
-			case "bus_hull_ratio":
-				if (_activeEndlessDirective.LowestBusHullRatio < _activeEndlessDirective.TargetRatio)
-				{
-					FailEndlessDirective("The ward line cracked below the safehouse threshold.");
-				}
-				break;
-		}
-	}
-
-	private void ResolveEndlessDirectiveCheckpoint()
-	{
-		if (!IsEndlessMode || _activeEndlessDirective == null || _activeEndlessDirective.RewardGranted)
-		{
-			return;
-		}
-
-		if (_activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
-		{
-			return;
-		}
-
-		switch (_activeEndlessDirective.Definition.Type)
-		{
-			case "enemy_defeats":
-				if (GetDirectiveEnemyDefeatProgress() >= _activeEndlessDirective.TargetCount)
-				{
-					CompleteEndlessDirective("Breakthrough window secured at the checkpoint.");
-				}
-				else
-				{
-					FailEndlessDirective("The caravan missed the breakthrough quota before the checkpoint.");
-				}
-				break;
-			case "deploy_limit":
-				if (GetDirectiveDeploymentCount() <= _activeEndlessDirective.TargetCount)
-				{
-						CompleteEndlessDirective("The caravan reached the checkpoint with the supply sweep intact.");
-				}
-				else
-				{
-						FailEndlessDirective("Too many deployments burned the supply sweep before the checkpoint.");
-				}
-				break;
-			case "bus_hull_ratio":
-				if (_activeEndlessDirective.LowestBusHullRatio >= _activeEndlessDirective.TargetRatio)
-				{
-					CompleteEndlessDirective("The war wagon held the fortified block all the way to the checkpoint.");
-				}
-				else
-				{
-					FailEndlessDirective("The fortified hold broke before the caravan reached the checkpoint.");
-				}
-				break;
-		}
-	}
-
-	private int GetDirectiveEnemyDefeatProgress()
-	{
-		return _activeEndlessDirective == null
-			? 0
-			: Math.Max(0, _enemyDefeats - _activeEndlessDirective.StartEnemyDefeats);
-	}
-
-	private int GetDirectiveDeploymentCount()
-	{
-		return _activeEndlessDirective == null
-			? 0
-			: Math.Max(0, _playerDeployments - _activeEndlessDirective.StartDeployments);
-	}
-
-	private int ResolveDirectiveTargetCount(EndlessDirectiveDefinition definition)
-	{
-		if (definition == null)
-		{
-			return 0;
-		}
-
-		return definition.Type switch
-		{
-			"enemy_defeats" => definition.TargetCount + Math.Min(6, _spawnDirector.EndlessWaveNumber / 5),
-			_ => definition.TargetCount
-		};
-	}
-
-	private static float ResolveDirectiveTargetRatio(EndlessDirectiveDefinition definition)
-	{
-		return definition == null ? 0f : definition.TargetRatio;
-	}
-
-	private void CompleteEndlessDirective(string statusText)
-	{
-		if (_activeEndlessDirective == null || _activeEndlessDirective.RewardGranted)
-		{
-			return;
-		}
-
-		_activeEndlessDirective.Completed = true;
-		_activeEndlessDirective.RewardGranted = true;
-		ApplyEndlessDirectiveReward(_activeEndlessDirective);
-		SetStatus($"{_activeEndlessDirective.Definition.Title} complete. {statusText}");
-	}
-
-	private void FailEndlessDirective(string statusText)
-	{
-		if (_activeEndlessDirective == null || _activeEndlessDirective.Completed || _activeEndlessDirective.Failed)
-		{
-			return;
-		}
-
-		_activeEndlessDirective.Failed = true;
-		SetStatus($"{_activeEndlessDirective.Definition.Title} failed. {statusText}");
-	}
-
-	private void ApplyEndlessDirectiveReward(EndlessDirectiveState directive)
-	{
-		switch (directive.Definition.Id)
-		{
-			case EndlessDirectiveCatalog.BreakthroughDirectiveId:
-				_courage = Mathf.Min(_maxCourage, _courage + 16f);
-				_deck.ReduceCooldowns(1.5f);
-				_spellDeck.ReduceCooldowns(1.5f);
-				SpawnEffect(PlayerBaseCorePosition, new Color("ffe066"), 12f, 30f, 0.24f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "BREAKTHROUGH", new Color("fff3b0"), 0.62f);
-				break;
-			case EndlessDirectiveCatalog.SalvageSweepDirectiveId:
-				_endlessDirectiveGoldBonus += 28;
-				_endlessDirectiveFoodBonus += 1;
-				RepairBusByRatio(0.04f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "SALVAGE SECURED", new Color("f4a261"), 0.66f);
-				break;
-			case EndlessDirectiveCatalog.HoldLineDirectiveId:
-				RepairBusByRatio(0.08f);
-				_deck.ReduceCooldowns(1f);
-				_spellDeck.ReduceCooldowns(1f);
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
-					? GameData.PlayerDefenderId
-					: GameData.PlayerBrawlerId);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "SAFEHOUSE AID", new Color("ade8f4"), 0.66f);
-				break;
-		}
-	}
-
-	private string BuildEndlessDirectiveText()
-	{
-		if (!IsEndlessMode || _activeEndlessDirective == null)
-		{
-			return "Directive: standby.";
-		}
-
-		var prefix = _activeEndlessDirective.Completed
-			? "[OK]"
-			: _activeEndlessDirective.Failed
-				? "[X]"
-				: "[..]";
-		return $"{prefix} Directive: {_activeEndlessDirective.Definition.Title}  |  {BuildEndlessDirectiveProgressText()}  |  {_activeEndlessDirective.Definition.RewardSummary}";
 	}
 
 	private string BuildEndlessBossCheckpointText()
@@ -13692,37 +8013,6 @@ public partial class BattleController : Node2D
 		return $"[OK] {definition.Title}  |  {definition.RewardSummary}";
 	}
 
-	private string BuildEndlessDirectiveCheckpointSummary()
-	{
-		if (_activeEndlessDirective == null)
-		{
-			return "Directive report: standby.";
-		}
-
-		var prefix = _activeEndlessDirective.Completed
-			? "[OK]"
-			: _activeEndlessDirective.Failed
-				? "[X]"
-				: "[..]";
-		return $"{prefix} {_activeEndlessDirective.Definition.Title}  |  {BuildEndlessDirectiveProgressText()}";
-	}
-
-	private string BuildEndlessDirectiveProgressText()
-	{
-		if (_activeEndlessDirective == null)
-		{
-			return "No directive";
-		}
-
-		return _activeEndlessDirective.Definition.Type switch
-		{
-			"enemy_defeats" => $"Defeats {GetDirectiveEnemyDefeatProgress()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
-			"deploy_limit" => $"Deployments {GetDirectiveDeploymentCount()}/{_activeEndlessDirective.TargetCount} before checkpoint wave {_activeEndlessDirective.CheckpointWave}",
-			"bus_hull_ratio" => $"War wagon hull low {Mathf.RoundToInt(_activeEndlessDirective.LowestBusHullRatio * 100f)}% / keep above {Mathf.RoundToInt(_activeEndlessDirective.TargetRatio * 100f)}% through wave {_activeEndlessDirective.CheckpointWave}",
-			_ => _activeEndlessDirective.Definition.Summary
-		};
-	}
-
 	private void ResolveEndlessBossCheckpoint()
 	{
 		if (!IsEndlessMode || !EndlessBossCheckpointCatalog.IsBossCheckpointWave(_spawnDirector.EndlessWaveNumber))
@@ -13750,39 +8040,18 @@ public partial class BattleController : Node2D
 				_spellDeck.ReduceCooldowns(1f);
 				break;
 			case RouteCatalog.QuarantineId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId)
-					? GameData.PlayerCoordinatorId
-					: GameData.PlayerDefenderId);
 				break;
 			case RouteCatalog.ThornwallId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRangerId)
-					? GameData.PlayerRangerId
-					: GameData.PlayerShooterId);
 				break;
 			case RouteCatalog.BasilicaId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerCoordinatorId)
-					? GameData.PlayerCoordinatorId
-					: GameData.PlayerMarksmanId);
 				break;
 			case RouteCatalog.MireId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerMechanicId)
-					? GameData.PlayerMechanicId
-					: GameData.PlayerBrawlerId);
 				break;
 			case RouteCatalog.SteppeId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerRaiderId)
-					? GameData.PlayerRaiderId
-					: GameData.PlayerBrawlerId);
 				break;
 			case RouteCatalog.GloamwoodId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerMarksmanId)
-					? GameData.PlayerMarksmanId
-					: GameData.PlayerShooterId);
 				break;
 			case RouteCatalog.CitadelId:
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerBreacherId)
-					? GameData.PlayerBreacherId
-					: GameData.PlayerDefenderId);
 				break;
 		}
 
@@ -13790,1069 +8059,6 @@ public partial class BattleController : Node2D
 		SpawnEffect(EnemyBaseCorePosition, route.BannerAccent.Lightened(0.08f), 18f, 72f, 0.3f, false);
 		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -56f), "BOSS CHECKPOINT BROKEN", route.BannerAccent.Lightened(0.16f), 0.72f);
 		SetStatus($"{definition.Title} broken on wave {_spawnDirector.EndlessWaveNumber}. {definition.ClearStatus}");
-	}
-
-	private void ResetEndlessContactTradeoffs()
-	{
-		_endlessContactTradeoffLabel = DefaultEndlessContactTradeoffLabel;
-		_endlessContactCourageGainScale = 1f;
-		_endlessContactGoldScale = 1f;
-		_spawnDirector.ResetEndlessSegmentTradeoffs();
-	}
-
-	private void StartEndlessContactEvent()
-	{
-		_activeEndlessContact = null;
-	}
-
-	private Vector2 ResolveEndlessContactAnchor(string contactId)
-	{
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.64f), BaseCenterY),
-			EndlessContactCatalog.SalvageCacheId => new Vector2(PlayerSpawnX + 132f, BattlefieldBottom - 128f),
-			EndlessContactCatalog.SafehouseRescueId => new Vector2(PlayerBaseX + 164f, BattlefieldTop + 126f),
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.42f), BaseCenterY + 18f),
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.72f), BaseCenterY),
-			EndlessContactCatalog.ConvoyEscortId => new Vector2(PlayerBaseX + 96f, BaseCenterY - 24f),
-			_ => new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.5f), BaseCenterY)
-		};
-	}
-
-	private static Color ResolveEndlessContactColor(string contactId)
-	{
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => new Color("ffb703"),
-			EndlessContactCatalog.SalvageCacheId => new Color("84cc16"),
-			EndlessContactCatalog.SafehouseRescueId => new Color("90e0ef"),
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => new Color("d4a017"),
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => new Color("7b2d8b"),
-			EndlessContactCatalog.ConvoyEscortId => new Color("c4a882"),
-			_ => Colors.White
-		};
-	}
-
-	private float ResolveEndlessContactResponseCadence(string contactId)
-	{
-		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
-		var baseCadence = contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => 6.8f,
-			EndlessContactCatalog.SalvageCacheId => 7.4f,
-			EndlessContactCatalog.SafehouseRescueId => 7.9f,
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 7.5f,
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 6.5f,
-			EndlessContactCatalog.ConvoyEscortId => 8.0f,
-			_ => 7.2f
-		};
-
-		return Mathf.Max(3.6f, baseCadence - (wavePressure * 0.08f));
-	}
-
-	private int ResolveEndlessContactResponseLimit(string contactId)
-	{
-		var extra = Mathf.Clamp(_spawnDirector.EndlessWaveNumber / 6, 0, 2);
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => 2 + extra,
-			EndlessContactCatalog.SalvageCacheId => 2 + extra,
-			EndlessContactCatalog.SafehouseRescueId => 1 + extra,
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 2 + extra,
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 2 + extra,
-			EndlessContactCatalog.ConvoyEscortId => 1 + extra,
-			_ => 2
-		};
-	}
-
-	private void UpdateEndlessContactEvent(float delta)
-	{
-		if (!IsEndlessMode || _activeEndlessContact == null || _battleEnded)
-		{
-			return;
-		}
-
-		if (_activeEndlessContact.Completed || _activeEndlessContact.Failed)
-		{
-			return;
-		}
-
-		var anchor = _activeEndlessContact.Anchor;
-		var radius = _activeEndlessContact.Definition.Radius;
-		var playerInside = HasTeamUnitInRadius(Team.Player, anchor, radius);
-		var enemyInside = HasTeamUnitInRadius(Team.Enemy, anchor, radius);
-		_activeEndlessContact.PlayerInside = playerInside;
-		_activeEndlessContact.EnemyInside = enemyInside;
-
-		if (IsInstanceValid(_activeEndlessContactActor))
-		{
-			if (playerInside && !enemyInside)
-			{
-				_activeEndlessContactActor.Repair(ResolveEndlessContactPresenceRepairRate(_activeEndlessContact.Definition.Id) * delta);
-			}
-		}
-
-		switch (_activeEndlessContact.Definition.Type)
-		{
-			case "forward_presence":
-				if (playerInside && !enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 1.2f;
-				}
-				else if (playerInside)
-				{
-					_activeEndlessContact.Progress += delta * 0.4f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 0.3f;
-				}
-				break;
-			case "secure_cache":
-				if (playerInside && !enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 1.25f;
-				}
-				else if (enemyInside)
-				{
-					_activeEndlessContact.Progress -= delta * 0.9f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 0.18f;
-				}
-				break;
-			case "rescue_hold":
-				if (!enemyInside)
-				{
-					_activeEndlessContact.Progress += playerInside ? delta * 1.18f : delta * 0.85f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 1.05f;
-				}
-				break;
-			case "site_defense":
-				if (playerInside && !enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 1.15f;
-				}
-				else if (enemyInside)
-				{
-					_activeEndlessContact.Progress -= delta * 0.85f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 0.2f;
-				}
-				break;
-			case "channel_interrupt":
-				if (playerInside && !enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 1.3f;
-				}
-				else if (playerInside)
-				{
-					_activeEndlessContact.Progress += delta * 0.5f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 0.4f;
-				}
-				break;
-			case "escort_guard":
-				if (playerInside && !enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 1.1f;
-				}
-				else if (!enemyInside)
-				{
-					_activeEndlessContact.Progress += delta * 0.7f;
-				}
-				else
-				{
-					_activeEndlessContact.Progress -= delta * 0.95f;
-				}
-				break;
-		}
-
-		_activeEndlessContact.Progress = Mathf.Clamp(
-			_activeEndlessContact.Progress,
-			0f,
-			_activeEndlessContact.Definition.TargetSeconds);
-
-		if (IsInstanceValid(_activeEndlessContactActor))
-		{
-			_activeEndlessContactActor.UpdateState(
-				_activeEndlessContact.Progress / Mathf.Max(0.01f, _activeEndlessContact.Definition.TargetSeconds),
-				playerInside,
-				enemyInside,
-				_activeEndlessContact.Completed,
-				_activeEndlessContact.Failed);
-
-			if (_activeEndlessContactActor.Health <= 0.01f)
-			{
-				FailEndlessContactEvent("The battlefield contact was destroyed before the caravan secured it.");
-				return;
-			}
-		}
-
-		TryTriggerEndlessContactSupportMoment();
-
-		if (_activeEndlessContact.Progress + 0.001f >= _activeEndlessContact.Definition.TargetSeconds)
-		{
-			CompleteEndlessContactEvent();
-			return;
-		}
-
-		UpdateEndlessContactResponses(delta);
-	}
-
-	private void UpdateEndlessContactResponses(float delta)
-	{
-		if (_activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
-		{
-			return;
-		}
-
-		if (_activeEndlessContact.ResponseWavesTriggered >= _activeEndlessContact.ResponseWaveLimit)
-		{
-			return;
-		}
-
-		_activeEndlessContact.ResponseTimer -= delta;
-		if (_activeEndlessContact.ResponseTimer > 0f)
-		{
-			return;
-		}
-
-		if (TriggerEndlessContactResponse())
-		{
-			_activeEndlessContact.ResponseWavesTriggered++;
-			_activeEndlessContact.ResponseTimer = ResolveEndlessContactResponseCadence(_activeEndlessContact.Definition.Id) * 0.9f;
-			return;
-		}
-
-		_activeEndlessContact.ResponseTimer = 1.6f;
-	}
-
-	private void TryTriggerEndlessContactSupportMoment()
-	{
-		if (_activeEndlessContact == null || _activeEndlessContact.SupportMomentTriggered)
-		{
-			return;
-		}
-
-		if (_activeEndlessContact.Progress + 0.001f < (_activeEndlessContact.Definition.TargetSeconds * 0.5f))
-		{
-			return;
-		}
-
-		_activeEndlessContact.SupportMomentTriggered = true;
-		var contact = _activeEndlessContact;
-		var statusText = "";
-		switch (contact.Definition.Id)
-		{
-			case EndlessContactCatalog.RelaySignalId:
-				_courage = Mathf.Min(_maxCourage, _courage + 8f);
-				_deck.ReduceCooldowns(0.7f);
-				_spellDeck.ReduceCooldowns(0.7f);
-				statusText = "Relay uplink pulse refreshed courage and squad recovery.";
-				_endlessSupportEventLabel = "Relay uplink pulse boosted caravan deployment tempo.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "UPLINK BURST", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactGoldBonus += 8;
-				RepairBusByRatio(0.02f);
-				statusText = "Salvage crew hauled reserve parts aboard the caravan.";
-					_endlessSupportEventLabel = "Reserve stores loaded: light repairs and extra payout banked.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "SUPPLY WINCH", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			case EndlessContactCatalog.SafehouseRescueId:
-				RepairBusByRatio(0.03f);
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerShooterId)
-					? GameData.PlayerShooterId
-					: GameData.PlayerBrawlerId);
-				statusText = "Safehouse volunteers joined the firing line around the caravan.";
-				_endlessSupportEventLabel = "Militia volunteers deployed from the safehouse block.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "MILITIA JOIN", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			case EndlessContactCatalog.RelicRecoveryId:
-			case "relic_recovery_plague":
-				_endlessContactGoldBonus += 6;
-				statusText = "Excavation crew uncovered promising fragments near the dig site.";
-				_endlessSupportEventLabel = "Dig site survey completed: bonus salvage banked.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "DIG PROGRESS", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			case EndlessContactCatalog.RitualDisruptionId:
-			case "ritual_disruption_necro":
-				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				_deck.ReduceCooldowns(0.5f);
-				_spellDeck.ReduceCooldowns(0.5f);
-				statusText = "Ritual disruption pulse weakened enemy channeling and refreshed the line.";
-				_endlessSupportEventLabel = "Ritual channel partially disrupted: cooldowns trimmed.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "CHANNEL BREAK", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			case EndlessContactCatalog.ConvoyEscortId:
-				RepairBusByRatio(0.02f);
-				_endlessContactFoodBonus += 1;
-				statusText = "Supply wagon delivered emergency rations and spare parts mid-escort.";
-				_endlessSupportEventLabel = "Escort resupply: light repairs and food bonus loaded.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -56f), "RESUPPLY", contact.Color.Lightened(0.28f), 0.6f);
-				break;
-			default:
-				return;
-		}
-
-		SpawnEffect(contact.Anchor, contact.Color.Lightened(0.08f), 10f, contact.Definition.Radius * 0.58f, 0.22f, false);
-		SetStatus($"{contact.Definition.Title} triggered caravan assistance. {statusText}");
-	}
-
-	private bool TriggerEndlessContactResponse()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return false;
-		}
-
-		var contact = _activeEndlessContact;
-		var spawned = 0;
-		var label = "";
-		switch (contact.Definition.Id)
-		{
-			case EndlessContactCatalog.RelaySignalId:
-				label = "Intercept Pack";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 78f, 122f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 110f, 154f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 3 || contact.PlayerInside)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemySpitterId, 148f, 196f, 28f) ? 1 : 0;
-				}
-				break;
-			case EndlessContactCatalog.SalvageCacheId:
-				label = "Scavenge Swarm";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 70f, 112f, 34f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBloaterId, 118f, 162f, 26f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 6)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBruteId, 154f, 198f, 22f) ? 1 : 0;
-				}
-				break;
-			case EndlessContactCatalog.SafehouseRescueId:
-				label = "Blockade Push";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 66f, 104f, 30f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(
-					_spawnDirector.EndlessWaveNumber >= 6 ? GameData.EnemyCrusherId : GameData.EnemyBruteId,
-					120f,
-					168f,
-					20f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 9)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemySpitterId, 154f, 196f, 18f) ? 1 : 0;
-				}
-				break;
-			case EndlessContactCatalog.RelicRecoveryId:
-			case "relic_recovery_plague":
-				label = "Plunder Party";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 72f, 116f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 108f, 152f, 30f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 4)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBruteId, 144f, 188f, 24f) ? 1 : 0;
-				}
-				break;
-			case EndlessContactCatalog.RitualDisruptionId:
-			case "ritual_disruption_necro":
-				label = "Ritual Guard";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemySpitterId, 80f, 124f, 32f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBruteId, 116f, 160f, 26f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 5)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyCrusherId, 150f, 194f, 20f) ? 1 : 0;
-				}
-				break;
-			case EndlessContactCatalog.ConvoyEscortId:
-				label = "Ambush Wave";
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyRunnerId, 74f, 118f, 34f) ? 1 : 0;
-				spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyWalkerId, 110f, 156f, 28f) ? 1 : 0;
-				if (_spawnDirector.EndlessWaveNumber >= 7)
-				{
-					spawned += TrySpawnEndlessContactResponseEnemy(GameData.EnemyBloaterId, 148f, 192f, 22f) ? 1 : 0;
-				}
-				break;
-		}
-
-		if (spawned <= 0)
-		{
-			return false;
-		}
-
-		SpawnEffect(contact.Anchor, contact.Color.Darkened(0.08f), 10f, contact.Definition.Radius * 0.62f, 0.24f, false);
-		SpawnFloatText(contact.Anchor + new Vector2(0f, -72f), label.ToUpperInvariant(), contact.Color.Lightened(0.1f), 0.58f);
-		_endlessBattlefieldEventLabel = $"Contact response active: {label}.";
-		SetStatus($"{contact.Definition.Title} triggered a hostile response: {label}.");
-		return true;
-	}
-
-	private bool TrySpawnEndlessContactResponseEnemy(string unitId, float minOffsetX, float maxOffsetX, float verticalRange = 38f)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return false;
-		}
-
-		if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies() + 2)
-		{
-			return false;
-		}
-
-		if (!_spawnDirector.TryBuildEnemyStats(unitId, out var stats))
-		{
-			return false;
-		}
-
-		var anchor = _activeEndlessContact.Anchor;
-		var position = new Vector2(
-			Mathf.Clamp(anchor.X + _rng.RandfRange(minOffsetX, maxOffsetX), BattlefieldLeft + 48f, BattlefieldRight - 48f),
-			Mathf.Clamp(anchor.Y + _rng.RandfRange(-verticalRange, verticalRange), BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-		SpawnEnemyUnit(stats, position);
-		return true;
-	}
-
-	private void ResolveEndlessContactCheckpoint()
-	{
-		if (!IsEndlessMode || _activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
-		{
-			return;
-		}
-
-		FailEndlessContactEvent();
-	}
-
-	private void CompleteEndlessContactEvent()
-	{
-		if (_activeEndlessContact == null || _activeEndlessContact.RewardGranted)
-		{
-			return;
-		}
-
-		_activeEndlessContact.Completed = true;
-		_activeEndlessContact.RewardGranted = true;
-		ApplyEndlessContactReward(_activeEndlessContact);
-		SetStatus($"{_activeEndlessContact.Definition.Title} secured. {ResolveEndlessContactCompleteStatus(_activeEndlessContact.Definition.Id)} {_endlessContactTradeoffLabel}");
-	}
-
-	private void FailEndlessContactEvent(string statusText = null)
-	{
-		if (_activeEndlessContact == null || _activeEndlessContact.Completed || _activeEndlessContact.Failed)
-		{
-			return;
-		}
-
-		_activeEndlessContact.Failed = true;
-		ApplyEndlessContactFailurePenalty(_activeEndlessContact);
-		if (IsInstanceValid(_activeEndlessContactActor))
-		{
-			_activeEndlessContactActor.UpdateState(
-				_activeEndlessContact.Progress / Mathf.Max(0.01f, _activeEndlessContact.Definition.TargetSeconds),
-				_activeEndlessContact.PlayerInside,
-				_activeEndlessContact.EnemyInside,
-				false,
-				true);
-		}
-
-		var penaltyText = ResolveEndlessContactFailurePenaltyText(_activeEndlessContact.Definition.Id);
-		var baseStatus = statusText ?? $"{_activeEndlessContact.Definition.Title} lost before the caravan cleared the segment.";
-		SetStatus($"{baseStatus} {penaltyText}");
-	}
-
-	private void ApplyEndlessContactReward(EndlessContactState contact)
-	{
-		SpawnEffect(contact.Anchor, contact.Color, 12f, contact.Definition.Radius * 0.72f, 0.28f, false);
-		if (IsInstanceValid(_activeEndlessContactActor))
-		{
-			_activeEndlessContactActor.Repair(_activeEndlessContactActor.MaxHealth);
-			_activeEndlessContactActor.UpdateState(1f, true, false, true, false);
-		}
-
-		switch (contact.Definition.Id)
-		{
-			case EndlessContactCatalog.RelaySignalId:
-				_courage = Mathf.Min(_maxCourage, _courage + 14f);
-				_deck.ReduceCooldowns(1.2f);
-				_spellDeck.ReduceCooldowns(1.2f);
-				ApplyEndlessContactSuccessTradeoff(contact);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELAY ONLINE", contact.Color.Lightened(0.2f), 0.66f);
-				break;
-			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactGoldBonus += 22;
-				_endlessContactFoodBonus += 1;
-				RepairBusByRatio(0.03f);
-				ApplyEndlessContactSuccessTradeoff(contact);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "CACHE SECURED", contact.Color.Lightened(0.2f), 0.66f);
-				break;
-			case EndlessContactCatalog.SafehouseRescueId:
-				RepairBusByRatio(0.06f);
-				_deck.ReduceCooldowns(0.8f);
-				_spellDeck.ReduceCooldowns(0.8f);
-				SpawnSupportUnit(GameState.Instance.IsUnitUnlocked(GameData.PlayerDefenderId)
-					? GameData.PlayerDefenderId
-					: GameData.PlayerBrawlerId);
-				ApplyEndlessContactSuccessTradeoff(contact);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SURVIVORS OUT", contact.Color.Lightened(0.2f), 0.66f);
-				break;
-			case EndlessContactCatalog.RelicRecoveryId:
-			case "relic_recovery_plague":
-			{
-				var candidates = GameData.GetAllEquipment()
-					.Where(e => string.Equals(e.Rarity, "common", StringComparison.OrdinalIgnoreCase))
-					.ToList();
-				if (candidates.Count > 0)
-				{
-					var relic = candidates[_rng.RandiRange(0, candidates.Count - 1)];
-					var isNew = GameState.Instance.TryGrantEquipment(relic.Id);
-					var label = isNew ? $"RELIC SECURED: {relic.DisplayName}" : "RELIC SECURED (owned)";
-					var color = isNew ? new Color("ffd700") : new Color("adb5bd");
-					SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), label, color, 0.66f);
-					if (isNew)
-					{
-						_relicDropName = relic.DisplayName;
-						AudioDirector.Instance?.PlayRelicPickup();
-					}
-				}
-				else
-				{
-					SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELIC SECURED", contact.Color.Lightened(0.2f), 0.66f);
-				}
-				ApplyEndlessContactSuccessTradeoff(contact);
-				break;
-			}
-			case EndlessContactCatalog.RitualDisruptionId:
-			case "ritual_disruption_necro":
-				_endlessContactTempDamageScale = 1.15f;
-				_endlessContactTempDamageExpiry = _elapsed + 30f;
-				ApplyEndlessContactSuccessTradeoff(contact);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RITUAL BROKEN", contact.Color.Lightened(0.2f), 0.66f);
-				break;
-			case EndlessContactCatalog.ConvoyEscortId:
-				RepairBusByRatio(0.20f);
-				_endlessContactFoodBonus += 2;
-				ApplyEndlessContactSuccessTradeoff(contact);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "CONVOY DELIVERED", contact.Color.Lightened(0.2f), 0.66f);
-				break;
-		}
-	}
-
-	private void ApplyEndlessContactSuccessTradeoff(EndlessContactState contact)
-	{
-		switch (contact.Definition.Id)
-		{
-			case EndlessContactCatalog.RelaySignalId:
-				_spawnDirector.AdvanceNextEndlessWave(_elapsed, 1.4f);
-				_endlessContactTradeoffLabel = "Relay sprint active: the next surge arrives 1.4s sooner.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "SURGE PULLED FORWARD", new Color("ffd166"), 0.68f);
-				break;
-			case EndlessContactCatalog.SalvageCacheId:
-				_spawnDirector.SetEndlessTradeoffEnemyCapModifier(1);
-				_endlessContactTradeoffLabel = "Cargo drag active: enemy cap is +1 until the next checkpoint.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "LANE STRETCHED", new Color("caffbf"), 0.68f);
-				break;
-			case EndlessContactCatalog.SafehouseRescueId:
-				_endlessContactCourageGainScale = 0.85f;
-				_endlessContactTradeoffLabel = "Evac load active: courage gain is reduced by 15% until checkpoint.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "EVAC LOAD", new Color("bde0fe"), 0.68f);
-				break;
-			case EndlessContactCatalog.RelicRecoveryId:
-			case "relic_recovery_plague":
-				_endlessContactGoldScale = 1.05f;
-				_endlessContactTradeoffLabel = "Relic momentum active: +5% gold bonus for the rest of this segment.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "RELIC MOMENTUM", new Color("f0d080"), 0.68f);
-				break;
-			case EndlessContactCatalog.RitualDisruptionId:
-			case "ritual_disruption_necro":
-				_spawnDirector.SetEndlessTradeoffSpawnIntervalScale(1.1f);
-				_endlessContactTradeoffLabel = "Disruption echo active: enemy spawn rate reduced by 10% until checkpoint.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "SPAWN SUPPRESSED", new Color("c8a0d8"), 0.68f);
-				break;
-			case EndlessContactCatalog.ConvoyEscortId:
-				_endlessContactCourageGainScale = 1.08f;
-				_endlessContactTradeoffLabel = "Escort bonus active: courage gain +8% for the rest of this segment.";
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -46f), "ESCORT MORALE", new Color("d4c0a0"), 0.68f);
-				break;
-		}
-	}
-
-	private static string ResolveEndlessContactCompleteStatus(string contactId)
-	{
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => "Forward scouts refreshed the route intel and opened the line.",
-			EndlessContactCatalog.SalvageCacheId => "The crew hauled the supply cache aboard before the lane collapsed.",
-			EndlessContactCatalog.SafehouseRescueId => "Safehouse survivors joined the caravan before the block fell.",
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => "The dig site was secured and the relic recovered before enemies could intervene.",
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => "The enemy ritual was interrupted and the caravan presses forward with renewed fury.",
-			EndlessContactCatalog.ConvoyEscortId => "The supply wagon arrived safely and the caravan is resupplied.",
-			_ => "The caravan secured the battlefield contact."
-		};
-	}
-
-	private void ApplyEndlessContactFailurePenalty(EndlessContactState contact)
-	{
-		switch (contact.Definition.Id)
-		{
-			case EndlessContactCatalog.RelaySignalId:
-				_courage = Mathf.Max(0f, _courage - 14f);
-				_deck.IncreaseCooldowns(1.8f);
-				_spellDeck.IncreaseCooldowns(1.8f);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "SIGNAL LOST", new Color("ffb4a2"), 0.62f);
-				break;
-			case EndlessContactCatalog.SalvageCacheId:
-				_endlessContactGoldBonus -= 16;
-				_endlessContactFoodBonus -= 1;
-				DamageBusByRatio(0.04f, new Color("f28482"), "CACHE LOST");
-				break;
-			case EndlessContactCatalog.SafehouseRescueId:
-				DamageBusByRatio(0.08f, new Color("ef476f"), "BLOCK LOST");
-				_deck.IncreaseCooldowns(1f);
-				_spellDeck.IncreaseCooldowns(1f);
-				break;
-			case EndlessContactCatalog.RelicRecoveryId:
-			case "relic_recovery_plague":
-			{
-				var goldPenalty = Mathf.RoundToInt(_endlessContactGoldBonus * 0.15f);
-				_endlessContactGoldBonus -= Mathf.Max(1, goldPenalty);
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RELIC LOST", new Color("ffb4a2"), 0.62f);
-				break;
-			}
-			case EndlessContactCatalog.RitualDisruptionId:
-			case "ritual_disruption_necro":
-				foreach (var unit in _units)
-				{
-					if (unit.IsDead || unit.Team != Team.Enemy)
-					{
-						continue;
-					}
-
-					unit.Heal(unit.MaxHealth * 0.10f);
-				}
-				SpawnFloatText(contact.Anchor + new Vector2(0f, -24f), "RITUAL COMPLETE", new Color("d8a0e0"), 0.62f);
-				break;
-			case EndlessContactCatalog.ConvoyEscortId:
-				DamageBusByRatio(0.10f, new Color("c89060"), "CONVOY LOST");
-				break;
-		}
-	}
-
-	private static string ResolveEndlessContactFailurePenaltyText(string contactId)
-	{
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => "The caravan loses courage and squad cards recover slower.",
-			EndlessContactCatalog.SalvageCacheId => "Projected spoils drop and the war wagon takes collision damage.",
-			EndlessContactCatalog.SafehouseRescueId => "The caravan takes a hard hull hit and squad recovery slows.",
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => "Relic lost \u2014 enemies plundered the dig site.",
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => "Ritual completed \u2014 enemy forces grow stronger.",
-			EndlessContactCatalog.ConvoyEscortId => "Supply wagon destroyed \u2014 the caravan takes the loss.",
-			_ => "The caravan loses ground on the route."
-		};
-	}
-
-	private float ResolveEndlessContactMaxHealth(string contactId)
-	{
-		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => 72f + (wavePressure * 2.8f),
-			EndlessContactCatalog.SalvageCacheId => 88f + (wavePressure * 3.1f),
-			EndlessContactCatalog.SafehouseRescueId => 104f + (wavePressure * 3.5f),
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 82f + (wavePressure * 2.9f),
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 76f + (wavePressure * 3.0f),
-			EndlessContactCatalog.ConvoyEscortId => 96f + (wavePressure * 3.3f),
-			_ => 80f
-		};
-	}
-
-	private float ResolveEndlessContactPresenceRepairRate(string contactId)
-	{
-		return contactId switch
-		{
-			EndlessContactCatalog.RelaySignalId => 1.6f,
-			EndlessContactCatalog.SalvageCacheId => 1.3f,
-			EndlessContactCatalog.SafehouseRescueId => 1.8f,
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 1.4f,
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 1.5f,
-			EndlessContactCatalog.ConvoyEscortId => 1.7f,
-			_ => 1.2f
-		};
-	}
-
-	private float ResolveEndlessContactAttackRadius()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return 22f;
-		}
-
-		return _activeEndlessContact.Definition.Id switch
-		{
-			EndlessContactCatalog.RelaySignalId => 26f,
-			EndlessContactCatalog.SalvageCacheId => 32f,
-			EndlessContactCatalog.SafehouseRescueId => 38f,
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 30f,
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 28f,
-			EndlessContactCatalog.ConvoyEscortId => 34f,
-			_ => 28f
-		};
-	}
-
-	private float ResolveEndlessContactSupportRadius()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return 34f;
-		}
-
-		return _activeEndlessContact.Definition.Id switch
-		{
-			EndlessContactCatalog.RelaySignalId => 34f,
-			EndlessContactCatalog.SalvageCacheId => 40f,
-			EndlessContactCatalog.SafehouseRescueId => 44f,
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => 38f,
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => 36f,
-			EndlessContactCatalog.ConvoyEscortId => 42f,
-			_ => 36f
-		};
-	}
-
-	private float ResolvePlayerContactSupportRepair(Unit unit)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return 0f;
-		}
-
-		return _activeEndlessContact.Definition.Id switch
-		{
-			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
-			{
-				"gunner" => 5.2f,
-				"sniper" => 5.4f,
-				"shield" => 4.2f,
-				_ => 3.6f
-			},
-			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
-			{
-				"skirmisher" => 5f,
-				"fighter" => 4.8f,
-				"shield" => 4.3f,
-				_ => 3.5f
-			},
-			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
-			{
-				"shield" => 6.2f,
-				"fighter" => 5.3f,
-				"skirmisher" => 4.6f,
-				_ => 3.8f
-			},
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => unit.VisualClass switch
-			{
-				"fighter" => 5.0f,
-				"skirmisher" => 4.8f,
-				"shield" => 4.4f,
-				_ => 3.6f
-			},
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => unit.VisualClass switch
-			{
-				"gunner" => 5.4f,
-				"sniper" => 5.2f,
-				"fighter" => 4.6f,
-				_ => 3.5f
-			},
-			EndlessContactCatalog.ConvoyEscortId => unit.VisualClass switch
-			{
-				"shield" => 5.8f,
-				"fighter" => 5.0f,
-				"skirmisher" => 4.5f,
-				_ => 3.7f
-			},
-			_ => 3.4f
-		};
-	}
-
-	private float ResolvePlayerContactSupportProgress(Unit unit)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return 0f;
-		}
-
-		return _activeEndlessContact.Definition.Id switch
-		{
-			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
-			{
-				"gunner" => 0.95f,
-				"sniper" => 1.05f,
-				"shield" => 0.5f,
-				_ => 0.62f
-			},
-			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
-			{
-				"skirmisher" => 1.05f,
-				"fighter" => 0.92f,
-				"shield" => 0.68f,
-				_ => 0.56f
-			},
-			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
-			{
-				"shield" => 1.05f,
-				"fighter" => 0.94f,
-				"skirmisher" => 0.82f,
-				_ => 0.58f
-			},
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => unit.VisualClass switch
-			{
-				"fighter" => 0.98f,
-				"skirmisher" => 0.92f,
-				"shield" => 0.62f,
-				_ => 0.55f
-			},
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => unit.VisualClass switch
-			{
-				"gunner" => 1.0f,
-				"sniper" => 1.08f,
-				"fighter" => 0.78f,
-				_ => 0.58f
-			},
-			EndlessContactCatalog.ConvoyEscortId => unit.VisualClass switch
-			{
-				"shield" => 1.02f,
-				"fighter" => 0.9f,
-				"skirmisher" => 0.76f,
-				_ => 0.54f
-			},
-			_ => 0.5f
-		};
-	}
-
-	private string ResolvePlayerContactSupportLabel(Unit unit)
-	{
-		if (_activeEndlessContact == null)
-		{
-			return "SUPPORT";
-		}
-
-		return _activeEndlessContact.Definition.Id switch
-		{
-			EndlessContactCatalog.RelaySignalId => unit.VisualClass switch
-			{
-				"gunner" => "LINK",
-				"sniper" => "UPLINK",
-				_ => "BOOST"
-			},
-			EndlessContactCatalog.SalvageCacheId => unit.VisualClass switch
-			{
-				"skirmisher" => "LOAD",
-				"fighter" => "HAUL",
-				_ => "COVER"
-			},
-			EndlessContactCatalog.SafehouseRescueId => unit.VisualClass switch
-			{
-				"shield" => "ESCORT",
-				"fighter" => "GUARD",
-				_ => "STABILIZE"
-			},
-			EndlessContactCatalog.RelicRecoveryId or "relic_recovery_plague" => unit.VisualClass switch
-			{
-				"fighter" => "DIG",
-				"skirmisher" => "EXCAVATE",
-				_ => "SECURE"
-			},
-			EndlessContactCatalog.RitualDisruptionId or "ritual_disruption_necro" => unit.VisualClass switch
-			{
-				"gunner" => "DISRUPT",
-				"sniper" => "SUPPRESS",
-				_ => "INTERRUPT"
-			},
-			EndlessContactCatalog.ConvoyEscortId => unit.VisualClass switch
-			{
-				"shield" => "ESCORT",
-				"fighter" => "FLANK",
-				_ => "GUARD"
-			},
-			_ => "SUPPORT"
-		};
-	}
-
-	private float ResolveEnemyContactAttackDamage(Unit unit)
-	{
-		var wavePressure = Mathf.Max(0, _spawnDirector.EndlessWaveNumber);
-		var baseDamage = unit.VisualClass switch
-		{
-			"spitter" => 13f,
-			"runner" => 8f,
-			"walker" => 11f,
-			"splitter" => 12f,
-			"brute" => 15f,
-			"crusher" => 18f,
-			"boss" => 24f,
-			_ => 10f
-		};
-		var attackScale = unit.AttackDamage <= 0.05f
-			? 1f
-			: unit.CurrentAttackDamage / unit.AttackDamage;
-		return (baseDamage * attackScale) + (wavePressure * 0.38f);
-	}
-
-	private string BuildEndlessContactText()
-	{
-		if (!IsEndlessMode || _activeEndlessContact == null)
-		{
-			return "Contact event: standby.";
-		}
-
-		var prefix = _activeEndlessContact.Completed
-			? "[OK]"
-			: _activeEndlessContact.Failed
-				? "[X]"
-				: "[..]";
-		return $"{prefix} Contact: {_activeEndlessContact.Definition.Title}  |  {BuildEndlessContactProgressText()}  |  {_activeEndlessContact.Definition.RewardSummary}  |  {_activeEndlessContact.Definition.TradeoffSummary}  |  {_activeEndlessContact.Definition.PenaltySummary}";
-	}
-
-	private string BuildEndlessContactCheckpointSummary()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return "Contact report: standby.";
-		}
-
-		var prefix = _activeEndlessContact.Completed
-			? "[OK]"
-			: _activeEndlessContact.Failed
-				? "[X]"
-				: "[..]";
-		return $"{prefix} {_activeEndlessContact.Definition.Title}  |  {BuildEndlessContactProgressText()}";
-	}
-
-	private string BuildEndlessContactProgressText()
-	{
-		if (_activeEndlessContact == null)
-		{
-			return "No contact";
-		}
-
-		var progress = _activeEndlessContact.Progress;
-		var target = _activeEndlessContact.Definition.TargetSeconds;
-		return _activeEndlessContact.Definition.Type switch
-		{
-			"forward_presence" => $"Presence {progress:0.0}/{target:0.0}s inside the relay zone",
-			"secure_cache" => $"Secure window {progress:0.0}/{target:0.0}s at the cache radius",
-			"rescue_hold" => $"Hold timer {progress:0.0}/{target:0.0}s around the rescue block",
-			_ => _activeEndlessContact.Definition.Summary
-		};
-	}
-
-	private void UpdateEndlessFieldEvent(float delta)
-	{
-		if (!IsEndlessMode || _activeEndlessFieldEvent == null || _battleEnded)
-		{
-			return;
-		}
-
-		_activeEndlessFieldEvent.Remaining = Mathf.Max(0f, _activeEndlessFieldEvent.Remaining - delta);
-		_activeEndlessFieldEvent.PulseTimer -= delta;
-
-		while (_activeEndlessFieldEvent != null && _activeEndlessFieldEvent.PulseTimer <= 0f && _activeEndlessFieldEvent.Remaining > 0f)
-		{
-			TriggerEndlessFieldEventPulse(_activeEndlessFieldEvent);
-			_activeEndlessFieldEvent.PulseTimer += _activeEndlessFieldEvent.Interval;
-		}
-
-		if (_activeEndlessFieldEvent != null && _activeEndlessFieldEvent.Remaining <= 0f)
-		{
-			_endlessBattlefieldEventLabel = "Segment event spent. Await the next route checkpoint.";
-			_activeEndlessFieldEvent = null;
-		}
-	}
-
-	private void TriggerEndlessFieldEventPulse(EndlessFieldEvent fieldEvent)
-	{
-		switch (fieldEvent.Type)
-		{
-			case "mainline_push":
-				TriggerMainlinePushPulse(fieldEvent);
-				break;
-			case "scavenge_detour":
-				TriggerScavengeDetourPulse(fieldEvent);
-				break;
-			case "fortified_block":
-				TriggerFortifiedBlockPulse(fieldEvent);
-				break;
-		}
-	}
-
-	private void TriggerMainlinePushPulse(EndlessFieldEvent fieldEvent)
-	{
-		for (var i = 0; i < fieldEvent.Anchors.Length; i++)
-		{
-			var anchor = fieldEvent.Anchors[i];
-			SpawnEffect(anchor, fieldEvent.Color, 10f, fieldEvent.Radius, 0.22f, false);
-
-			foreach (var unit in _units)
-			{
-				if (unit.IsDead || unit.Team != Team.Enemy)
-				{
-					continue;
-				}
-
-				if (unit.Position.DistanceTo(anchor) > fieldEvent.Radius)
-				{
-					continue;
-				}
-
-				var appliedDamage = unit.TakeDamage(18f + (_spawnDirector.EndlessWaveNumber * 0.8f));
-				SpawnDamageFeedback(unit.Position, appliedDamage, fieldEvent.Color);
-			}
-		}
-
-		_endlessBattlefieldEventLabel = "Rapid flares detonated across the forward lanes.";
-	}
-
-	private void TriggerScavengeDetourPulse(EndlessFieldEvent fieldEvent)
-	{
-		for (var i = 0; i < fieldEvent.Anchors.Length; i++)
-		{
-			var anchor = fieldEvent.Anchors[i];
-			SpawnEffect(anchor, fieldEvent.Color, 12f, 26f, 0.24f);
-			SpawnFloatText(anchor + new Vector2(0f, -18f), "CACHE", fieldEvent.Color.Lightened(0.3f), 0.5f);
-		}
-
-		_courage = Mathf.Min(_maxCourage, _courage + 8f);
-		_deck.ReduceCooldowns(1.2f);
-		_spellDeck.ReduceCooldowns(1.2f);
-		RepairBusByRatio(0.03f);
-		_endlessBattlefieldEventLabel = "Scavenge caches yielded courage and quick repairs.";
-	}
-
-	private void TriggerFortifiedBlockPulse(EndlessFieldEvent fieldEvent)
-	{
-		var anchor = fieldEvent.Anchors[0];
-		SpawnEffect(anchor, fieldEvent.Color, 10f, 34f, 0.22f, false);
-
-		var target = FindClosestEnemyToPoint(anchor, fieldEvent.Radius);
-		if (target != null)
-		{
-			var appliedDamage = target.TakeDamage(26f + (_spawnDirector.EndlessWaveNumber * 0.7f));
-			SpawnDamageFeedback(target.Position, appliedDamage, fieldEvent.Color);
-			SpawnFloatText(target.Position + new Vector2(0f, -20f), "TURRET", fieldEvent.Color.Lightened(0.25f), 0.46f);
-		}
-		else
-		{
-			RepairBusByRatio(0.02f);
-		}
-
-		_endlessBattlefieldEventLabel = target != null
-			? "Safehouse turret suppressed the closest target."
-			: "Safehouse crew redirected the pulse into caravan repairs.";
 	}
 
 	private UnitStats BuildPlayerUnitStatsForBattle(UnitDefinition definition)
@@ -14869,16 +8075,6 @@ public partial class BattleController : Node2D
 			_endlessUnitDamageScale,
 			0f,
 			0);
-	}
-
-	private void SpawnSupportUnit(string unitId)
-	{
-		SpawnSupportUnit(unitId, null);
-	}
-
-	private void SpawnSupportUnit(string unitId, float? preferredY)
-	{
-		// Automatic reinforcements are retired; allies are deployed from the selected warband card.
 	}
 
 	private void RepairBusByRatio(float ratio)
@@ -15089,7 +8285,6 @@ public partial class BattleController : Node2D
 				$"{AsyncChallengeCatalog.BuildScoreSummary(scoreBreakdown)}\n" +
 				$"{AsyncChallengeCatalog.BuildTargetSummary(_challengeDefinition, scoreBreakdown.FinalScore)}\n" +
 				$"{StageObjectives.BuildOutcomeSummary(evaluation)}\n" +
-				$"{BuildStageMissionDebriefText()}\n" +
 				$"{BuildChallengeGhostResultSummary(scoreBreakdown.FinalScore, starsEarned)}\n" +
 				$"Personal best: {GameState.Instance.GetAsyncChallengeBestScore(_challengeDefinition.Code)}" +
 				(string.IsNullOrWhiteSpace(challengeStatsBreakdown) ? "" : $"\n{challengeStatsBreakdown}");
@@ -15120,9 +8315,9 @@ public partial class BattleController : Node2D
 		if (playerWon)
 		{
 			AudioDirector.Instance?.PlayVictory();
-			ResolveCampaignAdaptiveWaveChallengeOnVictory();
 			var stageResult = BuildStageBattleResult();
 			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, true);
+			ResolveCampaignAdaptiveWaveChallengeOnVictory();
 			var rewardGold = IsCampaignMode ? _stageData.RewardGold : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardGold ?? 0 : 0;
 			var rewardFood = IsCampaignMode ? _stageData.RewardFood : IsTowerMode ? ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.RewardFood ?? 0 : 0;
 			ApplyCampaignCommendationVictoryReward(ref rewardGold, ref rewardFood);
@@ -15179,26 +8374,9 @@ public partial class BattleController : Node2D
 			var bestStars = GameState.Instance.GetStageStars(_stage);
 			if (_campaignAdaptiveWaveRewardReady && !_campaignAdaptiveWaveRewardSecured)
 			{
-				_campaignAdaptiveWaveRewardLost = true;
 			}
 			if (IsCampaignMode) GameState.Instance.ApplyDefeat(_stage);
 			var momentumLine = IsCampaignMode ? $"\n{GameState.Instance.BuildCampaignMomentumStatusText()}" : "";
-			var convoyCommandLine = IsCampaignMode ? $"\n{BuildCampaignConvoyCommandDebriefText()}" : "";
-			var fieldOrderLine = IsCampaignMode ? $"\n{BuildCampaignFieldOrderDebriefText()}" : "";
-			var fieldOrderResponseLine = IsCampaignMode ? $"\n{BuildCampaignFieldOrderResponseDebriefText()}" : "";
-			var doctrineLine = IsCampaignMode ? $"\n{BuildCampaignRouteDoctrineDebriefText()}" : "";
-			var missionAftermathLine = IsCampaignMode ? $"\n{BuildCampaignMissionAftermathDebriefText()}" : "";
-			var counterSurgeLine = IsCampaignMode ? $"\n{BuildCampaignCounterSurgeDebriefText()}" : "";
-			var bonusObjectivePressureLine = IsCampaignMode ? $"\n{BuildCampaignBonusObjectivePressureDebriefText()}" : "";
-			var pressureEchoLine = IsCampaignMode ? $"\n{BuildCampaignPressureEchoDebriefText()}" : "";
-			var bossPressureLine = IsCampaignMode ? $"\n{BuildCampaignBossPressureDebriefText()}" : "";
-			var adaptiveWaveLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveDebriefText()}" : "";
-			var adaptiveWaveChoiceLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveChoiceDebriefText()}" : "";
-			var adaptiveWaveChallengeLine = IsCampaignMode ? $"\n{BuildCampaignAdaptiveWaveChallengeDebriefText()}" : "";
-			var lateConditionLine = IsCampaignMode ? $"\n{BuildCampaignLateConditionDebriefText()}" : "";
-			var commendationLine = IsCampaignMode ? $"\n{BuildCampaignCommendationDebriefText()}" : "";
-			var reserveLine = IsCampaignMode ? $"\n{BuildCampaignReserveDebriefText()}" : "";
-			var routeSupportLine = IsCampaignMode ? $"\n{BuildCampaignRouteSupportDebriefText()}" : "";
 			var bossPhaseLine = IsCampaignMode ? $"\n{BuildCampaignBossPhaseDebriefText()}" : "";
 			var statsBreakdownDefeat = BuildBattleStatsBreakdown();
 			_endLabel.Text =
@@ -15206,24 +8384,7 @@ public partial class BattleController : Node2D
 				$"{BuildStageBattleStatsText(stageResult)}\n" +
 				$"Clear reward on success: +{_stageData.RewardGold} gold, +{_stageData.RewardFood} food   |   Best: {bestStars}/3\n" +
 				$"{StageObjectives.BuildOutcomeSummary(evaluation)}\n" +
-				$"{BuildStageMissionDebriefText()}" +
 				momentumLine +
-				convoyCommandLine +
-				fieldOrderLine +
-				fieldOrderResponseLine +
-				doctrineLine +
-				missionAftermathLine +
-				counterSurgeLine +
-				bonusObjectivePressureLine +
-				pressureEchoLine +
-				bossPressureLine +
-				adaptiveWaveLine +
-				adaptiveWaveChoiceLine +
-				adaptiveWaveChallengeLine +
-				lateConditionLine +
-				commendationLine +
-				reserveLine +
-				routeSupportLine +
 				bossPhaseLine +
 				(string.IsNullOrWhiteSpace(statsBreakdownDefeat) ? "" : $"\n{statsBreakdownDefeat}");
 			SetStatus("The war wagon was overrun. Regroup.");
@@ -15409,312 +8570,6 @@ public partial class BattleController : Node2D
 		};
 	}
 
-	private string BuildCampaignReserveDebriefText()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		return _campaignReserveTriggered
-			? "Emergency reserve: deployed under pressure."
-			: "Emergency reserve: held in reserve.";
-	}
-
-	private string BuildCampaignRouteDoctrineDebriefText()
-	{
-		if (!IsCampaignMode || _campaignDoctrineThreshold <= 0)
-		{
-			return "";
-		}
-
-		var title = GameState.Instance.GetCampaignRouteDoctrineTitle(_activeRouteId);
-		return _campaignDoctrineTriggerCount > 0
-			? $"District doctrine: {title} triggered x{_campaignDoctrineTriggerCount}."
-			: $"District doctrine: {title} never cycled.";
-	}
-
-	private string BuildCampaignConvoyCommandDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignConvoyCommandLabel))
-		{
-			return "";
-		}
-
-		return _campaignConvoyCommandTriggered
-			? $"Convoy command: {_campaignConvoyCommandLabel} committed."
-			: _campaignConvoyCommandReady
-				? $"Convoy command: {_campaignConvoyCommandLabel} stayed ready but unused."
-				: $"Convoy command: {_campaignConvoyCommandLabel} never finished charging.";
-	}
-
-	private string BuildCampaignFieldOrderDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignFieldOrderAssaultLabel) || string.IsNullOrWhiteSpace(_campaignFieldOrderBulwarkLabel))
-		{
-			return "";
-		}
-
-		if (_campaignFieldOrderCommitted)
-		{
-			var committedLabel = _campaignFieldOrderUsedAssault ? _campaignFieldOrderAssaultLabel : _campaignFieldOrderBulwarkLabel;
-			var outcomeText = _campaignFieldOrderMissionResolved
-				? _campaignFieldOrderMissionSucceeded
-					? "after the battlefield event held"
-					: "after the battlefield event collapsed"
-				: "after the event window";
-			return $"Field order: {committedLabel} committed {outcomeText}.";
-		}
-
-		return _campaignFieldOrderReady
-			? $"Field order: {_campaignFieldOrderAssaultLabel} / {_campaignFieldOrderBulwarkLabel} unlocked but unused."
-			: "Field order: never unlocked.";
-	}
-
-	private string BuildCampaignFieldOrderResponseDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignFieldOrderResponseLabel))
-		{
-			return "";
-		}
-
-		return _campaignFieldOrderResponseTriggered
-			? $"Field order follow-up: {_campaignFieldOrderResponseLabel} triggered."
-			: _campaignFieldOrderResponseQueued
-				? $"Field order follow-up: {_campaignFieldOrderResponseLabel} was arming when the route ended."
-				: $"Field order follow-up: {_campaignFieldOrderResponseLabel} never landed.";
-	}
-
-	private string BuildCampaignMissionAftermathDebriefText()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		if (_campaignMissionAftermathTriggered)
-		{
-			return _campaignMissionAftermathFriendly
-				? $"Objective branch: {_campaignMissionAftermathLabel} triggered after the battlefield event held."
-				: $"Objective branch: {_campaignMissionAftermathLabel} triggered after the battlefield event collapsed.";
-		}
-
-		if (_campaignMissionAftermathQueued)
-		{
-			return _campaignMissionAftermathFriendly
-				? $"Objective branch: {_campaignMissionAftermathLabel} was arming after the battlefield event held."
-				: $"Objective branch: {_campaignMissionAftermathLabel} was arming after the battlefield event collapsed.";
-		}
-
-		return _campaignMissionAftermathReady
-			? "Objective branch: no battlefield event outcome resolved before the route ended."
-			: $"Objective branch: {_campaignMissionAftermathLabel} never landed.";
-	}
-
-	private string BuildCampaignCounterSurgeDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel))
-		{
-			return "";
-		}
-
-		return _campaignCounterSurgeTriggered
-			? $"Counter-surge: {_campaignCounterSurgeLabel} triggered."
-			: _campaignCounterSurgeQueued
-				? $"Counter-surge: {_campaignCounterSurgeLabel} was forming when the route ended."
-				: _campaignCounterSurgeReady
-					? $"Counter-surge: {_campaignCounterSurgeLabel} was never provoked."
-					: $"Counter-surge: {_campaignCounterSurgeLabel} never landed.";
-	}
-
-	private string BuildCampaignBonusObjectivePressureDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignBonusObjectivePressureLabel))
-		{
-			return "";
-		}
-
-		return _campaignBonusObjectivePressureTriggered
-			? _campaignBonusObjectivePressureFriendly
-				? $"Reserve beat: {_campaignBonusObjectivePressureLabel} landed after the branch objective.{BuildCampaignBonusObjectivePressureIntelSuffix()}"
-				: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} landed after the branch objective slipped.{BuildCampaignBonusObjectivePressureIntelSuffix()}"
-			: _campaignBonusObjectivePressureQueued
-				? _campaignBonusObjectivePressureFriendly
-					? $"Reserve beat: {_campaignBonusObjectivePressureLabel} was arming when the route ended.{BuildCampaignBonusObjectivePressureIntelSuffix()}"
-					: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} was forming when the route ended.{BuildCampaignBonusObjectivePressureIntelSuffix()}"
-				: _campaignBonusObjectivePressureFriendly
-					? $"Reserve beat: {_campaignBonusObjectivePressureLabel} never came online.{BuildCampaignBonusObjectivePressureIntelSuffix()}"
-					: $"Reprisal beat: {_campaignBonusObjectivePressureLabel} never landed.{BuildCampaignBonusObjectivePressureIntelSuffix()}";
-	}
-
-	private string BuildCampaignPressureEchoDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignPressureEchoLabel))
-		{
-			return "";
-		}
-
-		if (_campaignPressureEchoTriggerCount > 0)
-		{
-			return _campaignPressureEchoCompleted
-				? $"Pressure echo: {_campaignPressureEchoLabel} triggered x{_campaignPressureEchoTriggerCount} and fully cashed out on the next enemy swell."
-				: $"Pressure echo: {_campaignPressureEchoLabel} triggered x{_campaignPressureEchoTriggerCount} on the next enemy swell.";
-		}
-
-		return _campaignPressureEchoChargesRemaining > 0
-			? $"Pressure echo: {_campaignPressureEchoLabel} was armed when the route ended."
-			: $"Pressure echo: {_campaignPressureEchoLabel} never reached the next enemy swell.";
-	}
-
-	private string BuildCampaignLateConditionDebriefText()
-	{
-		if (!IsCampaignMode || !_campaignLateConditionActive || string.IsNullOrWhiteSpace(_campaignLateConditionLabel))
-		{
-			return "";
-		}
-
-		return _campaignLateConditionTriggerCount > 0
-			? $"Late district condition: {_campaignLateConditionLabel} cycled x{_campaignLateConditionTriggerCount}."
-			: $"Late district condition: {_campaignLateConditionLabel} never reached its first pulse.";
-	}
-
-	private string BuildCampaignCommendationDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignCommendationLabel))
-		{
-			return "";
-		}
-
-		if (_campaignCommendationRewardSecured)
-		{
-			return $"Commendation: {_campaignCommendationLabel} held with {ResolveCampaignCommendationSquadLabel()}. {BuildCampaignCommendationRewardText()} secured.";
-		}
-
-		if (_campaignCommendationBroken)
-		{
-			return $"Commendation: {_campaignCommendationLabel} broke when {ResolveCampaignCommendationSquadLabel()} fell. {BuildCampaignCommendationRewardText()} lost.";
-		}
-
-		if (_campaignCommendationTriggered)
-		{
-			return $"Commendation: {_campaignCommendationLabel} empowered {ResolveCampaignCommendationSquadLabel()}, but the route ended before the survival payout could be claimed.";
-		}
-
-		return _campaignCommendationReady
-			? $"Commendation: {_campaignCommendationLabel} stayed armed but unused."
-			: $"Commendation: {_campaignCommendationLabel} never armed.";
-	}
-
-	private string BuildCampaignRouteSupportDebriefText()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		var title = GameState.Instance.GetCampaignRouteSupportTitle(_activeRouteId);
-		return _campaignRouteSupportTriggered
-			? $"District tactic: {title} triggered."
-			: $"District tactic: {title} held in reserve.";
-	}
-
-	private string BuildCampaignBossPressureDebriefText()
-	{
-		if (!IsCampaignMode || string.IsNullOrWhiteSpace(_campaignBossPressureLabel))
-		{
-			return "";
-		}
-
-		if (_campaignBossPressureTriggerCount > 0)
-		{
-			return _campaignBossPressureActive
-				? $"Boss command: {_campaignBossPressureLabel} triggered x{_campaignBossPressureTriggerCount} and was still cycling when the route ended."
-				: $"Boss command: {_campaignBossPressureLabel} triggered x{_campaignBossPressureTriggerCount}.";
-		}
-
-		if (_campaignBossPressureActive)
-		{
-			return $"Boss command: {_campaignBossPressureLabel} armed on a {_campaignBossPressureIntervalSeconds:0.#}s cadence but never completed its first cycle.";
-		}
-
-		return _campaignBossPhaseTriggered
-			? $"Boss command: {_campaignBossPressureLabel} armed but never completed a full cycle."
-			: $"Boss command: {_campaignBossPressureLabel} stayed dormant because the boss phase never came online.";
-	}
-
-	private string BuildCampaignAdaptiveWaveDebriefText()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady)
-		{
-			return "";
-		}
-
-		if (_campaignAdaptiveWaveTriggerCount > 0)
-		{
-			return $"Adaptive wave read: {_campaignAdaptiveWaveLabel} modified x{_campaignAdaptiveWaveTriggerCount} opening spawn{(_campaignAdaptiveWaveTriggerCount == 1 ? "" : "s")} across {_campaignAdaptiveWaveWaveCount} scripted wave{(_campaignAdaptiveWaveWaveCount == 1 ? "" : "s")}.";
-		}
-
-		return _campaignAdaptiveWaveWaveCount > 0
-			? $"Adaptive wave read: {_campaignAdaptiveWaveLabel} armed on {_campaignAdaptiveWaveWaveCount} scripted wave{(_campaignAdaptiveWaveWaveCount == 1 ? "" : "s")} but no spawns were left to bend."
-			: "Adaptive wave read: no scripted wave opened after the system came online.";
-	}
-
-	private string BuildCampaignAdaptiveWaveChoiceDebriefText()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady)
-		{
-			return "";
-		}
-
-		if (_campaignAdaptiveWaveOverrideQueued)
-		{
-			return $"Adaptive wave override: {_campaignAdaptiveWaveChoiceLabel} was queued with {ResolveCampaignAdaptiveWaveDirectiveBranchTitle(_campaignAdaptiveWaveQueuedDirective)} when the route ended.";
-		}
-
-		if (_campaignAdaptiveWaveRewardSecured)
-		{
-			return $"Adaptive wave override: {_campaignAdaptiveWaveChoiceLabel} held and banked {BuildCampaignAdaptiveWaveRewardText()}.{BuildCampaignAdaptiveWaveBranchClause()}";
-		}
-
-		if (_campaignAdaptiveWaveRewardLost)
-		{
-			return $"Adaptive wave override: {_campaignAdaptiveWaveChoiceLabel} armed {BuildCampaignAdaptiveWaveRewardText()}, but the route fell before it could be claimed.{BuildCampaignAdaptiveWaveBranchClause()}";
-		}
-
-		if (_campaignAdaptiveWaveChoiceUsed)
-		{
-			return _campaignAdaptiveWaveRewardReady
-				? $"Adaptive wave override: {_campaignAdaptiveWaveChoiceLabel} committed and left {BuildCampaignAdaptiveWaveRewardText()} on the table.{BuildCampaignAdaptiveWaveBranchClause()}"
-				: $"Adaptive wave override: {_campaignAdaptiveWaveChoiceLabel} committed.{BuildCampaignAdaptiveWaveBranchClause()}";
-		}
-
-		return _campaignAdaptiveWaveChoiceReady
-			? $"Adaptive wave override: {CampaignAdaptiveWaveRescueLabel} / {CampaignAdaptiveWaveBreakthroughLabel} unlocked but unused."
-			: "Adaptive wave override: never unlocked.";
-	}
-
-	private string BuildCampaignAdaptiveWaveChallengeDebriefText()
-	{
-		if (!IsCampaignMode || !_campaignAdaptiveWaveReady || string.IsNullOrWhiteSpace(_campaignAdaptiveWaveChallengeLabel))
-		{
-			return "";
-		}
-
-		if (_campaignAdaptiveWaveChallengeCompleted)
-		{
-			return $"Adaptive wave follow-up: {_campaignAdaptiveWaveChallengeLabel} secured {BuildCampaignAdaptiveWaveUpgradeText()} and pushed the payout to {BuildCampaignAdaptiveWaveRewardText()}.";
-		}
-
-		if (_campaignAdaptiveWaveChallengeFailed)
-		{
-			return $"Adaptive wave follow-up: {_campaignAdaptiveWaveChallengeLabel} slipped, so only the base payout remained.";
-		}
-
-		return _campaignAdaptiveWaveChallengeActive
-			? $"Adaptive wave follow-up: {_campaignAdaptiveWaveChallengeLabel} was still active when the route ended."
-			: "";
-	}
-
 	private string BuildCampaignBossPhaseDebriefText()
 	{
 		if (!IsCampaignMode)
@@ -15773,83 +8628,10 @@ public partial class BattleController : Node2D
 		var enemyCountPressure = Mathf.Clamp(CountTeamUnits(Team.Enemy) / 12f, 0f, 1f) * 0.45f;
 		var hullPressure = (1f - Mathf.Clamp(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), 0f, 1f)) * 0.3f;
 		var pendingPressure = Mathf.Clamp(_spawnDirector.PendingSpawnCount / 10f, 0f, 1f) * 0.12f;
-		var hazardPressure = _stageHazards.Any(hazard => hazard.WarningIssued || hazard.NextTriggerTime <= _elapsed + 2f) ? 0.08f : 0f;
-		var missionPressure = _stageMissions.Any(mission => mission.Started && !mission.Completed && !mission.Failed) ? 0.08f : 0f;
 		var endlessPressure = IsEndlessMode
 			? Mathf.Clamp(_spawnDirector.EndlessWaveNumber / 40f, 0f, 1f) * 0.14f
 			: 0f;
-		return Mathf.Clamp(enemyCountPressure + hullPressure + pendingPressure + hazardPressure + missionPressure + endlessPressure, 0f, 1f);
-	}
-
-	private string BuildStageMissionDebriefText()
-	{
-		var directiveText = BuildCampaignDirectiveBattleText();
-		if (_stageMissions.Count == 0)
-		{
-			return string.IsNullOrWhiteSpace(directiveText)
-				? "Battlefield events: none"
-				: $"{directiveText}\nBattlefield events: none";
-		}
-
-		var lines = new List<string>();
-		if (!string.IsNullOrWhiteSpace(directiveText))
-		{
-			lines.Add(directiveText);
-		}
-
-		lines.Add("Battlefield events:");
-
-		foreach (var mission in _stageMissions)
-		{
-			var prefix = mission.Completed
-				? "[OK]"
-				: mission.Failed
-					? "[X]"
-					: "[--]";
-			lines.Add($"{prefix} {BuildStageMissionDisplayTitle(mission)}  |  {BuildStageMissionDebriefDetail(mission)}");
-		}
-
-		return string.Join("\n", lines);
-	}
-
-	private string BuildCampaignDirectiveBattleText()
-	{
-		if (IsEndlessMode || IsChallengeMode || !GameState.Instance.IsCampaignDirectiveArmed(_stage))
-		{
-			return "";
-		}
-
-		var directive = GameState.Instance.GetCampaignDirective(_stage);
-		if (directive == null)
-		{
-			return "";
-		}
-
-		var bountyStatus = GameState.Instance.HasClaimedCampaignDirective(directive.Id)
-			? "bounty already claimed"
-			: CampaignDirectiveCatalog.BuildRewardSummary(directive);
-		return $"Heroic directive: {directive.Title}  |  {directive.Summary}  |  {bountyStatus}";
-	}
-
-	private string BuildStageMissionDebriefDetail(StageMissionState mission)
-	{
-		if (mission.Completed)
-		{
-			return StageMissionEvents.ResolveRewardSummary(mission.Definition);
-		}
-
-		if (mission.Failed)
-		{
-			return StageMissionEvents.ResolvePenaltySummary(mission.Definition);
-		}
-
-		if (!mission.Started)
-		{
-			return $"Not reached before route end (arms at {mission.Definition.StartTime:0.0}s)";
-		}
-
-		var target = Mathf.Max(1f, mission.Definition.TargetSeconds);
-		return $"{mission.Progress:0.0}/{target:0.0}s secured when the route ended";
+		return Mathf.Clamp(enemyCountPressure + hullPressure + pendingPressure + endlessPressure, 0f, 1f);
 	}
 
 	private string BuildEndlessRunDebriefText(int rewardGold, int rewardFood, bool retreated)
@@ -15862,13 +8644,9 @@ public partial class BattleController : Node2D
 			$"{outcomeLine}\n" +
 			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Survival: {_elapsed:0.0}s  |  Enemy defeats: {_enemyDefeats}\n" +
 			$"Banked payout: +{rewardGold} gold, +{rewardFood} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
-			$"Bonus bank: directives {FormatSignedInt(_endlessDirectiveGoldBonus)} gold / {FormatSignedInt(_endlessDirectiveFoodBonus)} food  |  contacts {FormatSignedInt(_endlessContactGoldBonus)} gold / {FormatSignedInt(_endlessContactFoodBonus)} food  |  bosses {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
+			$"Boss bonus: {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
 			$"{BuildEndlessRunUpgradeSummary()}\n" +
 			$"{BuildEndlessBossCheckpointText()}\n" +
-			$"{BuildEndlessDirectiveCheckpointSummary()}\n" +
-			$"{BuildEndlessContactCheckpointSummary()}\n" +
-			$"Tradeoff report: {_endlessContactTradeoffLabel}\n" +
-			$"Contact telemetry: {BuildEndlessContactTelemetryText()}\n" +
 			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
 			$"Caravan support: {_endlessSupportEventLabel}\n" +
 			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
@@ -15893,14 +8671,13 @@ public partial class BattleController : Node2D
 		var timeBonus = Mathf.FloorToInt(_elapsed / 18f) * 3;
 		var reward = Math.Max(0, (_spawnDirector.EndlessWaveNumber * 16) + (_enemyDefeats * 2) + timeBonus);
 		reward = Mathf.RoundToInt(reward * _endlessGoldScale);
-		reward = Mathf.RoundToInt(reward * _endlessContactGoldScale);
 		reward = Mathf.RoundToInt(reward * ResolveRouteForkGoldScale());
 		if (_endlessBoonId == EndlessBoonCatalog.SalvageCacheId)
 		{
 			reward = Mathf.RoundToInt(reward * 1.25f);
 		}
 
-		return Math.Max(0, reward + _endlessDirectiveGoldBonus + _endlessContactGoldBonus + _endlessBossGoldBonus);
+		return Math.Max(0, reward + _endlessBossGoldBonus);
 	}
 
 	private int CalculateEndlessFoodReward()
@@ -15910,7 +8687,7 @@ public partial class BattleController : Node2D
 			return 0;
 		}
 
-		return Math.Max(0, (_spawnDirector.EndlessWaveNumber / 4) + _endlessDirectiveFoodBonus + _endlessContactFoodBonus + _endlessBossFoodBonus);
+		return Math.Max(0, (_spawnDirector.EndlessWaveNumber / 4) + _endlessBossFoodBonus);
 	}
 
 	private static string FormatSignedInt(int value)
@@ -15975,5 +8752,51 @@ public partial class BattleController : Node2D
 			EndlessRouteForkCatalog.FortifiedBlockId => 0.9f,
 			_ => 1f
 		};
+	}
+
+	private void ApplyCampaignCommendationVictoryReward(ref int rewardGold, ref int rewardFood)
+	{
+		if (!HasActiveCampaignCommendationUnit())
+		{
+			return;
+		}
+
+		_campaignCommendationRewardSecured = true;
+		rewardGold += _campaignCommendationBonusGold;
+		rewardFood += _campaignCommendationBonusFood;
+	}
+
+	private void ResolveCampaignAdaptiveWaveChallengeOnVictory()
+	{
+		if (!_campaignAdaptiveWaveChallengeActive)
+		{
+			return;
+		}
+
+		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats)
+		{
+			_campaignAdaptiveWaveChallengeProgress = Mathf.Max(0f, _enemyDefeats - _campaignAdaptiveWaveChallengeStartEnemyDefeats);
+		}
+
+		if (_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeHold ||
+			(_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage &&
+				(_enemyBaseHealth <= 0.01f || _campaignAdaptiveWaveChallengeProgress + 0.05f >= _campaignAdaptiveWaveChallengeTarget)) ||
+			(_campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats &&
+				_campaignAdaptiveWaveChallengeProgress + 0.05f >= _campaignAdaptiveWaveChallengeTarget))
+		{
+			CompleteCampaignAdaptiveWaveChallenge(true);
+		}
+	}
+
+	private void ApplyCampaignAdaptiveWaveVictoryReward(ref int rewardGold, ref int rewardFood)
+	{
+		if (!_campaignAdaptiveWaveRewardReady)
+		{
+			return;
+		}
+
+		_campaignAdaptiveWaveRewardSecured = true;
+		rewardGold += _campaignAdaptiveWaveBonusGold;
+		rewardFood += _campaignAdaptiveWaveBonusFood;
 	}
 }

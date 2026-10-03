@@ -1,4 +1,4 @@
-"""Generate distinct editable battlefields, route maps, and the enemy gatehouse."""
+"""Generate editable fallback battlefields and the enemy gatehouse."""
 import argparse
 import json
 import math
@@ -16,19 +16,13 @@ from crownroad_art import area_light,box,camera,collection,setup_render
 from world_kit import WorldKit
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--category',choices=['all','battlefields','maps','gatehouse','menus'],default='all')
+parser.add_argument('--category',choices=['all','battlefields','gatehouse'],default='all')
 parser.add_argument('--ids',default='all')
 parser.add_argument('--samples',type=int,default=32)
 parser.add_argument('--resume',action='store_true')
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 stages=json.loads((ROOT/'data/stages.json').read_text())['Stages']
 terrains={s['TerrainId']:s['MapId'] for s in stages}
-routes=list(dict.fromkeys(s['MapId'] for s in stages))
-menus={'loadout':'city','shop':'harbor','cash_shop':'citadel','endless':'gloamwood','multiplayer':'steppe',
-       'lan_race':'city','arena':'citadel','battle_summary':'city','bounty':'thornwall','codex':'basilica',
-       'event':'steppe','expedition':'harbor','forge':'foundry','friends':'city','guild':'citadel',
-       'leaderboard':'basilica','login_calendar':'city','profile':'city','raid':'quarantine',
-       'season_pass':'steppe','skill_tree':'gloamwood','settings':'basilica','tower':'thornwall'}
 
 
 def reset(ident):
@@ -138,11 +132,9 @@ def save_render(scene,ident,category,output):
 jobs=[]
 if args.category in ('all','gatehouse'): jobs.append(('gatehouse','gatehouse','citadel'))
 if args.category in ('all','battlefields'): jobs.extend(('battlefields',k,v) for k,v in terrains.items())
-if args.category in ('all','maps'): jobs.extend(('maps',r,r) for r in routes)
-if args.category in ('all','menus'): jobs.extend(('menus',k,v) for k,v in menus.items())
 for category,ident,route in jobs:
     if args.ids!='all' and ident not in args.ids.split(','): continue
-    folder={'gatehouse':'structures','battlefields':'backgrounds','maps':'map/backgrounds','menus':'ui/backgrounds'}[category]
+    folder={'gatehouse':'structures','battlefields':'backgrounds'}[category]
     output=ROOT/'assets'/folder/(ident+'.png')
     if args.resume and output.exists():
         print('WORLD_SKIP '+category+'/'+ident,flush=True); continue
@@ -179,13 +171,6 @@ for category,ident,route in jobs:
         out=mist.node_tree.nodes.new('ShaderNodeOutputMaterial')
         mist.node_tree.links.new(volume.outputs['Volume'],out.inputs['Volume'])
         box('Distant atmospheric haze',(0,31,11),(90,40,23),mist,geometry,0)
-        if category=='maps':
-            scene.camera=camera('Route map camera',(0,-16,52),(0,8,0),58,rig)
-            scene.render.resolution_x,scene.render.resolution_y=1280,960
-        elif category=='menus':
-            scene.camera=camera('Menu establishing camera',(-14,-29,16),(5,10,2.8),43,rig)
-            scene.render.resolution_x,scene.render.resolution_y=1280,720
-        else:
-            scene.camera=camera('Battle side-view camera',(0,-38,18.5),(0,10,1.5),53,rig)
-            scene.render.resolution_x,scene.render.resolution_y=1280,720
+        scene.camera=camera('Battle side-view camera',(0,-38,18.5),(0,10,1.5),53,rig)
+        scene.render.resolution_x,scene.render.resolution_y=1280,720
     save_render(scene,ident,category,output)

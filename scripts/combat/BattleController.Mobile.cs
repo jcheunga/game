@@ -12,7 +12,6 @@ public partial class BattleController
     private bool _mobileClearView;
     private float _mobileCombatZoom = MobilePresentation.BattleZoom;
     private Vector2 _mobileClosePosition;
-    private Control _mobileOrders;
     private bool _mobilePointerDown, _mobileDragging;
     private int _mobilePointerId;
     private Vector2 _mobilePointerStart, _mobilePointerLast;
@@ -53,11 +52,6 @@ public partial class BattleController
             button.CustomMinimumSize=new Vector2(112,96);
             button.ClipContents=true;
         }
-        if (_convoyOrderButton != null)
-        {
-            _mobileOrders=(Control)_convoyOrderButton.GetParent();
-            foreach(var button in _convoyOrderButton.GetParent().GetChildren().OfType<Button>()) MobilePresentation.TouchButton(button);
-        }
         foreach(var button in _pauseOverlay.FindChildren("*","Button",true,false).OfType<Button>()) MobilePresentation.TouchButton(button);
         _endPanel.CustomMinimumSize=new Vector2(680,380);
         MobilePresentation.TouchButton(_endPrimaryButton); MobilePresentation.TouchButton(_endSecondaryButton);
@@ -97,11 +91,8 @@ public partial class BattleController
             _mobilePlacementHint.Size=new Vector2(width-120,26);
             _mobileCancelButton.Position=new Vector2(root.Size.X-right-102,cards.Position.Y-60);
             _mobileCancelButton.Size=new Vector2(102,56);
-            _intelPanel.Position=new Vector2(root.Size.X-right-Mathf.Min(460,width),top+74);
-            _intelPanel.Size=new Vector2(Mathf.Min(460,width),Mathf.Max(150,cards.Position.Y-top-108));
             var pauseVeil=_pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if(pauseVeil!=null) pauseVeil.CustomMinimumSize=root.Size;
-            if(_convoyOrderButton!=null) ((Control)_convoyOrderButton.GetParent()).Position=new Vector2(left,top+76);
             _mobileFieldTop=(top+70)*scale;
             _mobileFieldBottom=(_mobileClearView?root.Size.Y-bottom-32:cards.Position.Y-30)*scale;
             ClampMobileCamera();
@@ -114,14 +105,11 @@ public partial class BattleController
     private void RefreshMobileHud()
     {
         if (_mobileHud==null) return;
-        static string Hull(float value) => value>=1000?$"{value/1000:0.#}k":Mathf.Max(0,Mathf.CeilToInt(value)).ToString();
-        _baseHealthLabel.Text=$"Wagon {Hull(_playerBaseHealth)}" + (IsEndlessMode?"":$" · Gate {Hull(_enemyBaseHealth)}");
         var armed=_selectionMode==BattleSelectionMode.Spell ? _spellDeck.ArmedSpell?.DisplayName : _deck.ArmedUnit?.DisplayName;
         _mobilePlacementHint.Text=_mobileClearView?"View only · Drag to explore · Tap Cards to deploy":
             _cardDragging?"Release on the field · Return to the cards to cancel":
             string.IsNullOrEmpty(armed)?"":$"{armed} · Drag to deploy";
         _mobileCancelButton.Visible=!_mobileClearView && !string.IsNullOrEmpty(armed);
-        if(_mobileOrders!=null) _mobileOrders.Visible=!_mobileClearView;
     }
 
     private void ToggleMobileOverview()

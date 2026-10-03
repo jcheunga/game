@@ -8,7 +8,8 @@ public partial class LoginCalendarMenu : Control
 
     public override void _Ready()
     {
-        MenuBackdropComposer.AddSolidBackdrop(this, "login_calendar", new Color("15231f"));
+
+        MedievalUi.Apply(this);
         RealmUi.Header(this, System.DateTime.UtcNow.ToString("MMMM yyyy"), "Gifts of the realm", () => SceneRouter.Instance.GoToMainMenu(), "gift");
         var body = RealmUi.Panel(this, new Rect2(24, 110, 1232, 492), out _);
         RealmUi.Tabs(body, page => { _page = page; RefreshUi(); }, "Days 1–10", "Days 11–20", "Days 21–30");

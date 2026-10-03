@@ -102,8 +102,6 @@ public partial class UiReviewSmoke : Node
                 System.IO.Directory.CreateDirectory(_output);
                 await Open("ShopMenu"); await AuditArmoryPages();
                 await Press("Spells"); await AuditArmoryPages();
-                BattleSummaryData.Current = new BattleSummaryData { Won = true, Stage = 60, StarsEarned = 3, BattleMode = "Campaign", ElapsedSeconds = 123, EnemiesDefeated = 145, UnitsDeployed = 35, UnitsLost = 12, SpellsCast = 7, TotalDamageDealt = 123456, TotalDamageTaken = 12345, GoldEarned = 1250, FoodEarned = 12, SeasonXPEarned = 100, MasteryXPPerUnit = GameData.GetPlayerUnits().ToDictionary(x => x.Id, _ => 250) };
-                await Open("BattleSummaryMenu"); AuditText("Populated battle summary"); await Capture("type-populated-summary");
                 GameState.Instance.UnlockNextStage(GameState.Instance.MaxStage - 1);
                 await Open("MainMenu"); await PressHint("More"); await Press("Caravan"); AuditText("MainMenu / all unlocks"); await Capture("type-main-unlocked");
                 foreach (var stage in GameData.Stages)
@@ -122,7 +120,7 @@ public partial class UiReviewSmoke : Node
             {
                 _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
                 System.IO.Directory.CreateDirectory(_output);
-                foreach (var scene in new[] { "MainMenu", "MapMenu", "LoadoutMenu", "ShopMenu", "EndlessMenu", "MultiplayerMenu", "SettingsMenu", "ArenaMenu", "BattleSummaryMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
+                foreach (var scene in new[] { "MainMenu", "MapMenu", "LoadoutMenu", "ShopMenu", "EndlessMenu", "MultiplayerMenu", "SettingsMenu", "ArenaMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
                 {
                     await Open(scene);
                     await Capture("type-" + scene);
@@ -142,7 +140,7 @@ public partial class UiReviewSmoke : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--all-menus"))
             {
-                foreach (var scene in new[] { "ArenaMenu", "BattleSummaryMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
+                foreach (var scene in new[] { "ArenaMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
                 {
                     await Open(scene);
                     var refresh = GetTree().CurrentScene.GetType().GetMethod("RefreshUi", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);

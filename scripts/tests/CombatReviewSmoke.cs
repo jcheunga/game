@@ -147,13 +147,6 @@ public partial class CombatReviewSmoke : Node
         director.TryBuildEnemyStats(GameData.EnemyBossReliquaryId, out var tyrantStats);
         var tyrant = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, tyrantStats, new Vector2(900, 240));
         tyrant.TakeDamage(tyrant.MaxHealth * 0.6f / tyrant.DamageTakenScale);
-        var woundedHealth = tyrant.Health;
-        var beforePressureCount = Read<List<Unit>>(battle, "_units").Count;
-        Write(battle, "_enemyBaseHealth", 100f);
-        Invoke(battle, "ApplyCampaignBossPressure", tyrant);
-        Check(tyrant.Health == woundedHealth, "Repeated Ossuary Fire preserves damage dealt to the Tyrant");
-        Check(Read<List<Unit>>(battle, "_units").Count == beforePressureCount && Read<float>(battle, "_enemyBaseHealth") == 100f,
-            "Ossuary Fire leaves a recovery window instead of adding another summon and gate-repair loop");
         Invoke(battle, "ApplyCampaignBossPhase", tyrant);
         tyrant.TickSpecialTimer(100);
         Invoke(battle, "TriggerEnemyRaiseFallen", tyrant);
@@ -167,18 +160,6 @@ public partial class CombatReviewSmoke : Node
         for (var attempt = 0; attempt < 64; attempt++) Invoke(battle, "TryLichGraveyardReanimate", artillery[0]);
         Check(Read<List<Unit>>(battle, "_units").Count(x => !x.IsDead && x.DefinitionId == tyrant.SpecialSpawnUnitId) == 2,
             "Graveyard resurrection cannot bypass the Tyrant's artillery limit after a replacement");
-        await CloseBattle(battle);
-
-        battle = await OpenBattle(55);
-        Invoke(battle, "TickTunnelInvasion", 1f);
-        Check(Read<List<Unit>>(battle, "_units").Count == 0, "Tunnel invasion leaves the opening deployment window clear");
-        Invoke(battle, "TickTunnelInvasion", 15f);
-        Check(Read<Vector2?>(battle, "_pendingTunnelInvasion").HasValue && Read<List<Unit>>(battle, "_units").Count == 0,
-            "Tunnel invasion marks its position before an enemy appears");
-        Invoke(battle, "TickTunnelInvasion", 2f);
-        Check(Read<List<Unit>>(battle, "_units").Count == 1 && !Read<Vector2?>(battle, "_pendingTunnelInvasion").HasValue,
-            "The warned tunneler emerges after its reaction window");
-        Check(Read<float>(battle, "_tunnelInvasionTimer") >= 22f, "Tunnel invasion grants recovery between ambushes");
         await CloseBattle(battle);
 
         battle = await OpenBattle(1);
@@ -366,18 +347,6 @@ public partial class CombatReviewSmoke : Node
             {
                 var enemy = units.Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
                 var targetY = enemy?.Position.Y ?? 340;
-                if (OS.GetCmdlineUserArgs().Contains("--field-tactics"))
-                {
-                    var plan = Read<StageDefinition>(battle, "_stageData").Battlefield;
-                    var outpost = (Vector2)Invoke(battle, "FieldPoint", plan.OutpostXRatio, plan.OutpostYRatio);
-                    Write(battle, "_forwardDeploymentArmed", enemy == null || enemy.Position.X >= outpost.X - 140);
-                    if (enemy == null || enemy.Position.X > 600)
-                    {
-                        if (!Read<bool>(battle, "_outpostCaptured")) targetY = outpost.Y;
-                        else if (!Read<bool>(battle, "_supplyCollected"))
-                            targetY = ((Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio)).Y;
-                    }
-                }
                 var courage = Read<float>(battle, "_courage");
                 var savingForSpell = false;
                 if (tactical)
@@ -432,7 +401,6 @@ public partial class CombatReviewSmoke : Node
             fieldTactics = OS.GetCmdlineUserArgs().Contains("--field-tactics"),
             baseCouragePerSecond = GameData.Combat.CourageGainPerSecond,
             mapWidth = GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
-            outpostCaptured = Read<bool>(battle, "_outpostCaptured"), supplyCollected = Read<bool>(battle, "_supplyCollected"), forwardDeployments = Read<int>(battle, "_forwardDeploymentsUsed"),
             firstContact, firstGateDamage, waveTimes, stars = evaluation.StarsEarned,
             objectives = evaluation.Outcomes, battleResult.CompletedMissionEvents, battleResult.FailedMissionEvents,
             battleResult.TotalMissionEvents, battleResult.PlayerHazardHits, battleResult.CampaignBossPressureTriggers,

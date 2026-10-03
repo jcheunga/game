@@ -16,35 +16,6 @@ public static class AssetCoverageCatalog
         "citadel"
     };
 
-    public static readonly string[] ScreenBackgroundIds =
-    {
-        "main_menu",
-        "map",
-        "loadout",
-        "shop",
-        "cash_shop",
-        "endless",
-        "multiplayer",
-        "lan_race",
-        "arena",
-        "battle_summary",
-        "bounty",
-        "codex",
-        "event",
-        "expedition",
-        "forge",
-        "friends",
-        "guild",
-        "leaderboard",
-        "login_calendar",
-        "profile",
-        "raid",
-        "season_pass",
-        "skill_tree",
-        "settings",
-        "tower"
-    };
-
     public static readonly string[] StructureIds =
     {
         "war_wagon",
@@ -150,21 +121,6 @@ public static class AssetCoverageCatalog
         "challenge",
         "members"
     };
-
-    public static string BuildScreenVariantId(string screenId, string variantId)
-    {
-        if (string.IsNullOrWhiteSpace(screenId))
-        {
-            return string.Empty;
-        }
-
-        if (string.IsNullOrWhiteSpace(variantId))
-        {
-            return NormalizeId(screenId);
-        }
-
-        return $"{NormalizeId(screenId)}_{NormalizeId(variantId)}";
-    }
 
     public static string NormalizeId(string value)
     {

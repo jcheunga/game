@@ -9,8 +9,6 @@ public partial class BattleHudBar : Control
 	private float _displayRatio;
 	private float _flashTimer;
 	private Color _fillColor = new("80ed99");
-	private Color _backgroundColor = new(0f, 0f, 0f, 0.45f);
-	private Color _frameColor = new(1f, 1f, 1f, 0.25f);
 	private Color _flashColor = Colors.White;
 	private string _label = "";
 	private string _valueText = "";
@@ -20,7 +18,6 @@ public partial class BattleHudBar : Control
 	public void Setup(Color fillColor, Color frameColor, string label, bool showLabel = true)
 	{
 		_fillColor = fillColor;
-		_frameColor = frameColor;
 		_flashColor = fillColor.Lightened(0.35f);
 		_label = label;
 		_showLabel = showLabel;

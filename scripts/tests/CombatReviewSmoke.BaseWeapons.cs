@@ -184,8 +184,8 @@ public partial class CombatReviewSmoke
         battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
         AddChild(battle);
         battle.SetPhysicsProcess(false);
-        Check(Read<Label>(battle, "_statusLabel") != null && Read<Label>(battle, "_baseWeaponsIntel") != null,
-            "Endless battle initializes its HUD before issuing directives");
+        Check(Read<Label>(battle, "_statusLabel") != null && Read<BattleHudBar>(battle, "_healthBar") != null,
+            "Endless battle initializes its health HUD");
         Check(Read<object>(battle, "_strongholdMount") == null, "Endless mode has no phantom stronghold weapon");
         core = Core(true);
         Spawn(Team.Enemy, core + new Vector2(200, 0));

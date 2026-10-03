@@ -20,7 +20,6 @@ public static class EndlessBoonCatalog
     public const string ReinforcedBusId = "reinforced_bus";
     public const string SalvageCacheId = "salvage_cache";
     public const string RelicForgeId = "relic_forge";
-    public const string CorpseHoardId = "corpse_hoard";
     public const string BerserkerBloodId = "berserker_blood";
     public const string ShieldFormationId = "shield_formation";
     public const string SplitterBaneId = "splitter_bane";

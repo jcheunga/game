@@ -15,9 +15,7 @@ public partial class Unit
     private float _contactTime;
     private float _facing;
     private Unit _contactTarget;
-    private uint _contactTargetLifetime;
     private Vector2 _aimPosition;
-    private Vector2 _contactOffset;
     private readonly HitReactionMotion _hitReaction = new();
     internal float HitReactionAmount => _hitReaction.Amount;
 
@@ -57,7 +55,6 @@ public partial class Unit
     public void FaceCombatTarget(Unit target)
     {
         _contactTarget = target;
-        _contactTargetLifetime = target.CombatLifetime;
         FaceCombatPosition(target.Position);
     }
     private void FaceCombatPosition(Vector2 position)
@@ -79,7 +76,6 @@ public partial class Unit
         _spriteAnimState = UnitAnimState.Attack;
         _spriteAnimFrame = 0;
         _spriteAnimTimer = 0;
-        _contactOffset = Vector2.Zero;
     }
 
     private void TickCombatMotion(float delta)
@@ -121,7 +117,6 @@ public partial class Unit
         _contactTarget = null;
         _contactClock = _contactDuration = _contactTime = 0;
         _hitReaction.Reset();
-        _contactOffset = Vector2.Zero;
         _facing = 0;
         ShouldPausePresentation = null;
     }

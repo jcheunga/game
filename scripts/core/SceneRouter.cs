@@ -26,7 +26,7 @@ public partial class SceneRouter : Node
     public const string LoginCalendarScene = "res://scenes/LoginCalendarMenu.tscn";
     public const string LeaderboardScene = "res://scenes/LeaderboardMenu.tscn";
     public const string SeasonPassScene = "res://scenes/SeasonPassMenu.tscn";
-    public const string BattleSummaryScene = "res://scenes/BattleSummaryMenu.tscn";
+
     public const string BattleScene = "res://scenes/Battle.tscn";
 
     private const float FadeDuration = 0.18f;
@@ -210,11 +210,6 @@ public partial class SceneRouter : Node
         ChangeScene(SeasonPassScene);
     }
 
-    public void GoToBattleSummary()
-    {
-        ChangeScene(BattleSummaryScene);
-    }
-
     public void GoToBattle()
     {
         ChangeScene(BattleScene);
@@ -326,7 +321,7 @@ public partial class SceneRouter : Node
             LoginCalendarScene => "Login Calendar",
             LeaderboardScene => "Leaderboards",
             SeasonPassScene => "Season Pass",
-            BattleSummaryScene => "Battle Summary",
+
             MultiplayerScene => "Multiplayer Challenge",
             LanRaceScene => "LAN Race",
             EndlessScene => "Endless Prep",

@@ -13,7 +13,6 @@ public partial class ExpeditionMenu : Control
 	private VBoxContainer _slotsStack = null!;
 	private VBoxContainer _catalogStack = null!;
 	private readonly List<string> _selectedUnitIds = new();
-	private string _selectedExpeditionId = "";
 
 	public override void _Ready()
 	{
@@ -40,7 +39,8 @@ public partial class ExpeditionMenu : Control
 
 	private void BuildUi()
 	{
-		MenuBackdropComposer.AddSplitBackdrop(this, "expedition", new Color("1a1a2e"), new Color("16213e"), new Color("22c55e"), 104f);
+
+        MedievalUi.Apply(this);
 
 		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
 		AddChild(_titlePanel);

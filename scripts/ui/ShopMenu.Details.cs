@@ -34,7 +34,7 @@ public partial class ShopMenu
         };
         stack.AddThemeConstantOverride("separation", 6);
         row.AddChild(stack);
-        var heading = RealmUi.Heading(title, 28);
+        var heading = RealmUi.Heading(title, 24);
         heading.AddThemeColorOverride("font_color", new Color("ffd47d"));
         stack.AddChild(heading);
         var state = RealmUi.Label(status, 18, true);

@@ -11,7 +11,7 @@ public static class ArmoryDetailUi
     {
         var grid = new GridContainer { Name = "ProfileStats", Columns = columns, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         grid.AddThemeConstantOverride("h_separation", 8);
-        grid.AddThemeConstantOverride("v_separation", 8);
+        grid.AddThemeConstantOverride("v_separation", 6);
         foreach (var stat in values)
         {
             var tile = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AccessibilityName = $"{stat.Label}: {stat.Value}" };
@@ -26,7 +26,7 @@ public static class ArmoryDetailUi
                 MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color("d6ba80")
             });
             var number = new Label { Text = stat.Value, VerticalAlignment = VerticalAlignment.Center };
-            number.AddThemeFontSizeOverride("font_size", 24); number.AddThemeColorOverride("font_color", ModalUi.Cream); row.AddChild(number);
+            number.AddThemeFontSizeOverride("font_size", 22); number.AddThemeColorOverride("font_color", ModalUi.Cream); row.AddChild(number);
             var label = new Label { Text = stat.Label, AutowrapMode = TextServer.AutowrapMode.WordSmart };
             label.AddThemeFontSizeOverride("font_size", 18); label.AddThemeColorOverride("font_color", ModalUi.Muted); stack.AddChild(label);
         }

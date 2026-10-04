@@ -762,7 +762,7 @@ public partial class BattleController : Node2D
 		if (IsEndlessMode)
 		{
 		}
-		InitializeAmbientParticles();
+		// Ambient terrain and weather particles are disabled while their visuals are revised.
 		SetStatus(IsEndlessMode ? "Defend your wagon."
 			: IsChallengeMode ? $"Challenge {_challengeDefinition.Code}"
 			: "Choose a card, then tap the ground.");
@@ -8002,28 +8002,6 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private string BuildEndlessBossCheckpointText()
-	{
-		if (!IsEndlessMode)
-		{
-			return "Boss checkpoint: standby.";
-		}
-
-		if (_spawnDirector.EndlessBossCheckpointPending)
-		{
-			var definition = EndlessBossCheckpointCatalog.GetForWave(_spawnDirector.EndlessWaveNumber, _activeRouteId);
-			return $"[BOSS] {definition.Title}  |  Wave {_spawnDirector.EndlessWaveNumber}  |  {definition.Summary}  |  {definition.RewardSummary}";
-		}
-
-		var nextBossWave = EndlessBossCheckpointCatalog.GetNextBossCheckpointWave(_spawnDirector.EndlessWaveNumber);
-		if (_lastEndlessBossCheckpointWave > 0)
-		{
-			return $"[OK] {_lastEndlessBossCheckpointTitle} broken on wave {_lastEndlessBossCheckpointWave}  |  Next boss checkpoint at wave {nextBossWave}";
-		}
-
-		return $"Boss checkpoint: first warlord surge expected at wave {nextBossWave}.";
-	}
-
 	private string BuildEndlessBossCheckpointCheckpointSummary()
 	{
 		if (!IsEndlessMode)
@@ -8330,7 +8308,9 @@ public partial class BattleController : Node2D
 					: onlineRoomResultSubmitted
 						? "Online room failure recorded. Return to multiplayer for the shared room board."
 					: "Challenge failed. Refit the approach and try the same code again.");
-			if (playerWon) PresentVictoryRewards();
+			if (!IsLanRaceMode && !IsOnlineRoomMode)
+				PresentResult(playerWon, playerWon ? "Challenge cleared" : "Challenge failed", $"Score {scoreBreakdown.FinalScore:N0} · {medalLabel}");
+			else if (playerWon) PresentResult(true, "Victory");
 			_endCenter.Visible = true;
 			_endPanel.Visible = true;
 			RefreshLanRaceEndPanel();
@@ -8386,7 +8366,7 @@ public partial class BattleController : Node2D
 			var busHealthRatio = _playerBaseMaxHealth > 0f ? _playerBaseHealth / _playerBaseMaxHealth : 0f;
 			GameState.Instance.CheckCombatAchievements(busHealthRatio, _elapsed, _triggeredComboPairIds.Count, 0);
 			GameState.Instance.ConsumeAchievementNotification();
-			PresentVictoryRewards();
+			PresentResult(true, "Victory");
 			SetStatus("Gatehouse shattered. Route secured.");
 		}
 		else
@@ -8396,24 +8376,8 @@ public partial class BattleController : Node2D
 			{
 				GameState.Instance.ApplyArenaResult(false, GameState.Instance.SelectedArenaOpponent.ArenaRating);
 			}
-			var stageResult = BuildStageBattleResult();
-			var evaluation = StageObjectives.EvaluateBattle(_stageData, stageResult, false);
-			var bestStars = GameState.Instance.GetStageStars(_stage);
-			if (_campaignAdaptiveWaveRewardReady && !_campaignAdaptiveWaveRewardSecured)
-			{
-			}
 			if (IsCampaignMode) GameState.Instance.ApplyDefeat(_stage);
-			var momentumLine = IsCampaignMode ? $"\n{GameState.Instance.BuildCampaignMomentumStatusText()}" : "";
-			var bossPhaseLine = IsCampaignMode ? $"\n{BuildCampaignBossPhaseDebriefText()}" : "";
-			var statsBreakdownDefeat = BuildBattleStatsBreakdown();
-			_endLabel.Text =
-				$"Defeat on stage {_stage}: {_stageData.StageName}.\n" +
-				$"{BuildStageBattleStatsText(stageResult)}\n" +
-				$"Clear reward on success: +{_stageData.RewardGold} gold, +{_stageData.RewardFood} food   |   Best: {bestStars}/3\n" +
-				$"{StageObjectives.BuildOutcomeSummary(evaluation)}\n" +
-				momentumLine +
-				bossPhaseLine +
-				(string.IsNullOrWhiteSpace(statsBreakdownDefeat) ? "" : $"\n{statsBreakdownDefeat}");
+			PresentResult(false, "Defeat");
 			SetStatus("The war wagon was overrun. Regroup.");
 		}
 
@@ -8597,24 +8561,6 @@ public partial class BattleController : Node2D
 		};
 	}
 
-	private string BuildCampaignBossPhaseDebriefText()
-	{
-		if (!IsCampaignMode)
-		{
-			return "";
-		}
-
-		var title = StageEncounterIntel.GetBossPhaseTitleForStage(_stageData);
-		if (string.IsNullOrWhiteSpace(title))
-		{
-			return "";
-		}
-
-		return _campaignBossPhaseTriggered
-			? $"Boss phase: {title} triggered."
-			: $"Boss phase: {title} never came online.";
-	}
-
 	private void FinalizeEndlessRun(bool retreated)
 	{
 		AudioDirector.Instance?.SetBattlePressure(0.14f);
@@ -8623,11 +8569,9 @@ public partial class BattleController : Node2D
 		GameState.Instance.ApplyEndlessResult(_activeRouteId, _spawnDirector.EndlessWaveNumber, _elapsed, _enemyDefeats, rewardGold, rewardFood, retreated);
 		var busHealthRatio = _playerBaseMaxHealth > 0f ? _playerBaseHealth / _playerBaseMaxHealth : 0f;
 		GameState.Instance.CheckCombatAchievements(busHealthRatio, _elapsed, _triggeredComboPairIds.Count, _endlessBossCheckpointsCleared);
-		var achievementLine = GameState.Instance.ConsumeAchievementNotification();
-		var endlessStatsBreakdown = BuildBattleStatsBreakdown();
-		_endLabel.Text = BuildEndlessRunDebriefText(rewardGold, rewardFood, retreated)
-			+ (string.IsNullOrEmpty(achievementLine) ? "" : $"\n{achievementLine}")
-			+ (string.IsNullOrWhiteSpace(endlessStatsBreakdown) ? "" : $"\n{endlessStatsBreakdown}");
+		GameState.Instance.ConsumeAchievementNotification();
+		var time = System.TimeSpan.FromSeconds(_elapsed);
+		if (!retreated) PresentResult(false, "Run over", $"Wave {_spawnDirector.EndlessWaveNumber} reached · {(int)time.TotalMinutes}:{time.Seconds:00}");
 		SetStatus(retreated
 			? "The caravan withdrew in good order and banked its spoils."
 			: "The caravan was eventually overrun. Rear scouts recovered what they could.");
@@ -8659,38 +8603,6 @@ public partial class BattleController : Node2D
 			? Mathf.Clamp(_spawnDirector.EndlessWaveNumber / 40f, 0f, 1f) * 0.14f
 			: 0f;
 		return Mathf.Clamp(enemyCountPressure + hullPressure + pendingPressure + endlessPressure, 0f, 1f);
-	}
-
-	private string BuildEndlessRunDebriefText(int rewardGold, int rewardFood, bool retreated)
-	{
-		var routeLabel = ResolveRouteLabel(_activeRouteId);
-		var outcomeLine = retreated
-			? $"Endless retreat banked on {routeLabel}."
-			: $"Endless run ended on {routeLabel}.";
-		return
-			$"{outcomeLine}\n" +
-			$"Wave reached: {_spawnDirector.EndlessWaveNumber}  |  Survival: {_elapsed:0.0}s  |  Enemy defeats: {_enemyDefeats}\n" +
-			$"Banked payout: +{rewardGold} gold, +{rewardFood} food  |  Boon: {EndlessBoonCatalog.Get(_endlessBoonId).Title}  |  Path: {EndlessRouteForkCatalog.Get(_endlessRouteForkId).Title}\n" +
-			$"Boss bonus: {FormatSignedInt(_endlessBossGoldBonus)} gold / {FormatSignedInt(_endlessBossFoodBonus)} food\n" +
-			$"{BuildEndlessRunUpgradeSummary()}\n" +
-			$"{BuildEndlessBossCheckpointText()}\n" +
-			$"Battlefield event: {_endlessBattlefieldEventLabel}\n" +
-			$"Caravan support: {_endlessSupportEventLabel}\n" +
-			$"Record: wave {GameState.Instance.BestEndlessWave}  |  {GameState.Instance.BestEndlessTimeSeconds:0.0}s";
-	}
-
-	private string BuildEndlessRunUpgradeSummary()
-	{
-		if (_endlessRunUpgrades.Count == 0)
-		{
-			return "Run upgrades: none";
-		}
-
-		var labels = _endlessRunUpgrades
-			.Select(id => GetDraftOption(id).Title)
-			.OrderBy(title => title, StringComparer.OrdinalIgnoreCase)
-			.ToArray();
-		return "Run upgrades: " + string.Join(", ", labels);
 	}
 
 	private int CalculateEndlessGoldReward()

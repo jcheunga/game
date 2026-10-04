@@ -59,7 +59,7 @@ public partial class LoadoutMenu : Control
             var button = RealmUi.IconButton(spell.EffectType.Contains("heal") ? "heart" : "bolt", spell.DisplayName,
                 () => SpellShowcase.Show(this, spell));
             if (UiArtLoader.TryLoadSpellIcon(spell) is { } icon) { button.Icon = icon; button.SetMeta("painted_resource_icon", true); }
-            button.AddThemeConstantOverride("icon_max_width", 32);
+            button.AddThemeConstantOverride("icon_max_width", 28);
             button.CustomMinimumSize = new Vector2(56, 48);
             magic.AddChild(button);
         }

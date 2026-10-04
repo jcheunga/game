@@ -88,10 +88,14 @@ public partial class UiReviewSmoke
         await Press("Details");
         Check(Walk(menu).OfType<ModelShowcase>().Any(), "Preparation opens the visual unit inspector");
         AuditText("Profile / unit inspector"); await Capture("05-unit-inspector");
-        await Press("Close");
+        Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The unit inspector opens as a modal above preparation");
+        await PressHint("Close details");
         SpellShowcase.Show(Walk(menu).OfType<LoadoutMenu>().Single(), firstSpell); await Wait(.3);
         Check(Walk(menu).OfType<SpellShowcase>().Any(), "Preparation can inspect a spell with the same visual stat cards");
-        AuditText("Profile / spell inspector"); await Capture("06-spell-inspector"); await Press("Close");
+        AuditText("Profile / spell inspector"); await Capture("06-spell-inspector");
+        Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The spell inspector opens as a modal above preparation");
+        await PressHint("Close details");
+        Check(!Walk(menu).OfType<SpellShowcase>().Any(), "Closing the spell inspector returns to preparation");
         menu.CloseHomeModal();
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit));
         GD.Print($"ARMORY_DETAILS_REVIEW_RESULT: {_failures} failures");

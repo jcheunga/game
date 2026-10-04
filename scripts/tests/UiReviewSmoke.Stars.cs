@@ -85,6 +85,23 @@ public partial class UiReviewSmoke
             "Showing the reward panel again cannot award the victory twice");
         AuditText("Victory rewards");
         await Capture("04-victory-rating");
+
+        // A defeat uses the same card: title, rating, any earnings, and both actions side by side.
+        state.PrepareCampaignBattle();
+        await Open("Battle");
+        battle = (BattleController)GetTree().CurrentScene;
+        battle.SetPhysicsProcess(false);
+        typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { 1f, Colors.White, "" });
+        typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { false });
+        await Wait(.5);
+        var labels = Walk(battle).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text).ToArray();
+        Check(labels.Contains("Defeat") && !labels.Any(text => text.Contains("Defeat on stage") || text.Contains("[X]") || text.Contains("Clear reward")),
+            "Defeat shows a titled result card instead of the battle report");
+        var actions = Walk(battle).OfType<Button>().Where(button => button.IsVisibleInTree() && (button.Text == "Back to map" || button.Text.StartsWith("Restart"))).ToArray();
+        Check(actions.Length == 2 && actions[0].GetParent() == actions[1].GetParent() && actions[0].GetParent() is HBoxContainer,
+            "Defeat actions sit side by side");
+        AuditText("Defeat result");
+        await Capture("05-defeat");
         await Open("MainMenu");
         GD.Print($"STAGE_STAR_UI_RESULT: {_failures} failures");
         QuitAfterAudio(_failures == 0 ? 0 : 1);

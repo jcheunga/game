@@ -112,7 +112,9 @@ public partial class UiReviewSmoke
         Call(fight, "RetreatToMap"); await Wait(.7);
         Check(GetTree().CurrentScene is MapMenu quitHome && !quitHome.HasHomeModal && state.EndlessRuns == runs + 1 && state.Gold == gold + payout,
             "Quitting Endless banks rewards and returns directly to the map without another modal");
-        fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false);
+        fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false); await Wait(.5);
+        Check(Walk(fight).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text == "Run over"), "An endless run ends on the shared result card");
+        AuditText("Endless result"); await Capture("03-endless-result");
         Call(fight, "HandleEndPanelSecondaryAction"); await Wait(.7);
         Check(GetTree().CurrentScene is MapMenu endlessHome && endlessHome.HomeModalDestination == SceneRouter.EndlessScene,
             "Endless result returns to the current preparation modal");

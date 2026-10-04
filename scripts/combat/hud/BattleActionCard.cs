@@ -25,6 +25,7 @@ public partial class BattleActionCard : Control
     public BattleActionCard()
     {
         Name = "ActionCardArt";
+        SetMeta("frame_bleed", true);
         MouseFilter = MouseFilterEnum.Ignore;
         ClipContents = true;
         TextureFilter = TextureFilterEnum.Linear;
@@ -43,11 +44,13 @@ public partial class BattleActionCard : Control
         };
         AddChild(_cooldownShade);
         _costPlate = new PanelContainer { Name = "CourageCost", MouseFilter = MouseFilterEnum.Ignore };
+        _costPlate.SetMeta("frame_inset", 1f);
         _costPlate.AddThemeStyleboxOverride("panel", _costMaterial);
         AddChild(_costPlate);
         _cost = CardLabel(22);
         _costPlate.AddChild(_cost);
         _statusPlate = new PanelContainer { Name = "UnavailableStatus", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        _statusPlate.SetMeta("frame_inset", 1f);
         _statusPlate.AddThemeStyleboxOverride("panel", MedievalUi.Engraved("meter_track", 6, 1));
         AddChild(_statusPlate);
         _status = CardLabel(18);

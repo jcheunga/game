@@ -17,15 +17,15 @@ public partial class LoadoutMenu
         var roster = GameState.Instance.GetActiveDeckUnits().ToArray();
         foreach (var unit in roster)
         {
-            var button = new RealmButton { CustomMinimumSize = new Vector2(140, 108),
+            var button = new RealmButton { CustomMinimumSize = new Vector2(140, 116),
                 TooltipText = $"{unit.DisplayName} · Level {GameState.Instance.GetUnitLevel(unit.Id)} · {unit.Cost} courage",
                 AccessibilityName = $"View {unit.DisplayName}" };
             button.Pressed += () => ModelShowcase.Show(this, roster, unit.Id);
             ModalUi.StyleButton(button); cards.AddChild(button);
             var padding = new MarginContainer { MouseFilter = MouseFilterEnum.Ignore };
             button.AddChild(padding); padding.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-            foreach (var side in new[] { "left", "right" }) padding.AddThemeConstantOverride("margin_" + side, 8);
-            foreach (var side in new[] { "top", "bottom" }) padding.AddThemeConstantOverride("margin_" + side, 4);
+            foreach (var side in new[] { "left", "right" }) padding.AddThemeConstantOverride("margin_" + side, ModalSurface.MinimumSideInset);
+            foreach (var side in new[] { "top", "bottom" }) padding.AddThemeConstantOverride("margin_" + side, ModalSurface.MinimumEndInset);
             var card = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; padding.AddChild(card);
             card.AddChild(new TextureRect { Texture = UiArtLoader.TryLoadUnitIcon(unit), CustomMinimumSize = new Vector2(80, 64),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,

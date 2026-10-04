@@ -58,9 +58,9 @@ public partial class CodexMenu
             bool known = state.IsCodexEntryDiscovered(entry.Id);
             var button = new Button { CustomMinimumSize = new Vector2(96, 86), AccessibilityName = known ? entry.Title : "Undiscovered codex entry", TooltipText = known ? entry.Title : "Encounter this creature or acquire this item to discover it", Disabled = !known };
             ModalUi.StyleButton(button, entry.Id == _selectedEntryId, new Color("8c6b44"), entry.Id == _selectedEntryId ? ModalMaterial.Gold : ModalMaterial.Portrait);
-            var badge = known ? UiBadgeFactory.CreateCodexBadge(entry, new Vector2(80, 72)) : UiBadgeFactory.CreateMysteryBadge(new Vector2(80, 72));
+            var badge = known ? UiBadgeFactory.CreateCodexBadge(entry, new Vector2(76, 66)) : UiBadgeFactory.CreateMysteryBadge(new Vector2(76, 66));
             RealmModal.Polish(badge);
-            button.AddChild(badge); badge.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); badge.OffsetLeft = badge.OffsetTop = 6; badge.OffsetRight = badge.OffsetBottom = -6;
+            button.AddChild(badge); badge.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); badge.OffsetLeft = badge.OffsetTop = 10; badge.OffsetRight = badge.OffsetBottom = -10;
             button.Pressed += () => { _selectedEntryId = entry.Id; RefreshBook(); }; _bookGrid.AddChild(button);
         }
         RealmUi.Clear(_bookDetail);

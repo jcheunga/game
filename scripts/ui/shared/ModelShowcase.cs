@@ -2,12 +2,14 @@ using System;
 using System.Linq;
 using Godot;
 
+/// <summary>An ally's animated model and stats, in a modal above the current panel.</summary>
 public partial class ModelShowcase : CanvasLayer
 {
     private UnitDefinition[] _units;
     private int _index;
+    private RealmModal _modal;
     private UnitModelPreview _preview;
-    private Label _title, _page;
+    private Label _page;
     private VBoxContainer _details;
     private Button[] _animationButtons;
     public static ModelShowcase Show(Control host, UnitDefinition[] units, string selectedId)
@@ -20,40 +22,51 @@ public partial class ModelShowcase : CanvasLayer
 
     public override void _Ready()
     {
-        var veil=new ColorRect { Color=new Color("080f14f5") };
-        AddChild(veil); veil.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        var canvas=new ResponsiveUiCanvas(); AddChild(canvas); MedievalUi.Apply(canvas);
-        var stack=new VBoxContainer(); stack.AddThemeConstantOverride("separation",8); canvas.Content.AddChild(stack);
-        var header=new HBoxContainer(); stack.AddChild(header);
-        _title=RealmUi.Heading("",30); header.AddChild(_title);
-        var close=RealmUi.Button("close","Close",QueueFree); MobilePresentation.TouchButton(close); header.AddChild(close);
-        var body=new HBoxContainer { SizeFlagsVertical=Control.SizeFlags.ExpandFill }; stack.AddChild(body);
+        _modal=RealmModal.OpenInspector(this,"","warband");
+        var stack=new VBoxContainer(); stack.AddThemeConstantOverride("separation",12);
+        _modal.Content.AddChild(stack); stack.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        var body=new HBoxContainer { SizeFlagsVertical=Control.SizeFlags.ExpandFill }; body.AddThemeConstantOverride("separation",20); stack.AddChild(body);
         var stage=new PanelContainer { SizeFlagsHorizontal=Control.SizeFlags.ExpandFill }; body.AddChild(stage);
-        stage.AddThemeStyleboxOverride("panel",MedievalUi.Engraved("engraved_panel",12,8));
+        stage.AddThemeStyleboxOverride("panel",new ModalSurface(ModalMaterial.Steel,12));
+        var art=new Control { ClipContents=true,CustomMinimumSize=new Vector2(250,150) }; stage.AddChild(art);
+        var backdrop=new ModalShowcaseBackdrop(); art.AddChild(backdrop); backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _preview=new UnitModelPreview { CustomMinimumSize=new Vector2(250,150),MouseFilter=Control.MouseFilterEnum.Ignore };
-        stage.AddChild(_preview);
-        var report=new ScrollContainer { CustomMinimumSize=new Vector2(320,0),
+        art.AddChild(_preview); _preview.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        var report=new ScrollContainer { CustomMinimumSize=new Vector2(MobilePresentation.Enabled?300:320,0),
             HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled }; body.AddChild(report);
         _details=new VBoxContainer { SizeFlagsHorizontal=Control.SizeFlags.ExpandFill };
         _details.AddThemeConstantOverride("separation",12); report.AddChild(_details);
+
+        // Animation choices on the left, squad paging on the right.
         var footer=new HBoxContainer(); footer.AddThemeConstantOverride("separation",8); stack.AddChild(footer);
-        var previous=RealmUi.IconButton("back","Previous model",()=>Select(-1)); MobilePresentation.TouchButton(previous); footer.AddChild(previous);
-        _page=RealmUi.Label("",20,true); _page.VerticalAlignment=VerticalAlignment.Center; footer.AddChild(_page);
         var states=new[]{UnitAnimState.Idle,UnitAnimState.Walk,UnitAnimState.Attack};
         _animationButtons=states.Select(state=>
         {
-            var b=new Button {Text=state.ToString(),CustomMinimumSize=new Vector2(100,56),ToggleMode=true};
-            MobilePresentation.TouchButton(b); b.Pressed+=()=>Play(state); footer.AddChild(b); return b;
+            var b=new RealmButton {Text=state.ToString(),CustomMinimumSize=new Vector2(96,48),ToggleMode=true,
+                MouseDefaultCursorShape=Control.CursorShape.PointingHand};
+            b.SetMeta("realm_toggle",true); ModalUi.StyleButton(b); Touch(b);
+            b.Pressed+=()=>Play(state); footer.AddChild(b); return (Button)b;
         }).ToArray();
-        var next=RealmUi.IconButton("arrow","Next model",()=>Select(1)); MobilePresentation.TouchButton(next); footer.AddChild(next);
-        Select(0); close.GrabFocus();
+        footer.AddChild(new Control { SizeFlagsHorizontal=Control.SizeFlags.ExpandFill });
+        var previous=RealmUi.IconButton("back","Previous ally",()=>Select(-1)); ModalUi.StyleButton(previous); Touch(previous); footer.AddChild(previous);
+        _page=RealmUi.Label("",18,true); _page.VerticalAlignment=VerticalAlignment.Center; _page.HorizontalAlignment=HorizontalAlignment.Center;
+        _page.AutowrapMode=TextServer.AutowrapMode.Off; _page.CustomMinimumSize=new Vector2(64,0); _page.SizeFlagsHorizontal=Control.SizeFlags.ShrinkCenter; footer.AddChild(_page);
+        var next=RealmUi.IconButton("arrow","Next ally",()=>Select(1)); ModalUi.StyleButton(next); Touch(next); footer.AddChild(next);
+        previous.Visible=next.Visible=_page.Visible=_units.Length>1;
+        Select(0);
+    }
+
+    // Phones get touch-sized targets; the modal's own styling stays in place.
+    private static void Touch(Button button)
+    {
+        if(MobilePresentation.Enabled) button.CustomMinimumSize=new Vector2(Mathf.Max(56,button.CustomMinimumSize.X),Mathf.Max(56,button.CustomMinimumSize.Y));
     }
 
     private void Select(int direction)
     {
         _index=(_index+direction+_units.Length)%_units.Length;
-        var unit=_units[_index]; _preview.SetUnit(unit); _title.Text=unit.DisplayName;
-        _page.Text=$"{_index+1} / {_units.Length}";
+        var unit=_units[_index]; _preview.SetUnit(unit); _modal.SetHeading(unit.DisplayName);
+        _page.Text=$"{_index+1} of {_units.Length}";
         var stats=unit.IsPlayerSide?GameState.Instance.BuildPlayerUnitStats(unit):new UnitStats(unit);
         RealmUi.Clear(_details);
         _details.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag),18,true));
@@ -73,10 +86,5 @@ public partial class ModelShowcase : CanvasLayer
     {
         _preview.Play(state);
         foreach(var b in _animationButtons) b.ButtonPressed=b.Text==state.ToString();
-    }
-
-    public override void _UnhandledInput(InputEvent input)
-    {
-        if(input is InputEventKey {Pressed:true,Keycode:Key.Escape}) {QueueFree(); GetViewport().SetInputAsHandled();}
     }
 }

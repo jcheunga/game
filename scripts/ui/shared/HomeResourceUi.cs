@@ -26,7 +26,7 @@ public static class HomeResourceUi
         button.Text = $"Deploy  ·  {cost}";
         button.Icon = HomeMapArt.Icon("food");
         button.IconAlignment = HorizontalAlignment.Right;
-        button.AddThemeConstantOverride("icon_max_width", 32);
+        button.AddThemeConstantOverride("icon_max_width", 28);
         button.AccessibilityName = $"Deploy, {cost} rations";
         button.TooltipText = $"Battle entry · {cost} rations";
     }

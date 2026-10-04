@@ -27,10 +27,10 @@ public static class HomeMapUi
 
     public static void StyleButton(Button button, bool active = false)
     {
-        button.AddThemeStyleboxOverride("normal", Surface(active, 8));
-        button.AddThemeStyleboxOverride("hover", Surface(true, 8));
-        button.AddThemeStyleboxOverride("pressed", Surface(true, 8));
-        button.AddThemeStyleboxOverride("disabled", Surface(false, 8));
+        button.AddThemeStyleboxOverride("normal", Surface(active, 10));
+        button.AddThemeStyleboxOverride("hover", Surface(true, 10));
+        button.AddThemeStyleboxOverride("pressed", Surface(true, 10));
+        button.AddThemeStyleboxOverride("disabled", Surface(false, 10));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("ffe2a6") };
         focus.SetCornerRadiusAll(12);
         focus.SetBorderWidthAll(2);
@@ -42,7 +42,7 @@ public static class HomeMapUi
         var button = new Button
         {
             Name = title + "Tab", AccessibilityName = title, TooltipText = title,
-            CustomMinimumSize = new Vector2(108, 108), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(108, 104), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand
         };
         foreach (var state in new[] { "normal", "disabled" }) button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
@@ -63,6 +63,7 @@ public static class HomeMapUi
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
         circle.AddThemeStyleboxOverride("panel", Surface(active, 2, 35));
+        circle.SetMeta("frame_bleed", true); // The painted emblem deliberately overlaps its medallion.
         content.AddChild(circle);
         circle.AddChild(new TextureRect
         {

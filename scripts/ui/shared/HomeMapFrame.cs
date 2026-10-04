@@ -10,6 +10,9 @@ public partial class HomeMapFrame : StyleBox
     private StyleBoxFlat _rim, _inset;
 
     public HomeMapFrame() { }
+
+    /// <summary>Width of the drawn rim and inner line; content belongs inside it.</summary>
+    public const float FrameInset = 7;
     public HomeMapFrame(bool highlighted, int padding, int radius)
     {
         _highlighted = highlighted;

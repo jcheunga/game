@@ -145,8 +145,14 @@ public partial class CashShopMenu : Control
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_resourcesRow);
-        _resourcesRow.AddChild(HomeResourceUi.Amount("gold", GameState.Instance.Gold.ToString("N0"), $"Gold: {GameState.Instance.Gold:N0}"));
-        _resourcesRow.AddChild(HomeResourceUi.Amount("food", $"{GameState.Instance.Food}/{GameState.FoodRechargeCap}", GameState.Instance.FoodRechargeText));
+        // Same slim balance strip as the armory.
+        foreach (var balance in new[] {
+            HomeResourceUi.Amount("gold", GameState.Instance.Gold.ToString("N0"), $"Gold: {GameState.Instance.Gold:N0}", 28),
+            HomeResourceUi.Amount("food", $"{GameState.Instance.Food}/{GameState.FoodRechargeCap}", GameState.Instance.FoodRechargeText, 28) })
+        {
+            balance.GetChild<Label>(1).AddThemeFontSizeOverride("font_size", 20);
+            _resourcesRow.AddChild(balance);
+        }
         RealmModal.Polish(_resourcesRow);
     }
 

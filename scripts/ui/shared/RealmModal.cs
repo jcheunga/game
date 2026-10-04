@@ -13,7 +13,7 @@ public partial class RealmModal : Control
     private PanelContainer _frame;
     private PanelContainer _header;
     private TextureRect _emblem;
-    private float _preferredWidth = 1120;
+    private float _preferredWidth = 1120, _preferredHeight = 612;
     private bool _mobileCanvas;
 
     public override void _Ready()
@@ -44,18 +44,37 @@ public partial class RealmModal : Control
         Resized += FitToOwnArea;
     }
 
-    public void Present(string destination, string title, string subtitle, bool hasBack, float width = 1120)
+    public void Present(string destination, string title, string subtitle, bool hasBack, float width = 1120, float height = 612, string identity = null)
     {
-        _preferredWidth = width;
+        _preferredWidth = width; _preferredHeight = height;
         _close.GrabFocus();
         Destination = destination; _title.Text = title; _subtitle.Text = subtitle ?? ""; _back.Visible = hasBack;
-        ApplyIdentity(title);
+        ApplyIdentity(identity ?? title);
         _frame.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
         _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
         _frame.OffsetTop = -322; _frame.OffsetBottom = 290;
         FitToOwnArea();
         if (!(GameState.Instance?.ReducedMotion ?? false)) RealmUi.FadeIn(_frame);
     }
+
+    /// <summary>
+    /// A smaller modal stacked above whatever is open, for inspecting one item.
+    /// It lives on its own layer so it covers the home panel and the battle HUD alike.
+    /// </summary>
+    public static RealmModal OpenInspector(CanvasLayer layer, string title, string identity, float width = 880, float height = 540)
+    {
+        var modal = new RealmModal();
+        MedievalUi.Apply(modal);
+        layer.AddChild(modal);
+        modal.Name = "InspectorModal";
+        if (MobilePresentation.Enabled) modal.UseMobileCanvas();
+        modal.Closed = modal.Back = layer.QueueFree;
+        modal._close.TooltipText = modal._close.AccessibilityName = "Close details";
+        modal.Present("inspector", title, "", false, width, height, identity);
+        return modal;
+    }
+
+    public void SetHeading(string title) => _title.Text = title;
 
     public static void UpdateHeading(Node child, string title = null, string subtitle = null)
     {
@@ -66,7 +85,7 @@ public partial class RealmModal : Control
     public void FitToArea(Vector2 area)
     {
         var width = Mathf.Min(_preferredWidth, area.X - 32);
-        var height = Mathf.Min(612, area.Y - 32);
+        var height = Mathf.Min(_preferredHeight, area.Y - 32);
         _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
         _frame.OffsetTop = -height / 2; _frame.OffsetBottom = height / 2;
         var compact = area.Y < 500;
@@ -223,7 +242,8 @@ public partial class RealmModal : Control
             button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
             var textWidth = ModalUi.HeadingFont.GetStringSize(button.Text, fontSize: RealmUi.ButtonFontSize).X;
             var iconWidth = button.Icon == null ? 0 : button.GetThemeConstant("icon_max_width") + button.GetThemeConstant("h_separation");
-            button.CustomMinimumSize = new Vector2(Mathf.Max(48, textWidth + iconWidth + 16), 48);
+            // Room for the text plus the surface's rim-clearing insets on both sides.
+            button.CustomMinimumSize = new Vector2(Mathf.Max(48, textWidth + iconWidth + 2 * ModalSurface.MinimumSideInset + 4), 48);
         }
         foreach (var child in node.GetChildren()) CompactFooter(child);
     }

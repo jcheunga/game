@@ -160,6 +160,31 @@ public partial class ShopMenu
         _recommendationStack.AddChild(advice);
     }
 
+    // Clears both the portrait rim and the thicker gold rim of the selected portrait.
+    private const int PortraitInset = 10;
+
+    // Bottom-right state mark inside the portrait: recruit, locked, equipped or level.
+    private Control RosterMark(bool owned, bool available, bool equipped, string id)
+    {
+        var icon = !owned ? available ? "plus" : "lock" : equipped ? "check" : null;
+        if (icon != null)
+            return new TextureRect
+            {
+                Texture = RealmUi.Icon(icon), Modulate = RealmUi.Gold, MouseFilter = MouseFilterEnum.Ignore,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                Position = new Vector2(76 - PortraitInset - 18, 80 - PortraitInset - 18), Size = new Vector2(18, 18)
+            };
+        var level = new Label
+        {
+            Text = $"{(_showSpells ? GameState.Instance.GetSpellLevel(id) : GameState.Instance.GetUnitLevel(id))}",
+            MouseFilter = MouseFilterEnum.Ignore, HorizontalAlignment = HorizontalAlignment.Right,
+            Position = new Vector2(76 - PortraitInset - 30, 80 - PortraitInset - 22), Size = new Vector2(30, 22)
+        };
+        level.AddThemeFontSizeOverride("font_size", 16);
+        level.AddThemeColorOverride("font_color", RealmUi.Gold);
+        return level;
+    }
+
     private void RebuildModalRoster()
     {
         RealmUi.Clear(_modalRoster);
@@ -196,22 +221,9 @@ public partial class ShopMenu
                 };
                 button.AddChild(image);
                 image.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-                image.OffsetLeft = image.OffsetTop = 6;
-                image.OffsetRight = image.OffsetBottom = -6;
-                if (!compact)
-                {
-                    var badge = new Label
-                    {
-                        Text = !owned ? available ? "+" : "🔒" : equipped ? "✓" : $"{(_showSpells ? GameState.Instance.GetSpellLevel(id) : GameState.Instance.GetUnitLevel(id))}",
-                        MouseFilter = MouseFilterEnum.Ignore,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Position = new Vector2(51, 54),
-                        Size = new Vector2(20, 24)
-                    };
-                    badge.AddThemeFontSizeOverride("font_size", 18);
-                    badge.AddThemeColorOverride("font_color", RealmUi.Gold);
-                    button.AddChild(badge);
-                }
+                image.OffsetLeft = image.OffsetTop = PortraitInset;
+                image.OffsetRight = image.OffsetBottom = -PortraitInset;
+                if (!compact) button.AddChild(RosterMark(owned, available, equipped, id));
 
                 button.Pressed += () =>
                 {

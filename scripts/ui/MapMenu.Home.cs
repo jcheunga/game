@@ -66,7 +66,7 @@ public partial class MapMenu
                 MouseFilter = MouseFilterEnum.Ignore
             });
             var value = new Label { VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            value.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
+            value.AddThemeFontSizeOverride("font_size", 16); // Balances, not button text.
             value.AddThemeColorOverride("font_color", new Color("f1e7cb"));
             content.AddChild(value);
             button.Pressed += () => action();
@@ -82,9 +82,9 @@ public partial class MapMenu
     private void BuildZoneHeading()
     {
         var panel = new PanelContainer { Name = "ZoneHeading" };
-        panel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 8));
+        panel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 10));
         _hud.AddChild(panel);
-        HomeMapUi.Place(panel, .5f, 0, new Rect2(-180, 20, 360, 86));
+        HomeMapUi.Place(panel, .5f, 0, new Rect2(-180, 20, 360, 92));
         var title = new VBoxContainer();
         title.AddThemeConstantOverride("separation", 0);
         panel.AddChild(title);
@@ -107,7 +107,7 @@ public partial class MapMenu
     private void BuildDock()
     {
         var dock = new PanelContainer { Name = "HomeTabs" };
-        dock.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 8, 16));
+        dock.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 10, 16));
         _hud.AddChild(dock);
         HomeMapUi.Place(dock, .5f, 1, new Rect2(-354, -142, 708, 126));
         var tabs = new HBoxContainer();
@@ -142,6 +142,7 @@ public partial class MapMenu
         header.AddChild(_siteEyebrow);
         var close = HomeMapUi.IconButton("close", "Close site details", CloseSiteDetails);
         close.CustomMinimumSize = new Vector2(40, 40);
+        close.AddThemeConstantOverride("icon_max_width", 22); // Clears the rim of the compact button.
         header.AddChild(close);
         var encounter = new HBoxContainer();
         encounter.AddThemeConstantOverride("separation", 12);

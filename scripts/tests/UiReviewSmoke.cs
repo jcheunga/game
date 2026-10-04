@@ -219,7 +219,8 @@ public partial class UiReviewSmoke : Node
             await Capture("06-loadout");
             await Press("Details");
             Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ModelShowcase>().Any(), "Unit details open on demand");
-            await Press("Close");
+            await Capture("06b-unit-inspector");
+            await PressHint("Close details");
             await Open("ShopMenu"); await Capture("07-armory");
             var oldGold = GameState.Instance.Gold;
             var oldLevel = GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId);
@@ -317,6 +318,7 @@ public partial class UiReviewSmoke : Node
     {
         if (OS.GetCmdlineUserArgs().Contains("--scroll-spacing")) AuditScrollSpacing(screen);
         AuditModalBounds(screen);
+        AuditFrameClearance(screen);
         var viewport = GetViewport().GetVisibleRect();
         var panels = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
         foreach (var panel in panels)
@@ -358,7 +360,7 @@ public partial class UiReviewSmoke : Node
             var issues = new List<string>();
             var minimumFont = homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
-                if (parent is Button) { minimumFont = Math.Min(minimumFont, 16); break; }
+                if (parent is Button) { minimumFont = Math.Min(minimumFont, RealmUi.ButtonFontSize); break; }
             if (font < minimumFont) issues.Add("small text");
             if (label.GetVisibleLineCount() < label.GetLineCount()) issues.Add("hidden lines");
             var hiddenLines = label.GetVisibleLineCount() < label.GetLineCount();

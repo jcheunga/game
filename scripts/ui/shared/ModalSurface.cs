@@ -11,11 +11,17 @@ public partial class ModalSurface : StyleBox
     private bool _active, _pressed;
     private StyleBoxFlat _shadow, _inset;
     public ModalSurface() { }
+
+    /// <summary>Width of the drawn rim and inner bevel line; content belongs inside it.</summary>
+    public float FrameInset => _material == ModalMaterial.Portrait ? 4 : 8;
+    public const int MinimumSideInset = 12, MinimumEndInset = 10;
     public ModalSurface(ModalMaterial material, int padding = 12, Color? accent = null, bool active = false, bool pressed = false)
     {
         _material = material; _accent = accent ?? _accent; _active = active; _pressed = pressed;
-        ContentMarginLeft = ContentMarginRight = padding;
-        ContentMarginTop = ContentMarginBottom = padding;
+        // Content always clears the rim and bevel with some air; portrait art may meet its thinner rim.
+        var portrait = material == ModalMaterial.Portrait;
+        ContentMarginLeft = ContentMarginRight = portrait ? padding : Mathf.Max(padding, MinimumSideInset);
+        ContentMarginTop = ContentMarginBottom = portrait ? padding : Mathf.Max(padding, MinimumEndInset);
         _shadow = new StyleBoxFlat { BgColor = new Color("15101a"), ShadowColor = new Color("09060c99"), ShadowSize = 4, ShadowOffset = new Vector2(0, 4) };
         _shadow.SetCornerRadiusAll(5);
         _inset = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color(material == ModalMaterial.Paper ? "c6a36a80" : "ecdbb650") };

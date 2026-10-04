@@ -129,10 +129,10 @@ public static class UiBadgeFactory
 
         frame.MouseFilter = Control.MouseFilterEnum.Ignore;
         var inner = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        inner.AddThemeConstantOverride("margin_left", 4);
-        inner.AddThemeConstantOverride("margin_right", 4);
-        inner.AddThemeConstantOverride("margin_top", 4);
-        inner.AddThemeConstantOverride("margin_bottom", 4);
+        // Larger badges leave visible air inside the rim; tiny ones keep their art legible.
+        var inset = size.X >= 30 ? 6 : 5;
+        foreach (var side in new[] { "margin_left", "margin_right", "margin_top", "margin_bottom" })
+            inner.AddThemeConstantOverride(side, inset);
         frame.AddChild(inner);
 
         if (texture != null)

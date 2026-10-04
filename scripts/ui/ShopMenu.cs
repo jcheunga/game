@@ -101,7 +101,8 @@ public partial class ShopMenu : Control
 
             )
             {
-                var balance = HomeResourceUi.Amount(icon, amount.ToString("N0"), $"{name}: {amount:N0}");
+                var balance = HomeResourceUi.Amount(icon, amount.ToString("N0"), $"{name}: {amount:N0}", 28);
+                balance.GetChild<Label>(1).AddThemeFontSizeOverride("font_size", 20);
                 balance.Name = "Balance" + icon;
                 balance.SizeFlagsVertical = SizeFlags.ShrinkCenter;
                 _resourcesRow.AddChild(balance);

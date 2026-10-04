@@ -60,11 +60,11 @@ public partial class AchievementsPanel : VBoxContainer
             {
                 button.Icon = UiArtLoader.TryLoadRewardIcon(reward.RewardType, reward.RewardItemId);
                 button.SetMeta("painted_resource_icon", true);
-                button.AddThemeConstantOverride("icon_max_width", 30);
+                button.AddThemeConstantOverride("icon_max_width", 24);
                 button.AccessibilityName = $"{entry.Title}, {reward.RewardLabel}, {(claimed ? "claimed" : done ? "ready to claim" : "in progress")}";
                 button.TooltipText = button.AccessibilityName;
             }
-            button.CustomMinimumSize = new Vector2(0, 40); button.Disabled = !done || claimed || reward == null; ModalUi.StyleButton(button, done && !claimed); stack.AddChild(button);
+            button.CustomMinimumSize = new Vector2(0, 44); button.Disabled = !done || claimed || reward == null; ModalUi.StyleButton(button, done && !claimed); stack.AddChild(button);
             if (claimed) button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Tab, 8, new Color("5e9971"), true));
             RealmModal.Polish(description);
         }

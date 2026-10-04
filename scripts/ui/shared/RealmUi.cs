@@ -5,7 +5,7 @@ using Godot;
 /// <summary>Small, shared presentation primitives. Game rules remain in GameState.</summary>
 public static class RealmUi
 {
-    public const int ButtonFontSize = 16;
+    public const int ButtonFontSize = 14;
     public const int CompactButtonFontSize = 14;
     public static readonly Color Gold = new("d7b77b");
     public static readonly Color Muted = new("9eada9");

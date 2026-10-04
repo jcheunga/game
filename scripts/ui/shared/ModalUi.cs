@@ -48,7 +48,7 @@ public static class ModalUi
     private static void StyleTab(Button button)
     {
         // List rows read from the left edge, so they need a wider inset than centred tabs.
-        var inset = button.Alignment == HorizontalAlignment.Left ? 16 : 8;
+        var inset = button.Alignment == HorizontalAlignment.Left ? 16 : ModalSurface.MinimumSideInset;
         StyleBox Surface(ModalMaterial material, Color colour, bool active = false)
         {
             var surface = new ModalSurface(material, 8, colour, active);

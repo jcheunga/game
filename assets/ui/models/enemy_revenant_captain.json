@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.921345774431406,
+  "drawScale": 2.0571428571428574,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_revenant_captain",
   "title": "Revenant Captain",
   "source": "art/remaster/units/enemy_revenant_captain.py",
-  "anchorY": 0.7130358219146729,
-  "anchorX": 0.475542,
+  "anchorY": 0.802531898021698,
+  "anchorX": 0.465267,
   "motion": {
     "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
-      -0.0,
-      -0.209014
+      0.0,
+      -0.29682
     ],
     "contact": [
-      0.3398,
-      -0.126162
+      0.48255,
+      -0.179162
     ]
   },
-  "healthBarY": 0.478661
+  "healthBarY": 0.680657
 }

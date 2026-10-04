@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.4294804712259994,
+  "drawScale": 2.9495079324852607,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_defender",
   "title": "Shield Knight",
   "source": "art/remaster/units/player_defender.py",
-  "anchorY": 0.7561664283275604,
-  "anchorX": 0.47059,
+  "anchorY": 0.7110017538070679,
+  "anchorX": 0.475775,
   "motion": {
     "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
       -0.0,
-      -0.25133
+      -0.207018
     ],
     "contact": [
-      0.264982,
-      -0.17317
+      0.218263,
+      -0.142639
     ]
   },
-  "healthBarY": 0.487416
+  "healthBarY": 0.401627
 }

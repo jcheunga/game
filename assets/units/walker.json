@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.2167063647915857,
+  "drawScale": 2.0571428571428574,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 4,
+      "fx": "ash",
+      "motion": "crumple",
+      "impactPoint": [
+        0.012791,
+        0.002062
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_walker",
   "title": "Risen",
   "source": "art/remaster/units/enemy_walker.py",
-  "anchorY": 0.780754953622818,
-  "anchorX": 0.467767,
+  "anchorY": 0.802531898021698,
+  "anchorX": 0.465267,
   "motion": {
     "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
       0.0,
-      -0.275454
+      -0.29682
     ],
     "contact": [
-      0.379945,
-      -0.072646
+      0.409415,
+      -0.07828
     ]
   },
-  "healthBarY": 0.51513
+  "healthBarY": 0.555657
 }

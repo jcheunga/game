@@ -2989,6 +2989,35 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	// The fall, landing and dissolve follow the authored death clip: the thud, dust and camera
+	// accent land on the frame the body hits the ground, not the moment of death.
+	private void PresentUnitDeath(Unit deadUnit)
+	{
+		var boss = deadUnit.VisualClass == "boss";
+		var corpse = deadUnit.SpawnDeathVisual(this);
+		if (boss) AudioDirector.Instance?.PlayBossDeath();
+		if (corpse == null)
+		{
+			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
+			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, boss);
+			return;
+		}
+		BattleDeathEffects.SpawnDeathMoment(this, deadUnit.BodyContactPosition, corpse.Style);
+		var weight = deadUnit.MaxHealth * 0.5f;
+		var visualClass = deadUnit.VisualClass;
+		corpse.Impacted = body =>
+		{
+			AudioDirector.Instance?.PlayImpact(weight, visualClass);
+			BattleDeathEffects.SpawnImpact(this, body);
+			if (body.Style.Heavy && !IsReducedMotionEnabled())
+			{
+				_impactShakeStrength = Mathf.Max(_impactShakeStrength, body.Style.Boss ? .6f : .28f);
+				_impactShakeTimer = Mathf.Max(_impactShakeTimer, ImpactShakeDurationSeconds * (body.Style.Boss ? 2.2f : 1.2f));
+			}
+		};
+		corpse.DissolveStarted = body => BattleDeathEffects.SpawnDissolve(this, body, body.Style.Boss ? 1.3f : .7f);
+	}
+
 	private void TriggerImpactShake(float appliedDamage, bool ranged)
 	{
 		if (appliedDamage < 24f || IsReducedMotionEnabled())
@@ -5111,10 +5140,8 @@ public partial class BattleController : Node2D
 			TriggerSpawnOnDeath(deadUnit);
 				TriggerDamageReflectOnDeath(deadUnit);
 			TryLichGraveyardReanimate(deadUnit);
-			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
-			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, deadUnit.VisualClass == "boss");
-			deadUnit.SpawnDeathVisual(this);
+			PresentUnitDeath(deadUnit);
 			_pendingBossPhases.Remove(deadUnit);
 			_campaignBossPhaseTriggeredUnits.Remove(deadUnit);
 			foreach (var attacker in _targetLocks.Where(pair => pair.Value == deadUnit).Select(pair => pair.Key).ToArray())

@@ -1,7 +1,7 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.6285714285714286,
+  "frameWidth": 356,
+  "frameHeight": 507,
+  "drawScale": 1.95862676056338,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_siegetower",
   "title": "Siege Tower",
   "source": "art/remaster/units/enemy_siegetower.py",
-  "anchorY": 0.8309374302625656,
-  "anchorX": 0.472818,
+  "anchorY": 0.910436,
+  "anchorX": 0.398515,
   "motion": {
     "revision": "remaster-v1",
     "profile": "siege-deploy",
     "body": [
       -0.0,
-      -0.292984
+      -0.345115
     ],
     "contact": [
-      0.226929,
-      -0.305513
+      0.30455,
+      -0.359873
     ]
   },
-  "healthBarY": 0.712187
+  "healthBarY": 0.835963
 }

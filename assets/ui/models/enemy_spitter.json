@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.0979376772175664,
+  "drawScale": 2.0571428571428574,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_spitter",
   "title": "Blight Caster",
   "source": "art/remaster/units/enemy_spitter.py",
-  "anchorY": 0.7008921205997467,
-  "anchorX": 0.476936,
+  "anchorY": 0.802531898021698,
+  "anchorX": 0.465267,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.202291
+      -0.304639
     ],
     "contact": [
-      0.238521,
-      -0.32191
+      0.359199,
+      -0.484778
     ]
   },
-  "healthBarY": 0.400892
+  "healthBarY": 0.602532
 }

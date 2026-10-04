@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.374900062632116,
+  "drawScale": 2.365265425687991,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_marksman",
   "title": "Mage",
   "source": "art/remaster/units/player_marksman.py",
-  "anchorY": 0.6844058632850647,
-  "anchorX": 0.478829,
+  "anchorY": 0.7631211280822754,
+  "anchorX": 0.469792,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
-      -0.0,
-      -0.185814
+      0.0,
+      -0.265131
     ],
     "contact": [
-      0.192103,
-      -0.354478
+      0.274104,
+      -0.505789
     ]
   },
-  "healthBarY": 0.393781
+  "healthBarY": 0.563121
 }

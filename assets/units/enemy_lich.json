@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.497268167341718,
+  "drawScale": 2.7308023124007703,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 10,
+      "fx": "bones",
+      "motion": "rise-collapse",
+      "impactPoint": [
+        -0.003239,
+        0.012007
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_lich",
   "title": "Lich",
   "source": "art/remaster/units/enemy_lich.py",
-  "anchorY": 0.7492128610610962,
-  "anchorX": 0.471388,
+  "anchorY": 0.7279005348682404,
+  "anchorX": 0.473835,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.251009
+      -0.229543
     ],
     "contact": [
-      0.27333,
-      -0.475964
+      0.249955,
+      -0.435261
     ]
   },
-  "healthBarY": 0.514838
+  "healthBarY": 0.471651
 }

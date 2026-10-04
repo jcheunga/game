@@ -21,8 +21,8 @@ The material/lighting finish is defined in [`art/blender/ART_DIRECTION.md`](art/
 
 ### Combat animation
 
-All 52 character atlases now contain 32 poses: idle 0–3, walk 4–9, attack 10–19,
-hit 20–21, death 22–27 and deploy 28–31. Atlas dimensions are unchanged. Attacks
+All character atlases contain idle 0–3, walk 4–9, attack 10–19,
+hit 20–21, then a 12-frame death (16 for bosses, see Death performances) and the 4-frame deploy. Attacks
 use 20 shared weapon/creature motion profiles, with contact/release at local frame
 4. The metadata includes `anchorX`, `motion.profile`, normalized `motion.body`
 and `motion.contact` points, and `animations.attack.contactFrame`.
@@ -40,12 +40,56 @@ melee hits can land together while the defender keeps its own attack. Native Hit
 frames remain available in the source/atlas. See
 [`docs/COMBAT_HIT_REACTIONS.md`](docs/COMBAT_HIT_REACTIONS.md) for bounds and tests.
 
+### Death performances
+
+Every unit has its own death, defined in [`art/remaster/roster/deaths.py`](art/remaster/roster/deaths.py) and
+solved in Blender by [`art/remaster/rk/death.py`](art/remaster/rk/death.py). There are 19 choreographies (falls
+back and forward, kneel-and-topple, crumple, spin, stagger, sit-and-slump, last roar, rise-and-collapse for
+casters, prayer, braced, rigid topple, dive-and-skid, burst, hound, horse with a thrown rider, machine wreck,
+nest burst). Each unit's parameters, kit and timing make it distinct. The solver keys each frame so that:
+
+- the deformed body rests on the ground, pivoting at the pelvis or a planted foot/knee, so nothing floats or skates;
+- capes hang under gravity, drape over the back and legs, and bend at the hem instead of propping the body up;
+  scabbards and quivers swing about their straps;
+- weapons, shields, crowns, helmets and pustules come loose and fall with gravity, topple about their contact
+  point and settle flat before the clip ends; a planted standard or sword stays standing;
+- rigid skeletons and machine parts (skulls, hands, wheels, ballista arms, the plague barrel) break away and tumble;
+- glowing eyes, soul cores, lanterns and forge embers go dark.
+
+The death clip's metadata adds `impactFrame` (the body lands), `impactPoint` (where the torso lands) and `fx` (the
+effect family). In game, `UnitDeathVisual` plays the clip, fires the thud, dust and (for heavy units and bosses) a
+camera accent on the impact frame, drops the body beneath the living, lets it rest, then dissolves it in its
+family's style (`DeathPresentation.cs`, `BattleDeathEffects.cs`). Lantern Caravan dead go out as warm lantern
+motes; the Rotbound Host burns to ash, scatters as soul-light, or rots into gas, water, embers or glass.
+Bosses rest longer and play the boss-death sting. Reduced motion keeps the clip but drops particles and the
+dissolve; crowded fights shorten the rest.
+
+Preview one unit's death without touching the shipped art:
+
+```sh
+blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_units.py -- \
+    --ids player_brawler --preview --clip death --no-portrait --samples 24
+```
+
+### Large units: hi-res battle atlases
+
+Bosses and the Siege Tower are drawn three to four times larger than the regular roster.
+From the standard 192×240 frame that left 0.5–0.8 atlas pixels per battle pixel, which
+looked soft and blocky in battle, worse on high-DPI windows and the mobile close view.
+Their masters are rendered larger (up to 1024×1280) and packed cropped to the animation
+envelope at 2 atlas pixels per battle pixel, about the same as the regular roster. Frame
+size, column count, `drawScale` and the normalised anchors differ per unit, and these
+atlases import with mipmaps. [`art/remaster/density.py`](art/remaster/density.py) decides
+which units qualify, and the remaster pipeline picks the scale automatically. `BlenderAssetSmoke`
+checks that every unit keeps at least 1.25 atlas pixels per battle pixel.
+
 ### Model-inspection previews
 
 Preparation and armory model viewers use original-resolution 256×320 Blender
 frames, packed separately from the smaller battle sprites. All 52 characters have
 Idle, Walk, and Attack clips in `assets/ui/models/{unit_id}.png` with matching
-metadata. Run `python3 art/blender/pack_assets.py previews` after updating the
+metadata. Hi-res units (above) preview their cropped battle frames instead, which
+are sharper than a 256×320 master. Run `python3 art/blender/pack_assets.py previews` after updating the
 source renders; `units` and `all` also refresh them. Textures are loaded per
 preview and released when their viewer closes or changes character.
 See [`docs/MOBILE_PRESENTATION.md`](docs/MOBILE_PRESENTATION.md) for zoom controls,

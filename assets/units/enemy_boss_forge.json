@@ -1,7 +1,7 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.89359678540911,
+  "frameWidth": 370,
+  "frameHeight": 428,
+  "drawScale": 2.035651408450704,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 16,
+      "duration": 0.08,
+      "loop": false,
+      "impactFrame": 13,
+      "fx": "embers",
+      "motion": "stagger-back",
+      "impactPoint": [
+        0.216683,
+        0.03448
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_boss_forge",
   "title": "Iron Warden",
   "source": "art/remaster/units/enemy_boss_forge.py",
-  "anchorY": 0.6598396897315979,
-  "anchorX": 0.481649,
+  "anchorY": 0.72552,
+  "anchorX": 0.490538,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
-      0.0,
-      -0.152545
+      -0.0,
+      -0.315292
     ],
     "contact": [
-      -0.060664,
-      0.094008
+      -0.116032,
+      0.194304
     ]
   },
-  "healthBarY": 0.306715
+  "healthBarY": 0.632133
 }

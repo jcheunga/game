@@ -774,17 +774,20 @@ public partial class Unit : Node2D
         }
     }
 
-    public void SpawnDeathVisual(Node parent)
+    public UnitDeathVisual SpawnDeathVisual(Node parent)
     {
         EnsureSpriteLoaded();
         if (_spriteSheet == null || !_spriteSheet.Animations.TryGetValue(UnitAnimState.Death, out var clip)
-            || clip.FrameCount < 2) return;
+            || clip.FrameCount < 2) return null;
         var width = Radius * 2f * VisualScale * _spriteSheet.DrawScale;
         var visual = new UnitDeathVisual();
-        visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing(), EnvironmentTint * LocalLightTint, GroundShadowsManaged);
+        var style = DeathStyle.For(_spriteSheet.DeathFx, Team == Team.Player, VisualClass == "boss", Radius);
+        visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing(),
+            EnvironmentTint * LocalLightTint, GroundShadowsManaged, style);
         parent.AddChild(visual);
         visual.Position = Position;
         visual.ZIndex = ZIndex;
+        return visual;
     }
 
     private void DrawSpriteFrame()

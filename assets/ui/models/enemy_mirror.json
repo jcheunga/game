@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.853663774750988,
+  "drawScale": 3.867345418989288,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_mirror",
   "title": "Mirror Knight",
   "source": "art/remaster/units/enemy_mirror.py",
-  "anchorY": 0.7180885076522827,
-  "anchorX": 0.474962,
+  "anchorY": 0.6609246730804443,
+  "anchorX": 0.481525,
   "motion": {
     "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
-      0.0,
-      -0.213971
+      -0.0,
+      -0.157887
     ],
     "contact": [
-      0.328361,
-      -0.131327
+      0.242294,
+      -0.096904
     ]
   },
-  "healthBarY": 0.421214
+  "healthBarY": 0.310925
 }

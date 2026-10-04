@@ -6,7 +6,10 @@ can be compared and either can be rebuilt.
 
 The game still loads rendered PNGs. Runtime contracts (frame sizes, atlas layouts,
 metadata fields, anchors, contact frame, motion-profile names, icon and structure
-canvases) match the original pipeline, so the remastered files are drop-in.
+canvases) match the original pipeline, so the remastered files are drop-in. One exception:
+units drawn large in battle (bosses, Siege Tower) render bigger masters and pack into
+envelope-cropped atlases so they stay as sharp as the regular roster. `density.py` decides
+which units qualify and at what scale; `build_units.py` and `pack.py` apply it automatically.
 
 ## What changed
 

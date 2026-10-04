@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 1.8285714285714287,
+  "drawScale": 2.123744147164481,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boneballista",
   "title": "Bone Ballista",
   "source": "art/remaster/units/enemy_boneballista.py",
-  "anchorY": 0.7200158834457397,
-  "anchorX": 0.460925,
+  "anchorY": 0.6894365549087524,
+  "anchorX": 0.466356,
   "motion": {
     "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
-      -0.0,
-      -0.225624
+      0.0,
+      -0.194265
     ],
     "contact": [
-      0.319643,
-      -0.235327
+      0.275216,
+      -0.20262
     ]
   },
-  "healthBarY": 0.582516
+  "healthBarY": 0.501937
 }

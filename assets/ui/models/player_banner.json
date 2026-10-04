@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.3506665170562933,
+  "drawScale": 2.874052154351465,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_banner",
   "title": "Banner Knight",
   "source": "art/remaster/units/player_banner.py",
-  "anchorY": 0.6857395470142365,
-  "anchorX": 0.478676,
+  "anchorY": 0.7165414094924927,
+  "anchorX": 0.475139,
   "motion": {
     "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
-      -0.0,
-      -0.182233
+      0.0,
+      -0.212453
     ],
     "contact": [
-      0.289714,
-      -0.113895
+      0.337758,
+      -0.132783
     ]
   },
-  "healthBarY": 0.50449
+  "healthBarY": 0.588416
 }

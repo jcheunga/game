@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 3.714730576698824,
+  "drawScale": 3.5776746939428103,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 6,
+      "fx": "debris",
+      "motion": "wreck",
+      "impactPoint": [
+        0.0,
+        0.0
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_ballista",
   "title": "Ballista Crew",
   "source": "art/remaster/units/player_ballista.py",
-  "anchorY": 0.6083025336265564,
-  "anchorX": 0.480765,
+  "anchorY": 0.6124514639377594,
+  "anchorX": 0.480029,
   "motion": {
     "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
       0.0,
-      -0.111063
+      -0.115318
     ],
     "contact": [
-      0.157344,
-      -0.11584
+      0.163371,
+      -0.120277
     ]
   },
-  "healthBarY": 0.289553
+  "healthBarY": 0.303076
 }

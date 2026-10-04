@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.4981092962419025,
+  "drawScale": 2.6278276621184733,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_bloater",
   "title": "Rot Hulk",
   "source": "art/remaster/units/enemy_bloater.py",
-  "anchorY": 0.7491289377212524,
-  "anchorX": 0.471398,
+  "anchorY": 0.7368310987949371,
+  "anchorX": 0.47281,
   "motion": {
     "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
       -0.0,
-      -0.237578
+      -0.225851
     ],
     "contact": [
-      0.266951,
-      -0.203913
+      0.253774,
+      -0.193848
     ]
   },
-  "healthBarY": 0.417879
+  "healthBarY": 0.396206
 }

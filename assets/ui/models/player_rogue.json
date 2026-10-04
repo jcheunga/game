@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.536445078642472,
+  "drawScale": 2.673321481076827,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_rogue",
   "title": "Rogue",
   "source": "art/remaster/units/player_rogue.py",
-  "anchorY": 0.7453635931015015,
-  "anchorX": 0.47183,
+  "anchorY": 0.7328007519245148,
+  "anchorX": 0.473273,
   "motion": {
     "revision": "remaster-v1",
     "profile": "blade-stab",
     "body": [
-      -0.0,
-      -0.234225
+      0.0,
+      -0.222232
     ],
     "contact": [
-      0.228853,
-      -0.161835
+      0.217136,
+      -0.153549
     ]
   },
-  "healthBarY": 0.464114
+  "healthBarY": 0.442176
 }

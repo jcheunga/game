@@ -1,7 +1,7 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 3.405679382892869,
+  "frameWidth": 320,
+  "frameHeight": 409,
+  "drawScale": 1.8632817049027597,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boss_ward",
   "title": "Plague Archon",
   "source": "art/remaster/units/enemy_boss_ward.py",
-  "anchorY": 0.6827392578125,
-  "anchorX": 0.47902,
+  "anchorY": 0.851304,
+  "anchorX": 0.421986,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
-      0.0,
-      -0.199239
+      -0.0,
+      -0.356154
     ],
     "contact": [
-      0.262312,
-      -0.008102
+      0.47945,
+      -0.014482
     ]
   },
-  "healthBarY": 0.379614
+  "healthBarY": 0.67535
 }

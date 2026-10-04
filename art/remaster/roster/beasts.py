@@ -77,7 +77,7 @@ def war_hound(ident, title):
     st, C = B.clips('hound')
     ch.tip_rest = J['snout'] + Vector((0.05, 0, -0.04))
     ch.tip_bone = 'head'
-    return ch, finish_clips(ch, C, profile_of(ident), body_z=0.62, cam_z=0.65, min_scale=2.6,
+    return ch, finish_clips(ch, C, profile_of(ident), body_z=0.62, cam_z=0.65, min_scale=2.6, stance=st,
                             portrait=dict(target=(0.35, 0, 0.75), distance=4.6))
 
 
@@ -253,11 +253,12 @@ def cavalry_rider(ident, title):
     ln = rider.hold(W.lance(M, rider.coll, length=2.7, paint=S.paint(palette.LANTERN_TEAL, name='Lance paint')), 'R',
                     pitch=8, yaw=-4)
     rider.strap(W.heater_shield(M, rider.coll, size=0.85, emblem=lantern_emblem(M)), 'L', forward=0.12, yaw=-20)
-    _, HC = B.clips('horse')
+    hst, HC = B.clips('horse')
     RC = rider_clips(st, profile_of(ident))
-    opts = finish_clips(hc, HC, profile_of(ident), body_z=1.9, cam_z=1.6, min_scale=4.4,
-                        companions=[(rider, RC)], portrait=dict(target=(0.5, 0, 2.05), distance=7.0))
+    # Mount first so the rider's death is solved against the horse going down.
     rider_on(hc, rider)
+    opts = finish_clips(hc, HC, profile_of(ident), body_z=1.9, cam_z=1.6, min_scale=4.4, stance=hst,
+                        companions=[(rider, RC, st)], portrait=dict(target=(0.5, 0, 2.05), distance=7.0))
     hc.tip_bone_owner = rider
     return hc, opts
 
@@ -382,7 +383,7 @@ def ballista_crew(ident, title):
         'hit': anim.hit_frames(cst), 'death': anim.death_frames(cst), 'deploy': anim.deploy_frames(cst),
     }
     opts = finish_clips(ch, MCc, profile_of(ident), release=bolt, body_z=0.75, cam_z=0.75, min_scale=3.4,
-                        companions=[(crew, cc)], portrait=dict(target=(0.0, 0, 0.8), distance=7.5))
+                        companions=[(crew, cc, cst)], portrait=dict(target=(0.0, 0, 0.8), distance=7.5))
     crew.arm.location = (-0.55, -0.62, 0)
     return ch, opts
 

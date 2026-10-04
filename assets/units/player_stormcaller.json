@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 3.3515094970324024,
+  "drawScale": 2.8259524277278354,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 10,
+      "fx": "storm",
+      "motion": "rise-collapse",
+      "impactPoint": [
+        0.012726,
+        -0.011291
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_stormcaller",
   "title": "Stormcaller",
   "source": "art/remaster/units/player_stormcaller.py",
-  "anchorY": 0.6856928467750549,
-  "anchorX": 0.478681,
+  "anchorY": 0.7202270925045013,
+  "anchorX": 0.474716,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       -0.0,
-      -0.187111
+      -0.221909
     ],
     "contact": [
-      0.191328,
-      -0.352479
+      0.226911,
+      -0.418031
     ]
   },
-  "healthBarY": 0.382568
+  "healthBarY": 0.454602
 }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 3.5323477679898274,
+  "drawScale": 2.571707778835889,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 9,
+      "fx": "dust",
+      "motion": "last-roar",
+      "impactPoint": [
+        0.146859,
+        0.02175
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_berserker",
   "title": "Berserker",
   "source": "art/remaster/units/player_berserker.py",
-  "anchorY": 0.6761862933635712,
-  "anchorX": 0.479772,
+  "anchorY": 0.7419992089271545,
+  "anchorX": 0.472217,
   "motion": {
     "revision": "remaster-v1",
     "profile": "axe-cleave",
     "body": [
-      0.0,
-      -0.168188
+      -0.0,
+      -0.231013
     ],
     "contact": [
-      0.105541,
-      0.03256
+      0.144966,
+      0.044723
     ]
   },
-  "healthBarY": 0.363686
+  "healthBarY": 0.498249
 }

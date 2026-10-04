@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.7609454178662034,
+  "drawScale": 3.22504769200864,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 7,
+      "fx": "dust",
+      "motion": "fall-back",
+      "impactPoint": [
+        -0.178694,
+        -0.025636
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_brawler",
   "title": "Swordsman",
   "source": "art/remaster/units/player_brawler.py",
-  "anchorY": 0.7254123985767365,
-  "anchorX": 0.474121,
+  "anchorY": 0.6929742991924286,
+  "anchorX": 0.477845,
   "motion": {
     "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
       0.0,
-      -0.221157
+      -0.189331
     ],
     "contact": [
-      0.323469,
-      -0.13921
+      0.27692,
+      -0.119177
     ]
   },
-  "healthBarY": 0.425412
+  "healthBarY": 0.364849
 }

@@ -1,7 +1,7 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.8904640896720175,
+  "frameWidth": 624,
+  "frameHeight": 560,
+  "drawScale": 3.0793525463876827,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boss_plague_monarch",
   "title": "Plague Monarch",
   "source": "art/remaster/units/enemy_boss_plague_monarch.py",
-  "anchorY": 0.7153119146823883,
-  "anchorX": 0.47528,
+  "anchorY": 0.735506,
+  "anchorX": 0.569239,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
-      -0.0,
-      -0.205445
+      0.0,
+      -0.268602
     ],
     "contact": [
-      -0.039117,
-      0.034318
+      -0.036718,
+      0.044869
     ]
   },
-  "healthBarY": 0.384062
+  "healthBarY": 0.503064
 }

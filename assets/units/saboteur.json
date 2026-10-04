@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.0571428571428574,
+  "drawScale": 2.5130872770866253,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 7,
+      "fx": "embers",
+      "motion": "spin-fall",
+      "impactPoint": [
+        0.106012,
+        -0.011983
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_saboteur",
   "title": "Sapper",
   "source": "art/remaster/units/enemy_saboteur.py",
-  "anchorY": 0.802531898021698,
-  "anchorX": 0.465267,
+  "anchorY": 0.7476441264152527,
+  "anchorX": 0.471568,
   "motion": {
     "revision": "remaster-v1",
     "profile": "flask-toss",
     "body": [
-      0.0,
-      -0.275543
+      -0.0,
+      -0.225552
     ],
     "contact": [
-      0.230922,
-      -0.419228
+      0.189026,
+      -0.343168
     ]
   },
-  "healthBarY": 0.480657
+  "healthBarY": 0.394519
 }

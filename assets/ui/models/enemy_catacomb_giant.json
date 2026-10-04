@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.2653119164223994,
+  "drawScale": 2.2584062185346707,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_catacomb_giant",
   "title": "Catacomb Giant",
   "source": "art/remaster/units/enemy_catacomb_giant.py",
-  "anchorY": 0.7747309505939484,
-  "anchorX": 0.468459,
+  "anchorY": 0.7755710184574127,
+  "anchorX": 0.468362,
   "motion": {
     "revision": "remaster-v1",
     "profile": "heavy-smash",
     "body": [
       0.0,
-      -0.261897
+      -0.262698
     ],
     "contact": [
-      -0.041936,
-      0.114978
+      -0.042064,
+      0.115329
     ]
   },
-  "healthBarY": 0.512231
+  "healthBarY": 0.516196
 }

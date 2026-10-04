@@ -1,7 +1,7 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.756165800627714,
+  "frameWidth": 404,
+  "frameHeight": 432,
+  "drawScale": 2.3523931524397343,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 16,
+      "duration": 0.08,
+      "loop": false,
+      "impactFrame": 13,
+      "fx": "arcane",
+      "motion": "rise-collapse",
+      "impactPoint": [
+        -0.005879,
+        -0.016413
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_boss_verge",
   "title": "Gloamwood Witch",
   "source": "art/remaster/units/enemy_boss_verge.py",
-  "anchorY": 0.6656879186630249,
-  "anchorX": 0.480978,
+  "anchorY": 0.890416,
+  "anchorX": 0.481537,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.187242
+      -0.0,
+      -0.349499
     ],
     "contact": [
-      0.218171,
-      -0.345777
+      0.348363,
+      -0.645414
     ]
   },
-  "healthBarY": 0.450063
+  "healthBarY": 0.839123
 }

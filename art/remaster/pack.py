@@ -7,6 +7,11 @@ python3 art/remaster/pack.py stage --only units,items
 Runtime contracts are identical to art/blender/pack_assets.py: 192x240 battle frames
 in an 8-column atlas, 256x320 model-viewer frames in a 5-column atlas, 256 px unit
 icons, 512 px Codex portraits, shared visual-class fallbacks and Codex aliases.
+
+Units drawn large in battle (bosses, Siege Tower; see density.py) are the exception: their
+larger masters are cropped to the animation envelope and packed at TARGET_DENSITY, so frame
+size, column count, drawScale and the normalised anchors differ per unit. The game reads all
+of these from the JSON.
 """
 import argparse
 import json
@@ -16,6 +21,8 @@ import shutil
 from pathlib import Path
 
 from PIL import Image
+
+import density
 
 ROOT = Path(__file__).resolve().parents[2]
 REVIEW = ROOT / 'artifacts/remaster'
@@ -56,8 +63,62 @@ def put(img_or_path, rel, size=None):
     return target
 
 
+HIRES_PAD = 6  # transparent atlas pixels around the envelope, for filtering and mipmaps
+
+
+def atlas_columns(count, w, h, limit=density.MAX_ATLAS):
+    """Column count with the smallest atlas inside the texture limit (8 when equally good)."""
+    best = None
+    for cols in range(1, count + 1):
+        rows = math.ceil(count / cols)
+        if cols * w <= limit and rows * h <= limit:
+            key = (cols * w * rows * h, abs(cols - 8))
+            best = min(best or (key, cols), (key, cols))
+    return best and best[1]
+
+
+def hires_frames(unit, meta, frames, envelope):
+    """Crop to the animation envelope and resample to TARGET_DENSITY; returns frames and metadata."""
+    sw, sh = meta['frameWidth'], meta['frameHeight']
+    x0, y0, x1, y1 = envelope
+    scale = density.TARGET_DENSITY * density.frame_canvas_width(unit, meta['drawScale']) / sw
+    if scale > 1:
+        print(f'WARN {unit["Id"]}: {sw}x{sh} masters are below the target density; '
+              'rerender with build_units.py (automatic res scale)')
+        scale = 1.0
+    while True:
+        w = math.ceil((x1 - x0) * scale) + 2 * HIRES_PAD
+        h = math.ceil((y1 - y0) * scale) + 2 * HIRES_PAD
+        cols = atlas_columns(len(frames), w, h)
+        if cols:
+            break
+        scale *= 0.95
+    # Crop box in master pixels covering exactly w x h output pixels, centred on the envelope.
+    bw, bh = w / scale, h / scale
+    bx, by = (x0 + x1 - bw) / 2, (y0 + y1 - bh) / 2
+    m = math.ceil(max(bw - (x1 - x0), bh - (y1 - y0))) + 2
+    out = []
+    for frame in frames:
+        padded = Image.new('RGBA', (sw + 2 * m, sh + 2 * m))
+        padded.paste(frame, (m, m))
+        out.append(padded.resize((w, h), Image.Resampling.LANCZOS, box=(bx + m, by + m, bx + m + bw, by + m + bh)))
+    # Re-express the normalised frame coordinates against the crop box.
+    motion = dict(meta['motion'])
+    for key in ('body', 'contact'):
+        motion[key] = [round(motion[key][0] * sw / bw, 6), round(motion[key][1] * sh / bh, 6)]
+    animations = {k: dict(v) for k, v in meta['animations'].items()}
+    death = animations.get('death', {})
+    if 'impactPoint' in death:
+        death['impactPoint'] = [round(death['impactPoint'][0] * sw / bw, 6), round(death['impactPoint'][1] * sh / bh, 6)]
+    packed = dict(meta, frameWidth=w, frameHeight=h, drawScale=meta['drawScale'] * bw / sw,
+                  anchorX=round((meta['anchorX'] * sw - bx) / bw, 6),
+                  anchorY=round((meta['anchorY'] * sh - by) / bh, 6),
+                  healthBarY=round(meta['healthBarY'] * sh / bh, 6), motion=motion, animations=animations)
+    return out, packed, cols
+
+
 def pack_units():
-    packed, clipped = [], []
+    packed, clipped, hires = [], [], {}
     for u in UNITS:
         ident = u['Id']
         src = REVIEW / 'units' / ident
@@ -65,9 +126,8 @@ def pack_units():
             continue
         meta = json.loads((src / 'metadata.json').read_text())
         sw, sh = meta['frameWidth'], meta['frameHeight']
-        w, h = 192, 240
         count = sum(a['count'] for a in meta['animations'].values())
-        sheet = Image.new('RGBA', (w * 8, h * math.ceil(count / 8)))
+        frames, envelope = [], None
         for i in range(count):
             frame = Image.open(src / f'{i:03}.png').convert('RGBA')
             if frame.size != (sw, sh):
@@ -79,17 +139,33 @@ def pack_units():
                 meta['healthBarY'] = round(meta['anchorY'] - bounds[1] / sh, 6)
             if bounds[0] == 0 or bounds[1] == 0 or bounds[2] == sw or bounds[3] == sh:
                 clipped.append({'id': ident, 'frame': i, 'bbox': bounds})
-            sheet.paste(frame.resize((w, h), Image.Resampling.LANCZOS), ((i % 8) * w, (i // 8) * h))
-        out = dict(meta, frameWidth=w, frameHeight=h)
+            envelope = bounds if envelope is None else (min(envelope[0], bounds[0]), min(envelope[1], bounds[1]),
+                                                        max(envelope[2], bounds[2]), max(envelope[3], bounds[3]))
+            frames.append(frame)
+        if density.needs_hires(u, meta['drawScale']):
+            cells, out, cols = hires_frames(u, meta, frames, envelope)
+            w, h = out['frameWidth'], out['frameHeight']
+            hires[ident] = {'frame': [w, h], 'columns': cols, 'master': [sw, sh],
+                            'density': round(density.TARGET_DENSITY, 2),
+                            'was': round(density.standard_density(u, meta['drawScale']), 2)}
+        else:
+            w, h, cols = *density.STANDARD_FRAME, 8
+            cells = [frame.resize((w, h), Image.Resampling.LANCZOS) for frame in frames]
+            out = dict(meta, frameWidth=w, frameHeight=h)
+        sheet = Image.new('RGBA', (w * cols, h * math.ceil(count / cols)))
+        for i, cell in enumerate(cells):
+            sheet.paste(cell, ((i % cols) * w, (i // cols) * h))
         put(sheet, f'assets/units/{ident}.png')
         (STAGE / f'assets/units/{ident}.json').write_text(json.dumps(out, indent=2) + '\n')
-        # Model-viewer preview: native 256x320 idle/walk/attack, no upscaling.
-        pm = dict(meta)
+        # Model-viewer preview: native 256x320 idle/walk/attack, no upscaling. Hi-res units reuse
+        # their cropped battle frames, which are already sharper than a 256x320 master.
+        pm = dict(meta if ident not in hires else out)
         pm['animations'] = {k: v for k, v in meta['animations'].items() if k in ('idle', 'walk', 'attack')}
         pcount = max(c['start'] + c['count'] for c in pm['animations'].values())
-        prev = Image.new('RGBA', (sw * 5, sh * math.ceil(pcount / 5)))
+        pw, ph = (sw, sh) if ident not in hires else (w, h)
+        prev = Image.new('RGBA', (pw * 5, ph * math.ceil(pcount / 5)))
         for i in range(pcount):
-            prev.paste(Image.open(src / f'{i:03}.png').convert('RGBA'), ((i % 5) * sw, (i // 5) * sh))
+            prev.paste(frames[i] if ident not in hires else cells[i], ((i % 5) * pw, (i // 5) * ph))
         put(prev, f'assets/ui/models/{ident}.png')
         (STAGE / f'assets/ui/models/{ident}.json').write_text(json.dumps(pm, indent=2) + '\n')
         put(src / 'portrait.png', f'assets/ui/icons/units/{ident}.png', 256)
@@ -102,8 +178,10 @@ def pack_units():
     for cls, ident in reps.items():
         for suffix in ('.png', '.json'):
             shutil.copy2(STAGE / f'assets/units/{ident}{suffix}', STAGE / f'assets/units/{cls}{suffix}')
-    print(json.dumps({'units': len(packed), 'class_fallbacks': len(reps), 'clipped_frames': len(clipped)}))
-    (REVIEW / 'unit-framing-report.json').write_text(json.dumps({'packed': packed, 'clipped': clipped}, indent=2) + '\n')
+    print(json.dumps({'units': len(packed), 'class_fallbacks': len(reps), 'clipped_frames': len(clipped),
+                      'hires': len(hires)}))
+    (REVIEW / 'unit-framing-report.json').write_text(json.dumps({'packed': packed, 'clipped': clipped, 'hires': hires},
+                                                                indent=2) + '\n')
     return packed
 
 

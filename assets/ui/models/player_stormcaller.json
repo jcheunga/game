@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.3515094970324024,
+  "drawScale": 2.8259524277278354,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_stormcaller",
   "title": "Stormcaller",
   "source": "art/remaster/units/player_stormcaller.py",
-  "anchorY": 0.6856928467750549,
-  "anchorX": 0.478681,
+  "anchorY": 0.7202270925045013,
+  "anchorX": 0.474716,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       -0.0,
-      -0.187111
+      -0.221909
     ],
     "contact": [
-      0.191328,
-      -0.352479
+      0.226911,
+      -0.418031
     ]
   },
-  "healthBarY": 0.382568
+  "healthBarY": 0.454602
 }

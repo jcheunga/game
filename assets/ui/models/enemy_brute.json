@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.141596219554451,
+  "drawScale": 2.6758922553210525,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_brute",
   "title": "Grave Brute",
   "source": "art/remaster/units/enemy_brute.py",
-  "anchorY": 0.7906016111373901,
-  "anchorX": 0.466637,
+  "anchorY": 0.7325771152973175,
+  "anchorX": 0.473298,
   "motion": {
     "revision": "remaster-v1",
     "profile": "heavy-smash",
     "body": [
-      -0.0,
-      -0.276777
+      0.0,
+      -0.221513
     ],
     "contact": [
-      0.095584,
-      0.098795
+      0.076499,
+      0.079069
     ]
   },
-  "healthBarY": 0.496852
+  "healthBarY": 0.398202
 }

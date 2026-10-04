@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.5319842166782167,
+  "drawScale": 2.4004263907485863,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_breacher",
   "title": "Halberdier",
   "source": "art/remaster/units/player_breacher.py",
-  "anchorY": 0.6762044429779053,
-  "anchorX": 0.47977,
+  "anchorY": 0.7592669874429703,
+  "anchorX": 0.470234,
   "motion": {
     "revision": "remaster-v1",
     "profile": "axe-cleave",
     "body": [
-      0.0,
-      -0.168205
+      -0.0,
+      -0.247497
     ],
     "contact": [
-      0.116814,
-      0.016558
+      0.17188,
+      0.024363
     ]
   },
-  "healthBarY": 0.357454
+  "healthBarY": 0.524892
 }

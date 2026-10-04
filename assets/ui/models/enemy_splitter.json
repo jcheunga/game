@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 1.5999999999999999,
+  "drawScale": 1.674298173892572,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_splitter",
   "title": "Bone Nest",
   "source": "art/remaster/units/enemy_splitter.py",
-  "anchorY": 0.6826854050159454,
-  "anchorX": 0.455343,
+  "anchorY": 0.6745786070823669,
+  "anchorX": 0.457325,
   "motion": {
     "revision": "remaster-v1",
     "profile": "nest-pulse",
     "body": [
-      -0.0,
-      -0.154713
+      0.0,
+      -0.147848
     ],
     "contact": [
-      0.378019,
-      -0.096489
+      0.361244,
+      -0.092208
     ]
   },
-  "healthBarY": 0.388935
+  "healthBarY": 0.371454
 }

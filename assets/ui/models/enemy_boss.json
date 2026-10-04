@@ -1,7 +1,7 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 3.6686306414396865,
+  "frameWidth": 317,
+  "frameHeight": 413,
+  "drawScale": 1.8458134389192966,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boss",
   "title": "Grave Lord",
   "source": "art/remaster/units/enemy_boss.py",
-  "anchorY": 0.6696413159370422,
-  "anchorX": 0.480524,
+  "anchorY": 0.777809,
+  "anchorX": 0.442977,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.16194
+      -0.308809
     ],
     "contact": [
-      0.035908,
-      0.106623
+      0.07137,
+      0.203323
     ]
   },
-  "healthBarY": 0.357141
+  "healthBarY": 0.678437
 }

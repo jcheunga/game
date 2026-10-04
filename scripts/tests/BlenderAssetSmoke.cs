@@ -32,9 +32,17 @@ public partial class BlenderAssetSmoke : Node
             {
                 var def = GameData.GetUnit(id);
                 var sheet = UnitSpriteLoader.TryLoad(def.VisualClass, id);
-                Check(sheet != null && sheet.FrameWidth == 192 && sheet.FrameHeight == 240 && sheet.AnchorY > 0.5f,
+                // Units drawn large in battle ship larger frames cropped to their animation
+                // envelope (art/remaster/density.py), still within a mobile-safe atlas.
+                Check(sheet != null && sheet.AnchorY > 0.5f && (sheet.FrameWidth == 192 && sheet.FrameHeight == 240
+                    || sheet.FrameWidth > 192 && sheet.Texture.GetWidth() <= 4096 && sheet.Texture.GetHeight() <= 4096),
                     id + " has compact atlas metadata and ground anchor");
                 if (sheet == null) continue;
+                var probe = new Unit();
+                probe.Setup(def.IsPlayerSide ? Team.Player : Team.Enemy, new UnitStats(def), Vector2.Zero);
+                var density = sheet.FrameWidth / (probe.Radius * 2 * probe.VisualScale * sheet.DrawScale);
+                probe.Free();
+                Check(density >= 1.25f, $"{id} keeps {density:0.00} atlas px per battle px, so enlarged units stay sharp");
                 var total = sheet.Texture.GetWidth() / sheet.FrameWidth * (sheet.Texture.GetHeight() / sheet.FrameHeight);
                 Check(Enum.GetValues<UnitAnimState>().All(state => sheet.Animations.TryGetValue(state, out var clip)
                     && clip.FrameCount > 0 && clip.FrameDuration > 0 && clip.StartFrame + clip.FrameCount <= total), id + " six valid clips");
@@ -110,12 +118,23 @@ public partial class BlenderAssetSmoke : Node
         unit.ReactToContact(1, 15);
         unit._Process(.04);
         Check(unit.HitReactionAmount > 0 && unit.HitReactionAmount < 1, "Ordinary hit adds a restrained pose reaction");
-        unit.SpawnDeathVisual(this);
-        var visual = GetChildren().OfType<UnitDeathVisual>().Single();
+        var visual = unit.SpawnDeathVisual(this);
+        Check(visual != null && GetChildren().OfType<UnitDeathVisual>().Single() == visual, "Death visual spawned");
+        var impacts = 0;
+        var dissolves = 0;
+        visual.Impacted = _ => impacts++;
+        visual.DissolveStarted = _ => dissolves++;
         UnitPool.Release(unit);
         Check(IsInstanceValid(visual), "Death visual survives unit pooling");
         visual.SetProcess(false);
-        visual._Process(1.5);
+        var clip = Read<SpriteAnimRange>(visual, "_clip");
+        Check(clip.ImpactFrame > 0 && clip.ImpactFrame < clip.FrameCount, "Death clip reports when the body lands");
+        visual._Process(clip.ImpactFrame * clip.FrameDuration + .001);
+        Check(impacts == 1 && dissolves == 0, "Impact fires on the landing frame, before the dissolve");
+        visual._Process(clip.FrameCount * clip.FrameDuration);
+        Check(impacts == 1 && IsInstanceValid(visual), "The body rests on the ground after the clip");
+        visual._Process(visual.Lifetime);
+        Check(dissolves == 1, "The body dissolves after resting");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         Check(!IsInstanceValid(visual), "Death visual cleans itself up");
         unit = UnitPool.Acquire();

@@ -212,7 +212,12 @@ public partial class MobilePresentationReview : Node
         foreach(var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
         {
             var source=UnitSpriteLoader.LoadOwnedPreview(id);
-            Check(source!=null && source.FrameWidth==256 && source.FrameHeight==320 && source.Animations.Count==3,
+            // Hi-res units (bosses, Siege Tower) preview their sharper, cropped battle frames.
+            var battle=UnitSpriteLoader.TryLoad(GameData.GetUnit(id).VisualClass,id);
+            var hires=battle!=null && battle.FrameWidth>192;
+            Check(source!=null && source.Animations.Count==3 && (hires
+                ? source.FrameWidth==battle.FrameWidth && source.FrameHeight==battle.FrameHeight
+                : source.FrameWidth==256 && source.FrameHeight==320),
                 $"{id} has original-resolution idle, walk and attack previews");
             source?.Texture.Dispose();
         }

@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.497268167341718,
+  "drawScale": 2.7308023124007703,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_lich",
   "title": "Lich",
   "source": "art/remaster/units/enemy_lich.py",
-  "anchorY": 0.7492128610610962,
-  "anchorX": 0.471388,
+  "anchorY": 0.7279005348682404,
+  "anchorX": 0.473835,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.251009
+      -0.229543
     ],
     "contact": [
-      0.27333,
-      -0.475964
+      0.249955,
+      -0.435261
     ]
   },
-  "healthBarY": 0.514838
+  "healthBarY": 0.471651
 }

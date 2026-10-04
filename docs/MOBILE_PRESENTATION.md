@@ -45,7 +45,8 @@ poses. Previews spawn no combat units and do not change progression or combat.
 All 53 characters have separate preview atlases in `assets/ui/models/`. They use
 the original 256×320 Blender frames rather than the 192×240 battle frames: 20
 poses packed into a 1280×1280 atlas. This preserves source detail without
-upscaling. Each preview owns its texture and releases it when closed or changed;
+upscaling. Bosses and the Siege Tower instead reuse their hi-res, envelope-cropped battle
+frames (see `ASSETS.md`), which hold more detail. Each preview owns its texture and releases it when closed or changed;
 only crop bounds are cached. Missing previews fall back to the battle atlas.
 Cropping uses a stable union of the three animation clips so weapons remain in
 frame and the model does not change scale between poses.

@@ -1,5 +1,7 @@
 """Stances and the six game clips (idle 4, walk 6, attack 10, hit 2, death 6, deploy 4).
 
+Units listed in roster/deaths.py replace the generic death below with a Performance (rk/death.py).
+
 Poses are dictionaries of bone -> degrees (LAT) or [(deg, axis)], plus '@move'
 (world offsets) and '@scale'. Clip poses are layered on top of a stance so the
 same motion families work across differently armed characters.
@@ -337,6 +339,10 @@ def all_clips(stance, profile, gait='march', heavy=1.0, low_strike=False, death=
             clips['walk'] = walk_frames(stance, 6, cape=cape)
     clips['attack'] = attack_frames(stance, profile, heavy, low_strike, attack_override)
     clips['hit'] = hit_frames(stance)
-    clips['death'] = death_frames(stance, death)
+    if isinstance(death, dict):
+        from .death import performance
+        clips['death'] = performance(stance, death)
+    else:
+        clips['death'] = death_frames(stance, death)
     clips['deploy'] = deploy_frames(stance, flourish)
     return clips

@@ -48,8 +48,12 @@ def finish(ch, stance, profile, *, gait='march', heavy=1.0, low_strike=False, de
            float_mode=False, cape=True, flourish=None, attack_override=None, portrait=None, body_z=None,
            min_scale=3.6, cam_z=1.15):
     """Bind, key all six clips and return render options."""
+    from .deaths import DEATHS
     ch.finalize_bones()
     ch.bind()
+    death = DEATHS.get(ch.ident, death)
+    if release:
+        ch.add_prop('nocked', release, None)
     clips = anim.all_clips(stance, profile, gait=gait, heavy=heavy, low_strike=low_strike, death=death,
                            attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish)
     ch.key_clips(clips, release=release)
@@ -99,14 +103,25 @@ def profile_of(ident):
 
 
 def finish_clips(ch, clips, profile, release=None, body_z=None, min_scale=3.6, cam_z=1.15, portrait=None,
-                 companions=()):
-    """Bind and key explicit clip dictionaries (beasts, machines, mounted riders)."""
+                 companions=(), stance=None):
+    """Bind and key explicit clip dictionaries (beasts, machines, mounted riders).
+
+    companions: (character, clips[, stance]). Units listed in roster/deaths.py (riders and crews
+    use their own '<id>_rider' / '<id>_crew' entries) get their death performance from there."""
+    from rk.death import performance
+    from .deaths import DEATHS
     ch.finalize_bones()
     ch.bind()
+    if release:
+        ch.add_prop('nocked', release, None)
+    if ch.ident in DEATHS:
+        clips = dict(clips, death=performance(stance or {}, DEATHS[ch.ident]))
     ch.key_clips(clips, release=release)
-    for comp, comp_clips in companions:
+    for comp, comp_clips, *rest in companions:
         comp.finalize_bones()
         comp.bind()
+        if comp.ident in DEATHS:
+            comp_clips = dict(comp_clips, death=performance(rest[0] if rest else {}, DEATHS[comp.ident]))
         comp.key_clips(comp_clips)
     return dict(profile=profile, portrait_cfg=portrait or {}, body_z=body_z, min_scale=min_scale, cam_target_z=cam_z)
 

@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.2322605944568323,
+  "drawScale": 2.0571428571428574,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "player_coordinator",
   "title": "Battle Monk",
   "source": "art/remaster/units/player_coordinator.py",
-  "anchorY": 0.6925436556339264,
-  "anchorX": 0.477894,
+  "anchorY": 0.802531898021698,
+  "anchorX": 0.465267,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.194014
+      -0.304842
     ],
     "contact": [
-      0.191519,
-      -0.35313
+      0.300921,
+      -0.554851
     ]
   },
-  "healthBarY": 0.376919
+  "healthBarY": 0.593157
 }

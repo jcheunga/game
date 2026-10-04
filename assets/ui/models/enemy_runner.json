@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 2.2101029105808423,
+  "drawScale": 2.760196472547069,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_runner",
   "title": "Ghoul",
   "source": "art/remaster/units/enemy_runner.py",
-  "anchorY": 0.7815938144922256,
-  "anchorX": 0.467671,
+  "anchorY": 0.725473552942276,
+  "anchorX": 0.474114,
   "motion": {
     "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
-      0.0,
-      -0.247159
+      -0.0,
+      -0.197901
     ],
     "contact": [
-      0.301739,
-      -0.230486
+      0.241604,
+      -0.184551
     ]
   },
-  "healthBarY": 0.412844
+  "healthBarY": 0.331724
 }

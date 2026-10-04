@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 4.244149841877244,
+  "drawScale": 4.997599939381854,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 7,
+      "fx": "dust",
+      "motion": "horse-collapse",
+      "impactPoint": [
+        -0.013482,
+        -0.000443
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_raider",
   "title": "Cavalry Rider",
   "source": "art/remaster/units/player_raider.py",
-  "anchorY": 0.7049627602100372,
-  "anchorX": 0.483165,
+  "anchorY": 0.6740620732307434,
+  "anchorX": 0.485703,
   "motion": {
     "revision": "remaster-v1",
     "profile": "mounted-lance",
     "body": [
-      -0.0,
-      -0.246262
+      0.0,
+      -0.209135
     ],
     "contact": [
-      0.472637,
-      -0.090533
+      0.401381,
+      -0.076884
     ]
   },
-  "healthBarY": 0.370588
+  "healthBarY": 0.283437
 }

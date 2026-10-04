@@ -23,6 +23,8 @@ public sealed class UnitSpriteSheet
 	public Vector2 ContactOffset { get; set; } = new(.28f,-.25f);
 	public string MotionProfile { get; set; } = "sword-cut";
 	public float HealthBarY { get; set; } = 0.8f;
+	// Death presentation family authored with the clip (art/remaster/roster/deaths.py).
+	public string DeathFx { get; set; } = "";
 	public Dictionary<UnitAnimState, SpriteAnimRange> Animations { get; set; } = new();
 }
 
@@ -33,6 +35,10 @@ public sealed class SpriteAnimRange
 	public float FrameDuration { get; set; } = 0.12f;
 	public bool Loop { get; set; } = true;
 	public int ContactFrame { get; set; } = 2;
+	// Death clips: the frame the body hits the ground and where the torso lands, in frame
+	// units relative to the ground anchor (same convention as motion.body).
+	public int ImpactFrame { get; set; } = -1;
+	public Vector2 ImpactPoint { get; set; }
 }
 
 public static class UnitSpriteLoader
@@ -185,7 +191,7 @@ public static class UnitSpriteLoader
 					if (prop.Value.TryGetProperty("duration", out var d) && d.TryGetDouble(out var dv)) frameDuration = (float)dv;
 					if (prop.Value.TryGetProperty("loop", out var l) && l.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False) loop = l.GetBoolean();
 
-					sheet.Animations[state] = new SpriteAnimRange
+					var range = new SpriteAnimRange
 					{
 						StartFrame = startFrame,
 						FrameCount = frameCount,
@@ -193,6 +199,13 @@ public static class UnitSpriteLoader
 						ContactFrame = prop.Value.TryGetProperty("contactFrame", out var contactFrame) ? contactFrame.GetInt32() : 2,
 						Loop = loop
 					};
+					if (prop.Value.TryGetProperty("impactFrame", out var impact) && impact.TryGetInt32(out var impactVal))
+						range.ImpactFrame = Mathf.Clamp(impactVal, 0, frameCount - 1);
+					if (prop.Value.TryGetProperty("impactPoint", out var point) && point.GetArrayLength() == 2)
+						range.ImpactPoint = new Vector2(point[0].GetSingle(), point[1].GetSingle());
+					if (state == UnitAnimState.Death && prop.Value.TryGetProperty("fx", out var fx))
+						sheet.DeathFx = fx.GetString() ?? "";
+					sheet.Animations[state] = range;
 				}
 			}
 		}

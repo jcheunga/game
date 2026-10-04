@@ -1,7 +1,7 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.8558800679556327,
+  "frameWidth": 378,
+  "frameHeight": 426,
+  "drawScale": 1.989708260342272,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boss_reliquary",
   "title": "Reliquary Tyrant",
   "source": "art/remaster/units/enemy_boss_reliquary.py",
-  "anchorY": 0.717919260263443,
-  "anchorX": 0.474981,
+  "anchorY": 0.76392,
+  "anchorX": 0.423458,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.213805
+      -0.340377
     ],
     "contact": [
-      -0.003522,
-      0.014266
+      -0.005056,
+      0.022712
     ]
   },
-  "healthBarY": 0.452294
+  "healthBarY": 0.717526
 }

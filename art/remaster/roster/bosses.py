@@ -453,10 +453,11 @@ def steppe_warlord(ident, title):
     gloves(rider, M, 'leather_dark')
     boots(rider, M, shaft=0.25)
     rider.hold(W.lance(M, rider.coll, length=2.8, paint=S.paint('5a2a18', name='Lance paint')), 'R', pitch=8, yaw=-4)
-    _, HC = B.clips('horse')
+    hst, HC = B.clips('horse')
     RC = rider_clips(st, profile_of(ident))
-    opts = finish_clips(hc, HC, profile_of(ident), body_z=1.9, cam_z=1.6, min_scale=4.4, companions=[(rider, RC)],
-                        portrait=dict(target=(0.5, 0, 2.05), distance=7.0))
+    # Mount first so the rider's death is solved against the horse going down.
     rider_on(hc, rider)
+    opts = finish_clips(hc, HC, profile_of(ident), body_z=1.9, cam_z=1.6, min_scale=4.4, stance=hst,
+                        companions=[(rider, RC, st)], portrait=dict(target=(0.5, 0, 2.05), distance=7.0))
     hc.tip_bone_owner = rider
     return hc, opts

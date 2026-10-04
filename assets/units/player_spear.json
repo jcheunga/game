@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.9451872621263777,
+  "drawScale": 2.9235602906031635,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 8,
+      "fx": "dust",
+      "motion": "fall-forward",
+      "impactPoint": [
+        0.165393,
+        0.024864
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_spear",
   "title": "Spearman",
   "source": "art/remaster/units/player_spear.py",
-  "anchorY": 0.7113112807273865,
-  "anchorX": 0.47574,
+  "anchorY": 0.7128744423389435,
+  "anchorX": 0.47556,
   "motion": {
     "revision": "remaster-v1",
     "profile": "spear-thrust",
     "body": [
       0.0,
-      -0.201719
+      -0.203211
     ],
     "contact": [
-      0.338313,
-      -0.077848
+      0.340816,
+      -0.078424
     ]
   },
-  "healthBarY": 0.383186
+  "healthBarY": 0.387874
 }

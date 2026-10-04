@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 2.536445078642472,
+  "drawScale": 2.673321481076827,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 5,
+      "fx": "dust",
+      "motion": "dive-skid",
+      "impactPoint": [
+        0.103858,
+        0.015054
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_rogue",
   "title": "Rogue",
   "source": "art/remaster/units/player_rogue.py",
-  "anchorY": 0.7453635931015015,
-  "anchorX": 0.47183,
+  "anchorY": 0.7328007519245148,
+  "anchorX": 0.473273,
   "motion": {
     "revision": "remaster-v1",
     "profile": "blade-stab",
     "body": [
-      -0.0,
-      -0.234225
+      0.0,
+      -0.222232
     ],
     "contact": [
-      0.228853,
-      -0.161835
+      0.217136,
+      -0.153549
     ]
   },
-  "healthBarY": 0.464114
+  "healthBarY": 0.442176
 }

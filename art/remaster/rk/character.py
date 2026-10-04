@@ -1,8 +1,10 @@
 """Character assembly, animation keying, framing and rendering to the game contract.
 
 Contract (unchanged from the original pipeline):
-  32 master frames 256x320 RGBA: idle 0-3, walk 4-9, attack 10-19 (contact 14),
-  hit 20-21, death 22-27, deploy 28-31; portrait 512x512.
+  master frames 256x320 RGBA: idle 0-3, walk 4-9, attack 10-19 (contact 14), hit 20-21,
+  then the unit's death performance (12 frames, 16 for bosses; see death.py) and deploy (4);
+  portrait 512x512. res_scale renders the same
+  framing at a multiple of 256x320 for units drawn large in battle (see density.py).
   metadata: drawScale = 2 * ortho / 3.5 (same world-to-screen scale as before),
   anchorX/anchorY ground projection, motion.body / motion.contact offsets.
 """
@@ -15,6 +17,7 @@ from mathutils import Euler, Matrix, Vector
 from bpy_extras.object_utils import world_to_camera_view
 
 from . import anim, body, core, geo, rig
+from .death import Performance
 from .rig import LAT, Poser
 
 CAM_DIR = Vector((0.55, -0.83, 0.28)).normalized()
@@ -27,6 +30,7 @@ class Character:
         self.title = title
         self.coll = coll or core.collection(title + ' • model')
         self.body_skin = None
+        self.props = []      # loose kit for death performances: {'name', 'objs', 'bone'}
         if skeleton_fn is not None:
             self.s = dict(spec or {})
             self.parts = []
@@ -102,6 +106,7 @@ class Character:
         for o in wd['objs']:
             geo.transform(o, Mr)
             self.parts.append((o, bone))
+        self.add_prop('weapon' if hand == 'R' and not bone.startswith('hand.L') else 'offhand', wd['objs'], bone)
         res = dict(wd)
         res['matrix'] = Mr
         if wd.get('tip') is not None:
@@ -126,7 +131,18 @@ class Character:
         for o in wd['objs']:
             geo.transform(o, Mr)
             self.parts.append((o, bone))
+        self.add_prop('shield', wd['objs'], bone)
         return Mr
+
+    def add_prop(self, name, objs, bone):
+        """Register kit that can come loose in a death (second weapon -> 'weapon2', ...)."""
+        taken = {p['name'] for p in self.props}
+        base, i = name, 2
+        while name in taken:
+            name = f'{base}{i}'
+            i += 1
+        self.props.append({'name': name, 'objs': list(objs), 'bone': bone})
+        return name
 
     def place_in_stance(self, objs, bone, matrix_world_stance):
         conv, _ = self._conv(bone)
@@ -227,14 +243,28 @@ class Character:
 
     # ---------------------------------------------------------- animation
     def key_clips(self, clips, release=None):
-        """clips: name -> list of poses. Keys frames 1..32 in CLIPS order."""
+        """clips: name -> list of poses, or a death Performance. Keys from frame 1 in CLIPS order;
+        clip lengths come from the poses, so a longer death shifts deploy later."""
         frame = 1
         meta = {}
         P = self.poser
+        pending = []
         for name, count, duration, loop in anim.CLIPS:
             poses = clips[name]
-            assert len(poses) == count, (name, len(poses))
-            meta[name] = {'start': frame - 1, 'count': count, 'duration': duration, 'loop': loop}
+            if isinstance(poses, Performance):
+                meta[name] = {'start': frame - 1, 'count': poses.count, 'duration': poses.duration, 'loop': loop}
+                pending.append((name, poses, frame))
+                bpy.context.scene.timeline_markers.new(name, frame=frame)
+                # Placeholder keys keep later clips' frame numbers; the solver replaces them below.
+                for pose in poses.poses:
+                    P.clear()
+                    P.apply(pose)
+                    P.key(frame)
+                    frame += 1
+                continue
+            if name != 'death':
+                assert len(poses) == count, (name, len(poses))
+            meta[name] = {'start': frame - 1, 'count': len(poses), 'duration': duration, 'loop': loop}
             bpy.context.scene.timeline_markers.new(name, frame=frame)
             for pose in poses:
                 P.clear()
@@ -242,16 +272,21 @@ class Character:
                 P.key(frame)
                 frame += 1
         meta['attack']['contactFrame'] = anim.CONTACT
+        total = frame - 1
         for fc in _fcurves(self.arm):
             for kp in fc.keyframe_points:
                 kp.interpolation = 'CONSTANT'
         if release:
             # Nocked projectiles vanish on the release frame and reappear on recovery.
             for obj in release:
-                for f, hidden in ((1, False), (14, False), (15, True), (18, True), (19, False), (32, False)):
+                for f, hidden in ((1, False), (14, False), (15, True), (18, True), (19, False), (total, False)):
                     obj.hide_render = hidden
                     obj.keyframe_insert('hide_render', frame=f)
+        bpy.context.scene.frame_start, bpy.context.scene.frame_end = 1, total
+        for name, perf, start in pending:
+            meta[name].update(perf.key(self, start))
         self.clip_meta = meta
+        self.total_frames = total
         return meta
 
 
@@ -310,7 +345,7 @@ def frame_envelope(scene, cam, objs, frames, margin=0.92):
 
 def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, portrait_cfg=None,
                      body_z=None, contact_fallback=(1.12, 0, 1.1), profile='sword-cut', save_blend=None,
-                     min_scale=3.6, frames=None, scale_override=None):
+                     min_scale=3.6, frames=None, scale_override=None, res_scale=1.0):
     scene = bpy.context.scene
     core.setup_render(scene, samples)
     core.studio_world(scene, top='7a8a9c', bottom='3a3128', strength=0.75)
@@ -321,11 +356,16 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W, FRAME_H
     scene.render.fps = 12
     light_rig(rc, Vector((0, 0, 1.1)))
-    scene.frame_start, scene.frame_end = 1, 32
+    total = getattr(ch, 'total_frames', 32)
+    scene.frame_start, scene.frame_end = 1, total
     objs = [o for o in bpy.data.objects if o.type == 'MESH' and not o.name.startswith('_')]
-    env = frame_envelope(scene, cam, objs, range(1, 33))
+    env = frame_envelope(scene, cam, objs, range(1, total + 1))
     scale = max(min_scale, 4.0 * env) if scale_override is None else scale_override
     cam.data.ortho_scale = scale
+    draw_scale = 2.0 * scale / 3.5
+    # Same framing, more pixels: anchors and motion points are normalised, so only the size changes.
+    k = res_scale(draw_scale) if callable(res_scale) else res_scale
+    scene.render.resolution_x, scene.render.resolution_y = round(FRAME_W * k), round(FRAME_H * k)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     scene.frame_set(1)
@@ -345,9 +385,12 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     else:
         tip = Vector(contact_fallback)
     contact_pt = projected(tip)
+    death = ch.clip_meta.get('death', {})
+    if '_impactWorld' in death:
+        death['impactPoint'] = projected(Vector(death.pop('_impactWorld')))
     meta = {
-        'frameWidth': FRAME_W, 'frameHeight': FRAME_H,
-        'drawScale': 2.0 * scale / 3.5,
+        'frameWidth': scene.render.resolution_x, 'frameHeight': scene.render.resolution_y,
+        'drawScale': draw_scale,
         'animations': ch.clip_meta,
         'assetId': ch.ident, 'title': ch.title,
         'source': f'art/remaster/units/{ch.ident}.py',
@@ -359,14 +402,14 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
         scene['animations'] = json.dumps(ch.clip_meta)
         scene.frame_set(1)
         core.save_blend(save_blend)
-    for f in (frames or range(1, 33)):
+    for f in (frames or range(1, total + 1)):
         scene.frame_set(f)
         scene.render.filepath = str(out / f'{f - 1:03}.png')
         bpy.ops.render.render(write_still=True)
     if portrait:
         render_portrait(ch, out / 'portrait.png', samples=max(samples, 128), **(portrait_cfg or {}))
     (out / 'metadata.json').write_text(json.dumps(meta, indent=2) + '\n')
-    (out / 'complete.json').write_text(json.dumps({'id': ch.ident, 'frames': 32, 'revision': 'remaster-v1'}, indent=2) + '\n')
+    (out / 'complete.json').write_text(json.dumps({'id': ch.ident, 'frames': total, 'revision': 'remaster-v2'}, indent=2) + '\n')
     return meta
 
 

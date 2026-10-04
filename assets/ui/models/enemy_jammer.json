@@ -1,7 +1,7 @@
 {
   "frameWidth": 256,
   "frameHeight": 320,
-  "drawScale": 3.0863360588594992,
+  "drawScale": 2.5443545039396107,
   "animations": {
     "idle": {
       "start": 0,
@@ -26,19 +26,19 @@
   "assetId": "enemy_jammer",
   "title": "Hexer",
   "source": "art/remaster/units/enemy_jammer.py",
-  "anchorY": 0.7016472816467285,
-  "anchorX": 0.476849,
+  "anchorY": 0.7446008622646332,
+  "anchorX": 0.471918,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
       0.0,
-      -0.202532
+      -0.245675
     ],
     "contact": [
-      0.369107,
-      -0.202123
+      0.447732,
+      -0.245177
     ]
   },
-  "healthBarY": 0.404772
+  "healthBarY": 0.491476
 }

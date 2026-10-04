@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 3.0979376772175664,
+  "drawScale": 2.0571428571428574,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 9,
+      "fx": "gas",
+      "motion": "crumple",
+      "impactPoint": [
+        0.06665,
+        0.005407
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "enemy_spitter",
   "title": "Blight Caster",
   "source": "art/remaster/units/enemy_spitter.py",
-  "anchorY": 0.7008921205997467,
-  "anchorX": 0.476936,
+  "anchorY": 0.802531898021698,
+  "anchorX": 0.465267,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.202291
+      -0.304639
     ],
     "contact": [
-      0.238521,
-      -0.32191
+      0.359199,
+      -0.484778
     ]
   },
-  "healthBarY": 0.400892
+  "healthBarY": 0.602532
 }

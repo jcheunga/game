@@ -1,7 +1,7 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 3.1610656228865155,
+  "drawScale": 2.2784219765515057,
   "animations": {
     "idle": {
       "start": 0,
@@ -30,12 +30,19 @@
     },
     "death": {
       "start": 22,
-      "count": 6,
-      "duration": 0.11,
-      "loop": false
+      "count": 12,
+      "duration": 0.075,
+      "loop": false,
+      "impactFrame": 9,
+      "fx": "arcane",
+      "motion": "kneel-topple",
+      "impactPoint": [
+        0.074736,
+        -0.020578
+      ]
     },
     "deploy": {
-      "start": 28,
+      "start": 34,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -44,19 +51,19 @@
   "assetId": "player_necromancer",
   "title": "Necromancer",
   "source": "art/remaster/units/player_necromancer.py",
-  "anchorY": 0.6968802213668823,
-  "anchorX": 0.477397,
+  "anchorY": 0.773150160908699,
+  "anchorX": 0.46864,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.198384
+      -0.275236
     ],
     "contact": [
-      0.206281,
-      -0.361519
+      0.286193,
+      -0.501569
     ]
   },
-  "healthBarY": 0.39063
+  "healthBarY": 0.5419
 }

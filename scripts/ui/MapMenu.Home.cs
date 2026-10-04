@@ -127,11 +127,11 @@ public partial class MapMenu
         _sitePanel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 16));
         _hud.AddChild(_sitePanel);
         _sitePanel.AnchorLeft = _sitePanel.AnchorRight = 1;
-        _sitePanel.AnchorBottom = 1;
         _sitePanel.OffsetLeft = -382;
         _sitePanel.OffsetRight = -22;
-        _sitePanel.OffsetTop = 136;
-        _sitePanel.OffsetBottom = -156;
+        _sitePanel.OffsetTop = SitePanelTop;
+        _sitePanel.OffsetBottom = SitePanelTop + 240;
+        _sitePanel.VisibilityChanged += QueueSitePanelFit;
         var side = new VBoxContainer();
         side.AddThemeConstantOverride("separation", 8);
         _sitePanel.AddChild(side);
@@ -175,12 +175,31 @@ public partial class MapMenu
         side.AddChild(_action);
     }
 
+    // New reward rows only report their wrapped height once laid out, so measure on the next frame.
+    private void QueueSitePanelFit()
+    {
+        if (IsInsideTree()) GetTree().CreateTimer(0).Timeout += FitSitePanel;
+    }
+
+    // The details card hugs its content, up to the space between the header and the dock.
+    private void FitSitePanel()
+    {
+        if (!IsInstanceValid(_sitePanel) || !_sitePanel.Visible) return;
+        var side = _sitePanel.GetChild<VBoxContainer>(0);
+        var content = side.GetCombinedMinimumSize().Y + _overview.GetCombinedMinimumSize().Y
+            + _sitePanel.GetThemeStylebox("panel").GetMinimumSize().Y;
+        var available = _hud.Size.Y - SitePanelTop - SitePanelBottomGap;
+        _sitePanel.OffsetBottom = SitePanelTop + Mathf.Min(content, available);
+    }
+
+    private const float SitePanelTop = 136, SitePanelBottomGap = 156;
+
     private void RefreshZoneNavigation()
     {
         var maps = GameData.Stages.Select(stage => stage.MapId).Distinct().ToArray();
         var index = Array.IndexOf(maps, _activeMapId);
         var stages = GameData.GetStagesForMap(_activeMapId);
-        _zoneProgress.Text = $"ZONE {index + 1:00}  ·  {stages.Count(stage => GameState.Instance.GetStageStars(stage.StageNumber) > 0)}/{stages.Count} cleared";
+        _zoneProgress.Text = $"Zone {index + 1} · {stages.Count(stage => GameState.Instance.GetStageStars(stage.StageNumber) > 0)}/{stages.Count} cleared";
         _previousZone.Disabled = _mapCanvas.IsTravelling || index <= 0;
         var hasNext = index + 1 < maps.Length;
         var nextUnlocked = hasNext && GameState.Instance.IsAdventureZoneUnlocked(maps[index + 1]);
@@ -201,56 +220,56 @@ public partial class MapMenu
     private void ShowDestinations(int tab)
     {
         RealmUi.Clear(_destinations);
-        void Link(string icon, string title, Action action, string locked = null)
+        void Link(string title, Action action, string locked = null)
         {
-            var button = new Button { CustomMinimumSize = new Vector2(0, 216), SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = title, TooltipText = locked ?? title, Disabled = locked != null };
+            var button = new Button { CustomMinimumSize = new Vector2(0, 196), MouseDefaultCursorShape = CursorShape.PointingHand, SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = title, TooltipText = locked ?? title, Disabled = locked != null };
             ModalUi.StyleButton(button, accent: tab == 0 ? new Color("6387b9") : tab == 1 ? new Color("55a28a") : new Color("bd6073"), material: ModalMaterial.Inset);
             var content = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; content.AddThemeConstantOverride("separation", 5);
             button.AddChild(content); content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); content.OffsetLeft = content.OffsetTop = 14; content.OffsetRight = content.OffsetBottom = -14;
-            content.MinimumSizeChanged += () => button.CustomMinimumSize = new Vector2(0, Mathf.Max(216, content.GetCombinedMinimumSize().Y + 28));
+            content.MinimumSizeChanged += () => button.CustomMinimumSize = new Vector2(0, Mathf.Max(196, content.GetCombinedMinimumSize().Y + 28));
             int illustration = title switch {
                 "Endless" or "Codex" => 1, "Tower" or "Warband guild" => 0, "Forge" => 2,
                 "Bounties" or "Expeditions" or "Challenges" => 3,
                 "Boss rush" or "Weekly raid" or "Season" or "Arena" or "Rankings" => 5, _ => 4 };
-            var art = new TextureRect { Texture = ModalArt.Illustration(illustration), CustomMinimumSize = new Vector2(0, 64), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Modulate = locked == null ? Colors.White : new Color(.45f,.45f,.45f) }; content.AddChild(art);
-            var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; head.AddThemeConstantOverride("separation", 12); content.AddChild(head);
-            head.AddChild(new TextureRect { Texture = HomeMapArt.Icon(icon), CustomMinimumSize = new Vector2(44,44), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
-            var name = RealmUi.Heading(title, 20); name.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize); name.VerticalAlignment = VerticalAlignment.Center; name.MouseFilter = MouseFilterEnum.Ignore; head.AddChild(name);
+            var art = new TextureRect { Texture = ModalArt.Illustration(illustration), CustomMinimumSize = new Vector2(0, 72), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Modulate = locked == null ? Colors.White : new Color(.45f,.45f,.45f) }; content.AddChild(art);
+            // The illustration identifies the activity; the title leads and the line below supports it.
+            content.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore });
+            var name = RealmUi.SectionTitle(title, 22); name.AddThemeColorOverride("font_color", locked == null ? ModalUi.Cream : ModalUi.Muted); name.MouseFilter = MouseFilterEnum.Ignore; content.AddChild(name);
             var description = RealmUi.Label(locked ?? title switch {
                 "Endless" => "Hold the line against an endless horde.", "Tower" => "Climb 100 floors of escalating battles.", "Bounties" => "Daily objectives and useful rewards.", "Weekly raid" => "Face a powerful boss with your guild.", "Event" => "Limited adventures and seasonal rewards.",
                 "Expeditions" => "Send reserve allies to gather supplies.", "Forge" => "Craft, fuse and enchant your relics.", "Daily gifts" => "Collect today's caravan supplies.", "Season" => "Earn rewards as your journey continues.", "Codex" => "Read your field notes and discoveries.", "Store" => "Refill supplies and browse offers.", "Warband guild" => "Join allies and contribute to your guild.", "Friends" => "Find friends and exchange gifts.", "Challenges" => "Daily races, shared runs and LAN play.", "Arena" => "Challenge rival warbands.", "Rankings" => "See the kingdom's leading caravans.", _ => "Continue your Crownroad journey." }, 18, true);
-            description.MouseFilter = MouseFilterEnum.Ignore; content.AddChild(description);
+            description.AddThemeFontSizeOverride("font_size", 18); description.MouseFilter = MouseFilterEnum.Ignore; content.AddChild(description);
             RealmModal.Polish(name); RealmModal.Polish(description);
             button.Pressed += () => action?.Invoke();
             _destinations.AddChild(button);
         }
         if (tab == 0)
         {
-            Link("flame", "Endless", () => SceneRouter.Instance.GoToEndless());
-            Link("mountain", "Tower", () => SceneRouter.Instance.GoToTower());
-            Link("flag", "Bounties", () => SceneRouter.Instance.GoToBounty());
-            Link("shield", "Boss rush", null, "Boss rush is in development");
-            Link("sword", "Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage < 5 ? "Win stage 4 or higher to unlock raids" : null);
-            Link("star", "Event", () => SceneRouter.Instance.GoToEvent(), GameState.Instance.GetActiveEvent() == null ? "No event is active" : null);
+            Link("Endless", () => SceneRouter.Instance.GoToEndless());
+            Link("Tower", () => SceneRouter.Instance.GoToTower());
+            Link("Bounties", () => SceneRouter.Instance.GoToBounty());
+            Link("Boss rush", null, "Boss rush is in development");
+            Link("Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage < 5 ? "Win stage 4 or higher to unlock raids" : null);
+            Link("Event", () => SceneRouter.Instance.GoToEvent(), GameState.Instance.GetActiveEvent() == null ? "No event is active" : null);
         }
         else if (tab == 1)
         {
-            Link("flag", "Expeditions", () => SceneRouter.Instance.GoToExpeditions());
-            Link("hammer", "Forge", () => SceneRouter.Instance.GoToForge());
-            Link("gift", "Daily gifts", () => SceneRouter.Instance.GoToLoginCalendar());
-            Link("crown", "Season", () => SceneRouter.Instance.GoToSeasonPass());
-            Link("book", "Codex", () => SceneRouter.Instance.GoToCodex());
-            Link("gold", "Store", () => SceneRouter.Instance.GoToCashShop());
+            Link("Expeditions", () => SceneRouter.Instance.GoToExpeditions());
+            Link("Forge", () => SceneRouter.Instance.GoToForge());
+            Link("Daily gifts", () => SceneRouter.Instance.GoToLoginCalendar());
+            Link("Season", () => SceneRouter.Instance.GoToSeasonPass());
+            Link("Codex", () => SceneRouter.Instance.GoToCodex());
+            Link("Store", () => SceneRouter.Instance.GoToCashShop());
             if (GameState.Instance.CanPrestige)
-                Link("star", "Prestige", () => MedievalUi.ShowConfirmation(this, "Begin a new age?", "Restart campaign progression for prestige rewards.", "Prestige", () => { GameState.Instance.TryPrestige(out _); SceneRouter.Instance.ReloadHome(); }));
+                Link("Prestige", () => MedievalUi.ShowConfirmation(this, "Begin a new age?", "Restart campaign progression for prestige rewards.", "Prestige", () => { GameState.Instance.TryPrestige(out _); SceneRouter.Instance.ReloadHome(); }));
         }
         else
         {
-            Link("people", "Warband guild", () => SceneRouter.Instance.GoToGuild());
-            Link("people", "Friends", () => SceneRouter.Instance.GoToFriends());
-            Link("sword", "Challenges", () => SceneRouter.Instance.GoToMultiplayer());
-            Link("shield", "Arena", () => SceneRouter.Instance.GoToArena(), GameState.Instance.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null);
-            Link("crown", "Rankings", () => SceneRouter.Instance.GoToLeaderboard());
+            Link("Warband guild", () => SceneRouter.Instance.GoToGuild());
+            Link("Friends", () => SceneRouter.Instance.GoToFriends());
+            Link("Challenges", () => SceneRouter.Instance.GoToMultiplayer());
+            Link("Arena", () => SceneRouter.Instance.GoToArena(), GameState.Instance.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null);
+            Link("Rankings", () => SceneRouter.Instance.GoToLeaderboard());
         }
     }
 

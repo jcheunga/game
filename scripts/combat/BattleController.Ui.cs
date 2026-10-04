@@ -135,14 +135,14 @@ public partial class BattleController
 		_endPrimaryButton = new RealmButton
 		{
 			Text = IsEndlessMode
-				? "Restart Run"
+				? "Restart run"
 					: IsLanRaceMode
-						? "Room Rematch"
+						? "Rematch"
 						: IsOnlineRoomMode
-							? "Back To Online Room"
+							? "Back to room"
 						: IsChallengeMode
-							? "Retry Challenge"
-						: "Retry Stage",
+							? "Retry challenge"
+						: "Retry stage",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		ApplyBattleButtonTheme(_endPrimaryButton, route);
@@ -154,14 +154,14 @@ public partial class BattleController
 		_endSecondaryButton = new RealmButton
 		{
 			Text = IsEndlessMode
-				? "Back To Endless Prep"
+				? "Back to endless"
 					: IsLanRaceMode
-						? "Back To Multiplayer"
+						? "Back to challenges"
 						: IsOnlineRoomMode
-							? "Leave Online Room"
+							? "Leave room"
 						: IsChallengeMode
-							? "Back To Multiplayer"
-						: IsTowerMode ? "Back To Tower" : IsArenaMode ? "Back To Arena" : IsSeasonalEventMode ? "Back To Event" : "Back To Map",
+							? "Back to challenges"
+						: IsTowerMode ? "Back to tower" : IsArenaMode ? "Back to arena" : IsSeasonalEventMode ? "Back to event" : "Back to map",
 			CustomMinimumSize = new Vector2(0f, 48f)
 		};
 		ApplyBattleButtonTheme(_endSecondaryButton, route);
@@ -240,7 +240,7 @@ public partial class BattleController
 				continue;
 			}
 
-			SetStatus($"[{hint.Title}] {hint.Body}");
+			SetStatus($"{hint.Title}: {hint.Body}");
 			GameState.Instance.MarkHintSeen(hint.Id);
 		}
 	}
@@ -268,7 +268,7 @@ public partial class BattleController
 	{
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
         _healthBar.SetValue(_playerBaseMaxHealth > 0 ? _playerBaseHealth / _playerBaseMaxHealth : 0,
-            $"{Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} / {Mathf.CeilToInt(_playerBaseMaxHealth)}");
+            $"{Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))}/{Mathf.CeilToInt(_playerBaseMaxHealth)}");
         _goldAmount.Text = GameState.Instance.Gold.ToString("N0");
         _healthBar.AccessibilityName = $"War wagon health, {Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} of {Mathf.CeilToInt(_playerBaseMaxHealth)}";
         _courageBar.AccessibilityName = $"Courage, {Mathf.FloorToInt(_courage)} of {Mathf.FloorToInt(_maxCourage)}";

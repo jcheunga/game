@@ -56,7 +56,7 @@ public partial class LanChallengeService : Node
 	public int RoomPort { get; private set; } = DefaultPort;
 	public string SharedChallengeCode { get; private set; } = "";
 	public string SharedChallengeTitle { get; private set; } = "";
-	public string SessionStatus { get; private set; } = "No LAN race room active.";
+	public string SessionStatus { get; private set; } = "";
 	public string ScoreboardSummary { get; private set; } = "LAN scoreboard: no race submissions yet.";
 	public string SessionStandingsSummary { get; private set; } = "LAN session standings: no completed LAN races yet.";
 	public IReadOnlyList<string> SharedLockedDeckUnitIds => _sharedLockedDeckUnitIds;

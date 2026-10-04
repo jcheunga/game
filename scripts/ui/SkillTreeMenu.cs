@@ -66,11 +66,11 @@ public partial class SkillTreeMenu : Control
 		var listInner = new VBoxContainer();
 		listInner.AddThemeConstantOverride("separation", 4);
 		listOuter.AddChild(listInner);
-		listInner.AddChild(new Label { Text = "Units", HorizontalAlignment = HorizontalAlignment.Center });
-		var listScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 400f) };
+		listInner.AddChild(RealmUi.SectionTitle("Allies"));
+		var listScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 400f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		listInner.AddChild(listScroll);
 		_unitStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_unitStack.AddThemeConstantOverride("separation", 4);
+		_unitStack.AddThemeConstantOverride("separation", 6);
 		listScroll.AddChild(_unitStack);
 
 		// Right panel: skill tree
@@ -85,7 +85,7 @@ public partial class SkillTreeMenu : Control
 		var treeInner = new VBoxContainer();
 		treeInner.AddThemeConstantOverride("separation", 4);
 		treeOuter.AddChild(treeInner);
-		var treeScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 430f) };
+		var treeScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 430f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		treeInner.AddChild(treeScroll);
 		_treeStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_treeStack.AddThemeConstantOverride("separation", 8);
@@ -147,35 +147,33 @@ public partial class SkillTreeMenu : Control
 			}
 
 			var capturedId = unitId;
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 6);
-			row.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(38f, 38f)));
-
-			var label = new Label
+			_selectedUnitId ??= capturedId;
+			var row = new RealmButton
 			{
-				Text = $"{displayName}  ({unlockedCount}/{tree.Nodes.Length} nodes)",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
+				Text = $"{displayName} · {unlockedCount}/{tree.Nodes.Length}",
+				Icon = UiArtLoader.TryLoadUnitIcon(unit),
+				ExpandIcon = true,
+				Alignment = HorizontalAlignment.Left,
+				ToggleMode = true,
+				ButtonPressed = _selectedUnitId == capturedId,
+				CustomMinimumSize = new Vector2(0f, 52f),
+				TooltipText = $"{unlockedCount} of {tree.Nodes.Length} talents unlocked",
+				MouseDefaultCursorShape = CursorShape.PointingHand
 			};
-			if (_selectedUnitId == capturedId)
-				label.AddThemeColorOverride("font_color", new Color("facc15"));
-			else if (unlockedCount == tree.Nodes.Length)
-				label.AddThemeColorOverride("font_color", new Color("4ade80"));
-			row.AddChild(label);
-
-			var btn = new RealmButton { Text = "View", CustomMinimumSize = new Vector2(60f, 0f) };
-			btn.Pressed += () =>
+			row.AddThemeConstantOverride("icon_max_width", 36);
+			row.SetMeta("realm_toggle", true);
+			row.Pressed += () =>
 			{
 				_selectedUnitId = capturedId;
 				RefreshUi();
 			};
-			row.AddChild(btn);
+			if (RealmModal.Embedded(this)) ModalUi.StyleButton(row);
 			_unitStack.AddChild(row);
 		}
 
 		if (ownedUnitIds.Count == 0)
 		{
-			_unitStack.AddChild(new Label { Text = "No units owned." });
+			_unitStack.AddChild(RealmUi.Label("Recruit allies in the armory to train their talents.", 18, true));
 		}
 	}
 
@@ -185,7 +183,7 @@ public partial class SkillTreeMenu : Control
 
 		if (_selectedUnitId == null)
 		{
-			_treeStack.AddChild(new Label { Text = "Select a unit to view its skill tree.", HorizontalAlignment = HorizontalAlignment.Center });
+			_treeStack.AddChild(RealmUi.EmptyState("hammer", "No talents yet", "Recruit an ally to open their talent tree."));
 			return;
 		}
 
@@ -193,140 +191,81 @@ public partial class SkillTreeMenu : Control
 		var tree = UnitSkillTreeCatalog.GetTree(_selectedUnitId);
 		if (tree == null)
 		{
-			_treeStack.AddChild(new Label { Text = "No skill tree found for this unit." });
+			_treeStack.AddChild(RealmUi.Label("This ally has no talents.", 18, true));
 			return;
 		}
 
 		var unit = GameData.GetUnit(_selectedUnitId);
 		var headerRow = new HBoxContainer();
-		headerRow.AddThemeConstantOverride("separation", 10);
+		headerRow.AddThemeConstantOverride("separation", 12);
 		headerRow.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(52f, 52f)));
-		var headerLabel = new Label { Text = $"{unit?.DisplayName ?? _selectedUnitId} - Skill Tree", VerticalAlignment = VerticalAlignment.Center };
-		headerLabel.AddThemeColorOverride("font_color", new Color("facc15"));
-		headerRow.AddChild(headerLabel);
+		var heading = RealmUi.Heading(unit?.DisplayName ?? _selectedUnitId, 24);
+		heading.VerticalAlignment = VerticalAlignment.Center;
+		headerRow.AddChild(heading);
+		var balance = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
+		balance.AddThemeConstantOverride("separation", 16);
+		balance.AddChild(HomeResourceUi.Amount("tomes", gs.Tomes.ToString("N0"), $"Tomes: {gs.Tomes:N0}", 28));
+		balance.AddChild(HomeResourceUi.Amount("gold", gs.Gold.ToString("N0"), $"Gold: {gs.Gold:N0}", 28));
+		headerRow.AddChild(balance);
 		_treeStack.AddChild(headerRow);
 
-		_treeStack.AddChild(new HSeparator());
-
-		// Display nodes in a vertical tree layout (root at top, diamond shape)
-		// Node order: 0=root, 1=left, 2=right, 3=left-deep, 4=convergence
-		// Visual diamond:  0
-		//                 1  2
-		//                3    (skip)
-		//                  4
-
-		for (var i = 0; i < tree.Nodes.Length; i++)
+		// Talents unlock in order; each card names the talent it requires.
+		var grid = new GridContainer { Columns = MobilePresentation.Enabled ? 1 : 2, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		grid.AddThemeConstantOverride("h_separation", 12);
+		grid.AddThemeConstantOverride("v_separation", 12);
+		_treeStack.AddChild(grid);
+		foreach (var node in tree.Nodes)
 		{
-			var node = tree.Nodes[i];
 			var isUnlocked = gs.IsSkillNodeUnlocked(_selectedUnitId, node.Id);
 			var capturedNodeId = node.Id;
 			var capturedUnitId = _selectedUnitId;
+			var card = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			grid.AddChild(card);
+			var stack = new VBoxContainer();
+			stack.AddThemeConstantOverride("separation", 6);
+			card.AddChild(stack);
 
-			// Indentation to approximate diamond shape
-			var indent = i switch
+			var title = RealmUi.KeyValue(node.Title, isUnlocked ? "Unlocked" : "", isUnlocked ? new Color("9fd49a") : null);
+			var titleLabel = title.GetChild<Label>(0);
+			titleLabel.AddThemeColorOverride("font_color", ModalUi.Cream);
+			titleLabel.AddThemeFontOverride("font", ModalUi.HeadingFont);
+			titleLabel.AddThemeFontSizeOverride("font_size", 20);
+			stack.AddChild(title);
+
+			var bonusParts = new List<string>();
+			if (node.HealthScale > 1.001f) bonusParts.Add($"+{(node.HealthScale - 1f) * 100:0}% health");
+			if (node.DamageScale > 1.001f) bonusParts.Add($"+{(node.DamageScale - 1f) * 100:0}% damage");
+			if (node.SpeedScale > 1.001f) bonusParts.Add($"+{(node.SpeedScale - 1f) * 100:0}% speed");
+			if (node.CooldownReduction > 0.001f) bonusParts.Add($"−{node.CooldownReduction:0.##}s cooldown");
+			stack.AddChild(RealmUi.Label(bonusParts.Count > 0 ? string.Join(" · ", bonusParts) : node.Description, 18, true));
+
+			if (isUnlocked) continue;
+			var prerequisite = string.IsNullOrWhiteSpace(node.PrerequisiteNodeId) ? null : tree.Nodes.FirstOrDefault(n => n.Id == node.PrerequisiteNodeId);
+			var prereqsMet = prerequisite == null || gs.IsSkillNodeUnlocked(capturedUnitId, prerequisite.Id);
+			var canAfford = gs.Tomes >= node.TomeCost && gs.Gold >= node.GoldCost;
+			var actions = new HBoxContainer();
+			actions.AddThemeConstantOverride("separation", 16);
+			stack.AddChild(actions);
+			if (!prereqsMet)
 			{
-				0 => 300, // center (root)
-				1 => 140, // left branch
-				2 => 460, // right branch
-				3 => 140, // left-deep
-				4 => 300, // convergence (center bottom)
-				_ => 300
+				var requirement = RealmUi.Label($"Requires {prerequisite!.Title}", 18, true);
+				requirement.VerticalAlignment = VerticalAlignment.Center;
+				actions.AddChild(requirement);
+				continue;
+			}
+			actions.AddChild(HomeResourceUi.Amount("tomes", node.TomeCost.ToString(), $"{node.TomeCost} tomes", 26));
+			actions.AddChild(HomeResourceUi.Amount("gold", node.GoldCost.ToString("N0"), $"{node.GoldCost:N0} gold", 26));
+			actions.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+			var unlockBtn = new RealmButton { Text = "Unlock", CustomMinimumSize = new Vector2(120f, 44f), Disabled = !canAfford,
+				TooltipText = canAfford ? "Unlock this talent" : "Not enough tomes or gold" };
+			if (canAfford) unlockBtn.SetMeta("realm_primary", true);
+			unlockBtn.Pressed += () =>
+			{
+				gs.TryUnlockSkillNode(capturedUnitId, capturedNodeId, out var message);
+				_statusLabel.Text = message;
+				RefreshUi();
 			};
-
-			// Connector lines
-			if (i == 1)
-			{
-				var connectorLabel = new Label { Text = "/          \\", HorizontalAlignment = HorizontalAlignment.Center };
-				connectorLabel.AddThemeColorOverride("font_color", new Color("606060"));
-				_treeStack.AddChild(connectorLabel);
-			}
-			else if (i == 3)
-			{
-				var connectorLabel = new Label { Text = "\\          /", HorizontalAlignment = HorizontalAlignment.Center };
-				connectorLabel.AddThemeColorOverride("font_color", new Color("606060"));
-				_treeStack.AddChild(connectorLabel);
-			}
-
-			var nodeContainer = new HBoxContainer();
-
-			// Spacer for indentation
-			var spacer = new Control { CustomMinimumSize = new Vector2(indent, 0f) };
-			nodeContainer.AddChild(spacer);
-
-			var nodePanel = new PanelContainer { CustomMinimumSize = new Vector2(260f, 0f) };
-			nodeContainer.AddChild(nodePanel);
-
-			var nodeMargin = new MarginContainer();
-			nodeMargin.AddThemeConstantOverride("margin_left", 6);
-			nodeMargin.AddThemeConstantOverride("margin_right", 6);
-			nodeMargin.AddThemeConstantOverride("margin_top", 4);
-			nodeMargin.AddThemeConstantOverride("margin_bottom", 4);
-			nodePanel.AddChild(nodeMargin);
-
-			var nodeVbox = new VBoxContainer();
-			nodeVbox.AddThemeConstantOverride("separation", 2);
-			nodeMargin.AddChild(nodeVbox);
-
-			// Node status marker
-			var statusIcon = isUnlocked ? "[UNLOCKED]" : "[LOCKED]";
-			var titleText = $"{statusIcon}  {node.Title}";
-			var titleLabel = new Label { Text = titleText };
-			if (isUnlocked)
-				titleLabel.AddThemeColorOverride("font_color", new Color("4ade80"));
-			else
-				titleLabel.AddThemeColorOverride("font_color", new Color("c8c8c8"));
-			nodeVbox.AddChild(titleLabel);
-
-			// Stat bonuses
-			var bonusParts = new System.Collections.Generic.List<string>();
-			if (node.HealthScale > 1.001f) bonusParts.Add($"HP +{(node.HealthScale - 1f) * 100:0}%");
-			if (node.DamageScale > 1.001f) bonusParts.Add($"DMG +{(node.DamageScale - 1f) * 100:0}%");
-			if (node.SpeedScale > 1.001f) bonusParts.Add($"SPD +{(node.SpeedScale - 1f) * 100:0}%");
-			if (node.CooldownReduction > 0.001f) bonusParts.Add($"CD -{node.CooldownReduction:0.00}s");
-			var bonusLabel = new Label { Text = bonusParts.Count > 0 ? string.Join(", ", bonusParts) : node.Description };
-			bonusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-			nodeVbox.AddChild(bonusLabel);
-
-			// Cost
-			var costLabel = new Label { Text = $"Cost: {node.TomeCost} Tomes, {node.GoldCost} Gold" };
-			costLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-			nodeVbox.AddChild(costLabel);
-
-			// Unlock button (only for locked nodes)
-			if (!isUnlocked)
-			{
-				var canAfford = gs.Tomes >= node.TomeCost && gs.Gold >= node.GoldCost;
-				var prereqsMet = true;
-				if (!string.IsNullOrWhiteSpace(node.PrerequisiteNodeId))
-				{
-					if (!gs.IsSkillNodeUnlocked(capturedUnitId, node.PrerequisiteNodeId))
-					{
-						prereqsMet = false;
-					}
-				}
-
-				var unlockBtn = new RealmButton
-				{
-					Text = !prereqsMet ? "Prereqs Not Met" : (!canAfford ? "Can't Afford" : "Unlock"),
-					CustomMinimumSize = new Vector2(120f, 0f),
-					Disabled = !canAfford || !prereqsMet
-				};
-				unlockBtn.Pressed += () =>
-				{
-					if (gs.TryUnlockSkillNode(capturedUnitId, capturedNodeId, out var message))
-					{
-						_statusLabel.Text = message;
-						RefreshUi();
-					}
-					else
-					{
-						_statusLabel.Text = message;
-					}
-				};
-				nodeVbox.AddChild(unlockBtn);
-			}
-
-			_treeStack.AddChild(nodeContainer);
+			actions.AddChild(unlockBtn);
 		}
 	}
 }

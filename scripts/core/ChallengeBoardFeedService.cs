@@ -80,7 +80,7 @@ public partial class ChallengeBoardFeedService : Node
 		{
 			return
 				"Remote featured feed:\n" +
-				"Not fetched yet. Use `Refresh Online` to pull backend-authored boards.\n" +
+				"Not loaded yet. Refresh to check for boards.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

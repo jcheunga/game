@@ -142,7 +142,7 @@ public static class OnlineRoomJoinService
 		{
 			return
 				"Online room join:\n" +
-				"No join ticket requested yet. Use `Request Join` on a room listing to negotiate backend access.\n" +
+				"No seat requested yet. Choose Request join on a room to take a seat.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

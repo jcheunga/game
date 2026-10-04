@@ -55,7 +55,7 @@ public partial class ShopMenu
             extra.AddChild(ArmoryDetailUi.Stats(new[] { new ArmoryDetailUi.Stat("heart", "Health", $"+{next.MaxHealth - stats.MaxHealth:0}"), new ArmoryDetailUi.Stat("sword", "Damage", $"+{next.AttackDamage - stats.AttackDamage:0.#}"), new ArmoryDetailUi.Stat("shield", "Gate damage", $"+{next.BaseDamage - stats.BaseDamage}") }));
         }
 
-        var traits = UnitStatText.BuildInlineTraits(stats).Trim(' ', '|');
+        var traits = UnitStatText.BuildInlineTraits(stats).Trim(' ', '·');
         if (traits.Length > 0)
             extra.AddChild(RealmUi.Label(traits, 18));
         var ability = UnitActiveAbilityCatalog.GetForUnit(unit.Id);

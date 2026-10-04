@@ -6284,8 +6284,8 @@ public partial class BattleController : Node2D
 			$"Lv{level} {definition.DisplayName}\n" +
 			$"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}\n" +
 			$"{status}\n" +
-			$"HP: {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK: {stats.AttackDamage:0.#} damage  |  Range: {stats.AttackRange:0.#}\n" +
-			$"Deploy: {effectiveDeployCooldown:0.#}s cooldown  |  Cost: {definition.Cost} courage" +
+			$"HP {Mathf.RoundToInt(stats.MaxHealth)} · {stats.AttackDamage:0.#} damage · range {stats.AttackRange:0.#}\n" +
+			$"{effectiveDeployCooldown:0.#}s recovery · {definition.Cost} courage" +
 			UnitStatText.BuildInlineTraits(stats);
 	}
 

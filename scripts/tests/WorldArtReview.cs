@@ -94,6 +94,6 @@ public partial class WorldArtReview : Node
                 }
         }
         catch (Exception e) { GD.PrintErr(e); _failures++; }
-        GD.Print($"WORLD_ART_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1);
+        GD.Print($"WORLD_ART_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);
     }
 }

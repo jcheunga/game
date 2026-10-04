@@ -111,9 +111,11 @@ public partial class BountyMenu : Control
 		{
 			HorizontalAlignment = HorizontalAlignment.Center,
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(0f, 0f)
+			// Two lines keep the progress rows aligned across all three cards.
+			CustomMinimumSize = new Vector2(0f, 60f)
 		};
-		_descLabels[index].AddThemeColorOverride("font_color", new Color("b0b8c8"));
+		_descLabels[index].SetMeta(RealmModal.KeepMinimum, true);
+		_descLabels[index].AddThemeColorOverride("font_color", ModalUi.Muted);
 		stack.AddChild(_descLabels[index]);
 
 		// Spacer
@@ -121,7 +123,7 @@ public partial class BountyMenu : Control
 
 		_progressBars[index] = new ProgressBar
 		{
-			CustomMinimumSize = new Vector2(0f, 24f),
+			CustomMinimumSize = new Vector2(0f, 10f),
 			MinValue = 0,
 			MaxValue = 1,
 			Value = 0,
@@ -144,7 +146,7 @@ public partial class BountyMenu : Control
 		// Spacer pushes button toward bottom
 		stack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 
-		_claimButtons[index] = new RealmButton { Text = "Claim", CustomMinimumSize = new Vector2(160f, 40f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+		_claimButtons[index] = new RealmButton { Text = "Claim", CustomMinimumSize = new Vector2(180f, 48f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
 		var capturedIndex = index;
 		_claimButtons[index].Pressed += () => OnClaimPressed(capturedIndex);
 		stack.AddChild(_claimButtons[index]);
@@ -179,10 +181,14 @@ public partial class BountyMenu : Control
 			_descLabels[i].Text = def.Description;
 			_progressBars[i].MaxValue = def.TargetCount;
 			_progressBars[i].Value = Math.Min(progress, def.TargetCount);
-			_progressLabels[i].Text = $"Progress: {Math.Min(progress, def.TargetCount)}/{def.TargetCount}";
-			RebuildRewardRow(i, def.RewardType, "", $"+{def.RewardAmount} {CapitalizeRewardType(def.RewardType)}");
+			_progressLabels[i].Text = $"{Math.Min(progress, def.TargetCount):N0}/{def.TargetCount:N0}";
+			RebuildRewardRow(i, def.RewardType, "", $"+{def.RewardAmount:N0} {CapitalizeRewardType(def.RewardType).ToLowerInvariant()}");
 			_claimButtons[i].Disabled = !reachedTarget || completed;
 			_claimButtons[i].Text = completed ? "Claimed" : "Claim";
+			// A finished bounty's claim becomes the card's primary action.
+			if (reachedTarget && !completed) _claimButtons[i].SetMeta("realm_primary", true);
+			else _claimButtons[i].RemoveMeta("realm_primary");
+			if (RealmModal.Embedded(this)) ModalUi.StyleButton(_claimButtons[i]);
 		}
 	}
 
@@ -208,7 +214,7 @@ public partial class BountyMenu : Control
 		foreach (var child in _rewardRows[index].GetChildren()) child.QueueFree();
 		_rewardRows[index].AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, rewardItemId, text, new Vector2(36f, 36f)));
 		var rewardLabel = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-		rewardLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
+		rewardLabel.AddThemeColorOverride("font_color", RealmUi.Gold);
 		_rewardRows[index].AddChild(rewardLabel);
 	}
 

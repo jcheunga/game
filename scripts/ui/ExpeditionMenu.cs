@@ -64,7 +64,7 @@ public partial class ExpeditionMenu : Control
 		var slotsInner = new VBoxContainer();
 		slotsInner.AddThemeConstantOverride("separation", 6);
 		slotsOuter.AddChild(slotsInner);
-		slotsInner.AddChild(new Label { Text = "Active Expeditions", HorizontalAlignment = HorizontalAlignment.Center });
+		slotsInner.AddChild(RealmUi.SectionTitle("Underway"));
 		_slotsStack = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
 		_slotsStack.AddThemeConstantOverride("separation", 8);
 		slotsInner.AddChild(_slotsStack);
@@ -81,8 +81,8 @@ public partial class ExpeditionMenu : Control
 		var catInner = new VBoxContainer();
 		catInner.AddThemeConstantOverride("separation", 6);
 		catOuter.AddChild(catInner);
-		catInner.AddChild(new Label { Text = "Available Expeditions", HorizontalAlignment = HorizontalAlignment.Center });
-		var catScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
+		catInner.AddChild(RealmUi.SectionTitle("Available"));
+		var catScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		catInner.AddChild(catScroll);
 		_catalogStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_catalogStack.AddThemeConstantOverride("separation", 6);
@@ -143,45 +143,40 @@ public partial class ExpeditionMenu : Control
 
 			var complete = GameState.Instance.IsExpeditionComplete(i);
 			var remaining = GameState.Instance.GetExpeditionTimeRemaining(i);
-			var unitNames = string.Join(", ", slot.AssignedUnitIds.Select(ResolveUnitName));
-
 			var box = new VBoxContainer();
-			box.AddThemeConstantOverride("separation", 2);
-			box.AddChild(new Label { Text = def.Title });
+			box.AddThemeConstantOverride("separation", 6);
+			box.AddChild(RealmUi.Heading(def.Title, 20));
 			if (slot.AssignedUnitIds.Any())
-			{
-				box.AddChild(BuildUnitBadgeRow(slot.AssignedUnitIds, 34f));
-				box.AddChild(new Label { Text = $"Assigned: {unitNames}", AutowrapMode = TextServer.AutowrapMode.WordSmart });
-			}
+				box.AddChild(BuildUnitBadgeRow(slot.AssignedUnitIds, 36f));
 
 			if (complete)
 			{
 				var capturedIndex = i;
-				var collectBtn = new RealmButton { Text = "Collect Rewards" };
-				collectBtn.Pressed += () =>
+				var collectBtn = RealmUi.Button("gift", "Collect rewards", () =>
 				{
 					if (GameState.Instance.TryCollectExpedition(capturedIndex, out var resultMsg))
 					{
 						_statusLabel.Text = resultMsg;
 						RefreshUi();
 					}
-				};
+				}, true);
+				collectBtn.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
 				box.AddChild(collectBtn);
 			}
 			else
 			{
-				var mins = (int)remaining.TotalMinutes;
-				var secs = remaining.Seconds;
-				box.AddChild(new Label { Text = $"Time remaining: {mins}m {secs}s" });
+				box.AddChild(RealmUi.Label($"Returns in {(int)remaining.TotalMinutes}m {remaining.Seconds:00}s", 18, true));
 			}
 
 			_slotsStack.AddChild(box);
+			_slotsStack.AddChild(new HSeparator());
 		}
 
-		for (var i = expeditions.Count; i < ExpeditionCatalog.MaxSlots; i++)
-		{
-			_slotsStack.AddChild(new Label { Text = $"Slot {i + 1}: Empty" });
-		}
+		var free = ExpeditionCatalog.MaxSlots - expeditions.Count;
+		if (expeditions.Count == 0)
+			_slotsStack.AddChild(RealmUi.EmptyState("map", "No expeditions underway", $"Send allies who are not in your squad to gather supplies. {free} slots free."));
+		else if (free > 0)
+			_slotsStack.AddChild(RealmUi.Label(free == 1 ? "1 slot free" : $"{free} slots free", 18, true));
 	}
 
 	private void RebuildCatalog()
@@ -195,73 +190,62 @@ public partial class ExpeditionMenu : Control
 		foreach (var def in ExpeditionCatalog.GetAll())
 		{
 			var box = new VBoxContainer();
-			box.AddThemeConstantOverride("separation", 4);
-			box.AddChild(new Label { Text = $"{def.Title} ({def.DurationMinutes}m)" });
-			box.AddChild(new Label { Text = def.Description });
-			box.AddChild(BuildRewardRow(def.BaseGoldReward, def.BaseFoodReward, def.RelicDropChance));
-			box.AddChild(new Label { Text = $"Reward: ~{def.BaseGoldReward} gold, ~{def.BaseFoodReward} food  |  Relic chance: {(int)(def.RelicDropChance * 100)}%" });
-			box.AddChild(new Label { Text = $"Units: {def.MinUnits}-{def.MaxUnits}" });
+			box.AddThemeConstantOverride("separation", 6);
+			box.AddChild(RealmUi.KeyValue(def.Title, $"{def.DurationMinutes} min"));
+			var title = box.GetChild<HBoxContainer>(0).GetChild<Label>(0);
+			title.AddThemeFontOverride("font", ModalUi.HeadingFont); title.AddThemeFontSizeOverride("font_size", 20); title.AddThemeColorOverride("font_color", ModalUi.Cream);
+			box.AddChild(RealmUi.Label(def.Description, 18, true));
+			box.AddChild(BuildRewardRow(def.BaseGoldReward, def.BaseFoodReward, def.RelicDropChance, def.MinUnits, def.MaxUnits));
 
-			if (slotsAvailable > 0)
+			var idleUnits = gs.GetOwnedPlayerUnitIds()
+				.Where(id => !gs.IsUnitInActiveDeck(id) && !gs.IsUnitOnExpedition(id))
+				.ToArray();
+			var actions = new HBoxContainer();
+			actions.AddThemeConstantOverride("separation", 10);
+			box.AddChild(actions);
+			var unitPick = idleUnits.Take(def.MaxUnits).ToArray();
+			var ready = slotsAvailable > 0 && idleUnits.Length >= def.MinUnits;
+			if (ready)
 			{
-				// Build a unit picker: show idle (owned, not in deck, not on expedition) units
-				var idleUnits = gs.GetOwnedPlayerUnitIds()
-					.Where(id => !gs.IsUnitInActiveDeck(id) && !gs.IsUnitOnExpedition(id))
-					.ToArray();
-
-				if (idleUnits.Length >= def.MinUnits)
-				{
-					var unitPick = idleUnits.Take(def.MaxUnits).ToArray();
-					var unitLabel = string.Join(", ", unitPick.Select(ResolveUnitName));
-					box.AddChild(BuildUnitBadgeRow(unitPick, 30f));
-					box.AddChild(new Label { Text = $"Send: {unitLabel}" });
-
-					var capturedId = def.Id;
-					var capturedUnits = unitPick;
-					var sendBtn = new RealmButton { Text = "Dispatch" };
-					sendBtn.Pressed += () =>
-					{
-						if (gs.TryStartExpedition(capturedId, capturedUnits, out var msg))
-						{
-							_statusLabel.Text = msg;
-							RefreshUi();
-						}
-						else
-						{
-							_statusLabel.Text = msg;
-						}
-					};
-					box.AddChild(sendBtn);
-				}
-				else
-				{
-					box.AddChild(new Label { Text = "Not enough idle units." });
-				}
+				actions.AddChild(BuildUnitBadgeRow(unitPick, 36f));
+				actions.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 			}
 			else
 			{
-				box.AddChild(new Label { Text = "All slots in use." });
+				var allies = def.MinUnits == 1 ? "1 ally" : $"{def.MinUnits} allies";
+				var reason = RealmUi.Label(slotsAvailable <= 0 ? "All slots are in use." : $"Needs {allies} outside your squad.", 18, true);
+				reason.VerticalAlignment = VerticalAlignment.Center;
+				actions.AddChild(reason);
 			}
-
+			var capturedId = def.Id;
+			var sendBtn = RealmUi.Button("flag", "Dispatch", () =>
+			{
+				if (gs.TryStartExpedition(capturedId, unitPick, out var msg))
+				{
+					_statusLabel.Text = msg;
+					RefreshUi();
+				}
+				else
+				{
+					_statusLabel.Text = msg;
+				}
+			});
+			sendBtn.Disabled = !ready;
+			actions.AddChild(sendBtn);
 			_catalogStack.AddChild(box);
 			_catalogStack.AddChild(new HSeparator());
 		}
 	}
 
+	private double _timerRefresh;
+
 	public override void _Process(double delta)
 	{
-		// Refresh timer displays periodically
-		var expeditions = GameState.Instance.GetActiveExpeditions();
-		if (expeditions.Count > 0)
-		{
-			RebuildSlots();
-		}
-	}
-
-	private IEnumerable<string> GetOwnedPlayerUnitIds()
-	{
-		// Helper; GameState should expose this
-		return GameState.Instance.GetOwnedPlayerUnitIds();
+		// Countdowns tick once a second rather than rebuilding every frame.
+		_timerRefresh += delta;
+		if (_timerRefresh < 1 || GameState.Instance.GetActiveExpeditions().Count == 0) return;
+		_timerRefresh = 0;
+		RebuildSlots();
 	}
 
 	private static HBoxContainer BuildUnitBadgeRow(IEnumerable<string> unitIds, float badgeSize)
@@ -272,6 +256,8 @@ public partial class ExpeditionMenu : Control
 		{
 			row.AddChild(UiBadgeFactory.CreateUnitBadge(TryGetUnit(unitId), new Vector2(badgeSize, badgeSize)));
 		}
+		row.TooltipText = string.Join(", ", unitIds.Select(ResolveUnitName));
+		row.MouseFilter = MouseFilterEnum.Pass;
 		return row;
 	}
 
@@ -292,22 +278,16 @@ public partial class ExpeditionMenu : Control
 		return TryGetUnit(unitId)?.DisplayName ?? unitId;
 	}
 
-	private static HBoxContainer BuildRewardRow(int gold, int food, float relicDropChance)
+	private static HBoxContainer BuildRewardRow(int gold, int food, float relicDropChance, int minUnits, int maxUnits)
 	{
 		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 8);
-		if (gold > 0)
-		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{gold} Gold", new Vector2(28f, 28f)));
-		}
-		if (food > 0)
-		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{food} Food", new Vector2(28f, 28f)));
-		}
-		if (relicDropChance > 0f)
-		{
-			row.AddChild(UiBadgeFactory.CreateRewardBadge("relic", "", $"Relic {(int)(relicDropChance * 100)}%", new Vector2(28f, 28f)));
-		}
+		row.AddThemeConstantOverride("separation", 18);
+		if (gold > 0) row.AddChild(HomeResourceUi.Amount("gold", $"~{gold:N0}", $"About {gold:N0} gold", 28));
+		if (food > 0) row.AddChild(HomeResourceUi.Amount("food", $"~{food}", $"About {food} rations", 28));
+		var details = $"{(int)(relicDropChance * 100)}% relic chance · {(minUnits == maxUnits ? $"{minUnits}" : $"{minUnits}–{maxUnits}")} allies";
+		var label = RealmUi.Label(details, 18, true);
+		label.VerticalAlignment = VerticalAlignment.Center;
+		row.AddChild(label);
 		return row;
 	}
 }

@@ -135,6 +135,6 @@ public partial class FeedbackReview : Node
             Check(!Walk(GetTree().Root).OfType<Control>().Any(c => c.IsVisibleInTree() && c.TooltipText.Length > 0), "Touch screens have no hover tooltips");
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
-        GD.Print($"FEEDBACK_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1);
+        GD.Print($"FEEDBACK_REVIEW_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);
     }
 }

@@ -34,6 +34,54 @@ public static class RealmUi
         return label;
     }
 
+    public static readonly Color SectionInk = new("e8c88a");
+
+    /// <summary>A left-aligned panel heading in the shared heading face.</summary>
+    public static Label SectionTitle(string text, int size = 20)
+    {
+        var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        label.AddThemeFontOverride("font", ModalUi.HeadingFont);
+        label.AddThemeFontSizeOverride("font_size", size);
+        label.AddThemeColorOverride("font_color", SectionInk);
+        label.SetMeta("section_title", true);
+        return label;
+    }
+
+    /// <summary>A muted name on the left with its value aligned right.</summary>
+    public static HBoxContainer KeyValue(string name, string value, Color? valueInk = null)
+    {
+        var row = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        row.AddThemeConstantOverride("separation", 12);
+        var key = Label(name, 18, true); key.AutowrapMode = TextServer.AutowrapMode.Off; row.AddChild(key);
+        var amount = Label(value, 18); amount.AutowrapMode = TextServer.AutowrapMode.Off; amount.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+        amount.HorizontalAlignment = HorizontalAlignment.Right;
+        if (valueInk is { } ink) amount.AddThemeColorOverride("font_color", ink);
+        row.AddChild(amount);
+        return row;
+    }
+
+    /// <summary>A calm, centred message for pages with nothing to show yet.</summary>
+    public static VBoxContainer EmptyState(string icon, string title, string body = "")
+    {
+        var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
+        stack.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(new Control { CustomMinimumSize = new Vector2(0, 24) });
+        stack.AddChild(new TextureRect { Texture = HomeMapArt.Icon(icon), CustomMinimumSize = new Vector2(56, 56), SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Modulate = new Color(1, 1, 1, .85f) });
+        var heading = SectionTitle(title, 22);
+        heading.HorizontalAlignment = HorizontalAlignment.Center;
+        heading.AddThemeColorOverride("font_color", ModalUi.Cream);
+        stack.AddChild(heading);
+        if (body.Length > 0)
+        {
+            var text = Label(body, 18, true);
+            text.HorizontalAlignment = HorizontalAlignment.Center;
+            text.AddThemeColorOverride("font_color", ModalUi.Muted);
+            stack.AddChild(text);
+        }
+        return stack;
+    }
+
     public static Button Button(string icon, string label, Action action, bool primary = false)
     {
         var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = true, TooltipText = label,

@@ -150,6 +150,7 @@ public partial class PrivacyReview : Node
             await serving;
         }
         GD.Print($"PRIVACY_REVIEW_RESULT: {_failures} failures");
+        await LiveUiReview.StopAudio(this);
         GetTree().Quit(_failures == 0 ? 0 : 1);
     }
 
@@ -178,8 +179,9 @@ public partial class PrivacyReview : Node
         accountTab.ButtonPressed = true;
         accountTab.EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
-        Check(settings.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Enable Analytics"), "Analytics remains an optional choice in Settings");
-        var crash = settings.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text == "Enable Crash Reports");
+        Check(settings.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.IsVisibleInTree()
+            && button.AccessibilityName == "Share analytics" && !button.ButtonPressed && button.Text == "Off"), "Analytics remains an optional choice in Settings");
+        var crash = settings.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.AccessibilityName == "Send crash reports" && b.Text == "Off");
         Node ancestor = crash.GetParent();
         while (ancestor is not ScrollContainer) ancestor = ancestor.GetParent();
         var scroll = (ScrollContainer)ancestor;

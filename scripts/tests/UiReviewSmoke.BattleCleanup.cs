@@ -140,13 +140,13 @@ public partial class UiReviewSmoke
         fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false);
         Call(fight, "HandleEndPanelSecondaryAction"); await Wait(.7);
         var phoneEndless = (MapMenu)GetTree().CurrentScene;
-        var start = Walk(phoneEndless).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin Endless March");
+        var start = Walk(phoneEndless).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin endless march");
         Check(start.GetGlobalRect().End.Y <= phoneEndless.GetViewportRect().End.Y,
             "Phone Endless preparation keeps the launch action inside the current modal");
         Check(phoneEndless.GetNode<RealmModal>("HomeModal").Content.GetGlobalRect().Encloses(start.GetGlobalRect()),
             "Phone Endless launch action is fully visible within the modal content");
         await Capture("06-phone-endless-return");
         MobilePresentation.TestOverride = null;
-        GD.Print($"BATTLE_CLEANUP_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1);
+        GD.Print($"BATTLE_CLEANUP_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

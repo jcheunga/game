@@ -21,9 +21,10 @@ public static class ModalUi
 
     public static void StyleButton(Button button, bool selected = false, Color? accent = null, ModalMaterial? material = null)
     {
-        bool tab = button.GetParent()?.HasMeta("realm_tabs") ?? false;
-        var colour = accent ?? (tab ? TabColours[button.GetIndex() % TabColours.Length] : Accent(button.Text));
-        var type = material ?? (tab ? ModalMaterial.Tab : button.HasMeta("realm_primary") ? ModalMaterial.Gold : ModalMaterial.Steel);
+        bool tab = (button.GetParent()?.HasMeta("realm_tabs") ?? false) || button.HasMeta("realm_toggle");
+        if (tab && accent == null && material == null) { StyleTab(button); return; }
+        var colour = accent ?? Accent(button.Text);
+        var type = material ?? (button.HasMeta("realm_primary") ? ModalMaterial.Gold : ModalMaterial.Steel);
         button.AddThemeStyleboxOverride("normal", new ModalSurface(type, 8, colour, selected));
         button.AddThemeStyleboxOverride("hover", new ModalSurface(type, 8, colour.Lightened(.05f), true));
         button.AddThemeStyleboxOverride("pressed", new ModalSurface(type == ModalMaterial.Tab ? ModalMaterial.Tab : type, 8, colour, true, true));
@@ -38,6 +39,32 @@ public static class ModalUi
         button.AddThemeColorOverride("icon_hover_color", ink);
         button.AddThemeColorOverride("icon_pressed_color", ink);
         if (button is RealmButton { CenterIconAndText: true }) foreach (var key in new[] { "icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color" }) button.AddThemeColorOverride(key, Colors.Transparent);
+    }
+
+    // Every tab row shares one material; only the selected tab is lit, so the
+    // current page reads at a glance instead of competing with coloured siblings.
+    private static readonly Color TabIdle = new("6b665c"), TabSelected = new("b39257"), TabInk = new("d9cdb8"), TabSelectedInk = new("fff0cf");
+
+    private static void StyleTab(Button button)
+    {
+        // List rows read from the left edge, so they need a wider inset than centred tabs.
+        var inset = button.Alignment == HorizontalAlignment.Left ? 16 : 8;
+        StyleBox Surface(ModalMaterial material, Color colour, bool active = false)
+        {
+            var surface = new ModalSurface(material, 8, colour, active);
+            surface.ContentMarginLeft = surface.ContentMarginRight = inset;
+            return surface;
+        }
+        button.AddThemeStyleboxOverride("normal", Surface(ModalMaterial.Tab, TabIdle));
+        button.AddThemeStyleboxOverride("hover", Surface(ModalMaterial.Tab, TabIdle.Lightened(.12f)));
+        button.AddThemeStyleboxOverride("pressed", Surface(ModalMaterial.Tab, TabSelected, true));
+        button.AddThemeStyleboxOverride("hover_pressed", Surface(ModalMaterial.Tab, TabSelected.Lightened(.05f), true));
+        button.AddThemeStyleboxOverride("disabled", Surface(ModalMaterial.Inset, TabIdle));
+        var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("dcc693") }; focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4); button.AddThemeStyleboxOverride("focus", focus);
+        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
+        if (button is RealmButton realm) realm.SetPresentation(HeadingFont, TabInk, new Color("aaa091"));
+        foreach (var key in new[] { "font_color", "font_hover_color", "font_focus_color" }) button.AddThemeColorOverride(key, TabInk);
+        foreach (var key in new[] { "font_pressed_color", "font_hover_pressed_color" }) button.AddThemeColorOverride(key, TabSelectedInk);
     }
 
     public static void Dress(Node node)

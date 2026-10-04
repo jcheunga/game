@@ -24,7 +24,7 @@ public partial class UiReviewSmoke
         await Press("Equip"); Check(state.IsUnitInActiveDeck(recruit.Id), "The recruited ally can join the equipped warband");
         AuditText("Modal / trained warband"); await Capture("13-trained-warband");
         menu.CloseHomeModal(); SceneRouter.Instance.GoToShop(1); await Wait(.3);
-        var spell = GameData.GetPlayerSpells().First(); await Press("Scribe "); await Press("Equip Spell");
+        var spell = GameData.GetPlayerSpells().First(); await Press("Scribe "); await Press("Equip");
         Check(state.IsSpellOwned(spell.Id) && state.IsSpellInActiveDeck(spell.Id), "Scribing and equipping a spell updates the spell loadout");
         var spellLevel = state.GetSpellLevel(spell.Id); await Press("Upgrade Lv");
         Check(state.GetSpellLevel(spell.Id) == spellLevel + 1, "Spell training works inside the modal");
@@ -66,7 +66,7 @@ public partial class UiReviewSmoke
     {
         var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
         await Open("MainMenu"); SceneRouter.Instance.GoToEndless(); await Wait(.3);
-        var start = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin Endless March");
+        var start = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin endless march");
         await TapModal(start); await Wait(.8);
         Check(GetTree().CurrentScene.SceneFilePath == SceneRouter.BattleScene && state.CurrentBattleMode == BattleRunMode.Endless, "Starting endless from its modal enters the real endless battle");
         SceneRouter.Instance.GoToMainMenu(); await Wait(.8);

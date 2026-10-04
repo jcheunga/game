@@ -72,7 +72,7 @@ public partial class FriendsMenu : Control
 		var listInner = new VBoxContainer();
 		listInner.AddThemeConstantOverride("separation", 4);
 		listOuter.AddChild(listInner);
-		listInner.AddChild(new Label { Text = "Friend List", HorizontalAlignment = HorizontalAlignment.Center });
+		listInner.AddChild(RealmUi.SectionTitle("Friends"));
 		var friendScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 400f) };
 		listInner.AddChild(friendScroll);
 		_friendStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -91,26 +91,19 @@ public partial class FriendsMenu : Control
 		var actionsInner = new VBoxContainer();
 		actionsInner.AddThemeConstantOverride("separation", 10);
 		actionsOuter.AddChild(actionsInner);
-		actionsInner.AddChild(new Label { Text = "Actions", HorizontalAlignment = HorizontalAlignment.Center });
-
-		// Add Friend section
-		var addSectionLabel = new Label { Text = "Add Friend" };
-		addSectionLabel.AddThemeColorOverride("font_color", new Color("f472b6"));
-		actionsInner.AddChild(addSectionLabel);
+		actionsInner.AddChild(RealmUi.SectionTitle("Add a friend"));
 		var addRow = new HBoxContainer();
 		addRow.AddThemeConstantOverride("separation", 6);
 		actionsInner.AddChild(addRow);
-		_addFriendInput = new LineEdit { PlaceholderText = "Enter profile ID...", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_addFriendInput = new LineEdit { PlaceholderText = "Profile ID", SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		addRow.AddChild(_addFriendInput);
-		var addBtn = new RealmButton { Text = "Add", CustomMinimumSize = new Vector2(80f, 0f) };
+		var addBtn = new RealmButton { Text = "Add", CustomMinimumSize = new Vector2(120f, 44f) };
 		addBtn.Pressed += OnAddFriendPressed;
 		addRow.AddChild(addBtn);
 
 		// Gift Info section
 		actionsInner.AddChild(new HSeparator());
-		var giftSectionLabel = new Label { Text = "Gift Info" };
-		giftSectionLabel.AddThemeColorOverride("font_color", new Color("f472b6"));
-		actionsInner.AddChild(giftSectionLabel);
+		actionsInner.AddChild(RealmUi.SectionTitle("Daily gifts"));
 		_giftStatusRow = new HBoxContainer();
 		_giftStatusRow.AddThemeConstantOverride("separation", 8);
 		actionsInner.AddChild(_giftStatusRow);
@@ -120,10 +113,7 @@ public partial class FriendsMenu : Control
 
 		// Remove Friend section
 		actionsInner.AddChild(new HSeparator());
-		var removeSectionLabel = new Label { Text = "Remove Friend" };
-		removeSectionLabel.AddThemeColorOverride("font_color", new Color("f472b6"));
-		actionsInner.AddChild(removeSectionLabel);
-		_removeBtn = new RealmButton { Text = "Remove Selected Friend", Disabled = true, CustomMinimumSize = new Vector2(200f, 0f) };
+		_removeBtn = new RealmButton { Text = "Remove selected friend", Disabled = true, CustomMinimumSize = new Vector2(200f, 48f), TooltipText = "Select a friend first" };
 		_removeBtn.Pressed += OnRemoveFriendPressed;
 		actionsInner.AddChild(_removeBtn);
 
@@ -154,6 +144,7 @@ public partial class FriendsMenu : Control
 		RebuildGiftRewardRow();
 		_selectedFriendId = null;
 		_removeBtn.Disabled = true;
+		_removeBtn.Visible = friends.Count > 0;
 		RebuildFriendList(friends);
 	}
 
@@ -185,7 +176,7 @@ public partial class FriendsMenu : Control
 			child.QueueFree();
 		}
 
-		_giftStatusRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", $"Gifts sent today: {giftsSentToday}/3", new Vector2(24f, 24f)));
+		_giftStatusRow.AddChild(RealmUi.KeyValue("Sent today", $"{giftsSentToday}/3"));
 	}
 
 	private void RebuildGiftRewardRow()
@@ -195,8 +186,11 @@ public partial class FriendsMenu : Control
 			child.QueueFree();
 		}
 
-		_giftRewardRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", "50", new Vector2(24f, 24f)));
-		_giftRewardRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", "2", new Vector2(24f, 24f)));
+		var caption = RealmUi.Label("Each gift sends", 18, true);
+		caption.VerticalAlignment = VerticalAlignment.Center;
+		_giftRewardRow.AddChild(caption);
+		_giftRewardRow.AddChild(HomeResourceUi.Amount("gold", "50", "50 gold", 28));
+		_giftRewardRow.AddChild(HomeResourceUi.Amount("food", "2", "2 rations", 28));
 	}
 
 	private void RebuildFriendList(IReadOnlyCollection<string> friends)
@@ -205,7 +199,7 @@ public partial class FriendsMenu : Control
 
 		if (friends.Count == 0)
 		{
-			_friendStack.AddChild(UiBadgeFactory.CreateMetaMetric("friends", "No friends yet.", new Vector2(24f, 24f)));
+			_friendStack.AddChild(RealmUi.EmptyState("people", "No friends yet", "Add a friend by their profile ID to trade daily gifts."));
 			return;
 		}
 
@@ -229,12 +223,12 @@ public partial class FriendsMenu : Control
 			selectBtn.Pressed += () => OnFriendSelected(capturedId, selectBtn);
 			row.AddChild(selectBtn);
 
-			var giftBtn = new RealmButton { Text = "Send Gift", CustomMinimumSize = new Vector2(100f, 0f) };
+			var giftBtn = new RealmButton { Text = "Send gift", CustomMinimumSize = new Vector2(120f, 0f) };
 			// Disable if already sent 3 gifts today
 			if (giftsSentToday >= 3)
 			{
 				giftBtn.Disabled = true;
-				giftBtn.TooltipText = "Daily gift limit reached (3/3).";
+				giftBtn.TooltipText = "Daily gift limit reached";
 			}
 			var capturedGiftId = friendId;
 			giftBtn.Pressed += () => OnSendGiftPressed(capturedGiftId);

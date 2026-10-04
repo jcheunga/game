@@ -67,7 +67,7 @@ public partial class GuildMenu : Control
 		var infoInner = new VBoxContainer();
 		infoInner.AddThemeConstantOverride("separation", 6);
 		infoOuter.AddChild(infoInner);
-		infoInner.AddChild(new Label { Text = "Guild Info", HorizontalAlignment = HorizontalAlignment.Center });
+		infoInner.AddChild(RealmUi.SectionTitle("Your guild"));
 		var infoScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
 		infoInner.AddChild(infoScroll);
 		_infoStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -86,7 +86,7 @@ public partial class GuildMenu : Control
 		var actInner = new VBoxContainer();
 		actInner.AddThemeConstantOverride("separation", 6);
 		actOuter.AddChild(actInner);
-		actInner.AddChild(new Label { Text = "Actions", HorizontalAlignment = HorizontalAlignment.Center });
+		actInner.AddChild(RealmUi.SectionTitle("Actions"));
 		_actionsStack = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
 		_actionsStack.AddThemeConstantOverride("separation", 10);
 		actInner.AddChild(_actionsStack);
@@ -143,42 +143,42 @@ public partial class GuildMenu : Control
 
 		if (!hasGuild)
 		{
-			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", "No guild joined.", new Vector2(26f, 26f)));
-			_infoStack.AddChild(new Label { Text = "Create or join one to unlock perks." });
+			_infoStack.AddChild(RealmUi.EmptyState("people", "No guild yet", "Create or join a guild to unlock shared perks."));
 			return;
 		}
 
 		var tierDef = GuildCatalog.GetTier(guild!.Tier);
-		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"{tierDef.Title} (Tier {guild.Tier})", new Vector2(26f, 26f)));
-		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"Experience: {guild.Experience}", new Vector2(26f, 26f)));
-		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"Members: {guild.MemberCount} / {tierDef.MaxMembers}", new Vector2(26f, 26f)));
-		_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("guild", $"Your Contribution: {gs.GuildContributionPoints}", new Vector2(26f, 26f)));
+		_infoStack.AddChild(RealmUi.Heading($"{guild.Name}", 22));
+		_infoStack.AddChild(RealmUi.KeyValue("Rank", $"{tierDef.Title} · tier {guild.Tier}"));
+		_infoStack.AddChild(RealmUi.KeyValue("Experience", guild.Experience.ToString("N0")));
+		_infoStack.AddChild(RealmUi.KeyValue("Members", $"{guild.MemberCount}/{tierDef.MaxMembers}"));
+		_infoStack.AddChild(RealmUi.KeyValue("Your contribution", gs.GuildContributionPoints.ToString("N0")));
 
 		_infoStack.AddChild(new HSeparator());
 
 		// Weekly goal progress
 		if (guild.WeeklyGoalTarget > 0)
 		{
-			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"Weekly Goal: {guild.WeeklyGoalType}", new Vector2(26f, 26f)));
-			var progressFraction = Mathf.Clamp((float)guild.WeeklyGoalProgress / guild.WeeklyGoalTarget, 0f, 1f);
+			_infoStack.AddChild(RealmUi.SectionTitle("Weekly goal"));
+			_infoStack.AddChild(RealmUi.KeyValue(guild.WeeklyGoalType, $"{guild.WeeklyGoalProgress:N0}/{guild.WeeklyGoalTarget:N0}"));
 			var progressBar = new ProgressBar
 			{
 				MinValue = 0,
 				MaxValue = guild.WeeklyGoalTarget,
 				Value = guild.WeeklyGoalProgress,
-				CustomMinimumSize = new Vector2(0f, 24f),
+				CustomMinimumSize = new Vector2(0f, 10f),
+				ShowPercentage = false,
 				SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			};
 			_infoStack.AddChild(progressBar);
-			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", $"{guild.WeeklyGoalProgress} / {guild.WeeklyGoalTarget}  ({(int)(progressFraction * 100)}%)", new Vector2(26f, 26f)));
 		}
 		else
 		{
-			_infoStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No weekly goal active.", new Vector2(26f, 26f)));
+			_infoStack.AddChild(RealmUi.Label("No weekly goal this week.", 18, true));
 		}
 
 		_infoStack.AddChild(new HSeparator());
-		_infoStack.AddChild(new Label { Text = "Perks", HorizontalAlignment = HorizontalAlignment.Center });
+		_infoStack.AddChild(RealmUi.SectionTitle("Perks"));
 
 		var allPerks = GuildCatalog.GetAllPerks();
 		var activePerkIds = guild.ActivePerkIds ?? Array.Empty<string>();
@@ -187,18 +187,11 @@ public partial class GuildMenu : Control
 		{
 			var active = activePerkIds.Contains(perk.Id) && guild.Tier >= perk.TierRequired;
 			var unlocked = guild.Tier >= perk.TierRequired;
-			var statusText = active ? "[Active]" : (unlocked ? "[Unlocked]" : $"[Tier {perk.TierRequired}]");
-
-			var perkLabel = new Label { Text = $"{statusText} {perk.Title} - {perk.Description}" };
-			if (!unlocked)
-			{
-				perkLabel.AddThemeColorOverride("font_color", new Color("606060"));
-			}
-			else if (active)
-			{
-				perkLabel.AddThemeColorOverride("font_color", new Color("22c55e"));
-			}
-			_infoStack.AddChild(perkLabel);
+			var statusText = active ? "Active" : unlocked ? "Unlocked" : $"Tier {perk.TierRequired}";
+			_infoStack.AddChild(RealmUi.KeyValue(perk.Title, statusText, active ? new Color("9fd49a") : null));
+			var description = RealmUi.Label(perk.Description, 18, true);
+			if (!unlocked) description.Modulate = new Color(1, 1, 1, .6f);
+			_infoStack.AddChild(description);
 		}
 	}
 
@@ -208,11 +201,11 @@ public partial class GuildMenu : Control
 
 		if (!hasGuild)
 		{
-			var createBtn = new RealmButton { Text = "Create Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var createBtn = new RealmButton { Text = "Create guild", CustomMinimumSize = new Vector2(200f, 48f) };
 			createBtn.Pressed += OnCreateGuild;
 			_actionsStack.AddChild(createBtn);
 
-			var joinBtn = new RealmButton { Text = "Join Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var joinBtn = new RealmButton { Text = "Join guild", CustomMinimumSize = new Vector2(200f, 48f) };
 			joinBtn.Pressed += OnJoinGuild;
 			_actionsStack.AddChild(joinBtn);
 		}
@@ -220,15 +213,15 @@ public partial class GuildMenu : Control
 		{
 			var contributeBtn = new RealmButton
 			{
-				Text = $"Contribute ({ContributionGoldCost} Gold)",
-				CustomMinimumSize = new Vector2(200f, 36f),
+				Text = $"Contribute · {ContributionGoldCost} gold",
+				CustomMinimumSize = new Vector2(200f, 48f),
 			};
 			contributeBtn.Pressed += OnContribute;
 			_actionsStack.AddChild(contributeBtn);
 
-			_actionsStack.AddChild(new Label { Text = $"Adds {ContributionPointsGain} contribution + {ContributionGuildXpGain} guild XP" });
+			_actionsStack.AddChild(RealmUi.Label($"+{ContributionPointsGain} contribution · +{ContributionGuildXpGain} guild XP", 18, true));
 
-			var leaveBtn = new RealmButton { Text = "Leave Guild", CustomMinimumSize = new Vector2(200f, 36f) };
+			var leaveBtn = new RealmButton { Text = "Leave guild", CustomMinimumSize = new Vector2(200f, 48f) };
 			leaveBtn.Pressed += OnLeaveGuild;
 			_actionsStack.AddChild(leaveBtn);
 		}

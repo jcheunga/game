@@ -21,21 +21,21 @@ public partial class AchievementsPanel : VBoxContainer
         _grid = new GridContainer { Columns = 3 }; _grid.AddThemeConstantOverride("h_separation", 14); _grid.AddThemeConstantOverride("v_separation", 14); stack.AddChild(_grid);
         var footer = new HBoxContainer(); footer.AddThemeConstantOverride("separation", 10); AddChild(footer);
         _previous = HomeMapUi.IconButton("back", "Previous achievement page", () => { _page--; Refresh(); }); footer.AddChild(_previous);
-        _pageLabel = RealmUi.Label("", 18, true); _pageLabel.CustomMinimumSize = new Vector2(90, 0); _pageLabel.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _pageLabel.VerticalAlignment = VerticalAlignment.Center; footer.AddChild(_pageLabel);
+        _pageLabel = RealmUi.Label("", 18, true); _pageLabel.CustomMinimumSize = new Vector2(72, 0); _pageLabel.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _pageLabel.HorizontalAlignment = HorizontalAlignment.Center; _pageLabel.VerticalAlignment = VerticalAlignment.Center; _pageLabel.AutowrapMode = TextServer.AutowrapMode.Off; footer.AddChild(_pageLabel);
         _next = HomeMapUi.IconButton("arrow", "Next achievement page", () => { _page++; Refresh(); }); footer.AddChild(_next);
         ModalUi.StyleButton(_previous); ModalUi.StyleButton(_next);
-        _status = RealmUi.Label("Complete objectives to earn rewards.", 18, true); _status.VerticalAlignment = VerticalAlignment.Center; footer.AddChild(_status);
+        _status = RealmUi.Label("", 18, true); _status.VerticalAlignment = VerticalAlignment.Center; footer.AddChild(_status);
         Refresh();
     }
 
     private void Refresh()
     {
         var state = GameState.Instance;
-        RealmModal.UpdateHeading(this, subtitle: $"{state.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} COMPLETE · {state.GetUnclaimedAchievementRewardCount()} REWARDS READY");
+        RealmModal.UpdateHeading(this, subtitle: $"{state.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} complete · {state.GetUnclaimedAchievementRewardCount()} rewards ready");
         _summary.Text = $"{state.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} completed · {state.GetUnclaimedAchievementRewardCount()} rewards ready";
         var entries = AchievementCatalog.GetAll().Where(a => _category == "All" || a.Category.Equals(_category, StringComparison.OrdinalIgnoreCase)).ToArray();
         var pages = Math.Max(1, (entries.Length + PageSize - 1) / PageSize); _page = Math.Clamp(_page, 0, pages - 1);
-        _previous.Disabled = _page == 0; _next.Disabled = _page >= pages - 1; _pageLabel.Text = $"{_page + 1} / {pages}";
+        _previous.Disabled = _page == 0; _next.Disabled = _page >= pages - 1; _pageLabel.Text = $"{_page + 1} of {pages}";
         RealmUi.Clear(_grid);
         foreach (var entry in entries.Skip(_page * PageSize).Take(PageSize))
         {

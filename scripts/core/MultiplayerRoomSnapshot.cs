@@ -58,11 +58,7 @@ public static class MultiplayerRoomFormatter
 		if (!snapshot.HasRoom)
 		{
 			return
-				$"No {snapshot.TransportLabel} room active.\n" +
-				$"Selected board: {snapshot.SelectedBoardCode}\n" +
-				$"Board deck mode: {snapshot.SelectedBoardDeckMode}\n" +
-				$"Transport: {snapshot.TransportLabel}\n" +
-				"Host a room to broadcast the current board, or join a host IP to sync it.";
+				$"No room open. Host board {snapshot.SelectedBoardCode} or join a host by address.";
 		}
 
 		var launchEligiblePeers = snapshot.Peers.Where(peer => peer.IsLaunchEligible).ToArray();
@@ -119,7 +115,7 @@ public static class MultiplayerRoomFormatter
 	{
 		if (snapshot == null || !snapshot.HasRoom)
 		{
-			return "Launch readiness: no active room.";
+			return "";
 		}
 
 		var launchEligiblePeers = snapshot.Peers.Where(peer => peer.IsLaunchEligible).ToArray();

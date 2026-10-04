@@ -51,7 +51,9 @@ public partial class MapMenu
             SceneRouter.LeaderboardScene => "Rankings", SceneRouter.ProfileScene => "Player profile",
             SceneRouter.SkillTreeScene => "Warband talents", SceneRouter.LoadoutScene => "Prepare for battle",
             "achievements" => "Achievements", "more" => "The lantern caravan", _ => "Crownroad" };
-        var subtitle = path == "achievements" ? $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} COMPLETE · {GameState.Instance.GetUnclaimedAchievementRewardCount()} REWARDS READY" : path == SceneRouter.CodexScene ? "FIELD NOTES · CREATURES, ALLIES & RELICS" : path == "more" ? "ADVENTURE · CARAVAN · COMMUNITY" : path == SceneRouter.SettingsScene ? "SOUND · GAMEPLAY · ONLINE · ACCOUNT" : path == SceneRouter.ShopScene ? $"{GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} ALLIES · {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} SPELLS EQUIPPED" : "CROWNROAD · YOUR JOURNEY";
+        // Subtitles carry live state only; tab names and slogans are already on screen.
+        var subtitle = path == "achievements" ? $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} complete · {GameState.Instance.GetUnclaimedAchievementRewardCount()} rewards ready"
+            : path == SceneRouter.ShopScene ? $"{GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} allies · {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} spells equipped" : "";
         _modal.Present(path, title, subtitle, _modalHistory.Count > 1, path == SceneRouter.SettingsScene ? 840 : 1120);
 
         return true;
@@ -88,7 +90,7 @@ public partial class MapMenu
         footer.AddChild(RealmUi.Button("people", "Account", () => AccountDialog.Show(this)));
         footer.AddChild(RealmUi.Button("star", "Player profile", () => SceneRouter.Instance.GoToProfile()));
         footer.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        footer.AddChild(HomeMapUi.IconButton("close", "Quit game", () => MedievalUi.ShowConfirmation(this, "Leave Crownroad?", "Your progress is saved.", "Quit", () => GetTree().Quit())));
+        footer.AddChild(RealmUi.Button("back", "Quit game", () => MedievalUi.ShowConfirmation(this, "Leave Crownroad?", "Your progress is saved.", "Quit", () => GetTree().Quit())));
         RealmModal.Polish(footer); ShowDestinations(0); return root;
     }
 }

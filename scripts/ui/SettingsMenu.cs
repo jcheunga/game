@@ -5,24 +5,16 @@ using Godot;
 public partial class SettingsMenu : Control
 {
     private readonly List<(HSlider Slider, Label Amount, string Channel)> _volumes = new();
-    private Label _audioLabel = null!;
-    private Label _interfaceLabel = null!;
-    private Label _callsignLabel = null!;
     private Label _syncLabel = null!;
     private Label _lifecycleLabel = null!;
     private Label _returnLabel = null!;
-    private Label _achievementsLabel = null!;
     private Label _purchaseLabel = null!;
     private Label _cloudSaveLabel = null!;
     private LineEdit _purchaseEndpointEdit = null!;
-    private Button _muteButton = null!;
-    private Button _showFpsButton = null!;
-    private Button _showHintsButton = null!;
     private Button _syncProviderButton = null!;
     private Button _syncAutoFlushButton = null!;
     private Button _backButton = null!;
     private Button _titleButton = null!;
-    private Button _difficultyButton = null!;
     private Label _difficultyLabel = null!;
     private LineEdit _callsignEdit = null!;
     private LineEdit _syncEndpointEdit = null!;
@@ -70,7 +62,7 @@ public partial class SettingsMenu : Control
                 continue;
             }
 
-            _returnLabel.Text = $"[{hint.Title}] {hint.Body}";
+            _returnLabel.Text = $"{hint.Title}: {hint.Body}";
             GameState.Instance.MarkHintSeen(hint.Id);
         }
     }
@@ -160,312 +152,31 @@ public partial class SettingsMenu : Control
             pages[i].GetParent<ScrollContainer>().Visible = i == 0;
         }
         if (GameState.DeveloperModeAvailable) BuildDeveloperPage(pages[4]);
-        var stack = pages[0];
-
-        var audioPanel = new PanelContainer();
-        stack.AddChild(audioPanel);
-
-        var audioPadding = new MarginContainer();
-        audioPadding.AddThemeConstantOverride("margin_left", 14);
-        audioPadding.AddThemeConstantOverride("margin_top", 14);
-        audioPadding.AddThemeConstantOverride("margin_right", 14);
-        audioPadding.AddThemeConstantOverride("margin_bottom", 14);
-        audioPanel.AddChild(audioPadding);
-
-        var audioStack = new VBoxContainer();
-        audioStack.AddThemeConstantOverride("separation", 10);
-        audioPadding.AddChild(audioStack);
-
-        audioStack.AddChild(new Label
-        {
-            Text = "Audio Mix"
-        });
-
-        _audioLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        audioStack.AddChild(_audioLabel); _audioLabel.Visible = false;
-
-        void Volume(string label, string icon, int initial, Action<int> apply)
+        // Sound
+        var audioStack = Section(pages[0], "Volume");
+        void Volume(string label, int initial, Action<int> apply)
         {
             var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 16); audioStack.AddChild(row);
-            row.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), CustomMinimumSize = new Vector2(32, 32), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered });
-            var name = RealmUi.Label(label, 20); name.CustomMinimumSize = new Vector2(112, 0); name.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; name.VerticalAlignment = VerticalAlignment.Center; row.AddChild(name);
+            var name = RealmUi.Label(label, 18); name.CustomMinimumSize = new Vector2(120, 0); name.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; name.VerticalAlignment = VerticalAlignment.Center; row.AddChild(name);
             var slider = new HSlider { MinValue = 0, MaxValue = 100, Step = 1, Value = initial, CustomMinimumSize = new Vector2(0, 44), SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = label + " volume" }; row.AddChild(slider);
-            var amount = RealmUi.Label(initial + "%", 18); amount.CustomMinimumSize = new Vector2(54, 0); amount.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; amount.VerticalAlignment = VerticalAlignment.Center; row.AddChild(amount);
+            var amount = RealmUi.Label(initial + "%", 18); amount.CustomMinimumSize = new Vector2(56, 0); amount.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; amount.HorizontalAlignment = HorizontalAlignment.Right; amount.VerticalAlignment = VerticalAlignment.Center; row.AddChild(amount);
             slider.ValueChanged += value => { apply((int)value); amount.Text = $"{value:0}%"; RefreshUi(); };
             slider.SetMeta("volume_channel", label); _volumes.Add((slider, amount, label));
         }
-        Volume("Music", "star", GameState.Instance.MusicVolumePercent, GameState.Instance.SetMusicVolumePercent);
-        Volume("Effects", "flame", GameState.Instance.EffectsVolumePercent, GameState.Instance.SetEffectsVolumePercent);
-        Volume("Ambience", "mountain", GameState.Instance.AmbienceVolumePercent, GameState.Instance.SetAmbienceVolumePercent);
-
-        _muteButton = BuildCompactButton("Mute", () =>
+        Volume("Music", GameState.Instance.MusicVolumePercent, GameState.Instance.SetMusicVolumePercent);
+        Volume("Effects", GameState.Instance.EffectsVolumePercent, GameState.Instance.SetEffectsVolumePercent);
+        Volume("Ambience", GameState.Instance.AmbienceVolumePercent, GameState.Instance.SetAmbienceVolumePercent);
+        Toggle(audioStack, "Mute all sound", () => GameState.Instance.AudioMuted, muted =>
         {
-            GameState.Instance.SetAudioMuted(!GameState.Instance.AudioMuted);
-            RefreshUi();
-            if (!GameState.Instance.AudioMuted)
-            {
-                AudioDirector.Instance?.PlayUiConfirm();
-            }
+            GameState.Instance.SetAudioMuted(muted);
+            if (!muted) AudioDirector.Instance?.PlayUiConfirm();
         });
-        audioStack.AddChild(_muteButton);
-
-        var interfacePanel = new PanelContainer();
-        pages[1].AddChild(interfacePanel);
-
-        var interfacePadding = new MarginContainer();
-        interfacePadding.AddThemeConstantOverride("margin_left", 14);
-        interfacePadding.AddThemeConstantOverride("margin_top", 14);
-        interfacePadding.AddThemeConstantOverride("margin_right", 14);
-        interfacePadding.AddThemeConstantOverride("margin_bottom", 14);
-        interfacePanel.AddChild(interfacePadding);
-
-        var interfaceStack = new VBoxContainer();
-        interfaceStack.AddThemeConstantOverride("separation", 10);
-        interfacePadding.AddChild(interfaceStack);
-
-        interfaceStack.AddChild(new Label
-        {
-            Text = "Interface"
-        });
-
-        _interfaceLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        interfaceStack.AddChild(_interfaceLabel);
-
-        _callsignLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        interfaceStack.AddChild(_callsignLabel);
-
-        var callsignRow = new HBoxContainer();
-        callsignRow.AddThemeConstantOverride("separation", 8);
-        interfaceStack.AddChild(callsignRow);
-
-        _callsignEdit = new LineEdit
-        {
-            PlaceholderText = "Lantern",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        callsignRow.AddChild(_callsignEdit);
-
-        var callsignButton = new RealmButton
-        {
-            Text = "Apply Callsign",
-            CustomMinimumSize = new Vector2(180f, 40f)
-        };
-        callsignButton.Pressed += () =>
-        {
-            GameState.Instance.SetPlayerCallsign(_callsignEdit.Text);
-            RefreshUi();
-        };
-        callsignRow.AddChild(callsignButton);
-
-        var interfaceRow = new GridContainer { Columns = 2 };
-        interfaceRow.AddThemeConstantOverride("separation", 8);
-        interfaceStack.AddChild(interfaceRow);
-
-        _showFpsButton = BuildCompactButton("Toggle FPS Counter", () =>
-        {
-            GameState.Instance.SetShowFpsCounter(!GameState.Instance.ShowFpsCounter);
-            RefreshUi();
-        });
-        interfaceRow.AddChild(_showFpsButton);
-
-        _showHintsButton = BuildCompactButton("Toggle Hints", () =>
-        {
-            GameState.Instance.SetShowHints(!GameState.Instance.ShowHints);
-            RefreshUi();
-        });
-        interfaceRow.AddChild(_showHintsButton);
-
-        Button motionButton = null!;
-        motionButton = BuildCompactButton(GameState.Instance.ReducedMotion ? "Motion reduced" : "Full motion", () => {
-            GameState.Instance.SetReducedMotion(!GameState.Instance.ReducedMotion);
-            motionButton.Text = GameState.Instance.ReducedMotion ? "Motion reduced" : "Full motion";
-        });
-        interfaceRow.AddChild(motionButton);
-        var langButton = BuildCompactButton("Language", () =>
-        {
-            var supported = Locale.GetSupportedLanguages();
-            var currentIndex = 0;
-            for (var li = 0; li < supported.Length; li++)
-            {
-                if (supported[li] == GameState.Instance.Language)
-                {
-                    currentIndex = li;
-                    break;
-                }
-            }
-            var nextIndex = (currentIndex + 1) % supported.Length;
-            GameState.Instance.SetLanguage(supported[nextIndex]);
-            RefreshUi();
-        });
-        interfaceRow.AddChild(langButton);
-
-        var accessRow = new GridContainer { Columns = 2 };
-        accessRow.AddThemeConstantOverride("separation", 8);
-        interfaceStack.AddChild(accessRow);
-
-        accessRow.AddChild(BuildCompactButton("Font -", () =>
-        {
-            GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset - 2);
-            RefreshUi();
-        }));
-        accessRow.AddChild(BuildCompactButton("Font +", () =>
-        {
-            GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset + 2);
-            RefreshUi();
-        }));
-        accessRow.AddChild(BuildCompactButton("High Contrast", () =>
-        {
-            GameState.Instance.SetHighContrast(!GameState.Instance.HighContrast);
-            RefreshUi();
-        }));
-
-        var difficultyPanel = new PanelContainer();
-        pages[1].AddChild(difficultyPanel);
-
-        var difficultyPadding = new MarginContainer();
-        difficultyPadding.AddThemeConstantOverride("margin_left", 14);
-        difficultyPadding.AddThemeConstantOverride("margin_top", 14);
-        difficultyPadding.AddThemeConstantOverride("margin_right", 14);
-        difficultyPadding.AddThemeConstantOverride("margin_bottom", 14);
-        difficultyPanel.AddChild(difficultyPadding);
-
-        var difficultyStack = new VBoxContainer();
-        difficultyStack.AddThemeConstantOverride("separation", 10);
-        difficultyPadding.AddChild(difficultyStack);
-
-        difficultyStack.AddChild(new Label
-        {
-            Text = "Difficulty"
-        });
-
-        _difficultyLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        difficultyStack.AddChild(_difficultyLabel);
-
-        _difficultyButton = BuildCompactButton("Next Difficulty", () =>
-        {
-            var all = DifficultyCatalog.GetAll();
-            var currentIndex = 0;
-            for (int i = 0; i < all.Count; i++)
-            {
-                if (all[i].Id == GameState.Instance.DifficultyId)
-                {
-                    currentIndex = i;
-                    break;
-                }
-            }
-            var nextIndex = (currentIndex + 1) % all.Count;
-            GameState.Instance.SetDifficulty(all[nextIndex].Id);
-            RefreshUi();
-        });
-        difficultyStack.AddChild(_difficultyButton);
-
-        var syncPanel = new PanelContainer();
-        pages[2].AddChild(syncPanel);
-
-        var syncPadding = new MarginContainer();
-        syncPadding.AddThemeConstantOverride("margin_left", 14);
-        syncPadding.AddThemeConstantOverride("margin_top", 14);
-        syncPadding.AddThemeConstantOverride("margin_right", 14);
-        syncPadding.AddThemeConstantOverride("margin_bottom", 14);
-        syncPanel.AddChild(syncPadding);
-
-        var syncStack = new VBoxContainer();
-        syncStack.AddThemeConstantOverride("separation", 10);
-        syncPadding.AddChild(syncStack);
-
-        syncStack.AddChild(new Label
-        {
-            Text = "Multiplayer Sync"
-        });
-
-        _syncLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        syncStack.AddChild(_syncLabel);
-
-        _lifecycleLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        syncStack.AddChild(_lifecycleLabel); _lifecycleLabel.Visible = !embedded;
-
-        var providerRow = new HBoxContainer();
-        providerRow.AddThemeConstantOverride("separation", 8);
-        syncStack.AddChild(providerRow);
-
-        _syncProviderButton = BuildCompactButton("Switch Provider", () =>
-        {
-            var nextProviderId = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
-                ? ChallengeSyncProviderCatalog.LocalJournalId
-                : ChallengeSyncProviderCatalog.HttpApiId;
-            GameState.Instance.SetChallengeSyncProvider(nextProviderId);
-            RefreshUi();
-        });
-        providerRow.AddChild(_syncProviderButton);
-		_syncProviderButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-
-        _syncAutoFlushButton = BuildCompactButton("Toggle Auto Flush", () =>
-        {
-            GameState.Instance.SetChallengeSyncAutoFlush(!GameState.Instance.ChallengeSyncAutoFlush);
-            RefreshUi();
-        });
-        providerRow.AddChild(_syncAutoFlushButton);
-		_syncAutoFlushButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-
-        var profileButton = BuildCompactButton("Refresh Profile", () =>
-        {
-            PlayerProfileSyncService.RefreshProfile(out _);
-            RefreshUi();
-        });
-        providerRow.AddChild(profileButton);
-
-        var endpointRow = new HBoxContainer();
-        endpointRow.AddThemeConstantOverride("separation", 8);
-        syncStack.AddChild(endpointRow);
-
-        _syncEndpointEdit = new LineEdit
-        {
-            PlaceholderText = "https://api.example.com/challenge-sync",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        endpointRow.AddChild(_syncEndpointEdit);
-		_syncEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
-
-        var endpointButton = new RealmButton
-        {
-            Text = "Apply Endpoint",
-            CustomMinimumSize = new Vector2(190f, 40f)
-        };
-        endpointButton.Pressed += () =>
-        {
-            GameState.Instance.SetChallengeSyncEndpoint(_syncEndpointEdit.Text);
-            RefreshUi();
-        };
-        endpointRow.AddChild(endpointButton);
-        if (embedded) {
-            endpointRow.Hide(); providerRow.Hide();
-            syncStack.AddChild(RealmUi.Button("gear", "Connection details", () => { endpointRow.Visible = !endpointRow.Visible; providerRow.Visible = endpointRow.Visible; }));
-            syncStack.AddChild(RealmUi.Button("people", "Refresh profile", () => { PlayerProfileSyncService.RefreshProfile(out _); RefreshUi(); }));
-        }
-		endpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
 
         var defaultsButton = new RealmButton
         {
-            Text = "Restore Defaults",
-            CustomMinimumSize = new Vector2(0f, 46f)
+            Text = "Restore defaults",
+            CustomMinimumSize = new Vector2(220f, 48f),
+            SizeFlagsHorizontal = SizeFlags.ShrinkEnd
         };
         defaultsButton.Pressed += () =>
         {
@@ -489,41 +200,168 @@ public partial class SettingsMenu : Control
             GameState.Instance.SetPurchaseValidationEndpoint("");
             RefreshUi();
         };
-        stack.AddChild(defaultsButton);
+        pages[0].AddChild(defaultsButton);
 
-        if (embedded) pages[3].AddChild(RealmUi.Button("people", "Manage account", () => AccountDialog.Show(this)));
-        pages[3].AddChild(RealmUi.Button("close", "Reset campaign", () => MedievalUi.ShowConfirmation(this,
-            "Abandon this campaign?", "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
-            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); })));
-        var purchasePanel = new PanelContainer();
-        pages[3].AddChild(purchasePanel);
-
-        var purchasePadding = new MarginContainer();
-        purchasePadding.AddThemeConstantOverride("margin_left", 14);
-        purchasePadding.AddThemeConstantOverride("margin_top", 14);
-        purchasePadding.AddThemeConstantOverride("margin_right", 14);
-        purchasePadding.AddThemeConstantOverride("margin_bottom", 14);
-        purchasePanel.AddChild(purchasePadding);
-
-        var purchaseStack = new VBoxContainer();
-        purchaseStack.AddThemeConstantOverride("separation", 10);
-        purchasePadding.AddChild(purchaseStack);
-
-        purchaseStack.AddChild(new Label
+        // Gameplay
+        var interfaceStack = Section(pages[1], "Interface");
+        var callsignRow = new HBoxContainer();
+        callsignRow.AddThemeConstantOverride("separation", 12);
+        interfaceStack.AddChild(callsignRow);
+        var callsignName = RealmUi.Label("Caravan name", 18); callsignName.CustomMinimumSize = new Vector2(150, 0);
+        callsignName.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; callsignName.VerticalAlignment = VerticalAlignment.Center;
+        callsignRow.AddChild(callsignName);
+        _callsignEdit = new LineEdit
         {
-            Text = "Payments"
-        });
-
-        _purchaseLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
+            PlaceholderText = "Lantern",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            TooltipText = "Shown in rooms and shared rankings"
         };
-        purchaseStack.AddChild(_purchaseLabel);
+        callsignRow.AddChild(_callsignEdit);
+        var callsignButton = new RealmButton
+        {
+            Text = "Save",
+            CustomMinimumSize = new Vector2(120f, 44f)
+        };
+        callsignButton.Pressed += () =>
+        {
+            GameState.Instance.SetPlayerCallsign(_callsignEdit.Text);
+            RefreshUi();
+        };
+        callsignRow.AddChild(callsignButton);
 
+        Toggle(interfaceStack, "Tutorial hints", () => GameState.Instance.ShowHints, GameState.Instance.SetShowHints);
+        Toggle(interfaceStack, "Reduced motion", () => GameState.Instance.ReducedMotion, GameState.Instance.SetReducedMotion);
+        Toggle(interfaceStack, "High contrast", () => GameState.Instance.HighContrast, GameState.Instance.SetHighContrast);
+        Toggle(interfaceStack, "FPS counter", () => GameState.Instance.ShowFpsCounter, GameState.Instance.SetShowFpsCounter);
+        Choice(interfaceStack, "Language", () => GameState.Instance.Language.ToUpperInvariant(), () =>
+        {
+            var supported = Locale.GetSupportedLanguages();
+            var currentIndex = Math.Max(0, Array.IndexOf(supported, GameState.Instance.Language));
+            GameState.Instance.SetLanguage(supported[(currentIndex + 1) % supported.Length]);
+        });
+        Stepper(interfaceStack, "Text size", () => $"{16 + GameState.Instance.FontSizeOffset} px",
+            () => GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset - 2),
+            () => GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset + 2));
+
+        var difficultyStack = Section(pages[1], "Difficulty");
+        Choice(difficultyStack, "Challenge level", () => GameState.Instance.GetDifficulty().Title, () =>
+        {
+            var all = DifficultyCatalog.GetAll();
+            var currentIndex = 0;
+            for (int i = 0; i < all.Count; i++)
+                if (all[i].Id == GameState.Instance.DifficultyId) { currentIndex = i; break; }
+            GameState.Instance.SetDifficulty(all[(currentIndex + 1) % all.Count].Id);
+        });
+        _difficultyLabel = RealmUi.Label("", 18, true);
+        difficultyStack.AddChild(_difficultyLabel);
+
+        // Online
+        var syncStack = Section(pages[2], "Online play");
+        _syncLabel = RealmUi.Label("", 18, true);
+        syncStack.AddChild(_syncLabel);
+        _lifecycleLabel = RealmUi.Label("", 18, true);
+        syncStack.AddChild(_lifecycleLabel); _lifecycleLabel.Visible = !embedded;
+
+        var providerRow = new HBoxContainer();
+        providerRow.AddThemeConstantOverride("separation", 8);
+        syncStack.AddChild(providerRow);
+        _syncProviderButton = BuildCompactButton("Switch provider", () =>
+        {
+            var nextProviderId = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
+                ? ChallengeSyncProviderCatalog.LocalJournalId
+                : ChallengeSyncProviderCatalog.HttpApiId;
+            GameState.Instance.SetChallengeSyncProvider(nextProviderId);
+            RefreshUi();
+        });
+        providerRow.AddChild(_syncProviderButton);
+		_syncProviderButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
+        _syncAutoFlushButton = BuildCompactButton("Auto flush", () =>
+        {
+            GameState.Instance.SetChallengeSyncAutoFlush(!GameState.Instance.ChallengeSyncAutoFlush);
+            RefreshUi();
+        });
+        providerRow.AddChild(_syncAutoFlushButton);
+		_syncAutoFlushButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
+
+        var endpointRow = new HBoxContainer();
+        endpointRow.AddThemeConstantOverride("separation", 8);
+        syncStack.AddChild(endpointRow);
+        _syncEndpointEdit = new LineEdit
+        {
+            PlaceholderText = "https://api.example.com/challenge-sync",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        endpointRow.AddChild(_syncEndpointEdit);
+		_syncEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
+        var endpointButton = new RealmButton
+        {
+            Text = "Apply",
+            CustomMinimumSize = new Vector2(120f, 44f)
+        };
+        endpointButton.Pressed += () =>
+        {
+            GameState.Instance.SetChallengeSyncEndpoint(_syncEndpointEdit.Text);
+            RefreshUi();
+        };
+        endpointRow.AddChild(endpointButton);
+		endpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
+        endpointRow.Visible = providerRow.Visible = !embedded;
+        var onlineActions = ActionRow(syncStack);
+        onlineActions.AddChild(Grow(RealmUi.Button("people", "Refresh profile", () => { PlayerProfileSyncService.RefreshProfile(out _); RefreshUi(); })));
+        onlineActions.AddChild(Grow(RealmUi.Button("gear", "Connection details", () => { endpointRow.Visible = !endpointRow.Visible; providerRow.Visible = endpointRow.Visible; })));
+
+        // Account
+        var accountActions = ActionRow(pages[3]);
+        accountActions.AddChild(Grow(RealmUi.Button("people", "Manage account", () => AccountDialog.Show(this))));
+        accountActions.AddChild(Grow(RealmUi.Button("close", "Reset campaign", () => MedievalUi.ShowConfirmation(this,
+            "Abandon this campaign?", "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
+            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); }))));
+
+        var cloudStack = Section(pages[3], "Cloud save");
+        _cloudSaveLabel = RealmUi.Label("", 18, true);
+        cloudStack.AddChild(_cloudSaveLabel);
+        var cloudSaveRow = ActionRow(cloudStack);
+        cloudSaveRow.AddChild(BuildCompactButton("Upload", () =>
+        {
+            CloudSaveService.Upload(out var msg);
+            _cloudSaveLabel.Text = msg;
+            RefreshUi();
+        }));
+        cloudSaveRow.AddChild(BuildCompactButton("Restore", () =>
+        {
+            var restored = CloudSaveService.Download(out var msg);
+            _cloudSaveLabel.Text = msg;
+            if (restored && RealmModal.Embedded(this)) { SceneRouter.Instance.ReloadHome(); return; }
+            RefreshUi();
+        }));
+        cloudSaveRow.AddChild(BuildCompactButton("Check status", () =>
+        {
+            var info = CloudSaveService.GetInfo();
+            if (info.Status == "ok")
+            {
+                var when = DateTimeOffset.FromUnixTimeSeconds(info.UploadedAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm");
+                _cloudSaveLabel.Text = $"Saved {when} · version {info.SaveVersion} · {info.SizeBytes / 1024} KB";
+            }
+            else
+            {
+                _cloudSaveLabel.Text = info.Message;
+            }
+            RefreshUi();
+        }));
+
+        // Each optional upload keeps its own switch and a plain list of what it sends.
+        var privacyStack = Section(pages[3], "Privacy");
+        Toggle(privacyStack, "Share analytics", () => GameState.Instance.AnalyticsConsent, GameState.Instance.SetAnalyticsConsent);
+        privacyStack.AddChild(RealmUi.Label("Gameplay events, player ID, game version and platform. Used to tune balance and difficulty.", 18, true));
+        Toggle(privacyStack, "Send crash reports", () => GameState.Instance.CrashReportingConsent, GameState.Instance.SetCrashReportingConsent);
+        privacyStack.AddChild(RealmUi.Label("Error messages, technical traces, player ID, game version, platform and current screen. Used to fix bugs.", 18, true));
+
+        var purchaseStack = Section(pages[3], "Payments");
+        _purchaseLabel = RealmUi.Label("", 18, true);
+        purchaseStack.AddChild(_purchaseLabel);
         var purchaseEndpointRow = new HBoxContainer();
         purchaseEndpointRow.AddThemeConstantOverride("separation", 8);
         purchaseStack.AddChild(purchaseEndpointRow);
-
         _purchaseEndpointEdit = new LineEdit
         {
             PlaceholderText = "https://api.example.com",
@@ -531,11 +369,10 @@ public partial class SettingsMenu : Control
         };
         purchaseEndpointRow.AddChild(_purchaseEndpointEdit);
 		_purchaseEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
-
         var purchaseEndpointButton = new RealmButton
         {
-            Text = "Apply Endpoint",
-            CustomMinimumSize = new Vector2(190f, 40f)
+            Text = "Apply",
+            CustomMinimumSize = new Vector2(120f, 44f)
         };
         purchaseEndpointButton.Pressed += () =>
         {
@@ -543,108 +380,14 @@ public partial class SettingsMenu : Control
             RefreshUi();
         };
         purchaseEndpointRow.AddChild(purchaseEndpointButton);
-        if (embedded) { purchaseEndpointRow.Hide(); purchaseStack.AddChild(RealmUi.Button("gear", "Payment connection details", () => purchaseEndpointRow.Visible = !purchaseEndpointRow.Visible)); }
 		purchaseEndpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-
-        _cloudSaveLabel = new Label
+        if (embedded)
         {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        purchaseStack.AddChild(_cloudSaveLabel);
-
-        var cloudSaveRow = new HBoxContainer();
-        cloudSaveRow.AddThemeConstantOverride("separation", 8);
-        purchaseStack.AddChild(cloudSaveRow);
-
-        var uploadButton = BuildCompactButton("Upload Save", () =>
-        {
-            CloudSaveService.Upload(out var msg);
-            _cloudSaveLabel.Text = msg;
-            RefreshUi();
-        });
-        cloudSaveRow.AddChild(uploadButton);
-
-        var downloadButton = BuildCompactButton("Restore Save", () =>
-        {
-            var restored = CloudSaveService.Download(out var msg);
-            _cloudSaveLabel.Text = msg;
-            if (restored && RealmModal.Embedded(this)) { SceneRouter.Instance.ReloadHome(); return; }
-            RefreshUi();
-        });
-        cloudSaveRow.AddChild(downloadButton);
-
-        var cloudInfoButton = BuildCompactButton("Check Cloud", () =>
-        {
-            var info = CloudSaveService.GetInfo();
-            if (info.Status == "ok")
-            {
-                var when = DateTimeOffset.FromUnixTimeSeconds(info.UploadedAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm");
-                _cloudSaveLabel.Text = $"Cloud save: v{info.SaveVersion}, {info.SizeBytes / 1024}KB, hash {info.SaveHash}\nUploaded: {when}";
-            }
-            else
-            {
-                _cloudSaveLabel.Text = $"Cloud: {info.Message}";
-            }
-        });
-        cloudSaveRow.AddChild(cloudInfoButton);
-
-        purchaseStack.AddChild(new Label
-        {
-            Text = "Privacy"
-        });
-
-        var privacyLabel = new Label
-        {
-            Text = "Optional analytics sends gameplay events, player ID, game version, and platform to improve balance and difficulty. You can turn it off at any time.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        purchaseStack.AddChild(privacyLabel);
-
-        var analyticsButton = BuildCompactButton(
-            GameState.Instance.AnalyticsConsent ? "Disable Analytics" : "Enable Analytics",
-            () =>
-            {
-                GameState.Instance.SetAnalyticsConsent(!GameState.Instance.AnalyticsConsent);
-                RefreshUi();
-            });
-        analyticsButton.Pressed += () => analyticsButton.Text = GameState.Instance.AnalyticsConsent ? "Disable Analytics" : "Enable Analytics";
-        purchaseStack.AddChild(analyticsButton);
-
-        purchaseStack.AddChild(new Label
-        {
-            Text = "Optional crash reports send error messages, technical traces, player ID, game version, platform, and the current screen to help fix bugs. You can turn them off at any time.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-        var crashButton = BuildCompactButton(
-            GameState.Instance.CrashReportingConsent ? "Disable Crash Reports" : "Enable Crash Reports",
-            () => GameState.Instance.SetCrashReportingConsent(!GameState.Instance.CrashReportingConsent));
-        crashButton.Pressed += () => crashButton.Text = GameState.Instance.CrashReportingConsent ? "Disable Crash Reports" : "Enable Crash Reports";
-        purchaseStack.AddChild(crashButton);
-
-        var achievementsPanel = new PanelContainer();
-        pages[3].AddChild(achievementsPanel);
-
-        var achievementsPadding = new MarginContainer();
-        achievementsPadding.AddThemeConstantOverride("margin_left", 14);
-        achievementsPadding.AddThemeConstantOverride("margin_top", 14);
-        achievementsPadding.AddThemeConstantOverride("margin_right", 14);
-        achievementsPadding.AddThemeConstantOverride("margin_bottom", 14);
-        achievementsPanel.AddChild(achievementsPadding);
-
-        var achievementsStack = new VBoxContainer();
-        achievementsStack.AddThemeConstantOverride("separation", 6);
-        achievementsPadding.AddChild(achievementsStack);
-
-        achievementsStack.AddChild(new Label
-        {
-            Text = "Achievements"
-        });
-
-        _achievementsLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        achievementsStack.AddChild(_achievementsLabel);
+            purchaseEndpointRow.Hide();
+            var details = RealmUi.Button("gear", "Connection details", () => purchaseEndpointRow.Visible = !purchaseEndpointRow.Visible);
+            details.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
+            purchaseStack.AddChild(details);
+        }
 
         var bottomRow = new HBoxContainer();
         bottomRow.AddThemeConstantOverride("separation", 12);
@@ -659,12 +402,89 @@ public partial class SettingsMenu : Control
 
         _titleButton = new RealmButton
         {
-            Text = "Back To Title",
+            Text = "Back to title",
             CustomMinimumSize = new Vector2(180f, 48f)
         };
         _titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
         bottomRow.AddChild(_titleButton);
         if (embedded) RealmModal.Polish(rootStack);
+    }
+
+    private readonly List<Action> _rowSyncs = new();
+
+    private static VBoxContainer Section(VBoxContainer page, string title)
+    {
+        var panel = new PanelContainer();
+        page.AddChild(panel);
+        var padding = new MarginContainer();
+        foreach (var side in new[] { "left", "top", "right", "bottom" }) padding.AddThemeConstantOverride("margin_" + side, 14);
+        panel.AddChild(padding);
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 10);
+        padding.AddChild(stack);
+        stack.AddChild(RealmUi.SectionTitle(title));
+        return stack;
+    }
+
+    private static HBoxContainer ActionRow(Control host)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 10);
+        host.AddChild(row);
+        return row;
+    }
+
+    private static Button Grow(Button button)
+    {
+        button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        return button;
+    }
+
+    // A setting name on the left and its control, sized consistently, on the right.
+    private static T SettingRow<T>(VBoxContainer host, string name, T control) where T : Control
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 16);
+        host.AddChild(row);
+        var label = RealmUi.Label(name, 18);
+        label.VerticalAlignment = VerticalAlignment.Center;
+        row.AddChild(label);
+        control.CustomMinimumSize = new Vector2(Math.Max(control.CustomMinimumSize.X, 168), 44);
+        control.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
+        row.AddChild(control);
+        return control;
+    }
+
+    private Button Toggle(VBoxContainer host, string name, Func<bool> value, Action<bool> apply)
+    {
+        var button = new RealmButton { ToggleMode = true, AccessibilityName = name, TooltipText = name, MouseDefaultCursorShape = CursorShape.PointingHand };
+        button.SetMeta("realm_toggle", true);
+        void Sync() { button.SetPressedNoSignal(value()); button.Text = value() ? "On" : "Off"; }
+        button.Pressed += () => { apply(!value()); RefreshUi(); };
+        _rowSyncs.Add(Sync); Sync();
+        return SettingRow(host, name, button);
+    }
+
+    private Button Choice(VBoxContainer host, string name, Func<string> value, Action next)
+    {
+        var button = new RealmButton { AccessibilityName = name, TooltipText = $"Change {name.ToLowerInvariant()}", MouseDefaultCursorShape = CursorShape.PointingHand };
+        void Sync() => button.Text = value();
+        button.Pressed += () => { next(); RefreshUi(); };
+        _rowSyncs.Add(Sync); Sync();
+        return SettingRow(host, name, button);
+    }
+
+    private void Stepper(VBoxContainer host, string name, Func<string> value, Action decrease, Action increase)
+    {
+        var group = new HBoxContainer();
+        group.AddThemeConstantOverride("separation", 8);
+        var less = RealmUi.IconButton("minus", $"Smaller {name.ToLowerInvariant()}", () => { decrease(); RefreshUi(); });
+        var amount = RealmUi.Label("", 18); amount.CustomMinimumSize = new Vector2(64, 0); amount.AutowrapMode = TextServer.AutowrapMode.Off;
+        amount.HorizontalAlignment = HorizontalAlignment.Center; amount.VerticalAlignment = VerticalAlignment.Center;
+        var more = RealmUi.IconButton("plus", $"Larger {name.ToLowerInvariant()}", () => { increase(); RefreshUi(); });
+        group.AddChild(less); group.AddChild(amount); group.AddChild(more);
+        _rowSyncs.Add(() => amount.Text = value());
+        SettingRow(host, name, group);
     }
 
     private static Button BuildCompactButton(string text, System.Action onPressed)
@@ -686,30 +506,13 @@ public partial class SettingsMenu : Control
             int value = channel == "Music" ? GameState.Instance.MusicVolumePercent : channel == "Effects" ? GameState.Instance.EffectsVolumePercent : GameState.Instance.AmbienceVolumePercent;
             slider.SetValueNoSignal(value); amount.Text = value + "%";
         }
+        foreach (var sync in _rowSyncs) sync();
         _returnLabel.Text = $"Return target: {SceneRouter.Instance.SettingsReturnLabel}";
-        _audioLabel.Text =
-            $"Effects: {GameState.Instance.EffectsVolumePercent}%  |  Ambience: {GameState.Instance.AmbienceVolumePercent}%  |  Music: {GameState.Instance.MusicVolumePercent}%\n" +
-            $"Muted: {(GameState.Instance.AudioMuted ? "Yes" : "No")}";
-        _interfaceLabel.Text =
-            $"FPS counter: {(GameState.Instance.ShowFpsCounter ? "Shown" : "Hidden")}\n" +
-            $"Tutorial hints: {(GameState.Instance.ShowHints ? "Shown" : "Hidden")}\n" +
-            $"Language: {GameState.Instance.Language}\n" +
-            $"Font size: {16 + GameState.Instance.FontSizeOffset}px  |  High contrast: {(GameState.Instance.HighContrast ? "On" : "Off")}";
-        _callsignLabel.Text = $"Caravan callsign: {GameState.Instance.PlayerCallsign}\nUsed for LAN room labels and shared scoreboards.";
-        var currentDiff = GameState.Instance.GetDifficulty();
-        _difficultyLabel.Text =
-            $"Current: {currentDiff.Title} ({currentDiff.Id})\n{currentDiff.Description}";
-        _difficultyButton.Text = $"Difficulty: {currentDiff.Title}";
-        _syncLabel.Text =
-            $"Profile: {GameState.Instance.PlayerProfileId}\n" +
-            $"Auth token: {(string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken) ? "none" : "active")}\n" +
-            $"Last profile sync: {(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds <= 0 ? "never" : System.DateTimeOffset.FromUnixTimeSeconds(GameState.Instance.LastPlayerProfileSyncAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm:ss"))}\n" +
-            $"Provider: {ChallengeSyncProviderCatalog.GetDisplayName(GameState.Instance.ChallengeSyncProviderId)}\n" +
-            $"Auto flush: {(GameState.Instance.ChallengeSyncAutoFlush ? "On" : "Off")}\n" +
-            $"Endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.ChallengeSyncEndpoint) ? "not set" : GameState.Instance.ChallengeSyncEndpoint)}{(GameState.Instance.IsReleaseBackendConfigured ? " (managed by release)" : "")}\n\n" +
-            $"{PlayerProfileSyncService.BuildStatusSummary()}\n\n" +
-            $"{(ChallengeSyncService.Instance?.BuildStatusSummary() ?? "Sync service unavailable.")}";
-        _lifecycleLabel.Text = AppLifecycleService.Instance?.BuildStatusSummary() ?? "App lifecycle service unavailable.";
+        _difficultyLabel.Text = GameState.Instance.GetDifficulty().Description;
+        _syncLabel.Text = string.IsNullOrEmpty(GameState.Instance.AccountProvider)
+            ? "Playing locally. Sign in from the Account tab to connect your caravan."
+            : $"Connected with {GameState.Instance.AccountProvider}.";
+        _lifecycleLabel.Text = AppLifecycleService.Instance?.BuildStatusSummary() ?? "";
         if (!_callsignEdit.HasFocus())
         {
             _callsignEdit.Text = GameState.Instance.PlayerCallsign;
@@ -718,33 +521,19 @@ public partial class SettingsMenu : Control
         {
             _syncEndpointEdit.Text = GameState.Instance.ChallengeSyncEndpoint;
         }
-        _muteButton.Text = GameState.Instance.AudioMuted ? "Unmute" : "Mute";
-        _showFpsButton.Text = GameState.Instance.ShowFpsCounter ? "Hide FPS Counter" : "Show FPS Counter";
-        _showHintsButton.Text = GameState.Instance.ShowHints ? "Hide Hints" : "Show Hints";
         _syncProviderButton.Text = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
-            ? "Use Local Stub"
+            ? "Use local journal"
             : "Use HTTP API";
-        _syncAutoFlushButton.Text = GameState.Instance.ChallengeSyncAutoFlush
-            ? "Disable Auto Flush"
-            : "Enable Auto Flush";
-        _purchaseLabel.Text =
-            $"Purchase endpoint: {(string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ? "not set (local mode)" : GameState.Instance.PurchaseValidationEndpoint)}{(GameState.Instance.IsReleaseBackendConfigured ? " (managed by release)" : "")}\n" +
-            $"Total purchases: {GameState.Instance.TotalPurchaseCount}\n" +
-            $"Platform: {DetectPurchasePlatform()}";
+        _syncAutoFlushButton.Text = GameState.Instance.ChallengeSyncAutoFlush ? "Auto flush: On" : "Auto flush: Off";
+        _purchaseLabel.Text = $"{GameState.Instance.TotalPurchaseCount} purchases · {DetectPurchasePlatform()}";
+        _cloudSaveLabel.Visible = _cloudSaveLabel.Text.Length > 0;
         if (!_purchaseEndpointEdit.HasFocus())
         {
             _purchaseEndpointEdit.Text = GameState.Instance.PurchaseValidationEndpoint;
         }
         var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
-        _backButton.Text = $"Back To {returnLabel}";
+        _backButton.Text = $"Back to {returnLabel.ToLowerInvariant()}";
         _titleButton.Visible = !returnLabel.Equals("Title", StringComparison.OrdinalIgnoreCase);
-        if (RealmModal.Embedded(this)) {
-            _interfaceLabel.Text = "Adjust readability and hints.";
-            _callsignLabel.Text = "Caravan name · used in rooms and shared rankings";
-            _syncLabel.Text = string.IsNullOrEmpty(GameState.Instance.AccountProvider) ? "Playing locally. Sign in from Account to connect your caravan." : $"Connected with {GameState.Instance.AccountProvider}. Refresh your profile to check the latest progress.";
-            _purchaseLabel.Text = $"Purchases completed: {GameState.Instance.TotalPurchaseCount}\nPayments: {DetectPurchasePlatform()}";
-        }
-        _achievementsLabel.Text = $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} completed. Open Achievements from the home dock to view objectives and claim rewards.";
     }
 
     private static string DetectPurchasePlatform()

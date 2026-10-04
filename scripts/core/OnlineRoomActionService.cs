@@ -85,7 +85,7 @@ public static class OnlineRoomActionService
 		var ticket = OnlineRoomJoinService.GetCachedTicket();
 		if (ticket == null)
 		{
-			return "Ready Up Online";
+			return "Ready up";
 		}
 
 		if (OnlineRoomJoinService.IsTicketExpired(ticket))
@@ -103,7 +103,7 @@ public static class OnlineRoomActionService
 			return "Waitlisted";
 		}
 
-		return GetDesiredReadyState(ticket) ? "Stand Down Online" : "Ready Up Online";
+		return GetDesiredReadyState(ticket) ? "Stand down" : "Ready up";
 	}
 
 	public static string BuildLaunchRoundLabel()

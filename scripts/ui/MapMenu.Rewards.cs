@@ -14,20 +14,7 @@ public partial class MapMenu
         return row;
     }
 
-    private void AddEntryCost(int entry)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 10);
-        _rewards.AddChild(row);
-        var panel = new PanelContainer { CustomMinimumSize = new Vector2(150, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        panel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(true, 8));
-        row.AddChild(panel);
-        var content = new VBoxContainer();
-        content.AddThemeConstantOverride("separation", 2);
-        panel.AddChild(content);
-        content.AddChild(RealmUi.Label("Battle entry", 18, true));
-        content.AddChild(HomeResourceUi.Amount("food", entry.ToString(), $"Battle entry · {entry} rations", 30));
-    }
+    private void AddEntryCost(int entry) => AddReward("Battle entry", "food", entry.ToString(), $"Battle entry · {entry} rations");
 
     private void ShowSiteRewards(bool known, bool leader, StageDefinition stage)
     {

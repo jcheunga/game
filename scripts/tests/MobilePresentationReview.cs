@@ -172,7 +172,7 @@ public partial class MobilePresentationReview : Node
         catch(Exception ex) {GD.PrintErr(ex.ToString()); _failures++;}
         finally { MobilePresentation.TestOverride=null; }
         GD.Print($"MOBILE_PRESENTATION_RESULT: {_failures} failures");
-        GetTree().Quit(_failures==0?0:1);
+        await LiveUiReview.StopAudio(this); GetTree().Quit(_failures==0?0:1);
     }
 
     private async Task CheckCloserViews(BattleController battle)

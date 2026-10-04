@@ -12,12 +12,7 @@ public partial class TowerMenu : Control
 
 	// Detail panel references
 	private Label _detailFloorLabel = null!;
-	private Label _detailStageLabel = null!;
-	private Label _detailScalingLabel = null!;
-	private Label _detailModifiersLabel = null!;
-	private HBoxContainer _detailRewardsRow = null!;
-	private Label _detailRewardsLabel = null!;
-	private Label _detailMilestoneLabel = null!;
+	private VBoxContainer _detailFacts = null!;
 	private Button _deployButton = null!;
 
 	private int _selectedFloor = 1;
@@ -79,11 +74,11 @@ public partial class TowerMenu : Control
 		var listInner = new VBoxContainer();
 		listInner.AddThemeConstantOverride("separation", 4);
 		listOuter.AddChild(listInner);
-		listInner.AddChild(new Label { Text = "Floors", HorizontalAlignment = HorizontalAlignment.Center });
-		var floorScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 420f) };
+		listInner.AddChild(RealmUi.SectionTitle("Floors"));
+		var floorScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 420f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		listInner.AddChild(floorScroll);
 		_floorStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_floorStack.AddThemeConstantOverride("separation", 2);
+		_floorStack.AddThemeConstantOverride("separation", 6);
 		floorScroll.AddChild(_floorStack);
 
 		// Detail panel (right)
@@ -96,47 +91,21 @@ public partial class TowerMenu : Control
 		detailOuter.AddThemeConstantOverride("margin_bottom", 16);
 		_detailPanel.AddChild(detailOuter);
 		var detailStack = new VBoxContainer();
-		detailStack.AddThemeConstantOverride("separation", 10);
+		detailStack.AddThemeConstantOverride("separation", 12);
 		detailOuter.AddChild(detailStack);
 
-		_detailFloorLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
+		_detailFloorLabel = RealmUi.Heading("", 24);
 		detailStack.AddChild(_detailFloorLabel);
-
-		_detailStageLabel = new Label();
-		_detailStageLabel.AddThemeColorOverride("font_color", new Color("b0b8c8"));
-		detailStack.AddChild(_detailStageLabel);
-
-		_detailScalingLabel = new Label();
-		_detailScalingLabel.AddThemeColorOverride("font_color", new Color("b0b8c8"));
-		detailStack.AddChild(_detailScalingLabel);
-
-		_detailModifiersLabel = new Label
-		{
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2(780f, 0f)
-		};
-		_detailModifiersLabel.AddThemeColorOverride("font_color", new Color("e07050"));
-		detailStack.AddChild(_detailModifiersLabel);
-
-		_detailRewardsRow = new HBoxContainer();
-		_detailRewardsRow.AddThemeConstantOverride("separation", 8);
-		detailStack.AddChild(_detailRewardsRow);
-		_detailRewardsLabel = new Label
-		{
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		_detailRewardsLabel.AddThemeColorOverride("font_color", new Color("ffd700"));
-		_detailRewardsRow.AddChild(_detailRewardsLabel);
-
-		_detailMilestoneLabel = new Label();
-		_detailMilestoneLabel.AddThemeColorOverride("font_color", new Color("a855f7"));
-		detailStack.AddChild(_detailMilestoneLabel);
+		_detailFacts = new VBoxContainer();
+		_detailFacts.AddThemeConstantOverride("separation", 10);
+		detailStack.AddChild(_detailFacts);
 
 		// Spacer pushes deploy button toward bottom
 		detailStack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 
-		_deployButton = new RealmButton { Text = "Deploy", CustomMinimumSize = new Vector2(200f, 44f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
-		_deployButton.Pressed += OnDeployPressed;
+		_deployButton = RealmUi.Button("sword", "Deploy", OnDeployPressed, true);
+		_deployButton.CustomMinimumSize = new Vector2(220f, 48f);
+		_deployButton.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
 		detailStack.AddChild(_deployButton);
 
 		// Status + nav
@@ -176,38 +145,29 @@ public partial class TowerMenu : Control
 			var isLocked = floor > highest + 1;
 			var isCleared = floor <= highest;
 
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 6);
-
-			var floorLabel = new Label
+			// Each floor is one selectable row: cleared floors show their stars, locked floors a lock.
+			var row = new RealmButton
 			{
-				Text = isCleared ? $"Floor {floor}  {"*".PadLeft(stars, '*')}" : $"Floor {floor}",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
+				Text = isCleared ? $"Floor {floor} · {stars}/3" : $"Floor {floor}",
+				ToggleMode = true,
+				ButtonPressed = capturedFloor == _selectedFloor,
+				Disabled = isLocked,
+				Alignment = HorizontalAlignment.Left,
+				Icon = isLocked ? RealmUi.Icon("lock") : isCleared ? HomeMapArt.Icon("star") : null,
+				IconAlignment = HorizontalAlignment.Right,
+				ExpandIcon = true,
+				CustomMinimumSize = new Vector2(0f, 44f),
+				TooltipText = isLocked ? "Clear the floor below to unlock" : isCleared ? $"{stars} of 3 stars" : "Next floor",
+				MouseDefaultCursorShape = CursorShape.PointingHand
 			};
-
-			if (capturedFloor == _selectedFloor)
-				floorLabel.AddThemeColorOverride("font_color", new Color("38bdf8"));
-			else if (isLocked)
-				floorLabel.AddThemeColorOverride("font_color", new Color("81918e"));
-			else if (isCleared)
-				floorLabel.AddThemeColorOverride("font_color", new Color("70c870"));
-
-			row.AddChild(floorLabel);
-
-			var selectBtn = new RealmButton
-			{
-				Text = capturedFloor == _selectedFloor ? ">" : "Select",
-				CustomMinimumSize = new Vector2(70f, 0f),
-				Disabled = isLocked
-			};
-			selectBtn.Pressed += () =>
+			row.AddThemeConstantOverride("icon_max_width", 22);
+			row.SetMeta("realm_toggle", true);
+			row.Pressed += () =>
 			{
 				_selectedFloor = capturedFloor;
 				RefreshUi();
 			};
-			row.AddChild(selectBtn);
-
+			if (RealmModal.Embedded(this)) ModalUi.StyleButton(row);
 			_floorStack.AddChild(row);
 		}
 	}
@@ -220,64 +180,30 @@ public partial class TowerMenu : Control
 		var def = ChallengeTowerCatalog.GetFloor(_selectedFloor);
 
 		_detailFloorLabel.Text = $"Floor {def.Floor}";
-		_detailStageLabel.Text = $"Base Stage: {def.BaseStageNumber}";
-		_detailScalingLabel.Text = $"Enemy HP x{def.EnemyHealthScale:F1}  |  DMG x{def.EnemyDamageScale:F1}";
-
-		if (def.ForcedModifierIds != null && def.ForcedModifierIds.Length > 0)
-			_detailModifiersLabel.Text = $"Modifiers: {string.Join(", ", def.ForcedModifierIds)}";
-		else
-			_detailModifiersLabel.Text = "Modifiers: None";
-
-		var rewards = "";
-		if (def.RewardGold > 0) rewards += $"{def.RewardGold} gold  ";
-		if (def.RewardFood > 0) rewards += $"{def.RewardFood} food  ";
-		if (def.RewardTomes > 0) rewards += $"{def.RewardTomes} tomes  ";
-		if (def.RewardEssence > 0) rewards += $"{def.RewardEssence} essence  ";
-		RebuildRewardBadges(def);
-		_detailRewardsLabel.Text = rewards.Length > 0 ? $"Rewards: {rewards.TrimEnd()}" : "Rewards: None";
-
+		RealmUi.Clear(_detailFacts);
+		var stage = GameData.GetStage(def.BaseStageNumber);
+		_detailFacts.AddChild(RealmUi.KeyValue("Battlefield", stage != null ? $"{stage.MapName} · {stage.StageName}" : $"Stage {def.BaseStageNumber}"));
+		_detailFacts.AddChild(RealmUi.KeyValue("Enemy strength", $"Health ×{def.EnemyHealthScale:0.0} · damage ×{def.EnemyDamageScale:0.0}"));
+		_detailFacts.AddChild(RealmUi.KeyValue("Modifiers", def.ForcedModifierIds is { Length: > 0 } ? string.Join(", ", def.ForcedModifierIds) : "None"));
 		if (!string.IsNullOrEmpty(def.MilestoneRelicId))
-			_detailMilestoneLabel.Text = $"Milestone Relic: {def.MilestoneRelicId}";
-		else
-			_detailMilestoneLabel.Text = "";
+			_detailFacts.AddChild(RealmUi.KeyValue("Milestone relic", GameData.GetEquipment(def.MilestoneRelicId)?.DisplayName ?? def.MilestoneRelicId, RealmUi.Gold));
+
+		var rewards = new HBoxContainer();
+		rewards.AddThemeConstantOverride("separation", 18);
+		var caption = RealmUi.Label("Rewards", 18, true);
+		caption.VerticalAlignment = VerticalAlignment.Center;
+		rewards.AddChild(caption);
+		var amounts = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
+		amounts.AddThemeConstantOverride("separation", 18);
+		rewards.AddChild(amounts);
+		if (def.RewardGold > 0) amounts.AddChild(HomeResourceUi.Amount("gold", $"{def.RewardGold:N0}", $"{def.RewardGold:N0} gold", 28));
+		if (def.RewardFood > 0) amounts.AddChild(HomeResourceUi.Amount("food", $"{def.RewardFood}", $"{def.RewardFood} rations", 28));
+		if (def.RewardTomes > 0) amounts.AddChild(HomeResourceUi.Amount("tomes", $"{def.RewardTomes}", $"{def.RewardTomes} tomes", 28));
+		if (def.RewardEssence > 0) amounts.AddChild(HomeResourceUi.Amount("essence", $"{def.RewardEssence}", $"{def.RewardEssence} essence", 28));
+		_detailFacts.AddChild(rewards);
 
 		_deployButton.Disabled = isLocked;
 		_deployButton.Text = isLocked ? "Locked" : "Deploy";
-	}
-
-	private void RebuildRewardBadges(TowerFloorDefinition def)
-	{
-		foreach (var child in _detailRewardsRow.GetChildren())
-		{
-			if (child != _detailRewardsLabel)
-			{
-				child.QueueFree();
-			}
-		}
-
-		if (def.RewardGold > 0)
-		{
-			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", $"{def.RewardGold} Gold", new Vector2(30f, 30f)));
-			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
-		}
-
-		if (def.RewardFood > 0)
-		{
-			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", $"{def.RewardFood} Food", new Vector2(30f, 30f)));
-			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
-		}
-
-		if (def.RewardTomes > 0)
-		{
-			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("tomes", "", $"{def.RewardTomes} Tomes", new Vector2(30f, 30f)));
-			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
-		}
-
-		if (def.RewardEssence > 0)
-		{
-			_detailRewardsRow.AddChild(UiBadgeFactory.CreateRewardBadge("essence", "", $"{def.RewardEssence} Essence", new Vector2(30f, 30f)));
-			_detailRewardsRow.MoveChild(_detailRewardsLabel, _detailRewardsRow.GetChildCount() - 1);
-		}
 	}
 
 	private void OnDeployPressed()

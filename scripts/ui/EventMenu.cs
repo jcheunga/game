@@ -70,8 +70,11 @@ public partial class EventMenu : Control
 		var stagesInner = new VBoxContainer();
 		stagesInner.AddThemeConstantOverride("separation", 6);
 		stagesOuter.AddChild(stagesInner);
-		stagesInner.AddChild(new Label { Text = "Event Stages", HorizontalAlignment = HorizontalAlignment.Center });
-		stagesInner.AddChild(new Label { Text = evt?.Description ?? "", HorizontalAlignment = HorizontalAlignment.Center });
+		if (evt != null)
+		{
+			stagesInner.AddChild(RealmUi.SectionTitle("Stages"));
+			stagesInner.AddChild(RealmUi.Label(evt.Description, 18, true));
+		}
 		var stagesScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 360f) };
 		stagesInner.AddChild(stagesScroll);
 		_stagesStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -90,7 +93,9 @@ public partial class EventMenu : Control
 		var msInner = new VBoxContainer();
 		msInner.AddThemeConstantOverride("separation", 6);
 		msOuter.AddChild(msInner);
-		msInner.AddChild(new Label { Text = "Milestones", HorizontalAlignment = HorizontalAlignment.Center });
+		msInner.AddChild(RealmUi.SectionTitle("Milestones"));
+		// Without an event the stage panel's message is the whole page.
+		if (evt == null) { _milestonesPanel.SetMeta("modal_hidden", true); _milestonesPanel.Visible = false; }
 		_milestonesStack = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
 		_milestonesStack.AddThemeConstantOverride("separation", 8);
 		msInner.AddChild(_milestonesStack);
@@ -135,7 +140,7 @@ public partial class EventMenu : Control
 
 		if (evt == null)
 		{
-			_stagesStack.AddChild(new Label { Text = "No event is active right now. Check back later!" });
+			_stagesStack.AddChild(RealmUi.EmptyState("star", "No event right now", "Seasonal events bring limited stages and rewards. Check back soon."));
 			return;
 		}
 
@@ -150,26 +155,28 @@ public partial class EventMenu : Control
 			row.AddThemeConstantOverride("separation", 8);
 
 			var stageData = GameData.GetStage(stage.BaseStageNumber);
-			var stageName = stageData?.MapId ?? $"Stage {stage.BaseStageNumber}";
-			var modifiers = stage.ForcedModifierIds.Length > 0 ? $"  [{string.Join(", ", stage.ForcedModifierIds)}]" : "";
-			var scaleText = $"HP x{stage.EnemyHealthScale:F2}, DMG x{stage.EnemyDamageScale:F2}";
-
-			var statusText = cleared ? "[CLEARED]" : (i == progress ? "[NEXT]" : "[LOCKED]");
+			var stageName = stageData != null ? $"{stageData.MapName} · {stageData.StageName}" : $"Stage {stage.BaseStageNumber}";
+			var details = $"Enemy health ×{stage.EnemyHealthScale:0.##} · damage ×{stage.EnemyDamageScale:0.##}";
+			if (stage.ForcedModifierIds.Length > 0) details += " · " + string.Join(", ", stage.ForcedModifierIds);
 			var rewardText = FormatReward(stage.CompletionReward);
 
-			var label = new Label
-			{
-				Text = $"{i + 1}. {stageName} — {scaleText}{modifiers}  {statusText}  Reward: {rewardText}",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
-			};
-			if (cleared) label.AddThemeColorOverride("font_color", new Color("60d060"));
 			row.AddChild(UiBadgeFactory.CreateRewardBadge(
 				stage.CompletionReward?.Type,
 				stage.CompletionReward?.ItemId,
 				rewardText,
-				new Vector2(30f, 30f)));
-			row.AddChild(label);
+				new Vector2(36f, 36f)));
+			var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			text.AddThemeConstantOverride("separation", 2);
+			text.AddChild(RealmUi.Label($"{i + 1}. {stageName}", 18));
+			text.AddChild(RealmUi.Label($"{details} · {rewardText}", 18, true));
+			row.AddChild(text);
+			if (cleared || i > progress)
+			{
+				var state = RealmUi.Label(cleared ? "Cleared" : "Locked", 18, true);
+				state.AutowrapMode = TextServer.AutowrapMode.Off; state.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; state.VerticalAlignment = VerticalAlignment.Center;
+				if (cleared) state.AddThemeColorOverride("font_color", new Color("9fd49a"));
+				row.AddChild(state);
+			}
 
 			if (i == progress && !cleared)
 			{
@@ -192,11 +199,11 @@ public partial class EventMenu : Control
 			var remaining = endDate.Date - DateTime.UtcNow.Date;
 			if (remaining.TotalDays > 0)
 			{
-				_statusLabel.Text = $"Event ends in {(int)remaining.TotalDays} day(s).";
+				_statusLabel.Text = (int)remaining.TotalDays == 1 ? "Event ends tomorrow." : $"Event ends in {(int)remaining.TotalDays} days.";
 			}
 			else
 			{
-				_statusLabel.Text = "Event ends today!";
+				_statusLabel.Text = "Event ends today.";
 			}
 		}
 	}
@@ -207,7 +214,7 @@ public partial class EventMenu : Control
 
 		if (evt == null)
 		{
-			_milestonesStack.AddChild(new Label { Text = "No milestones available." });
+			_milestonesStack.AddChild(RealmUi.Label("No milestones yet.", 18, true));
 			return;
 		}
 
@@ -223,17 +230,20 @@ public partial class EventMenu : Control
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 8);
 
-			var statusIcon = claimed ? "[CLAIMED]" : (reachable ? "[READY]" : $"[{progress}/{ms.StagesRequired}]");
 			var rewardText = FormatReward(ms.Reward);
-			var label = new Label
+			row.AddChild(UiBadgeFactory.CreateRewardBadge(ms.Reward?.Type, ms.Reward?.ItemId, rewardText, new Vector2(36f, 36f)));
+			var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			text.AddThemeConstantOverride("separation", 2);
+			text.AddChild(RealmUi.Label(ms.Label, 18));
+			text.AddChild(RealmUi.Label(rewardText, 18, true));
+			row.AddChild(text);
+			if (claimed || !reachable)
 			{
-				Text = $"{ms.Label}  {statusIcon}  Reward: {rewardText}",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
-			};
-			if (claimed) label.AddThemeColorOverride("font_color", new Color("60d060"));
-			row.AddChild(UiBadgeFactory.CreateRewardBadge(ms.Reward?.Type, ms.Reward?.ItemId, rewardText, new Vector2(30f, 30f)));
-			row.AddChild(label);
+				var state = RealmUi.Label(claimed ? "Claimed" : $"{progress}/{ms.StagesRequired}", 18, true);
+				state.AutowrapMode = TextServer.AutowrapMode.Off; state.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; state.VerticalAlignment = VerticalAlignment.Center;
+				if (claimed) state.AddThemeColorOverride("font_color", new Color("9fd49a"));
+				row.AddChild(state);
+			}
 
 			if (reachable && !claimed)
 			{
@@ -260,7 +270,8 @@ public partial class EventMenu : Control
 
 		// Progress bar
 		var totalStages = evt.Stages.Length;
-		_milestonesStack.AddChild(new Label { Text = $"\nProgress: {progress}/{totalStages} stages cleared" });
+		_milestonesStack.AddChild(new HSeparator());
+		_milestonesStack.AddChild(RealmUi.KeyValue("Stages cleared", $"{progress}/{totalStages}"));
 	}
 
 	private static string FormatReward(SeasonalEventReward reward)

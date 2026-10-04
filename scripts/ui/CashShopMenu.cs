@@ -23,6 +23,12 @@ public partial class CashShopMenu : Control
     {
         BuildModalUi();
         RefreshUi();
+        GameState.Instance.FoodChanged += RebuildResourcesRow;
+    }
+
+    public override void _ExitTree()
+    {
+        if (GameState.Instance != null) GameState.Instance.FoodChanged -= RebuildResourcesRow;
     }
 
     private void BuildModalUi()
@@ -34,9 +40,14 @@ public partial class CashShopMenu : Control
         root.AddThemeConstantOverride("separation", 10);
         AddChild(root);
         root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        _resourcesRow = new HBoxContainer();
-        _resourcesRow.AddThemeConstantOverride("separation", 16);
-        root.AddChild(_resourcesRow);
+        // Balances share the armory's centred strip so both stores read the same way.
+        var balances = new PanelContainer { Name = "StorehouseBalances" };
+        balances.SetMeta("modal_unframed", true);
+        balances.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
+        root.AddChild(balances);
+        _resourcesRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _resourcesRow.AddThemeConstantOverride("separation", 32);
+        balances.AddChild(_resourcesRow);
         BuildCatalog(root);
         RealmModal.Polish(root);
     }
@@ -134,8 +145,8 @@ public partial class CashShopMenu : Control
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_resourcesRow);
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourcesRow.AddChild(new FoodBalance());
+        _resourcesRow.AddChild(HomeResourceUi.Amount("gold", GameState.Instance.Gold.ToString("N0"), $"Gold: {GameState.Instance.Gold:N0}"));
+        _resourcesRow.AddChild(HomeResourceUi.Amount("food", $"{GameState.Instance.Food}/{GameState.FoodRechargeCap}", GameState.Instance.FoodRechargeText));
         RealmModal.Polish(_resourcesRow);
     }
 

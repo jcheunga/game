@@ -93,7 +93,7 @@ public static class OnlineRoomDirectoryService
 		{
 			return
 				"Online room directory:\n" +
-				"Not fetched yet. Use `Refresh Online` to pull internet room listings.\n" +
+				"Not loaded yet. Refresh to find rooms.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

@@ -50,7 +50,7 @@ public partial class UiReviewSmoke : Node
                 await ReviewDeveloperMode((MapMenu)GetTree().CurrentScene);
                 System.IO.File.WriteAllText(_output + "/developer-text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 GD.Print($"DEVELOPER_REVIEW_RESULT: {_failures} failures");
-                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--map-notices"))
             {
@@ -60,7 +60,7 @@ public partial class UiReviewSmoke : Node
                 var menu = (MapMenu)GetTree().CurrentScene;
                 await ReviewMapNotices(menu, Walk(menu).OfType<MapPathCanvas>().Single());
                 GD.Print($"MAP_NOTICE_REVIEW_RESULT: {_failures} failures");
-                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--storehouse"))
             {
@@ -70,7 +70,7 @@ public partial class UiReviewSmoke : Node
                 await ReviewStorehouse((MapMenu)GetTree().CurrentScene);
                 System.IO.File.WriteAllText(_output + "/storehouse-text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 GD.Print($"STOREHOUSE_REVIEW_RESULT: {_failures} failures");
-                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--map-rewards"))
             {
@@ -82,7 +82,7 @@ public partial class UiReviewSmoke : Node
                 var menu = (MapMenu)GetTree().CurrentScene;
                 await ReviewMapRewards(menu, Walk(menu).OfType<MapPathCanvas>().Single());
                 GD.Print($"MAP_REWARD_REVIEW_RESULT: {_failures} failures");
-                GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--poi-map") || OS.GetCmdlineUserArgs().Contains("--atlas-geometry"))
             { await ReviewTileMap(); return; }
@@ -128,14 +128,17 @@ public partial class UiReviewSmoke : Node
                     }
                 }
                 System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-                GD.Print($"TYPOGRAPHY_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                GD.Print($"TYPOGRAPHY_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--typography"))
             {
                 _output = ProjectSettings.GlobalizePath(MobilePresentation.Enabled ? "res://artifacts/typography-phone"
                     : OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
                 System.IO.Directory.CreateDirectory(_output);
-                foreach (var scene in new[] { SceneRouter.MainMenuScene }.Concat(LiveUiReview.ActivityScenes))
+                // --only=ShopMenu,ArenaMenu narrows a review to the screens being polished.
+                var only = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--only="))?["--only=".Length..].Split(',');
+                foreach (var scene in new[] { SceneRouter.MainMenuScene }.Concat(LiveUiReview.ActivityScenes)
+                    .Where(scene => only == null || only.Contains(System.IO.Path.GetFileNameWithoutExtension(scene))))
                 {
                     await Open(scene);
                     await Capture("type-" + System.IO.Path.GetFileNameWithoutExtension(scene));
@@ -151,7 +154,7 @@ public partial class UiReviewSmoke : Node
                 GameState.Instance.PrepareCampaignBattle();
                 await Open("Battle"); await Capture("type-Battle"); AuditText("Battle");
                 System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-                GD.Print($"TYPOGRAPHY_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                GD.Print($"TYPOGRAPHY_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--all-menus"))
             {
@@ -167,7 +170,7 @@ public partial class UiReviewSmoke : Node
                     AuditText(scene);
                     await Capture("audit-" + System.IO.Path.GetFileNameWithoutExtension(scene));
                 }
-                GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--playthrough"))
             {
@@ -187,7 +190,7 @@ public partial class UiReviewSmoke : Node
                     if (tick % 12 == 0) Send(new InputEventKey { Keycode = Key.Z, Pressed = true });
                     if (tick == 15) await Capture("20-battle-in-progress");
                     await Wait(1.5);
-                    if (Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Retry Stage")) break;
+                    if (Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Retry stage")) break;
                 }
                 Engine.TimeScale = 1;
                 await Wait(0.5); // Capture the readable end state after its entrance animation.
@@ -195,10 +198,10 @@ public partial class UiReviewSmoke : Node
                 Check(GameState.Instance.GetStageStars(1) > 0, "Real-input campaign battle reaches victory");
                 Check(SaveSystem.Instance.TryLoad(out var result) && result.StageStars.Length > 0 && result.StageStars[0] > 0, "Victory stars persist to disk");
                 await Capture("21-victory");
-                await Press("Back To Map");
+                await Press("Back to map");
                 Check(GetTree().CurrentScene is MapMenu, "Victory returns to the campaign map");
                 await Capture("23-map-after-victory");
-                GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
+                GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             await Open("MainMenu");
             Check(!Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ScrollContainer>().Any(x => x.IsVisibleInTree()), "Home has no visible scrolling regions");
@@ -272,9 +275,9 @@ public partial class UiReviewSmoke : Node
             await PressHint("Battle menu [Escape]"); await Press("Quit battle"); await Capture("17-retreat");
             Check(SaveSystem.Instance.TryLoad(out _), "Isolated save reloads");
             GD.Print($"UI_REVIEW_RESULT: {_failures} failures");
-            GetTree().Quit(_failures == 0 ? 0 : 1);
+            QuitAfterAudio(_failures == 0 ? 0 : 1);
         }
-        catch (Exception ex) { GD.PushError(ex.ToString()); GetTree().Quit(1); }
+        catch (Exception ex) { GD.PushError(ex.ToString()); QuitAfterAudio(1); }
     }
 
     private async Task CheckModeIsolation()
@@ -444,7 +447,7 @@ public partial class UiReviewSmoke : Node
     private async Task Open(string scene)
     {
         await LiveUiReview.Open(this, scene);
-        await Wait(0.2);
+        await Wait(0.4); // Let the modal fade-in finish before captures.
     }
     private async Task Press(string text)
     {
@@ -489,6 +492,13 @@ public partial class UiReviewSmoke : Node
     private void Check(bool condition, string label)
     { GD.Print($"{(condition ? "PASS" : "FAIL")} {label}"); if (!condition) _failures++; }
     private async Task Wait(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
+
+    // Quitting mid-track leaves the music's playback referenced and the engine reports it as leaked.
+    private async void QuitAfterAudio(int code)
+    {
+        await LiveUiReview.StopAudio(this);
+        GetTree().Quit(code);
+    }
     private static IEnumerable<Node> Walk(Node node)
     {
         yield return node;

@@ -88,7 +88,7 @@ public static class OnlineRoomScoreboardService
 			return
 				"Online room scoreboard:\n" +
 				$"Room {ticket.RoomTitle} is armed, but no scoreboard snapshot is cached yet.\n" +
-				"Use `Refresh Online` or `Refresh Room Scoreboard` to pull results.\n" +
+				"Refresh to load the latest results.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

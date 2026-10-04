@@ -35,6 +35,6 @@ public partial class UiReviewSmoke
             await Capture($"stage-{stage}-rewards");
         }
         GD.Print($"PROGRESSION_UI_RESULT: {_failures} failures");
-        GetTree().Quit(_failures == 0 ? 0 : 1);
+        QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

@@ -82,7 +82,7 @@ public static class OnlineRoomSessionService
 		{
 			return
 				"Online room session:\n" +
-				"No join ticket cached yet. Request Join first, then `Refresh Online` will pull the room lobby snapshot.\n" +
+				"No room joined yet. Request a seat, then refresh to load the lobby.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 
@@ -92,7 +92,7 @@ public static class OnlineRoomSessionService
 			return
 				"Online room session:\n" +
 				$"Join ticket ready for {ticket.RoomTitle}, but no room snapshot is cached yet.\n" +
-				"Use `Refresh Online` to pull the current runner/ready state.\n" +
+				"Refresh to see who is ready.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

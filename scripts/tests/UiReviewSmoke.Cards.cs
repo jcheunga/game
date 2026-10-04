@@ -107,6 +107,6 @@ public partial class UiReviewSmoke
         finally { MobilePresentation.TestOverride=null; }
         await LiveUiReview.StopAudio(this);
         GD.Print($"DEPLOYMENT_CARD_RESULT: {_failures} failures");
-        GetTree().Quit(_failures==0?0:1);
+        QuitAfterAudio(_failures==0?0:1);
     }
 }

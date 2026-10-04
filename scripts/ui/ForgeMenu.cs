@@ -55,7 +55,7 @@ public partial class ForgeMenu : Control
 		titleRow.AddChild(_resourcesRow);
 
 		// Dismantle panel
-		_dismantlePanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(380f, 480f) };
+		_dismantlePanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(300f, 480f) };
 		AddChild(_dismantlePanel);
 		var dismantleOuter = new MarginContainer();
 		dismantleOuter.AddThemeConstantOverride("margin_left", 8);
@@ -66,16 +66,16 @@ public partial class ForgeMenu : Control
 		var dismantleInner = new VBoxContainer();
 		dismantleInner.AddThemeConstantOverride("separation", 4);
 		dismantleOuter.AddChild(dismantleInner);
-		dismantleInner.AddChild(new Label { Text = "Dismantle", HorizontalAlignment = HorizontalAlignment.Center });
-		dismantleInner.AddChild(new Label { Text = "Break relics into shards.", HorizontalAlignment = HorizontalAlignment.Center });
-		var dismantleScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f) };
+		dismantleInner.AddChild(RealmUi.SectionTitle("Dismantle"));
+		dismantleInner.AddChild(RealmUi.Label("Break relics into shards.", 18, true));
+		var dismantleScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		dismantleInner.AddChild(dismantleScroll);
 		_dismantleStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_dismantleStack.AddThemeConstantOverride("separation", 4);
 		dismantleScroll.AddChild(_dismantleStack);
 
 		// Fuse panel
-		_fusePanel = new PanelContainer { Position = new Vector2(420f, 122f), Size = new Vector2(380f, 480f) };
+		_fusePanel = new PanelContainer { Position = new Vector2(340f, 122f), Size = new Vector2(300f, 480f) };
 		AddChild(_fusePanel);
 		var fuseOuter = new MarginContainer();
 		fuseOuter.AddThemeConstantOverride("margin_left", 8);
@@ -86,16 +86,16 @@ public partial class ForgeMenu : Control
 		var fuseInner = new VBoxContainer();
 		fuseInner.AddThemeConstantOverride("separation", 4);
 		fuseOuter.AddChild(fuseInner);
-		fuseInner.AddChild(new Label { Text = "Fuse", HorizontalAlignment = HorizontalAlignment.Center });
-		fuseInner.AddChild(new Label { Text = "Combine 3 same-rarity relics.", HorizontalAlignment = HorizontalAlignment.Center });
-		var fuseScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f) };
+		fuseInner.AddChild(RealmUi.SectionTitle("Fuse"));
+		fuseInner.AddChild(RealmUi.Label("Combine three relics of one rarity.", 18, true));
+		var fuseScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		fuseInner.AddChild(fuseScroll);
 		_fuseStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_fuseStack.AddThemeConstantOverride("separation", 4);
 		fuseScroll.AddChild(_fuseStack);
 
 		// Craft panel
-		_craftPanel = new PanelContainer { Position = new Vector2(816f, 122f), Size = new Vector2(440f, 480f) };
+		_craftPanel = new PanelContainer { Position = new Vector2(656f, 122f), Size = new Vector2(600f, 480f) };
 		AddChild(_craftPanel);
 		var craftOuter = new MarginContainer();
 		craftOuter.AddThemeConstantOverride("margin_left", 8);
@@ -106,9 +106,9 @@ public partial class ForgeMenu : Control
 		var craftInner = new VBoxContainer();
 		craftInner.AddThemeConstantOverride("separation", 4);
 		craftOuter.AddChild(craftInner);
-		craftInner.AddChild(new Label { Text = "Craft", HorizontalAlignment = HorizontalAlignment.Center });
-		craftInner.AddChild(new Label { Text = "Forge specific relics with shards + gold.", HorizontalAlignment = HorizontalAlignment.Center });
-		var craftScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f) };
+		craftInner.AddChild(RealmUi.SectionTitle("Craft"));
+		craftInner.AddChild(RealmUi.Label("Forge a chosen relic from shards and gold.", 18, true));
+		var craftScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		craftInner.AddChild(craftScroll);
 		_craftStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_craftStack.AddThemeConstantOverride("separation", 4);
@@ -159,20 +159,9 @@ public partial class ForgeMenu : Control
 			var equip = GameData.GetEquipment(relicId);
 			if (equip == null) continue;
 			var shards = RelicForgeCatalog.GetDismantleShards(equip.Rarity);
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 6);
-			row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(34f, 34f)));
-			var rarityColor = GetRarityColor(equip.Rarity);
-			var label = new Label
-			{
-				Text = $"{equip.DisplayName} ({equip.Rarity}) -> +{shards} shards",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
-			};
-			label.AddThemeColorOverride("font_color", rarityColor);
-			row.AddChild(label);
+			var row = RelicRow(equip, $"{Capitalize(equip.Rarity)} · +{shards} shards");
 			var capturedId = relicId;
-			var btn = new RealmButton { Text = "Dismantle", CustomMinimumSize = new Vector2(90f, 0f) };
+			var btn = new RealmButton { Text = "Dismantle", CustomMinimumSize = new Vector2(120f, 44f), SizeFlagsVertical = SizeFlags.ShrinkCenter };
 			btn.Pressed += () =>
 			{
 				if (GameState.Instance.TryDismantleRelic(capturedId, out var gained))
@@ -188,7 +177,7 @@ public partial class ForgeMenu : Control
 
 		if (owned.Count == 0)
 		{
-			_dismantleStack.AddChild(new Label { Text = "No relics to dismantle." });
+			_dismantleStack.AddChild(RealmUi.Label("No relics to dismantle.", 18, true));
 		}
 	}
 
@@ -212,14 +201,14 @@ public partial class ForgeMenu : Control
 		foreach (var (rarity, relics) in byRarity.OrderBy(p => p.Key))
 		{
 			var targetRarity = RelicForgeCatalog.GetFusionTargetRarity(rarity);
-			var label = new Label { Text = $"{rarity} ({relics.Count}/3) -> {targetRarity}" };
-			label.AddThemeColorOverride("font_color", GetRarityColor(rarity));
+			var label = RealmUi.KeyValue($"{Capitalize(rarity)} → {Capitalize(targetRarity)}", $"{relics.Count}/{RelicForgeCatalog.RelicsRequiredForFusion}");
+			label.GetChild<Label>(0).AddThemeColorOverride("font_color", GetRarityColor(rarity));
 			_fuseStack.AddChild(label);
 
 			if (relics.Count >= RelicForgeCatalog.RelicsRequiredForFusion)
 			{
 				var capturedRelics = relics.Take(3).ToArray();
-				var btn = new RealmButton { Text = $"Fuse 3 {rarity} relics" };
+				var btn = new RealmButton { Text = $"Fuse 3 {rarity.ToLowerInvariant()} relics", CustomMinimumSize = new Vector2(0f, 44f) };
 				btn.Pressed += () =>
 				{
 					if (GameState.Instance.TryFuseRelics(capturedRelics, out var resultId))
@@ -239,7 +228,7 @@ public partial class ForgeMenu : Control
 
 		if (byRarity.Count == 0)
 		{
-			_fuseStack.AddChild(new Label { Text = "No fuseable relics." });
+			_fuseStack.AddChild(RealmUi.Label("No matching sets yet.", 18, true));
 		}
 	}
 
@@ -254,22 +243,11 @@ public partial class ForgeMenu : Control
 			var recipe = RelicForgeCatalog.GetCraftRecipe(equip.Id);
 			if (recipe == null) continue;
 
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 6);
-			row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(34f, 34f)));
-			var rarityColor = GetRarityColor(equip.Rarity);
-			var label = new Label
-			{
-				Text = $"{equip.DisplayName} ({equip.Rarity})  {recipe.ShardCost} shards + {recipe.GoldCost} gold",
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				VerticalAlignment = VerticalAlignment.Center
-			};
-			label.AddThemeColorOverride("font_color", rarityColor);
-			row.AddChild(label);
+			var row = RelicRow(equip, $"{Capitalize(equip.Rarity)} · {recipe.ShardCost} shards · {recipe.GoldCost:N0} gold");
 
 			var canAfford = GameState.Instance.RelicShards >= recipe.ShardCost && GameState.Instance.Gold >= recipe.GoldCost;
 			var capturedId = equip.Id;
-			var btn = new RealmButton { Text = "Craft", CustomMinimumSize = new Vector2(80f, 0f), Disabled = !canAfford };
+			var btn = new RealmButton { Text = "Craft", CustomMinimumSize = new Vector2(100f, 44f), SizeFlagsVertical = SizeFlags.ShrinkCenter, Disabled = !canAfford };
 			btn.Pressed += () =>
 			{
 				if (GameState.Instance.TryForgeRelic(capturedId, out var msg))
@@ -287,13 +265,31 @@ public partial class ForgeMenu : Control
 		}
 	}
 
+	// A relic badge, its name in rarity ink, and one muted detail line.
+	private static HBoxContainer RelicRow(EquipmentDefinition equip, string detail)
+	{
+		var row = new HBoxContainer();
+		row.AddThemeConstantOverride("separation", 10);
+		row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(40f, 40f)));
+		var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		text.AddThemeConstantOverride("separation", 0);
+		var name = RealmUi.Label(equip.DisplayName, 18);
+		name.AddThemeColorOverride("font_color", GetRarityColor(equip.Rarity));
+		text.AddChild(name);
+		text.AddChild(RealmUi.Label(detail, 18, true));
+		row.AddChild(text);
+		return row;
+	}
+
+	private static string Capitalize(string text) => string.IsNullOrEmpty(text) ? "" : char.ToUpperInvariant(text[0]) + text[1..];
+
 	private static Color GetRarityColor(string rarity)
 	{
 		return rarity?.ToLowerInvariant() switch
 		{
-			"rare" => new Color("4488ff"),
-			"epic" => new Color("a855f7"),
-			_ => new Color("c8c8c8")
+			"rare" => new Color("8fb4ec"),
+			"epic" => new Color("c3a0ec"),
+			_ => ModalUi.Cream
 		};
 	}
 }

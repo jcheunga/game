@@ -10,7 +10,8 @@ public partial class ChallengeLeaderboardService : Node
 
 	private readonly Dictionary<string, ChallengeLeaderboardSnapshot> _cache = new(StringComparer.OrdinalIgnoreCase);
 	private readonly IChallengeLeaderboardProvider _localProvider = new LocalJournalChallengeLeaderboardProvider();
-	private string _lastStatus = "Remote board not fetched yet.";
+	private const string NotFetchedStatus = "Remote board not fetched yet.";
+	private string _lastStatus = NotFetchedStatus;
 
 	public override void _EnterTree()
 	{
@@ -59,10 +60,8 @@ public partial class ChallengeLeaderboardService : Node
 		var snapshot = GetCachedSnapshot(normalizedCode);
 		if (snapshot == null)
 		{
-			return
-				"Remote leaderboard:\n" +
-				"Not fetched yet for this board. Use `Refresh Board` to pull standings.\n" +
-				$"Provider status: {_lastStatus}";
+			// After a failed refresh the provider's reason is more useful than the generic prompt.
+			return _lastStatus == NotFetchedStatus ? "Not loaded yet. Refresh to load standings." : $"Not loaded yet. {_lastStatus}";
 		}
 
 		var builder = new StringBuilder();

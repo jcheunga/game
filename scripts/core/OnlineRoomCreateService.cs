@@ -100,7 +100,7 @@ public static class OnlineRoomCreateService
 		{
 			return
 				"Online room host:\n" +
-				"No hosted internet room published yet. Use `Host Online Room` to publish the selected async board.\n" +
+				"No room hosted yet. Use Host to open one for the selected board.\n" +
 				$"Provider status: {_lastStatus}";
 		}
 

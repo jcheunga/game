@@ -96,6 +96,6 @@ public partial class UiReviewSmoke
         await Capture("material-library");
         GameState.Instance.SetHighContrast(true); await Wait(.1); await Capture("material-library-high-contrast");
         GameState.Instance.SetHighContrast(false);
-        GD.Print($"UI_MATERIAL_RESULT: {_failures} failures"); GetTree().Quit(_failures==0?0:1);
+        GD.Print($"UI_MATERIAL_RESULT: {_failures} failures"); QuitAfterAudio(_failures==0?0:1);
     }
 }

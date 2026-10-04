@@ -14,12 +14,7 @@ public partial class SeasonPassMenu : Control
 	private HBoxContainer _tierStrip = null!;
 	private Button _upgradeBtn = null!;
 
-	private static readonly Color ColorClaimed = new("22c55e");
-	private static readonly Color ColorCurrent = new("eab308");
-	private static readonly Color ColorFuture = new("aab5b2");
-	private static readonly Color ColorPremiumLocked = new("9b9da8");
-	private static readonly Color ColorFreeReward = new("3b82f6");
-	private static readonly Color ColorPremiumReward = new("a855f7");
+	private static readonly Color ColorClaimed = new("9fd49a");
 
 	public override void _Ready()
 	{
@@ -75,7 +70,7 @@ public partial class SeasonPassMenu : Control
 		titleRow.AddChild(_tierXpLabel);
 
 		// ── Tier track panel ──
-		_trackPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(1232f, 380f) };
+		_trackPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(1232f, 470f) };
 		AddChild(_trackPanel);
 		var trackMargin = new MarginContainer();
 		trackMargin.AddThemeConstantOverride("margin_left", 8);
@@ -88,50 +83,52 @@ public partial class SeasonPassMenu : Control
 		trackVBox.AddThemeConstantOverride("separation", 6);
 		trackMargin.AddChild(trackVBox);
 
-		trackVBox.AddChild(new Label
-		{
-			Text = "Free Reward",
-			HorizontalAlignment = HorizontalAlignment.Left
-		});
-
-		var trackScroll = new ScrollContainer
-		{
-			SizeFlagsVertical = SizeFlags.ExpandFill,
-			CustomMinimumSize = new Vector2(0f, 300f),
-			HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-			VerticalScrollMode = ScrollContainer.ScrollMode.Disabled
-		};
-		trackVBox.AddChild(trackScroll);
-
-		_tierStrip = new HBoxContainer();
-		_tierStrip.AddThemeConstantOverride("separation", 6);
-		trackScroll.AddChild(_tierStrip);
-
-		// ── XP progress panel ──
-		_progressPanel = new PanelContainer { Position = new Vector2(24f, 514f), Size = new Vector2(1232f, 56f) };
-		AddChild(_progressPanel);
-		var progressMargin = new MarginContainer();
-		progressMargin.AddThemeConstantOverride("margin_left", 12);
-		progressMargin.AddThemeConstantOverride("margin_right", 12);
-		progressMargin.AddThemeConstantOverride("margin_top", 8);
-		progressMargin.AddThemeConstantOverride("margin_bottom", 8);
-		_progressPanel.AddChild(progressMargin);
-		var progressStack = new VBoxContainer();
-		progressStack.AddThemeConstantOverride("separation", 2);
-		progressMargin.AddChild(progressStack);
-		_xpBarLabel = new Label
-		{
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		_xpBarLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		progressStack.AddChild(_xpBarLabel);
+		_xpBarLabel = RealmUi.Label("", 18, true);
+		trackVBox.AddChild(_xpBarLabel);
 		_xpBar = new ProgressBar
 		{
-			CustomMinimumSize = new Vector2(0f, 18f),
+			CustomMinimumSize = new Vector2(0f, 10f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			ShowPercentage = false
 		};
-		progressStack.AddChild(_xpBar);
+		trackVBox.AddChild(_xpBar);
+
+		var trackRow = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+		trackRow.AddThemeConstantOverride("separation", 10);
+		trackVBox.AddChild(trackRow);
+		// Row names line up with the tier columns: header, free reward, premium reward.
+		var legend = new VBoxContainer { CustomMinimumSize = new Vector2(96f, 0f) };
+		legend.AddThemeConstantOverride("separation", TrackGap);
+		trackRow.AddChild(legend);
+		var header = new Control { CustomMinimumSize = new Vector2(0f, TierHeaderHeight) };
+		header.SetMeta(RealmModal.KeepMinimum, true);
+		legend.AddChild(header);
+		foreach (var name in new[] { "Free", "Premium" })
+		{
+			var label = RealmUi.Label(name, 18, true);
+			label.CustomMinimumSize = new Vector2(0f, RewardHeight);
+			label.AutowrapMode = TextServer.AutowrapMode.Off;
+			label.SetMeta(RealmModal.KeepMinimum, true);
+			label.VerticalAlignment = VerticalAlignment.Center;
+			legend.AddChild(label);
+		}
+		var trackScroll = new ScrollContainer
+		{
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			CustomMinimumSize = new Vector2(0f, 220f),
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+			VerticalScrollMode = ScrollContainer.ScrollMode.Disabled
+		};
+		trackRow.AddChild(trackScroll);
+		_tierStrip = new HBoxContainer();
+		_tierStrip.AddThemeConstantOverride("separation", 8);
+		trackScroll.AddChild(_tierStrip);
+
+		// The progress readout now sits above the track; this panel only reserves the old layout band.
+		_progressPanel = new PanelContainer { Visible = false };
+		_progressPanel.SetMeta("modal_hidden", true);
+		AddChild(_progressPanel);
 
 		// ── Bottom section: upgrade + status + nav ──
 		_bottomPanel = new PanelContainer { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 80f) };
@@ -148,11 +145,10 @@ public partial class SeasonPassMenu : Control
 
 		_upgradeBtn = new RealmButton
 		{
-			Text = "Upgrade to Premium",
+			Text = "Unlock premium",
 			CustomMinimumSize = new Vector2(200f, 0f),
 			Visible = !GameState.Instance.HasPremiumPass
 		};
-		_upgradeBtn.AddThemeColorOverride("font_color", ColorPremiumReward);
 		_upgradeBtn.Pressed += OnUpgradePremium;
 		bottomRow.AddChild(_upgradeBtn);
 
@@ -176,7 +172,7 @@ public partial class SeasonPassMenu : Control
 		var currentTier = gs.SeasonPassTier;
 		var currentXp = gs.SeasonPassXP;
 
-		_tierXpLabel.Text = $"Tier {currentTier}  |  XP: {currentXp}";
+		_tierXpLabel.Text = $"Tier {currentTier} · {currentXp:N0} XP";
 		_upgradeBtn.Visible = !gs.HasPremiumPass;
 
 		// XP progress toward next tier
@@ -189,8 +185,8 @@ public partial class SeasonPassMenu : Control
 		_xpBar.MaxValue = xpRange;
 		_xpBar.Value = currentTier >= 50 ? xpRange : Math.Clamp(xpProgress, 0, xpRange);
 		_xpBarLabel.Text = currentTier >= 50
-			? "Max Tier Reached!"
-			: $"{xpProgress} / {xpRange} XP to Tier {nextTier}";
+			? $"Tier {currentTier} · maximum tier reached"
+			: $"Tier {currentTier} · {Math.Max(0, xpProgress):N0}/{xpRange:N0} XP to tier {nextTier}";
 
 		RebuildTierStrip();
 	}
@@ -205,89 +201,52 @@ public partial class SeasonPassMenu : Control
 
 		foreach (var tier in tiers)
 		{
-			var col = new VBoxContainer { CustomMinimumSize = new Vector2(110f, 0f) };
-			col.AddThemeConstantOverride("separation", 4);
+			var col = new VBoxContainer { CustomMinimumSize = new Vector2(128f, 0f) };
+			col.AddThemeConstantOverride("separation", TrackGap);
 
-			// Tier number label
-			var tierColor = tier.Tier < currentTier ? ColorClaimed
-				: tier.Tier == currentTier ? ColorCurrent
-				: ColorFuture;
-			var tierLabel = new Label
-			{
-				Text = $"Tier {tier.Tier}",
-				HorizontalAlignment = HorizontalAlignment.Center
-			};
-			tierLabel.AddThemeColorOverride("font_color", tierColor);
+			var tierLabel = RealmUi.Label($"Tier {tier.Tier}", 18, tier.Tier > currentTier);
+			tierLabel.HorizontalAlignment = HorizontalAlignment.Center;
+			tierLabel.CustomMinimumSize = new Vector2(0f, TierHeaderHeight);
+			tierLabel.VerticalAlignment = VerticalAlignment.Center;
+			tierLabel.SetMeta(RealmModal.KeepMinimum, true);
+			if (tier.Tier == currentTier) tierLabel.AddThemeColorOverride("font_color", RealmUi.Gold);
 			col.AddChild(tierLabel);
 
-			var freePreview = new CenterContainer();
-			freePreview.AddChild(UiBadgeFactory.CreateRewardBadge(tier.FreeRewardType, "", tier.FreeRewardLabel, new Vector2(34f, 34f)));
-			col.AddChild(freePreview);
-
-			// Free reward button
 			var freeClaimed = gs.HasClaimedSeasonFreeTier(tier.Tier);
-			var freeUnlocked = tier.Tier <= currentTier;
-			var freeBtn = new RealmButton
-			{
-				Text = freeClaimed ? $"{tier.FreeRewardLabel} [Claimed]" : tier.FreeRewardLabel,
-				CustomMinimumSize = new Vector2(110f, 52f),
-				Disabled = freeClaimed || !freeUnlocked
-			};
-			if (freeClaimed)
-			{
-				freeBtn.AddThemeColorOverride("font_color", ColorClaimed);
-				freeBtn.AddThemeColorOverride("font_disabled_color", ColorClaimed);
-			}
-			else if (freeUnlocked)
-			{
-				freeBtn.AddThemeColorOverride("font_color", ColorFreeReward);
-			}
-			else
-			{
-				freeBtn.AddThemeColorOverride("font_disabled_color", ColorFuture);
-			}
-
 			var capturedTierFree = tier.Tier;
-			freeBtn.Pressed += () => OnClaimReward(capturedTierFree, isPremium: false);
-			col.AddChild(freeBtn);
+			col.AddChild(RewardButton(tier.FreeRewardType, "", tier.FreeRewardLabel, freeClaimed, tier.Tier <= currentTier,
+				() => OnClaimReward(capturedTierFree, isPremium: false)));
 
-			var premiumPreview = new CenterContainer();
-			premiumPreview.AddChild(UiBadgeFactory.CreateRewardBadge(tier.PremiumRewardType, tier.PremiumRewardItemId, tier.PremiumRewardLabel, new Vector2(34f, 34f)));
-			col.AddChild(premiumPreview);
-
-			// Premium reward button
 			var premClaimed = gs.HasClaimedSeasonPremiumTier(tier.Tier);
-			var premUnlocked = tier.Tier <= currentTier && gs.HasPremiumPass;
-			var premBtn = new RealmButton
-			{
-				Text = premClaimed ? $"{tier.PremiumRewardLabel} [Claimed]" : tier.PremiumRewardLabel,
-				CustomMinimumSize = new Vector2(110f, 52f),
-				Disabled = premClaimed || !premUnlocked
-			};
-			if (premClaimed)
-			{
-				premBtn.AddThemeColorOverride("font_color", ColorClaimed);
-				premBtn.AddThemeColorOverride("font_disabled_color", ColorClaimed);
-			}
-			else if (!gs.HasPremiumPass)
-			{
-				premBtn.AddThemeColorOverride("font_disabled_color", ColorPremiumLocked);
-			}
-			else if (premUnlocked)
-			{
-				premBtn.AddThemeColorOverride("font_color", ColorPremiumReward);
-			}
-			else
-			{
-				premBtn.AddThemeColorOverride("font_disabled_color", ColorFuture);
-			}
-
 			var capturedTierPrem = tier.Tier;
-			premBtn.Pressed += () => OnClaimReward(capturedTierPrem, isPremium: true);
-			col.AddChild(premBtn);
+			col.AddChild(RewardButton(tier.PremiumRewardType, tier.PremiumRewardItemId, tier.PremiumRewardLabel, premClaimed,
+				tier.Tier <= currentTier && gs.HasPremiumPass, () => OnClaimReward(capturedTierPrem, isPremium: true)));
 
 			_tierStrip.AddChild(col);
 		}
+	}
+
+	private const int TrackGap = 8, TierHeaderHeight = 32, RewardHeight = 64;
+
+	// The reward's icon and amount form the button; an unlocked reward is the primary action.
+	private Button RewardButton(string type, string itemId, string label, bool claimed, bool unlocked, Action claim)
+	{
+		var button = new RealmButton
+		{
+			Text = claimed ? "Claimed" : label,
+			Icon = UiArtLoader.TryLoadRewardIcon(type, itemId),
+			ExpandIcon = true,
+			CenterIconAndText = true,
+			CustomMinimumSize = new Vector2(128f, RewardHeight),
+			Disabled = claimed || !unlocked,
+			TooltipText = claimed ? $"{label} · claimed" : unlocked ? $"Claim {label}" : label,
+			MouseDefaultCursorShape = CursorShape.PointingHand
+		};
+		button.AddThemeConstantOverride("icon_max_width", 28);
+		button.SetMeta("painted_resource_icon", true);
+		if (unlocked && !claimed) button.SetMeta("realm_primary", true);
+		button.Pressed += claim;
+		return button;
 	}
 
 	private void OnClaimReward(int tier, bool isPremium)
@@ -301,7 +260,7 @@ public partial class SeasonPassMenu : Control
 		else
 		{
 			_statusLabel.Text = message;
-			_statusLabel.AddThemeColorOverride("font_color", new Color("ef4444"));
+			_statusLabel.AddThemeColorOverride("font_color", new Color("e58f84"));
 		}
 	}
 

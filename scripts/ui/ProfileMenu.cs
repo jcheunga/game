@@ -60,8 +60,8 @@ public partial class ProfileMenu : Control
 		var generalInner = new VBoxContainer();
 		generalInner.AddThemeConstantOverride("separation", 6);
 		generalOuter.AddChild(generalInner);
-		generalInner.AddChild(new Label { Text = "General & Campaign", HorizontalAlignment = HorizontalAlignment.Center });
-		var generalScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
+		generalInner.AddChild(RealmUi.SectionTitle("Caravan"));
+		var generalScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		generalInner.AddChild(generalScroll);
 		_generalStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_generalStack.AddThemeConstantOverride("separation", 6);
@@ -79,8 +79,8 @@ public partial class ProfileMenu : Control
 		var combatInner = new VBoxContainer();
 		combatInner.AddThemeConstantOverride("separation", 6);
 		combatOuter.AddChild(combatInner);
-		combatInner.AddChild(new Label { Text = "Combat & Records", HorizontalAlignment = HorizontalAlignment.Center });
-		var combatScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
+		combatInner.AddChild(RealmUi.SectionTitle("Battles"));
+		var combatScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		combatInner.AddChild(combatScroll);
 		_combatStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_combatStack.AddThemeConstantOverride("separation", 6);
@@ -98,8 +98,8 @@ public partial class ProfileMenu : Control
 		var collectionInner = new VBoxContainer();
 		collectionInner.AddThemeConstantOverride("separation", 6);
 		collectionOuter.AddChild(collectionInner);
-		collectionInner.AddChild(new Label { Text = "Collection & Achievements", HorizontalAlignment = HorizontalAlignment.Center });
-		var collectionScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
+		collectionInner.AddChild(RealmUi.SectionTitle("Collection"));
+		var collectionScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		collectionInner.AddChild(collectionScroll);
 		_collectionStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_collectionStack.AddThemeConstantOverride("separation", 6);
@@ -139,7 +139,7 @@ public partial class ProfileMenu : Control
 			VerticalAlignment = VerticalAlignment.Center,
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 		};
-		callsignLabel.AddThemeColorOverride("font_color", new Color("60a0ff"));
+		callsignLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
 		titleRow.AddChild(callsignLabel);
 
 		RebuildGeneralPanel(gs);
@@ -152,9 +152,8 @@ public partial class ProfileMenu : Control
 		foreach (var child in _generalStack.GetChildren()) child.QueueFree();
 
 		AddStatRow(_generalStack, "Callsign", gs.PlayerCallsign);
-		AddStatRow(_generalStack, "Prestige Level", gs.PrestigeLevel.ToString());
+		AddStatRow(_generalStack, "Prestige level", gs.PrestigeLevel.ToString());
 
-		_generalStack.AddChild(new HSeparator());
 		_generalStack.AddChild(MakeSubheading("Currencies"));
 
 		AddRewardStatRow(_generalStack, "gold", "Gold", gs.Gold.ToString("N0"));
@@ -164,12 +163,11 @@ public partial class ProfileMenu : Control
 		AddRewardStatRow(_generalStack, "tomes", "Tomes", gs.Tomes.ToString("N0"));
 		AddRewardStatRow(_generalStack, "essence", "Essence", gs.Essence.ToString("N0"));
 
-		_generalStack.AddChild(new HSeparator());
 		_generalStack.AddChild(MakeSubheading("Campaign"));
 
-		AddStatRow(_generalStack, "Stages Cleared", $"{gs.HighestUnlockedStage} / {gs.MaxStage}");
-		AddStatRow(_generalStack, "Total Stars", gs.TotalStarsEarned.ToString());
-		AddStatRow(_generalStack, "Hard Mode Cleared", gs.HardModeHighestCleared.ToString());
+		AddStatRow(_generalStack, "Stages cleared", $"{gs.HighestUnlockedStage}/{gs.MaxStage}");
+		AddStatRow(_generalStack, "Stars earned", gs.TotalStarsEarned.ToString());
+		AddStatRow(_generalStack, "Hard mode cleared", gs.HardModeHighestCleared.ToString());
 	}
 
 	private void RebuildCombatPanel(GameState gs)
@@ -177,27 +175,25 @@ public partial class ProfileMenu : Control
 		foreach (var child in _combatStack.GetChildren()) child.QueueFree();
 
 		var totalBattles = gs.EndlessRuns + gs.ChallengeRuns + gs.BossRushRuns;
-		AddStatRow(_combatStack, "Total Battles", totalBattles.ToString("N0"));
-		AddStatRow(_combatStack, "Endless Runs", gs.EndlessRuns.ToString("N0"));
-		AddStatRow(_combatStack, "Challenge Runs", gs.ChallengeRuns.ToString("N0"));
-		AddStatRow(_combatStack, "Boss Rush Runs", gs.BossRushRuns.ToString("N0"));
+		AddStatRow(_combatStack, "Total battles", totalBattles.ToString("N0"));
+		AddStatRow(_combatStack, "Endless runs", gs.EndlessRuns.ToString("N0"));
+		AddStatRow(_combatStack, "Challenge runs", gs.ChallengeRuns.ToString("N0"));
+		AddStatRow(_combatStack, "Boss rush runs", gs.BossRushRuns.ToString("N0"));
 
-		_combatStack.AddChild(new HSeparator());
 		_combatStack.AddChild(MakeSubheading("Records"));
 
-		AddStatRow(_combatStack, "Best Endless Wave", gs.BestEndlessWave.ToString());
-		AddStatRow(_combatStack, "Best Boss Rush Wave", gs.BestBossRushWave.ToString());
+		AddStatRow(_combatStack, "Best endless wave", gs.BestEndlessWave.ToString());
+		AddStatRow(_combatStack, "Best boss rush wave", gs.BestBossRushWave.ToString());
 
-		_combatStack.AddChild(new HSeparator());
 		_combatStack.AddChild(MakeSubheading("Arena"));
 
 		var tier = gs.GetArenaTier();
-		AddStatRow(_combatStack, "Arena Rating", $"{gs.ArenaRating} ({tier.Title})");
-		AddStatRow(_combatStack, "Arena W / L", $"{gs.ArenaWins} / {gs.ArenaLosses}");
+		AddStatRow(_combatStack, "Rating", $"{gs.ArenaRating} · {tier.Title}");
+		AddStatRow(_combatStack, "Record", $"{gs.ArenaWins} wins · {gs.ArenaLosses} losses");
 
-		_combatStack.AddChild(new HSeparator());
 
-		AddStatRow(_combatStack, "Expeditions Completed", gs.TotalExpeditionsCompleted.ToString());
+		_combatStack.AddChild(MakeSubheading("Expeditions"));
+		AddStatRow(_combatStack, "Completed", gs.TotalExpeditionsCompleted.ToString());
 	}
 
 	private void RebuildCollectionPanel(GameState gs)
@@ -208,27 +204,24 @@ public partial class ProfileMenu : Control
 		var ownedSpells = gs.GetOwnedPlayerSpells().Count;
 		var ownedRelics = gs.GetOwnedEquipment().Count;
 
-		AddRewardStatRow(_collectionStack, "unit", "Units Owned", ownedUnits.ToString());
-		AddRewardStatRow(_collectionStack, "spell", "Spells Owned", ownedSpells.ToString());
-		AddRewardStatRow(_collectionStack, "relic", "Relics Owned", ownedRelics.ToString());
+		AddRewardStatRow(_collectionStack, "unit", "Allies", ownedUnits.ToString());
+		AddRewardStatRow(_collectionStack, "spell", "Spells", ownedSpells.ToString());
+		AddRewardStatRow(_collectionStack, "relic", "Relics", ownedRelics.ToString());
 
-		_collectionStack.AddChild(new HSeparator());
 		_collectionStack.AddChild(MakeSubheading("Codex"));
 
 		var codexDiscovered = gs.DiscoveredCodexCount;
 		var codexTotal = CodexCatalog.TotalEntries;
 		var codexPct = codexTotal > 0 ? (int)(codexDiscovered * 100f / codexTotal) : 0;
-		AddStatRow(_collectionStack, "Codex Completion", $"{codexDiscovered} / {codexTotal}  ({codexPct}%)");
+		AddStatRow(_collectionStack, "Entries discovered", $"{codexDiscovered}/{codexTotal} · {codexPct}%");
 
-		_collectionStack.AddChild(new HSeparator());
-		_collectionStack.AddChild(MakeSubheading("Skill Tree"));
+		_collectionStack.AddChild(MakeSubheading("Talents"));
 
 		var totalNodes = 0;
 		foreach (var unit in gs.GetOwnedPlayerUnits())
 			totalNodes += gs.GetUnlockedSkillNodes(unit.Id).Count;
-		AddStatRow(_collectionStack, "Skill Nodes Unlocked", totalNodes.ToString());
+		AddStatRow(_collectionStack, "Talents unlocked", totalNodes.ToString());
 
-		_collectionStack.AddChild(new HSeparator());
 		_collectionStack.AddChild(MakeSubheading("Guild"));
 
 		if (!string.IsNullOrWhiteSpace(gs.GuildId) && gs.CachedGuildInfo != null)
@@ -241,11 +234,10 @@ public partial class ProfileMenu : Control
 			AddStatRow(_collectionStack, "Guild", "None");
 		}
 
-		_collectionStack.AddChild(new HSeparator());
 		_collectionStack.AddChild(MakeSubheading("Achievements"));
 
 		var totalAchievements = AchievementCatalog.GetAll().Count;
-		AddStatRow(_collectionStack, "Achievements", $"— / {totalAchievements}");
+		AddStatRow(_collectionStack, "Completed", $"{gs.GetUnlockedAchievementCount()}/{totalAchievements}");
 	}
 
 	private static void AddStatRow(VBoxContainer parent, string label, string value)
@@ -258,7 +250,7 @@ public partial class ProfileMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			VerticalAlignment = VerticalAlignment.Center,
 		};
-		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		nameLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
 		row.AddChild(nameLabel);
 		var valueLabel = new Label
 		{
@@ -266,7 +258,7 @@ public partial class ProfileMenu : Control
 			HorizontalAlignment = HorizontalAlignment.Right,
 			VerticalAlignment = VerticalAlignment.Center,
 		};
-		valueLabel.AddThemeColorOverride("font_color", new Color("e0e8f0"));
+		valueLabel.AddThemeColorOverride("font_color", ModalUi.Cream);
 		row.AddChild(valueLabel);
 		parent.AddChild(row);
 	}
@@ -284,7 +276,7 @@ public partial class ProfileMenu : Control
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			VerticalAlignment = VerticalAlignment.Center,
 		};
-		nameLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		nameLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
 		row.AddChild(nameLabel);
 
 		var valueLabel = new Label
@@ -293,16 +285,17 @@ public partial class ProfileMenu : Control
 			HorizontalAlignment = HorizontalAlignment.Right,
 			VerticalAlignment = VerticalAlignment.Center,
 		};
-		valueLabel.AddThemeColorOverride("font_color", new Color("e0e8f0"));
+		valueLabel.AddThemeColorOverride("font_color", ModalUi.Cream);
 		row.AddChild(valueLabel);
 
 		parent.AddChild(row);
 	}
 
-	private static Label MakeSubheading(string text)
+	private static Control MakeSubheading(string text)
 	{
-		var label = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center };
-		label.AddThemeColorOverride("font_color", new Color("60a0ff"));
-		return label;
+		var spaced = new MarginContainer();
+		spaced.AddThemeConstantOverride("margin_top", 10);
+		spaced.AddChild(RealmUi.SectionTitle(text, 18));
+		return spaced;
 	}
 }

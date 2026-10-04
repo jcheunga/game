@@ -76,7 +76,7 @@ public partial class CombatMotionReview : Node
         }
         catch(Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
         GD.Print($"COMBAT_MOTION_RESULT: {_failures} failures");
-        GetTree().Quit(_failures==0?0:1);
+        await LiveUiReview.StopAudio(this); GetTree().Quit(_failures==0?0:1);
     }
     private void CheckCancellationAndPause()
     {

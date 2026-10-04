@@ -133,6 +133,6 @@ public partial class ExplorationReview : Node
             Reset(); menu=await Map("citadel"); await Capture("06-citadel-veil"); menu.QueueFree(); await Wait(.2);
         }
         catch (Exception e) { GD.PrintErr(e); _failures++; }
-        GD.Print($"EXPLORATION_RESULT: {_failures} failures"); GetTree().Quit(_failures==0 ? 0 : 1);
+        GD.Print($"EXPLORATION_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures==0 ? 0 : 1);
     }
 }

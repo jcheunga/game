@@ -60,6 +60,7 @@ public partial class UiReviewSmoke
         foreach (var path in LiveUiReview.ActivityScenes)
         {
             var activity = (Control)await LiveUiReview.Open(this, path);
+            await Wait(0.4); // Captures show the settled overlay, not its fade-in.
             var modal = home.GetNode<RealmModal>("HomeModal");
             Check(modal.Content.GetGlobalRect().Grow(2).Encloses(activity.GetGlobalRect()), path + ": live activity fits its modal body");
             AuditText("Live route / " + path); await Capture("route-" + System.IO.Path.GetFileNameWithoutExtension(path));
@@ -71,6 +72,6 @@ public partial class UiReviewSmoke
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit,
             new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         GD.Print($"LIVE_UI_PARITY_RESULT: {_failures} failures; {LiveUiReview.ActivityScenes.Length} routed activities");
-        GetTree().Quit(_failures == 0 ? 0 : 1);
+        QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

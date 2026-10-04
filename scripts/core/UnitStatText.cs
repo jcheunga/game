@@ -24,7 +24,7 @@ public static class UnitStatText
 
         return parts.Count == 0
             ? ""
-            : "  |  " + string.Join("  |  ", parts);
+            : " · " + string.Join(" · ", parts);
     }
 
     public static bool HasAura(UnitStats stats)

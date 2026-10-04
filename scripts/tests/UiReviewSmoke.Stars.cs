@@ -87,6 +87,6 @@ public partial class UiReviewSmoke
         await Capture("04-victory-rating");
         await Open("MainMenu");
         GD.Print($"STAGE_STAR_UI_RESULT: {_failures} failures");
-        GetTree().Quit(_failures == 0 ? 0 : 1);
+        QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

@@ -27,9 +27,13 @@ public partial class BattleController
         foreach (var side in new[] { "left", "right", "top", "bottom" })
             _endPadding.AddThemeConstantOverride("margin_" + side, compact ? 12 : 24);
         _endStarRating.CustomMinimumSize = new Vector2(132, compact ? 36 : 48);
+        var title = RealmUi.Heading("Victory", compact ? 26 : 32);
+        title.Name = "VictoryTitle"; title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.AddThemeColorOverride("font_color", new Color("ffe3a1"));
+        _endContent.AddChild(title); _endContent.MoveChild(title, 0);
         var scroll = new ScrollContainer { Name = "VictoryRewards", SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, compact ? 96 : 160) };
-        _endContent.AddChild(scroll); _endContent.MoveChild(scroll, 1);
+        _endContent.AddChild(scroll); _endContent.MoveChild(scroll, 2);
         scroll.AddChild(BattleRewardUi.Cards(rewards, compact));
         var actions = new HBoxContainer(); actions.AddThemeConstantOverride("separation", 12); _endContent.AddChild(actions);
         _endSecondaryButton.Reparent(actions);

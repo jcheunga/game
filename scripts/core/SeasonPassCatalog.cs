@@ -57,7 +57,7 @@ public static class SeasonPassCatalog
 			{
 				1 => ("gold", 50 + tier * 10, $"{50 + tier * 10} Gold"),
 				2 => ("food", 2 + tier / 5, $"{2 + tier / 5} Food"),
-				_ => ("tomes", 1 + tier / 10, $"{1 + tier / 10} Tomes")
+				_ => ("tomes", 1 + tier / 10, 1 + tier / 10 == 1 ? "1 Tome" : $"{1 + tier / 10} Tomes")
 			};
 
 			// Premium rewards cycle: essence, sigils, special at milestones

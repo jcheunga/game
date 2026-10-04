@@ -30,7 +30,7 @@ public partial class CodexMenu
         var list = RealmUi.Scroll(left); _bookGrid = new GridContainer { Columns = 4 }; _bookGrid.AddThemeConstantOverride("h_separation", 10); _bookGrid.AddThemeConstantOverride("v_separation", 10); list.AddChild(_bookGrid);
         var pager = new HBoxContainer(); left.AddChild(pager);
         _bookPrevious = HomeMapUi.IconButton("back", "Previous codex page", () => { _bookPageIndex--; RefreshBook(); }); pager.AddChild(_bookPrevious);
-        _bookPage = Ink("", 18); _bookPage.HorizontalAlignment = HorizontalAlignment.Center; _bookPage.VerticalAlignment = VerticalAlignment.Center; pager.AddChild(_bookPage);
+        _bookPage = Ink("", 18); _bookPage.HorizontalAlignment = HorizontalAlignment.Center; _bookPage.VerticalAlignment = VerticalAlignment.Center; _bookPage.SizeFlagsHorizontal = SizeFlags.ExpandFill; pager.AddChild(_bookPage);
         _bookNext = HomeMapUi.IconButton("arrow", "Next codex page", () => { _bookPageIndex++; RefreshBook(); }); pager.AddChild(_bookNext);
         ModalUi.StyleButton(_bookPrevious); ModalUi.StyleButton(_bookNext);
         book.AddChild(new CodexBookSpine());
@@ -50,7 +50,7 @@ public partial class CodexMenu
         int pages = Math.Max(1, (entries.Length + 11) / 12); _bookPageIndex = Math.Clamp(_bookPageIndex, 0, pages - 1);
         var slice = entries.Skip(_bookPageIndex * 12).Take(12).ToArray();
         _selectedEntryId ??= slice.FirstOrDefault(entry => state.IsCodexEntryDiscovered(entry.Id))?.Id;
-        _bookCount.Text = $"{_activeCategory.ToUpperInvariant()} · {entries.Count(entry => state.IsCodexEntryDiscovered(entry.Id))}/{entries.Length} discovered";
+        _bookCount.Text = $"{entries.Count(entry => state.IsCodexEntryDiscovered(entry.Id))} of {entries.Length} discovered";
         _bookPage.Text = $"Page {_bookPageIndex + 1} of {pages}"; _bookPrevious.Disabled = _bookPageIndex == 0; _bookNext.Disabled = _bookPageIndex == pages - 1;
         RealmUi.Clear(_bookGrid);
         foreach (var entry in slice)
@@ -65,7 +65,12 @@ public partial class CodexMenu
         }
         RealmUi.Clear(_bookDetail);
         var selected = entries.FirstOrDefault(entry => entry.Id == _selectedEntryId && state.IsCodexEntryDiscovered(entry.Id));
-        if (selected == null) { _bookDetail.AddChild(Ink("A world waiting to be discovered", 26)); _bookDetail.AddChild(Ink("Explore the kingdom, meet enemies and collect allies, spells and relics to fill these pages.")); return; }
+        if (selected == null)
+        {
+            var heading = Ink("A world waiting to be discovered", 26); heading.AddThemeFontOverride("font", ModalUi.HeadingFont); heading.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(heading);
+            var hint = Ink("Meet enemies and collect allies, spells and relics to fill these pages.", 18); hint.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(hint);
+            return;
+        }
         var title = Ink(selected.Title, 28); title.AddThemeFontOverride("font", ModalUi.HeadingFont); title.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(title);
         var art = new CenterContainer(); var portrait = UiBadgeFactory.CreateCodexPortrait(selected, new Vector2(168, 168)); portrait.SetMeta("badge_tint", new Color("947543")); RealmModal.Polish(portrait); art.AddChild(portrait); _bookDetail.AddChild(art);
         _bookDetail.AddChild(Ink(selected.LoreText));

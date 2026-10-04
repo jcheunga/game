@@ -95,7 +95,7 @@ public partial class UiReviewSmoke
         menu.CloseHomeModal();
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit));
         GD.Print($"ARMORY_DETAILS_REVIEW_RESULT: {_failures} failures");
-        await Open("MainMenu"); GetTree().Quit(_failures == 0 ? 0 : 1);
+        await Open("MainMenu"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 
     private void CheckArmoryBalances(MapMenu menu, string message)

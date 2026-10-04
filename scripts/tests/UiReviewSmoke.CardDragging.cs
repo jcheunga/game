@@ -181,6 +181,6 @@ public partial class UiReviewSmoke
             }
         }
         finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }
-        GD.Print($"CARD_DRAG_RESULT: {_failures} failures"); GetTree().Quit(_failures==0?0:1);
+        GD.Print($"CARD_DRAG_RESULT: {_failures} failures"); QuitAfterAudio(_failures==0?0:1);
     }
 }

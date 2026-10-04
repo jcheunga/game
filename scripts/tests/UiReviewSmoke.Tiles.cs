@@ -39,7 +39,7 @@ public partial class UiReviewSmoke
         }
         if (OS.GetCmdlineUserArgs().Contains("--atlas-geometry"))
         {
-            GD.Print($"ATLAS_GEOMETRY_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
+            GD.Print($"ATLAS_GEOMETRY_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
         }
         await Open("MainMenu");
         var menu = (MapMenu)GetTree().CurrentScene;
@@ -261,6 +261,6 @@ public partial class UiReviewSmoke
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         GD.Print($"TILE_MAP_REVIEW_RESULT: {_failures} failures");
         if (includeHome) GD.Print($"HOME_MAP_REVIEW_RESULT: {_failures} failures");
-        GetTree().Quit(_failures == 0 ? 0 : 1);
+        QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

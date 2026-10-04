@@ -6,10 +6,16 @@ using Godot;
 /// <summary>Reward-only results, using the amounts and items actually granted.</summary>
 public static class BattleRewardUi
 {
+    private static int Rows(int count, bool compact) => Mathf.Max(1, Mathf.CeilToInt(count / (compact ? 5f : 4f)));
+
+    // Captions name each reward while they fit; a full squad's haul keeps the compact cards.
+    private static bool Captioned(int count, bool compact) => !compact && Rows(count, compact) <= 2;
+
     public static int PanelHeight(int count, bool compact)
     {
-        var rows = Mathf.Max(1, Mathf.CeilToInt(count / (compact ? 5f : 4f)));
-        return compact ? Mathf.Min(430, 340 + (rows - 1) * 60) : Mathf.Min(640, 400 + (rows - 1) * 120);
+        var rows = Rows(count, compact);
+        if (compact) return Mathf.Min(460, 374 + (rows - 1) * 60);
+        return Captioned(count, compact) ? 470 + (rows - 1) * 150 : Mathf.Min(680, 440 + (rows - 1) * 120);
     }
 
     public static List<BattleReward> Earned(GameSaveData before, GameSaveData after)
@@ -45,8 +51,9 @@ public static class BattleRewardUi
         return rewards;
     }
 
-    public static VBoxContainer Cards(IEnumerable<BattleReward> rewards, bool compact = false)
+    public static VBoxContainer Cards(IReadOnlyCollection<BattleReward> rewards, bool compact = false)
     {
+        var captioned = Captioned(rewards.Count, compact);
         var root = new VBoxContainer { Name = "BattleRewards", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         root.AddChild(new Control { SizeFlagsVertical = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Ignore });
@@ -61,7 +68,7 @@ public static class BattleRewardUi
             var value = reward.Kind == "training" ? $"Lv {reward.Amount}" : $"+{reward.Amount:N0}{suffix}";
             var hint = $"{name}: {value}";
             var card = new PanelContainer { Name = "Reward" + reward.Kind + reward.ItemId,
-                CustomMinimumSize = new Vector2(compact ? 100 : 136, 0), TooltipText = hint, AccessibilityName = hint };
+                CustomMinimumSize = new Vector2(compact ? 100 : 150, 0), TooltipText = hint, AccessibilityName = hint };
             card.SetMeta("modal_unframed", true);
             card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, compact ? 8 : 12));
             grid.AddChild(card);
@@ -74,10 +81,25 @@ public static class BattleRewardUi
             amount.AddThemeFontSizeOverride("font_size", compact ? 22 : 28);
             amount.AddThemeColorOverride("font_color", ModalUi.Cream);
             stack.AddChild(amount);
+            if (!captioned) continue;
+            var caption = new Label { Text = Caption(reward, name), HorizontalAlignment = HorizontalAlignment.Center,
+                AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore };
+            caption.AddThemeFontSizeOverride("font_size", 18);
+            caption.AddThemeColorOverride("font_color", ModalUi.Muted);
+            stack.AddChild(caption);
         }
         root.AddChild(new Control { SizeFlagsVertical = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Ignore });
         return root;
     }
+
+    // The portrait already names the ally, so experience cards say what was gained.
+    private static string Caption(BattleReward reward, string name) => reward.Kind switch
+    {
+        "season_xp" => "Season",
+        "mastery" => "Mastery",
+        "training" => "Training",
+        _ => name
+    };
 
     private static (Texture2D Texture, string Name) Art(BattleReward reward) => reward.Kind switch
     {

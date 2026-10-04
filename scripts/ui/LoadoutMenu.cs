@@ -22,8 +22,9 @@ public partial class LoadoutMenu : Control
         MedievalUi.Apply(this);
         RealmUi.Header(this, $"{route.Title} / Stage {_stage.StageNumber:00}", _stage.StageName, () => SceneRouter.Instance.GoToMap());
         var mission = RealmUi.Panel(this, new Rect2(28, 108, 438, 490), out _);
-        mission.AddChild(RealmUi.Label("CHALLENGE THE LEADER", 12, true));
+        mission.AddChild(RealmUi.Label($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}", 18, true));
         mission.AddChild(RealmUi.Heading(AdventureMapCatalog.Leader(_stage.StageNumber).Title, 25));
+        mission.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
         mission.AddChild(BuildVictoryRewards());
 
         var roster = RealmUi.Panel(this, new Rect2(486, 108, 766, 490), out _);
@@ -66,7 +67,8 @@ public partial class LoadoutMenu : Control
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 12);
         footer.AddChild(row);
-        _status = RealmUi.Label("Ready", 14, true);
+        _status = RealmUi.Label("", 18, true);
+        _status.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_status);
         row.AddChild(magic);
         var canDeploy = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var reason);
@@ -98,7 +100,7 @@ public partial class LoadoutMenu : Control
         }
         var section = new VBoxContainer { Name = "VictoryRewards" };
         section.AddThemeConstantOverride("separation", 12);
-        section.AddChild(RealmUi.Heading("Victory rewards", 22));
+        section.AddChild(RealmUi.SectionTitle("Victory rewards"));
         var rewards = new HBoxContainer();
         rewards.AddThemeConstantOverride("separation", 12);
         section.AddChild(rewards);

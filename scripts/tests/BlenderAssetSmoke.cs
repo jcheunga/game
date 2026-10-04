@@ -84,7 +84,7 @@ public partial class BlenderAssetSmoke : Node
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
         GD.Print($"BLENDER_ASSET_RESULT: {_failures} failures");
-        GetTree().Quit(_failures == 0 ? 0 : 1);
+        await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);
     }
 
     private async Task CheckAnimations()

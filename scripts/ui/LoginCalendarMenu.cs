@@ -16,7 +16,7 @@ public partial class LoginCalendarMenu : Control
         _days = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         body.AddChild(_days);
         var footer = RealmUi.Panel(this, new Rect2(24, 618, 1232, 80), out _);
-        _status = RealmUi.Label("Return each day to collect the next gift. Every reward is listed above.");
+        _status = RealmUi.Label("Return each day to collect the next gift.", 18, true);
         footer.AddChild(_status);
         RefreshUi();
     }
@@ -45,24 +45,32 @@ public partial class LoginCalendarMenu : Control
                 var card = new VBoxContainer(); frame.AddChild(card);
                 var title = RealmUi.Heading($"Day {reward.Day}", 22);
                 title.HorizontalAlignment = HorizontalAlignment.Center; card.AddChild(title);
-                var rewardRow = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+                var rewardRow = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
                 card.AddChild(rewardRow);
-                rewardRow.AddChild(UiBadgeFactory.CreateRewardBadge(reward.RewardType, reward.RewardItemId, reward.Label, new Vector2(38, 38)));
+                var badge = UiBadgeFactory.CreateRewardBadge(reward.RewardType, reward.RewardItemId, reward.Label, new Vector2(38, 38));
+                rewardRow.AddChild(badge);
                 var description = RealmUi.Label(reward.Label, 20);
                 description.VerticalAlignment = VerticalAlignment.Center;
+                description.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
                 rewardRow.AddChild(description);
+                // Every card reserves the same footer height so rewards line up across the grid.
+                var footer = new CenterContainer { CustomMinimumSize = new Vector2(0, 48) };
+                footer.SetMeta(RealmModal.KeepMinimum, true);
+                card.AddChild(footer);
                 if (current && canClaim)
                 {
-                    card.AddChild(RealmUi.Button("gift", "Claim", () =>
+                    var claim = RealmUi.Button("gift", "Claim", () =>
                     {
                         GameState.Instance.TryClaimLoginReward(out var message);
                         _status.Text = message; RefreshUi();
-                    }, true));
+                    }, true);
+                    footer.AddChild(claim);
                 }
                 else
                 {
                     var state = RealmUi.Label(collected ? "Collected" : current ? "Tomorrow" : "Locked", 18, true);
-                    state.HorizontalAlignment = HorizontalAlignment.Center; card.AddChild(state);
+                    state.HorizontalAlignment = HorizontalAlignment.Center; state.AutowrapMode = TextServer.AutowrapMode.Off; footer.AddChild(state);
+                    if (collected) { badge.Modulate = new Color(1, 1, 1, .55f); description.AddThemeColorOverride("font_color", ModalUi.Muted); }
                 }
             }
         }

@@ -236,7 +236,7 @@ public partial class EndlessMenu : Control
 
         var backButton = new RealmButton
         {
-            Text = "Back To Title",
+            Text = "Back to title",
             CustomMinimumSize = new Vector2(180f, 0f)
         };
         backButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
@@ -265,7 +265,7 @@ public partial class EndlessMenu : Control
 
         _deployButton = new RealmButton
         {
-            Text = "Start Endless Run",
+            Text = "Start endless run",
             CustomMinimumSize = new Vector2(240f, 0f)
         };
         _deployButton.Pressed += StartRun;
@@ -284,7 +284,7 @@ public partial class EndlessMenu : Control
         var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);
         var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_selectedRouteId);
 
-        _routeTitleLabel.Text = $"{templateStage.MapName} Endless Run";
+        _routeTitleLabel.Text = $"{templateStage.MapName} endless run";
         _routeSummaryLabel.Text =
             $"{BuildRouteDescription(_selectedRouteId)}\n\n" +
             $"District stages in campaign: {routeStages.Count}\n" +
@@ -311,7 +311,7 @@ public partial class EndlessMenu : Control
         var canStartBattle = GameState.Instance.CanStartBattle(out var deployMessage);
         _deckStatusLabel.Text = deployMessage;
         _deployButton.Disabled = !canStartBattle;
-        _deployButton.Text = canStartBattle ? "Begin Endless March" : "Caravan Not Ready";
+        _deployButton.Text = canStartBattle ? "Begin endless march" : "Caravan not ready";
     }
 
     private void RebuildResourcesRow()
@@ -340,7 +340,7 @@ public partial class EndlessMenu : Control
 
         _historyStack.AddChild(new Label
         {
-            Text = "Run History"
+            Text = "Run history"
         });
 
         var bestWave = GameState.Instance.BestEndlessWave;
@@ -352,7 +352,7 @@ public partial class EndlessMenu : Control
             var seconds = (int)(run.TimeSeconds % 60f);
             var routeName = GameData.GetLatestStageForMap(run.RouteId).MapName;
             var diffTitle = DifficultyCatalog.GetById(run.DifficultyId).Title;
-            var line = $"#{i + 1}  Wave {run.Wave}  |  {minutes}:{seconds:D2}  |  {routeName}  |  +{run.GoldEarned} gold  |  {diffTitle}";
+            var line = $"#{i + 1}  Wave {run.Wave} · {minutes}:{seconds:D2} · {routeName} · +{run.GoldEarned} gold · {diffTitle}";
 
             var isBestWave = run.Wave >= bestWave && bestWave > 0;
             var label = new Label

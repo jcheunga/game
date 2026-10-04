@@ -12,6 +12,7 @@ public partial class LanRaceMenu : Control
 	private HBoxContainer _boardSpellRow = null!;
 	private Label _roomLabel = null!;
 	private Label _readinessLabel = null!;
+	private Label _readinessTitle = null!;
 	private Label _monitorLabel = null!;
 	private Label _scoreboardLabel = null!;
 	private Label _sessionLabel = null!;
@@ -123,10 +124,7 @@ public partial class LanRaceMenu : Control
 		boardStack.AddThemeConstantOverride("separation", 8);
 		boardScroll.AddChild(boardStack);
 
-		boardStack.AddChild(new Label
-		{
-			Text = "Armed Board"
-		});
+		boardStack.AddChild(RealmUi.SectionTitle("Board"));
 
 		_boardLabel = new Label
 		{
@@ -145,10 +143,7 @@ public partial class LanRaceMenu : Control
 		_boardSpellRow.AddThemeConstantOverride("separation", 8);
 		loadoutRow.AddChild(_boardSpellRow);
 
-		boardStack.AddChild(new Label
-		{
-			Text = "Join Host IP"
-		});
+		boardStack.AddChild(RealmUi.SectionTitle("Host address"));
 
 		_addressEdit = new LineEdit
 		{
@@ -163,7 +158,7 @@ public partial class LanRaceMenu : Control
 
 		_hostButton = new RealmButton
 		{
-			Text = "Host Current Board",
+			Text = "Host board",
 			CustomMinimumSize = new Vector2(0f, 42f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		};
@@ -172,7 +167,7 @@ public partial class LanRaceMenu : Control
 
 		_refreshButton = new RealmButton
 		{
-			Text = "Broadcast Update",
+			Text = "Broadcast update",
 			CustomMinimumSize = new Vector2(0f, 42f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		};
@@ -185,7 +180,7 @@ public partial class LanRaceMenu : Control
 
 		_joinButton = new RealmButton
 		{
-			Text = "Join Host",
+			Text = "Join host",
 			CustomMinimumSize = new Vector2(0f, 42f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		};
@@ -194,7 +189,7 @@ public partial class LanRaceMenu : Control
 
 		_closeButton = new RealmButton
 		{
-			Text = "Close Room",
+			Text = "Close room",
 			CustomMinimumSize = new Vector2(0f, 42f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill
 		};
@@ -206,6 +201,7 @@ public partial class LanRaceMenu : Control
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
 			MaxLinesVisible = -1
 		};
+		_statusLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
 		boardStack.AddChild(_statusLabel);
 		boardStack.MoveChild(_statusLabel, 1);
 
@@ -236,10 +232,6 @@ public partial class LanRaceMenu : Control
         }
         var roomStack = stacks[0];
 
-		roomStack.AddChild(new Label
-		{
-			Text = "Room"
-		});
 
 		_roomLabel = new Label
 		{
@@ -248,10 +240,8 @@ public partial class LanRaceMenu : Control
 		};
 		roomStack.AddChild(_roomLabel);
 
-		roomStack.AddChild(new Label
-		{
-			Text = "Launch Readiness"
-		});
+		_readinessTitle = RealmUi.SectionTitle("Readiness");
+		roomStack.AddChild(_readinessTitle);
 
 		_readinessLabel = new Label
 		{
@@ -261,10 +251,7 @@ public partial class LanRaceMenu : Control
 		roomStack.AddChild(_readinessLabel);
 
 		roomStack = stacks[1];
-		roomStack.AddChild(new Label
-		{
-			Text = "Race Monitor"
-		});
+		roomStack.AddChild(RealmUi.SectionTitle("Race"));
 
 		_monitorLabel = new Label
 		{
@@ -273,10 +260,7 @@ public partial class LanRaceMenu : Control
 		};
 		roomStack.AddChild(_monitorLabel);
 
-		roomStack.AddChild(new Label
-		{
-			Text = "Scoreboard"
-		});
+		roomStack.AddChild(RealmUi.SectionTitle("Scoreboard"));
 
 		_scoreboardLabel = new Label
 		{
@@ -286,10 +270,6 @@ public partial class LanRaceMenu : Control
 		roomStack.AddChild(_scoreboardLabel);
 
 		roomStack = stacks[2];
-		roomStack.AddChild(new Label
-		{
-			Text = "Session Standings"
-		});
 
 		_sessionLabel = new Label
 		{
@@ -312,7 +292,7 @@ public partial class LanRaceMenu : Control
 
 		var backButton = new RealmButton
 		{
-			Text = "Back To Multiplayer",
+			Text = "Back to challenges",
 			CustomMinimumSize = new Vector2(200f, 0f)
 		};
 		backButton.Pressed += () => SceneRouter.Instance.GoToMultiplayer();
@@ -333,7 +313,7 @@ public partial class LanRaceMenu : Control
 
 		_readyButton = new RealmButton
 		{
-			Text = "Ready Up",
+			Text = "Ready up",
 			CustomMinimumSize = new Vector2(180f, 0f)
 		};
 		_readyButton.Pressed += ToggleReady;
@@ -341,7 +321,7 @@ public partial class LanRaceMenu : Control
 
 		_launchButton = new RealmButton
 		{
-			Text = "Launch LAN Race",
+			Text = "Launch LAN race",
 			CustomMinimumSize = new Vector2(240f, 0f)
 		};
 		_launchButton.Pressed += LaunchRace;
@@ -374,14 +354,16 @@ public partial class LanRaceMenu : Control
 		RebuildBoardBadgeRows(previewDeck, previewSpells);
 
 		_roomLabel.Text = LanChallengeService.Instance?.BuildRoomSummary() ?? "LAN room service unavailable.";
-		_readinessLabel.Text = LanChallengeService.Instance?.BuildLaunchReadinessSummary() ?? "LAN launch readiness unavailable.";
+		_readinessLabel.Text = LanChallengeService.Instance?.BuildLaunchReadinessSummary() ?? "";
+		_readinessTitle.Visible = _readinessLabel.Visible = _readinessLabel.Text.Length > 0;
 		_monitorLabel.Text = LanChallengeService.Instance?.BuildRaceMonitorSummary() ?? "LAN race monitor unavailable.";
 		_scoreboardLabel.Text = LanChallengeService.Instance?.ScoreboardSummary ?? "LAN scoreboard unavailable.";
 		_sessionLabel.Text = LanChallengeService.Instance?.SessionStandingsSummary ?? "LAN session standings unavailable.";
-		_statusLabel.Text = $"Status:\n{LanChallengeService.Instance?.SessionStatus ?? "No LAN room service available."}";
+		_statusLabel.Text = LanChallengeService.Instance?.SessionStatus ?? "LAN play is unavailable.";
+		_statusLabel.Visible = _statusLabel.Text.Length > 0;
 
 		var service = LanChallengeService.Instance;
-		_hostButton.Text = service != null && service.IsHosting ? "Rehost Current Board" : "Host Current Board";
+		_hostButton.Text = service != null && service.IsHosting ? "Rehost board" : "Host board";
 		_hostButton.Disabled = service != null && service.IsHosting && service.RoundLocked;
 		_refreshButton.Disabled = service == null || !service.IsHosting || service.RoundLocked;
 		_joinButton.Disabled = service != null && service.HasRoom && !service.IsClient;
@@ -392,16 +374,16 @@ public partial class LanRaceMenu : Control
 			(service.RoundLocked && !service.RoundComplete);
 		_readyButton.Text =
 			service == null || !service.HasRoom
-				? "Ready Up"
+				? "Ready up"
 				: service.LocalSpectating && !service.RoundComplete
 					? "Spectating"
 					: service.LocalSpectating && service.RoundComplete
-						? "Join Rematch"
+						? "Join rematch"
 						: service.LocalReady
 							? "Unready"
 							: service.RoundComplete
-								? "Ready Rematch"
-								: "Ready Up";
+								? "Ready rematch"
+								: "Ready up";
 		_launchButton.Disabled =
 			service == null ||
 			!service.IsHosting ||
@@ -461,11 +443,11 @@ public partial class LanRaceMenu : Control
 
 		if (LanChallengeService.Instance.HostSelectedBoard(out var message))
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 		}
 		else
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 		}
 
 		RefreshUi();
@@ -480,11 +462,11 @@ public partial class LanRaceMenu : Control
 
 		if (!LanChallengeService.Instance.RefreshHostedBoard(out var message))
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 			return;
 		}
 
-		_statusLabel.Text = $"Status:\n{message}";
+		_statusLabel.Text = message; _statusLabel.Visible = true;
 		RefreshUi();
 	}
 
@@ -497,11 +479,11 @@ public partial class LanRaceMenu : Control
 
 		if (!LanChallengeService.Instance.JoinRoom(_addressEdit.Text, out var message))
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 			return;
 		}
 
-		_statusLabel.Text = $"Status:\n{message}";
+		_statusLabel.Text = message; _statusLabel.Visible = true;
 		RefreshUi();
 	}
 
@@ -520,11 +502,11 @@ public partial class LanRaceMenu : Control
 
 		if (!LanChallengeService.Instance.ToggleLocalReady(out var message))
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 			return;
 		}
 
-		_statusLabel.Text = $"Status:\n{message}";
+		_statusLabel.Text = message; _statusLabel.Visible = true;
 		RefreshUi();
 	}
 
@@ -537,11 +519,11 @@ public partial class LanRaceMenu : Control
 
 		if (!LanChallengeService.Instance.LaunchRace(out var message))
 		{
-			_statusLabel.Text = $"Status:\n{message}";
+			_statusLabel.Text = message; _statusLabel.Visible = true;
 			return;
 		}
 
-		_statusLabel.Text = $"Status:\n{message}";
+		_statusLabel.Text = message; _statusLabel.Visible = true;
 	}
 
 	private void OnLanStateChanged()

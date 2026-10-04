@@ -58,7 +58,7 @@ public partial class RaidMenu : Control
 			VerticalAlignment = VerticalAlignment.Center,
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 		};
-		weekLabel.AddThemeColorOverride("font_color", new Color("60a0ff"));
+		weekLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
 		titleRow.AddChild(weekLabel);
 
 		// Left panel — Raid Boss
@@ -73,7 +73,7 @@ public partial class RaidMenu : Control
 		var bossInner = new VBoxContainer();
 		bossInner.AddThemeConstantOverride("separation", 6);
 		bossOuter.AddChild(bossInner);
-		bossInner.AddChild(new Label { Text = "Raid Boss", HorizontalAlignment = HorizontalAlignment.Center });
+		bossInner.AddChild(RealmUi.SectionTitle("This week's boss"));
 
 		_bossStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_bossStack.AddThemeConstantOverride("separation", 8);
@@ -85,13 +85,13 @@ public partial class RaidMenu : Control
 			MinValue = 0,
 			MaxValue = _boss.TotalHealthPool,
 			Value = 0,
-			CustomMinimumSize = new Vector2(0f, 28f),
+			CustomMinimumSize = new Vector2(0f, 10f),
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			ShowPercentage = false,
 		};
-		bossInner.AddChild(_hpBar);
-		_hpLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		_hpLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
+		_hpLabel = RealmUi.Label("", 18, true);
 		bossInner.AddChild(_hpLabel);
+		bossInner.AddChild(_hpBar);
 
 		// Right panel — Milestones
 		_milestonesPanel = new PanelContainer { Position = new Vector2(640f, 122f), Size = new Vector2(616f, 480f) };
@@ -105,8 +105,8 @@ public partial class RaidMenu : Control
 		var msInner = new VBoxContainer();
 		msInner.AddThemeConstantOverride("separation", 6);
 		msOuter.AddChild(msInner);
-		msInner.AddChild(new Label { Text = "Milestones", HorizontalAlignment = HorizontalAlignment.Center });
-		var msScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f) };
+		msInner.AddChild(RealmUi.SectionTitle("Milestones"));
+		var msScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		msInner.AddChild(msScroll);
 		_milestonesStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_milestonesStack.AddThemeConstantOverride("separation", 10);
@@ -140,7 +140,7 @@ public partial class RaidMenu : Control
 		_hpBar.MaxValue = _boss.TotalHealthPool;
 		_hpBar.Value = Mathf.Min(communityDamage, _boss.TotalHealthPool);
 		var pct = _boss.TotalHealthPool > 0 ? (int)(communityDamage * 100 / _boss.TotalHealthPool) : 0;
-		_hpLabel.Text = $"{communityDamage:N0} / {_boss.TotalHealthPool:N0}  ({pct}%)";
+		_hpLabel.Text = $"Raid progress · {pct}%";
 	}
 
 	private void RebuildBossInfo(GameState gs, long communityDamage)
@@ -148,45 +148,25 @@ public partial class RaidMenu : Control
 		foreach (var child in _bossStack.GetChildren()) child.QueueFree();
 
 		var codexEntry = CodexCatalog.GetById(_boss.BossUnitId);
-		var portrait = new CenterContainer();
-		portrait.AddChild(codexEntry != null
-			? UiBadgeFactory.CreateCodexPortrait(codexEntry, new Vector2(156f, 156f))
-			: UiBadgeFactory.CreateMysteryBadge(new Vector2(156f, 156f)));
-		_bossStack.AddChild(portrait);
-
-		// Boss name
-		var nameLabel = new Label { Text = _boss.BossName, HorizontalAlignment = HorizontalAlignment.Center };
-		nameLabel.AddThemeColorOverride("font_color", new Color("ff6060"));
-		_bossStack.AddChild(nameLabel);
-
-		// Lore from codex (if available)
+		var header = new HBoxContainer();
+		header.AddThemeConstantOverride("separation", 16);
+		_bossStack.AddChild(header);
+		var portrait = codexEntry != null
+			? UiBadgeFactory.CreateCodexPortrait(codexEntry, new Vector2(132f, 132f))
+			: UiBadgeFactory.CreateMysteryBadge(new Vector2(132f, 132f));
+		portrait.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+		header.AddChild(portrait);
+		var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		text.AddThemeConstantOverride("separation", 6);
+		header.AddChild(text);
+		var nameLabel = RealmUi.Heading(_boss.BossName, 22);
+		nameLabel.AddThemeColorOverride("font_color", new Color("e58f84"));
+		text.AddChild(nameLabel);
 		if (codexEntry != null && !string.IsNullOrWhiteSpace(codexEntry.LoreText))
-		{
-			var loreLabel = new Label
-			{
-				Text = codexEntry.LoreText,
-				AutowrapMode = TextServer.AutowrapMode.WordSmart,
-				CustomMinimumSize = new Vector2(0f, 60f),
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			};
-			loreLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-			_bossStack.AddChild(loreLabel);
-		}
+			text.AddChild(RealmUi.Label(codexEntry.LoreText, 18, true));
 
-		_bossStack.AddChild(new HSeparator());
-
-		// Total health pool
-		var hpNote = new Label { Text = $"Total Health Pool: {_boss.TotalHealthPool:N0}", HorizontalAlignment = HorizontalAlignment.Center };
-		_bossStack.AddChild(hpNote);
-
-		// Player contribution
-		var contribLabel = new Label
-		{
-			Text = $"Your contribution: {gs.RaidDamageContributed:N0} damage",
-			HorizontalAlignment = HorizontalAlignment.Center,
-		};
-		contribLabel.AddThemeColorOverride("font_color", new Color("60a0ff"));
-		_bossStack.AddChild(contribLabel);
+		_bossStack.AddChild(RealmUi.KeyValue("Health pool", $"{_boss.TotalHealthPool:N0}"));
+		_bossStack.AddChild(RealmUi.KeyValue("Your damage", $"{gs.RaidDamageContributed:N0}"));
 	}
 
 	private void RebuildMilestones(GameState gs, long communityDamage)
@@ -200,63 +180,31 @@ public partial class RaidMenu : Control
 			var reached = communityDamage >= ms.DamageThreshold;
 			var claimed = gs.HasClaimedRaidReward(_weekId, i);
 
-			var row = new VBoxContainer();
-			row.AddThemeConstantOverride("separation", 2);
-
-			// Milestone label
-			var msLabel = new Label { Text = ms.Label };
-			if (claimed)
-				msLabel.AddThemeColorOverride("font_color", new Color("606060"));
-			else if (reached)
-				msLabel.AddThemeColorOverride("font_color", new Color("22c55e"));
-			else
-				msLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-			row.AddChild(msLabel);
-
-			// Reward info
-			var rewardText = FormatReward(ms.RewardType, ms.RewardItemId, ms.RewardAmount);
-			var rewardRow = new HBoxContainer();
-			rewardRow.AddThemeConstantOverride("separation", 8);
+			// Badge, milestone and reward on the left; its state or claim action on the right.
+			var row = new HBoxContainer();
+			row.AddThemeConstantOverride("separation", 12);
 			var rewardBadge = BuildRewardBadge(ms);
-			if (rewardBadge != null)
+			if (rewardBadge != null) row.AddChild(rewardBadge);
+			var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			text.AddThemeConstantOverride("separation", 2);
+			row.AddChild(text);
+			var msLabel = RealmUi.Label(ms.Label, 18);
+			if (claimed) msLabel.AddThemeColorOverride("font_color", ModalUi.Muted);
+			text.AddChild(msLabel);
+			text.AddChild(RealmUi.Label($"{FormatReward(ms.RewardType, ms.RewardItemId, ms.RewardAmount)} · {ms.DamageThreshold:N0} damage", 18, true));
+
+			var actionRow = new HBoxContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+			if (reached && !claimed)
 			{
-				rewardRow.AddChild(rewardBadge);
-			}
-			var rewardLabel = new Label { Text = $"Reward: {rewardText}", VerticalAlignment = VerticalAlignment.Center };
-			rewardLabel.AddThemeColorOverride("font_color", new Color("c8c8c8"));
-			rewardRow.AddChild(rewardLabel);
-			row.AddChild(rewardRow);
-
-			// Threshold
-			var threshLabel = new Label { Text = $"Threshold: {ms.DamageThreshold:N0} damage" };
-			threshLabel.AddThemeColorOverride("font_color", new Color("707880"));
-			row.AddChild(threshLabel);
-
-			// Status + button
-			var actionRow = new HBoxContainer();
-			actionRow.AddThemeConstantOverride("separation", 8);
-
-			if (claimed)
-			{
-				var statusTag = new Label { Text = "[Claimed]", VerticalAlignment = VerticalAlignment.Center };
-				statusTag.AddThemeColorOverride("font_color", new Color("606060"));
-				actionRow.AddChild(statusTag);
-			}
-			else if (reached)
-			{
-				var statusTag = new Label { Text = "[Ready]", VerticalAlignment = VerticalAlignment.Center };
-				statusTag.AddThemeColorOverride("font_color", new Color("22c55e"));
-				actionRow.AddChild(statusTag);
-
 				var capturedIndex = i;
-				var claimBtn = new RealmButton { Text = "Claim", CustomMinimumSize = new Vector2(80f, 0f) };
-				claimBtn.Pressed += () => OnClaimMilestone(capturedIndex);
+				var claimBtn = RealmUi.Button("gift", "Claim", () => OnClaimMilestone(capturedIndex), true);
 				actionRow.AddChild(claimBtn);
 			}
 			else
 			{
-				var statusTag = new Label { Text = "[Locked]", VerticalAlignment = VerticalAlignment.Center };
-				statusTag.AddThemeColorOverride("font_color", new Color("90a0b0"));
+				var statusTag = RealmUi.Label(claimed ? "Claimed" : "Locked", 18, true);
+				statusTag.AutowrapMode = TextServer.AutowrapMode.Off;
+				if (claimed) statusTag.AddThemeColorOverride("font_color", new Color("9fd49a"));
 				actionRow.AddChild(statusTag);
 			}
 
@@ -286,11 +234,11 @@ public partial class RaidMenu : Control
 	{
 		return rewardType.ToLowerInvariant() switch
 		{
-			"gold" => $"{amount} Gold",
-			"essence" => $"{amount} Essence",
-			"relic" => $"{GameData.GetEquipment(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
-			"spell" => $"{GameData.GetSpell(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
-			"unit" => $"{GameData.GetUnit(rewardItemId)?.DisplayName ?? rewardItemId} x{amount}",
+			"gold" => $"{amount:N0} gold",
+			"essence" => $"{amount} essence",
+			"relic" => amount > 1 ? $"{GameData.GetEquipment(rewardItemId)?.DisplayName ?? rewardItemId} ×{amount}" : GameData.GetEquipment(rewardItemId)?.DisplayName ?? rewardItemId,
+			"spell" => amount > 1 ? $"{GameData.GetSpell(rewardItemId)?.DisplayName ?? rewardItemId} ×{amount}" : GameData.GetSpell(rewardItemId)?.DisplayName ?? rewardItemId,
+			"unit" => amount > 1 ? $"{GameData.GetUnit(rewardItemId)?.DisplayName ?? rewardItemId} ×{amount}" : GameData.GetUnit(rewardItemId)?.DisplayName ?? rewardItemId,
 			_ => $"{amount} {rewardType}",
 		};
 	}

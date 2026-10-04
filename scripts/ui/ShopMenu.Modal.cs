@@ -125,13 +125,39 @@ public partial class ShopMenu
         RebuildModalRoster();
         RebuildBaseUpgradePanels();
         RebuildRelicPanels();
-        RealmUi.Clear(_recommendationStack);
-        _recommendationStack.AddChild(ModalUi.Banner(4, "Caravan readiness", "A well-prepared caravan carries the day."));
-        _recommendationStack.AddChild(RealmUi.Label(BuildSummaryText()));
-        _recommendationStack.AddChild(RealmUi.Button("book", "Route & squad advice", () => RealmUi.Details(this, "Prepare your warband", BuildRouteIntelText())));
+        RebuildAdviser();
         RealmModal.Polish(_baseStack);
         RealmModal.Polish(_relicsStack);
         RealmModal.Polish(_recommendationStack);
+    }
+
+    private void RebuildAdviser()
+    {
+        RealmUi.Clear(_recommendationStack);
+        var state = GameState.Instance;
+        var report = state.GetCampaignReadinessReport(state.SelectedStage);
+        _recommendationStack.AddChild(ModalUi.Banner(4, report == null ? "Readiness" : $"Readiness · {report.Rating} {report.Score}/100",
+            report?.Summary ?? "Equip allies and spells to assess your caravan."));
+        var facts = new GridContainer { Columns = MobilePresentation.Enabled ? 1 : 2, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        facts.AddThemeConstantOverride("h_separation", 32); facts.AddThemeConstantOverride("v_separation", 6);
+        void Fact(string name, string value) => facts.AddChild(RealmUi.KeyValue(name, value));
+        int Level(string id) => state.GetBaseUpgradeLevel(id);
+        Fact("Allies owned", $"{state.GetOwnedPlayerUnits().Count}/{GameData.PlayerRosterIds.Length}");
+        Fact("Spells owned", $"{state.GetOwnedPlayerSpells().Count}/{GameData.PlayerSpellIds.Length}");
+        Fact("Heroic directives", $"{state.ClaimedCampaignDirectiveCount}/{state.MaxStage}");
+        Fact("Wagon plating", $"{Level(BaseUpgradeCatalog.HullPlatingId)}/{state.MaxBaseUpgradeLevel}");
+        Fact("Stores", $"{Level(BaseUpgradeCatalog.PantryId)}/{state.MaxBaseUpgradeLevel}");
+        Fact("March drum", $"{Level(BaseUpgradeCatalog.DispatchConsoleId)}/{state.MaxBaseUpgradeLevel}");
+        Fact("Rune beacon", $"{Level(BaseUpgradeCatalog.SignalRelayId)}/{state.MaxBaseUpgradeLevel}");
+        _recommendationStack.AddChild(facts);
+        if (report != null && report.Gaps.Count > 0)
+        {
+            _recommendationStack.AddChild(RealmUi.SectionTitle("Priorities"));
+            foreach (var gap in report.Gaps.Take(3)) _recommendationStack.AddChild(RealmUi.Label("•  " + gap, 18));
+        }
+        var advice = RealmUi.Button("book", "Route & squad advice", () => RealmUi.Details(this, "Prepare your warband", BuildRouteIntelText()));
+        advice.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
+        _recommendationStack.AddChild(advice);
     }
 
     private void RebuildModalRoster()
@@ -247,7 +273,7 @@ public partial class ShopMenu
         _unitDetail.AddChild(panel);
         RealmModal.Polish(panel);
         _equippedLabel.Text = _showSpells ? $"Squad {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit}" : $"Squad {GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit}";
-        RealmModal.UpdateHeading(this, subtitle: $"{GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} ALLIES · {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} SPELLS EQUIPPED");
+        RealmModal.UpdateHeading(this, subtitle: $"{GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} allies · {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} spells equipped");
     }
 }
 
@@ -274,20 +300,23 @@ public partial class ShopMenu
         var title = RealmUi.Heading(upgrade.Title, 20);
         title.VerticalAlignment = VerticalAlignment.Center;
         heading.AddChild(title);
-        stack.AddChild(RealmUi.Label($"LEVEL {level} / {upgrade.MaxLevel}", 18, true));
+        stack.AddChild(RealmUi.Label($"Level {level}/{upgrade.MaxLevel}", 18, true));
         stack.AddChild(new ProgressBar { Value = level, MaxValue = upgrade.MaxLevel, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 6) });
-        stack.AddChild(RealmUi.Label(level == 0 ? "Ready to install" : BuildBaseUpgradeEffectText(upgrade, level), 20, true));
+        stack.AddChild(RealmUi.Label(level == 0 ? "Not installed" : BuildBaseUpgradeEffectText(upgrade, level), 18, true));
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 10);
         stack.AddChild(row);
         row.AddChild(RealmUi.Button("book", "Details", () => RealmUi.Details(this, upgrade.Title, upgrade.Summary + "\n\nCurrent: " + BuildBaseUpgradeEffectText(upgrade, level) + (max ? "\n\nFully trained" : "\n\nNext: " + BuildBaseUpgradeEffectText(upgrade, level + 1)))));
-        var action = RealmUi.Button("gold", max ? "Fully trained" : $"Upgrade · {cost} gold", () =>
+        var action = new RealmButton { CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseDefaultCursorShape = CursorShape.PointingHand };
+        if (max) action.Text = "Fully trained";
+        else ArmoryDetailUi.GoldAction(action, "Upgrade", cost);
+        action.Pressed += () =>
         {
             if (state.TryUpgradeBase(upgrade.Id, out var message))
                 AudioDirector.Instance?.PlayUpgradeConfirm();
             _statusLabel.Text = message;
             RefreshUi();
-        }, true);
+        };
         action.Disabled = max || state.Gold < cost;
         row.AddChild(action);
         return panel;

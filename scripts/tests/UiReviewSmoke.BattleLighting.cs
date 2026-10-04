@@ -95,6 +95,6 @@ public partial class UiReviewSmoke
             "Pooled troops release previous zone and lamp lighting"); reused.Free();
         MobilePresentation.TestOverride = null;
         await Open("MainMenu");
-        GD.Print($"BATTLE_LIGHTING_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1);
+        GD.Print($"BATTLE_LIGHTING_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

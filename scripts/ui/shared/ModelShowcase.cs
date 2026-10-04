@@ -63,7 +63,7 @@ public partial class ModelShowcase : CanvasLayer
             new ArmoryDetailUi.Stat("arrow","Move speed",$"{stats.Speed:0.#}"),
             new ArmoryDetailUi.Stat("clock","Attack interval",$"{stats.AttackCooldown:0.##}s")
         },2));
-        var traits=UnitStatText.BuildInlineTraits(stats).Trim(' ','|');
+        var traits=UnitStatText.BuildInlineTraits(stats).Trim(' ','·');
         if(traits.Length>0) extra.AddChild(RealmUi.Label(traits,18));
         RealmModal.Polish(_details);
         Play(UnitAnimState.Idle);

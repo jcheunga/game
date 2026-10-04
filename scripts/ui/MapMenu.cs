@@ -77,7 +77,7 @@ public partial class MapMenu : Control
         var tile = AdventureTileCatalog.Find(_activeMapId, _selectedDiscovery.Id);
         var canTravel = state.CanTravelToAdventureTile(tile, out var reason);
         _portrait.Texture = HomeMapArt.Icon(_selectedDiscovery.Icon);
-        _siteEyebrow.Text = "RESOURCE TILE";
+        _siteEyebrow.Text = "Resource tile";
         _siteName.Text = _selectedDiscovery.Title;
         _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : "Open tile · ready to gather";
         ShowDiscoveryRewards();
@@ -89,6 +89,7 @@ public partial class MapMenu : Control
     }
     private void RefreshUi()
     {
+        QueueSitePanelFit();
         var state = GameState.Instance;
         var known = state.IsAdventureSiteDiscovered(_selected.Id);
         var boss = _selected.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(_selected.Stage);
@@ -111,7 +112,7 @@ public partial class MapMenu : Control
             return;
         }
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
-        _siteEyebrow.Text = !known ? "UNCHARTED" : leader ? $"{(boss ? "BOSS" : "RIVAL")} · STAGE {_selected.Stage:00}" : "LANDMARK";
+        _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
         _siteName.Text = known ? _selected.Title : "Beyond the mist";
         _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {5 - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/5 leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;

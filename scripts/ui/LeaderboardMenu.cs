@@ -95,7 +95,7 @@ public partial class LeaderboardMenu : Control
 		contentOuter.AddThemeConstantOverride("margin_top", 16);
 		contentOuter.AddThemeConstantOverride("margin_bottom", 16);
 		_contentPanel.AddChild(contentOuter);
-		var contentScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+		var contentScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 		contentOuter.AddChild(contentScroll);
 		_contentStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_contentStack.AddThemeConstantOverride("separation", 6);
@@ -144,13 +144,12 @@ public partial class LeaderboardMenu : Control
 
 	private void UpdateTabHighlights()
 	{
-		var activeColor = new Color("f59e0b");
-		var normalColor = new Color("c8c8c8");
-
-		_arenaTabBtn.Modulate = _activeTab == Tab.Arena ? activeColor : normalColor;
-		_towerTabBtn.Modulate = _activeTab == Tab.Tower ? activeColor : normalColor;
-		_endlessTabBtn.Modulate = _activeTab == Tab.Endless ? activeColor : normalColor;
-		_dailyTabBtn.Modulate = _activeTab == Tab.Daily ? activeColor : normalColor;
+		// Selection uses the shared tab styling instead of tinting the buttons.
+		foreach (var (button, tab) in new[] { (_arenaTabBtn, Tab.Arena), (_towerTabBtn, Tab.Tower), (_endlessTabBtn, Tab.Endless), (_dailyTabBtn, Tab.Daily) })
+		{
+			button.ToggleMode = true;
+			button.SetPressedNoSignal(_activeTab == tab);
+		}
 	}
 
 	private void RebuildContent()
@@ -178,183 +177,45 @@ public partial class LeaderboardMenu : Control
 	{
 		var gs = GameState.Instance;
 		var tier = gs.GetArenaTier();
-
-		var headerLabel = new Label
-		{
-			Text = "Arena Rankings",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		headerLabel.AddThemeColorOverride("font_color", new Color("f59e0b"));
-		_contentStack.AddChild(headerLabel);
-
-		_contentStack.AddChild(new HSeparator());
-
-		// Player stats
-		var arenaStatsRow = CreateMetaSummaryRow("arena_rating", $"Your Rating: {gs.ArenaRating}  |  Tier: {tier.Title}  |  W: {gs.ArenaWins}  L: {gs.ArenaLosses}", new Color("ffd700"));
-		_contentStack.AddChild(arenaStatsRow);
-
-		_contentStack.AddChild(new HSeparator());
-
-		// Placeholder rankings
+		AddStanding(("Rating", $"{gs.ArenaRating} · {tier.Title}"), ("Record", $"{gs.ArenaWins} wins · {gs.ArenaLosses} losses"));
 		AddPlaceholderRankings();
-
-		// Player's own entry at the bottom
-		_contentStack.AddChild(new HSeparator());
-		_contentStack.AddChild(CreatePlayerEntryRow("arena_rating", $"{gs.ArenaRating}", new Color("ffd700")));
 	}
 
 	private void BuildTowerContent()
 	{
 		var gs = GameState.Instance;
-
-		var headerLabel = new Label
-		{
-			Text = "Tower Rankings",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		headerLabel.AddThemeColorOverride("font_color", new Color("38bdf8"));
-		_contentStack.AddChild(headerLabel);
-
-		_contentStack.AddChild(new HSeparator());
-
-		// Player stats
-		var floorText = gs.TowerHighestFloor > 0 ? $"Floor {gs.TowerHighestFloor}" : "No floors cleared";
-		_contentStack.AddChild(CreateMetaSummaryRow("tower_floor", $"Your Highest Floor: {floorText}", new Color("ffd700")));
-
-		_contentStack.AddChild(new HSeparator());
-
+		AddStanding(("Highest floor", gs.TowerHighestFloor > 0 ? $"Floor {gs.TowerHighestFloor}" : "None yet"));
 		AddPlaceholderRankings();
-
-		// Player's own entry
-		_contentStack.AddChild(new HSeparator());
-		_contentStack.AddChild(CreatePlayerEntryRow("tower_floor", floorText, new Color("ffd700")));
 	}
 
 	private void BuildEndlessContent()
 	{
 		var gs = GameState.Instance;
-
-		var headerLabel = new Label
-		{
-			Text = "Endless Rankings",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		headerLabel.AddThemeColorOverride("font_color", new Color("a855f7"));
-		_contentStack.AddChild(headerLabel);
-
-		_contentStack.AddChild(new HSeparator());
-
-		// Player stats
 		var timeSpan = TimeSpan.FromSeconds(gs.BestEndlessTimeSeconds);
-		var timeText = $"{(int)timeSpan.TotalMinutes}:{timeSpan.Seconds:D2}";
-		_contentStack.AddChild(CreateMetaSummaryRow("endless_wave", $"Your Best Wave: {gs.BestEndlessWave}  |  Best Time: {timeText}", new Color("ffd700")));
-
-		_contentStack.AddChild(new HSeparator());
-
+		AddStanding(("Best wave", gs.BestEndlessWave.ToString()), ("Best time", $"{(int)timeSpan.TotalMinutes}:{timeSpan.Seconds:D2}"));
 		AddPlaceholderRankings();
-
-		// Player's own entry
-		_contentStack.AddChild(new HSeparator());
-		_contentStack.AddChild(CreatePlayerEntryRow("endless_wave", $"Wave {gs.BestEndlessWave}", new Color("ffd700")));
 	}
 
 	private void BuildDailyContent()
 	{
 		var gs = GameState.Instance;
-
-		var headerLabel = new Label
-		{
-			Text = "Daily Challenge Rankings",
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		headerLabel.AddThemeColorOverride("font_color", new Color("22c55e"));
-		_contentStack.AddChild(headerLabel);
-
-		_contentStack.AddChild(new HSeparator());
-
-		// Player stats
-		_contentStack.AddChild(CreateMetaSummaryRow("daily_streak", $"Your Daily Streak: {gs.DailyStreak}", new Color("ffd700")));
-
-		_contentStack.AddChild(new HSeparator());
-
+		AddStanding(("Daily streak", gs.DailyStreak == 1 ? "1 day" : $"{gs.DailyStreak} days"));
 		AddPlaceholderRankings();
+	}
 
-		// Player's own entry
+	private void AddStanding(params (string Name, string Value)[] facts)
+	{
+		_contentStack.AddChild(RealmUi.SectionTitle("Your standing"));
+		// A narrow column keeps each value close to its name.
+		var column = new VBoxContainer { CustomMinimumSize = new Vector2(480f, 0f), SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
+		column.SetMeta(RealmModal.KeepMinimum, true);
+		foreach (var (name, value) in facts) column.AddChild(RealmUi.KeyValue(name, value));
+		_contentStack.AddChild(column);
 		_contentStack.AddChild(new HSeparator());
-		_contentStack.AddChild(CreatePlayerEntryRow("daily_streak", $"Streak: {gs.DailyStreak}", new Color("ffd700")));
 	}
 
 	private void AddPlaceholderRankings()
 	{
-		var placeholderLabel = new Label
-		{
-			Text = "Online leaderboards require server connection.",
-			HorizontalAlignment = HorizontalAlignment.Center,
-			AutowrapMode = TextServer.AutowrapMode.WordSmart
-		};
-		placeholderLabel.AddThemeColorOverride("font_color", new Color("606870"));
-		_contentStack.AddChild(placeholderLabel);
-
-		// Show empty rank rows as visual placeholders
-		for (var rank = 1; rank <= 10; rank++)
-		{
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 16);
-
-			var rankLabel = new Label { Text = $"#{rank}", CustomMinimumSize = new Vector2(40f, 0f) };
-			rankLabel.AddThemeColorOverride("font_color", new Color("505860"));
-			row.AddChild(rankLabel);
-
-			var nameLabel = new Label { Text = "---", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-			nameLabel.AddThemeColorOverride("font_color", new Color("505860"));
-			row.AddChild(nameLabel);
-
-			var scoreLabel = new Label { Text = "---", HorizontalAlignment = HorizontalAlignment.Right };
-			scoreLabel.AddThemeColorOverride("font_color", new Color("505860"));
-			row.AddChild(scoreLabel);
-
-			_contentStack.AddChild(row);
-		}
-	}
-
-	private static Control CreateMetaSummaryRow(string metaId, string text, Color color)
-	{
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 8);
-		row.AddChild(UiBadgeFactory.CreateMetaBadge(metaId, text, new Vector2(30f, 30f)));
-
-		var label = new Label
-		{
-			Text = text,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		label.AddThemeColorOverride("font_color", color);
-		row.AddChild(label);
-		return row;
-	}
-
-	private static Control CreatePlayerEntryRow(string metaId, string scoreText, Color color)
-	{
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 12);
-		row.AddChild(UiBadgeFactory.CreateMetaBadge(metaId, scoreText, new Vector2(28f, 28f)));
-
-		var playerName = new Label
-		{
-			Text = "You",
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		playerName.AddThemeColorOverride("font_color", color);
-		row.AddChild(playerName);
-
-		var playerScore = new Label
-		{
-			Text = scoreText,
-			HorizontalAlignment = HorizontalAlignment.Right
-		};
-		playerScore.AddThemeColorOverride("font_color", color);
-		row.AddChild(playerScore);
-		return row;
+		_contentStack.AddChild(RealmUi.EmptyState("crown", "Rankings are offline", "Connect to the realm's server to compare caravans."));
 	}
 }

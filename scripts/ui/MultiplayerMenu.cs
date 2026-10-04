@@ -198,7 +198,7 @@ public partial class MultiplayerMenu : Control
 
         var rollButton = new RealmButton
         {
-            Text = "Roll Code",
+            Text = "Roll code",
             CustomMinimumSize = new Vector2(0f, 42f),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
@@ -207,7 +207,7 @@ public partial class MultiplayerMenu : Control
 
         var copyButton = new RealmButton
         {
-            Text = "Copy Code",
+            Text = "Copy code",
             CustomMinimumSize = new Vector2(0f, 42f),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
@@ -220,7 +220,7 @@ public partial class MultiplayerMenu : Control
 
         var shareButton = new RealmButton
         {
-            Text = "Share Link",
+            Text = "Share link",
             CustomMinimumSize = new Vector2(0f, 42f),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
@@ -321,10 +321,13 @@ public partial class MultiplayerMenu : Control
         bottomRow.AddThemeConstantOverride("separation", 12);
         bottomPanel.AddChild(bottomRow);
 
-        bottomRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
-        bottomRow.AddChild(RealmUi.IconButton("sword", "Armory", () => SceneRouter.Instance.GoToShop()));
-        bottomRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
-        _syncButton = RealmUi.IconButton("arrow", "Sync pending results", FlushOutbox); bottomRow.AddChild(_syncButton);
+        if (!RealmModal.Embedded(this))
+        {
+            bottomRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
+            bottomRow.AddChild(RealmUi.IconButton("sword", "Armory", () => SceneRouter.Instance.GoToShop()));
+            bottomRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
+        }
+        _syncButton = RealmUi.Button("arrow", "Sync", FlushOutbox); bottomRow.AddChild(_syncButton);
         _refreshOnlineButton = RealmUi.Button("eye", "Refresh", RefreshOnlineData); bottomRow.AddChild(_refreshOnlineButton);
         bottomRow.AddChild(RealmUi.Button("people", "Match", QuickMatchOnlineRoom));
         bottomRow.AddChild(RealmUi.Button("flag", "Host", HostOnlineRoom));
@@ -388,7 +391,7 @@ public partial class MultiplayerMenu : Control
         RebuildSquadPanels(stage);
 
         var canStart = GameState.Instance.CanStartAsyncChallenge(out var readinessMessage);
-        var startButtonText = canStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
+        var startButtonText = canStart ? $"Start {challenge.Code}" : "Challenge not ready";
         if (TryBuildOnlineRoomStartState(challenge, canStart, readinessMessage, out var onlineRoomCanStart, out var onlineRoomButtonText, out var onlineRoomMessage))
         {
             canStart = onlineRoomCanStart;
@@ -399,7 +402,7 @@ public partial class MultiplayerMenu : Control
         var statusMessage = string.IsNullOrWhiteSpace(_lastStatusMessage)
             ? readinessMessage
             : _lastStatusMessage;
-        _statusLabel.Text = $"Status:\n{statusMessage}";
+        _statusLabel.Text = statusMessage;
         _syncButton.Disabled = GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null;
         _syncButton.TooltipText = $"Sync results · {GameState.Instance.PendingChallengeSubmissionCount} pending";
         _refreshOnlineButton.Disabled = ChallengeLeaderboardService.Instance == null &&
@@ -425,10 +428,10 @@ public partial class MultiplayerMenu : Control
     {
         foreach (var page in _boardPages) RealmUi.Clear(page);
         _squadStack = _boardPages[0];
-        _squadStack.AddChild(RealmUi.Heading("Challenge rooms", 26));
-        _squadStack.AddChild(RealmUi.Label(OnlineRoomDirectoryService.BuildSnapshotSummary(), 14, true));
-        _squadStack.AddChild(RealmUi.Button("eye", "Connection details", () => RealmUi.Details(this, "Connection details",
-            OnlineRoomCreateService.BuildStatusSummary() + "\n" + OnlineRoomJoinService.BuildStatusSummary() + "\n" + OnlineRoomSessionService.BuildStatusSummary() + "\n" + OnlineRoomTelemetryService.BuildStatusSummary())));
+        // Service diagnostics live behind Connection details; the page leads with rooms.
+        var connection = RealmUi.Button("eye", "Connection details", () => RealmUi.Details(this, "Connection details",
+            OnlineRoomDirectoryService.BuildSnapshotSummary() + "\n\n" + OnlineRoomCreateService.BuildStatusSummary() + "\n" + OnlineRoomJoinService.BuildStatusSummary() + "\n" + OnlineRoomSessionService.BuildStatusSummary() + "\n" + OnlineRoomTelemetryService.BuildStatusSummary()));
+        connection.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
         var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
         if (joinedRoomTicket != null)
         {
@@ -438,7 +441,7 @@ public partial class MultiplayerMenu : Control
         var onlineRooms = OnlineRoomDirectoryService.GetCachedRooms();
         if (onlineRooms.Count == 0)
         {
-            _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No online room listings cached yet.", new Vector2(24f, 24f)));
+            _squadStack.AddChild(RealmUi.EmptyState("people", "No open rooms", "Refresh to find rooms, or host one for your friends."));
         }
         else
         {
@@ -448,26 +451,24 @@ public partial class MultiplayerMenu : Control
             }
         }
 
-        _squadStack = _boardPages[2];
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Remote Featured Feed", new Vector2(24f, 24f)));
+        _squadStack.AddChild(connection);
 
-        _squadStack.AddChild(new Label
-        {
-            Text = ChallengeBoardFeedService.Instance?.BuildSnapshotSummary() ??
-                "Remote challenge feed service unavailable.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
+        _squadStack = _boardPages[2];
+        var onlineBoards = RealmUi.SectionTitle("Online boards");
+        onlineBoards.TooltipText = ChallengeBoardFeedService.Instance?.BuildSnapshotSummary() ?? "Online boards are unavailable.";
+        onlineBoards.MouseFilter = MouseFilterEnum.Pass;
+        _squadStack.AddChild(onlineBoards);
 
         var remoteFeed = ChallengeBoardFeedService.Instance?.GetCachedFeaturedChallenges() ?? [];
         if (remoteFeed.Count == 0)
         {
-            _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "No remote featured boards cached yet.", new Vector2(24f, 24f)));
+            _squadStack.AddChild(RealmUi.Label("None loaded yet. Refresh to check for new boards.", 18, true));
         }
         else
         {
             foreach (var featured in remoteFeed)
             {
-                _squadStack.AddChild(BuildFeaturedChallengePanel(featured, "Load Remote"));
+                _squadStack.AddChild(BuildFeaturedChallengePanel(featured, "Load board"));
             }
         }
 
@@ -475,10 +476,7 @@ public partial class MultiplayerMenu : Control
         var dailyChallenge = GameState.GetDailyChallenge();
         var dailyStage = GameData.GetStage(Mathf.Clamp(dailyChallenge.StageIndex, 1, GameState.Instance.MaxStage));
         var dailyCompleted = GameState.Instance.HasCompletedDailyChallenge();
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
-            "daily_streak",
-            dailyCompleted ? "Daily Challenge (Completed)" : "Daily Challenge",
-            new Vector2(24f, 24f)));
+        _squadStack.AddChild(RealmUi.SectionTitle(dailyCompleted ? "Today's challenge · completed" : "Today's challenge"));
 
         var dailyPanel = new PanelContainer
         {
@@ -498,34 +496,18 @@ public partial class MultiplayerMenu : Control
         dailyStack.AddThemeConstantOverride("separation", 8);
         dailyPadding.AddChild(dailyStack);
 
-        var dailyHeading = UiBadgeFactory.CreateMetaMetric(
-            "challenge",
-            $"{dailyChallenge.Date}  |  {dailyChallenge.BoardLabel}  |  {dailyStage.MapName} S{dailyStage.StageNumber}",
-            new Vector2(24f, 24f));
-        foreach (var label in dailyHeading.GetChildren().OfType<Label>())
-        {
-            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        }
+        var dailyHeading = RealmUi.Heading(dailyChallenge.BoardLabel, 20);
+        dailyHeading.TooltipText = $"{dailyChallenge.Date} · seed {dailyChallenge.Seed}";
+        dailyHeading.MouseFilter = MouseFilterEnum.Pass;
         dailyStack.AddChild(dailyHeading);
 
         var dailySquadLine = dailyChallenge.LockedSquad && dailyChallenge.LockedDeckUnitIds.Length > 0
-            ? $"Locked squad: {string.Join(", ", dailyChallenge.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
-            : "Free squad (bring your own)";
-        var dailyStatusLine = dailyCompleted
-            ? "Status: Completed"
-            : dailyStage.StageNumber <= GameState.Instance.HighestUnlockedStage
-                ? "Status: Ready"
-                : $"Status: Locked (explore stage {dailyStage.StageNumber} first)";
-
-        dailyStack.AddChild(new Label
-        {
-            Text =
-                $"Seed: {dailyChallenge.Seed}  |  {dailySquadLine}\n" +
-                $"{dailyStatusLine}\n" +
-                $"Stage {dailyStage.StageNumber} must be unlocked to participate.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
+            ? $"Set squad: {string.Join(", ", dailyChallenge.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
+            : "Bring your own squad";
+        var dailyUnlocked = dailyStage.StageNumber <= GameState.Instance.HighestUnlockedStage;
+        dailyStack.AddChild(RealmUi.Label($"{dailyStage.MapName} · stage {dailyStage.StageNumber} · {dailySquadLine}", 18, true));
+        if (!dailyCompleted && !dailyUnlocked)
+            dailyStack.AddChild(RealmUi.Label($"Unlocks when you reach stage {dailyStage.StageNumber}.", 18, true));
 
         var dailyButtonRow = new HBoxContainer();
         dailyButtonRow.AddThemeConstantOverride("separation", 8);
@@ -533,7 +515,7 @@ public partial class MultiplayerMenu : Control
 
         var playDailyButton = new RealmButton
         {
-            Text = dailyCompleted ? "Replay Daily Challenge" : "Play Daily Challenge",
+            Text = dailyCompleted ? "Replay challenge" : "Play challenge",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -546,7 +528,7 @@ public partial class MultiplayerMenu : Control
         {
             dailyStack.AddChild(new HSeparator());
 
-            dailyStack.AddChild(UiBadgeFactory.CreateMetaMetric("daily_streak", "Daily Leaderboard", new Vector2(24f, 24f)));
+            dailyStack.AddChild(RealmUi.SectionTitle("Today's leaders", 18));
 
             if (_cachedDailyLeaderboard == null || _cachedDailyLeaderboard.Entries.Count == 0)
             {
@@ -578,10 +560,7 @@ public partial class MultiplayerMenu : Control
             }
         }
 
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
-            "daily_streak",
-            $"Daily Featured Queue ({FeaturedChallengeCatalog.GetDailyRotationStamp()})",
-            new Vector2(24f, 24f)));
+        _squadStack.AddChild(RealmUi.SectionTitle("Featured today"));
 
         foreach (var featured in FeaturedChallengeCatalog.GetDailyRotation(
                      GameState.Instance.HighestUnlockedStage,
@@ -591,17 +570,14 @@ public partial class MultiplayerMenu : Control
         }
 
         _squadStack = _boardPages[3];
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
-            "challenge",
-            $"Pinned Codes ({GameState.Instance.GetPinnedChallengeCodes().Count})",
-            new Vector2(24f, 24f)));
+        _squadStack.AddChild(RealmUi.SectionTitle("Pinned codes"));
 
         var pinnedCodes = GameState.Instance.GetPinnedChallengeCodes();
         if (pinnedCodes.Count == 0)
         {
             _squadStack.AddChild(new Label
             {
-                Text = "Pin any challenge code to keep it on the board for rematches.",
+                Text = "Pin a challenge code to keep it here for rematches.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
         }
@@ -617,12 +593,9 @@ public partial class MultiplayerMenu : Control
 
         _squadStack = _boardPages[4];
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
-            "members",
-            GameState.Instance.HasSelectedAsyncChallengeLockedDeck
-                ? $"Featured Squad Lock ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})"
-                : $"Active Squad ({previewDeck.Count}/{GameState.Instance.DeckSizeLimit})",
-            new Vector2(24f, 24f)));
+        _squadStack.AddChild(RealmUi.SectionTitle(GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+            ? $"Set squad {previewDeck.Count}/{GameState.Instance.DeckSizeLimit}"
+            : $"Squad {previewDeck.Count}/{GameState.Instance.DeckSizeLimit}"));
 
         _squadStack.AddChild(new Label
         {
@@ -630,12 +603,9 @@ public partial class MultiplayerMenu : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        _squadStack.AddChild(UiBadgeFactory.CreateMetaMetric(
-            "challenge",
-            GameState.Instance.HasSelectedAsyncChallengeLockedDeck
-                ? "Spell Layer"
-                : $"Active Magic ({GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit})",
-            new Vector2(24f, 24f)));
+        _squadStack.AddChild(RealmUi.SectionTitle(GameState.Instance.HasSelectedAsyncChallengeLockedDeck
+            ? "Spells"
+            : $"Spells {GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit}"));
 
         _squadStack.AddChild(new Label
         {
@@ -669,7 +639,7 @@ public partial class MultiplayerMenu : Control
             padding,
             UiBadgeFactory.CreateMetaBadge("challenge", code, new Vector2(48f, 48f)));
 
-        stack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Remote Board", new Vector2(24f, 24f)));
+        stack.AddChild(RealmUi.SectionTitle("Board standings", 18));
 
         stack.AddChild(new Label
         {
@@ -716,7 +686,7 @@ public partial class MultiplayerMenu : Control
 
         headerRow.AddChild(new Label
         {
-            Text = $"{room.Title}  |  {room.Status}",
+            Text = $"{room.Title} · {room.Status}",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         });
         headerRow.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"{room.CurrentPlayers}/{room.MaxPlayers}", new Vector2(24f, 24f)));
@@ -724,14 +694,14 @@ public partial class MultiplayerMenu : Control
         stack.AddChild(new Label
         {
             Text =
-                $"{room.BoardCode}  |  Host {room.HostCallsign}  |  Region {room.Region}\n" +
+                $"{room.BoardCode} · Host {room.HostCallsign} · Region {room.Region}\n" +
                 $"{room.BoardTitle}\n" +
                 $"{room.Summary}\n" +
                 $"{deckSummary}\n" +
                 $"Spectators: {room.SpectatorCount}" +
                 (stage == null || mutator == null
                     ? ""
-                    : $"\nStage: {stage.MapName} S{stage.StageNumber}  |  Mutator: {mutator.Title}"),
+                    : $"\nStage: {stage.MapName} S{stage.StageNumber} · Mutator: {mutator.Title}"),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -741,7 +711,7 @@ public partial class MultiplayerMenu : Control
 
         var loadButton = new RealmButton
         {
-            Text = "Preview Board",
+            Text = "Preview",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -750,7 +720,7 @@ public partial class MultiplayerMenu : Control
 
         var joinButton = new RealmButton
         {
-            Text = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId ? "Host Seat Active" : "Request Join",
+            Text = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId ? "Hosting" : "Request join",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             Disabled = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId
@@ -760,7 +730,7 @@ public partial class MultiplayerMenu : Control
 
         var copyButton = new RealmButton
         {
-            Text = "Copy Room ID",
+            Text = "Copy room ID",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -790,7 +760,7 @@ public partial class MultiplayerMenu : Control
             padding,
             UiBadgeFactory.CreateMetaBadge("challenge", "room", new Vector2(48f, 48f)));
 
-        stack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Online Room Controls", new Vector2(24f, 24f)));
+        stack.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", "Room controls", new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
@@ -838,7 +808,7 @@ public partial class MultiplayerMenu : Control
 
         var refreshButton = new RealmButton
         {
-            Text = "Refresh Joined Room",
+            Text = "Refresh room",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -847,7 +817,7 @@ public partial class MultiplayerMenu : Control
 
         var autoRefreshButton = new RealmButton
         {
-            Text = _onlineRoomAutoRefreshEnabled ? "Pause Auto Refresh" : "Resume Auto Refresh",
+            Text = _onlineRoomAutoRefreshEnabled ? "Pause auto refresh" : "Resume auto refresh",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -879,7 +849,7 @@ public partial class MultiplayerMenu : Control
 
         var refreshScoreboardButton = new RealmButton
         {
-            Text = "Refresh Room Scoreboard",
+            Text = "Refresh scoreboard",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -929,7 +899,7 @@ public partial class MultiplayerMenu : Control
 
         var reportButton = new RealmButton
         {
-            Text = "Submit Room Report",
+            Text = "Submit report",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             Disabled = !OnlineRoomReportService.CanSubmitJoinedRoomReport()
@@ -960,34 +930,18 @@ public partial class MultiplayerMenu : Control
             padding,
             UiBadgeFactory.CreateUnitBadge(definition, new Vector2(72f, 72f)));
 
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Lv{GameState.Instance.GetUnitLevel(definition.Id)}  {definition.DisplayName}  |  " +
-                $"{SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}  |  " +
-                $"{GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Cost {definition.Cost}  |  HP {Mathf.RoundToInt(stats.MaxHealth)}  |  ATK {stats.AttackDamage:0.#}  |  Base {stats.BaseDamage}",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"Range {stats.AttackRange:0.#}  |  Move {stats.Speed:0.#}  |  Deploy CD {deployCooldown:0.#}s" +
-                UnitStatText.BuildInlineTraits(stats),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
+        stack.AddChild(RealmUi.Heading(definition.DisplayName, 20));
+        stack.AddChild(RealmUi.Label(
+            $"Lv {GameState.Instance.GetUnitLevel(definition.Id)} · {SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)} · {GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}", 18, true));
+        stack.AddChild(RealmUi.Label(
+            $"{definition.Cost} courage · {Mathf.RoundToInt(stats.MaxHealth)} health · {stats.AttackDamage:0.#} damage · {stats.BaseDamage} gate damage", 18));
+        stack.AddChild(RealmUi.Label(
+            $"Range {stats.AttackRange:0.#} · speed {stats.Speed:0.#} · {deployCooldown:0.#}s recovery" + UnitStatText.BuildInlineTraits(stats), 18, true));
 
         return panel;
     }
 
-    private Control BuildFeaturedChallengePanel(FeaturedChallengeDefinition featured, string loadButtonText = "Load Featured")
+    private Control BuildFeaturedChallengePanel(FeaturedChallengeDefinition featured, string loadButtonText = "Load board")
     {
         var challenge = featured.Challenge;
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
@@ -1023,7 +977,7 @@ public partial class MultiplayerMenu : Control
 
         headerRow.AddChild(new Label
         {
-            Text = $"{featured.Title}  |  {stage.MapName} S{stage.StageNumber}",
+            Text = $"{featured.Title} · {stage.MapName} S{stage.StageNumber}",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         });
         headerRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", lockedLabel, new Vector2(24f, 24f)));
@@ -1031,7 +985,7 @@ public partial class MultiplayerMenu : Control
         stack.AddChild(new Label
         {
             Text =
-                $"{challenge.Code}  |  {mutator.Title}  |  Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
+                $"{challenge.Code} · {mutator.Title} · Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
                 $"{featured.Summary}\n" +
                 $"Locked squad: {deckSummary}\n" +
                 $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}",
@@ -1100,13 +1054,13 @@ public partial class MultiplayerMenu : Control
 
         stack.AddChild(UiBadgeFactory.CreateMetaMetric(
             "challenge",
-            $"{challenge.Code}  |  {stage.MapName} S{stage.StageNumber}  |  {mutator.Title}",
+            $"{challenge.Code} · {stage.MapName} S{stage.StageNumber} · {mutator.Title}",
             new Vector2(24f, 24f)));
 
         stack.AddChild(new Label
         {
             Text =
-                $"Pinned rematch board  |  Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
+                $"Pinned rematch board · Best {best} ({AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)})\n" +
                 $"{recentLine}\n" +
                 $"{AsyncChallengeCatalog.BuildTargetSummary(challenge)}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
@@ -1118,7 +1072,7 @@ public partial class MultiplayerMenu : Control
 
         var loadButton = new RealmButton
         {
-            Text = "Load Pinned",
+            Text = "Load",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -1127,7 +1081,7 @@ public partial class MultiplayerMenu : Control
 
         var removeButton = new RealmButton
         {
-            Text = "Remove Pin",
+            Text = "Unpin",
             CustomMinimumSize = new Vector2(0f, 38f),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -1305,7 +1259,7 @@ public partial class MultiplayerMenu : Control
         }
 
         SetStatusMessage(
-            $"Previewed room board {room.BoardCode} from {room.Title}. Use `Request Join` if you want to negotiate backend room access; this action only preloads the board locally.");
+            $"Previewed room board {room.BoardCode} from {room.Title}. Request join to take a seat; previewing only loads the board here.");
         RefreshUi();
     }
 
@@ -1596,7 +1550,7 @@ public partial class MultiplayerMenu : Control
         out string message)
     {
         canStart = baseCanStart;
-        buttonText = baseCanStart ? $"Start {challenge.Code}" : "Challenge Not Ready";
+        buttonText = baseCanStart ? $"Start {challenge.Code}" : "Challenge not ready";
         message = baseReadinessMessage;
 
         var ticket = OnlineRoomJoinService.GetCachedTicket();
@@ -1614,17 +1568,17 @@ public partial class MultiplayerMenu : Control
         if (OnlineRoomJoinService.IsTicketExpired(ticket))
         {
             canStart = false;
-            buttonText = "Recover Room Seat";
+            buttonText = "Recover seat";
             message =
                 $"Joined room seat for {ticket.RoomTitle} has expired.\n" +
-                "Use `Recover Seat` or `Quick Match` before trying to deploy into this room race.";
+                "Recover your seat or use Match before deploying into this room race.";
             return true;
         }
 
         if (string.Equals(ticket.Status, "spectate", StringComparison.OrdinalIgnoreCase))
         {
             canStart = false;
-            buttonText = "Spectating Room";
+            buttonText = "Spectating";
             message =
                 $"This room seat for {ticket.RoomTitle} is spectate-only.\n" +
                 "Leave the room or negotiate a runner seat before deploying on this board.";
@@ -1644,7 +1598,7 @@ public partial class MultiplayerMenu : Control
         if (!baseCanStart)
         {
             canStart = false;
-            buttonText = "Room Board Not Ready";
+            buttonText = "Room board not ready";
             message =
                 $"{baseReadinessMessage}\n" +
                 $"Room seat is armed for {ticket.RoomTitle}, but the selected board is not startable yet.";
@@ -1655,17 +1609,17 @@ public partial class MultiplayerMenu : Control
         if (roomSnapshot == null || !roomSnapshot.HasRoom)
         {
             canStart = false;
-            buttonText = "Refresh Room State";
+            buttonText = "Refresh room";
             message =
                 $"Room seat is armed for {ticket.RoomTitle}, but no live room snapshot is cached yet.\n" +
-                "Use `Refresh Joined Room` or `Refresh Online` before entering the room race.";
+                "Refresh the room before entering the race.";
             return true;
         }
 
         if (roomSnapshot.RoundComplete)
         {
             canStart = false;
-            buttonText = "Room Round Complete";
+            buttonText = "Round complete";
             message =
                 $"The current room round for {ticket.RoomTitle} is already complete.\n" +
                 "Wait for the host to reset the round, or leave and join a fresh room board.";
@@ -1675,7 +1629,7 @@ public partial class MultiplayerMenu : Control
         if (!roomSnapshot.RoundLocked)
         {
             canStart = false;
-            buttonText = OnlineRoomActionService.CanLaunchRound() ? "Launch Room Round" : "Waiting For Room Launch";
+            buttonText = OnlineRoomActionService.CanLaunchRound() ? "Launch round" : "Waiting for launch";
             message = OnlineRoomActionService.CanLaunchRound()
                 ? $"Host seat is armed for {ticket.RoomTitle}. Launch the room round first, then deploy into the shared race."
                 : $"Joined room {ticket.RoomTitle} is armed for {challenge.Code}, but the host has not launched the round yet.\nReady up in the room controls and wait for the race countdown.";
@@ -1683,7 +1637,7 @@ public partial class MultiplayerMenu : Control
         }
 
         canStart = true;
-        buttonText = roomSnapshot.RaceCountdownActive ? "Enter Online Room Race" : "Deploy Into Online Room";
+        buttonText = roomSnapshot.RaceCountdownActive ? "Enter race" : "Deploy into room";
         message = roomSnapshot.RaceCountdownActive
             ? $"Room launch countdown is live for {ticket.RoomTitle}: {roomSnapshot.RaceCountdownRemainingSeconds:0.0}s remaining.\nDeploy now to enter the shared room race on {challenge.Code}."
             : $"Room round is live for {ticket.RoomTitle}.\nDeploy now to post your result into the active internet-room scoreboard for {challenge.Code}.";
@@ -1803,7 +1757,7 @@ public partial class MultiplayerMenu : Control
 
         if (!OnlineRoomJoinService.HasActiveTicket())
         {
-            _onlineRoomAutoRefreshStatus = "Joined room auto refresh paused: the current room seat has expired. Use `Recover Seat` or `Refresh Online` to restore room play.";
+            _onlineRoomAutoRefreshStatus = "Joined room auto refresh paused: the current room seat has expired. Recover your seat or refresh to continue.";
             _onlineRoomAutoRefreshTimer = 0.5f;
             return;
         }
@@ -1854,12 +1808,12 @@ public partial class MultiplayerMenu : Control
         var ticket = OnlineRoomJoinService.GetCachedTicket();
         if (ticket == null)
         {
-            return "Quick Match";
+            return "Quick match";
         }
 
         return OnlineRoomJoinService.HasActiveTicket()
-            ? "Refresh Seat Lease"
-            : "Recover Seat";
+            ? "Refresh seat"
+            : "Recover seat";
     }
 
     private void OnAppLifecycleStateChanged()
@@ -1950,7 +1904,7 @@ public partial class MultiplayerMenu : Control
             ? DateTimeOffset.FromUnixTimeSeconds(record.PlayedAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm")
             : "--";
         var outcome = record.Retreated ? "RET" : record.Won ? "WIN" : "FAIL";
-        var medal = "No Medal";
+        var medal = "No medal";
         if (AsyncChallengeCatalog.TryParse(record.Code, out var challenge, out _))
         {
             medal = AsyncChallengeCatalog.ResolveMedalLabel(challenge, record.Score);

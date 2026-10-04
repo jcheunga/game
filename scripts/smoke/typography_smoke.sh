@@ -8,11 +8,15 @@ RUN_TAG="$(date +%s)-$$"
 mkdir -p artifacts/typography
 "$DOTNET_BIN" build Game.csproj
 "$GODOT_BIN" --headless --editor --path . --import > artifacts/typography/import.log 2>&1
-for mode in typography typography-advanced small-window; do
+for mode in typography typography-advanced small-window mobile-preview; do
   resolution=1280x720
   args=("--$mode")
   if [[ "$mode" == small-window ]]; then
     resolution=1024x768
+    args+=(--typography)
+  fi
+  if [[ "$mode" == mobile-preview ]]; then
+    resolution=844x390
     args+=(--typography)
   fi
   log="artifacts/typography/$mode.log"

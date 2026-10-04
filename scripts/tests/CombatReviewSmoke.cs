@@ -77,6 +77,7 @@ public partial class CombatReviewSmoke : Node
             }
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
+        await LiveUiReview.StopAudio(this);
         GD.Print($"COMBAT_REVIEW_RESULT: {_failures} failures");
         GetTree().Quit(_failures == 0 ? 0 : 1);
     }

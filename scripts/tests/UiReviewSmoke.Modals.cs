@@ -84,6 +84,9 @@ public partial class UiReviewSmoke
 
     private async Task TapModal(Button button)
     {
+        for (var parent = button.GetParent(); parent != null; parent = parent.GetParent())
+            if (parent is ScrollContainer scroll) scroll.EnsureControlVisible(button);
+        await Wait(.05);
         var center = button.GetGlobalRect().GetCenter();
         Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = center, GlobalPosition = center });
         Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = center, GlobalPosition = center });

@@ -166,20 +166,17 @@ public partial class PrivacyReview : Node
         freshNotice.HasShownConsentPrompt = false;
         SaveSystem.Instance.Save(freshNotice);
         state.ReloadFromDisk();
-        var main = GD.Load<PackedScene>("res://scenes/MainMenu.tscn").Instantiate<Control>();
-        AddChild(main);
+        var main = (Control)await LiveUiReview.Open(this, "MainMenu");
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
         Check(!main.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.Text == "Allow Analytics" || button.Text == "No Thanks")
             && !main.GetChildren().OfType<CenterContainer>().Any(), "A fresh startup opens the map without an analytics modal");
         Check(!state.AnalyticsConsent && !state.CrashReportingConsent, "Opening home without a prompt keeps optional uploads disabled");
         await Capture("startup");
-        main.QueueFree();
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-
-        var settings = GD.Load<PackedScene>("res://scenes/SettingsMenu.tscn").Instantiate<Control>();
-        AddChild(settings);
-        settings.FindChildren("*", "Button", true, false).OfType<Button>()
-            .Single(button => button.Text == "Account" && button.GetParent().HasMeta("realm_tabs")).EmitSignal(Button.SignalName.Pressed);
+        var settings = (Control)await LiveUiReview.Open(this, "SettingsMenu");
+        var accountTab = settings.FindChildren("*", "Button", true, false).OfType<Button>()
+            .Single(button => button.Text == "Account" && button.GetParent().HasMeta("realm_tabs"));
+        accountTab.ButtonPressed = true;
+        accountTab.EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
         Check(settings.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Enable Analytics"), "Analytics remains an optional choice in Settings");
         var crash = settings.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text == "Enable Crash Reports");
@@ -190,14 +187,17 @@ public partial class PrivacyReview : Node
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         Check(scroll.GetGlobalRect().Encloses(crash.GetGlobalRect()), "Separate crash-report choice remains reachable in Settings");
         await Capture("privacy-settings");
-        settings.QueueFree();
+        ((MapMenu)GetTree().CurrentScene).CloseHomeModal();
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
     }
 
     private async Task Capture(string name)
     {
-        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        RenderingServer.ForceDraw();
         var directory = ProjectSettings.GlobalizePath("res://artifacts/privacy-review");
         System.IO.Directory.CreateDirectory(directory);
-        GetViewport().GetTexture().GetImage().SavePng($"{directory}/{name}.png");
+        using var pixels = GetViewport().GetTexture().GetImage();
+        Check(pixels.SavePng($"{directory}/{name}.png") == Error.Ok, "Capture " + name);
     }
 }

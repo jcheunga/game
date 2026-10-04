@@ -13,7 +13,7 @@ public partial class WorldArtReview : Node
     private int _failures;
     private bool Phone => OS.GetCmdlineUserArgs().Contains("--mobile-preview");
     private bool Incomplete => OS.GetCmdlineUserArgs().Contains("--allow-incomplete");
-    private static T Read<T>(object obj, string field) => (T)obj.GetType().GetField(field,Hidden).GetValue(obj);
+    private static T Read<T>(object obj, string field) => (T)(obj is MapMenu ? typeof(MapMenu) : obj.GetType()).GetField(field,Hidden).GetValue(obj);
     private void Check(bool ok, string message) { GD.Print($"WORLD_ART_CHECK: {(ok ? "PASS" : "FAIL")} {message}"); if (!ok) _failures++; }
     private async Task Wait(double seconds = .15) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
     public override void _Ready() => Callable.From(Run).CallDeferred();
@@ -62,17 +62,19 @@ public partial class WorldArtReview : Node
                 if (zoneIndex > 0)
                     state.ApplyVictory(GameData.GetStagesForMap(AssetCoverageCatalog.RouteIds[zoneIndex - 1]).Max(s => s.StageNumber), 0, 0, 1);
                 var stage = GameData.GetStagesForMap(zone).First().StageNumber; state.SetSelectedStage(stage);
-                var map = GD.Load<PackedScene>("res://scenes/MapMenu.tscn").Instantiate<MapMenu>(); AddChild(map); await Wait(.4);
+                var map = (MapMenu)await LiveUiReview.Open(this, "MainMenu"); await Wait(.4);
                 var canvas = Read<MapPathCanvas>(map,"_mapCanvas");
                 Check(AdventureAtlasArt.Material(AdventureAtlasArt.GroundMaterial(zone)) != null && canvas.ActiveMapId == zone, zone + " artwork is connected to its map screen");
                 await Capture("zone-" + zone + "-fresh");
-                for (var cell = 0; cell < AdventureTerrain.CellCount; cell++) if (AdventureTerrain.Walkable(zone,cell)) state.MoveAdventureHero(zone,AdventureTerrain.Point(cell),false);
-                state.MoveAdventureHero(zone,AdventureMapCatalog.ForMap(zone).First().Point,false);
-                canvas.RefreshKnowledge(); canvas.ChangeZoom(.01f); canvas.FocusPoint(AdventureMapCatalog.WorldSize * .5f);
+                var explored = state.BuildSaveData();
+                explored.AdventureOpenTiles = AdventureTileCatalog.ForMap(zone).Select(tile => tile.Id).ToArray();
+                state.RestoreCloudSave(explored);
+                canvas.RefreshKnowledge(); canvas.ChangeZoom(.01f); canvas.FocusOverview();
+                Check(AdventureTileCatalog.ForMap(zone).All(state.IsAdventureTileOpen), zone + " explored capture opens the current tile map");
                 await Wait(); await Capture("zone-" + zone + "-explored"); map.QueueFree(); await Wait();
                 if (Incomplete && !ResourceLoader.Exists(WorldEnvironmentArt.BattlePath(stage))) continue;
                 state.PrepareCampaignBattle();
-                var battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>(); AddChild(battle); battle.SetPhysicsProcess(false); await Wait(.4);
+                var battle = (BattleController)await LiveUiReview.Open(this, "Battle"); battle.SetPhysicsProcess(false); await Wait(.4);
                 Check(Read<Texture2D>(battle,"_stageArtwork") != null, $"Stage {stage:00} screen loads the individual scene");
                 await Capture($"battle-{stage:00}-normal");
                 var camera = Read<Camera2D>(battle,Phone ? "_mobileCamera" : "_battleCamera");

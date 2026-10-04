@@ -8,7 +8,7 @@ The game deliberately uses a small number of folders with clear runtime roles:
 - `combat/hud/` — reusable battle-only HUD controls and floating text.
 - `ui/` — individual navigable menus and menu-specific interaction code.
 - `ui/shared/` — shared UI theme, layout/backdrop, asset loading, and badge components. New reusable UI code belongs here, not in a screen class.
-- `tests/` — game data validation.
+- `tests/` — game data, behavior and presentation reviews. Navigable screen reviews use the production router; see [live UI parity](../docs/LIVE_UI_TEST_PARITY.md).
 - `tools/` — editor/development helpers.
 
 ## Conventions

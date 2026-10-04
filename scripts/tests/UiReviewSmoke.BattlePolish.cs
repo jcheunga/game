@@ -112,6 +112,7 @@ public partial class UiReviewSmoke
         }
         MobilePresentation.TestOverride = null; GetTree().Paused = false;
         await Open("MainMenu");
+        await LiveUiReview.StopAudio(this);
         GD.Print($"BATTLE_POLISH_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1);
     }
 }

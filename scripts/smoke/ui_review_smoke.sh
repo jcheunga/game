@@ -10,12 +10,14 @@ mkdir -p artifacts/ui-review
 
 "$DOTNET_BIN" build Game.csproj
 "$GODOT_BIN" --headless --editor --path . --import > artifacts/ui-review/import.log 2>&1
-for mode in core all-menus playthrough; do
+for mode in live-parity core all-menus playthrough; do
   "$GODOT_BIN" --path . --windowed --rendering-method gl_compatibility --resolution 1280x720 \
     res://scenes/tests/UiReviewSmoke.tscn -- \
     "--save-suffix=ui-review-$RUN_TAG-$mode" "--$mode" \
     > "artifacts/ui-review/$mode.log" 2>&1
-  if ! rg -q 'UI_REVIEW_RESULT: 0 failures' "artifacts/ui-review/$mode.log"; then
+  result=UI_REVIEW_RESULT
+  if [[ "$mode" == live-parity ]]; then result=LIVE_UI_PARITY_RESULT; fi
+  if ! rg -q "$result: 0 failures" "artifacts/ui-review/$mode.log" || rg -q '^ERROR:' "artifacts/ui-review/$mode.log"; then
     cat "artifacts/ui-review/$mode.log"
     exit 1
   fi

@@ -12,7 +12,7 @@ public partial class ExplorationReview : Node
     private const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
     private int _failures;
     private bool Phone => OS.GetCmdlineUserArgs().Contains("--mobile-preview");
-    private static T Read<T>(object obj,string field) => (T)obj.GetType().GetField(field,Hidden).GetValue(obj);
+    private static T Read<T>(object obj,string field) => (T)(obj is MapMenu ? typeof(MapMenu) : obj.GetType()).GetField(field,Hidden).GetValue(obj);
     private static object Call(object obj,string method,params object[] args) => obj.GetType().GetMethod(method,Hidden).Invoke(obj,args);
     private void Check(bool ok,string text) { GD.Print($"EXPLORATION_CHECK: {(ok ? "PASS" : "FAIL")} {text}"); if (!ok) _failures++; }
     private async Task Wait(double seconds=.1) => await ToSignal(GetTree().CreateTimer(seconds),SceneTreeTimer.SignalName.Timeout);
@@ -38,7 +38,7 @@ public partial class ExplorationReview : Node
             GameState.Instance.ApplyVictory(GameData.GetStagesForMap(previous).Max(stage => stage.StageNumber), 0, 0, 1);
         }
         GameState.Instance.SetSelectedStage(GameData.GetStagesForMap(zone).First().StageNumber);
-        var menu=GD.Load<PackedScene>("res://scenes/MapMenu.tscn").Instantiate<MapMenu>(); AddChild(menu); await Wait(.2); return menu;
+        var menu=(MapMenu)await LiveUiReview.Open(this, "MainMenu"); await Wait(.2); return menu;
     }
     private async Task Capture(string name)
     {

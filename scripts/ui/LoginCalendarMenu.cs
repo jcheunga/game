@@ -38,7 +38,8 @@ public partial class LoginCalendarMenu : Control
                 var reward = rewards[index];
                 var current = reward.Day == claimed + 1;
                 var collected = reward.Day <= claimed;
-                var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(220, 0) };
+                var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                    CustomMinimumSize = new Vector2(RealmModal.Embedded(this) ? 0 : 220, 0) };
                 if (current) frame.AddThemeStyleboxOverride("panel", RealmUi.Surface(new Color("433623"), RealmUi.Gold));
                 strip.AddChild(frame);
                 var card = new VBoxContainer(); frame.AddChild(card);

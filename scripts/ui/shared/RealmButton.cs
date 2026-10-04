@@ -16,7 +16,7 @@ public partial class RealmButton : Button
         if (_groupLabel != null)
         {
             _groupLabel.AddThemeFontOverride("font", font);
-            _groupLabel.AddThemeFontSizeOverride("font_size", 20);
+            _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
             return;
         }
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) AddThemeColorOverride(key, ink);
@@ -39,11 +39,17 @@ public partial class RealmButton : Button
         _groupLabel = new Label { MouseFilter = MouseFilterEnum.Ignore, VerticalAlignment = VerticalAlignment.Center };
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
         _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+        ThemeChanged += SyncGroupTheme;
         if (IconAlignment == HorizontalAlignment.Right) { row.AddChild(_groupLabel); row.AddChild(_groupIcon); }
         else { row.AddChild(_groupIcon); row.AddChild(_groupLabel); }
         RefreshGroup();
     }
     public override void _Process(double delta) { if (_groupLabel != null) RefreshGroup(); }
+    private void SyncGroupTheme()
+    {
+        _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
+        _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+    }
     private void RefreshGroup()
     {
         if (_groupLabel.Text != Text) _groupLabel.Text = Text;

@@ -172,7 +172,15 @@ public partial class RealmModal : Control
             }
         }
         foreach (var footer in footers) {
-            menu.RemoveChild(footer); root.AddChild(footer); footer.Show(); RelaxMinimums(footer);
+            menu.RemoveChild(footer);
+            if (MobilePresentation.Enabled)
+            {
+                var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+                    VerticalScrollMode = ScrollContainer.ScrollMode.Disabled };
+                root.AddChild(scroll); scroll.AddChild(footer);
+            }
+            else root.AddChild(footer);
+            footer.Show(); RelaxMinimums(footer);
             footer.SizeFlagsHorizontal = SizeFlags.ExpandFill; footer.SizeFlagsVertical = SizeFlags.Fill;
             MarkLaunchActions(footer);
             if (MobilePresentation.Enabled) CompactFooter(footer);
@@ -186,7 +194,13 @@ public partial class RealmModal : Control
         if (node is Button button)
         {
             if (button.Text.StartsWith("Back ") || button.Text is "Settings" or "Caravan Armory") button.Hide();
-            else { button.CustomMinimumSize = new Vector2(0, 48); button.AddThemeFontSizeOverride("font_size", 18); }
+            else
+            {
+                button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
+                var textWidth = ModalUi.HeadingFont.GetStringSize(button.Text, fontSize: RealmUi.ButtonFontSize).X;
+                var iconWidth = button.Icon == null ? 0 : button.GetThemeConstant("icon_max_width") + button.GetThemeConstant("h_separation");
+                button.CustomMinimumSize = new Vector2(Mathf.Max(48, textWidth + iconWidth + 16), 48);
+            }
         }
         foreach (var child in node.GetChildren()) CompactFooter(child);
     }

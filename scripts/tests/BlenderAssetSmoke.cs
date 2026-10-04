@@ -167,7 +167,8 @@ public partial class BlenderAssetSmoke : Node
         }
         for (var i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.5), SceneTreeTimer.SignalName.Timeout);
-        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        RenderingServer.ForceDraw();
         var folder = ProjectSettings.GlobalizePath("res://artifacts/blender");
         Directory.CreateDirectory(folder);
         var result = GetViewport().GetTexture().GetImage().SavePng($"{folder}/assets-in-battle-{stage}.png");
@@ -179,13 +180,14 @@ public partial class BlenderAssetSmoke : Node
     private async Task CaptureCodex()
     {
         foreach (var entry in CodexCatalog.GetAll()) GameState.Instance.DiscoverCodexEntry(entry.Id);
-        var menu = GD.Load<PackedScene>("res://scenes/CodexMenu.tscn").Instantiate();
-        AddChild(menu);
-        menu.GetType().GetField("_activeCategory", Hidden)!.SetValue(menu, "Bosses");
-        menu.GetType().GetField("_selectedEntryId", Hidden)!.SetValue(menu, "boss_dread_sovereign");
-        menu.GetType().GetMethod("RefreshBook", Hidden)!.Invoke(menu, null);
+        var menu = await LiveUiReview.Open(this, "CodexMenu");
+        var bosses = menu.FindChildren("*", "Button", true, false).OfType<Button>().Single(button => button.Text == "Bosses");
+        bosses.ButtonPressed = true; bosses.EmitSignal(Button.SignalName.Pressed);
+        var sovereign = menu.FindChildren("*", "Button", true, false).OfType<Button>()
+            .Single(button => button.AccessibilityName == "Dread Sovereign");
+        sovereign.EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        RenderingServer.ForceDraw();
         var output = ProjectSettings.GlobalizePath("res://artifacts/blender/codex-in-game.png");
         Check(GetViewport().GetTexture().GetImage().SavePng(output) == Error.Ok, "Discovered Codex portrait screenshot");
         menu.QueueFree();

@@ -5,6 +5,8 @@ using Godot;
 /// <summary>Small, shared presentation primitives. Game rules remain in GameState.</summary>
 public static class RealmUi
 {
+    public const int ButtonFontSize = 16;
+    public const int CompactButtonFontSize = 14;
     public static readonly Color Gold = new("d7b77b");
     public static readonly Color Muted = new("9eada9");
     private static readonly Dictionary<string, Texture2D> Icons = new();
@@ -35,7 +37,7 @@ public static class RealmUi
     public static Button Button(string icon, string label, Action action, bool primary = false)
     {
         var button = new RealmButton { Text = label, Icon = Icon(icon), ExpandIcon = true, CenterIconAndText = true, TooltipText = label,
-            CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, 20).X + 72, 48),
+            CustomMinimumSize = new Vector2(string.IsNullOrEmpty(label) ? 48 : TitleFont.GetStringSize(label, HorizontalAlignment.Left, -1, ButtonFontSize).X + 72, 48),
             Alignment = HorizontalAlignment.Center, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
         button.AddThemeConstantOverride("icon_max_width", 22);
         button.AddThemeConstantOverride("h_separation", 10);

@@ -27,7 +27,7 @@ public partial class FeedbackReview : Node
     private static IEnumerable<Node> Walk(Node node)
     { yield return node; foreach (var child in node.GetChildren()) foreach (var descendant in Walk(child)) yield return descendant; }
     private async Task<T> Open<T>(string scene) where T : Node
-    { var node = ResourceLoader.Load<PackedScene>("res://scenes/" + scene + ".tscn").Instantiate<T>(); AddChild(node); await Wait(.5); return node; }
+    { var node = (T)await LiveUiReview.Open(this, scene); await Wait(.5); return node; }
     private async void Run()
     {
         try

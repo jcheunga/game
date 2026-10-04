@@ -27,7 +27,7 @@ public partial class MapMenu
         foreach (var button in new[] { gold, food })
         {
             button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            button.AddThemeFontSizeOverride("font_size", 18);
+            button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
             HomeMapUi.StyleButton(button);
             row.AddChild(button);
         }

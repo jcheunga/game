@@ -30,7 +30,7 @@ public partial class LoadoutMenu
             card.AddChild(new TextureRect { Texture = UiArtLoader.TryLoadUnitIcon(unit), CustomMinimumSize = new Vector2(80, 64),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 MouseFilter = MouseFilterEnum.Ignore });
-            var name = RealmUi.Label(unit.DisplayName, 17); name.HorizontalAlignment = HorizontalAlignment.Center;
+            var name = RealmUi.Label(unit.DisplayName, 17); name.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize); name.HorizontalAlignment = HorizontalAlignment.Center;
             name.AutowrapMode = TextServer.AutowrapMode.Off; name.ClipText = true;
             name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
             name.MouseFilter = MouseFilterEnum.Ignore; card.AddChild(name);

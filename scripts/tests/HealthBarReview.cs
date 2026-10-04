@@ -59,6 +59,7 @@ public partial class HealthBarReview : Node2D
             }
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
+        await LiveUiReview.StopAudio(this);
         GD.Print($"HEALTH_BAR_RESULT: {_failures} failures");
         GetTree().Quit(_failures == 0 ? 0 : 1);
     }

@@ -91,11 +91,11 @@ public static class MedievalUi
         theme.SetConstant("shadow_offset_x", "Label", 1);
         theme.SetConstant("shadow_offset_y", "Label", 2);
         theme.SetFontSize("font_size", "Label", 20);
-        theme.SetFontSize("font_size", "Button", 20);
+        theme.SetFontSize("font_size", "Button", RealmUi.ButtonFontSize);
         theme.SetFont("font", "Button", RealmUi.TitleFont);
         theme.SetFontSize("font_size", "LineEdit", 20);
-        theme.SetFontSize("font_size", "OptionButton", 20);
-        theme.SetFontSize("font_size", "PopupMenu", 20);
+        foreach (var type in new[] { "OptionButton", "MenuButton", "PopupMenu", "CheckBox", "CheckButton" })
+            theme.SetFontSize("font_size", type, RealmUi.ButtonFontSize);
         theme.SetFontSize("font_size", "TooltipLabel", 18);
         theme.SetColor("font_color", "Button", ink);
         theme.SetColor("font_hover_color", "Button", goldLight);

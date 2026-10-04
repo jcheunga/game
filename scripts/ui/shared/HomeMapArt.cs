@@ -19,6 +19,17 @@ public static class HomeMapArt
         if (Icons.TryGetValue(id, out var icon)) return icon;
         _atlas ??= ResourceLoader.Load<Texture2D>(IconAtlasPath);
         var size = _atlas.GetSize() / 3;
-        return Icons[id] = new AtlasTexture { Atlas = _atlas, Region = new Rect2(new Vector2(cell % 3, cell / 3) * size, size) };
+        var region = new Rect2(new Vector2(cell % 3, cell / 3) * size, size);
+        var margin = new Rect2();
+        if (id == "star")
+        {
+            // The food artwork extends 14 pixels into the star cell. Exclude it
+            // while preserving the icon's original size and alignment.
+            var inset = new Vector2(16, 0);
+            region.Position += inset;
+            region.Size -= inset;
+            margin = new Rect2(inset, inset);
+        }
+        return Icons[id] = new AtlasTexture { Atlas = _atlas, Region = region, Margin = margin, FilterClip = true };
     }
 }

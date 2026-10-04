@@ -506,7 +506,7 @@ public partial class ShopMenu : Control
         {
             var grid = new GridContainer
             {
-                Columns = 2,
+                Columns = MobilePresentation.Enabled ? 1 : 2,
                 SizeFlagsHorizontal = SizeFlags.ExpandFill
             };
             grid.AddThemeConstantOverride("h_separation", 14);

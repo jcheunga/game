@@ -66,7 +66,7 @@ public partial class MapMenu
                 MouseFilter = MouseFilterEnum.Ignore
             });
             var value = new Label { VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            value.AddThemeFontSizeOverride("font_size", 20);
+            value.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
             value.AddThemeColorOverride("font_color", new Color("f1e7cb"));
             content.AddChild(value);
             button.Pressed += () => action();
@@ -207,6 +207,7 @@ public partial class MapMenu
             ModalUi.StyleButton(button, accent: tab == 0 ? new Color("6387b9") : tab == 1 ? new Color("55a28a") : new Color("bd6073"), material: ModalMaterial.Inset);
             var content = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; content.AddThemeConstantOverride("separation", 5);
             button.AddChild(content); content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); content.OffsetLeft = content.OffsetTop = 14; content.OffsetRight = content.OffsetBottom = -14;
+            content.MinimumSizeChanged += () => button.CustomMinimumSize = new Vector2(0, Mathf.Max(216, content.GetCombinedMinimumSize().Y + 28));
             int illustration = title switch {
                 "Endless" or "Codex" => 1, "Tower" or "Warband guild" => 0, "Forge" => 2,
                 "Bounties" or "Expeditions" or "Challenges" => 3,
@@ -214,7 +215,7 @@ public partial class MapMenu
             var art = new TextureRect { Texture = ModalArt.Illustration(illustration), CustomMinimumSize = new Vector2(0, 64), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Modulate = locked == null ? Colors.White : new Color(.45f,.45f,.45f) }; content.AddChild(art);
             var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; head.AddThemeConstantOverride("separation", 12); content.AddChild(head);
             head.AddChild(new TextureRect { Texture = HomeMapArt.Icon(icon), CustomMinimumSize = new Vector2(44,44), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
-            var name = RealmUi.Heading(title, 20); name.VerticalAlignment = VerticalAlignment.Center; name.MouseFilter = MouseFilterEnum.Ignore; head.AddChild(name);
+            var name = RealmUi.Heading(title, 20); name.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize); name.VerticalAlignment = VerticalAlignment.Center; name.MouseFilter = MouseFilterEnum.Ignore; head.AddChild(name);
             var description = RealmUi.Label(locked ?? title switch {
                 "Endless" => "Hold the line against an endless horde.", "Tower" => "Climb 100 floors of escalating battles.", "Bounties" => "Daily objectives and useful rewards.", "Weekly raid" => "Face a powerful boss with your guild.", "Event" => "Limited adventures and seasonal rewards.",
                 "Expeditions" => "Send reserve allies to gather supplies.", "Forge" => "Craft, fuse and enchant your relics.", "Daily gifts" => "Collect today's caravan supplies.", "Season" => "Earn rewards as your journey continues.", "Codex" => "Read your field notes and discoveries.", "Store" => "Refill supplies and browse offers.", "Warband guild" => "Join allies and contribute to your guild.", "Friends" => "Find friends and exchange gifts.", "Challenges" => "Daily races, shared runs and LAN play.", "Arena" => "Challenge rival warbands.", "Rankings" => "See the kingdom's leading caravans.", _ => "Continue your Crownroad journey." }, 18, true);

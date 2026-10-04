@@ -63,7 +63,8 @@ public partial class ModalSurface : StyleBox
     }
     private static void Polygon(Rid canvas, Rect2 rect, Color top, Color bottom)
     {
-        float cut = Mathf.Min(6, rect.Size.Y / 4);
+        if (rect.Size.X <= 0 || rect.Size.Y <= 0) return;
+        float cut = Mathf.Min(6, Mathf.Min(rect.Size.X, rect.Size.Y) / 4);
         var points = new[] { rect.Position + new Vector2(cut, 0), new Vector2(rect.End.X - cut, rect.Position.Y), new Vector2(rect.End.X, rect.Position.Y + cut), rect.End - new Vector2(0, cut), rect.End - new Vector2(cut, 0), new Vector2(rect.Position.X + cut, rect.End.Y), new Vector2(rect.Position.X, rect.End.Y - cut), rect.Position + new Vector2(0, cut) };
         RenderingServer.CanvasItemAddPolygon(canvas, points, points.Select(p => top.Lerp(bottom, Mathf.Clamp((p.Y - rect.Position.Y) / Mathf.Max(1, rect.Size.Y), 0, 1))).ToArray());
     }

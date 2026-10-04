@@ -31,7 +31,7 @@ public static class ModalUi
         button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Inset, 8, colour));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("dcc693") }; focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4); button.AddThemeStyleboxOverride("focus", focus);
         var ink = type == ModalMaterial.Gold ? new Color("382316") : Cream;
-        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", 20);
+        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
         if (button is RealmButton realm) realm.SetPresentation(HeadingFont, ink, new Color("aaa091"));
         else foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) button.AddThemeColorOverride(key, ink);
         button.AddThemeColorOverride("icon_normal_color", ink);
@@ -53,7 +53,10 @@ public static class ModalUi
         if (node is Button button) StyleButton(button);
         if (node is Label label)
         {
-            label.AddThemeFontSizeOverride("font_size", Math.Max(18, label.GetThemeFontSize("font_size")));
+            var minimum = 18;
+            for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
+                if (parent is Button) { minimum = RealmUi.ButtonFontSize; break; }
+            label.AddThemeFontSizeOverride("font_size", Math.Max(minimum, label.GetThemeFontSize("font_size")));
             if (label.GetThemeFont("font") == RealmUi.TitleFont) label.AddThemeFontOverride("font", HeadingFont);
             if (label.GetThemeColor("font_color") == RealmUi.Muted) label.AddThemeColorOverride("font_color", Muted);
             label.AddThemeColorOverride("font_shadow_color", Colors.Transparent);

@@ -17,7 +17,8 @@ public partial class MobilePresentationReview : Node
     private async Task Capture(string name)
     {
         if(DisplayServer.GetName()=="headless") return;
-        await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
+        await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+        RenderingServer.ForceDraw();
         var path=ProjectSettings.GlobalizePath("res://artifacts/mobile-review");
         System.IO.Directory.CreateDirectory(path);
         GetViewport().GetTexture().GetImage().SavePng($"{path}/{name}.png");
@@ -225,16 +226,10 @@ public partial class MobilePresentationReview : Node
         foreach(var mobile in new[]{true,false})
         {
             MobilePresentation.TestOverride=mobile;
-            var loadout=GD.Load<PackedScene>("res://scenes/LoadoutMenu.tscn").Instantiate<LoadoutMenu>();
-            Node host=loadout;
-            if(mobile)
-            {   // Phones show preparation inside the map's scaled pop-up window (MapMenu.Modals.cs).
-                var modal=new RealmModal(); AddChild(modal); modal.UseMobileCanvas();
-                loadout.SetMeta("home_modal",true); modal.Content.AddChild(loadout);
-                loadout.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-                modal.Present(SceneRouter.LoadoutScene,"Prepare for battle","",false); host=modal;
-            }
-            else AddChild(loadout);
+            await LiveUiReview.Open(this,"MainMenu");
+            var loadout=(LoadoutMenu)await LiveUiReview.Open(this,"LoadoutMenu");
+            var home=(MapMenu)GetTree().CurrentScene;
+            Check(home.HasHomeModal && loadout.HasMeta("home_modal"),"Preparation uses the production map overlay on desktop and phone");
             await Settle(10); await Capture(mobile?"phone-loadout":"desktop-loadout-at-phone-size");
             var inspectors=loadout.FindChildren("*","Button",true,false).OfType<Button>()
                 .Where(b=>b.Text=="Details" || (b.AccessibilityName??"").StartsWith("View ")).ToArray();
@@ -246,7 +241,7 @@ public partial class MobilePresentationReview : Node
                     var rect=button.GetGlobalTransformWithCanvas()*new Rect2(Vector2.Zero,button.Size);
                     Check(rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
                 }
-            if(inspectors.Length==0) { host.QueueFree(); await Settle(); continue; }
+            if(inspectors.Length==0) { home.CloseHomeModal(); await Settle(); continue; }
             inspectors[0].EmitSignal(BaseButton.SignalName.Pressed); await Settle(6);
             var gallery=loadout.GetChildren().OfType<ModelShowcase>().Single();
             var model=gallery.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
@@ -262,11 +257,11 @@ public partial class MobilePresentationReview : Node
             Check(model.GlobalFrame==frame,"Reduced motion shows a still authored pose");
             GameState.Instance.SetReducedMotion(false);
             gallery.QueueFree(); await Settle();
-            host.QueueFree(); await Settle();
+            home.CloseHomeModal(); await Settle();
         }
         MobilePresentation.TestOverride=true;
-        var shop=GD.Load<PackedScene>("res://scenes/ShopMenu.tscn").Instantiate<ShopMenu>();
-        AddChild(shop); await Settle(20);
+        await LiveUiReview.Open(this,"MainMenu");
+        var shop=(ShopMenu)await LiveUiReview.Open(this,"ShopMenu"); await Settle(20);
         var shopModel=shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
         shopModel._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=new Vector2(20,20)});
         shopModel._GuiInput(new InputEventMouseMotion {Position=new Vector2(60,20)});
@@ -305,7 +300,8 @@ public partial class MobilePresentationReview : Node
             foreach(var projectile in battle.GetChildren().OfType<Projectile>().ToArray()) {projectile.SetPhysicsProcess(false); projectile._PhysicsProcess(1f/30);}
             foreach(var effect in battle.GetChildren().OfType<WeaponContactEffect>().ToArray()) {effect.SetProcess(false); effect._Process(1f/30);}
             battle.QueueRedraw();
-            await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
+            await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+            RenderingServer.ForceDraw();
             GetViewport().GetTexture().GetImage().SavePng($"{path}/{frame:000}.png");
         }
         camera.Position=start; camera.ForceUpdateScroll();

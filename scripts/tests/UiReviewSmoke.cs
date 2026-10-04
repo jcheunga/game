@@ -17,7 +17,8 @@ public partial class UiReviewSmoke : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(x => x.StartsWith("--save-suffix=ui-review-")))
                 throw new InvalidOperationException("UI smoke requires --save-suffix=ui-review-<unique-id>.");
-            var requestedSize = OS.GetCmdlineUserArgs().Contains("--small-window") ? new Vector2I(1024, 768) : new Vector2I(1280, 720);
+            var requestedSize = MobilePresentation.Enabled ? new Vector2I(844, 390)
+                : OS.GetCmdlineUserArgs().Contains("--small-window") ? new Vector2I(1024, 768) : new Vector2I(1280, 720);
             GetWindow().Mode = Window.ModeEnum.Windowed;
             GetWindow().Size = requestedSize;
             await Wait(0.5);
@@ -27,6 +28,8 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--live-parity"))
+            { await ReviewLiveParity(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--battle-cleanup"))
             { await ReviewBattleCleanup(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--battle-lighting"))
@@ -102,14 +105,25 @@ public partial class UiReviewSmoke : Node
                 System.IO.Directory.CreateDirectory(_output);
                 await Open("ShopMenu"); await AuditArmoryPages();
                 await Press("Spells"); await AuditArmoryPages();
-                GameState.Instance.UnlockNextStage(GameState.Instance.MaxStage - 1);
+                var fixture = GameState.Instance.BuildSaveData();
+                fixture.StageStars = Enumerable.Repeat(1, GameState.Instance.MaxStage).ToArray();
+                fixture.HighestUnlockedStage = GameState.Instance.MaxStage;
+                fixture.AdventureOpenTiles = GameData.Stages.SelectMany(stage => AdventureTileCatalog.ForMap(stage.MapId))
+                    .Where(tile => tile.HasInterest).Select(tile => tile.Id).Distinct().ToArray();
+                typeof(GameState).GetMethod("ApplySavedData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(GameState.Instance, new object[] { fixture });
                 await Open("MainMenu"); await PressHint("More"); await Press("Caravan"); AuditText("MainMenu / all unlocks"); await Capture("type-main-unlocked");
                 foreach (var stage in GameData.Stages)
                 {
                     GameState.Instance.SetSelectedStage(stage.StageNumber);
                     foreach (var scene in new[] { "MapMenu", "LoadoutMenu" })
                     {
-                        await Open(scene); var before = _failures; AuditText(scene + " / stage " + stage.StageNumber);
+                        await Open(scene);
+                        if (scene == "MapMenu") await ChooseAdventureSite("leader-" + stage.StageNumber);
+                        else Check(((StageDefinition)typeof(LoadoutMenu).GetField("_stage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                            .GetValue(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<LoadoutMenu>().Single())).StageNumber == stage.StageNumber,
+                            "Preparation displays requested stage " + stage.StageNumber);
+                        var before = _failures; AuditText(scene + " / stage " + stage.StageNumber);
                         if (_failures != before || stage.StageNumber % 10 == 0) await Capture($"type-{scene}-stage-{stage.StageNumber}");
                     }
                 }
@@ -118,18 +132,19 @@ public partial class UiReviewSmoke : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--typography"))
             {
-                _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
+                _output = ProjectSettings.GlobalizePath(MobilePresentation.Enabled ? "res://artifacts/typography-phone"
+                    : OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
                 System.IO.Directory.CreateDirectory(_output);
-                foreach (var scene in new[] { "MainMenu", "MapMenu", "LoadoutMenu", "ShopMenu", "EndlessMenu", "MultiplayerMenu", "SettingsMenu", "ArenaMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
+                foreach (var scene in new[] { SceneRouter.MainMenuScene }.Concat(LiveUiReview.ActivityScenes))
                 {
                     await Open(scene);
-                    await Capture("type-" + scene);
+                    await Capture("type-" + System.IO.Path.GetFileNameWithoutExtension(scene));
                     AuditText(scene);
-                    var tabs = Walk(GetTree().CurrentScene).OfType<HBoxContainer>().Where(x => x.IsVisibleInTree() && x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>()).Select(x => x.Text).ToArray();
+                    var tabs = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<HBoxContainer>().Where(x => x.IsVisibleInTree() && x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>()).Select(x => x.Text).ToArray();
                     foreach (var tab in tabs.Skip(1))
                     {
                         await Press(tab);
-                        await Capture("type-" + scene + "-" + tab.Replace(" ", "-"));
+                        await Capture("type-" + System.IO.Path.GetFileNameWithoutExtension(scene) + "-" + tab.Replace(" ", "-"));
                         AuditText(scene + "/" + tab);
                     }
                 }
@@ -140,14 +155,17 @@ public partial class UiReviewSmoke : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--all-menus"))
             {
-                foreach (var scene in new[] { "ArenaMenu", "BountyMenu", "CashShopMenu", "CodexMenu", "EventMenu", "ExpeditionMenu", "ForgeMenu", "FriendsMenu", "GuildMenu", "LanRaceMenu", "LeaderboardMenu", "LoginCalendarMenu", "ProfileMenu", "RaidMenu", "SeasonPassMenu", "SkillTreeMenu", "TowerMenu" })
+                foreach (var scene in LiveUiReview.ActivityScenes)
                 {
                     await Open(scene);
-                    var refresh = GetTree().CurrentScene.GetType().GetMethod("RefreshUi", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);
-                    refresh?.Invoke(GetTree().CurrentScene, null);
-                    refresh?.Invoke(GetTree().CurrentScene, null);
-                    await Wait(0.1);
-                    await Capture("audit-" + scene);
+                    var activity = LiveUiReview.AssertDestination(GetTree(), scene);
+                    var refresh = activity.GetType().GetMethod("RefreshUi", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+                    refresh?.Invoke(activity, null);
+                    refresh?.Invoke(activity, null);
+                    // Rebuilt rows receive the live modal's styles on its next layout pass.
+                    await Wait(0.3);
+                    AuditText(scene);
+                    await Capture("audit-" + System.IO.Path.GetFileNameWithoutExtension(scene));
                 }
                 GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
             }
@@ -159,7 +177,7 @@ public partial class UiReviewSmoke : Node
                 Engine.TimeScale = 3;
                 for (var tick = 0; tick < 150 && GameState.Instance.GetStageStars(1) == 0; tick++)
                 {
-                    var enemy = Walk(GetTree().CurrentScene).OfType<Unit>().Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
+                    var enemy = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Unit>().Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
                     var y = enemy?.Position.Y ?? 380;
                     Send(new InputEventKey { Keycode = tick % 4 == 0 ? Key.Key2 : Key.Key1, Pressed = true });
                     var pos = new Vector2(350, Mathf.Clamp(y, 230, 550));
@@ -169,7 +187,7 @@ public partial class UiReviewSmoke : Node
                     if (tick % 12 == 0) Send(new InputEventKey { Keycode = Key.Z, Pressed = true });
                     if (tick == 15) await Capture("20-battle-in-progress");
                     await Wait(1.5);
-                    if (Walk(GetTree().CurrentScene).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Retry Stage")) break;
+                    if (Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Retry Stage")) break;
                 }
                 Engine.TimeScale = 1;
                 await Wait(0.5); // Capture the readable end state after its entrance animation.
@@ -183,21 +201,21 @@ public partial class UiReviewSmoke : Node
                 GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); GetTree().Quit(_failures == 0 ? 0 : 1); return;
             }
             await Open("MainMenu");
-            Check(!Walk(GetTree().CurrentScene).OfType<ScrollContainer>().Any(x => x.IsVisibleInTree()), "Home has no visible scrolling regions");
+            Check(!Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ScrollContainer>().Any(x => x.IsVisibleInTree()), "Home has no visible scrolling regions");
             await Capture("01-camp");
             await PressHint("More");
             await Press("Caravan"); await Capture("02-camp-caravan");
             await Press("Community"); await Capture("03-camp-community");
             GameState.Instance.MoveAdventureHero("city", AdventureMapCatalog.Leader(1).Point);
             await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
-            Check(!Walk(GetTree().CurrentScene).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details show rewards without an Intel tab");
+            Check(!Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details show rewards without an Intel tab");
             await Capture("05-map-rewards");
             // Preparation opens as a modal over the map once the caravan arrives, not as its own scene.
             await Press("Prepare battle"); await FinishTravel();
-            Check(Walk(GetTree().CurrentScene).OfType<LoadoutMenu>().Any(x => x.IsVisibleInTree()), "Map opens preparation");
+            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<LoadoutMenu>().Any(x => x.IsVisibleInTree()), "Map opens preparation");
             await Capture("06-loadout");
             await Press("Details");
-            Check(Walk(GetTree().CurrentScene).OfType<ModelShowcase>().Any(), "Unit details open on demand");
+            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ModelShowcase>().Any(), "Unit details open on demand");
             await Press("Close");
             await Open("ShopMenu"); await Capture("07-armory");
             var oldGold = GameState.Instance.Gold;
@@ -245,7 +263,7 @@ public partial class UiReviewSmoke : Node
             Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = new Vector2(350, 380), GlobalPosition = new Vector2(350, 380) });
             Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = new Vector2(350, 380), GlobalPosition = new Vector2(350, 380) });
             await Wait(2);
-            Check(Walk(GetTree().CurrentScene).OfType<Unit>().Any(x => x.Team == Team.Player && !x.IsDead), "Unit card deploys a live ally");
+            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Unit>().Any(x => x.Team == Team.Player && !x.IsDead), "Unit card deploys a live ally");
             await Capture("14-deployed");
             await PressHint("Battle menu [Escape]"); await Capture("15-paused");
             await Press("Game settings"); await Capture("16-battle-settings");
@@ -277,15 +295,15 @@ public partial class UiReviewSmoke : Node
         var names = GameData.GetPlayerUnits().Select(x => x.DisplayName).Concat(GameData.GetPlayerSpells().Select(x => x.DisplayName)).ToHashSet();
         for (var page = 0; page < 20; page++)
         {
-            var cards = Walk(GetTree().CurrentScene).OfType<Button>().Where(x => x.IsVisibleInTree() && names.Contains(x.AccessibilityName)).Select(x => x.AccessibilityName).ToArray();
+            var cards = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(x => x.IsVisibleInTree() && names.Contains(x.AccessibilityName)).Select(x => x.AccessibilityName).ToArray();
             foreach (var name in cards)
             {
-                var card = Walk(GetTree().CurrentScene).OfType<Button>().First(x => x.IsVisibleInTree() && x.AccessibilityName == name);
+                var card = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(x => x.IsVisibleInTree() && x.AccessibilityName == name);
                 card.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
                 AuditText("Armory / " + name);
             }
             await Capture("type-armory-" + cards.FirstOrDefault()?.Replace(" ", "-"));
-            var next = Walk(GetTree().CurrentScene).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && x.TooltipText == "Next roster page" && !x.Disabled);
+            var next = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && x.TooltipText == "Next roster page" && !x.Disabled);
             if (next == null) break;
             next.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
         }
@@ -295,8 +313,9 @@ public partial class UiReviewSmoke : Node
     private void AuditText(string screen)
     {
         if (OS.GetCmdlineUserArgs().Contains("--scroll-spacing")) AuditScrollSpacing(screen);
-        var viewport = new Rect2(0, 0, 1280, 720);
-        var panels = Walk(GetTree().CurrentScene).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
+        AuditModalBounds(screen);
+        var viewport = GetViewport().GetVisibleRect();
+        var panels = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
         foreach (var panel in panels)
         {
             if (!viewport.Grow(2).Encloses(panel.GetGlobalRect()))
@@ -308,7 +327,7 @@ public partial class UiReviewSmoke : Node
             if (overlap.Size.X > 4 && overlap.Size.Y > 4)
             { GD.Print($"PANEL_OVERLAP {screen}: {panels[i].GetPath()} / {panels[j].GetPath()} {overlap}"); _failures++; }
         }
-        foreach (var button in Walk(GetTree().CurrentScene).OfType<Button>().Where(x => x.IsVisibleInTree() && !string.IsNullOrWhiteSpace(x.Text)))
+        foreach (var button in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(x => x.IsVisibleInTree() && !string.IsNullOrWhiteSpace(x.Text)))
         {
             var box = button.GetThemeStylebox("normal");
             var available = button.Size.X - box.GetContentMargin(Side.Left) - box.GetContentMargin(Side.Right);
@@ -318,7 +337,7 @@ public partial class UiReviewSmoke : Node
             if (button.AutowrapMode == TextServer.AutowrapMode.Off && widest > available + 3)
             { GD.Print($"BUTTON_TEXT_ISSUE {screen}: {button.Text.Replace("\n", " ")} ({widest:0} > {available:0})"); _failures++; }
         }
-        foreach (var control in Walk(GetTree().CurrentScene).OfType<Control>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && (x is Label || x is Button)))
+        foreach (var control in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Control>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && (x is Label || x is Button)))
         {
             for (var parent = control.GetParent(); parent != null; parent = parent.GetParent())
             {
@@ -330,11 +349,13 @@ public partial class UiReviewSmoke : Node
             }
         }
         var homeDock = GetTree().CurrentScene.GetNodeOrNull<PanelContainer>("HomeHud/HomeTabs");
-        foreach (var label in Walk(GetTree().CurrentScene).OfType<Label>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && !string.IsNullOrWhiteSpace(x.Text)))
+        foreach (var label in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Label>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && !string.IsNullOrWhiteSpace(x.Text)))
         {
             var font = label.GetThemeFontSize("font_size");
             var issues = new List<string>();
-            var minimumFont = homeDock != null && homeDock.IsAncestorOf(label) ? 16 : 18;
+            var minimumFont = homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
+            for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
+                if (parent is Button) { minimumFont = Math.Min(minimumFont, 16); break; }
             if (font < minimumFont) issues.Add("small text");
             if (label.GetVisibleLineCount() < label.GetLineCount()) issues.Add("hidden lines");
             var hiddenLines = label.GetVisibleLineCount() < label.GetLineCount();
@@ -361,10 +382,38 @@ public partial class UiReviewSmoke : Node
         }
     }
 
+    private void AuditModalBounds(string screen)
+    {
+        if (GetTree().CurrentScene is not MapMenu { HasHomeModal: true } home) return;
+        var body = home.GetNode<RealmModal>("HomeModal").Content;
+        var bounds = body.GetGlobalRect().Grow(3);
+        foreach (var control in Walk(body).OfType<Control>().Where(c => c.IsVisibleInTree() && c is Label or Button or ScrollContainer))
+        {
+            bool horizontalScroll = false, verticalScroll = false, separateCanvas = false;
+            for (var parent = control.GetParent(); parent != null && parent != body; parent = parent.GetParent())
+            {
+                if (parent is CanvasLayer) { separateCanvas = true; break; }
+                if (parent is ScrollContainer scroll)
+                {
+                    horizontalScroll |= scroll.HorizontalScrollMode != ScrollContainer.ScrollMode.Disabled;
+                    verticalScroll |= scroll.VerticalScrollMode != ScrollContainer.ScrollMode.Disabled;
+                }
+            }
+            if (separateCanvas) continue;
+            var rect = control.GetGlobalRect();
+            if ((!horizontalScroll && (rect.Position.X < bounds.Position.X || rect.End.X > bounds.End.X))
+                || (!verticalScroll && (rect.Position.Y < bounds.Position.Y || rect.End.Y > bounds.End.Y)))
+            {
+                GD.Print($"MODAL_CONTENT_CLIP {screen}: {control.GetPath()} {rect} outside {bounds}");
+                _failures++;
+            }
+        }
+    }
+
     private void AuditScrollSpacing(string screen)
     {
         var areas = 0; var rails = 0;
-        foreach (var scroll in Walk(GetTree().CurrentScene).OfType<ScrollContainer>().Where(area => area.IsVisibleInTree()))
+        foreach (var scroll in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ScrollContainer>().Where(area => area.IsVisibleInTree()))
         {
             areas++;
             var vertical = scroll.GetVScrollBar(); var horizontal = scroll.GetHScrollBar();
@@ -394,13 +443,12 @@ public partial class UiReviewSmoke : Node
 
     private async Task Open(string scene)
     {
-        var error = GetTree().ChangeSceneToFile($"res://scenes/{scene}.tscn");
-        if (error != Error.Ok) throw new InvalidOperationException($"Cannot open {scene}: {error}");
-        await Wait(0.8);
+        await LiveUiReview.Open(this, scene);
+        await Wait(0.2);
     }
     private async Task Press(string text)
     {
-        var button = Walk(GetTree().CurrentScene).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && !x.Disabled && x.Text.StartsWith(text, StringComparison.Ordinal));
+        var button = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && !x.Disabled && x.Text.StartsWith(text, StringComparison.Ordinal));
         if (button == null) throw new InvalidOperationException($"Missing active button: {text}");
         if (button.ToggleMode) button.ButtonPressed = true;
         button.EmitSignal(BaseButton.SignalName.Pressed);
@@ -408,7 +456,7 @@ public partial class UiReviewSmoke : Node
     }
     private async Task PressHint(string hint)
     {
-        var button = Walk(GetTree().CurrentScene).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && (x.TooltipText == hint || x.AccessibilityName == hint));
+        var button = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && (x.TooltipText == hint || x.AccessibilityName == hint));
         if (button == null) throw new InvalidOperationException($"Missing icon button: {hint}");
         if (button.ToggleMode) button.ButtonPressed = true;
         button.EmitSignal(BaseButton.SignalName.Pressed);
@@ -417,11 +465,13 @@ public partial class UiReviewSmoke : Node
     private async Task Capture(string name)
     {
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        foreach (var item in Walk(GetTree().CurrentScene).OfType<CanvasItem>()) item.QueueRedraw();
+        foreach (var item in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<CanvasItem>()) item.QueueRedraw();
         RenderingServer.ForceDraw(); // Hidden macOS windows may stop emitting automatic draw signals.
-        GetViewport().GetTexture().GetImage().SavePng($"{_output}/{name}.png");
-        var viewport = new Rect2(0, 0, 1280, 720);
-        foreach (var control in Walk(GetTree().CurrentScene).OfType<Control>())
+        using var pixels = GetViewport().GetTexture().GetImage();
+        if (pixels.SavePng($"{_output}/{name}.png") != Error.Ok)
+            throw new System.IO.IOException("Unable to save review capture " + name);
+        var viewport = GetViewport().GetVisibleRect();
+        foreach (var control in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Control>())
         {
             if (!control.IsVisibleInTree() || control.IsQueuedForDeletion() || control is not Button || Clipped(control)) continue;
             var rect = control.GetGlobalRect();

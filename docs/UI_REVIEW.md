@@ -2,6 +2,11 @@
 
 Reviewed and updated on 6 September 2026, using Godot 4.6.1 Mono on macOS.
 
+This is a historical review of the September screens and results. For the
+current October map overlays, test entry paths, and verified coverage, see
+[Live UI test parity](LIVE_UI_TEST_PARITY.md). The scene and label counts below
+describe the earlier run; they are not current parity evidence.
+
 ## Delivered
 
 - An illustrated camp home with a clear campaign action, three portraits, resource icons, and three compact navigation tabs. The home has no scroll containers.

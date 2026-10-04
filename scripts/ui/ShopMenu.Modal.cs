@@ -74,7 +74,7 @@ public partial class ShopMenu
         rosterScroll.AddChild(_modalRoster);
         _displayFrame = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(310, 0)
+            CustomMinimumSize = new Vector2(MobilePresentation.Enabled ? 210 : 310, 0)
         };
         _displayFrame.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Steel, 8));
         layout.AddChild(_displayFrame);

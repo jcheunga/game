@@ -7,7 +7,7 @@ public partial class BattleController
     private TextureRect _cardDragPortrait;
     private Label _cardDragHint;
     private Button _dragCardButton;
-    private UnitDefinition _dragUnit, _previousDragUnit;
+    private UnitDefinition _dragUnit;
     private SpellDefinition _dragSpell, _previousDragSpell;
     private BattleSelectionMode _previousDragMode;
     private ScrollContainer _dragCardScroll;
@@ -16,7 +16,6 @@ public partial class BattleController
     private int? _discardCardRelease;
     private ulong _cardMouseBlockUntil;
     private Vector2 _cardPointerStart, _cardPointerPosition, _cardPointerLast;
-    private float _dragUnitVisualScale;
 
     private void BuildCardDragPreview(Control root)
     {
@@ -61,12 +60,8 @@ public partial class BattleController
 
     private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && !_mobileClearView;
 
-    private bool DragCardAffordable()
-    {
-        if (_dragUnit != null) return _courage >= _dragUnit.Cost && _deck.GetCooldownRemaining(_dragUnit.Id) <= .05f;
-        return _dragSpell != null && _courage >= GameState.Instance.BuildSpellStats(_dragSpell).CourageCost
-            && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
-    }
+    private bool DragCardAffordable() => _dragSpell != null && _courage >= GameState.Instance.BuildSpellStats(_dragSpell).CourageCost
+        && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
 
     private bool CanDropCard(Vector2 screen)
     {
@@ -119,8 +114,7 @@ public partial class BattleController
             _cardPointerDown = true; _cardDragging = _cardScrolling = false;
             _cardPointerId = id; _cardPointerStart = _cardPointerLast = _cardPointerPosition = point;
             _dragCardButton = hit;
-            _dragUnitVisualScale = _dragUnit != null ? new UnitStats(_dragUnit).VisualScale : 1f;
-            _previousDragMode = _selectionMode; _previousDragUnit = _deck.ArmedUnit; _previousDragSpell = _spellDeck.ArmedSpell;
+            _previousDragMode = _selectionMode; _previousDragSpell = _spellDeck.ArmedSpell;
             _dragCardScroll = null;
             for (var parent = hit.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is ScrollContainer scroll) { _dragCardScroll = scroll; break; }
@@ -143,11 +137,9 @@ public partial class BattleController
             _cardScrolling = bar != null && bar.MaxValue > bar.Page + 1
                 && ScreenPointIn(_dragCardScroll, point)
                 && Mathf.Abs(distance.X) > Mathf.Abs(distance.Y) * 1.25f;
-            _cardDragging = !_cardScrolling;
-            if (_cardDragging)
-            {
-                if (_dragUnit != null) ArmPlayerUnit(_dragUnit); else ArmSpell(_dragSpell);
-            }
+            // Only magic is aimed. A unit card is a button: lifting off it cancels.
+            _cardDragging = !_cardScrolling && _dragSpell != null;
+            if (_cardDragging) ArmSpell(_dragSpell);
         }
         if (_cardScrolling)
         {
@@ -164,14 +156,13 @@ public partial class BattleController
         if (drop)
         {
             EndCardGesture(false, false);
-            // Reuse the authoritative placement, resource and cooldown paths.
-            if (unit != null) { _selectionMode = BattleSelectionMode.Unit; _deck.Arm(unit); TryDeployAtY(world.Y); }
-            else TryCastSpellAt(spell, world);
+            // Reuse the authoritative targeting, resource and cooldown paths.
+            TryCastSpellAt(spell, world);
         }
         else
         {
             EndCardGesture(true, false);
-            if (tap) { if (unit != null) ArmPlayerUnit(unit); else ArmSpell(spell); }
+            if (tap) { if (unit != null) DeployPlayerUnit(unit); else ArmSpell(spell); }
         }
         return true;
     }
@@ -188,7 +179,6 @@ public partial class BattleController
         if (restoreSelection && _cardDragging)
         {
             _selectionMode = _previousDragMode;
-            if (_previousDragUnit != null) _deck.Arm(_previousDragUnit); else _deck.Disarm();
             if (_previousDragSpell != null) _spellDeck.Arm(_previousDragSpell); else _spellDeck.Disarm();
         }
         _cardPointerDown = _cardDragging = _cardScrolling = false;
@@ -206,7 +196,7 @@ public partial class BattleController
         var valid = CanDropCard(_cardPointerPosition);
         _cardDragPortrait.Modulate = valid ? new Color("d8ffebcc") : new Color("ffb5a2aa");
         _cardDragHint.Text = !DragCardAffordable() ? "Unavailable · cancel" : !valid ? "Move onto the battlefield" :
-            _dragUnit != null ? "Release · caravan lane" : "Release · " + _dragSpell.DisplayName;
+            "Release · " + _dragSpell.DisplayName;
         var scale = _mobileHud != null ? 1.4f : 1f;
         _cardDragGhost.Scale = Vector2.One * scale;
         var size = _cardDragGhost.Size * scale;
@@ -214,16 +204,5 @@ public partial class BattleController
         var viewport = GetViewportRect().Size;
         _cardDragGhost.Position = new Vector2(Mathf.Clamp(position.X, 8, Mathf.Max(8, viewport.X - size.X - 8)),
             Mathf.Clamp(position.Y, 8, Mathf.Max(8, viewport.Y - size.Y - 8)));
-    }
-
-    private void DrawDraggedUnitGhost(Vector2 spawn)
-    {
-        var sheet = UnitSpriteLoader.TryLoad(_dragUnit.VisualClass, _dragUnit.Id);
-        if (sheet == null || !sheet.Animations.TryGetValue(UnitAnimState.Idle, out var idle)) return;
-        var scale = _dragUnitVisualScale;
-        var width = 28 * scale * scale * sheet.DrawScale;
-        var size = new Vector2(width, width * sheet.FrameHeight / sheet.FrameWidth);
-        DrawTextureRectRegion(sheet.Texture, new Rect2(spawn - size * new Vector2(sheet.AnchorX, sheet.AnchorY), size),
-            UnitSpriteLoader.GetFrameRect(sheet, idle.StartFrame), new Color("b4ffdac0"));
     }
 }

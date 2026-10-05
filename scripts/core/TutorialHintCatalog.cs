@@ -24,7 +24,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "cooldown_basics",
 			Title = "Cooldowns",
-			Body = "Drag a unit card onto the battlefield and release to deploy. Each card has a cooldown; the dark overlay shows remaining time.",
+			Body = "Tap a unit card to send it out from the war wagon. Each card has a cooldown; the dark overlay shows remaining time.",
 			TriggerContext = "first_battle"
 		},
 		new()

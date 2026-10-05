@@ -11,7 +11,7 @@ public partial class UiReviewSmoke
         if (OS.GetCmdlineUserArgs().Contains("--small-window")) _output += "/small";
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance;
-        foreach (var stage in new[] { 4, 43, 52 })
+        foreach (var stage in new[] { 10, 58, 60 })
         {
             var node = AdventureMapCatalog.Leader(stage);
             // Stage details only describe open tiles, so clear the earlier stages and open this leader's tile.

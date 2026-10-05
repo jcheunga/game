@@ -33,7 +33,7 @@ public partial class CombatReviewSmoke
         var battle = await OpenBattle(1);
         Check(!((StageBattleResult)Invoke(battle, "BuildStageBattleResult")).PlayerBaseTookDamage,
             "A new battle starts eligible for a no-damage clear");
-        Invoke(battle, "DamageBusByRatio", .00001f, Colors.White, "");
+        Invoke(battle, "DamageBusByRatio", .00001f, Colors.White);
         Invoke(battle, "RepairBusByRatio", 1f);
         var repaired = (StageBattleResult)Invoke(battle, "BuildStageBattleResult");
         Check(repaired.PlayerBaseTookDamage && repaired.PlayerBaseHealth == repaired.PlayerBaseMaxHealth,
@@ -48,7 +48,7 @@ public partial class CombatReviewSmoke
         await CloseBattle(battle);
 
         battle = await OpenBattle(1);
-        Invoke(battle, "DamageBusByRatio", .8f, Colors.White, "");
+        Invoke(battle, "DamageBusByRatio", .8f, Colors.White);
         Invoke(battle, "EndBattle", true);
         Check(state.GetStageStars(1) == 3, "A lower-scoring replay preserves the best rating");
         await CloseBattle(battle);

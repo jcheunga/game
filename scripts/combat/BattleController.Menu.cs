@@ -66,6 +66,8 @@ public partial class BattleController
             _goldReadout.Position = new Vector2(size.X - right - _goldReadout.Size.X, top);
             _fpsLabel.Position = new Vector2(size.X - right - 100, top + 48); _fpsLabel.Size = new Vector2(100, 20);
             _hudSettingsButton.Position = new Vector2(left, size.Y - bottom - 56); _hudSettingsButton.Size = new Vector2(56, 56);
+            if (_battleFollowButton != null)
+            { _battleFollowButton.Position = new Vector2(left, size.Y - bottom - 120); _battleFollowButton.Size = new Vector2(56, 56); }
             var veil = _pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if (veil != null) veil.CustomMinimumSize = size;
             var width = Mathf.Min(row.GetCombinedMinimumSize().X + 40, size.X - left - right - 160);

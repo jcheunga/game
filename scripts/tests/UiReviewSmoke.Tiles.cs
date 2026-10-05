@@ -26,7 +26,7 @@ public partial class UiReviewSmoke
             Check(tiles.All(tile => Geometry2D.IsPointInPolygon(tile.Point, AdventureAtlasLandscape.Coast(map)) && AdventureAtlasLandscape.Land(tile).Any(polygon => Geometry2D.IsPointInPolygon(tile.Point, polygon))), map + " coastlines and riverbank boundaries retain every playable site");
             Check(tiles.Select(tile => AdventureAtlasLandscape.Outline(tile).Length).Distinct().Count() > 2, map + " varies its terrain shapes instead of drawing a square lattice");
             Check(tiles.Where(tile => tile.HasInterest).Select(tile => (tile.Column, tile.Row)).Distinct().Count() == tiles.Count(tile => tile.HasInterest), map + " has one point of interest per tile");
-            Check(tiles.Count(tile => tile.Site?.Kind == AdventureSiteKind.Leader) == 6 && tiles.Count(tile => tile.Discovery != null) == AdventureDiscoveryCatalog.ForMap(map).Count, map + " preserves every stage and discovery");
+            Check(tiles.Count(tile => tile.Site?.Kind == AdventureSiteKind.Leader) == GameData.GetStagesForMap(map).Count && tiles.Count(tile => tile.Discovery != null) == AdventureDiscoveryCatalog.ForMap(map).Count, map + " preserves every stage and discovery");
             Check(tiles.All(tile => tile.Site?.Kind != AdventureSiteKind.Watchtower), map + " has no scout tower destinations");
             var start = AdventureTileCatalog.Starting(map);
             Check(start.Site.Stage == GameData.GetStagesForMap(map).Min(stage => stage.StageNumber) && start.Column == 1 && start.Row == 5
@@ -157,11 +157,9 @@ public partial class UiReviewSmoke
         oldShrine.AdventureHeroNodes["city"] = "landmark-2";
         oldShrine.AdventureOpenTiles = null; oldShrine.AdventureReachedTiles = null; oldShrine.AdventureCaravanTiles = null;
         Restore(oldShrine);
-        var formerShrine = tilesCity.Single(tile => tile.RetiredSiteId == "landmark-2");
-        Check(state.GetAdventureCaravanTile("city").Id == leader.Id && state.IsAdventureTileOpen(formerShrine)
-            && AdventureTileCatalog.Surrounding(formerShrine).All(state.IsAdventureTileOpen)
+        Check(state.GetAdventureCaravanTile("city").Id == leader.Id && AdventureTileCatalog.Find("city", "landmark-2") == null
             && !state.CanVisitAdventureSite("landmark-2") && state.GetAdventureStartingCourageBonus(1) == 0,
-            "Legacy shrine saves retain explored surroundings without restoring a shrine or its courage bonus");
+            "Legacy shrine saves return to the first stage without restoring a shrine or its courage bonus");
         var oldUntouched = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(initial))!;
         oldUntouched.Version = 44;
         oldUntouched.AdventureOpenTiles = null; oldUntouched.AdventureReachedTiles = null; oldUntouched.AdventureCaravanTiles = null;

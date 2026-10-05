@@ -23,9 +23,10 @@ public static class AdventureTileCatalog
     public static readonly Vector2 Origin = new Vector2(1744, 352) * LayoutScale;
     public static Vector2 WorldSize => AdventureTerrain.WorldSize * LayoutScale;
     private static readonly Dictionary<string, IReadOnlyList<AdventureTile>> Cache = new();
-    private static readonly Vector2I[] Leaders = { new(1,5), new(3,4), new(4,3), new(5,2), new(6,2), new(7,1) };
-    private static readonly Vector2I[] Supplies = { new(1,4), new(2,4), new(3,3), new(4,2), new(6,3), new(8,1) };
-    private static readonly Vector2I[] Landmarks = { new(2,6), new(3,5), new(4,4), new(5,3), new(6,1), new(7,0) };
+    // Ten stages per zone: the road climbs the west bank, crosses the top bridge, runs down the east side
+    // and turns back north to the boss in the far corner.
+    private static readonly Vector2I[] Leaders = { new(1,5), new(1,3), new(2,1), new(4,0), new(6,1), new(5,3), new(4,5), new(6,5), new(7,3), new(8,1) };
+    private static readonly Vector2I[] Supplies = { new(0,4), new(0,2), new(3,2), new(3,0), new(6,0), new(6,3), new(3,6), new(6,6), new(8,3), new(7,1) };
     public static IReadOnlyList<AdventureTile> ForMap(string mapId)
     {
         mapId = RouteCatalog.Normalize(mapId);
@@ -40,12 +41,8 @@ public static class AdventureTileCatalog
             var stage = stages[i].StageNumber;
             Add(AdventureMapCatalog.Find($"leader-{stage}"), Leaders[i]);
             Add(AdventureMapCatalog.Find($"supply-{stage}"), Supplies[i]);
-            var landmark = AdventureMapCatalog.Find($"landmark-{stage}");
-            // Preserve retired shrine regions without shifting existing discovery tiles.
-            if (landmark.Kind == AdventureSiteKind.Shrine)
-                tiles.Add(new(mapId, Landmarks[i].X, Landmarks[i].Y, RetiredSiteId: landmark.Id));
         }
-        Add(AdventureMapCatalog.Find($"hidden-{mapId}"), new(0,3));
+        Add(AdventureMapCatalog.Find($"hidden-{mapId}"), new(0,0));
         // Keep discovery IDs and amounts; only their atlas presentation changes.
         var rewards = new Queue<AdventureDiscovery>(AdventureDiscoveryCatalog.ForMap(mapId));
         var vacancies = Enumerable.Range(0, Columns * Rows).Select(cell => new Vector2I(cell % Columns, cell / Columns))

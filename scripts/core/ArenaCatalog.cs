@@ -34,7 +34,7 @@ public sealed class ArenaOpponentSnapshot
 public static class ArenaCatalog
 {
 	public const int EloK = 32;
-	public const int MinRequiredStage = 20;
+	public const int MinRequiredStage = 31;
 
 	private static readonly ArenaTier[] Tiers =
 	{

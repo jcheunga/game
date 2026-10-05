@@ -61,7 +61,7 @@ public static class CampaignDirectiveCatalog
                 modifier != null &&
                 modifier.NormalizedType.Equals("reinforced_barricade", StringComparison.OrdinalIgnoreCase));
 
-        var bonusGold = 8 + Math.Max(1, stage.StageNumber);
+        var bonusGold = 8 + Math.Max(1, stage.StageNumber * 3 / 5);
         var bonusFood = stage.StageNumber % 5 == 0 ? 1 : 0;
 
         if (hasGateBreachEvent || barricadeHeavyStage || heavyCount >= 5)

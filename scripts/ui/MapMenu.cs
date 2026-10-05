@@ -8,6 +8,8 @@ public partial class MapMenu : Control
 {
     private MapPathCanvas _mapCanvas;
     private AdventureMapNode _selected;
+    // Every other stage in the zone must fall before its boss gate opens.
+    private int BossGateLeaders => GameData.GetStagesForMap(GameData.GetStage(_selected.Stage).MapId).Count - 1;
     private AdventureDiscovery _selectedDiscovery;
     private string _activeMapId;
     private Label _mapTitle, _zoneProgress, _gold, _food, _stars, _siteName, _siteEyebrow, _siteStatus, _description;
@@ -20,6 +22,11 @@ public partial class MapMenu : Control
     public override void _Ready()
     {
         MedievalUi.Apply(this);
+        if (GameData.LoadFailed)
+        {
+            ShowDataLoadError();
+            return;
+        }
         _selected = AdventureMapCatalog.Leader(GameState.Instance.SelectedStage);
         _activeMapId = _selected.MapId;
         if (!GameState.Instance.IsAdventureZoneUnlocked(_activeMapId))
@@ -114,7 +121,7 @@ public partial class MapMenu : Control
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
         _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
         _siteName.Text = known ? _selected.Title : "Beyond the mist";
-        _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {5 - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/5 leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
+        _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);
         _directive.Visible = known && leader && state.IsCampaignDirectiveUnlocked(_selected.Stage);
@@ -176,5 +183,33 @@ public partial class MapMenu : Control
     private void CloseSiteDetails()
     {
         _sitePanel.Hide();
+    }
+
+    // Replaces the atlas when data/*.json is missing or corrupt. GameState refuses to save meanwhile.
+    private void ShowDataLoadError()
+    {
+        var backdrop = new ColorRect { Color = new Color("0d0f14") };
+        backdrop.SetAnchorsPreset(LayoutPreset.FullRect);
+        MedievalUi.MarkBackdrop(backdrop);
+        AddChild(backdrop);
+        var center = new CenterContainer();
+        center.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(center);
+        var panel = new PanelContainer { CustomMinimumSize = new Vector2(580, 0) };
+        center.AddChild(panel);
+        var padding = new MarginContainer();
+        foreach (var side in new[] { "left", "right" }) padding.AddThemeConstantOverride($"margin_{side}", 28);
+        foreach (var side in new[] { "top", "bottom" }) padding.AddThemeConstantOverride($"margin_{side}", 22);
+        panel.AddChild(padding);
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 18);
+        padding.AddChild(stack);
+        stack.AddChild(RealmUi.EmptyState("book", "Game data could not load",
+            "Your saved progress is safe and unchanged. Reinstall or update the game, then try again."));
+        var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        actions.AddThemeConstantOverride("separation", 12);
+        actions.AddChild(RealmUi.Button("book", "Details", () => RealmUi.Details(this, "Load error", GameData.LoadError)));
+        actions.AddChild(RealmUi.Button("close", "Quit game", () => GetTree().Quit(), primary: true));
+        stack.AddChild(actions);
     }
 }

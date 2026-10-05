@@ -113,7 +113,7 @@ public partial class CombatMotionReview : Node
     {
         var battle=await Battle();
         var a=(Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_shooter")),new Vector2(400,350));
-        var b=(Unit)Call(battle,"SpawnUnit",Team.Enemy,new UnitStats(GameData.GetUnit("enemy_walker"),healthScale:20),new Vector2(540,350));
+        var b=(Unit)Call(battle,"SpawnUnit",Team.Enemy,new UnitStats(GameData.GetUnit("enemy_walker"),healthScale:20),new Vector2(460,350));
         a.TryBeginAttack(b); Call(battle,"QueueUnitStrike",a,b);
         Check(!battle.GetChildren().OfType<Projectile>().Any(),"Arrow is not spawned during the draw");
         a.TickAttackTimer(a.AttackContactSeconds);
@@ -123,7 +123,7 @@ public partial class CombatMotionReview : Node
         Check(b.Health<hp,"Released arrow hits target body");
         a.TickAttackTimer(4); a.TryBeginAttack(b); Call(battle,"QueueUnitStrike",a,b); a.TickAttackTimer(a.AttackContactSeconds);
         p=battle.GetChildren().OfType<Projectile>().Single(); p.SetPhysicsProcess(false);
-        b.ResetForPool(); b.Setup(Team.Enemy,new UnitStats(GameData.GetUnit("enemy_walker")),new Vector2(540,350)); hp=b.Health;
+        b.ResetForPool(); b.Setup(Team.Enemy,new UnitStats(GameData.GetUnit("enemy_walker")),new Vector2(460,350)); hp=b.Health;
         p._PhysicsProcess(2);
         Check(b.Health==hp,"Projectile cannot hit a recycled target");
         battle.QueueFree(); await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);

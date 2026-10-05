@@ -17,6 +17,11 @@ public static class UnitStatText
             parts.Add($"Repair {stats.BusRepairAmount:0.#}");
         }
 
+        if (stats.UsesProjectile)
+        {
+            parts.Add(stats.DamagesStructures ? "Hits bases" : "Can't hit bases");
+        }
+
         if (HasAura(stats))
         {
             parts.Add(BuildAuraSummary(stats));

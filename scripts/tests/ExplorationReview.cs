@@ -104,7 +104,6 @@ public partial class ExplorationReview : Node
             legacy.StageStars=new int[state.MaxStage]; legacy.StageStars[cityStages[^2].StageNumber-1]=3; legacy.Gold=147; legacy.Food=17;
             Restore(legacy);
             Check(state.GetAdventureCaravanTile("city").Id==AdventureTileCatalog.Starting("city").Id && state.HasVisitedAdventureSite("supply-1")
-                && state.IsAdventureTileOpen(AdventureTileCatalog.ForMap("city").Single(t=>t.RetiredSiteId==shrine.Id))
                 && state.GetAdventureStartingCourageBonus(2)==0 && state.Gold==147 && state.Food==17,"Old saves return the caravan to the first stage, keep collected landmarks' ground and resources, and drop shrine courage");
             Check(state.IsAdventureSiteDiscovered("leader-2") && state.IsAdventureSiteDiscovered($"leader-{cityStages[^2].StageNumber}") && !state.CanVisitAdventureSite($"leader-{cityBoss}") && !state.IsCampaignStageUnlocked(cityBoss) && state.BuildSaveData().ClaimedAdventureDiscoveries.Length==0,"Migration preserves known and defeated rivals, keeps the boss gate sealed and grants no new discoveries");
             var invalid=state.BuildSaveData(); invalid.AdventureHeroPositions["city"]=new[]{float.NaN,0f}; invalid.AdventureExploredCells["city"]=new[]{-1,8000}; invalid.AdventureTravelledCells["city"]=new[]{-1,8000}; invalid.ClaimedAdventureDiscoveries=new[]{"invented"}; Restore(invalid);

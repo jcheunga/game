@@ -1,0 +1,50 @@
+{
+  "layers": [
+    {
+      "file": "gloamwood_far.png",
+      "rect": [
+        -10.0,
+        -150.0,
+        968.0,
+        482.0
+      ],
+      "parallax": 0.15,
+      "name": "far"
+    },
+    {
+      "file": "gloamwood_mid.png",
+      "rect": [
+        -10.0,
+        100.0,
+        968.0,
+        246.0
+      ],
+      "parallax": 0.45,
+      "name": "mid"
+    },
+    {
+      "file": "gloamwood.png",
+      "rect": [
+        -10.0,
+        110.0,
+        968.0,
+        490.0
+      ],
+      "parallax": 1.0,
+      "name": "near"
+    }
+  ],
+  "rect": [
+    -10.0,
+    110.0,
+    968.0,
+    490.0
+  ],
+  "sky": "a69c8a",
+  "fog": [
+    0.7715619802474976,
+    0.7225844264030457,
+    0.6291095018386841
+  ],
+  "generator": "art/remaster/build_backdrops.py"
+}

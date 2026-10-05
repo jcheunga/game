@@ -52,7 +52,10 @@ public partial class UiReviewSmoke
                     if(touch) Send(new InputEventScreenTouch {Index=7,Pressed=false,Canceled=cancel,Position=p});
                     else Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Canceled=cancel,Position=p,GlobalPosition=p});
                 }
+                // Magic is aimed by dragging onto the field; a unit card is a button that deploys on release.
                 void Start(int index=0) { Ready(); Down(CardPoint(index)); Move(FieldPoint()); }
+                void Press(int index=0) { Ready(); Down(CardPoint(index)); }
+                void CancelHeldCard() => Send(new InputEventKey {Keycode=Key.Escape,Pressed=true});
                 Ready(); await Wait(.1);
                 var point=FieldPoint(); var source=CardPoint(0);
                 var count=Read<int>("_playerDeployments"); var casts=Read<int>("_spellsCast");
@@ -62,19 +65,19 @@ public partial class UiReviewSmoke
                 Check(!Read<bool>("_cardDragging") && Read<int>("_playerDeployments")==count,mode+": small finger jitter cannot deploy");
                 var cameraPosition=camera.Position;
                 Move(point); await Wait(.05);
-                Check(Read<bool>("_cardDragging") && Read<Control>("_cardDragGhost").Visible,mode+": drag lifts the portrait and shows a preview");
-                Check((bool)Call("CanDropCard",point),mode+": visible terrain is a valid drop target");
-                Check(Read<int>("_playerDeployments")==count && Mathf.IsEqualApprox(Read<float>("_courage"),100),mode+": preview spends no courage");
-                Check(camera.Position==cameraPosition,mode+": card drag does not pan the battlefield");
-                var spawn=(Vector2)Call("ResolvePlayerDeployPosition",((Vector2)Call("ScreenToBattle",point)).Y);
-                await Capture(mode+"-unit-preview");
+                Check(!Read<bool>("_cardDragging") && !Read<Control>("_cardDragGhost").Visible,mode+": a unit card cannot be dragged to choose a position");
+                Check(camera.Position==cameraPosition,mode+": holding a card does not pan the battlefield");
                 Up(point); await Wait(.05);
+                Check(Read<int>("_playerDeployments")==count && Mathf.IsEqualApprox(Read<float>("_courage"),100),mode+": lifting off a unit card cancels for free");
+                var spawn=(Vector2)typeof(BattleController).GetMethod("get_WagonDoorExit",hidden)!.Invoke(battle,null)!;
+                Ready(); Down(source); Move(source+new Vector2(2,-2)); Up(source+new Vector2(2,-2)); await Wait(.05);
                 var unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);
-                Check(Read<int>("_playerDeployments")==count+1 && unit.DefinitionId==deck.Roster[0].Id,mode+": release deploys the dragged unit exactly once");
-                Check(unit.Position.DistanceTo(spawn)<.01,mode+": actual spawn matches the caravan/lane preview");
+                Check(Read<int>("_playerDeployments")==count+1 && unit.DefinitionId==deck.Roster[0].Id,mode+": tapping a unit card deploys it exactly once");
+                Check(unit.Position.DistanceTo(spawn)<.01,mode+": the unit steps out of the wagon's door");
                 Check(Mathf.IsEqualApprox(Read<float>("_courage"),100-deck.Roster[0].Cost) && deck.GetCooldownRemaining(deck.Roster[0].Id)>0,
                     mode+": deployment charges the existing cost and starts cooldown");
-                Up(point);
+                await Capture(mode+"-unit-deployed");
+                Up(source);
                 Check(Read<int>("_playerDeployments")==count+1,mode+": duplicate release cannot deploy again");
 
                 Ready();
@@ -93,7 +96,7 @@ public partial class UiReviewSmoke
                 for(var i=1;i<deck.Roster.Count;i++)
                 {
                     var before=Read<int>("_playerDeployments");
-                    Start(i); Up(point);
+                    Press(i); Up(CardPoint(i));
                     Check(Read<int>("_playerDeployments")==before+1
                         && Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player).DefinitionId==deck.Roster[i].Id,
                         mode+": each unit card deploys its own unit, not the previously armed one");
@@ -108,51 +111,54 @@ public partial class UiReviewSmoke
                     mode+": healing magic reaches allies at the drop location");
 
                 count=Read<int>("_playerDeployments"); casts=Read<int>("_spellsCast");
+                Start(deck.Roster.Count); Move(CardPoint(0)); Up(CardPoint(0));
+                Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==100,
+                    mode+": returning a magic card to the bar cancels for free");
                 foreach(var spell in new[]{false,true})
                 {
-                    Start(spell?deck.Roster.Count:0); Move(CardPoint(0)); Up(CardPoint(0));
+                    var index=spell?deck.Roster.Count:0;
+                    Start(index); Move(new Vector2(30,35)); Up(new Vector2(30,35));
                     Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==100,
-                        mode+": returning a unit/magic card to the bar cancels for free");
-                    Start(spell?deck.Roster.Count:0); Move(new Vector2(30,35)); Up(new Vector2(30,35));
-                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==100,
-                        mode+": dropping over the HUD never uses the card");
-                    Start(spell?deck.Roster.Count:0); Up(point,true);
+                        mode+": releasing over the HUD never uses the card");
+                    Press(index); Up(CardPoint(index),true);
                     Check(!Read<bool>("_cardPointerDown") && Read<float>("_courage")==100,mode+": OS-canceled unit/magic release is free");
-                    Start(spell?deck.Roster.Count:0); Move(new Vector2(-20,200)); Up(new Vector2(-20,200));
-                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts,mode+": outside-window drop is rejected");
-                    Start(spell?deck.Roster.Count:0); Write("_courage",0f); Up(point);
+                    Start(index); Move(new Vector2(-20,200)); Up(new Vector2(-20,200));
+                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts,mode+": outside-window release is rejected");
+                    if(spell) { Start(index); Write("_courage",0f); Up(point); }
+                    else { Press(index); Write("_courage",0f); Up(CardPoint(index)); }
                     Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==0,
-                        mode+": release rechecks courage instead of trusting the drag start");
+                        mode+": release rechecks courage instead of trusting the press");
                 }
-                Start(); deck.MarkDeployed(deck.Roster[0],5); Up(point);
+                Press(); deck.MarkDeployed(deck.Roster[0],5); Up(CardPoint(0));
                 Check(Read<int>("_playerDeployments")==count,mode+": release rechecks a newly active cooldown");
                 Start(deck.Roster.Count); spells.MarkCast(spells.Roster[0],5); Up(point);
                 Check(Read<int>("_spellsCast")==casts,mode+": magic release rechecks a newly active cooldown");
-                Ready(); Write("_courage",0f); Call("UpdateHud"); Down(CardPoint(0)); Move(point); Up(point);
-                Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": unavailable cards cannot begin a drag");
+                Ready(); Write("_courage",0f); Call("UpdateHud"); Down(CardPoint(0)); Up(CardPoint(0));
+                Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": unavailable cards cannot be pressed");
 
-                Start(); Send(new InputEventKey {Keycode=Key.Escape,Pressed=true}); Up(point);
+                Press(); Send(new InputEventKey {Keycode=Key.Escape,Pressed=true}); Up(CardPoint(0));
                 Check(!Read<bool>("_battlePaused") && !Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,
-                    mode+": Escape cancels the drag without pausing or deploying");
-                Start(); battle._Notification((int)Node.NotificationApplicationFocusOut); Up(point);
+                    mode+": Escape cancels a held card without pausing or deploying");
+                Press(); battle._Notification((int)Node.NotificationApplicationFocusOut); Up(CardPoint(0));
                 Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": focus loss cancels and consumes the late release");
-                Start(); Call("TogglePause"); Up(point); Call("TogglePause");
-                Check(Read<int>("_playerDeployments")==count && !Read<bool>("_cardPointerDown"),mode+": pause cancels an in-flight card");
-                Start(); Write("_endlessCheckpointActive",true); Call("UpdateCardDragPreview"); Up(point); Write("_endlessCheckpointActive",false);
-                Check(Read<int>("_playerDeployments")==count && !Read<bool>("_cardPointerDown"),mode+": checkpoint interrupts without spending");
-                Start(); Write("_battleEnded",true); Call("UpdateCardDragPreview"); Up(point); Write("_battleEnded",false);
-                Check(Read<int>("_playerDeployments")==count && !Read<bool>("_cardPointerDown"),mode+": battle end interrupts without spending");
-                Start(); GetWindow().Size=touch?new Vector2I(667,375):new Vector2I(1200,720); await Wait(.15); Up(point);
-                Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": resizing cancels stale drag coordinates");
+                Press(); Call("TogglePause"); Up(CardPoint(0)); Call("TogglePause");
+                Check(Read<int>("_playerDeployments")==count && !Read<bool>("_cardPointerDown"),mode+": pause cancels a held card");
+                Start(deck.Roster.Count); Write("_endlessCheckpointActive",true); Call("UpdateCardDragPreview"); Up(point); Write("_endlessCheckpointActive",false);
+                Check(Read<int>("_spellsCast")==casts && !Read<bool>("_cardPointerDown"),mode+": checkpoint interrupts without spending");
+                Start(deck.Roster.Count); Write("_battleEnded",true); Call("UpdateCardDragPreview"); Up(point); Write("_battleEnded",false);
+                Check(Read<int>("_spellsCast")==casts && !Read<bool>("_cardPointerDown"),mode+": battle end interrupts without spending");
+                Press(); GetWindow().Size=touch?new Vector2I(667,375):new Vector2I(1200,720); await Wait(.15); Up(CardPoint(0));
+                Check(!Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": resizing cancels stale card presses");
 
                 if(touch)
                 {
-                    Start(); point=FieldPoint();
+                    Press(); point=FieldPoint();
                     Send(new InputEventScreenTouch {Index=8,Pressed=true,Position=point});
                     Send(new InputEventScreenDrag {Index=8,Position=point+new Vector2(70,0)});
                     Send(new InputEventScreenTouch {Index=8,Pressed=false,Position=point});
                     Check(Read<bool>("_cardPointerDown") && Read<int>("_playerDeployments")==count,mode+": a second finger cannot release or deploy the first card");
-                    Up(point); count++;
+                    Up(CardPoint(0)); count++;
+                    Check(Read<int>("_playerDeployments")==count,mode+": the first finger's release deploys once");
                     Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=point,GlobalPosition=point,Device=-1});
                     Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=point,GlobalPosition=point,Device=-1});
                     Check(Read<int>("_playerDeployments")==count,mode+": emulated mouse events cannot duplicate a touch drop");
@@ -169,15 +175,18 @@ public partial class UiReviewSmoke
                 }
 
                 Ready();
-                point=FieldPoint(); Down(CardPoint(0)); Move(point);
+                var bar=cards[0].GetParent().GetParent().GetParent() as ScrollContainer;
+                bar?.EnsureControlVisible((Control)cards[deck.Roster.Count].GetParent()); await Wait(.1);
+                point=FieldPoint(); Down(CardPoint(deck.Roster.Count)); Move(point);
                 Check(Read<bool>("_cardDragging") && !Read<bool>("_cardScrolling"),
-                    mode+": diagonal lift out of an overflowing card bar remains a card drag");
-                spawn=(Vector2)Call("ResolvePlayerDeployPosition",((Vector2)Call("ScreenToBattle",point)).Y);
-                Up(point); await Wait(.05);
+                    mode+": diagonal lift out of an overflowing card bar remains a magic drag");
+                if(Read<bool>("_cardPointerDown")) CancelHeldCard();
+                if(bar!=null) bar.ScrollHorizontal=0;
+                await Wait(.1);
+                Ready(); Down(CardPoint(0)); Up(CardPoint(0)); await Wait(.05);
                 unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);
-                Check(Read<int>("_playerDeployments")==count+1 && unit.Position.DistanceTo(spawn)<.01
-                    && Mathf.IsEqualApprox(spawn.X,GameData.Combat.PlayerSpawnX),
-                    mode+": a dropped unit deploys at the wagon");
+                Check(Read<int>("_playerDeployments")==count+1 && unit.Position.DistanceTo(spawn)<.01,
+                    mode+": a tapped unit deploys at the wagon even with the card bar scrolled");
             }
         }
         finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }

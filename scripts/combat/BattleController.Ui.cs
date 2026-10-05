@@ -54,7 +54,7 @@ public partial class BattleController
 			button.AddThemeColorOverride("font_pressed_color", Colors.White);
 			button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
 			var card = AttachBattleCardContent(button, UiArtLoader.TryLoadUnitIcon(unit));
-			button.Pressed += () => ArmPlayerUnit(unit);
+			button.Pressed += () => DeployPlayerUnit(unit);
 			unitRow.AddChild(button);
 			_deploySlots.Add(new DeploySlot(unit, button, card));
 		}
@@ -283,13 +283,12 @@ public partial class BattleController
 			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
 			var level = GameState.Instance.GetUnitLevel(slot.Definition.Id);
 
-			var armed = _selectionMode == BattleSelectionMode.Unit && slot.Definition == _deck.ArmedUnit;
-			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage, armed);
+			slot.Button.SelfModulate = ResolveDeployButtonTint(slot.Definition, isReady, hasCourage);
 			slot.Button.TooltipText = BuildDeployButtonTooltip(slot.Definition, level, isReady, cooldown);
 			var totalCd = ResolvePlayerDeployCooldown(slot.Definition);
-			slot.Card.SetState(slot.Definition.Cost, _courage, cooldown, totalCd, armed, _battleEnded || _endlessCheckpointActive);
+			slot.Card.SetState(slot.Definition.Cost, _courage, cooldown, totalCd, false, _battleEnded || _endlessCheckpointActive);
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {slot.Definition.Cost} courage";
-			slot.Button.AccessibilityDescription = $"Level {level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a position on the battlefield." : "Ready. Select to place on the battlefield.");
+			slot.Button.AccessibilityDescription = $"Level {level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : "Ready. Select to deploy from the war wagon.");
 		}
 
 		foreach (var slot in _spellSlots)

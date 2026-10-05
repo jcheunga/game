@@ -10,7 +10,10 @@ public partial class BattleController
     private Label _mobilePlacementHint;
     private bool _mobileOverview, _mobileFollow = true;
     private bool _mobileClearView;
-    private float _mobileCombatZoom = MobilePresentation.BattleZoom;
+    // Combat zoom steps relative to the fit that shows the whole band between the HUD rows.
+    private static readonly float[] MobileZoomSteps = { 1f, 1.25f, 1.5f };
+    private int _mobileZoomStep;
+    private float MobileCombatZoom => BattleFitZoom * MobileZoomSteps[_mobileZoomStep];
     private Vector2 _mobileClosePosition;
     private bool _mobilePointerDown, _mobileDragging;
     private int _mobilePointerId;
@@ -24,8 +27,8 @@ public partial class BattleController
         _mobileHud=root;
         root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopLeft);
         root.Scale=Vector2.One*MobilePresentation.HudScale;
-        _mobileCamera=new Camera2D { Name="MobileBattleCamera", Zoom=Vector2.One*MobilePresentation.BattleZoom,
-            Position=new Vector2(0,350), PositionSmoothingEnabled=false };
+        _mobileCamera=new Camera2D { Name="MobileBattleCamera", Position=new Vector2(0,(BattlefieldTop+BattlefieldBottom)*.5f),
+            PositionSmoothingEnabled=false };
         AddChild(_mobileCamera); _mobileCamera.MakeCurrent();
         var views = new HBoxContainer(); views.AddThemeConstantOverride("separation", 6); root.AddChild(views);
         _mobileViewButton=RealmUi.IconButton("map", "Battlefield overview or follow combat", ToggleMobileOverview);
@@ -95,6 +98,7 @@ public partial class BattleController
             if(pauseVeil!=null) pauseVeil.CustomMinimumSize=root.Size;
             _mobileFieldTop=(top+70)*scale;
             _mobileFieldBottom=(_mobileClearView?root.Size.Y-bottom-32:cards.Position.Y-30)*scale;
+            _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:MobileCombatZoom);
             ClampMobileCamera();
             _mobileCamera.ForceUpdateScroll();
         };
@@ -105,10 +109,10 @@ public partial class BattleController
     private void RefreshMobileHud()
     {
         if (_mobileHud==null) return;
-        var armed=_selectionMode==BattleSelectionMode.Spell ? _spellDeck.ArmedSpell?.DisplayName : _deck.ArmedUnit?.DisplayName;
+        var armed=_selectionMode==BattleSelectionMode.Spell ? _spellDeck.ArmedSpell?.DisplayName : null;
         _mobilePlacementHint.Text=_mobileClearView?"View only · Drag to explore · Tap Cards to deploy":
             _cardDragging?"Release on the field · Return to the cards to cancel":
-            string.IsNullOrEmpty(armed)?"":$"{armed} · Drag to deploy";
+            string.IsNullOrEmpty(armed)?"":$"{armed} · Tap the field to cast";
         _mobileCancelButton.Visible=!_mobileClearView && !string.IsNullOrEmpty(armed);
     }
 
@@ -124,24 +128,31 @@ public partial class BattleController
         else { _mobileClosePosition=_mobileCamera.Position; _mobileOverview=true; }
         _mobileViewButton.Icon=RealmUi.Icon(_mobileOverview?"sword":"map");
         _mobileViewButton.TooltipText=_mobileOverview?"Return to close combat":"Show the whole battlefield";
-        _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:_mobileCombatZoom);
-        if (_mobileOverview) _mobileCamera.Position=new Vector2(BattleWorldWidth,BattleWorldHeight)*.5f;
+        _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:MobileCombatZoom);
+        if (_mobileOverview) _mobileCamera.Position=new Vector2(BattleWorldWidth*.5f,(FrameTop+FrameBottom)*.5f);
         else _mobileFollow=true;
         ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
     }
 
+    // A hand pan stops tracking; the view button then offers to resume it.
+    private void PauseMobileFollow()
+    {
+        _mobileFollow=false;
+        _mobileViewButton.Icon=RealmUi.Icon("sword");
+        _mobileViewButton.TooltipText="Follow the fighting";
+    }
+
     private Vector2 MobileVisibleCenter => new(GetViewportRect().Size.X*.5f,(_mobileFieldTop+_mobileFieldBottom)*.5f);
-    private float MobileOverviewZoom => Mathf.Min(GetViewportRect().Size.X / BattleWorldWidth,
-        Mathf.Max(1f,_mobileFieldBottom-_mobileFieldTop) / BattleWorldHeight);
+    private float MobileOverviewZoom => Mathf.Min(GetViewportRect().Size.X / BattleWorldWidth, BattleFitZoom);
 
     private void CycleMobileZoom()
     {
         _mobilePointerDown=false;
         if(_mobileOverview) ToggleMobileOverview();
         var focus=ScreenToBattle(MobileVisibleCenter);
-        _mobileCombatZoom=_mobileCombatZoom<2.5f?2.8f:_mobileCombatZoom<3.1f?3.4f:2.2f;
-        _mobileCamera.Zoom=Vector2.One*_mobileCombatZoom;
-        _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/_mobileCombatZoom;
+        _mobileZoomStep=(_mobileZoomStep+1)%MobileZoomSteps.Length;
+        _mobileCamera.Zoom=Vector2.One*MobileCombatZoom;
+        _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/MobileCombatZoom;
         ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
     }
 
@@ -153,22 +164,8 @@ public partial class BattleController
         _mobileClearButton.TooltipText=_mobileClearView?"Restore deployment cards":"Hide cards for a clear view";
         _mobileResize(); RefreshMobileHud();
         if(!_mobileOverview)
-            _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/_mobileCombatZoom;
+            _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/MobileCombatZoom;
         ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
-    }
-
-    private void UpdateMobileCamera(float delta)
-    {
-        if (_mobileCamera==null || _mobileOverview || !_mobileFollow || _battlePaused || _battleEnded || _endlessCheckpointActive || _mobilePointerDown || _cardPointerDown) return;
-        var front=_units.Where(u=>!u.IsDead && u.Team==Team.Player).OrderByDescending(u=>u.Position.X).FirstOrDefault();
-        if (front==null) return;
-        var enemy=_units.Where(u=>!u.IsDead && u.Team==Team.Enemy).OrderBy(u=>u.Position.DistanceSquaredTo(front.Position)).FirstOrDefault();
-        var focus=enemy!=null && front.Position.DistanceTo(enemy.Position)<300
-            ? (front.BodyContactPosition+enemy.BodyContactPosition)*.5f : front.BodyContactPosition+new Vector2(110,0);
-        // Center the characters in the unobstructed field, not behind the cards.
-        var destination=focus-GlobalPosition-(MobileVisibleCenter-GetViewportRect().Size*.5f)/_mobileCombatZoom;
-        _mobileCamera.Position=_mobileCamera.Position.Lerp(destination,1-Mathf.Exp(-delta*3));
-        ClampMobileCamera();
     }
 
     private void ClampMobileCamera()
@@ -212,7 +209,7 @@ public partial class BattleController
         _mobileDragging |= point.DistanceTo(_mobilePointerStart)>14;
         if(_mobileDragging && !_mobileOverview)
         {
-            _mobileFollow=false; _mobileViewButton.Text="Follow";
+            PauseMobileFollow();
             _mobileCamera.Position-=(point-_mobilePointerLast)/_mobileCamera.Zoom;
             ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
         }

@@ -19,12 +19,10 @@ public partial class UiReviewSmoke
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
         state.RestoreCloudSave(fixture);
-        var artworkSize = new Vector2(1983, 793); var ground = new Rect2(84, 96, 2392, 488);
-        var scene = WorldEnvironmentArt.BattleSceneRect(artworkSize, ground);
-        Check(Mathf.IsEqualApprox(scene.Size.X / artworkSize.X, scene.Size.Y / artworkSize.Y), "Scene art keeps its original proportions");
-        Check((scene.Position + artworkSize * WorldEnvironmentArt.BattleFloorSource.Position * (scene.Size.X / artworkSize.X)).DistanceTo(ground.Position) < .01f,
-            "Clear authored ground stays aligned with the simulation");
-        Check(scene.Encloses(new Rect2(0, 0, 2560, 720)), "Authored scenery covers the full battle world");
+        var artworkSize = new Vector2(1983, 793); var view = new Rect2(0, 210, 474, 267);
+        var plate = WorldEnvironmentArt.CoverRect(artworkSize, view);
+        Check(Mathf.IsEqualApprox(plate.Size.X / artworkSize.X, plate.Size.Y / artworkSize.Y), "Scene art keeps its proportions");
+        Check(plate.Encloses(view) && plate.GetCenter().DistanceTo(view.GetCenter()) < .01f, "Authored scenery covers the whole battle view");
         foreach (var size in new[] { new Vector2I(1280, 720), new Vector2I(1024, 768), new Vector2I(844, 390) })
         {
             var phone = size.X == 844;

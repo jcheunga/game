@@ -110,7 +110,6 @@ public partial class BattleController
             var repair = _playerBaseMaxHealth * BaseWeaponCatalog.RepairRatio(_wagonRepairLevel);
             _playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repair);
             SpawnEffect(PlayerBaseCorePosition, new Color("98dbaa"), 20, 90, 0.5f, false);
-            SpawnFloatText(PlayerBaseCorePosition + new Vector2(0, -90), $"REPAIR +{repair:0}", new Color("98dbaa"), 1f);
             SetStatus("The wagon crew triggered emergency repairs. Repairs are spent for this battle.");
         }
         if (_wagonVolleyLevel <= 0) return;
@@ -122,7 +121,6 @@ public partial class BattleController
         if (targets.Length == 0) return; // Keep a ready skill until enemies arrive.
         foreach (var target in targets) FireBaseWeapon(Team.Player, arrows, target);
         _wagonVolleyRecovery = BaseWeaponCatalog.VolleyCooldown(_wagonVolleyLevel);
-        SpawnFloatText(PlayerBaseCorePosition + new Vector2(0, -90), "ARROW VOLLEY", arrows.Color, 0.8f);
     }
 
     private void FireBaseWeapon(Team team, BaseWeaponDefinition weapon, Unit target)
@@ -189,7 +187,7 @@ public partial class BattleController
         if (_strongholdAim != null && IsInstanceValid(_strongholdAim) && !_strongholdAim.IsDead && _enemyBaseHealth > 0)
         {
             var color = new Color(_strongholdMount.Weapon.Color, 0.6f);
-            DrawArc(_strongholdAim.Position, Mathf.Max(22, _strongholdMount.Weapon.SplashRadius), 0, Mathf.Tau, 32, color, 2, true);
+            DrawArc(_strongholdAim.Position, Mathf.Max(11, _strongholdMount.Weapon.SplashRadius), 0, Mathf.Tau, 32, color, 2, true);
             DrawLine(BaseMountPosition(false), _strongholdAim.Position, new Color(color, 0.25f), 1, true);
         }
     }
@@ -199,7 +197,8 @@ public partial class BattleController
         var texture = BattlefieldTextureLoader.TryLoadStructure("mount_" + weapon.Kind.ToString().ToLowerInvariant());
         if (texture != null)
         {
-            canvas.DrawSetTransform(position - ((Node2D)canvas).Position, 0f, new Vector2(direction, 1));
+            // Mounts scale with the bases they sit on.
+            canvas.DrawSetTransform(position - ((Node2D)canvas).Position, 0f, new Vector2(direction, 1) * _combat.StructureScale);
             canvas.DrawTextureRect(texture, new Rect2(-30f, -59f, 60f, 75f), false, FieldLighting.Tint);
             canvas.DrawSetTransform(-((Node2D)canvas).Position, 0f, Vector2.One);
             return;

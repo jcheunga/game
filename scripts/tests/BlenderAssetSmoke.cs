@@ -78,7 +78,7 @@ public partial class BlenderAssetSmoke : Node
             await CheckAnimations();
             if (OS.GetCmdlineUserArgs().Contains("--screenshots"))
             {
-                foreach (var stage in new[] { 1, 24, 60 }) await CaptureBattle(stage);
+                foreach (var stage in new[] { 1, 54, 100 }) await CaptureBattle(stage);
                 await CaptureCodex();
             }
         }
@@ -153,7 +153,7 @@ public partial class BlenderAssetSmoke : Node
         AddChild(battle);
         battle.SetPhysicsProcess(false);
         var playerIds = new[] { "player_brawler", "player_shooter", "player_raider", "player_stormcaller", "player_ballista" };
-        var enemyIds = new[] { "enemy_walker", "enemy_brute", "enemy_lich", "enemy_siegetower", stage == 60 ? "enemy_boss_citadel" : "enemy_boss" };
+        var enemyIds = new[] { "enemy_walker", "enemy_brute", "enemy_lich", "enemy_siegetower", stage == 100 ? "enemy_boss_ashen_regent" : "enemy_boss" };
         for (var i = 0; i < 5; i++)
         {
             foreach (var team in new[] { Team.Player, Team.Enemy })

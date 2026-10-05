@@ -15,7 +15,7 @@ for profile in core lean equipped; do
     suffix=""
     if [[ "$seed" != 0 ]]; then
       suffix="-seed-$seed"
-      stage_args+=(--stages=12,15,16,21,25,26,29,52,53,55,56,58,60)
+      stage_args+=(--stages=20,30,34,35,40,50,55,57,60,64,68,88,100)
     fi
     godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.tscn -- \
       "--save-suffix=combat-review-progression-$profile-$seed-$run_tag" --tactical \
@@ -24,13 +24,13 @@ for profile in core lean equipped; do
 done
 for profile in armed siege-counter support-counter; do
   squad=()
-  stages=12,15,16,21,25,26,29,52,53,55,56,58,60
+  stages=20,30,34,35,40,50,55,57,60,64,68,88,100
   if [[ "$profile" == siege-counter ]]; then
     squad+=(--squad=player_lantern_guard,player_ballista,player_stormcaller)
-    stages=58
+    stages=68
   elif [[ "$profile" == support-counter ]]; then
     squad+=(--squad=player_lantern_guard,player_stormcaller,player_coordinator)
-    stages=60
+    stages=88
   fi
   for seed in 0 1000 2000; do
     godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.tscn -- \

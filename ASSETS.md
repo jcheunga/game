@@ -177,7 +177,7 @@ and the earlier district-map illustrations have been removed.
 
 ## Terrain IDs
 
-Current campaign coverage is 60 stages across 31 terrain IDs.
+Current campaign coverage is 100 stages (ten per zone) across 31 terrain IDs; battles draw each zone's layered Blender backdrop (`assets/world/backdrops`).
 
 - `city`: `highway`, `night`, `urban`
 - `harbor`: `industrial`, `shipyard`, `swamp`

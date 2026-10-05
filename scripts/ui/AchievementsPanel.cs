@@ -75,7 +75,7 @@ public partial class AchievementsPanel : VBoxContainer
         var s = GameState.Instance;
         (int, int) result = id switch {
             "campaign_complete" => (CampaignPlanCatalog.GetAll().Count(d => s.IsDistrictCleared(d.Id)), CampaignPlanCatalog.GetAll().Count),
-            "all_stars" => (Enumerable.Range(1, s.MaxStage).Count(stage => s.GetStageStars(stage) >= 3), 25),
+            "all_stars" => (Enumerable.Range(1, s.MaxStage).Count(stage => s.GetStageStars(stage) >= 3), 40),
             "endless_30" => (s.BestEndlessWave, 30), "endless_60" => (s.BestEndlessWave, 60), "endless_90" => (s.BestEndlessWave, 90),
             "relic_collector" => (s.GetOwnedEquipment().Count, 6), "full_armory" => (s.GetOwnedEquipment().Count, 12),
             "full_roster" => (GameData.GetPlayerUnits().Count(unit => s.IsUnitOwned(unit.Id)), GameData.PlayerRosterIds.Length),

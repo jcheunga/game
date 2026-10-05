@@ -1,0 +1,21 @@
+{
+  "source": "art/remaster/siege (fort_wall)",
+  "generator": "art/remaster/build_battle_structures.py",
+  "cameraElevation": 22,
+  "anchor": [
+    0.5,
+    0.929665
+  ],
+  "mounts": [],
+  "contacts": [],
+  "width": 94.078,
+  "lights": [],
+  "smoke": [
+    0.5,
+    0.929665
+  ],
+  "centre": [
+    0.496462,
+    0.49331
+  ]
+}

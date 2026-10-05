@@ -835,7 +835,7 @@ public sealed class BattleSpawnDirector
         var damageScale = _stageData.EnemyDamageScale * _additionalEnemyDamageScale;
         // Authored health/damage already provide campaign growth. Preserve each enemy's rhythm.
         var cooldownReduction = 0f;
-        var baseDamageBonus = Math.Min(10, Math.Max(0, (_stage - 1) / 6));
+        var baseDamageBonus = Math.Min(10, Math.Max(0, (_stage - 1) / 10));
 
         if (_isEndlessMode)
         {

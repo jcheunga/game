@@ -1,5 +1,5 @@
 {
-  "source": "art/remaster/blend/structures/battle-v2/war_wagon_skin_royal.blend",
+  "source": "art/remaster/siege (war_wagon_skin_royal)",
   "generator": "art/remaster/build_battle_structures.py",
   "cameraElevation": 22,
   "anchor": [
@@ -52,5 +52,26 @@
   "smoke": [
     0.439394,
     0.424824
-  ]
+  ],
+  "centre": [
+    0.471381,
+    0.505538
+  ],
+  "door": {
+    "rect": [
+      0.376953,
+      0.553711,
+      0.608398,
+      0.851562
+    ],
+    "frames": 2,
+    "exit": [
+      0.493939,
+      0.78464
+    ],
+    "foot": [
+      0.493939,
+      0.844661
+    ]
+  }
 }

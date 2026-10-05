@@ -82,11 +82,11 @@ public static class SeasonalEventCatalog
             "4488cc", "2026-03-20", "2026-04-03",
             new SeasonalEventStage[]
             {
-                new(15, 1.15f, 1.10f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)),
-                new(22, 1.20f, 1.15f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)),
-                new(30, 1.25f, 1.20f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)),
-                new(38, 1.35f, 1.25f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)),
-                new(45, 1.50f, 1.35f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")),
+                new(34, 1.15f, 1.10f, new[] { "elite_vanguard" }, new SeasonalEventReward("gold", amount: 300)),
+                new(51, 1.20f, 1.15f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 400)),
+                new(66, 1.25f, 1.20f, new[] { "cursed_ground" }, new SeasonalEventReward("food", amount: 8)),
+                new(82, 1.35f, 1.25f, new[] { "elite_vanguard", "fortified_deploy" }, new SeasonalEventReward("sigils", amount: 2)),
+                new(97, 1.50f, 1.35f, new[] { "cursed_ground", "rapid_assault" }, new SeasonalEventReward("relic", "relic_frostbound_crown")),
             },
             new SeasonalEventMilestone[]
             {
@@ -99,11 +99,11 @@ public static class SeasonalEventCatalog
             "cc6622", "2026-05-01", "2026-05-15",
             new SeasonalEventStage[]
             {
-                new(10, 1.10f, 1.10f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)),
-                new(18, 1.18f, 1.15f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)),
-                new(25, 1.25f, 1.20f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)),
-                new(35, 1.30f, 1.25f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)),
-                new(42, 1.40f, 1.30f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")),
+                new(22, 1.10f, 1.10f, new[] { "rapid_assault" }, new SeasonalEventReward("gold", amount: 250)),
+                new(42, 1.18f, 1.15f, new[] { "mirror_pressure" }, new SeasonalEventReward("food", amount: 6)),
+                new(57, 1.25f, 1.20f, new[] { "lich_graveyard" }, new SeasonalEventReward("gold", amount: 500)),
+                new(76, 1.30f, 1.25f, new[] { "tunnel_invasion" }, new SeasonalEventReward("sigils", amount: 2)),
+                new(91, 1.40f, 1.30f, new[] { "mirror_pressure", "lich_graveyard" }, new SeasonalEventReward("relic", "relic_moonfire_talisman")),
             },
             new SeasonalEventMilestone[]
             {

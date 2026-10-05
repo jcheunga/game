@@ -6,7 +6,6 @@ public static class MobilePresentation
 {
     internal static bool? TestOverride;
     public const float HudScale = 1.55f;
-    public const float BattleZoom = 2.8f;
     public static bool Enabled => TestOverride ?? (OS.HasFeature("android") || OS.HasFeature("ios")
         || (OS.HasFeature("web") && DisplayServer.IsTouchscreenAvailable())
         || OS.GetCmdlineUserArgs().Contains("--mobile-preview"));

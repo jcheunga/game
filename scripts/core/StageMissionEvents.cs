@@ -222,7 +222,7 @@ public static class StageMissionEvents
 
         var route = RouteCatalog.Get(stage.MapId);
         var colorHex = route.BannerAccent.ToHtml(false);
-        var startTime = Mathf.Clamp(18f + (stage.StageNumber * 0.35f), 18f, 34f);
+        var startTime = Mathf.Clamp(18f + (stage.StageNumber * 0.21f), 18f, 34f);
         var yRatio = ResolveCampaignFallbackYRatio(stage.StageNumber);
 
         return RouteCatalog.Normalize(stage.MapId) switch
@@ -236,7 +236,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the supply cart is burned and the wagon takes a direct hit.",
                 XRatio = 0.36f,
                 YRatio = yRatio,
-                Radius = 74f,
+                Radius = 37f,
                 TargetSeconds = 8.5f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -250,7 +250,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the crew is lost and the keep regains footing.",
                 XRatio = 0.62f,
                 YRatio = yRatio,
-                Radius = 78f,
+                Radius = 39f,
                 TargetSeconds = 8.2f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -264,7 +264,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the charge fizzles and the enemy wall resets.",
                 XRatio = 0.64f,
                 YRatio = yRatio,
-                Radius = 80f,
+                Radius = 40f,
                 TargetSeconds = 8.3f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -278,7 +278,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the circle falls and signal pressure worsens.",
                 XRatio = 0.48f,
                 YRatio = yRatio,
-                Radius = 76f,
+                Radius = 38f,
                 TargetSeconds = 8.6f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -292,7 +292,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the pyre goes dark and the line loses tempo.",
                 XRatio = 0.46f,
                 YRatio = yRatio,
-                Radius = 78f,
+                Radius = 39f,
                 TargetSeconds = 8.4f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -306,7 +306,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the reliquary is overrun and the wagon takes the blow.",
                 XRatio = 0.38f,
                 YRatio = yRatio,
-                Radius = 74f,
+                Radius = 37f,
                 TargetSeconds = 8.8f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -320,7 +320,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the bogfire is drowned and the front loses tempo.",
                 XRatio = 0.47f,
                 YRatio = yRatio,
-                Radius = 80f,
+                Radius = 40f,
                 TargetSeconds = 8.3f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -334,7 +334,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the relay is cut off and the wagon is struck instead.",
                 XRatio = 0.35f,
                 YRatio = yRatio,
-                Radius = 72f,
+                Radius = 36f,
                 TargetSeconds = 8.1f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -348,7 +348,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the cairn is snuffed and the lane falls into confusion.",
                 XRatio = 0.49f,
                 YRatio = yRatio,
-                Radius = 76f,
+                Radius = 38f,
                 TargetSeconds = 8.5f,
                 StartTime = startTime,
                 ColorHex = colorHex
@@ -362,7 +362,7 @@ public static class StageMissionEvents
                 PenaltySummary = "Risk: the spotters are silenced and the keep regains ground.",
                 XRatio = 0.66f,
                 YRatio = yRatio,
-                Radius = 82f,
+                Radius = 41f,
                 TargetSeconds = 8.4f,
                 StartTime = startTime,
                 ColorHex = colorHex

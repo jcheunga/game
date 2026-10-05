@@ -8,7 +8,7 @@ public partial class CombatReviewSmoke
 {
     private async Task CheckFinishPacing()
     {
-        var battle = await OpenBattle(58);
+        var battle = await OpenBattle(20);
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats(GameData.EnemyBossTidemasterId, out var stats);
         var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(900, 220));
@@ -34,7 +34,7 @@ public partial class CombatReviewSmoke
             "Siege limit does not suppress other escort types");
         await CloseBattle(battle);
 
-        battle = await OpenBattle(12);
+        battle = await OpenBattle(30);
         director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats(GameData.EnemyBossForgeId, out var forgeStats);
         var forge = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, forgeStats, new Vector2(900, 220));

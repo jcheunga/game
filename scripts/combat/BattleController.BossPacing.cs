@@ -17,8 +17,9 @@ public partial class BattleController
             if (!unit.IsDead && unit.Team == Team.Enemy && unit.DefinitionId == unitId) active++;
         return active < 2;
     }
-    private Rect2 CursedGroundArea => new(BattlefieldLeft + 200f, BaseCenterY - 62f,
-        BattlefieldRight - BattlefieldLeft - 340f, 124f);
+    // The centre strip covers about a quarter of the band, leaving clear ground at both edges.
+    private Rect2 CursedGroundArea => new(BattlefieldLeft + (BattlefieldRight - BattlefieldLeft) * .084f, BaseCenterY - _combat.LaneHalfHeight * .27f,
+        (BattlefieldRight - BattlefieldLeft) * .858f, _combat.LaneHalfHeight * .54f);
 
     private void DrawCursedGround()
     {
@@ -38,7 +39,6 @@ public partial class BattleController
         {
             _pendingBossPhases[boss] = _elapsed + BossPhaseWarningSeconds;
             var title = StageEncounterIntel.GetBossPhaseTitle(boss.DefinitionId);
-            SpawnFloatText(boss.Position + new Vector2(0, -62), "PHASE INCOMING", new Color("ffd166"), BossPhaseWarningSeconds);
             SetStatus($"{boss.UnitName} is preparing {title}. Reinforce, heal, or finish the commander!");
             return false;
         }

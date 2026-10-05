@@ -30,7 +30,6 @@ public partial class BattleController
             {
                 ApplySplashDamage(attacker.Team,target.Position,damage,attacker.AttackSplashRadius,attacker.Tint,attacker.UnitName);
                 ShowWeaponContact(attacker,target,damage,false);
-                SpawnFloatText(target.BodyContactPosition + new Vector2(0,-16),"BLAST",attacker.Tint.Lightened(.22f),.46f);
             }
             else
             {

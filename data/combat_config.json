@@ -1,18 +1,20 @@
 {
   "Combat": {
-    "PlayerBaseX": 96.0,
-    "EnemyBaseX": 2464.0,
-    "PlayerSpawnX": 140.0,
-    "EnemySpawnX": 2420.0,
+    "PlayerBaseX": 48.0,
+    "EnemyBaseX": 900.0,
+    "PlayerSpawnX": 70.0,
+    "EnemySpawnX": 878.0,
 
-    "BattlefieldLeft": 84.0,
-    "BattlefieldRight": 2476.0,
-    "BattlefieldTop": 96.0,
-    "BattlefieldBottom": 584.0,
+    "BattlefieldLeft": 42.0,
+    "BattlefieldRight": 906.0,
+    "BattlefieldTop": 313.0,
+    "BattlefieldBottom": 367.0,
     "SpawnVerticalPadding": 12.0,
 
-    "BaseCoreRadius": 44.0,
-    "BaseApproachDistance": 170.0,
+    "BaseCoreRadius": 22.0,
+    "BaseApproachDistance": 40.0,
+    "StructureScale": 0.51,
+    "ViewWidth": 474.0,
 
     "CourageStart": 0.0,
     "CourageMax": 100.0,
@@ -24,7 +26,7 @@
     "EnemySpawnPressureMax": 1.25,
     "EnemySpawnIntervalFloor": 1.4,
 
-    "MaxActiveEnemiesByStage": [5, 6, 7, 7, 8, 8, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 13],
+    "MaxActiveEnemiesByStage": [5, 6, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13],
     "VictoryFuelReward": 2
   }
 }

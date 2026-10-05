@@ -18,7 +18,7 @@ public partial class UiReviewSmoke
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance;
         state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
-        var fixture = state.BuildSaveData(); fixture.HighestUnlockedStage = 60; fixture.Food = 24;
+        var fixture = state.BuildSaveData(); fixture.HighestUnlockedStage = GameData.MaxStage; fixture.Food = 24;
         fixture.OwnedPlayerUnitIds = new[] { GameData.PlayerBrawlerId, GameData.PlayerShooterId, GameData.PlayerBallistaId };
         fixture.ActiveDeckUnitIds = fixture.OwnedPlayerUnitIds;
         fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
@@ -43,25 +43,24 @@ public partial class UiReviewSmoke
         var deck = Read<BattleDeckState>(fight, "_deck"); var first = deck.Roster[0];
         Write(fight, "_courage", 100f);
         Call(fight, "TryUseSelectionAt", new Vector2(350, 340));
-        Check(Read<int>(fight, "_playerDeployments") == 0 && !deck.HasArmedUnit, "An empty selection cannot deploy");
-        Call(fight, "ArmPlayerUnit", first);
-        Call(fight, "TrySpawnPlayer", deck.Roster[1], new Vector2(140, 340));
-        Check(Read<int>(fight, "_playerDeployments") == 0, "A selected card cannot deploy a different unit");
-        Call(fight, "TryDeployAtY", 340f);
+        Check(Read<int>(fight, "_playerDeployments") == 0, "A ground click never deploys a unit");
+        Call(fight, "DeployPlayerUnit", first);
         Check(Read<int>(fight, "_playerDeployments") == 1 && !deck.HasArmedUnit
-            && Mathf.IsEqualApprox(Read<float>(fight, "_courage"), 100 - first.Cost), "Deploying spends once and clears the selection");
-        Call(fight, "TryDeployAtY", 340f);
-        Check(Read<int>(fight, "_playerDeployments") == 1, "A second ground click cannot auto-deploy another card");
-        Call(fight, "ArmPlayerUnit", GameData.GetUnit(GameData.PlayerMarksmanId));
-        Check(!deck.HasArmedUnit, "Unowned units outside the warband cannot be selected");
+            && Mathf.IsEqualApprox(Read<float>(fight, "_courage"), 100 - first.Cost), "Selecting a unit card deploys it once and spends once");
+        Call(fight, "TryUseSelectionAt", new Vector2(350, 340));
+        Check(Read<int>(fight, "_playerDeployments") == 1, "A later ground click cannot deploy another unit");
+        Call(fight, "DeployPlayerUnit", first);
+        Check(Read<int>(fight, "_playerDeployments") == 1, "A recovering card cannot deploy again");
+        Call(fight, "DeployPlayerUnit", GameData.GetUnit(GameData.PlayerMarksmanId));
+        Check(Read<int>(fight, "_playerDeployments") == 1, "Unowned units outside the warband cannot be deployed");
         Check(UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerNecromancerId) == null
             && UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerMechanicId) == null, "Abilities cannot summon additional allied units");
         Check(typeof(BattleController).GetMethods(hidden).All(method => method.Name != "SpawnSupportUnit"),
             "Automatic allied support spawning is removed");
         Call(fight, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit(GameData.EnemyRunnerId)), new Vector2(650, 200));
         var spawned = Read<List<Unit>>(fight, "_units").Last();
-        Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= 58,
-            "An enemy requested in the middle of the field enters at the stronghold");
+        Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= GameData.Combat.LaneHalfHeight,
+            "An enemy requested in the middle of the field enters at the stronghold, inside the band");
         var director = Read<BattleSpawnDirector>(fight, "_spawnDirector");
         Check(director.NextEncounterSpawnX == GameData.Combat.EnemySpawnX, "Advance-triggered waves also enter at the stronghold");
         foreach (var terrain in new[] { "marsh", "pass", "grove", "foundry", "night", "cathedral" })
@@ -73,21 +72,20 @@ public partial class UiReviewSmoke
             ambient.QueueFree();
         }
         await Wait(.05);
-        var ballista = (Unit)Call(fight, "SpawnUnit", Team.Player, state.BuildPlayerUnitStats(GameData.GetUnit(GameData.PlayerBallistaId)), new Vector2(2220, 340));
+        var ballista = (Unit)Call(fight, "SpawnUnit", Team.Player, state.BuildPlayerUnitStats(GameData.GetUnit(GameData.PlayerBallistaId)), new Vector2(GameData.Combat.EnemyBaseX - 120, 340));
         var hull = Read<float>(fight, "_enemyBaseHealth");
         Call(fight, "ResolveAttackBase", ballista);
         var projectile = Walk(fight).OfType<Projectile>().Single(); projectile.SetPhysicsProcess(false);
         Check(Read<BaseWeaponKind?>(projectile, "_weaponVisual") == BaseWeaponKind.Ballista
             && Read<float>(fight, "_enemyBaseHealth") == hull, "Ballista releases a boulder; the base is undamaged during flight");
         projectile._PhysicsProcess(.12);
-        Call(fight, "SetBattleCameraX", 2280f);
         await Capture("01-boulder-flight");
         projectile._PhysicsProcess(2);
         var impacted = Read<float>(fight, "_enemyBaseHealth");
         projectile._PhysicsProcess(2);
         Check(impacted < hull && Read<float>(fight, "_enemyBaseHealth") == impacted, "A boulder damages the base exactly once on impact");
         spawned.TakeDamage(10000); Call(fight, "CleanupDeadUnits");
-        var victim = (Unit)Call(fight, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(GameData.EnemyBruteId)), new Vector2(2390, 340));
+        var victim = (Unit)Call(fight, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(GameData.EnemyBruteId)), new Vector2(GameData.Combat.EnemyBaseX - 36, 340));
         var health = victim.Health;
         Call(fight, "ActiveAbilitySnipe", ballista);
         projectile = Walk(fight).OfType<Projectile>().Single(); projectile.SetPhysicsProcess(false);
@@ -103,7 +101,7 @@ public partial class UiReviewSmoke
         Call(fight, "TogglePause");
         Check(!Walk(fight).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("1–6")), "Pause menu contains no control-instruction paragraph");
         await Capture("03-pause-menu"); Call(fight, "TogglePause");
-        Check(Enumerable.Range(1, 60).All(stage => state.GetStageExploreFoodCost(stage) == 0), "Exploration is free across all stages");
+        Check(Enumerable.Range(1, GameData.MaxStage).All(stage => state.GetStageExploreFoodCost(stage) == 0), "Exploration is free across all stages");
 
         fight = await Battle(BattleRunMode.Endless);
         var runs = state.EndlessRuns; var gold = state.Gold;

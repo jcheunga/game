@@ -693,19 +693,31 @@ public static class Database
 
     private static void SeedDefaultFeed(DbConnection conn)
     {
-        using var check = conn.CreateCommand();
-        check.CommandText = "SELECT COUNT(*) FROM challenge_feed";
-        var count = ToInt64(check.ExecuteScalar());
-        if (count > 0) return;
-
+        // Stages follow the ten-stage zones (King's Road 1-10, Saltwake 11-20, ...).
         var boards = new[]
         {
             ("CH-01-DAILY-1001", "King's Road Daily", 3, 1001, false, ""),
-            ("CH-02-DAILY-2002", "Saltwake Docks Daily", 8, 2002, false, ""),
-            ("CH-03-LOCK-3003", "Emberforge Locked Convoy", 13, 3003, true, "player_brawler,player_shooter,player_defender"),
-            ("CH-04-DAILY-4004", "Thornwall Sprint", 23, 4004, false, ""),
-            ("CH-05-LOCK-5005", "Citadel Locked Siege", 48, 5005, true, "player_breacher,player_marksman,player_grenadier"),
+            ("CH-02-DAILY-2002", "Saltwake Docks Daily", 14, 2002, false, ""),
+            ("CH-03-LOCK-3003", "Emberforge Locked Convoy", 21, 3003, true, "player_brawler,player_shooter,player_defender"),
+            ("CH-04-DAILY-4004", "Thornwall Sprint", 42, 4004, false, ""),
+            ("CH-05-LOCK-5005", "Citadel Locked Siege", 92, 5005, true, "player_breacher,player_marksman,player_grenadier"),
         };
+
+        using var check = conn.CreateCommand();
+        check.CommandText = "SELECT COUNT(*) FROM challenge_feed";
+        if (ToInt64(check.ExecuteScalar()) > 0)
+        {
+            // Feeds seeded under the 60-stage campaign point the default boards at the renumbered stages.
+            foreach (var (code, _, stage, _, _, _) in boards)
+            {
+                using var fix = conn.CreateCommand();
+                fix.CommandText = "UPDATE challenge_feed SET stage = @stage WHERE board_code = @code";
+                fix.Parameters.AddWithValue("@stage", stage);
+                fix.Parameters.AddWithValue("@code", code);
+                fix.ExecuteNonQuery();
+            }
+            return;
+        }
 
         foreach (var (code, title, stage, seed, locked, deckIds) in boards)
         {

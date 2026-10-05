@@ -20,41 +20,76 @@ Desktop card height is unchanged. Phone cards retain a 96-logical-pixel height a
 use a 112-pixel minimum width, so the normal three-unit/two-spell deck fits without
 scrolling. Larger decks can still scroll. All decorative children ignore mouse
 and touch input: tapping either the portrait or the price activates the same
-card. Keyboard shortcuts and the select-then-place flow remain available as
-alternatives to dragging.
+card. Number keys deploy units; Q–T select magic.
 
-## Drag to deploy and cast
+## Tap to deploy, drag to cast
 
-Press a ready unit or magic card (including its cost badge), drag onto the
-battlefield, and release. Mouse and touch use the same targeting and spending
-paths. A lifted portrait follows the pointer; the battlefield shows the unit's
-entry lane and model ghost, or the spell's area of effect. Instructions stay in
-screen space so they remain readable at mobile camera zoom.
+Tapping a ready unit card (including its cost badge) or pressing its number key
+deploys the unit at once. The ramp door of the wagon's troop hold drops, the unit
+steps out of the lit doorway and walks down the ramp, and it marches from the
+ramp's foot on the wagon's centre line. There is no lane or position to choose, so
+the decision is only *who* and *when*. Courage and cooldowns are checked on release. Lifting off the card,
+Escape/right-click, focus loss, system cancellation, pause, checkpoints, battle
+end and resizing cancel a held card for free.
 
-Unit drops choose the lane, not a new unrestricted spawn position. Units still
-enter from the caravan or an available captured forward post, with existing
-frontline snapping, forward-post charges and recovery. Magic uses the drop
-position; self-centered War Cry and last-fallen-ally Resurrect retain their
-existing special targeting rules.
+Magic cards still drag: press, drag onto the battlefield and release, or tap to
+select and then tap the target. A lifted portrait follows the pointer and the
+battlefield shows the spell's area of effect. Self-centred War Cry and
+last-fallen-ally Resurrect keep their special targeting. Returning to the cards,
+releasing over other UI or outside the field cancels without spending. Ground
+taps never deploy units.
 
-Returning to the cards, releasing over other UI or outside the field cancels
-without spending. Escape/right-click, focus loss, system cancellation, pause,
-checkpoints, battle end and resizing also cancel safely. Courage and cooldowns
-are checked again on release. One pointer owns the gesture, so secondary fingers
-and emulated mouse events cannot create duplicate deployments or casts.
+One pointer owns the gesture, so secondary fingers and emulated mouse events
+cannot create duplicate deployments or casts. Small finger jitter on a card
+still counts as a tap. Horizontal swipes inside an overflowing card row scroll
+it. The camera does not pan or follow units while a card is held.
 
-Small finger jitter does not deploy. Horizontal swipes inside an overflowing
-card row scroll it; lifting out of the row starts a card drag. The camera does
-not pan or follow units while a card is being aimed. Dragging terrain still pans
-normally when no card is held.
+## Battlefield proportions
+
+The battle uses lane-game proportions like Dead Ahead: a soldier is about 14% of
+the screen, the wagon and stronghold are about two soldiers tall, and the field
+runs about two screens from base to base (`data/combat_config.json`: a 948-unit
+world, `ViewWidth` 474 units across the screen, `StructureScale` 0.51 for the
+base plates). The camera keeps that scale (about 2.7×), runs the band low across
+the screen under the scenery and above the card tray, and follows the fighting.
+Stage plates cover the whole field at their own proportions, so the bases stand
+on the plate's floor and its scenery fills the screen.
+
+The walking band is about one soldier deep: 30 units walkable
+(`BattlefieldTop`/`BattlefieldBottom` minus `SpawnVerticalPadding`). Every
+fighter's `AggroRangeY` (18–22) lies between half and all of that depth. A unit
+walking straight out of the wagon reaches an enemy on either edge, but a unit on
+one edge cannot see an enemy on the other. Enemies leave the stronghold on any
+line across the band. `DataIntegrityValidator` fails if a unit's `AggroRangeY` or
+the band breaks this rule.
+
+Distances are tuned for the two-screen field. A Swordsman crosses in about 30 seconds.
+Ranged reach is two to four soldiers, and aggro is about two soldiers past
+weapon reach. Auras, rallies, spell areas, campaign effects and base weapons
+reach part of the field, not most of it.
+
+The stronghold straddles the band, its mass on the centre line, with outworks
+on its flanks: a curtain wall, a beacon tower, a brazier, a palisade and a bone
+totem. They are scenery only; troops walk past them and nothing targets them.
+
+Battle text is numbers only: damage, healing and repairs. Spell names, ability
+shouts, quotes and objective callouts no longer float over the field.
+
+Support troops wait for a leader ahead of them but never fall back to one
+behind. Out in front, they keep marching. Only melee troops and units flagged
+`DamagesStructures` (Ballista Crew, Bone Ballista, Plague Engine, ranged
+bosses) can damage the wagon or the stronghold. Other ranged troops advance to
+firing range of a base and hold there. Tooltips show "Hits bases" or
+"Can't hit bases" for ranged units.
 
 ## Editable parts
 
 - `scripts/combat/hud/BattleActionCard.cs`: portrait, badge, status and selection.
 - `scripts/combat/BattleController.Ui.cs`: unit/spell cost and cooldown binding.
 - `scripts/combat/BattleController.Mobile.cs`: touch layout and placement hint.
-- `scripts/combat/BattleController.CardDragging.cs`: gesture capture, validation,
-  cancellation and drag preview.
+- `scripts/combat/BattleController.CardDragging.cs`: gesture capture, unit taps,
+  magic validation, cancellation and drag preview.
+- `scripts/combat/BattleController.Camera.cs`: soldier-scale zoom, band placement, follow and panning.
 - `art/ui/build_surfaces.py`: source for `assets/ui/frames/cost_badge.svg`.
 - `assets/ui/icons/units/` and `assets/ui/icons/spells/`: existing portrait artwork.
 
@@ -73,6 +108,7 @@ godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui
 godot --path . --scene res://scenes/tests/MobilePresentationReview.tscn -- --save-suffix=mobile-review-cards-UNIQUE
 godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-card-flow-UNIQUE
 godot --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-drag-camera-UNIQUE --camera
+godot --headless --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-lanes-UNIQUE --lanes
 ```
 
 The card-specific review exercises desktop and phone sizes, actual badge clicks,
@@ -82,11 +118,13 @@ recovery and disabled states. Screenshots are written to
 touch targets, the larger model view, resizing, pause/results and inspection.
 These are desktop-rendered phone-size checks, not physical-device certification.
 
-The drag review sends actual viewport mouse/touch events and checks deployment,
-damage and healing at the drop position, spending and cooldowns, invalid and
-interrupted gestures, duplicate releases, multiple fingers, emulated mouse
-events, overflowing card-row scrolling, and forward-post rules. Its desktop and
-phone preview screenshots are written to `artifacts/card-drag-review/`.
+The drag review sends actual viewport mouse/touch events and checks unit taps
+deploying at the wagon, magic damage and healing at the drop position, spending
+and cooldowns, invalid and interrupted gestures, duplicate releases, multiple
+fingers, emulated mouse events and overflowing card-row scrolling. Its desktop
+and phone screenshots are written to `artifacts/card-drag-review/`. The lanes
+review checks the aggro rule against real units, enemy entry lines, the
+no-retreat rule for support troops and which troops can hit a base.
 
 Icon-card baseline verified on 29 September 2026: build completed with zero errors/warnings;
 89 card-specific checks, 162 mobile-presentation checks, 12 functional UI checks,
@@ -101,3 +139,8 @@ errors/warnings. All 81 drag checks, 89 icon-card checks, 162 mobile-presentatio
 checks, 31 camera checks and 12 functional UI checks passed (375 total), with no
 engine errors or warnings in these runs. Desktop and phone-sized drag previews
 were visually inspected. Physical-device touch testing remains outstanding.
+
+Tap-to-deploy and shallow battlefield verified on 5 October 2026: build with zero
+errors/warnings; 7,535 data checks, 86 server tests, 612 combat regressions,
+78 card-gesture checks, 34 camera checks and 150 mobile-presentation checks
+passed. Desktop and phone battle screenshots were inspected.

@@ -5,8 +5,8 @@ using Godot;
 
 public static class StageEncounterIntel
 {
-    private const int BossPressureVeteranStage = 36;
-    private const int BossPressureEliteStage = 51;
+    private const int BossPressureVeteranStage = CampaignPacing.VeteranStage;
+    private const int BossPressureEliteStage = CampaignPacing.EliteStage;
     private const float BossPressureBaseIntervalSeconds = 14f;
     private const float BossPressureVeteranIntervalSeconds = 12.5f;
     private const float BossPressureEliteIntervalSeconds = 11f;

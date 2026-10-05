@@ -61,7 +61,7 @@ Main gaps versus the intended DAZW-style experience:
 - ~~battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy~~ (war wagon/gatehouse framing implemented with route-themed HUD, heraldic silhouettes, and terrain-specific palettes)
 - ~~the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion~~ (full medieval fantasy theme bible applied; menus, routes, units, stages, spells, and fiction all rethemed)
 - ~~deployment was roster-based rather than deck/card-based~~ (deck/card-based deployment with cooldowns, active deck persistence, and loadout screen implemented)
-- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (60 stages across 10 districts with authored waves, battlefield events, hazards, and modifiers)
+- ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (100 stages across 10 districts of ten, with authored waves, battlefield events, hazards, and modifiers)
 - ~~no squad-building metagame beyond basic stage selection~~ (loadout screen, deck synergies, combo pairs, doctrine branches, and relic equipment all implemented)
 - ~~no real shop/payment flow for buying units, unit upgrades, or bus/base upgrades~~ (convoy shop with unit purchases, leveling, spell upgrades, war wagon upgrades, and relic management)
 - ~~current prototype currencies do not match the intended gold/food economy loop~~ (gold/food economy fully replaced scrap/fuel, with stage costs, upgrade costs, and reward tuning)

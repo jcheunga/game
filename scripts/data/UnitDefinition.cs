@@ -17,6 +17,9 @@ public sealed class UnitDefinition
     public float AttackCooldown { get; set; } = 1f;
     public float AttackSplashRadius { get; set; }
     public bool UsesProjectile { get; set; }
+    // Whether attacks can damage the war wagon or the stronghold. Melee troops can by default;
+    // ranged troops only when authored as siege weapons (ballistas, engines, ranged bosses).
+    public bool? DamagesStructures { get; set; }
     public float ProjectileSpeed { get; set; } = 420f;
     public float AggroRangeX { get; set; } = 220f;
     public float AggroRangeY { get; set; } = 96f;

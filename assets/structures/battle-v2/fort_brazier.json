@@ -1,0 +1,26 @@
+{
+  "source": "art/remaster/siege (fort_brazier)",
+  "generator": "art/remaster/build_battle_structures.py",
+  "cameraElevation": 22,
+  "anchor": [
+    0.5,
+    0.936094
+  ],
+  "mounts": [],
+  "contacts": [],
+  "width": 23.625,
+  "lights": [
+    [
+      0.5,
+      0.95425
+    ]
+  ],
+  "smoke": [
+    0.5,
+    0.936094
+  ],
+  "centre": [
+    0.498958,
+    0.580524
+  ]
+}

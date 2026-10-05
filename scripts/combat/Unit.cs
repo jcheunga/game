@@ -26,6 +26,7 @@ public sealed class UnitStats
         AttackCooldown = Mathf.Max(0.45f, definition.AttackCooldown - cooldownReduction);
         AttackSplashRadius = definition.AttackSplashRadius;
         UsesProjectile = definition.UsesProjectile;
+        DamagesStructures = definition.DamagesStructures ?? !definition.UsesProjectile;
         ProjectileSpeed = definition.ProjectileSpeed;
         AggroRangeX = Mathf.Max(AttackRange, definition.AggroRangeX);
         AggroRangeY = definition.AggroRangeY;
@@ -68,6 +69,7 @@ public sealed class UnitStats
     public float AttackCooldown { get; }
     public float AttackSplashRadius { get; }
     public bool UsesProjectile { get; }
+    public bool DamagesStructures { get; }
     public float ProjectileSpeed { get; }
     public float AggroRangeX { get; }
     public float AggroRangeY { get; }
@@ -229,6 +231,7 @@ public partial class Unit : Node2D
     public float AttackCooldown { get; private set; }
     public float AttackSplashRadius { get; private set; }
     public bool UsesProjectile { get; private set; }
+    public bool DamagesStructures { get; private set; }
     public float ProjectileSpeed { get; private set; }
     public float AggroRangeX { get; private set; }
     public float AggroRangeY { get; private set; }
@@ -321,6 +324,7 @@ public partial class Unit : Node2D
         AttackCooldown = stats.AttackCooldown;
         AttackSplashRadius = stats.AttackSplashRadius;
         UsesProjectile = stats.UsesProjectile;
+        DamagesStructures = stats.DamagesStructures;
         ProjectileSpeed = stats.ProjectileSpeed;
         AggroRangeX = stats.AggroRangeX;
         AggroRangeY = stats.AggroRangeY;
@@ -617,10 +621,12 @@ public partial class Unit : Node2D
         return Mathf.Abs(delta.X) <= AggroRangeX && Mathf.Abs(delta.Y) <= AggroRangeY;
     }
 
+    // Weather shortens how far ahead a unit sees, never how wide: the band is built so every fighter on the
+    // centre line reaches both edges (AggroRangeY >= LaneHalfHeight), and fog must not let enemies slip past.
     public bool IsInAggroRange(Unit target, float rangeScale)
     {
         var delta = target.Position - Position;
-        return Mathf.Abs(delta.X) <= AggroRangeX * rangeScale && Mathf.Abs(delta.Y) <= AggroRangeY * rangeScale;
+        return Mathf.Abs(delta.X) <= AggroRangeX * rangeScale && Mathf.Abs(delta.Y) <= AggroRangeY;
     }
 
     public void MoveToward(Vector2 target, float delta, float minX, float maxX, float minY, float maxY)
@@ -1394,8 +1400,9 @@ public partial class Unit : Node2D
     {
         var highContrast = GameState.Instance != null && GameState.Instance.HighContrast;
         var boss = VisualClass == "boss";
-        var hpBarWidth = Mathf.Max(boss ? 62f : 34f, Radius * (highContrast ? 2.7f : 2.4f));
-        var hpBarHeight = (boss ? 13f : 10f) + (highContrast ? 2f : 0f);
+        // Slim bars: the camera is close, and the field is a single screen of soldiers.
+        var hpBarWidth = Mathf.Max(boss ? 40f : 22f, Radius * (highContrast ? 1.8f : 1.6f));
+        var hpBarHeight = (boss ? 7f : 5f) + (highContrast ? 1f : 0f);
         var hpRatio = HealthRatio;
         var spriteHeight = _spriteSheet == null ? Radius + 16f : Radius * 2f * VisualScale * _spriteSheet.DrawScale
             * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth * _spriteSheet.HealthBarY + 6f;
@@ -1405,9 +1412,10 @@ public partial class Unit : Node2D
 
         if (Team == Team.Player)
         {
+            // A faint team mark at the feet.
             DrawRect(
-                new Rect2(new Vector2(-Radius * 0.44f, Radius * 1.04f), new Vector2(Radius * 0.88f, 3f)),
-                new Color(1f, 1f, 1f, 0.32f),
+                new Rect2(new Vector2(-Radius * 0.44f, 1.5f), new Vector2(Radius * 0.88f, 1.5f)),
+                new Color(1f, 1f, 1f, 0.22f),
                 true);
         }
     }

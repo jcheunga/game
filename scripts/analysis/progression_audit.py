@@ -22,16 +22,16 @@ def read(path):
 
 
 def unit_target(stage):
-    return 1 if stage < 4 else 2 if stage < 9 else 3 if stage < 16 else 4 if stage < 37 else 5
+    return 1 if stage < 10 else 2 if stage < 21 else 3 if stage < 35 else 4 if stage < 81 else 5
 
 
 def wagon_targets(stage):
-    level = 0 if stage < 9 else 1 if stage < 21 else 2 if stage < 37 else 3
+    level = 0 if stage < 21 else 1 if stage < 50 else 2 if stage < 81 else 3
     targets = {key: level for key in CORE_WAGON}
     for key, milestones in {
-        "wagon_archers": [6, 25, 45], "wagon_ballista": [12, 26, 47],
-        "wagon_firepot": [15, 29, 49], "wagon_emergency_repair": [19, 35, 51],
-        "wagon_armor": [27, 43, 55], "wagon_volley": [33, 46, 57],
+        "wagon_archers": [10, 41, 75], "wagon_ballista": [20, 43, 78],
+        "wagon_firepot": [25, 48, 81], "wagon_emergency_repair": [31, 58, 85],
+        "wagon_armor": [45, 71, 91], "wagon_volley": [55, 76, 95],
     }.items():
         targets[key] = sum(stage >= n for n in milestones)
     return targets
@@ -42,20 +42,20 @@ def investment(economy, stage, candidate=False, flexible=False, collector=False)
     multipliers = [1, 2, 3, 5] if candidate else [1, 1, 1, 1]
     unit_ids = STARTERS | (SUPPORT if flexible else set())
     unit_cost = 0
-    # Reserve units join the representative route at 18, 23, 28 and 33, trained to the main squad.
-    contracts = dict(zip(["player_marksman", "player_coordinator", "player_grenadier", "player_breacher"], [18, 23, 28, 33]))
+    # Reserve units join the representative route with their contracts, trained to the main squad.
+    contracts = dict(zip(["player_marksman", "player_coordinator", "player_grenadier", "player_breacher"], [23, 45, 33, 38]))
     for unit in economy["units"]:
         if unit["id"] not in unit_ids or stage < contracts.get(unit["id"], 1):
             continue
-        trained_level = level if unit["id"] in STARTERS or collector else min(level, 3 if stage < 45 else 4)
+        trained_level = level if unit["id"] in STARTERS or collector else min(level, 3 if stage < 75 else 4)
         unit_cost += unit["recruit"] + sum(c * m for c, m in zip(unit["upgrades"][:trained_level-1], multipliers))
-    spell_level = 1 if stage < 16 else 2 if stage < 31 else 3
+    spell_level = 1 if stage < 35 else 2 if stage < 70 else 3
     spell_cost = sum(sum(s["upgrades"][:spell_level-1]) for s in economy["spells"]
                      if s["id"] in {"spell_heal", "spell_fireball"})
     targets = wagon_targets(stage)
     base_cost = sum(sum(b["upgrades"][:targets.get(b["id"], 0)]) for b in economy["wagon"])
     # Promotions of starter units, whose exact runtime costs are exported. Sigils tracked separately.
-    promotion_ids = ["player_defender", "player_shooter", "player_brawler"][:sum(stage >= n for n in [40, 48, 56])]
+    promotion_ids = ["player_defender", "player_shooter", "player_brawler"][:sum(stage >= n for n in [66, 80, 93])]
     promoted = [u["promotion"] for u in economy["units"] if u["id"] in promotion_ids]
     promotion_cost = sum(p["GoldCost"] for p in promoted)
     return {"gold": unit_cost + spell_cost + base_cost + promotion_cost,
@@ -77,7 +77,7 @@ def main():
             if "COMBAT_REVIEW_RESULT: 0 failures" not in log or "ERROR:" in log:
                 raise ValueError(f"Incomplete or failed benchmark: {path}")
             samples = [json.loads(line.split(": ", 1)[1]) for line in log.splitlines() if line.startswith("COMBAT_SAMPLE:")]
-            expected = 60 if not suffix else 13
+            expected = 100 if not suffix else 13
             if len(samples) != expected or len({s['stage'] for s in samples}) != expected:
                 raise ValueError(f"Expected {expected} distinct stages: {path}")
             for sample in samples:
@@ -215,7 +215,7 @@ def main():
               "Reserve units stay at L3 through stage 44, then L4. The collector sensitivity instead levels all seven units equally; see audit.json for its extra replay demand.", "",
               "| Before stage | Focused total investment | Focused remaining gold | Flexible total investment | Flexible remaining gold | Flexible replays so far |", "|---|---|---|---|---|---|"]
     for row in rows:
-        if row["stage"] not in [4, 8, 12, 16, 21, 26, 31, 36, 41, 46, 52, 58, 60]:
+        if row["stage"] not in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]:
             continue
         f, v = row["ledgers"]["candidate_focused"], row["ledgers"]["candidate_flexible"]
         lines.append(f"| {row['stage']} | {f['cost']['gold']:,} | {f['balance_before_reward']:,} | {v['cost']['gold']:,} | {v['balance_before_reward']:,} | {v['replays_total']} |")

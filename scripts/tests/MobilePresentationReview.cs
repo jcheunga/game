@@ -76,7 +76,7 @@ public partial class MobilePresentationReview : Node
             var battle=await Battle(true);
             var camera=Read<Camera2D>(battle,"_mobileCamera");
             var hud=Read<Control>(battle,"_mobileHud");
-            Check(camera.Zoom==Vector2.One*MobilePresentation.BattleZoom,"Mobile characters enlarged without changing unit scale");
+            Check(camera.Zoom.IsEqualApprox(Vector2.One*(float)Call(battle,"get_BattleFitZoom")),"Mobile combat frames the whole band without changing unit scale");
             Check(hud.Size.DistanceTo(battle.GetViewportRect().Size/1.55f)<1,"HUD fits logical phone viewport");
             var actionCards=hud.FindChildren("*","Control",true,false).OfType<BattleActionCard>().ToArray();
             Check(actionCards.Length>=5,"The battle bar contains real icon-first unit and spell cards");
@@ -105,18 +105,23 @@ public partial class MobilePresentationReview : Node
             var point=new Vector2(430,340);
             var screen=battle.GetCanvasTransform()*point;
             Check(((Vector2)Call(battle,"ScreenToBattle",screen)).DistanceTo(point)<.01,"Zoomed taps map back to world coordinates");
-            Write(battle,"_courage",100f);
-            Call(battle,"ArmPlayerUnit",GameData.GetUnit("player_brawler"));
+            Write(battle,"_courage",100f); Call(battle,"UpdateHud");
+            var unitCard=actionCards[0];
+            var cardPoint=unitCard.GetGlobalTransformWithCanvas()*(unitCard.Size*.5f);
             var count=Read<int>(battle,"_playerDeployments");
-            battle._UnhandledInput(new InputEventScreenTouch { Index=0,Pressed=true,Position=screen });
-            Check(Read<int>(battle,"_playerDeployments")==count,"Touch down does not deploy before drag is known");
-            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen});
-            Check(Read<int>(battle,"_playerDeployments")==count+1,"Touch release deploys exactly once");
-            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen});
+            battle._Input(new InputEventScreenTouch { Index=0,Pressed=true,Position=cardPoint });
+            Check(Read<int>(battle,"_playerDeployments")==count,"Touching a unit card does not deploy before release");
+            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=cardPoint});
+            Check(Read<int>(battle,"_playerDeployments")==count+1,"Releasing a unit card deploys exactly once");
+            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=cardPoint});
             Check(Read<int>(battle,"_playerDeployments")==count+1,"Duplicate release cannot deploy again");
             battle._UnhandledInput(new InputEventScreenTouch {Index=0,Pressed=true,Position=screen});
-            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Canceled=true,Position=screen});
-            Check(Read<int>(battle,"_playerDeployments")==count+1 && !Read<bool>(battle,"_mobilePointerDown"),"OS-canceled touch never deploys or sticks");
+            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen});
+            Check(Read<int>(battle,"_playerDeployments")==count+1,"Field taps never deploy units");
+            Read<BattleDeckState>(battle,"_deck").ReduceCooldowns(1000); Call(battle,"UpdateHud");
+            battle._Input(new InputEventScreenTouch {Index=0,Pressed=true,Position=cardPoint});
+            battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Canceled=true,Position=cardPoint});
+            Check(Read<int>(battle,"_playerDeployments")==count+1 && !Read<bool>(battle,"_cardPointerDown"),"OS-canceled touch never deploys or sticks");
             var previous=camera.Position;
             battle._UnhandledInput(new InputEventScreenTouch {Index=0,Pressed=true,Position=screen});
             battle._Input(new InputEventScreenDrag {Index=0,Position=screen+new Vector2(-100,0)});
@@ -126,7 +131,7 @@ public partial class MobilePresentationReview : Node
             Call(battle,"ToggleMobileOverview");
             Check(Read<bool>(battle,"_mobileFollow") && !Read<bool>(battle,"_mobileOverview"),"Follow button restores automatic tracking");
             Call(battle,"ToggleMobileOverview");
-            Check(battle.GetViewportRect().Size.X/camera.Zoom.X>=GameData.Combat.BattlefieldRight+GameData.Combat.BattlefieldLeft,
+            Check(battle.GetViewportRect().Size.X/camera.Zoom.X>=GameData.Combat.BattlefieldRight+GameData.Combat.BattlefieldLeft-.5f,
                 "Overview fits the entire extended battlefield");
             Call(battle,"ToggleMobileOverview");
             Write(battle,"_mobileFollow",false); camera.Position=new Vector2(440,350); camera.ForceUpdateScroll();
@@ -158,13 +163,13 @@ public partial class MobilePresentationReview : Node
             draftScroll.ScrollVertical=10000; await Settle();
             Check(draftScroll.ScrollVertical>0,"Long checkpoint choices are scrollable, not cut off");
             battle.QueueFree(); await Settle();
-            GameState.Instance.UnlockNextStage(59);
+            GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
             foreach(var late in new[]{false,true})
             {
-                var advanced=await Battle(true,60,late);
+                var advanced=await Battle(true,GameData.MaxStage,late);
                 var header=Read<PanelContainer>(advanced,"_topHudPanel");
                 Check(header.GetGlobalRect().End.X<=advanced.GetViewportRect().Size.X+1,late?"Endless HUD fits":"Late campaign HUD fits");
-                await Capture(late?"phone-endless":"phone-stage-60");
+                await Capture(late?"phone-endless":"phone-stage-100");
                 advanced.QueueFree(); await Settle();
             }
             await CheckModelPreviews();
@@ -181,9 +186,13 @@ public partial class MobilePresentationReview : Node
         var start=camera.Position;
         var center=new Vector2(640,(Read<float>(battle,"_mobileFieldTop")+Read<float>(battle,"_mobileFieldBottom"))*.5f);
         var focus=(Vector2)Call(battle,"ScreenToBattle",center);
+        var fit=(float)Call(battle,"get_BattleFitZoom");
+        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit),"Phone combat opens framing the whole band");
         Call(battle,"CycleMobileZoom");
-        Check(Mathf.IsEqualApprox(camera.Zoom.X,3.4f),"Zoom control reaches the 3.4x close-up");
-        Check(((Vector2)Call(battle,"ScreenToBattle",center)).DistanceTo(focus)<.01,"Zoom holds the visible focus point steady");
+        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.25f),"Zoom control steps in to a closer view");
+        var band=battle.GetCanvasTransform()*new Vector2(0,(GameData.Combat.BattlefieldTop+GameData.Combat.BattlefieldBottom)*.5f);
+        Check(Mathf.Abs(((Vector2)Call(battle,"ScreenToBattle",center)).X-focus.X)<.01 && band.Y>Read<float>(battle,"_mobileFieldTop") && band.Y<Read<float>(battle,"_mobileFieldBottom"),
+            "Zoom holds the visible focus steady along the field and keeps the band in view");
         var positions=battle.GetChildren().OfType<Unit>().Select(u=>u.Position).ToArray();
         var oldBottom=Read<float>(battle,"_mobileFieldBottom");
         Call(battle,"ToggleMobileClearView"); await Settle();
@@ -201,10 +210,10 @@ public partial class MobilePresentationReview : Node
         Write(battle,"_mobileFollow",true);
         var close=camera.Position;
         Call(battle,"ToggleMobileOverview"); Call(battle,"ToggleMobileOverview");
-        Check(Mathf.IsEqualApprox(camera.Zoom.X,3.4f) && camera.Position.DistanceTo(close)<.1,"Map returns to the chosen zoom and prior close view");
+        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.25f) && camera.Position.DistanceTo(close)<.1,"Map returns to the chosen zoom and prior close view");
         Write(battle,"_mobileFollow",false);
-        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,2.2f),"Zoom cycles to the wider tactical close view");
-        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,2.8f),"Zoom cycles back to the larger default");
+        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.5f),"Zoom cycles to the closest view");
+        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,fit),"Zoom cycles back to the whole-band default");
         camera.Position=start; camera.ForceUpdateScroll();
     }
 

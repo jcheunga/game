@@ -25,7 +25,7 @@ public static class AchievementCatalog
         new("first_blood", "First Blood", "Complete your first campaign stage.", "campaign"),
         new("district_clear", "District Marshal", "Clear an entire campaign district.", "campaign"),
         new("campaign_complete", "Caravan Commander", "Clear all 10 campaign districts.", "campaign"),
-        new("all_stars", "Star Collector", "Earn 3 stars on 25 stages.", "campaign"),
+        new("all_stars", "Star Collector", "Earn 3 stars on 40 stages.", "campaign"),
         new("heroic_clear", "Heroic Legend", "Complete 10 heroic directives.", "campaign"),
 
         // Combat (5)

@@ -101,7 +101,8 @@ public partial class FeedbackReview : Node
             Check(archer.Position == before && (Vector2)Call(archer,"ContactDrawOffset") == Vector2.Zero, "Attack animation cannot shift a unit's feet");
             var swordsman = (Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_brawler")),new Vector2(500,400));
             swordsman.MoveToward(new Vector2(400,400),.1f,84,2476,108,572);
-            Check((float)Call(swordsman,"GetFacing") == -1 && swordsman.Speed == 60, "The slower swordsman turns while walking back");
+            Check((float)Call(swordsman,"GetFacing") == -1 && Mathf.IsEqualApprox(swordsman.Speed, GameData.GetUnit("player_brawler").Speed),
+                "The swordsman turns while walking back at its authored speed");
             var enemyBase = (Vector2)typeof(BattleController).GetProperty("EnemyBaseCorePosition",Hidden).GetValue(battle);
             swordsman.Position = enemyBase;
             Call(battle,"TryAttackBase",swordsman); swordsman.TickAttackTimer(2);

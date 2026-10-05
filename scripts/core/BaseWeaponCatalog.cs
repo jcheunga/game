@@ -13,25 +13,25 @@ public static class BaseWeaponCatalog
         return upgradeId switch
         {
             BaseUpgradeCatalog.ArcherCrewId => new("Wagon archers", BaseWeaponKind.Arrows,
-                10 + 3 * level, 320 + 12 * level, 2.4f, 520, new Color("eed49a")),
+                10 + 3 * level, 160 + 6 * level, 2.4f, 260, new Color("eed49a")),
             BaseUpgradeCatalog.BallistaId when level > 0 => new("Wagon ballista", BaseWeaponKind.Ballista,
-                25 + 7 * level, 400 + 10 * level, 4.5f, 620, new Color("b4d9df")),
+                25 + 7 * level, 200 + 5 * level, 4.5f, 310, new Color("b4d9df")),
             BaseUpgradeCatalog.FirepotId when level > 0 => new("Wagon firepot", BaseWeaponKind.Firepot,
-                10 + 4 * level, 310 + 10 * level, 5f, 310, new Color("ff9955"), 66),
+                10 + 4 * level, 155 + 5 * level, 5f, 155, new Color("ff9955"), 33),
             _ => null
         };
     }
 
     public static BaseWeaponDefinition Stronghold(string routeId) => routeId switch
     {
-        RouteCatalog.HarborId => new("Harpoon ballista", BaseWeaponKind.Ballista, 14, 360, 4.5f, 580, new Color("9bdaf1")),
-        RouteCatalog.FoundryId => new("Furnace firepots", BaseWeaponKind.Firepot, 8, 300, 5, 290, new Color("ff9955"), 60),
-        RouteCatalog.CitadelId => new("Citadel ballista", BaseWeaponKind.Ballista, 16, 380, 4.5f, 600, new Color("e4b96b")),
-        RouteCatalog.ThornwallId => new("Frost sentries", BaseWeaponKind.Frost, 8, 330, 3.5f, 430, new Color("a4e7ef")),
-        RouteCatalog.SteppeId => new("Raider archers", BaseWeaponKind.Arrows, 7, 330, 2.8f, 520, new Color("f4a261")),
+        RouteCatalog.HarborId => new("Harpoon ballista", BaseWeaponKind.Ballista, 14, 180, 4.5f, 290, new Color("9bdaf1")),
+        RouteCatalog.FoundryId => new("Furnace firepots", BaseWeaponKind.Firepot, 8, 150, 5, 145, new Color("ff9955"), 30),
+        RouteCatalog.CitadelId => new("Citadel ballista", BaseWeaponKind.Ballista, 16, 190, 4.5f, 300, new Color("e4b96b")),
+        RouteCatalog.ThornwallId => new("Frost sentries", BaseWeaponKind.Frost, 8, 165, 3.5f, 215, new Color("a4e7ef")),
+        RouteCatalog.SteppeId => new("Raider archers", BaseWeaponKind.Arrows, 7, 165, 2.8f, 260, new Color("f4a261")),
         RouteCatalog.QuarantineId or RouteCatalog.MireId or RouteCatalog.BasilicaId or RouteCatalog.GloamwoodId =>
-            new("Hex sentries", BaseWeaponKind.Hex, 9, 320, 4, 350, new Color("ca9ee6"), 42),
-        _ => new("Castle archers", BaseWeaponKind.Arrows, 7, 310, 3, 490, new Color("f2be94"))
+            new("Hex sentries", BaseWeaponKind.Hex, 9, 160, 4, 175, new Color("ca9ee6"), 21),
+        _ => new("Castle archers", BaseWeaponKind.Arrows, 7, 155, 3, 245, new Color("f2be94"))
     };
 
     public static float ArmorScale(int level) => 1f - Mathf.Clamp(level, 0, 5) * 0.06f;

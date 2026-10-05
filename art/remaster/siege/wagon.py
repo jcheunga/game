@@ -11,7 +11,7 @@ from mathutils import Matrix, Vector
 
 from rk import core, geo, shaders as S, structures as ST, weapons as W
 from rk.heads import catmull
-from rk.structures import Batch, V
+from rk.structures import Batch, V, mat4
 
 from . import skins
 
@@ -188,7 +188,101 @@ def conform(objs, fn, uc, vc, su, sv, lift=0.012, toward=(0, -1, 0)):
 
 
 # ---------------------------------------------------------------------------
-def build(skin_name, coll):
+# Troop hold slung between the wheels, with a drop-down ramp door on the near side. Troops leave the
+# caravan through it: they step out of the doorway and walk down the ramp onto the battle line.
+HOLD_X0, HOLD_X1 = -0.74, 0.64
+HOLD_Y = 0.92
+HOLD_Z0, HOLD_Z1 = 0.16, 1.3
+DOOR_X, DOOR_W = -0.05, 0.7
+DOOR_Z0, DOOR_Z1 = 0.2, 1.22
+DOOR_OPEN = 100.0            # degrees from upright; the tip rests on the ground
+DOOR_EXIT = (DOOR_X, -0.7, 0.0)     # where a troop first appears, just inside the doorway
+DOOR_FOOT = (DOOR_X, -2.02, 0.0)    # the foot of the lowered ramp
+
+
+def troop_hold(coll, M, F, door, studs, lights):
+    """Lower hold and its ramp door. `door` runs 0 (shut, upright) to 1 (lowered onto the ground)."""
+    rng = random.Random(23)
+    H = Batch('Troop hold', coll, random.Random(23))
+    y0 = -HOLD_Y
+    depth = 0.5                          # doorway recess between the facade and the hold's body
+    # body behind the recess; the facade planks close it off either side of the doorway
+    H.box((HOLD_X1 - HOLD_X0, HOLD_Y - depth + HOLD_Y, HOLD_Z1 - HOLD_Z0), ((HOLD_X0 + HOLD_X1) / 2, depth / 2, (HOLD_Z0 + HOLD_Z1) / 2),
+          M['wood_dark'], var=0.3)
+    rows = 4
+    rh = (HOLD_Z1 - HOLD_Z0) / rows
+    dx0, dx1 = DOOR_X - DOOR_W / 2, DOOR_X + DOOR_W / 2
+    for r in range(rows):
+        z = HOLD_Z0 + r * rh + rh / 2
+        for xa, xb in ((HOLD_X0, dx0 - 0.06), (dx1 + 0.06, HOLD_X1)):
+            H.box((xb - xa - 0.01, 0.05, rh - 0.012), ((xa + xb) / 2, y0 - 0.02 + rng.uniform(-0.004, 0.004), z), M['wood'],
+                  rot=(0, rng.uniform(-0.4, 0.4), 0))
+    lintel_z = (DOOR_Z1 + HOLD_Z1) / 2
+    H.box((dx1 - dx0 + 0.12, 0.05, HOLD_Z1 - DOOR_Z1), (DOOR_X, y0 - 0.02, lintel_z), M['wood'])
+    # doorway: a lamp-lit recess (like the cabin windows), threshold, ceiling and a heavy frame
+    inside = S.emissive(F['light'], 0.55, name='Hold interior', core=F['light'], flicker=.25, base='120c08')
+    H.box((DOOR_W, 0.02, DOOR_Z1 - DOOR_Z0), (DOOR_X, y0 + depth - 0.01, (DOOR_Z0 + DOOR_Z1) / 2), inside)
+    H.box((DOOR_W, depth, 0.04), (DOOR_X, y0 + depth / 2, DOOR_Z0 - 0.02), M['wood_dark'])
+    H.box((DOOR_W + 0.1, depth, 0.04), (DOOR_X, y0 + depth / 2, DOOR_Z1 + 0.02), M['wood_dark'])
+    for sx in (-1, 1):
+        H.box((0.07, depth, DOOR_Z1 - DOOR_Z0), (DOOR_X + sx * (DOOR_W / 2 + 0.035), y0 + depth / 2, (DOOR_Z0 + DOOR_Z1) / 2),
+              M['wood_dark'])
+        H.box((0.12, 0.09, DOOR_Z1 - DOOR_Z0 + 0.1), (DOOR_X + sx * (DOOR_W / 2 + 0.06), y0 - 0.06, (DOOR_Z0 + DOOR_Z1) / 2 + 0.03),
+              M['wood_v'])
+        H.box((0.06, 0.03, DOOR_Z1 - DOOR_Z0 + 0.08), (DOOR_X + sx * (DOOR_W / 2 + 0.06), y0 - 0.115, (DOOR_Z0 + DOOR_Z1) / 2 + 0.03),
+              M['iron'])
+    H.box((DOOR_W + 0.32, 0.1, 0.12), (DOOR_X, y0 - 0.07, DOOR_Z1 + 0.06), M['wood_v'])
+    H.box((DOOR_W + 0.34, 0.03, 0.05), (DOOR_X, y0 - 0.125, DOOR_Z1 + 0.06), M['iron'])
+    # iron bands and corner straps around the hold
+    for z in (HOLD_Z0 + 0.06, HOLD_Z1 - 0.06):
+        for xa, xb in ((HOLD_X0 - 0.02, dx0 - 0.12), (dx1 + 0.12, HOLD_X1 + 0.02)):
+            H.box((xb - xa, 0.03, 0.06), ((xa + xb) / 2, y0 - 0.05, z), M['iron'])
+            for i in range(4):
+                studs.append(((xa + 0.04 + i * (xb - xa - 0.08) / 3, y0 - 0.068, z), (0, -1, 0)))
+    for x in (HOLD_X0, HOLD_X1):
+        H.box((0.08, 0.08, HOLD_Z1 - HOLD_Z0 + 0.04), (x, y0 - 0.02, (HOLD_Z0 + HOLD_Z1) / 2), M['iron'])
+    H.finish(bevel=0.009)
+
+    # the ramp door, hinged along its bottom edge just inside the frame
+    angle = math.radians(DOOR_OPEN * door)
+    hinge = V(DOOR_X, y0 - 0.04, DOOR_Z0)
+    leaf_len = DOOR_Z1 - DOOR_Z0 + 0.02
+    Msw = Matrix.Translation(hinge) @ Matrix.Rotation(angle, 4, 'X')      # tips outward, toward the camera
+    R = Batch('Ramp door', coll, random.Random(29))
+
+    def leaf(size, loc, mat, rot=(0, 0, 0)):
+        # parts are laid out on the upright door, then swung about the hinge
+        R.box(size, (0, 0, 0), mat, matrix=Msw @ mat4(loc, rot))
+    planks = 5
+    for i in range(planks):
+        xa = -DOOR_W / 2 + DOOR_W * i / planks + 0.006
+        xb = -DOOR_W / 2 + DOOR_W * (i + 1) / planks - 0.006
+        leaf((xb - xa, 0.07, leaf_len), ((xa + xb) / 2, 0, leaf_len / 2), M['wood_v'], rot=(0, rng.uniform(-0.3, 0.3), 0))
+    for t in (0.18, 0.5, 0.82):
+        leaf((DOOR_W + 0.02, 0.025, 0.07), (0, -0.05, leaf_len * t), M['iron'])
+        if door > 0.01:
+            # treads across the inner face, so the lowered ramp reads as a gangway
+            leaf((DOOR_W - 0.06, 0.03, 0.04), (0, 0.05, leaf_len * (t + 0.08)), M['wood_dark'])
+    leaf((0.06, 0.03, leaf_len - 0.06), (0, -0.05, leaf_len / 2), M['iron'])
+    R.finish(bevel=0.006)
+    for t in (0.18, 0.5, 0.82):
+        for sx in (-1, 1):
+            studs.append((tuple(Msw @ V(sx * (DOOR_W / 2 - 0.05), -0.068, leaf_len * t)), tuple((Msw.to_3x3() @ V(0, -1, 0)))))
+    for o in emblem_for(F, M)(V(0, 0, 0), coll, 0.42):
+        _face_neg_y([o], (0, 0, 0))
+        o.matrix_world = Msw @ Matrix.Translation((0, -0.07, leaf_len * 0.66)) @ o.matrix_world
+    # chains from the frame to the ramp tip
+    for sx in (-1, 1):
+        top = V(DOOR_X + sx * (DOOR_W / 2 + 0.04), y0 - 0.1, DOOR_Z1 + 0.02)
+        tip = Msw @ V(sx * (DOOR_W / 2 - 0.04), -0.05, leaf_len - 0.04)
+        ST.chain('Ramp chain', coll, top, tip, M['iron'], sag=0.04 + 0.1 * (1 - door), link=0.04, wire=0.008)
+    if door > 0.01:
+        # warm light from inside the hold falls across the lowered ramp
+        lights.append(core.point_light('Hold glow', (DOOR_X, y0 + depth * 0.6, 0.75), 30 * F['light_power'] * door,
+                                       core.srgb(F['light']), 0.15, coll))
+
+
+def build(skin_name, coll, door=0.0):
     M, F = skins.skin(skin_name)
     rng = random.Random(11)
     lights = []
@@ -236,6 +330,8 @@ def build(skin_name, coll):
                 pts = [((x + math.cos(a) * WR * .68, y - 0.15, WR + math.sin(a) * WR * .68), (0, -1, 0))
                        for a in (math.tau * i / 16 for i in range(16))]
                 geo.rivets('Disc rivets', pts, 0.02, M['stud'], coll)
+
+    troop_hold(coll, M, F, door, studs, lights)
 
     # ------------------------------------------------------------ cabin walls
     Wb = Batch('Cabin boards', coll, random.Random(5))
@@ -360,10 +456,6 @@ def build(skin_name, coll):
               location=(dc + 0.22, -SY - 0.16, dz0 + 0.62), close_top=False, close_bottom=False)
     for o in emblem_for(F, M)(V(0, 0, 0), coll, 0.9):
         _face_neg_y([o], (dc, -SY - 0.15, dz0 + dh - 0.05))
-    geo.box('Fold-out step', (0.95, 0.42, 0.08), (dc, -SY - 0.3, 1.22), M['wood_dark'], coll, bevel=0.01)
-    for sx in (-1, 1):
-        geo.box('Step bracket', (0.04, 0.36, 0.04), (dc + sx * 0.4, -SY - 0.28, 1.17), M['iron'], coll, bevel=0.005,
-                rotation=(-20, 0, 0))
 
     # ------------------------------------------------------------ panel D: window with shutters and awning
     wc, wz, ww, wh = 1.22, 2.36, 0.6, 0.58

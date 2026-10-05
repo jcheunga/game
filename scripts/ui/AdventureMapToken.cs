@@ -1,6 +1,7 @@
 using Godot;
 
-/// <summary>The painted landmark is the hit target; earned stars remain above its roof.</summary>
+/// <summary>The painted landmark is the hit target; its star rating sits above its roof, with empty sockets
+/// for a stage that has been found but not yet won.</summary>
 public partial class AdventureMapToken : RealmButton
 {
     public AdventureMapNode Site { get; set; }
@@ -30,9 +31,7 @@ public partial class AdventureMapToken : RealmButton
         if (Site == null) return;
         var state = GameState.Instance;
         var tile = AdventureTileCatalog.Find(Site.MapId, Site.Id);
-        var leader = Site.Kind == AdventureSiteKind.Leader;
-        var cleared = state.IsAdventureTileComplete(tile);
-        if (leader && cleared)
+        if (Site.Kind == AdventureSiteKind.Leader)
         {
             var roof = MarkerCenter.Y - AdventureAtlasArt.LandmarkHeight(tile) * AdventureAtlasArt.GroundAnchor(AdventureAtlasArt.LandmarkSprite(tile)).Y;
             StageStarRating.DrawStars(this, new Rect2(new Vector2(Size.X / 2 - 32, roof - 25), new Vector2(64, 22)), state.GetStageStars(Site.Stage));

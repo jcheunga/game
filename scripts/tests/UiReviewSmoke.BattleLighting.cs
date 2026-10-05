@@ -29,8 +29,10 @@ public partial class UiReviewSmoke
             Call(battle, "ClearArmedSelection");
             var ground = new Vector2(world.PlayerBaseX, (world.BattlefieldTop + world.BattlefieldBottom) * .5f);
             var bases = Walk(battle).OfType<BattleBaseCanvas>().ToArray();
-            Check(battle.YSortEnabled && bases.Length == 2 && bases.All(canvas => Mathf.IsEqualApprox(canvas.Position.Y, ground.Y)),
-                stage.MapId + ": bases and units sort from their ground positions");
+            Check(battle.YSortEnabled && bases.Length == 7
+                && bases.Single(b => b.Name == "Caravan").Position == (Vector2)Call(battle, "get_WagonSortPosition")
+                && bases.Single(b => b.Name == "Castle").Position == (Vector2)Call(battle, "get_CastleGround"),
+                stage.MapId + ": bases, outworks and units sort from their ground positions");
             var unit = (Unit)Call(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), new Vector2(330, 340));
             Check(unit.GroundShadowsManaged && unit.EnvironmentTint == BattleLighting.ForZone(stage.MapId).Tint,
                 stage.MapId + ": unit inherits shared environmental light and ground shadow pass");
@@ -75,8 +77,10 @@ public partial class UiReviewSmoke
         Call(phone, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_walker")), new Vector2(420, 380));
         await Wait(.15); await Capture("phone-caravan");
         Call(phone, "ToggleMobileOverview"); await Wait(.15); await Capture("phone-overview");
-        Check(Walk(phone).OfType<BattleShadowCanvas>().Single().Visible && Walk(phone).OfType<BattleBaseCanvas>().Count() == 2,
-            "Phone view and overview retain the same grounded bases and shadow pass");
+        var canvases = Walk(phone).OfType<BattleBaseCanvas>().ToArray();
+        Check(Walk(phone).OfType<BattleShadowCanvas>().Single().Visible && canvases.Count(b => b.Name == "Caravan" || b.Name == "Castle") == 2
+            && canvases.Count(b => b.Name.ToString().StartsWith("Outwork")) == 5,
+            "Phone view and overview retain the same grounded bases, outworks and shadow pass");
         foreach (var id in new[] { "war_wagon", "gatehouse" }.Concat(WagonSkinCatalog.GetAll().Where(skin => skin.Id != WagonSkinCatalog.DefaultSkinId).Select(skin => "war_wagon_" + skin.Id)))
         {
             var art = BattleStructureArt.Load(id);
@@ -84,7 +88,10 @@ public partial class UiReviewSmoke
             if (art == null) continue;
             var ground = new Vector2(300, 340);
             Check(art.Point(ground, art.Anchor).DistanceTo(ground) < .001f &&
-                art.Mounts.All(socket => art.Point(ground, socket).Y < ground.Y - 65), id + ": ground anchor and roof sockets align");
+                art.Mounts.All(socket => art.Point(ground, socket).Y < ground.Y - 65 * GameData.Combat.StructureScale), id + ": ground anchor and roof sockets align");
+            if (id.StartsWith("war_wagon"))
+                Check(art.Door is { Frames: >= 2 } door && door.Strip != null && door.Foot.Y > door.Exit.Y
+                    && new Rect2(Vector2.Zero, Vector2.One).Encloses(door.Rect), id + ": troop door frames and exit points load");
         }
         var reused = new Unit();
         reused.Setup(Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), Vector2.Zero);

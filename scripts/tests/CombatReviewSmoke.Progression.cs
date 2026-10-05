@@ -32,7 +32,7 @@ public partial class CombatReviewSmoke
         state.ResetProgress();
         state.SetAnalyticsConsent(false);
         state.SetShowHints(false);
-        state.UnlockNextStage(59);
+        state.UnlockNextStage(GameData.MaxStage - 1);
     }
 
     private void CheckCampaignProgression()
@@ -40,30 +40,30 @@ public partial class CombatReviewSmoke
         var state = GameState.Instance;
         state.ResetProgress();
         state.PrepareCampaignBattle();
-        var reward = state.ApplyVictory(4, 0, 0, 1);
+        var reward = state.ApplyVictory(10, 0, 0, 1);
         Check(reward.Contains("Iron Pendant") && state.TryEquipItem("player_defender", "relic_iron_pendant"),
             "An ordinary first boss victory guarantees an equippable relic");
         var shards = state.RelicShards;
-        state.ApplyVictory(4, 0, 0, 3);
+        state.ApplyVictory(10, 0, 0, 3);
         Check(state.RelicShards == shards + 3, "Improving a clear to three stars grants the boss mastery shards");
         shards = state.RelicShards;
         state.ReloadFromDisk();
         state.PrepareCampaignBattle();
-        state.ApplyVictory(4, 0, 0, 3);
+        state.ApplyVictory(10, 0, 0, 3);
         Check(state.RelicShards == shards, "Reload and replay cannot duplicate milestone or mastery rewards");
-        Check(!state.BuildProgressionRewardPreview(4).Contains("milestone", StringComparison.OrdinalIgnoreCase),
+        Check(!state.BuildProgressionRewardPreview(10).Contains("milestone", StringComparison.OrdinalIgnoreCase),
             "Claimed rewards disappear from the preview");
 
-        state.ApplyVictory(43, 0, 0, 1);
+        state.ApplyVictory(58, 0, 0, 1);
         Check(state.IsUnitOwned("player_lantern_guard") && state.GetUnitLevel("player_lantern_guard") == 4,
             "Out-of-order contract victory grants a trained specialist before its major counter fight");
         var tomes = state.Tomes;
-        state.ApplyVictory(43, 0, 0, 1);
+        state.ApplyVictory(58, 0, 0, 1);
         Check(state.Tomes == tomes, "Recruit contracts award training and tomes only once");
         var levels = Read<Dictionary<string, int>>(state, "_unitUpgradeLevels");
         Read<HashSet<string>>(state, "_ownedPlayerUnitIds").Add("player_marksman");
         levels["player_marksman"] = 5;
-        state.ApplyVictory(18, 0, 0, 1);
+        state.ApplyVictory(23, 0, 0, 1);
         Check(state.GetUnitLevel("player_marksman") == 5 && state.Tomes == tomes + 1,
             "Already developed recruits retain their levels and receive the advertised tome reward");
 
@@ -73,18 +73,18 @@ public partial class CombatReviewSmoke
         Invoke(state, "ApplySavedData", roundTrip);
         state.PrepareCampaignBattle();
         tomes = state.Tomes;
-        state.ApplyVictory(43, 0, 0, 1);
+        state.ApplyVictory(58, 0, 0, 1);
         Check(state.Tomes == tomes && state.GetUnitLevel("player_lantern_guard") == 4,
             "Serialized saves preserve contract claims and trained units");
 
         state.ResetProgress();
         state.PrepareEndlessBattle("city");
-        Check((string)Invoke(state, "ClaimCampaignProgressionRewards", 43, 3) == "" && !state.IsUnitOwned("player_lantern_guard"),
+        Check((string)Invoke(state, "ClaimCampaignProgressionRewards", 58, 3) == "" && !state.IsUnitOwned("player_lantern_guard"),
             "Other game modes cannot claim campaign contracts");
         state.PrepareCampaignBattle();
         state.TryGrantEquipment("relic_iron_pendant");
         shards = state.RelicShards;
-        state.ApplyVictory(4, 0, 0, 1);
+        state.ApplyVictory(10, 0, 0, 1);
         Check(state.RelicShards == shards + 1, "An owned milestone relic becomes useful crafting shards");
         var legacy = (GameSaveData)Invoke(state, "BuildSaveData");
         legacy.Version = 41;
@@ -93,10 +93,10 @@ public partial class CombatReviewSmoke
         Invoke(state, "ApplySavedData", legacy);
         state.PrepareCampaignBattle();
         shards = state.RelicShards;
-        state.ApplyVictory(4, 0, 0, 1);
+        state.ApplyVictory(10, 0, 0, 1);
         Check(state.RelicShards == shards + 1, "Existing saves can earn newly introduced milestones once by replaying");
-        state.ApplyVictory(60, 0, 0, 1);
-        Check(state.TryPrestige(out _) && state.BuildProgressionRewardPreview(4).Contains("milestone"),
+        state.ApplyVictory(state.MaxStage, 0, 0, 1);
+        Check(state.TryPrestige(out _) && state.BuildProgressionRewardPreview(10).Contains("milestone"),
             "A new prestige campaign restores its progression reward track");
 
         Check(GameData.Stages.All(s => s.Objectives.All(o => o.Type != "enemy_defeats" ||
@@ -108,7 +108,7 @@ public partial class CombatReviewSmoke
             "Campaign boss pool retains epics while preserving raid and tower exclusivity");
 
         state.PrepareCampaignBattle();
-        foreach (var stage in new[] { 43, 47, 53 }) state.ApplyVictory(stage, 0, 0, 1);
+        foreach (var stage in new[] { 58, 68, 78 }) state.ApplyVictory(stage, 0, 0, 1);
         save = (GameSaveData)Invoke(state, "BuildSaveData");
         save.Gold = 20000; save.Sigils = 30; save.Tomes = 10;
         var lateUnits = new[] { "player_lantern_guard", "player_ballista", "player_stormcaller" };

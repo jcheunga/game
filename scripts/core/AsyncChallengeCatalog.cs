@@ -403,11 +403,11 @@ public static class AsyncChallengeCatalog
     public static AsyncChallengeTargetScores GetTargetScores(AsyncChallengeDefinition challenge)
     {
         var mutator = GetMutator(challenge.MutatorId);
-        var baseTarget = 520 + (challenge.Stage * 125);
+        var baseTarget = 520 + (challenge.Stage * 75);
         var bronze = Mathf.RoundToInt(baseTarget * mutator.ScoreMultiplier);
-        var silver = Mathf.RoundToInt((baseTarget + 220 + (challenge.Stage * 12)) * mutator.ScoreMultiplier);
-        var gold = Mathf.RoundToInt((baseTarget + 500 + (challenge.Stage * 18)) * mutator.ScoreMultiplier);
-        var ace = Mathf.RoundToInt((baseTarget + 860 + (challenge.Stage * 24)) * mutator.ScoreMultiplier);
+        var silver = Mathf.RoundToInt((baseTarget + 220 + (challenge.Stage * 7)) * mutator.ScoreMultiplier);
+        var gold = Mathf.RoundToInt((baseTarget + 500 + (challenge.Stage * 11)) * mutator.ScoreMultiplier);
+        var ace = Mathf.RoundToInt((baseTarget + 860 + (challenge.Stage * 14)) * mutator.ScoreMultiplier);
 
         silver = Math.Max(silver, bronze + 120);
         gold = Math.Max(gold, silver + 140);

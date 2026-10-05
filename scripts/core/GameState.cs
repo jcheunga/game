@@ -55,10 +55,10 @@ public partial class GameState : Node
 	private const float CampaignReserveRallySpeedScale = 1.1f;
 	private const float CampaignReserveRallyDurationSeconds = 7f;
 	private const int CampaignRouteDoctrineBaseThreshold = 7;
-	private const int CampaignAdaptiveWaveStage = 36;
-	private const int CampaignAdaptiveWaveEliteStage = 51;
-	private const int CampaignLateConditionStage = 31;
-	private const int CampaignLateConditionEliteStage = 51;
+	private const int CampaignAdaptiveWaveStage = CampaignPacing.VeteranStage;
+	private const int CampaignAdaptiveWaveEliteStage = CampaignPacing.EliteStage;
+	private const int CampaignLateConditionStage = CampaignPacing.LateConditionStage;
+	private const int CampaignLateConditionEliteStage = CampaignPacing.EliteStage;
 	private const float CampaignLateConditionBaseIntervalSeconds = 18f;
 	private const float CampaignLateConditionEliteIntervalSeconds = 15f;
 	private static readonly string DefaultAsyncChallengeCode =
@@ -550,7 +550,7 @@ public partial class GameState : Node
 			return CampaignRouteDoctrineBaseThreshold;
 		}
 
-		return Mathf.Clamp(CampaignRouteDoctrineBaseThreshold + ((Mathf.Max(1, stage) - 1) / 20), CampaignRouteDoctrineBaseThreshold, 10);
+		return Mathf.Clamp(CampaignRouteDoctrineBaseThreshold + ((Mathf.Max(1, stage) - 1) / 33), CampaignRouteDoctrineBaseThreshold, 10);
 	}
 
 	public string GetCampaignRouteDoctrineTitle(string routeId)
@@ -1813,9 +1813,9 @@ public partial class GameState : Node
 
 	public bool PrepareBossRush(out string message)
 	{
-		if (HighestUnlockedStage < 10)
+		if (HighestUnlockedStage <= CampaignPacing.StagesPerZone)
 		{
-			message = "Unlock at least 10 stages to access Boss Rush.";
+			message = "Defeat the King's Road boss to access Boss Rush.";
 			return false;
 		}
 
@@ -4993,6 +4993,12 @@ public partial class GameState : Node
 
 	private void LoadOrInitialize(GameSaveData restored = null, GameSaveData deviceState = null)
 	{
+		// Without game data a save cannot be validated or clamped, so leave it untouched on disk.
+		if (GameData.LoadFailed)
+		{
+			return;
+		}
+
 		if (restored != null)
 		{
 			ApplySavedData(restored);
@@ -5200,6 +5206,8 @@ public partial class GameState : Node
 
 	private void ApplySavedData(GameSaveData saved)
 	{
+		// Saves from the 60-stage campaign move onto ten stages per zone before anything reads stage numbers.
+		CampaignRenumbering.Migrate(saved, MaxStage);
 		LoadProgressionRewards(saved);
         AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? "";
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
@@ -6566,6 +6574,12 @@ public partial class GameState : Node
 
 	private void NormalizeStageStars()
 	{
+		// MaxStage is zero without game data; resizing to it would erase every saved star.
+		if (GameData.LoadFailed)
+		{
+			return;
+		}
+
 		for (var i = 0; i < _stageStars.Count; i++)
 		{
 			_stageStars[i] = Mathf.Clamp(_stageStars[i], 0, 3);
@@ -7332,6 +7346,12 @@ public partial class GameState : Node
 
 	private void Persist()
 	{
+		// A broken install must never overwrite a good save with clamped or empty progress.
+		if (GameData.LoadFailed)
+		{
+			return;
+		}
+
 		SaveSystem.Instance?.Save(BuildSaveData());
 	}
 
@@ -7350,7 +7370,7 @@ public partial class GameState : Node
 		var now = DateTime.UtcNow;
 		var seed = now.DayOfYear + now.Year * 1000;
 		var rng = new Random(seed);
-		var stageIndex = rng.Next(10, 41);
+		var stageIndex = rng.Next(16, 67);
 		var lockedSquad = now.DayOfYear % 2 == 0;
 		var boardLabels = new[] { "Route Trial", "Pressure Test", "Final Push", "Endurance Run" };
 		var boardLabel = boardLabels[seed % boardLabels.Length];
@@ -7749,7 +7769,7 @@ public partial class GameState : Node
 				threeStarCount++;
 			}
 		}
-		if (threeStarCount >= 25)
+		if (threeStarCount >= 40)
 		{
 			TryUnlockAchievement("all_stars");
 		}

@@ -32,6 +32,7 @@ which units qualify and at what scale; `build_units.py` and `pack.py` apply it a
 | `icons/` | Item-icon recipes, stage and glow post-process |
 | `siege/` | War wagon, skins, mounts and gatehouse recipes |
 | `menu_scenes/`, `battle_scenes/`, `map_scenes/` | Menu backgrounds, battlefield fallbacks and district maps |
+| `battle_backdrops/` | Layered zone battle backdrops (far vista, mid skyline, near street); see `assets/world/backdrops/README.md` |
 | `build_*.py` | One builder per category (see below) |
 | `pack.py` | Packs renders into runtime files under `artifacts/remaster/stage/`; `apply` copies PNG/JSON into `assets/` |
 | `compare.py`, `review_page.py`, `*_sheet.py`, `contact_sheets.py`, `review.py`, `ingame.py`, `sheet.py` | Comparison media, the review page and contact sheets (originals are read from git `HEAD`) |
@@ -54,6 +55,8 @@ blender --background --factory-startup --python-exit-code 1 --python art/remaste
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_particles.py -- --ids all --samples 128
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_menus.py -- --ids all --samples 128
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_battlefields.py -- --ids all --samples 128
+# zone battle backdrops: three parallax layers per zone (assets/world/backdrops)
+blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_backdrops.py -- --zones all --samples 64
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_maps.py -- --ids all --samples 128
 # stage runtime files (does not touch assets/), then review
 python3 art/remaster/pack.py stage

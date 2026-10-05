@@ -120,7 +120,7 @@ public partial class CombatMotionReview
             Call(battle,"ApplyImpactReaction",attackers[0],target,80f,false);
             Check(Read<float>(battle,"_impactShakeStrength")<=.65f && target.Position==feet,
                 $"{mode}: heavy hit accent is capped and leaves the feet planted");
-            Call(battle,"PushUnitsFromPoint",Team.Enemy,feet-new Vector2(10,0),50f,12f,.8f,.2f,Colors.White,"");
+            Call(battle,"PushUnitsFromPoint",Team.Enemy,feet-new Vector2(10,0),50f,12f,.8f,.2f,Colors.White);
             Check(target.Position.X>feet.X+11,$"{mode}: explicit ability and hazard knockback remains functional");
             battle.QueueFree(); await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
             UnitPool.Clear(); ProjectilePool.Clear();

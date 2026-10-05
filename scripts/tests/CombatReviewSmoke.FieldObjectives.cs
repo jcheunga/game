@@ -7,7 +7,7 @@ public partial class CombatReviewSmoke
 {
     private async Task CheckCampaignFieldObjectives()
     {
-        var battle = await OpenBattle(8);
+        var battle = await OpenBattle(15);
         var plan = Read<StageDefinition>(battle, "_stageData").Battlefield;
         var point = (Vector2)Invoke(battle, "FieldPoint", plan.OutpostXRatio, plan.OutpostYRatio);
         Unit Spawn(string id, Team team, Vector2 position) => (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)), position);
@@ -22,13 +22,12 @@ public partial class CombatReviewSmoke
         Check(ally.Position == allyStart, "Field updates leave troop positions unchanged");
         var deck = Read<BattleDeckState>(battle, "_deck");
         var card = deck.Roster[0];
-        Invoke(battle, "ArmPlayerUnit", card);
         Write(battle, "_courage", 100f);
-        var preview = (Vector2)Invoke(battle, "ResolvePlayerDeployPosition", point.Y - 200);
-        Invoke(battle, "TryDeployAtY", point.Y - 200);
+        Invoke(battle, "DeployPlayerUnit", card);
         var spawned = Read<List<Unit>>(battle, "_units").Last();
-        Check(spawned.Position == preview && Mathf.IsEqualApprox(preview.X, GameData.Combat.PlayerSpawnX),
-            "Deployment matches its preview and always begins at the wagon");
+        Check(spawned.Position == (Vector2)Invoke(battle, "get_WagonDoorExit") &&
+            Mathf.IsEqualApprox(((Vector2)Invoke(battle, "get_CaravanDeployPosition")).Y, (GameData.Combat.BattlefieldTop + GameData.Combat.BattlefieldBottom) * .5f),
+            "Deployment always begins at the wagon's door and joins the centre line");
         Check(deck.GetCooldownRemaining(card.Id) > 0 && Read<float>(battle, "_courage") < 100,
             "Deployment consumes the normal courage and cooldown");
         ally.Position = (Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio);
@@ -50,19 +49,19 @@ public partial class CombatReviewSmoke
         Invoke(battle, "TriggerEnemyRaiseFallen", summoner);
         Check(Read<List<Unit>>(battle, "_units").Count == unitCount && !(bool)Invoke(battle, "CanAddCampaignPeriodicReinforcement", summoner),
             "Defeated summons exhaust the finite reserve instead of being replaced forever");
-        summoner.Position = new Vector2(2450, 200);
+        summoner.Position = new Vector2(2450, 340);
         Check(!(bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "Remote summoners wait for the fighting to reach them");
         summoner.Position = ally.Position;
         Write(battle, "_enemyBaseHealth", 0f);
         Check(!(bool)Invoke(battle, "CanUseCampaignEnemySpecial", summoner), "Breaching the gate ends renewable summon pressure");
         await CloseBattle(battle);
 
-        foreach (var stageNumber in new[] { 1, 13, 49 })
+        foreach (var stageNumber in new[] { 1, 31, 64 })
         {
             battle = await OpenBattle(stageNumber);
             Write(battle, "_courage", 0f);
             Write(battle, "_playerBaseHealth", 1f);
-            if (stageNumber == 49)
+            if (stageNumber == 64)
             {
                 var patches = ((IEnumerable<Rect2>)Invoke(battle, "CursedGroundAreas")).ToArray();
                 Check(patches.Length == 2 && patches.Sum(p => p.Size.X) <= 600, "Cursed ground is limited to two bounded pockets");
@@ -97,13 +96,13 @@ public partial class CombatReviewSmoke
         Check(director.EncounterWarningActive && positions.Count == 0, "Encounters warn before spawning");
         director.Tick(3, 4, () => 0, (_, p) => positions.Add(p), _ => { });
         Check(positions.Count == 1 && positions[0].X < GameData.Combat.EnemySpawnX, "Approach encounters use their local entry point");
-        director.SetPlayerFrontline(1300);
+        director.SetPlayerFrontline(Mathf.Lerp(GameData.Combat.PlayerSpawnX, GameData.Combat.EnemySpawnX, .55f));
         director.Tick(1, 5, () => 100, (_, p) => positions.Add(p), _ => { });
         Check(director.IsScriptedWaveHeld && positions.Count == 1, "Advancement respects the active enemy cap");
         director.Tick(1, 6, () => 0, (_, p) => positions.Add(p), _ => { });
         Check(director.EncounterWarningActive, "Reaching the next area arms its encounter before the fallback time");
         director.Tick(4, 10, () => 0, (_, p) => positions.Add(p), _ => { });
-        Check(positions.Count == 2 && positions[1].X >= 1480 && director.NextScriptedWaveIndex == 2,
+        Check(positions.Count == 2 && positions[1].X >= Mathf.Lerp(GameData.Combat.PlayerSpawnX, GameData.Combat.EnemySpawnX, .6f) && director.NextScriptedWaveIndex == 2,
             "An advanced encounter spawns ahead of troops and keeps the full authored roster");
         director.Initialize(1, data, GameData.Combat, GameData.GetEnemyUnits());
         director.EnableAdvanceEncounters(true);

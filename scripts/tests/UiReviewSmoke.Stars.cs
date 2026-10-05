@@ -67,7 +67,7 @@ public partial class UiReviewSmoke
             typeof(BattleController).GetMethod("SpawnUnit", hidden)!.Invoke(battle, new object[] {
                 Team.Player, state.BuildPlayerUnitStats(unit), new Vector2(330 + index * 40, 360) });
         var earnedBefore = state.BuildSaveData();
-        typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { .1f, Colors.White, "" });
+        typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { .1f, Colors.White });
         typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { true });
         await Wait(.5);
         Check(Walk(battle).OfType<StageStarRating>().Single(x => x.IsVisibleInTree()).Stars == 2,
@@ -91,7 +91,7 @@ public partial class UiReviewSmoke
         await Open("Battle");
         battle = (BattleController)GetTree().CurrentScene;
         battle.SetPhysicsProcess(false);
-        typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { 1f, Colors.White, "" });
+        typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { 1f, Colors.White });
         typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { false });
         await Wait(.5);
         var labels = Walk(battle).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text).ToArray();

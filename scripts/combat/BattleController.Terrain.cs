@@ -5,12 +5,15 @@ public partial class BattleController
     private NoiseTexture2D _groundTexture;
     private Texture2D _stageArtwork;
     private bool _stageArtworkChecked;
+    private ZoneBackdrop _stageBackdrop;
     private BattleTerrainCanvas _terrainCanvas;
     private void DrawPlayableTerrain(TerrainPalette palette)
     {
         if (!_stageArtworkChecked)
         {
-            _stageArtwork = WorldEnvironmentArt.LoadBattle(_stageData?.StageNumber ?? 1);
+            // Prefer the zone's Blender backdrop; fall back to the painted stage plate.
+            _stageBackdrop = WorldEnvironmentArt.LoadZoneBackdrop(_activeRouteId);
+            _stageArtwork = _stageBackdrop?.Near ?? WorldEnvironmentArt.LoadBattle(_stageData?.StageNumber ?? 1);
             _stageArtworkChecked = true;
             // The legacy fallback is painted on the parent. Its shadow layer must
             // follow that paint, while authored terrain lives behind both passes.
@@ -23,15 +26,23 @@ public partial class BattleController
                 _terrainCanvas = new BattleTerrainCanvas { Name = "BattleTerrain", ShowBehindParent = true, ZIndex = -10,
                     TextureFilter = TextureFilterEnum.LinearWithMipmaps, Artwork = _stageArtwork,
                     Backdrop = palette.SkyColor.Darkened(.55f),
-                    Ground = new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop) };
-                AddChild(_terrainCanvas); _terrainCanvas.AddGroundDetail(_activeRouteId, _stage);
+                    Ground = new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop),
+                    Cover = () => BattleCoverRect, Layers = _stageBackdrop, WorldCentreX = (BattlefieldLeft + BattlefieldRight) * .5f };
+                AddChild(_terrainCanvas);
+                // Blender backdrops carry their own road surface; the detail overlay is for painted plates.
+                if (_stageBackdrop == null) _terrainCanvas.AddGroundDetail(_activeRouteId, _stage);
             }
             _terrainCanvas.QueueRedraw();
             return;
         }
         var background = BattlefieldTextureLoader.TryLoadBackground((_stageData?.TerrainId ?? "urban").ToLowerInvariant());
         if (background != null) DrawBattleBackground(background);
-        else DrawRect(new Rect2(0,0,BattleWorldWidth,BattleWorldHeight), palette.SkyColor.Darkened(.35f));
+        else
+        {
+            DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
+            DrawRect(GetViewportRect(), palette.SkyColor.Darkened(.35f));
+            DrawSetTransform(Vector2.Zero);
+        }
         var earth = new Color(_activeRouteId switch {
             "harbor" => "63706c", "foundry" => "715c4a", "quarantine" => "646453",
             "thornwall" => "647363", "basilica" => "716d61", "mire" => "46553c",

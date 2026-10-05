@@ -9,7 +9,7 @@ public partial class MainMenu : MapMenu
 
     private void TryHandleDeepLink()
     {
-        if (DeepLinkHandler.Instance == null || !DeepLinkHandler.Instance.HasPendingChallenge())
+        if (GameData.LoadFailed || DeepLinkHandler.Instance == null || !DeepLinkHandler.Instance.HasPendingChallenge())
             return;
 
         var code = DeepLinkHandler.Instance.ConsumePendingChallenge();

@@ -35,7 +35,9 @@ from siege import common  # noqa: E402
 
 ROOT = HERE.parent.parent
 SKINS = ['iron', 'royal', 'bone', 'flame', 'shadow', 'guild', 'legendary']
-ALL = ['war_wagon'] + [f'war_wagon_skin_{s}' for s in SKINS] + ['gatehouse']
+PROPS = ['fort_tower', 'fort_wall', 'fort_palisade', 'fort_brazier', 'fort_totem']   # siege/fortifications.py
+ALL = ['war_wagon'] + [f'war_wagon_skin_{s}' for s in SKINS] + ['gatehouse'] + PROPS
+PROP_PAD = 6
 GATE_YAW = -62.0
 SAFE = 0.015
 GENERATOR = 'art/remaster/build_battle_structures.py'
@@ -80,17 +82,102 @@ def gatehouse_points(R):
     )
 
 
+DOOR_FRAMES = (0.45, 1.0)     # ramp-door states rendered after the closed plate (0 = shut, 1 = lowered)
+
+
+def build_wagon_scene(skin, samples, door=0.0):
+    from siege import wagon
+    core.reset()
+    shaders.reset_cache()
+    scene, cam, rig = common.scene_setup('battle_wagon', samples)
+    coll = core.collection('Lantern Caravan • ' + skin)
+    info = wagon.build(skin, coll, door=door)
+    common.light_rig(rig, (0.0, 0.0, 2.4), scale=2.3, **common.STRUCTURE_FILL)
+    common.no_shadow(info.get('flames', []))
+    bpy.context.view_layer.update()
+    return scene, cam, info
+
+
+def read_rgba(path):
+    import numpy as np
+    img = bpy.data.images.load(str(path))
+    w, h = img.size
+    px = np.empty(len(img.pixels), dtype=np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    return px.reshape(h, w, 4)[::-1].copy()      # rows top-down
+
+
+def write_rgba(path, rgba):
+    import numpy as np
+    h, w = rgba.shape[:2]
+    img = bpy.data.images.new(Path(path).stem, w, h, alpha=True)
+    img.pixels.foreach_set(np.ascontiguousarray(rgba[::-1]).ravel())
+    img.filepath_raw = str(path)
+    img.file_format = 'PNG'
+    img.save()
+    bpy.data.images.remove(img)
+
+
+def render_door_strip(ident, skin, samples, out, closed_png):
+    """Render the ramp door's opening states and keep only the region that differs from the closed
+    plate, as a horizontal strip the runtime draws over it. Returns the door metadata."""
+    import numpy as np
+    from siege import wagon
+    base = read_rgba(closed_png)
+    frames = []
+    for k, door in enumerate(DOOR_FRAMES):
+        scene, cam, _ = build_wagon_scene(skin, samples, door)
+        tmp = out / f'{ident}_door{k}.tmp.png'
+        common.render_robust(scene, tmp, cam)
+        common.clean_alpha(tmp)
+        frames.append(read_rgba(tmp))
+        tmp.unlink()
+    diff = np.zeros(base.shape[:2], dtype=bool)
+    for f in frames:
+        diff |= (np.abs(f - base) > 12 / 255).any(axis=2)
+    diff = settled_change(diff)
+    ys, xs = np.nonzero(diff)
+    h, w = base.shape[:2]
+    pad = 10
+    x0, x1 = max(0, xs.min() - pad), min(w, xs.max() + 1 + pad)
+    y0, y1 = max(0, ys.min() - pad), min(h, ys.max() + 1 + pad)
+    strip = np.concatenate([f[y0:y1, x0:x1] for f in frames], axis=1)
+    write_rgba(out / f'{ident}_door.png', strip)
+    return dict(rect=[round(x0 / w, 6), round(y0 / h, 6), round(x1 / w, 6), round(y1 / h, 6)], frames=len(frames),
+                exit=project(scene, cam, wagon.DOOR_EXIT), foot=project(scene, cam, wagon.DOOR_FOOT))
+
+
+def settled_change(mask):
+    """Drop isolated sampling-noise specks (erode 3x3), then grow what is left back (dilate 9x9), so the
+    door crop covers the door and the light it throws, not render noise spread over the whole plate."""
+    import numpy as np
+
+    def shift_reduce(m, r, op):
+        out = m.copy()
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                out = op(out, np.roll(np.roll(m, dy, 0), dx, 1))
+        return out
+    return shift_reduce(shift_reduce(mask, 1, np.logical_and), 4, np.logical_or)
+
+
 def build_one(ident, samples, out_dir, blend_dir, metadata_only):
     core.reset()
     shaders.reset_cache()
     if ident.startswith('war_wagon'):
-        from siege import wagon
         skin = ident[len('war_wagon_skin_'):] if ident.startswith('war_wagon_skin_') else 'default'
-        scene, cam, rig = common.scene_setup('battle_wagon', samples)
-        coll = core.collection('Lantern Caravan • ' + skin)
-        info = wagon.build(skin, coll)
-        common.light_rig(rig, (0.0, 0.0, 2.4), scale=2.3, **common.STRUCTURE_FILL)
+        scene, cam, info = build_wagon_scene(skin, samples)
         pts = wagon_points(info)
+        R = Matrix.Identity(4)
+    elif ident.startswith('fort_'):
+        # outworks share the gatehouse camera and scale, so they stand beside it as one fortress
+        from siege import fortifications
+        scene, cam, rig = common.scene_setup('battle_gatehouse', samples)
+        coll = core.collection('Rotbound outworks • ' + ident)
+        info = fortifications.build(ident, coll)
+        common.light_rig(rig, (0.0, 0.0, 1.4), scale=2.1, **common.STRUCTURE_FILL)
+        pts = dict(anchor=info['anchor'], mounts=[], contacts=[], lights=info['lights'], smoke=info['anchor'], width=216)
         R = Matrix.Identity(4)
     else:
         from siege import gatehouse
@@ -133,10 +220,57 @@ def build_one(ident, samples, out_dir, blend_dir, metadata_only):
         if bbox is None or bbox[0] < SAFE or bbox[1] < SAFE or bbox[2] > 1 - SAFE or bbox[3] > 1 - SAFE:
             raise RuntimeError(f'{ident}: silhouette {bbox} outside the {SAFE:.1%} safe frame')
         print(f'SAFE_FRAME {ident} bbox={[round(v, 4) for v in bbox]}', flush=True)
+        meta['centre'] = alpha_centroid(png)
+        if ident.startswith('fort_'):
+            crop_to_silhouette(png, meta, bbox)
+        if ident.startswith('war_wagon'):
+            if blend:
+                core.save_blend(blend)
+                blend = None
+            meta['door'] = render_door_strip(ident, skin, samples, out, png)
         if blend:
             core.save_blend(blend)
+    if metadata_only:
+        if ident.startswith('fort_'):
+            raise RuntimeError(f'{ident}: props are cropped after rendering; --metadata-only cannot place their points')
+        previous = out / f'{ident}.json'
+        if previous.exists():
+            # door frames and the centroid come from rendered pixels; keep them from the last render
+            old = json.loads(previous.read_text())
+            meta.update({k: old[k] for k in ('centre', 'door') if k in old})
     (out / f'{ident}.json').write_text(json.dumps(meta, indent=2) + '\n')
     return png
+
+
+def crop_to_silhouette(png, meta, bbox):
+    """Props are small on the shared 1024 canvas: keep only their silhouette (plus a margin) and
+    re-express every normalised point, and the world width, against the cropped image."""
+    rgba = read_rgba(png)
+    h, w = rgba.shape[:2]
+    x0, y0 = max(0, int(bbox[0] * w) - PROP_PAD), max(0, int(bbox[1] * h) - PROP_PAD)
+    x1, y1 = min(w, int(math.ceil(bbox[2] * w)) + PROP_PAD), min(h, int(math.ceil(bbox[3] * h)) + PROP_PAD)
+    write_rgba(png, rgba[y0:y1, x0:x1])
+
+    def remap(p):
+        return [round((p[0] * w - x0) / (x1 - x0), 6), round((p[1] * h - y0) / (y1 - y0), 6)]
+    for key in ('anchor', 'smoke', 'centre'):
+        meta[key] = remap(meta[key])
+    meta['lights'] = [remap(p) for p in meta['lights']]
+    meta['width'] = round(meta['width'] * (x1 - x0) / w, 3)
+
+
+def alpha_centroid(path):
+    """Alpha-weighted centroid (x, y), normalised with image y down: where a structure's visual mass sits."""
+    import numpy as np
+    img = bpy.data.images.load(str(path))
+    w, h = img.size
+    px = np.empty(len(img.pixels), dtype=np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    a = px.reshape(h, w, 4)[::-1, :, 3]
+    total = a.sum()
+    ys, xs = np.mgrid[0:h, 0:w]
+    return [round(float((xs * a).sum() / total / w), 6), round(float((ys * a).sum() / total / h), 6)]
 
 
 def alpha_bbox(path, threshold=0.03):

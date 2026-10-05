@@ -385,9 +385,9 @@ public static class StageObjectives
             return Mathf.Max(1, Mathf.RoundToInt(objective.Value));
         }
 
-        return stage.StageNumber >= 51
+        return stage.StageNumber >= CampaignPacing.EliteStage
             ? 4
-            : stage.StageNumber >= 36
+            : stage.StageNumber >= CampaignPacing.VeteranStage
                 ? 3
                 : 2;
     }

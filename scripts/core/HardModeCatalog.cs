@@ -47,20 +47,20 @@ public static class HardModeCatalog
 
 			var modifiers = stage switch
 			{
-				<= 10 => new[] { "elite_vanguard" },
-				<= 20 => new[] { "elite_vanguard", "rapid_assault" },
-				<= 30 => new[] { "rapid_assault", "cursed_ground" },
-				<= 40 => new[] { "cursed_ground", "fortified_deploy" },
+				<= 20 => new[] { "elite_vanguard" },
+				<= 40 => new[] { "elite_vanguard", "rapid_assault" },
+				<= 60 => new[] { "rapid_assault", "cursed_ground" },
+				<= 80 => new[] { "cursed_ground", "fortified_deploy" },
 				_ => new[] { "elite_vanguard", "cursed_ground", "fortified_deploy" }
 			};
 
 			var milestoneRelic = stage switch
 			{
-				10 => "relic_hardened_bulwark",
-				20 => "relic_hardened_fang",
-				30 => "relic_hardened_sigil",
-				40 => "relic_hardened_crown",
-				50 => "relic_hardened_soul",
+				20 => "relic_hardened_bulwark",
+				40 => "relic_hardened_fang",
+				60 => "relic_hardened_sigil",
+				80 => "relic_hardened_crown",
+				100 => "relic_hardened_soul",
 				_ => ""
 			};
 

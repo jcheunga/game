@@ -1,0 +1,50 @@
+{
+  "layers": [
+    {
+      "file": "thornwall_far.png",
+      "rect": [
+        -10.0,
+        -150.0,
+        968.0,
+        482.0
+      ],
+      "parallax": 0.15,
+      "name": "far"
+    },
+    {
+      "file": "thornwall_mid.png",
+      "rect": [
+        -10.0,
+        100.0,
+        968.0,
+        246.0
+      ],
+      "parallax": 0.45,
+      "name": "mid"
+    },
+    {
+      "file": "thornwall.png",
+      "rect": [
+        -10.0,
+        110.0,
+        968.0,
+        490.0
+      ],
+      "parallax": 1.0,
+      "name": "near"
+    }
+  ],
+  "rect": [
+    -10.0,
+    110.0,
+    968.0,
+    490.0
+  ],
+  "sky": "b8c1c9",
+  "fog": [
+    0.789648175239563,
+    0.791782021522522,
+    0.7880198955535889
+  ],
+  "generator": "art/remaster/build_backdrops.py"
+}

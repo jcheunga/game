@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -64,14 +65,17 @@ public partial class UiReviewSmoke
                 Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=click,GlobalPosition=click});
                 Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=click,GlobalPosition=click});
                 await Wait(.1);
-                Check(deck.ArmedUnit==deck.Roster[1] && target.Selected,$"{prefix}: tapping the corner badge selects its unit");
-                Check(Read<int>("_playerDeployments")==deployments,$"{prefix}: card tap selects without accidentally deploying into the field");
+                Check(Read<int>("_playerDeployments")==deployments+1 && Read<List<Unit>>("_units").Last().DefinitionId==deck.Roster[1].Id
+                    && !target.Selected,$"{prefix}: tapping the corner badge deploys its unit from the wagon");
                 buttons[deck.Roster.Count].EmitSignal(BaseButton.SignalName.Pressed);
-                Check(cards.Count(c=>c.Selected)==1 && cards[deck.Roster.Count].Selected,$"{prefix}: spell selection clears the unit's selection mark");
+                Check(cards.Count(c=>c.Selected)==1 && cards[deck.Roster.Count].Selected,$"{prefix}: magic cards are still selected to aim");
                 Send(new InputEventKey {Keycode=Key.Key1,Pressed=true});
                 Send(new InputEventKey {Keycode=Key.Key1,Pressed=false});
                 await Wait(.1);
-                Check(cards.Count(c=>c.Selected)==1 && cards[0].Selected,$"{prefix}: keyboard selection still works");
+                Check(Read<int>("_playerDeployments")==deployments+2 && Read<List<Unit>>("_units").Last().DefinitionId==deck.Roster[0].Id,
+                    $"{prefix}: number keys deploy their unit");
+                Check(cards.Count(c=>c.Selected)==1 && cards[deck.Roster.Count].Selected,$"{prefix}: deploying a unit keeps the aimed magic selected");
+                deck.ReduceCooldowns(1000);
 
                 Write("_courage",0f); Call("UpdateHud"); await Wait(.1);
                 Check(buttons.All(b=>b.Disabled) && cards.All(c=>c.StatusLabel.Text.Contains("short")),

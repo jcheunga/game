@@ -2,12 +2,14 @@
 
 The battle scene now has a phone-specific presentation, enabled on Android/iOS,
 touch-enabled web builds, or with the `--mobile-preview` user argument. Desktop
-uses normal-scale horizontal panning across the extended 2560-unit battlefield.
+and phone share the soldier scale and two-screen field (see
+[Deployment cards](DEPLOYMENT_CARDS.md#battlefield-proportions)).
 
-- Combat camera: 2.8× the original framing by default, with smooth front-line
-  tracking. Tap the zoom number to cycle through 2.2×, 2.8×, and 3.4×.
-- Drag the field to pan from the wagon to the far enemy base. **Follow** resumes tracking. **Map** fits the whole
-  field; **Fight** restores the selected zoom and previous close-view position.
+- Combat camera: the same soldier scale as desktop, tracking the action between
+  the HUD and the cards. The zoom button steps to 1.25× and 1.5× closer.
+- Drag the field to pan. The view button then shows a sword: tap it to resume
+  tracking. **Map** fits the whole field; **Fight** restores the selected zoom
+  and previous close-view position.
 - **View** hides cards and convoy orders to expose more of the field; **Cards**
   restores them. Field taps cannot deploy units or cast spells while in this
   view-only mode. Both zoom and card visibility preserve the visible focal point.
@@ -16,9 +18,9 @@ uses normal-scale horizontal panning across the extended 2560-unit battlefield.
   cost/readiness cards, and horizontal scrolling for larger decks.
 - Long reports live in the expandable intel panel. Pause, results, and checkpoint
   choices fit the smaller layout; long result/checkpoint reports scroll.
-- Touch coordinates are transformed through the camera. Deployment happens on
-  release, not press; dragging, canceled touches, pause, focus loss, and resizing
-  must not cause accidental deployment.
+- Touch coordinates are transformed through the camera. A unit deploys when its
+  card is released, never from a field tap; lifting off the card, canceled
+  touches, pause, focus loss, and resizing must not cause accidental deployment.
 - Native safe-area pixels are converted to canvas coordinates, including existing
   letterbox padding, before laying out controls.
 

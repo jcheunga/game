@@ -250,7 +250,7 @@ public partial class MapMenu
             Link("Tower", () => SceneRouter.Instance.GoToTower());
             Link("Bounties", () => SceneRouter.Instance.GoToBounty());
             Link("Boss rush", null, "Boss rush is in development");
-            Link("Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage < 5 ? "Win stage 4 or higher to unlock raids" : null);
+            Link("Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage <= CampaignPacing.StagesPerZone ? "Defeat the King's Road boss to unlock raids" : null);
             Link("Event", () => SceneRouter.Instance.GoToEvent(), GameState.Instance.GetActiveEvent() == null ? "No event is active" : null);
         }
         else if (tab == 1)

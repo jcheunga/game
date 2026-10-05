@@ -36,24 +36,31 @@ public partial class WorldArtReview : Node
             GetWindow().ContentScaleSize = new Vector2I(1280,720); GetWindow().ContentScaleMode = Window.ContentScaleModeEnum.CanvasItems;
             var state = GameState.Instance; state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
             var hashes = new HashSet<string>();
-            foreach (var stage in GameData.Stages)
+            var combat = GameData.Combat;
+            var ground = new Rect2(combat.BattlefieldLeft,combat.BattlefieldTop,combat.BattlefieldRight-combat.BattlefieldLeft,combat.BattlefieldBottom-combat.BattlefieldTop);
+            var world = combat.BattlefieldLeft + combat.BattlefieldRight;
+            // Each zone battles in front of one Blender backdrop rendered for the exact battle world.
+            foreach (var zone in AssetCoverageCatalog.RouteIds)
             {
-                var path = WorldEnvironmentArt.BattlePath(stage.StageNumber);
-                if (Incomplete && !ResourceLoader.Exists(path)) continue;
-                Check(ResourceLoader.Exists(path), $"Stage {stage.StageNumber:00} has its own environment");
-                if (!ResourceLoader.Exists(path)) continue;
-                using var texture = ResourceLoader.Load<Texture2D>(path,"",ResourceLoader.CacheMode.Ignore);
-                Check(texture != null && texture.GetWidth() >= 1280 && texture.GetHeight() >= 600, $"Stage {stage.StageNumber:00} imports at usable resolution");
-                Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(ProjectSettings.GlobalizePath(path))))), $"Stage {stage.StageNumber:00} is a distinct image");
+                var backdrop = WorldEnvironmentArt.LoadZoneBackdrop(zone);
+                Check(backdrop is { Layers.Count: 3 }, $"{zone} has a layered Blender battle backdrop");
+                if (backdrop == null) continue;
+                var near = backdrop.Layers[^1];
+                Check(backdrop.Layers.All(l => Mathf.IsEqualApprox(l.Texture.GetWidth() / (float)l.Texture.GetHeight(), l.Rect.Size.X / l.Rect.Size.Y, .01f))
+                    && near.Texture.GetWidth() >= 4096, $"{zone} layers import at full resolution and the proportions of their world rects");
+                Check(near.Parallax == 1 && backdrop.Layers.Select(l => l.Parallax).SequenceEqual(backdrop.Layers.Select(l => l.Parallax).OrderBy(p => p)),
+                    $"{zone} layers run far to near and the road layer is locked to the field");
+                Check(backdrop.Layers.All(l => l.Rect.Position.X <= 0 && l.Rect.End.X >= world) && near.Rect.Encloses(ground), $"{zone} backdrop covers the whole battle world and band");
+                var path = ProjectSettings.GlobalizePath(WorldEnvironmentArt.BackdropDirectory + zone + ".png");
+                Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(path)))), $"{zone} backdrop is a distinct image");
             }
             for (var material = 0; material < 9; material++)
                 Check(AdventureAtlasArt.Material(material) != null, $"Map material {material} loads");
             for (var sprite = 0; sprite < 29; sprite++)
                 Check(AdventureAtlasArt.Sprite(sprite) != null, $"Map scenery {sprite} loads");
-            var ground = new Rect2(84,96,2392,488); var world = new Vector2(2560,720);
-            var sourceSize = new Vector2(1984,800); var scene = WorldEnvironmentArt.BattleSceneRect(sourceSize,ground);
-            Check(Mathf.IsEqualApprox(scene.Size.X / sourceSize.X, scene.Size.Y / sourceSize.Y), "Battle scenery preserves its authored proportions");
-            Check(scene.Encloses(new Rect2(Vector2.Zero,world)), "Scene mapping covers the complete battle world without repeated panels");
+            var plate = WorldEnvironmentArt.CoverRect(new Vector2(1984,800),new Rect2(0,ground.Position.Y-180,combat.BattlefieldLeft+combat.BattlefieldRight,267));
+            Check(Mathf.IsEqualApprox(plate.Size.X / 1984, plate.Size.Y / 800), "Battle scenery preserves its authored proportions");
+            Check(plate.Position.X <= 0 && plate.End.X >= combat.BattlefieldLeft + combat.BattlefieldRight, "Scene mapping covers the whole one-screen field");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             foreach (var zone in AssetCoverageCatalog.RouteIds)
             {
@@ -72,26 +79,25 @@ public partial class WorldArtReview : Node
                 canvas.RefreshKnowledge(); canvas.ChangeZoom(.01f); canvas.FocusOverview();
                 Check(AdventureTileCatalog.ForMap(zone).All(state.IsAdventureTileOpen), zone + " explored capture opens the current tile map");
                 await Wait(); await Capture("zone-" + zone + "-explored"); map.QueueFree(); await Wait();
-                if (Incomplete && !ResourceLoader.Exists(WorldEnvironmentArt.BattlePath(stage))) continue;
                 state.PrepareCampaignBattle();
                 var battle = (BattleController)await LiveUiReview.Open(this, "Battle"); battle.SetPhysicsProcess(false); await Wait(.4);
-                Check(Read<Texture2D>(battle,"_stageArtwork") != null, $"Stage {stage:00} screen loads the individual scene");
+                Check(Read<Texture2D>(battle,"_stageArtwork") is { } drawn && drawn.ResourcePath == WorldEnvironmentArt.BackdropDirectory + zone + ".png",
+                    $"Stage {stage:00} battles in front of the {zone} backdrop");
                 await Capture($"battle-{stage:00}-normal");
                 var camera = Read<Camera2D>(battle,Phone ? "_mobileCamera" : "_battleCamera");
-                camera.Zoom = Vector2.One * .45f; camera.Position = world*.5f; camera.ForceUpdateScroll();
+                camera.Zoom = Vector2.One * .45f; camera.Position = new Vector2(GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
+                    GameData.Combat.BattlefieldTop + GameData.Combat.BattlefieldBottom) * .5f; camera.ForceUpdateScroll();
                 await Wait(); await Capture($"battle-{stage:00}-overview"); battle.QueueFree(); await Wait();
             }
             if (!Phone && OS.GetCmdlineUserArgs().Contains("--capture"))
-                for (var page = 0; page < 5; page++)
-                {
-                    var gallery = new WorldArtGallery { Size = new Vector2(1280,720) }; AddChild(gallery);
-                    foreach (var stage in GameData.Stages.OrderBy(s => s.StageNumber).Skip(page*12).Take(12))
-                    {
-                        var texture = WorldEnvironmentArt.LoadBattle(stage.StageNumber);
-                        if (texture != null) gallery.Entries.Add((stage.StageNumber,texture,stage.StageName));
-                    }
-                    gallery.QueueRedraw(); await Wait(); await Capture($"stage-gallery-{page+1}"); gallery.QueueFree(); await Wait(); GC.Collect();
-                }
+            {
+                var gallery = new WorldArtGallery { Size = new Vector2(1280,720) }; AddChild(gallery);
+                foreach (var zone in AssetCoverageCatalog.RouteIds)
+                    if (WorldEnvironmentArt.LoadZoneBackdrop(zone)?.Layers[^1] is { } art)
+                        gallery.Entries.Add((GameData.GetStagesForMap(zone).First().StageNumber, art.Texture, RouteCatalog.Get(zone).Title,
+                            new Rect2((ground.Position - art.Rect.Position) / art.Rect.Size, ground.Size / art.Rect.Size)));
+                gallery.QueueRedraw(); await Wait(); await Capture("backdrop-gallery"); gallery.QueueFree(); await Wait();
+            }
         }
         catch (Exception e) { GD.PrintErr(e); _failures++; }
         GD.Print($"WORLD_ART_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);

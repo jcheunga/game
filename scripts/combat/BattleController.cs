@@ -11,11 +11,10 @@ public partial class BattleController : Node2D
 	private const float OnlineRoomTelemetryIntervalSeconds = 1f;
 	private const float OnlineRoomMonitorRefreshIntervalSeconds = 2f;
 	private const float OnlineRoomEndRefreshIntervalSeconds = 2.5f;
-	private const float DeployLaneSnapDistance = 30f;
 	private const float DeployMomentumDurationSeconds = 1.2f;
 	private const float DeployMomentumDefenseScale = 0.88f;
 	private const float FormationLaneTolerance = 132f;
-	private const float FormationBacklineCatchupThreshold = 70f;
+	private const float FormationBacklineCatchupThreshold = 35f;
 	private const float ImpactShakeDurationSeconds = 0.09f;
 	private const float MeleeImpactSlowDurationSeconds = 0.1f;
 	private const float RangedImpactSlowDurationSeconds = 0.06f;
@@ -27,18 +26,18 @@ public partial class BattleController : Node2D
 	private const float CampaignCounterSurgeTelegraphLeadSeconds = 2.8f;
 	private const float CampaignBonusObjectivePressureLeadSeconds = 2.2f;
 	private const float CampaignAdaptiveWaveChallengeMissionLeadSeconds = 0.45f;
-	private const int CampaignAdaptiveWaveStage = 36;
-	private const int CampaignAdaptiveWaveEliteStage = 51;
+	private const int CampaignAdaptiveWaveStage = CampaignPacing.VeteranStage;
+	private const int CampaignAdaptiveWaveEliteStage = CampaignPacing.EliteStage;
 	private const string CampaignAdaptiveWaveRescueLabel = "Rescue";
 	private const string CampaignAdaptiveWaveBreakthroughLabel = "Breakthrough";
 	private const string CampaignAdaptiveWaveChallengeModeHold = "hold";
 	private const string CampaignAdaptiveWaveChallengeModeDefeats = "defeats";
 	private const string CampaignAdaptiveWaveChallengeModeBaseDamage = "base_damage";
-	private const int CampaignBonusObjectivePressureVeteranStage = 36;
-	private const int CampaignBonusObjectivePressureEliteStage = 51;
+	private const int CampaignBonusObjectivePressureVeteranStage = CampaignPacing.VeteranStage;
+	private const int CampaignBonusObjectivePressureEliteStage = CampaignPacing.EliteStage;
 	private const float CampaignCommendationGoldRewardScale = 0.18f;
-	private const int CampaignCommendationLateFoodStage = 18;
-	private const int CampaignCommendationEliteFoodStage = 48;
+	private const int CampaignCommendationLateFoodStage = CampaignPacing.LateFoodStage;
+	private const int CampaignCommendationEliteFoodStage = CampaignPacing.EliteFoodStage;
 
 	private readonly struct TerrainPalette
 	{
@@ -469,8 +468,8 @@ public partial class BattleController : Node2D
 		}
 		else if (IsArenaMode)
 		{
-			// Arena: use a mid-campaign stage as the battlefield
-			_stage = Mathf.Clamp(25, 1, GameState.Instance.MaxStage);
+			// Arena: use a mid-campaign stage (Reliquary Steps) as the battlefield
+			_stage = Mathf.Clamp(57, 1, GameState.Instance.MaxStage);
 			_stageData = GameData.GetStage(_stage);
 			_activeRouteId = NormalizeRouteId(_stageData.MapId);
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
@@ -765,7 +764,7 @@ public partial class BattleController : Node2D
 		// Ambient terrain and weather particles are disabled while their visuals are revised.
 		SetStatus(IsEndlessMode ? "Defend your wagon."
 			: IsChallengeMode ? $"Challenge {_challengeDefinition.Code}"
-			: "Choose a card, then tap the ground.");
+			: "Tap a unit card to deploy.");
 		TryShowTutorialHint("first_battle");
 		if (IsEndlessMode)
 		{
@@ -876,11 +875,6 @@ public partial class BattleController : Node2D
 			if (!_cardDragging || !CanDropCard(_cardPointerPosition)) return;
 			var target = ScreenToBattle(_cardPointerPosition);
 			if (_dragSpell != null) DrawSpellPreview(GameState.Instance.BuildSpellStats(_dragSpell), target);
-			else
-			{
-				DrawDeployPreview(_dragUnit, target.Y);
-				DrawDraggedUnitGhost(ResolvePlayerDeployPosition(target.Y));
-			}
 			return;
 		}
 
@@ -893,50 +887,7 @@ public partial class BattleController : Node2D
 		if (_selectionMode == BattleSelectionMode.Spell && _spellDeck.HasArmedSpell)
 		{
 			DrawSpellPreview(GameState.Instance.BuildSpellStats(_spellDeck.ArmedSpell), ClampBattlefieldPoint(mousePosition));
-			return;
 		}
-
-		if (_deck.HasArmedUnit)
-		{
-			DrawDeployPreview(_deck.ArmedUnit, mousePosition.Y);
-		}
-	}
-
-	private void DrawDeployPreview(UnitDefinition definition, float requestedY)
-	{
-		var previewY = ResolveDeployLaneY(requestedY, out var snapped);
-		var spawnPosition = ResolvePlayerDeployPosition(requestedY);
-		previewY = spawnPosition.Y;
-		var cooldown = _deck.GetCooldownRemaining(definition.Id);
-		var isReady = cooldown <= 0.05f;
-		var hasCourage = _courage >= definition.Cost;
-		var color = ResolveDeployButtonTint(definition, isReady, hasCourage, true).Lightened(0.12f);
-		var alpha = isReady && hasCourage ? 0.9f : 0.45f;
-
-		DrawLine(
-			new Vector2(spawnPosition.X + 18f, previewY),
-			new Vector2(BattlefieldRight - 24f, previewY),
-			new Color(color, 0.16f + (alpha * 0.28f)),
-			snapped ? 3f : 2f,
-			true);
-		DrawCircle(spawnPosition, 18f, new Color(color, 0.07f + (alpha * 0.12f)));
-		DrawArc(
-			spawnPosition,
-			18f,
-			0f,
-			Mathf.Tau,
-			28,
-			new Color(color, 0.36f + (alpha * 0.4f)),
-			2.6f);
-
-		var label = !isReady
-			? $"{definition.DisplayName} recovering {cooldown:0.0}s"
-			: !hasCourage
-				? $"{definition.DisplayName} needs {definition.Cost - Mathf.FloorToInt(_courage)} courage"
-				: snapped
-					? $"{definition.DisplayName}  |  Frontline snap"
-					: $"{definition.DisplayName}  |  Deploy";
-		DrawPreviewLabel(spawnPosition + new Vector2(28f, -26f), label, color);
 	}
 
 	private void DrawSpellPreview(ResolvedSpellStats spell, Vector2 requestedTargetPosition)
@@ -947,7 +898,7 @@ public partial class BattleController : Node2D
 
 		if (spell.EffectType == "war_cry")
 		{
-			radius = 120f;
+			radius = 60f;
 		}
 		else if (spell.EffectType == "resurrect" && !string.IsNullOrWhiteSpace(_lastDeadPlayerUnitId))
 		{
@@ -1325,7 +1276,7 @@ public partial class BattleController : Node2D
 		wagonTexture ??= BattlefieldTextureLoader.TryLoadStructure("war_wagon");
 		if (wagonTexture != null)
 		{
-			var drawRect = art?.At(PlayerBaseCorePosition) ?? new Rect2(PlayerBaseX - 90f, BaseCenterY - 128f, 180f, 140f);
+			var drawRect = art?.At(WagonGround) ?? new Rect2(PlayerBaseX - 90f, BaseCenterY - 128f, 180f, 140f);
 			var modulate = FieldLighting.Tint;
 			if (_playerBaseFlashTimer > 0f)
 			{
@@ -1334,9 +1285,10 @@ public partial class BattleController : Node2D
 				modulate.B = Mathf.Max(0.7f, 1f - 0.2f);
 			}
 			canvas.DrawTextureRect(wagonTexture, drawRect, false, modulate);
-			DrawDamageSmoke(canvas, (art?.Point(PlayerBaseCorePosition, art.Smoke) ?? new Vector2(PlayerBaseX - 18f, BaseCenterY - 80f)), healthRatio, palette.PlayerBaseColor);
+			art?.DrawDoor(canvas, drawRect, WagonDoorFrame, modulate);
+			DrawDamageSmoke(canvas, (art?.Point(WagonGround, art.Smoke) ?? new Vector2(PlayerBaseX - 18f, BaseCenterY - 80f)), healthRatio, palette.PlayerBaseColor);
 			DrawBaseHealthMeter(canvas,
-				new Vector2(PlayerBaseX, drawRect.Position.Y + drawRect.Size.Y * .07f - 20f),
+				new Vector2(PlayerBaseX, drawRect.Position.Y + drawRect.Size.Y * .11f - 5f),
 				132f,
 				healthRatio,
 				true);
@@ -1435,7 +1387,7 @@ public partial class BattleController : Node2D
 		var gatehouseTexture = art?.Texture ?? BattlefieldTextureLoader.TryLoadStructure("gatehouse");
 		if (gatehouseTexture != null)
 		{
-			var drawRect = art?.At(EnemyBaseCorePosition) ?? new Rect2(EnemyBaseX - 90f, BaseCenterY - 148f, 180f, 160f);
+			var drawRect = art?.At(CastleGround) ?? new Rect2(EnemyBaseX - 90f, BaseCenterY - 148f, 180f, 160f);
 			var modulate = FieldLighting.Tint;
 			if (_enemyBaseFlashTimer > 0f)
 			{
@@ -1444,9 +1396,9 @@ public partial class BattleController : Node2D
 				modulate.B = Mathf.Max(0.7f, 1f - 0.2f);
 			}
 			canvas.DrawTextureRect(gatehouseTexture, drawRect, false, modulate);
-			DrawDamageSmoke(canvas, (art?.Point(EnemyBaseCorePosition, art.Smoke) ?? new Vector2(EnemyBaseX - 6f, BaseCenterY - 100f)), healthRatio, palette.EnemyBaseColor);
+			DrawDamageSmoke(canvas, (art?.Point(CastleGround, art.Smoke) ?? new Vector2(EnemyBaseX - 6f, BaseCenterY - 100f)), healthRatio, palette.EnemyBaseColor);
 			DrawBaseHealthMeter(canvas,
-				new Vector2(EnemyBaseX, drawRect.Position.Y + drawRect.Size.Y * .08f - 20f),
+				new Vector2(EnemyBaseX, drawRect.Position.Y + drawRect.Size.Y * .08f - 10f),
 				132f,
 				healthRatio,
 				false);
@@ -1606,6 +1558,7 @@ public partial class BattleController : Node2D
 		UpdateChallengeGhost(deltaF);
 
 		SimulateUnits(deltaF);
+		UpdateWagonDoor(deltaF);
 		TickBaseWeapons(deltaF);
 		ApplyFriendlyUnitSeparation(deltaF);
 		ExpireBarricades();
@@ -1626,7 +1579,7 @@ public partial class BattleController : Node2D
 	{
 		UpdateActorLighting();
 		UpdateCardDragPreview();
-		UpdateMobileCamera((float)delta);
+		UpdateBattleCamera((float)delta);
 		var reducedMotion = IsReducedMotionEnabled();
 		_playerHealthBarMotion.Update(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), (float)delta, reducedMotion);
 		_enemyHealthBarMotion.Update(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), (float)delta, reducedMotion);
@@ -1743,8 +1696,6 @@ public partial class BattleController : Node2D
 		_courage = Mathf.Min(_maxCourage, _courage + courageGain);
 		var rewardColor = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.12f);
 		SpawnEffect(PlayerBaseCorePosition, rewardColor, 12f, 34f + (peakPressure * 1.2f), 0.26f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -58f), "CLEAN CLEAR", rewardColor.Lightened(0.2f), 0.68f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -82f), $"+{Mathf.RoundToInt(courageGain)} COURAGE", rewardColor.Lightened(0.28f), 0.62f);
 		SetStatus($"Clean defense: line held for {encounterDuration:0.0}s. +{Mathf.RoundToInt(courageGain)} courage and a rally burst.");
 	}
 
@@ -2125,7 +2076,7 @@ public partial class BattleController : Node2D
 		};
 		if (unitIndex >= 0 && unitIndex < _deploySlots.Count)
 		{
-			ArmPlayerUnit(_deploySlots[unitIndex].Definition);
+			DeployPlayerUnit(_deploySlots[unitIndex].Definition);
 			return;
 		}
 
@@ -2176,19 +2127,6 @@ public partial class BattleController : Node2D
 		return count;
 	}
 
-	private void ArmPlayerUnit(UnitDefinition definition)
-	{
-		if (_battleEnded)
-		{
-			return;
-		}
-
-		_selectionMode = BattleSelectionMode.Unit;
-		_spellDeck.Disarm();
-		_deck.Arm(definition);
-		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to deploy" : "Drag to deploy")}");
-		UpdateHud();
-	}
 
 	private void ArmSpell(SpellDefinition definition)
 	{
@@ -2217,13 +2155,6 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (_deck.HasArmedUnit)
-		{
-			var unitName = _deck.ArmedUnit.DisplayName;
-			_deck.Disarm();
-			SetStatus($"{unitName} deployment cleared.");
-			UpdateHud();
-		}
 	}
 
 	private bool IsInBattlefield(Vector2 position)
@@ -2234,6 +2165,7 @@ public partial class BattleController : Node2D
 			position.Y <= BattlefieldBottom;
 	}
 
+	// Ground taps only aim magic. Units deploy from their card, never from the field.
 	private void TryUseSelectionAt(Vector2 clickPosition)
 	{
 		if (_selectionMode == BattleSelectionMode.Spell && _spellDeck.HasArmedSpell)
@@ -2242,24 +2174,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (!_deck.HasArmedUnit)
-		{
-			SetStatus("Drag a unit or magic card onto the battlefield and release.");
-			return;
-		}
-
-		TryDeployAtY(clickPosition.Y);
-	}
-
-	private void TryDeployAtY(float clickY)
-	{
-		if (!_deck.HasArmedUnit)
-		{
-			SetStatus("Drag a unit card onto the battlefield and release.");
-			return;
-		}
-
-		TrySpawnPlayer(_deck.ArmedUnit, ResolvePlayerDeployPosition(clickY));
+		SetStatus("Tap a unit card to deploy, or drag magic onto the battlefield.");
 	}
 
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
@@ -2282,9 +2197,9 @@ public partial class BattleController : Node2D
 		UpdateHud();
 	}
 
-	private void TrySpawnPlayer(UnitDefinition definition, Vector2 spawnPosition)
+	private void DeployPlayerUnit(UnitDefinition definition)
 	{
-		if (_battleEnded || _selectionMode != BattleSelectionMode.Unit || _deck.ArmedUnit?.Id != definition.Id)
+		if (_battleEnded || _battlePaused || _endlessCheckpointActive)
 		{
 			return;
 		}
@@ -2292,9 +2207,11 @@ public partial class BattleController : Node2D
 		if (!_deck.CanDeploy(definition, _courage, _battleEnded, out var reason))
 		{
 			SetStatus(reason);
+			UpdateHud();
 			return;
 		}
 
+		var spawnPosition = CaravanDeployPosition;
 		var stats = BuildPlayerUnitStatsForBattle(definition);
 		_courage -= stats.Cost;
 		_deck.MarkDeployed(definition, ResolvePlayerDeployCooldown(definition));
@@ -2303,21 +2220,19 @@ public partial class BattleController : Node2D
 		GameState.Instance.AddUnitMasteryXP(definition.Id, MasteryCatalog.XPPerDeploy);
 		RecordChallengeDeployment(definition.Id, spawnPosition.Y);
 		var deployedUnit = SpawnUnit(Team.Player, stats, spawnPosition);
+		BeginWagonExit(deployedUnit);
 		ApplyDeployMomentum(deployedUnit, definition);
 		ApplyFortifiedDeployBonus(spawnPosition);
 		var commendationFeedback = TryApplyCampaignCommendation(deployedUnit, spawnPosition);
 		AudioDirector.Instance?.PlayDeploy(definition);
-		SpawnEffect(spawnPosition, stats.Color, 12f, 42f, 0.28f);
-		BattleParticles.SpawnDeployBurst(this, spawnPosition, stats.Color);
-		if (!string.IsNullOrEmpty(stats.DeployQuote) && _rng.Randf() > 0.3f)
-		{
-			SpawnFloatText(spawnPosition + new Vector2(0f, -38f), stats.DeployQuote, new Color("fff3b0"), 1.2f);
-		}
+		SpawnEffect(WagonDoorExit, stats.Color, 6f, 18f, 0.28f);
+		BattleParticles.SpawnDeployBurst(this, WagonDoorExit, stats.Color);
+
 		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition, spawnPosition);
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
 		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from {(spawnPosition.X > PlayerSpawnX + 50 ? "the forward post" : "the war wagon")} at lane height {Mathf.RoundToInt(spawnPosition.Y)}.{commendationFeedback}{ghostDeployFeedback}");
+			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from the war wagon.{commendationFeedback}{ghostDeployFeedback}");
 		UpdateHud();
 	}
 
@@ -2343,17 +2258,15 @@ public partial class BattleController : Node2D
 
 	private void SpawnEnemyUnit(UnitStats stats, Vector2 position)
 	{
-		// All reinforcements leave the stronghold, including scripted waves and boss escorts.
-		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BaseCenterY - 58f, BaseCenterY + 58f));
+		// All reinforcements leave the stronghold, including scripted waves and boss escorts,
+		// and may take any line across the band, right up to either edge.
+		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
 		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
 		var unit = SpawnUnit(Team.Enemy, stats, position);
 		ApplyCampaignPressureEchoToEnemySpawn(unit);
 		ApplyCampaignAdaptiveWaveToEnemySpawn(unit);
 		SpawnEffect(position, stats.Color.Darkened(0.15f), 10f, 26f, 0.22f, false);
-		if (!string.IsNullOrEmpty(stats.DeployQuote) && _rng.Randf() > 0.3f)
-		{
-			SpawnFloatText(position + new Vector2(0f, -38f), stats.DeployQuote, new Color("fff3b0"), 1.2f);
-		}
+
 		if (stats.VisualClass == "boss")
 		{
 			TriggerBossEntranceBanner(stats);
@@ -2384,6 +2297,7 @@ public partial class BattleController : Node2D
 		_campaignPeriodicSummons.Remove(unit);
 		unit.ShouldPausePresentation = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
 		unit.Visible = true;
+		unit.Modulate = Colors.White;
 		if (team == Team.Player)
 		{
 			var ability = UnitActiveAbilityCatalog.GetForUnit(stats.DefinitionId);
@@ -2410,7 +2324,7 @@ public partial class BattleController : Node2D
 		if (attacker.MotionProfile == "bow-draw" || attacker.MotionProfile == "crossbow") projectile.SetWeaponVisual(BaseWeaponKind.Arrows);
 		else if (attacker.MotionProfile == "ballista") projectile.SetWeaponVisual(BaseWeaponKind.Ballista);
 
-		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 420f;
+		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 210f;
 		var color = attacker.Tint.Lightened(0.25f);
 		var shotTeam = attacker.Team;
 		var shotName = attacker.UnitName;
@@ -2445,7 +2359,6 @@ public partial class BattleController : Node2D
 				(position, _, hitColor) =>
 				{
 					SpawnEffect(position, hitColor.Lightened(0.14f), 8f, shotSplash, 0.2f, false);
-					SpawnFloatText(position + new Vector2(0f, -16f), "BLAST", hitColor.Lightened(0.25f), 0.48f);
 				});
 		}
 		else
@@ -2466,7 +2379,6 @@ public partial class BattleController : Node2D
 						TrackDamageDealt(attackerName, dmg);
 						SpawnDamageFeedback(pos, dmg, hitColor);
 						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, interceptor, dmg, true);
-						SpawnFloatText(pos + new Vector2(0f, -24f), "BLOCKED", new Color("adb5bd"), 0.44f);
 					});
 			}
 			else
@@ -2492,7 +2404,7 @@ public partial class BattleController : Node2D
 
 	private void TryAttackBase(Unit attacker)
 	{
-		if (IsEndlessMode && attacker.Team == Team.Player)
+		if ((IsEndlessMode && attacker.Team == Team.Player) || !attacker.DamagesStructures)
 		{
 			return;
 		}
@@ -2529,7 +2441,7 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayBaseHit(false, baseDamage);
 			SpawnEffect(EnemyBaseCorePosition, tint, 8f, 26f, 0.18f);
 			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, tint);
-			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(baseDamage)}", tint.Lightened(0.18f), 0.44f);
+			SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(baseDamage)}", tint.Lightened(0.18f), 0.44f);
 		}
 		else
 		{
@@ -2549,7 +2461,7 @@ public partial class BattleController : Node2D
 			AudioDirector.Instance?.PlayBaseHit(true, busDamage);
 			SpawnEffect(PlayerBaseCorePosition, tint, 8f, 26f, 0.18f);
 			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, tint);
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", tint.Lightened(0.18f), 0.44f);
+			SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", tint.Lightened(0.18f), 0.44f);
 		}
 		CheckBattleEnd();
 	}
@@ -2563,7 +2475,7 @@ public partial class BattleController : Node2D
 
 	private void SimulatePlayerBusSupport(Unit unit, float delta)
 	{
-		var supportRadius = BaseCoreRadius + 18f;
+		var supportRadius = BaseCoreRadius + 9f;
 		if (unit.CanAttackPosition(PlayerBaseCorePosition, supportRadius))
 		{
 			if (unit.TryBeginAttackPosition(PlayerBaseCorePosition, supportRadius))
@@ -2578,8 +2490,7 @@ public partial class BattleController : Node2D
 						_playerBaseFlashTimer = 0.12f;
 						AudioDirector.Instance?.PlayBusRepair(repaired);
 						SpawnEffect(PlayerBaseCorePosition, unit.Tint.Lightened(0.12f), 7f, 22f, 0.18f);
-						SpawnFloatText(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
-						SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -54f), "REPAIR", unit.Tint.Lightened(0.18f), 0.42f);
+						SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
 					}
 				});
 			}
@@ -2625,6 +2536,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
+			if (TickWagonExit(unit, delta)) continue;
 			if (_pendingBossPhases.ContainsKey(unit)) continue;
 			unit.TickAttackTimer(delta);
 			if (_battleEnded) return;
@@ -2632,7 +2544,7 @@ public partial class BattleController : Node2D
 			unit.TickActiveAbilityTimer(delta);
 			if (unit.IsDead || unit.IsAttackCommitted) continue;
 			var defendingBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
-			if (!(IsEndlessMode && unit.Team == Team.Player) && unit.IsAttackingPosition(defendingBase) &&
+			if (!(IsEndlessMode && unit.Team == Team.Player) && unit.DamagesStructures && unit.IsAttackingPosition(defendingBase) &&
 				unit.CanAttackPosition(defendingBase, BaseCoreRadius) && !ShouldRepairBus(unit))
 			{
 				TryAttackBase(unit);
@@ -2698,10 +2610,11 @@ public partial class BattleController : Node2D
 					{
 						TrySiegeTowerDeploy(unit);
 					}
-					else
+					else if (unit.DamagesStructures)
 					{
 						TryAttackBase(unit);
 					}
+					// Other ranged troops hold at firing range, covering the attackers without hurting the walls.
 				}
 				else if (prioritizeObjectiveRaid || ShouldApproachBase(unit))
 				{
@@ -2740,7 +2653,7 @@ public partial class BattleController : Node2D
 		for (var i = 0; i < _units.Count; i++)
 		{
 			var unitA = _units[i];
-			if (unitA.IsDead || IsHoldingAttackPosition(unitA))
+			if (unitA.IsDead || IsHoldingAttackPosition(unitA) || _wagonExits.ContainsKey(unitA))
 			{
 				continue;
 			}
@@ -2748,7 +2661,7 @@ public partial class BattleController : Node2D
 			for (var j = i + 1; j < _units.Count; j++)
 			{
 				var unitB = _units[j];
-				if (unitB.IsDead || IsHoldingAttackPosition(unitB) || unitA.Team != unitB.Team)
+				if (unitB.IsDead || IsHoldingAttackPosition(unitB) || _wagonExits.ContainsKey(unitB) || unitA.Team != unitB.Team)
 				{
 					continue;
 				}
@@ -2810,8 +2723,15 @@ public partial class BattleController : Node2D
 
 		var direction = unit.Team == Team.Player ? 1f : -1f;
 		var forwardGap = (anchorPosition.X - unit.Position.X) * direction;
+		// Support troops wait for a leader ahead of them, but never fall back to one behind:
+		// out in front, they keep marching toward the far end.
+		if (forwardGap < -12f)
+		{
+			return false;
+		}
+
 		var laneGap = Mathf.Abs(anchorPosition.Y - unit.Position.Y);
-		if (Mathf.Abs(forwardGap) <= 12f && laneGap <= 10f)
+		if (forwardGap <= 12f && laneGap <= 10f)
 		{
 			return true;
 		}
@@ -2821,13 +2741,9 @@ public partial class BattleController : Node2D
 		{
 			moveDelta *= 1.14f;
 		}
-		else if (forwardGap < -20f)
-		{
-			moveDelta *= 0.9f;
-		}
 
 		unit.MoveToward(
-			anchorPosition,
+			new Vector2(forwardGap > 0f ? anchorPosition.X : unit.Position.X, anchorPosition.Y),
 			moveDelta,
 			BattlefieldLeft,
 			BattlefieldRight,
@@ -2858,7 +2774,7 @@ public partial class BattleController : Node2D
 			}
 
 			var forwardOffset = (ally.Position.X - unit.Position.X) * direction;
-			if (forwardOffset < -132f)
+			if (forwardOffset < -66f)
 			{
 				continue;
 			}
@@ -2916,22 +2832,22 @@ public partial class BattleController : Node2D
 	private static float ResolveFormationTrailingDistance(Unit unit, Unit leader)
 	{
 		var trailingDistance = unit.UsesProjectile
-			? Mathf.Clamp(unit.AttackRange * 0.42f, 42f, 96f)
+			? Mathf.Clamp(unit.AttackRange * 0.42f, 21f, 48f)
 			: 24f;
 		if (unit.ProvidesAura)
 		{
-			trailingDistance = Mathf.Min(trailingDistance, Mathf.Clamp(unit.AuraRadius * 0.34f, 22f, 62f));
+			trailingDistance = Mathf.Min(trailingDistance, Mathf.Clamp(unit.AuraRadius * 0.34f, 11f, 31f));
 		}
 		if (unit.BusRepairAmount > 0.05f)
 		{
-			trailingDistance = Mathf.Max(trailingDistance, 58f);
+			trailingDistance = Mathf.Max(trailingDistance, 29f);
 		}
 		if (unit.VisualClass == "banner")
 		{
 			trailingDistance = 18f;
 		}
 
-		return Mathf.Clamp(trailingDistance + (leader.Radius * 0.2f), 18f, 110f);
+		return Mathf.Clamp(trailingDistance + (leader.Radius * 0.2f), 18f, 55f);
 	}
 
 	private void OffsetUnitWithinBattlefield(Unit unit, Vector2 offset)
@@ -3046,10 +2962,7 @@ public partial class BattleController : Node2D
 
 		_activeAbilitiesTriggered++;
 
-		if (!string.IsNullOrEmpty(unit.AbilityQuote))
-		{
-			SpawnFloatText(unit.Position + new Vector2(0f, -44f), unit.AbilityQuote, unit.Tint.Lightened(0.35f), 1.2f);
-		}
+
 
 		unit.FaceCombatTarget(target);
 		var targetLife = target.CombatLifetime;
@@ -3124,7 +3037,6 @@ public partial class BattleController : Node2D
 		var radius = Mathf.Max(48f, unit.AttackRange * 0.8f);
 		ApplySplashDamage(unit.Team, unit.Position, damage, radius, unit.Tint, unit.UnitName);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.12f), 10f, radius, 0.24f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "CLEAVE", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilityArrowVolley(Unit unit)
@@ -3151,17 +3063,13 @@ public partial class BattleController : Node2D
 			fired++;
 		}
 
-		if (fired > 0)
-		{
-			SpawnFloatText(unit.Position + new Vector2(0f, -32f), "VOLLEY", unit.Tint.Lightened(0.22f), 0.54f);
-		}
+
 	}
 
 	private void ActiveAbilityShieldWall(Unit unit)
 	{
 		unit.ApplyTemporaryDefenseModifier(0.4f, 4f);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.18f), 8f, 36f, 0.28f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "SHIELD WALL", unit.Tint.Lightened(0.22f), 0.56f);
 	}
 
 	private void ActiveAbilityPiercingThrust(Unit unit, Unit target)
@@ -3173,7 +3081,6 @@ public partial class BattleController : Node2D
 		var applied = target.TakeDamage(compensated, unit.UnitName);
 		ShowWeaponContact(unit,target,applied,false);
 		SpawnDamageFeedback(target.Position, applied, unit.Tint);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "THRUST", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilitySnipe(Unit unit)
@@ -3207,7 +3114,6 @@ public partial class BattleController : Node2D
 			ShowReleaseTrace(unit,farthest);
 			ShowWeaponContact(unit,farthest,applied,true);
 			SpawnDamageFeedback(farthest.Position, applied, unit.Tint);
-			SpawnFloatText(unit.Position + new Vector2(0f, -32f), "SNIPE", unit.Tint.Lightened(0.22f), 0.54f);
 		}
 	}
 
@@ -3253,7 +3159,6 @@ public partial class BattleController : Node2D
 			BattlefieldTop + SpawnVerticalPadding,
 			BattlefieldBottom - SpawnVerticalPadding);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.1f), 8f, 44f, 0.22f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "CHARGE", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilityArcaneBeam(Unit unit)
@@ -3287,7 +3192,6 @@ public partial class BattleController : Node2D
 		if (hit > 0)
 		{
 			SpawnEffect(unit.Position, unit.Tint.Lightened(0.15f), 6f, 48f, 0.26f, false);
-			SpawnFloatText(unit.Position + new Vector2(0f, -32f), "ARCANE BEAM", unit.Tint.Lightened(0.22f), 0.56f);
 		}
 	}
 
@@ -3297,7 +3201,6 @@ public partial class BattleController : Node2D
 		var radius = Mathf.Max(56f, unit.AttackRange);
 		ApplySplashDamage(unit.Team, unit.Position, damage, radius, unit.Tint, unit.UnitName);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.1f), 10f, radius, 0.22f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "SWEEP", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilityVolatileFlask(Unit unit, Unit target)
@@ -3314,7 +3217,6 @@ public partial class BattleController : Node2D
 			()=>!IsInstanceValid(target) || target.IsDead,
 			(pos,_,color)=>SpawnEffect(pos,color.Lightened(.14f),10,radius,.26f,false));
 		AddChild(projectile);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "VOLATILE FLASK", unit.Tint.Lightened(0.22f), 0.56f);
 	}
 
 	private void ActiveAbilityBlessing(Unit unit)
@@ -3341,7 +3243,6 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.2f), 10f, healRadius * 0.6f, 0.28f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "BLESSING", unit.Tint.Lightened(0.26f), 0.56f);
 	}
 
 	private void ActiveAbilityPackHowl(Unit unit)
@@ -3349,7 +3250,6 @@ public partial class BattleController : Node2D
 		// 50% attack speed simulated as 50% increased attack damage (DPS equivalent)
 		unit.ApplyTemporaryCombatBuff(1.5f, 1f, 5f);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.12f), 8f, 40f, 0.24f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "HOWL", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilityInspire(Unit unit)
@@ -3377,7 +3277,6 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.18f), 10f, 52f, 0.28f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "INSPIRE", unit.Tint.Lightened(0.26f), 0.56f);
 	}
 
 	private void ActiveAbilityVanish(Unit unit)
@@ -3385,7 +3284,6 @@ public partial class BattleController : Node2D
 		unit.SetUntargetable(3f);
 		unit.ApplyTemporaryCombatBuff(2.5f, 1f, 3f);
 		SpawnEffect(unit.Position, unit.Tint.Darkened(0.3f), 6f, 28f, 0.2f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "VANISH", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private void ActiveAbilityBloodFrenzy(Unit unit)
@@ -3395,7 +3293,6 @@ public partial class BattleController : Node2D
 		unit.ApplyTemporaryCombatBuff(1.4f, 1f, 6f);
 		unit.ApplyTemporaryDefenseModifier(1.2f, 6f);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.08f), 8f, 36f, 0.22f, false);
-		SpawnFloatText(unit.Position + new Vector2(0f, -32f), "FRENZY", unit.Tint.Lightened(0.22f), 0.54f);
 	}
 
 	private bool TryTriggerEnemySpecialAbility(Unit unit)
@@ -3469,7 +3366,6 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(boss.Position, boss.Tint.Lightened(0.15f), 12f, Mathf.Max(56f, boss.SpecialBuffRadius * 0.55f), 0.28f, false);
-		SpawnFloatText(boss.Position + new Vector2(0f, -48f), "RALLY", boss.Tint.Lightened(0.26f), 0.6f);
 		SetStatus(
 			$"{boss.UnitName} rally call: {buffedCount} undead surged forward" +
 			(escortsSpawned > 0 ? $" and {escortsSpawned} escorts joined the push." : "."));
@@ -3525,13 +3421,8 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(jammer.Position, jammer.Tint.Lightened(0.08f), 12f, 54f, 0.26f, false);
-		SpawnFloatText(jammer.Position + new Vector2(0f, -42f), "JAM", jammer.Tint.Lightened(0.22f), 0.6f);
 		SpawnEffect(PlayerBaseCorePosition, jammer.Tint, 10f, 36f, 0.24f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "SIGNAL JAM", jammer.Tint.Lightened(0.22f), 0.62f);
-		if (GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId) > 0)
-		{
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -86f), "RELAY HARDENED", new Color("d9f0ff"), 0.56f);
-		}
+
 		var statusMsg = $"Enemy hexer disrupted caravan rhythm: courage gain suppressed for {jamDuration:0.0}s and card recovery delayed.";
 		if (escortsSpawned > 0)
 		{
@@ -3577,7 +3468,6 @@ public partial class BattleController : Node2D
 		if (spawned > 0)
 		{
 			SpawnEffect(lich.Position, lich.Tint.Lightened(0.1f), 10f, 48f, 0.26f, false);
-			SpawnFloatText(lich.Position + new Vector2(0f, -44f), "RAISE DEAD", lich.Tint.Lightened(0.2f), 0.6f);
 			SetStatus($"Enemy lich raised {spawned} fallen undead from the battlefield.");
 		}
 
@@ -3621,10 +3511,8 @@ public partial class BattleController : Node2D
 				BattlefieldBottom - SpawnVerticalPadding));
 
 		SpawnEffect(tunneler.Position, tunneler.Tint, 8f, 22f, 0.2f, false);
-		SpawnFloatText(tunneler.Position + new Vector2(0f, -36f), "BURROW", tunneler.Tint.Lightened(0.2f), 0.5f);
 		tunneler.Position = burrowTarget;
 		SpawnEffect(tunneler.Position, tunneler.Tint.Lightened(0.12f), 6f, 28f, 0.22f, false);
-		SpawnFloatText(tunneler.Position + new Vector2(0f, -36f), "EMERGE", tunneler.Tint.Lightened(0.25f), 0.5f);
 		SetStatus("Enemy tunneler burrowed behind the caravan lines.");
 		return true;
 	}
@@ -3647,13 +3535,8 @@ public partial class BattleController : Node2D
 
 		var blackoutColor = new Color("93c5fd");
 		SpawnEffect(EnemyBaseCorePosition, blackoutColor, 12f, 42f, 0.24f, false);
-		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -56f), "BLACKOUT", blackoutColor.Lightened(0.2f), 0.62f);
 		SpawnEffect(PlayerBaseCorePosition, blackoutColor.Lightened(0.08f), 10f, 38f, 0.24f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "BOARD JAM", blackoutColor.Lightened(0.2f), 0.62f);
-		if (GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.SignalRelayId) > 0)
-		{
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -86f), "RELAY HARDENED", new Color("d9f0ff"), 0.56f);
-		}
+
 
 		SetStatus($"Challenge mutator blackout hit caravan signals for {jamDuration:0.0}s.");
 	}
@@ -3739,7 +3622,6 @@ public partial class BattleController : Node2D
 		var anchor = mission?.Anchor ?? new Vector2(PlayerBaseX + 90f, BaseCenterY);
 		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.12f);
 		SpawnEffect(anchor, color, 12f, 42f, 0.24f, false);
-		SpawnFloatText(anchor + new Vector2(0f, -52f), "FIELD ORDER", color.Lightened(0.22f), 0.64f);
 		SetStatus(
 			$"Field order ready after {(_campaignFieldOrderMissionSucceeded ? $"{_campaignFieldOrderMissionLabel} held" : $"{_campaignFieldOrderMissionLabel} collapsed")}: " +
 			$"[Z] {_campaignFieldOrderAssaultLabel} or [X] {_campaignFieldOrderBulwarkLabel}.");
@@ -3876,7 +3758,7 @@ public partial class BattleController : Node2D
 	{
 		var route = RouteCatalog.Get(_activeRouteId);
 		var clampedLaneY = Mathf.Clamp(laneAnchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var yRatio = Mathf.Clamp(Mathf.InverseLerp(BattlefieldTop + 48f, BattlefieldBottom - 48f, clampedLaneY), 0.12f, 0.88f);
+		var yRatio = Mathf.Clamp(Mathf.InverseLerp(BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding, clampedLaneY), 0.12f, 0.88f);
 		var missionType = ResolveCampaignAdaptiveWaveChallengeMissionType();
 		var routeLabel = _campaignAdaptiveWaveChallengeLabel;
 		var summary = _campaignAdaptiveWaveChallengeMode switch
@@ -3907,7 +3789,7 @@ public partial class BattleController : Node2D
 			PenaltySummary = penaltySummary,
 			XRatio = ResolveCampaignAdaptiveWaveChallengeMissionXRatio(),
 			YRatio = yRatio,
-			Radius = _campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage ? 80f : 76f,
+			Radius = _campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeBaseDamage ? 40f : 38f,
 			TargetSeconds = Mathf.Max(1f, _campaignAdaptiveWaveChallengeTarget),
 			StartTime = _elapsed + CampaignAdaptiveWaveChallengeMissionLeadSeconds,
 			ColorHex = color.Lightened(0.04f).ToHtml(false)
@@ -3927,7 +3809,6 @@ public partial class BattleController : Node2D
 			isBonusObjective: true,
 			usesAdaptiveWaveProgress: true);
 		SpawnEffect(_campaignAdaptiveWaveChallengeMission.Anchor, color.Lightened(0.06f), 12f, _campaignAdaptiveWaveChallengeMission.Definition.Radius * 0.58f, 0.24f, false);
-		SpawnFloatText(_campaignAdaptiveWaveChallengeMission.Anchor + new Vector2(0f, -44f), "FOLLOW-UP", color.Lightened(0.22f), 0.6f);
 		return $"{StageMissionEvents.ResolveTitle(_campaignAdaptiveWaveChallengeMission.Definition)} arms in {Mathf.Max(0f, _campaignAdaptiveWaveChallengeMission.Definition.StartTime - _elapsed):0.0}s.";
 	}
 
@@ -3935,12 +3816,12 @@ public partial class BattleController : Node2D
 	{
 		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue)
 		{
-			goldBonus = Mathf.Clamp(3 + ((_stage - 1) / 12), 3, 6);
+			goldBonus = Mathf.Clamp(3 + ((_stage - 1) / 20), 3, 6);
 			foodBonus = HasCampaignAdaptiveWaveEliteIntensity() ? 2 : 1;
 			return;
 		}
 
-		goldBonus = Mathf.Clamp(5 + ((_stage - 1) / 10), 5, 10);
+		goldBonus = Mathf.Clamp(5 + ((_stage - 1) / 17), 5, 10);
 		foodBonus = HasCampaignAdaptiveWaveEliteIntensity() ? 1 : 0;
 	}
 
@@ -3970,10 +3851,6 @@ public partial class BattleController : Node2D
 		_campaignAdaptiveWaveChallengeLabel = ResolveCampaignAdaptiveWaveChallengeLabel();
 		ResolveCampaignAdaptiveWaveUpgradeBonus(out var upgradeGold, out var upgradeFood);
 
-		var calloutAnchor = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue
-			? PlayerBaseCorePosition + new Vector2(0f, -64f)
-			: laneAnchor + new Vector2(0f, -54f);
-		SpawnFloatText(calloutAnchor, _campaignAdaptiveWaveChallengeLabel.ToUpperInvariant(), color.Lightened(0.2f), 0.6f);
 		var missionStatus = TryAddCampaignAdaptiveWaveChallengeMission(laneAnchor, color);
 		var openText = BuildCampaignAdaptiveWaveChallengeOpenText(upgradeGold, upgradeFood);
 		return string.IsNullOrWhiteSpace(missionStatus)
@@ -4012,14 +3889,12 @@ public partial class BattleController : Node2D
 			RepairBusByRatio(0.015f);
 			_deck.ReduceCooldowns(0.18f);
 			_spellDeck.ReduceCooldowns(0.18f);
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -58f), "HOLD", color.Lightened(0.22f), 0.6f);
 		}
 		else
 		{
 			var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.58f), ResolveCampaignLateConditionLaneY());
-			DamageEnemyBaseByRatio(0.01f, color, "OPEN");
-			BuffUnitsNear(Team.Player, laneAnchor, 132f, 1.04f, 1.06f, 4f, color, "SURGE");
-			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -58f), "OPEN", color.Lightened(0.22f), 0.6f);
+			DamageEnemyBaseByRatio(0.01f, color);
+			BuffUnitsNear(Team.Player, laneAnchor, 66f, 1.04f, 1.06f, 4f, color);
 		}
 
 		SetStatus($"{_campaignAdaptiveWaveChallengeLabel} secured: payout upgraded by {BuildCampaignAdaptiveWaveUpgradeText()} and now banks {BuildCampaignAdaptiveWaveRewardText()} on victory.");
@@ -4143,27 +4018,23 @@ public partial class BattleController : Node2D
 
 	private void ApplyCampaignBossPhase(Unit boss)
 	{
-		var phaseTitle = StageEncounterIntel.GetBossPhaseTitle(boss.DefinitionId);
 		var color = boss.Tint.Lightened(0.08f);
 		SpawnEffect(boss.Position, color, 14f, 64f, 0.3f, false);
-		if (!string.IsNullOrWhiteSpace(phaseTitle))
-		{
-			SpawnFloatText(boss.Position + new Vector2(0f, -56f), phaseTitle.ToUpperInvariant(), color.Lightened(0.24f), 0.72f);
-		}
+
 
 		switch (boss.DefinitionId)
 		{
 			case GameData.EnemyBossDocksId:
-				DamagePlayersNear(boss.Position + new Vector2(-18f, 0f), 104f, 20f, color, "UNDERTOW");
-				SlowPlayersNear(boss.Position, 118f, 0.72f, 4.2f, color);
-				PushPlayersFromPoint(boss.Position, 108f, 22f, 0.82f, 2.8f, color, "");
+				DamagePlayersNear(boss.Position + new Vector2(-18f, 0f), 52f, 20f, color);
+				SlowPlayersNear(boss.Position, 59f, 0.72f, 4.2f, color);
+				PushPlayersFromPoint(boss.Position, 54f, 11f, 0.82f, 2.8f, color);
 				SetStatus($"{boss.UnitName} unleashed Undertow and shoved the caravan line back.");
 				break;
 			case GameData.EnemyBossForgeId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				DamagePlayersNear(boss.Position, 92f, 18f, color, "FORGE SURGE");
-				BuffUnitsNear(Team.Enemy, boss.Position, 132f, 1.12f, 1.06f, 6.5f, color);
+				DamagePlayersNear(boss.Position, 46f, 18f, color);
+				BuffUnitsNear(Team.Enemy, boss.Position, 66f, 1.12f, 1.06f, 6.5f, color);
 				SetStatus($"{boss.UnitName} entered Forge Surge" + (escorts > 0 ? $": {escorts} escorts reinforced the breach." : "."));
 				break;
 			}
@@ -4173,7 +4044,7 @@ public partial class BattleController : Node2D
 				_enemySignalJamCourageGainScale = Mathf.Min(_enemySignalJamCourageGainScale, 0.62f);
 				_deck.IncreaseCooldowns(0.8f);
 				_spellDeck.IncreaseCooldowns(0.8f);
-				SlowPlayersNear(boss.Position, 120f, 0.76f, 4.2f, color, "BLACKOUT BLOOM");
+				SlowPlayersNear(boss.Position, 60f, 0.76f, 4.2f, color);
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, 1);
 				SetStatus($"{boss.UnitName} blackout phase hit caravan signals" + (escorts > 0 ? " and fresh hexers joined the field." : "."));
 				break;
@@ -4181,29 +4052,29 @@ public partial class BattleController : Node2D
 			case GameData.EnemyBossPassId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(2, boss.SpecialSpawnCount));
-				BuffUnitsNear(Team.Enemy, boss.Position, 150f, 1.08f, 1.18f, 7f, color, "WAR STAMPEDE");
-				PushPlayersFromPoint(boss.Position, 102f, 16f, 0.86f, 2.4f, color, "");
+				BuffUnitsNear(Team.Enemy, boss.Position, 75f, 1.08f, 1.18f, 7f, color);
+				PushPlayersFromPoint(boss.Position, 51f, 8f, 0.86f, 2.4f, color);
 				SetStatus($"{boss.UnitName} called a stampede" + (escorts > 0 ? $": {escorts} fast escorts flooded the lane." : "."));
 				break;
 			}
 			case GameData.EnemyBossBasilicaId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				HealUnit(boss, boss.MaxHealth * 0.12f, color, "CRYPT VOW");
-				RepairEnemyBaseByRatio(0.04f, color, "");
+				HealUnit(boss, boss.MaxHealth * 0.12f, color);
+				RepairEnemyBaseByRatio(0.04f, color);
 				SetStatus($"{boss.UnitName} invoked Crypt Vow" + (escorts > 0 ? $" and {escorts} ritual escorts answered the call." : "."));
 				break;
 			}
 			case GameData.EnemyBossMireId:
-				DamagePlayersNear(boss.Position, 110f, 22f, color, "ROT SWELL");
-				SlowPlayersNear(boss.Position, 128f, 0.66f, 4.6f, color);
+				DamagePlayersNear(boss.Position, 55f, 22f, color);
+				SlowPlayersNear(boss.Position, 64f, 0.66f, 4.6f, color);
 				HealUnit(boss, boss.MaxHealth * 0.1f, color);
 				SetStatus($"{boss.UnitName} burst into a Rot Swell and dragged the frontline into the mire.");
 				break;
 			case GameData.EnemyBossSteppeId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(2, boss.SpecialSpawnCount + 1));
-				BuffUnitsNear(Team.Enemy, boss.Position, 150f, 1.1f, 1.2f, 7f, color, "WOLF RUN");
+				BuffUnitsNear(Team.Enemy, boss.Position, 75f, 1.1f, 1.2f, 7f, color);
 				SetStatus($"{boss.UnitName} launched Wolf Run" + (escorts > 0 ? $": {escorts} runners broke from the flank." : "."));
 				break;
 			}
@@ -4215,7 +4086,7 @@ public partial class BattleController : Node2D
 					var appliedDamage = target.TakeDamage(30f, boss.UnitName);
 					SpawnDamageFeedback(target.Position, appliedDamage, color);
 					target.ApplyTemporarySpeedModifier(0.58f, 4.5f);
-					DamagePlayersNear(target.Position, 72f, 14f, color, "HEX BLOOM");
+					DamagePlayersNear(target.Position, 36f, 14f, color);
 				}
 
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
@@ -4225,15 +4096,15 @@ public partial class BattleController : Node2D
 			case GameData.EnemyBossCitadelId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				RepairEnemyBaseByRatio(0.05f, color, "KEEP WARD");
-				BuffUnitsNear(Team.Enemy, EnemyBaseCorePosition + new Vector2(-64f, 0f), 140f, 1.12f, 1.06f, 6.5f, color);
+				RepairEnemyBaseByRatio(0.05f, color);
+				BuffUnitsNear(Team.Enemy, EnemyBaseCorePosition + new Vector2(-64f, 0f), 70f, 1.12f, 1.06f, 6.5f, color);
 				SetStatus($"{boss.UnitName} fortified the keep" + (escorts > 0 ? $" and {escorts} elite escorts took the lane." : "."));
 				break;
 			}
 			case GameData.EnemyBossReliquaryId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				RepairEnemyBaseByRatio(0.05f, color, "CATACOMB");
+				RepairEnemyBaseByRatio(0.05f, color);
 				HealUnit(boss, boss.MaxHealth * 0.1f, color);
 				SetStatus($"{boss.UnitName} opened the catacombs" + (escorts > 0 ? $" and {escorts} bone artillery crews emerged." : "."));
 				break;
@@ -4241,17 +4112,17 @@ public partial class BattleController : Node2D
 			case GameData.EnemyBossAshenRegentId:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				DamagePlayersNear(boss.Position, 116f, 24f, color, "ASHFALL EDICT");
-				PushPlayersFromPoint(boss.Position, 116f, 20f, 0.82f, 3f, color, "");
-				BuffUnitsNear(Team.Enemy, boss.Position, 140f, 1.1f, 1.06f, 6f, color);
+				DamagePlayersNear(boss.Position, 58f, 24f, color);
+				PushPlayersFromPoint(boss.Position, 58f, 10f, 0.82f, 3f, color);
+				BuffUnitsNear(Team.Enemy, boss.Position, 70f, 1.1f, 1.06f, 6f, color);
 				SetStatus($"{boss.UnitName} cast Ashfall Edict" + (escorts > 0 ? $" and {escorts} heavy escorts stepped through the smoke." : "."));
 				break;
 			}
 			case GameData.EnemyBossTidemasterId:
-				DamagePlayersNear(boss.Position + new Vector2(-20f, 0f), 118f, 26f, color, "FLOODGATE");
-				SlowPlayersNear(boss.Position, 132f, 0.64f, 4.8f, color);
-				PushPlayersFromPoint(boss.Position, 118f, 26f, 0.8f, 3.2f, color, "");
-				RepairEnemyBaseByRatio(0.03f, color, "");
+				DamagePlayersNear(boss.Position + new Vector2(-20f, 0f), 59f, 26f, color);
+				SlowPlayersNear(boss.Position, 66f, 0.64f, 4.8f, color);
+				PushPlayersFromPoint(boss.Position, 59f, 13f, 0.8f, 3.2f, color);
+				RepairEnemyBaseByRatio(0.03f, color);
 				SetStatus($"{boss.UnitName} broke the floodgates and drowned the frontline in pressure.");
 				break;
 			case GameData.EnemyBossPlagueMonarchId:
@@ -4261,7 +4132,7 @@ public partial class BattleController : Node2D
 				_deck.IncreaseCooldowns(1.1f);
 				_spellDeck.IncreaseCooldowns(1.1f);
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				SlowPlayersNear(boss.Position, 130f, 0.72f, 4.5f, color, "PLAGUE ECLIPSE");
+				SlowPlayersNear(boss.Position, 65f, 0.72f, 4.5f, color);
 				SetStatus($"{boss.UnitName} blotted out caravan signals" + (escorts > 0 ? $" while {escorts} captains reinforced the assault." : "."));
 				break;
 			}
@@ -4269,7 +4140,7 @@ public partial class BattleController : Node2D
 			default:
 			{
 				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				BuffUnitsNear(Team.Enemy, boss.Position, 140f, 1.1f, 1.08f, 6f, color, "LAST STAND");
+				BuffUnitsNear(Team.Enemy, boss.Position, 70f, 1.1f, 1.08f, 6f, color);
 				SetStatus($"{boss.UnitName} entered a last stand" + (escorts > 0 ? $" and {escorts} escorts answered the call." : "."));
 				break;
 			}
@@ -4294,11 +4165,6 @@ public partial class BattleController : Node2D
 			succeeded ? PlayerSpawnX + 18f : EnemySpawnX - 18f,
 			Mathf.Clamp(_campaignMissionAftermathLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
 		SpawnEffect(telegraphAnchor, route.BannerAccent, 10f, 40f, 0.22f, false);
-		SpawnFloatText(
-			telegraphAnchor + new Vector2(0f, -34f),
-			succeeded ? "FOLLOW-THROUGH" : "BACKLASH",
-			route.BannerAccent.Lightened(0.18f),
-			0.6f);
 		return succeeded
 			? $"{_campaignMissionAftermathLabel} is lining up behind the convoy in {CampaignMissionAftermathLeadSeconds:0.0}s."
 			: $"{_campaignMissionAftermathLabel} is rolling back down the lane in {CampaignMissionAftermathLeadSeconds:0.0}s.";
@@ -4316,43 +4182,39 @@ public partial class BattleController : Node2D
 		_campaignCounterSurgeLaneY = mission?.Anchor.Y ?? BaseCenterY;
 		_campaignCounterSurgeLabel = GameState.Instance.GetCampaignCounterSurgeTitle(_activeRouteId);
 		SpawnEffect(new Vector2(EnemySpawnX - 22f, _campaignCounterSurgeLaneY), RouteCatalog.Get(_activeRouteId).BannerAccent, 10f, 42f, 0.22f, false);
-		SpawnFloatText(new Vector2(EnemySpawnX - 28f, _campaignCounterSurgeLaneY - 36f), "COUNTER-SURGE", RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.18f), 0.62f);
 		return string.IsNullOrWhiteSpace(_campaignCounterSurgeLabel)
 			? "Enemy reserves are forming for a counter-surge."
 			: $"Enemy reserves are forming: {_campaignCounterSurgeLabel} in {CampaignCounterSurgeTelegraphLeadSeconds:0.0}s.";
 	}
 
-	private void DamageEnemiesNear(Vector2 center, float radius, float damage, Color color, string label)
+	private void DamageEnemiesNear(Vector2 center, float radius, float damage, Color color)
 	{
-		DamageUnitsNear(Team.Player, center, radius, damage, color, label);
+		DamageUnitsNear(Team.Player, center, radius, damage, color);
 	}
 
-	private void DamagePlayersNear(Vector2 center, float radius, float damage, Color color, string label)
+	private void DamagePlayersNear(Vector2 center, float radius, float damage, Color color)
 	{
-		DamageUnitsNear(Team.Enemy, center, radius, damage, color, label);
+		DamageUnitsNear(Team.Enemy, center, radius, damage, color);
 	}
 
-	private void DamageUnitsNear(Team attackerTeam, Vector2 center, float radius, float damage, Color color, string label)
+	private void DamageUnitsNear(Team attackerTeam, Vector2 center, float radius, float damage, Color color)
 	{
 		ApplySplashDamage(attackerTeam, center, damage, radius, color);
 		SpawnEffect(center, color, 10f, radius, 0.24f, false);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(center + new Vector2(0f, -24f), label, color.Lightened(0.2f), 0.58f);
-		}
+
 	}
 
-	private void SlowEnemiesNear(Vector2 center, float radius, float speedScale, float duration, Color color, string label = "")
+	private void SlowEnemiesNear(Vector2 center, float radius, float speedScale, float duration, Color color)
 	{
-		ApplySpeedModifierNear(Team.Enemy, center, radius, speedScale, duration, color, label);
+		ApplySpeedModifierNear(Team.Enemy, center, radius, speedScale, duration, color);
 	}
 
-	private void SlowPlayersNear(Vector2 center, float radius, float speedScale, float duration, Color color, string label = "")
+	private void SlowPlayersNear(Vector2 center, float radius, float speedScale, float duration, Color color)
 	{
-		ApplySpeedModifierNear(Team.Player, center, radius, speedScale, duration, color, label);
+		ApplySpeedModifierNear(Team.Player, center, radius, speedScale, duration, color);
 	}
 
-	private void ApplySpeedModifierNear(Team targetTeam, Vector2 center, float radius, float speedScale, float duration, Color color, string label = "")
+	private void ApplySpeedModifierNear(Team targetTeam, Vector2 center, float radius, float speedScale, float duration, Color color)
 	{
 		var affected = false;
 		foreach (var unit in _units)
@@ -4372,10 +4234,7 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(center, color.Lightened(0.08f), 10f, radius, 0.2f, false);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(center + new Vector2(0f, -24f), label, color.Lightened(0.22f), 0.6f);
-		}
+
 	}
 
 	private void BuffAllPlayerUnits(float attackScale, float speedScale, float duration, float defenseScale = 1f)
@@ -4395,7 +4254,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void BuffUnitsNear(Team targetTeam, Vector2 center, float radius, float attackScale, float speedScale, float duration, Color color, string label = "")
+	private void BuffUnitsNear(Team targetTeam, Vector2 center, float radius, float attackScale, float speedScale, float duration, Color color)
 	{
 		var affected = false;
 		foreach (var unit in _units)
@@ -4415,23 +4274,20 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(center, color.Lightened(0.08f), 10f, radius, 0.2f, false);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(center + new Vector2(0f, -24f), label, color.Lightened(0.22f), 0.6f);
-		}
+
 	}
 
-	private void PushEnemiesFromPoint(Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color, string label)
+	private void PushEnemiesFromPoint(Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color)
 	{
-		PushUnitsFromPoint(Team.Enemy, point, radius, pushDistance, slowScale, duration, color, label);
+		PushUnitsFromPoint(Team.Enemy, point, radius, pushDistance, slowScale, duration, color);
 	}
 
-	private void PushPlayersFromPoint(Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color, string label)
+	private void PushPlayersFromPoint(Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color)
 	{
-		PushUnitsFromPoint(Team.Player, point, radius, pushDistance, slowScale, duration, color, label);
+		PushUnitsFromPoint(Team.Player, point, radius, pushDistance, slowScale, duration, color);
 	}
 
-	private void PushUnitsFromPoint(Team targetTeam, Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color, string label)
+	private void PushUnitsFromPoint(Team targetTeam, Vector2 point, float radius, float pushDistance, float slowScale, float duration, Color color)
 	{
 		var affected = false;
 		foreach (var unit in _units)
@@ -4463,10 +4319,7 @@ public partial class BattleController : Node2D
 
 		var effectOffset = targetTeam == Team.Enemy ? 60f : -60f;
 		SpawnEffect(point + new Vector2(effectOffset, 0f), color.Lightened(0.08f), 12f, radius * 0.7f, 0.24f, false);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(point + new Vector2(0f, -56f), label, color.Lightened(0.22f), 0.66f);
-		}
+
 	}
 
 	private Unit FindHighestHealthEnemy()
@@ -4511,7 +4364,7 @@ public partial class BattleController : Node2D
 		return best;
 	}
 
-	private int SpawnEnemyEscortsNear(Unit anchor, string unitId, int count, float xSpread = 32f, float ySpread = 58f)
+	private int SpawnEnemyEscortsNear(Unit anchor, string unitId, int count, float xSpread = 16f, float ySpread = 20f)
 	{
 		if (anchor == null || anchor.IsDead || string.IsNullOrWhiteSpace(unitId) || count <= 0)
 		{
@@ -4541,7 +4394,7 @@ public partial class BattleController : Node2D
 		return spawned;
 	}
 
-	private void HealUnit(Unit unit, float amount, Color color, string label = "")
+	private void HealUnit(Unit unit, float amount, Color color)
 	{
 		if (unit == null || unit.IsDead || amount <= 0.05f)
 		{
@@ -4555,11 +4408,8 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(unit.Position, color.Lightened(0.08f), 10f, 36f, 0.22f, false);
-		SpawnFloatText(unit.Position + new Vector2(_rng.RandfRange(-10f, 10f), -36f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.52f);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(unit.Position + new Vector2(0f, -56f), label, color.Lightened(0.32f), 0.6f);
-		}
+		SpawnCombatNumber(unit.Position + new Vector2(_rng.RandfRange(-10f, 10f), -36f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.52f);
+
 	}
 
 	private void ApplyEndlessBoonEffects(float delta)
@@ -4698,7 +4548,6 @@ public partial class BattleController : Node2D
 			}
 
 			unit.ApplyTemporaryDefenseModifier(defenseScale, duration);
-			SpawnFloatText(unit.Position + new Vector2(0f, -22f), "FORTIFIED", new Color("8ecae6"), 0.46f);
 			break;
 		}
 	}
@@ -4867,7 +4716,7 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
-			if (ally.Position.DistanceTo(source.Position) > 240f)
+			if (ally.Position.DistanceTo(source.Position) > 120f)
 			{
 				continue;
 			}
@@ -5013,7 +4862,6 @@ public partial class BattleController : Node2D
 			if (_elapsed >= expiresAt)
 			{
 				SpawnEffect(unit.Position, unit.Tint, 8f, 22f, 0.2f, false);
-				SpawnFloatText(unit.Position + new Vector2(0f, -18f), "CRUMBLES", unit.Tint.Lightened(0.15f), 0.48f);
 				unit.TakeDamage(unit.MaxHealth * 10f);
 				_barricades.RemoveAt(i);
 			}
@@ -5087,7 +4935,6 @@ public partial class BattleController : Node2D
 							killer.UnitName == deadUnit.LastDamagedBy &&
 							!string.IsNullOrEmpty(killer.KillQuote))
 						{
-							SpawnFloatText(killer.Position + new Vector2(0f, -38f), killer.KillQuote, new Color("a7f3a0"), 1.0f);
 							break;
 						}
 					}
@@ -5155,7 +5002,6 @@ public partial class BattleController : Node2D
 		{
 			ApplyThreatNeutralizedFeedback(
 				threatPosition,
-				threatLabel,
 				threatStatus,
 				threatColor,
 				threatCourageGain,
@@ -5167,7 +5013,6 @@ public partial class BattleController : Node2D
 
 		if (!string.IsNullOrWhiteSpace(commendationBreakStatus))
 		{
-			SpawnFloatText(commendationBreakPosition + new Vector2(0f, -60f), "COMMENDATION BROKEN", commendationBreakColor, 0.58f);
 			var baseStatus = bestThreatPriority < int.MaxValue
 				? _statusLabel.Text
 				: "";
@@ -5196,7 +5041,7 @@ public partial class BattleController : Node2D
 		color = deadUnit.Tint.Lightened(0.18f);
 		priority = int.MaxValue;
 		courageGain = 0f;
-		buffRadius = 172f;
+		buffRadius = 86f;
 		buffDuration = 2.4f;
 		attackScale = 1.06f;
 		speedScale = 1.08f;
@@ -5226,7 +5071,7 @@ public partial class BattleController : Node2D
 				status = "Siege pressure collapsed and the line surged forward.";
 				priority = 2;
 				courageGain = 4f;
-				buffRadius = 188f;
+				buffRadius = 94f;
 				buffDuration = 3f;
 				attackScale = 1.1f;
 				speedScale = 1.1f;
@@ -5249,7 +5094,6 @@ public partial class BattleController : Node2D
 
 	private void ApplyThreatNeutralizedFeedback(
 		Vector2 position,
-		string label,
 		string status,
 		Color color,
 		float courageGain,
@@ -5281,15 +5125,8 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(position, color, 12f, 34f, 0.24f, false);
-		SpawnFloatText(position + new Vector2(0f, -44f), label, color, 0.66f);
-		if (courageGain > 0.05f)
-		{
-			SpawnFloatText(position + new Vector2(0f, -66f), $"+{Mathf.RoundToInt(courageGain)} COURAGE", color.Lightened(0.18f), 0.56f);
-		}
-		if (ralliedAllies > 0)
-		{
-			SpawnFloatText(position + new Vector2(0f, -88f), "RALLY SURGE", color.Lightened(0.28f), 0.52f);
-		}
+
+
 
 		var rallySuffix = ralliedAllies > 0
 			? $" {ralliedAllies} nearby allies surged."
@@ -5325,21 +5162,20 @@ public partial class BattleController : Node2D
 				_courage = Mathf.Min(_maxCourage, _courage + 4f);
 				_deck.ReduceCooldowns(0.45f);
 				_spellDeck.ReduceCooldowns(0.45f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "LANTERN LEVY", color.Lightened(0.2f), 0.6f);
 				SetStatus("Lantern Levy cycled: +4 courage and quicker card recovery.");
 				break;
 			case RouteCatalog.HarborId:
 			{
-				var anchor = FindClosestEnemyToPoint(PlayerBaseCorePosition + new Vector2(120f, 0f), 260f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
-				DamageEnemiesNear(anchor, 76f, 14f, color, "RIPCHAIN");
-				SlowEnemiesNear(anchor, 76f, 0.74f, 2.8f, color);
+				var anchor = FindClosestEnemyToPoint(PlayerBaseCorePosition + new Vector2(120f, 0f), 130f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
+				DamageEnemiesNear(anchor, 38f, 14f, color);
+				SlowEnemiesNear(anchor, 38f, 0.74f, 2.8f, color);
 				SetStatus("Ripchain Echo snapped across the nearest push.");
 				break;
 			}
 			case RouteCatalog.FoundryId:
 			{
-				var anchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.64f), BaseCenterY), 420f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
-				DamageEnemiesNear(anchor, 84f, 18f, color, "SMELTER");
+				var anchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.64f), BaseCenterY), 210f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
+				DamageEnemiesNear(anchor, 42f, 18f, color);
 				SetStatus("Smelter Volley scattered the densest enemy pack.");
 				break;
 			}
@@ -5351,31 +5187,28 @@ public partial class BattleController : Node2D
 					_enemySignalJamCourageGainScale = 1f;
 				}
 				RepairBusByRatio(0.02f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "CLEANSE", color.Lightened(0.2f), 0.6f);
 				SetStatus("Cleanse Pulse cut through curse pressure and patched the wagon.");
 				break;
 			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(PlayerBaseCorePosition, 180f, 14f, 0.72f, 2.8f, color, "STONEWAKE");
+				PushEnemiesFromPoint(PlayerBaseCorePosition, 90f, 7f, 0.72f, 2.8f, color);
 				SetStatus("Stonewake rolled downhill and knocked the front back.");
 				break;
 			case RouteCatalog.BasilicaId:
 				RepairBusByRatio(0.02f);
 				BuffAllPlayerUnits(1.04f, 1.04f, 4.2f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "CHORUS", color.Lightened(0.2f), 0.6f);
 				SetStatus("Sanctuary Chorus steadied the wagon and blessed the line.");
 				break;
 			case RouteCatalog.MireId:
 			{
-				var anchor = FindClosestEnemyToPoint(PlayerBaseCorePosition + new Vector2(90f, 0f), 220f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
-				DamageEnemiesNear(anchor, 86f, 12f, color, "BOG SNARE");
-				SlowEnemiesNear(anchor, 96f, 0.7f, 3.2f, color);
+				var anchor = FindClosestEnemyToPoint(PlayerBaseCorePosition + new Vector2(90f, 0f), 110f)?.Position ?? anchorUnit?.Position ?? EnemyBaseCorePosition;
+				DamageEnemiesNear(anchor, 43f, 12f, color);
+				SlowEnemiesNear(anchor, 48f, 0.7f, 3.2f, color);
 				SetStatus("Bog Snare dragged the nearest push into the mire.");
 				break;
 			}
 			case RouteCatalog.SteppeId:
 				_courage = Mathf.Min(_maxCourage, _courage + 4f);
 				BuffAllPlayerUnits(1.02f, 1.08f, 4.5f);
-				SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -56f), "RIDER TEMPO", color.Lightened(0.2f), 0.6f);
 				SetStatus("Rider Tempo kicked the caravan forward with a speed surge.");
 				break;
 			case RouteCatalog.GloamwoodId:
@@ -5386,14 +5219,13 @@ public partial class BattleController : Node2D
 					var appliedDamage = target.TakeDamage(20f, "Witchmark");
 					SpawnDamageFeedback(target.Position, appliedDamage, color);
 					target.ApplyTemporarySpeedModifier(0.7f, 3.2f);
-					SpawnFloatText(target.Position + new Vector2(0f, -42f), "WITCHMARK", color.Lightened(0.22f), 0.58f);
 				}
 				SetStatus("Witchmark fell on the toughest enemy in the lane.");
 				break;
 			}
 			case RouteCatalog.CitadelId:
-				DamageEnemyBaseByRatio(0.02f, color, "BASTION");
-				DamageEnemiesNear(EnemyBaseCorePosition + new Vector2(-84f, 0f), 84f, 16f, color, "RANGE");
+				DamageEnemyBaseByRatio(0.02f, color);
+				DamageEnemiesNear(EnemyBaseCorePosition + new Vector2(-84f, 0f), 42f, 16f, color);
 				SetStatus("Bastion Range shelled the keep and its frontline.");
 				break;
 			default:
@@ -5454,13 +5286,9 @@ public partial class BattleController : Node2D
 		{
 			AudioDirector.Instance?.PlayRelicPickup();
 		}
-		var label = isNew ? $"RELIC: {relic.DisplayName}" : $"DUPLICATE RELIC: +{duplicateShards} SHARDS";
-		var color = isNew ? new Color("ffd700") : new Color("adb5bd");
-		SpawnFloatText(boss.Position + new Vector2(0f, -48f), label, color, 0.72f);
 
 		// Sigil drop from boss kills
 		GameState.Instance.GrantSigils(1);
-		SpawnFloatText(boss.Position + new Vector2(0f, -70f), "+1 SIGIL", new Color("c0c0ff"), 0.6f);
 	}
 
 	private void TriggerDeathBurst(Unit deadUnit)
@@ -5594,7 +5422,6 @@ public partial class BattleController : Node2D
 		if (actualReflected > 0.05f)
 		{
 			SpawnDamageFeedback(attacker.Position, actualReflected, reflector.Tint.Lightened(0.3f));
-			SpawnFloatText(reflector.Position + new Vector2(0f, -28f), "REFLECT", reflector.Tint.Lightened(0.35f), 0.4f);
 		}
 	}
 
@@ -5616,7 +5443,6 @@ public partial class BattleController : Node2D
 		if (actualReflected > 0.05f)
 		{
 			SpawnDamageFeedback(attacker.Position, actualReflected, target.Tint.Lightened(0.3f));
-			SpawnFloatText(target.Position + new Vector2(0f, -28f), "MIRROR", target.Tint.Lightened(0.35f), 0.4f);
 		}
 	}
 
@@ -5653,7 +5479,6 @@ public partial class BattleController : Node2D
 		if (spawned > 0)
 		{
 			SpawnEffect(siegeTower.Position, siegeTower.Tint.Lightened(0.12f), 14f, 56f, 0.3f, false);
-			SpawnFloatText(siegeTower.Position + new Vector2(0f, -48f), "SIEGE DEPLOY", siegeTower.Tint.Lightened(0.2f), 0.7f);
 			SetStatus($"Siege Tower deployed {spawned} enemies behind the caravan lines.");
 		}
 
@@ -5704,7 +5529,6 @@ public partial class BattleController : Node2D
 				BattlefieldBottom - SpawnVerticalPadding));
 		SpawnEnemyUnit(reanimatedStats, spawnPosition);
 		SpawnEffect(spawnPosition, deadUnit.Tint.Lightened(0.15f), 8f, 32f, 0.24f, false);
-		SpawnFloatText(spawnPosition + new Vector2(0f, -36f), "REANIMATE", deadUnit.Tint.Lightened(0.2f), 0.56f);
 		SetStatus("A fallen enemy reanimated from the lich graveyard.");
 	}
 
@@ -5738,7 +5562,7 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(position, color.Lightened(0.12f), 2f, Mathf.Clamp(6f + damage * .04f, 6f, 10f), .11f, false);
-		SpawnFloatText(
+		SpawnCombatNumber(
 			position + new Vector2(_rng.RandfRange(-6f, 6f), -8f),
 			$"-{Mathf.RoundToInt(damage)}",
 			color.Lightened(0.3f),
@@ -5746,10 +5570,13 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.PlayImpact(damage);
 	}
 
-	private void SpawnFloatText(Vector2 position, string text, Color color, float lifetime = 0.5f)
+	// Battle text is numbers only (damage, healing, repairs); names and callouts stay off the field.
+	private void SpawnCombatNumber(Vector2 position, string text, Color color, float lifetime = 0.5f)
 	{
 		var floatText = new BattleFloatText();
 		if (_mobileCamera != null) floatText.PresentationScale = () => MobilePresentation.HudScale / _mobileCamera.Zoom.X;
+		// Keep combat text near its old on-screen size while the desktop camera is zoomed in.
+		else if (_battleCamera != null) floatText.PresentationScale = () => 1.2f / _battleCamera.Zoom.X;
 		floatText.Position = position;
 		floatText.Setup(
 			text,
@@ -5793,48 +5620,6 @@ public partial class BattleController : Node2D
 		return bestTarget;
 	}
 
-	private float ResolveDeployLaneY(float requestedY, out bool snapped)
-	{
-		var clampedY = Mathf.Clamp(requestedY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
-		var bestY = clampedY;
-		var bestScore = float.MaxValue;
-
-		foreach (var unit in _units)
-		{
-			if (unit.IsDead)
-			{
-				continue;
-			}
-
-			var deltaY = Mathf.Abs(unit.Position.Y - clampedY);
-			if (deltaY > DeployLaneSnapDistance)
-			{
-				continue;
-			}
-
-			var score = deltaY;
-			if (unit.Team == Team.Player)
-			{
-				score -= unit.Position.X > PlayerSpawnX + 90f ? 9f : 5f;
-			}
-			else if (unit.Position.X < EnemySpawnX - 70f)
-			{
-				score -= 2.5f;
-			}
-
-			if (score < bestScore)
-			{
-				bestScore = score;
-				bestY = unit.Position.Y;
-			}
-		}
-
-		snapped = bestScore < float.MaxValue;
-		return snapped
-			? Mathf.Clamp(bestY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding)
-			: clampedY;
-	}
-
 	private void ApplyDeployMomentum(Unit unit, UnitDefinition definition)
 	{
 		if (!IsInstanceValid(unit) || unit.IsDead || unit.Team != Team.Player)
@@ -5875,7 +5660,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
 		BattleParticles.SpawnFireballParticles(this, targetPosition, color, spell.Radius);
-		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FIREBALL", color.Lightened(0.22f), 0.56f);
 
 		foreach (var target in targets)
 		{
@@ -5904,7 +5688,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.HealBloom);
 		BattleParticles.SpawnHealSparkles(this, targetPosition, color, spell.Radius);
-		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "HEAL", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
 		{
@@ -5917,7 +5700,7 @@ public partial class BattleController : Node2D
 			healedUnits++;
 			totalHealing += healed;
 			SpawnEffect(ally.Position, color.Lightened(0.08f), 8f, 22f, 0.18f, false, BattleEffectStyle.HealBloom);
-			SpawnFloatText(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
+			SpawnCombatNumber(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
 		}
 
 		var repaired = RepairBusByAmount(spell.SecondaryPower);
@@ -5935,7 +5718,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.3f, false, BattleEffectStyle.FrostBurst);
 		BattleParticles.SpawnFrostParticles(this, targetPosition, color, spell.Radius);
-		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "FROST", color.Lightened(0.24f), 0.58f);
 
 		foreach (var target in targets)
 		{
@@ -5966,7 +5748,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false, BattleEffectStyle.LightningStrike);
 		BattleParticles.SpawnLightningParticles(this, targetPosition, color);
-		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "LIGHTNING", color.Lightened(0.18f), 0.56f);
 
 		for (var i = 0; i < targets.Length; i++)
 		{
@@ -6000,7 +5781,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.WardSigil);
 		BattleParticles.SpawnWardParticles(this, targetPosition, color, spell.Radius);
-		SpawnFloatText(targetPosition + new Vector2(0f, -18f), "WARD", color.Lightened(0.18f), 0.56f);
 
 		foreach (var ally in allies)
 		{
@@ -6044,7 +5824,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(clampedPosition, color, 10f, spell.Radius, 0.24f, false);
 		BattleParticles.SpawnStoneBarricadeParticles(this, clampedPosition, color, spell.Radius);
-		SpawnFloatText(clampedPosition + new Vector2(0f, -22f), "BARRICADE", color.Lightened(0.2f), 0.58f);
 
 		return $"Stone Barricade raised at the target lane with {Mathf.RoundToInt(spell.Power)} durability.";
 	}
@@ -6054,9 +5833,8 @@ public partial class BattleController : Node2D
 		var color = spell.GetTint();
 		var buffed = 0;
 
-		SpawnEffect(PlayerBaseCorePosition, color, 18f, 120f, 0.32f, false);
-		BattleParticles.SpawnWarCryParticles(this, PlayerBaseCorePosition, color, 120f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -62f), "WAR CRY", color.Lightened(0.24f), 0.64f);
+		SpawnEffect(PlayerBaseCorePosition, color, 18f, 60f, 0.32f, false);
+		BattleParticles.SpawnWarCryParticles(this, PlayerBaseCorePosition, color, 60f);
 
 		foreach (var unit in _units)
 		{
@@ -6084,7 +5862,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(targetPosition, color, 20f, spell.Radius, 0.34f, false);
 		BattleParticles.SpawnEarthquakeParticles(this, targetPosition, color, spell.Radius);
-		SpawnFloatText(targetPosition + new Vector2(0f, -22f), "EARTHQUAKE", color.Lightened(0.2f), 0.62f);
 
 		foreach (var target in targets)
 		{
@@ -6133,7 +5910,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(bestTarget.Position, color, 10f, 32f, 0.26f, false, BattleEffectStyle.WardSigil);
 		BattleParticles.SpawnPolymorphParticles(this, bestTarget.Position, color);
-		SpawnFloatText(bestTarget.Position + new Vector2(0f, -28f), "POLYMORPH", color.Lightened(0.22f), 0.6f);
 
 		return $"Polymorph transformed {bestTarget.UnitName} into a harmless creature for {spell.Duration:0.0}s.";
 	}
@@ -6177,7 +5953,6 @@ public partial class BattleController : Node2D
 
 		SpawnEffect(spawnPos, color, 12f, 38f, 0.28f, false, BattleEffectStyle.HealBloom);
 		BattleParticles.SpawnResurrectParticles(this, spawnPos, color);
-		SpawnFloatText(spawnPos + new Vector2(0f, -32f), "RESURRECT", color.Lightened(0.24f), 0.64f);
 		_lastDeadPlayerUnitId = "";
 
 		return $"Resurrect restored {resurrectDef.DisplayName} at {Mathf.RoundToInt(spell.Power * 100f)}% health.";
@@ -6200,8 +5975,10 @@ public partial class BattleController : Node2D
 	private void DrawBaseHealthMeter(CanvasItem canvas, Vector2 center, float width, float healthRatio, bool friendly)
 	{
 		var highContrast = GameState.Instance?.HighContrast ?? false;
+		// Base meters shrink with the bases they label.
+		width *= _combat.StructureScale;
 		var origin = center - new Vector2(width * 0.5f, 0f);
-		HealthBarPainter.Draw(canvas, new Rect2(origin, new Vector2(width, highContrast ? 18f : 16f)), healthRatio,
+		HealthBarPainter.Draw(canvas, new Rect2(origin, new Vector2(width, (highContrast ? 18f : 16f) * Mathf.Max(.6f, _combat.StructureScale))), healthRatio,
 			friendly ? _playerHealthBarMotion.TrailRatio : _enemyHealthBarMotion.TrailRatio,
 			friendly, HealthBarKind.Base, highContrast);
 	}
@@ -6239,7 +6016,7 @@ public partial class BattleController : Node2D
 		canvas.DrawCircle(origin + new Vector2(-4f + (plumeOffset * 0.4f), -24f), 14f + (smokeStrength * 6f), new Color(0f, 0f, 0f, 0.12f + (smokeStrength * 0.12f)));
 	}
 
-	private Color ResolveDeployButtonTint(UnitDefinition definition, bool isReady, bool hasCourage, bool armed)
+	private Color ResolveDeployButtonTint(UnitDefinition definition, bool isReady, bool hasCourage)
 	{
 		var tint = definition.GetTint();
 		if (!isReady)
@@ -6252,9 +6029,7 @@ public partial class BattleController : Node2D
 			return tint.Darkened(0.28f).Lerp(new Color("6c757d"), 0.35f);
 		}
 
-		return armed
-			? tint.Lightened(0.25f)
-			: tint.Lerp(Colors.White, 0.25f);
+		return tint.Lerp(Colors.White, 0.25f);
 	}
 
 	private Color ResolveSpellButtonTint(SpellDefinition definition, bool isReady, bool hasCourage, bool armed)
@@ -6361,7 +6136,6 @@ public partial class BattleController : Node2D
 		var markerPosition = new Vector2(PlayerSpawnX + 26f, ResolveChallengeLaneY(deployment.LanePercent));
 		_challengeGhostMarkers.Add(new ChallengeGhostMarker(unit.Id, markerPosition, ghostColor, deployment.TimeSeconds));
 		SpawnEffect(markerPosition, ghostColor, 8f, 30f, 0.22f, false);
-		SpawnFloatText(markerPosition + new Vector2(0f, -22f), $"GHOST {unit.DisplayName.ToUpperInvariant()}", ghostColor.Lightened(0.12f), 0.48f);
 	}
 
 	private float ResolveChallengeLaneY(int lanePercent)
@@ -6452,8 +6226,8 @@ public partial class BattleController : Node2D
 		bool usesAdaptiveWaveProgress = false)
 	{
 		var anchor = new Vector2(
-			Mathf.Lerp(BattlefieldLeft + 64f, BattlefieldRight - 64f, Mathf.Clamp(definition.XRatio, 0f, 1f)),
-			Mathf.Lerp(BattlefieldTop + 48f, BattlefieldBottom - 48f, Mathf.Clamp(definition.YRatio, 0f, 1f)));
+			Mathf.Lerp(BattlefieldLeft + 32f, BattlefieldRight - 32f, Mathf.Clamp(definition.XRatio, 0f, 1f)),
+			Mathf.Lerp(BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding, Mathf.Clamp(definition.YRatio, 0f, 1f)));
 		var mission = new StageMissionState(
 			definition,
 			anchor,
@@ -6504,13 +6278,6 @@ public partial class BattleController : Node2D
 				_campaignAdaptiveWaveChallengeMission = null;
 			}
 
-			var callout = _campaignAdaptiveWaveChallengeMode switch
-			{
-				CampaignAdaptiveWaveChallengeModeHold => "ROUTE HELD",
-				CampaignAdaptiveWaveChallengeModeBaseDamage => "BREACH FORCED",
-				_ => "COUNTERCUT"
-			};
-			SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), callout, mission.Color.Lightened(0.18f), 0.64f);
 			return;
 		}
 
@@ -6520,25 +6287,20 @@ public partial class BattleController : Node2D
 				_courage = Mathf.Min(_maxCourage, _courage + 12f);
 				_deck.ReduceCooldowns(0.8f);
 				_spellDeck.ReduceCooldowns(0.8f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RITE SECURED", mission.Color.Lightened(0.18f), 0.64f);
 				break;
 			case "relic_escort":
 				RepairBusByRatio(0.06f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RELICS THROUGH", mission.Color.Lightened(0.18f), 0.64f);
 				break;
 			case "gate_breach":
-				DamageEnemyBaseByRatio(0.18f, mission.Color, "GATE BREACHED");
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "BREACH LANDED", mission.Color.Lightened(0.18f), 0.64f);
+				DamageEnemyBaseByRatio(0.18f, mission.Color);
 				break;
 			case "rescue_hold":
 				RepairBusByRatio(0.04f);
 				_courage = Mathf.Min(_maxCourage, _courage + 6f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RESCUED", mission.Color.Lightened(0.18f), 0.64f);
 				break;
 			case "mainline_push":
-				DamageEnemyBaseByRatio(0.08f, mission.Color, "LINE BROKEN");
-				BuffUnitsNear(Team.Player, mission.Anchor, 156f, 1.08f, 1.12f, 6f, mission.Color);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "PUSH LANDED", mission.Color.Lightened(0.18f), 0.64f);
+				DamageEnemyBaseByRatio(0.08f, mission.Color);
+				BuffUnitsNear(Team.Player, mission.Anchor, 78f, 1.08f, 1.12f, 6f, mission.Color);
 				break;
 		}
 
@@ -6595,13 +6357,6 @@ public partial class BattleController : Node2D
 			}
 
 			SpawnEffect(mission.Anchor, mission.Color.Lightened(0.06f), 10f, mission.Definition.Radius * 0.64f, 0.22f, false);
-			var callout = _campaignAdaptiveWaveChallengeMode switch
-			{
-				CampaignAdaptiveWaveChallengeModeHold => "HOLD BROKE",
-				CampaignAdaptiveWaveChallengeModeBaseDamage => "BREACH LOST",
-				_ => "PUSH SLIPPED"
-			};
-			SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), callout, new Color("ffb4a2"), 0.62f);
 			return;
 		}
 
@@ -6611,21 +6366,20 @@ public partial class BattleController : Node2D
 				_courage = Mathf.Max(0f, _courage - 12f);
 				_deck.IncreaseCooldowns(0.8f);
 				_spellDeck.IncreaseCooldowns(0.8f);
-				SpawnFloatText(mission.Anchor + new Vector2(0f, -28f), "RITE LOST", new Color("ffb4a2"), 0.62f);
 				break;
 			case "relic_escort":
-				DamageBusByRatio(0.08f, mission.Color, "ESCORT LOST");
+				DamageBusByRatio(0.08f, mission.Color);
 				break;
 			case "gate_breach":
-				RepairEnemyBaseByRatio(0.08f, mission.Color, "GATE RESET");
+				RepairEnemyBaseByRatio(0.08f, mission.Color);
 				break;
 			case "rescue_hold":
-				DamageBusByRatio(0.06f, mission.Color, "RESCUE LOST");
+				DamageBusByRatio(0.06f, mission.Color);
 				_courage = Mathf.Max(0f, _courage - 6f);
 				break;
 			case "mainline_push":
-				RepairEnemyBaseByRatio(0.05f, mission.Color, "PUSH HALTED");
-				PushPlayersFromPoint(mission.Anchor, 112f, 18f, 0.78f, 2.6f, mission.Color, "REPULSE");
+				RepairEnemyBaseByRatio(0.05f, mission.Color);
+				PushPlayersFromPoint(mission.Anchor, 56f, 9f, 0.78f, 2.6f, mission.Color);
 				break;
 		}
 
@@ -6670,7 +6424,7 @@ public partial class BattleController : Node2D
 		var offensiveObjective = missionType == "mainline_push" || missionType == "gate_breach";
 		var laneY = Mathf.Clamp(mission.Anchor.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding);
 		var laneAnchor = mission.Anchor;
-		var enemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY), 360f)?.Position
+		var enemyAnchor = FindClosestEnemyToPoint(new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY), 180f)?.Position
 			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.62f), laneY);
 		var color = mission.Color.Lightened(0.04f);
 
@@ -6683,7 +6437,7 @@ public partial class BattleController : Node2D
 					{
 						_deck.ReduceCooldowns(0.7f);
 						_spellDeck.ReduceCooldowns(0.7f);
-						BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.06f, 1.08f, 5.2f, color, "LEVY PUSH");
+						BuffUnitsNear(Team.Player, laneAnchor, 74f, 1.06f, 1.08f, 5.2f, color);
 						return "City levies flooded the lane and sped the next hand.";
 					}
 					RepairBusByRatio(0.03f);
@@ -6692,18 +6446,18 @@ public partial class BattleController : Node2D
 				case RouteCatalog.HarborId:
 					if (offensiveObjective)
 					{
-						DamageEnemiesNear(enemyAnchor, 96f, 22f, color, "RIPCHAIN");
-						SlowEnemiesNear(enemyAnchor, 96f, 0.58f, 3.2f, color);
+						DamageEnemiesNear(enemyAnchor, 48f, 22f, color);
+						SlowEnemiesNear(enemyAnchor, 48f, 0.58f, 3.2f, color);
 						return "Dock chains caught the lane and held the breach open.";
 					}
-					PushEnemiesFromPoint(enemyAnchor, 96f, 14f, 0.66f, 3f, color, "BREAKWATER");
+					PushEnemiesFromPoint(enemyAnchor, 48f, 7f, 0.66f, 3f, color);
 					return "Harbor crews locked the fallback block behind a breakwater snap.";
 				case RouteCatalog.FoundryId:
 					if (offensiveObjective)
 					{
-						DamageEnemiesNear(enemyAnchor + new Vector2(-18f, -18f), 72f, 18f, color, "FIRE");
-						DamageEnemiesNear(enemyAnchor + new Vector2(20f, 12f), 88f, 22f, color, "SLAG");
-						DamageEnemyBaseByRatio(0.03f, color, "");
+						DamageEnemiesNear(enemyAnchor + new Vector2(-18f, -18f), 36f, 18f, color);
+						DamageEnemiesNear(enemyAnchor + new Vector2(20f, 12f), 44f, 22f, color);
+						DamageEnemyBaseByRatio(0.03f, color);
 						return "Foundry fire teams widened the opening with slag bursts.";
 					}
 					RepairBusByRatio(0.04f);
@@ -6713,7 +6467,7 @@ public partial class BattleController : Node2D
 					_enemySignalJamCourageGainScale = 1f;
 					if (offensiveObjective)
 					{
-						DamageEnemiesNear(enemyAnchor, 88f, 18f, color, "PURGE");
+						DamageEnemiesNear(enemyAnchor, 44f, 18f, color);
 						return "Ward lanterns burned the hex pressure out of the opening.";
 					}
 
@@ -6722,32 +6476,32 @@ public partial class BattleController : Node2D
 				case RouteCatalog.ThornwallId:
 					if (offensiveObjective)
 					{
-						PushEnemiesFromPoint(enemyAnchor, 112f, 20f, 0.54f, 3.2f, color, "STONEFALL");
+						PushEnemiesFromPoint(enemyAnchor, 56f, 10f, 0.54f, 3.2f, color);
 						return "Mountain wardens broke the line wider down the pass.";
 					}
 
-					PushEnemiesFromPoint(laneAnchor, 120f, 18f, 0.56f, 3.2f, color, "PASS HOLD");
+					PushEnemiesFromPoint(laneAnchor, 60f, 9f, 0.56f, 3.2f, color);
 					RepairBusByRatio(0.02f);
 					return "The pass line held and shoved the enemy off the rescue block.";
 				case RouteCatalog.BasilicaId:
 					if (offensiveObjective)
 					{
-						HealUnit(FindHighestHealthPlayer(), 24f, color, "VOW");
+						HealUnit(FindHighestHealthPlayer(), 24f, color);
 						BuffAllPlayerUnits(1.06f, 1.04f, 5.5f);
 						return "Reliquary keepers sanctified the push and steadied the line.";
 					}
 					RepairBusByRatio(0.03f);
-					HealUnit(FindHighestHealthPlayer(), 30f, color, "SHELTER");
+					HealUnit(FindHighestHealthPlayer(), 30f, color);
 					return "Sanctified escorts pulled the rescue block back into order.";
 				case RouteCatalog.MireId:
 					if (offensiveObjective)
 					{
-						DamageEnemiesNear(enemyAnchor, 88f, 18f, color, "FEN LURE");
-						SlowEnemiesNear(enemyAnchor, 104f, 0.56f, 3.8f, color);
+						DamageEnemiesNear(enemyAnchor, 44f, 18f, color);
+						SlowEnemiesNear(enemyAnchor, 52f, 0.56f, 3.8f, color);
 						return "Fen lures dragged the enemy off the open road.";
 					}
 					RepairBusByRatio(0.03f);
-					SlowEnemiesNear(enemyAnchor, 100f, 0.6f, 3.6f, color, "BOG HOLD");
+					SlowEnemiesNear(enemyAnchor, 50f, 0.6f, 3.6f, color);
 					return "Mire runners bought space and pulled stragglers through the block.";
 				case RouteCatalog.SteppeId:
 					if (offensiveObjective)
@@ -6756,7 +6510,7 @@ public partial class BattleController : Node2D
 						_courage = Mathf.Min(_maxCourage, _courage + 4f);
 						return "Outriders turned the opening into a running chase.";
 					}
-					BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.02f, 1.12f, 5.2f, color, "SCREEN");
+					BuffUnitsNear(Team.Player, laneAnchor, 74f, 1.02f, 1.12f, 5.2f, color);
 					return "Steppe scouts screened the rescue lane and pulled survivors through.";
 				case RouteCatalog.GloamwoodId:
 				{
@@ -6775,12 +6529,12 @@ public partial class BattleController : Node2D
 				case RouteCatalog.CitadelId:
 					if (offensiveObjective)
 					{
-						DamageEnemyBaseByRatio(0.04f, color, "RANGE FIX");
-						DamageEnemiesNear(enemyAnchor, 104f, 22f, color, "SHELL");
+						DamageEnemyBaseByRatio(0.04f, color);
+						DamageEnemiesNear(enemyAnchor, 52f, 22f, color);
 						return "Citadel spotters corrected the guns onto the breach.";
 					}
-					DamageEnemiesNear(enemyAnchor, 88f, 18f, color, "COVER");
-					BuffUnitsNear(Team.Player, laneAnchor, 148f, 1.04f, 1.06f, 5f, color, "SCREEN");
+					DamageEnemiesNear(enemyAnchor, 44f, 18f, color);
+					BuffUnitsNear(Team.Player, laneAnchor, 74f, 1.04f, 1.06f, 5f, color);
 					return "Citadel spotters covered the retreat lane with disciplined fire.";
 			}
 
@@ -6792,18 +6546,18 @@ public partial class BattleController : Node2D
 			case RouteCatalog.CityId:
 				if (offensiveObjective)
 				{
-					BuffUnitsNear(Team.Enemy, enemyAnchor, 144f, 1.04f, 1.08f, 4.8f, color, "PANIC");
+					BuffUnitsNear(Team.Enemy, enemyAnchor, 72f, 1.04f, 1.08f, 4.8f, color);
 					return "Street panic fed the enemy counter-push.";
 				}
 
-				DamageBusByRatio(0.02f, color, "PANIC");
+				DamageBusByRatio(0.02f, color);
 				return "Street panic rattled the wagon and cost hull.";
 			case RouteCatalog.HarborId:
-				PushPlayersFromPoint(laneAnchor, 96f, 12f, 0.84f, 2.6f, color, "HOOKED");
+				PushPlayersFromPoint(laneAnchor, 48f, 6f, 0.84f, 2.6f, color);
 				return "Harbor reavers hooked the lane and dragged the line backward.";
 			case RouteCatalog.FoundryId:
-				RepairEnemyBaseByRatio(0.03f, color, "SMELTER RESET");
-				DamageBusByRatio(0.02f, color, "EMBER");
+				RepairEnemyBaseByRatio(0.03f, color);
+				DamageBusByRatio(0.02f, color);
 				return "Foundry crews lost the lane and the enemy rebuilt under fire.";
 			case RouteCatalog.QuarantineId:
 				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, 3f);
@@ -6812,18 +6566,18 @@ public partial class BattleController : Node2D
 				_spellDeck.IncreaseCooldowns(0.5f);
 				return "Hex fog rolled back over the lane and jammed the convoy.";
 			case RouteCatalog.ThornwallId:
-				PushPlayersFromPoint(laneAnchor, 112f, 20f, 0.8f, 2.8f, color, "ROCKSLIDE");
+				PushPlayersFromPoint(laneAnchor, 56f, 10f, 0.8f, 2.8f, color);
 				return "A rockslide repulse broke the lane apart.";
 			case RouteCatalog.BasilicaId:
-				RepairEnemyBaseByRatio(0.03f, color, "CRYPT VOW");
-				HealUnit(FindHighestHealthEnemy(), 22f, color, "VOW");
+				RepairEnemyBaseByRatio(0.03f, color);
+				HealUnit(FindHighestHealthEnemy(), 22f, color);
 				return "Crypt vows restored the enemy line after the slip.";
 			case RouteCatalog.MireId:
-				DamageBusByRatio(0.02f, color, "MIRE FLOOD");
-				PushPlayersFromPoint(laneAnchor, 100f, 12f, 0.82f, 2.6f, color, "MIRE");
+				DamageBusByRatio(0.02f, color);
+				PushPlayersFromPoint(laneAnchor, 50f, 6f, 0.82f, 2.6f, color);
 				return "Bog flood swallowed the lane and stalled the recovery.";
 			case RouteCatalog.SteppeId:
-				BuffUnitsNear(Team.Enemy, enemyAnchor, 150f, 1.04f, 1.14f, 5.2f, color, "RIDE DOWN");
+				BuffUnitsNear(Team.Enemy, enemyAnchor, 75f, 1.04f, 1.14f, 5.2f, color);
 				return "Steppe raiders turned the slip into a running pursuit.";
 			case RouteCatalog.GloamwoodId:
 			{
@@ -6838,8 +6592,8 @@ public partial class BattleController : Node2D
 				return "Nightmarks punished the exposed lane leader.";
 			}
 			case RouteCatalog.CitadelId:
-				RepairEnemyBaseByRatio(0.04f, color, "IRON LINE");
-				DamageBusByRatio(0.02f, color, "SHELL");
+				RepairEnemyBaseByRatio(0.04f, color);
+				DamageBusByRatio(0.02f, color);
 				return "Citadel guns reset the keep line and shelled the wagon.";
 		}
 
@@ -6862,11 +6616,6 @@ public partial class BattleController : Node2D
 			succeeded ? PlayerSpawnX + 18f : EnemySpawnX - 18f,
 			Mathf.Clamp(_campaignBonusObjectivePressureLaneY, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
 		SpawnEffect(telegraphAnchor, color, 10f, 38f, 0.22f, false);
-		SpawnFloatText(
-			telegraphAnchor + new Vector2(0f, -34f),
-			ResolveCampaignBonusObjectivePressureTelegraphLabel(succeeded),
-			color.Lightened(0.18f),
-			0.58f);
 		return succeeded
 			? $"{_campaignBonusObjectivePressureLabel} is rolling into the lane in {CampaignBonusObjectivePressureLeadSeconds:0.0}s.{BuildCampaignBonusObjectivePressureStatusSuffix()}"
 			: $"{_campaignBonusObjectivePressureLabel} is forming beyond the keep in {CampaignBonusObjectivePressureLeadSeconds:0.0}s.{BuildCampaignBonusObjectivePressureStatusSuffix()}";
@@ -6963,7 +6712,6 @@ public partial class BattleController : Node2D
 		var status = _campaignPressureEchoFriendly
 			? ApplyFriendlyCampaignPressureEcho(unit, laneAnchor, color)
 			: ApplyEnemyCampaignPressureEcho(unit, laneAnchor, color);
-		SpawnFloatText(unit.Position + new Vector2(0f, -52f), _campaignPressureEchoLabel.ToUpperInvariant(), color.Lightened(0.2f), 0.56f);
 
 		if (_campaignPressureEchoChargesRemaining > 0)
 		{
@@ -7003,7 +6751,6 @@ public partial class BattleController : Node2D
 			ApplyEnemyCampaignAdaptiveWave(unit, laneAnchor, color);
 		}
 
-		SpawnFloatText(unit.Position + new Vector2(0f, -44f), _campaignAdaptiveWaveLabel.ToUpperInvariant(), color.Lightened(0.18f), 0.5f);
 		if (_campaignAdaptiveWaveChargesRemaining <= 0)
 		{
 			var completionStatus = ResolveCampaignAdaptiveWaveCompletion(unit, laneAnchor, color);
@@ -7030,14 +6777,14 @@ public partial class BattleController : Node2D
 		{
 			var challengeSummary = ArmCampaignAdaptiveWaveChallenge(laneAnchor, color);
 			RepairBusByRatio(0.012f);
-			HealUnit(FindHighestHealthPlayer(), 18f, color, "CACHE");
+			HealUnit(FindHighestHealthPlayer(), 18f, color);
 			return $"{_campaignAdaptiveWaveChoiceLabel} secured a supply cache: win to bank {BuildCampaignAdaptiveWaveRewardText()}." +
 				(string.IsNullOrWhiteSpace(challengeSummary) ? "" : $" {challengeSummary}");
 		}
 
 		var breakthroughSummary = ArmCampaignAdaptiveWaveChallenge(laneAnchor, color);
-		DamageEnemyBaseByRatio(0.012f, color, "BREACH");
-		BuffUnitsNear(Team.Player, laneAnchor, 132f, 1.04f, 1.06f, 4.2f, color, "PUSH");
+		DamageEnemyBaseByRatio(0.012f, color);
+		BuffUnitsNear(Team.Player, laneAnchor, 66f, 1.04f, 1.06f, 4.2f, color);
 		return $"{_campaignAdaptiveWaveChoiceLabel} opened a breach bounty: win to bank {BuildCampaignAdaptiveWaveRewardText()}." +
 			(string.IsNullOrWhiteSpace(breakthroughSummary) ? "" : $" {breakthroughSummary}");
 	}
@@ -7045,8 +6792,8 @@ public partial class BattleController : Node2D
 	private void ResolveCampaignAdaptiveWaveVictoryBonus(out int goldBonus, out int foodBonus)
 	{
 		goldBonus = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough
-			? Mathf.Clamp(8 + ((_stage - 1) / 6), 8, 24)
-			: Mathf.Clamp(4 + ((_stage - 1) / 8), 4, 14);
+			? Mathf.Clamp(8 + ((_stage - 1) / 10), 8, 24)
+			: Mathf.Clamp(4 + ((_stage - 1) / 13), 4, 14);
 		foodBonus = _campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue
 			? (_stage >= CampaignAdaptiveWaveEliteStage ? 2 : 1)
 			: (_stage >= CampaignAdaptiveWaveEliteStage ? 1 : 0);
@@ -7096,7 +6843,7 @@ public partial class BattleController : Node2D
 				break;
 			}
 			case RouteCatalog.FoundryId:
-				DamageEnemiesNear(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 76f : 62f, HasCampaignAdaptiveWaveEliteIntensity() ? 14f : 10f, color, "SLAG");
+				DamageEnemiesNear(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 38f : 31f, HasCampaignAdaptiveWaveEliteIntensity() ? 14f : 10f, color);
 				break;
 			case RouteCatalog.QuarantineId:
 			{
@@ -7111,24 +6858,24 @@ public partial class BattleController : Node2D
 				break;
 			}
 			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 94f : 82f, HasCampaignAdaptiveWaveEliteIntensity() ? 14f : 10f, 0.64f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.8f : 2.2f, color, "PASS");
+				PushEnemiesFromPoint(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 47f : 41f, HasCampaignAdaptiveWaveEliteIntensity() ? 7f : 5f, 0.64f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.8f : 2.2f, color);
 				break;
 			case RouteCatalog.BasilicaId:
 			{
 				var appliedDamage = unit.TakeDamage(HasCampaignAdaptiveWaveEliteIntensity() ? 14f : 10f, _campaignAdaptiveWaveLabel);
 				SpawnDamageFeedback(unit.Position, appliedDamage, color);
-				HealUnit(FindHighestHealthPlayer(), HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color, "VOW");
+				HealUnit(FindHighestHealthPlayer(), HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color);
 				break;
 			}
 			case RouteCatalog.MireId:
-				DamageEnemiesNear(unit.Position, 78f, HasCampaignAdaptiveWaveEliteIntensity() ? 12f : 9f, color, "FEN");
-				SlowEnemiesNear(unit.Position, 92f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.62f : 0.72f, HasCampaignAdaptiveWaveEliteIntensity() ? 3.1f : 2.6f, color, "BOG");
+				DamageEnemiesNear(unit.Position, 39f, HasCampaignAdaptiveWaveEliteIntensity() ? 12f : 9f, color);
+				SlowEnemiesNear(unit.Position, 46f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.62f : 0.72f, HasCampaignAdaptiveWaveEliteIntensity() ? 3.1f : 2.6f, color);
 				break;
 			case RouteCatalog.SteppeId:
 			{
 				var appliedDamage = unit.TakeDamage(HasCampaignAdaptiveWaveEliteIntensity() ? 14f : 10f, _campaignAdaptiveWaveLabel);
 				SpawnDamageFeedback(unit.Position, appliedDamage, color);
-				BuffUnitsNear(Team.Player, laneAnchor, 122f, 1.02f, HasCampaignAdaptiveWaveEliteIntensity() ? 1.1f : 1.06f, 3.6f, color, "RIDE");
+				BuffUnitsNear(Team.Player, laneAnchor, 61f, 1.02f, HasCampaignAdaptiveWaveEliteIntensity() ? 1.1f : 1.06f, 3.6f, color);
 				break;
 			}
 			case RouteCatalog.GloamwoodId:
@@ -7139,10 +6886,10 @@ public partial class BattleController : Node2D
 				break;
 			}
 			case RouteCatalog.CitadelId:
-				DamageEnemiesNear(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 82f : 68f, HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color, "RANGE");
+				DamageEnemiesNear(unit.Position, HasCampaignAdaptiveWaveEliteIntensity() ? 41f : 34f, HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color);
 				if (HasCampaignAdaptiveWaveEliteIntensity())
 				{
-					DamageEnemyBaseByRatio(0.005f, color, "");
+					DamageEnemyBaseByRatio(0.005f, color);
 				}
 				break;
 			default:
@@ -7156,11 +6903,11 @@ public partial class BattleController : Node2D
 		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Rescue)
 		{
 			RepairBusByRatio(0.004f);
-			HealUnit(FindHighestHealthPlayer(), 10f, color, "RESCUE");
+			HealUnit(FindHighestHealthPlayer(), 10f, color);
 		}
 		else if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.Breakthrough)
 		{
-			DamageEnemiesNear(unit.Position, 72f, 8f, color, "PUSH");
+			DamageEnemiesNear(unit.Position, 36f, 8f, color);
 			_courage = Mathf.Min(_maxCourage, _courage + 1f);
 		}
 	}
@@ -7175,13 +6922,13 @@ public partial class BattleController : Node2D
 		switch (_activeRouteId)
 		{
 			case RouteCatalog.CityId:
-				BuffUnitsNear(Team.Enemy, unit.Position, 104f, 1.03f, 1.06f, 3.8f, color, "PANIC");
+				BuffUnitsNear(Team.Enemy, unit.Position, 52f, 1.03f, 1.06f, 3.8f, color);
 				break;
 			case RouteCatalog.HarborId:
-				SlowPlayersNear(unit.Position, 82f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.8f : 0.86f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.4f : 2f, color, "HOOK");
+				SlowPlayersNear(unit.Position, 41f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.8f : 0.86f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.4f : 2f, color);
 				break;
 			case RouteCatalog.FoundryId:
-				HealUnit(unit, HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color, "IRON");
+				HealUnit(unit, HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color);
 				break;
 			case RouteCatalog.QuarantineId:
 				_enemySignalJamTimer = Mathf.Max(_enemySignalJamTimer, HasCampaignAdaptiveWaveEliteIntensity() ? 1.9f : 1.3f);
@@ -7190,16 +6937,16 @@ public partial class BattleController : Node2D
 				_spellDeck.IncreaseCooldowns(0.08f);
 				break;
 			case RouteCatalog.ThornwallId:
-				PushPlayersFromPoint(unit.Position, 80f, HasCampaignAdaptiveWaveEliteIntensity() ? 10f : 8f, 0.86f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.2f : 1.8f, color, "STONE");
+				PushPlayersFromPoint(unit.Position, 40f, HasCampaignAdaptiveWaveEliteIntensity() ? 5f : 4f, 0.86f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.2f : 1.8f, color);
 				break;
 			case RouteCatalog.BasilicaId:
-				HealUnit(FindHighestHealthEnemy(), HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color, "CRYPT");
+				HealUnit(FindHighestHealthEnemy(), HasCampaignAdaptiveWaveEliteIntensity() ? 16f : 12f, color);
 				break;
 			case RouteCatalog.MireId:
-				SlowPlayersNear(unit.Position, 90f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.78f : 0.84f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.6f : 2.1f, color, "ROT");
+				SlowPlayersNear(unit.Position, 45f, HasCampaignAdaptiveWaveEliteIntensity() ? 0.78f : 0.84f, HasCampaignAdaptiveWaveEliteIntensity() ? 2.6f : 2.1f, color);
 				break;
 			case RouteCatalog.SteppeId:
-				BuffUnitsNear(Team.Enemy, unit.Position, 120f, 1.02f, HasCampaignAdaptiveWaveEliteIntensity() ? 1.12f : 1.08f, 3.8f, color, "RIDE");
+				BuffUnitsNear(Team.Enemy, unit.Position, 60f, 1.02f, HasCampaignAdaptiveWaveEliteIntensity() ? 1.12f : 1.08f, 3.8f, color);
 				break;
 			case RouteCatalog.GloamwoodId:
 			{
@@ -7213,18 +6960,17 @@ public partial class BattleController : Node2D
 				break;
 			}
 			case RouteCatalog.CitadelId:
-				DamageBusByRatio(HasCampaignAdaptiveWaveEliteIntensity() ? 0.006f : 0.004f, color, "SHELL");
-				RepairEnemyBaseByRatio(HasCampaignAdaptiveWaveEliteIntensity() ? 0.008f : 0.005f, color, "IRON");
+				DamageBusByRatio(HasCampaignAdaptiveWaveEliteIntensity() ? 0.006f : 0.004f, color);
+				RepairEnemyBaseByRatio(HasCampaignAdaptiveWaveEliteIntensity() ? 0.008f : 0.005f, color);
 				break;
 			default:
-				BuffUnitsNear(Team.Enemy, laneAnchor, 112f, 1.02f, 1.04f, 3.6f, color, "READ");
+				BuffUnitsNear(Team.Enemy, laneAnchor, 56f, 1.02f, 1.04f, 3.6f, color);
 				break;
 		}
 	}
 
 	private string ResolveCampaignPressureEchoCompletion(Unit unit, Vector2 laneAnchor, Color color)
 	{
-		SpawnFloatText(unit.Position + new Vector2(0f, -74f), "ECHO CASHED", color.Lightened(0.26f), 0.58f);
 		if (_campaignPressureEchoFriendly)
 		{
 			ApplyCampaignRouteDoctrine(unit);
@@ -7234,14 +6980,14 @@ public partial class BattleController : Node2D
 
 		if (_campaignPressureEchoOffensive)
 		{
-			DamageBusByRatio(0.01f, color, "AFTERSHOCK");
-			BuffUnitsNear(Team.Enemy, unit.Position, 128f, 1.05f, 1.08f, 4.2f, color, "SURGE");
+			DamageBusByRatio(0.01f, color);
+			BuffUnitsNear(Team.Enemy, unit.Position, 64f, 1.05f, 1.08f, 4.2f, color);
 			return $"{_campaignPressureEchoLabel} completed and drove a hard enemy surge. Pressure echo spent.";
 		}
 
 		_deck.IncreaseCooldowns(0.2f);
 		_spellDeck.IncreaseCooldowns(0.2f);
-		SlowPlayersNear(laneAnchor, 96f, 0.82f, 2.6f, color, "LOCK");
+		SlowPlayersNear(laneAnchor, 48f, 0.82f, 2.6f, color);
 		return $"{_campaignPressureEchoLabel} completed and locked the convoy line down. Pressure echo spent.";
 	}
 
@@ -7292,7 +7038,7 @@ public partial class BattleController : Node2D
 	private void ResolveCampaignCommendationVictoryBonus(out int goldBonus, out int foodBonus)
 	{
 		goldBonus = Mathf.Clamp(
-			Mathf.RoundToInt(Mathf.Max(4f, _stageData.RewardGold * CampaignCommendationGoldRewardScale)) + Mathf.Clamp((_stage - 1) / 10, 0, 6),
+			Mathf.RoundToInt(Mathf.Max(4f, _stageData.RewardGold * CampaignCommendationGoldRewardScale)) + Mathf.Clamp((_stage - 1) / 16, 0, 6),
 			4,
 			40);
 		foodBonus = _stage >= CampaignCommendationEliteFoodStage
@@ -7312,7 +7058,7 @@ public partial class BattleController : Node2D
 			case RouteCatalog.BasilicaId:
 			case RouteCatalog.GloamwoodId:
 				goldBonus += 2;
-				foodBonus = Mathf.Max(foodBonus, _stage >= 30 ? 1 : 0);
+				foodBonus = Mathf.Max(foodBonus, _stage >= CampaignPacing.LateConditionStage ? 1 : 0);
 				break;
 			case RouteCatalog.HarborId:
 			case RouteCatalog.MireId:
@@ -7368,10 +7114,9 @@ public partial class BattleController : Node2D
 			? "the deployed squad"
 			: unit.UnitName;
 		var color = RouteCatalog.Get(_activeRouteId).BannerAccent.Lightened(0.16f);
-		var anchor = FindClosestEnemyToPoint(spawnPosition + new Vector2(84f, 0f), 260f)?.Position
+		var anchor = FindClosestEnemyToPoint(spawnPosition + new Vector2(84f, 0f), 130f)?.Position
 			?? new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.6f), spawnPosition.Y);
 		unit.ApplyTemporaryCombatBuff(1.08f, 1.08f, 6f);
-		SpawnFloatText(unit.Position + new Vector2(0f, -52f), _campaignCommendationLabel.ToUpperInvariant(), color.Lightened(0.22f), 0.62f);
 
 		var status = _activeRouteId switch
 		{
@@ -7403,22 +7148,22 @@ public partial class BattleController : Node2D
 	private string ApplyHarborCommendation(Unit unit, Vector2 anchor, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(1.08f, 1.1f, 6f);
-		DamageEnemiesNear(anchor, 72f, 12f, color, "CHAIN");
-		SlowEnemiesNear(anchor, 88f, 0.7f, 2.8f, color, "TIDECUT");
+		DamageEnemiesNear(anchor, 36f, 12f, color);
+		SlowEnemiesNear(anchor, 44f, 0.7f, 2.8f, color);
 		return $"{_campaignCommendationLabel} snapped chains across the next harbor clash.";
 	}
 
 	private string ApplyFoundryCommendation(Unit unit, Vector2 anchor, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(1.12f, 1.04f, 6f);
-		DamageEnemiesNear(anchor, 84f, 16f, color, "SLAG");
+		DamageEnemiesNear(anchor, 42f, 16f, color);
 		return $"{_campaignCommendationLabel} shelled the lane around the new squad.";
 	}
 
 	private string ApplyQuarantineCommendation(Unit unit, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(1.08f, 1.06f, 6f);
-		HealUnit(unit, 24f, color, "WARD");
+		HealUnit(unit, 24f, color);
 		_enemySignalJamTimer = Mathf.Max(0f, _enemySignalJamTimer - 1.8f);
 		if (_enemySignalJamTimer <= 0.05f)
 		{
@@ -7432,21 +7177,21 @@ public partial class BattleController : Node2D
 	private string ApplyThornwallCommendation(Unit unit, Vector2 anchor, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(1.1f, 1.06f, 6f);
-		PushEnemiesFromPoint(anchor, 100f, 14f, 0.62f, 3f, color, "PASS");
+		PushEnemiesFromPoint(anchor, 50f, 7f, 0.62f, 3f, color);
 		return $"{_campaignCommendationLabel} broke the pass open for the next squad.";
 	}
 
 	private string ApplyBasilicaCommendation(Unit unit, Vector2 spawnPosition, Color color)
 	{
-		HealUnit(unit, 26f, color, "VOW");
-		BuffUnitsNear(Team.Player, spawnPosition, 128f, 1.04f, 1.04f, 4.2f, color, "SANCTIFY");
+		HealUnit(unit, 26f, color);
+		BuffUnitsNear(Team.Player, spawnPosition, 64f, 1.04f, 1.04f, 4.2f, color);
 		return $"{_campaignCommendationLabel} sanctified the deploy lane.";
 	}
 
 	private string ApplyMireCommendation(Vector2 anchor, Color color)
 	{
-		DamageEnemiesNear(anchor, 78f, 12f, color, "FEN");
-		SlowEnemiesNear(anchor, 92f, 0.62f, 3.2f, color, "BOG");
+		DamageEnemiesNear(anchor, 39f, 12f, color);
+		SlowEnemiesNear(anchor, 46f, 0.62f, 3.2f, color);
 		return $"{_campaignCommendationLabel} dragged the next enemy knot into the mire.";
 	}
 
@@ -7473,8 +7218,8 @@ public partial class BattleController : Node2D
 	private string ApplyCitadelCommendation(Unit unit, Vector2 anchor, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(1.08f, 1.06f, 6f);
-		DamageEnemiesNear(anchor, 86f, 14f, color, "RANGE");
-		BuffUnitsNear(Team.Player, unit.Position, 120f, 1.03f, 1.03f, 3.8f, color, "COVER");
+		DamageEnemiesNear(anchor, 43f, 14f, color);
+		BuffUnitsNear(Team.Player, unit.Position, 60f, 1.03f, 1.03f, 3.8f, color);
 		return $"{_campaignCommendationLabel} covered the next deploy with corrected fire.";
 	}
 
@@ -7505,12 +7250,12 @@ public partial class BattleController : Node2D
 				unit.ApplyTemporarySpeedModifier(_campaignPressureEchoOffensive ? 0.62f : 0.74f, _campaignPressureEchoOffensive ? 3.2f : 2.6f);
 				if (!_campaignPressureEchoOffensive)
 				{
-					PushEnemiesFromPoint(unit.Position, 72f, 10f, 0.78f, 2.2f, color, "HOOK");
+					PushEnemiesFromPoint(unit.Position, 36f, 5f, 0.78f, 2.2f, color);
 				}
 				return $"{_campaignPressureEchoLabel} snapped into the next harbor swell.";
 			}
 			case RouteCatalog.FoundryId:
-				DamageEnemiesNear(unit.Position, _campaignPressureEchoOffensive ? 76f : 60f, _campaignPressureEchoOffensive ? 16f : 12f, color, "SLAG");
+				DamageEnemiesNear(unit.Position, _campaignPressureEchoOffensive ? 38f : 30f, _campaignPressureEchoOffensive ? 16f : 12f, color);
 				if (!_campaignPressureEchoOffensive)
 				{
 					RepairBusByRatio(0.01f);
@@ -7533,28 +7278,28 @@ public partial class BattleController : Node2D
 				return $"{_campaignPressureEchoLabel} burned through the next curse knot.";
 			}
 			case RouteCatalog.ThornwallId:
-				PushEnemiesFromPoint(unit.Position, 96f, _campaignPressureEchoOffensive ? 16f : 12f, _campaignPressureEchoOffensive ? 0.56f : 0.68f, 2.8f, color, "STONE");
+				PushEnemiesFromPoint(unit.Position, 48f, _campaignPressureEchoOffensive ? 8f : 6f, _campaignPressureEchoOffensive ? 0.56f : 0.68f, 2.8f, color);
 				return $"{_campaignPressureEchoLabel} smashed the next pass surge backward.";
 			case RouteCatalog.BasilicaId:
 			{
 				var appliedDamage = unit.TakeDamage(_campaignPressureEchoOffensive ? 14f : 10f, _campaignPressureEchoLabel);
 				SpawnDamageFeedback(unit.Position, appliedDamage, color);
-				HealUnit(FindHighestHealthPlayer(), _campaignPressureEchoOffensive ? 14f : 20f, color, "VOW");
+				HealUnit(FindHighestHealthPlayer(), _campaignPressureEchoOffensive ? 14f : 20f, color);
 				if (!_campaignPressureEchoOffensive)
 				{
-					BuffUnitsNear(Team.Player, laneAnchor, 120f, 1.03f, 1.03f, 3.2f, color, "SHELTER");
+					BuffUnitsNear(Team.Player, laneAnchor, 60f, 1.03f, 1.03f, 3.2f, color);
 				}
 				return $"{_campaignPressureEchoLabel} blessed the next basilica clash.";
 			}
 			case RouteCatalog.MireId:
-				DamageEnemiesNear(unit.Position, 78f, _campaignPressureEchoOffensive ? 14f : 10f, color, "FEN");
-				SlowEnemiesNear(unit.Position, 92f, _campaignPressureEchoOffensive ? 0.58f : 0.68f, 3.4f, color, "SNARE");
+				DamageEnemiesNear(unit.Position, 39f, _campaignPressureEchoOffensive ? 14f : 10f, color);
+				SlowEnemiesNear(unit.Position, 46f, _campaignPressureEchoOffensive ? 0.58f : 0.68f, 3.4f, color);
 				return $"{_campaignPressureEchoLabel} dragged the next mire wave off pace.";
 			case RouteCatalog.SteppeId:
 			{
 				var appliedDamage = unit.TakeDamage(_campaignPressureEchoOffensive ? 14f : 10f, _campaignPressureEchoLabel);
 				SpawnDamageFeedback(unit.Position, appliedDamage, color);
-				BuffUnitsNear(Team.Player, laneAnchor, 128f, 1.02f, _campaignPressureEchoOffensive ? 1.1f : 1.06f, 4f, color, "RIDE");
+				BuffUnitsNear(Team.Player, laneAnchor, 64f, 1.02f, _campaignPressureEchoOffensive ? 1.1f : 1.06f, 4f, color);
 				if (_campaignPressureEchoOffensive)
 				{
 					_courage = Mathf.Min(_maxCourage, _courage + 2f);
@@ -7569,14 +7314,14 @@ public partial class BattleController : Node2D
 				return $"{_campaignPressureEchoLabel} hexed the next gloamwood threat.";
 			}
 			case RouteCatalog.CitadelId:
-				DamageEnemiesNear(unit.Position, 82f, _campaignPressureEchoOffensive ? 18f : 12f, color, "RANGE");
+				DamageEnemiesNear(unit.Position, 41f, _campaignPressureEchoOffensive ? 18f : 12f, color);
 				if (_campaignPressureEchoOffensive)
 				{
-					DamageEnemyBaseByRatio(0.01f, color, "");
+					DamageEnemyBaseByRatio(0.01f, color);
 				}
 				else
 				{
-					BuffUnitsNear(Team.Player, laneAnchor, 120f, 1.02f, 1.03f, 3.4f, color, "COVER");
+					BuffUnitsNear(Team.Player, laneAnchor, 60f, 1.02f, 1.03f, 3.4f, color);
 				}
 				return $"{_campaignPressureEchoLabel} corrected onto the next citadel swell.";
 			default:
@@ -7600,21 +7345,21 @@ public partial class BattleController : Node2D
 			case RouteCatalog.CityId:
 				if (_campaignPressureEchoOffensive)
 				{
-					BuffUnitsNear(Team.Enemy, unit.Position, 110f, 1.04f, 1.08f, 4f, color, "PANIC");
+					BuffUnitsNear(Team.Enemy, unit.Position, 55f, 1.04f, 1.08f, 4f, color);
 				}
 				else
 				{
-					DamageBusByRatio(0.008f, color, "PANIC");
+					DamageBusByRatio(0.008f, color);
 				}
 				return $"{_campaignPressureEchoLabel} fed the next city counter-push.";
 			case RouteCatalog.HarborId:
-				SlowPlayersNear(unit.Position, 84f, _campaignPressureEchoOffensive ? 0.8f : 0.84f, 2.6f, color, "HOOK");
+				SlowPlayersNear(unit.Position, 42f, _campaignPressureEchoOffensive ? 0.8f : 0.84f, 2.6f, color);
 				return $"{_campaignPressureEchoLabel} dragged the next harbor rush across the lane.";
 			case RouteCatalog.FoundryId:
-				HealUnit(unit, _campaignPressureEchoOffensive ? 18f : 12f, color, "IRON");
+				HealUnit(unit, _campaignPressureEchoOffensive ? 18f : 12f, color);
 				if (!_campaignPressureEchoOffensive)
 				{
-					RepairEnemyBaseByRatio(0.01f, color, "RESET");
+					RepairEnemyBaseByRatio(0.01f, color);
 				}
 				return $"{_campaignPressureEchoLabel} armored the next forge wave.";
 			case RouteCatalog.QuarantineId:
@@ -7624,20 +7369,20 @@ public partial class BattleController : Node2D
 				_spellDeck.IncreaseCooldowns(0.15f);
 				return $"{_campaignPressureEchoLabel} rolled fresh curse pressure into the swell.";
 			case RouteCatalog.ThornwallId:
-				PushPlayersFromPoint(unit.Position, 90f, _campaignPressureEchoOffensive ? 14f : 10f, _campaignPressureEchoOffensive ? 0.8f : 0.86f, 2.4f, color, "STONE");
+				PushPlayersFromPoint(unit.Position, 45f, _campaignPressureEchoOffensive ? 7f : 5f, _campaignPressureEchoOffensive ? 0.8f : 0.86f, 2.4f, color);
 				return $"{_campaignPressureEchoLabel} knocked the next pass clash off balance.";
 			case RouteCatalog.BasilicaId:
-				HealUnit(FindHighestHealthEnemy(), _campaignPressureEchoOffensive ? 18f : 24f, color, "CRYPT");
+				HealUnit(FindHighestHealthEnemy(), _campaignPressureEchoOffensive ? 18f : 24f, color);
 				return $"{_campaignPressureEchoLabel} restored the next reliquary push.";
 			case RouteCatalog.MireId:
-				SlowPlayersNear(unit.Position, 94f, _campaignPressureEchoOffensive ? 0.76f : 0.82f, 2.8f, color, "ROT");
+				SlowPlayersNear(unit.Position, 47f, _campaignPressureEchoOffensive ? 0.76f : 0.82f, 2.8f, color);
 				if (!_campaignPressureEchoOffensive)
 				{
-					DamageBusByRatio(0.006f, color, "MIRE");
+					DamageBusByRatio(0.006f, color);
 				}
 				return $"{_campaignPressureEchoLabel} soaked the next mire swell in blight.";
 			case RouteCatalog.SteppeId:
-				BuffUnitsNear(Team.Enemy, unit.Position, 128f, 1.04f, 1.12f, 4.2f, color, "RIDE");
+				BuffUnitsNear(Team.Enemy, unit.Position, 64f, 1.04f, 1.12f, 4.2f, color);
 				return $"{_campaignPressureEchoLabel} sped the next steppe charge.";
 			case RouteCatalog.GloamwoodId:
 			{
@@ -7651,10 +7396,10 @@ public partial class BattleController : Node2D
 				return $"{_campaignPressureEchoLabel} marked the next gloamwood strike.";
 			}
 			case RouteCatalog.CitadelId:
-				DamageBusByRatio(_campaignPressureEchoOffensive ? 0.008f : 0.012f, color, "SHELL");
+				DamageBusByRatio(_campaignPressureEchoOffensive ? 0.008f : 0.012f, color);
 				if (!_campaignPressureEchoOffensive)
 				{
-					RepairEnemyBaseByRatio(0.01f, color, "IRON");
+					RepairEnemyBaseByRatio(0.01f, color);
 				}
 				return $"{_campaignPressureEchoLabel} walked guns onto the next citadel wave.";
 			default:
@@ -7677,19 +7422,11 @@ public partial class BattleController : Node2D
 
 		if (deploymentIndex >= _challengeGhostRun.Deployments.Count)
 		{
-			var beyondColor = new Color("bde0fe");
-			SpawnFloatText(spawnPosition + new Vector2(0f, -44f), "BEYOND GHOST", beyondColor, 0.52f);
 			return " Beyond the saved ghost tape.";
 		}
 
 		var ghostDeployment = _challengeGhostRun.Deployments[deploymentIndex];
 		var ghostUnit = GameData.GetUnit(ghostDeployment.UnitId);
-		var currentLanePercent = Mathf.RoundToInt(
-			Mathf.InverseLerp(
-				BattlefieldTop + SpawnVerticalPadding,
-				BattlefieldBottom - SpawnVerticalPadding,
-				spawnPosition.Y) * 100f);
-		var laneDelta = currentLanePercent - ghostDeployment.LanePercent;
 		var timeDelta = _elapsed - ghostDeployment.TimeSeconds;
 		var sameUnit = definition.Id.Equals(ghostDeployment.UnitId, StringComparison.OrdinalIgnoreCase);
 		var paceLabel = timeDelta <= -0.15f
@@ -7697,31 +7434,9 @@ public partial class BattleController : Node2D
 			: timeDelta >= 0.15f
 				? "LATE"
 				: "SYNC";
-		var feedbackColor = sameUnit
-			? paceLabel switch
-			{
-				"AHEAD" => new Color("95d5b2"),
-				"LATE" => new Color("f4a261"),
-				_ => new Color("8ecae6")
-			}
-			: new Color("ffafcc");
-		var primaryLabel = sameUnit
-			? $"{paceLabel} {Mathf.Abs(timeDelta):0.0}s"
-			: $"SWAP {ghostUnit.DisplayName.ToUpperInvariant()}";
-		SpawnFloatText(spawnPosition + new Vector2(0f, -44f), primaryLabel, feedbackColor, 0.56f);
-
-		if (Mathf.Abs(laneDelta) >= 8)
-		{
-			SpawnFloatText(
-				spawnPosition + new Vector2(0f, -66f),
-				$"LANE {FormatSignedInt(laneDelta)}%",
-				feedbackColor.Lightened(0.12f),
-				0.48f);
-		}
-
 		return sameUnit
-			? $" Ghost split {deploymentIndex + 1}: {paceLabel.ToLowerInvariant()} {Mathf.Abs(timeDelta):0.0}s, lane {FormatSignedInt(laneDelta)}%."
-			: $" Ghost split {deploymentIndex + 1}: swapped {definition.DisplayName} for {ghostUnit.DisplayName}, timing {FormatSignedSeconds(timeDelta)}, lane {FormatSignedInt(laneDelta)}%.";
+			? $" Ghost split {deploymentIndex + 1}: {paceLabel.ToLowerInvariant()} {Mathf.Abs(timeDelta):0.0}s."
+			: $" Ghost split {deploymentIndex + 1}: swapped {definition.DisplayName} for {ghostUnit.DisplayName}, timing {FormatSignedSeconds(timeDelta)}.";
 	}
 
 	private string BuildChallengeGhostResultSummary(int finalScore, int starsEarned)
@@ -8062,7 +7777,6 @@ public partial class BattleController : Node2D
 
 		var route = RouteCatalog.Get(_activeRouteId);
 		SpawnEffect(EnemyBaseCorePosition, route.BannerAccent.Lightened(0.08f), 18f, 72f, 0.3f, false);
-		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -56f), "BOSS CHECKPOINT BROKEN", route.BannerAccent.Lightened(0.16f), 0.72f);
 		SetStatus($"{definition.Title} broken on wave {_spawnDirector.EndlessWaveNumber}. {definition.ClearStatus}");
 	}
 
@@ -8094,10 +7808,10 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.18f;
 		AudioDirector.Instance?.PlayBusRepair(healAmount);
 		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
+		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
 	}
 
-	private void DamageEnemyBaseByRatio(float ratio, Color color, string label = "")
+	private void DamageEnemyBaseByRatio(float ratio, Color color)
 	{
 		if (ratio <= 0f)
 		{
@@ -8110,14 +7824,11 @@ public partial class BattleController : Node2D
 		_enemyBaseFlashTimer = 0.22f;
 		AudioDirector.Instance?.PlayBaseHit(false, damageAmount);
 		SpawnEffect(EnemyBaseCorePosition, color, 10f, 30f, 0.22f, false);
-		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.18f), 0.62f);
-		}
+		SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+
 	}
 
-	private void RepairEnemyBaseByRatio(float ratio, Color color, string label = "")
+	private void RepairEnemyBaseByRatio(float ratio, Color color)
 	{
 		if (ratio <= 0f || _enemyBaseHealth <= 0f)
 		{
@@ -8128,11 +7839,8 @@ public partial class BattleController : Node2D
 		_enemyBaseHealth = Mathf.Min(_enemyBaseMaxHealth, _enemyBaseHealth + repairAmount);
 		_enemyBaseFlashTimer = 0.18f;
 		SpawnEffect(EnemyBaseCorePosition, color.Lightened(0.08f), 10f, 28f, 0.22f);
-		SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repairAmount)}", color.Lightened(0.18f), 0.56f);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(EnemyBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.24f), 0.62f);
-		}
+		SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repairAmount)}", color.Lightened(0.18f), 0.56f);
+
 	}
 
 	private float RepairBusByAmount(float amount)
@@ -8147,11 +7855,11 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.18f;
 		AudioDirector.Instance?.PlayBusRepair(repaired);
 		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repaired)}", new Color("b7efc5"), 0.56f);
+		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repaired)}", new Color("b7efc5"), 0.56f);
 		return repaired;
 	}
 
-	private void DamageBusByRatio(float ratio, Color color, string label = "")
+	private void DamageBusByRatio(float ratio, Color color)
 	{
 		if (ratio <= 0f)
 		{
@@ -8164,11 +7872,8 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.22f;
 		AudioDirector.Instance?.PlayBaseHit(true, damageAmount);
 		SpawnEffect(PlayerBaseCorePosition, color, 10f, 30f, 0.22f, false);
-		SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
-		if (!string.IsNullOrWhiteSpace(label))
-		{
-			SpawnFloatText(PlayerBaseCorePosition + new Vector2(0f, -60f), label, color.Lightened(0.18f), 0.62f);
-		}
+		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+
 	}
 
 	private bool IsRouteForkCheckpoint()

@@ -30,18 +30,18 @@ public partial class CombatReviewSmoke
         var arrows = BaseWeaponCatalog.Wagon(BaseUpgradeCatalog.ArcherCrewId, 0);
         Check(arrows != null && BaseWeaponCatalog.Wagon(BaseUpgradeCatalog.BallistaId, 0) == null,
             "New saves start with archers; extra mounts require an upgrade");
-        var outside = Spawn(Team.Enemy, core + new Vector2(550, 0));
+        var outside = Spawn(Team.Enemy, core + new Vector2(275, 0));
         Invoke(battle, "TickBaseWeapons", 1f);
         Check(Shots().Length == 0, "Bases do not shoot out-of-range enemies");
-        var infantry = Spawn(Team.Enemy, core + new Vector2(110, 0));
-        var runner = Spawn(Team.Enemy, core + new Vector2(240, 0), "saboteur", 100);
-        var ally = Spawn(Team.Player, core + new Vector2(120, 10));
+        var infantry = Spawn(Team.Enemy, core + new Vector2(55, 0));
+        var runner = Spawn(Team.Enemy, core + new Vector2(120, 0), "saboteur", 100);
+        var ally = Spawn(Team.Player, core + new Vector2(60, 5));
         Check(ReferenceEquals(Invoke(battle, "FindBaseWeaponTarget", Team.Player, core, arrows), runner),
             "Wagon archers prioritize fast raiders over closer infantry");
         Invoke(battle, "TickBaseWeapons", 0.1f);
         Check(Shots().Length == 1, "Starting wagon fires one ranged shot");
         var shotPosition = Shots()[0].Position;
-        Check(shotPosition.Y < core.Y - 65 && Shots()[0].ZIndex > 0,
+        Check(shotPosition.Y < core.Y - 30 && Shots()[0].ZIndex > 0,
             "Base projectiles launch from the roof above grounded actors");
         Write(battle, "_endlessCheckpointActive", true);
         ResolveShots();
@@ -55,7 +55,7 @@ public partial class CombatReviewSmoke
         Invoke(battle, "TickBaseWeapons", 3f);
         Check(Shots().Length == 1 && Shots()[0].Visible, "A recycled projectile remains visible on the next shot");
         ResolveShots();
-        var armored = Spawn(Team.Enemy, core + new Vector2(280, -60), "brute", 30, 0.5f);
+        var armored = Spawn(Team.Enemy, core + new Vector2(140, -30), "brute", 30, 0.5f);
         runner.SetUntargetable(5);
         Check(!ReferenceEquals(Invoke(battle, "FindBaseWeaponTarget", Team.Player, core, arrows), runner),
             "Base weapons skip untargetable enemies");
@@ -67,15 +67,15 @@ public partial class CombatReviewSmoke
         ResolveShots();
         Check(Mathf.IsEqualApprox(armored.MaxHealth - armored.Health, ballista.Damage * 1.5f * 0.5f),
             "Ballista armor bonus still respects the target's damage reduction");
-        var shield = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_shieldwall")), core + new Vector2(230, -60));
+        var shield = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_shieldwall")), core + new Vector2(115, -30));
         var armoredHealth = armored.Health;
         Invoke(battle, "FireBaseWeapon", Team.Player, arrows, armored);
         ResolveShots();
         Check(armored.Health == armoredHealth && shield.Health < shield.MaxHealth, "Shield walls intercept wagon arrows aimed behind them");
         shield.TakeDamage(10000);
         var firepot = BaseWeaponCatalog.Wagon(BaseUpgradeCatalog.FirepotId, 1);
-        var clusterA = Spawn(Team.Enemy, core + new Vector2(210, 110));
-        var clusterB = Spawn(Team.Enemy, core + new Vector2(220, 110));
+        var clusterA = Spawn(Team.Enemy, core + new Vector2(105, 55));
+        var clusterB = Spawn(Team.Enemy, core + new Vector2(110, 55));
         Check(new[] { clusterA, clusterB }.Contains((Unit)Invoke(battle, "FindBaseWeaponTarget", Team.Player, core, firepot)),
             "Firepots prefer clustered enemies");
         ally.Position = clusterA.Position;
@@ -188,7 +188,7 @@ public partial class CombatReviewSmoke
             "Endless battle initializes its health HUD");
         Check(Read<object>(battle, "_strongholdMount") == null, "Endless mode has no phantom stronghold weapon");
         core = Core(true);
-        Spawn(Team.Enemy, core + new Vector2(200, 0));
+        Spawn(Team.Enemy, core + new Vector2(100, 0));
         Invoke(battle, "TickBaseWeapons", 1f);
         Check(Shots().Length == 1, "Starting wagon archers also defend endless runs");
         ResolveShots();

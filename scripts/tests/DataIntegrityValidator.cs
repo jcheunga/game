@@ -113,6 +113,17 @@ public static class DataIntegrityValidator
             }
         }
 
+        // The shallow battlefield only works if every fighter's vertical aggro reaches either edge from the
+        // wagon's centre line, yet cannot span the whole band from one edge to the other.
+        var laneHalfHeight = LoadLaneHalfHeight(Path.Combine(dataDir, "combat_config.json"));
+        Check(laneHalfHeight > 0, "combat_config.json must define a positive battlefield lane height");
+        foreach (var unit in units.Where(unit => GetFloat(unit, "AttackRange") > 0))
+        {
+            var aggroY = unit.TryGetProperty("AggroRangeY", out _) ? GetFloat(unit, "AggroRangeY") : 96f;
+            Check(aggroY >= laneHalfHeight && aggroY < laneHalfHeight * 2,
+                $"Unit {GetStr(unit, "Id")} AggroRangeY {aggroY} must lie in [{laneHalfHeight}, {laneHalfHeight * 2}) for the battlefield band");
+        }
+
         Check(playerUnitIds.Count >= 16, $"Expected at least 16 player units, found {playerUnitIds.Count}");
         Check(enemyUnitIds.Count >= 15, $"Expected at least 15 enemy units, found {enemyUnitIds.Count}");
 
@@ -168,21 +179,25 @@ public static class DataIntegrityValidator
         {
             "ritual_site", "relic_escort", "gate_breach", "rescue_hold", "mainline_push"
         };
+        // Scripted remix stages (the former postgame 51-60), now inside their zones.
+        var remixStages = new HashSet<int> { 8, 20, 28, 40, 48, 60, 68, 78, 88, 100 };
         var postgameBossStages = new Dictionary<int, string>
         {
-            [52] = "enemy_boss_reliquary",
-            [56] = "enemy_boss_ashen_regent",
-            [58] = "enemy_boss_tidemaster",
-            [60] = "enemy_boss_plague_monarch"
+            [60] = "enemy_boss_reliquary",
+            [100] = "enemy_boss_ashen_regent",
+            [20] = "enemy_boss_tidemaster",
+            [40] = "enemy_boss_plague_monarch"
         };
+        // Remix stages keep their signature modifiers once the campaign has introduced them (fortified deploys
+        // arrive at stage 51, so the earlier Whiteout Bastion and Pale Crown no longer carry them).
         var postgameModifierExpectations = new Dictionary<int, string[]>
         {
-            [51] = new[] { "fortified_deploy" },
-            [52] = new[] { "lich_graveyard" },
-            [53] = new[] { "lich_graveyard" },
-            [55] = new[] { "mirror_pressure", "tunnel_invasion" },
-            [60] = new[] { "fortified_deploy" }
+            [60] = new[] { "lich_graveyard" },
+            [68] = new[] { "lich_graveyard" },
+            [88] = new[] { "mirror_pressure", "tunnel_invasion" },
+            [100] = new[] { "reinforced_barricade" }
         };
+        var zoneStages = new Dictionary<string, List<(int Number, bool Boss)>>(StringComparer.OrdinalIgnoreCase);
 
         float prevHealthScale = 0f;
         int prevRewardGold = 0;
@@ -231,13 +246,14 @@ public static class DataIntegrityValidator
                 if (battlefield.TryGetProperty("CursePatches", out var patches))
                     foreach (var patch in patches.EnumerateArray())
                         Check(GetFloat(patch, "XRatio") is >= .2f and <= .85f && GetFloat(patch, "Width") is > 0 and <= 300 &&
-                            GetFloat(patch, "Height") is > 0 and <= 124 && GetFloat(patch, "YRatio") is >= .25f and <= .75f,
-                            $"Stage {num} cursed pockets must preserve safe lanes");
+                            GetFloat(patch, "Height") > 0 && GetFloat(patch, "Height") <= laneHalfHeight && GetFloat(patch, "YRatio") is >= .25f and <= .75f,
+                            $"Stage {num} cursed pockets must leave clear ground above and below");
             }
 
             // Check wave unit references
             var hasScriptedWaves = false;
             var containsExpectedBossWave = !postgameBossStages.ContainsKey(num);
+            var hasBossWave = GetFloat(stage, "BossSpawnStartTime") > 0f;
             if (stage.TryGetProperty("Waves", out var waves) && waves.ValueKind == JsonValueKind.Array)
             {
                 hasScriptedWaves = true;
@@ -264,6 +280,7 @@ public static class DataIntegrityValidator
                             Check(!string.IsNullOrWhiteSpace(waveUnitId), $"Stage {num} has scripted wave entry with empty UnitId");
                             Check(unitIds.Contains(waveUnitId), $"Stage {num} wave entry references unknown unit: {waveUnitId}");
                             Check(count > 0, $"Stage {num} wave entry '{waveUnitId}' has non-positive Count");
+                            if (waveUnitId.StartsWith("enemy_boss", StringComparison.OrdinalIgnoreCase)) hasBossWave = true;
                             if (postgameBossStages.TryGetValue(num, out var expectedBossId) &&
                                 waveUnitId.Equals(expectedBossId, StringComparison.OrdinalIgnoreCase))
                             {
@@ -290,6 +307,9 @@ public static class DataIntegrityValidator
                 }
             }
 
+            if (!zoneStages.TryGetValue(mapId, out var zoneList)) zoneStages[mapId] = zoneList = new();
+            zoneList.Add((num, hasBossWave));
+
             if (stage.TryGetProperty("MissionEvents", out var missionEvents) && missionEvents.ValueKind == JsonValueKind.Array)
             {
                 foreach (var mission in missionEvents.EnumerateArray())
@@ -302,7 +322,7 @@ public static class DataIntegrityValidator
                 }
             }
 
-            if (num >= 51 && num <= 60)
+            if (remixStages.Contains(num))
             {
                 Check(hasScriptedWaves, $"Postgame stage {num} is missing scripted waves");
                 Check(stage.TryGetProperty("MissionEvents", out var postgameMissionEvents) &&
@@ -328,7 +348,15 @@ public static class DataIntegrityValidator
             prevRewardGold = rewardGold;
         }
 
-        Check(stageNumbers.Count >= 60, $"Expected at least 60 stages, found {stageNumbers.Count}");
+        Check(stageNumbers.Count == 100, $"Expected 100 stages, found {stageNumbers.Count}");
+        foreach (var (zone, list) in zoneStages)
+        {
+            var ordered = list.OrderBy(x => x.Number).ToArray();
+            var first = ordered[0].Number;
+            Check(ordered.Length == 10 && ordered[^1].Number == first + 9 && (first - 1) % 10 == 0,
+                $"Zone {zone} must hold ten contiguous stages starting at 10k+1 (found {string.Join(",", ordered.Select(x => x.Number))})");
+            Check(ordered[^1].Boss, $"Zone {zone} must end on a boss stage");
+        }
 
         // Check sequential stage numbering
         for (var i = 1; i <= stageNumbers.Count; i++)
@@ -528,6 +556,14 @@ public static class DataIntegrityValidator
         var result = new List<JsonElement>();
         foreach (var item in arr.EnumerateArray()) result.Add(item);
         return result.ToArray();
+    }
+
+    private static float LoadLaneHalfHeight(string path)
+    {
+        if (!File.Exists(path)) return 0;
+        using var doc = JsonDocument.Parse(File.ReadAllText(path));
+        if (!doc.RootElement.TryGetProperty("Combat", out var combat)) return 0;
+        return (GetFloat(combat, "BattlefieldBottom") - GetFloat(combat, "BattlefieldTop")) * 0.5f - GetFloat(combat, "SpawnVerticalPadding");
     }
 
     private static JsonElement[]? LoadArrayRoot(string path)

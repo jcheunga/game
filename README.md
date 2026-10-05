@@ -97,7 +97,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 | `ROADMAP.md` | Full milestone plan, sprint log, bugs/hardening status |
 | `ASSETS.md` | Art production manifest (units, backgrounds, structures, audio, particles) |
 | `THEME_BIBLE.md` | Fiction, factions, and setting reference |
-| `CAMPAIGN_PLAN.md` | 10-district campaign structure with the extended 60-stage route plan |
+| `CAMPAIGN_PLAN.md` | 10-district campaign structure: ten stages per district, 100 in all |
 
 ## Architecture
 
@@ -113,10 +113,13 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 ## Prototype controls
 
-- Battlefield: the map is 2560 units wide (twice the original screen width). Scroll
-  the mouse wheel or trackpad to pan, middle-drag, or use Left/Right arrows. The
-  **Home / End** jump to either base. On mobile, drag to explore and use **Map**
-  to see the entire battlefield.
+- Battlefield: about two screens long at lane-game proportions (a soldier is about
+  14% of the screen). The camera follows the fighting; scroll the mouse wheel or
+  trackpad, middle-drag, or use Left/Right arrows to pan, then the sword button or
+  **F** to follow again. **Home / End** jump to either base. On mobile, drag to
+  explore and use **Map** to see the entire battlefield.
+- Deploying: tap a unit card (or its number key). It steps out of the wagon's
+  troop door onto the battle line. Magic cards drag onto the field.
 - Campaign victory occurs when either base is destroyed. Deployments always
   start at the wagon. Capture posts, supply rings, the minimap and battle speed
   controls have been removed.

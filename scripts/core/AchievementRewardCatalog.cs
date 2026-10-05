@@ -28,7 +28,6 @@ public static class AchievementRewardCatalog
 		new("district_clear", "gold", 300, "+300 gold"),
 		new("campaign_complete", "sigils", 5, "+5 sigils"),
 		new("all_stars", "tomes", 5, "+5 tomes"),
-		new("heroic_clear", "essence", 5, "+5 essence"),
 
 		// Combat
 		new("boss_slayer", "gold", 200, "+200 gold"),

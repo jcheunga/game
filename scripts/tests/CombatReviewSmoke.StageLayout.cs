@@ -10,7 +10,7 @@ public partial class CombatReviewSmoke
         GameState.Instance.PrepareCampaignBattle();
         foreach (var original in GameData.Stages.OrderBy(s => s.StageNumber))
         {
-            var stage = GameState.Instance.BuildConfiguredCampaignStage(original.StageNumber);
+            var stage = GameData.GetStage(original.StageNumber);
             var missions = StageMissionEvents.GetCampaignMissionEvents(stage);
             var plan = stage.Battlefield;
             Check(plan != null && plan.OutpostXRatio is >= .3f and <= .5f && plan.SupplyXRatio > plan.OutpostXRatio &&

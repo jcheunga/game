@@ -168,9 +168,6 @@ public partial class MapMenu
         _overview.AddChild(_rewards);
         _description = RealmUi.Label("");
         _overview.AddChild(_description);
-        _directive = RealmUi.Button("shield", "Heroic directive", ToggleDirective);
-        HomeMapUi.StyleButton(_directive);
-        side.AddChild(_directive);
         _action = RealmUi.Button("flag", "Prepare battle", VisitSelected, true);
         HomeMapUi.StyleButton(_action, true);
         side.AddChild(_action);

@@ -22,7 +22,6 @@ public static class CampaignRenumbering
         [33] = 38, [38] = 53, [41] = 70, [43] = 58, [46] = 80, [47] = 68, [53] = 78, [56] = 90, [60] = 100,
     };
     private static readonly Regex SiteId = new(@"^(leader|supply|landmark)-(\d+)$", RegexOptions.Compiled);
-    private static readonly Regex DirectiveId = new(@"^stage_(\d+)_(.+)$", RegexOptions.Compiled);
 
     public static int Stage(int legacy) => legacy >= 1 && legacy <= LegacyStageCount ? LegacyToCurrent[legacy - 1] : legacy;
 
@@ -40,12 +39,9 @@ public static class CampaignRenumbering
         saved.HighestUnlockedStage = Math.Clamp(cleared + 1, 1, Math.Max(1, stageCount));
         saved.SelectedStage = Math.Clamp(Stage(saved.SelectedStage), 1, Math.Max(1, stageCount));
         if (saved.HardModeHighestCleared > 0) saved.HardModeHighestCleared = Stage(saved.HardModeHighestCleared);
-        if (saved.ArmedCampaignDirectiveStage > 0) saved.ArmedCampaignDirectiveStage = Stage(saved.ArmedCampaignDirectiveStage);
         saved.ClaimedProgressionMilestones = (saved.ClaimedProgressionMilestones ?? Array.Empty<int>())
             .Select(stage => LegacyMilestones.GetValueOrDefault(stage, Stage(stage))).Distinct().ToArray();
         saved.ClaimedStageMasteryRewards = (saved.ClaimedStageMasteryRewards ?? Array.Empty<int>()).Select(Stage).Distinct().ToArray();
-        saved.ClaimedCampaignDirectiveIds = (saved.ClaimedCampaignDirectiveIds ?? Array.Empty<string>()).Select(id =>
-            DirectiveId.Match(id) is { Success: true } m ? $"stage_{Stage(int.Parse(m.Groups[1].Value))}_{m.Groups[2].Value}" : id).ToArray();
         saved.VisitedAdventureSites = (saved.VisitedAdventureSites ?? Array.Empty<string>()).Select(Site).ToArray();
         saved.AdventureOpenTiles = (saved.AdventureOpenTiles ?? Array.Empty<string>()).Select(Site).ToArray();
         saved.AdventureReachedTiles = (saved.AdventureReachedTiles ?? Array.Empty<string>()).Select(Site).ToArray();

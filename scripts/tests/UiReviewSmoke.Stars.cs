@@ -52,7 +52,7 @@ public partial class UiReviewSmoke
         SceneRouter.Instance.GoToLoadout(); await Wait(.3);
         var preparation = Walk(GetTree().CurrentScene).OfType<LoadoutMenu>().Single();
         Check(!Walk(GetTree().CurrentScene).OfType<Label>().Any(x => x.Text.Contains(StageStarScore.RulesText))
-            && Walk(preparation).OfType<Label>().Any(x => x.Text == $"+{state.BuildConfiguredCampaignStage(state.SelectedStage).RewardGold:N0}")
+            && Walk(preparation).OfType<Label>().Any(x => x.Text == $"+{GameData.GetStage(state.SelectedStage).RewardGold:N0}")
             && !Walk(preparation).OfType<Button>().Any(button => button.Text is "Goals" or "Foes" or "Field" or "Brief")
             && !Walk(preparation).OfType<ScrollContainer>().Any(scroll => scroll.GetVScrollBar().IsVisibleInTree()),
             "Battle preparation fits its rewards and squad without briefing tabs or vertical scrolling");

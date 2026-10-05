@@ -225,20 +225,12 @@ public partial class UiReviewSmoke
         var details = menu.GetNode<PanelContainer>("HomeHud/SelectedSite");
         Check(!Walk(details).OfType<Button>().Any(button => button.Text is "Intel" or "Overview"), "Stage details present rewards and costs directly without an Intel tab");
         var resourceIcons = Walk(details).OfType<TextureRect>().Where(icon => icon.IsVisibleInTree()).ToArray();
-        Check(resourceIcons.Count(icon => icon.Texture == HomeMapArt.Icon("food")) == (state.BuildConfiguredCampaignStage(1).RewardFood > 0 ? 2 : 1)
+        Check(resourceIcons.Count(icon => icon.Texture == HomeMapArt.Icon("food")) == (GameData.GetStage(1).RewardFood > 0 ? 2 : 1)
             && resourceIcons.Any(icon => icon.Texture == HomeMapArt.Icon("gold"))
-            && Walk(details).OfType<Label>().Any(label => label.Text == $"+{state.BuildConfiguredCampaignStage(1).RewardGold:N0}"),
+            && Walk(details).OfType<Label>().Any(label => label.Text == $"+{GameData.GetStage(1).RewardGold:N0}"),
             "Stage details display the configured victory reward and a single battle entry ration cost");
-        if (state.IsCampaignDirectiveUnlocked(1))
-        {
-            var armed = state.IsCampaignDirectiveArmed(1);
-            var directive = Walk(details).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == (armed ? "Stand down directive" : "Heroic directive"));
-            await TapModal(directive);
-            Check(state.IsCampaignDirectiveArmed(1) != armed && Walk(details).OfType<Label>().Any(label => label.Text == $"+{state.BuildConfiguredCampaignStage(1).RewardGold:N0}"),
-                "The directive remains usable without Intel and refreshes the configured reward");
-            await TapModal(directive);
-            Check(state.IsCampaignDirectiveArmed(1) == armed, "The stage panel can restore the original directive choice");
-        }
+        Check(!Walk(details).OfType<Button>().Any(button => button.Text.Contains("directive", StringComparison.OrdinalIgnoreCase)),
+            "Cleared stage details offer no heroic directive");
         AuditText("Tile map / stage details"); await Capture("05-stage-costs");
         await Press("Prepare battle"); await Wait(.3);
         Check(menu.HomeModalDestination == SceneRouter.LoadoutScene && state.SelectedStage == 1, "Stage tile launches the matching real battle preparation");

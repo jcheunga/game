@@ -129,7 +129,6 @@ public partial class GameState : Node
 	public int PendingChallengeSubmissionCount => _pendingChallengeSubmissions.Count;
 	public int ClaimedDistrictRewardCount => _claimedDistrictRewardIds.Count;
 	public int ClaimedUnitDoctrineCount => _unitDoctrineSelections.Count;
-	public int ClaimedCampaignDirectiveCount => _claimedCampaignDirectiveIds.Count;
 	public int CampaignMomentumStacks => _campaignMomentumStacks;
 	public int DailyStreak => _dailyStreak;
 	public int PromotedUnitCount => _promotedUnitIds.Count;
@@ -162,7 +161,6 @@ public partial class GameState : Node
 	private readonly List<ChallengeSubmissionEnvelope> _pendingChallengeSubmissions = new();
 	private readonly List<string> _pinnedChallengeCodes = new();
 	private readonly HashSet<string> _claimedDistrictRewardIds = new(StringComparer.OrdinalIgnoreCase);
-	private readonly HashSet<string> _claimedCampaignDirectiveIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _ownedEquipmentIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, string> _unitEquipmentSlots = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _seenHintIds = new(StringComparer.OrdinalIgnoreCase);
@@ -171,7 +169,6 @@ public partial class GameState : Node
 	private readonly HashSet<string> _purchasedProductIds = new(StringComparer.OrdinalIgnoreCase);
 	private int _totalPurchaseCount;
 	private string _purchaseValidationEndpoint = "";
-	private int _armedCampaignDirectiveStage;
 	private int _campaignMomentumStacks;
 	private int _dailyStreak;
 	private readonly RandomNumberGenerator _rng = new();
@@ -946,129 +943,9 @@ public partial class GameState : Node
 		};
 	}
 
-	public CampaignDirectiveDefinition GetCampaignDirective(int stage)
-	{
-		if (stage < 1 || stage > MaxStage)
-		{
-			return null;
-		}
-
-		return CampaignDirectiveCatalog.GetForStage(GameData.GetStage(stage));
-	}
-
-	public bool IsCampaignDirectiveUnlocked(int stage)
-	{
-		return stage >= 1 &&
-			IsCampaignStageUnlocked(stage) &&
-			GetStageStars(stage) > 0 &&
-			GetCampaignDirective(stage) != null;
-	}
-
-	public bool IsCampaignDirectiveArmed(int stage)
-	{
-		return _armedCampaignDirectiveStage == stage &&
-			GetCampaignDirective(stage) != null;
-	}
-
-	public bool HasClaimedCampaignDirective(string directiveId)
-	{
-		return !string.IsNullOrWhiteSpace(directiveId) &&
-			_claimedCampaignDirectiveIds.Contains(directiveId.Trim());
-	}
-
-	public bool HasClaimedCampaignDirectiveForStage(int stage)
-	{
-		var directive = GetCampaignDirective(stage);
-		return directive != null && HasClaimedCampaignDirective(directive.Id);
-	}
-
-	public bool ToggleCampaignDirective(int stage, out string message)
-	{
-		var directive = GetCampaignDirective(stage);
-		if (directive == null)
-		{
-			message = $"Stage {stage} has no heroic directive.";
-			return false;
-		}
-
-		if (!IsCampaignDirectiveUnlocked(stage))
-		{
-			message = $"Clear stage {stage} once before arming its heroic directive.";
-			return false;
-		}
-
-		if (_armedCampaignDirectiveStage == stage)
-		{
-			_armedCampaignDirectiveStage = 0;
-			LastResultMessage = $"Heroic directive stood down on stage {stage}.";
-		}
-		else
-		{
-			_armedCampaignDirectiveStage = stage;
-			LastResultMessage = $"Heroic directive armed for stage {stage}: {directive.Title}.";
-		}
-
-		Persist();
-		message = LastResultMessage;
-		return true;
-	}
-
-	public StageDefinition BuildConfiguredCampaignStage(int stage)
-	{
-		var baseStage = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
-		var directive = IsCampaignDirectiveArmed(baseStage.StageNumber)
-			? GetCampaignDirective(baseStage.StageNumber)
-			: null;
-
-		if (directive == null)
-		{
-			return baseStage;
-		}
-
-		return CloneStageWithDirective(baseStage, directive);
-	}
-
-	public string BuildCampaignDirectiveStatusText(int stage)
-	{
-		var directive = GetCampaignDirective(stage);
-		if (directive == null)
-		{
-			return "Heroic directive: none";
-		}
-
-		return CampaignDirectiveCatalog.BuildStatusText(
-			directive,
-			IsCampaignDirectiveUnlocked(stage),
-			IsCampaignDirectiveArmed(stage),
-			HasClaimedCampaignDirective(directive.Id));
-	}
-
-	public string BuildCampaignDirectiveInlineText(int stage)
-	{
-		var directive = GetCampaignDirective(stage);
-		if (directive == null)
-		{
-			return "Directive: none";
-		}
-
-		var status = HasClaimedCampaignDirective(directive.Id)
-			? "claimed"
-			: IsCampaignDirectiveArmed(stage)
-				? "armed"
-				: IsCampaignDirectiveUnlocked(stage)
-					? "ready"
-					: "locked";
-		return $"Directive: {directive.Title} ({status})";
-	}
-
-	public string BuildCampaignDirectiveRewardSummary(int stage)
-	{
-		return CampaignDirectiveCatalog.BuildRewardSummary(GetCampaignDirective(stage));
-	}
-
 	public CampaignReadinessReport GetCampaignReadinessReport(int stage)
 	{
-		var resolvedStage = BuildConfiguredCampaignStage(stage);
+		var resolvedStage = GameData.GetStage(Mathf.Clamp(stage, 1, MaxStage));
 		return CampaignReadinessEvaluator.Evaluate(
 			resolvedStage,
 			GetActiveDeckUnits(),
@@ -1244,10 +1121,9 @@ public partial class GameState : Node
 		var progressionRewardSummary = ClaimCampaignProgressionRewards(stage, starsEarned);
 		if (CurrentBattleMode == BattleRunMode.Campaign) UnlockNextStageInternal(stage);
 		var districtRewardSummary = TryClaimDistrictRewardForStage(stage);
-		var directiveRewardSummary = TryClaimCampaignDirectiveReward(stage);
 		var scoutRewardSummary = TryClaimCampaignScoutCache(firstClear, starsEarned);
 		var momentumSummary = UpdateCampaignMomentumAfterVictory(starsEarned);
-		var extraRewardSummary = BuildCombinedCampaignBonusSummary(progressionRewardSummary, districtRewardSummary, directiveRewardSummary, scoutRewardSummary, momentumSummary);
+		var extraRewardSummary = BuildCombinedCampaignBonusSummary(progressionRewardSummary, districtRewardSummary, scoutRewardSummary, momentumSummary);
 		var boss = GameData.GetStagesForMap(GameData.GetStage(stage).MapId).Max(x => x.StageNumber);
 		var nextStageHint = GetAdventureBossRemainingLeaders(boss) == 0 && GetStageStars(boss) == 0
 			? " The district boss gate is open. Challenge its ruler when you are ready."
@@ -1944,8 +1820,6 @@ public partial class GameState : Node
 		_spellUpgradeLevels.Clear();
 		_baseUpgradeLevels.Clear();
 		_claimedDistrictRewardIds.Clear();
-		_claimedCampaignDirectiveIds.Clear();
-		_armedCampaignDirectiveStage = 0;
 		_campaignMomentumStacks = 0;
 
 		// Keep permanent unlocks
@@ -5106,14 +4980,12 @@ public partial class GameState : Node
 		_spellUpgradeLevels.Clear();
 		_baseUpgradeLevels.Clear();
 		_unitDoctrineSelections.Clear();
-		_armedCampaignDirectiveStage = 0;
 		_challengeBestScores.Clear();
 		_endlessRunHistory.Clear();
 		_challengeHistory.Clear();
 		_pendingChallengeSubmissions.Clear();
 		_pinnedChallengeCodes.Clear();
 		_claimedDistrictRewardIds.Clear();
-		_claimedCampaignDirectiveIds.Clear();
 		_ownedEquipmentIds.Clear();
 		_unitEquipmentSlots.Clear();
 		_unlockedAchievementIds.Clear();
@@ -5450,22 +5322,6 @@ public partial class GameState : Node
 			}
 		}
 
-		_armedCampaignDirectiveStage = saved.Version >= 24
-			? Mathf.Clamp(saved.ArmedCampaignDirectiveStage, 0, MaxStage)
-			: 0;
-
-		_claimedCampaignDirectiveIds.Clear();
-		if (saved.Version >= 24 && saved.ClaimedCampaignDirectiveIds != null)
-		{
-			foreach (var directiveId in saved.ClaimedCampaignDirectiveIds)
-			{
-				if (!string.IsNullOrWhiteSpace(directiveId))
-				{
-					_claimedCampaignDirectiveIds.Add(directiveId.Trim());
-				}
-			}
-		}
-
 		_ownedEquipmentIds.Clear();
 		if (saved.Version >= 26 && saved.OwnedEquipmentIds != null)
 		{
@@ -5625,7 +5481,8 @@ public partial class GameState : Node
 		{
 			foreach (var achievementId in saved.UnlockedAchievementIds)
 			{
-				if (!string.IsNullOrWhiteSpace(achievementId))
+				// Retired achievements (such as the heroic directive one) no longer count.
+				if (!string.IsNullOrWhiteSpace(achievementId) && AchievementCatalog.GetById(achievementId.Trim()) != null)
 				{
 					_unlockedAchievementIds.Add(achievementId.Trim());
 				}
@@ -5970,7 +5827,6 @@ public partial class GameState : Node
 		NormalizePendingChallengeSubmissions();
 		NormalizePinnedChallenges();
 		NormalizeClaimedDistrictRewards();
-		NormalizeCampaignDirectives();
 		NormalizeSelectedAsyncChallengeLockedDeck();
 		SelectedEndlessRouteId = NormalizeRouteId(SelectedEndlessRouteId);
 		SelectedEndlessBoonId = NormalizeEndlessBoonId(SelectedEndlessBoonId);
@@ -6095,8 +5951,6 @@ public partial class GameState : Node
 			TotalChallengeSubmissionsSynced = TotalChallengeSubmissionsSynced,
 			PinnedChallengeCodes = _pinnedChallengeCodes.ToArray(),
 			ClaimedDistrictRewardIds = _claimedDistrictRewardIds.ToArray(),
-			ArmedCampaignDirectiveStage = _armedCampaignDirectiveStage,
-			ClaimedCampaignDirectiveIds = _claimedCampaignDirectiveIds.ToArray(),
 			OwnedEquipmentIds = _ownedEquipmentIds.ToArray(),
 			UnitEquipmentSlots = new Dictionary<string, string>(_unitEquipmentSlots),
 			LastDailyDate = LastDailyDate ?? "",
@@ -6295,35 +6149,6 @@ public partial class GameState : Node
 			: "";
 	}
 
-	private string TryClaimCampaignDirectiveReward(int stage)
-	{
-		if (!IsCampaignDirectiveArmed(stage))
-		{
-			return "";
-		}
-
-		var directive = GetCampaignDirective(stage);
-		if (directive == null)
-		{
-			return "";
-		}
-
-		if (_claimedCampaignDirectiveIds.Contains(directive.Id))
-		{
-			return $"Heroic directive replayed: {directive.Title}. Bounty already claimed.";
-		}
-
-		_claimedCampaignDirectiveIds.Add(directive.Id);
-		Gold += directive.BonusGold;
-		Food += directive.BonusFood;
-		var baseSummary = directive.BonusFood > 0
-			? $"Heroic directive secured: {directive.Title}. +{directive.BonusGold} gold, +{directive.BonusFood} food."
-			: $"Heroic directive secured: {directive.Title}. +{directive.BonusGold} gold.";
-
-		var relicSummary = TryRollHeroicRelicDrop();
-		return string.IsNullOrWhiteSpace(relicSummary) ? baseSummary : $"{baseSummary} {relicSummary}";
-	}
-
 	private string TryClaimCampaignScoutCache(bool firstClear, int starsEarned)
 	{
 		if (CurrentBattleMode != BattleRunMode.Campaign || !firstClear || starsEarned < 2)
@@ -6367,32 +6192,6 @@ public partial class GameState : Node
 		return "Caravan momentum broken.";
 	}
 
-	private string TryRollHeroicRelicDrop()
-	{
-		var roll = _rng.Randf();
-		string targetRarity;
-		if (roll < 0.05f)
-			targetRarity = "epic";
-		else if (roll < 0.25f)
-			targetRarity = "rare";
-		else if (roll < 0.65f)
-			targetRarity = "common";
-		else
-			return "";
-
-		var candidates = GameData.GetAllEquipment()
-			.Where(e => string.Equals(e.Rarity, targetRarity, StringComparison.OrdinalIgnoreCase))
-			.ToList();
-		if (candidates.Count == 0)
-			return "";
-
-		var relic = candidates[_rng.RandiRange(0, candidates.Count - 1)];
-		var isNew = TryGrantEquipment(relic.Id);
-		return isNew
-			? $"Relic drop: {relic.DisplayName} ({relic.Rarity})!"
-			: $"Relic drop: {relic.DisplayName} (already owned).";
-	}
-
 	private static string BuildCombinedCampaignBonusSummary(params string[] summaries)
 	{
 		return string.Join(
@@ -6400,50 +6199,6 @@ public partial class GameState : Node
 			summaries
 				.Where(summary => !string.IsNullOrWhiteSpace(summary))
 				.Select(summary => summary.Trim()));
-	}
-
-	private static StageDefinition CloneStageWithDirective(StageDefinition stage, CampaignDirectiveDefinition directive)
-	{
-		return new StageDefinition
-		{
-			StageNumber = stage.StageNumber,
-			StageName = stage.StageName,
-			MapId = stage.MapId,
-			MapName = stage.MapName,
-			TerrainId = stage.TerrainId,
-			Description = stage.Description,
-			RewardGold = stage.RewardGold,
-			RewardFood = stage.RewardFood,
-			EntryFoodCost = stage.EntryFoodCost,
-			ExploreFoodCost = stage.ExploreFoodCost,
-			MapX = stage.MapX,
-			MapY = stage.MapY,
-			PlayerBaseHealth = stage.PlayerBaseHealth,
-			EnemyBaseHealth = stage.EnemyBaseHealth,
-			EnemySpawnMin = stage.EnemySpawnMin,
-			EnemySpawnMax = stage.EnemySpawnMax,
-			EnemyHealthScale = stage.EnemyHealthScale,
-			EnemyDamageScale = stage.EnemyDamageScale,
-			WalkerWeight = stage.WalkerWeight,
-			RunnerWeight = stage.RunnerWeight,
-			BruteWeight = stage.BruteWeight,
-			SpitterWeight = stage.SpitterWeight,
-			CrusherWeight = stage.CrusherWeight,
-			BossWeight = stage.BossWeight,
-			BossSpawnStartTime = stage.BossSpawnStartTime,
-			BonusWaveChance = stage.BonusWaveChance,
-			TwoStarBusHullRatio = stage.TwoStarBusHullRatio,
-			ThreeStarTimeLimitSeconds = stage.ThreeStarTimeLimitSeconds,
-			Hazards = stage.Hazards,
-			Modifiers = CampaignDirectiveCatalog.CombineModifiers(stage, directive)
-				.Select(modifier => modifier.Clone())
-				.ToArray(),
-			Objectives = stage.Objectives,
-			MissionEvents = stage.MissionEvents,
-			Battlefield = stage.Battlefield,
-			WeatherId = stage.WeatherId,
-			Waves = stage.Waves
-		};
 	}
 
 	private void GrantPendingDistrictRewardsOnLoad()
@@ -6602,31 +6357,6 @@ public partial class GameState : Node
 			CampaignPlanCatalog.GetAll().Select(district => district.Id),
 			StringComparer.OrdinalIgnoreCase);
 		_claimedDistrictRewardIds.RemoveWhere(districtId => !validDistrictIds.Contains(districtId));
-	}
-
-	private void NormalizeCampaignDirectives()
-	{
-		var validDirectiveIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		for (var stage = 1; stage <= MaxStage; stage++)
-		{
-			var directive = GetCampaignDirective(stage);
-			if (directive != null)
-			{
-				validDirectiveIds.Add(directive.Id);
-			}
-		}
-
-		_claimedCampaignDirectiveIds.RemoveWhere(directiveId => !validDirectiveIds.Contains(directiveId));
-		if (_armedCampaignDirectiveStage < 0 || _armedCampaignDirectiveStage > MaxStage)
-		{
-			_armedCampaignDirectiveStage = 0;
-			return;
-		}
-
-		if (_armedCampaignDirectiveStage > 0 && !IsCampaignDirectiveUnlocked(_armedCampaignDirectiveStage))
-		{
-			_armedCampaignDirectiveStage = 0;
-		}
 	}
 
 	private int RecordStageStars(int stage, int starsEarned)
@@ -7772,11 +7502,6 @@ public partial class GameState : Node
 		if (threeStarCount >= 40)
 		{
 			TryUnlockAchievement("all_stars");
-		}
-
-		if (_claimedCampaignDirectiveIds.Count >= 10)
-		{
-			TryUnlockAchievement("heroic_clear");
 		}
 
 		// Combat - boss_slayer and boss_hunter checked via stage clears

@@ -16,7 +16,6 @@ public static class LoadingTipCatalog
 		"The Necromancer raises skeletons from enemy corpses — more enemies means more minions.",
 		"Banner Knight's aura boosts attack and speed for all nearby allies.",
 		"Boss stages appear at the end of each district. Bring your strongest squad.",
-		"Heroic Directives offer bonus rewards for replaying stages with extra challenge.",
 		"Daily Challenges change every day — check Multiplayer for today's board.",
 		"Food is spent to enter stages and explore new districts.",
 		"Gold funds unit purchases, level-ups, spell upgrades, and war wagon improvements.",

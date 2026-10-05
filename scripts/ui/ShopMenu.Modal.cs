@@ -144,7 +144,6 @@ public partial class ShopMenu
         int Level(string id) => state.GetBaseUpgradeLevel(id);
         Fact("Allies owned", $"{state.GetOwnedPlayerUnits().Count}/{GameData.PlayerRosterIds.Length}");
         Fact("Spells owned", $"{state.GetOwnedPlayerSpells().Count}/{GameData.PlayerSpellIds.Length}");
-        Fact("Heroic directives", $"{state.ClaimedCampaignDirectiveCount}/{state.MaxStage}");
         Fact("Wagon plating", $"{Level(BaseUpgradeCatalog.HullPlatingId)}/{state.MaxBaseUpgradeLevel}");
         Fact("Stores", $"{Level(BaseUpgradeCatalog.PantryId)}/{state.MaxBaseUpgradeLevel}");
         Fact("March drum", $"{Level(BaseUpgradeCatalog.DispatchConsoleId)}/{state.MaxBaseUpgradeLevel}");

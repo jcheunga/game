@@ -496,7 +496,7 @@ public partial class BattleController : Node2D
 		else
 		{
 			_stage = Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage);
-			_stageData = GameState.Instance.BuildConfiguredCampaignStage(_stage);
+			_stageData = GameData.GetStage(_stage);
 			_activeRouteId = NormalizeRouteId(_stageData.MapId);
 			_playerBaseMaxHealth = _stageData.PlayerBaseHealth * StageModifiers.ResolvePlayerBaseHealthScale(_stageData);
 			_enemyBaseMaxHealth = _stageData.EnemyBaseHealth * StageModifiers.ResolveEnemyBaseHealthScale(_stageData);

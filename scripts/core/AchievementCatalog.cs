@@ -21,12 +21,11 @@ public static class AchievementCatalog
 {
     private static readonly AchievementDefinition[] Definitions =
     {
-        // Campaign (5)
+        // Campaign (4)
         new("first_blood", "First Blood", "Complete your first campaign stage.", "campaign"),
         new("district_clear", "District Marshal", "Clear an entire campaign district.", "campaign"),
         new("campaign_complete", "Caravan Commander", "Clear all 10 campaign districts.", "campaign"),
         new("all_stars", "Star Collector", "Earn 3 stars on 40 stages.", "campaign"),
-        new("heroic_clear", "Heroic Legend", "Complete 10 heroic directives.", "campaign"),
 
         // Combat (5)
         new("boss_slayer", "Boss Slayer", "Defeat any district boss.", "combat"),

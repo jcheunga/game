@@ -115,8 +115,6 @@ public sealed class GameSaveData
     public string[] ClaimedDistrictRewardIds { get; set; } = [];
     public Dictionary<string, string> UnitDoctrineIds { get; set; } = new();
     public List<EndlessRunRecord> EndlessRunHistory { get; set; } = [];
-    public int ArmedCampaignDirectiveStage { get; set; }
-    public string[] ClaimedCampaignDirectiveIds { get; set; } = [];
     public string[] OwnedEquipmentIds { get; set; } = [];
     public Dictionary<string, string> UnitEquipmentSlots { get; set; } = new();
     public string LastDailyDate { get; set; } = "";

@@ -263,11 +263,6 @@ public static class CampaignReadinessEvaluator
             score -= Math.Min(8, (doctrineEligibleCount - doctrineSelections) * 2);
         }
 
-        if (GameState.Instance.IsCampaignDirectiveArmed(stage.StageNumber))
-        {
-            score -= 4;
-        }
-
         var rating = score switch
         {
             < 45 => "Fragile",

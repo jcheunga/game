@@ -15,7 +15,7 @@ public partial class MapMenu : Control
     private Label _mapTitle, _zoneProgress, _gold, _food, _stars, _siteName, _siteEyebrow, _siteStatus, _description;
     private VBoxContainer _rewards;
     private TextureRect _portrait;
-    private Button _action, _directive, _previousZone, _nextZone;
+    private Button _action, _previousZone, _nextZone;
     private PanelContainer _sitePanel;
     private VBoxContainer _overview;
 
@@ -89,7 +89,6 @@ public partial class MapMenu : Control
         _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : "Open tile · ready to gather";
         ShowDiscoveryRewards();
         _description.Text = reason; _description.Visible = !canTravel;
-        _directive.Visible = false;
         _action.Text = _mapCanvas.IsTravelling ? "Collecting…" : "Collect";
         _action.Icon = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _action.Disabled = _mapCanvas.IsTravelling || !canTravel;
@@ -103,7 +102,7 @@ public partial class MapMenu : Control
         var bossLocked = boss && !state.IsCampaignStageUnlocked(_selected.Stage);
         var leader = _selected.Kind == AdventureSiteKind.Leader;
         var visited = state.HasVisitedAdventureSite(_selected.Id);
-        var stage = state.BuildConfiguredCampaignStage(_selected.Stage);
+        var stage = GameData.GetStage(_selected.Stage);
         var tile = AdventureTileCatalog.Find(_activeMapId, _selected.Id);
         _mapTitle.Text = RouteCatalog.Get(_activeMapId).Title;
         RefreshZoneNavigation();
@@ -124,9 +123,6 @@ public partial class MapMenu : Control
         _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);
-        _directive.Visible = known && leader && state.IsCampaignDirectiveUnlocked(_selected.Stage);
-        _directive.Disabled = _mapCanvas.IsTravelling || bossLocked;
-        _directive.Text = state.IsCampaignDirectiveArmed(_selected.Stage) ? "Stand down directive" : "Heroic directive";
         _action.Text = _mapCanvas.IsTravelling ? "Travelling…" : !known ? "Tile unopened" : bossLocked ? "Boss gate sealed" : leader ? "Prepare battle" : "Collect";
         _action.Disabled = !known || bossLocked || _mapCanvas.IsTravelling || (!string.IsNullOrEmpty(_selected.RequiredVisit) && !state.HasVisitedAdventureSite(_selected.RequiredVisit));
         if (known && !state.CanTravelToAdventureTile(tile, out var reason)) {
@@ -174,12 +170,6 @@ public partial class MapMenu : Control
         GameState.Instance.FoodChanged -= RefreshUi;
         GameState.Instance.DeveloperStateChanged -= RefreshUi;
     }
-    private void ToggleDirective()
-    {
-        GameState.Instance.ToggleCampaignDirective(_selected.Stage, out _);
-        RefreshUi();
-    }
-
     private void CloseSiteDetails()
     {
         _sitePanel.Hide();

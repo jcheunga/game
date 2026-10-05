@@ -320,7 +320,6 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Endless defeats and voluntary retreats now both open a full run debrief with banked payout, boon/path context, directive/contact reports, and reward-bank telemetry before leaving battle
   - Fully clearing a district now grants a one-time chapter reward, and the map/title screens track claimed district rewards as a campaign meta milestone
   - Owned units now unlock doctrine branches at level 3, and Caravan Armory can forge or retrain those specializations with persistent stat bonuses
-  - Cleared stages now unlock optional heroic directives with extra modifiers and one-time bounty rewards, so campaign replays have a real challenge/bounty loop
   - Audio ambience now shifts by district and battle pressure, so route selection and live combat carry different procedural mood beds instead of one generic backdrop
   - Map, loadout, title, and armory screens now show a shared readiness rating for the selected stage, and Caravan Armory can recommend doctrine picks when veteran units are the missing answer
   - Hazard-heavy Foundry missions now also track hazard-hit limits as real star conditions

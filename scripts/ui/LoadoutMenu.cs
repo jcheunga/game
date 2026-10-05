@@ -10,7 +10,7 @@ public partial class LoadoutMenu : Control
 
     public override void _Ready()
     {
-        _stage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        _stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         BuildUi();
     }
 

@@ -114,10 +114,10 @@ public partial class ShopMenu : Control
 
     private string BuildRouteIntelText()
     {
-        var selectedStage = GameState.Instance.BuildConfiguredCampaignStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
+        var selectedStage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
         var route = RouteCatalog.Get(selectedStage.MapId);
         var upcomingStages = GameData.GetStagesForMap(selectedStage.MapId).Where(stage => stage.StageNumber >= selectedStage.StageNumber).Take(3).ToArray();
-        var intel = $"Selected route: {route.Title}\n" + $"{route.CampaignSubtitle}\n" + $"Pressure profile: {route.PressureSummary}\n" + $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" + $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food · Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" + $"{GameState.Instance.BuildCampaignDirectiveStatusText(selectedStage.StageNumber)}\n" + $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(selectedStage.StageNumber)}\n" + $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
+        var intel = $"Selected route: {route.Title}\n" + $"{route.CampaignSubtitle}\n" + $"Pressure profile: {route.PressureSummary}\n" + $"Current target: Stage {selectedStage.StageNumber} - {selectedStage.StageName}\n" + $"Deploy cost: {GameState.Instance.GetStageEntryFoodCost(selectedStage.StageNumber)} food · Clear reward: +{selectedStage.RewardGold} gold, +{selectedStage.RewardFood} food\n" + $"{GameState.Instance.BuildCampaignReadinessDetailedSummary(selectedStage.StageNumber)}\n" + $"{StageMissionEvents.BuildSummaryText(selectedStage)}";
         if (TryGetNextStageForMap(selectedStage.MapId, out var nextRouteStage))
         {
             intel += $"\nNext route exploration: Stage {nextRouteStage.StageNumber}";

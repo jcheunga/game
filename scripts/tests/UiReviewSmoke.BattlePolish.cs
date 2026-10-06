@@ -19,10 +19,6 @@ public partial class UiReviewSmoke
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
         state.RestoreCloudSave(fixture);
-        var artworkSize = new Vector2(1983, 793); var view = new Rect2(0, 210, 474, 267);
-        var plate = WorldEnvironmentArt.CoverRect(artworkSize, view);
-        Check(Mathf.IsEqualApprox(plate.Size.X / artworkSize.X, plate.Size.Y / artworkSize.Y), "Scene art keeps its proportions");
-        Check(plate.Encloses(view) && plate.GetCenter().DistanceTo(view.GetCenter()) < .01f, "Authored scenery covers the whole battle view");
         foreach (var size in new[] { new Vector2I(1280, 720), new Vector2I(1024, 768), new Vector2I(844, 390) })
         {
             var phone = size.X == 844;
@@ -37,12 +33,12 @@ public partial class UiReviewSmoke
             var menu = Read<Button>(battle, "_hudSettingsButton");
             Check(health.GetGlobalRect().Position.X < 50 && health.GetGlobalRect().Position.Y < 50, tag + ": health and courage stay top left");
             Check(gold.GetGlobalRect().Position.X > battle.GetViewportRect().Size.X * .7f, tag + ": gold stays top right");
-            Check(menu.GetGlobalRect().Position.Y > battle.GetViewportRect().Size.Y * .7f, tag + ": settings stays bottom left");
+            Check(menu.GetGlobalRect().Position.X > battle.GetViewportRect().Size.X * .7f && menu.GetGlobalRect().Position.Y < 120, tag + ": pause sits top right beside the gold");
             state.SetShowDevUi(true); Call(battle, "UpdateHud");
             Check(!Walk(battle).OfType<Label>().Any(l => l.IsVisibleInTree() &&
                 (l.Text.Contains("Wave") || l.Text.Contains("surge") || l.Text.Contains("Courage:"))),
                 tag + ": wave forecasts and countdowns are absent");
-            Check(Walk(battle).OfType<BattleTerrainCanvas>().Any() && BattleTerrainCanvas.GroundMaterial("city") != null, tag + ": authored scene and fine terrain both render");
+            Check(Walk(battle).OfType<BattleTerrainCanvas>().Count(canvas => canvas.Layers != null) == 2, tag + ": the painted backdrop renders behind and in front of the troops");
             Call(battle, "ClearArmedSelection");
             foreach (var (unit, index) in GameData.PlayerRosterIds.Take(3).Select((unit, index) => (unit, index)))
                 typeof(BattleController).GetMethod("SpawnUnit", hidden)!.Invoke(battle,
@@ -90,7 +86,8 @@ public partial class UiReviewSmoke
                 typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(fresh, new object[] { false }); await Wait(.1);
                 var depleted = state.BuildSaveData(); depleted.Food = 0; depleted.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); state.RestoreCloudSave(depleted);
                 Call(fresh, "HandleEndPanelPrimaryAction");
-                Check(GetTree().CurrentScene == fresh && Read<Label>(fresh, "_endRetryMessage").Visible, "Result-screen retry also rejects an unaffordable restart");
+                Check(GetTree().CurrentScene == fresh && Walk(fresh).OfType<RoyalToast>().Any(toast => toast.IsVisibleInTree()),
+                    "Result-screen retry also rejects an unaffordable restart and says why on the result board");
                 var retrySave = state.BuildSaveData(); retrySave.Food = 24; state.RestoreCloudSave(retrySave);
                 var retryFood = state.Food; Call(fresh, "HandleEndPanelPrimaryAction"); Call(fresh, "HandleEndPanelPrimaryAction");
                 Check(state.Food == retryFood - cost, "Result-screen retry also charges the ration price exactly once");
@@ -105,7 +102,7 @@ public partial class UiReviewSmoke
             state.SetSelectedStage(stage); state.PrepareCampaignBattle(); await Open("Battle");
             var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
             if (Read<bool>(battle, "_battlePaused")) Call(battle, "TogglePause");
-            Check(BattleTerrainCanvas.GroundMaterial(GameData.GetStage(stage).MapId) != null, $"Stage {stage}: zone-specific detail is available");
+            Check(Read<ZoneBackdrop>(battle, "_stageBackdrop") is { Layers.Count: 5 }, $"Stage {stage}: its zone's painted backdrop is in place");
             await Capture($"zone-stage-{stage:00}");
         }
         MobilePresentation.TestOverride = null; GetTree().Paused = false;

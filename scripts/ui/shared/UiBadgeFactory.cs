@@ -20,11 +20,6 @@ public static class UiBadgeFactory
         return CreateBadge(UiArtLoader.TryLoadRelicIcon(relic), ResolveRelicTint(relic), BuildInitials(relic?.DisplayName), size);
     }
 
-    public static Control CreateCodexBadge(CodexEntry entry, Vector2 size)
-    {
-        return CreateBadge(UiArtLoader.TryLoadCodexIcon(entry), ResolveCodexTint(entry), BuildInitials(entry?.Title), size);
-    }
-
     public static Control CreateCodexPortrait(CodexEntry entry, Vector2 size)
     {
         return CreateBadge(UiArtLoader.TryLoadCodexPortrait(entry), ResolveCodexTint(entry), BuildInitials(entry?.Title), size, true);
@@ -122,7 +117,7 @@ public static class UiBadgeFactory
             CustomMinimumSize = size,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
         };
-        frame.SetMeta("realm_badge", true); frame.SetMeta("badge_tint", tint);
+        frame.SetMeta("realm_badge", true);
         var style = RealmUi.Surface(new Color("142228"), new Color("687362"));
         style.ContentMarginLeft = style.ContentMarginRight = style.ContentMarginTop = style.ContentMarginBottom = 1;
         frame.AddThemeStyleboxOverride("panel", style);
@@ -225,9 +220,6 @@ public static class UiBadgeFactory
         return metaId switch
         {
             "arena_rating" => new Color("f97316"),
-            "tower_floor" => new Color("38bdf8"),
-            "endless_wave" => new Color("a855f7"),
-            "daily_streak" => new Color("22c55e"),
             "guild" => new Color("f59e0b"),
             "friends" => new Color("f472b6"),
             "challenge" => new Color("60a5fa"),
@@ -259,9 +251,6 @@ public static class UiBadgeFactory
         return metaId switch
         {
             "arena_rating" => "AR",
-            "tower_floor" => "TW",
-            "endless_wave" => "EW",
-            "daily_streak" => "DS",
             "guild" => "GW",
             "friends" => "FR",
             "challenge" => "CH",

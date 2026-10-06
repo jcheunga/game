@@ -127,22 +127,6 @@
     "length": 0.238,
     "spin": true
   },
-  "frost_shard": {
-    "size": [
-      265,
-      101
-    ],
-    "tip": [
-      0.94341,
-      0.5161
-    ],
-    "centre": [
-      0.5,
-      0.5161
-    ],
-    "length": 0.42,
-    "spin": false
-  },
   "harpoon": {
     "size": [
       1014,

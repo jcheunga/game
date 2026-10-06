@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "quarantine_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    401.53,
+    198.16,
+    396.94,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    2117,
+    575
+   ],
+   "file": "quarantine_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    311.5,
+    306.66,
+    576.99,
+    160.32
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    566
+   ],
+   "file": "quarantine_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    455.18,
+    233.78,
+    289.64,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2115,
+    599
+   ],
+   "file": "quarantine_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    460.3,
+    399.72,
+    279.4,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    533
+   ],
+   "file": "quarantine_front.png"
+  }
+ ],
+ "sky": "53544b",
+ "generator": "art/royal/backdrops.py"
+}

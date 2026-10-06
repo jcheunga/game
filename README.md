@@ -59,19 +59,17 @@ GitHub Actions also runs the game build plus the server/data validation workflow
 | Asset Type | Drop Location | Format |
 |-----------|---------------|--------|
 | Unit sprites | `assets/units/{unit_id}.png` + `.json` | Sprite sheet and frame metadata; `{visual_class}.png` is the fallback |
-| Battle backdrops | `assets/world/backdrops/{zone}.json` + `{zone}_far.png`, `{zone}_mid.png`, `{zone}.png` | Layered parallax scene per zone; `assets/backgrounds/{terrain_id}.png` (1280×720) is a fallback |
-| Map art | `assets/world/overworld/polished-v3/` | Terrain and medieval scenery atlases |
-| Menu materials | `assets/ui/modal/`, `assets/ui/frames/` | Shared modal and interface textures |
+| Screens and menus | `assets/ui/royal/` (plates, specs, kit, figures, missions) | Concept plates, measured layouts and cut interface pieces; see `docs/ROYAL_UI.md` |
+| Battle backdrops | `assets/world/royal/{zone}.json` + `{zone}_far/_mid/_ground/_near/_front.png` | Five painted parallax layers per zone (`art/royal/backdrops.py`) |
+| Map art | `assets/world/royal/maps/{zone}.png` + `.json`, `maps/landmarks/` | One painted map per zone and the site landmarks (`art/royal/maps.py`) |
+| Spell and relic pictures | `assets/ui/royal/items/{spell_or_relic_id}.png` | Painted item images (`art/royal/items.py`) |
 | Structures | `assets/structures/battle-v2/{id}.png` + `.json` | Wagon, gatehouse and fort plates with anchor, mounts and door strip; `assets/structures/{id}.png` is the fallback |
 | Particle textures | `assets/particles/{particle_id}.png` | Battle burst/trail sprites for deploy, impact, spell, and boss VFX |
 | Projectile sprites | `assets/projectiles/{sprite_id}.png` | Blender-rendered arrows, bolts, flasks, pots and other shots, flown on arcs by `ProjectileStyles` |
 | Unit icons | `assets/ui/icons/units/{unit_id}.png` | Optional shared fallback: `{visual_class}.png` |
-| Spell icons | `assets/ui/icons/spells/{spell_id}.png` | Optional shared fallback: `{effect_type}.png` |
-| Relic icons | `assets/ui/icons/relics/{relic_id}.png` | Used in armory/loadout cards |
-| Reward icons | `assets/ui/icons/rewards/{reward_type}.png` | Currency/reward badges across main menu, profile, prep screens, social/meta menus, title-bar economy strips, season pass, dailies, events, raids |
+| Reward icons | `assets/ui/icons/rewards/{reward_type}.png` | Badges for sigils, shards, relics, season experience, units and spells; gold, food, tomes and essence use the home map's resource icons |
 | Meta icons | `assets/ui/icons/meta/{meta_id}.png` | Social, leaderboard, arena, and challenge-status badges |
-| Codex icons | `assets/ui/icons/codex/{entry_id}.png` | Optional codex fallback art |
-| Codex portraits | `assets/ui/portraits/codex/{entry_id}.png` | Used in codex detail view |
+| Codex portraits | `assets/ui/portraits/codex/{entry_id}.png` | Only for codex foes without a battle figure (legacy foes and raid bosses); units show their figure, spells and relics their painted picture |
 | Music | `assets/music/{track_id}.ogg` | Loopable OGG/MP3/WAV |
 | Sound effects | `assets/sfx/{cue_id}.ogg` | Per-cue OGG/MP3/WAV override |
 
@@ -139,7 +137,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 - Settings: tabs for `Sound` (music, effects, ambience, mute), `Gameplay` (caravan name, tutorial hints,
   reduced motion, high contrast, FPS counter, language, difficulty), `Online` (provider, endpoint, profile
   refresh) and `Account` (account, cloud save, privacy, payments). It returns to the screen you opened it from.
-- Armory (`Warband`, `Spells`, `War wagon`, `Relics`, `Adviser` tabs):
+- Armory (`Warband`, `Spells`, `War wagon`, `Relics` tabs):
   - Recruit units with gold once their stage is reached, scribe spells, and upgrade owned units with a stat preview
   - Equip up to six unit cards and five spell cards; one unit is enough to deploy
   - Each unit has a squad role (`Frontline`, `Recon`, `Support`, `Breach`); two cards of one role activate
@@ -148,10 +146,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - War wagon: upgrade plating, stores, march drum and rune beacon. The wagon starts with an archer crew;
     upgrade its damage and range, install a mounted ballista and firepot launcher, learn Arrow Volley and
     Emergency Repairs, or fit Reinforced Axles. Installed mounts fire automatically
-  - Enemy strongholds defend themselves with zone weapons (archers, ballistas, firepots, frost and hex
-    sentries). Shots have a 0.7-second aim warning; a breached gate stops firing. Endless mode has wagon
-    weapons but no stronghold gun
-  - `Adviser` gives route and squad advice for the selected stage
+  - Enemy strongholds have no weapons: the gate never fires at your troops
 - Stage preparation: the leader, victory rewards, your warband with levels and courage costs, and equipped
   spells. `Edit squad` opens the armory; `Deploy` spends the entry food and starts the battle.
 - Battle:

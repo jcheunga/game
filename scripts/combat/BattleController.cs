@@ -151,10 +151,6 @@ public partial class BattleController : Node2D
 		public bool IsBonusObjective { get; }
 		public bool UsesAdaptiveWaveProgress { get; }
 		public float Progress { get; set; }
-		public bool Started { get; set; }
-		public bool SupportMomentTriggered { get; set; }
-		public bool PlayerInside { get; set; }
-		public bool EnemyInside { get; set; }
 		public bool Completed { get; set; }
 		public bool Failed { get; set; }
 	}
@@ -758,10 +754,6 @@ public partial class BattleController : Node2D
 
 		InitializeBattlePresentation();
 		BuildUi();
-		if (IsEndlessMode)
-		{
-		}
-		// Ambient terrain and weather particles are disabled while their visuals are revised.
 		SetStatus(IsEndlessMode ? "Defend your wagon."
 			: IsChallengeMode ? $"Challenge {_challengeDefinition.Code}"
 			: "Tap a unit card to deploy.");
@@ -789,7 +781,6 @@ public partial class BattleController : Node2D
 		CleanupMobilePresentation();
 		Engine.TimeScale = 1f;
 		ResetImpactShake();
-		_groundTexture?.Dispose(); _groundTexture = null;
 		_stageArtwork = null;
 		UnitPool.Clear();
 		UnitSpriteLoader.ClearCache();
@@ -813,7 +804,6 @@ public partial class BattleController : Node2D
 		// Enemy arrival timing stays hidden to preserve suspense.
 		DrawSelectionPreview();
 
-		DrawStrongholdAim();
 		// These warnings belong to the screen even while the battlefield pans or zooms.
 		DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
 		DrawCriticalHealthVignette();
@@ -6173,6 +6163,7 @@ public partial class BattleController : Node2D
 
 	private void ShowEndPanelAnimated()
 	{
+		if (IsInstanceValid(_royalResult)) { _royalResult.Visible = true; _royalResult.Appear(); return; }
 		_endCenter.Visible = true;
 		_endPanel.Visible = true;
 		_endPanel.Modulate = new Color(1f, 1f, 1f, 0f);
@@ -6203,24 +6194,6 @@ public partial class BattleController : Node2D
 			BattleParticles.SpawnDeathBurst(this, PlayerBaseCorePosition, smokeColor, true);
 			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, smokeColor);
 		}
-	}
-
-	private void InitializeAmbientParticles()
-	{
-		var ambient = new BattleAmbientParticles();
-		AddChild(ambient);
-		ambient.Setup(
-			_stageData?.TerrainId ?? "urban",
-			BattlefieldLeft,
-			BattlefieldRight,
-			BattlefieldTop,
-			BattlefieldBottom);
-		ambient.ApplyWeather(
-			_stageData?.WeatherId ?? "",
-			BattlefieldLeft,
-			BattlefieldRight,
-			BattlefieldTop,
-			BattlefieldBottom);
 	}
 
 	private StageMissionState AddStageMission(
@@ -6661,21 +6634,6 @@ public partial class BattleController : Node2D
 	private bool HasCampaignBonusObjectivePressureEliteEscalation()
 	{
 		return _stage >= CampaignBonusObjectivePressureEliteStage;
-	}
-
-	private string ResolveCampaignBonusObjectivePressureTelegraphLabel(bool friendly)
-	{
-		if (HasCampaignBonusObjectivePressureEliteEscalation())
-		{
-			return friendly ? "ELITE RESERVE" : "ELITE REPRISAL";
-		}
-
-		if (HasCampaignBonusObjectivePressureVeteranEscalation())
-		{
-			return friendly ? "VETERAN RESERVE" : "HARDENED REPRISAL";
-		}
-
-		return friendly ? "RESERVE BEAT" : "REPRISAL";
 	}
 
 	private string BuildCampaignBonusObjectivePressureStatusSuffix()
@@ -7997,13 +7955,17 @@ public partial class BattleController : Node2D
 					: onlineRoomResultSubmitted
 						? "Online room failure recorded. Return to multiplayer for the shared room board."
 					: "Challenge failed. Refit the approach and try the same code again.");
+			// Solo challenges end on the royal result board; shared rooms keep their scoreboard card.
 			if (!IsLanRaceMode && !IsOnlineRoomMode)
 				PresentResult(playerWon, playerWon ? "Challenge cleared" : "Challenge failed", $"Score {scoreBreakdown.FinalScore:N0} · {medalLabel}");
-			else if (playerWon) PresentResult(true, "Victory");
-			_endCenter.Visible = true;
-			_endPanel.Visible = true;
-			RefreshLanRaceEndPanel();
-			RefreshOnlineRoomEndPanel(true);
+			else
+			{
+				if (playerWon) PresentResult(true, "Victory");
+				_endCenter.Visible = true;
+				_endPanel.Visible = true;
+				RefreshLanRaceEndPanel();
+				RefreshOnlineRoomEndPanel(true);
+			}
 			UpdateHud();
 			return;
 		}

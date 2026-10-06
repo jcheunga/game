@@ -24,6 +24,9 @@ public partial class BattleHudBar : Control
 		MouseFilter = MouseFilterEnum.Ignore;
 	}
 
+	public float TargetRatio => _targetRatio;
+	public string ValueText => _valueText;
+
 	public void SetValue(float ratio, string valueText = "")
 	{
 		var oldRatio = _targetRatio;
@@ -71,7 +74,7 @@ public partial class BattleHudBar : Control
 			return;
 		}
 
-		var font = ThemeDB.FallbackFont;
+		var font = RealmUi.TitleFont;
 		var fontSize = Mathf.Max(18, Mathf.RoundToInt(barRect.Size.Y * 0.65f));
 
 		if (!string.IsNullOrWhiteSpace(_label))

@@ -1,0 +1,746 @@
+{
+ "screen": "settings",
+ "ref": "art/royal/ref/menu-06-settings.png",
+ "elements": [
+  {
+   "id": "panel.modal",
+   "kind": "rect",
+   "rect": [
+    97,
+    43,
+    1086,
+    628
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.header",
+   "kind": "rect",
+   "rect": [
+    106,
+    46,
+    1071,
+    103
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.icon",
+   "kind": "rect",
+   "rect": [
+    133,
+    55,
+    80,
+    81
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Settings",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 276,
+   "x": 239,
+   "baseline": 115,
+   "align": "left",
+   "color": "#f6d18e",
+   "style": "gold",
+   "size": 57,
+   "pen_x": 239
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1119,
+    49,
+    56,
+    57
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1135,
+    66,
+    23,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "panel.tabs",
+   "kind": "rect",
+   "rect": [
+    106,
+    149,
+    1071,
+    74
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "tab.sound",
+   "kind": "rect",
+   "rect": [
+    211,
+    158,
+    215,
+    58
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.sound.icon",
+   "kind": "rect",
+   "rect": [
+    266,
+    173,
+    27,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.sound.label",
+   "kind": "text",
+   "text": "Sound",
+   "font": "crimson",
+   "weight": 600,
+   "width": 59,
+   "x": 320,
+   "baseline": 195,
+   "align": "left",
+   "color": "#fff6c8",
+   "size": 21,
+   "pen_x": 320
+  },
+  {
+   "id": "tab.gameplay",
+   "kind": "rect",
+   "rect": [
+    434,
+    159,
+    223,
+    55
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.gameplay.icon",
+   "kind": "rect",
+   "rect": [
+    471,
+    172,
+    31,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.gameplay.label",
+   "kind": "text",
+   "text": "Gameplay",
+   "font": "crimson",
+   "weight": 600,
+   "width": 86,
+   "x": 527,
+   "baseline": 193,
+   "align": "left",
+   "color": "#e1ddd9",
+   "size": 19,
+   "pen_x": 527
+  },
+  {
+   "id": "tab.online",
+   "kind": "rect",
+   "rect": [
+    666,
+    159,
+    215,
+    55
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.online.icon",
+   "kind": "rect",
+   "rect": [
+    717,
+    172,
+    35,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.online.label",
+   "kind": "text",
+   "text": "Online",
+   "font": "crimson",
+   "weight": 600,
+   "width": 58,
+   "x": 774,
+   "baseline": 193,
+   "align": "left",
+   "color": "#e2ddd8",
+   "size": 19,
+   "pen_x": 774
+  },
+  {
+   "id": "tab.account",
+   "kind": "rect",
+   "rect": [
+    890,
+    159,
+    211,
+    55
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.account.icon",
+   "kind": "rect",
+   "rect": [
+    939,
+    171,
+    26,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.account.label",
+   "kind": "text",
+   "text": "Account",
+   "font": "crimson",
+   "weight": 600,
+   "width": 67,
+   "x": 989,
+   "baseline": 193,
+   "align": "left",
+   "color": "#e4ddd9",
+   "size": 18,
+   "pen_x": 989
+  },
+  {
+   "id": "panel.illustration",
+   "kind": "rect",
+   "rect": [
+    107,
+    224,
+    318,
+    440
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "panel.content",
+   "kind": "rect",
+   "rect": [
+    427,
+    224,
+    746,
+    440
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "section.volume",
+   "kind": "text",
+   "text": "VOLUME",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 125,
+   "x": 446,
+   "baseline": 264,
+   "align": "left",
+   "color": "#fff1c2",
+   "size": 27,
+   "pen_x": 447
+  },
+  {
+   "id": "section.volume.rule",
+   "kind": "rect",
+   "rect": [
+    448,
+    276,
+    684,
+    7
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "row.music",
+   "kind": "rect",
+   "rect": [
+    450,
+    292,
+    690,
+    67
+   ],
+   "role": "row"
+  },
+  {
+   "id": "row.music.iconbox",
+   "kind": "rect",
+   "rect": [
+    450,
+    292,
+    82,
+    67
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.music.icon",
+   "kind": "rect",
+   "rect": [
+    472,
+    307,
+    42,
+    39
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.music.label",
+   "kind": "text",
+   "text": "Music",
+   "font": "crimson",
+   "weight": 600,
+   "width": 53,
+   "x": 551,
+   "baseline": 331,
+   "align": "left",
+   "color": "#fffcdf",
+   "size": 20,
+   "pen_x": 551
+  },
+  {
+   "id": "row.music.slider.track",
+   "kind": "rect",
+   "rect": [
+    657,
+    317,
+    353,
+    17
+   ],
+   "role": "slider"
+  },
+  {
+   "id": "row.music.slider.fill",
+   "kind": "rect",
+   "rect": [
+    660,
+    320,
+    173,
+    11
+   ],
+   "role": "fill"
+  },
+  {
+   "id": "row.music.slider.knob",
+   "kind": "rect",
+   "rect": [
+    819,
+    310,
+    29,
+    30
+   ],
+   "role": "knob"
+  },
+  {
+   "id": "row.music.value",
+   "kind": "rect",
+   "rect": [
+    1030,
+    307,
+    96,
+    37
+   ],
+   "role": "value"
+  },
+  {
+   "id": "row.music.value.text",
+   "kind": "text",
+   "text": "50%",
+   "font": "crimson",
+   "weight": 600,
+   "width": 37,
+   "x": 1077,
+   "baseline": 333,
+   "align": "center",
+   "color": "#fff9ec",
+   "size": 20
+  },
+  {
+   "id": "row.effects",
+   "kind": "rect",
+   "rect": [
+    450,
+    368,
+    690,
+    64
+   ],
+   "role": "row"
+  },
+  {
+   "id": "row.effects.iconbox",
+   "kind": "rect",
+   "rect": [
+    450,
+    368,
+    82,
+    64
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.effects.icon",
+   "kind": "rect",
+   "rect": [
+    475,
+    383,
+    35,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.effects.label",
+   "kind": "text",
+   "text": "Effects",
+   "font": "crimson",
+   "weight": 600,
+   "width": 60,
+   "x": 551,
+   "baseline": 406,
+   "align": "left",
+   "color": "#fffcdf",
+   "size": 19,
+   "pen_x": 551
+  },
+  {
+   "id": "row.effects.slider.track",
+   "kind": "rect",
+   "rect": [
+    657,
+    392,
+    353,
+    17
+   ],
+   "role": "slider"
+  },
+  {
+   "id": "row.effects.slider.fill",
+   "kind": "rect",
+   "rect": [
+    660,
+    395,
+    283,
+    11
+   ],
+   "role": "fill"
+  },
+  {
+   "id": "row.effects.slider.knob",
+   "kind": "rect",
+   "rect": [
+    928,
+    385,
+    28,
+    29
+   ],
+   "role": "knob"
+  },
+  {
+   "id": "row.effects.value",
+   "kind": "rect",
+   "rect": [
+    1030,
+    382,
+    96,
+    37
+   ],
+   "role": "value"
+  },
+  {
+   "id": "row.effects.value.text",
+   "kind": "text",
+   "text": "85%",
+   "font": "crimson",
+   "weight": 600,
+   "width": 37,
+   "x": 1077,
+   "baseline": 408,
+   "align": "center",
+   "color": "#fff9ec",
+   "size": 20
+  },
+  {
+   "id": "row.ambience",
+   "kind": "rect",
+   "rect": [
+    450,
+    441,
+    690,
+    64
+   ],
+   "role": "row"
+  },
+  {
+   "id": "row.ambience.iconbox",
+   "kind": "rect",
+   "rect": [
+    450,
+    441,
+    82,
+    64
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.ambience.icon",
+   "kind": "rect",
+   "rect": [
+    472,
+    457,
+    41,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.ambience.label",
+   "kind": "text",
+   "text": "Ambience",
+   "font": "crimson",
+   "weight": 600,
+   "width": 90,
+   "x": 551,
+   "baseline": 479,
+   "align": "left",
+   "color": "#fffcdf",
+   "size": 21,
+   "pen_x": 551
+  },
+  {
+   "id": "row.ambience.slider.track",
+   "kind": "rect",
+   "rect": [
+    657,
+    465,
+    353,
+    17
+   ],
+   "role": "slider"
+  },
+  {
+   "id": "row.ambience.slider.fill",
+   "kind": "rect",
+   "rect": [
+    660,
+    468,
+    212,
+    11
+   ],
+   "role": "fill"
+  },
+  {
+   "id": "row.ambience.slider.knob",
+   "kind": "rect",
+   "rect": [
+    858,
+    458,
+    28,
+    29
+   ],
+   "role": "knob"
+  },
+  {
+   "id": "row.ambience.value",
+   "kind": "rect",
+   "rect": [
+    1030,
+    455,
+    96,
+    37
+   ],
+   "role": "value"
+  },
+  {
+   "id": "row.ambience.value.text",
+   "kind": "text",
+   "text": "65%",
+   "font": "crimson",
+   "weight": 600,
+   "width": 37,
+   "x": 1077,
+   "baseline": 481,
+   "align": "center",
+   "color": "#fff9ec",
+   "size": 21
+  },
+  {
+   "id": "row.mute",
+   "kind": "rect",
+   "rect": [
+    450,
+    519,
+    690,
+    63
+   ],
+   "role": "row"
+  },
+  {
+   "id": "row.mute.iconbox",
+   "kind": "rect",
+   "rect": [
+    450,
+    519,
+    82,
+    63
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.mute.icon",
+   "kind": "rect",
+   "rect": [
+    475,
+    530,
+    35,
+    41
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "row.mute.label",
+   "kind": "text",
+   "text": "Mute all sound",
+   "font": "crimson",
+   "weight": 600,
+   "width": 140,
+   "x": 553,
+   "baseline": 559,
+   "align": "left",
+   "color": "#fffcdf",
+   "size": 21,
+   "pen_x": 553
+  },
+  {
+   "id": "row.mute.toggle",
+   "kind": "rect",
+   "rect": [
+    981,
+    533,
+    75,
+    37
+   ],
+   "role": "toggle"
+  },
+  {
+   "id": "row.mute.toggle.knob",
+   "kind": "rect",
+   "rect": [
+    984,
+    535,
+    32,
+    32
+   ],
+   "role": "knob"
+  },
+  {
+   "id": "row.mute.state",
+   "kind": "text",
+   "text": "OFF",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 37,
+   "x": 1070,
+   "baseline": 559,
+   "align": "left",
+   "color": "#c1bdba",
+   "size": 19,
+   "pen_x": 1070
+  },
+  {
+   "id": "button.restore",
+   "kind": "rect",
+   "rect": [
+    444,
+    594,
+    344,
+    63
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.restore.icon",
+   "kind": "rect",
+   "rect": [
+    484,
+    613,
+    26,
+    26
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.restore.label",
+   "kind": "text",
+   "text": "Restore Defaults",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 182,
+   "x": 543,
+   "baseline": 633,
+   "align": "left",
+   "color": "#fefdf9",
+   "size": 18,
+   "pen_x": 543
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    803,
+    594,
+    351,
+    63
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    885,
+    608,
+    35,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "Back to Map",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 133,
+   "x": 942,
+   "baseline": 633,
+   "align": "left",
+   "color": "#080000",
+   "size": 19,
+   "pen_x": 942
+  }
+ ],
+ "notes": "Single framed modal (bronze frame with corner studs) over a dark map backdrop. Header band: helmet-with-blue-plume icon, gold 'Settings' title (tall S + small caps), castle panorama on the right, red close button top-right inside the frame. Below it a dark wooden tab band with four tabs: Sound is SELECTED (teal fill, glowing gold frame, gold music-note icon, cream label, label sits ~2 px lower and slightly larger than the others); Gameplay/Online/Account are unselected (near-black fill, thin brass frame with corner rivets, grey icon and label). Content: left column is a framed painted illustration (no interaction); right column is a dark panel with the VOLUME heading (uniform caps) over a thin rule with a centre diamond and arrow-tip ends, then four setting rows. Each row is a dark plate with a brass frame and corner rivets, a square icon box on the left sharing the row frame (gold icons: lute+note, crossed swords, wind, bell), a cream label, and on the right either a slider + value box (Music 50%, Effects 85%, Ambience 65%) or, for 'Mute all sound', a toggle switch in the OFF state (knob at the left, unlit dark track, grey 'OFF' text) with no value box. Sliders: brass-rimmed pill track, teal fill, round gold knob; the fill rect runs from the inner track start (x 660) to the knob centre, so fill.w / 347 gives the drawn position (0.50, 0.81, 0.61) - the concept knobs do not exactly match the 85% and 65% labels. Row heights/pitch are slightly irregular in the concept (67/64/64/63 tall). Buttons: RESTORE DEFAULTS is the secondary style (slate-blue fill, brass frame, gold refresh icon, white small-caps label); BACK TO MAP is the primary style (gold/tan fill, dark map-pin icon, near-black small-caps label). Both labels are left-aligned after their icons rather than centred. Concept lettering is narrower/taller than Cinzel, so sizes are width-fitted."
+}

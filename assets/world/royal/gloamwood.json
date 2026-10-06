@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "gloamwood_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    453.29,
+    198.16,
+    293.43,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    1799,
+    661
+   ],
+   "file": "gloamwood_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    311.5,
+    302.51,
+    576.99,
+    208.19
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    735
+   ],
+   "file": "gloamwood_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    422.43,
+    233.78,
+    355.13,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2117,
+    489
+   ],
+   "file": "gloamwood_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    459.24,
+    399.72,
+    281.52,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    529
+   ],
+   "file": "gloamwood_front.png"
+  }
+ ],
+ "sky": "153452",
+ "generator": "art/royal/backdrops.py"
+}

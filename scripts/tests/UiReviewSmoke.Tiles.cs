@@ -80,9 +80,10 @@ public partial class UiReviewSmoke
         await Wait(.1); await Capture("01-stage-hover-out");
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = building, GlobalPosition = building });
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = building, GlobalPosition = building });
-        await Wait(.1);
-        Check(menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible && Walk(menu).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text == leader.Site.Title), "Clicking the painted fort after zooming and panning opens its matching stage");
-        await PressHint("Close site details"); canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
+        await FinishTravel(); await Wait(.2);
+        Check(menu.HomeModalDestination == SceneRouter.LoadoutScene && state.SelectedStage == leader.Site.Stage
+            && !menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Clicking the painted fort after zooming and panning opens its matching stage's preparation");
+        menu.CloseHomeModal(); await Wait(.1); canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
         var far = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(tile.Site.Stage));
         Check(!state.TryReachAdventureTile(far, out _) && state.Food == food, "Unopened destinations reject travel without charging");
         var openedBeforeVisit = tilesCity.Count(state.IsAdventureTileOpen);
@@ -221,18 +222,15 @@ public partial class UiReviewSmoke
         await PressHint("Warband"); AuditText("Tile map / warband"); menu.CloseHomeModal(); await Wait(.1);
         Check(canvas.MapOffset == beforeModal && state.Food == beforeModalFood && state.AdventureKnowledgeRevision == beforeModalKnowledge, "Settings and warband overlays preserve the tile map and resources");
         canvas.FocusSite(leader.Id); await Wait(.1);
-        Walk(menu).OfType<AdventureMapToken>().Single(token => token.Site.Id == leader.Id).EmitSignal(BaseButton.SignalName.Pressed); await Wait(.1);
-        var details = menu.GetNode<PanelContainer>("HomeHud/SelectedSite");
-        Check(!Walk(details).OfType<Button>().Any(button => button.Text is "Intel" or "Overview"), "Stage details present rewards and costs directly without an Intel tab");
-        var resourceIcons = Walk(details).OfType<TextureRect>().Where(icon => icon.IsVisibleInTree()).ToArray();
-        Check(resourceIcons.Count(icon => icon.Texture == HomeMapArt.Icon("food")) == (GameData.GetStage(1).RewardFood > 0 ? 2 : 1)
-            && resourceIcons.Any(icon => icon.Texture == HomeMapArt.Icon("gold"))
-            && Walk(details).OfType<Label>().Any(label => label.Text == $"+{GameData.GetStage(1).RewardGold:N0}"),
-            "Stage details display the configured victory reward and a single battle entry ration cost");
-        Check(!Walk(details).OfType<Button>().Any(button => button.Text.Contains("directive", StringComparison.OrdinalIgnoreCase)),
-            "Cleared stage details offer no heroic directive");
-        AuditText("Tile map / stage details"); await Capture("05-stage-costs");
-        await Press("Prepare battle"); await Wait(.3);
+        Walk(menu).OfType<AdventureMapToken>().Single(token => token.Site.Id == leader.Id).EmitSignal(BaseButton.SignalName.Pressed);
+        // A playable stage skips the details panel: the caravan travels there and its preparation opens.
+        await FinishTravel(); await Wait(.3);
+        Check(!menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "A playable stage opens without a details panel");
+        var preparation = PreparationText();
+        Check(preparation.Any(text => text.StartsWith($"{GameData.GetStage(1).RewardGold:N0} GOLD"))
+            && preparation.Contains($"{state.GetStageEntryFoodCost(1)} FOOD"),
+            "Battle preparation displays the configured victory reward and a single battle entry ration cost");
+        AuditText("Tile map / stage preparation"); await Capture("05-stage-costs");
         Check(menu.HomeModalDestination == SceneRouter.LoadoutScene && state.SelectedStage == 1, "Stage tile launches the matching real battle preparation");
         var deployFood = state.Food;
         await Press("Deploy");

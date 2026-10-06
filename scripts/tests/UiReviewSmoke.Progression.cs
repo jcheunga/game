@@ -24,13 +24,12 @@ public partial class UiReviewSmoke
             await Open("MapMenu");
             typeof(MapMenu).GetMethod("SelectSite", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(GetTree().CurrentScene, new object[] { node });
-            await Wait(.15);
-            // Single-page stage details show the configured victory rewards and the battle entry cost.
-            var details = Walk(GetTree().CurrentScene).OfType<Control>().Where(c => c.IsVisibleInTree()).ToArray();
-            Check(details.Any(c => c.AccessibilityName == $"Victory · {GameData.GetStage(stage).RewardGold:N0} gold"),
-                $"Stage {stage} displays its victory reward");
-            Check(details.Any(c => c.AccessibilityName == $"Battle entry · {state.GetStageEntryFoodCost(stage)} rations"),
-                $"Stage {stage} displays its battle entry cost");
+            // A playable stage opens its preparation straight away, which shows the configured victory
+            // rewards and the battle entry cost.
+            await FinishTravel(); await Wait(.3);
+            var text = PreparationText();
+            Check(text.Any(t => t.StartsWith($"{GameData.GetStage(stage).RewardGold:N0} GOLD")), $"Stage {stage} displays its victory reward");
+            Check(text.Contains($"{state.GetStageEntryFoodCost(stage)} FOOD"), $"Stage {stage} displays its battle entry cost");
             AuditText($"Progression / stage {stage}");
             await Capture($"stage-{stage}-rewards");
         }

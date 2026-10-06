@@ -21,16 +21,17 @@ public partial class BattleActionCard : Control
     internal Label StatusLabel => _status;
     internal bool Selected => _selected;
     internal float CooldownRatio => _cooldownRatio;
+    internal bool Unaffordable { get; private set; }
 
     public BattleActionCard()
     {
         Name = "ActionCardArt";
         SetMeta("frame_bleed", true);
         MouseFilter = MouseFilterEnum.Ignore;
-        ClipContents = true;
+        ClipContents = false;
         TextureFilter = TextureFilterEnum.Linear;
         _selection = MedievalUi.Engraved("focus", 0, 0);
-        _costMaterial = MedievalUi.Engraved("cost_badge", 6, 0);
+        _costMaterial = new StyleBoxTexture { Texture = RoyalKit.Texture("hud-cost") };
         _portrait = new TextureRect
         {
             Name = "Portrait", MouseFilter = MouseFilterEnum.Ignore,
@@ -47,11 +48,16 @@ public partial class BattleActionCard : Control
         _costPlate.SetMeta("frame_inset", 1f);
         _costPlate.AddThemeStyleboxOverride("panel", _costMaterial);
         AddChild(_costPlate);
-        _cost = CardLabel(22);
+        // The concept's round bronze badge with the courage cost in white book serif.
+        _cost = CardLabel(21);
+        _cost.AddThemeFontOverride("font", RoyalFonts.Body(600));
+        _cost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _costPlate.AddChild(_cost);
         _statusPlate = new PanelContainer { Name = "UnavailableStatus", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
         _statusPlate.SetMeta("frame_inset", 1f);
-        _statusPlate.AddThemeStyleboxOverride("panel", MedievalUi.Engraved("meter_track", 6, 1));
+        var statusStyle = new StyleBoxFlat { BgColor = new Color(.04f, .05f, .06f, .82f), BorderColor = new Color("8d7650"), AntiAliasing = true };
+        statusStyle.SetBorderWidthAll(1); statusStyle.SetCornerRadiusAll(9);
+        _statusPlate.AddThemeStyleboxOverride("panel", statusStyle);
         AddChild(_statusPlate);
         _status = CardLabel(18);
         _statusPlate.AddChild(_status);
@@ -63,7 +69,8 @@ public partial class BattleActionCard : Control
         var label = new Label { MouseFilter = MouseFilterEnum.Ignore,
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", new Color("fff3d8"));
+        label.AddThemeFontOverride("font", RoyalFonts.Body(600));
+        label.AddThemeColorOverride("font_color", new Color("fbfaf9"));
         label.AddThemeColorOverride("font_outline_color", new Color("080e12"));
         label.AddThemeConstantOverride("outline_size", 2);
         return label;
@@ -111,12 +118,14 @@ public partial class BattleActionCard : Control
     {
         var cooling = cooldown > .05f;
         var affordable = courage >= cost;
+        Unaffordable = !affordable;
         _selected = selected;
         _cooldownRatio = cooling && totalCooldown > .1f ? Mathf.Clamp(cooldown / totalCooldown, 0, 1) : 0;
         _cost.Text = cost.ToString();
-        _costMaterial.ModulateColor = affordable ? Colors.White : new Color("efa18b");
+        _costMaterial.ModulateColor = affordable ? Colors.White : new Color("e88f7a");
         _portrait.Modulate = cooling || !affordable || blocked ? new Color("a0aaa9") : Colors.White;
-        _status.Text = cooling ? $"{cooldown:0.0}s" : !affordable ? $"{cost - Mathf.FloorToInt(courage)} short" : "";
+        // Unaffordable cards read from the dimmed art and red-tinted cost; only a cooldown is spelled out.
+        _status.Text = cooling ? $"{cooldown:0.0}s" : "";
         _statusPlate.Visible = !string.IsNullOrEmpty(_status.Text);
         _cooldownShade.Visible = cooling;
         LayoutArt();
@@ -125,26 +134,28 @@ public partial class BattleActionCard : Control
 
     private void LayoutArt()
     {
-        var inner = new Rect2(new Vector2(7, 7), (Size - new Vector2(14, 14)).Max(Vector2.One));
-        _portrait.Position = inner.Position;
-        _portrait.Size = inner.Size;
+        var inner = new Rect2(new Vector2(4, 4), (Size - new Vector2(8, 8)).Max(Vector2.One));
+        // The art sits whole inside the card with a margin, a little below the cost badge.
+        _portrait.Position = inner.Position + inner.Size * new Vector2(.14f, .17f);
+        _portrait.Size = inner.Size * new Vector2(.72f, .76f);
         _cooldownShade.Position = new Vector2(inner.Position.X, inner.End.Y - inner.Size.Y * _cooldownRatio);
         _cooldownShade.Size = new Vector2(inner.Size.X, inner.Size.Y * _cooldownRatio);
-        var costWidth = Mathf.Max(46, _cost.GetMinimumSize().X + 12);
-        _costPlate.Position = new Vector2(Mathf.Max(5, Size.X - costWidth - 5), 5);
-        _costPlate.Size = new Vector2(costWidth, 32);
+        // Badge: 44 px at the concept's 119 px card, top-right, scaled with the card.
+        var badge = Mathf.Round(44 * Size.X / 119f);
+        _costPlate.Position = new Vector2(Size.X - badge - 2, 1);
+        _costPlate.Size = new Vector2(badge, badge);
         var statusWidth = Mathf.Min(Mathf.Max(64, _status.GetMinimumSize().X + 12), Mathf.Max(1, Size.X - 12));
         _statusPlate.Position = new Vector2((Size.X - statusWidth) * .5f, Mathf.Max(5, Size.Y - 31));
         _statusPlate.Size = new Vector2(statusWidth, 25);
     }
 
+    private static SliceStyle _selectedFrame;
+
     public override void _Draw()
     {
         if (!_selected) return;
-        DrawStyleBox(_selection, new Rect2(Vector2.One, (Size - Vector2.One * 2).Max(Vector2.One)));
-        // A check mark makes selection readable without relying only on colour.
-        DrawCircle(new Vector2(16, 16), 9, new Color("14262b"));
-        DrawArc(new Vector2(16, 16), 9, 0, Mathf.Tau, 20, RealmUi.Gold, 1, true);
-        DrawPolyline(new[] { new Vector2(11, 16), new Vector2(15, 20), new Vector2(21, 12) }, new Color("ffe1a4"), 2, true);
+        // The concept's glowing gold frame marks the armed card.
+        _selectedFrame ??= RoyalKit.Slice("hud-card-selected", 14, false);
+        DrawStyleBox(_selectedFrame, new Rect2(-3, -3, Size.X + 6, Size.Y + 6));
     }
 }

@@ -1,10 +1,10 @@
 using Godot;
 
-public enum BaseWeaponKind { Arrows, Ballista, Firepot, Frost, Hex }
+public enum BaseWeaponKind { Arrows, Ballista, Firepot }
 
-/// <param name="Shot">A projectile sprite that replaces the kind's usual shot, or null.</param>
+/// <summary>A weapon mounted on the war wagon. The enemy stronghold has none: it never fires at troops.</summary>
 public sealed record BaseWeaponDefinition(string Title, BaseWeaponKind Kind, float Damage,
-    float Range, float Cooldown, float Speed, Color Color, float SplashRadius = 0f, string Shot = null);
+    float Range, float Cooldown, float Speed, Color Color, float SplashRadius = 0f);
 
 public static class BaseWeaponCatalog
 {
@@ -22,18 +22,6 @@ public static class BaseWeaponCatalog
             _ => null
         };
     }
-
-    public static BaseWeaponDefinition Stronghold(string routeId) => routeId switch
-    {
-        RouteCatalog.HarborId => new("Harpoon ballista", BaseWeaponKind.Ballista, 14, 180, 4.5f, 290, new Color("9bdaf1"), Shot: "harpoon"),
-        RouteCatalog.FoundryId => new("Furnace firepots", BaseWeaponKind.Firepot, 8, 150, 5, 145, new Color("ff9955"), 30),
-        RouteCatalog.CitadelId => new("Citadel ballista", BaseWeaponKind.Ballista, 16, 190, 4.5f, 300, new Color("e4b96b")),
-        RouteCatalog.ThornwallId => new("Frost sentries", BaseWeaponKind.Frost, 8, 165, 3.5f, 215, new Color("a4e7ef")),
-        RouteCatalog.SteppeId => new("Raider archers", BaseWeaponKind.Arrows, 7, 165, 2.8f, 260, new Color("f4a261")),
-        RouteCatalog.QuarantineId or RouteCatalog.MireId or RouteCatalog.BasilicaId or RouteCatalog.GloamwoodId =>
-            new("Hex sentries", BaseWeaponKind.Hex, 9, 160, 4, 175, new Color("ca9ee6"), 21),
-        _ => new("Castle archers", BaseWeaponKind.Arrows, 7, 155, 3, 245, new Color("f2be94"))
-    };
 
     public static float ArmorScale(int level) => 1f - Mathf.Clamp(level, 0, 5) * 0.06f;
     public static float VolleyCooldown(int level) => 18f - Mathf.Clamp(level, 0, 5);

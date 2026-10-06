@@ -4,11 +4,24 @@ using Godot;
 public partial class RealmButton : Button
 {
     public bool CenterIconAndText { get; set; }
+    public bool VerticalContent { get; set; }
+    public bool HasContentGroup => _groupLabel != null;
     private TextureRect _groupIcon;
     private Label _groupLabel;
     private Color _normalInk, _disabledInk;
     private Color _iconInk = Colors.White;
     private bool? _lastDisabled;
+    private Vector2 _authoredMinimum;
+    public override Vector2 _GetMinimumSize()
+    {
+        var font = GetThemeFont("font"); var fontSize = GetThemeFontSize("font_size");
+        var box = GetThemeStylebox("normal"); var icon = Icon == null ? 0 : GetThemeConstant("icon_max_width");
+        var text = font.GetStringSize(Text, fontSize: fontSize).X;
+        var horizontal = Mathf.Max(12, box.GetContentMargin(Side.Left)) + Mathf.Max(12, box.GetContentMargin(Side.Right));
+        var vertical = VerticalContent ? 28 : Mathf.Max(10, box.GetContentMargin(Side.Top)) + Mathf.Max(10, box.GetContentMargin(Side.Bottom));
+        return new Vector2((VerticalContent ? Mathf.Max(icon, text) : text + icon + (icon > 0 && Text.Length > 0 ? 10 : 0)) + horizontal,
+            (VerticalContent ? font.GetHeight(fontSize) + icon + 6 + 4 : Mathf.Max(Text.Length > 0 ? font.GetHeight(fontSize) : 0, icon)) + vertical);
+    }
     public void SetPresentation(Font font, Color ink, Color disabled)
     {
         _normalInk = ink; _disabledInk = disabled; _lastDisabled = null;
@@ -24,6 +37,9 @@ public partial class RealmButton : Button
     }
     public override void _Ready()
     {
+        _authoredMinimum = CustomMinimumSize;
+        RefreshPresentationMinimum();
+        ThemeChanged += RefreshPresentationMinimum;
         if (!CenterIconAndText) return;
         _normalInk = GetThemeColor("font_color"); _disabledInk = GetThemeColor("font_disabled_color");
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color",
@@ -31,12 +47,15 @@ public partial class RealmButton : Button
             AddThemeColorOverride(key, Colors.Transparent);
         var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(center); center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-        row.AddThemeConstantOverride("separation", 10); center.AddChild(row);
+        center.OffsetLeft = 12; center.OffsetRight = -12; center.OffsetTop = VerticalContent ? 14 : 10; center.OffsetBottom = VerticalContent ? -14 : -10;
+        BoxContainer row = VerticalContent ? new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center } : new HBoxContainer();
+        row.MouseFilter = MouseFilterEnum.Ignore;
+        row.AddThemeConstantOverride("separation", VerticalContent ? 6 : 10); center.AddChild(row);
         var iconSize = GetThemeConstant("icon_max_width");
         _groupIcon = new TextureRect { CustomMinimumSize = new Vector2(iconSize,iconSize), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore };
         _groupLabel = new Label { MouseFilter = MouseFilterEnum.Ignore, VerticalAlignment = VerticalAlignment.Center };
+        if (VerticalContent) { _groupIcon.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _groupLabel.HorizontalAlignment = HorizontalAlignment.Center; }
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
         _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
         ThemeChanged += SyncGroupTheme;
@@ -50,11 +69,15 @@ public partial class RealmButton : Button
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
         _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
     }
+    private void RefreshPresentationMinimum()
+    {
+        CustomMinimumSize = _authoredMinimum.Max(_GetMinimumSize());
+    }
     private void RefreshGroup()
     {
-        if (_groupLabel.Text != Text) _groupLabel.Text = Text;
+        if (_groupLabel.Text != Text) { _groupLabel.Text = Text; RefreshPresentationMinimum(); }
         _groupLabel.Visible = Text.Length > 0;
-        if (_groupIcon.Texture != Icon) _groupIcon.Texture = Icon;
+        if (_groupIcon.Texture != Icon) { _groupIcon.Texture = Icon; RefreshPresentationMinimum(); }
         _groupIcon.Visible = Icon != null;
         if (_lastDisabled != Disabled)
         {

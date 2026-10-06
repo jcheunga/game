@@ -1,0 +1,1015 @@
+{
+ "screen": "codex",
+ "ref": "art/royal/ref/menu-05-crownroad-codex.png",
+ "elements": [
+  {
+   "id": "panel.header",
+   "kind": "rect",
+   "rect": [
+    33,
+    22,
+    1213,
+    106
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.icon",
+   "kind": "rect",
+   "rect": [
+    62,
+    35,
+    79,
+    79
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "The Crownroad Codex",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 422,
+   "x": 162,
+   "baseline": 87,
+   "align": "left",
+   "color": "#f1d9ad",
+   "style": "gold",
+   "size": 33,
+   "pen_x": 162
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    53,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1201,
+    42,
+    22,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.all",
+   "kind": "rect",
+   "rect": [
+    619,
+    57,
+    94,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.all.icon",
+   "kind": "rect",
+   "rect": [
+    651,
+    70,
+    30,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.all.label",
+   "kind": "text",
+   "text": "All",
+   "font": "crimson",
+   "weight": 500,
+   "width": 19,
+   "x": 665,
+   "baseline": 112,
+   "align": "center",
+   "color": "#f8ea9d",
+   "size": 17
+  },
+  {
+   "id": "tab.enemies",
+   "kind": "rect",
+   "rect": [
+    715,
+    57,
+    91,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.enemies.icon",
+   "kind": "rect",
+   "rect": [
+    750,
+    70,
+    19,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.enemies.label",
+   "kind": "text",
+   "text": "Enemies",
+   "font": "crimson",
+   "weight": 500,
+   "width": 55,
+   "x": 759,
+   "baseline": 112,
+   "align": "center",
+   "color": "#d2cbca",
+   "size": 15
+  },
+  {
+   "id": "tab.bosses",
+   "kind": "rect",
+   "rect": [
+    807,
+    57,
+    93,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.bosses.icon",
+   "kind": "rect",
+   "rect": [
+    840,
+    70,
+    26,
+    26
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.bosses.label",
+   "kind": "text",
+   "text": "Bosses",
+   "font": "crimson",
+   "weight": 500,
+   "width": 43,
+   "x": 853,
+   "baseline": 112,
+   "align": "center",
+   "color": "#d2cbca",
+   "size": 15
+  },
+  {
+   "id": "tab.units",
+   "kind": "rect",
+   "rect": [
+    901,
+    57,
+    92,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.units.icon",
+   "kind": "rect",
+   "rect": [
+    932,
+    70,
+    29,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.units.label",
+   "kind": "text",
+   "text": "Units",
+   "font": "crimson",
+   "weight": 500,
+   "width": 34,
+   "x": 946.5,
+   "baseline": 112,
+   "align": "center",
+   "color": "#d2cbca",
+   "size": 15
+  },
+  {
+   "id": "tab.spells",
+   "kind": "rect",
+   "rect": [
+    994,
+    57,
+    93,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.spells.icon",
+   "kind": "rect",
+   "rect": [
+    1032,
+    69,
+    18,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.spells.label",
+   "kind": "text",
+   "text": "Spells",
+   "font": "crimson",
+   "weight": 500,
+   "width": 39,
+   "x": 1040,
+   "baseline": 112,
+   "align": "center",
+   "color": "#d2cbca",
+   "size": 15
+  },
+  {
+   "id": "tab.relics",
+   "kind": "rect",
+   "rect": [
+    1088,
+    57,
+    91,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.relics.icon",
+   "kind": "rect",
+   "rect": [
+    1120,
+    70,
+    29,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.relics.label",
+   "kind": "text",
+   "text": "Relics",
+   "font": "crimson",
+   "weight": 500,
+   "width": 37,
+   "x": 1134,
+   "baseline": 112,
+   "align": "center",
+   "color": "#d2cbca",
+   "size": 15
+  },
+  {
+   "id": "panel.book",
+   "kind": "rect",
+   "rect": [
+    113,
+    141,
+    1099,
+    527
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.page.left",
+   "kind": "rect",
+   "rect": [
+    126,
+    145,
+    535,
+    512
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.page.right",
+   "kind": "rect",
+   "rect": [
+    668,
+    145,
+    530,
+    512
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "list.heading",
+   "kind": "text",
+   "text": "DISCOVERED",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 110,
+   "x": 187,
+   "baseline": 189,
+   "align": "left",
+   "color": "#22150e",
+   "size": 15,
+   "pen_x": 187
+  },
+  {
+   "id": "list.heading.rule",
+   "kind": "rect",
+   "rect": [
+    317,
+    174,
+    111,
+    18
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "list.page",
+   "kind": "text",
+   "text": "PAGE 1 OF 7",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 81,
+   "x": 449,
+   "baseline": 189,
+   "align": "left",
+   "color": "#1b0f07",
+   "size": 13,
+   "pen_x": 449
+  },
+  {
+   "id": "page.prev",
+   "kind": "rect",
+   "rect": [
+    549,
+    166,
+    32,
+    33
+   ],
+   "role": "button"
+  },
+  {
+   "id": "page.prev.icon",
+   "kind": "rect",
+   "rect": [
+    560,
+    175,
+    11,
+    16
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "page.next",
+   "kind": "rect",
+   "rect": [
+    593,
+    166,
+    33,
+    33
+   ],
+   "role": "button"
+  },
+  {
+   "id": "page.next.icon",
+   "kind": "rect",
+   "rect": [
+    605,
+    175,
+    10,
+    16
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.1",
+   "kind": "rect",
+   "rect": [
+    157,
+    208,
+    149,
+    136
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.1.art",
+   "kind": "rect",
+   "rect": [
+    163,
+    213,
+    135,
+    124
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.1.corner",
+   "kind": "rect",
+   "rect": [
+    161,
+    211,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.2",
+   "kind": "rect",
+   "rect": [
+    317,
+    208,
+    149,
+    136
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.2.art",
+   "kind": "rect",
+   "rect": [
+    323,
+    213,
+    135,
+    124
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.2.corner",
+   "kind": "rect",
+   "rect": [
+    321,
+    211,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.3",
+   "kind": "rect",
+   "rect": [
+    477,
+    208,
+    150,
+    136
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.3.art",
+   "kind": "rect",
+   "rect": [
+    483,
+    213,
+    136,
+    124
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.3.corner",
+   "kind": "rect",
+   "rect": [
+    481,
+    211,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.4",
+   "kind": "rect",
+   "rect": [
+    157,
+    350,
+    149,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.4.art",
+   "kind": "rect",
+   "rect": [
+    163,
+    355,
+    135,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.4.corner",
+   "kind": "rect",
+   "rect": [
+    161,
+    353,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.5",
+   "kind": "rect",
+   "rect": [
+    317,
+    350,
+    149,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.5.art",
+   "kind": "rect",
+   "rect": [
+    323,
+    355,
+    135,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.5.corner",
+   "kind": "rect",
+   "rect": [
+    321,
+    353,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.6",
+   "kind": "rect",
+   "rect": [
+    477,
+    350,
+    150,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.6.art",
+   "kind": "rect",
+   "rect": [
+    483,
+    355,
+    136,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.6.corner",
+   "kind": "rect",
+   "rect": [
+    481,
+    353,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.7",
+   "kind": "rect",
+   "rect": [
+    157,
+    488,
+    149,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.7.art",
+   "kind": "rect",
+   "rect": [
+    163,
+    493,
+    135,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.7.corner",
+   "kind": "rect",
+   "rect": [
+    161,
+    491,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.8",
+   "kind": "rect",
+   "rect": [
+    317,
+    488,
+    149,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.8.art",
+   "kind": "rect",
+   "rect": [
+    323,
+    493,
+    135,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.8.corner",
+   "kind": "rect",
+   "rect": [
+    321,
+    491,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.9",
+   "kind": "rect",
+   "rect": [
+    477,
+    488,
+    150,
+    132
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "cell.9.art",
+   "kind": "rect",
+   "rect": [
+    483,
+    493,
+    136,
+    120
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "cell.9.corner",
+   "kind": "rect",
+   "rect": [
+    481,
+    491,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "cell.8.lock",
+   "kind": "text",
+   "text": "?",
+   "font": "crimson",
+   "weight": 600,
+   "width": 20,
+   "x": 391.5,
+   "baseline": 572,
+   "align": "center",
+   "color": "#8d8172",
+   "size": 54
+  },
+  {
+   "id": "cell.9.lock",
+   "kind": "text",
+   "text": "?",
+   "font": "crimson",
+   "weight": 600,
+   "width": 20,
+   "x": 551.5,
+   "baseline": 572,
+   "align": "center",
+   "color": "#8d8172",
+   "size": 54
+  },
+  {
+   "id": "list.footer.ornament",
+   "kind": "rect",
+   "rect": [
+    326,
+    630,
+    111,
+    21
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "detail.name",
+   "kind": "text",
+   "text": "Shield Knight",
+   "font": "crimson",
+   "weight": 800,
+   "width": 271,
+   "x": 713,
+   "baseline": 213,
+   "align": "left",
+   "color": "#020102",
+   "size": 44,
+   "pen_x": 713
+  },
+  {
+   "id": "detail.role",
+   "kind": "rect",
+   "rect": [
+    714,
+    226,
+    164,
+    42
+   ],
+   "role": "chip"
+  },
+  {
+   "id": "detail.role.icon",
+   "kind": "rect",
+   "rect": [
+    714,
+    226,
+    46,
+    42
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.role.label",
+   "kind": "text",
+   "text": "Frontline",
+   "font": "crimson",
+   "weight": 700,
+   "width": 75,
+   "x": 773,
+   "baseline": 251,
+   "align": "left",
+   "color": "#030200",
+   "size": 17,
+   "pen_x": 773
+  },
+  {
+   "id": "detail.blurb",
+   "kind": "text",
+   "text": "A stalwart defender of the Lantern Caravan.",
+   "font": "crimson",
+   "weight": 600,
+   "width": 333,
+   "x": 716,
+   "baseline": 286,
+   "align": "left",
+   "color": "#17110a",
+   "size": 17,
+   "pen_x": 717
+  },
+  {
+   "id": "detail.portrait",
+   "kind": "rect",
+   "rect": [
+    697,
+    307,
+    256,
+    324
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "stat.1",
+   "kind": "rect",
+   "rect": [
+    966,
+    303,
+    203,
+    64
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.1.icon",
+   "kind": "rect",
+   "rect": [
+    984,
+    321,
+    32,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.1.caption",
+   "kind": "text",
+   "text": "HEALTH",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 45,
+   "x": 1039,
+   "baseline": 325,
+   "align": "left",
+   "color": "#c2b8af",
+   "size": 11,
+   "pen_x": 1039
+  },
+  {
+   "id": "stat.1.value",
+   "kind": "text",
+   "text": "108",
+   "font": "crimson",
+   "weight": 700,
+   "width": 38,
+   "x": 1040,
+   "baseline": 353,
+   "align": "left",
+   "color": "#fbf8cd",
+   "size": 24,
+   "pen_x": 1040
+  },
+  {
+   "id": "stat.2",
+   "kind": "rect",
+   "rect": [
+    966,
+    374,
+    203,
+    64
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.2.icon",
+   "kind": "rect",
+   "rect": [
+    984,
+    390,
+    33,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.2.caption",
+   "kind": "text",
+   "text": "DAMAGE",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 54,
+   "x": 1039,
+   "baseline": 397,
+   "align": "left",
+   "color": "#c2b8af",
+   "size": 11,
+   "pen_x": 1039
+  },
+  {
+   "id": "stat.2.value",
+   "kind": "text",
+   "text": "12",
+   "font": "crimson",
+   "weight": 700,
+   "width": 25,
+   "x": 1041,
+   "baseline": 424,
+   "align": "left",
+   "color": "#fbf8cd",
+   "size": 28,
+   "pen_x": 1041
+  },
+  {
+   "id": "detail.divider",
+   "kind": "rect",
+   "rect": [
+    963,
+    445,
+    135,
+    25
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "detail.lore",
+   "kind": "rect",
+   "rect": [
+    971,
+    479,
+    206,
+    62
+   ],
+   "role": "text"
+  },
+  {
+   "id": "detail.lore.1",
+   "kind": "text",
+   "text": "Trained to hold the line against",
+   "font": "crimson",
+   "weight": 500,
+   "width": 182,
+   "x": 971,
+   "baseline": 489,
+   "align": "left",
+   "color": "#30211a",
+   "size": 14,
+   "pen_x": 971
+  },
+  {
+   "id": "detail.lore.2",
+   "kind": "text",
+   "text": "relentless foes, Shield Knights form",
+   "font": "crimson",
+   "weight": 500,
+   "width": 205,
+   "x": 972,
+   "baseline": 506,
+   "align": "left",
+   "color": "#30211a",
+   "size": 14,
+   "pen_x": 972
+  },
+  {
+   "id": "detail.lore.3",
+   "kind": "text",
+   "text": "the immovable wall of the",
+   "font": "crimson",
+   "weight": 500,
+   "width": 153,
+   "x": 972,
+   "baseline": 523,
+   "align": "left",
+   "color": "#30211a",
+   "size": 14,
+   "pen_x": 973
+  },
+  {
+   "id": "detail.lore.4",
+   "kind": "text",
+   "text": "Lantern Caravan.",
+   "font": "crimson",
+   "weight": 500,
+   "width": 100,
+   "x": 972,
+   "baseline": 540,
+   "align": "left",
+   "color": "#30211a",
+   "size": 14,
+   "pen_x": 972
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    953,
+    573,
+    227,
+    64
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    985,
+    592,
+    29,
+    28
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK TO MAP",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 122,
+   "x": 1028,
+   "baseline": 614,
+   "align": "left",
+   "color": "#f5eeb1",
+   "size": 17,
+   "pen_x": 1028
+  }
+ ],
+ "notes": "Two-part layout: a full-width header band (helmet-with-blue-plume icon, gold small-caps title, six tabs, red close button) above an open book (leather cover, left and right parchment pages split by a dark gutter at x 661-667). Tabs: All is SELECTED (warm gold-brown fill, bright gold frame with diamond studs top/bottom centre and corner flourishes, gold book icon and gold label); Enemies/Bosses/Units/Spells/Relics are unselected (dark slate fill, thin brass frame, grey-white icons and labels) and abut each other with a shared brass divider. Left page: 'DISCOVERED' heading, a flourish rule, 'PAGE 1 OF 7' and prev/next chevron buttons (both drawn identically, so prev is not visibly disabled on page 1), then a 3x3 grid of portrait cells (column pitch 160, gutters ~11 px; row 1 is 136 tall, rows 2-3 are 132 tall in the concept). Each cell is a dark well in a thin brass frame with corner rivets and the same crossed-quill emblem top-left (cell.N.corner). Cell 1 (Shield Knight) is SELECTED: glowing orange-gold frame with outer bloom and a warm-brown well. Cells 2-7 are discovered (full-colour figures). Cells 8 and 9 are LOCKED: a dark smoky silhouette with a grey '?' (recorded as text cell.8.lock / cell.9.lock). A small flourish ornament sits centred under the grid. Right page shows the selected entry: bold dark serif name, a role chip (dark shield badge with gold shield icon + tan ribbon with swallowtail end, 'Frontline'), a one-line blurb, a large portrait well with ragged painted vignette edges (no frame; the rect is the median edge, the figure's helmet nearly touches the top), two dark stat tiles with brass frames and corner rivets (heart/HEALTH 108, sword/DAMAGE 12; caption small grey caps, value large cream serif), a snowflake-and-line divider, a 4-line lore paragraph, and a slate BACK TO MAP button with a brass frame and scroll icon (label left-aligned after the icon, not centred). A faint sepia caravan sketch decorates the top-right of the right page (background art, not interactive). Banners and lanterns outside the book are backdrop. Fit caveats: concept lettering is narrower/taller than Cinzel/Crimson, so sizes are width-fitted and glyphs render slightly shorter; lore line 2 is ~9 px tighter in the concept than Crimson 500/14 (kept the paragraph's common size); stat values fit 24 ('108') vs 28 ('12') because the concept digits are condensed, so use one size (~26) for both in practice. The selected 'All' label fits size 17 against 15 for the other tab labels (it is drawn slightly larger in the concept)."
+}

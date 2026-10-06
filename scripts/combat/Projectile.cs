@@ -38,7 +38,7 @@ public partial class Projectile : Node2D
     internal float Seed => _seed;
 
     public void SetStyle(ProjectileStyle style) => _style = style ?? ProjectileStyles.Default;
-    public void SetWeaponVisual(BaseWeaponKind kind, string shot = null) => SetStyle(ProjectileStyles.ForBaseWeapon(kind, shot));
+    public void SetWeaponVisual(BaseWeaponKind kind) => SetStyle(ProjectileStyles.ForBaseWeapon(kind));
 
     public override void _ExitTree()
     {

@@ -1,0 +1,82 @@
+{
+ "achievements": {
+  "clean": true,
+  "name": "achievements",
+  "source": "art/royal/gen/plates/achievements.png"
+ },
+ "codex": {
+  "clean": true,
+  "name": "codex",
+  "source": "art/royal/gen/plates/codex.png"
+ },
+ "endless": {
+  "clean": true,
+  "name": "endless",
+  "source": "art/royal/gen/plates/endless.png"
+ },
+ "forge": {
+  "clean": true,
+  "name": "forge",
+  "source": "art/royal/gen/plates/forge.png"
+ },
+ "hub": {
+  "clean": true,
+  "name": "hub",
+  "source": "art/royal/gen/plates/hub.png"
+ },
+ "hud-battle": {
+  "clean": true,
+  "name": "hud-battle",
+  "source": "art/royal/gen/plates/hud-battle.png"
+ },
+ "hud-home": {
+  "clean": true,
+  "name": "hud-home",
+  "source": "art/royal/gen/plates/hud-home.png"
+ },
+ "multiplayer": {
+  "clean": true,
+  "name": "multiplayer",
+  "source": "art/royal/gen/plates/multiplayer.png"
+ },
+ "preparation": {
+  "clean": true,
+  "name": "preparation",
+  "source": "art/royal/gen/plates/preparation.png"
+ },
+ "relics": {
+  "clean": true,
+  "name": "relics",
+  "source": "art/royal/gen/plates/relics.png"
+ },
+ "season": {
+  "clean": true,
+  "name": "season",
+  "source": "art/royal/gen/plates/season.png"
+ },
+ "settings": {
+  "clean": true,
+  "name": "settings",
+  "source": "art/royal/gen/plates/settings.png"
+ },
+ "spells": {
+  "clean": true,
+  "name": "spells",
+  "source": "art/royal/gen/plates/spells.png"
+ },
+ "victory": {
+  "clean": true,
+  "name": "victory",
+  "source": "art/royal/gen/plates/victory.png"
+ },
+ "wagon": {
+  "clean": true,
+  "name": "wagon",
+  "source": "art/royal/gen/plates/wagon.png"
+ },
+ "warband": {
+  "clean": true,
+  "name": "warband",
+  "source": "art/royal/gen/plates/warband.png"
+ }
+}

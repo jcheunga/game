@@ -45,7 +45,7 @@ public partial class UiReviewSmoke
                     var art=cards[i]; var button=buttons[i];
                     var cost=i<deck.Roster.Count?deck.Roster[i].Cost:GameState.Instance.BuildSpellStats(spells.Roster[i-deck.Roster.Count]).CourageCost;
                     Check(art.CostLabel.Text==cost.ToString(),$"{prefix}: badge uses the actual resolved courage cost");
-                    Check(art.Portrait.Texture!=null && art.Portrait.Size.Y>=art.Size.Y*.8f,$"{prefix}: portrait fills the card");
+                    Check(art.Portrait.Texture!=null && art.Portrait.Size.Y>=art.Size.Y*.6f && new Rect2(Vector2.Zero,art.Size).Encloses(art.Portrait.GetRect()),$"{prefix}: portrait sits whole inside the card");
                     Check(art.CostPlate.Position.X>art.Size.X*.5f && art.CostPlate.Position.Y<=6
                         && new Rect2(Vector2.Zero,art.Size).Encloses(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),
                         $"{prefix}: textured cost badge fits the top-right corner");
@@ -78,7 +78,7 @@ public partial class UiReviewSmoke
                 deck.ReduceCooldowns(1000);
 
                 Write("_courage",0f); Call("UpdateHud"); await Wait(.1);
-                Check(buttons.All(b=>b.Disabled) && cards.All(c=>c.StatusLabel.Text.Contains("short")),
+                Check(buttons.All(b=>b.Disabled) && cards.All(c=>c.Unaffordable && c.Portrait.Modulate.R<.9f),
                     $"{prefix}: insufficient courage is explicit and prevents activation");
                 Check(cards.All(c=>c.CostLabel.IsVisibleInTree()),$"{prefix}: unavailable cards still show their price");
                 await Capture(prefix+"-low-courage");

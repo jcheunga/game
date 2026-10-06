@@ -196,7 +196,7 @@ public partial class ArenaMenu : Control
 			name.AddThemeColorOverride("font_color", new Color(tier.ColorHex).Lerp(ModalUi.Cream, .35f));
 			var panel = new PanelContainer();
 			panel.SetMeta("modal_unframed", true);
-			panel.AddThemeStyleboxOverride("panel", current ? new ModalSurface(ModalMaterial.Tab, 10, new Color("b39257"), true) : new StyleBoxEmpty { ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 6, ContentMarginBottom = 6 });
+			panel.AddThemeStyleboxOverride("panel", current ? new ModalSurface(ModalMaterial.Tab, 10, true) : new StyleBoxEmpty { ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 6, ContentMarginBottom = 6 });
 			panel.AddChild(row);
 			if (current) name.Text = $"{tier.Title} · you";
 			_ladderStack.AddChild(panel);

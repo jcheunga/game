@@ -1,48 +1,31 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 /// <summary>Small, shared presentation primitives. Game rules remain in GameState.</summary>
 public static class RealmUi
 {
-    public const int ButtonFontSize = 14;
-    public const int CompactButtonFontSize = 14;
-    public static readonly Color Gold = new("d7b77b");
-    public static readonly Color Muted = new("9eada9");
+    public const int ButtonFontSize = 18;
+    public static readonly Color Gold = new("edc47d");
+    public static readonly Color Muted = new("c6bba6");
     private static readonly Dictionary<string, Texture2D> Icons = new();
-    public static readonly Font TitleFont = new SystemFont { FontNames = new[] { "Georgia", "Noto Serif", "serif" } };
-    private static readonly FontFile DisplayFace = ResourceLoader.Load<FontFile>("res://assets/fonts/GrenzeGotisch-Variable.ttf");
-    private static readonly Dictionary<(int, bool), Font> DisplayFonts = new();
+    // The concept typography: Crimson Pro for reading, Cinzel capitals for headings.
+    public static readonly Font TitleFont = RoyalFonts.Body(500);
+    public static readonly Font HeadingFont = RoyalFonts.Display(700);
     private static readonly System.Text.RegularExpressions.Regex CapitalRun = new(@"\p{Lu}{2,}");
     private const string DisplaySizeMeta = "display_size";
-    private static bool _warnedMissingDisplayFace;
 
-    /// <summary>Grenze Gotisch, the blackletter face the website also uses, for headings only: body text, buttons and
-    /// numbers stay in the text faces. Its tall accent and descender room is trimmed so a heading line is no taller
-    /// than a text line, which keeps layouts built around the old heading face intact. <paramref name="roman"/>
-    /// selects the face's roman letterforms (stylistic set 1).</summary>
+    /// <summary>The approved concepts use bold Roman serif headings. Keep the shared entry point for all screens.</summary>
     public static Font DisplayFont(int size, bool roman = false)
     {
-        if (DisplayFace == null)
-        {
-            if (!_warnedMissingDisplayFace) GD.PushWarning("RealmUi: the Grenze Gotisch display font failed to load; headings fall back to the serif face.");
-            _warnedMissingDisplayFace = true;
-            return TitleFont;
-        }
-        if (DisplayFonts.TryGetValue((size, roman), out var font)) return font;
-        var variation = new FontVariation { BaseFont = DisplayFace, VariationOpentype = new Godot.Collections.Dictionary { { "wght", 600 } } };
-        if (roman) variation.OpentypeFeatures = new Godot.Collections.Dictionary { { TextServerManager.GetPrimaryInterface().NameToTag("ss01"), 1 } };
-        variation.SetSpacing(TextServer.SpacingType.Top, -Mathf.RoundToInt(size * .30f));
-        variation.SetSpacing(TextServer.SpacingType.Bottom, -Mathf.RoundToInt(size * .16f));
-        return DisplayFonts[(size, roman)] = variation;
+        return HeadingFont;
     }
 
-    /// <summary>Sets a heading in the display face. Blackletter capitals run short, so it is set a tenth larger and
-    /// never below 22px. They also only read as initials, so a heading with an all-caps word ("LAN race") is roman.
-    /// Change the text afterwards with <see cref="SetDisplayText"/> so that choice follows it.</summary>
+    /// <summary>Sets a readable serif heading with the same size across the shared interface.</summary>
     public static Label Display(Label label, int size)
     {
-        size = Mathf.RoundToInt(Mathf.Max(size, 20) * 1.1f);
+        size = Mathf.Max(size, 20);
         label.AddThemeFontOverride("font", DisplayFont(size, CapitalRun.IsMatch(label.Text)));
         label.AddThemeFontSizeOverride("font_size", size);
         label.SetMeta(DisplaySizeMeta, size);
@@ -182,14 +165,31 @@ public static class RealmUi
     public static HBoxContainer Tabs(Control host, Action<int> select, params string[] labels)
     {
         var row = new HBoxContainer();
-        host.AddChild(row);
+        if (MobilePresentation.Enabled)
+        {
+            var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+                CustomMinimumSize = new Vector2(0, 56), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            scroll.SetMeta("modal_min_height", 0); host.AddChild(scroll); scroll.AddChild(row);
+        }
+        else host.AddChild(row);
         row.SetMeta("realm_tabs", true);
         var group = new ButtonGroup();
         for (int i = 0; i < labels.Length; i++)
         {
             int index = i;
-            var button = new RealmButton { Text = labels[i], ToggleMode = true, ButtonGroup = group, ButtonPressed = i == 0,
+            var symbol = labels[i] switch {
+                "Warband" or "Squad" or "Community" => "people", "Spells" => "flame", "War wagon" or "Caravan" => "wagon",
+                "Relics" => "crown", "All" => "book", "Enemies" or "Bosses" => "skull",
+                "Units" => "people", "Sound" => "music", "Gameplay" or "Combat" or "Adventure" => "sword",
+                "Online" or "Account" or "Rooms" => "people", "Saved" => "flag", "Daily" => "star", "Featured" => "star",
+                _ => "shield" };
+            // Navigation has small monochrome emblems; illustrated resource icons remain in content cards.
+            if (!ResourceLoader.Exists($"res://assets/ui/icons/navigation/{symbol}.svg")) symbol = "shield";
+            var button = new RealmButton { Text = labels[i], Icon = Icon(symbol), ExpandIcon = true, CenterIconAndText = true,
+                VerticalContent = labels.Contains("War wagon") || labels.Contains("Enemies"),
+                ToggleMode = true, ButtonGroup = group, ButtonPressed = i == 0,
                 CustomMinimumSize = new Vector2(0, 48), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            button.AddThemeConstantOverride("icon_max_width", 20); button.AddThemeConstantOverride("h_separation", 6);
             MedievalUi.StyleButton(button, 12, 10);
             button.Pressed += () => select(index);
             row.AddChild(button);

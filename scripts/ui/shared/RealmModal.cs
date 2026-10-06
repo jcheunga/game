@@ -6,6 +6,8 @@ using Godot;
 public partial class RealmModal : Control
 {
     public Control Content { get; private set; }
+    /// <summary>The presented page: a full-canvas concept screen or the framed content.</summary>
+    public Control ActivePage => GodotObject.IsInstanceValid(_royal) ? _royal : Content.GetChildren().OfType<Control>().FirstOrDefault();
     public string Destination { get; private set; }
     public Action Closed, Back;
     private Button _back, _close;
@@ -13,15 +15,18 @@ public partial class RealmModal : Control
     private int _titleSize = 28;
     private PanelContainer _frame;
     private PanelContainer _header;
+    private VBoxContainer _titles;
     private TextureRect _emblem;
-    private float _preferredWidth = 1120, _preferredHeight = 612;
+    private float _preferredWidth = 1232, _preferredHeight = 672;
     private bool _mobileCanvas;
+    private ColorRect _veil;
+    private Control _royal;
 
     public override void _Ready()
     {
         Name = "HomeModal";
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var veil = new ColorRect { Color = new Color("050f18ab"), MouseFilter = MouseFilterEnum.Stop };
+        var veil = _veil = new ColorRect { Color = new Color("050f18ab"), MouseFilter = MouseFilterEnum.Stop };
         AddChild(veil); veil.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         veil.GuiInput += input => {
             if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Closed?.Invoke();
@@ -29,27 +34,56 @@ public partial class RealmModal : Control
         _frame = new PanelContainer { MouseFilter = MouseFilterEnum.Stop };
         _frame.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 16));
         AddChild(_frame);
-        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 12); _frame.AddChild(stack);
+        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 10); _frame.AddChild(stack);
         _header = new PanelContainer(); _header.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Steel, 10)); stack.AddChild(_header);
+
         var heading = new HBoxContainer(); heading.AddThemeConstantOverride("separation", 14); _header.AddChild(heading);
         _back = HomeMapUi.IconButton("back", "Back to previous panel", () => Back?.Invoke()); heading.AddChild(_back);
         ModalUi.StyleButton(_back);
         _emblem = new TextureRect { CustomMinimumSize = new Vector2(52, 52), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore }; heading.AddChild(_emblem);
-        var titles = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter }; titles.AddThemeConstantOverride("separation", 0); heading.AddChild(titles);
-        _title = RealmUi.Heading("", 28); _title.AddThemeColorOverride("font_color", new Color("ffe3a1")); titles.AddChild(_title);
+        var titles = _titles = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter }; titles.AddThemeConstantOverride("separation", 0); heading.AddChild(titles);
+        _title = RealmUi.Heading("", 28); titles.AddChild(_title);
+        GoldTitle(_title);
+        _title.Resized += FitHeadingFont;
         _subtitle = RealmUi.Label("", 18, true); _subtitle.AddThemeFontSizeOverride("font_size", 18); _subtitle.AddThemeColorOverride("font_color", ModalUi.Muted); titles.AddChild(_subtitle);
         _close = HomeMapUi.IconButton("close", "Close panel", () => Closed?.Invoke()); heading.AddChild(_close);
         ModalUi.StyleButton(_close, material: ModalMaterial.Ruby);
+        if (RoyalKit.Texture("close-button") != null) { _close.Icon = null; _close.CustomMinimumSize = new Vector2(54, 54); _close.SizeFlagsVertical = SizeFlags.ShrinkCenter; }
         Content = new Control { Name = "Content", SizeFlagsVertical = SizeFlags.ExpandFill, ClipContents = true };
         stack.AddChild(Content);
         Resized += FitToOwnArea;
     }
 
-    public void Present(string destination, string title, string subtitle, bool hasBack, float width = 1120, float height = 612, string identity = null)
+    /// <summary>Shows a concept screen that draws its own frame on the full canvas.</summary>
+    public void PresentRoyal(string destination, Control screen)
     {
+        Destination = destination;
+        ClearRoyal();
+        _frame.Visible = false;
+        _veil.Color = Colors.Transparent;
+        _royal = screen;
+        if (screen is RoyalScreen royal) royal.Closed = () => Closed?.Invoke();
+        AddChild(screen);
+        if (_mobileCanvas) { Scale = Vector2.One; Size = GetViewportRect().Size; }
+        screen.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        if (!(GameState.Instance?.ReducedMotion ?? false)) RealmUi.FadeIn(screen);
+    }
+
+    private void ClearRoyal()
+    {
+        if (GodotObject.IsInstanceValid(_royal)) { RemoveChild(_royal); _royal.QueueFree(); }
+        _royal = null;
+        _frame.Visible = true;
+        _veil.Color = new Color("050f18ab");
+    }
+
+    public void Present(string destination, string title, string subtitle, bool hasBack, float width = 1232, float height = 672, string identity = null)
+    {
+        ClearRoyal();
+        if (_mobileCanvas) ResizeMobileCanvas();
         _preferredWidth = width; _preferredHeight = height;
         _close.GrabFocus();
-        Destination = destination; _title.Text = title; _subtitle.Text = subtitle ?? ""; _back.Visible = hasBack;
+        Destination = destination; _title.Text = title.ToUpperInvariant(); _subtitle.Text = subtitle ?? ""; _back.Visible = hasBack;
         ApplyIdentity(identity ?? title);
         _frame.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
         _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
@@ -75,13 +109,7 @@ public partial class RealmModal : Control
         return modal;
     }
 
-    public void SetHeading(string title) { _title.Text = title; RealmUi.Display(_title, _titleSize); }
-
-    public static void UpdateHeading(Node child, string title = null, string subtitle = null)
-    {
-        for (var parent = child.GetParent(); parent != null; parent = parent.GetParent())
-            if (parent is RealmModal modal) { if (title != null) { modal.SetHeading(title); modal.ApplyIdentity(title); } if (subtitle != null) { modal._subtitle.Text = subtitle; modal.FitToOwnArea(); } return; }
-    }
+    public void SetHeading(string title) { _title.Text = title.ToUpperInvariant(); FitToOwnArea(); }
 
     public void FitToArea(Vector2 area)
     {
@@ -90,13 +118,23 @@ public partial class RealmModal : Control
         _frame.OffsetLeft = -width / 2; _frame.OffsetRight = width / 2;
         _frame.OffsetTop = -height / 2; _frame.OffsetBottom = height / 2;
         var compact = area.Y < 500;
+        _titles.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _subtitle.Visible = !compact && _subtitle.Text.Length > 0;
-        _titleSize = compact ? 22 : 28;
+        _titleSize = compact ? 22 : 42;
         RealmUi.Display(_title, _titleSize);
         _title.ClipText = true;
         _title.AutowrapMode = TextServer.AutowrapMode.Off;
         _title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        _emblem.CustomMinimumSize = new Vector2(compact ? 36 : 52, compact ? 36 : 52);
+        _emblem.CustomMinimumSize = new Vector2(compact ? 36 : 64, compact ? 36 : 64);
+        Callable.From(FitHeadingFont).CallDeferred();
+    }
+
+    private void FitHeadingFont()
+    {
+        if (!GodotObject.IsInstanceValid(_title) || _title.Size.X <= 0) return;
+        var fontSize = _titleSize;
+        while (fontSize > 20 && RealmUi.HeadingFont.GetStringSize(_title.Text, fontSize: fontSize).X > _title.Size.X - 2) fontSize--;
+        RealmUi.Display(_title, fontSize);
     }
 
     private void FitToOwnArea() { if (_frame != null && Size.X > 0 && Size.Y > 0) FitToArea(Size); }
@@ -112,6 +150,7 @@ public partial class RealmModal : Control
 
     private void ResizeMobileCanvas()
     {
+        if (GodotObject.IsInstanceValid(_royal)) { Scale = Vector2.One; Size = GetViewportRect().Size; return; }
         Scale = Vector2.One * MobilePresentation.HudScale;
         Size = GetViewportRect().Size / MobilePresentation.HudScale;
         FitToOwnArea();
@@ -125,10 +164,12 @@ public partial class RealmModal : Control
     private void ApplyIdentity(string title)
     {
         var text = title.ToLowerInvariant();
-        var material = text.Contains("spell") || text.Contains("relic") || text.Contains("tower") || text.Contains("raid") ? ModalMaterial.Arcane : text.Contains("upgrade") || text.Contains("wagon") || text.Contains("forge") ? ModalMaterial.Forge : ModalMaterial.Wood;
-        _frame.AddThemeStyleboxOverride("panel", new ModalSurface(material, 16));
-        _header.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Tab, 10, ModalUi.Accent(title), true));
-        _emblem.Texture = HomeMapArt.Icon(EmblemFor(text));
+        _frame.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 12));
+        // The concept header: navy enamel with the castle skyline on the right.
+        var header = RoyalKit.Texture("modal-header") != null ? RoyalKit.Slice("modal-header", 40, 10, 560, 10) : null;
+        if (header != null) { header.ContentMarginLeft = 18; header.ContentMarginRight = 10; header.ContentMarginTop = header.ContentMarginBottom = 10; }
+        _header.AddThemeStyleboxOverride("panel", (StyleBox)header ?? new ModalSurface(ModalMaterial.Steel, 12));
+        _emblem.Texture = text.Contains("forge") || text.Contains("upgrade") ? RoyalKit.Texture("icon-dismantle") : HomeMapArt.Icon(EmblemFor(text));
     }
 
     // Painted emblems keep every header in one illustrated family.
@@ -144,6 +185,22 @@ public partial class RealmModal : Control
         if (Has("expedition", "bount")) return "map";
         if (Has("caravan", "guild", "friend")) return "people";
         return "sword";
+    }
+
+    private static Shader _goldShader;
+
+    /// <summary>Engraved gold lettering for modal titles, as on the concepts.</summary>
+    private static void GoldTitle(Label title)
+    {
+        _goldShader ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_gold_text.gdshader");
+        var material = new ShaderMaterial { Shader = _goldShader };
+        title.Material = material;
+        title.AddThemeColorOverride("font_color", Colors.White);
+        title.AddThemeColorOverride("font_outline_color", new Color("22140a"));
+        title.AddThemeConstantOverride("outline_size", 4);
+        title.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, .55f));
+        title.AddThemeConstantOverride("shadow_offset_y", 2);
+        title.Resized += () => { material.SetShaderParameter("top_y", title.Size.Y * .22f); material.SetShaderParameter("bottom_y", title.Size.Y * .78f); };
     }
 
     public override void _Input(InputEvent input)

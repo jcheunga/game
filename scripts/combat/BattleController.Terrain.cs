@@ -2,7 +2,6 @@ using Godot;
 
 public partial class BattleController
 {
-    private NoiseTexture2D _groundTexture;
     private Texture2D _stageArtwork;
     private bool _stageArtworkChecked;
     private ZoneBackdrop _stageBackdrop;
@@ -11,70 +10,30 @@ public partial class BattleController
     {
         if (!_stageArtworkChecked)
         {
-            // Prefer the zone's Blender backdrop; fall back to the painted stage plate.
             _stageBackdrop = WorldEnvironmentArt.LoadZoneBackdrop(_activeRouteId);
-            _stageArtwork = _stageBackdrop?.Near ?? WorldEnvironmentArt.LoadBattle(_stageData?.StageNumber ?? 1);
+            _stageArtwork = _stageBackdrop?.Near;
             _stageArtworkChecked = true;
-            // The legacy fallback is painted on the parent. Its shadow layer must
-            // follow that paint, while authored terrain lives behind both passes.
-            if (_shadowCanvas != null) _shadowCanvas.ZIndex = _stageArtwork != null ? -5 : 0;
+            // The painted layers live behind both passes, so the shadow layer sits just above them.
+            if (_shadowCanvas != null) _shadowCanvas.ZIndex = _stageBackdrop != null ? -5 : 0;
         }
-        if (_stageArtwork != null)
+        if (_stageBackdrop == null)
         {
-            if (_terrainCanvas == null)
-            {
-                _terrainCanvas = new BattleTerrainCanvas { Name = "BattleTerrain", ShowBehindParent = true, ZIndex = -10,
-                    TextureFilter = TextureFilterEnum.LinearWithMipmaps, Artwork = _stageArtwork,
-                    Backdrop = palette.SkyColor.Darkened(.55f),
-                    Ground = new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop),
-                    Cover = () => BattleCoverRect, Layers = _stageBackdrop, WorldCentreX = (BattlefieldLeft + BattlefieldRight) * .5f };
-                AddChild(_terrainCanvas);
-                // Blender backdrops carry their own road surface; the detail overlay is for painted plates.
-                if (_stageBackdrop == null) _terrainCanvas.AddGroundDetail(_activeRouteId, _stage);
-            }
-            _terrainCanvas.QueueRedraw();
-            return;
-        }
-        var background = BattlefieldTextureLoader.TryLoadBackground((_stageData?.TerrainId ?? "urban").ToLowerInvariant());
-        if (background != null) DrawBattleBackground(background);
-        else
-        {
+            // Every zone ships a painted backdrop; a missing one leaves a plain field rather than failing.
             DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
             DrawRect(GetViewportRect(), palette.SkyColor.Darkened(.35f));
             DrawSetTransform(Vector2.Zero);
+            return;
         }
-        var earth = new Color(_activeRouteId switch {
-            "harbor" => "63706c", "foundry" => "715c4a", "quarantine" => "646453",
-            "thornwall" => "647363", "basilica" => "716d61", "mire" => "46553c",
-            "steppe" => "768253", "gloamwood" => "465e42", "citadel" => "626b6d", _ => "6b7050"
-        });
-        if (_groundTexture == null)
+        if (_terrainCanvas == null)
         {
-            var noise = new FastNoiseLite { NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex, Frequency = .022f,
-                FractalOctaves = 3, Seed = 905 };
-            var gradient = new Gradient(); gradient.SetColor(0, earth.Darkened(.06f)); gradient.SetColor(1, earth.Lightened(.07f));
-            _groundTexture = new NoiseTexture2D { Width = 256, Height = 256, Noise = noise, ColorRamp = gradient, Seamless = true };
-            TextureRepeat = TextureRepeatEnum.Enabled;
+            var centre = (BattlefieldLeft + BattlefieldRight) * .5f;
+            _terrainCanvas = new BattleTerrainCanvas { Name = "BattleTerrain", ShowBehindParent = true, ZIndex = -10,
+                TextureFilter = TextureFilterEnum.LinearWithMipmaps, Layers = _stageBackdrop, WorldCentreX = centre };
+            AddChild(_terrainCanvas);
+            if (System.Linq.Enumerable.Any(_stageBackdrop.Layers, layer => layer.Front))
+                AddChild(new BattleTerrainCanvas { Name = "BattleForeground", ZIndex = 60, FrontLayers = true, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
+                    Layers = _stageBackdrop, WorldCentreX = centre });
         }
-        var ground = new Rect2(BattlefieldLeft, BattlefieldTop, BattlefieldRight - BattlefieldLeft, BattlefieldBottom - BattlefieldTop);
-        DrawRect(ground, earth);
-        DrawTextureRect(_groundTexture, ground, true);
-        for (var i = 0; i < 190; i++)
-        {
-            var x = BattlefieldLeft + 18 + (i * 173.7f % (ground.Size.X - 36));
-            var y = BattlefieldTop + 16 + (i * 53.3f % (ground.Size.Y - 32));
-            var point = new Vector2(x,y);
-            if (i % 4 == 0)
-                DrawCircle(point, 1.8f, earth.Lightened(.1f));
-            else
-            {
-                var ink = earth.Darkened(.1f);
-                DrawLine(point, point + new Vector2(-2,-4), ink, 1, true);
-                DrawLine(point, point + new Vector2(2,-5), ink, 1, true);
-            }
-        }
-        // All playable ground stays unobstructed. Landscape art is confined to the margins.
-        DrawRect(new Rect2(BattlefieldLeft, BattlefieldTop - 6, ground.Size.X, 6), earth.Darkened(.2f));
-        DrawRect(new Rect2(BattlefieldLeft, BattlefieldBottom, ground.Size.X, 6), earth.Darkened(.2f));
+        _terrainCanvas.QueueRedraw();
     }
 }

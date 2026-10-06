@@ -50,6 +50,7 @@ public partial class MultiplayerMenu : Control
             AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
         }
         BuildUi();
+        BuildRoyalLayout();
         RefreshUi();
         AnimateEntrance();
     }
@@ -80,6 +81,7 @@ public partial class MultiplayerMenu : Control
     public override void _Process(double delta)
     {
         TickOnlineRoomAutoRefresh((float)delta);
+        RefreshRoyal();
     }
 
     private void BuildUi()
@@ -445,9 +447,10 @@ public partial class MultiplayerMenu : Control
         }
         else
         {
+            var roomIndex = 0;
             foreach (var room in onlineRooms)
             {
-                _squadStack.AddChild(BuildOnlineRoomPanel(room));
+                _squadStack.AddChild(BuildRoyalRoomRow(room, roomIndex++));
             }
         }
 
@@ -647,100 +650,6 @@ public partial class MultiplayerMenu : Control
                 "Remote leaderboard service unavailable.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
-
-        return panel;
-    }
-
-    private Control BuildOnlineRoomPanel(OnlineRoomDirectoryEntry room)
-    {
-        AsyncChallengeCatalog.TryParse(room.BoardCode, out var challenge, out _);
-        var stage = challenge != null
-            ? GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage))
-            : null;
-        var mutator = challenge != null
-            ? AsyncChallengeCatalog.GetMutator(challenge.MutatorId)
-            : null;
-        var deckSummary = room.UsesLockedDeck
-            ? $"Locked squad: {string.Join(", ", room.LockedDeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName))}"
-            : "Deck mode: player squads";
-
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(0f, 156f)
-        };
-
-        var padding = new MarginContainer();
-        padding.AddThemeConstantOverride("margin_left", 14);
-        padding.AddThemeConstantOverride("margin_right", 14);
-        padding.AddThemeConstantOverride("margin_top", 12);
-        padding.AddThemeConstantOverride("margin_bottom", 12);
-        panel.AddChild(padding);
-
-        var stack = UiBadgeFactory.CreateStackWithLeadingBadge(
-            padding,
-            UiBadgeFactory.CreateMetaBadge("challenge", room.BoardCode, new Vector2(48f, 48f)));
-
-        var headerRow = new HBoxContainer();
-        headerRow.AddThemeConstantOverride("separation", 8);
-        stack.AddChild(headerRow);
-
-        headerRow.AddChild(new Label
-        {
-            Text = $"{room.Title} · {room.Status}",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        });
-        headerRow.AddChild(UiBadgeFactory.CreateMetaMetric("members", $"{room.CurrentPlayers}/{room.MaxPlayers}", new Vector2(24f, 24f)));
-
-        stack.AddChild(new Label
-        {
-            Text =
-                $"{room.BoardCode} · Host {room.HostCallsign} · Region {room.Region}\n" +
-                $"{room.BoardTitle}\n" +
-                $"{room.Summary}\n" +
-                $"{deckSummary}\n" +
-                $"Spectators: {room.SpectatorCount}" +
-                (stage == null || mutator == null
-                    ? ""
-                    : $"\nStage: {stage.MapName} S{stage.StageNumber} · Mutator: {mutator.Title}"),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
-        stack.AddChild(row);
-
-        var loadButton = new RealmButton
-        {
-            Text = "Preview",
-            CustomMinimumSize = new Vector2(0f, 38f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        loadButton.Pressed += () => LoadOnlineRoomBoard(room);
-        row.AddChild(loadButton);
-
-        var joinButton = new RealmButton
-        {
-            Text = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId ? "Hosting" : "Request join",
-            CustomMinimumSize = new Vector2(0f, 38f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            Disabled = OnlineRoomCreateService.GetHostedRoom()?.RoomId == room.RoomId
-        };
-        joinButton.Pressed += () => RequestOnlineRoomJoin(room);
-        row.AddChild(joinButton);
-
-        var copyButton = new RealmButton
-        {
-            Text = "Copy room ID",
-            CustomMinimumSize = new Vector2(0f, 38f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        copyButton.Pressed += () =>
-        {
-            DisplayServer.ClipboardSet(string.IsNullOrWhiteSpace(room.RoomId) ? room.BoardCode : room.RoomId);
-            SetStatusMessage($"Copied {(string.IsNullOrWhiteSpace(room.RoomId) ? room.BoardCode : room.RoomId)} to the clipboard.");
-            RefreshUi();
-        };
-        row.AddChild(copyButton);
 
         return panel;
     }

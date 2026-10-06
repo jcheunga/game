@@ -22,8 +22,10 @@ public partial class BattleFloatText : Label
 
         AddThemeColorOverride("font_color", color);
         AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.85f));
-        AddThemeFontSizeOverride("font_size", 19);
-        AddThemeConstantOverride("outline_size", 4);
+        // The concept's bold book-serif numerals with a dark outline.
+        AddThemeFontOverride("font", RoyalFonts.Body(700));
+        AddThemeFontSizeOverride("font_size", 21);
+        AddThemeConstantOverride("outline_size", 5);
         Scale = Vector2.One * (PresentationScale?.Invoke() ?? 1f);
     }
 

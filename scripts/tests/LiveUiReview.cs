@@ -75,7 +75,7 @@ public static class LiveUiReview
     {
         if (tree.CurrentScene is not MapMenu { HasHomeModal: true } home || home.HomeModalDestination != path)
             throw new InvalidOperationException($"Review bypassed the live map overlay for {path}.");
-        var content = home.GetNode<RealmModal>("HomeModal").Content.GetChildren().OfType<Control>().Single();
+        var content = home.GetNode<RealmModal>("HomeModal").ActivePage;
         if (!content.HasMeta("home_modal") || content.SceneFilePath != path)
             throw new InvalidOperationException($"Review is showing the wrong activity for {path}.");
         GD.Print($"LIVE_UI_ROUTE: {path} above {home.SceneFilePath}");

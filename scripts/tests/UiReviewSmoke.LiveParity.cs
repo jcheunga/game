@@ -30,7 +30,7 @@ public partial class UiReviewSmoke
         {
             await TapHint(hint);
             var activity = LiveUiReview.AssertDestination(GetTree(), path);
-            Check(Walk(activity).OfType<Button>().Any(b => b.Text == tab && b.ButtonPressed), hint + ": native home click selects its live page");
+            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.Text == tab && b.ButtonPressed), hint + ": native home click selects its live page");
             AuditText("Live click / " + hint); await Capture("click-" + hint);
             await TapHint("Close panel");
             Check(!home.HasHomeModal && GetTree().CurrentScene == home, hint + ": close restores the same home");
@@ -49,7 +49,9 @@ public partial class UiReviewSmoke
         Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.Text == "Rooms" && b.ButtonPressed),
             "Challenges opens the live multiplayer Rooms page through More / Community");
         AuditText("Live click / Multiplayer"); await Capture("click-Multiplayer");
-        await TapModal(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Single(b => b.Text == "LAN"));
+        // LAN lives in the challenge code menu on the concept layout; its original action is reused.
+        Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Single(b => b.Text == "LAN").EmitSignal(BaseButton.SignalName.Pressed);
+        await LiveUiReview.Settle(this);
         LiveUiReview.AssertDestination(GetTree(), SceneRouter.LanRaceScene);
         AuditText("Live click / LAN"); await Capture("click-LAN");
         await TapHint("Back to previous panel");
@@ -61,7 +63,8 @@ public partial class UiReviewSmoke
             var activity = (Control)await LiveUiReview.Open(this, path);
             await Wait(0.4); // Captures show the settled overlay, not its fade-in.
             var modal = home.GetNode<RealmModal>("HomeModal");
-            Check(modal.Content.GetGlobalRect().Grow(2).Encloses(activity.GetGlobalRect()), path + ": live activity fits its modal body");
+            var body = activity.HasMeta("royal_screen") ? GetViewport().GetVisibleRect() : modal.Content.GetGlobalRect();
+            Check(body.Grow(2).Encloses(activity.GetGlobalRect()), path + ": live activity fits its modal body");
             AuditText("Live route / " + path); await Capture("route-" + System.IO.Path.GetFileNameWithoutExtension(path));
             await TapHint("Close panel");
             Check(GetTree().CurrentScene == home && !home.HasHomeModal, path + ": closing preserves the map");

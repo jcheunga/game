@@ -12,9 +12,16 @@ public partial class BattleController
 
     // Every outcome shares one card: a title, this run's stars, what was actually earned,
     // and the two actions side by side. The detailed report stays out of the way.
+    private RoyalResult _royalResult;
+
     private void PresentResult(bool won, string title, string detail = "")
     {
         var rewards = BattleRewardUi.Earned(_battleRewardStart, GameState.Instance.BuildSaveData());
+        if (!IsLanRaceMode && !IsOnlineRoomMode)
+        {
+            PresentRoyalResult(won, title, detail, rewards);
+            return;
+        }
         if (won)
             BattleSummaryData.Current = new BattleSummaryData {
                 Won = true, StarsEarned = _endStarRating.Stars, Stage = _stage, BattleMode = _battleMode.ToString(),
@@ -28,15 +35,15 @@ public partial class BattleController
         var compact = MobilePresentation.Enabled;
         var height = rewards.Count > 0 ? BattleRewardUi.PanelHeight(rewards.Count, compact) : compact ? 280 : 330;
         if (detail.Length > 0) height += compact ? 24 : 30;
-        _endPanel.CustomMinimumSize = new Vector2(compact ? 680 : 760, height);
-        _endPanel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 0));
+        _endPanel.CustomMinimumSize = new Vector2(compact ? 680 : 880, Mathf.Min(680, height));
+        _endPanel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 12));
         _endContent.AddThemeConstantOverride("separation", compact ? 8 : 14);
         var inset = compact ? 12 : 24;
         foreach (var side in new[] { "left", "right" }) _endPadding.AddThemeConstantOverride("margin_" + side, inset - ModalSurface.MinimumSideInset);
         foreach (var side in new[] { "top", "bottom" }) _endPadding.AddThemeConstantOverride("margin_" + side, inset - ModalSurface.MinimumEndInset);
         _endStarRating.CustomMinimumSize = new Vector2(132, compact ? 36 : 48);
 
-        var heading = RealmUi.Heading(title, compact ? 26 : 32);
+        var heading = RealmUi.Heading(title.ToUpperInvariant(), compact ? 26 : 48);
         heading.Name = "ResultTitle"; heading.HorizontalAlignment = HorizontalAlignment.Center;
         heading.AddThemeColorOverride("font_color", won ? VictoryInk : DefeatInk);
         _endContent.AddChild(heading); _endContent.MoveChild(heading, 0);
@@ -71,5 +78,31 @@ public partial class BattleController
         _endSecondaryButton.SizeFlagsHorizontal = _endPrimaryButton.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         ModalUi.StyleButton(_endSecondaryButton, material: won ? ModalMaterial.Gold : ModalMaterial.Steel);
         ModalUi.StyleButton(_endPrimaryButton, material: won ? ModalMaterial.Steel : ModalMaterial.Gold);
+    }
+
+    /// <summary>The approved victory board, used for every result except LAN and online rooms.</summary>
+    private void PresentRoyalResult(bool won, string title, string detail, System.Collections.Generic.List<BattleReward> rewards)
+    {
+        if (won)
+            BattleSummaryData.Current = new BattleSummaryData {
+                Won = true, StarsEarned = _endStarRating.Stars, Stage = _stage, BattleMode = _battleMode.ToString(),
+                Rewards = rewards, GoldEarned = rewards.Where(reward => reward.Kind == "gold").Sum(reward => reward.Amount),
+                FoodEarned = rewards.Where(reward => reward.Kind == "food").Sum(reward => reward.Amount),
+                SeasonXPEarned = rewards.Where(reward => reward.Kind == "season_xp").Sum(reward => reward.Amount),
+                MasteryXPPerUnit = rewards.Where(reward => reward.Kind == "mastery").ToDictionary(reward => reward.ItemId, reward => reward.Amount)
+            };
+        _royalResult?.QueueFree();
+        _royalResult = new RoyalResult
+        {
+            Won = won, Title = title, Detail = detail, Stars = won ? _endStarRating.Stars : 0, Rewards = rewards,
+            LeaveText = _endSecondaryButton.Text, RetryText = IsCampaignMode ? "Restart" : _endPrimaryButton.Text,
+            RetryFoodCost = IsCampaignMode ? GameState.Instance.GetStageEntryFoodCost(_stage) : 0,
+            Leave = HandleEndPanelSecondaryAction, Retry = HandleEndPanelPrimaryAction
+        };
+        _endCenter.GetParent().AddChild(_royalResult);
+        _endPanel.Visible = false;
+        // The result board stands alone over the battlefield, as in the concept.
+        foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock })
+            if (IsInstanceValid(hud)) hud.Visible = false;
     }
 }

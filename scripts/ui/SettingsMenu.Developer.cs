@@ -9,10 +9,14 @@ public partial class SettingsMenu
 
     private void BuildDeveloperPage(VBoxContainer page)
     {
+        _developerGrantButtons.Clear();
         page.AddChild(RealmUi.Heading("Testing supplies", 24));
         page.AddChild(RealmUi.Label("Add supplies for test runs. Quick top-ups also appear below your map balances.", 18, true));
         _developerModeButton = RealmUi.Button("gear", "Developer mode: Off", () =>
-            GameState.Instance.SetDeveloperMode(!GameState.Instance.DeveloperModeEnabled));
+        {
+            GameState.Instance.SetDeveloperMode(!GameState.Instance.DeveloperModeEnabled);
+            RefreshDeveloperPage();
+        });
         _developerModeButton.Name = "DeveloperModeToggle";
         page.AddChild(_developerModeButton);
 
@@ -32,7 +36,10 @@ public partial class SettingsMenu
             foreach (var amount in new[] { small, large })
             {
                 var button = RealmUi.Button(icon, $"+{amount:N0} {title.ToLowerInvariant()}", () =>
-                    GameState.Instance.TryAddDeveloperResources(gold ? amount : 0, gold ? 0 : amount));
+                {
+                    GameState.Instance.TryAddDeveloperResources(gold ? amount : 0, gold ? 0 : amount);
+                    RefreshDeveloperPage();
+                });
                 button.Name = $"Developer{title}{amount}";
                 _developerGrantButtons.Add(button);
                 stack.AddChild(button);
@@ -45,7 +52,8 @@ public partial class SettingsMenu
 
     private void RefreshDeveloperPage()
     {
-        if (_developerModeButton == null) return;
+        // The tools live in an inspector that may have been closed since.
+        if (!IsInstanceValid(_developerModeButton)) return;
         var state = GameState.Instance;
         _developerModeButton.Text = state.DeveloperModeEnabled ? "Developer mode: On" : "Developer mode: Off";
         _developerModeButton.TooltipText = _developerModeButton.Text;

@@ -112,17 +112,6 @@ def focus():
       <path d="M11 6h8m154 0h8M6 11v8m180 0v-8M11 58h8m154 0h8" stroke="#fff4d8" fill="none"/>''')
 
 
-def cost_badge():
-    return svg(64,40, f'''<defs><linearGradient id="brass" x2="0" y2="1">
-      <stop stop-color="#927143"/><stop offset=".35" stop-color="#634d31"/><stop offset="1" stop-color="#332d24"/></linearGradient>
-      <clipPath id="clip"><path d="{bevel(64,40,2,5)}"/></clipPath></defs>
-      <path d="{bevel(64,40,1,5)}" fill="#071015" stroke="#080e12" stroke-width="2"/>
-      <path d="{bevel(64,40,2,5)}" fill="url(#brass)" stroke="#d6bb83" stroke-width="1.2"/>
-      {grain(64,40,'clip')}
-      <path d="M9 5H55" stroke="#f4dba6" stroke-opacity=".45"/>
-      <path d="M9 36H55" stroke="#070e12" stroke-width="1.5"/>''')
-
-
 def meter(fill=False):
     if fill:
         return svg(128,24, f'''<defs><linearGradient id="g" x2="0" y2="1">
@@ -175,7 +164,6 @@ def main():
         'button_primary_hover': button('#a0804a','#80623b','#51462f','#ffe0a1'),
         'button_primary_pressed': button('#3b3024','#57422c','#6a5030','#e0c08a',pressed=True),
         'focus': focus(),
-        'cost_badge': cost_badge(),
         'inset': inset(),
         'input_focus': inset('#14272b','#e0c08a'),
         'input_disabled': inset('#131c20','#46534e'),

@@ -68,12 +68,12 @@ public static class BattleRewardUi
             var value = reward.Kind == "training" ? $"Lv {reward.Amount}" : $"+{reward.Amount:N0}{suffix}";
             var hint = $"{name}: {value}";
             var card = new PanelContainer { Name = "Reward" + reward.Kind + reward.ItemId,
-                CustomMinimumSize = new Vector2(compact ? 100 : 150, 0), TooltipText = hint, AccessibilityName = hint };
+                CustomMinimumSize = new Vector2(compact ? 100 : 180, 0), TooltipText = hint, AccessibilityName = hint };
             card.SetMeta("modal_unframed", true);
             card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, compact ? 8 : 12));
             grid.AddChild(card);
             var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", compact ? 4 : 8); card.AddChild(stack);
-            stack.AddChild(new TextureRect { Texture = texture, CustomMinimumSize = new Vector2(0, compact ? 40 : 64),
+            stack.AddChild(new TextureRect { Texture = texture, CustomMinimumSize = new Vector2(0, compact ? 40 : 80),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 MouseFilter = Control.MouseFilterEnum.Ignore });
             var amount = new Label { Text = value, HorizontalAlignment = HorizontalAlignment.Center,

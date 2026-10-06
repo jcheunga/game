@@ -16,6 +16,8 @@ public partial class UnitModelPreview : Control
     private Vector2 _pressPosition;
     public UnitAnimState Animation { get; private set; }=UnitAnimState.Idle;
     public Action InspectRequested { get; set; }
+    /// <summary>Stands the model on the bottom edge (a painted pedestal) instead of centring it.</summary>
+    public bool AlignBottom { get; set; }
     internal Rect2 ModelRect { get; private set; }
     internal int GlobalFrame => _frame;
 
@@ -108,7 +110,7 @@ public partial class UnitModelPreview : Control
         var available=(Size-new Vector2(16,12)).Max(Vector2.One);
         var scale=Mathf.Min(available.X/_crop.Size.X,available.Y/_crop.Size.Y);
         var size=_crop.Size*scale;
-        ModelRect=new Rect2((Size-size)*.5f,size);
+        ModelRect=AlignBottom?new Rect2(new Vector2((Size.X-size.X)*.5f,Size.Y-8-size.Y),size):new Rect2((Size-size)*.5f,size);
         DrawSetTransform(new Vector2(Size.X*.5f,Size.Y-8),0,new Vector2(Size.X*.34f,6));
         DrawCircle(Vector2.Zero,1,new Color("00000038"));
         DrawSetTransform(Vector2.Zero);

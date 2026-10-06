@@ -1,0 +1,1277 @@
+{
+ "screen": "forge",
+ "ref": "art/royal/ref/menu-09-relic-forge.png",
+ "elements": [
+  {
+   "id": "panel.header",
+   "kind": "rect",
+   "rect": [
+    33,
+    21,
+    1213,
+    97
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.emblem",
+   "kind": "rect",
+   "rect": [
+    95,
+    33,
+    85,
+    76
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Relic Forge",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 345,
+   "x": 206,
+   "baseline": 91,
+   "align": "left",
+   "color": "#ebc785",
+   "style": "gold",
+   "size": 53,
+   "pen_x": 206
+  },
+  {
+   "id": "resource.gold",
+   "kind": "rect",
+   "rect": [
+    796,
+    57,
+    176,
+    47
+   ],
+   "role": "plaque"
+  },
+  {
+   "id": "resource.gold.icon",
+   "kind": "rect",
+   "rect": [
+    816,
+    64,
+    39,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "resource.gold.value",
+   "kind": "text",
+   "text": "1,240",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 54,
+   "x": 867,
+   "baseline": 89,
+   "align": "left",
+   "color": "#ebeaeb",
+   "size": 21,
+   "pen_x": 867
+  },
+  {
+   "id": "resource.shard",
+   "kind": "rect",
+   "rect": [
+    981,
+    57,
+    173,
+    47
+   ],
+   "role": "plaque"
+  },
+  {
+   "id": "resource.shard.icon",
+   "kind": "rect",
+   "rect": [
+    1001,
+    61,
+    29,
+    39
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "resource.shard.value",
+   "kind": "text",
+   "text": "18",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 22,
+   "x": 1043,
+   "baseline": 89,
+   "align": "left",
+   "color": "#eeedee",
+   "size": 21,
+   "pen_x": 1043
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    54,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1201,
+    42,
+    23,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "panel.body",
+   "kind": "rect",
+   "rect": [
+    33,
+    117,
+    1213,
+    525
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.dismantle",
+   "kind": "rect",
+   "rect": [
+    67,
+    137,
+    379,
+    492
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "dismantle.header",
+   "kind": "rect",
+   "rect": [
+    67,
+    137,
+    379,
+    70
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "dismantle.header.icon",
+   "kind": "rect",
+   "rect": [
+    99,
+    145,
+    41,
+    50
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dismantle.header.title",
+   "kind": "text",
+   "text": "Dismantle",
+   "font": "crimson",
+   "weight": 600,
+   "width": 150,
+   "x": 159,
+   "baseline": 171,
+   "align": "left",
+   "color": "#f8e7bb",
+   "size": 34,
+   "pen_x": 159
+  },
+  {
+   "id": "dismantle.header.subtitle",
+   "kind": "text",
+   "text": "SELECT RELICS",
+   "font": "crimson",
+   "weight": 600,
+   "width": 130,
+   "x": 159,
+   "baseline": 197,
+   "align": "left",
+   "color": "#cfcecd",
+   "size": 20,
+   "pen_x": 159
+  },
+  {
+   "id": "dismantle.grid",
+   "kind": "rect",
+   "rect": [
+    73,
+    210,
+    367,
+    340
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "slot.0",
+   "kind": "rect",
+   "rect": [
+    81,
+    217,
+    85,
+    80
+   ],
+   "role": "slot",
+   "frame": "gold"
+  },
+  {
+   "id": "slot.0.check",
+   "kind": "rect",
+   "rect": [
+    85,
+    221,
+    26,
+    27
+   ],
+   "role": "check"
+  },
+  {
+   "id": "slot.0.check.mark",
+   "kind": "rect",
+   "rect": [
+    90,
+    226,
+    16,
+    15
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.1",
+   "kind": "rect",
+   "rect": [
+    174,
+    218,
+    80,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.1.diamond",
+   "kind": "rect",
+   "rect": [
+    237,
+    280,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.2",
+   "kind": "rect",
+   "rect": [
+    264,
+    218,
+    79,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.2.diamond",
+   "kind": "rect",
+   "rect": [
+    326,
+    280,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.3",
+   "kind": "rect",
+   "rect": [
+    352,
+    218,
+    80,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.3.diamond",
+   "kind": "rect",
+   "rect": [
+    414,
+    280,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.4",
+   "kind": "rect",
+   "rect": [
+    83,
+    305,
+    82,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.4.diamond",
+   "kind": "rect",
+   "rect": [
+    147,
+    367,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.5",
+   "kind": "rect",
+   "rect": [
+    174,
+    305,
+    80,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.5.diamond",
+   "kind": "rect",
+   "rect": [
+    237,
+    367,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.6",
+   "kind": "rect",
+   "rect": [
+    264,
+    305,
+    79,
+    78
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.6.diamond",
+   "kind": "rect",
+   "rect": [
+    325,
+    367,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.7",
+   "kind": "rect",
+   "rect": [
+    352,
+    305,
+    80,
+    78
+   ],
+   "role": "slot",
+   "frame": "purple"
+  },
+  {
+   "id": "slot.7.diamond",
+   "kind": "rect",
+   "rect": [
+    414,
+    367,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.8",
+   "kind": "rect",
+   "rect": [
+    83,
+    392,
+    82,
+    79
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.8.diamond",
+   "kind": "rect",
+   "rect": [
+    147,
+    455,
+    12,
+    9
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.9",
+   "kind": "rect",
+   "rect": [
+    174,
+    392,
+    80,
+    79
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.9.diamond",
+   "kind": "rect",
+   "rect": [
+    237,
+    455,
+    12,
+    9
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.10",
+   "kind": "rect",
+   "rect": [
+    264,
+    392,
+    79,
+    79
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "slot.10.diamond",
+   "kind": "rect",
+   "rect": [
+    325,
+    455,
+    12,
+    9
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.11",
+   "kind": "rect",
+   "rect": [
+    352,
+    392,
+    80,
+    79
+   ],
+   "role": "slot",
+   "frame": "purple"
+  },
+  {
+   "id": "slot.11.diamond",
+   "kind": "rect",
+   "rect": [
+    414,
+    455,
+    12,
+    9
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.12",
+   "kind": "rect",
+   "rect": [
+    83,
+    480,
+    82,
+    70
+   ],
+   "role": "slot",
+   "frame": "purple"
+  },
+  {
+   "id": "slot.12.diamond",
+   "kind": "rect",
+   "rect": [
+    147,
+    539,
+    12,
+    10
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "slot.13",
+   "kind": "rect",
+   "rect": [
+    174,
+    480,
+    80,
+    70
+   ],
+   "role": "slot",
+   "frame": "grey"
+  },
+  {
+   "id": "slot.14",
+   "kind": "rect",
+   "rect": [
+    264,
+    480,
+    79,
+    70
+   ],
+   "role": "slot",
+   "frame": "grey"
+  },
+  {
+   "id": "slot.15",
+   "kind": "rect",
+   "rect": [
+    352,
+    480,
+    80,
+    70
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "button.dismantle",
+   "kind": "rect",
+   "rect": [
+    81,
+    555,
+    353,
+    63
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.dismantle.icon",
+   "kind": "rect",
+   "rect": [
+    168,
+    567,
+    39,
+    39
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.dismantle.label",
+   "kind": "text",
+   "text": "Dismantle",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 122,
+   "x": 227,
+   "baseline": 595,
+   "align": "left",
+   "color": "#0f0602",
+   "size": 21,
+   "pen_x": 227
+  },
+  {
+   "id": "panel.fuse",
+   "kind": "rect",
+   "rect": [
+    459,
+    137,
+    384,
+    492
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "fuse.header",
+   "kind": "rect",
+   "rect": [
+    459,
+    137,
+    384,
+    70
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "fuse.header.icon",
+   "kind": "rect",
+   "rect": [
+    491,
+    146,
+    46,
+    42
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "fuse.header.title",
+   "kind": "text",
+   "text": "Fuse",
+   "font": "crimson",
+   "weight": 600,
+   "width": 66,
+   "x": 562,
+   "baseline": 171,
+   "align": "left",
+   "color": "#f9eac1",
+   "size": 35,
+   "pen_x": 562
+  },
+  {
+   "id": "fuse.header.subtitle",
+   "kind": "text",
+   "text": "THREE OF ONE RARITY",
+   "font": "crimson",
+   "weight": 600,
+   "width": 203,
+   "x": 562,
+   "baseline": 197,
+   "align": "left",
+   "color": "#d4d2d0",
+   "size": 20,
+   "pen_x": 562
+  },
+  {
+   "id": "fuse.socket.1",
+   "kind": "rect",
+   "rect": [
+    507,
+    226,
+    87,
+    86
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "fuse.socket.1.pip",
+   "kind": "rect",
+   "rect": [
+    541,
+    295,
+    18,
+    18
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "fuse.socket.1.diamond",
+   "kind": "rect",
+   "rect": [
+    575,
+    293,
+    13,
+    14
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.socket.1.base",
+   "kind": "rect",
+   "rect": [
+    505,
+    311,
+    92,
+    15
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "fuse.socket.2",
+   "kind": "rect",
+   "rect": [
+    610,
+    226,
+    87,
+    86
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "fuse.socket.2.pip",
+   "kind": "rect",
+   "rect": [
+    644,
+    295,
+    17,
+    18
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "fuse.socket.2.diamond",
+   "kind": "rect",
+   "rect": [
+    678,
+    293,
+    13,
+    14
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.socket.2.base",
+   "kind": "rect",
+   "rect": [
+    608,
+    311,
+    92,
+    15
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "fuse.socket.3",
+   "kind": "rect",
+   "rect": [
+    713,
+    226,
+    86,
+    86
+   ],
+   "role": "slot",
+   "frame": "blue"
+  },
+  {
+   "id": "fuse.socket.3.pip",
+   "kind": "rect",
+   "rect": [
+    747,
+    295,
+    17,
+    18
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "fuse.socket.3.diamond",
+   "kind": "rect",
+   "rect": [
+    781,
+    293,
+    13,
+    14
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.socket.3.base",
+   "kind": "rect",
+   "rect": [
+    711,
+    311,
+    92,
+    15
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "fuse.connector",
+   "kind": "rect",
+   "rect": [
+    549,
+    324,
+    208,
+    21
+   ],
+   "role": "connector"
+  },
+  {
+   "id": "fuse.connector.stem",
+   "kind": "rect",
+   "rect": [
+    651,
+    324,
+    4,
+    30
+   ],
+   "role": "connector"
+  },
+  {
+   "id": "fuse.arrow",
+   "kind": "rect",
+   "rect": [
+    639,
+    353,
+    28,
+    16
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "fuse.result",
+   "kind": "rect",
+   "rect": [
+    591,
+    372,
+    122,
+    123
+   ],
+   "role": "slot",
+   "frame": "gold"
+  },
+  {
+   "id": "fuse.result.pips",
+   "kind": "rect",
+   "rect": [
+    597,
+    497,
+    109,
+    25
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "fuse.result.pip.1",
+   "kind": "rect",
+   "rect": [
+    619,
+    502,
+    16,
+    17
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "fuse.result.pip.2",
+   "kind": "rect",
+   "rect": [
+    640,
+    503,
+    15,
+    15
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.result.pip.3",
+   "kind": "rect",
+   "rect": [
+    656,
+    503,
+    15,
+    15
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.result.pip.4",
+   "kind": "rect",
+   "rect": [
+    671,
+    503,
+    11,
+    15
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "fuse.result.pip.5",
+   "kind": "rect",
+   "rect": [
+    684,
+    503,
+    15,
+    15
+   ],
+   "role": "pip",
+   "state": "empty"
+  },
+  {
+   "id": "button.fuse",
+   "kind": "rect",
+   "rect": [
+    479,
+    555,
+    345,
+    63
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.fuse.icon",
+   "kind": "rect",
+   "rect": [
+    587,
+    571,
+    41,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.fuse.label",
+   "kind": "text",
+   "text": "Fuse",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 53,
+   "x": 651,
+   "baseline": 595,
+   "align": "left",
+   "color": "#120804",
+   "size": 22,
+   "pen_x": 651
+  },
+  {
+   "id": "panel.craft",
+   "kind": "rect",
+   "rect": [
+    854,
+    137,
+    387,
+    492
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "craft.header",
+   "kind": "rect",
+   "rect": [
+    854,
+    137,
+    357,
+    55
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "craft.header.icon",
+   "kind": "rect",
+   "rect": [
+    890,
+    146,
+    46,
+    40
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "craft.header.title",
+   "kind": "text",
+   "text": "Craft",
+   "font": "crimson",
+   "weight": 600,
+   "width": 71,
+   "x": 959,
+   "baseline": 171,
+   "align": "left",
+   "color": "#f8e9c2",
+   "size": 32,
+   "pen_x": 959
+  },
+  {
+   "id": "craft.list",
+   "kind": "rect",
+   "rect": [
+    854,
+    193,
+    121,
+    436
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "recipe.1",
+   "kind": "rect",
+   "rect": [
+    866,
+    204,
+    99,
+    69
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "recipe.2",
+   "kind": "rect",
+   "rect": [
+    868,
+    280,
+    95,
+    67
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "recipe.3",
+   "kind": "rect",
+   "rect": [
+    868,
+    355,
+    95,
+    66
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "recipe.4",
+   "kind": "rect",
+   "rect": [
+    868,
+    429,
+    95,
+    67
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "recipe.5",
+   "kind": "rect",
+   "rect": [
+    868,
+    504,
+    95,
+    68
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "recipe.1.caption",
+   "kind": "text",
+   "text": "Iron Pendant",
+   "font": "crimson",
+   "weight": 600,
+   "width": 78,
+   "x": 877,
+   "baseline": 265,
+   "align": "left",
+   "color": "#efe8d1",
+   "size": 14,
+   "pen_x": 877
+  },
+  {
+   "id": "craft.preview",
+   "kind": "rect",
+   "rect": [
+    978,
+    199,
+    259,
+    299
+   ],
+   "role": "preview"
+  },
+  {
+   "id": "craft.preview.title",
+   "kind": "text",
+   "text": "Iron Pendant",
+   "font": "crimson",
+   "weight": 700,
+   "width": 132,
+   "x": 1043,
+   "baseline": 229,
+   "align": "left",
+   "color": "#fcf1cc",
+   "size": 22,
+   "pen_x": 1043
+  },
+  {
+   "id": "craft.cost",
+   "kind": "rect",
+   "rect": [
+    998,
+    502,
+    222,
+    45
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "craft.cost.gold.icon",
+   "kind": "rect",
+   "rect": [
+    1016,
+    508,
+    40,
+    33
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "craft.cost.gold.value",
+   "kind": "text",
+   "text": "150",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 28,
+   "x": 1063,
+   "baseline": 532,
+   "align": "left",
+   "color": "#f3edd0",
+   "size": 17,
+   "pen_x": 1063
+  },
+  {
+   "id": "craft.cost.shard.icon",
+   "kind": "rect",
+   "rect": [
+    1122,
+    507,
+    27,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "craft.cost.shard.value",
+   "kind": "text",
+   "text": "3",
+   "font": "cinzel",
+   "weight": 700,
+   "size": 17,
+   "x": 1159,
+   "baseline": 532,
+   "align": "left",
+   "color": "#f4f0d4",
+   "pen_x": 1159
+  },
+  {
+   "id": "button.craft",
+   "kind": "rect",
+   "rect": [
+    987,
+    555,
+    240,
+    63
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.craft.icon",
+   "kind": "rect",
+   "rect": [
+    1038,
+    570,
+    34,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.craft.label",
+   "kind": "text",
+   "text": "Craft",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 71,
+   "x": 1093,
+   "baseline": 595,
+   "align": "left",
+   "color": "#150903",
+   "size": 22,
+   "pen_x": 1093
+  },
+  {
+   "id": "button.armory",
+   "kind": "rect",
+   "rect": [
+    117,
+    651,
+    263,
+    52
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.armory.icon",
+   "kind": "rect",
+   "rect": [
+    178,
+    658,
+    30,
+    38
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.armory.label",
+   "kind": "text",
+   "text": "ARMORY",
+   "font": "crimson",
+   "weight": 600,
+   "width": 86,
+   "x": 233,
+   "baseline": 684,
+   "align": "left",
+   "color": "#faeeb7",
+   "size": 22,
+   "pen_x": 233
+  },
+  {
+   "id": "button.map",
+   "kind": "rect",
+   "rect": [
+    902,
+    651,
+    296,
+    52
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.map.icon",
+   "kind": "rect",
+   "rect": [
+    954,
+    660,
+    49,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.map.label",
+   "kind": "text",
+   "text": "BACK TO MAP",
+   "font": "crimson",
+   "weight": 600,
+   "width": 125,
+   "x": 1030,
+   "baseline": 684,
+   "align": "left",
+   "color": "#f7efc2",
+   "size": 21,
+   "pen_x": 1030
+  }
+ ],
+ "notes": "Relic forge modal: header band (anvil emblem, gold 'Relic Forge' title in Cinzel with tall R/F, castle art on the right, gold 1,240 and shard 18 plaques, red close button) over a body frame with three framed columns, each topped by a section header bar (icon + Crimson bold title + Cinzel caps subtitle; Craft has no subtitle and its bar is shorter, 55 tall, ending at x=1210). Dismantle: 4x4 relic grid in a scroll viewport (dismantle.grid); slot.0 is SELECTED (glowing gold frame, slightly larger than the others, check badge top-left, no corner diamond). Frame colour per slot is given in each slot's 'frame' (blue = rare, purple = epic, grey = common). Every unselected slot has a small empty grey diamond in its bottom-right corner (~5 px in from the right edge, ~6 px up from the bottom). Row 3 is CLIPPED by the viewport at y=549 (full slots are 78 tall; slot rects there are the visible part); only slot.12's diamond is partly visible. Fuse: three blue-framed sockets all holding the same blue-gem pendant, each with a filled gold diamond pip straddling the bottom edge at centre and an empty grey diamond in its bottom-right corner, sitting on a dark ledge (base). A glowing gold bracket joins the three socket bottoms (y 341-344) and a centre stem with a down arrow points at the result socket (gold glowing frame, larger, pendant with radiant glow) above a pip plate showing 1 filled gold + 4 empty diamonds (the 4th empty diamond is drawn faded/overlapping the 3rd in the concept; space them evenly). Craft: recipe list column (craft.list) with five recipe slots; recipe.1 is SELECTED (orange glow) with caption 'Iron Pendant'; recipes 2-5 have plain dark-steel frames and no captions. Preview well shows 'Iron Pendant' title over a forge-workbench illustration; cost bar 150 gold + 3 shards. Action buttons Dismantle/Fuse/Craft are gold plates with dark-brown Cinzel labels (tall first letter + small caps) and dark icons left of the label; ARMORY and BACK TO MAP are navy plates with gold rivets, cream full-caps labels and gold icons, sitting outside the body frame below it. No disabled states are shown. The three section titles (Dismantle/Fuse/Craft, fitted 34/35/32) and the three action labels (21/22/22) are one style each in the concept; use a single size per style (~34 and ~22). The cost '3' uses the same size as '150' (single glyph, not width-fitted)."
+}

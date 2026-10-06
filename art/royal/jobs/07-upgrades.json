@@ -1,0 +1,74 @@
+[
+ {
+  "id": "upgrade-wagon_armor",
+  "out": "art/royal/gen/upgrades/wagon_armor.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: heavy iron-banded reinforced wagon axles and wheels with thick riveted plates.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-projectile_ward",
+  "out": "art/royal/gen/upgrades/projectile_ward.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: a glowing translucent teal ward shield deflecting incoming arrows above a wagon roof.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-wagon_archers",
+  "out": "art/royal/gen/upgrades/wagon_archers.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: two caravan archers in teal tabards drawing longbows from a wooden wagon platform.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-wagon_firepot",
+  "out": "art/royal/gen/upgrades/wagon_firepot.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: a small catapult-like firepot launcher loaded with a flaming clay pot on a wagon.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-wagon_volley",
+  "out": "art/royal/gen/upgrades/wagon_volley.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: a volley of arrows arcing into the sky from a row of bows, dramatic.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-wagon_emergency_repair",
+  "out": "art/royal/gen/upgrades/wagon_emergency_repair.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: a wagon mechanic hammering a fresh wooden plank onto a damaged wagon side with tools and nails.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-gate_breaker",
+  "out": "art/royal/gen/upgrades/gate_breaker.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: a massive iron-headed battering hammer on chains hanging from a wagon frame.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "upgrade-relic_vault",
+  "out": "art/royal/gen/upgrades/relic_vault.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/08-war-wagon-workshop.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: square picture for an upgrade card in the war wagon workshop of a medieval fantasy game (Crownroad: Siege of Ash).\nSubject: an ornate locked iron strongbox full of glowing relics and gems inside a wagon.\nStyle/medium: match the upgrade card pictures in the attached reference screen exactly: painterly high-detail 3D game art, warm workshop lantern light, dark background vignette.\nComposition: a single subject centred, filling most of the square, opaque dark painted background.\nConstraints: no text, no UI, no frame, no watermark."
+ }
+]

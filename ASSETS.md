@@ -6,13 +6,16 @@ The game already supports incremental art/audio replacement. Missing files do no
 
 ## Blender source assets
 
-The shipped unit sprites, model previews, unit icons and Codex portraits, item icons, caravan skins,
-battle-v2 bases, weapon mounts, gatehouse, particles, projectiles, zone battle backdrops and fallback
-battle backgrounds come from the remaster pipeline in [`art/remaster/README.md`](art/remaster/README.md):
+The shipped unit sprites, model previews, unit icons, reward and meta icons, caravan skins, battle-v2
+bases, weapon mounts, gatehouse, particles and projectiles come from the remaster pipeline in
+[`art/remaster/README.md`](art/remaster/README.md):
 sculpted, skinned characters, modelled equipment and lighting matched to the battle renderer. It writes
 the same runtime contracts described below; `python3 art/remaster/pack.py stage` then `apply` refreshes
-`assets/` and only ever replaces files the game already ships (backdrops and projectiles have their own
-build scripts). The original library below remains the source for older art.
+`assets/` and only ever replaces files the game already ships (projectiles have their own build script).
+The original library below remains the source for older art.
+
+The screens, battle backdrops, campaign maps and spell and relic pictures are painted art made in
+`art/royal` (see [`docs/ROYAL_UI.md`](docs/ROYAL_UI.md)).
 
 The original Blender visual asset pass covers the current unit roster, environments, structures, wagon cosmetics, weapon mounts, icons, portraits, and particle textures. Editable scenes and reproducible build instructions live in [`art/blender/README.md`](art/blender/README.md); [`art/blender/coverage.json`](art/blender/coverage.json) records required-file coverage. The game loads rendered PNGs, not live 3D models. The authoring folder is excluded from Godot import. Vector UI, the painted icon and map-piece atlases, fonts, and procedural music/SFX are retained.
 
@@ -117,33 +120,31 @@ Both paths print the current asset coverage and the exact IDs still missing.
 |-----------|---------------|-------|
 | Unit sprite sheet | `assets/units/{unit_id}.png` | Matching `.json`; falls back to `{visual_class}.png` |
 | Animated model preview | `assets/ui/models/{unit_id}.png` | Idle/Walk/Attack sheet and `.json`; falls back to the battle sheet |
-| Zone battle backdrop | `assets/world/backdrops/{route_id}.json` + `{route_id}_far.png`, `{route_id}_mid.png`, `{route_id}.png` | Far, mid and near (road) parallax layers; the JSON gives each layer's world rect and parallax. See `assets/world/backdrops/README.md` |
-| Fallback stage plate | `assets/world/battles/stage-{number:00}.png` | Painted plates for stages 1–60, used only when a zone has no backdrop |
+| Screen art | `assets/ui/royal/` | Concept plates, measured specs, cut kit pieces, unit figures and mission pictures (`docs/ROYAL_UI.md`) |
+| Zone battle backdrop | `assets/world/royal/{route_id}.json` + `{route_id}_far/_mid/_ground/_near/_front.png` | Five painted parallax layers; the JSON gives each layer's world rect, parallax and tiling (`art/royal/backdrops.py`) |
+| Campaign map | `assets/world/royal/maps/{route_id}.png` + `.json`, `maps/landmarks/{site}.png` | One painting per zone over its world rect, and the site landmarks (`art/royal/maps.py`) |
+| Spell and relic picture | `assets/ui/royal/items/{id}.png` | Painted item images (`art/royal/items.py`) |
 | Painted home icons | `assets/ui/home/painted-icons-v2.png` | Transparent 3 × 3 atlas for tabs and stats |
 | Home artwork prompts | `assets/ui/home/generated-art-v2.json` | Built-in image tool prompts and provenance for the icon atlas |
-| World art prompts | `assets/world/manifest.json` | Prompts and provenance for the 60 stage plates; notes in `assets/world/README.md` |
-| Fallback battle terrain | `assets/backgrounds/{terrain_id}.png` | Used when a stage has neither a zone backdrop nor a stage plate |
 | Battle structures | `assets/structures/battle-v2/{structure_id}.png` + `.json` | Caravan, skins (with `_door.png` strips), gatehouse and `fort_*` outworks; see `assets/structures/battle-v2/README.md` |
 | Structures | `assets/structures/{structure_id}.png` | `mount_*` weapon mounts; flat `war_wagon`, `gatehouse` and `war_wagon_skin_*` fallbacks |
 | Particle texture | `assets/particles/{particle_id}.png` | Battle VFX sprite used by CPU particle bursts/trails |
 | Projectile sprite | `assets/projectiles/{sprite_id}.png` + `projectiles.json` | Side-on lit shot (arrow, bolt, flask, pot…); the JSON gives each sprite's normalised tip and centre and its real length. Styles and flight live in `scripts/combat/ProjectileStyles.cs` |
 | Unit icon | `assets/ui/icons/units/{unit_id}.png` | Optional fallback: `{visual_class}.png` |
-| Spell icon | `assets/ui/icons/spells/{spell_id}.png` | Optional fallback: `{effect_type}.png` |
-| Relic icon | `assets/ui/icons/relics/{relic_id}.png` | Armory/loadout card art |
-| Reward icon | `assets/ui/icons/rewards/{reward_type}.png` | Currency/reward badge art used across reward screens, main-menu summary chips, and economy HUD strips |
+| Reward icon | `assets/ui/icons/rewards/{reward_type}.png` | Reward badges; gold, food, tomes and essence use the home map's painted resource icons |
 | Meta icon | `assets/ui/icons/meta/{meta_id}.png` | Social, leaderboard, and challenge-status badge art |
-| Codex icon | `assets/ui/icons/codex/{entry_id}.png` | Optional fallback if no portrait exists |
-| Codex portrait | `assets/ui/portraits/codex/{entry_id}.png` | Detail-screen portrait or splash art |
+| Codex portrait | `assets/ui/portraits/codex/{entry_id}.png` | Only codex foes without a battle figure (legacy foes and raid bosses) need one |
 | Music | `assets/music/{track_id}.ogg` | `.ogg`, `.mp3`, and `.wav` all load |
 | SFX override | `assets/sfx/{cue_id}.ogg` | `.ogg`, `.mp3`, and `.wav` all load |
 
 ## Fallback Rules
 
 - Missing unit sprites fall back to the procedural silhouettes already used in battle.
-- Battles draw the zone backdrop, then the stage plate, then the terrain background, then a procedural ground.
+- Battles draw the zone's painted backdrop; a zone without one shows a plain field.
+- The campaign map draws the zone's painting; a zone without one shows plain sea around its sites.
 - Missing structure images fall back to the current color-block/procedural presentation.
 - Missing particle textures fall back to the existing built-in Godot particle quads.
-- Missing unit/spell/relic/codex/reward images fall back to generated badges with initials, so the UI still stays readable.
+- Missing spell pictures fall back to a plain glyph, and missing unit/relic/codex/reward images to generated badges with initials, so the UI still stays readable.
 - Missing music and SFX fall back to the procedural audio already shipped in the repo.
 - You can replace assets incrementally. There is no requirement to finish a whole category in one pass.
 
@@ -151,34 +152,26 @@ Both paths print the current asset coverage and the exact IDs still missing.
 
 - Unit sheets: PNG, authored facing right
 - Unit metadata: JSON, see `assets/units/_example.json`
-- Zone backdrops: three PNG layers in the proportions of their world rects; the near layer is at least `4096` px wide. Layout rules are in `assets/world/backdrops/README.md`.
-- Fallback battle backgrounds: PNG, target `1280x720`
-- Fallback stage plates: panoramic PNG, at least `1280x600`, drawn at their own proportions to cover the visible battle world
+- Zone backdrops: five PNG layers in the proportions of their world rects; the road layer spans the battle band (screen rows 411–516). See `docs/ROYAL_UI.md`.
 - Structures: PNG, authored against transparent background
 - Particle textures: PNG with transparency, target `64x64` to `256x256`
-- Unit/spell/relic icons: PNG, target `128x128`
+- Unit icons: PNG, target `128x128`; spell and relic pictures: square PNG, `512x512`
 - Reward icons: PNG, target `128x128`
 - Codex portraits: PNG, target `512x512` or larger portrait crop
 - Music/SFX: loopable `ogg` preferred, `mp3`/`wav` also supported
 
 ## Menu and map presentation
 
-Menus use the shared modal materials in `assets/ui/modal/` and vector surfaces
-in `assets/ui/frames/`. The completion-driven map uses the four texture atlases
-in `assets/world/overworld/polished-v3/`.
+Screens with a concept draw its painted plate with live text and controls placed from measured specs;
+the others share the kit chrome cut from the plates (`art/royal/chrome.py`). The campaign map is one
+painting per zone with painted landmarks and a shaded storm-cloud fog. See `docs/ROYAL_UI.md`.
 
 ## Fonts
 
-Headings (screen and modal titles, section titles, card titles, battle result
-titles and the boss banner) use Grenze Gotisch, the blackletter display face the
-website also uses: `assets/fonts/GrenzeGotisch-Variable.ttf`, SIL Open Font
-License 1.1 (`assets/fonts/GrenzeGotisch-OFL.txt`), from
-[google/fonts](https://github.com/google/fonts/tree/main/ofl/grenzegotisch).
-Body text, buttons, tabs and numbers keep the system text faces. Use
-`RealmUi.Heading`, `RealmUi.SectionTitle` or `RealmUi.Display` rather than
-setting the font directly: they size it up a tenth, trim its tall line box to
-match the text faces, and switch headings with an all-caps word to the font's
-roman stylistic set.
+Titles and caps use Cinzel and body text uses Crimson Pro, both variable fonts under the SIL Open Font
+License 1.1 (`assets/fonts/Cinzel-Variable.ttf`, `assets/fonts/CrimsonPro-Variable.ttf` and their OFL
+texts), from [google/fonts](https://github.com/google/fonts). `RoyalFonts` caches weights of each;
+use `RoyalText`, `RealmUi.Heading` or `RealmUi.Display` rather than setting a font directly.
 
 ## Route IDs
 
@@ -195,7 +188,7 @@ roman stylistic set.
 
 ## Terrain IDs
 
-Current campaign coverage is 100 stages (ten per zone) across 31 terrain IDs; battles draw each zone's layered Blender backdrop (`assets/world/backdrops`).
+Current campaign coverage is 100 stages (ten per zone) across 31 terrain IDs; battles draw each zone's painted backdrop (`assets/world/royal`).
 
 - `city`: `highway`, `night`, `urban`
 - `harbor`: `industrial`, `shipyard`, `swamp`
@@ -282,14 +275,10 @@ Unit icons can be authored either per unit or per shared class:
 - `assets/ui/icons/units/{unit_id}.png`
 - `assets/ui/icons/units/{visual_class}.png`
 
-Spell icons can be authored either per spell or per shared effect type:
+Spell and relic pictures are per item:
 
-- `assets/ui/icons/spells/{spell_id}.png`
-- `assets/ui/icons/spells/{effect_type}.png`
-
-Relic icons are per relic:
-
-- `assets/ui/icons/relics/{relic_id}.png`
+- `assets/ui/royal/items/{spell_id}.png`
+- `assets/ui/royal/items/{relic_id}.png`
 
 Reward icons are per reward type:
 
@@ -297,10 +286,6 @@ Reward icons are per reward type:
 
 Current reward icon IDs:
 
-- `gold`
-- `food`
-- `tomes`
-- `essence`
 - `sigils`
 - `shards`
 - `relic`
@@ -315,21 +300,14 @@ Meta icons are per social/competitive status type:
 Current meta icon IDs:
 
 - `arena_rating`
-- `tower_floor`
-- `endless_wave`
-- `daily_streak`
 - `guild`
 - `friends`
 - `challenge`
 - `members`
 
-Codex detail portraits are per codex entry:
+Codex portraits are per codex entry, for foes without a battle figure:
 
 - `assets/ui/portraits/codex/{entry_id}.png`
-
-Optional codex icons can also be authored per entry:
-
-- `assets/ui/icons/codex/{entry_id}.png`
 
 ## Music Track IDs
 
@@ -382,13 +360,12 @@ Ambience:
 ## Recommended Handoff Order
 
 1. `assets/units`
-2. `assets/world/backdrops`
+2. `assets/world/royal` (battle backdrops and campaign maps)
 3. `assets/structures/battle-v2`
 4. `assets/particles` and `assets/projectiles`
-5. `assets/ui/modal` and `assets/ui/frames`
-6. `assets/world/overworld/polished-v3`
-7. `assets/music`
-8. `assets/sfx`
+5. `assets/ui/royal` and `assets/ui/frames`
+6. `assets/music`
+7. `assets/sfx`
 
 That order covers the main campaign loop first: units, battle spaces, combat VFX, title/map/loadout/results, then audio polish.
 
@@ -401,20 +378,7 @@ thumbs, and selection/focus details. The shared theme applies them throughout th
 menus and battle HUD while preserving existing content padding and mobile touch
 sizes. See `docs/UI_MATERIALS.md` for regeneration and visual-review commands.
 
-Battle deployment cards reuse the authored unit/spell PNG icons at a larger size,
-with the new `cost_badge.svg` brass plate in the top-right. Transparent padding is
-cropped only in the UI; the original artwork is unchanged.
+Battle deployment cards show the unit icon or spell picture whole inside the card, with the round
+bronze courage badge (`hud-cost` kit piece) in the top-right. Transparent padding is cropped only in
+the UI; the original artwork is unchanged.
 
-## Painted home modal assets
-
-`assets/ui/modal/materials-v1.png` is a 2 × 2 atlas containing walnut planks,
-violet arcane cloth, golden parchment, and burnished copper. The 3 × 2
-`illustrations-v1.png` atlas supplies warband, spell, forge, adventure, caravan,
-and community vignettes. Both were generated with the built-in image tool;
-the complete prompts and provenance are in `generated-art-v1.json` in the same
-folder. `ModalArt` selects regions at runtime without altering the originals.
-
-`ModalSurface` draws scalable silver bevels, rivets, coloured tabs and action
-plates around these materials. Text and actions remain native controls. The
-editable `slider-thumb-v1.svg` supplies the carved amber audio handle. Existing
-animated units and spell icons remain the source of the actual roster previews.

@@ -39,11 +39,9 @@ public partial class UiReviewSmoke
         }
         AuditText("Stage stars / map overview");
         await Capture("01-map-ratings");
-        await ChooseAdventureSite("leader-1");
         canvas.ChangeZoom(1.6f);
-        canvas.FocusSite("leader-1");
+        canvas.FocusSite("leader-1"); await Wait(.1);
         await Capture("02-three-stars-close");
-        Check(!Walk(GetTree().CurrentScene).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details do not contain an Intel tab");
         var squad = state.BuildSaveData();
         squad.OwnedPlayerUnitIds = squad.ActiveDeckUnitIds = GameData.GetPlayerUnits().Take(state.DeckSizeLimit).Select(unit => unit.Id).ToArray();
         squad.OwnedPlayerSpellIds = squad.ActiveDeckSpellIds = GameData.GetPlayerSpells().Take(state.SpellDeckSizeLimit).Select(spell => spell.Id).ToArray();
@@ -51,11 +49,9 @@ public partial class UiReviewSmoke
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { squad });
         SceneRouter.Instance.GoToLoadout(); await Wait(.3);
         var preparation = Walk(GetTree().CurrentScene).OfType<LoadoutMenu>().Single();
-        Check(!Walk(GetTree().CurrentScene).OfType<Label>().Any(x => x.Text.Contains(StageStarScore.RulesText))
-            && Walk(preparation).OfType<Label>().Any(x => x.Text == $"+{GameData.GetStage(state.SelectedStage).RewardGold:N0}")
-            && !Walk(preparation).OfType<Button>().Any(button => button.Text is "Goals" or "Foes" or "Field" or "Brief")
+        Check(PreparationText().Any(text => text.StartsWith($"{GameData.GetStage(state.SelectedStage).RewardGold:N0} GOLD"))
             && !Walk(preparation).OfType<ScrollContainer>().Any(scroll => scroll.GetVScrollBar().IsVisibleInTree()),
-            "Battle preparation fits its rewards and squad without briefing tabs or vertical scrolling");
+            "Battle preparation fits its rewards and squad without vertical scrolling");
         AuditText("Stage stars / preparation rewards");
         await Capture("03-preparation-rewards");
         state.PrepareCampaignBattle();
@@ -70,15 +66,14 @@ public partial class UiReviewSmoke
         typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { .1f, Colors.White });
         typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { true });
         await Wait(.5);
-        Check(Walk(battle).OfType<StageStarRating>().Single(x => x.IsVisibleInTree()).Stars == 2,
-            "The victory panel displays this run's rating even when the saved best is three stars");
+        RoyalResult Board() => Walk(battle).OfType<RoyalResult>().Single(board => board.IsVisibleInTree() && !board.IsQueuedForDeletion());
+        Check(Board().Stars == 2, "The victory board displays this run's rating even when the saved best is three stars");
         var paid = BattleSummaryData.Current;
         Check(paid.GoldEarned == state.Gold - earnedBefore.Gold && paid.SeasonXPEarned == state.SeasonPassXP - earnedBefore.SeasonPassXP
             && paid.MasteryXPPerUnit.Count == state.ActiveDeckUnitIds.Count,
             "Victory cards report the gold, experience and squad mastery actually awarded");
-        var loot = Walk(battle).OfType<ScrollContainer>().Single(scroll => scroll.Name == "VictoryRewards");
-        Check(!loot.GetVScrollBar().IsVisibleInTree() && !Walk(battle).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("Victory on stage")),
-            "A full squad's victory rewards fit without the old battle report or a vertical scrollbar");
+        Check(Board().Rewards.Count == paid.Rewards.Count && !Walk(battle).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("Victory on stage")),
+            "A full squad's victory rewards show on the board without the old battle report");
         var earnedAfter = state.BuildSaveData();
         typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { true });
         Check(state.Gold == earnedAfter.Gold && state.SeasonPassXP == earnedAfter.SeasonPassXP,
@@ -94,11 +89,11 @@ public partial class UiReviewSmoke
         typeof(BattleController).GetMethod("DamageBusByRatio", hidden)!.Invoke(battle, new object[] { 1f, Colors.White });
         typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(battle, new object[] { false });
         await Wait(.5);
-        var labels = Walk(battle).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text).ToArray();
-        Check(labels.Contains("Defeat") && !labels.Any(text => text.Contains("Defeat on stage") || text.Contains("[X]") || text.Contains("Clear reward")),
-            "Defeat shows a titled result card instead of the battle report");
-        var actions = Walk(battle).OfType<Button>().Where(button => button.IsVisibleInTree() && (button.Text == "Back to map" || button.Text.StartsWith("Restart"))).ToArray();
-        Check(actions.Length == 2 && actions[0].GetParent() == actions[1].GetParent() && actions[0].GetParent() is HBoxContainer,
+        var defeat = Walk(battle).OfType<RoyalResult>().Single(board => board.IsVisibleInTree() && !board.IsQueuedForDeletion());
+        Check(!defeat.Won && defeat.Title == "Defeat" && !Walk(battle).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("Defeat on stage")),
+            "Defeat shows a titled result board instead of the battle report");
+        Check(defeat.LeaveButton.IsVisibleInTree() && defeat.RetryButton.IsVisibleInTree()
+            && Mathf.Abs(defeat.LeaveButton.GetGlobalRect().GetCenter().Y - defeat.RetryButton.GetGlobalRect().GetCenter().Y) < 4,
             "Defeat actions sit side by side");
         AuditText("Defeat result");
         await Capture("05-defeat");

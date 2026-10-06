@@ -3,293 +3,274 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public partial class ForgeMenu : Control
+/// <summary>
+/// The relic forge on the approved concept. Tap a relic in the inventory to select it: Dismantle
+/// melts the selection into shards, tapping an empty fuse socket places it there, and three relics
+/// of one rarity fuse into one of the next. Craft forges a chosen recipe for gold and shards.
+/// </summary>
+public partial class ForgeMenu : RoyalScreen
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _dismantlePanel = null!;
-	private PanelContainer _fusePanel = null!;
-	private PanelContainer _craftPanel = null!;
-	private HBoxContainer _resourcesRow = null!;
-	private Label _statusLabel = null!;
-	private VBoxContainer _dismantleStack = null!;
-	private VBoxContainer _fuseStack = null!;
-	private VBoxContainer _craftStack = null!;
-	private readonly List<string> _selectedFuseRelics = new();
+    private readonly List<string> _selectedFuseRelics = new();
+    private string _dismantleId = "", _craftId = "";
+    private int _recipeTop;
+    private float _inventoryScroll;
+    private Control _layer;
 
-	public override void _Ready()
-	{
-		BuildUi();
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _dismantlePanel, _fusePanel, _craftPanel });
-	}
+    public ForgeMenu() { PlateName = "forge"; }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    private static RoyalSpec Spec => RoyalSpec.For("forge");
 
-	private void BuildUi()
-	{
+    protected override void Build()
+    {
+        _layer = Layer("Live");
+        RefreshUi();
+    }
 
-        MedievalUi.Apply(this);
+    private static string Frame(EquipmentDefinition relic) => relic.Rarity.ToLowerInvariant() switch
+    {
+        "epic" or "hardened" or "legendary" => "forge-slot-purple", "rare" => "forge-slot-blue", _ => "forge-slot-grey"
+    };
 
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
-		titleRow.AddChild(new Label { Text = "Relic Forge", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_resourcesRow = new HBoxContainer();
-		_resourcesRow.AddThemeConstantOverride("separation", 12);
-		titleRow.AddChild(_resourcesRow);
+    private void RefreshUi()
+    {
+        if (_layer == null) return;
+        RoyalUiTools.Clear(_layer);
+        var spec = Spec;
+        var state = GameState.Instance;
+        _layer.AddChild(spec.Label("title", "Relic Forge", 500));
+        _layer.AddChild(RoyalButton.Over(spec.Rect("close"), "Close panel", Close, 6));
+        _layer.AddChild(RoyalKit.Image("forge-gold", spec.Rect("resource.gold.icon")));
+        _layer.AddChild(spec.Label("resource.gold.value", state.Gold.ToString("N0"), 100));
+        _layer.AddChild(RoyalKit.Image("forge-shard", spec.Rect("resource.shard.icon")));
+        _layer.AddChild(spec.Label("resource.shard.value", state.RelicShards.ToString("N0"), 100));
+        _layer.AddChild(spec.Label("dismantle.header.title", "Dismantle", 260));
+        _layer.AddChild(spec.Label("dismantle.header.subtitle", "SELECT RELICS", 260));
+        _layer.AddChild(spec.Label("fuse.header.title", "Fuse", 260));
+        _layer.AddChild(spec.Label("fuse.header.subtitle", "THREE OF ONE RARITY", 260));
+        _layer.AddChild(spec.Label("craft.header.title", "Craft", 220));
+        BuildInventory(spec);
+        BuildFuse(spec);
+        BuildCraft(spec);
+        Footer(spec, "armory", "icon-armory", "ARMORY", () => SceneRouter.Instance.GoToShop(3));
+        Footer(spec, "map", "icon-map-gold", "BACK TO MAP", Close);
+    }
 
-		// Dismantle panel
-		_dismantlePanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(300f, 480f) };
-		AddChild(_dismantlePanel);
-		var dismantleOuter = new MarginContainer();
-		dismantleOuter.AddThemeConstantOverride("margin_left", 8);
-		dismantleOuter.AddThemeConstantOverride("margin_right", 8);
-		dismantleOuter.AddThemeConstantOverride("margin_top", 8);
-		dismantleOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_dismantlePanel.AddChild(dismantleOuter);
-		var dismantleInner = new VBoxContainer();
-		dismantleInner.AddThemeConstantOverride("separation", 4);
-		dismantleOuter.AddChild(dismantleInner);
-		dismantleInner.AddChild(RealmUi.SectionTitle("Dismantle"));
-		dismantleInner.AddChild(RealmUi.Label("Break relics into shards.", 18, true));
-		var dismantleScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		dismantleInner.AddChild(dismantleScroll);
-		_dismantleStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_dismantleStack.AddThemeConstantOverride("separation", 4);
-		dismantleScroll.AddChild(_dismantleStack);
+    private RoyalButton Action(RoyalSpec spec, string key, string icon, string text, Action run, bool enabled, string hint)
+    {
+        var rect = spec.Rect($"button.{key}");
+        var button = RoyalButton.Over(rect, text, run, 6);
+        button.Disabled = !enabled;
+        button.TooltipText = hint;
+        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
+        var label = spec.Label($"button.{key}.label", text, 200);
+        label.Ink = new Color("140803"); label.ShadowInk = new Color(1, .95f, .8f, .3f);
+        label.Position -= rect.Position;
+        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        _layer.AddChild(button);
+        return button;
+    }
 
-		// Fuse panel
-		_fusePanel = new PanelContainer { Position = new Vector2(340f, 122f), Size = new Vector2(300f, 480f) };
-		AddChild(_fusePanel);
-		var fuseOuter = new MarginContainer();
-		fuseOuter.AddThemeConstantOverride("margin_left", 8);
-		fuseOuter.AddThemeConstantOverride("margin_right", 8);
-		fuseOuter.AddThemeConstantOverride("margin_top", 8);
-		fuseOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_fusePanel.AddChild(fuseOuter);
-		var fuseInner = new VBoxContainer();
-		fuseInner.AddThemeConstantOverride("separation", 4);
-		fuseOuter.AddChild(fuseInner);
-		fuseInner.AddChild(RealmUi.SectionTitle("Fuse"));
-		fuseInner.AddChild(RealmUi.Label("Combine three relics of one rarity.", 18, true));
-		var fuseScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		fuseInner.AddChild(fuseScroll);
-		_fuseStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_fuseStack.AddThemeConstantOverride("separation", 4);
-		fuseScroll.AddChild(_fuseStack);
+    private void Footer(RoyalSpec spec, string key, string icon, string text, Action run)
+    {
+        var rect = spec.Rect($"button.{key}");
+        var button = RoyalButton.Over(rect, text, run, 6);
+        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
+        var label = spec.Label($"button.{key}.label", text, 200);
+        label.Position -= rect.Position;
+        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        _layer.AddChild(button);
+    }
 
-		// Craft panel
-		_craftPanel = new PanelContainer { Position = new Vector2(656f, 122f), Size = new Vector2(600f, 480f) };
-		AddChild(_craftPanel);
-		var craftOuter = new MarginContainer();
-		craftOuter.AddThemeConstantOverride("margin_left", 8);
-		craftOuter.AddThemeConstantOverride("margin_right", 8);
-		craftOuter.AddThemeConstantOverride("margin_top", 8);
-		craftOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_craftPanel.AddChild(craftOuter);
-		var craftInner = new VBoxContainer();
-		craftInner.AddThemeConstantOverride("separation", 4);
-		craftOuter.AddChild(craftInner);
-		craftInner.AddChild(RealmUi.SectionTitle("Craft"));
-		craftInner.AddChild(RealmUi.Label("Forge a chosen relic from shards and gold.", 18, true));
-		var craftScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 340f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		craftInner.AddChild(craftScroll);
-		_craftStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_craftStack.AddThemeConstantOverride("separation", 4);
-		craftScroll.AddChild(_craftStack);
+    private static TextureRect Art(EquipmentDefinition relic, Rect2 rect, bool dim = false) => new()
+    {
+        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+        Texture = ShopMenu.RelicArt(relic), Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore,
+        TextureFilter = TextureFilterEnum.LinearWithMipmaps, SelfModulate = dim ? new Color(.5f, .5f, .52f) : Colors.White
+    };
 
-		// Status + nav
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
+    private void BuildInventory(RoyalSpec spec)
+    {
+        var state = GameState.Instance;
+        var owned = state.GetOwnedEquipment().ToArray();
+        if (!owned.Contains(_dismantleId)) _dismantleId = owned.FirstOrDefault() ?? "";
+        var first = spec.Rect("slot.0"); var right = spec.Rect("slot.1"); var below = spec.Rect("slot.4");
+        var cell = new Vector2(80, 78);
+        var pitch = new Vector2(right.Position.X - first.Position.X + 1, below.Position.Y - first.Position.Y);
+        var view = spec.Rect("dismantle.grid");
+        var scroll = new ScrollContainer { Position = view.Position, Size = view.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
+        _layer.AddChild(scroll);
+        var count = Math.Max(16, (owned.Length + 3) / 4 * 4);
+        var grid = new Control { CustomMinimumSize = new Vector2(view.Size.X, Mathf.Max(view.Size.Y, (count / 4) * pitch.Y + 6)), MouseFilter = MouseFilterEnum.Pass };
+        scroll.AddChild(grid);
+        var origin = new Vector2(first.Position.X - view.Position.X + 2, first.Position.Y - view.Position.Y + 1);
+        for (var i = 0; i < count; i++)
+        {
+            var rect = new Rect2(origin + new Vector2(i % 4 * pitch.X, i / 4 * pitch.Y), cell);
+            if (i >= owned.Length)
+            {
+                grid.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("forge-slot-grey", 10))));
+                continue;
+            }
+            var relic = GameData.GetEquipment(owned[i]);
+            var selected = relic.Id == _dismantleId;
+            var inFuse = _selectedFuseRelics.Contains(relic.Id);
+            var slot = new RoyalButton { Position = rect.Position, Size = rect.Size, AccessibilityName = relic.DisplayName, MouseFilter = MouseFilterEnum.Pass,
+                TooltipText = $"{relic.DisplayName} · {relic.Rarity} · {RelicForgeCatalog.GetDismantleShards(relic.Rarity)} shards", MouseDefaultCursorShape = CursorShape.PointingHand };
+            slot.SetStates(RoyalKit.Slice(selected ? "forge-slot-selected" : Frame(relic), 10), 6);
+            slot.AddChild(Art(relic, new Rect2(8, 7, rect.Size.X - 16, rect.Size.Y - 14), inFuse));
+            if (selected) slot.AddChild(RoyalKit.Image("forge-check", new Rect2(4, 4, 26, 27)));
+            var id = relic.Id;
+            slot.Pressed += () => { _dismantleId = id; RefreshUi(); };
+            grid.AddChild(slot);
+        }
+        scroll.GetVScrollBar().ValueChanged += value => _inventoryScroll = (float)value;
+        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) scroll.ScrollVertical = (int)_inventoryScroll; }).CallDeferred();
+        var chosen = _dismantleId.Length > 0 ? GameData.GetEquipment(_dismantleId) : null;
+        Action(spec, "dismantle", "icon-dismantle", "Dismantle", () =>
+        {
+            if (GameState.Instance.TryDismantleRelic(_dismantleId, out var gained))
+            {
+                RoyalToast.Show(this, $"Dismantled for +{gained} shards.");
+                _selectedFuseRelics.Remove(_dismantleId);
+                RefreshUi();
+            }
+        }, chosen != null && !_selectedFuseRelics.Contains(_dismantleId),
+            chosen == null ? "No relics to dismantle" : $"Melt {chosen.DisplayName} into {RelicForgeCatalog.GetDismantleShards(chosen.Rarity)} shards");
+    }
 
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var backBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
-		backBtn.Pressed += () => SceneRouter.Instance.GoToShop();
-		bottomRow.AddChild(backBtn);
-		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
-		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
-		bottomRow.AddChild(mapBtn);
-	}
+    private void BuildFuse(RoyalSpec spec)
+    {
+        var state = GameState.Instance;
+        var owned = state.GetOwnedEquipment();
+        _selectedFuseRelics.RemoveAll(id => !owned.Contains(id));
+        var selected = _dismantleId.Length > 0 ? GameData.GetEquipment(_dismantleId) : null;
+        for (var i = 0; i < 3; i++)
+        {
+            var key = $"fuse.socket.{i + 1}";
+            var rect = spec.Rect(key);
+            var socket = RoyalButton.Over(rect, "Fuse socket", null, 6);
+            if (i < _selectedFuseRelics.Count)
+            {
+                var relic = GameData.GetEquipment(_selectedFuseRelics[i]);
+                socket.AddThemeStyleboxOverride("normal", RoyalKit.Slice(Frame(relic), 10));
+                socket.AddChild(Art(relic, new Rect2(9, 8, rect.Size.X - 18, rect.Size.Y - 24)));
+                socket.AccessibilityName = relic.DisplayName;
+                socket.TooltipText = $"{relic.DisplayName} · tap to remove";
+                var id = relic.Id;
+                socket.Pressed += () => { _selectedFuseRelics.Remove(id); RefreshUi(); };
+            }
+            else
+            {
+                var canPlace = selected != null && !_selectedFuseRelics.Contains(selected.Id) && RelicForgeCatalog.GetFusionTargetRarity(selected.Rarity) != null
+                    && _selectedFuseRelics.All(id => GameData.GetEquipment(id).Rarity == selected.Rarity);
+                socket.TooltipText = canPlace ? $"Place {selected.DisplayName}" : "Select a relic, then tap a socket";
+                socket.AccessibilityName = canPlace ? $"Place {selected.DisplayName}" : "Empty fuse socket";
+                socket.Disabled = !canPlace;
+                socket.Pressed += () => { _selectedFuseRelics.Add(selected.Id); RefreshUi(); };
+                if (canPlace) socket.AddChild(RoyalKit.Image("empty-plus", new Rect2(rect.Size.X / 2 - 14, rect.Size.Y / 2 - 22, 28, 28), new Color(1, 1, 1, .45f)));
+            }
+            _layer.AddChild(socket);
+        }
+        var result = spec.Rect("fuse.result");
+        var ready = _selectedFuseRelics.Count == 3;
+        if (_selectedFuseRelics.Count > 0)
+        {
+            var rarity = GameData.GetEquipment(_selectedFuseRelics[0]).Rarity;
+            var target = RelicForgeCatalog.GetFusionTargetRarity(rarity);
+            var preview = target == null ? null : RelicForgeCatalog.GetRelicsByRarity(target).FirstOrDefault();
+            if (preview != null)
+            {
+                var mystery = Art(preview, new Rect2(result.Position + new Vector2(14, 14), result.Size - new Vector2(28, 28)));
+                mystery.SelfModulate = ready ? new Color(1, .92f, .75f) : new Color(.25f, .22f, .2f, .8f);
+                _layer.AddChild(mystery);
+                var hint = RoyalText.Caps(ready ? target.ToUpperInvariant() : $"{_selectedFuseRelics.Count} / 3", 14, new Color("f3dfa6"), 700);
+                hint.Align = HorizontalAlignment.Center;
+                RoyalText.Place(_layer, hint, result.Position.X, result.End.Y - 30, result.Size.X, 22);
+            }
+        }
+        var tier = _selectedFuseRelics.Count == 0 ? 0 : GameData.GetEquipment(_selectedFuseRelics[0]).Rarity.ToLowerInvariant() switch { "common" => 2, "rare" => 3, "epic" => 4, _ => 5 };
+        var pips = spec.Rect("fuse.result.pips");
+        _layer.AddChild(RoyalKit.Pips(new Vector2(pips.Position.X + 22, pips.Position.Y + 5), tier, 5, 16, 15));
+        Action(spec, "fuse", "icon-fuse", "Fuse", () =>
+        {
+            if (GameState.Instance.TryFuseRelics(_selectedFuseRelics.ToArray(), out var made))
+            {
+                RoyalToast.Show(this, "Fused into " + GameData.GetEquipment(made).DisplayName + ".");
+                _selectedFuseRelics.Clear();
+                RefreshUi();
+            }
+        }, ready, ready ? "Fuse the three relics" : "Place three relics of one rarity");
+    }
 
-	private void RefreshUi()
-	{
-		var gs = GameState.Instance;
-		RebuildResourcesRow(gs);
-		RebuildDismantlePanel();
-		RebuildFusePanel();
-		RebuildCraftPanel();
-	}
-
-	private void RebuildResourcesRow(GameState gs)
-	{
-		foreach (var child in _resourcesRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("shards", "", gs.RelicShards.ToString("N0"), new Vector2(24f, 24f)));
-	}
-
-	private void RebuildDismantlePanel()
-	{
-		foreach (var child in _dismantleStack.GetChildren()) child.QueueFree();
-		var owned = GameState.Instance.GetOwnedEquipment();
-		foreach (var relicId in owned.OrderBy(id => id))
-		{
-			var equip = GameData.GetEquipment(relicId);
-			if (equip == null) continue;
-			var shards = RelicForgeCatalog.GetDismantleShards(equip.Rarity);
-			var row = RelicRow(equip, $"{Capitalize(equip.Rarity)} · +{shards} shards");
-			var capturedId = relicId;
-			var btn = new RealmButton { Text = "Dismantle", CustomMinimumSize = new Vector2(120f, 44f), SizeFlagsVertical = SizeFlags.ShrinkCenter };
-			btn.Pressed += () =>
-			{
-				if (GameState.Instance.TryDismantleRelic(capturedId, out var gained))
-				{
-					_statusLabel.Text = $"Dismantled for +{gained} shards.";
-					_selectedFuseRelics.Clear();
-					RefreshUi();
-				}
-			};
-			row.AddChild(btn);
-			_dismantleStack.AddChild(row);
-		}
-
-		if (owned.Count == 0)
-		{
-			_dismantleStack.AddChild(RealmUi.Label("No relics to dismantle.", 18, true));
-		}
-	}
-
-	private void RebuildFusePanel()
-	{
-		foreach (var child in _fuseStack.GetChildren()) child.QueueFree();
-
-		// Group owned relics by rarity
-		var owned = GameState.Instance.GetOwnedEquipment();
-		var byRarity = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-		foreach (var id in owned)
-		{
-			var equip = GameData.GetEquipment(id);
-			if (equip == null) continue;
-			var target = RelicForgeCatalog.GetFusionTargetRarity(equip.Rarity);
-			if (target == null) continue; // can't fuse epics
-			if (!byRarity.ContainsKey(equip.Rarity)) byRarity[equip.Rarity] = new List<string>();
-			byRarity[equip.Rarity].Add(id);
-		}
-
-		foreach (var (rarity, relics) in byRarity.OrderBy(p => p.Key))
-		{
-			var targetRarity = RelicForgeCatalog.GetFusionTargetRarity(rarity);
-			var label = RealmUi.KeyValue($"{Capitalize(rarity)} → {Capitalize(targetRarity)}", $"{relics.Count}/{RelicForgeCatalog.RelicsRequiredForFusion}");
-			label.GetChild<Label>(0).AddThemeColorOverride("font_color", GetRarityColor(rarity));
-			_fuseStack.AddChild(label);
-
-			if (relics.Count >= RelicForgeCatalog.RelicsRequiredForFusion)
-			{
-				var capturedRelics = relics.Take(3).ToArray();
-				var btn = new RealmButton { Text = $"Fuse 3 {rarity.ToLowerInvariant()} relics", CustomMinimumSize = new Vector2(0f, 44f) };
-				btn.Pressed += () =>
-				{
-					if (GameState.Instance.TryFuseRelics(capturedRelics, out var resultId))
-					{
-						var resultEquip = GameData.GetEquipment(resultId);
-						_statusLabel.Text = $"Fused into {resultEquip?.DisplayName ?? resultId}!";
-						RefreshUi();
-					}
-					else
-					{
-						_statusLabel.Text = "Fusion failed.";
-					}
-				};
-				_fuseStack.AddChild(btn);
-			}
-		}
-
-		if (byRarity.Count == 0)
-		{
-			_fuseStack.AddChild(RealmUi.Label("No matching sets yet.", 18, true));
-		}
-	}
-
-	private void RebuildCraftPanel()
-	{
-		foreach (var child in _craftStack.GetChildren()) child.QueueFree();
-		var owned = GameState.Instance.GetOwnedEquipment();
-
-		foreach (var equip in GameData.GetAllEquipment().OrderBy(e => e.Rarity).ThenBy(e => e.DisplayName))
-		{
-			if (owned.Contains(equip.Id)) continue;
-			var recipe = RelicForgeCatalog.GetCraftRecipe(equip.Id);
-			if (recipe == null) continue;
-
-			var row = RelicRow(equip, $"{Capitalize(equip.Rarity)} · {recipe.ShardCost} shards · {recipe.GoldCost:N0} gold");
-
-			var canAfford = GameState.Instance.RelicShards >= recipe.ShardCost && GameState.Instance.Gold >= recipe.GoldCost;
-			var capturedId = equip.Id;
-			var btn = new RealmButton { Text = "Craft", CustomMinimumSize = new Vector2(100f, 44f), SizeFlagsVertical = SizeFlags.ShrinkCenter, Disabled = !canAfford };
-			btn.Pressed += () =>
-			{
-				if (GameState.Instance.TryForgeRelic(capturedId, out var msg))
-				{
-					_statusLabel.Text = msg;
-					RefreshUi();
-				}
-				else
-				{
-					_statusLabel.Text = msg;
-				}
-			};
-			row.AddChild(btn);
-			_craftStack.AddChild(row);
-		}
-	}
-
-	// A relic badge, its name in rarity ink, and one muted detail line.
-	private static HBoxContainer RelicRow(EquipmentDefinition equip, string detail)
-	{
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 10);
-		row.AddChild(UiBadgeFactory.CreateRelicBadge(equip, new Vector2(40f, 40f)));
-		var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		text.AddThemeConstantOverride("separation", 0);
-		var name = RealmUi.Label(equip.DisplayName, 18);
-		name.AddThemeColorOverride("font_color", GetRarityColor(equip.Rarity));
-		text.AddChild(name);
-		text.AddChild(RealmUi.Label(detail, 18, true));
-		row.AddChild(text);
-		return row;
-	}
-
-	private static string Capitalize(string text) => string.IsNullOrEmpty(text) ? "" : char.ToUpperInvariant(text[0]) + text[1..];
-
-	private static Color GetRarityColor(string rarity)
-	{
-		return rarity?.ToLowerInvariant() switch
-		{
-			"rare" => new Color("8fb4ec"),
-			"epic" => new Color("c3a0ec"),
-			_ => ModalUi.Cream
-		};
-	}
+    private void BuildCraft(RoyalSpec spec)
+    {
+        var state = GameState.Instance;
+        var owned = state.GetOwnedEquipment();
+        var candidates = GameData.GetAllEquipment().Where(e => !owned.Contains(e.Id) && RelicForgeCatalog.GetCraftRecipe(e.Id) != null).ToArray();
+        if (candidates.Length == 0)
+        {
+            var done = RoyalText.Paragraph("Every recipe is already in your collection.", 18, RoyalText.Cream, 500, HorizontalAlignment.Center);
+            RoyalText.Place(_layer, done, spec.Rect("craft.preview").Position.X + 20, 300, spec.Rect("craft.preview").Size.X - 40, 80);
+            return;
+        }
+        if (!candidates.Any(e => e.Id == _craftId)) _craftId = candidates[0].Id;
+        var index = Array.FindIndex(candidates, e => e.Id == _craftId);
+        if (index < _recipeTop) _recipeTop = index;
+        if (index >= _recipeTop + 5) _recipeTop = index - 4;
+        _recipeTop = Math.Clamp(_recipeTop, 0, Math.Max(0, candidates.Length - 5));
+        for (var i = 0; i < 5 && _recipeTop + i < candidates.Length; i++)
+        {
+            var relic = candidates[_recipeTop + i];
+            var rect = spec.Rect($"recipe.{i + 1}");
+            var selected = relic.Id == _craftId;
+            var slot = RoyalButton.Over(rect, relic.DisplayName, null, 6);
+            slot.SetStates(RoyalKit.Slice(selected ? "forge-recipe-selected" : "forge-recipe", 10), 6);
+            slot.AddChild(Art(relic, new Rect2(14, 6, rect.Size.X - 28, rect.Size.Y - (selected ? 24 : 12))));
+            if (selected)
+            {
+                var caption = spec.Label("recipe.1.caption", relic.DisplayName, rect.Size.X - 8);
+                caption.Align = HorizontalAlignment.Center;
+                caption.Position = new Vector2(4, caption.Position.Y - spec.Rect("recipe.1").Position.Y);
+                caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
+                slot.AddChild(caption);
+            }
+            var id = relic.Id;
+            slot.Pressed += () => { _craftId = id; RefreshUi(); };
+            _layer.AddChild(slot);
+        }
+        if (candidates.Length > 5)
+        {
+            var list = spec.Rect("craft.list");
+            for (var side = -1; side <= 1; side += 2)
+            {
+                var direction = side;
+                var rect = new Rect2(list.GetCenter().X - 14, side < 0 ? list.Position.Y - 6 : list.End.Y - 22, 28, 20);
+                var arrow = RoyalButton.Over(rect, side < 0 ? "Earlier recipes" : "More recipes", () => { _recipeTop += direction * 5; RefreshUi(); }, 4);
+                arrow.SetGlyph(RoyalKit.Texture(side < 0 ? "icon-chevron-left" : "icon-chevron-right"), new Rect2(9, 2, 10, 16));
+                arrow.Glyph.PivotOffset = new Vector2(5, 8); arrow.Glyph.Rotation = Mathf.Pi / 2;
+                arrow.Disabled = side < 0 ? _recipeTop == 0 : _recipeTop + 5 >= candidates.Length;
+                _layer.AddChild(arrow);
+            }
+        }
+        var chosen = GameData.GetEquipment(_craftId);
+        var recipe = RelicForgeCatalog.GetCraftRecipe(_craftId);
+        var previewRect = spec.Rect("craft.preview");
+        var title = spec.Label("craft.preview.title", chosen.DisplayName, previewRect.Size.X - 20);
+        title.Align = HorizontalAlignment.Center;
+        title.Position = new Vector2(previewRect.Position.X + 10, title.Position.Y); title.Size = new Vector2(previewRect.Size.X - 20, title.Size.Y);
+        _layer.AddChild(new SpellAura { Position = previewRect.Position + new Vector2(0, 30), Size = previewRect.Size - new Vector2(0, 60) });
+        _layer.AddChild(Art(chosen, new Rect2(previewRect.Position + new Vector2(50, 48), new Vector2(previewRect.Size.X - 100, 190))));
+        _layer.AddChild(title);
+        _layer.AddChild(RoyalKit.Image("forge-cost-gold", spec.Rect("craft.cost.gold.icon")));
+        _layer.AddChild(spec.Label("craft.cost.gold.value", recipe.GoldCost.ToString("N0"), 60, state.Gold >= recipe.GoldCost ? null : new Color("e88f7a")));
+        _layer.AddChild(RoyalKit.Image("forge-cost-shard", spec.Rect("craft.cost.shard.icon")));
+        _layer.AddChild(spec.Label("craft.cost.shard.value", recipe.ShardCost.ToString(), 50, state.RelicShards >= recipe.ShardCost ? null : new Color("e88f7a")));
+        var affordable = state.Gold >= recipe.GoldCost && state.RelicShards >= recipe.ShardCost;
+        Action(spec, "craft", "icon-craft", "Craft", () =>
+        {
+            GameState.Instance.TryForgeRelic(_craftId, out var message);
+            RoyalToast.Show(this, message);
+            RefreshUi();
+        }, affordable, affordable ? $"Forge {chosen.DisplayName}" : "Not enough gold or shards");
+    }
 }

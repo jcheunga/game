@@ -20,17 +20,6 @@ public static class HomeResourceUi
         return row;
     }
 
-    public static void SetEntryCost(Button button, int cost)
-    {
-        button.SetMeta("painted_resource_icon", true);
-        button.Text = $"Deploy  ·  {cost}";
-        button.Icon = HomeMapArt.Icon("food");
-        button.IconAlignment = HorizontalAlignment.Right;
-        button.AddThemeConstantOverride("icon_max_width", 28);
-        button.AccessibilityName = $"Deploy, {cost} rations";
-        button.TooltipText = $"Battle entry · {cost} rations";
-    }
-
     public static float AmountWidth(string icon, string amount, int fontSize, int iconSize) =>
         RealmUi.TitleFont.GetStringSize(amount, fontSize: fontSize).X + (string.IsNullOrEmpty(icon) ? 0 : iconSize + 5);
 

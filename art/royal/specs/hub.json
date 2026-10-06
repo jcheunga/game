@@ -1,0 +1,1058 @@
+{
+ "screen": "hub",
+ "ref": "art/royal/ref/menu-01-caravan-menu-hub.png",
+ "elements": [
+  {
+   "id": "resources",
+   "kind": "rect",
+   "rect": [
+    18,
+    15,
+    372,
+    55
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "resources.0.icon",
+   "kind": "rect",
+   "rect": [
+    30,
+    27,
+    38,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "resources.0.value",
+   "kind": "text",
+   "text": "120",
+   "font": "crimson",
+   "weight": 600,
+   "width": 30,
+   "x": 82,
+   "baseline": 51,
+   "align": "left",
+   "color": "#e9e8e0",
+   "size": 20,
+   "pen_x": 82
+  },
+  {
+   "id": "resources.1.icon",
+   "kind": "rect",
+   "rect": [
+    147,
+    24,
+    44,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "resources.1.value",
+   "kind": "text",
+   "text": "21 / 24",
+   "font": "crimson",
+   "weight": 600,
+   "width": 60,
+   "x": 202,
+   "baseline": 51,
+   "align": "left",
+   "color": "#ebeae3",
+   "size": 22,
+   "pen_x": 202
+  },
+  {
+   "id": "resources.2.icon",
+   "kind": "rect",
+   "rect": [
+    294,
+    24,
+    37,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "resources.2.value",
+   "kind": "text",
+   "text": "3",
+   "font": "crimson",
+   "weight": 600,
+   "width": 10,
+   "x": 343,
+   "baseline": 51,
+   "align": "left",
+   "color": "#e9e8e0",
+   "size": 21,
+   "pen_x": 343
+  },
+  {
+   "id": "zone",
+   "kind": "rect",
+   "rect": [
+    464,
+    0,
+    352,
+    92
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "zone.crown",
+   "kind": "rect",
+   "rect": [
+    627,
+    1,
+    27,
+    20
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "zone.prev",
+   "kind": "rect",
+   "rect": [
+    464,
+    19,
+    55,
+    53
+   ],
+   "role": "button"
+  },
+  {
+   "id": "zone.prev.icon",
+   "kind": "rect",
+   "rect": [
+    487,
+    36,
+    20,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "zone.next",
+   "kind": "rect",
+   "rect": [
+    760,
+    19,
+    56,
+    53
+   ],
+   "role": "button"
+  },
+  {
+   "id": "zone.next.icon",
+   "kind": "rect",
+   "rect": [
+    774,
+    36,
+    19,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "zone.title",
+   "kind": "text",
+   "text": "King's Road",
+   "font": "crimson",
+   "weight": 600,
+   "width": 152,
+   "x": 564,
+   "baseline": 56,
+   "align": "left",
+   "color": "#f6ebd1",
+   "size": 30,
+   "pen_x": 564
+  },
+  {
+   "id": "zone.plate",
+   "kind": "rect",
+   "rect": [
+    554,
+    67,
+    171,
+    25
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "zone.subtitle",
+   "kind": "text",
+   "text": "ZONE 01",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 67,
+   "x": 606,
+   "baseline": 87,
+   "align": "left",
+   "color": "#d5cbba",
+   "size": 15,
+   "pen_x": 606
+  },
+  {
+   "id": "settings",
+   "kind": "rect",
+   "rect": [
+    1208,
+    16,
+    54,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "settings.icon",
+   "kind": "rect",
+   "rect": [
+    1221,
+    29,
+    28,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    33,
+    92,
+    1214,
+    607
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.band",
+   "kind": "rect",
+   "rect": [
+    150,
+    106,
+    1083,
+    72
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.emblem",
+   "kind": "rect",
+   "rect": [
+    63,
+    105,
+    85,
+    139
+   ],
+   "role": "emblem"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "The Lantern Caravan",
+   "font": "cinzel",
+   "weight": 675,
+   "width": 559,
+   "x": 192,
+   "baseline": 158,
+   "align": "left",
+   "color": "#ebce90",
+   "style": "gold",
+   "size": 47,
+   "pen_x": 192
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    98,
+    54,
+    56
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1202,
+    115,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.adventure",
+   "kind": "rect",
+   "rect": [
+    206,
+    183,
+    280,
+    54
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.adventure.icon",
+   "kind": "rect",
+   "rect": [
+    260,
+    193,
+    33,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.adventure.label",
+   "kind": "text",
+   "text": "Adventure",
+   "font": "crimson",
+   "weight": 575,
+   "width": 117,
+   "x": 311,
+   "baseline": 217,
+   "align": "left",
+   "color": "#fefcc6",
+   "size": 26,
+   "pen_x": 311
+  },
+  {
+   "id": "tab.adventure.marker",
+   "kind": "rect",
+   "rect": [
+    332,
+    225,
+    17,
+    18
+   ],
+   "role": "indicator"
+  },
+  {
+   "id": "tab.caravan",
+   "kind": "rect",
+   "rect": [
+    498,
+    183,
+    288,
+    54
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.caravan.icon",
+   "kind": "rect",
+   "rect": [
+    563,
+    195,
+    40,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.caravan.label",
+   "kind": "text",
+   "text": "Caravan",
+   "font": "crimson",
+   "weight": 625,
+   "width": 85,
+   "x": 634,
+   "baseline": 218,
+   "align": "left",
+   "color": "#cec6bf",
+   "size": 23,
+   "pen_x": 634
+  },
+  {
+   "id": "tab.community",
+   "kind": "rect",
+   "rect": [
+    799,
+    183,
+    280,
+    54
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.community.icon",
+   "kind": "rect",
+   "rect": [
+    853,
+    194,
+    39,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.community.label",
+   "kind": "text",
+   "text": "Community",
+   "font": "crimson",
+   "weight": 600,
+   "width": 120,
+   "x": 913,
+   "baseline": 218,
+   "align": "left",
+   "color": "#d0c9c2",
+   "size": 23,
+   "pen_x": 913
+  },
+  {
+   "id": "divider",
+   "kind": "rect",
+   "rect": [
+    41,
+    241,
+    1198,
+    3
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "content",
+   "kind": "rect",
+   "rect": [
+    41,
+    244,
+    1198,
+    391
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.endless",
+   "kind": "rect",
+   "rect": [
+    63,
+    257,
+    382,
+    179
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.endless.art",
+   "kind": "rect",
+   "rect": [
+    68,
+    262,
+    373,
+    170
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.endless.bar",
+   "kind": "rect",
+   "rect": [
+    70,
+    384,
+    371,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.endless.icon",
+   "kind": "rect",
+   "rect": [
+    86,
+    393,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.endless.title",
+   "kind": "text",
+   "text": "Endless",
+   "font": "crimson",
+   "weight": 700,
+   "width": 87,
+   "x": 141,
+   "baseline": 421,
+   "align": "left",
+   "color": "#f6e9aa",
+   "size": 25,
+   "pen_x": 141
+  },
+  {
+   "id": "card.endless.chevron",
+   "kind": "rect",
+   "rect": [
+    411,
+    396,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.tower",
+   "kind": "rect",
+   "rect": [
+    459,
+    257,
+    363,
+    179
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.tower.art",
+   "kind": "rect",
+   "rect": [
+    463,
+    262,
+    355,
+    170
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.tower.bar",
+   "kind": "rect",
+   "rect": [
+    465,
+    384,
+    353,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.tower.icon",
+   "kind": "rect",
+   "rect": [
+    484,
+    393,
+    24,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.tower.title",
+   "kind": "text",
+   "text": "Tower",
+   "font": "crimson",
+   "weight": 700,
+   "width": 69,
+   "x": 534,
+   "baseline": 420,
+   "align": "left",
+   "color": "#f5ebb3",
+   "size": 24,
+   "pen_x": 535
+  },
+  {
+   "id": "card.tower.chevron",
+   "kind": "rect",
+   "rect": [
+    789,
+    396,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bounties",
+   "kind": "rect",
+   "rect": [
+    836,
+    257,
+    380,
+    179
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.bounties.art",
+   "kind": "rect",
+   "rect": [
+    840,
+    262,
+    372,
+    170
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.bounties.bar",
+   "kind": "rect",
+   "rect": [
+    843,
+    384,
+    369,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.bounties.icon",
+   "kind": "rect",
+   "rect": [
+    859,
+    394,
+    29,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bounties.title",
+   "kind": "text",
+   "text": "Bounties",
+   "font": "crimson",
+   "weight": 700,
+   "width": 97,
+   "x": 916,
+   "baseline": 421,
+   "align": "left",
+   "color": "#f8ebae",
+   "size": 25,
+   "pen_x": 916
+  },
+  {
+   "id": "card.bounties.chevron",
+   "kind": "rect",
+   "rect": [
+    1182,
+    396,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossrush",
+   "kind": "rect",
+   "rect": [
+    63,
+    445,
+    382,
+    180
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.bossrush.art",
+   "kind": "rect",
+   "rect": [
+    68,
+    450,
+    373,
+    171
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.bossrush.bar",
+   "kind": "rect",
+   "rect": [
+    70,
+    573,
+    371,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.bossrush.icon",
+   "kind": "rect",
+   "rect": [
+    89,
+    579,
+    27,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossrush.title",
+   "kind": "text",
+   "text": "Boss rush",
+   "font": "crimson",
+   "weight": 675,
+   "width": 105,
+   "x": 142,
+   "baseline": 609,
+   "align": "left",
+   "color": "#bcbab8",
+   "size": 25,
+   "pen_x": 142
+  },
+  {
+   "id": "card.bossrush.chevron",
+   "kind": "rect",
+   "rect": [
+    410,
+    585,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossrush.badge",
+   "kind": "rect",
+   "rect": [
+    151,
+    535,
+    211,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.bossrush.badge.icon",
+   "kind": "rect",
+   "rect": [
+    179,
+    541,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossrush.badge.label",
+   "kind": "text",
+   "text": "In development",
+   "font": "crimson",
+   "weight": 650,
+   "width": 121,
+   "x": 217,
+   "baseline": 558,
+   "align": "left",
+   "color": "#c4c2c4",
+   "size": 17,
+   "pen_x": 217
+  },
+  {
+   "id": "card.weeklyraid",
+   "kind": "rect",
+   "rect": [
+    459,
+    445,
+    363,
+    180
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.weeklyraid.art",
+   "kind": "rect",
+   "rect": [
+    463,
+    450,
+    355,
+    171
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.weeklyraid.bar",
+   "kind": "rect",
+   "rect": [
+    465,
+    573,
+    353,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.weeklyraid.icon",
+   "kind": "rect",
+   "rect": [
+    479,
+    583,
+    45,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.weeklyraid.title",
+   "kind": "text",
+   "text": "Weekly raid",
+   "font": "crimson",
+   "weight": 650,
+   "width": 130,
+   "x": 536,
+   "baseline": 609,
+   "align": "left",
+   "color": "#fbefb3",
+   "size": 24,
+   "pen_x": 536
+  },
+  {
+   "id": "card.weeklyraid.chevron",
+   "kind": "rect",
+   "rect": [
+    789,
+    586,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.event",
+   "kind": "rect",
+   "rect": [
+    836,
+    445,
+    380,
+    180
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.event.art",
+   "kind": "rect",
+   "rect": [
+    840,
+    450,
+    372,
+    171
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.event.bar",
+   "kind": "rect",
+   "rect": [
+    843,
+    573,
+    369,
+    47
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.event.icon",
+   "kind": "rect",
+   "rect": [
+    861,
+    582,
+    27,
+    33
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.event.title",
+   "kind": "text",
+   "text": "Event",
+   "font": "crimson",
+   "weight": 700,
+   "width": 62,
+   "x": 915,
+   "baseline": 609,
+   "align": "left",
+   "color": "#f8ecb1",
+   "size": 24,
+   "pen_x": 915
+  },
+  {
+   "id": "card.event.chevron",
+   "kind": "rect",
+   "rect": [
+    1182,
+    586,
+    15,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "footer",
+   "kind": "rect",
+   "rect": [
+    41,
+    635,
+    1198,
+    64
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "button.account",
+   "kind": "rect",
+   "rect": [
+    69,
+    646,
+    192,
+    42
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.account.icon",
+   "kind": "rect",
+   "rect": [
+    97,
+    654,
+    24,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.account.label",
+   "kind": "text",
+   "text": "Account",
+   "font": "crimson",
+   "weight": 600,
+   "width": 62,
+   "x": 161,
+   "baseline": 673,
+   "align": "left",
+   "color": "#ebe4b7",
+   "size": 17,
+   "pen_x": 162
+  },
+  {
+   "id": "footer.separator.1",
+   "kind": "rect",
+   "rect": [
+    288,
+    655,
+    2,
+    24
+   ],
+   "role": "separator"
+  },
+  {
+   "id": "button.profile",
+   "kind": "rect",
+   "rect": [
+    309,
+    646,
+    211,
+    42
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.profile.icon",
+   "kind": "rect",
+   "rect": [
+    340,
+    655,
+    19,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.profile.label",
+   "kind": "text",
+   "text": "Player profile",
+   "font": "crimson",
+   "weight": 600,
+   "width": 106,
+   "x": 386,
+   "baseline": 673,
+   "align": "left",
+   "color": "#e7e2c7",
+   "size": 18,
+   "pen_x": 386
+  },
+  {
+   "id": "footer.separator.2",
+   "kind": "rect",
+   "rect": [
+    543,
+    655,
+    2,
+    24
+   ],
+   "role": "separator"
+  },
+  {
+   "id": "button.quit",
+   "kind": "rect",
+   "rect": [
+    566,
+    646,
+    196,
+    42
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.quit.icon",
+   "kind": "rect",
+   "rect": [
+    595,
+    655,
+    19,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.quit.label",
+   "kind": "text",
+   "text": "Quit game",
+   "font": "crimson",
+   "weight": 625,
+   "width": 81,
+   "x": 646,
+   "baseline": 673,
+   "align": "left",
+   "color": "#e9e4c4",
+   "size": 18,
+   "pen_x": 646
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    935,
+    635,
+    300,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    983,
+    645,
+    39,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK TO MAP",
+   "font": "cinzel",
+   "weight": 650,
+   "width": 131,
+   "x": 1046,
+   "baseline": 670,
+   "align": "left",
+   "color": "#391f0d",
+   "size": 18,
+   "pen_x": 1046
+  }
+ ],
+ "notes": "Caravan hub modal drawn over the world map. Top bar: resource strip (gold 120, supplies 21 / 24, stars 3), zone plaque with prev/next arrow buttons, the zone name and a small ZONE 01 plate hanging below it, and a square settings (gear) button at the top right. Modal: hanging blue banner emblem at the top left overlapping the header band; gold-gradient title over a castle skyline; red-wine square close button at top right. Section tabs: Adventure is SELECTED (bright gold frame with outer glow, cream label, small gold diamond on its bottom edge at x~340); Caravan and Community are unselected (dark slate fill, thin steel/brass frame, grey labels). Six activity cards in a 3x2 grid; column widths differ in the concept (382 / 363 / 380). Each card is a full-bleed illustration inside a brass frame with corner studs and a dark label bar along the bottom; the bar's left icon section rises above the rest of the bar (its top is 7 px higher: bar.y is that raised top, the main bar top edge sits at bar.y + 7). Boss rush is DISABLED: the whole card is desaturated to greyscale (grey frame, grey title/icon/chevron) and carries an 'In development' badge (hammer icon) centred over the art. Footer: three dark secondary buttons (icon left, label) separated by thin vertical brass rules, and a large gold primary BACK TO MAP button (dark brown uniform-caps label, map scroll icon) at the right. Text is width-fitted; the concept numerals are taller than Crimson Pro's at the same width."
+}

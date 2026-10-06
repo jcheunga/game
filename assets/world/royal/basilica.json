@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "basilica_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    426.2,
+    198.16,
+    347.6,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    1870,
+    580
+   ],
+   "file": "basilica_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    396.35,
+    310.49,
+    407.29,
+    146.96
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    735
+   ],
+   "file": "basilica_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    466.49,
+    233.78,
+    267.01,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2106,
+    647
+   ],
+   "file": "basilica_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    458.71,
+    399.72,
+    282.58,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    527
+   ],
+   "file": "basilica_front.png"
+  }
+ ],
+ "sky": "442c6c",
+ "generator": "art/royal/backdrops.py"
+}

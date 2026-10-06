@@ -1,0 +1,1298 @@
+{
+ "screen": "home",
+ "ref": "art/royal/ref/ui-06-cartographers-atlas-home.png",
+ "elements": [
+  {
+   "id": "res.frame",
+   "kind": "rect",
+   "rect": [
+    19,
+    7,
+    391,
+    77
+   ],
+   "role": "panel",
+   "note": "whole resource bar incl. brass end caps and finials"
+  },
+  {
+   "id": "res.bar",
+   "kind": "rect",
+   "rect": [
+    19,
+    19,
+    391,
+    54
+   ],
+   "role": "panel",
+   "note": "strip line: brass rim top 19 / bottom 72, caps point out to x 19 and 409"
+  },
+  {
+   "id": "res.parchment",
+   "kind": "rect",
+   "rect": [
+    40,
+    23,
+    352,
+    45
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "res.gold.icon",
+   "kind": "rect",
+   "rect": [
+    52,
+    30,
+    42,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "res.gold.value",
+   "kind": "text",
+   "text": "120",
+   "font": "crimson",
+   "weight": 700,
+   "width": 28.6,
+   "x": 105,
+   "baseline": 53,
+   "align": "left",
+   "color": "#121210",
+   "size": 19,
+   "pen_x": 105
+  },
+  {
+   "id": "res.divider.1",
+   "kind": "rect",
+   "rect": [
+    148,
+    26,
+    6,
+    41
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "res.food.icon",
+   "kind": "rect",
+   "rect": [
+    168,
+    28,
+    42,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "res.food.value",
+   "kind": "text",
+   "text": "21 / 24",
+   "font": "crimson",
+   "weight": 700,
+   "width": 54,
+   "x": 223,
+   "baseline": 53,
+   "align": "left",
+   "color": "#121210",
+   "size": 20,
+   "pen_x": 223
+  },
+  {
+   "id": "res.divider.2",
+   "kind": "rect",
+   "rect": [
+    293,
+    26,
+    6,
+    41
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "res.stars.icon",
+   "kind": "rect",
+   "rect": [
+    313,
+    28,
+    34,
+    33
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "res.stars.value",
+   "kind": "text",
+   "text": "3",
+   "font": "crimson",
+   "weight": 700,
+   "width": 9.6,
+   "x": 359,
+   "baseline": 53,
+   "align": "left",
+   "color": "#121210",
+   "size": 20,
+   "pen_x": 359
+  },
+  {
+   "id": "zone.plaque",
+   "kind": "rect",
+   "rect": [
+    497,
+    16,
+    288,
+    77
+   ],
+   "role": "panel",
+   "note": "parchment scroll; bottom edge waves, 87 at the ends, ~92 near the middle"
+  },
+  {
+   "id": "zone.plaque.pendant",
+   "kind": "rect",
+   "rect": [
+    632,
+    82,
+    18,
+    23
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "zone.banner.left",
+   "kind": "rect",
+   "rect": [
+    434,
+    0,
+    63,
+    108
+   ],
+   "role": "banner"
+  },
+  {
+   "id": "zone.banner.left.cloth",
+   "kind": "rect",
+   "rect": [
+    452,
+    20,
+    44,
+    88
+   ],
+   "role": "banner"
+  },
+  {
+   "id": "zone.banner.right",
+   "kind": "rect",
+   "rect": [
+    786,
+    0,
+    62,
+    106
+   ],
+   "role": "banner"
+  },
+  {
+   "id": "zone.banner.right.cloth",
+   "kind": "rect",
+   "rect": [
+    787,
+    18,
+    43,
+    88
+   ],
+   "role": "banner"
+  },
+  {
+   "id": "zone.title",
+   "kind": "text",
+   "text": "King\u2019s Road",
+   "font": "crimson",
+   "weight": 700,
+   "width": 152,
+   "x": 643,
+   "baseline": 53,
+   "align": "center",
+   "color": "#0f1212",
+   "size": 29
+  },
+  {
+   "id": "zone.subtitle",
+   "kind": "text",
+   "text": "ZONE 01",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 76.5,
+   "x": 640.5,
+   "baseline": 78,
+   "align": "center",
+   "color": "#6f4c1f",
+   "tracking": 2,
+   "note": "concept is letter-spaced: cap height 11 = Cinzel ~14 with ~2px tracking; width-fit size without tracking is 18",
+   "size": 18
+  },
+  {
+   "id": "zone.rule.left",
+   "kind": "rect",
+   "rect": [
+    523,
+    62,
+    66,
+    7
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "zone.rule.right",
+   "kind": "rect",
+   "rect": [
+    696,
+    62,
+    64,
+    7
+   ],
+   "role": "ornament"
+  },
+  {
+   "id": "settings",
+   "kind": "rect",
+   "rect": [
+    1199,
+    12,
+    64,
+    64
+   ],
+   "role": "button",
+   "note": "round gold ring with 8 short spikes (4 long at N/E/S/W), centre (1230.5, 44.5)"
+  },
+  {
+   "id": "settings.ring",
+   "kind": "rect",
+   "rect": [
+    1203,
+    18,
+    55,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "settings.icon",
+   "kind": "rect",
+   "rect": [
+    1218,
+    31,
+    26,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock",
+   "kind": "rect",
+   "rect": [
+    111,
+    573,
+    1058,
+    126
+   ],
+   "role": "panel",
+   "note": "brass frame; corner finials overhang to x 103..1176, y 553..710"
+  },
+  {
+   "id": "dock.parchment",
+   "kind": "rect",
+   "rect": [
+    118,
+    578,
+    1043,
+    115
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "dock.warband",
+   "kind": "rect",
+   "rect": [
+    193,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.warband.icon",
+   "kind": "rect",
+   "rect": [
+    209,
+    590,
+    56,
+    64
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.warband.label",
+   "kind": "text",
+   "text": "Warband",
+   "font": "crimson",
+   "weight": 500,
+   "width": 67,
+   "x": 234,
+   "baseline": 680,
+   "align": "center",
+   "color": "#171512",
+   "size": 17
+  },
+  {
+   "id": "dock.spells",
+   "kind": "rect",
+   "rect": [
+    353,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.spells.icon",
+   "kind": "rect",
+   "rect": [
+    365,
+    592,
+    57,
+    59
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.spells.label",
+   "kind": "text",
+   "text": "Spells",
+   "font": "crimson",
+   "weight": 500,
+   "width": 41,
+   "x": 394,
+   "baseline": 680,
+   "align": "center",
+   "color": "#171512",
+   "size": 17
+  },
+  {
+   "id": "dock.upgrades",
+   "kind": "rect",
+   "rect": [
+    514,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.upgrades.icon",
+   "kind": "rect",
+   "rect": [
+    528,
+    591,
+    52,
+    61
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.upgrades.label",
+   "kind": "text",
+   "text": "Upgrades",
+   "font": "crimson",
+   "weight": 500,
+   "width": 69.5,
+   "x": 556,
+   "baseline": 680,
+   "align": "center",
+   "color": "#171512",
+   "size": 17
+  },
+  {
+   "id": "dock.achievements",
+   "kind": "rect",
+   "rect": [
+    681,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.achievements.icon",
+   "kind": "rect",
+   "rect": [
+    693,
+    589,
+    59,
+    59
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.achievements.label",
+   "kind": "text",
+   "text": "Achievements",
+   "font": "crimson",
+   "weight": 500,
+   "width": 101,
+   "x": 721,
+   "baseline": 680,
+   "align": "center",
+   "color": "#171512",
+   "size": 17
+  },
+  {
+   "id": "dock.codex",
+   "kind": "rect",
+   "rect": [
+    842,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.codex.icon",
+   "kind": "rect",
+   "rect": [
+    851,
+    590,
+    65,
+    62
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.codex.label",
+   "kind": "text",
+   "text": "Codex",
+   "font": "crimson",
+   "weight": 500,
+   "width": 46.5,
+   "x": 882.5,
+   "baseline": 682,
+   "align": "center",
+   "color": "#171512",
+   "size": 18
+  },
+  {
+   "id": "dock.more",
+   "kind": "rect",
+   "rect": [
+    1002,
+    581,
+    83,
+    83
+   ],
+   "role": "button"
+  },
+  {
+   "id": "dock.more.icon",
+   "kind": "rect",
+   "rect": [
+    1015,
+    595,
+    55,
+    55
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "dock.more.label",
+   "kind": "text",
+   "text": "More",
+   "font": "crimson",
+   "weight": 500,
+   "width": 39,
+   "x": 1043,
+   "baseline": 682,
+   "align": "center",
+   "color": "#171512",
+   "size": 17
+  },
+  {
+   "id": "dock.sep.1",
+   "kind": "rect",
+   "rect": [
+    149,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.2",
+   "kind": "rect",
+   "rect": [
+    310,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.3",
+   "kind": "rect",
+   "rect": [
+    469,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.4",
+   "kind": "rect",
+   "rect": [
+    633,
+    620,
+    13,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.5",
+   "kind": "rect",
+   "rect": [
+    799,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.6",
+   "kind": "rect",
+   "rect": [
+    958,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "dock.sep.7",
+   "kind": "rect",
+   "rect": [
+    1118,
+    620,
+    12,
+    13
+   ],
+   "role": "diamond"
+  },
+  {
+   "id": "deco.banner.left",
+   "kind": "rect",
+   "rect": [
+    27,
+    528,
+    85,
+    192
+   ],
+   "role": "panel",
+   "note": "spear finial pole + teal lion banner left of dock"
+  },
+  {
+   "id": "deco.banner.left.cloth",
+   "kind": "rect",
+   "rect": [
+    41,
+    581,
+    59,
+    128
+   ],
+   "role": "banner"
+  },
+  {
+   "id": "deco.lantern",
+   "kind": "rect",
+   "rect": [
+    1190,
+    504,
+    63,
+    148
+   ],
+   "role": "panel",
+   "note": "lit brass lantern, pole continues down to 720 at x 1224..1234"
+  },
+  {
+   "id": "deco.banner.right",
+   "kind": "rect",
+   "rect": [
+    1181,
+    580,
+    31,
+    117
+   ],
+   "role": "banner",
+   "note": "teal banner hanging from dock right corner, behind lantern"
+  },
+  {
+   "id": "deco.banner.edge",
+   "kind": "rect",
+   "rect": [
+    1252,
+    511,
+    28,
+    140
+   ],
+   "role": "banner",
+   "note": "banner cut off by the right screen edge, tassel 612..650"
+  },
+  {
+   "id": "map.stage.1",
+   "kind": "castle",
+   "rect": [
+    99,
+    141,
+    87,
+    78
+   ],
+   "role": "map",
+   "stage": 1
+  },
+  {
+   "id": "map.stage.1.stars",
+   "kind": "stars",
+   "rect": [
+    116,
+    129,
+    50,
+    17
+   ],
+   "role": "map",
+   "stars": 3
+  },
+  {
+   "id": "map.stage.2",
+   "kind": "castle",
+   "rect": [
+    325,
+    207,
+    65,
+    61
+   ],
+   "role": "map",
+   "stage": 2
+  },
+  {
+   "id": "map.stage.2.stars",
+   "kind": "stars",
+   "rect": [
+    348,
+    193,
+    35,
+    17
+   ],
+   "role": "map",
+   "stars": 2
+  },
+  {
+   "id": "map.stage.3",
+   "kind": "castle",
+   "rect": [
+    509,
+    228,
+    70,
+    58
+   ],
+   "role": "map",
+   "stage": 3
+  },
+  {
+   "id": "map.stage.3.stars",
+   "kind": "stars",
+   "rect": [
+    529,
+    213,
+    35,
+    17
+   ],
+   "role": "map",
+   "stars": 2
+  },
+  {
+   "id": "map.stage.4",
+   "kind": "castle",
+   "rect": [
+    717,
+    248,
+    73,
+    65
+   ],
+   "role": "map",
+   "stage": 4
+  },
+  {
+   "id": "map.stage.4.stars",
+   "kind": "stars",
+   "rect": [
+    731,
+    233,
+    51,
+    17
+   ],
+   "role": "map",
+   "stars": 3
+  },
+  {
+   "id": "map.stage.5",
+   "kind": "castle",
+   "rect": [
+    829,
+    288,
+    67,
+    57
+   ],
+   "role": "map",
+   "stage": 5
+  },
+  {
+   "id": "map.stage.5.stars",
+   "kind": "stars",
+   "rect": [
+    846,
+    268,
+    36,
+    17
+   ],
+   "role": "map",
+   "stars": 2
+  },
+  {
+   "id": "map.stage.6",
+   "kind": "castle",
+   "rect": [
+    1081,
+    259,
+    87,
+    81
+   ],
+   "role": "map",
+   "stage": 6
+  },
+  {
+   "id": "map.stage.6.stars",
+   "kind": "stars",
+   "rect": [
+    1096,
+    243,
+    49,
+    18
+   ],
+   "role": "map",
+   "stars": 3
+  },
+  {
+   "id": "map.house.1",
+   "kind": "house",
+   "rect": [
+    51,
+    184,
+    36,
+    32
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.2",
+   "kind": "house",
+   "rect": [
+    255,
+    91,
+    44,
+    27
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.3",
+   "kind": "house",
+   "rect": [
+    295,
+    154,
+    25,
+    30
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.hut.1",
+   "kind": "hut",
+   "rect": [
+    405,
+    164,
+    19,
+    20
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.4",
+   "kind": "house",
+   "rect": [
+    476,
+    176,
+    24,
+    28
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.5",
+   "kind": "house",
+   "rect": [
+    452,
+    273,
+    30,
+    35
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.6",
+   "kind": "house",
+   "rect": [
+    767,
+    150,
+    34,
+    31
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.7",
+   "kind": "house",
+   "rect": [
+    897,
+    207,
+    26,
+    27
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.8",
+   "kind": "house",
+   "rect": [
+    366,
+    347,
+    29,
+    31
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.9",
+   "kind": "house",
+   "rect": [
+    330,
+    381,
+    31,
+    28
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.10",
+   "kind": "house",
+   "rect": [
+    305,
+    387,
+    25,
+    28
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.11",
+   "kind": "house",
+   "rect": [
+    500,
+    327,
+    21,
+    24
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.12",
+   "kind": "house",
+   "rect": [
+    776,
+    334,
+    23,
+    23
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.13",
+   "kind": "house",
+   "rect": [
+    920,
+    370,
+    23,
+    30
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.house.14",
+   "kind": "house",
+   "rect": [
+    1049,
+    312,
+    26,
+    28
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.1",
+   "kind": "wagon",
+   "rect": [
+    176,
+    310,
+    34,
+    28
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.2",
+   "kind": "wagon",
+   "rect": [
+    400,
+    91,
+    31,
+    29
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.3",
+   "kind": "wagon",
+   "rect": [
+    675,
+    203,
+    33,
+    29
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.4",
+   "kind": "wagon",
+   "rect": [
+    614,
+    353,
+    38,
+    33
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.5",
+   "kind": "wagon",
+   "rect": [
+    640,
+    440,
+    35,
+    42
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.wagon.6",
+   "kind": "wagon",
+   "rect": [
+    861,
+    192,
+    29,
+    23
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.cart.1",
+   "kind": "cart",
+   "rect": [
+    380,
+    264,
+    30,
+    22
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.windmill.1",
+   "kind": "windmill",
+   "rect": [
+    652,
+    266,
+    26,
+    53
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.windmill.2",
+   "kind": "windmill",
+   "rect": [
+    926,
+    332,
+    24,
+    30
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.tower.1",
+   "kind": "ruined tower",
+   "rect": [
+    632,
+    277,
+    20,
+    37
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.bridge.1",
+   "kind": "bridge",
+   "rect": [
+    197,
+    197,
+    70,
+    36
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.bridge.2",
+   "kind": "bridge",
+   "rect": [
+    792,
+    255,
+    47,
+    23
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.ruin.1",
+   "kind": "ruin",
+   "rect": [
+    226,
+    243,
+    44,
+    49
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.shrine.1",
+   "kind": "shrine",
+   "rect": [
+    980,
+    360,
+    28,
+    36
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.stones.1",
+   "kind": "standing stones",
+   "rect": [
+    832,
+    160,
+    47,
+    30
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.camp.1",
+   "kind": "camp",
+   "rect": [
+    682,
+    119,
+    29,
+    18
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.haycart.1",
+   "kind": "hay cart",
+   "rect": [
+    157,
+    289,
+    36,
+    26
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.debris.1",
+   "kind": "wrecked cart",
+   "rect": [
+    575,
+    276,
+    23,
+    15
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.chest.1",
+   "kind": "chest",
+   "rect": [
+    482,
+    387,
+    43,
+    24
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.chest.2",
+   "kind": "chest",
+   "rect": [
+    562,
+    480,
+    38,
+    34
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.field.1",
+   "kind": "wheat field",
+   "rect": [
+    555,
+    360,
+    38,
+    25
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.field.2",
+   "kind": "wheat field",
+   "rect": [
+    734,
+    366,
+    62,
+    29
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.field.3",
+   "kind": "wheat field",
+   "rect": [
+    779,
+    356,
+    56,
+    31
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.1",
+   "kind": "mountain",
+   "rect": [
+    550,
+    96,
+    66,
+    52
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.2",
+   "kind": "mountain",
+   "rect": [
+    940,
+    98,
+    132,
+    80
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.3",
+   "kind": "mountain",
+   "rect": [
+    1152,
+    186,
+    128,
+    144
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.4",
+   "kind": "mountain",
+   "rect": [
+    376,
+    386,
+    116,
+    140
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.5",
+   "kind": "mountain",
+   "rect": [
+    150,
+    372,
+    114,
+    88
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.6",
+   "kind": "mountain",
+   "rect": [
+    792,
+    422,
+    92,
+    70
+   ],
+   "role": "map-prop"
+  },
+  {
+   "id": "map.mountain.7",
+   "kind": "mountain",
+   "rect": [
+    668,
+    498,
+    88,
+    72
+   ],
+   "role": "map-prop"
+  }
+ ],
+ "notes": "STATE: home/world-map screen for zone 01 (King\u2019s Road). Six castle stage nodes are visible and every one shows stars (3,2,2,3,2,3 = 15), so all six read as cleared; 2-star nodes show just 2 stars with no empty third slot. No node is highlighted as current/locked, there is no selection ring or path marker, and no dock medallion is selected (all six are identical: navy disc, gold ring, small gold diamond nubs on the ring's left/right at the centre line, sticking out ~5px). The HUD star total reads 3 even though the nodes show 15 stars (concept inconsistency). HUD: resource bar top-left is a parchment strip with brass rim (y 19..72) and ornate brass end caps (left cap point x 19, right cap point x 409, cap finials reach y 7..84); three icon+value groups split by thin vertical brass dividers that have a small knob at the middle (y~47). Values are dark book serif with lining figures, ~13px cap height (Crimson's digits are wider, so the fitted size gives a ~11-12px cap height). Zone plaque: parchment scroll centred at x~640 (497..784, top 16, wavy bottom ~87 at the ends and ~92 near the middle), with a gold diamond pendant hanging under the centre (632..650, 82..105) and a tiny cross ornament at the top centre. Title is a black book serif (Crimson 700 fits the width, but the concept's caps are taller: K is 22px). The ZONE 01 subtitle is brown Cinzel, letter-spaced, flanked by thin brass rules with a diamond at the outer end and an arrow point at the inner end. Two teal swallow-tail banners with a gold rampant lion hang from brass poles on either side of the plaque. Each pole comes down from the top screen edge, and a crossbar with a spear finial points outward (left finial tip x 434, right x 848). Settings: round navy button with a gold ring and 8 spikes, cream gear icon, top-right, no label. Dock: full-width brass-framed parchment bar (111..1168, 573..698) with corner bosses and finials that overhang the frame. The six medallions are 83px circles with centres at x 234.5, 394.5, 555.5, 722.5, 883.5, 1043.5 and y 622.5 (pitch ~160, Achievements sits ~6px right of an even spacing). Labels are dark book serif centred under each medallion; Codex and More sit 2px lower (baseline 682 vs 680). Small gold four-point diamonds sit on the medallion centre line (y~626) between medallions and at both ends (x 155, 316, 475, 639, 805, 964, 1124). Faint printed compass-rose and crease lines decorate the parchment below them (texture, not interactive). Left of the dock is a brass pole with a spear finial and a teal lion banner hanging over the dark sea. Right of the dock is a lit brass lantern on a post (warm flame glow) with teal banners, one hanging from the dock's right corner arm behind the lantern and one cut off by the right screen edge. Dock label text weight: Crimson 500 gives the measured widths at a consistent size 17 (Codex 18), but the concept strokes look heavier (600-700) with a taller x-height. MAP: one painted full-bleed illustration behind the HUD, using a top-down 3/4 view. The camera looks north and down at roughly 45-50 degrees, with no visible perspective convergence (orthographic-like, 'isometric-ish' but not a diamond grid). Every building shows its south facade and roof, and scale is uniform (castles 65-87px wide, trees 15-30px). Light is warm late-afternoon from the upper left, with glowing orange windows and lamps. COAST: a large forested island fills the centre. The north coast runs just under the top HUD (sea shows above the resource bar at y<15 and at the top-left corner). The coastline (x,y) goes (95,80) (60,95) (38,120) (28,140) (0,160). Land touches the left edge from y 160 to 255, then comes the river mouth/estuary at x 0..50, y 255..300. From there it runs (45,300) (70,320) (105,340) (140,360) (165,400) (160,420) (165,440) (270,462) (300,480) (390,500) (520,530) (560,550) (590,573). A rocky southern peninsula reaches the dock top between x~580 and ~760, then the coast continues (760,480) (840,470) (880,478) (920,450) (960,438) and on into the fog. On the north-east, the coast leaves the top edge at x~850 just right of the plaque banner and runs (860,95) (900,105) (940,120) (1000,130) (1040,160) (1100,170) (1150,195) into the mountains/fog. Rocky cliffs and sea stacks with white surf line the south-west and south shores, and the sea is dark navy-teal with painted wave texture. RIVER: a bright teal river with whitecaps crosses the island from a north-east bay to the west coast. Its centreline is (1100,196) (1080,200) (1040,215) (1000,232) (960,240) (920,254) (880,266) (820,268, under bridge.2) (760,268) (700,272) (640,265) (560,245) (500,233) (460,224) (400,215) (340,222) (300,215) (280,208) (232,218, under bridge.1) (180,238) (140,250) (120,265) (80,285), reaching the sea at about (20,285). It is ~15-25px wide and widens to ~40px at the mouth. ROADS: tan dirt roads. The stage road links the castles in order 1-2-3-4-5-6: castle 1 gate (150,215) goes east along the north bank and over stone bridge.1 (197..267) to the south bank, then south-east past ruin.1 to castle 2 (355,255). From castle 2 it heads east past cart.1 and house.5 to castle 3 (545,280), east past the wrecked cart, tower.1 and windmill.1 to castle 4 (750,305), then south-east to castle 5 (860,335), and east past windmill.2 (~940,350) to the castle 6 gate (1110,330). Bridge.2 (792..839, 255..278) leaves the road just east of castle 4 and crosses the river north-east to the north-bank network. A secondary north-bank road network links house.2 (top), the hut, house.4, wagon.3, house.6, the standing stones, wagon.6 and house.7, heading north-east toward the mountains. Spur paths run south from the stage road to the southern houses, the wheat fields, the wagons and the chests. FOG: the right side of the map is covered by soft dark grey/black cloud (unexplored). The edge runs from the top edge at x~950 through (1000,80) (1075,120) (1110,160) (1150,190) (1200,240) (1230,300) (1200,330) (1160,360) (1060,380) (1010,420) (960,450) (890,480) and down to the dock at x~880. Everything right of that line is fog, with mountain.3 peaks fading into it at x 1150..1280, y 186..330 and the lantern/banner deco standing in front of it. Castle 6 (the last node, 87x81) is the largest keep, with five blue spires. Castle 1 (87x78) is the other large keep; castles 2-5 are smaller 2-tower gatehouses (~65-73px). Each star row sits centred ~4-12px above its castle's tallest spire, with stars ~16px wide on a ~17px pitch."
+}

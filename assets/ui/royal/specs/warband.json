@@ -1,0 +1,1774 @@
+{
+ "screen": "warband",
+ "ref": "art/royal/ref/ui-07-warband-armory.png",
+ "elements": [
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    666
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    106
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.crest",
+   "kind": "rect",
+   "rect": [
+    63,
+    35,
+    77,
+    80
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Warband",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 279,
+   "x": 154,
+   "baseline": 82,
+   "align": "left",
+   "color": "#f9dfa2",
+   "style": "gold",
+   "size": 55,
+   "pen_x": 156
+  },
+  {
+   "id": "subtitle.icon",
+   "kind": "rect",
+   "rect": [
+    160,
+    94,
+    24,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "text": "SQUAD",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 61,
+   "x": 197,
+   "baseline": 111,
+   "align": "left",
+   "color": "#f0e9df",
+   "size": 16,
+   "pen_x": 197
+  },
+  {
+   "id": "subtitle.count",
+   "kind": "text",
+   "text": "5 / 6",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 41,
+   "x": 267,
+   "baseline": 111,
+   "align": "left",
+   "color": "#f2eee6",
+   "size": 20,
+   "pen_x": 267
+  },
+  {
+   "id": "tab.warband",
+   "kind": "rect",
+   "rect": [
+    620,
+    57,
+    121,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.warband.icon",
+   "kind": "rect",
+   "rect": [
+    667,
+    69,
+    27,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.warband.label",
+   "kind": "text",
+   "text": "Warband",
+   "font": "crimson",
+   "weight": 500,
+   "width": 69,
+   "x": 680.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#fffebe",
+   "size": 17
+  },
+  {
+   "id": "tab.spells",
+   "kind": "rect",
+   "rect": [
+    741,
+    57,
+    99,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.spells.icon",
+   "kind": "rect",
+   "rect": [
+    781,
+    69,
+    17,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.spells.label",
+   "kind": "text",
+   "text": "Spells",
+   "font": "crimson",
+   "weight": 500,
+   "width": 41,
+   "x": 789.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c6c6c5",
+   "size": 17
+  },
+  {
+   "id": "tab.war_wagon",
+   "kind": "rect",
+   "rect": [
+    840,
+    57,
+    118,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.war_wagon.icon",
+   "kind": "rect",
+   "rect": [
+    884,
+    69,
+    28,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.war_wagon.label",
+   "kind": "text",
+   "text": "War wagon",
+   "font": "crimson",
+   "weight": 500,
+   "width": 79,
+   "x": 898.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c6c7c8",
+   "size": 16
+  },
+  {
+   "id": "tab.relics",
+   "kind": "rect",
+   "rect": [
+    958,
+    57,
+    111,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.relics.icon",
+   "kind": "rect",
+   "rect": [
+    1002,
+    69,
+    22,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.relics.label",
+   "kind": "text",
+   "text": "Relics",
+   "font": "crimson",
+   "weight": 500,
+   "width": 40,
+   "x": 1013,
+   "baseline": 111,
+   "align": "center",
+   "color": "#cccccb",
+   "size": 16
+  },
+  {
+   "id": "tab.adviser",
+   "kind": "rect",
+   "rect": [
+    1069,
+    57,
+    110,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.adviser.icon",
+   "kind": "rect",
+   "rect": [
+    1113,
+    69,
+    23,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.adviser.label",
+   "kind": "text",
+   "text": "Adviser",
+   "font": "crimson",
+   "weight": 500,
+   "width": 53,
+   "x": 1124.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c4c4c4",
+   "size": 16
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1186,
+    26,
+    53,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1201,
+    41,
+    24,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slots",
+   "kind": "rect",
+   "rect": [
+    34,
+    127,
+    1212,
+    142
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "slot.1",
+   "kind": "rect",
+   "rect": [
+    67,
+    147,
+    183,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.1.badge",
+   "kind": "rect",
+   "rect": [
+    69,
+    150,
+    35,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.1.number",
+   "kind": "text",
+   "text": "1",
+   "font": "crimson",
+   "weight": 700,
+   "width": 7,
+   "x": 82,
+   "baseline": 173,
+   "align": "left",
+   "color": "#000000",
+   "size": 17,
+   "pen_x": 82
+  },
+  {
+   "id": "slot.1.art",
+   "kind": "rect",
+   "rect": [
+    123,
+    154,
+    66,
+    95
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.1.class",
+   "kind": "rect",
+   "rect": [
+    78,
+    223,
+    20,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.1.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 25,
+   "x": 107,
+   "baseline": 243,
+   "align": "left",
+   "color": "#f1eadf",
+   "size": 16,
+   "pen_x": 107
+  },
+  {
+   "id": "slot.1.pips",
+   "kind": "rect",
+   "rect": [
+    175,
+    233,
+    62,
+    13
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.2",
+   "kind": "rect",
+   "rect": [
+    261,
+    147,
+    185,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.2.badge",
+   "kind": "rect",
+   "rect": [
+    263,
+    150,
+    36,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.2.number",
+   "kind": "text",
+   "text": "2",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 274,
+   "baseline": 173,
+   "align": "left",
+   "color": "#000000",
+   "size": 21,
+   "pen_x": 274
+  },
+  {
+   "id": "slot.2.art",
+   "kind": "rect",
+   "rect": [
+    332,
+    161,
+    55,
+    89
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.2.class",
+   "kind": "rect",
+   "rect": [
+    274,
+    223,
+    18,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.2.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 25,
+   "x": 301,
+   "baseline": 243,
+   "align": "left",
+   "color": "#e7ded6",
+   "size": 16,
+   "pen_x": 301
+  },
+  {
+   "id": "slot.2.pips",
+   "kind": "rect",
+   "rect": [
+    372,
+    233,
+    62,
+    13
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.3",
+   "kind": "rect",
+   "rect": [
+    455,
+    147,
+    186,
+    110
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.3.badge",
+   "kind": "rect",
+   "rect": [
+    459,
+    150,
+    36,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.3.number",
+   "kind": "text",
+   "text": "3",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 471,
+   "baseline": 173,
+   "align": "left",
+   "color": "#0c0100",
+   "size": 21,
+   "pen_x": 471
+  },
+  {
+   "id": "slot.3.art",
+   "kind": "rect",
+   "rect": [
+    538,
+    162,
+    49,
+    91
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.3.class",
+   "kind": "rect",
+   "rect": [
+    466,
+    222,
+    23,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.3.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 25,
+   "x": 499,
+   "baseline": 243,
+   "align": "left",
+   "color": "#fffcce",
+   "size": 16,
+   "pen_x": 499
+  },
+  {
+   "id": "slot.3.pips",
+   "kind": "rect",
+   "rect": [
+    568,
+    233,
+    62,
+    13
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.4",
+   "kind": "rect",
+   "rect": [
+    650,
+    147,
+    182,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.4.badge",
+   "kind": "rect",
+   "rect": [
+    652,
+    150,
+    36,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.4.number",
+   "kind": "text",
+   "text": "4",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 664,
+   "baseline": 173,
+   "align": "left",
+   "color": "#000000",
+   "size": 20,
+   "pen_x": 664
+  },
+  {
+   "id": "slot.4.art",
+   "kind": "rect",
+   "rect": [
+    711,
+    155,
+    59,
+    95
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.4.class",
+   "kind": "rect",
+   "rect": [
+    663,
+    221,
+    19,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.4.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 25,
+   "x": 691,
+   "baseline": 243,
+   "align": "left",
+   "color": "#eae0d8",
+   "size": 16,
+   "pen_x": 691
+  },
+  {
+   "id": "slot.4.pips",
+   "kind": "rect",
+   "rect": [
+    760,
+    233,
+    62,
+    13
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.5",
+   "kind": "rect",
+   "rect": [
+    842,
+    147,
+    185,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.5.badge",
+   "kind": "rect",
+   "rect": [
+    844,
+    150,
+    36,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.5.number",
+   "kind": "text",
+   "text": "5",
+   "font": "crimson",
+   "weight": 700,
+   "width": 10,
+   "x": 856,
+   "baseline": 173,
+   "align": "left",
+   "color": "#000000",
+   "size": 19,
+   "pen_x": 856
+  },
+  {
+   "id": "slot.5.art",
+   "kind": "rect",
+   "rect": [
+    912,
+    143,
+    57,
+    109
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.5.class",
+   "kind": "rect",
+   "rect": [
+    854,
+    223,
+    19,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.5.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 25,
+   "x": 883,
+   "baseline": 243,
+   "align": "left",
+   "color": "#d9d2ca",
+   "size": 16,
+   "pen_x": 883
+  },
+  {
+   "id": "slot.5.pips",
+   "kind": "rect",
+   "rect": [
+    953,
+    233,
+    62,
+    13
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.6",
+   "kind": "rect",
+   "rect": [
+    1038,
+    147,
+    179,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.6.badge",
+   "kind": "rect",
+   "rect": [
+    1040,
+    150,
+    35,
+    33
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.6.number",
+   "kind": "text",
+   "text": "6",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 1051,
+   "baseline": 173,
+   "align": "left",
+   "color": "#000000",
+   "size": 19,
+   "pen_x": 1051
+  },
+  {
+   "id": "slot.6.plus",
+   "kind": "rect",
+   "rect": [
+    1119,
+    174,
+    34,
+    35
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.6.label",
+   "kind": "text",
+   "text": "Empty slot",
+   "font": "crimson",
+   "weight": 500,
+   "width": 73,
+   "x": 1099,
+   "baseline": 238,
+   "align": "left",
+   "color": "#a2a1a2",
+   "size": 16,
+   "pen_x": 1099
+  },
+  {
+   "id": "collection",
+   "kind": "rect",
+   "rect": [
+    40,
+    272,
+    342,
+    412
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.title",
+   "kind": "rect",
+   "rect": [
+    44,
+    283,
+    329,
+    51
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.label",
+   "kind": "text",
+   "text": "Unit Collection",
+   "font": "crimson",
+   "weight": 500,
+   "width": 132,
+   "x": 64,
+   "baseline": 317,
+   "align": "left",
+   "color": "#fff7c3",
+   "size": 21,
+   "pen_x": 64
+  },
+  {
+   "id": "collection.filter",
+   "kind": "rect",
+   "rect": [
+    268,
+    294,
+    99,
+    33
+   ],
+   "role": "dropdown"
+  },
+  {
+   "id": "collection.filter.label",
+   "kind": "text",
+   "text": "All",
+   "font": "crimson",
+   "weight": 500,
+   "width": 19,
+   "x": 282,
+   "baseline": 316,
+   "align": "left",
+   "color": "#fffbdd",
+   "size": 17,
+   "pen_x": 283
+  },
+  {
+   "id": "collection.filter.arrow",
+   "kind": "rect",
+   "rect": [
+    345,
+    307,
+    11,
+    8
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.0",
+   "kind": "rect",
+   "rect": [
+    51,
+    348,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.0.art",
+   "kind": "rect",
+   "rect": [
+    55,
+    352,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.0.corner",
+   "kind": "rect",
+   "rect": [
+    51,
+    348,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.0.icon",
+   "kind": "rect",
+   "rect": [
+    56,
+    354,
+    19,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.1",
+   "kind": "rect",
+   "rect": [
+    154,
+    348,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.1.art",
+   "kind": "rect",
+   "rect": [
+    158,
+    352,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.1.corner",
+   "kind": "rect",
+   "rect": [
+    154,
+    348,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.1.icon",
+   "kind": "rect",
+   "rect": [
+    160,
+    355,
+    17,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    348,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    352,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    348,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.2.icon",
+   "kind": "rect",
+   "rect": [
+    263,
+    354,
+    18,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.0",
+   "kind": "rect",
+   "rect": [
+    51,
+    450,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.0.art",
+   "kind": "rect",
+   "rect": [
+    55,
+    454,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.0.corner",
+   "kind": "rect",
+   "rect": [
+    51,
+    450,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.0.icon",
+   "kind": "rect",
+   "rect": [
+    56,
+    456,
+    19,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.1",
+   "kind": "rect",
+   "rect": [
+    154,
+    450,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.1.art",
+   "kind": "rect",
+   "rect": [
+    158,
+    454,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.1.corner",
+   "kind": "rect",
+   "rect": [
+    154,
+    450,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.1.icon",
+   "kind": "rect",
+   "rect": [
+    161,
+    456,
+    17,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    450,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    454,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    450,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.2.icon",
+   "kind": "rect",
+   "rect": [
+    265,
+    456,
+    17,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.0",
+   "kind": "rect",
+   "rect": [
+    51,
+    552,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.0.art",
+   "kind": "rect",
+   "rect": [
+    55,
+    556,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.0.corner",
+   "kind": "rect",
+   "rect": [
+    51,
+    552,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.0.icon",
+   "kind": "rect",
+   "rect": [
+    57,
+    557,
+    18,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.1",
+   "kind": "rect",
+   "rect": [
+    154,
+    552,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.1.art",
+   "kind": "rect",
+   "rect": [
+    158,
+    556,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.1.corner",
+   "kind": "rect",
+   "rect": [
+    154,
+    552,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.1.icon",
+   "kind": "rect",
+   "rect": [
+    161,
+    558,
+    16,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    552,
+    94,
+    91
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    556,
+    86,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    552,
+    29,
+    29
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.2.icon",
+   "kind": "rect",
+   "rect": [
+    265,
+    558,
+    17,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.scroll",
+   "kind": "rect",
+   "rect": [
+    363,
+    344,
+    6,
+    308
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "grid.scroll.thumb",
+   "kind": "rect",
+   "rect": [
+    362,
+    411,
+    8,
+    39
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "preview",
+   "kind": "rect",
+   "rect": [
+    391,
+    284,
+    339,
+    386
+   ],
+   "role": "preview"
+  },
+  {
+   "id": "preview.prev",
+   "kind": "rect",
+   "rect": [
+    416,
+    469,
+    17,
+    29
+   ],
+   "role": "button"
+  },
+  {
+   "id": "preview.next",
+   "kind": "rect",
+   "rect": [
+    685,
+    469,
+    16,
+    29
+   ],
+   "role": "button"
+  },
+  {
+   "id": "detail",
+   "kind": "rect",
+   "rect": [
+    730,
+    272,
+    512,
+    412
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.icon",
+   "kind": "rect",
+   "rect": [
+    746,
+    295,
+    31,
+    28
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.name",
+   "kind": "text",
+   "text": "Archer",
+   "font": "crimson",
+   "weight": 700,
+   "width": 105,
+   "x": 793,
+   "baseline": 320,
+   "align": "left",
+   "color": "#fff8cb",
+   "size": 36,
+   "pen_x": 793
+  },
+  {
+   "id": "detail.level",
+   "kind": "text",
+   "text": "LEVEL",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 57,
+   "x": 794,
+   "baseline": 352,
+   "align": "left",
+   "color": "#dbcfc0",
+   "size": 19,
+   "pen_x": 794
+  },
+  {
+   "id": "detail.level.value",
+   "kind": "text",
+   "text": "1",
+   "font": "cinzel",
+   "weight": 500,
+   "x": 861,
+   "baseline": 352,
+   "align": "left",
+   "color": "#ead8c0",
+   "size": 19,
+   "pen_x": 861
+  },
+  {
+   "id": "detail.pips",
+   "kind": "rect",
+   "rect": [
+    887,
+    339,
+    66,
+    14
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "detail.chip",
+   "kind": "rect",
+   "rect": [
+    999,
+    323,
+    194,
+    33
+   ],
+   "role": "chip"
+  },
+  {
+   "id": "detail.chip.icon",
+   "kind": "rect",
+   "rect": [
+    999,
+    322,
+    31,
+    35
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.chip.label",
+   "kind": "text",
+   "text": "Support",
+   "font": "crimson",
+   "weight": 600,
+   "width": 49,
+   "x": 1041,
+   "baseline": 344,
+   "align": "left",
+   "color": "#f8e9c4",
+   "size": 14,
+   "pen_x": 1041
+  },
+  {
+   "id": "detail.chip.sep",
+   "kind": "text",
+   "text": "\u00b7",
+   "font": "crimson",
+   "weight": 600,
+   "width": 2,
+   "x": 1105,
+   "baseline": 341,
+   "align": "left",
+   "color": "#e1caad",
+   "size": 8,
+   "pen_x": 1105
+  },
+  {
+   "id": "detail.chip.label2",
+   "kind": "text",
+   "text": "Equipped",
+   "font": "crimson",
+   "weight": 600,
+   "width": 58,
+   "x": 1122,
+   "baseline": 344,
+   "align": "left",
+   "color": "#efdfc6",
+   "size": 14,
+   "pen_x": 1122
+  },
+  {
+   "id": "detail.rule",
+   "kind": "rect",
+   "rect": [
+    726,
+    365,
+    312,
+    2
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "stat.0",
+   "kind": "rect",
+   "rect": [
+    753,
+    377,
+    180,
+    66
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.0.icon",
+   "kind": "rect",
+   "rect": [
+    766,
+    398,
+    26,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.0.caption",
+   "kind": "text",
+   "text": "HEALTH",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 53,
+   "x": 814,
+   "baseline": 400,
+   "align": "left",
+   "color": "#dbd6d2",
+   "size": 12,
+   "pen_x": 814
+  },
+  {
+   "id": "stat.0.value",
+   "kind": "text",
+   "text": "48",
+   "font": "crimson",
+   "weight": 700,
+   "width": 28,
+   "x": 814,
+   "baseline": 430,
+   "align": "left",
+   "color": "#fffcdd",
+   "size": 26,
+   "pen_x": 814
+  },
+  {
+   "id": "stat.1",
+   "kind": "rect",
+   "rect": [
+    944,
+    377,
+    172,
+    66
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.1.icon",
+   "kind": "rect",
+   "rect": [
+    957,
+    396,
+    28,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.1.caption",
+   "kind": "text",
+   "text": "DAMAGE",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 56,
+   "x": 1005,
+   "baseline": 400,
+   "align": "left",
+   "color": "#e1dbd4",
+   "size": 12,
+   "pen_x": 1005
+  },
+  {
+   "id": "stat.1.value",
+   "kind": "text",
+   "text": "10",
+   "font": "crimson",
+   "weight": 700,
+   "width": 24,
+   "x": 1006,
+   "baseline": 430,
+   "align": "left",
+   "color": "#fff9d7",
+   "size": 23,
+   "pen_x": 1006
+  },
+  {
+   "id": "stat.2",
+   "kind": "rect",
+   "rect": [
+    753,
+    454,
+    180,
+    67
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.2.icon",
+   "kind": "rect",
+   "rect": [
+    770,
+    473,
+    19,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.2.caption",
+   "kind": "text",
+   "text": "COURAGE",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 68,
+   "x": 814,
+   "baseline": 478,
+   "align": "left",
+   "color": "#ddd7cf",
+   "size": 13,
+   "pen_x": 814
+  },
+  {
+   "id": "stat.2.value",
+   "kind": "text",
+   "text": "24",
+   "font": "crimson",
+   "weight": 700,
+   "width": 27,
+   "x": 814,
+   "baseline": 508,
+   "align": "left",
+   "color": "#fffddc",
+   "size": 25,
+   "pen_x": 814
+  },
+  {
+   "id": "stat.3",
+   "kind": "rect",
+   "rect": [
+    944,
+    454,
+    172,
+    67
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.3.icon",
+   "kind": "rect",
+   "rect": [
+    959,
+    477,
+    30,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.3.caption",
+   "kind": "text",
+   "text": "RANGE",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 43,
+   "x": 1005,
+   "baseline": 479,
+   "align": "left",
+   "color": "#e2dbd2",
+   "size": 11,
+   "pen_x": 1005
+  },
+  {
+   "id": "stat.3.value",
+   "kind": "text",
+   "text": "146",
+   "font": "crimson",
+   "weight": 700,
+   "width": 38,
+   "x": 1006,
+   "baseline": 509,
+   "align": "left",
+   "color": "#fff7d6",
+   "size": 26,
+   "pen_x": 1006
+  },
+  {
+   "id": "stat.4",
+   "kind": "rect",
+   "rect": [
+    753,
+    531,
+    180,
+    67
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.4.icon",
+   "kind": "rect",
+   "rect": [
+    768,
+    549,
+    23,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.4.caption",
+   "kind": "text",
+   "text": "RECOVERY",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 77,
+   "x": 814,
+   "baseline": 555,
+   "align": "left",
+   "color": "#ded8d1",
+   "size": 13,
+   "pen_x": 814
+  },
+  {
+   "id": "stat.4.value",
+   "kind": "text",
+   "text": "8s",
+   "font": "crimson",
+   "weight": 700,
+   "width": 24,
+   "x": 814,
+   "baseline": 586,
+   "align": "left",
+   "color": "#fff9d7",
+   "size": 24,
+   "pen_x": 814
+  },
+  {
+   "id": "button.left",
+   "kind": "rect",
+   "rect": [
+    753,
+    610,
+    216,
+    62
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.left.label",
+   "kind": "text",
+   "text": "Unequip",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 86,
+   "x": 863,
+   "baseline": 648,
+   "align": "center",
+   "color": "#ffffe0",
+   "size": 18
+  },
+  {
+   "id": "button.right",
+   "kind": "rect",
+   "rect": [
+    978,
+    610,
+    265,
+    62
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.right.label",
+   "kind": "text",
+   "text": "Upgrade",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 91,
+   "x": 1035,
+   "baseline": 649,
+   "align": "left",
+   "color": "#0c0000",
+   "size": 19,
+   "pen_x": 1035
+  },
+  {
+   "id": "button.right.cost",
+   "kind": "text",
+   "text": "59",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 22,
+   "x": 1136,
+   "baseline": 649,
+   "align": "left",
+   "color": "#110200",
+   "size": 18,
+   "pen_x": 1136
+  },
+  {
+   "id": "button.right.icon",
+   "kind": "rect",
+   "rect": [
+    1172,
+    625,
+    37,
+    31
+   ],
+   "role": "icon"
+  }
+ ],
+ "notes": "Armory modal, Warband tab selected (tab.warband has the lit gold frame, warm label colour and diamond finials top/bottom; the other four tabs are idle navy). Same modal chrome as spells.json (modal, header, tabs, close). Header subtitle reads 'SQUAD 5 / 6' and is split into a caption (subtitle) and a dynamic count (subtitle.count) because the concept's word gap is wider than Cinzel's. Squad strip: six unit cards, taller than the spell slots (109 px, so the strip panel runs to y 268 and the lower panels start at 272, 8 px lower than in spells). Slots 1-5 hold Lv 1 units, each with 1 of 4 pips filled: 1 swordsman with shield, 2 archer, 3 archer (selected: glowing orange frame, 1 px taller, warm badge), 4 shield bearer, 5 spearman. The spearman's spear tip pokes 4 px above the card top, so slot.5.art starts above the card. Slot 6 is empty (grey plus and 'Empty slot'; no class icon, level or pips). Number badges are gold plates in each card's top-left corner with black serif numerals. The concept numerals are taller and narrower than Crimson (ink 16 px tall), so the width-fitted size draws them shorter (same as spells). Unit collection: 3x3 grid of uniform cells (94x91, columns at 51/154/258, rows at 348/450/552). Each cell has a dark corner tab with a gold class icon and a unit picture. There is no level text and no pips in the cells on this screen. grid.0.1 (Archer) is selected with the orange glow frame, which reaches about 1 px outside the cell rect. All 9 cells are fully visible. The scrollbar is a gold track with end caps (344-651) and a hexagonal thumb at 411-449, a little below the top, not at scroll position 0. The concept label reads 'Unit Collection' with a capital C; the game's sentence-case convention would be 'Unit collection' (spells uses 'Spell collection'). The preview well shows the selected Archer on a pedestal with prev/next chevrons. The detail column has no frame: wood on the left and a parchment map with lantern/helmet on the right, bleeding to the modal edge. It shows a bow icon + 'Archer' and 'LEVEL 1' with 1 of 4 pips. 'LEVEL 1' is split into detail.level ('LEVEL') and detail.level.value ('1') because the concept's word gap is wider. detail.level.value gives an explicit size 19 instead of a width, since width-fitting a single narrow glyph would shrink it. A translucent chip shows a class medallion + 'Support \u00b7 Equipped' (no second chip icon on this screen), then a thin gold rule with a small diamond at its left end that fades out to the right. There is no description line. Five stat tiles (2+2+1, icon left, Cinzel caption + Crimson value): HEALTH 48, DAMAGE 10, COURAGE 24, RANGE 146, RECOVERY 8s. All captions have a 9 px cap height (about Cinzel 13), but the width-fit gives 11-13 because the concept letter widths vary. Values are condensed bold figures (ink 19 px tall), so the width-fitted Crimson sizes (23-26) draw them shorter. Buttons: UNEQUIP (navy, left, label centred) and UPGRADE 59 (gold, primary, dark label + gold coin pile icon). UPGRADE and its cost are separate text elements (button.right.label / button.right.cost) because the concept leaves a wider gap before the number, mirroring spells' SCRIBE 134."
+}

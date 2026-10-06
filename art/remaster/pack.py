@@ -284,7 +284,7 @@ def apply(allow_new=False):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('action', choices=['stage', 'apply'])
-    ap.add_argument('--only', default='units,items,structures,particles,menus,battlefields,maps,codex')
+    ap.add_argument('--only', default='units,items,structures,particles,codex')
     ap.add_argument('--allow-new', action='store_true', help='also create files the game does not ship yet')
     a = ap.parse_args()
     if a.action == 'apply':
@@ -299,11 +299,5 @@ if __name__ == '__main__':
             pack_structures()
         if 'particles' in only:
             pack_simple('particles', 'assets/particles', (128, 128))
-        if 'menus' in only:
-            pack_simple('menus', 'assets/ui/backgrounds', (1280, 720))
-        if 'battlefields' in only:
-            pack_simple('battlefields', 'assets/backgrounds', (1280, 720))
-        if 'maps' in only:
-            pack_simple('maps', 'assets/map/backgrounds', (1280, 960))
         if 'codex' in only:
             pack_codex()

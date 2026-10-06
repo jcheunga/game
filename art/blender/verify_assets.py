@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import sys
 from PIL import Image
-from pack_assets import ROOT,ART,REVIEW,UNITS,SPELLS,RELICS,STAGES,catalog_array,audit
+from pack_assets import ROOT,ART,REVIEW,UNITS,catalog_array,audit
 
 failures=[]
 checked=[]
@@ -37,7 +37,6 @@ for unit in UNITS:
     check(path,(1536,240*((frame_count+7)//8)),transparent=True)
     for frame in range(frame_count):check(REVIEW/'units'/ident/f'{frame:03}.png',(256,320),True,margin=True)
     check(ROOT/'assets/ui/icons/units'/f'{ident}.png',(256,256),True)
-    check(ROOT/'assets/ui/portraits/codex'/f'{ident}.png',(512,512),True)
     if path.with_suffix('.json').exists():
         meta=json.loads(path.with_suffix('.json').read_text())
         if frame_count not in (28,32):failures.append('Wrong clip count: '+ident)
@@ -45,15 +44,13 @@ for unit in UNITS:
         if not .5<meta['anchorY']<1:failures.append('Invalid ground anchor: '+ident)
         if not .1<meta['healthBarY']<1:failures.append('Invalid health bar height: '+ident)
 
-for key in ('structures','caravan_skins','weapon_mounts','particles','spell_icons','relic_icons','reward_icons','meta_icons'):
+for key in ('structures','caravan_skins','weapon_mounts','particles','reward_icons','meta_icons'):
     # Gather catalog paths explicitly, avoiding unrelated pre-existing assets.
     paths={
         'structures':[ROOT/'assets/structures'/f'{x}.png' for x in catalog_array('StructureIds')],
         'caravan_skins':list((ROOT/'assets/structures').glob('war_wagon_skin_*.png')),
-        'weapon_mounts':[ROOT/'assets/structures'/f'mount_{x}.png' for x in ('arrows','ballista','firepot','frost','hex')],
+        'weapon_mounts':[ROOT/'assets/structures'/f'mount_{x}.png' for x in ('arrows','ballista','firepot')],
         'particles':[ROOT/'assets/particles'/f'{x}.png' for x in catalog_array('ParticleTextureIds')],
-        'spell_icons':[ROOT/'assets/ui/icons/spells'/f'{x["Id"]}.png' for x in SPELLS],
-        'relic_icons':[ROOT/'assets/ui/icons/relics'/f'{x["Id"]}.png' for x in RELICS],
         'reward_icons':[ROOT/'assets/ui/icons/rewards'/f'{x}.png' for x in catalog_array('RewardIconIds')],
         'meta_icons':[ROOT/'assets/ui/icons/meta'/f'{x}.png' for x in catalog_array('MetaIconIds')],
     }[key]
@@ -62,20 +59,9 @@ for key in ('structures','caravan_skins','weapon_mounts','particles','spell_icon
 source_paths=[ART/'lantern_caravan.blend',ART/'gatehouse/gatehouse.blend']
 source_paths += [ART/'units'/f'{u["Id"]}.blend' for u in UNITS]
 source_paths += [ART/'caravans'/f'war_wagon_skin_{i}.blend' for i in ('iron','royal','bone','flame','shadow','guild','legendary')]
-source_paths += [ART/'mounts'/f'mount_{i}.blend' for i in ('arrows','ballista','firepot','frost','hex')]
-source_paths += [ART/'items'/f'{x["Id"]}.blend' for x in SPELLS+RELICS]
+source_paths += [ART/'mounts'/f'mount_{i}.blend' for i in ('arrows','ballista','firepot')]
 source_paths += [ART/'items'/f'{i}.blend' for i in catalog_array('RewardIconIds')+catalog_array('MetaIconIds')]
 source_paths += [ART/'particles'/f'{i}.blend' for i in catalog_array('ParticleTextureIds')]
-for category,folder,ids,size in (
-    ('battlefields','backgrounds',sorted({s['TerrainId'] for s in STAGES}),(1280,720)),
-):
-    for ident in ids:
-        check(ROOT/'assets'/folder/f'{ident}.png',size,opaque=True)
-        source_paths.append(ART/category/f'{ident}.blend')
-for stage in STAGES:
-    check(ROOT/'assets/world/battles'/f'stage-{stage["StageNumber"]:02}.png',opaque=True)
-for atlas in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery'):
-    check(ROOT/'assets/world/overworld/polished-v3'/f'{atlas}.png')
 for path in source_paths:
     if not path.exists() or path.stat().st_size<1000:failures.append(f'Missing/empty source: {path.relative_to(ROOT)}')
 

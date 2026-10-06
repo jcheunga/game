@@ -61,9 +61,6 @@ public static class ProjectileStyles
     public static readonly ProjectileStyle Harpoon = new("harpoon", Sprite: "harpoon", Length: 32, Arc: .07f, ArcMax: 18,
         Trail: ProjectileTrail.Streak, TrailColor: "cfe6ee", Impact: ProjectileImpact.Heavy, Launch: ProjectileLaunch.Dust,
         MaxSpeed: 620);
-    public static readonly ProjectileStyle FrostShard = new("frost_shard", Sprite: "frost_shard", Length: 13, Arc: .04f,
-        ArcMax: 8, Glow: "a4e7ef", GlowRadius: 8, Trail: ProjectileTrail.Frost, TrailColor: "d8fbff",
-        Impact: ProjectileImpact.Frost, Launch: ProjectileLaunch.Flash);
     public static readonly ProjectileStyle Flask = new("flask", Sprite: "flask", Length: 7, Orient: ProjectileOrient.Spin,
         Arc: .32f, ArcMax: 58, Spin: 13, Glow: "ff9a3c", GlowRadius: 9, Trail: ProjectileTrail.Embers, TrailColor: "ff9a3c",
         Impact: ProjectileImpact.Shatter);
@@ -139,14 +136,12 @@ public static class ProjectileStyles
         };
     }
 
-    /// <summary>A base weapon's shot; <paramref name="shot"/> names a sprite that replaces its kind's (the harbour's harpoon).</summary>
-    public static ProjectileStyle ForBaseWeapon(BaseWeaponKind kind, string shot = null) => kind switch
+    /// <summary>A wagon weapon's shot.</summary>
+    public static ProjectileStyle ForBaseWeapon(BaseWeaponKind kind) => kind switch
     {
         BaseWeaponKind.Arrows => Arrow,
-        BaseWeaponKind.Ballista => shot == Harpoon.Sprite ? Harpoon : BallistaBolt,
+        BaseWeaponKind.Ballista => BallistaBolt,
         BaseWeaponKind.Firepot => Firepot,
-        BaseWeaponKind.Frost => FrostShard,
-        BaseWeaponKind.Hex => Hex,
         _ => Default
     };
 

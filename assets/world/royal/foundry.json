@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "foundry_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    407.88,
+    198.16,
+    384.24,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    2117,
+    594
+   ],
+   "file": "foundry_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    333.69,
+    303.35,
+    532.61,
+    175.71
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    672
+   ],
+   "file": "foundry_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    484.21,
+    233.78,
+    231.58,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    1739,
+    616
+   ],
+   "file": "foundry_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    439.52,
+    399.72,
+    320.95,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    464
+   ],
+   "file": "foundry_front.png"
+  }
+ ],
+ "sky": "75291c",
+ "generator": "art/royal/backdrops.py"
+}

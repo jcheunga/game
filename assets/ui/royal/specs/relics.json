@@ -1,0 +1,1286 @@
+{
+ "screen": "relics",
+ "ref": "art/royal/ref/menu-03-relics-armory.png",
+ "elements": [
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    666
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    106
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.crest",
+   "kind": "rect",
+   "rect": [
+    55,
+    30,
+    85,
+    85
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Relics",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 188,
+   "x": 161,
+   "baseline": 83,
+   "align": "left",
+   "color": "#f7dfac",
+   "style": "gold",
+   "size": 55,
+   "pen_x": 161
+  },
+  {
+   "id": "subtitle.icon",
+   "kind": "rect",
+   "rect": [
+    162,
+    94,
+    24,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "text": "SQUAD",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 61,
+   "x": 199,
+   "baseline": 111,
+   "align": "left",
+   "color": "#f6f5f2",
+   "size": 16,
+   "pen_x": 199
+  },
+  {
+   "id": "subtitle.count",
+   "kind": "text",
+   "text": "5 / 6",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 40,
+   "x": 268,
+   "baseline": 111,
+   "align": "left",
+   "color": "#f6f5f2",
+   "size": 19,
+   "pen_x": 268
+  },
+  {
+   "id": "tab.warband",
+   "kind": "rect",
+   "rect": [
+    621,
+    57,
+    118,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.warband.icon",
+   "kind": "rect",
+   "rect": [
+    667,
+    69,
+    27,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.warband.label",
+   "kind": "text",
+   "text": "Warband",
+   "font": "crimson",
+   "weight": 500,
+   "width": 67,
+   "x": 680.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c8c0bb",
+   "size": 17
+  },
+  {
+   "id": "tab.spells",
+   "kind": "rect",
+   "rect": [
+    737,
+    57,
+    103,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.spells.icon",
+   "kind": "rect",
+   "rect": [
+    781,
+    69,
+    17,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.spells.label",
+   "kind": "text",
+   "text": "Spells",
+   "font": "crimson",
+   "weight": 500,
+   "width": 41,
+   "x": 789.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c8c0bb",
+   "size": 17
+  },
+  {
+   "id": "tab.war_wagon",
+   "kind": "rect",
+   "rect": [
+    838,
+    57,
+    116,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.war_wagon.icon",
+   "kind": "rect",
+   "rect": [
+    883,
+    68,
+    29,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.war_wagon.label",
+   "kind": "text",
+   "text": "War wagon",
+   "font": "crimson",
+   "weight": 500,
+   "width": 79,
+   "x": 897.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c8c0bb",
+   "size": 16
+  },
+  {
+   "id": "tab.relics",
+   "kind": "rect",
+   "rect": [
+    955,
+    56,
+    114,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.relics.icon",
+   "kind": "rect",
+   "rect": [
+    999,
+    68,
+    27,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.relics.label",
+   "kind": "text",
+   "text": "Relics",
+   "font": "crimson",
+   "weight": 500,
+   "width": 42,
+   "x": 1013.0,
+   "baseline": 111,
+   "align": "center",
+   "color": "#f8ecb6",
+   "size": 17
+  },
+  {
+   "id": "tab.adviser",
+   "kind": "rect",
+   "rect": [
+    1070,
+    57,
+    109,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.adviser.icon",
+   "kind": "rect",
+   "rect": [
+    1112,
+    69,
+    24,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.adviser.label",
+   "kind": "text",
+   "text": "Adviser",
+   "font": "crimson",
+   "weight": 500,
+   "width": 53,
+   "x": 1124.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#c8c0bb",
+   "size": 16
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    54,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1200,
+    41,
+    25,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "collection",
+   "kind": "rect",
+   "rect": [
+    40,
+    131,
+    417,
+    551
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.title",
+   "kind": "rect",
+   "rect": [
+    46,
+    146,
+    410,
+    53
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.label",
+   "kind": "text",
+   "text": "Collection",
+   "font": "crimson",
+   "weight": 500,
+   "width": 100,
+   "x": 71,
+   "baseline": 180,
+   "align": "left",
+   "color": "#fffcd8",
+   "size": 23,
+   "pen_x": 71
+  },
+  {
+   "id": "collection.filter",
+   "kind": "rect",
+   "rect": [
+    318,
+    153,
+    124,
+    38
+   ],
+   "role": "dropdown"
+  },
+  {
+   "id": "collection.filter.label",
+   "kind": "text",
+   "text": "All",
+   "font": "crimson",
+   "weight": 500,
+   "width": 22,
+   "x": 335,
+   "baseline": 179,
+   "align": "left",
+   "color": "#fffcdd",
+   "size": 18,
+   "pen_x": 335
+  },
+  {
+   "id": "collection.filter.arrow",
+   "kind": "rect",
+   "rect": [
+    417,
+    170,
+    13,
+    8
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.0.0",
+   "kind": "rect",
+   "rect": [
+    56,
+    212,
+    120,
+    132
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.0.0.art",
+   "kind": "rect",
+   "rect": [
+    60,
+    216,
+    112,
+    98
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.0.0.corner",
+   "kind": "rect",
+   "rect": [
+    57,
+    213,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.0.0.icon",
+   "kind": "rect",
+   "rect": [
+    65,
+    219,
+    17,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.0.0.label",
+   "kind": "text",
+   "text": "Iron Pendant",
+   "font": "crimson",
+   "weight": 500,
+   "width": 79,
+   "x": 116.5,
+   "baseline": 332,
+   "align": "center",
+   "color": "#f5f0e0",
+   "size": 14
+  },
+  {
+   "id": "card.0.1",
+   "kind": "rect",
+   "rect": [
+    187,
+    212,
+    118,
+    132
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.0.1.art",
+   "kind": "rect",
+   "rect": [
+    191,
+    216,
+    110,
+    98
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.0.1.corner",
+   "kind": "rect",
+   "rect": [
+    188,
+    213,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.0.1.icon",
+   "kind": "rect",
+   "rect": [
+    195,
+    221,
+    16,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.0.1.label",
+   "kind": "text",
+   "text": "Swift Boots",
+   "font": "crimson",
+   "weight": 500,
+   "width": 70,
+   "x": 245.0,
+   "baseline": 333,
+   "align": "center",
+   "color": "#f6f5ee",
+   "size": 15
+  },
+  {
+   "id": "card.0.2",
+   "kind": "rect",
+   "rect": [
+    316,
+    212,
+    117,
+    132
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.0.2.art",
+   "kind": "rect",
+   "rect": [
+    320,
+    216,
+    109,
+    98
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.0.2.corner",
+   "kind": "rect",
+   "rect": [
+    317,
+    213,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.0.2.icon",
+   "kind": "rect",
+   "rect": [
+    323,
+    221,
+    19,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.0.2.label",
+   "kind": "text",
+   "text": "Wolftooth Charm",
+   "font": "crimson",
+   "weight": 500,
+   "width": 102,
+   "x": 374.0,
+   "baseline": 334,
+   "align": "center",
+   "color": "#f4f2e9",
+   "size": 14
+  },
+  {
+   "id": "card.1.0",
+   "kind": "rect",
+   "rect": [
+    54,
+    354,
+    123,
+    134
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.1.0.art",
+   "kind": "rect",
+   "rect": [
+    60,
+    360,
+    112,
+    97
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.1.0.corner",
+   "kind": "rect",
+   "rect": [
+    57,
+    357,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.1.0.icon",
+   "kind": "rect",
+   "rect": [
+    65,
+    360,
+    16,
+    26
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.1.0.label",
+   "kind": "text",
+   "text": "Spectral Lantern",
+   "font": "crimson",
+   "weight": 500,
+   "width": 101,
+   "x": 115.5,
+   "baseline": 477,
+   "align": "center",
+   "color": "#f2efe7",
+   "size": 14
+  },
+  {
+   "id": "card.1.1",
+   "kind": "rect",
+   "rect": [
+    187,
+    356,
+    118,
+    131
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.1.1.art",
+   "kind": "rect",
+   "rect": [
+    191,
+    360,
+    110,
+    97
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.1.1.corner",
+   "kind": "rect",
+   "rect": [
+    188,
+    357,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.1.1.icon",
+   "kind": "rect",
+   "rect": [
+    196,
+    364,
+    16,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.1.1.label",
+   "kind": "text",
+   "text": "Sage's Ring",
+   "font": "crimson",
+   "weight": 500,
+   "width": 69,
+   "x": 245.5,
+   "baseline": 477,
+   "align": "center",
+   "color": "#e7e5e0",
+   "size": 14
+  },
+  {
+   "id": "card.1.2",
+   "kind": "rect",
+   "rect": [
+    316,
+    356,
+    117,
+    131
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.1.2.art",
+   "kind": "rect",
+   "rect": [
+    320,
+    360,
+    109,
+    97
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.1.2.corner",
+   "kind": "rect",
+   "rect": [
+    317,
+    357,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.1.2.icon",
+   "kind": "rect",
+   "rect": [
+    323,
+    364,
+    19,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.1.2.label",
+   "kind": "text",
+   "text": "Windrunner Cloak",
+   "font": "crimson",
+   "weight": 500,
+   "width": 101,
+   "x": 373.5,
+   "baseline": 477,
+   "align": "center",
+   "color": "#ebe7df",
+   "size": 13
+  },
+  {
+   "id": "card.2.0",
+   "kind": "rect",
+   "rect": [
+    56,
+    499,
+    120,
+    125
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.2.0.art",
+   "kind": "rect",
+   "rect": [
+    60,
+    503,
+    112,
+    91
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.2.0.corner",
+   "kind": "rect",
+   "rect": [
+    57,
+    500,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.2.0.icon",
+   "kind": "rect",
+   "rect": [
+    63,
+    507,
+    21,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.2.0.label",
+   "kind": "text",
+   "text": "Crown of Valor",
+   "font": "crimson",
+   "weight": 500,
+   "width": 93,
+   "x": 116.5,
+   "baseline": 612,
+   "align": "center",
+   "color": "#eae7de",
+   "size": 14
+  },
+  {
+   "id": "card.2.1",
+   "kind": "rect",
+   "rect": [
+    187,
+    499,
+    118,
+    125
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.2.1.art",
+   "kind": "rect",
+   "rect": [
+    191,
+    503,
+    110,
+    91
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.2.1.corner",
+   "kind": "rect",
+   "rect": [
+    188,
+    500,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.2.1.icon",
+   "kind": "rect",
+   "rect": [
+    193,
+    506,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.2.1.label",
+   "kind": "text",
+   "text": "Moonfire Talisman",
+   "font": "crimson",
+   "weight": 500,
+   "width": 102,
+   "x": 245.0,
+   "baseline": 612,
+   "align": "center",
+   "color": "#ede9e1",
+   "size": 13
+  },
+  {
+   "id": "card.2.2",
+   "kind": "rect",
+   "rect": [
+    316,
+    499,
+    117,
+    125
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.2.2.art",
+   "kind": "rect",
+   "rect": [
+    320,
+    503,
+    109,
+    91
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.2.2.corner",
+   "kind": "rect",
+   "rect": [
+    317,
+    500,
+    32,
+    35
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "card.2.2.icon",
+   "kind": "rect",
+   "rect": [
+    324,
+    507,
+    18,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.2.2.label",
+   "kind": "text",
+   "text": "Ascendant's Signet",
+   "font": "crimson",
+   "weight": 500,
+   "width": 101,
+   "x": 373.5,
+   "baseline": 612,
+   "align": "center",
+   "color": "#eae7de",
+   "size": 13
+  },
+  {
+   "id": "grid.scroll",
+   "kind": "rect",
+   "rect": [
+    442,
+    209,
+    6,
+    447
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "grid.scroll.thumb",
+   "kind": "rect",
+   "rect": [
+    442,
+    213,
+    6,
+    114
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    61,
+    639,
+    234,
+    43
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    124,
+    650,
+    14,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 57,
+   "x": 166,
+   "baseline": 669,
+   "align": "left",
+   "color": "#ffefbc",
+   "size": 19,
+   "pen_x": 166
+  },
+  {
+   "id": "preview",
+   "kind": "rect",
+   "rect": [
+    470,
+    146,
+    389,
+    520
+   ],
+   "role": "preview"
+  },
+  {
+   "id": "preview.prev",
+   "kind": "rect",
+   "rect": [
+    488,
+    396,
+    19,
+    35
+   ],
+   "role": "button"
+  },
+  {
+   "id": "preview.next",
+   "kind": "rect",
+   "rect": [
+    814,
+    396,
+    19,
+    34
+   ],
+   "role": "button"
+  },
+  {
+   "id": "detail",
+   "kind": "rect",
+   "rect": [
+    872,
+    152,
+    359,
+    329
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.titlebar",
+   "kind": "rect",
+   "rect": [
+    872,
+    152,
+    359,
+    68
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.icon.plate",
+   "kind": "rect",
+   "rect": [
+    872,
+    152,
+    74,
+    72
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "detail.icon",
+   "kind": "rect",
+   "rect": [
+    896,
+    163,
+    31,
+    55
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.name",
+   "kind": "text",
+   "text": "Spectral Lantern",
+   "font": "crimson",
+   "weight": 600,
+   "width": 244,
+   "x": 955,
+   "baseline": 196,
+   "align": "left",
+   "color": "#fff6ca",
+   "size": 35,
+   "pen_x": 955
+  },
+  {
+   "id": "detail.desc.1",
+   "kind": "text",
+   "text": "A ghostly lamp that reveals weakness",
+   "font": "crimson",
+   "weight": 700,
+   "width": 288,
+   "x": 897,
+   "baseline": 256,
+   "align": "left",
+   "color": "#140d09",
+   "size": 17,
+   "pen_x": 897
+  },
+  {
+   "id": "detail.desc.2",
+   "kind": "text",
+   "text": "in the undead.",
+   "font": "crimson",
+   "weight": 700,
+   "width": 110,
+   "x": 898,
+   "baseline": 277,
+   "align": "left",
+   "color": "#120c08",
+   "size": 17,
+   "pen_x": 898
+  },
+  {
+   "id": "detail.stats",
+   "kind": "rect",
+   "rect": [
+    895,
+    286,
+    312,
+    181
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "stat.0",
+   "kind": "rect",
+   "rect": [
+    895,
+    286,
+    312,
+    60
+   ],
+   "role": "row"
+  },
+  {
+   "id": "stat.0.icon",
+   "kind": "rect",
+   "rect": [
+    919,
+    298,
+    23,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.0.value",
+   "kind": "text",
+   "text": "+24%",
+   "font": "crimson",
+   "weight": 700,
+   "width": 45,
+   "x": 982,
+   "baseline": 314,
+   "align": "left",
+   "color": "#f6ebbd",
+   "size": 19,
+   "pen_x": 982
+  },
+  {
+   "id": "stat.0.caption",
+   "kind": "text",
+   "text": "Damage",
+   "font": "crimson",
+   "weight": 600,
+   "width": 55,
+   "x": 982,
+   "baseline": 333,
+   "align": "left",
+   "color": "#bcb5aa",
+   "size": 15,
+   "pen_x": 982
+  },
+  {
+   "id": "stat.1",
+   "kind": "rect",
+   "rect": [
+    895,
+    346,
+    312,
+    60
+   ],
+   "role": "row"
+  },
+  {
+   "id": "stat.1.icon",
+   "kind": "rect",
+   "rect": [
+    914,
+    364,
+    33,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.1.value",
+   "kind": "text",
+   "text": "-4%",
+   "font": "crimson",
+   "weight": 700,
+   "width": 32,
+   "x": 981,
+   "baseline": 374,
+   "align": "left",
+   "color": "#fff7c6",
+   "size": 18,
+   "pen_x": 981
+  },
+  {
+   "id": "stat.1.caption",
+   "kind": "text",
+   "text": "Cooldown",
+   "font": "crimson",
+   "weight": 600,
+   "width": 68,
+   "x": 982,
+   "baseline": 393,
+   "align": "left",
+   "color": "#c7bcaf",
+   "size": 15,
+   "pen_x": 982
+  },
+  {
+   "id": "stat.2",
+   "kind": "rect",
+   "rect": [
+    895,
+    406,
+    312,
+    61
+   ],
+   "role": "row"
+  },
+  {
+   "id": "stat.2.icon",
+   "kind": "rect",
+   "rect": [
+    918,
+    421,
+    25,
+    33
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.2.value",
+   "kind": "text",
+   "text": "EPIC",
+   "font": "crimson",
+   "weight": 700,
+   "width": 40,
+   "x": 982,
+   "baseline": 434,
+   "align": "left",
+   "color": "#fcebb5",
+   "size": 19,
+   "pen_x": 982
+  },
+  {
+   "id": "stat.2.caption",
+   "kind": "text",
+   "text": "Rarity",
+   "font": "crimson",
+   "weight": 600,
+   "width": 42,
+   "x": 982,
+   "baseline": 453,
+   "align": "left",
+   "color": "#c3baaf",
+   "size": 16,
+   "pen_x": 982
+  },
+  {
+   "id": "button.equip",
+   "kind": "rect",
+   "rect": [
+    883,
+    498,
+    336,
+    74
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.equip.icon",
+   "kind": "rect",
+   "rect": [
+    965,
+    514,
+    29,
+    41
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.equip.label",
+   "kind": "text",
+   "text": "Equip",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 88,
+   "x": 1050,
+   "baseline": 546,
+   "align": "left",
+   "color": "#fff8d8",
+   "size": 29,
+   "pen_x": 1050
+  },
+  {
+   "id": "button.forge",
+   "kind": "rect",
+   "rect": [
+    883,
+    583,
+    337,
+    75
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.forge.icon",
+   "kind": "rect",
+   "rect": [
+    955,
+    602,
+    48,
+    40
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.forge.label",
+   "kind": "text",
+   "text": "Forge",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 88,
+   "x": 1046,
+   "baseline": 631,
+   "align": "left",
+   "color": "#1a0603",
+   "size": 25,
+   "pen_x": 1046
+  }
+ ],
+ "notes": "Armory modal, Relics tab selected (tab.relics has the lit gold frame with diamond finials and a warm label; the other tabs are idle navy with grey labels). Header subtitle 'SQUAD 5 / 6' is split into a caption and a dynamic count (the concept's word spacing is wider than Cinzel's). Left: framed collection panel with a 'Collection' title bar and an 'All' filter dropdown, a 3x3 grid of relic cards (pennant-shaped corner plate with a category glyph, item picture, centred name caption), a gold scrollbar with the thumb at the top (more rows below), and a navy BACK button with a chevron (BACK is drawn in uniform capitals here, unlike the spells screen's 'Back'). card.1.0 (Spectral Lantern) is selected: orange glowing frame, so its rect is the glow-frame edge and 1-2 px larger than the other cards. All other cards are idle; nothing is locked or equipped-marked. Card sizes are slightly irregular in the concept: columns 120/118/117 wide, rows 132/131/125 tall (the bottom row is shorter). Centre: preview well with the selected relic on a pedestal and prev/next chevrons. Right: detail card = dark title bar (lantern icon plate + 'Spectral Lantern') over a parchment body with a two-line dark description and a dark inset stats panel of three rows (icon, thin gold vertical divider at x 963-964, value over caption): +24% Damage, -4% Cooldown, EPIC Rarity. Below are two full-width buttons: EQUIP (navy, helmet icon, light label) and FORGE (gold, primary, crossed-hammers icon, dark label). Equip/Forge use Cinzel small caps (initial about 2 px taller); the concept's FORGE letters are narrower than Cinzel's, so the width-fitted size draws them about 3 px short."
+}

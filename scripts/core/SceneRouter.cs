@@ -102,11 +102,11 @@ public partial class SceneRouter : Node
 
     public void GoToShop(int tab = 0)
     {
-        InitialShopTab = Mathf.Clamp(tab, 0, 4);
+        InitialShopTab = Mathf.Clamp(tab, 0, 3);
         ChangeScene(ShopScene);
     }
 
-    public void SetInitialShopTab(int tab) => InitialShopTab = Mathf.Clamp(tab, 0, 4);
+    public void SetInitialShopTab(int tab) => InitialShopTab = Mathf.Clamp(tab, 0, 3);
 
     public int ConsumeInitialShopTab()
     {

@@ -1,4 +1,4 @@
-"""Model and render Crownroad relics, spell emblems, reward badges and particles."""
+"""Model and render Crownroad reward badges, meta icons and particles (spell and relic pictures are painted: art/royal/items.py)."""
 import argparse
 import json
 import math
@@ -379,9 +379,8 @@ def render_particle(ident):
 
 
 if args.category in ('all','icons'):
-    jobs=[(r['Id'],'relics',r['Rarity']) for r in json.loads((ROOT/'data/equipment.json').read_text())['Equipment']]
-    jobs += [(s['Id'],'spells','rare') for s in json.loads((ROOT/'data/spells.json').read_text())['Spells']]
-    jobs += [(i,'rewards','legendary') for i in catalog('RewardIconIds')]
+    # Spell and relic pictures are painted (art/royal/items.py); only reward and meta icons are modelled here.
+    jobs=[(i,'rewards','legendary') for i in catalog('RewardIconIds')]
     jobs += [(i,'meta','rare') for i in catalog('MetaIconIds')]
     for ident,category,rarity in jobs:
         if args.ids=='all' or ident in args.ids.split(','):render_icon(ident,category,rarity)

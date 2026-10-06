@@ -1,0 +1,1122 @@
+{
+ "screen": "wagon",
+ "ref": "art/royal/ref/ui-08-war-wagon-workshop.png",
+ "elements": [
+  {
+   "id": "banner",
+   "kind": "rect",
+   "rect": [
+    35,
+    0,
+    97,
+    133
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "banner.emblem",
+   "kind": "rect",
+   "rect": [
+    49,
+    18,
+    69,
+    86
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title.plate",
+   "kind": "rect",
+   "rect": [
+    132,
+    17,
+    282,
+    62
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "War Wagon",
+   "font": "cinzel",
+   "weight": 725,
+   "width": 222,
+   "x": 150,
+   "baseline": 62,
+   "align": "left",
+   "color": "#dfba82",
+   "style": "gold",
+   "size": 34,
+   "pen_x": 152
+  },
+  {
+   "id": "gold",
+   "kind": "rect",
+   "rect": [
+    1063,
+    23,
+    195,
+    52
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "gold.icon",
+   "kind": "rect",
+   "rect": [
+    1086,
+    35,
+    38,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "gold.value",
+   "kind": "text",
+   "text": "1,240",
+   "font": "crimson",
+   "weight": 500,
+   "width": 61,
+   "x": 1142,
+   "baseline": 58,
+   "align": "left",
+   "color": "#e7e5e2",
+   "size": 29,
+   "pen_x": 1142
+  },
+  {
+   "id": "card.1",
+   "kind": "rect",
+   "rect": [
+    24,
+    145,
+    372,
+    113
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.1.picture",
+   "kind": "rect",
+   "rect": [
+    37,
+    157,
+    96,
+    88
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.1.name",
+   "kind": "text",
+   "text": "PLATING",
+   "font": "cinzel",
+   "weight": 450,
+   "width": 77,
+   "x": 149,
+   "baseline": 181,
+   "align": "left",
+   "color": "#e0dedc",
+   "size": 17,
+   "pen_x": 149
+  },
+  {
+   "id": "card.1.level",
+   "kind": "text",
+   "text": "Level 1 / 5",
+   "font": "crimson",
+   "weight": 575,
+   "width": 78,
+   "x": 149,
+   "baseline": 208,
+   "align": "left",
+   "color": "#d6d5d4",
+   "size": 19,
+   "pen_x": 149
+  },
+  {
+   "id": "card.1.pip.1",
+   "kind": "rect",
+   "rect": [
+    148,
+    219,
+    22,
+    22
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "card.1.pip.2",
+   "kind": "rect",
+   "rect": [
+    176,
+    219,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.1.pip.3",
+   "kind": "rect",
+   "rect": [
+    204,
+    219,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.1.pip.4",
+   "kind": "rect",
+   "rect": [
+    232,
+    219,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.1.pip.5",
+   "kind": "rect",
+   "rect": [
+    260,
+    219,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.1.button",
+   "kind": "rect",
+   "rect": [
+    341,
+    195,
+    38,
+    38
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.1.button.icon",
+   "kind": "rect",
+   "rect": [
+    354,
+    204,
+    12,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.2",
+   "kind": "rect",
+   "rect": [
+    24,
+    286,
+    372,
+    113
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.2.picture",
+   "kind": "rect",
+   "rect": [
+    37,
+    298,
+    96,
+    88
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.2.name",
+   "kind": "text",
+   "text": "Stores",
+   "font": "cinzel",
+   "weight": 625,
+   "width": 70,
+   "x": 149,
+   "baseline": 323,
+   "align": "left",
+   "color": "#d9d6d3",
+   "size": 19,
+   "pen_x": 149
+  },
+  {
+   "id": "card.2.level",
+   "kind": "text",
+   "text": "Level 1 / 5",
+   "font": "crimson",
+   "weight": 575,
+   "width": 78,
+   "x": 149,
+   "baseline": 350,
+   "align": "left",
+   "color": "#d5d3d2",
+   "size": 19,
+   "pen_x": 149
+  },
+  {
+   "id": "card.2.pip.1",
+   "kind": "rect",
+   "rect": [
+    148,
+    360,
+    22,
+    22
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "card.2.pip.2",
+   "kind": "rect",
+   "rect": [
+    176,
+    360,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.2.pip.3",
+   "kind": "rect",
+   "rect": [
+    204,
+    360,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.2.pip.4",
+   "kind": "rect",
+   "rect": [
+    232,
+    360,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.2.pip.5",
+   "kind": "rect",
+   "rect": [
+    260,
+    360,
+    22,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.2.button",
+   "kind": "rect",
+   "rect": [
+    341,
+    336,
+    38,
+    38
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.2.button.icon",
+   "kind": "rect",
+   "rect": [
+    354,
+    345,
+    12,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.3",
+   "kind": "rect",
+   "rect": [
+    883,
+    109,
+    375,
+    110
+   ],
+   "role": "card",
+   "state": "selected"
+  },
+  {
+   "id": "card.3.picture",
+   "kind": "rect",
+   "rect": [
+    892,
+    118,
+    104,
+    92
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.3.name",
+   "kind": "text",
+   "text": "Mounted Ballista",
+   "font": "cinzel",
+   "weight": 625,
+   "width": 194,
+   "x": 1011,
+   "baseline": 145,
+   "align": "left",
+   "color": "#f0f0f0",
+   "size": 19,
+   "pen_x": 1012
+  },
+  {
+   "id": "card.3.level",
+   "kind": "text",
+   "text": "Level 1 / 5",
+   "font": "crimson",
+   "weight": 575,
+   "width": 78,
+   "x": 1012,
+   "baseline": 173,
+   "align": "left",
+   "color": "#dededd",
+   "size": 19,
+   "pen_x": 1012
+  },
+  {
+   "id": "card.3.pip.1",
+   "kind": "rect",
+   "rect": [
+    1011,
+    183,
+    22,
+    21
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "card.3.pip.2",
+   "kind": "rect",
+   "rect": [
+    1039,
+    183,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.3.pip.3",
+   "kind": "rect",
+   "rect": [
+    1066,
+    183,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.3.pip.4",
+   "kind": "rect",
+   "rect": [
+    1094,
+    183,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.3.pip.5",
+   "kind": "rect",
+   "rect": [
+    1122,
+    183,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.3.button",
+   "kind": "rect",
+   "rect": [
+    1203,
+    160,
+    39,
+    38
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.3.button.icon",
+   "kind": "rect",
+   "rect": [
+    1217,
+    169,
+    12,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.4",
+   "kind": "rect",
+   "rect": [
+    885,
+    238,
+    373,
+    112
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.4.picture",
+   "kind": "rect",
+   "rect": [
+    898,
+    251,
+    97,
+    87
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.4.name",
+   "kind": "text",
+   "text": "March Drum",
+   "font": "cinzel",
+   "weight": 675,
+   "width": 130,
+   "x": 1012,
+   "baseline": 275,
+   "align": "left",
+   "color": "#e1dedb",
+   "size": 18,
+   "pen_x": 1012
+  },
+  {
+   "id": "card.4.level",
+   "kind": "text",
+   "text": "Level 1 / 5",
+   "font": "crimson",
+   "weight": 575,
+   "width": 78,
+   "x": 1012,
+   "baseline": 302,
+   "align": "left",
+   "color": "#d7d6d5",
+   "size": 19,
+   "pen_x": 1012
+  },
+  {
+   "id": "card.4.pip.1",
+   "kind": "rect",
+   "rect": [
+    1011,
+    313,
+    22,
+    21
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "card.4.pip.2",
+   "kind": "rect",
+   "rect": [
+    1039,
+    313,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.4.pip.3",
+   "kind": "rect",
+   "rect": [
+    1066,
+    313,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.4.pip.4",
+   "kind": "rect",
+   "rect": [
+    1094,
+    313,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.4.pip.5",
+   "kind": "rect",
+   "rect": [
+    1122,
+    313,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.4.button",
+   "kind": "rect",
+   "rect": [
+    1203,
+    289,
+    39,
+    38
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.4.button.icon",
+   "kind": "rect",
+   "rect": [
+    1217,
+    298,
+    12,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.5",
+   "kind": "rect",
+   "rect": [
+    885,
+    368,
+    373,
+    111
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.5.picture",
+   "kind": "rect",
+   "rect": [
+    898,
+    380,
+    97,
+    87
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "card.5.name",
+   "kind": "text",
+   "text": "Rune Beacon",
+   "font": "cinzel",
+   "weight": 625,
+   "width": 132,
+   "x": 1011,
+   "baseline": 405,
+   "align": "left",
+   "color": "#dbd8d6",
+   "size": 18,
+   "pen_x": 1011
+  },
+  {
+   "id": "card.5.level",
+   "kind": "text",
+   "text": "Level 1 / 5",
+   "font": "crimson",
+   "weight": 575,
+   "width": 78,
+   "x": 1012,
+   "baseline": 432,
+   "align": "left",
+   "color": "#d8d7d6",
+   "size": 19,
+   "pen_x": 1012
+  },
+  {
+   "id": "card.5.pip.1",
+   "kind": "rect",
+   "rect": [
+    1011,
+    442,
+    22,
+    21
+   ],
+   "role": "pip",
+   "state": "filled"
+  },
+  {
+   "id": "card.5.pip.2",
+   "kind": "rect",
+   "rect": [
+    1039,
+    442,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.5.pip.3",
+   "kind": "rect",
+   "rect": [
+    1066,
+    442,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.5.pip.4",
+   "kind": "rect",
+   "rect": [
+    1094,
+    442,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.5.pip.5",
+   "kind": "rect",
+   "rect": [
+    1122,
+    442,
+    22,
+    21
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "card.5.button",
+   "kind": "rect",
+   "rect": [
+    1203,
+    418,
+    39,
+    39
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.5.button.icon",
+   "kind": "rect",
+   "rect": [
+    1217,
+    427,
+    12,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "wagon",
+   "kind": "rect",
+   "rect": [
+    404,
+    93,
+    442,
+    396
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "callout.1.marker",
+   "kind": "rect",
+   "rect": [
+    478,
+    213,
+    20,
+    20
+   ],
+   "role": "marker"
+  },
+  {
+   "id": "callout.1",
+   "kind": "line",
+   "role": "callout",
+   "points": [
+    [
+     396,
+     189
+    ],
+    [
+     425,
+     189
+    ],
+    [
+     488,
+     223
+    ]
+   ],
+   "color": "#ffe893",
+   "thickness": 2,
+   "target": "card.1"
+  },
+  {
+   "id": "callout.2.marker",
+   "kind": "rect",
+   "rect": [
+    458,
+    291,
+    15,
+    15
+   ],
+   "role": "marker"
+  },
+  {
+   "id": "callout.2",
+   "kind": "line",
+   "role": "callout",
+   "points": [
+    [
+     396,
+     329
+    ],
+    [
+     411,
+     329
+    ],
+    [
+     465.5,
+     298.5
+    ]
+   ],
+   "color": "#ffe893",
+   "thickness": 2,
+   "target": "card.2"
+  },
+  {
+   "id": "callout.3.marker",
+   "kind": "rect",
+   "rect": [
+    740,
+    96,
+    21,
+    21
+   ],
+   "role": "marker"
+  },
+  {
+   "id": "callout.3",
+   "kind": "line",
+   "role": "callout",
+   "points": [
+    [
+     750.5,
+     106.5
+    ],
+    [
+     811,
+     106
+    ],
+    [
+     869,
+     131
+    ],
+    [
+     883,
+     131
+    ]
+   ],
+   "color": "#f2d48c",
+   "thickness": 2,
+   "target": "card.3"
+  },
+  {
+   "id": "callout.4.marker",
+   "kind": "rect",
+   "rect": [
+    813,
+    238,
+    15,
+    15
+   ],
+   "role": "marker"
+  },
+  {
+   "id": "callout.4",
+   "kind": "line",
+   "role": "callout",
+   "points": [
+    [
+     820.5,
+     245.5
+    ],
+    [
+     868,
+     277
+    ],
+    [
+     885,
+     277
+    ]
+   ],
+   "color": "#f2d48c",
+   "thickness": 2,
+   "target": "card.4"
+  },
+  {
+   "id": "detail",
+   "kind": "rect",
+   "rect": [
+    200,
+    490,
+    879,
+    210
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.well",
+   "kind": "rect",
+   "rect": [
+    206,
+    499,
+    370,
+    191
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.picture",
+   "kind": "rect",
+   "rect": [
+    215,
+    508,
+    358,
+    174
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "detail.title",
+   "kind": "text",
+   "text": "Mounted Ballista",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 234,
+   "x": 604,
+   "baseline": 539,
+   "align": "left",
+   "color": "#f0cd8d",
+   "style": "gold",
+   "size": 23,
+   "pen_x": 605
+  },
+  {
+   "id": "detail.desc.1",
+   "kind": "text",
+   "text": "A heavy ballista mounted on the war wagon.",
+   "font": "crimson",
+   "weight": 400,
+   "width": 315,
+   "x": 604,
+   "baseline": 568,
+   "align": "left",
+   "color": "#bdbdbc",
+   "size": 17,
+   "pen_x": 604
+  },
+  {
+   "id": "detail.desc.2",
+   "kind": "text",
+   "text": "Provides long-range fire support for your warband.",
+   "font": "crimson",
+   "weight": 400,
+   "width": 359,
+   "x": 605,
+   "baseline": 589,
+   "align": "left",
+   "color": "#babbbb",
+   "size": 17,
+   "pen_x": 605
+  },
+  {
+   "id": "detail.level",
+   "kind": "text",
+   "text": "LEVEL 1 / 5",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 91,
+   "x": 605,
+   "baseline": 628,
+   "align": "left",
+   "color": "#e0dfde",
+   "size": 18,
+   "pen_x": 605
+  },
+  {
+   "id": "detail.bar.1",
+   "kind": "rect",
+   "rect": [
+    604,
+    640,
+    37,
+    23
+   ],
+   "role": "progress",
+   "state": "filled"
+  },
+  {
+   "id": "detail.bar.2",
+   "kind": "rect",
+   "rect": [
+    643,
+    640,
+    37,
+    23
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "detail.bar.3",
+   "kind": "rect",
+   "rect": [
+    682,
+    640,
+    37,
+    23
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "detail.bar.4",
+   "kind": "rect",
+   "rect": [
+    721,
+    640,
+    37,
+    23
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "detail.bar.5",
+   "kind": "rect",
+   "rect": [
+    760,
+    640,
+    37,
+    23
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "detail.bar.1.fill",
+   "kind": "rect",
+   "rect": [
+    606,
+    642,
+    32,
+    19
+   ],
+   "role": "fill"
+  },
+  {
+   "id": "button.upgrade",
+   "kind": "rect",
+   "rect": [
+    835,
+    617,
+    223,
+    59
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.upgrade.icon",
+   "kind": "rect",
+   "rect": [
+    863,
+    633,
+    37,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.upgrade.label",
+   "kind": "text",
+   "text": "UPGRADE",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 82,
+   "x": 912,
+   "baseline": 654,
+   "align": "left",
+   "color": "#f1e39c",
+   "size": 16,
+   "pen_x": 912
+  },
+  {
+   "id": "button.upgrade.cost",
+   "kind": "text",
+   "text": "150",
+   "font": "crimson",
+   "weight": 625,
+   "width": 32,
+   "x": 1006,
+   "baseline": 654,
+   "align": "left",
+   "color": "#f6f6f6",
+   "size": 22,
+   "pen_x": 1006
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    25,
+    633,
+    161,
+    53
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    59,
+    649,
+    15,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK",
+   "font": "cinzel",
+   "weight": 650,
+   "width": 49,
+   "x": 104,
+   "baseline": 668,
+   "align": "left",
+   "color": "#dcd7d2",
+   "size": 17,
+   "pen_x": 104
+  }
+ ],
+ "notes": "Full-screen workshop with no modal frame, drawn over a blurred castle-yard backdrop. Header: teal heraldic banner (crown + lantern + laurels) hangs from the top-left edge, overlapping the start of the dark title plate (the plate continues behind the banner); gold plaque top-right. Upgrade cards: two on the left (card.1 Plating, card.2 Stores, x 24) and three on the right (card.3 Mounted Ballista, card.4 March Drum, card.5 Rune Beacon, x ~885); each card = picture well, Cinzel name, Crimson 'Level 1 / 5', five 22 px level squares on a 28 px pitch, and a square chevron button on the right. Selected state: card.3 Mounted Ballista has a bright gold glowing frame (#e4c784 to #fff3c3, glow bleeds ~3 px outside the rect) and a slightly larger picture well; it is the item shown in the bottom detail panel. Other cards use the plain dark-bronze frame. All five upgrades are at level 1 of 5: pip 1 is filled gold (#e1b14c), pips 2-5 are empty dark sockets; the detail bar likewise has segment 1 filled (detail.bar.1.fill) and 4 empty. Casing: card names render as Cinzel small caps (tall initials) except PLATING, which the concept draws as uniform caps; an implementation will probably want one style for all names. Callouts: kind 'line' elements are 2 px pale-gold polylines (points in canvas units) from a ring marker on the wagon (callout.N.marker rects, filled pale dot inside a gold ring) to the facing edge of card N: left cards are met on their right edge (x 396), right cards on their left edge (x 883/885). Card.5 Rune Beacon has no callout. The wagon illustration sits centred between the card columns, behind the callouts and above the detail panel. Detail panel: wooden outer frame, iron-framed picture well on the left, gold small-caps title, two grey Crimson description lines, 'LEVEL 1 / 5' in uniform Cinzel caps, five-segment level bar, teal UPGRADE button (coin icon, pale gold Cinzel label, white Crimson cost). BACK button sits bottom-left on the backdrop, left of the detail panel."
+}

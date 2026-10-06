@@ -40,8 +40,8 @@ cover the models. This applies on desktop too.
 
 Mobile battle preparation shows the victory rewards, a horizontally scrolling
 row of touch-sized squad cards (portrait and name), and the **Warband** and
-**Deploy** actions. Tapping a squad card opens the model inspector; on desktop
-preparation each squad card's **Details** button does the same. The armory
+**Deploy** actions. Tapping a squad card opens the model inspector, on desktop
+too. The armory
 shows the selected unit's animated model: tapping it opens the inspector, and
 dragging it does not.
 

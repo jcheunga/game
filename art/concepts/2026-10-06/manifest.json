@@ -1,0 +1,327 @@
+{
+  "project": "CROWNROAD: SIEGE OF ASH",
+  "generated_with": "built-in image_gen",
+  "sheet_count": 10,
+  "roster_count": 52,
+  "missing_roster_ids": [],
+  "sheets": [
+    {
+      "sheet": 1,
+      "district": "KING'S ROAD",
+      "file": "01-kings-road.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2984848,
+      "sha256": "7294bbf0e6a6bc3839c27f4d5ac1a66cb423998479c57b64d7abb16c9cab13a8",
+      "roster": [
+        {
+          "id": "player_brawler",
+          "name": "Swordsman"
+        },
+        {
+          "id": "player_shooter",
+          "name": "Archer"
+        },
+        {
+          "id": "player_defender",
+          "name": "Shield Knight"
+        },
+        {
+          "id": "enemy_walker",
+          "name": "Risen"
+        },
+        {
+          "id": "enemy_runner",
+          "name": "Ghoul"
+        },
+        {
+          "id": "enemy_boss",
+          "name": "Grave Lord"
+        }
+      ]
+    },
+    {
+      "sheet": 2,
+      "district": "SALTWAKE DOCKS",
+      "file": "02-saltwake-docks.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3285249,
+      "sha256": "53d817681e93c5b4089add6cea9ad33318f870188733d44062a1efb52cb551bd",
+      "roster": [
+        {
+          "id": "player_spear",
+          "name": "Spearman"
+        },
+        {
+          "id": "player_ranger",
+          "name": "Crossbowman"
+        },
+        {
+          "id": "enemy_bloater",
+          "name": "Rot Hulk"
+        },
+        {
+          "id": "enemy_boss_docks",
+          "name": "Tidecaller"
+        },
+        {
+          "id": "enemy_boss_tidemaster",
+          "name": "Harrow Tidemaster"
+        }
+      ]
+    },
+    {
+      "sheet": 3,
+      "district": "EMBERFORGE MARCH",
+      "file": "03-emberforge-march.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3182474,
+      "sha256": "9744c057188b35af08708efa5278287c4c398aa2e72747eb3a95f7ec48f218f7",
+      "roster": [
+        {
+          "id": "player_mechanic",
+          "name": "Siege Engineer"
+        },
+        {
+          "id": "player_grenadier",
+          "name": "Alchemist"
+        },
+        {
+          "id": "enemy_saboteur",
+          "name": "Sapper"
+        },
+        {
+          "id": "enemy_crusher",
+          "name": "Bone Juggernaut"
+        },
+        {
+          "id": "enemy_boss_forge",
+          "name": "Iron Warden"
+        },
+        {
+          "id": "enemy_boss_ashen_regent",
+          "name": "Ashen Regent"
+        }
+      ]
+    },
+    {
+      "sheet": 4,
+      "district": "ASHEN WARD",
+      "file": "04-ashen-ward.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3191792,
+      "sha256": "9e4665fafdc8bb24c96946586a60695b2f30f8bfcde50015e0ac087530893c79",
+      "roster": [
+        {
+          "id": "player_coordinator",
+          "name": "Battle Monk"
+        },
+        {
+          "id": "player_lantern_guard",
+          "name": "Lantern Guard"
+        },
+        {
+          "id": "enemy_spitter",
+          "name": "Blight Caster"
+        },
+        {
+          "id": "enemy_jammer",
+          "name": "Hexer"
+        },
+        {
+          "id": "enemy_boss_ward",
+          "name": "Plague Archon"
+        },
+        {
+          "id": "enemy_boss_plague_monarch",
+          "name": "Plague Monarch"
+        }
+      ]
+    },
+    {
+      "sheet": 5,
+      "district": "THORNWALL PASS",
+      "file": "05-thornwall-pass.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3112722,
+      "sha256": "ab71fa02e0a297468f55c69c7b9fa1495907ae212b6f2ab2188ec966fac38b5d",
+      "roster": [
+        {
+          "id": "player_breacher",
+          "name": "Halberdier"
+        },
+        {
+          "id": "player_berserker",
+          "name": "Berserker"
+        },
+        {
+          "id": "enemy_brute",
+          "name": "Grave Brute"
+        },
+        {
+          "id": "enemy_tunneler",
+          "name": "Tunneler"
+        },
+        {
+          "id": "enemy_boss_pass",
+          "name": "Thornwall Chieftain"
+        }
+      ]
+    },
+    {
+      "sheet": 6,
+      "district": "HOLLOW BASILICA",
+      "file": "06-hollow-basilica.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3120482,
+      "sha256": "23e4432500a50afb64f885e8d347a824d792a2a921354518c32864a51d523e7d",
+      "roster": [
+        {
+          "id": "player_necromancer",
+          "name": "Necromancer"
+        },
+        {
+          "id": "player_marksman",
+          "name": "Mage"
+        },
+        {
+          "id": "enemy_lich",
+          "name": "Lich"
+        },
+        {
+          "id": "enemy_catacomb_giant",
+          "name": "Catacomb Giant"
+        },
+        {
+          "id": "enemy_boss_basilica",
+          "name": "Bone Pontiff"
+        },
+        {
+          "id": "enemy_boss_reliquary",
+          "name": "Reliquary Tyrant"
+        }
+      ]
+    },
+    {
+      "sheet": 7,
+      "district": "MIRE OF SAINTS",
+      "file": "07-mire-of-saints.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3173099,
+      "sha256": "3ddb402ed422967e461b1668d2136fb6990b11fe4757c26f9af42ccc3d6fbfe3",
+      "roster": [
+        {
+          "id": "player_hound",
+          "name": "War Hound"
+        },
+        {
+          "id": "enemy_splitter",
+          "name": "Bone Nest"
+        },
+        {
+          "id": "enemy_plague_engine",
+          "name": "Plague Engine"
+        },
+        {
+          "id": "enemy_boss_mire",
+          "name": "Mire Behemoth"
+        }
+      ]
+    },
+    {
+      "sheet": 8,
+      "district": "SUNFALL STEPPE",
+      "file": "08-sunfall-steppe.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3176462,
+      "sha256": "14ada8392eceb876add8404910e810210b6fa9d469ac24a875a1c6683009601c",
+      "roster": [
+        {
+          "id": "player_raider",
+          "name": "Cavalry Rider"
+        },
+        {
+          "id": "player_banner",
+          "name": "Banner Knight"
+        },
+        {
+          "id": "enemy_howler",
+          "name": "Dread Herald"
+        },
+        {
+          "id": "enemy_revenant_captain",
+          "name": "Revenant Captain"
+        },
+        {
+          "id": "enemy_boss_steppe",
+          "name": "Steppe Warlord"
+        }
+      ]
+    },
+    {
+      "sheet": 9,
+      "district": "GLOAMWOOD VERGE",
+      "file": "09-gloamwood-verge.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3298213,
+      "sha256": "4ad4cf960cc1f5ac0d311f26a0698a015197a0fa9ebaee109855f97160909679",
+      "roster": [
+        {
+          "id": "player_rogue",
+          "name": "Rogue"
+        },
+        {
+          "id": "player_stormcaller",
+          "name": "Stormcaller"
+        },
+        {
+          "id": "enemy_mirror",
+          "name": "Mirror Knight"
+        },
+        {
+          "id": "enemy_shieldwall",
+          "name": "Shield Wall"
+        },
+        {
+          "id": "enemy_boss_verge",
+          "name": "Gloamwood Witch"
+        }
+      ]
+    },
+    {
+      "sheet": 10,
+      "district": "CROWNFALL CITADEL",
+      "file": "10-crownfall-citadel.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3069248,
+      "sha256": "cfdd3dd9afaeac887372e5c49a3b54a30fa9bd0d26d4f56bc6b196b0315cad0c",
+      "roster": [
+        {
+          "id": "player_ballista",
+          "name": "Ballista Crew"
+        },
+        {
+          "id": "enemy_boneballista",
+          "name": "Bone Ballista"
+        },
+        {
+          "id": "enemy_siegetower",
+          "name": "Siege Tower"
+        },
+        {
+          "id": "enemy_boss_citadel",
+          "name": "Dread Sovereign"
+        }
+      ]
+    }
+  ]
+}

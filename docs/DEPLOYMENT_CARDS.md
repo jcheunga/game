@@ -90,8 +90,8 @@ firing range of a base and hold there. Tooltips show "Hits bases" or
 - `scripts/combat/BattleController.CardDragging.cs`: gesture capture, unit taps,
   magic validation, cancellation and drag preview.
 - `scripts/combat/BattleController.Camera.cs`: soldier-scale zoom, band placement, follow and panning.
-- `art/ui/build_surfaces.py`: source for `assets/ui/frames/cost_badge.svg`.
-- `assets/ui/icons/units/` and `assets/ui/icons/spells/`: existing portrait artwork.
+- `scripts/combat/hud/BattleActionCard.cs`: the card art, round courage badge (`hud-cost` kit piece) and cooldown.
+- `assets/ui/icons/units/` and `assets/ui/royal/items/`: unit portraits and painted spell pictures.
 
 The visual crops transparent icon padding at runtime; no source PNG is modified.
 Crop bounds are cached, and each card releases its owned atlas wrapper when it

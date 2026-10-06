@@ -61,6 +61,4 @@ public static class AdventureTileCatalog
     }
     public static IEnumerable<AdventureTile> Surrounding(AdventureTile tile, int radius = 1) => ForMap(tile.MapId)
         .Where(other => Math.Max(Math.Abs(tile.Column - other.Column), Math.Abs(tile.Row - other.Row)) <= radius);
-    public static Vector2[] Boundary(AdventureTile tile, float inset = 0) => AdventureAtlasLandscape.Outline(tile)
-        .Select(point => inset == 0 ? point : point.MoveToward(tile.Point, inset)).ToArray();
 }

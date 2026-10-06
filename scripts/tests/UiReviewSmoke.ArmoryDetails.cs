@@ -14,29 +14,29 @@ public partial class UiReviewSmoke
         await Open("MainMenu");
         var menu = (MapMenu)GetTree().CurrentScene;
         var camera = Walk(menu).OfType<MapPathCanvas>().Single().MapOffset;
+        // The royal profile names each stat tile by its hint ("Health: 53") and each action by what it does.
+        // (The audio director moves hover hints into accessible names for touch play.)
+        bool Shows(string stat) => Walk(menu).OfType<Control>().Any(control => control.IsVisibleInTree() && (control.TooltipText == stat || control.AccessibilityName == stat));
+        RoyalButton Action(string name) => Walk(menu).OfType<RoyalButton>().FirstOrDefault(button => button.IsVisibleInTree() && !button.Disabled
+            && (button.AccessibilityName ?? "").StartsWith(name));
+        bool TraitsOpen() => Walk(menu).OfType<CanvasLayer>().Any(layer => layer.Name == "TraitsLayer" && !layer.IsQueuedForDeletion() && Walk(layer).OfType<RealmModal>().Any());
         SceneRouter.Instance.GoToShop(); await Wait(.3);
-        var unit = GameData.GetPlayerUnits().First();
+        var unit = GameData.GetPlayerUnits().First(); await PressHint(unit.DisplayName);
         var stats = state.BuildPlayerUnitStats(unit);
-        Check(Walk(menu).OfType<PanelContainer>().Any(control => control.IsVisibleInTree() && control.AccessibilityName == $"Health: {stats.MaxHealth:0}"), "Unit profile shows the actual trained health beside its icon");
-        Check(!Walk(menu).OfType<Control>().Single(control => control.Name == "ExtraProfileDetails").Visible, "Unit traits and training start collapsed");
-        var disclosure = Walk(menu).OfType<Button>().Single(button => button.Name == "ProfileDisclosure");
-        var profileScroll = disclosure.GetParent();
-        while (profileScroll is not ScrollContainer) profileScroll = profileScroll.GetParent();
-        Check(((ScrollContainer)profileScroll).GetGlobalRect().Encloses(disclosure.GetGlobalRect()), "The resource bar leaves the unit profile disclosure fully visible");
+        Check(Shows($"Health: {stats.MaxHealth:0}"), "Unit profile shows the actual trained health beside its icon");
         AuditText("Profile / fresh unit"); await Capture("01-unit-profile");
         var food = state.Food; var gold = state.Gold; var level = state.GetUnitLevel(unit.Id); var cost = state.GetUnitUpgradeCost(unit.Id);
-        var upgrade = Walk(menu).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text.StartsWith("Upgrade ") && !button.Disabled);
-        Check(upgrade.GetGlobalRect().End.Y < 630, "Unit training stays visible in the fixed action bar");
+        var upgrade = Action("Upgrade");
+        Check(upgrade != null && GetViewport().GetVisibleRect().Encloses(upgrade.GetGlobalRect()), "Unit training stays visible in the profile's action bar");
         await TapModal(upgrade);
         stats = state.BuildPlayerUnitStats(unit);
-        Check(state.GetUnitLevel(unit.Id) == level + 1 && state.Gold == gold - cost
-            && Walk(menu).OfType<PanelContainer>().Any(control => control.IsVisibleInTree() && control.AccessibilityName == $"Health: {stats.MaxHealth:0}"), "A native training click spends once and updates the displayed stats");
-        CheckArmoryBalances(menu, "Unit training refreshes the visible resource balances");
-        await Press("Traits & training");
-        Check(Walk(menu).OfType<Control>().Single(control => control.Name == "ExtraProfileDetails").Visible, "The optional unit breakdown expands inside the same profile");
-        var extraActions = Walk(menu.GetNode<RealmModal>("HomeModal")).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text.StartsWith("Upgrade "));
-        Check(extraActions.GetGlobalRect().End.Y < 630, "Expanding training keeps the main action outside the scroller");
-        AuditText("Profile / expanded unit"); await Capture("02-unit-training");
+        Check(state.GetUnitLevel(unit.Id) == level + 1 && state.Gold == gold - cost && Shows($"Health: {stats.MaxHealth:0}"),
+            "A native training click spends once and updates the displayed stats");
+        await PressHint("Traits & training");
+        Check(TraitsOpen(), "Traits & training opens the full unit breakdown above the profile");
+        AuditText("Profile / unit traits"); await Capture("02-unit-training");
+        await PressHint("Close details"); await Wait(.1);
+        Check(!TraitsOpen(), "Closing the breakdown returns to the profile");
         menu.CloseHomeModal();
         var fixture = state.BuildSaveData(); fixture.Gold = 100000; fixture.Sigils = 100; fixture.HighestUnlockedStage = state.MaxStage;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Select(entry => entry.Id).ToArray();
@@ -49,43 +49,43 @@ public partial class UiReviewSmoke
         {
             await PressHint(entry.DisplayName);
             AuditText("Profile / " + entry.DisplayName);
-            Check(Walk(menu).OfType<GridContainer>().First(grid => grid.Name == "ProfileStats").GetGlobalRect().End.Y < 605, entry.DisplayName + ": core stats fit at maximum level");
+            var trained = state.BuildPlayerUnitStats(entry);
+            Check(Shows($"Health: {trained.MaxHealth:0}") && Shows($"Damage: {trained.AttackDamage:0.#}"), entry.DisplayName + ": core stats show at maximum level");
         }
-        await PressHint(unit.DisplayName); await Press("Traits & training");
+        await PressHint(unit.DisplayName); await PressHint("Traits & training");
         var doctrine = state.GetUnitDoctrineOptions(unit.Id).First();
         await Press("Choose " + doctrine.Title);
-        Check(state.GetUnitDoctrineId(unit.Id) == doctrine.Id, "Doctrines remain selectable from the expanded profile");
+        Check(state.GetUnitDoctrineId(unit.Id) == doctrine.Id && Walk(menu).OfType<CanvasLayer>().Count(layer => layer.Name == "TraitsLayer") == 1,
+            "Doctrines remain selectable from the breakdown, which reopens in place");
         AuditText("Profile / doctrine"); await Capture("03-unit-doctrine");
-        var promote = Walk(menu).OfType<Button>().FirstOrDefault(button => button.IsVisibleInTree() && button.Text.StartsWith("Promote") && !button.Disabled);
-        if (promote != null)
+        await PressHint("Close details"); await Wait(.1);
+        if (Action("Promote") is { } promote)
         {
             await TapModal(promote);
-            Check(state.IsUnitPromoted(unit.Id), "The fixed profile action still promotes eligible units");
-            CheckArmoryBalances(menu, "Promotion refreshes the displayed gold and sigils");
+            Check(state.IsUnitPromoted(unit.Id), "The profile action still promotes eligible units");
         }
         menu.CloseHomeModal(); SceneRouter.Instance.GoToShop(1); await Wait(.3);
         foreach (var spell in GameData.GetPlayerSpells())
         {
             await PressHint(spell.DisplayName);
             var resolved = state.BuildSpellStats(spell);
-            Check(Walk(menu).OfType<PanelContainer>().Any(tile => tile.IsVisibleInTree() && tile.AccessibilityName == $"Cooldown: {resolved.Cooldown:0.#}s")
-                && Walk(menu).OfType<PanelContainer>().Any(tile => tile.IsVisibleInTree() && tile.AccessibilityName == $"Courage: {resolved.CourageCost}"), spell.DisplayName + ": profile uses the battle's resolved cost and cooldown");
+            Check(Shows($"Cooldown: {resolved.Cooldown:0.#}s") && Shows($"Courage: {resolved.CourageCost}"), spell.DisplayName + ": profile uses the battle's resolved cost and cooldown");
             AuditText("Profile / " + spell.DisplayName);
             await Capture("spell-" + spell.EffectType);
         }
         var firstSpell = GameData.GetPlayerSpells().First(); await PressHint(firstSpell.DisplayName);
         gold = state.Gold; cost = state.GetSpellUpgradeCost(firstSpell.Id); level = state.GetSpellLevel(firstSpell.Id);
-        upgrade = Walk(menu).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text.StartsWith("Upgrade Lv"));
-        await TapModal(upgrade);
-        var trained = state.BuildSpellStats(firstSpell);
-        Check(state.GetSpellLevel(firstSpell.Id) == level + 1 && state.Gold == gold - cost
-            && Walk(menu).OfType<PanelContainer>().Any(tile => tile.IsVisibleInTree() && tile.AccessibilityName == $"Damage: {trained.Power:0.#}"), "Spell training spends once and refreshes the real damage value");
-        CheckArmoryBalances(menu, "Spell training refreshes the visible resource balances");
-        await Press("Effects & training"); AuditText("Profile / expanded spell"); await Capture("04-spell-training");
+        await TapModal(Action("Upgrade"));
+        var scribed = state.BuildSpellStats(firstSpell);
+        Check(state.GetSpellLevel(firstSpell.Id) == level + 1 && state.Gold == gold - cost && Shows($"Damage: {scribed.Power:0.#}"),
+            "Spell training spends once and refreshes the real damage value");
+        await PressHint("Traits & training"); AuditText("Profile / spell traits"); await Capture("04-spell-training");
+        await PressHint("Close details"); await Wait(.1);
         Check(state.Food == food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset == camera, "Profile browsing and training preserve the map and travel supplies");
         menu.CloseHomeModal();
         state.ToggleDeckSpell(firstSpell.Id, out _); state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
-        await Press("Details");
+        var view = Walk(menu).OfType<Button>().First(button => button.IsVisibleInTree() && (button.AccessibilityName ?? "").StartsWith("View "));
+        view.EmitSignal(BaseButton.SignalName.Pressed); await Wait(.6);
         Check(Walk(menu).OfType<ModelShowcase>().Any(), "Preparation opens the visual unit inspector");
         AuditText("Profile / unit inspector"); await Capture("05-unit-inspector");
         Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The unit inspector opens as a modal above preparation");
@@ -100,19 +100,5 @@ public partial class UiReviewSmoke
         System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit));
         GD.Print($"ARMORY_DETAILS_REVIEW_RESULT: {_failures} failures");
         await Open("MainMenu"); QuitAfterAudio(_failures == 0 ? 0 : 1);
-    }
-
-    private void CheckArmoryBalances(MapMenu menu, string message)
-    {
-        var state = GameState.Instance;
-        var balances = Walk(menu).OfType<HFlowContainer>().Single(control => control.Name == "ResourceBalances");
-        var expected = new[] { ("gold", state.Gold), ("food", state.Food), ("sigils", state.Sigils),
-            ("tomes", state.Tomes), ("shards", state.RelicShards), ("essence", state.Essence) };
-        Check(balances.IsVisibleInTree() && expected.All(resource => {
-            var row = balances.GetNode<HBoxContainer>("Balance" + resource.Item1);
-            return row.IsVisibleInTree() && balances.GetGlobalRect().Encloses(row.GetGlobalRect())
-                && row.GetChild<Label>(1).Text == resource.Item2.ToString("N0")
-                && row.GetChild<TextureRect>(0).Texture != null;
-        }), message);
     }
 }

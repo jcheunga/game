@@ -6,6 +6,7 @@ public partial class BattleController
 {
     private BattleHudBar _healthBar;
     private HBoxContainer _goldReadout;
+    private PanelContainer _goldFrame;
     private Label _goldAmount, _restartMessage, _endRetryMessage;
     private Button _hudSettingsButton, _restartButton, _resumeButton;
     private RealmModal _battleSettingsModal;
@@ -13,35 +14,62 @@ public partial class BattleController
     private Action _hudLayout;
     private bool _restartPending;
 
+    private TextureRect _hudBanner;
+
+    // The clean-steel concept HUD: banner and two bar plates at the top left, the gold plaque and pause
+    // button at the top right, and the card dock at the bottom centre.
     private void BuildCompactHud(Control root)
     {
         _battleHudRoot = root;
-        _topHudPanel = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Stop };
+        var spec = RoyalSpec.For("battle");
+        _topHudPanel = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         _topHudPanel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         root.AddChild(_topHudPanel);
-        var meters = new VBoxContainer(); meters.AddThemeConstantOverride("separation", 8);
+        var meters = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(480, 160) };
         _topHudPanel.AddChild(meters);
-        BattleHudBar Meter(string icon, string name, Color color)
+        RoyalMeter Meter(string key, string plate, string fill, string name, string icon)
         {
-            var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-            row.AddThemeConstantOverride("separation", 8); meters.AddChild(row);
-            row.AddChild(new TextureRect { Texture = HomeMapArt.Icon(icon), CustomMinimumSize = new Vector2(32, 32),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                MouseFilter = Control.MouseFilterEnum.Ignore });
-            var bar = new BattleHudBar { CustomMinimumSize = new Vector2(184, 30), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-                TooltipText = name, AccessibilityName = name };
-            bar.Setup(color, new Color("ffffff33"), ""); row.AddChild(bar); return bar;
+            var rect = spec.Rect(key);
+            var iconRect = spec.Rect(key + ".icon");
+            var track = spec.Rect(key + ".track");
+            var meter = new RoyalMeter { Plate = plate, FillKit = fill, Position = rect.Position, Size = rect.Size, TooltipText = name, AccessibilityName = name,
+                Track = new Rect2(track.Position - rect.Position + new Vector2(4, 4), track.Size - new Vector2(8, 8)),
+                ValueRight = spec.Number(key + ".value", "x", rect.End.X - 30) - rect.Position.X, ValueBaseline = spec.Number(key + ".value", "baseline", 30) - rect.Position.Y,
+                ValueSize = (int)spec.Number(key + ".value", "size", 20), MouseFilter = Control.MouseFilterEnum.Pass,
+                IconKit = icon, IconRect = new Rect2(iconRect.Position - rect.Position - new Vector2(2, 2), iconRect.Size + new Vector2(4, 4)) };
+            meter.Setup(Colors.White, Colors.White, "");
+            meters.AddChild(meter);
+            return meter;
         }
-        _healthBar = Meter("heart", "War wagon health", new Color("bd605c"));
-        _courageBar = Meter("flame", "Courage", new Color("71b6d1"));
-        _goldReadout = HomeResourceUi.Amount("gold", "0", "Gold", 36);
-        _goldAmount = _goldReadout.GetChildren().OfType<Label>().Single();
-        _goldAmount.AddThemeFontSizeOverride("font_size", 28);
-        _goldAmount.AddThemeConstantOverride("outline_size", 4);
-        _goldAmount.AddThemeColorOverride("font_outline_color", new Color("111a20"));
-        root.AddChild(_goldReadout);
-        _hudSettingsButton = RealmUi.IconButton("gear", "Battle menu [Escape]", TogglePause);
-        _hudSettingsButton.CustomMinimumSize = new Vector2(56, 56); root.AddChild(_hudSettingsButton);
+        _healthBar = Meter("hull", "hud-hull", "hud-fill-hull", "War wagon", "hud-heart");
+        _courageBar = Meter("courage", "hud-courage", "hud-fill-courage", "Courage", "hud-flame");
+        _hudBanner = RoyalKit.Image("hud-banner", spec.Rect("banner"));
+        meters.AddChild(_hudBanner);
+
+        _goldReadout = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _goldReadout.AddThemeConstantOverride("separation", 14);
+        var coin = spec.Rect("gold.icon");
+        _goldReadout.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            Texture = RoyalKit.Texture("hud-coin"), CustomMinimumSize = coin.Size + new Vector2(6, 6), MouseFilter = Control.MouseFilterEnum.Ignore });
+        _goldAmount = new Label { VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore };
+        _goldAmount.AddThemeFontOverride("font", RoyalFonts.Body(500));
+        _goldAmount.AddThemeFontSizeOverride("font_size", (int)spec.Number("gold.value", "size", 27));
+        _goldAmount.AddThemeColorOverride("font_color", new Color("f6e6c3"));
+        _goldAmount.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, .6f));
+        _goldAmount.AddThemeConstantOverride("shadow_offset_y", 1);
+        _goldReadout.AddChild(_goldAmount);
+        _goldFrame = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        var plaque = RoyalKit.Slice("hud-gold", 20, 8, 30, 8);
+        plaque.ContentMarginLeft = coin.Position.X - spec.Rect("gold").Position.X - 3; plaque.ContentMarginRight = 26;
+        plaque.ContentMarginTop = plaque.ContentMarginBottom = 0;
+        _goldFrame.AddThemeStyleboxOverride("panel", plaque);
+        root.AddChild(_goldFrame); _goldFrame.AddChild(_goldReadout);
+        var pause = new RoyalButton { AccessibilityName = "Battle menu [Escape]", TooltipText = "Battle menu [Escape]", MouseDefaultCursorShape = Control.CursorShape.PointingHand };
+        pause.SetStates(RoyalKit.Slice("hud-pause", 14), 8);
+        pause.Pressed += TogglePause;
+        var icon = spec.Rect("button.pause.icon");
+        pause.SetGlyph(RoyalKit.Texture("hud-pause-icon"), new Rect2(icon.Position - spec.Rect("button.pause").Position - new Vector2(2, 2), icon.Size + new Vector2(4, 4)));
+        _hudSettingsButton = pause; root.AddChild(pause);
 
         _statusLabel = new Label { Visible = false };
         root.AddChild(_statusLabel);
@@ -49,30 +77,52 @@ public partial class BattleController
         _fpsLabel.AddThemeFontSizeOverride("font_size", 14); root.AddChild(_fpsLabel);
     }
 
+    private PanelContainer _cardDock;
+
     private void ConfigureCompactHudLayout(PanelContainer cards, HBoxContainer row)
     {
-        cards.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        _cardDock = cards;
+        var spec = RoyalSpec.For("battle");
+        var dock = RoyalKit.Slice("hud-dock", 30, 22, 30, 22);
+        dock.ContentMarginLeft = dock.ContentMarginRight = 9; dock.ContentMarginTop = 9; dock.ContentMarginBottom = 11;
+        cards.AddThemeStyleboxOverride("panel", dock);
+        row.AddThemeConstantOverride("separation", 13);
         _hudLayout = () =>
         {
             if (!IsInstanceValid(_battleHudRoot)) return;
             var scale = _battleHudRoot.Scale.X;
             var size = GetViewportRect().Size / scale;
-            var left = (SafeAreaService.Instance?.MarginLeft ?? 0) / scale + 18;
-            var right = (SafeAreaService.Instance?.MarginRight ?? 0) / scale + 18;
-            var top = (SafeAreaService.Instance?.MarginTop ?? 0) / scale + 16;
-            var bottom = (SafeAreaService.Instance?.MarginBottom ?? 0) / scale + 16;
-            _topHudPanel.Position = new Vector2(left, top); _topHudPanel.Size = new Vector2(224, 72);
-            _goldReadout.Size = _goldReadout.GetCombinedMinimumSize();
-            _goldReadout.Position = new Vector2(size.X - right - _goldReadout.Size.X, top);
-            _fpsLabel.Position = new Vector2(size.X - right - 100, top + 48); _fpsLabel.Size = new Vector2(100, 20);
-            _hudSettingsButton.Position = new Vector2(left, size.Y - bottom - 56); _hudSettingsButton.Size = new Vector2(56, 56);
+            var left = (SafeAreaService.Instance?.MarginLeft ?? 0) / scale;
+            var right = (SafeAreaService.Instance?.MarginRight ?? 0) / scale;
+            var top = (SafeAreaService.Instance?.MarginTop ?? 0) / scale;
+            var bottom = (SafeAreaService.Instance?.MarginBottom ?? 0) / scale;
+            _topHudPanel.Position = new Vector2(left, top); _topHudPanel.Size = new Vector2(480, 160);
+            var gold = spec.Rect("gold");
+            _goldFrame.Size = new Vector2(Mathf.Max(gold.Size.X, _goldReadout.GetCombinedMinimumSize().X + 60), gold.Size.Y);
+            _goldFrame.Position = new Vector2(size.X - right - (1280 - gold.End.X) - _goldFrame.Size.X, top + gold.Position.Y);
+            var pause = spec.Rect("button.pause");
+            _hudSettingsButton.Position = new Vector2(size.X - right - (1280 - pause.Position.X), top + pause.Position.Y); _hudSettingsButton.Size = pause.Size;
+            _fpsLabel.Position = new Vector2(size.X - right - 100, top + 64); _fpsLabel.Size = new Vector2(100, 20);
             if (_battleFollowButton != null)
-            { _battleFollowButton.Position = new Vector2(left, size.Y - bottom - 120); _battleFollowButton.Size = new Vector2(56, 56); }
+            { _battleFollowButton.Position = new Vector2(left + 18, size.Y - bottom - 120); _battleFollowButton.Size = new Vector2(56, 56); }
             var veil = _pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if (veil != null) veil.CustomMinimumSize = size;
-            var width = Mathf.Min(row.GetCombinedMinimumSize().X + 40, size.X - left - right - 160);
-            var height = MobilePresentation.Enabled ? 124 : 148;
-            cards.Position = new Vector2(Mathf.Max(left + 80, (size.X - width) / 2), size.Y - bottom - height);
+            // Cards keep the concept's 119 x 131 size and 132 px pitch while they fit, then share the width.
+            var count = row.GetChildCount();
+            var available = size.X - left - right - 40;
+            var pitch = Mathf.Min(132, (available - 18) / Mathf.Max(1, count));
+            var cardWidth = pitch - 13;
+            var cardHeight = Mathf.Round(cardWidth * 131 / 119f);
+            foreach (var child in row.GetChildren().OfType<Control>()) child.CustomMinimumSize = new Vector2(cardWidth, cardHeight);
+            if (row.GetParent() is ScrollContainer scroller)
+            {
+                scroller.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+                scroller.CustomMinimumSize = new Vector2(0, cardHeight);
+            }
+            var dockRect = spec.Rect("dock");
+            var width = count * pitch - 13 + 18;
+            var height = cardHeight + 20;
+            cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
             _battleSettingsModal?.FitToArea(size);
         };
@@ -125,12 +175,14 @@ public partial class BattleController
         var paid = IsCampaignMode ? state.TrySpendStageEntryFood(_stage, out message) : state.TrySpendBattleRestartFood(_stage, out message);
         if (!paid)
         {
-            var label = _battleEnded ? _endRetryMessage : _restartMessage;
-            label.Text = state.Food < state.GetStageEntryFoodCost(_stage)
+            var reason = state.Food < state.GetStageEntryFoodCost(_stage)
                 ? $"Need {state.GetStageEntryFoodCost(_stage)} rations · Have {state.Food}" : message;
-            label.Visible = true; return;
+            // After the battle the reason shows on the result board; the old card is only used by shared rooms.
+            if (_battleEnded && IsInstanceValid(_royalResult)) { RoyalToast.Show(_royalResult, reason, 690); return; }
+            var label = _battleEnded ? _endRetryMessage : _restartMessage;
+            label.Text = reason; label.Visible = true; return;
         }
-        _restartPending = true; _restartButton.Disabled = true; _endPrimaryButton.Disabled = true;
+        _restartPending = true; _restartButton.Disabled = true; _endPrimaryButton.Disabled = true; if (IsInstanceValid(_royalResult)) _royalResult.RetryButton.Disabled = true;
         CancelCardDrag(); _battlePaused = true; GetTree().Paused = false; ResetBattleSpeed();
         // Freeze the departing simulation while the scene transition runs.
         SceneRouter.Instance.RetryBattle();

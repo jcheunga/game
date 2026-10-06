@@ -1,0 +1,1262 @@
+{
+ "screen": "achievements",
+ "ref": "art/royal/ref/menu-04-achievements.png",
+ "elements": [
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    58,
+    30,
+    1164,
+    653
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.banner",
+   "kind": "rect",
+   "rect": [
+    65,
+    26,
+    97,
+    155
+   ],
+   "role": "decoration"
+  },
+  {
+   "id": "header.band",
+   "kind": "rect",
+   "rect": [
+    171,
+    36,
+    1044,
+    82
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.emblem",
+   "kind": "rect",
+   "rect": [
+    197,
+    51,
+    70,
+    54
+   ],
+   "role": "emblem"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Achievements",
+   "font": "cinzel",
+   "weight": 750,
+   "width": 463,
+   "x": 291,
+   "baseline": 98,
+   "align": "left",
+   "color": "#e9c380",
+   "style": "gold",
+   "size": 61,
+   "pen_x": 293
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1160,
+    40,
+    53,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1176,
+    56,
+    21,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tabs",
+   "kind": "rect",
+   "rect": [
+    170,
+    119,
+    1020,
+    60
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "tab.all",
+   "kind": "rect",
+   "rect": [
+    170,
+    119,
+    150,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.all.icon",
+   "kind": "rect",
+   "rect": [
+    216,
+    137,
+    23,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.all.label",
+   "kind": "text",
+   "text": "All",
+   "font": "crimson",
+   "weight": 600,
+   "width": 19,
+   "x": 255,
+   "baseline": 157,
+   "align": "left",
+   "color": "#f4eabf",
+   "size": 15,
+   "pen_x": 256
+  },
+  {
+   "id": "tab.all.marker",
+   "kind": "rect",
+   "rect": [
+    238,
+    168,
+    10,
+    12
+   ],
+   "role": "indicator"
+  },
+  {
+   "id": "tab.campaign",
+   "kind": "rect",
+   "rect": [
+    321,
+    119,
+    176,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.campaign.icon",
+   "kind": "rect",
+   "rect": [
+    360,
+    136,
+    24,
+    28
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.campaign.label",
+   "kind": "text",
+   "text": "Campaign",
+   "font": "crimson",
+   "weight": 600,
+   "width": 74,
+   "x": 395,
+   "baseline": 157,
+   "align": "left",
+   "color": "#dcdddf",
+   "size": 16,
+   "pen_x": 395
+  },
+  {
+   "id": "tab.combat",
+   "kind": "rect",
+   "rect": [
+    496,
+    119,
+    180,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.combat.icon",
+   "kind": "rect",
+   "rect": [
+    537,
+    137,
+    26,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.combat.label",
+   "kind": "text",
+   "text": "Combat",
+   "font": "crimson",
+   "weight": 600,
+   "width": 58,
+   "x": 576,
+   "baseline": 157,
+   "align": "left",
+   "color": "#dadbdc",
+   "size": 17,
+   "pen_x": 576
+  },
+  {
+   "id": "tab.endless",
+   "kind": "rect",
+   "rect": [
+    675,
+    119,
+    163,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.endless.icon",
+   "kind": "rect",
+   "rect": [
+    709,
+    144,
+    29,
+    13
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.endless.label",
+   "kind": "text",
+   "text": "Endless",
+   "font": "crimson",
+   "weight": 575,
+   "width": 56,
+   "x": 749,
+   "baseline": 157,
+   "align": "left",
+   "color": "#dddddf",
+   "size": 17,
+   "pen_x": 749
+  },
+  {
+   "id": "tab.collection",
+   "kind": "rect",
+   "rect": [
+    837,
+    119,
+    180,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.collection.icon",
+   "kind": "rect",
+   "rect": [
+    872,
+    138,
+    27,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.collection.label",
+   "kind": "text",
+   "text": "Collection",
+   "font": "crimson",
+   "weight": 600,
+   "width": 75,
+   "x": 911,
+   "baseline": 157,
+   "align": "left",
+   "color": "#d6d6d8",
+   "size": 17,
+   "pen_x": 911
+  },
+  {
+   "id": "tab.mastery",
+   "kind": "rect",
+   "rect": [
+    1016,
+    119,
+    174,
+    60
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.mastery.icon",
+   "kind": "rect",
+   "rect": [
+    1052,
+    137,
+    27,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.mastery.label",
+   "kind": "text",
+   "text": "Mastery",
+   "font": "crimson",
+   "weight": 600,
+   "width": 59,
+   "x": 1092,
+   "baseline": 157,
+   "align": "left",
+   "color": "#dfdedf",
+   "size": 16,
+   "pen_x": 1092
+  },
+  {
+   "id": "content",
+   "kind": "rect",
+   "rect": [
+    72,
+    181,
+    1136,
+    501
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "card.firstblood",
+   "kind": "rect",
+   "rect": [
+    100,
+    200,
+    353,
+    190
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.firstblood.art",
+   "kind": "rect",
+   "rect": [
+    105,
+    220,
+    128,
+    160
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.firstblood.icon",
+   "kind": "rect",
+   "rect": [
+    238,
+    223,
+    27,
+    28
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.firstblood.title",
+   "kind": "text",
+   "text": "First Blood",
+   "font": "crimson",
+   "weight": 550,
+   "width": 107,
+   "x": 282,
+   "baseline": 240,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 23,
+   "pen_x": 282
+  },
+  {
+   "id": "card.firstblood.desc.1",
+   "kind": "text",
+   "text": "Complete your first",
+   "font": "crimson",
+   "weight": 425,
+   "width": 141,
+   "x": 253,
+   "baseline": 269,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 18,
+   "pen_x": 253
+  },
+  {
+   "id": "card.firstblood.desc.2",
+   "kind": "text",
+   "text": "campaign stage.",
+   "font": "crimson",
+   "weight": 500,
+   "width": 115,
+   "x": 253,
+   "baseline": 288,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 253
+  },
+  {
+   "id": "card.firstblood.track",
+   "kind": "rect",
+   "rect": [
+    236,
+    293,
+    200,
+    16
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.firstblood.fill",
+   "kind": "rect",
+   "rect": [
+    239,
+    296,
+    194,
+    10
+   ],
+   "role": "progress_fill"
+  },
+  {
+   "id": "card.firstblood.progress",
+   "kind": "text",
+   "text": "1 / 1",
+   "font": "crimson",
+   "weight": 600,
+   "width": 28,
+   "x": 334.5,
+   "baseline": 326,
+   "align": "center",
+   "color": "#e1dbbb",
+   "size": 19
+  },
+  {
+   "id": "card.firstblood.button",
+   "kind": "rect",
+   "rect": [
+    240,
+    332,
+    198,
+    48
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.firstblood.button.label",
+   "kind": "text",
+   "text": "CLAIM",
+   "font": "cinzel",
+   "weight": 675,
+   "width": 58,
+   "x": 291,
+   "baseline": 363,
+   "align": "left",
+   "color": "#341f0b",
+   "size": 17,
+   "pen_x": 291
+  },
+  {
+   "id": "card.firstblood.button.icon",
+   "kind": "rect",
+   "rect": [
+    371,
+    341,
+    36,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.districtmarshal",
+   "kind": "rect",
+   "rect": [
+    466,
+    200,
+    350,
+    190
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.districtmarshal.art",
+   "kind": "rect",
+   "rect": [
+    475,
+    224,
+    138,
+    156
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.districtmarshal.icon",
+   "kind": "rect",
+   "rect": [
+    610,
+    221,
+    25,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.districtmarshal.title",
+   "kind": "text",
+   "text": "District Marshal",
+   "font": "crimson",
+   "weight": 575,
+   "width": 146,
+   "x": 652,
+   "baseline": 242,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 20,
+   "pen_x": 652
+  },
+  {
+   "id": "card.districtmarshal.desc.1",
+   "kind": "text",
+   "text": "Clear an entire",
+   "font": "crimson",
+   "weight": 475,
+   "width": 106,
+   "x": 626,
+   "baseline": 276,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 626
+  },
+  {
+   "id": "card.districtmarshal.desc.2",
+   "kind": "text",
+   "text": "campaign district.",
+   "font": "crimson",
+   "weight": 500,
+   "width": 130,
+   "x": 626,
+   "baseline": 295,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 626
+  },
+  {
+   "id": "card.districtmarshal.track",
+   "kind": "rect",
+   "rect": [
+    619,
+    320,
+    183,
+    17
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.districtmarshal.progress",
+   "kind": "text",
+   "text": "0 / 1",
+   "font": "crimson",
+   "weight": 600,
+   "width": 31,
+   "x": 706,
+   "baseline": 358,
+   "align": "center",
+   "color": "#e8e8e8",
+   "size": 18
+  },
+  {
+   "id": "card.bossslayer",
+   "kind": "rect",
+   "rect": [
+    829,
+    200,
+    352,
+    190
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.bossslayer.art",
+   "kind": "rect",
+   "rect": [
+    834,
+    205,
+    148,
+    178
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.bossslayer.icon",
+   "kind": "rect",
+   "rect": [
+    986,
+    220,
+    25,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossslayer.title",
+   "kind": "text",
+   "text": "Boss Slayer",
+   "font": "crimson",
+   "weight": 600,
+   "width": 103,
+   "x": 1032,
+   "baseline": 241,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 21,
+   "pen_x": 1032
+  },
+  {
+   "id": "card.bossslayer.desc.1",
+   "kind": "text",
+   "text": "Defeat any district boss.",
+   "font": "crimson",
+   "weight": 425,
+   "width": 166,
+   "x": 996,
+   "baseline": 276,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 996
+  },
+  {
+   "id": "card.bossslayer.track",
+   "kind": "rect",
+   "rect": [
+    989,
+    293,
+    178,
+    16
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.bossslayer.fill",
+   "kind": "rect",
+   "rect": [
+    992,
+    296,
+    171,
+    10
+   ],
+   "role": "progress_fill"
+  },
+  {
+   "id": "card.bossslayer.progress",
+   "kind": "text",
+   "text": "1 / 1",
+   "font": "crimson",
+   "weight": 550,
+   "width": 27,
+   "x": 1078,
+   "baseline": 326,
+   "align": "center",
+   "color": "#e5dfbf",
+   "size": 19
+  },
+  {
+   "id": "card.bossslayer.button",
+   "kind": "rect",
+   "rect": [
+    985,
+    333,
+    183,
+    45
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.bossslayer.button.label",
+   "kind": "text",
+   "text": "CLAIMED",
+   "font": "cinzel",
+   "weight": 575,
+   "width": 79,
+   "x": 1045,
+   "baseline": 363,
+   "align": "left",
+   "color": "#e5c79b",
+   "size": 16,
+   "pen_x": 1045
+  },
+  {
+   "id": "card.bossslayer.button.check",
+   "kind": "rect",
+   "rect": [
+    1014,
+    349,
+    17,
+    14
+   ],
+   "role": "check"
+  },
+  {
+   "id": "card.bossslayer.button.laurel.left",
+   "kind": "rect",
+   "rect": [
+    988,
+    337,
+    15,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.bossslayer.button.laurel.right",
+   "kind": "rect",
+   "rect": [
+    1150,
+    337,
+    14,
+    36
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.untouchable",
+   "kind": "rect",
+   "rect": [
+    100,
+    403,
+    353,
+    201
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.untouchable.art",
+   "kind": "rect",
+   "rect": [
+    110,
+    426,
+    133,
+    164
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.untouchable.icon",
+   "kind": "rect",
+   "rect": [
+    257,
+    422,
+    27,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.untouchable.title",
+   "kind": "text",
+   "text": "Untouchable",
+   "font": "crimson",
+   "weight": 525,
+   "width": 112,
+   "x": 303,
+   "baseline": 444,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 20,
+   "pen_x": 303
+  },
+  {
+   "id": "card.untouchable.desc.1",
+   "kind": "text",
+   "text": "Complete a stage",
+   "font": "crimson",
+   "weight": 425,
+   "width": 126,
+   "x": 272,
+   "baseline": 469,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 18,
+   "pen_x": 272
+  },
+  {
+   "id": "card.untouchable.desc.2",
+   "kind": "text",
+   "text": "with the war wagon",
+   "font": "crimson",
+   "weight": 475,
+   "width": 148,
+   "x": 272,
+   "baseline": 488,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 18,
+   "pen_x": 272
+  },
+  {
+   "id": "card.untouchable.desc.3",
+   "kind": "text",
+   "text": "at full health.",
+   "font": "crimson",
+   "weight": 475,
+   "width": 95,
+   "x": 273,
+   "baseline": 505,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 273
+  },
+  {
+   "id": "card.untouchable.track",
+   "kind": "rect",
+   "rect": [
+    253,
+    509,
+    185,
+    16
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.untouchable.fill",
+   "kind": "rect",
+   "rect": [
+    257,
+    512,
+    177,
+    10
+   ],
+   "role": "progress_fill"
+  },
+  {
+   "id": "card.untouchable.progress",
+   "kind": "text",
+   "text": "1 / 1",
+   "font": "crimson",
+   "weight": 600,
+   "width": 26,
+   "x": 345.5,
+   "baseline": 541,
+   "align": "center",
+   "color": "#efeacd",
+   "size": 17
+  },
+  {
+   "id": "card.untouchable.button",
+   "kind": "rect",
+   "rect": [
+    253,
+    546,
+    185,
+    46
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.untouchable.button.label",
+   "kind": "text",
+   "text": "CLAIMED",
+   "font": "cinzel",
+   "weight": 575,
+   "width": 79,
+   "x": 315,
+   "baseline": 576,
+   "align": "left",
+   "color": "#e8d0a3",
+   "size": 16,
+   "pen_x": 315
+  },
+  {
+   "id": "card.untouchable.button.check",
+   "kind": "rect",
+   "rect": [
+    284,
+    563,
+    17,
+    13
+   ],
+   "role": "check"
+  },
+  {
+   "id": "card.untouchable.button.laurel.left",
+   "kind": "rect",
+   "rect": [
+    256,
+    550,
+    16,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.untouchable.button.laurel.right",
+   "kind": "rect",
+   "rect": [
+    420,
+    550,
+    15,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.survivor",
+   "kind": "rect",
+   "rect": [
+    466,
+    403,
+    350,
+    201
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.survivor.art",
+   "kind": "rect",
+   "rect": [
+    472,
+    420,
+    145,
+    175
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.survivor.icon",
+   "kind": "rect",
+   "rect": [
+    621,
+    425,
+    24,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.survivor.title",
+   "kind": "text",
+   "text": "Survivor",
+   "font": "crimson",
+   "weight": 600,
+   "width": 79,
+   "x": 664,
+   "baseline": 447,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 21,
+   "pen_x": 664
+  },
+  {
+   "id": "card.survivor.desc.1",
+   "kind": "text",
+   "text": "Reach wave 30",
+   "font": "crimson",
+   "weight": 500,
+   "width": 103,
+   "x": 628,
+   "baseline": 480,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 628
+  },
+  {
+   "id": "card.survivor.desc.2",
+   "kind": "text",
+   "text": "in endless mode.",
+   "font": "crimson",
+   "weight": 500,
+   "width": 115,
+   "x": 627,
+   "baseline": 500,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 16,
+   "pen_x": 627
+  },
+  {
+   "id": "card.survivor.track",
+   "kind": "rect",
+   "rect": [
+    620,
+    530,
+    182,
+    16
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.survivor.fill",
+   "kind": "rect",
+   "rect": [
+    623,
+    533,
+    100,
+    10
+   ],
+   "role": "progress_fill"
+  },
+  {
+   "id": "card.survivor.progress",
+   "kind": "text",
+   "text": "18 / 30",
+   "font": "crimson",
+   "weight": 600,
+   "width": 49,
+   "x": 711,
+   "baseline": 568,
+   "align": "center",
+   "color": "#e8e8e8",
+   "size": 18
+  },
+  {
+   "id": "card.arcanescholar",
+   "kind": "rect",
+   "rect": [
+    829,
+    403,
+    352,
+    201
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.arcanescholar.art",
+   "kind": "rect",
+   "rect": [
+    839,
+    418,
+    140,
+    177
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.arcanescholar.icon",
+   "kind": "rect",
+   "rect": [
+    980,
+    427,
+    34,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.arcanescholar.title",
+   "kind": "text",
+   "text": "Arcane Scholar",
+   "font": "crimson",
+   "weight": 575,
+   "width": 134,
+   "x": 1031,
+   "baseline": 447,
+   "align": "left",
+   "color": "#f4eab3",
+   "size": 20,
+   "pen_x": 1031
+  },
+  {
+   "id": "card.arcanescholar.desc.1",
+   "kind": "text",
+   "text": "Own all 10 spells.",
+   "font": "crimson",
+   "weight": 500,
+   "width": 121,
+   "x": 997,
+   "baseline": 483,
+   "align": "left",
+   "color": "#dedfdf",
+   "size": 17,
+   "pen_x": 997
+  },
+  {
+   "id": "card.arcanescholar.track",
+   "kind": "rect",
+   "rect": [
+    985,
+    502,
+    181,
+    16
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "card.arcanescholar.fill",
+   "kind": "rect",
+   "rect": [
+    989,
+    505,
+    174,
+    10
+   ],
+   "role": "progress_fill"
+  },
+  {
+   "id": "card.arcanescholar.progress",
+   "kind": "text",
+   "text": "10 / 10",
+   "font": "crimson",
+   "weight": 600,
+   "width": 45,
+   "x": 1077,
+   "baseline": 538,
+   "align": "center",
+   "color": "#e9e4c6",
+   "size": 17
+  },
+  {
+   "id": "card.arcanescholar.button",
+   "kind": "rect",
+   "rect": [
+    984,
+    547,
+    184,
+    45
+   ],
+   "role": "button"
+  },
+  {
+   "id": "card.arcanescholar.button.label",
+   "kind": "text",
+   "text": "CLAIMED",
+   "font": "cinzel",
+   "weight": 575,
+   "width": 79,
+   "x": 1045,
+   "baseline": 576,
+   "align": "left",
+   "color": "#e9d0a4",
+   "size": 16,
+   "pen_x": 1045
+  },
+  {
+   "id": "card.arcanescholar.button.check",
+   "kind": "rect",
+   "rect": [
+    1014,
+    563,
+    17,
+    13
+   ],
+   "role": "check"
+  },
+  {
+   "id": "card.arcanescholar.button.laurel.left",
+   "kind": "rect",
+   "rect": [
+    988,
+    553,
+    15,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.arcanescholar.button.laurel.right",
+   "kind": "rect",
+   "rect": [
+    1149,
+    552,
+    15,
+    38
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "deco.banner.left",
+   "kind": "rect",
+   "rect": [
+    18,
+    188,
+    72,
+    255
+   ],
+   "role": "decoration"
+  },
+  {
+   "id": "deco.lantern.left",
+   "kind": "rect",
+   "rect": [
+    12,
+    437,
+    62,
+    165
+   ],
+   "role": "decoration"
+  },
+  {
+   "id": "deco.banner.right",
+   "kind": "rect",
+   "rect": [
+    1198,
+    188,
+    69,
+    258
+   ],
+   "role": "decoration"
+  },
+  {
+   "id": "deco.lantern.right",
+   "kind": "rect",
+   "rect": [
+    1203,
+    440,
+    64,
+    170
+   ],
+   "role": "decoration"
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    491,
+    617,
+    299,
+    58
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    544,
+    635,
+    14,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK TO MAP",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 134,
+   "x": 599,
+   "baseline": 654,
+   "align": "left",
+   "color": "#efe4b0",
+   "size": 18,
+   "pen_x": 599
+  }
+ ],
+ "notes": "Achievements modal: hanging blue banner at the top left overlapping the frame, laurel-and-star emblem plus gold-gradient 'Achievements' title (tall A + small caps) on a blue header band with a castle skyline at the right, wine-red square close button at top right. Six filter tabs in one shared strip (unselected tabs share the outer top/bottom rails and are split by thin brass posts at x 496/675/837/1016; each has an inner steel-blue frame); 'All' is SELECTED (glowing gold frame, warm brown fill, cream label, small gold stud on its bottom edge). Six achievement cards in a 3x2 grid; row 2 cards are taller (201 vs 190) to fit the 3-line Untouchable description. Each card: frameless diorama illustration on the left sitting directly on the dark card fill (art rects are the illustration bounds), small icon + crimson title, grey description lines, a rounded progress track with an inset fill, a centred 'n / m' count, then the reward button. States: First Blood is COMPLETE and CLAIMABLE (card frame glows gold/orange like the selected tab; gold CLAIM button with dark brown label and a coin-pile icon); District Marshal is IN PROGRESS at 0 / 1 (empty track, no button); Boss Slayer, Untouchable and Arcane Scholar are CLAIMED (full gold fill, dark slate CLAIMED button with check mark and a laurel sprig on each side, muted gold label); Survivor is IN PROGRESS at 18 / 30 with a BLUE fill (in-progress fills are blue, complete fills gold) and no button. Banners hang outside the modal on both sides above lit lanterns; crates/barrels fill the bottom corners. Steel-blue BACK TO MAP button (left chevron, cream uniform-caps label) centred on the bottom ledge."
+}

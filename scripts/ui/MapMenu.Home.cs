@@ -5,11 +5,10 @@ using Godot;
 public partial class MapMenu
 {
     private Control _hud;
-    private GridContainer _destinations;
 
     private void BuildUi()
     {
-        var background = new ColorRect { Color = new Color("253331"), MouseFilter = MouseFilterEnum.Ignore };
+        var background = new ColorRect { Color = new Color("1d3b57"), MouseFilter = MouseFilterEnum.Ignore };
         AddChild(background);
         background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _mapCanvas = new MapPathCanvas { Name = "ZoneMap" };
@@ -22,103 +21,79 @@ public partial class MapMenu
         GameState.Instance.FoodChanged += RefreshUi;
         GameState.Instance.DeveloperStateChanged += RefreshUi;
 
-        _hud = new Control { Name = "HomeHud", MouseFilter = MouseFilterEnum.Ignore };
+        // The concept HUD on the fixed canvas: painted pieces from the atlas plate, live values on top.
+        _hud = new Control { Name = "HomeHud", MouseFilter = MouseFilterEnum.Ignore, Position = Vector2.Zero, Size = RoyalArt.Canvas };
         AddChild(_hud);
-        _hud.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        SafeAreaService.Instance?.ApplyToControl(_hud);
-        BuildResources();
+        var spec = RoyalSpec.For("home");
+        foreach (var piece in new[] { new Rect2(434, 0, 414, 108), new Rect2(1199, 12, 64, 64), new Rect2(27, 504, 1253, 216) })
+            _hud.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+                Texture = RoyalArt.Cut("hud-home", piece), Position = piece.Position, Size = piece.Size, MouseFilter = MouseFilterEnum.Ignore });
+        BuildResources(spec);
         BuildDeveloperControls();
-        BuildZoneHeading();
-        var settings = HomeMapUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings());
+        BuildZoneHeading(spec);
+        var settings = RoyalButton.Over(spec.Rect("settings.ring"), "Settings", () => SceneRouter.Instance.GoToSettings(), 28);
+        var ring = spec.Rect("settings.ring");
+        settings.SetGlyph(RoyalKit.Texture("settings-face"), new Rect2(7, 7, ring.Size.X - 14, ring.Size.Y - 14));
         _hud.AddChild(settings);
-        HomeMapUi.Place(settings, 1, 0, new Rect2(-74, 20, 52, 52));
         BuildSitePanel();
-        BuildDock();
+        BuildDock(spec);
     }
 
-    private void BuildResources()
+    private RoyalResourceBar _resources;
+
+    private void BuildResources(RoyalSpec spec)
     {
-        var panel = new PanelContainer { Name = "Resources" };
-        panel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 10));
-        _hud.AddChild(panel);
-        HomeMapUi.Place(panel, 0, 0, new Rect2(22, 20, 318, 62));
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 14);
-        panel.AddChild(row);
-        Label Metric(string icon, string hint, Action action)
+        _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 391, 62), MaxWidth = 412 };
+        _hud.AddChild(_resources);
+        _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop());
+        _foodHint = _resources.Add(spec, "res", "food", HomeMapArt.Icon("food"), "Refill food", () => SceneRouter.Instance.GoToCashShop());
+        _resources.Add(spec, "res", "stars", HomeMapArt.Icon("star"), "Player profile", () => SceneRouter.Instance.GoToProfile());
+    }
+
+    private Button _foodHint;
+
+    private void BuildZoneHeading(RoyalSpec spec)
+    {
+        _mapTitle = spec.Label("zone.title", "", 250, new Color("15120e"));
+        _mapTitle.ShadowOffset = Vector2.Zero;
+        _hud.AddChild(_mapTitle);
+        _zoneProgress = spec.Label("zone.subtitle", "", 220);
+        _zoneProgress.ShadowOffset = Vector2.Zero;
+        _hud.AddChild(_zoneProgress);
+        // The lion banners either side of the plaque page between zones.
+        _previousZone = RoyalButton.Over(spec.Rect("zone.banner.left.cloth"), "Previous zone", () => ChangeZone(-1), 4);
+        _nextZone = RoyalButton.Over(spec.Rect("zone.banner.right.cloth"), "Next zone", () => ChangeZone(1), 4);
+        _hud.AddChild(_previousZone); _hud.AddChild(_nextZone);
+        var zoneInfo = RoyalButton.Over(spec.Rect("zone.plaque"), "Zone progress", null, 8);
+        zoneInfo.FocusMode = FocusModeEnum.None;
+        _hud.AddChild(zoneInfo);
+        _zoneInfo = zoneInfo;
+    }
+
+    private Button _zoneInfo;
+
+    private void BuildDock(RoyalSpec spec)
+    {
+        void Medallion(string key, string unused, string title, System.Action action)
         {
-            var button = new Button
-            {
-                AccessibilityName = hint, TooltipText = hint, Flat = true,
-                SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseDefaultCursorShape = CursorShape.PointingHand
-            };
-            foreach (var state in new[] { "normal", "hover", "pressed", "disabled" })
-                button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-            row.AddChild(button);
-            var content = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            button.AddChild(content);
-            content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-            content.AddThemeConstantOverride("separation", 7);
-            content.AddChild(new TextureRect
-            {
-                Texture = HomeMapArt.Icon(icon), CustomMinimumSize = new Vector2(38, 38),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                MouseFilter = MouseFilterEnum.Ignore
-            });
-            var value = new Label { VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            value.AddThemeFontSizeOverride("font_size", 16); // Balances, not button text.
-            value.AddThemeColorOverride("font_color", new Color("f1e7cb"));
-            content.AddChild(value);
-            button.Pressed += () => action();
-            // Allow the amount to grow without clipping large existing balances.
-            content.MinimumSizeChanged += () => button.CustomMinimumSize = content.GetCombinedMinimumSize();
-            return value;
+            var rect = spec.Rect($"dock.{key}");
+            var label = spec.Label($"dock.{key}.label", title, 140, new Color("1b1712"));
+            label.ShadowOffset = Vector2.Zero;
+            var area = new Rect2(rect.Position - new Vector2(16, 2), new Vector2(rect.Size.X + 32, label.Position.Y + label.Size.Y - rect.Position.Y));
+            var button = RoyalButton.Over(area, title, action, 12);
+            button.Name = title + "Tab";
+            var face = new Rect2(rect.Position + new Vector2(6.5f, 6.5f), rect.Size - new Vector2(13, 13));
+            button.SetGlyph(RoyalKit.Texture("dock-" + key), new Rect2(face.Position - area.Position, face.Size));
+            label.Position -= area.Position;
+            button.SetCaption(label, new Rect2(label.Position, label.Size));
+            _hud.AddChild(button);
         }
-        _gold = Metric("gold", "Royal storehouse", () => SceneRouter.Instance.GoToCashShop());
-        _food = Metric("food", "Refill food", () => SceneRouter.Instance.GoToCashShop());
-        _stars = Metric("star", "Player profile", () => SceneRouter.Instance.GoToProfile());
-    }
-
-    private void BuildZoneHeading()
-    {
-        var panel = new PanelContainer { Name = "ZoneHeading" };
-        panel.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 10));
-        _hud.AddChild(panel);
-        HomeMapUi.Place(panel, .5f, 0, new Rect2(-180, 20, 360, 92));
-        var title = new VBoxContainer();
-        title.AddThemeConstantOverride("separation", 0);
-        panel.AddChild(title);
-        var pager = new HBoxContainer();
-        pager.AddThemeConstantOverride("separation", 5);
-        title.AddChild(pager);
-        _previousZone = HomeMapUi.IconButton("back", "Previous zone", () => ChangeZone(-1));
-        pager.AddChild(_previousZone);
-        _mapTitle = RealmUi.Heading("", 22);
-        _mapTitle.HorizontalAlignment = HorizontalAlignment.Center;
-        _mapTitle.VerticalAlignment = VerticalAlignment.Center;
-        pager.AddChild(_mapTitle);
-        _nextZone = HomeMapUi.IconButton("arrow", "Next zone", () => ChangeZone(1));
-        pager.AddChild(_nextZone);
-        _zoneProgress = RealmUi.Label("", 18, true);
-        _zoneProgress.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddChild(_zoneProgress);
-    }
-
-    private void BuildDock()
-    {
-        var dock = new PanelContainer { Name = "HomeTabs" };
-        dock.AddThemeStyleboxOverride("panel", HomeMapUi.Surface(false, 10, 16));
-        _hud.AddChild(dock);
-        HomeMapUi.Place(dock, .5f, 1, new Rect2(-354, -142, 708, 126));
-        var tabs = new HBoxContainer();
-        tabs.AddThemeConstantOverride("separation", 6);
-        dock.AddChild(tabs);
-        tabs.AddChild(HomeMapUi.Tab("sword", "Warband", () => SceneRouter.Instance.GoToShop(0)));
-        tabs.AddChild(HomeMapUi.Tab("flame", "Spells", () => SceneRouter.Instance.GoToShop(1)));
-        tabs.AddChild(HomeMapUi.Tab("hammer", "Upgrades", () => SceneRouter.Instance.GoToShop(2)));
-        tabs.AddChild(HomeMapUi.Tab("star", "Achievements", () => OpenHomeDestination("achievements")));
-        tabs.AddChild(HomeMapUi.Tab("book", "Codex", () => SceneRouter.Instance.GoToCodex()));
-        tabs.AddChild(HomeMapUi.Tab("people", "More", ShowMore));
+        Medallion("warband", "sword", "Warband", () => SceneRouter.Instance.GoToShop(0));
+        Medallion("spells", "flame", "Spells", () => SceneRouter.Instance.GoToShop(1));
+        Medallion("upgrades", "hammer", "Upgrades", () => SceneRouter.Instance.GoToShop(2));
+        Medallion("achievements", "star", "Achievements", () => OpenHomeDestination("achievements"));
+        Medallion("codex", "book", "Codex", () => SceneRouter.Instance.GoToCodex());
+        Medallion("more", "people", "More", ShowMore);
     }
 
     private void BuildSitePanel()
@@ -197,12 +172,12 @@ public partial class MapMenu
         var maps = GameData.Stages.Select(stage => stage.MapId).Distinct().ToArray();
         var index = Array.IndexOf(maps, _activeMapId);
         var stages = GameData.GetStagesForMap(_activeMapId);
-        _zoneProgress.Text = $"Zone {index + 1} · {stages.Count(stage => GameState.Instance.GetStageStars(stage.StageNumber) > 0)}/{stages.Count} cleared";
+        _zoneProgress.Text = $"ZONE {index + 1:00}";
+        _zoneInfo.TooltipText = $"Zone {index + 1} · {stages.Count(stage => GameState.Instance.GetStageStars(stage.StageNumber) > 0)}/{stages.Count} cleared";
         _previousZone.Disabled = _mapCanvas.IsTravelling || index <= 0;
         var hasNext = index + 1 < maps.Length;
         var nextUnlocked = hasNext && GameState.Instance.IsAdventureZoneUnlocked(maps[index + 1]);
         _nextZone.Disabled = _mapCanvas.IsTravelling || !nextUnlocked;
-        _nextZone.Icon = RealmUi.Icon(nextUnlocked ? "arrow" : "lock");
         _nextZone.TooltipText = nextUnlocked ? "Next zone" : hasNext ? $"Defeat the boss of {RouteCatalog.Get(_activeMapId).Title} to reveal the next zone" : "You have reached the final zone";
     }
 
@@ -214,62 +189,6 @@ public partial class MapMenu
     }
 
     private void ShowMore() => OpenHomeDestination("more");
-
-    private void ShowDestinations(int tab)
-    {
-        RealmUi.Clear(_destinations);
-        void Link(string title, Action action, string locked = null)
-        {
-            var button = new Button { CustomMinimumSize = new Vector2(0, 196), MouseDefaultCursorShape = CursorShape.PointingHand, SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = title, TooltipText = locked ?? title, Disabled = locked != null };
-            ModalUi.StyleButton(button, accent: tab == 0 ? new Color("6387b9") : tab == 1 ? new Color("55a28a") : new Color("bd6073"), material: ModalMaterial.Inset);
-            var content = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; content.AddThemeConstantOverride("separation", 5);
-            button.AddChild(content); content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); content.OffsetLeft = content.OffsetTop = 14; content.OffsetRight = content.OffsetBottom = -14;
-            content.MinimumSizeChanged += () => button.CustomMinimumSize = new Vector2(0, Mathf.Max(196, content.GetCombinedMinimumSize().Y + 28));
-            int illustration = title switch {
-                "Endless" or "Codex" => 1, "Tower" or "Warband guild" => 0, "Forge" => 2,
-                "Bounties" or "Expeditions" or "Challenges" => 3,
-                "Boss rush" or "Weekly raid" or "Season" or "Arena" or "Rankings" => 5, _ => 4 };
-            var art = new TextureRect { Texture = ModalArt.Illustration(illustration), CustomMinimumSize = new Vector2(0, 72), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Modulate = locked == null ? Colors.White : new Color(.45f,.45f,.45f) }; content.AddChild(art);
-            // The illustration identifies the activity; the title leads and the line below supports it.
-            content.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore });
-            var name = RealmUi.SectionTitle(title, 22); name.AddThemeColorOverride("font_color", locked == null ? ModalUi.Cream : ModalUi.Muted); name.MouseFilter = MouseFilterEnum.Ignore; content.AddChild(name);
-            var description = RealmUi.Label(locked ?? title switch {
-                "Endless" => "Hold the line against an endless horde.", "Tower" => "Climb 100 floors of escalating battles.", "Bounties" => "Daily objectives and useful rewards.", "Weekly raid" => "Face a powerful boss with your guild.", "Event" => "Limited adventures and seasonal rewards.",
-                "Expeditions" => "Send reserve allies to gather supplies.", "Forge" => "Craft, fuse and enchant your relics.", "Daily gifts" => "Collect today's caravan supplies.", "Season" => "Earn rewards as your journey continues.", "Codex" => "Read your field notes and discoveries.", "Store" => "Refill supplies and browse offers.", "Warband guild" => "Join allies and contribute to your guild.", "Friends" => "Find friends and exchange gifts.", "Challenges" => "Daily races, shared runs and LAN play.", "Arena" => "Challenge rival warbands.", "Rankings" => "See the kingdom's leading caravans.", _ => "Continue your Crownroad journey." }, 18, true);
-            description.AddThemeFontSizeOverride("font_size", 18); description.MouseFilter = MouseFilterEnum.Ignore; content.AddChild(description);
-            RealmModal.Polish(name); RealmModal.Polish(description);
-            button.Pressed += () => action?.Invoke();
-            _destinations.AddChild(button);
-        }
-        if (tab == 0)
-        {
-            Link("Endless", () => SceneRouter.Instance.GoToEndless());
-            Link("Tower", () => SceneRouter.Instance.GoToTower());
-            Link("Bounties", () => SceneRouter.Instance.GoToBounty());
-            Link("Boss rush", null, "Boss rush is in development");
-            Link("Weekly raid", () => SceneRouter.Instance.GoToRaid(), GameState.Instance.HighestUnlockedStage <= CampaignPacing.StagesPerZone ? "Defeat the King's Road boss to unlock raids" : null);
-            Link("Event", () => SceneRouter.Instance.GoToEvent(), GameState.Instance.GetActiveEvent() == null ? "No event is active" : null);
-        }
-        else if (tab == 1)
-        {
-            Link("Expeditions", () => SceneRouter.Instance.GoToExpeditions());
-            Link("Forge", () => SceneRouter.Instance.GoToForge());
-            Link("Daily gifts", () => SceneRouter.Instance.GoToLoginCalendar());
-            Link("Season", () => SceneRouter.Instance.GoToSeasonPass());
-            Link("Codex", () => SceneRouter.Instance.GoToCodex());
-            Link("Store", () => SceneRouter.Instance.GoToCashShop());
-            if (GameState.Instance.CanPrestige)
-                Link("Prestige", () => MedievalUi.ShowConfirmation(this, "Begin a new age?", "Restart campaign progression for prestige rewards.", "Prestige", () => { GameState.Instance.TryPrestige(out _); SceneRouter.Instance.ReloadHome(); }));
-        }
-        else
-        {
-            Link("Warband guild", () => SceneRouter.Instance.GoToGuild());
-            Link("Friends", () => SceneRouter.Instance.GoToFriends());
-            Link("Challenges", () => SceneRouter.Instance.GoToMultiplayer());
-            Link("Arena", () => SceneRouter.Instance.GoToArena(), GameState.Instance.HighestUnlockedStage < ArenaCatalog.MinRequiredStage ? $"Win stage {ArenaCatalog.MinRequiredStage - 1} or higher to unlock the arena" : null);
-            Link("Rankings", () => SceneRouter.Instance.GoToLeaderboard());
-        }
-    }
 
     public override void _UnhandledKeyInput(InputEvent input)
     {

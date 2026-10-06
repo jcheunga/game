@@ -1,0 +1,92 @@
+[
+ {
+  "id": "mapicon-leader",
+  "out": "art/royal/gen/landmarks/leader.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a small medieval stone castle with a square keep, two round towers with slate-blue conical roofs, crenellated walls and a teal banner.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-boss",
+  "out": "art/royal/gen/landmarks/boss.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a large dark fortress keep on a rocky mound with tall spiked towers, red-glowing windows and a tattered red banner, ominous.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-camp",
+  "out": "art/royal/gen/landmarks/camp.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a small military camp of three canvas tents around a campfire with a teal banner pole and supply crates.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-watchtower",
+  "out": "art/royal/gen/landmarks/watchtower.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a tall wooden watchtower on stilts with a thatched roof and a lantern.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-shrine",
+  "out": "art/royal/gen/landmarks/shrine.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a small ancient stone shrine with two pillars, a carved arch and a glowing blue lantern.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-gold",
+  "out": "art/royal/gen/landmarks/gold.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: an open wooden treasure chest overflowing with gold coins on a small patch of ground.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-food",
+  "out": "art/royal/gen/landmarks/food.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a covered canvas supply wagon loaded with sacks of grain and barrels.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-tomes",
+  "out": "art/royal/gen/landmarks/tomes.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a small stack of old leather books and scrolls on a wooden lectern.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-essence",
+  "out": "art/royal/gen/landmarks/essence.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a cluster of glowing violet magic crystals growing from a rock.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ },
+ {
+  "id": "mapicon-survey",
+  "out": "art/royal/gen/landmarks/survey.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a wooden signpost with three pointing boards on a small cairn of stones.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
+ }
+]

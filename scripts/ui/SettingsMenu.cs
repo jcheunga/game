@@ -1,539 +1,384 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
-public partial class SettingsMenu : Control
+/// <summary>
+/// Settings on the approved concept: four tabs and rows of icon box, name and control (slider,
+/// switch, choice or action), with Restore defaults and Back to map underneath.
+/// </summary>
+public partial class SettingsMenu : RoyalScreen
 {
-    private readonly List<(HSlider Slider, Label Amount, string Channel)> _volumes = new();
-    private Label _syncLabel = null!;
-    private Label _lifecycleLabel = null!;
-    private Label _returnLabel = null!;
-    private Label _purchaseLabel = null!;
-    private Label _cloudSaveLabel = null!;
-    private LineEdit _purchaseEndpointEdit = null!;
-    private Button _syncProviderButton = null!;
-    private Button _syncAutoFlushButton = null!;
-    private Button _backButton = null!;
-    private Button _titleButton = null!;
-    private Label _difficultyLabel = null!;
-    private LineEdit _callsignEdit = null!;
-    private LineEdit _syncEndpointEdit = null!;
+    private int _tab;
+    private Control _layer;
+    private string _status = "";
+    private float _rowsScroll;
 
-    public override void _Ready()
+    public SettingsMenu() { PlateName = "settings"; }
+
+    private static RoyalSpec Spec => RoyalSpec.For("settings");
+    private string[] Tabs => HasMeta("battle_modal") ? new[] { "Sound", "Gameplay" } : new[] { "Sound", "Gameplay", "Online", "Account" };
+
+    protected override void Build()
     {
-        if (AppLifecycleService.Instance != null)
-        {
-            AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
-        }
-        BuildUi();
-        GameState.Instance.DeveloperStateChanged += RefreshUi;
-        RefreshUi();
+        _layer = Layer("Live");
+        if (AppLifecycleService.Instance != null) AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
+        GameState.Instance.DeveloperStateChanged += Rebuild;
+        Rebuild();
         TryShowMenuHint();
-        AnimateEntrance();
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.Echo)
-        {
-            return;
-        }
-
-        if (keyEvent.Keycode == Key.Escape)
-        {
-            if (RealmModal.Embedded(this) && GetTree().CurrentScene is MapMenu home) home.CloseHomeModal();
-            else SceneRouter.Instance.ReturnFromSettings();
-            GetViewport().SetInputAsHandled();
-        }
-    }
-
-    private void TryShowMenuHint()
-    {
-        if (!GameState.Instance.ShowHints)
-        {
-            return;
-        }
-
-        var hints = TutorialHintCatalog.GetByContext("first_settings");
-        foreach (var hint in hints)
-        {
-            if (GameState.Instance.HasSeenHint(hint.Id))
-            {
-                continue;
-            }
-
-            _returnLabel.Text = $"{hint.Title}: {hint.Body}";
-            GameState.Instance.MarkHintSeen(hint.Id);
-        }
-    }
-
-    private Control _mainPanel;
-
-    private void AnimateEntrance()
-    {
-        if (_mainPanel == null || GameState.Instance.ReducedMotion) return;
-        _mainPanel.Modulate = new Color(1f, 1f, 1f, 0f);
-        _mainPanel.Scale = new Vector2(0.97f, 0.97f);
-        _mainPanel.PivotOffset = _mainPanel.Size * 0.5f;
-        var tween = CreateTween();
-        tween.SetParallel(true);
-        tween.TweenProperty(_mainPanel, "modulate:a", 1f, 0.25f)
-            .SetTrans(Tween.TransitionType.Cubic)
-            .SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(_mainPanel, "scale", Vector2.One, 0.3f)
-            .SetTrans(Tween.TransitionType.Cubic)
-            .SetEase(Tween.EaseType.Out);
     }
 
     public override void _ExitTree()
     {
-        if (GameState.Instance != null) GameState.Instance.DeveloperStateChanged -= RefreshUi;
-        if (AppLifecycleService.Instance != null)
+        if (GameState.Instance != null) GameState.Instance.DeveloperStateChanged -= Rebuild;
+        if (AppLifecycleService.Instance != null) AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
+    }
+
+    private void OnAppLifecycleStateChanged() { if (IsInsideTree()) Rebuild(); }
+
+    private void TryShowMenuHint()
+    {
+        if (!GameState.Instance.ShowHints) return;
+        foreach (var hint in TutorialHintCatalog.GetByContext("first_settings"))
         {
-            AppLifecycleService.Instance.StateChanged -= OnAppLifecycleStateChanged;
+            if (GameState.Instance.HasSeenHint(hint.Id)) continue;
+            RoyalToast.Show(this, $"{hint.Title}: {hint.Body}");
+            GameState.Instance.MarkHintSeen(hint.Id);
         }
     }
 
-    private void BuildUi()
+    private void Rebuild()
     {
-        var embedded = RealmModal.Embedded(this);
-        MedievalUi.Apply(this);
-
-        Container center = embedded ? new MarginContainer() : new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
-
-        var viewportSize = GetViewportRect().Size;
-        var panel = new PanelContainer
+        if (_layer == null) return;
+        RoyalUiTools.Clear(_layer);
+        var spec = Spec;
+        _layer.AddChild(spec.Label("title", "Settings", 600));
+        _layer.AddChild(RoyalButton.Over(spec.Rect("close"), "Close panel", Leave, 6));
+        var keys = new[] { "sound", "gameplay", "online", "account" };
+        var tabs = Tabs;
+        for (var i = 0; i < keys.Length; i++)
         {
-            CustomMinimumSize = new Vector2(
-                Mathf.Clamp(viewportSize.X - 48f, 560f, 760f),
-                Mathf.Clamp(viewportSize.Y - 48f, 560f, 860f))
-        };
-        if (embedded) { panel.CustomMinimumSize = Vector2.Zero; panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty()); }
-        center.AddChild(panel);
-        _mainPanel = panel;
-
-        var content = new MarginContainer();
-        content.AddThemeConstantOverride("margin_left", embedded ? 0 : 24);
-        content.AddThemeConstantOverride("margin_top", embedded ? 0 : 24);
-        content.AddThemeConstantOverride("margin_right", embedded ? 0 : 24);
-        content.AddThemeConstantOverride("margin_bottom", embedded ? 0 : 24);
-        panel.AddChild(content);
-
-        var rootStack = new VBoxContainer();
-        rootStack.AddThemeConstantOverride("separation", 16);
-        rootStack.SizeFlagsVertical = SizeFlags.ExpandFill;
-        content.AddChild(rootStack);
-
-        var title = RealmUi.Heading("Settings", 30);
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        rootStack.AddChild(title); title.Visible = !embedded;
-        var account = RealmUi.Button("people", "Account", () => AccountDialog.Show(this));
-        rootStack.AddChild(account); account.Visible = !embedded;
-
-        _returnLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        _returnLabel.AddThemeColorOverride("font_color", RealmUi.Muted);
-        rootStack.AddChild(_returnLabel); _returnLabel.Visible = !embedded;
-
-        var pages = new VBoxContainer[GameState.DeveloperModeAvailable ? 5 : 4];
-        var tabTitles = GameState.DeveloperModeAvailable
-            ? new[] { "Sound", "Gameplay", "Online", "Account", "Developer" }
-            : new[] { "Sound", "Gameplay", "Online", "Account" };
-        if (HasMeta("battle_modal")) tabTitles = new[] { "Sound", "Gameplay" };
-        RealmUi.Tabs(rootStack, index => { for (int i = 0; i < pages.Length; i++) pages[i].GetParent<ScrollContainer>().Visible = index == i; }, tabTitles);
-        for (int i = 0; i < pages.Length; i++)
-        {
-            pages[i] = RealmUi.Scroll(rootStack);
-            pages[i].GetParent<ScrollContainer>().Visible = i == 0;
+            var rect = spec.Rect("tab." + keys[i]);
+            if (i >= tabs.Length) { _layer.AddChild(EmptyTabVeil(rect)); continue; }
+            var index = i;
+            var tab = RoyalButton.Over(rect, tabs[i], () => { _tab = index; _rowsScroll = 0; Rebuild(); }, 5);
+            if (i == _tab) tab.SetStates(RoyalKit.Slice("settings-tab-selected", 14), 5);
+            tab.MarkTab(i == _tab);
+            var icon = spec.Rect($"tab.{keys[i]}.icon");
+            tab.SetGlyph(RoyalKit.Texture("settingstab-" + keys[i]), new Rect2(icon.Position - rect.Position, icon.Size));
+            var label = spec.Label($"tab.{keys[i]}.label", tabs[i], 160, i == _tab ? new Color("fff6c8") : new Color("e1ddd9"));
+            label.Position -= rect.Position;
+            tab.SetCaption(label, new Rect2(label.Position, label.Size));
+            _layer.AddChild(tab);
         }
-        if (GameState.DeveloperModeAvailable) BuildDeveloperPage(pages[4]);
-        // Sound
-        var audioStack = Section(pages[0], "Volume");
-        void Volume(string label, int initial, Action<int> apply)
+        var heading = spec.Label("section.volume", _tab switch { 0 => "Volume", 1 => "Interface", 2 => "Online play", _ => "Account" }, 600);
+        _layer.AddChild(heading);
+        BuildRows(spec);
+        BuildButtons(spec);
+    }
+
+    private static Control EmptyTabVeil(Rect2 rect)
+    {
+        var veil = new Panel { Position = rect.Position + new Vector2(3, 3), Size = rect.Size - new Vector2(6, 6), MouseFilter = MouseFilterEnum.Ignore };
+        veil.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(.03f, .04f, .05f, .6f) });
+        return veil;
+    }
+
+    // ---- Rows ---------------------------------------------------------------------------------
+
+    private abstract record Row(string Icon, string Name);
+    private sealed record SliderRow(string Icon, string Name, Func<int> Value, Action<int> Apply) : Row(Icon, Name);
+    private sealed record SwitchRow(string Icon, string Name, Func<bool> Value, Action<bool> Apply) : Row(Icon, Name);
+    private sealed record ChoiceRow(string Icon, string Name, Func<string> Value, Action Next, string Hint = null) : Row(Icon, Name);
+    private sealed record ActionRow(string Icon, string Name, string Button, Action Run, bool Enabled = true) : Row(Icon, Name);
+    private sealed record InfoRow(string Icon, string Name, Func<string> Value) : Row(Icon, Name);
+    private sealed record EditRow(string Icon, string Name, Func<string> Value, Action<string> Apply, string Placeholder, bool Enabled = true) : Row(Icon, Name);
+
+    private IEnumerable<Row> RowsFor(int tab)
+    {
+        var state = GameState.Instance;
+        switch (tab)
         {
-            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 16); audioStack.AddChild(row);
-            var name = RealmUi.Label(label, 18); name.CustomMinimumSize = new Vector2(120, 0); name.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; name.VerticalAlignment = VerticalAlignment.Center; row.AddChild(name);
-            var slider = new HSlider { MinValue = 0, MaxValue = 100, Step = 1, Value = initial, CustomMinimumSize = new Vector2(0, 44), SizeFlagsHorizontal = SizeFlags.ExpandFill, AccessibilityName = label + " volume" }; row.AddChild(slider);
-            var amount = RealmUi.Label(initial + "%", 18); amount.CustomMinimumSize = new Vector2(56, 0); amount.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; amount.HorizontalAlignment = HorizontalAlignment.Right; amount.VerticalAlignment = VerticalAlignment.Center; row.AddChild(amount);
-            slider.ValueChanged += value => { apply((int)value); amount.Text = $"{value:0}%"; RefreshUi(); };
-            slider.SetMeta("volume_channel", label); _volumes.Add((slider, amount, label));
+            case 0:
+                yield return new SliderRow("settingsicon-music", "Music", () => state.MusicVolumePercent, state.SetMusicVolumePercent);
+                yield return new SliderRow("settingsicon-effects", "Effects", () => state.EffectsVolumePercent, state.SetEffectsVolumePercent);
+                yield return new SliderRow("settingsicon-ambience", "Ambience", () => state.AmbienceVolumePercent, state.SetAmbienceVolumePercent);
+                yield return new SwitchRow("settingsicon-mute", "Mute all sound", () => state.AudioMuted, muted =>
+                {
+                    state.SetAudioMuted(muted);
+                    if (!muted) AudioDirector.Instance?.PlayUiConfirm();
+                });
+                break;
+            case 1:
+                yield return new EditRow("people", "Caravan name", () => state.PlayerCallsign, state.SetPlayerCallsign, "Lantern");
+                yield return new ChoiceRow("sword", "Challenge level", () => state.GetDifficulty().Title, () =>
+                {
+                    var all = DifficultyCatalog.GetAll();
+                    var index = Math.Max(0, all.ToList().FindIndex(d => d.Id == state.DifficultyId));
+                    state.SetDifficulty(all[(index + 1) % all.Count].Id);
+                }, state.GetDifficulty().Description);
+                yield return new SwitchRow("book", "Tutorial hints", () => state.ShowHints, state.SetShowHints);
+                yield return new SwitchRow("eye", "Reduced motion", () => state.ReducedMotion, state.SetReducedMotion);
+                yield return new SwitchRow("flame", "High contrast", () => state.HighContrast, state.SetHighContrast);
+                yield return new SwitchRow("clock", "FPS counter", () => state.ShowFpsCounter, state.SetShowFpsCounter);
+                yield return new ChoiceRow("map", "Language", () => state.Language.ToUpperInvariant(), () =>
+                {
+                    var supported = Locale.GetSupportedLanguages();
+                    var index = Math.Max(0, Array.IndexOf(supported, state.Language));
+                    state.SetLanguage(supported[(index + 1) % supported.Length]);
+                });
+                yield return new ChoiceRow("plus", "Text size", () => $"{16 + state.FontSizeOffset} px", () =>
+                    state.SetFontSizeOffset(state.FontSizeOffset >= 6 ? -2 : state.FontSizeOffset + 2), "Tap to step through sizes");
+                break;
+            case 2:
+                yield return new InfoRow("people", "Account", () => string.IsNullOrEmpty(state.AccountProvider) ? "Playing locally" : $"Connected · {state.AccountProvider}");
+                yield return new ActionRow("people", "Player profile", "Refresh", () => { PlayerProfileSyncService.RefreshProfile(out var message); _status = message; });
+                if (!RealmModal.Embedded(this)) yield return new InfoRow("clock", "App state", () => AppLifecycleService.Instance?.BuildStatusSummary() ?? "");
+                var release = state.IsReleaseBackendConfigured;
+                yield return new ChoiceRow("gear", "Challenge sync", () => state.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId ? "HTTP API" : "Local journal", () =>
+                {
+                    if (release) return;
+                    state.SetChallengeSyncProvider(state.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId ? ChallengeSyncProviderCatalog.LocalJournalId : ChallengeSyncProviderCatalog.HttpApiId);
+                }, release ? "Set by this release" : null);
+                yield return new SwitchRow("arrow", "Auto flush", () => state.ChallengeSyncAutoFlush, value => { if (!release) state.SetChallengeSyncAutoFlush(value); });
+                yield return new EditRow("map", "Sync endpoint", () => state.ChallengeSyncEndpoint, state.SetChallengeSyncEndpoint, "https://api.example.com/challenge-sync", !release);
+                break;
+            default:
+                yield return new ActionRow("people", "Account", "Manage", () => AccountDialog.Show(this));
+                yield return new ActionRow("book", "Cloud save", "Upload", () => { CloudSaveService.Upload(out var message); _status = message; });
+                yield return new ActionRow("arrow", "Restore cloud save", "Restore", () =>
+                {
+                    var restored = CloudSaveService.Download(out var message);
+                    _status = message;
+                    if (restored && RealmModal.Embedded(this)) SceneRouter.Instance.ReloadHome();
+                });
+                yield return new ActionRow("clock", "Cloud status", "Check", () =>
+                {
+                    var info = CloudSaveService.GetInfo();
+                    _status = info.Status == "ok"
+                        ? $"Saved {DateTimeOffset.FromUnixTimeSeconds(info.UploadedAtUnixSeconds).ToLocalTime():MM-dd HH:mm} · version {info.SaveVersion} · {info.SizeBytes / 1024} KB"
+                        : info.Message;
+                });
+                yield return new SwitchRow("eye", "Share analytics", () => state.AnalyticsConsent, state.SetAnalyticsConsent);
+                yield return new SwitchRow("flag", "Send crash reports", () => state.CrashReportingConsent, state.SetCrashReportingConsent);
+                yield return new InfoRow("gold", "Payments", () => $"{state.TotalPurchaseCount} purchases · {DetectPurchasePlatform()}");
+                yield return new EditRow("gold", "Payment endpoint", () => state.PurchaseValidationEndpoint, state.SetPurchaseValidationEndpoint, "https://api.example.com", !state.IsReleaseBackendConfigured);
+                if (GameState.DeveloperModeAvailable) yield return new ActionRow("gear", "Developer tools", "Open", OpenDeveloperTools);
+                yield return new ActionRow("close", "Reset campaign", "Reset", () => MedievalUi.ShowConfirmation(this, "Abandon this campaign?",
+                    "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
+                    () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); }));
+                break;
         }
-        Volume("Music", GameState.Instance.MusicVolumePercent, GameState.Instance.SetMusicVolumePercent);
-        Volume("Effects", GameState.Instance.EffectsVolumePercent, GameState.Instance.SetEffectsVolumePercent);
-        Volume("Ambience", GameState.Instance.AmbienceVolumePercent, GameState.Instance.SetAmbienceVolumePercent);
-        Toggle(audioStack, "Mute all sound", () => GameState.Instance.AudioMuted, muted =>
-        {
-            GameState.Instance.SetAudioMuted(muted);
-            if (!muted) AudioDirector.Instance?.PlayUiConfirm();
-        });
+    }
 
-        var defaultsButton = new RealmButton
+    private void BuildRows(RoyalSpec spec)
+    {
+        var first = spec.Rect("row.music");
+        var pitch = spec.Rect("row.effects").Position.Y - first.Position.Y;
+        var area = new Rect2(first.Position.X - 2, first.Position.Y - 2, first.Size.X + 6, spec.Rect("button.restore").Position.Y - first.Position.Y - 6);
+        var rows = RowsFor(_tab).ToList();
+        var scroll = new ScrollContainer { Position = area.Position, Size = area.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
+        _layer.AddChild(scroll);
+        var needed = (rows.Count - 1) * pitch + first.Size.Y + 4;
+        var list = new Control { CustomMinimumSize = new Vector2(area.Size.X - 2, Mathf.Max(area.Size.Y, needed)), MouseFilter = MouseFilterEnum.Pass };
+        scroll.AddChild(list);
+        for (var i = 0; i < rows.Count; i++)
+            list.AddChild(BuildRow(spec, rows[i], new Rect2(2, 2 + i * pitch, first.Size.X, first.Size.Y)));
+        if (needed > area.Size.Y + 2)
         {
-            Text = "Restore defaults",
-            CustomMinimumSize = new Vector2(220f, 48f),
-            SizeFlagsHorizontal = SizeFlags.ShrinkEnd
-        };
-        defaultsButton.Pressed += () =>
-        {
-            GameState.Instance.SetPlayerCallsign("Lantern");
-            GameState.Instance.ClearPlayerProfileSession();
-            GameState.Instance.SetAudioMuted(false);
-            GameState.Instance.SetEffectsVolumePercent(85);
-            GameState.Instance.SetAmbienceVolumePercent(65);
-            GameState.Instance.SetMusicVolumePercent(50);
-            GameState.Instance.SetLanguage("en");
-            GameState.Instance.SetFontSizeOffset(0);
-            GameState.Instance.SetHighContrast(false);
-            GameState.Instance.SetShowDevUi(true);
-            GameState.Instance.SetDeveloperMode(false);
-            GameState.Instance.SetShowFpsCounter(true);
-            GameState.Instance.SetChallengeSyncProvider(ChallengeSyncProviderCatalog.LocalJournalId);
-            GameState.Instance.SetChallengeSyncEndpoint("");
-            GameState.Instance.SetChallengeSyncAutoFlush(false);
-            GameState.Instance.SetDifficulty(DifficultyCatalog.NormalId);
-            GameState.Instance.SetShowHints(true);
-            GameState.Instance.SetPurchaseValidationEndpoint("");
-            RefreshUi();
-        };
-        pages[0].AddChild(defaultsButton);
+            var hint = new RoyalScrollHint { Position = new Vector2(area.End.X - 10, area.Position.Y), Size = new Vector2(6, area.Size.Y), Scroll = scroll };
+            _layer.AddChild(hint);
+        }
+        scroll.GetVScrollBar().ValueChanged += value => _rowsScroll = (float)value;
+        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) scroll.ScrollVertical = (int)_rowsScroll; }).CallDeferred();
+        if (_status.Length > 0) { RoyalToast.Show(this, _status, 690); _status = ""; }
+    }
 
-        // Gameplay
-        var interfaceStack = Section(pages[1], "Interface");
-        var callsignRow = new HBoxContainer();
-        callsignRow.AddThemeConstantOverride("separation", 12);
-        interfaceStack.AddChild(callsignRow);
-        var callsignName = RealmUi.Label("Caravan name", 18); callsignName.CustomMinimumSize = new Vector2(150, 0);
-        callsignName.SizeFlagsHorizontal = SizeFlags.ShrinkBegin; callsignName.VerticalAlignment = VerticalAlignment.Center;
-        callsignRow.AddChild(callsignName);
-        _callsignEdit = new LineEdit
+    private Control BuildRow(RoyalSpec spec, Row row, Rect2 rect)
+    {
+        var origin = spec.Rect("row.music").Position;
+        Rect2 Local(string id) => new(spec.Rect(id).Position - origin, spec.Rect(id).Size);
+        var holder = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass };
+        holder.AddThemeStyleboxOverride("panel", RoyalKit.Slice("settings-row", 92, 10, 12, 10));
+        var iconBox = Local("row.music.iconbox");
+        var icon = row.Icon.StartsWith("settingsicon-") ? RoyalKit.Image(row.Icon, Local("row.music.icon"))
+            : RoyalKit.Image(row.Icon, new Rect2(iconBox.GetCenter() - new Vector2(17, 17), new Vector2(34, 34)), new Color("d8b46e"));
+        holder.AddChild(icon);
+        var name = spec.Label("row.music.label", row.Name, 300);
+        name.Position -= origin;
+        holder.AddChild(name);
+        switch (row)
         {
-            PlaceholderText = "Lantern",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            TooltipText = "Shown in rooms and shared rankings"
-        };
-        callsignRow.AddChild(_callsignEdit);
-        var callsignButton = new RealmButton
-        {
-            Text = "Save",
-            CustomMinimumSize = new Vector2(120f, 44f)
-        };
-        callsignButton.Pressed += () =>
-        {
-            GameState.Instance.SetPlayerCallsign(_callsignEdit.Text);
-            RefreshUi();
-        };
-        callsignRow.AddChild(callsignButton);
-
-        Toggle(interfaceStack, "Tutorial hints", () => GameState.Instance.ShowHints, GameState.Instance.SetShowHints);
-        Toggle(interfaceStack, "Reduced motion", () => GameState.Instance.ReducedMotion, GameState.Instance.SetReducedMotion);
-        Toggle(interfaceStack, "High contrast", () => GameState.Instance.HighContrast, GameState.Instance.SetHighContrast);
-        Toggle(interfaceStack, "FPS counter", () => GameState.Instance.ShowFpsCounter, GameState.Instance.SetShowFpsCounter);
-        Choice(interfaceStack, "Language", () => GameState.Instance.Language.ToUpperInvariant(), () =>
-        {
-            var supported = Locale.GetSupportedLanguages();
-            var currentIndex = Math.Max(0, Array.IndexOf(supported, GameState.Instance.Language));
-            GameState.Instance.SetLanguage(supported[(currentIndex + 1) % supported.Length]);
-        });
-        Stepper(interfaceStack, "Text size", () => $"{16 + GameState.Instance.FontSizeOffset} px",
-            () => GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset - 2),
-            () => GameState.Instance.SetFontSizeOffset(GameState.Instance.FontSizeOffset + 2));
-
-        var difficultyStack = Section(pages[1], "Difficulty");
-        Choice(difficultyStack, "Challenge level", () => GameState.Instance.GetDifficulty().Title, () =>
-        {
-            var all = DifficultyCatalog.GetAll();
-            var currentIndex = 0;
-            for (int i = 0; i < all.Count; i++)
-                if (all[i].Id == GameState.Instance.DifficultyId) { currentIndex = i; break; }
-            GameState.Instance.SetDifficulty(all[(currentIndex + 1) % all.Count].Id);
-        });
-        _difficultyLabel = RealmUi.Label("", 18, true);
-        difficultyStack.AddChild(_difficultyLabel);
-
-        // Online
-        var syncStack = Section(pages[2], "Online play");
-        _syncLabel = RealmUi.Label("", 18, true);
-        syncStack.AddChild(_syncLabel);
-        _lifecycleLabel = RealmUi.Label("", 18, true);
-        syncStack.AddChild(_lifecycleLabel); _lifecycleLabel.Visible = !embedded;
-
-        var providerRow = new HBoxContainer();
-        providerRow.AddThemeConstantOverride("separation", 8);
-        syncStack.AddChild(providerRow);
-        _syncProviderButton = BuildCompactButton("Switch provider", () =>
-        {
-            var nextProviderId = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
-                ? ChallengeSyncProviderCatalog.LocalJournalId
-                : ChallengeSyncProviderCatalog.HttpApiId;
-            GameState.Instance.SetChallengeSyncProvider(nextProviderId);
-            RefreshUi();
-        });
-        providerRow.AddChild(_syncProviderButton);
-		_syncProviderButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-        _syncAutoFlushButton = BuildCompactButton("Auto flush", () =>
-        {
-            GameState.Instance.SetChallengeSyncAutoFlush(!GameState.Instance.ChallengeSyncAutoFlush);
-            RefreshUi();
-        });
-        providerRow.AddChild(_syncAutoFlushButton);
-		_syncAutoFlushButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-
-        var endpointRow = new HBoxContainer();
-        endpointRow.AddThemeConstantOverride("separation", 8);
-        syncStack.AddChild(endpointRow);
-        _syncEndpointEdit = new LineEdit
-        {
-            PlaceholderText = "https://api.example.com/challenge-sync",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        endpointRow.AddChild(_syncEndpointEdit);
-		_syncEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
-        var endpointButton = new RealmButton
-        {
-            Text = "Apply",
-            CustomMinimumSize = new Vector2(120f, 44f)
-        };
-        endpointButton.Pressed += () =>
-        {
-            GameState.Instance.SetChallengeSyncEndpoint(_syncEndpointEdit.Text);
-            RefreshUi();
-        };
-        endpointRow.AddChild(endpointButton);
-		endpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-        endpointRow.Visible = providerRow.Visible = !embedded;
-        var onlineActions = ActionRow(syncStack);
-        onlineActions.AddChild(Grow(RealmUi.Button("people", "Refresh profile", () => { PlayerProfileSyncService.RefreshProfile(out _); RefreshUi(); })));
-        onlineActions.AddChild(Grow(RealmUi.Button("gear", "Connection details", () => { endpointRow.Visible = !endpointRow.Visible; providerRow.Visible = endpointRow.Visible; })));
-
-        // Account
-        var accountActions = ActionRow(pages[3]);
-        accountActions.AddChild(Grow(RealmUi.Button("people", "Manage account", () => AccountDialog.Show(this))));
-        accountActions.AddChild(Grow(RealmUi.Button("close", "Reset campaign", () => MedievalUi.ShowConfirmation(this,
-            "Abandon this campaign?", "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
-            () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); }))));
-
-        var cloudStack = Section(pages[3], "Cloud save");
-        _cloudSaveLabel = RealmUi.Label("", 18, true);
-        cloudStack.AddChild(_cloudSaveLabel);
-        var cloudSaveRow = ActionRow(cloudStack);
-        cloudSaveRow.AddChild(BuildCompactButton("Upload", () =>
-        {
-            CloudSaveService.Upload(out var msg);
-            _cloudSaveLabel.Text = msg;
-            RefreshUi();
-        }));
-        cloudSaveRow.AddChild(BuildCompactButton("Restore", () =>
-        {
-            var restored = CloudSaveService.Download(out var msg);
-            _cloudSaveLabel.Text = msg;
-            if (restored && RealmModal.Embedded(this)) { SceneRouter.Instance.ReloadHome(); return; }
-            RefreshUi();
-        }));
-        cloudSaveRow.AddChild(BuildCompactButton("Check status", () =>
-        {
-            var info = CloudSaveService.GetInfo();
-            if (info.Status == "ok")
+            case SliderRow slider: AddSlider(spec, holder, slider, Local); break;
+            case SwitchRow toggle: AddSwitch(spec, holder, toggle, Local); break;
+            case ChoiceRow choice:
             {
-                var when = DateTimeOffset.FromUnixTimeSeconds(info.UploadedAtUnixSeconds).ToLocalTime().ToString("MM-dd HH:mm");
-                _cloudSaveLabel.Text = $"Saved {when} · version {info.SaveVersion} · {info.SizeBytes / 1024} KB";
+                var box = new Rect2(Local("row.music.slider.track").Position.X + 60, Local("row.music.value").Position.Y, Local("row.music.value").End.X - Local("row.music.slider.track").Position.X - 60, Local("row.music.value").Size.Y);
+                var button = RoyalButton.Over(box, row.Name, () => { choice.Next(); Rebuild(); }, 4);
+                button.SetStates(RoyalKit.Slice("value-box", 8), 4);
+                button.TooltipText = choice.Hint ?? $"Change {row.Name.ToLowerInvariant()}";
+                var text = RoyalText.Serif(choice.Value(), 20, new Color("fff9ec"));
+                text.Align = HorizontalAlignment.Center;
+                button.SetCaption(text, new Rect2(8, 0, box.Size.X - 16, box.Size.Y));
+                holder.AddChild(button);
+                break;
             }
-            else
+            case ActionRow action:
             {
-                _cloudSaveLabel.Text = info.Message;
+                var box = Local("row.music.value"); box = new Rect2(box.End.X - 150, box.Position.Y, 150, box.Size.Y);
+                var button = RoyalButton.Over(box, row.Name, () => { action.Run(); Rebuild(); }, 4);
+                button.SetStates(RoyalKit.Slice("value-box", 8), 4);
+                button.Disabled = !action.Enabled;
+                var text = RoyalText.Caps(action.Button, 16, new Color("fff3d6"), 700);
+                text.Align = HorizontalAlignment.Center;
+                button.SetCaption(text, new Rect2(6, 0, box.Size.X - 12, box.Size.Y));
+                holder.AddChild(button);
+                break;
             }
-            RefreshUi();
-        }));
-
-        // Each optional upload keeps its own switch and a plain list of what it sends.
-        var privacyStack = Section(pages[3], "Privacy");
-        Toggle(privacyStack, "Share analytics", () => GameState.Instance.AnalyticsConsent, GameState.Instance.SetAnalyticsConsent);
-        privacyStack.AddChild(RealmUi.Label("Gameplay events, player ID, game version and platform. Used to tune balance and difficulty.", 18, true));
-        Toggle(privacyStack, "Send crash reports", () => GameState.Instance.CrashReportingConsent, GameState.Instance.SetCrashReportingConsent);
-        privacyStack.AddChild(RealmUi.Label("Error messages, technical traces, player ID, game version, platform and current screen. Used to fix bugs.", 18, true));
-
-        var purchaseStack = Section(pages[3], "Payments");
-        _purchaseLabel = RealmUi.Label("", 18, true);
-        purchaseStack.AddChild(_purchaseLabel);
-        var purchaseEndpointRow = new HBoxContainer();
-        purchaseEndpointRow.AddThemeConstantOverride("separation", 8);
-        purchaseStack.AddChild(purchaseEndpointRow);
-        _purchaseEndpointEdit = new LineEdit
-        {
-            PlaceholderText = "https://api.example.com",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        purchaseEndpointRow.AddChild(_purchaseEndpointEdit);
-		_purchaseEndpointEdit.Editable = !GameState.Instance.IsReleaseBackendConfigured;
-        var purchaseEndpointButton = new RealmButton
-        {
-            Text = "Apply",
-            CustomMinimumSize = new Vector2(120f, 44f)
-        };
-        purchaseEndpointButton.Pressed += () =>
-        {
-            GameState.Instance.SetPurchaseValidationEndpoint(_purchaseEndpointEdit.Text);
-            RefreshUi();
-        };
-        purchaseEndpointRow.AddChild(purchaseEndpointButton);
-		purchaseEndpointButton.Disabled = GameState.Instance.IsReleaseBackendConfigured;
-        if (embedded)
-        {
-            purchaseEndpointRow.Hide();
-            var details = RealmUi.Button("gear", "Connection details", () => purchaseEndpointRow.Visible = !purchaseEndpointRow.Visible);
-            details.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
-            purchaseStack.AddChild(details);
+            case InfoRow info:
+            {
+                var value = RoyalText.Serif(info.Value(), 18, new Color("d8cfc0"), 500);
+                value.Align = HorizontalAlignment.Right;
+                value.Position = new Vector2(Local("row.music.slider.track").Position.X - 60, name.Position.Y);
+                value.Size = new Vector2(Local("row.music.value").End.X - value.Position.X, name.Size.Y);
+                value.Baseline = name.Baseline;
+                holder.AddChild(value);
+                break;
+            }
+            case EditRow edit:
+            {
+                var box = new Rect2(Local("row.music.slider.track").Position.X - 30, Local("row.music.value").Position.Y, Local("row.music.value").End.X - Local("row.music.slider.track").Position.X + 30, Local("row.music.value").Size.Y);
+                var field = new LineEdit { Text = edit.Value(), PlaceholderText = edit.Placeholder, Position = box.Position, Size = box.Size, Editable = edit.Enabled,
+                    TooltipText = row.Name, AccessibilityName = row.Name };
+                field.AddThemeStyleboxOverride("normal", RoyalKit.Slice("value-box", 8));
+                field.AddThemeStyleboxOverride("focus", RoyalKit.Slice("value-box", 8));
+                field.AddThemeStyleboxOverride("read_only", RoyalKit.Slice("value-box", 8));
+                field.AddThemeFontOverride("font", RoyalFonts.Body(500));
+                field.AddThemeFontSizeOverride("font_size", 18);
+                field.AddThemeColorOverride("font_color", new Color("fff9ec"));
+                field.AddThemeConstantOverride("minimum_character_width", 4);
+                field.TextSubmitted += value => { edit.Apply(value); Rebuild(); };
+                field.FocusExited += () => { if (field.Text != edit.Value()) edit.Apply(field.Text); };
+                holder.AddChild(field);
+                break;
+            }
         }
+        return holder;
+    }
 
-        var bottomRow = new HBoxContainer();
-        bottomRow.AddThemeConstantOverride("separation", 12);
-        rootStack.AddChild(bottomRow); bottomRow.Visible = !embedded;
-
-        _backButton = new RealmButton
+    private void AddSlider(RoyalSpec spec, Control holder, SliderRow row, Func<string, Rect2> local)
+    {
+        var track = local("row.music.slider.track");
+        holder.AddChild(new Panel { Position = track.Position, Size = track.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("slider-track", 8, 6, 8, 6))));
+        var fill = new Panel { Position = local("row.music.slider.fill").Position, MouseFilter = MouseFilterEnum.Ignore };
+        fill.AddThemeStyleboxOverride("panel", RoyalKit.Slice("slider-fill", 5, 3, 5, 3));
+        holder.AddChild(fill);
+        var knobSize = local("row.music.slider.knob").Size;
+        var knob = RoyalKit.Image("slider-knob", new Rect2(Vector2.Zero, knobSize));
+        holder.AddChild(knob);
+        var value = spec.Label("row.music.value.text", "", 90);
+        value.Position -= spec.Rect("row.music").Position;
+        var slider = new HSlider { MinValue = 0, MaxValue = 100, Step = 1, Value = row.Value(), Position = track.Position - new Vector2(10, 10), Size = track.Size + new Vector2(20, 20),
+            AccessibilityName = row.Name + " volume", MouseDefaultCursorShape = CursorShape.PointingHand };
+        foreach (var style in new[] { "slider", "grabber_area", "grabber_area_highlight" }) slider.AddThemeStyleboxOverride(style, new StyleBoxEmpty());
+        var empty = new ImageTexture();
+        foreach (var icon in new[] { "grabber", "grabber_highlight", "grabber_disabled" }) slider.AddThemeIconOverride(icon, empty);
+        slider.SetMeta("volume_channel", row.Name);
+        holder.AddChild(slider);
+        holder.AddChild(new Panel { Position = local("row.music.value").Position, Size = local("row.music.value").Size, MouseFilter = MouseFilterEnum.Ignore }
+            .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("value-box", 8))));
+        holder.AddChild(value);
+        void Show(double amount)
         {
-            CustomMinimumSize = new Vector2(220f, 48f)
-        };
-        _backButton.Pressed += () => SceneRouter.Instance.ReturnFromSettings();
-        bottomRow.AddChild(_backButton);
-
-        _titleButton = new RealmButton
-        {
-            Text = "Back to title",
-            CustomMinimumSize = new Vector2(180f, 48f)
-        };
-        _titleButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
-        bottomRow.AddChild(_titleButton);
-        if (embedded) RealmModal.Polish(rootStack);
+            var width = (track.Size.X - 6) * (float)(amount / 100.0);
+            fill.Size = new Vector2(Mathf.Max(0, width), local("row.music.slider.fill").Size.Y);
+            fill.Visible = width > 2;
+            knob.Position = new Vector2(track.Position.X + 3 + width - knobSize.X / 2, local("row.music.slider.knob").Position.Y);
+            value.Text = $"{amount:0}%";
+        }
+        Show(row.Value());
+        slider.ValueChanged += amount => { row.Apply((int)amount); Show(amount); };
     }
 
-    private readonly List<Action> _rowSyncs = new();
-
-    private static VBoxContainer Section(VBoxContainer page, string title)
+    private void AddSwitch(RoyalSpec spec, Control holder, SwitchRow row, Func<string, Rect2> local)
     {
-        var panel = new PanelContainer();
-        page.AddChild(panel);
-        var padding = new MarginContainer();
-        foreach (var side in new[] { "left", "top", "right", "bottom" }) padding.AddThemeConstantOverride("margin_" + side, 14);
-        panel.AddChild(padding);
-        var stack = new VBoxContainer();
-        stack.AddThemeConstantOverride("separation", 10);
-        padding.AddChild(stack);
-        stack.AddChild(RealmUi.SectionTitle(title));
-        return stack;
-    }
-
-    private static HBoxContainer ActionRow(Control host)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 10);
-        host.AddChild(row);
-        return row;
-    }
-
-    private static Button Grow(Button button)
-    {
-        button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        return button;
-    }
-
-    // A setting name on the left and its control, sized consistently, on the right.
-    private static T SettingRow<T>(VBoxContainer host, string name, T control) where T : Control
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
-        host.AddChild(row);
-        var label = RealmUi.Label(name, 18);
-        label.VerticalAlignment = VerticalAlignment.Center;
-        row.AddChild(label);
-        control.CustomMinimumSize = new Vector2(Math.Max(control.CustomMinimumSize.X, 168), 44);
-        control.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
-        row.AddChild(control);
-        return control;
-    }
-
-    private Button Toggle(VBoxContainer host, string name, Func<bool> value, Action<bool> apply)
-    {
-        var button = new RealmButton { ToggleMode = true, AccessibilityName = name, TooltipText = name, MouseDefaultCursorShape = CursorShape.PointingHand };
+        var rect = local("row.mute.toggle");
+        rect.Position = new Vector2(rect.Position.X, (holder.Size.Y - rect.Size.Y) / 2);
+        var on = row.Value();
+        var button = RoyalButton.Over(rect, row.Name, () => { row.Apply(!row.Value()); Rebuild(); }, (int)(rect.Size.Y / 2));
+        button.ToggleMode = true; button.SetPressedNoSignal(on);
         button.SetMeta("realm_toggle", true);
-        void Sync() { button.SetPressedNoSignal(value()); button.Text = value() ? "On" : "Off"; }
-        button.Pressed += () => { apply(!value()); RefreshUi(); };
-        _rowSyncs.Add(Sync); Sync();
-        return SettingRow(host, name, button);
+        var track = RoyalKit.Slice("toggle-track", 18, 12, 18, 12);
+        button.SetStates(on ? track.Tinted(new Color(.55f, 1.25f, 1.3f)) : track, rect.Size.Y / 2, on ? track.Tinted(new Color(.55f, 1.25f, 1.3f)) : null);
+        var knob = local("row.mute.toggle.knob").Size;
+        button.SetGlyph(RoyalKit.Texture("toggle-knob"), new Rect2(on ? rect.Size.X - knob.X - 3 : 3, (rect.Size.Y - knob.Y) / 2, knob.X, knob.Y));
+        holder.AddChild(button);
+        var state = spec.Label("row.mute.state", on ? "ON" : "OFF", 60, on ? new Color("f3dfa6") : null);
+        state.Position = new Vector2(rect.End.X + spec.Number("row.mute.state", "pen_x", 1070) - spec.Rect("row.mute.toggle").End.X, state.Position.Y - spec.Rect("row.mute").Position.Y + (holder.Size.Y - spec.Rect("row.mute").Size.Y) / 2);
+        holder.AddChild(state);
+        button.Text = on ? "On" : "Off";
     }
 
-    private Button Choice(VBoxContainer host, string name, Func<string> value, Action next)
+    private void BuildButtons(RoyalSpec spec)
     {
-        var button = new RealmButton { AccessibilityName = name, TooltipText = $"Change {name.ToLowerInvariant()}", MouseDefaultCursorShape = CursorShape.PointingHand };
-        void Sync() => button.Text = value();
-        button.Pressed += () => { next(); RefreshUi(); };
-        _rowSyncs.Add(Sync); Sync();
-        return SettingRow(host, name, button);
-    }
-
-    private void Stepper(VBoxContainer host, string name, Func<string> value, Action decrease, Action increase)
-    {
-        var group = new HBoxContainer();
-        group.AddThemeConstantOverride("separation", 8);
-        var less = RealmUi.IconButton("minus", $"Smaller {name.ToLowerInvariant()}", () => { decrease(); RefreshUi(); });
-        var amount = RealmUi.Label("", 18); amount.CustomMinimumSize = new Vector2(64, 0); amount.AutowrapMode = TextServer.AutowrapMode.Off;
-        amount.HorizontalAlignment = HorizontalAlignment.Center; amount.VerticalAlignment = VerticalAlignment.Center;
-        var more = RealmUi.IconButton("plus", $"Larger {name.ToLowerInvariant()}", () => { increase(); RefreshUi(); });
-        group.AddChild(less); group.AddChild(amount); group.AddChild(more);
-        _rowSyncs.Add(() => amount.Text = value());
-        SettingRow(host, name, group);
-    }
-
-    private static Button BuildCompactButton(string text, System.Action onPressed)
-    {
-        var button = new RealmButton
-        {
-            Text = text,
-            CustomMinimumSize = new Vector2(0f, 40f),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        button.Pressed += onPressed;
-        return button;
-    }
-
-    private void RefreshUi()
-    {
-        RefreshDeveloperPage();
-        foreach (var (slider, amount, channel) in _volumes) {
-            int value = channel == "Music" ? GameState.Instance.MusicVolumePercent : channel == "Effects" ? GameState.Instance.EffectsVolumePercent : GameState.Instance.AmbienceVolumePercent;
-            slider.SetValueNoSignal(value); amount.Text = value + "%";
-        }
-        foreach (var sync in _rowSyncs) sync();
-        _returnLabel.Text = $"Return target: {SceneRouter.Instance.SettingsReturnLabel}";
-        _difficultyLabel.Text = GameState.Instance.GetDifficulty().Description;
-        _syncLabel.Text = string.IsNullOrEmpty(GameState.Instance.AccountProvider)
-            ? "Playing locally. Sign in from the Account tab to connect your caravan."
-            : $"Connected with {GameState.Instance.AccountProvider}.";
-        _lifecycleLabel.Text = AppLifecycleService.Instance?.BuildStatusSummary() ?? "";
-        if (!_callsignEdit.HasFocus())
-        {
-            _callsignEdit.Text = GameState.Instance.PlayerCallsign;
-        }
-        if (!_syncEndpointEdit.HasFocus())
-        {
-            _syncEndpointEdit.Text = GameState.Instance.ChallengeSyncEndpoint;
-        }
-        _syncProviderButton.Text = GameState.Instance.ChallengeSyncProviderId == ChallengeSyncProviderCatalog.HttpApiId
-            ? "Use local journal"
-            : "Use HTTP API";
-        _syncAutoFlushButton.Text = GameState.Instance.ChallengeSyncAutoFlush ? "Auto flush: On" : "Auto flush: Off";
-        _purchaseLabel.Text = $"{GameState.Instance.TotalPurchaseCount} purchases · {DetectPurchasePlatform()}";
-        _cloudSaveLabel.Visible = _cloudSaveLabel.Text.Length > 0;
-        if (!_purchaseEndpointEdit.HasFocus())
-        {
-            _purchaseEndpointEdit.Text = GameState.Instance.PurchaseValidationEndpoint;
-        }
+        var restore = RoyalButton.Over(spec.Rect("button.restore"), "Restore defaults", RestoreDefaults, 6);
+        restore.SetGlyph(RoyalKit.Texture("icon-restore"), new Rect2(spec.Rect("button.restore.icon").Position - spec.Rect("button.restore").Position, spec.Rect("button.restore.icon").Size));
+        var restoreLabel = spec.Label("button.restore.label", "Restore Defaults", 240);
+        restoreLabel.Position -= spec.Rect("button.restore").Position;
+        restore.SetCaption(restoreLabel, new Rect2(restoreLabel.Position, restoreLabel.Size));
+        _layer.AddChild(restore);
         var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
-        _backButton.Text = $"Back to {returnLabel.ToLowerInvariant()}";
-        _titleButton.Visible = !returnLabel.Equals("Title", StringComparison.OrdinalIgnoreCase);
+        var backText = RealmModal.Embedded(this) || HasMeta("battle_modal") ? "Back to Map" : $"Back to {returnLabel}";
+        if (HasMeta("battle_modal")) backText = "Back to Battle";
+        var back = RoyalButton.Over(spec.Rect("button.back"), backText, Leave, 6);
+        back.SetGlyph(RoyalKit.Texture("icon-map-pin"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
+        var backLabel = spec.Label("button.back.label", backText, 220);
+        backLabel.Position -= spec.Rect("button.back").Position;
+        back.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
+        _layer.AddChild(back);
+    }
+
+    private void Leave()
+    {
+        if (HasMeta("battle_modal") || RealmModal.Embedded(this)) { Close(); return; }
+        SceneRouter.Instance.ReturnFromSettings();
+    }
+
+    private void RestoreDefaults()
+    {
+        var state = GameState.Instance;
+        state.SetPlayerCallsign("Lantern");
+        state.ClearPlayerProfileSession();
+        state.SetAudioMuted(false);
+        state.SetEffectsVolumePercent(85);
+        state.SetAmbienceVolumePercent(65);
+        state.SetMusicVolumePercent(50);
+        state.SetLanguage("en");
+        state.SetFontSizeOffset(0);
+        state.SetHighContrast(false);
+        state.SetShowDevUi(true);
+        state.SetDeveloperMode(false);
+        state.SetShowFpsCounter(true);
+        state.SetChallengeSyncProvider(ChallengeSyncProviderCatalog.LocalJournalId);
+        state.SetChallengeSyncEndpoint("");
+        state.SetChallengeSyncAutoFlush(false);
+        state.SetDifficulty(DifficultyCatalog.NormalId);
+        state.SetShowHints(true);
+        state.SetPurchaseValidationEndpoint("");
+        _status = "Settings restored to defaults.";
+        Rebuild();
+    }
+
+    private void OpenDeveloperTools()
+    {
+        var layer = new CanvasLayer { Layer = 40 };
+        AddChild(layer);
+        var modal = RealmModal.OpenInspector(layer, "Developer tools", "settings", 900, 560);
+        var page = RealmUi.Scroll(modal.Content);
+        ((ScrollContainer)page.GetParent()).SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        BuildDeveloperPage(page);
+        RefreshDeveloperPage();
+        RealmModal.Polish(page);
     }
 
     private static string DetectPurchasePlatform()
@@ -542,14 +387,27 @@ public partial class SettingsMenu : Control
         if (OS.HasFeature("android")) return "Google Play Billing";
         return "Stripe Checkout (web/PC)";
     }
+}
 
-    private void OnAppLifecycleStateChanged()
+/// <summary>A thin brass thumb showing where a scrolling list is.</summary>
+public partial class RoyalScrollHint : Control
+{
+    public ScrollContainer Scroll;
+    public RoyalScrollHint() { MouseFilter = MouseFilterEnum.Ignore; }
+    public override void _Process(double delta) => QueueRedraw();
+    public override void _Draw()
     {
-        if (!IsInsideTree())
-        {
-            return;
-        }
-
-        RefreshUi();
+        if (!GodotObject.IsInstanceValid(Scroll)) return;
+        var bar = Scroll.GetVScrollBar();
+        var range = Mathf.Max(1, bar.MaxValue - bar.Page);
+        var length = Mathf.Clamp(Size.Y * (float)(bar.Page / Mathf.Max(1, bar.MaxValue)), 24, Size.Y);
+        var top = (Size.Y - length) * (float)(bar.Value / range);
+        DrawRect(new Rect2(0, 0, Size.X, Size.Y), new Color(.1f, .08f, .06f, .55f));
+        DrawRect(new Rect2(0, top, Size.X, length), new Color("b89458"));
     }
+}
+
+public static class ControlExtensions
+{
+    public static T With<T>(this T control, Action<T> setup) where T : Control { setup(control); return control; }
 }

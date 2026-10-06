@@ -148,22 +148,6 @@ def harpoon(coll):
     return dict(objs=_to_x(out))
 
 
-def frost_shard(coll):
-    ice = S.glass('bff4ff', name='Frost crystal', ior=1.31, rough=0.12, glow=0.6)
-    core_glow = S.emissive('d8fbff', strength=3.0, name='Frost core')
-    L = 0.42
-    out = [geo.lathe('Shard', [(0.0, 0.0), (0.045, 0.1), (0.05, 0.24), (0.0, L)], 6, ice, coll)]
-    out.append(geo.lathe('Core', [(0.0, 0.06), (0.014, 0.14), (0.0, 0.3)], 6, core_glow, coll))
-    rnd = random.Random(4)
-    for k in range(4):
-        z = 0.08 + 0.05 * k
-        a = rnd.uniform(0, math.tau)
-        d = _v(math.cos(a), math.sin(a), -0.6).normalized()
-        p0 = _v(0, 0, z)
-        out.append(geo.tube('Spur', [p0, p0 + d * 0.09], [0.018, 0.001], ice, coll, sides=5))
-    return dict(objs=_to_x(out))
-
-
 # ------------------------------------------------------------------ thrown shots (upright, spun or swayed)
 def flask(coll):
     M = palette.lantern()
@@ -250,10 +234,10 @@ def blight_glob(coll):
 
 
 BUILDERS = dict(arrow=arrow, bolt=bolt, ballista_bolt=ballista_bolt, bone_bolt=bone_bolt, harpoon=harpoon,
-                frost_shard=frost_shard, flask=flask, plague_pot=plague_pot, firepot=firepot, cog=cog, skull=skull,
+                flask=flask, plague_pot=plague_pot, firepot=firepot, cog=cog, skull=skull,
                 blight_glob=blight_glob)
 # Modelled along +X with the shaft on the X axis; the rest are thrown shots modelled upright.
-LONG_SHOTS = {'arrow', 'bolt', 'ballista_bolt', 'bone_bolt', 'harpoon', 'frost_shard'}
+LONG_SHOTS = {'arrow', 'bolt', 'ballista_bolt', 'bone_bolt', 'harpoon'}
 
 
 def _bounds(objs):

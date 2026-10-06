@@ -86,8 +86,8 @@ public partial class MobilePresentationReview : Node
                 var labels=art.FindChildren("*","Label",true,false).OfType<Label>().Where(l=>l.IsVisibleInTree()).ToArray();
                 var cardRect=button.GetGlobalRect();
                 Check(labels.All(l=>cardRect.Grow(.1f).Encloses(l.GetGlobalRect())),"Corner cost and temporary status remain inside card");
-                Check(art.CostPlate.Position.X>=art.Size.X*.5f && art.CostPlate.Position.Y<=6,"Courage cost sits in the top-right corner");
-                Check(art.Portrait.Texture!=null && art.Portrait.Size.Y>=art.Size.Y*.8f,"Large portrait dominates the card");
+                Check(art.CostPlate.GetRect().End.X >= art.Size.X - 6 && art.CostPlate.GetRect().End.X <= art.Size.X + 1 && art.CostPlate.Position.Y<=6,"Courage cost sits in the top-right corner");
+                Check(art.Portrait.Texture!=null && art.Portrait.Size.Y>=art.Size.Y*.6f && new Rect2(Vector2.Zero,art.Size).Encloses(art.Portrait.GetRect()),"Portrait sits whole inside the card");
                 Check(labels.All(l=>!l.Text.Contains("DEPLOY") && !l.Text.Contains("CAST") && !l.Text.Contains("Ready")),"Ready cards have no redundant action words");
                 Check(button.CustomMinimumSize.X>=56 && button.CustomMinimumSize.Y>=56 && !string.IsNullOrWhiteSpace(button.AccessibilityName),
                     "Icon-only cards retain large touch targets and accessible names");
@@ -248,8 +248,8 @@ public partial class MobilePresentationReview : Node
             if(mobile)
                 foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
                 {
-                    var rect=button.GetGlobalTransformWithCanvas()*new Rect2(Vector2.Zero,button.Size);
-                    Check(rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
+                    var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
+                    Check(rect.Position.X>=-1 && rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
                 }
             if(inspectors.Length==0) { home.CloseHomeModal(); await Settle(); continue; }
             inspectors[0].EmitSignal(BaseButton.SignalName.Pressed); await Settle(6);
@@ -273,13 +273,9 @@ public partial class MobilePresentationReview : Node
         await LiveUiReview.Open(this,"MainMenu");
         var shop=(ShopMenu)await LiveUiReview.Open(this,"ShopMenu"); await Settle(20);
         var shopModel=shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
-        shopModel._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=new Vector2(20,20)});
-        shopModel._GuiInput(new InputEventMouseMotion {Position=new Vector2(60,20)});
-        shopModel._GuiInput(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=new Vector2(60,20)});
-        Check(shopModel.MouseFilter==Control.MouseFilterEnum.Pass && !shop.GetChildren().OfType<ModelShowcase>().Any(),
-            "Dragging the armory model does not open inspection");
-        shopModel.InspectRequested(); await Settle();
-        Check(shop.GetChildren().OfType<ModelShowcase>().Any(),"Armory opens the large model inspector");
+        // The armory already shows the full profile beside the model, so the model opens no extra inspector.
+        Check(shopModel.MouseFilter==Control.MouseFilterEnum.Ignore && shopModel.InspectRequested==null && !shop.GetChildren().OfType<ModelShowcase>().Any(),
+            "The armory model is display-only and opens no extra inspector");
         shop.QueueFree(); await Settle();
     }
 

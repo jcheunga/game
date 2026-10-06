@@ -1,6 +1,6 @@
 """Build comparison media (old vs remaster) for the review page.
 
-python3 art/remaster/compare.py   ->  artifacts/remaster/compare/{units,battle,items,structures,menus,particles}/...
+python3 art/remaster/compare.py   ->  artifacts/remaster/compare/{units,battle,items,structures,particles}/...
 """
 import json
 import math
@@ -73,9 +73,11 @@ def unit_strip(ident, panel=(300, 300), px_per_draw=58.0):
     return path
 
 
-def battle_scene(ids, out_name, stage_png='assets/world/battles/stage-01.png', frame_idx=0, zoom=2.0, crop=(200, 130, 1800, 680)):
-    """Old and new rosters standing on the same painted battlefield at runtime scale."""
-    bg = Image.open(ROOT / stage_png).convert('RGBA').crop(crop)
+def battle_scene(ids, out_name, stage_png='assets/world/royal/city_ground.png', frame_idx=0, zoom=2.0, crop=None):
+    """Old and new rosters standing on the same painted road at runtime scale."""
+    bg = Image.open(ROOT / stage_png).convert('RGBA')
+    if crop:
+        bg = bg.crop(crop)
     bg = bg.resize((int(bg.width * zoom / 2), int(bg.height * zoom / 2)))
     out = []
     for label, src in (('current', 'old'), ('remaster', 'new')):
@@ -156,7 +158,7 @@ def items():
 
 def structures():
     ids = ['war_wagon'] + [f'war_wagon_skin_{s}' for s in ('iron', 'royal', 'bone', 'flame', 'shadow', 'guild', 'legendary')] + \
-          ['gatehouse'] + [f'mount_{m}' for m in ('arrows', 'ballista', 'firepot', 'frost', 'hex')]
+          ['gatehouse'] + [f'mount_{m}' for m in ('arrows', 'ballista', 'firepot')]
     res = []
     for i in ids:
         old, new = OLD / 'assets/structures' / f'{i}.png', REVIEW / 'structures' / f'{i}.png'
@@ -192,47 +194,6 @@ def battle_v2():
         p = OUT / 'structures' / f'battle-{new.stem}.jpg'
         p.parent.mkdir(parents=True, exist_ok=True)
         c.save(p, quality=88)
-        res.append(p)
-    return res
-
-
-def menus():
-    res = []
-    for new in sorted((REVIEW / 'menus').glob('*.png')) if (REVIEW / 'menus').exists() else []:
-        if new.stem.startswith('contact'):
-            continue
-        old = OLD / 'assets/ui/backgrounds' / new.name
-        if not old.exists():
-            continue
-        a = Image.open(old).convert('RGB').resize((640, 360), Image.LANCZOS)
-        b = Image.open(new).convert('RGB').resize((640, 360), Image.LANCZOS)
-        c = Image.new('RGB', (1288, 360), STAGE_BG)
-        c.paste(a, (0, 0))
-        c.paste(b, (648, 0))
-        p = OUT / 'menus' / f'{new.stem}.jpg'
-        p.parent.mkdir(parents=True, exist_ok=True)
-        c.save(p, quality=86)
-        res.append(p)
-    return res
-
-
-def backdrops(folder, old_rel, size):
-    res = []
-    for new in sorted((REVIEW / folder).glob('*.png')) if (REVIEW / folder).exists() else []:
-        if new.stem.startswith('contact'):
-            continue
-        old = OLD / old_rel / new.name
-        if not old.exists():
-            continue
-        w, h = size
-        a = Image.open(old).convert('RGB').resize((w, h), Image.LANCZOS)
-        b = Image.open(new).convert('RGB').resize((w, h), Image.LANCZOS)
-        c = Image.new('RGB', (w * 2 + 8, h), STAGE_BG)
-        c.paste(a, (0, 0))
-        c.paste(b, (w + 8, 0))
-        p = OUT / folder / f'{new.stem}.jpg'
-        p.parent.mkdir(parents=True, exist_ok=True)
-        c.save(p, quality=84)
         res.append(p)
     return res
 
@@ -278,10 +239,7 @@ if __name__ == '__main__':
     battle_scene(['player_brawler', 'player_shooter', 'player_defender', 'player_spear', 'player_ranger', 'player_marksman',
                   'player_banner', 'player_raider', 'player_hound'], 'kings-road-lantern')
     battle_scene(['enemy_walker', 'enemy_runner', 'enemy_bloater', 'enemy_brute', 'enemy_spitter', 'enemy_shieldwall', 'enemy_lich',
-                  'enemy_crusher', 'enemy_boss'], 'kings-road-rotbound', stage_png='assets/world/battles/stage-07.png')
+                  'enemy_crusher', 'enemy_boss'], 'kings-road-rotbound')
     print('items', items())
     print('structures', len(structures()), 'battle-v2', len(battle_v2()))
-    print('menus', len(menus()))
-    print('battlefields', len(backdrops('battlefields', 'assets/backgrounds', (640, 360))))
-    print('maps', len(backdrops('maps', 'assets/map/backgrounds', (480, 360))))
     print('particles', particles())

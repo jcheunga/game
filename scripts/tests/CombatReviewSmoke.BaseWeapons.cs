@@ -63,13 +63,13 @@ public partial class CombatReviewSmoke
         var ballista = BaseWeaponCatalog.Wagon(BaseUpgradeCatalog.BallistaId, 1);
         Check(ReferenceEquals(Invoke(battle, "FindBaseWeaponTarget", Team.Player, core, ballista), armored),
             "Ballista prioritizes armored targets");
-        Invoke(battle, "FireBaseWeapon", Team.Player, ballista, armored);
+        Invoke(battle, "FireBaseWeapon", ballista, armored);
         ResolveShots();
         Check(Mathf.IsEqualApprox(armored.MaxHealth - armored.Health, ballista.Damage * 1.5f * 0.5f),
             "Ballista armor bonus still respects the target's damage reduction");
         var shield = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_shieldwall")), core + new Vector2(115, -30));
         var armoredHealth = armored.Health;
-        Invoke(battle, "FireBaseWeapon", Team.Player, arrows, armored);
+        Invoke(battle, "FireBaseWeapon", arrows, armored);
         ResolveShots();
         Check(armored.Health == armoredHealth && shield.Health < shield.MaxHealth, "Shield walls intercept wagon arrows aimed behind them");
         shield.TakeDamage(10000);
@@ -79,11 +79,11 @@ public partial class CombatReviewSmoke
         Check(new[] { clusterA, clusterB }.Contains((Unit)Invoke(battle, "FindBaseWeaponTarget", Team.Player, core, firepot)),
             "Firepots prefer clustered enemies");
         ally.Position = clusterA.Position;
-        Invoke(battle, "FireBaseWeapon", Team.Player, firepot, clusterA);
+        Invoke(battle, "FireBaseWeapon", firepot, clusterA);
         ResolveShots();
         Check(clusterA.Health < clusterA.MaxHealth && clusterB.Health < clusterB.MaxHealth && ally.Health == ally.MaxHealth,
             "Firepot impact damages a group and spares allies");
-        Invoke(battle, "FireBaseWeapon", Team.Player, arrows, clusterA);
+        Invoke(battle, "FireBaseWeapon", arrows, clusterA);
         clusterA.TakeDamage(10000);
         var before = clusterB.Health;
         ResolveShots();
@@ -126,17 +126,13 @@ public partial class CombatReviewSmoke
         Check(Mathf.IsEqualApprox(hullBefore - Read<float>(battle, "_playerBaseHealth"), infantry.BaseDamage * 0.7f),
             "Maximum axle armor reduces enemy base attacks by 30%");
         foreach (var unit in Read<List<Unit>>(battle, "_units").Where(x => x.Team == Team.Enemy)) unit.Position = core + new Vector2(600, 0);
-        ally.Position = Core(false) - new Vector2(150, 0);
+        // The enemy stronghold has no weapons: troops at its gate are never shot.
+        ally.Position = Core(false) - new Vector2(60, 0);
+        var allyHealth = ally.Health;
         Invoke(battle, "TickBaseWeapons", 10f);
-        Check(Shots().Length == 0 && Read<Unit>(battle, "_strongholdAim") == ally, "Castle archers warn before firing");
-        Invoke(battle, "TickBaseWeapons", 0.8f);
-        Check(Shots().Length == 1, "Castle archers fire after their aim window");
-        ResolveShots();
-        Check(ally.Health < ally.MaxHealth, "Stronghold projectiles damage attacking troops");
+        Invoke(battle, "TickBaseWeapons", 10f);
+        Check(Shots().Length == 0 && Mathf.IsEqualApprox(ally.Health, allyHealth), "The enemy stronghold never fires at troops at its gate");
         Write(battle, "_enemyBaseHealth", 0f);
-        Invoke(battle, "TickBaseWeapons", 10f);
-        Invoke(battle, "TickBaseWeapons", 1f);
-        Check(Shots().Length == 0, "Breached strongholds stop firing");
         Write(battle, "_wagonVolleyRecovery", 0f);
         Invoke(battle, "TickWagonSkills", 1f);
         Check(Read<float>(battle, "_wagonVolleyRecovery") == 0, "A ready volley is saved when no targets are in range");
@@ -153,11 +149,6 @@ public partial class CombatReviewSmoke
         Check(Shots().Length == 0, "Destroyed wagons stop firing");
         await CloseBattle(battle);
 
-        Check(BaseWeaponCatalog.Stronghold(RouteCatalog.CityId).Kind == BaseWeaponKind.Arrows &&
-            BaseWeaponCatalog.Stronghold(RouteCatalog.FoundryId).SplashRadius > 0 &&
-            BaseWeaponCatalog.Stronghold(RouteCatalog.ThornwallId).Kind == BaseWeaponKind.Frost &&
-            BaseWeaponCatalog.Stronghold(RouteCatalog.CitadelId).Kind == BaseWeaponKind.Ballista,
-            "Enemy factions have distinct stronghold weapons");
         var saved = (GameSaveData)Invoke(state, "BuildSaveData");
         saved.Gold = 10000;
         Invoke(state, "ApplySavedData", JsonSerializer.Deserialize<GameSaveData>(JsonSerializer.Serialize(saved))!);
@@ -186,7 +177,6 @@ public partial class CombatReviewSmoke
         battle.SetPhysicsProcess(false);
         Check(Read<Label>(battle, "_statusLabel") != null && Read<BattleHudBar>(battle, "_healthBar") != null,
             "Endless battle initializes its health HUD");
-        Check(Read<object>(battle, "_strongholdMount") == null, "Endless mode has no phantom stronghold weapon");
         core = Core(true);
         Spawn(Team.Enemy, core + new Vector2(100, 0));
         Invoke(battle, "TickBaseWeapons", 1f);

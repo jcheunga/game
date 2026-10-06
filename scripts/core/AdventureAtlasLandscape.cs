@@ -6,7 +6,7 @@ using Godot;
 /// <summary>Deterministic geography, independent of saved point identities and completion rules.</summary>
 public static class AdventureAtlasLandscape
 {
-    private sealed record Region(Vector2[] Outline, Vector2[][] Land, Vector2[][] Banks, Vector2[][] Water, Vector2[][] Roads);
+    private sealed record Region(Vector2[] Outline, Vector2[][] Land);
     private sealed record Geography(Dictionary<string, Region> Regions, Vector2[] Coast, Vector2[] River, Vector2[] Bridges, Vector2[] RoadPath);
     private static readonly Dictionary<string, Geography> Cache = new();
     private static readonly Dictionary<string, Vector2[]> RiverLines = new();
@@ -65,9 +65,6 @@ public static class AdventureAtlasLandscape
     }
     public static Vector2[] Outline(AdventureTile tile) => ForMap(tile.MapId).Regions[tile.Id].Outline;
     public static Vector2[][] Land(AdventureTile tile) => ForMap(tile.MapId).Regions[tile.Id].Land;
-    public static Vector2[][] Banks(AdventureTile tile) => ForMap(tile.MapId).Regions[tile.Id].Banks;
-    public static Vector2[][] Water(AdventureTile tile) => ForMap(tile.MapId).Regions[tile.Id].Water;
-    public static Vector2[][] Roads(AdventureTile tile) => ForMap(tile.MapId).Regions[tile.Id].Roads;
     public static Vector2[] Coast(string map) => ForMap(map).Coast;
     public static Vector2[] River(string map) => ForMap(map).River;
     public static Vector2[] RoadPath(string map) => ForMap(map).RoadPath;
@@ -101,11 +98,9 @@ public static class AdventureAtlasLandscape
         var coast = CoastSkeleton(map);
         var river = RiverSkeleton(map);
         var water = Ribbon(river, WaterWidth(map));
-        var banks = Ribbon(river, WaterWidth(map) + 22);
         var route = tiles.Where(tile => tile.Site?.Kind == AdventureSiteKind.Leader)
             .OrderBy(tile => tile.Site.Stage).Select(tile => tile.Point + new Vector2(0, 31)).ToArray();
         var roadPath = Smooth(route, 15);
-        var roads = Ribbon(roadPath, 15);
         var regions = new Dictionary<string, Region>();
         var sitePoints = tiles.Select(tile => tile.Point).ToArray();
         var minimum = Vector2.One * (100 * AdventureTileCatalog.LayoutScale);
@@ -124,13 +119,11 @@ public static class AdventureAtlasLandscape
             var main = clipped.FirstOrDefault(polygon => Geometry2D.IsPointInPolygon(tile.Point, polygon)) ?? bounds;
             var outline = CurveEdges(map, main, sitePoints);
             var land = Geometry2D.ClipPolygons(outline, water).Where(polygon => polygon.Length >= 3 && Geometry2D.TriangulatePolygon(polygon).Length > 0).ToArray();
-            regions[tile.Id] = new(outline, land, Intersect(outline, banks), Intersect(outline, water), Intersect(outline, roads));
+            regions[tile.Id] = new(outline, land);
         }
         var bridges = new[] { 1.3f, 3.4f, 5.55f }.Select(row => Project(map, RiverColumn(map, row), row)).ToArray();
         return Cache[map] = new(regions, coast, river, bridges, roadPath);
     }
-    private static Vector2[][] Intersect(Vector2[] region, Vector2[] feature) => Geometry2D.IntersectPolygons(region, feature)
-        .Where(polygon => polygon.Length >= 3 && Geometry2D.TriangulatePolygon(polygon).Length > 0).ToArray();
     private static Vector2[] ClipHalfPlane(Vector2[] polygon, Vector2 middle, Vector2 normal)
     {
         var result = new List<Vector2>();

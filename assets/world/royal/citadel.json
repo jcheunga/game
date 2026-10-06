@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "citadel_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    427.6,
+    198.16,
+    344.8,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    2082,
+    651
+   ],
+   "file": "citadel_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    262.25,
+    284.84,
+    675.51,
+    201.96
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    609
+   ],
+   "file": "citadel_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    457.69,
+    233.78,
+    284.62,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2113,
+    609
+   ],
+   "file": "citadel_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    468.44,
+    399.72,
+    263.11,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    566
+   ],
+   "file": "citadel_front.png"
+  }
+ ],
+ "sky": "441b1d",
+ "generator": "art/royal/backdrops.py"
+}

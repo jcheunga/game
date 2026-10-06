@@ -37,7 +37,7 @@ from siege import common  # noqa: E402
 
 ROOT = HERE.parent.parent
 SKINS = ['iron', 'royal', 'bone', 'flame', 'shadow', 'guild', 'legendary']
-MOUNTS = ['arrows', 'ballista', 'firepot', 'frost', 'hex']
+MOUNTS = ['arrows', 'ballista', 'firepot']
 ALL = ['war_wagon'] + [f'war_wagon_skin_{s}' for s in SKINS] + ['gatehouse'] + [f'mount_{m}' for m in MOUNTS]
 
 

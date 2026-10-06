@@ -106,8 +106,6 @@ public partial class GameState
     }
     public Vector2 GetAdventureHeroPosition(string mapId) => _adventureHeroPositions.TryGetValue(RouteCatalog.Normalize(mapId), out var point)
         ? point : GetAdventureHeroNode(mapId).Point;
-    public IReadOnlyList<Vector3> GetAdventureRevealAreas(string mapId) => Enumerable.Range(0,AdventureTerrain.CellCount)
-        .Where(c => IsAdventureCellRevealed(mapId,c)).Select(c => new Vector3(AdventureTerrain.Point(c).X,AdventureTerrain.Point(c).Y,80)).ToArray();
     public bool MoveAdventureHero(string mapId, Vector2 point, bool persist = true)
     {
         mapId = RouteCatalog.Normalize(mapId);

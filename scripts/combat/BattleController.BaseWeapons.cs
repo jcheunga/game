@@ -13,9 +13,6 @@ public partial class BattleController
     }
 
     private readonly List<BaseMount> _wagonMounts = new();
-    private BaseMount _strongholdMount;
-    private Unit _strongholdAim;
-    private float _strongholdWindup;
     private int _wagonVolleyLevel, _wagonRepairLevel, _wagonArmorLevel;
     private float _wagonVolleyRecovery;
     private bool _wagonRepairUsed;
@@ -34,8 +31,6 @@ public partial class BattleController
         _wagonArmorLevel = state.GetBaseUpgradeLevel(BaseUpgradeCatalog.ReinforcedArmorId);
         _wagonVolleyRecovery = BaseWeaponCatalog.VolleyCooldown(_wagonVolleyLevel);
         _wagonRepairUsed = false;
-        _strongholdAim = null;
-        _strongholdMount = IsEndlessMode ? null : new BaseMount(BaseWeaponCatalog.Stronghold(_activeRouteId));
     }
 
     private bool CanBaseTarget(Team team, Vector2 origin, BaseWeaponDefinition weapon, Unit target) =>
@@ -73,33 +68,10 @@ public partial class BattleController
             if (mount.Recovery > 0) continue;
             var target = FindBaseWeaponTarget(Team.Player, PlayerBaseCorePosition, mount.Weapon);
             if (target == null) continue;
-            FireBaseWeapon(Team.Player, mount.Weapon, target);
+            FireBaseWeapon(mount.Weapon, target);
             mount.Recovery = mount.Weapon.Cooldown;
         }
         TickWagonSkills(delta);
-        if (_strongholdMount == null || _enemyBaseHealth <= 0)
-        {
-            _strongholdAim = null;
-            return;
-        }
-        // Every stronghold shot has a visible aim window before it launches.
-        if (_strongholdAim != null)
-        {
-            _strongholdWindup -= delta;
-            if (!CanBaseTarget(Team.Enemy, EnemyBaseCorePosition, _strongholdMount.Weapon, _strongholdAim))
-                _strongholdAim = null;
-            else if (_strongholdWindup <= 0)
-            {
-                FireBaseWeapon(Team.Enemy, _strongholdMount.Weapon, _strongholdAim);
-                _strongholdAim = null;
-                _strongholdMount.Recovery = _strongholdMount.Weapon.Cooldown;
-            }
-            return;
-        }
-        _strongholdMount.Recovery = Mathf.Max(0, _strongholdMount.Recovery - delta);
-        if (_strongholdMount.Recovery > 0) return;
-        _strongholdAim = FindBaseWeaponTarget(Team.Enemy, EnemyBaseCorePosition, _strongholdMount.Weapon);
-        _strongholdWindup = 0.7f;
     }
 
     private void TickWagonSkills(float delta)
@@ -119,78 +91,58 @@ public partial class BattleController
         var targets = _units.Where(target => CanBaseTarget(Team.Player, PlayerBaseCorePosition, arrows, target))
             .OrderBy(target => PlayerBaseCorePosition.DistanceSquaredTo(target.Position)).Take(3).ToArray();
         if (targets.Length == 0) return; // Keep a ready skill until enemies arrive.
-        foreach (var target in targets) FireBaseWeapon(Team.Player, arrows, target);
+        foreach (var target in targets) FireBaseWeapon(arrows, target);
         _wagonVolleyRecovery = BaseWeaponCatalog.VolleyCooldown(_wagonVolleyLevel);
     }
 
-    private void FireBaseWeapon(Team team, BaseWeaponDefinition weapon, Unit target)
+    private void FireBaseWeapon(BaseWeaponDefinition weapon, Unit target)
     {
-        var origin = team == Team.Player ? PlayerBaseCorePosition : EnemyBaseCorePosition;
-        if (team == Team.Player && weapon.Kind is BaseWeaponKind.Arrows or BaseWeaponKind.Ballista)
+        var origin = PlayerBaseCorePosition;
+        if (weapon.Kind is BaseWeaponKind.Arrows or BaseWeaponKind.Ballista)
         {
             // Use the same frontal shield protection as troop projectiles.
-            target = _units.Where(shield => CanBaseTarget(team, origin, weapon, shield) &&
+            target = _units.Where(shield => CanBaseTarget(Team.Player, origin, weapon, shield) &&
                     shield.SpecialAbilityId == "projectile_shield" && shield.SpecialBuffRadius > 0 &&
                     shield.Position.DistanceTo(target.Position) <= shield.SpecialBuffRadius &&
                     shield.Position.X >= origin.X && shield.Position.X <= target.Position.X + 40)
                 .OrderBy(shield => origin.DistanceSquaredTo(shield.Position)).FirstOrDefault() ?? target;
         }
         var victim = target;
-        var damage = weapon.Damage;
-        if (team == Team.Enemy)
-            damage *= Mathf.Clamp(_stageData.EnemyDamageScale, 0.75f, 1.8f) *
-                (1f - GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.ProjectileWardId) * 0.08f);
         var projectile = ProjectilePool.Acquire();
         AddChild(projectile);
-        projectile.SetWeaponVisual(weapon.Kind, weapon.Shot);
+        projectile.SetWeaponVisual(weapon.Kind);
         projectile.LaunchGroundY = (BattlefieldTop + BattlefieldBottom) * .5f;
-        var mountIndex = Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind));
-        projectile.Position = BaseMountPosition(team == Team.Player, mountIndex);
+        projectile.Position = WagonMountPosition(Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind)));
         projectile.ProcessMode = ProcessModeEnum.Pausable;
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive;
-        projectile.Setup(victim, damage, weapon.Speed, weapon.Color,
+        projectile.Setup(victim, weapon.Damage, weapon.Speed, weapon.Color,
             amount =>
             {
                 if (_battleEnded) return 0;
                 if (weapon.SplashRadius > 0)
                 {
-                    ApplySplashDamage(team, victim.Position, amount, weapon.SplashRadius, weapon.Color,
-                        team == Team.Player ? weapon.Title : null);
+                    ApplySplashDamage(Team.Player, victim.Position, amount, weapon.SplashRadius, weapon.Color, weapon.Title);
                     SpawnEffect(victim.Position, weapon.Color, 8, weapon.SplashRadius, 0.3f, false);
                     return 0;
                 }
                 if (weapon.Kind == BaseWeaponKind.Ballista && IsArmoredBaseTarget(victim)) amount *= 1.5f;
-                var dealt = victim.TakeDamage(amount, team == Team.Player ? weapon.Title : null);
-                if (weapon.Kind == BaseWeaponKind.Frost) victim.ApplyTemporarySpeedModifier(0.7f, 1.5f);
-                return dealt;
+                return victim.TakeDamage(amount, weapon.Title);
             },
             () => _battleEnded || !IsInstanceValid(victim) || victim.IsDead || victim.IsUntargetable,
             (position, dealt, color) =>
             {
                 if (dealt <= 0) return;
-                if (team == Team.Player) TrackDamageDealt(weapon.Title, dealt);
+                TrackDamageDealt(weapon.Title, dealt);
                 SpawnDamageFeedback(ToLocal(position), dealt, color);
             });
         SpawnEffect(projectile.Position, weapon.Color, 3, 15, 0.16f, false);
     }
 
-    private void DrawBaseArmaments(CanvasItem canvas, bool player)
+    private void DrawWagonArmaments(CanvasItem canvas)
     {
-        if (player && _playerBaseHealth > 0)
-            for (var i = 0; i < _wagonMounts.Count; i++)
-                DrawBaseMount(canvas, BaseMountPosition(true, i), _wagonMounts[i].Weapon, 1);
-        if (!player && _strongholdMount != null && _enemyBaseHealth > 0)
-            DrawBaseMount(canvas, BaseMountPosition(false), _strongholdMount.Weapon, -1);
-    }
-
-    private void DrawStrongholdAim()
-    {
-        if (_strongholdAim != null && IsInstanceValid(_strongholdAim) && !_strongholdAim.IsDead && _enemyBaseHealth > 0)
-        {
-            var color = new Color(_strongholdMount.Weapon.Color, 0.6f);
-            DrawArc(_strongholdAim.Position, Mathf.Max(11, _strongholdMount.Weapon.SplashRadius), 0, Mathf.Tau, 32, color, 2, true);
-            DrawLine(BaseMountPosition(false), _strongholdAim.Position, new Color(color, 0.25f), 1, true);
-        }
+        if (_playerBaseHealth <= 0) return;
+        for (var i = 0; i < _wagonMounts.Count; i++)
+            DrawBaseMount(canvas, WagonMountPosition(i), _wagonMounts[i].Weapon, 1);
     }
 
     private void DrawBaseMount(CanvasItem canvas, Vector2 position, BaseWeaponDefinition weapon, float direction)
@@ -209,7 +161,7 @@ public partial class BattleController
         var shade = new Color("302b26");
         var accent = weapon.Color.Darkened(0.3f);
         Vector2 Point(float x, float y) => position + new Vector2(x * direction, y);
-        // Timber supports seat each crew or weapon on the wagon roof / battlement.
+        // Timber supports seat each crew or weapon on the wagon roof.
         canvas.DrawLine(Point(-5, 8), Point(-8, 24), shade, 4, true);
         canvas.DrawLine(Point(5, 8), Point(8, 24), wood, 3, true);
         canvas.DrawLine(Point(-11, 9), Point(11, 9), wood, 4, true);
@@ -230,7 +182,7 @@ public partial class BattleController
             canvas.DrawPolyline(new[] { Point(9, -14), Point(-5, 1), Point(9, 11) }, new Color("b8ab89"), 1, true);
             canvas.DrawLine(Point(-6, 0), Point(27, -4), iron.Lightened(0.2f), 2, true);
         }
-        else
+        else // Firepot launcher.
         {
             canvas.DrawLine(Point(-4, 6), Point(9, -9), shade, 12, true);
             canvas.DrawLine(Point(-4, 6), Point(9, -9), iron.Darkened(0.3f), 8, true);

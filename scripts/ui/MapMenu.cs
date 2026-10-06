@@ -10,7 +10,8 @@ public partial class MapMenu : Control
     private int BossGateLeaders => GameData.GetStagesForMap(GameData.GetStage(_selected.Stage).MapId).Count - 1;
     private AdventureDiscovery _selectedDiscovery;
     private string _activeMapId;
-    private Label _mapTitle, _zoneProgress, _gold, _food, _stars, _siteName, _siteEyebrow, _siteStatus, _description;
+    private RoyalLabel _mapTitle, _zoneProgress;
+    private Label _siteName, _siteEyebrow, _siteStatus, _description;
     private VBoxContainer _rewards;
     private TextureRect _portrait;
     private Button _action, _previousZone, _nextZone;
@@ -38,6 +39,11 @@ public partial class MapMenu : Control
         _mapCanvas.ShowMap(_activeMapId, _selected.Id);
         RefreshUi();
     }
+    public string ActiveMapId => _activeMapId;
+
+    /// <summary>Pages the atlas to the neighbouring zone (used by the caravan hub's zone plaque).</summary>
+    public void StepZone(int direction) => ChangeZone(direction);
+
     private void SwitchRegion(string mapId)
     {
         if (_mapCanvas.IsTravelling || !GameState.Instance.IsAdventureZoneUnlocked(mapId)) return;
@@ -56,13 +62,14 @@ public partial class MapMenu : Control
         if (reward && GameState.Instance.HasVisitedAdventureSite(site.Id)) return;
         _selectedDiscovery = null;
         _selected = site;
-        var tile = AdventureTileCatalog.Find(site.MapId, site.Id);
-        if (reward && GameState.Instance.CanTravelToAdventureTile(tile, out _)) _sitePanel.Hide();
-        else _sitePanel.Show();
         if (site.Kind == AdventureSiteKind.Leader && GameState.Instance.CanVisitAdventureSite(site.Id)) GameState.Instance.SetSelectedStage(site.Stage);
         _mapCanvas.SelectSite(site.Id);
         RefreshUi();
-        if (reward && GameState.Instance.IsAdventureSiteDiscovered(site.Id)) VisitSelected();
+        // A site that can be entered is entered at once: the caravan travels there and a battle opens its
+        // preparation (which shows the rewards and entry cost). The details panel only appears to explain
+        // why a site cannot be entered yet, such as a sealed boss gate.
+        _sitePanel.Visible = _action.Disabled;
+        if (!_action.Disabled) VisitSelected();
     }
     private void SelectDiscovery(AdventureDiscovery discovery)
     {
@@ -102,12 +109,10 @@ public partial class MapMenu : Control
         var visited = state.HasVisitedAdventureSite(_selected.Id);
         var stage = GameData.GetStage(_selected.Stage);
         var tile = AdventureTileCatalog.Find(_activeMapId, _selected.Id);
-        RealmUi.SetDisplayText(_mapTitle, RouteCatalog.Get(_activeMapId).Title);
+        _mapTitle.Text = RouteCatalog.Get(_activeMapId).Title.Replace("'", "’");
         RefreshZoneNavigation();
-        _gold.Text = state.Gold.ToString("N0");
-        _food.Text = $"{state.Food}/{GameState.FoodRechargeCap}";
-        _food.GetParent().GetParent<Button>().TooltipText = state.FoodRechargeText;
-        _stars.Text = state.TotalStarsEarned.ToString();
+        _resources.SetValues(state.Gold.ToString("N0"), $"{state.Food} / {GameState.FoodRechargeCap}", state.TotalStarsEarned.ToString());
+        _foodHint.TooltipText = state.FoodRechargeText;
         if (_developerPanel != null) _developerPanel.Visible = state.DeveloperModeEnabled;
         if (_selectedDiscovery != null)
         {

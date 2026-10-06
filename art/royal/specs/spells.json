@@ -1,0 +1,1936 @@
+{
+ "screen": "spells",
+ "ref": "art/royal/ref/menu-02-spell-library.png",
+ "elements": [
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    666
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header",
+   "kind": "rect",
+   "rect": [
+    34,
+    22,
+    1212,
+    106
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.crest",
+   "kind": "rect",
+   "rect": [
+    55,
+    30,
+    85,
+    85
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Spells",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 184,
+   "x": 156,
+   "baseline": 81,
+   "align": "left",
+   "color": "#f6dda2",
+   "style": "gold",
+   "size": 55,
+   "pen_x": 156
+  },
+  {
+   "id": "subtitle.icon",
+   "kind": "rect",
+   "rect": [
+    159,
+    93,
+    26,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "text": "EQUIPPED",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 90,
+   "x": 196,
+   "baseline": 112,
+   "align": "left",
+   "color": "#f4efe9",
+   "size": 17,
+   "pen_x": 196
+  },
+  {
+   "id": "subtitle.count",
+   "kind": "text",
+   "text": "4 / 5",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 42,
+   "x": 295,
+   "baseline": 112,
+   "align": "left",
+   "color": "#f4f1ef",
+   "size": 20,
+   "pen_x": 295
+  },
+  {
+   "id": "tab.warband",
+   "kind": "rect",
+   "rect": [
+    621,
+    57,
+    116,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.warband.icon",
+   "kind": "rect",
+   "rect": [
+    667,
+    69,
+    27,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.warband.label",
+   "kind": "text",
+   "text": "Warband",
+   "font": "crimson",
+   "weight": 500,
+   "width": 67,
+   "x": 679.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#e4e1dd",
+   "size": 17
+  },
+  {
+   "id": "tab.spells",
+   "kind": "rect",
+   "rect": [
+    739,
+    56,
+    100,
+    68
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.spells.icon",
+   "kind": "rect",
+   "rect": [
+    781,
+    68,
+    17,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.spells.label",
+   "kind": "text",
+   "text": "Spells",
+   "font": "crimson",
+   "weight": 500,
+   "width": 41,
+   "x": 789.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#fbf1ba",
+   "size": 17
+  },
+  {
+   "id": "tab.war_wagon",
+   "kind": "rect",
+   "rect": [
+    841,
+    57,
+    118,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.war_wagon.icon",
+   "kind": "rect",
+   "rect": [
+    884,
+    68,
+    28,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.war_wagon.label",
+   "kind": "text",
+   "text": "War wagon",
+   "font": "crimson",
+   "weight": 500,
+   "width": 77,
+   "x": 898.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#e4e1dd",
+   "size": 15
+  },
+  {
+   "id": "tab.relics",
+   "kind": "rect",
+   "rect": [
+    957,
+    57,
+    113,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.relics.icon",
+   "kind": "rect",
+   "rect": [
+    1002,
+    68,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.relics.label",
+   "kind": "text",
+   "text": "Relics",
+   "font": "crimson",
+   "weight": 500,
+   "width": 39,
+   "x": 1013.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#e4e1dd",
+   "size": 16
+  },
+  {
+   "id": "tab.adviser",
+   "kind": "rect",
+   "rect": [
+    1067,
+    57,
+    113,
+    67
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.adviser.icon",
+   "kind": "rect",
+   "rect": [
+    1112,
+    69,
+    23,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.adviser.label",
+   "kind": "text",
+   "text": "Adviser",
+   "font": "crimson",
+   "weight": 500,
+   "width": 53,
+   "x": 1124.5,
+   "baseline": 111,
+   "align": "center",
+   "color": "#e4e1dd",
+   "size": 16
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    54,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1200,
+    41,
+    25,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slots",
+   "kind": "rect",
+   "rect": [
+    34,
+    127,
+    1212,
+    134
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "slot.1",
+   "kind": "rect",
+   "rect": [
+    65,
+    146,
+    201,
+    100
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.1.badge",
+   "kind": "rect",
+   "rect": [
+    69,
+    150,
+    35,
+    34
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.1.number",
+   "kind": "text",
+   "text": "1",
+   "font": "crimson",
+   "weight": 700,
+   "width": 8,
+   "x": 81,
+   "baseline": 174,
+   "align": "left",
+   "color": "#060403",
+   "size": 18,
+   "pen_x": 81
+  },
+  {
+   "id": "slot.1.art",
+   "kind": "rect",
+   "rect": [
+    110,
+    151,
+    84,
+    84
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.1.class",
+   "kind": "rect",
+   "rect": [
+    74,
+    209,
+    24,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.1.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 27,
+   "x": 110,
+   "baseline": 235,
+   "align": "left",
+   "color": "#f2e2b7",
+   "size": 17,
+   "pen_x": 110
+  },
+  {
+   "id": "slot.1.pips",
+   "kind": "rect",
+   "rect": [
+    184,
+    221,
+    70,
+    15
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.2",
+   "kind": "rect",
+   "rect": [
+    279,
+    146,
+    216,
+    99
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.2.badge",
+   "kind": "rect",
+   "rect": [
+    282,
+    150,
+    37,
+    34
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.2.number",
+   "kind": "text",
+   "text": "2",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 294,
+   "baseline": 174,
+   "align": "left",
+   "color": "#060403",
+   "size": 21,
+   "pen_x": 294
+  },
+  {
+   "id": "slot.2.art",
+   "kind": "rect",
+   "rect": [
+    361,
+    154,
+    66,
+    76
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.2.class",
+   "kind": "rect",
+   "rect": [
+    295,
+    209,
+    21,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.2.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 27,
+   "x": 326,
+   "baseline": 233,
+   "align": "left",
+   "color": "#e6dac7",
+   "size": 17,
+   "pen_x": 326
+  },
+  {
+   "id": "slot.2.pips",
+   "kind": "rect",
+   "rect": [
+    414,
+    221,
+    69,
+    14
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.3",
+   "kind": "rect",
+   "rect": [
+    507,
+    146,
+    215,
+    99
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.3.badge",
+   "kind": "rect",
+   "rect": [
+    510,
+    150,
+    36,
+    34
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.3.number",
+   "kind": "text",
+   "text": "3",
+   "font": "crimson",
+   "weight": 700,
+   "width": 11,
+   "x": 522,
+   "baseline": 174,
+   "align": "left",
+   "color": "#060403",
+   "size": 21,
+   "pen_x": 522
+  },
+  {
+   "id": "slot.3.art",
+   "kind": "rect",
+   "rect": [
+    587,
+    152,
+    64,
+    88
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.3.class",
+   "kind": "rect",
+   "rect": [
+    521,
+    210,
+    22,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.3.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 27,
+   "x": 553,
+   "baseline": 234,
+   "align": "left",
+   "color": "#f2e9bf",
+   "size": 17,
+   "pen_x": 553
+  },
+  {
+   "id": "slot.3.pips",
+   "kind": "rect",
+   "rect": [
+    642,
+    221,
+    69,
+    15
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.4",
+   "kind": "rect",
+   "rect": [
+    734,
+    146,
+    217,
+    99
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.4.badge",
+   "kind": "rect",
+   "rect": [
+    737,
+    150,
+    36,
+    34
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.4.number",
+   "kind": "text",
+   "text": "4",
+   "font": "crimson",
+   "weight": 700,
+   "width": 12,
+   "x": 748,
+   "baseline": 174,
+   "align": "left",
+   "color": "#060403",
+   "size": 22,
+   "pen_x": 748
+  },
+  {
+   "id": "slot.4.art",
+   "kind": "rect",
+   "rect": [
+    790,
+    150,
+    130,
+    90
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "slot.4.class",
+   "kind": "rect",
+   "rect": [
+    748,
+    210,
+    15,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.4.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 27,
+   "x": 775,
+   "baseline": 233,
+   "align": "left",
+   "color": "#fbf5f0",
+   "size": 17,
+   "pen_x": 775
+  },
+  {
+   "id": "slot.4.pips",
+   "kind": "rect",
+   "rect": [
+    869,
+    221,
+    70,
+    14
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "slot.5",
+   "kind": "rect",
+   "rect": [
+    962,
+    146,
+    253,
+    99
+   ],
+   "role": "card"
+  },
+  {
+   "id": "slot.5.badge",
+   "kind": "rect",
+   "rect": [
+    965,
+    150,
+    36,
+    34
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "slot.5.number",
+   "kind": "text",
+   "text": "5",
+   "font": "crimson",
+   "weight": 700,
+   "width": 10,
+   "x": 978,
+   "baseline": 174,
+   "align": "left",
+   "color": "#060403",
+   "size": 19,
+   "pen_x": 978
+  },
+  {
+   "id": "slot.5.plus",
+   "kind": "rect",
+   "rect": [
+    1075,
+    169,
+    34,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "slot.5.label",
+   "kind": "text",
+   "text": "Empty slot",
+   "font": "crimson",
+   "weight": 500,
+   "width": 78,
+   "x": 1053,
+   "baseline": 229,
+   "align": "left",
+   "color": "#a5a4a4",
+   "size": 17,
+   "pen_x": 1053
+  },
+  {
+   "id": "collection",
+   "kind": "rect",
+   "rect": [
+    40,
+    264,
+    342,
+    413
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.title",
+   "kind": "rect",
+   "rect": [
+    45,
+    276,
+    330,
+    49
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "collection.label",
+   "kind": "text",
+   "text": "Spell collection",
+   "font": "crimson",
+   "weight": 500,
+   "width": 136,
+   "x": 65,
+   "baseline": 308,
+   "align": "left",
+   "color": "#fdf9d6",
+   "size": 21,
+   "pen_x": 65
+  },
+  {
+   "id": "collection.filter",
+   "kind": "rect",
+   "rect": [
+    267,
+    287,
+    100,
+    32
+   ],
+   "role": "dropdown"
+  },
+  {
+   "id": "collection.filter.label",
+   "kind": "text",
+   "text": "All",
+   "font": "crimson",
+   "weight": 500,
+   "width": 19,
+   "x": 282,
+   "baseline": 309,
+   "align": "left",
+   "color": "#fdf8db",
+   "size": 17,
+   "pen_x": 283
+  },
+  {
+   "id": "collection.filter.arrow",
+   "kind": "rect",
+   "rect": [
+    344,
+    300,
+    11,
+    7
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.0",
+   "kind": "rect",
+   "rect": [
+    50,
+    336,
+    98,
+    86
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.0.art",
+   "kind": "rect",
+   "rect": [
+    54,
+    340,
+    90,
+    78
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.0.corner",
+   "kind": "rect",
+   "rect": [
+    50,
+    336,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.0.icon",
+   "kind": "rect",
+   "rect": [
+    58,
+    341,
+    20,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.0.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 60,
+   "baseline": 413,
+   "align": "left",
+   "color": "#f9f3dc",
+   "size": 13,
+   "pen_x": 60
+  },
+  {
+   "id": "grid.0.0.pips",
+   "kind": "rect",
+   "rect": [
+    99,
+    403,
+    40,
+    12
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.0.1",
+   "kind": "rect",
+   "rect": [
+    157,
+    336,
+    93,
+    86
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.1.art",
+   "kind": "rect",
+   "rect": [
+    161,
+    340,
+    85,
+    78
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.1.corner",
+   "kind": "rect",
+   "rect": [
+    157,
+    336,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.1.icon",
+   "kind": "rect",
+   "rect": [
+    165,
+    342,
+    20,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.1.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 166,
+   "baseline": 413,
+   "align": "left",
+   "color": "#ece2c8",
+   "size": 13,
+   "pen_x": 166
+  },
+  {
+   "id": "grid.0.1.pips",
+   "kind": "rect",
+   "rect": [
+    216,
+    404,
+    25,
+    11
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.0.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    336,
+    96,
+    86
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.0.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    340,
+    88,
+    78
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.0.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    336,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.0.2.icon",
+   "kind": "rect",
+   "rect": [
+    266,
+    342,
+    20,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.0.2.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 268,
+   "baseline": 413,
+   "align": "left",
+   "color": "#e7e9dd",
+   "size": 13,
+   "pen_x": 268
+  },
+  {
+   "id": "grid.0.2.pips",
+   "kind": "rect",
+   "rect": [
+    308,
+    404,
+    38,
+    11
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.1.0",
+   "kind": "rect",
+   "rect": [
+    50,
+    430,
+    98,
+    84
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.0.art",
+   "kind": "rect",
+   "rect": [
+    54,
+    434,
+    90,
+    76
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.0.corner",
+   "kind": "rect",
+   "rect": [
+    50,
+    430,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.0.icon",
+   "kind": "rect",
+   "rect": [
+    60,
+    436,
+    17,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.0.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 60,
+   "baseline": 505,
+   "align": "left",
+   "color": "#e5e1c9",
+   "size": 13,
+   "pen_x": 60
+  },
+  {
+   "id": "grid.1.0.pips",
+   "kind": "rect",
+   "rect": [
+    113,
+    495,
+    26,
+    12
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.1.1",
+   "kind": "rect",
+   "rect": [
+    157,
+    430,
+    93,
+    84
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.1.art",
+   "kind": "rect",
+   "rect": [
+    161,
+    434,
+    85,
+    76
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.1.corner",
+   "kind": "rect",
+   "rect": [
+    157,
+    430,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.1.icon",
+   "kind": "rect",
+   "rect": [
+    164,
+    436,
+    15,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.1.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 165,
+   "baseline": 505,
+   "align": "left",
+   "color": "#efedeb",
+   "size": 13,
+   "pen_x": 165
+  },
+  {
+   "id": "grid.1.1.pips",
+   "kind": "rect",
+   "rect": [
+    216,
+    495,
+    25,
+    12
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.1.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    430,
+    96,
+    84
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.1.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    434,
+    88,
+    76
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.1.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    430,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.1.2.icon",
+   "kind": "rect",
+   "rect": [
+    265,
+    438,
+    21,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.1.2.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 268,
+   "baseline": 505,
+   "align": "left",
+   "color": "#e4ddcb",
+   "size": 13,
+   "pen_x": 268
+  },
+  {
+   "id": "grid.1.2.pips",
+   "kind": "rect",
+   "rect": [
+    308,
+    495,
+    38,
+    12
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.2.0",
+   "kind": "rect",
+   "rect": [
+    50,
+    522,
+    98,
+    82
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.0.art",
+   "kind": "rect",
+   "rect": [
+    54,
+    526,
+    90,
+    74
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.0.corner",
+   "kind": "rect",
+   "rect": [
+    50,
+    522,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.0.icon",
+   "kind": "rect",
+   "rect": [
+    57,
+    529,
+    21,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.0.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 60,
+   "baseline": 596,
+   "align": "left",
+   "color": "#e4dec0",
+   "size": 13,
+   "pen_x": 60
+  },
+  {
+   "id": "grid.2.0.pips",
+   "kind": "rect",
+   "rect": [
+    99,
+    586,
+    40,
+    11
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.2.1",
+   "kind": "rect",
+   "rect": [
+    157,
+    522,
+    93,
+    82
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.1.art",
+   "kind": "rect",
+   "rect": [
+    161,
+    526,
+    85,
+    74
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.1.corner",
+   "kind": "rect",
+   "rect": [
+    157,
+    522,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.1.icon",
+   "kind": "rect",
+   "rect": [
+    164,
+    529,
+    21,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.1.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 166,
+   "baseline": 596,
+   "align": "left",
+   "color": "#e6e2cb",
+   "size": 13,
+   "pen_x": 166
+  },
+  {
+   "id": "grid.2.1.pips",
+   "kind": "rect",
+   "rect": [
+    216,
+    586,
+    25,
+    12
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.2.2",
+   "kind": "rect",
+   "rect": [
+    258,
+    522,
+    96,
+    82
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.2.2.art",
+   "kind": "rect",
+   "rect": [
+    262,
+    526,
+    88,
+    74
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.2.2.corner",
+   "kind": "rect",
+   "rect": [
+    258,
+    522,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.2.2.icon",
+   "kind": "rect",
+   "rect": [
+    266,
+    529,
+    20,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.2.2.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 268,
+   "baseline": 596,
+   "align": "left",
+   "color": "#ece8e1",
+   "size": 13,
+   "pen_x": 268
+  },
+  {
+   "id": "grid.2.2.pips",
+   "kind": "rect",
+   "rect": [
+    308,
+    587,
+    38,
+    10
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "grid.3.0",
+   "kind": "rect",
+   "rect": [
+    50,
+    611,
+    98,
+    65
+   ],
+   "role": "cell"
+  },
+  {
+   "id": "grid.3.0.art",
+   "kind": "rect",
+   "rect": [
+    54,
+    615,
+    90,
+    61
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "grid.3.0.corner",
+   "kind": "rect",
+   "rect": [
+    50,
+    611,
+    30,
+    30
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "grid.3.0.icon",
+   "kind": "rect",
+   "rect": [
+    58,
+    618,
+    20,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "grid.3.0.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 20,
+   "x": 60,
+   "baseline": 673,
+   "align": "left",
+   "color": "#f4f1d2",
+   "size": 13,
+   "pen_x": 60
+  },
+  {
+   "id": "grid.scroll",
+   "kind": "rect",
+   "rect": [
+    365,
+    335,
+    6,
+    320
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "grid.scroll.thumb",
+   "kind": "rect",
+   "rect": [
+    365,
+    340,
+    6,
+    108
+   ],
+   "role": "scroll"
+  },
+  {
+   "id": "preview",
+   "kind": "rect",
+   "rect": [
+    393,
+    277,
+    337,
+    398
+   ],
+   "role": "preview"
+  },
+  {
+   "id": "preview.prev",
+   "kind": "rect",
+   "rect": [
+    413,
+    463,
+    19,
+    33
+   ],
+   "role": "button"
+  },
+  {
+   "id": "preview.next",
+   "kind": "rect",
+   "rect": [
+    686,
+    464,
+    18,
+    32
+   ],
+   "role": "button"
+  },
+  {
+   "id": "detail",
+   "kind": "rect",
+   "rect": [
+    730,
+    264,
+    512,
+    413
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.icon",
+   "kind": "rect",
+   "rect": [
+    749,
+    286,
+    30,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.name",
+   "kind": "text",
+   "text": "Fireball",
+   "font": "crimson",
+   "weight": 700,
+   "width": 116,
+   "x": 796,
+   "baseline": 315,
+   "align": "left",
+   "color": "#fef1c0",
+   "size": 34,
+   "pen_x": 796
+  },
+  {
+   "id": "detail.level",
+   "kind": "text",
+   "text": "Lv 1",
+   "font": "crimson",
+   "weight": 500,
+   "width": 36,
+   "x": 797,
+   "baseline": 345,
+   "align": "left",
+   "color": "#dcd1be",
+   "size": 24,
+   "pen_x": 797
+  },
+  {
+   "id": "detail.pips",
+   "kind": "rect",
+   "rect": [
+    855,
+    330,
+    78,
+    16
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "detail.chip",
+   "kind": "rect",
+   "rect": [
+    1002,
+    316,
+    187,
+    34
+   ],
+   "role": "chip"
+  },
+  {
+   "id": "detail.chip.icon",
+   "kind": "rect",
+   "rect": [
+    1002,
+    316,
+    36,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.chip.label",
+   "kind": "text",
+   "text": "Damage",
+   "font": "crimson",
+   "weight": 500,
+   "width": 51,
+   "x": 1044,
+   "baseline": 338,
+   "align": "left",
+   "color": "#ecdea9",
+   "size": 15,
+   "pen_x": 1044
+  },
+  {
+   "id": "detail.chip.sep",
+   "kind": "text",
+   "text": "\u00b7",
+   "font": "crimson",
+   "weight": 500,
+   "width": 3,
+   "x": 1107,
+   "baseline": 335,
+   "align": "left",
+   "color": "#f0d49a",
+   "size": 10,
+   "pen_x": 1107
+  },
+  {
+   "id": "detail.chip.icon2",
+   "kind": "rect",
+   "rect": [
+    1121,
+    322,
+    21,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "detail.chip.label2",
+   "kind": "text",
+   "text": "Area",
+   "font": "crimson",
+   "weight": 500,
+   "width": 28,
+   "x": 1151,
+   "baseline": 338,
+   "align": "left",
+   "color": "#e5d594",
+   "size": 14,
+   "pen_x": 1152
+  },
+  {
+   "id": "detail.rule",
+   "kind": "rect",
+   "rect": [
+    726,
+    357,
+    310,
+    2
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "detail.desc",
+   "kind": "text",
+   "text": "Blast a group of enemies.",
+   "font": "crimson",
+   "weight": 600,
+   "width": 210,
+   "x": 756,
+   "baseline": 382,
+   "align": "left",
+   "color": "#ede2cf",
+   "size": 19,
+   "pen_x": 756
+  },
+  {
+   "id": "stat.0",
+   "kind": "rect",
+   "rect": [
+    753,
+    399,
+    180,
+    65
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.0.icon",
+   "kind": "rect",
+   "rect": [
+    767,
+    416,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.0.caption",
+   "kind": "text",
+   "text": "DAMAGE",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 54,
+   "x": 820,
+   "baseline": 419,
+   "align": "left",
+   "color": "#d5d5d4",
+   "size": 11,
+   "pen_x": 820
+  },
+  {
+   "id": "stat.0.value",
+   "kind": "text",
+   "text": "34",
+   "font": "crimson",
+   "weight": 700,
+   "width": 28,
+   "x": 821,
+   "baseline": 450,
+   "align": "left",
+   "color": "#fff8ce",
+   "size": 27,
+   "pen_x": 821
+  },
+  {
+   "id": "stat.1",
+   "kind": "rect",
+   "rect": [
+    944,
+    399,
+    171,
+    65
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.1.icon",
+   "kind": "rect",
+   "rect": [
+    957,
+    417,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.1.caption",
+   "kind": "text",
+   "text": "COURAGE",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 58,
+   "x": 1007,
+   "baseline": 419,
+   "align": "left",
+   "color": "#d9d9d8",
+   "size": 11,
+   "pen_x": 1007
+  },
+  {
+   "id": "stat.1.value",
+   "kind": "text",
+   "text": "22",
+   "font": "crimson",
+   "weight": 700,
+   "width": 27,
+   "x": 1007,
+   "baseline": 450,
+   "align": "left",
+   "color": "#fffbda",
+   "size": 25,
+   "pen_x": 1007
+  },
+  {
+   "id": "stat.2",
+   "kind": "rect",
+   "rect": [
+    753,
+    474,
+    180,
+    65
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.2.icon",
+   "kind": "rect",
+   "rect": [
+    768,
+    491,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.2.caption",
+   "kind": "text",
+   "text": "COOLDOWN",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 70,
+   "x": 818,
+   "baseline": 496,
+   "align": "left",
+   "color": "#cdcdcd",
+   "size": 11,
+   "pen_x": 818
+  },
+  {
+   "id": "stat.2.value",
+   "kind": "text",
+   "text": "12s",
+   "font": "crimson",
+   "weight": 700,
+   "width": 36,
+   "x": 820,
+   "baseline": 527,
+   "align": "left",
+   "color": "#fef3c9",
+   "size": 28,
+   "pen_x": 820
+  },
+  {
+   "id": "stat.3",
+   "kind": "rect",
+   "rect": [
+    944,
+    474,
+    171,
+    65
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "stat.3.icon",
+   "kind": "rect",
+   "rect": [
+    963,
+    492,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "stat.3.caption",
+   "kind": "text",
+   "text": "RADIUS",
+   "font": "cinzel",
+   "weight": 500,
+   "width": 44,
+   "x": 1008,
+   "baseline": 496,
+   "align": "left",
+   "color": "#d3d3d2",
+   "size": 11,
+   "pen_x": 1008
+  },
+  {
+   "id": "stat.3.value",
+   "kind": "text",
+   "text": "53",
+   "font": "crimson",
+   "weight": 700,
+   "width": 26,
+   "x": 1008,
+   "baseline": 527,
+   "align": "left",
+   "color": "#fff6c8",
+   "size": 26,
+   "pen_x": 1008
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    753,
+    611,
+    216,
+    61
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "Back",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 51,
+   "x": 861.5,
+   "baseline": 648,
+   "align": "center",
+   "color": "#fffdd3",
+   "size": 18
+  },
+  {
+   "id": "button.scribe",
+   "kind": "rect",
+   "rect": [
+    978,
+    611,
+    262,
+    61
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.scribe.label",
+   "kind": "text",
+   "text": "SCRIBE",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 73,
+   "x": 1036,
+   "baseline": 650,
+   "align": "left",
+   "color": "#210400",
+   "size": 19,
+   "pen_x": 1036
+  },
+  {
+   "id": "button.scribe.cost",
+   "kind": "text",
+   "text": "134",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 35,
+   "x": 1121,
+   "baseline": 650,
+   "align": "left",
+   "color": "#1d0400",
+   "size": 21,
+   "pen_x": 1121
+  },
+  {
+   "id": "button.scribe.coin",
+   "kind": "rect",
+   "rect": [
+    1165,
+    627,
+    40,
+    31
+   ],
+   "role": "icon"
+  }
+ ],
+ "notes": "Armory modal, Spells tab selected (tab.spells has the lit gold frame, warmer label colour and diamond finials top/bottom; the other four tabs are idle navy). Header subtitle reads 'EQUIPPED 4 / 5' and is split into a caption and a dynamic count because the concept's word spacing is wider than Cinzel's. Equipped strip: slots 1-4 hold Fireball and three other spells (blue shield, green chalice, purple lightning), each Lv 1 with 1 of 4 pips filled; slot 1 is the selected slot (glowing orange frame); slot 5 is empty (grey plus + 'Empty slot', no class icon/level/pips). Number badges are gold plates in each slot's top-left corner with black serif numerals; the concept numerals are taller and narrower than Crimson (ink about 17 px tall), so the width-fitted size draws them shorter. Spell collection: 3-column grid, 10 spells, all Lv 1; grid.0.0 (Fireball) is selected with the same orange glow frame. Pip rows are right-aligned 10 px from the cell edge and show 3 diamonds on some cells and 2 on others (1 filled each), so the count varies per spell. Cell sizes are slightly irregular in the concept (rows 86/84/82 tall, columns 98/93/96 wide); row 3 is clipped by the panel bottom (only grid.3.0 is visible, pips hidden), so the grid scrolls. Scrollbar: thin gold track with a two-segment lighter thumb at the top (thumb at scroll position 0). Preview well shows the hero casting the selected spell on a pedestal, with prev/next chevrons. Detail column has no frame (wood on the left, parchment map with lantern/chests on the right): flame icon + 'Fireball', 'Lv 1' with 1 of 4 pips, a translucent chip (flame medallion + 'Damage \u00b7 Area' with a crosshair icon), a thin gold rule fading out to the right, a one-line description, four stat tiles (2x2, icon left, caption + value) and two buttons: BACK (navy) and SCRIBE 134 (gold, primary, dark label plus a coin pile icon). SCRIBE and its cost are separate text elements because the concept puts a wider gap before the number."
+}

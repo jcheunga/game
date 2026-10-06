@@ -18,7 +18,7 @@ public partial class UiReviewSmoke
         sub.Position=new Vector2(32,70); sub.Size=new Vector2(1216,28); root.AddChild(sub);
 
         var surfaces=new[]{"engraved_panel","button","button_hover","button_pressed","button_hover_pressed",
-            "button_disabled","button_primary","button_primary_hover","button_primary_pressed","focus","cost_badge","inset","input_focus","input_disabled",
+            "button_disabled","button_primary","button_primary_hover","button_primary_pressed","focus","inset","input_focus","input_disabled",
             "surface_body","surface_rim","meter_track","meter_fill","scroll_thumb","scroll_thumb_hover",
             "scroll_thumb_horizontal","scroll_thumb_horizontal_hover","separator","dropdown",
             "checked","unchecked","radio_checked","radio_unchecked","checked_disabled","unchecked_disabled","radio_checked_disabled","radio_unchecked_disabled"};
@@ -87,7 +87,9 @@ public partial class UiReviewSmoke
         var list=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill}; scroll.AddChild(list);
         for(var i=0;i<12;i++) list.AddChild(RealmUi.Label($"Caravan supplies / entry {i+1:00}",20));
         await Wait(.4);
-        foreach(var (type,item) in new[]{("PanelContainer","panel"),("LineEdit","normal"),("LineEdit","focus"),
+        // Panels take the concept's wood and brass frame (the modal-frame kit piece); the rest use the shared textures.
+        Check(root.Theme.GetStylebox("panel","PanelContainer") is ModalSurface,"PanelContainer/panel uses the concept frame");
+        foreach(var (type,item) in new[]{("LineEdit","normal"),("LineEdit","focus"),
             ("OptionButton","normal"),("PopupMenu","panel"),("TooltipPanel","panel"),("VScrollBar","grabber"),
             ("HScrollBar","grabber"),("ProgressBar","background"),("ProgressBar","fill"),("HSeparator","separator")})
             Check(root.Theme.GetStylebox(item,type) is StyleBoxTexture,$"{type}/{item} uses a shared textured material");

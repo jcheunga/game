@@ -7,7 +7,7 @@ public static class ArmoryDetailUi
 {
     public readonly record struct Stat(string Icon, string Label, string Value);
 
-    public static GridContainer Stats(IEnumerable<Stat> values, int columns = 3)
+    public static GridContainer Stats(IEnumerable<Stat> values, int columns = 2)
     {
         var grid = new GridContainer { Name = "ProfileStats", Columns = columns, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         grid.AddThemeConstantOverride("h_separation", 8);
@@ -18,17 +18,18 @@ public static class ArmoryDetailUi
             tile.SetMeta("modal_unframed", true);
             tile.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
             grid.AddChild(tile);
-            var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 0); tile.AddChild(stack);
-            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 7); stack.AddChild(row);
+            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 8); tile.AddChild(row);
             row.AddChild(new TextureRect {
-                Texture = RealmUi.Icon(stat.Icon), CustomMinimumSize = new Vector2(23, 23),
+                Texture = RealmUi.Icon(stat.Icon), CustomMinimumSize = new Vector2(28, 28),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color("d6ba80")
             });
-            var number = new Label { Text = stat.Value, VerticalAlignment = VerticalAlignment.Center };
-            number.AddThemeFontSizeOverride("font_size", 22); number.AddThemeColorOverride("font_color", ModalUi.Cream); row.AddChild(number);
-            var label = new Label { Text = stat.Label, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; stack.AddThemeConstantOverride("separation", 0); row.AddChild(stack);
+            // Captions wrap only between words ("GATE / DAMAGE"), never inside one ("COOLDOW / N").
+            var label = new Label { Text = stat.Label.ToUpperInvariant(), AutowrapMode = TextServer.AutowrapMode.Word };
             label.AddThemeFontSizeOverride("font_size", 18); label.AddThemeColorOverride("font_color", ModalUi.Muted); stack.AddChild(label);
+            var number = new Label { Text = stat.Value, VerticalAlignment = VerticalAlignment.Center };
+            number.AddThemeFontSizeOverride("font_size", 28); number.AddThemeColorOverride("font_color", ModalUi.Cream); stack.AddChild(number);
         }
         return grid;
     }
@@ -91,14 +92,4 @@ public static class ArmoryDetailUi
         return content;
     }
 
-    public static void GoldAction(Button button, string label, int amount)
-    {
-        button.Text = $"{label} {amount:N0}";
-        button.Icon = HomeMapArt.Icon("gold"); button.IconAlignment = HorizontalAlignment.Right;
-        button.ExpandIcon = true; button.AddThemeConstantOverride("icon_max_width", 28);
-        button.AddThemeConstantOverride("h_separation", 8);
-        if (button is RealmButton realm) realm.CenterIconAndText = true;
-        button.SetMeta("realm_primary", true); button.SetMeta("painted_resource_icon", true);
-        button.AccessibilityName = $"{label}, {amount:N0} gold";
-    }
 }

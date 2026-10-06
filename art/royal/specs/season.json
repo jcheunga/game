@@ -1,0 +1,1269 @@
+{
+ "screen": "season",
+ "ref": "art/royal/ref/menu-10-season-rewards.png",
+ "elements": [
+  {
+   "id": "panel.header",
+   "kind": "rect",
+   "rect": [
+    33,
+    21,
+    1213,
+    106
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.emblem",
+   "kind": "rect",
+   "rect": [
+    62,
+    36,
+    79,
+    79
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Season Rewards",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 449,
+   "x": 165,
+   "baseline": 93,
+   "align": "left",
+   "color": "#e2bb7e",
+   "style": "gold",
+   "size": 51,
+   "pen_x": 165
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    54,
+    54
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1201,
+    42,
+    21,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "panel.body",
+   "kind": "rect",
+   "rect": [
+    33,
+    127,
+    1213,
+    565
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "band",
+   "kind": "rect",
+   "rect": [
+    50,
+    141,
+    1178,
+    88
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "band.banner",
+   "kind": "rect",
+   "rect": [
+    80,
+    143,
+    83,
+    126
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "band.season",
+   "kind": "text",
+   "text": "Season 1",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 157,
+   "x": 187,
+   "baseline": 197,
+   "align": "left",
+   "color": "#080605",
+   "size": 35,
+   "pen_x": 187
+  },
+  {
+   "id": "band.divider",
+   "kind": "rect",
+   "rect": [
+    385,
+    149,
+    9,
+    72
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "band.tier",
+   "kind": "text",
+   "text": "Tier 8",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 106,
+   "x": 410,
+   "baseline": 197,
+   "align": "left",
+   "color": "#050403",
+   "size": 34,
+   "pen_x": 410
+  },
+  {
+   "id": "band.xp.track",
+   "kind": "rect",
+   "rect": [
+    536,
+    173,
+    337,
+    21
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "band.xp.fill",
+   "kind": "rect",
+   "rect": [
+    541,
+    177,
+    257,
+    13
+   ],
+   "role": "fill"
+  },
+  {
+   "id": "band.xp.label",
+   "kind": "text",
+   "text": "750 / 900 XP",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 120,
+   "x": 888,
+   "baseline": 191,
+   "align": "left",
+   "color": "#0c0a07",
+   "size": 19,
+   "pen_x": 888
+  },
+  {
+   "id": "band.crest",
+   "kind": "rect",
+   "rect": [
+    1024,
+    156,
+    31,
+    49
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "rail",
+   "kind": "rect",
+   "rect": [
+    279,
+    255,
+    944,
+    6
+   ],
+   "role": "rail"
+  },
+  {
+   "id": "rail.end.left",
+   "kind": "rect",
+   "rect": [
+    279,
+    252,
+    9,
+    13
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "tier.7",
+   "kind": "rect",
+   "rect": [
+    345,
+    237,
+    50,
+    45
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "tier.7.label",
+   "kind": "text",
+   "text": "7",
+   "font": "cinzel",
+   "weight": 600,
+   "size": 26,
+   "x": 371.0,
+   "baseline": 268,
+   "align": "center",
+   "color": "#f6e5a1"
+  },
+  {
+   "id": "rail.diamond.1",
+   "kind": "rect",
+   "rect": [
+    456,
+    249,
+    15,
+    20
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "tier.8",
+   "kind": "rect",
+   "rect": [
+    532,
+    237,
+    52,
+    45
+   ],
+   "role": "badge",
+   "state": "current"
+  },
+  {
+   "id": "tier.8.label",
+   "kind": "text",
+   "text": "8",
+   "font": "cinzel",
+   "weight": 600,
+   "size": 26,
+   "x": 558.0,
+   "baseline": 268,
+   "align": "center",
+   "color": "#f6e5a1"
+  },
+  {
+   "id": "rail.diamond.2",
+   "kind": "rect",
+   "rect": [
+    644,
+    249,
+    15,
+    20
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "tier.9",
+   "kind": "rect",
+   "rect": [
+    722,
+    237,
+    51,
+    45
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "tier.9.label",
+   "kind": "text",
+   "text": "9",
+   "font": "cinzel",
+   "weight": 600,
+   "size": 26,
+   "x": 747.5,
+   "baseline": 268,
+   "align": "center",
+   "color": "#f6e5a1"
+  },
+  {
+   "id": "rail.diamond.3",
+   "kind": "rect",
+   "rect": [
+    834,
+    249,
+    15,
+    20
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "tier.10",
+   "kind": "rect",
+   "rect": [
+    912,
+    237,
+    51,
+    45
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "tier.10.label",
+   "kind": "text",
+   "text": "10",
+   "font": "cinzel",
+   "weight": 600,
+   "size": 26,
+   "x": 938.0,
+   "baseline": 268,
+   "align": "center",
+   "color": "#f6e5a1"
+  },
+  {
+   "id": "rail.diamond.4",
+   "kind": "rect",
+   "rect": [
+    1026,
+    249,
+    15,
+    20
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "tier.11",
+   "kind": "rect",
+   "rect": [
+    1104,
+    237,
+    50,
+    45
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "tier.11.label",
+   "kind": "text",
+   "text": "11",
+   "font": "cinzel",
+   "weight": 600,
+   "size": 26,
+   "x": 1128.5,
+   "baseline": 268,
+   "align": "center",
+   "color": "#f6e5a1"
+  },
+  {
+   "id": "rail.end.right",
+   "kind": "rect",
+   "rect": [
+    1214,
+    252,
+    9,
+    13
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "row.free",
+   "kind": "rect",
+   "rect": [
+    53,
+    280,
+    219,
+    164
+   ],
+   "role": "card"
+  },
+  {
+   "id": "row.free.art",
+   "kind": "rect",
+   "rect": [
+    66,
+    325,
+    86,
+    80
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "row.free.divider.top",
+   "kind": "rect",
+   "rect": [
+    159,
+    331,
+    95,
+    6
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "row.free.label",
+   "kind": "text",
+   "text": "FREE",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 58,
+   "x": 172,
+   "baseline": 372,
+   "align": "left",
+   "color": "#d9d0c5",
+   "size": 23,
+   "pen_x": 172
+  },
+  {
+   "id": "row.free.divider.bottom",
+   "kind": "rect",
+   "rect": [
+    159,
+    388,
+    95,
+    6
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "row.premium",
+   "kind": "rect",
+   "rect": [
+    53,
+    458,
+    219,
+    163
+   ],
+   "role": "card"
+  },
+  {
+   "id": "row.premium.art",
+   "kind": "rect",
+   "rect": [
+    69,
+    494,
+    69,
+    61
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "row.premium.divider.top",
+   "kind": "rect",
+   "rect": [
+    148,
+    500,
+    106,
+    6
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "row.premium.label",
+   "kind": "text",
+   "text": "PREMIUM",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 105,
+   "x": 152,
+   "baseline": 538,
+   "align": "left",
+   "color": "#fae485",
+   "size": 21,
+   "pen_x": 152
+  },
+  {
+   "id": "row.premium.divider.bottom",
+   "kind": "rect",
+   "rect": [
+    148,
+    553,
+    106,
+    6
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "reward.free.7",
+   "kind": "rect",
+   "rect": [
+    283,
+    281,
+    179,
+    164
+   ],
+   "role": "card",
+   "state": "claimed"
+  },
+  {
+   "id": "reward.free.7.art",
+   "kind": "rect",
+   "rect": [
+    325,
+    306,
+    89,
+    66
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.free.7.caption",
+   "kind": "text",
+   "text": "120 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 81,
+   "x": 371.5,
+   "baseline": 391,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 19
+  },
+  {
+   "id": "reward.free.7.button",
+   "kind": "rect",
+   "rect": [
+    288,
+    399,
+    168,
+    41
+   ],
+   "role": "button",
+   "state": "claimed"
+  },
+  {
+   "id": "reward.free.7.button.icon",
+   "kind": "rect",
+   "rect": [
+    320,
+    411,
+    18,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.free.7.button.label",
+   "kind": "text",
+   "text": "CLAIMED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 70,
+   "x": 352,
+   "baseline": 427,
+   "align": "left",
+   "color": "#a4daa0",
+   "size": 16,
+   "pen_x": 352
+  },
+  {
+   "id": "reward.free.7.check",
+   "kind": "rect",
+   "rect": [
+    423,
+    281,
+    39,
+    39
+   ],
+   "role": "check"
+  },
+  {
+   "id": "reward.free.7.check.mark",
+   "kind": "rect",
+   "rect": [
+    436,
+    292,
+    17,
+    15
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.free.8",
+   "kind": "rect",
+   "rect": [
+    471,
+    281,
+    175,
+    165
+   ],
+   "role": "card",
+   "state": "claim"
+  },
+  {
+   "id": "reward.free.8.art",
+   "kind": "rect",
+   "rect": [
+    511,
+    304,
+    94,
+    66
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.free.8.caption",
+   "kind": "text",
+   "text": "3 FOOD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 58,
+   "x": 556.0,
+   "baseline": 391,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.free.8.button",
+   "kind": "rect",
+   "rect": [
+    477,
+    398,
+    163,
+    43
+   ],
+   "role": "button",
+   "state": "claim"
+  },
+  {
+   "id": "reward.free.8.button.label",
+   "kind": "text",
+   "text": "CLAIM",
+   "font": "crimson",
+   "weight": 600,
+   "width": 61,
+   "x": 557.5,
+   "baseline": 427,
+   "align": "center",
+   "color": "#080601",
+   "size": 21
+  },
+  {
+   "id": "reward.free.9",
+   "kind": "rect",
+   "rect": [
+    655,
+    281,
+    179,
+    164
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.9.art",
+   "kind": "rect",
+   "rect": [
+    698,
+    301,
+    97,
+    73
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.free.9.caption",
+   "kind": "text",
+   "text": "1 TOME",
+   "font": "crimson",
+   "weight": 600,
+   "width": 58,
+   "x": 746.0,
+   "baseline": 391,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.free.9.button",
+   "kind": "rect",
+   "rect": [
+    660,
+    399,
+    168,
+    41
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.9.button.icon",
+   "kind": "rect",
+   "rect": [
+    691,
+    411,
+    15,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.free.9.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 63,
+   "x": 727,
+   "baseline": 427,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 17,
+   "pen_x": 727
+  },
+  {
+   "id": "reward.free.10",
+   "kind": "rect",
+   "rect": [
+    845,
+    281,
+    182,
+    164
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.10.art",
+   "kind": "rect",
+   "rect": [
+    889,
+    309,
+    95,
+    62
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.free.10.caption",
+   "kind": "text",
+   "text": "150 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 77,
+   "x": 937.5,
+   "baseline": 391,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.free.10.button",
+   "kind": "rect",
+   "rect": [
+    850,
+    399,
+    171,
+    41
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.10.button.icon",
+   "kind": "rect",
+   "rect": [
+    881,
+    411,
+    16,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.free.10.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 63,
+   "x": 918,
+   "baseline": 427,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 17,
+   "pen_x": 918
+  },
+  {
+   "id": "reward.free.11",
+   "kind": "rect",
+   "rect": [
+    1038,
+    281,
+    182,
+    164
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.11.art",
+   "kind": "rect",
+   "rect": [
+    1082,
+    303,
+    90,
+    66
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.free.11.caption",
+   "kind": "text",
+   "text": "4 FOOD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 61,
+   "x": 1131.5,
+   "baseline": 391,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.free.11.button",
+   "kind": "rect",
+   "rect": [
+    1043,
+    399,
+    171,
+    41
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.free.11.button.icon",
+   "kind": "rect",
+   "rect": [
+    1076,
+    411,
+    16,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.free.11.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 62,
+   "x": 1113,
+   "baseline": 427,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 16,
+   "pen_x": 1113
+  },
+  {
+   "id": "reward.premium.7",
+   "kind": "rect",
+   "rect": [
+    283,
+    459,
+    179,
+    162
+   ],
+   "role": "card",
+   "state": "claimed"
+  },
+  {
+   "id": "reward.premium.7.art",
+   "kind": "rect",
+   "rect": [
+    318,
+    480,
+    101,
+    66
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.premium.7.caption",
+   "kind": "text",
+   "text": "205 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 85,
+   "x": 370.5,
+   "baseline": 566,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 20
+  },
+  {
+   "id": "reward.premium.7.button",
+   "kind": "rect",
+   "rect": [
+    288,
+    574,
+    168,
+    42
+   ],
+   "role": "button",
+   "state": "claimed"
+  },
+  {
+   "id": "reward.premium.7.button.icon",
+   "kind": "rect",
+   "rect": [
+    320,
+    587,
+    18,
+    16
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.premium.7.button.label",
+   "kind": "text",
+   "text": "CLAIMED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 70,
+   "x": 352,
+   "baseline": 602,
+   "align": "left",
+   "color": "#a4daa0",
+   "size": 16,
+   "pen_x": 352
+  },
+  {
+   "id": "reward.premium.7.check",
+   "kind": "rect",
+   "rect": [
+    423,
+    459,
+    39,
+    39
+   ],
+   "role": "check"
+  },
+  {
+   "id": "reward.premium.7.check.mark",
+   "kind": "rect",
+   "rect": [
+    436,
+    470,
+    17,
+    15
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.premium.8",
+   "kind": "rect",
+   "rect": [
+    471,
+    459,
+    175,
+    163
+   ],
+   "role": "card",
+   "state": "claim"
+  },
+  {
+   "id": "reward.premium.8.art",
+   "kind": "rect",
+   "rect": [
+    503,
+    481,
+    110,
+    65
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.premium.8.caption",
+   "kind": "text",
+   "text": "220 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 80,
+   "x": 559.0,
+   "baseline": 566,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.premium.8.button",
+   "kind": "rect",
+   "rect": [
+    477,
+    573,
+    163,
+    44
+   ],
+   "role": "button",
+   "state": "claim"
+  },
+  {
+   "id": "reward.premium.8.button.label",
+   "kind": "text",
+   "text": "CLAIM",
+   "font": "crimson",
+   "weight": 600,
+   "width": 61,
+   "x": 557.5,
+   "baseline": 602,
+   "align": "center",
+   "color": "#080601",
+   "size": 21
+  },
+  {
+   "id": "reward.premium.9",
+   "kind": "rect",
+   "rect": [
+    655,
+    459,
+    179,
+    162
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.9.art",
+   "kind": "rect",
+   "rect": [
+    687,
+    480,
+    112,
+    67
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.premium.9.caption",
+   "kind": "text",
+   "text": "235 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 84,
+   "x": 744.0,
+   "baseline": 566,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 20
+  },
+  {
+   "id": "reward.premium.9.button",
+   "kind": "rect",
+   "rect": [
+    660,
+    574,
+    168,
+    42
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.9.button.icon",
+   "kind": "rect",
+   "rect": [
+    691,
+    586,
+    15,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.premium.9.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 63,
+   "x": 727,
+   "baseline": 602,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 17,
+   "pen_x": 727
+  },
+  {
+   "id": "reward.premium.10",
+   "kind": "rect",
+   "rect": [
+    845,
+    459,
+    182,
+    162
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.10.art",
+   "kind": "rect",
+   "rect": [
+    890,
+    474,
+    92,
+    75
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.premium.10.caption",
+   "kind": "text",
+   "text": "3 SIGILS",
+   "font": "crimson",
+   "weight": 600,
+   "width": 64,
+   "x": 938.0,
+   "baseline": 566,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 18
+  },
+  {
+   "id": "reward.premium.10.button",
+   "kind": "rect",
+   "rect": [
+    850,
+    574,
+    171,
+    42
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.10.button.icon",
+   "kind": "rect",
+   "rect": [
+    881,
+    586,
+    16,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.premium.10.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 63,
+   "x": 918,
+   "baseline": 602,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 17,
+   "pen_x": 918
+  },
+  {
+   "id": "reward.premium.11",
+   "kind": "rect",
+   "rect": [
+    1038,
+    459,
+    182,
+    162
+   ],
+   "role": "card",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.11.art",
+   "kind": "rect",
+   "rect": [
+    1073,
+    480,
+    115,
+    66
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "reward.premium.11.caption",
+   "kind": "text",
+   "text": "265 GOLD",
+   "font": "crimson",
+   "weight": 600,
+   "width": 80,
+   "x": 1130.0,
+   "baseline": 566,
+   "align": "center",
+   "color": "#f4f0e8",
+   "size": 19
+  },
+  {
+   "id": "reward.premium.11.button",
+   "kind": "rect",
+   "rect": [
+    1043,
+    574,
+    171,
+    42
+   ],
+   "role": "button",
+   "state": "locked"
+  },
+  {
+   "id": "reward.premium.11.button.icon",
+   "kind": "rect",
+   "rect": [
+    1076,
+    586,
+    16,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.premium.11.button.label",
+   "kind": "text",
+   "text": "LOCKED",
+   "font": "crimson",
+   "weight": 600,
+   "width": 62,
+   "x": 1113,
+   "baseline": 602,
+   "align": "left",
+   "color": "#b7b6b6",
+   "size": 16,
+   "pen_x": 1113
+  },
+  {
+   "id": "button.map",
+   "kind": "rect",
+   "rect": [
+    949,
+    630,
+    277,
+    56
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.map.label",
+   "kind": "text",
+   "text": "Back to Map",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 143,
+   "x": 1017,
+   "baseline": 666,
+   "align": "left",
+   "color": "#f4ecce",
+   "size": 21,
+   "pen_x": 1017
+  }
+ ],
+ "notes": "Season rewards modal: header band (plumed helmet emblem, gold 'Season Rewards' title in Cinzel with tall S/R, burning-castle art on the right, red close button) over a body frame. A parchment band spans the top of the body: a blue crown-and-laurel banner hangs from a rod at its left and overflows the band down to y=269; 'Season 1' (Cinzel small caps, near-black ink), a thin vertical divider, 'Tier 8', the XP bar (dark track with gold fill ending at x=797, ~78% of the track interior although 750/900 is 83%), '750 / 900 XP' and a small crown crest; castle art fills the band's right end. Tier rail: a thin gold line (y 255-260) from x=279 to 1222 with small end-cap diamonds, five shield/hexagon badges numbered 7-11 (Cinzel, all one size 26; single digits were not width-fitted) and four gold diamonds midway between badges. Badge 8 is the CURRENT tier (glowing gold). Rows: FREE (silver-white label, iron-bound chest art) and PREMIUM (gold label, gold crown art) header cards with ornamental dividers above and below the label; the PREMIUM card's lower-left is covered by foreground props (rolled map, coins, lantern, chests) that also hide the body frame's bottom-left corner, so its bottom edge (y=620) is inferred from the reward cards. Reward cards per tier column: tier 7 = CLAIMED in both rows (green-tinted card and frame, green corner tab with check mark at top-right, green CLAIMED button with check icon and pale-green label); tier 8 = CLAIMABLE in both rows (glowing gold frame, warm brown fill, gold CLAIM button with dark label; this column is ~5 px narrower); tiers 9-11 = LOCKED (dark steel card, grey LOCKED button with padlock icon and grey label). Captions are cream full caps centred under the art; art rects are the measured picture bounds (they vary per item). Back to Map is a slate-blue plate at the bottom right inside the body frame, Cinzel small caps (tall B and M). Width-fitted sizes vary slightly within one style: the ten captions (fitted 18-20) are one style (~19); CLAIMED/LOCKED labels (16-17) are one style (~16-17) while the CLAIM label is visibly larger (~21)."
+}

@@ -12,8 +12,8 @@ keyboard focus has a separate bright outline.
 - `scripts/ui/shared/MedievalUi.cs` supplies the shared control theme and slicing.
 - `scripts/ui/shared/UiSurfaceStyle.cs` layers a tintable body and rim for cards
   and badges, preserving their existing selection/reward colours.
-- `scripts/combat/hud/BattleHudBar.cs` uses the shared meter track and fill for
-  war wagon health and courage, including outlined values and high-contrast edges.
+- `scripts/combat/hud/RoyalMeter.cs` draws the battle HUD's hull and courage meters from the
+  clean-steel kit pieces (see `docs/ROYAL_UI.md`).
 
 Regenerate with `python3 art/ui/build_surfaces.py`, then let Godot import the SVGs.
 No external artwork, bitmap-generation service, shader, or SVG filter is needed.

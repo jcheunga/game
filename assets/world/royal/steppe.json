@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    57.37,
+    768.75,
+    258.26
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2164,
+    727
+   ],
+   "file": "steppe_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    468.66,
+    198.16,
+    262.69,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    1747,
+    717
+   ],
+   "file": "steppe_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    333.69,
+    301.38,
+    532.61,
+    184.07
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    704
+   ],
+   "file": "steppe_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    465.51,
+    233.78,
+    268.99,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2115,
+    645
+   ],
+   "file": "steppe_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    435.26,
+    399.72,
+    329.47,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    452
+   ],
+   "file": "steppe_front.png"
+  }
+ ],
+ "sky": "a2585b",
+ "generator": "art/royal/backdrops.py"
+}

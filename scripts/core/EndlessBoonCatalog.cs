@@ -33,11 +33,11 @@ public static class EndlessBoonCatalog
         new(
             ReinforcedBusId,
             "Reinforced Wagon",
-            "The caravan starts with +20% war wagon hull for longer survival against spikes."),
+            "Start with +20% war wagon hull."),
         new(
             SalvageCacheId,
             "Supply Cache",
-            "Endless run gold rewards are increased by 25% when the run ends."),
+            "Earn 25% more gold at the end of the run."),
         new(
             RelicForgeId,
             "Relic Forge",

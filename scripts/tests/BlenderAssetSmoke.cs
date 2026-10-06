@@ -73,13 +73,11 @@ public partial class BlenderAssetSmoke : Node
                     if (group.Value.ValueKind != System.Text.Json.JsonValueKind.Object) continue;
                     Check(group.Value.GetProperty("present").GetInt32() == group.Value.GetProperty("expected").GetInt32(), group.Name + " complete");
                 }
-                foreach (var terrain in GameData.Stages.Select(x => x.TerrainId).Distinct())
-                    Check(BattlefieldTextureLoader.TryLoadBackground(terrain) != null, terrain + " background loads");
                 foreach (var skin in WagonSkinCatalog.GetAll())
                     Check(BattlefieldTextureLoader.TryLoadStructure(skin.Id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + skin.Id) != null, skin.Id + " caravan loads");
                 foreach (var kind in Enum.GetValues<BaseWeaponKind>())
                     Check(BattlefieldTextureLoader.TryLoadStructure("mount_" + kind.ToString().ToLowerInvariant()) != null, kind + " mount loads");
-                foreach (var folder in new[] { "backgrounds", "structures", "units", "particles", "map/adventure", "world/battles", "world/overworld", "ui/icons", "ui/portraits" })
+                foreach (var folder in new[] { "structures", "units", "particles", "world/royal", "ui/icons", "ui/portraits", "ui/royal" })
                 {
                     var count = 0;
                     var directory = ProjectSettings.GlobalizePath("res://assets/" + folder);

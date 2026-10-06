@@ -1,9 +1,8 @@
-"""Weapon mounts placed on the wagon roof (arrows, ballista, firepot) and on the enemy
-stronghold (any kind, mirrored). +X is the firing direction; base sits at z=0 centred near
-x=0.15 so it lands on the runtime anchor (mount pixel 192, base row ~390).
+"""Weapon mounts placed on the wagon roof (arrows, ballista, firepot); the enemy stronghold has
+none. +X is the firing direction; base sits at z=0 centred near x=0.15 so it lands on the
+runtime anchor (mount pixel 192, base row ~390).
 
-Shared mounts stay faction-neutral (oak, blackened iron, brass, rope) because the same
-texture serves both sides; frost and hex are stronghold-only and lean Rotbound.
+Mounts stay faction-neutral (oak, blackened iron, brass, rope).
 Weapons aim ~25 degrees toward the camera so prods, arms and lenses read in 3/4.
 """
 import math
@@ -290,147 +289,13 @@ def firepot(coll, M):
     return out
 
 
-# =================================================================== frost
-def frost(coll, M):
-    out = {'flames': []}
-    stone = ST.ashlar('2c3646', name='Frostbitten stone', warm='343a44', cool='243042', grime=.3, grime_height=.4, crack=.5,
-                      grime_color='141a22')
-    rime = ST.frost_rime('a8dcf0', base='35505e')
-    ice = ST.ice('1aa8ff', glow=1.3, core='6fd8ff')
-    shard = ST.ice('5cc8f0', name='Ice shard', glow=0.6, core='a8e8ff')
-    lens_glass = S.glass('3a9adf', name='Projector lens', glow=1.2)
-    frost_rune = S.emissive('38c8ff', 2.2, name='Frost runes', core='9fe6ff')
-    B = Batch('Frost plinth', coll, random.Random(12))
-    B.lathe([(0, 0), (0.6, 0), (0.6, 0.12), (0.52, 0.16), (0.52, 0.3), (0.46, 0.34), (0, 0.34)], stone,
-            Matrix.Translation((CX, 0, 0)) @ Matrix.Rotation(math.radians(15), 4, 'Z'), 6)
-    B.lathe([(0, 0.335), (0.45, 0.335), (0.42, 0.37), (0, 0.38)], rime, Matrix.Translation((CX, 0, 0)), 18)
-    B.finish(bevel=0.012)
-    for k in range(6):
-        a = math.radians(15 + 60 * k + 30)
-        d = V(math.cos(a), math.sin(a), 0)
-        geo.box('Frost rune', (0.012, 0.16, 0.035), V(CX, 0, 0.22) + d * 0.502, frost_rune, coll, bevel=0.003,
-                rotation=(0, 0, math.degrees(a)))
-    # black iron claw tripod
-    tri = []
-    for k in range(3):
-        a = math.radians(k * 120 + 30)
-        b = V(CX + math.cos(a) * 0.36, math.sin(a) * 0.36, 0.34)
-        pts = catmull([b, b + V(math.cos(a) * 0.08, math.sin(a) * 0.08, 0.35), V(CX + math.cos(a) * 0.2, math.sin(a) * 0.2, 0.95),
-                       V(CX + math.cos(a) * 0.08, math.sin(a) * 0.08, 1.14)], 4)
-        tri.append(geo.tube('Claw prong', pts, [0.05 - 0.035 * i / len(pts) for i in range(len(pts))], M['iron'], coll, sides=8))
-    # gimbal rings around the crystal
-    cc = V(CX, 0, 1.2)
-    rings = []
-    for rot in ((90, 0, 20), (0, 70, 20)):
-        rings.append(geo.lathe('Gimbal ring', [(0.33, -0.025), (0.36, -0.025), (0.36, 0.025), (0.33, 0.025)], 40, M['brass'], coll,
-                               rotation=rot, location=cc, close_top=False, close_bottom=False))
-    # main crystal aimed +X (toward camera-right)
-    cr = geo.lathe('Frost crystal', [(0, -0.42), (0.13, -0.24), (0.15, 0.1), (0.12, 0.28), (0, 0.46)], 6, ice, coll)
-    geo.transform(cr, aim_matrix(cc, YAW, 18) @ Matrix.Rotation(math.radians(90), 4, 'Y'))
-    for k in range(5):
-        a = math.tau * k / 5
-        s = geo.lathe('Crystal spur', [(0, 0), (0.05, 0.06), (0.04, 0.16), (0, 0.24)], 6, shard, coll)
-        geo.transform(s, aim_matrix(cc, YAW, 18) @ Matrix.Translation((-0.1, 0, 0)) @ Matrix.Rotation(a, 4, 'X') @
-                      Matrix.Rotation(math.radians(55), 4, 'X') @ Matrix.Translation((0, 0, 0.08)))
-    # projector lens cone in front
-    lens = geo.lathe('Projector horn', [(0.08, 0.0), (0.1, 0.02), (0.18, 0.2), (0.2, 0.24), (0.17, 0.24), (0.08, 0.04)], 20, M['brass'],
-                     coll, close_top=False, close_bottom=False)
-    geo.transform(lens, aim_matrix(cc, YAW, 18) @ Matrix.Translation((0.34, 0, 0)) @ Matrix.Rotation(math.radians(90), 4, 'Y'))
-    disc = geo.cylinder('Projector lens', 0.17, 0.02, (0, 0, 0), lens_glass, coll, 20, bevel=0.005)
-    geo.transform(disc, aim_matrix(cc, YAW, 18) @ Matrix.Translation((0.57, 0, 0)) @ Matrix.Rotation(math.radians(90), 4, 'Y'))
-    # ice growth on the plinth and icicles under the rings
-    rng = random.Random(13)
-    for k in range(9):
-        a = rng.uniform(0, math.tau)
-        r = rng.uniform(0.25, 0.5)
-        h = rng.uniform(0.12, 0.3)
-        s = geo.lathe('Rime shard', [(0, -0.02), (0.035 + h * 0.08, 0.0), (0.025, h * 0.7), (0, h)], 5, shard, coll)
-        geo.transform(s, Matrix.Translation((CX + math.cos(a) * r, math.sin(a) * r, 0.33)) @
-                      Matrix.Rotation(math.radians(rng.uniform(-35, 35)), 4, 'X') @ Matrix.Rotation(math.radians(rng.uniform(-35, 35)), 4, 'Y'))
-    for k in range(8):
-        a = math.tau * k / 8
-        p = cc + V(math.cos(a) * 0.35, math.sin(a) * 0.35 * 0.34, -abs(math.sin(a)) * 0.33 - 0.02)
-        geo.lathe('Icicle', [(0.018, 0), (0.012, -0.05), (0, -0.11 - 0.04 * (k % 3))], 6, shard, coll, location=p)
-    out['lights'] = [core.point_light('Frost glow', cc + V(0.2, -0.45, 0.0), 25, core.srgb('a4e7ef'), 0.1, coll),
-                     core.point_light('Frost under', V(CX, -0.6, 0.6), 12, core.srgb('8fd8ff'), 0.1, coll)]
-    return out
-
-
-# =================================================================== hex
-def hex_totem(coll, M):
-    out = {'flames': []}
-    violet = 'b07cff'
-    glow = S.emissive('9a50ff', 2.6, name='Hex light', core='c890ff')
-    rune = S.emissive('8a44ff', 1.8, name='Hex runes', core='b880ff')
-    bone = S.bone('d2c6a4', name='Totem bone')
-    bone_dark = S.bone('a8987a', name='Grave bone', stain='3b2c1c')
-    stone = ST.ashlar('2c2836', name='Black altar stone', warm='342e3a', cool='262634', grime=.4, grime_height=.4, crack=.7,
-                      crack_glow='9a5cff', glow_strength=4, grime_color='141218')
-    hm = dict(bone=bone, dark=S.flat('050404', name='Void'), glow=glow, horn=S.bone('3a3029', name='Horn', stain='15100c', crack=.2))
-    B = Batch('Hex altar', coll, random.Random(14))
-    B.lathe([(0, 0), (0.56, 0), (0.56, 0.1), (0.48, 0.14), (0.48, 0.26), (0, 0.26)], stone,
-            Matrix.Translation((CX, 0, 0)) @ Matrix.Rotation(math.radians(10), 4, 'Z'), 7)
-    B.finish(bevel=0.012)
-    # rune ring on the altar top
-    for k in range(7):
-        a = math.tau * k / 7 + 0.2
-        geo.box('Altar rune', (0.1, 0.03, 0.012), (CX + math.cos(a) * 0.36, math.sin(a) * 0.36, 0.262), rune, coll, bevel=0.003,
-                rotation=(0, 0, math.degrees(a) + 90))
-    # carved post bound with bones
-    T = Batch('Totem post', coll, random.Random(15))
-    T.cyl(0.11, 1.25, (CX, 0, 0.26 + 0.62), ST.board('3a2a22', name='Gallows wood', axis='Z', dark=.5), segs=10)
-    for z in (0.5, 0.86, 1.22):
-        T.cyl(0.125, 0.04, (CX, 0, z), M['rope'], segs=12)
-    T.finish(bevel=0.008)
-    rng = random.Random(16)
-    for k in range(7):
-        a = math.tau * k / 7
-        base = V(CX + math.cos(a) * 0.14, math.sin(a) * 0.14, 0.3)
-        geo.tube('Lashed femur', [base, base + V(math.cos(a) * 0.04, math.sin(a) * 0.04, 0.55 + rng.uniform(-.08, .08))],
-                 [0.03, 0.022, 0.03], bone_dark, coll, sides=6)
-    # skull stack and crowning horned skull
-    ST.oriented_skull('Totem skull', coll, (CX + 0.05, -0.05, 1.0), 0.12, hm, facing=(0.6, -1, 0), jaw_open=0.2)
-    ST.oriented_skull('Totem skull', coll, (CX - 0.04, 0.06, 1.26), 0.11, hm, facing=(-0.2, -1, 0), jaw_open=0.3)
-    ST.oriented_skull('Horned skull', coll, (CX + 0.02, 0, 1.62), 0.16, hm, facing=(0.7, -1, 0), jaw_open=0.25,
-                      horns=dict(length=1.5, curl=0.9, thick=0.24, ram=True))
-    # crooked arm reaching forward with the hex orb
-    arm_pts = [V(CX, 0, 1.4), V(CX + 0.25, -0.05, 1.5), V(CX + 0.45, -0.1, 1.42), V(CX + 0.62, -0.18, 1.5)]
-    geo.tube('Hex arm', catmull(arm_pts, 4), [0.05 - 0.03 * i / 13 for i in range(13)], ST.board('3a2a22', name='Gallows wood',
-             axis='Z', dark=.5), coll, sides=7)
-    orb_c = V(CX + 0.7, -0.22, 1.62)
-    geo.sphere('Hex orb', 0.1, orb_c, glow, coll, 18, 12)
-    geo.sphere('Hex orb shell', 0.125, orb_c, S.glass('7a40d0', name='Hex glass', glow=0.4), coll, 18, 12)
-    for k in range(4):
-        a = math.tau * k / 4 + 0.4
-        geo.tube('Claw finger', catmull([orb_c + V(-0.12, 0, -0.06), orb_c + V(math.cos(a) * 0.05 - 0.1, math.sin(a) * 0.12, -0.12),
-                                         orb_c + V(math.cos(a) * 0.1, math.sin(a) * 0.13, math.sin(a + 1) * 0.04)], 3),
-                 [0.02, 0.018, 0.015, 0.012, 0.01, 0.008, 0.006], bone, coll, sides=6)
-    geo.lathe('Hex sigil ring', [(0.2, -0.008), (0.22, -0.008), (0.22, 0.008), (0.2, 0.008)], 40, rune, coll,
-              rotation=(70, 0, 25), location=orb_c, close_top=False, close_bottom=False)
-    # tattered pennants of grave cloth hanging from the arm
-    cl = S.cloth('4e2f6e', name='Hex cloth', var='241636', weave=40)
-    for k, u in enumerate((0.3, 0.55)):
-        p = V(CX + 0.2 + u * 0.5, -0.08 - u * 0.1, 1.47)
-        sh, _ = ST.banner_sheet('Hex rag', coll, p, 0.14, 0.42 - k * 0.08, cl, axis_dir=(1, 0, 0), normal=(0, -1, 0), tails=2,
-                                tail_depth=0.3, tatter=1.0, seed=k + 3, nx=4, ny=8, thickness=0.008, subsurf=0)
-    # candles on the altar
-    for k, (a, h) in enumerate(((0.9, 0.16), (2.4, 0.11), (4.0, 0.2), (5.3, 0.13))):
-        p = V(CX + math.cos(a) * 0.4, math.sin(a) * 0.4, 0.26)
-        geo.cylinder('Grave candle', 0.035, h, p + V(0, 0, h / 2), S.bone('d8ccaa', name='Tallow', crack=0.1), coll, 10, bevel=0.006)
-        out['flames'] += ST.flame_tongues('Candle fire', coll, p + V(0, 0, h), 0.08, 0.02, ST.flame('8a44ff', 'c890ff', 1.6,
-                                          name='Hex flame'), seed=k, count=2)
-    out['lights'] = [core.point_light('Hex glow', orb_c + V(0.1, -0.4, 0.0), 30, core.srgb(violet), 0.1, coll),
-                     core.point_light('Hex altar glow', V(CX, -0.55, 0.45), 10, core.srgb('9a5cff'), 0.1, coll)]
-    return out
-
-
-SCALE = {'arrows': 1.32, 'ballista': 1.3, 'firepot': 1.28, 'frost': 1.3, 'hex': 1.22}
+SCALE = {'arrows': 1.32, 'ballista': 1.3, 'firepot': 1.28}
 
 
 def build(kind, coll):
     M = mats()
     M['flame'] = ST.flame('ff6a1a', 'ffb040', 1.8, name='Fire')
-    fn = {'arrows': arrows, 'ballista': ballista, 'firepot': firepot, 'frost': frost, 'hex': hex_totem}[kind]
+    fn = {'arrows': arrows, 'ballista': ballista, 'firepot': firepot}[kind]
     out = fn(coll, M)
     # author at design scale, then grow about the footprint centre so the weapon reads at 60x75
     s = SCALE[kind]

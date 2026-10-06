@@ -1,0 +1,1217 @@
+{
+ "screen": "multiplayer",
+ "ref": "art/royal/ref/menu-08-multiplayer-challenges.png",
+ "elements": [
+  {
+   "id": "modal",
+   "kind": "rect",
+   "rect": [
+    33,
+    22,
+    1213,
+    666
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header",
+   "kind": "rect",
+   "rect": [
+    33,
+    22,
+    1213,
+    98
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.field",
+   "kind": "rect",
+   "rect": [
+    46,
+    33,
+    1191,
+    83
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.art",
+   "kind": "rect",
+   "rect": [
+    700,
+    33,
+    485,
+    83
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "header.helmet",
+   "kind": "rect",
+   "rect": [
+    62,
+    35,
+    79,
+    78
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Multiplayer Challenges",
+   "font": "cinzel",
+   "weight": 690,
+   "width": 583,
+   "x": 159,
+   "baseline": 92,
+   "align": "left",
+   "color": "#e6b973",
+   "style": "gold",
+   "size": 43,
+   "pen_x": 160
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1185,
+    26,
+    53,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1201,
+    42,
+    22,
+    22
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.rooms",
+   "kind": "rect",
+   "rect": [
+    48,
+    123,
+    232,
+    53
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.rooms.icon",
+   "kind": "rect",
+   "rect": [
+    104,
+    134,
+    35,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.rooms.label",
+   "kind": "text",
+   "text": "Rooms",
+   "font": "crimson",
+   "weight": 600,
+   "width": 56,
+   "x": 161,
+   "baseline": 156,
+   "align": "left",
+   "color": "#fff8b9",
+   "size": 19,
+   "pen_x": 161
+  },
+  {
+   "id": "tab.daily",
+   "kind": "rect",
+   "rect": [
+    285,
+    123,
+    234,
+    52
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.daily.icon",
+   "kind": "rect",
+   "rect": [
+    360,
+    133,
+    28,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.daily.label",
+   "kind": "text",
+   "text": "Daily",
+   "font": "crimson",
+   "weight": 600,
+   "width": 39,
+   "x": 410,
+   "baseline": 156,
+   "align": "left",
+   "color": "#dad8d4",
+   "size": 18,
+   "pen_x": 410
+  },
+  {
+   "id": "tab.featured",
+   "kind": "rect",
+   "rect": [
+    523,
+    123,
+    235,
+    52
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.featured.icon",
+   "kind": "rect",
+   "rect": [
+    583,
+    135,
+    29,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.featured.label",
+   "kind": "text",
+   "text": "Featured",
+   "font": "crimson",
+   "weight": 590,
+   "width": 68,
+   "x": 632,
+   "baseline": 156,
+   "align": "left",
+   "color": "#e4e4e2",
+   "size": 17,
+   "pen_x": 632
+  },
+  {
+   "id": "tab.saved",
+   "kind": "rect",
+   "rect": [
+    762,
+    123,
+    235,
+    52
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.saved.icon",
+   "kind": "rect",
+   "rect": [
+    835,
+    134,
+    23,
+    31
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.saved.label",
+   "kind": "text",
+   "text": "Saved",
+   "font": "crimson",
+   "weight": 600,
+   "width": 46,
+   "x": 884,
+   "baseline": 156,
+   "align": "left",
+   "color": "#f1efec",
+   "size": 18,
+   "pen_x": 884
+  },
+  {
+   "id": "tab.squad",
+   "kind": "rect",
+   "rect": [
+    1000,
+    123,
+    233,
+    52
+   ],
+   "role": "tab"
+  },
+  {
+   "id": "tab.squad.icon",
+   "kind": "rect",
+   "rect": [
+    1068,
+    134,
+    35,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "tab.squad.label",
+   "kind": "text",
+   "text": "Squad",
+   "font": "crimson",
+   "weight": 600,
+   "width": 48,
+   "x": 1125,
+   "baseline": 156,
+   "align": "left",
+   "color": "#e0dbd9",
+   "size": 18,
+   "pen_x": 1125
+  },
+  {
+   "id": "brief",
+   "kind": "rect",
+   "rect": [
+    37,
+    179,
+    1204,
+    103
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "brief.art",
+   "kind": "rect",
+   "rect": [
+    66,
+    195,
+    278,
+    72
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "brief.map.icon",
+   "kind": "rect",
+   "rect": [
+    355,
+    215,
+    32,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.route",
+   "kind": "text",
+   "text": "King's Road",
+   "font": "crimson",
+   "weight": 600,
+   "width": 142,
+   "x": 408,
+   "baseline": 238,
+   "align": "left",
+   "color": "#fff9c8",
+   "size": 28,
+   "pen_x": 408
+  },
+  {
+   "id": "brief.separator.1",
+   "kind": "rect",
+   "rect": [
+    569,
+    205,
+    4,
+    54
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "brief.modifier.icon",
+   "kind": "rect",
+   "rect": [
+    602,
+    208,
+    41,
+    47
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.modifier",
+   "kind": "text",
+   "text": "Pressure Spike",
+   "font": "crimson",
+   "weight": 545,
+   "width": 125,
+   "x": 662,
+   "baseline": 225,
+   "align": "left",
+   "color": "#fbf7d8",
+   "size": 20,
+   "pen_x": 662
+  },
+  {
+   "id": "brief.difficulty",
+   "kind": "rect",
+   "rect": [
+    664,
+    236,
+    66,
+    19
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "brief.difficulty.1",
+   "kind": "rect",
+   "rect": [
+    664,
+    236,
+    15,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.difficulty.2",
+   "kind": "rect",
+   "rect": [
+    690,
+    236,
+    15,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.difficulty.3",
+   "kind": "rect",
+   "rect": [
+    716,
+    236,
+    14,
+    19
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.separator.2",
+   "kind": "rect",
+   "rect": [
+    808,
+    205,
+    2,
+    53
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "brief.code",
+   "kind": "rect",
+   "rect": [
+    823,
+    204,
+    225,
+    55
+   ],
+   "role": "field"
+  },
+  {
+   "id": "brief.code.icon",
+   "kind": "rect",
+   "rect": [
+    838,
+    215,
+    38,
+    34
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "brief.code.label",
+   "kind": "text",
+   "text": "CH-01-PRS-1001",
+   "font": "crimson",
+   "weight": 500,
+   "width": 133,
+   "x": 895,
+   "baseline": 239,
+   "align": "left",
+   "color": "#efe5d5",
+   "size": 20,
+   "pen_x": 895
+  },
+  {
+   "id": "button.load",
+   "kind": "rect",
+   "rect": [
+    1066,
+    202,
+    156,
+    61
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.load.label",
+   "kind": "text",
+   "text": "LOAD",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 60,
+   "x": 1143.0,
+   "baseline": 242,
+   "align": "center",
+   "color": "#fffcdc",
+   "size": 20
+  },
+  {
+   "id": "room.1",
+   "kind": "rect",
+   "rect": [
+    50,
+    289,
+    1182,
+    103
+   ],
+   "role": "row"
+  },
+  {
+   "id": "room.1.art",
+   "kind": "rect",
+   "rect": [
+    56,
+    293,
+    372,
+    94
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.1.tab",
+   "kind": "rect",
+   "rect": [
+    57,
+    292,
+    47,
+    37
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "room.1.number",
+   "kind": "text",
+   "text": "1",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 8,
+   "x": 79.0,
+   "baseline": 319,
+   "align": "center",
+   "color": "#0a0806",
+   "size": 20
+  },
+  {
+   "id": "room.1.banner",
+   "kind": "rect",
+   "rect": [
+    133,
+    291,
+    75,
+    96
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.1.players.icon",
+   "kind": "rect",
+   "rect": [
+    467,
+    316,
+    31,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.1.players",
+   "kind": "text",
+   "text": "1 / 2",
+   "font": "crimson",
+   "weight": 600,
+   "width": 36,
+   "x": 483.0,
+   "baseline": 364,
+   "align": "center",
+   "color": "#f6edcb",
+   "size": 22
+  },
+  {
+   "id": "room.1.slot.1",
+   "kind": "rect",
+   "rect": [
+    552,
+    302,
+    79,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.1.slot.2",
+   "kind": "rect",
+   "rect": [
+    638,
+    302,
+    76,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.1.slot.2.plus",
+   "kind": "rect",
+   "rect": [
+    665,
+    329,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.1.sidebanner",
+   "kind": "rect",
+   "rect": [
+    865,
+    297,
+    52,
+    88
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.1.ready",
+   "kind": "rect",
+   "rect": [
+    931,
+    318,
+    110,
+    45
+   ],
+   "role": "chip"
+  },
+  {
+   "id": "room.1.ready.dot",
+   "kind": "rect",
+   "rect": [
+    942,
+    333,
+    15,
+    15
+   ],
+   "role": "indicator"
+  },
+  {
+   "id": "room.1.ready.label",
+   "kind": "text",
+   "text": "READY",
+   "font": "cinzel",
+   "weight": 760,
+   "width": 60,
+   "x": 969,
+   "baseline": 347,
+   "align": "left",
+   "color": "#bff9a1",
+   "size": 16,
+   "pen_x": 969
+  },
+  {
+   "id": "room.1.join",
+   "kind": "rect",
+   "rect": [
+    1056,
+    308,
+    166,
+    64
+   ],
+   "role": "button"
+  },
+  {
+   "id": "room.1.join.label",
+   "kind": "text",
+   "text": "JOIN",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 51,
+   "x": 1138.5,
+   "baseline": 348,
+   "align": "center",
+   "color": "#0a0604",
+   "size": 20
+  },
+  {
+   "id": "room.2",
+   "kind": "rect",
+   "rect": [
+    52,
+    398,
+    1178,
+    99
+   ],
+   "role": "row"
+  },
+  {
+   "id": "room.2.art",
+   "kind": "rect",
+   "rect": [
+    56,
+    402,
+    372,
+    92
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.2.tab",
+   "kind": "rect",
+   "rect": [
+    57,
+    400,
+    47,
+    37
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "room.2.number",
+   "kind": "text",
+   "text": "2",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 12,
+   "x": 78.0,
+   "baseline": 427,
+   "align": "center",
+   "color": "#0a0806",
+   "size": 18
+  },
+  {
+   "id": "room.2.banner",
+   "kind": "rect",
+   "rect": [
+    133,
+    399,
+    75,
+    97
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.2.players.icon",
+   "kind": "rect",
+   "rect": [
+    461,
+    424,
+    44,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.2.players",
+   "kind": "text",
+   "text": "2 / 4",
+   "font": "crimson",
+   "weight": 600,
+   "width": 40,
+   "x": 482.0,
+   "baseline": 472,
+   "align": "center",
+   "color": "#f6edcb",
+   "size": 22
+  },
+  {
+   "id": "room.2.slot.1",
+   "kind": "rect",
+   "rect": [
+    552,
+    410,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.2.slot.2",
+   "kind": "rect",
+   "rect": [
+    626,
+    410,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.2.slot.3",
+   "kind": "rect",
+   "rect": [
+    700,
+    410,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.2.slot.3.plus",
+   "kind": "rect",
+   "rect": [
+    723,
+    437,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.2.slot.4",
+   "kind": "rect",
+   "rect": [
+    774,
+    410,
+    66,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.2.slot.4.plus",
+   "kind": "rect",
+   "rect": [
+    796,
+    437,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.2.sidebanner",
+   "kind": "rect",
+   "rect": [
+    865,
+    405,
+    52,
+    88
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.2.ready.dot",
+   "kind": "rect",
+   "rect": [
+    975,
+    434,
+    31,
+    30
+   ],
+   "role": "indicator"
+  },
+  {
+   "id": "room.2.join",
+   "kind": "rect",
+   "rect": [
+    1056,
+    416,
+    166,
+    65
+   ],
+   "role": "button"
+  },
+  {
+   "id": "room.2.join.label",
+   "kind": "text",
+   "text": "JOIN",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 50,
+   "x": 1138.0,
+   "baseline": 456,
+   "align": "center",
+   "color": "#fffbdd",
+   "size": 20
+  },
+  {
+   "id": "room.3",
+   "kind": "rect",
+   "rect": [
+    52,
+    506,
+    1178,
+    100
+   ],
+   "role": "row"
+  },
+  {
+   "id": "room.3.art",
+   "kind": "rect",
+   "rect": [
+    56,
+    510,
+    372,
+    92
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.3.tab",
+   "kind": "rect",
+   "rect": [
+    57,
+    508,
+    47,
+    37
+   ],
+   "role": "badge"
+  },
+  {
+   "id": "room.3.number",
+   "kind": "text",
+   "text": "3",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 12,
+   "x": 78.0,
+   "baseline": 536,
+   "align": "center",
+   "color": "#0a0806",
+   "size": 21
+  },
+  {
+   "id": "room.3.banner",
+   "kind": "rect",
+   "rect": [
+    133,
+    507,
+    75,
+    95
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.3.players.icon",
+   "kind": "rect",
+   "rect": [
+    461,
+    532,
+    44,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.3.players",
+   "kind": "text",
+   "text": "3 / 4",
+   "font": "crimson",
+   "weight": 600,
+   "width": 40,
+   "x": 482.0,
+   "baseline": 581,
+   "align": "center",
+   "color": "#f6edcb",
+   "size": 22
+  },
+  {
+   "id": "room.3.slot.1",
+   "kind": "rect",
+   "rect": [
+    552,
+    518,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.3.slot.2",
+   "kind": "rect",
+   "rect": [
+    626,
+    518,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.3.slot.3",
+   "kind": "rect",
+   "rect": [
+    700,
+    518,
+    67,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.3.slot.4",
+   "kind": "rect",
+   "rect": [
+    774,
+    518,
+    66,
+    76
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "room.3.slot.4.plus",
+   "kind": "rect",
+   "rect": [
+    796,
+    546,
+    22,
+    23
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "room.3.sidebanner",
+   "kind": "rect",
+   "rect": [
+    865,
+    513,
+    52,
+    87
+   ],
+   "role": "picture"
+  },
+  {
+   "id": "room.3.ready.dot",
+   "kind": "rect",
+   "rect": [
+    975,
+    541,
+    31,
+    31
+   ],
+   "role": "indicator"
+  },
+  {
+   "id": "room.3.join",
+   "kind": "rect",
+   "rect": [
+    1056,
+    524,
+    166,
+    65
+   ],
+   "role": "button"
+  },
+  {
+   "id": "room.3.join.label",
+   "kind": "text",
+   "text": "JOIN",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 50,
+   "x": 1138.0,
+   "baseline": 564,
+   "align": "center",
+   "color": "#fffbdd",
+   "size": 20
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    53,
+    621,
+    179,
+    52
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    74,
+    637,
+    12,
+    20
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 53,
+   "x": 131,
+   "baseline": 655,
+   "align": "left",
+   "color": "#fffad8",
+   "size": 18,
+   "pen_x": 131
+  },
+  {
+   "id": "button.refresh",
+   "kind": "rect",
+   "rect": [
+    410,
+    618,
+    165,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.refresh.icon",
+   "kind": "rect",
+   "rect": [
+    431,
+    632,
+    25,
+    27
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.refresh.label",
+   "kind": "text",
+   "text": "REFRESH",
+   "font": "cinzel",
+   "weight": 745,
+   "width": 76,
+   "x": 475,
+   "baseline": 653,
+   "align": "left",
+   "color": "#faf8e2",
+   "size": 15,
+   "pen_x": 475
+  },
+  {
+   "id": "button.match",
+   "kind": "rect",
+   "rect": [
+    583,
+    618,
+    159,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.match.icon",
+   "kind": "rect",
+   "rect": [
+    600,
+    634,
+    30,
+    24
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.match.label",
+   "kind": "text",
+   "text": "MATCH",
+   "font": "cinzel",
+   "weight": 725,
+   "width": 60,
+   "x": 652,
+   "baseline": 653,
+   "align": "left",
+   "color": "#f2eedc",
+   "size": 14,
+   "pen_x": 653
+  },
+  {
+   "id": "button.host",
+   "kind": "rect",
+   "rect": [
+    750,
+    618,
+    177,
+    55
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.host.icon",
+   "kind": "rect",
+   "rect": [
+    771,
+    630,
+    36,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.host.label",
+   "kind": "text",
+   "text": "HOST",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 44,
+   "x": 840,
+   "baseline": 653,
+   "align": "left",
+   "color": "#f7f5e5",
+   "size": 14,
+   "pen_x": 840
+  },
+  {
+   "id": "button.start",
+   "kind": "rect",
+   "rect": [
+    936,
+    614,
+    297,
+    61
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.start.icon",
+   "kind": "rect",
+   "rect": [
+    971,
+    629,
+    31,
+    32
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.start.label",
+   "kind": "text",
+   "text": "START CHALLENGE",
+   "font": "cinzel",
+   "weight": 745,
+   "width": 182,
+   "x": 1023,
+   "baseline": 652,
+   "align": "left",
+   "color": "#0a0604",
+   "size": 17,
+   "pen_x": 1023
+  }
+ ],
+ "notes": "Multiplayer challenge browser. TABS: 'Rooms' is SELECTED (warm brown fill, glowing gold frame, gold icon and warm-yellow label); Daily, Featured, Saved and Squad are inactive (dark navy fill, thin brass frame, grey-white icon and label). The selected tab's glow makes it 1px taller at the bottom. BRIEFING BAR (selected challenge summary): route picture well, map icon + route name, hairline separator, modifier skull icon + modifier name over a row of three difficulty skulls (first two gold/lit, third grey/unlit = difficulty 2 of 3), second hairline separator, a recessed code field (ticket icon + challenge code), and a slate LOAD button. ROOM LIST: three rows. Row 1 is HIGHLIGHTED/selected: glowing orange-gold frame (about 6px outer glow beyond the rect), a gold primary JOIN button with dark label, and a green READY chip (lit green dot + green label; the chip fades out to the right). Rows 2 and 3 have plain brass frames, slate JOIN buttons with light labels, and a hollow grey ready dot (not ready, no label). Each row: gold number tab over the top-left of a scene picture, a crest banner hanging over the picture (its rod with arrow finials sticks out ~13px either side of the banner rect), player-count icon above 'n / max', unit slots (filled slots show unit portraits, empty slots a grey plus), a side banner repeating the crest, the ready indicator and JOIN. Row 1 has 2 slots (79 and 76 wide, 1 filled); rows 2-3 have 4 slots 67 wide (2 and 3 filled). Faint vertical hairline dividers sit at about x435, x532, x850 and x931 inside each row. BOTTOM BAR: BACK, REFRESH, MATCH, HOST are slate secondary buttons with icons (BACK sits 3px lower than the others); START CHALLENGE is the parchment-gold primary with crossed swords. All button/chip labels are uniform full-caps Cinzel. Digit tabs are tall narrow numerals in the concept, so width-fitted sizes render shorter than the concept digits."
+}

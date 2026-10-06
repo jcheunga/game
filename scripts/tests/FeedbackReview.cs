@@ -77,12 +77,14 @@ public partial class FeedbackReview : Node
             Check(!Walk(map).OfType<MapPathCanvas>().Single().IsTravelling, "Map opens with a stable selection");
             map.QueueFree(); await Wait();
             var shop = await Open<ShopMenu>("ShopMenu"); await Capture("03-squad");
-            // The armory is a two-column scrolling collection of portrait tiles beside one animated model of the selected unit.
-            var squadGrid = Walk(shop).OfType<GridContainer>().FirstOrDefault(g => g.GetParent() is ScrollContainer && g.GetChildCount() == GameData.GetPlayerUnits().Count);
-            Check(squadGrid != null && squadGrid.Columns == 2, "Squad browser displays every unit in one scrolling grid");
-            Check(squadGrid != null && !Walk(squadGrid).OfType<UnitModelPreview>().Any() && squadGrid.GetChildren().OfType<Button>().All(b => b.GetChildren().OfType<TextureRect>().Any()), "Squad browser uses portraits instead of side-facing models");
+            // The armory is a three-column scrolling collection of portrait tiles beside one animated model of the selected unit.
+            Control Collection() => Walk(shop).OfType<ScrollContainer>().SingleOrDefault(scroll => scroll.Name == "Collection")?.GetChild<Control>(0);
+            var squadGrid = Collection();
+            Check(squadGrid != null && squadGrid.GetChildCount() == GameData.GetPlayerUnits().Count
+                && squadGrid.GetChildren().OfType<Control>().Select(cell => cell.Position.X).Distinct().Count() == 3, "Squad browser displays every unit in one scrolling grid");
+            Check(squadGrid != null && !Walk(squadGrid).OfType<UnitModelPreview>().Any() && squadGrid.GetChildren().OfType<RoyalButton>().All(b => Walk(b).OfType<TextureRect>().Any()), "Squad browser uses portraits instead of side-facing models");
             var rites = Walk(shop).OfType<Button>().Single(b => b.Text == "Spells"); rites.ButtonPressed = true; rites.EmitSignal(BaseButton.SignalName.Pressed); await Wait();
-            Check(Walk(shop).OfType<GridContainer>().Any(g => g.Columns == 2 && g.GetParent() is ScrollContainer && g.GetChildCount() == GameData.GetPlayerSpells().Count), "Spell browser also displays its full inventory grid");
+            Check(Collection() is { } spellGrid && spellGrid.GetChildCount() == GameData.GetPlayerSpells().Count, "Spell browser also displays its full inventory grid");
             await Capture("03b-spells");
             shop.QueueFree(); await Wait();
             var loadout = await Open<LoadoutMenu>("LoadoutMenu"); await Capture("04-loadout");

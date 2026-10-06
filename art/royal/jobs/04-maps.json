@@ -1,0 +1,102 @@
+[
+ {
+  "id": "map-city",
+  "out": "art/royal/gen/maps/city.png",
+  "inputs": [
+   "art/royal/gen/map-guides/city-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: King's Road: lush green meadows, patchwork farmland and wheat fields, deciduous and pine forests, small half-timbered hamlets, windmills, rocky outcrops and a clear blue river; warm afternoon sun.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-harbor",
+  "out": "art/royal/gen/maps/harbor.png",
+  "inputs": [
+   "art/royal/gen/map-guides/harbor-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Saltwake Docks: windswept coastal land with sandy beaches, white cliffs, fishing villages with piers, lighthouses, small rocky islets and sailing ships on a deep teal sea.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-foundry",
+  "out": "art/royal/gen/maps/foundry.png",
+  "inputs": [
+   "art/royal/gen/map-guides/foundry-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Emberforge March: dark volcanic rock and ash-grey plains, the river is a glowing orange lava flow, forges with smoking chimneys, mines, slag heaps and scorched pine.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-quarantine",
+  "out": "art/royal/gen/maps/quarantine.png",
+  "inputs": [
+   "art/royal/gen/map-guides/quarantine-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Ashen Ward: grey-brown ashen fields, dead leafless trees, walled villages with sealed gates, plague watch-fires and a murky grey-green river under a pale sickly light.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-thornwall",
+  "out": "art/royal/gen/maps/thornwall.png",
+  "inputs": [
+   "art/royal/gen/map-guides/thornwall-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Thornwall Pass: snowy alpine valley, a frozen blue river, dark snow-dusted pine forests, jagged grey mountains with glaciers and wooden watch forts.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-basilica",
+  "out": "art/royal/gen/maps/basilica.png",
+  "inputs": [
+   "art/royal/gen/map-guides/basilica-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Hollow Basilica: overgrown ancient ruins, broken gothic chapels and cloisters, purple heather moorland, mossy standing stones, misty and dim.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-mire",
+  "out": "art/royal/gen/maps/mire.png",
+  "inputs": [
+   "art/royal/gen/map-guides/mire-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Mire of Saints: a misty swamp of green bog pools, reeds, twisted dead trees and willows, sunken chapels and wooden boardwalks, with murky green water.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-steppe",
+  "out": "art/royal/gen/maps/steppe.png",
+  "inputs": [
+   "art/royal/gen/map-guides/steppe-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Sunfall Steppe: vast golden dry grasslands, sparse acacia-like trees, red rocky mesas, nomad tent camps and a shallow winding river at sunset.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-gloamwood",
+  "out": "art/royal/gen/maps/gloamwood.png",
+  "inputs": [
+   "art/royal/gen/map-guides/gloamwood-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Gloamwood Verge: a dense dark enchanted forest of huge blue-green trees, glowing mushrooms, mossy clearings, ancient shrines and a moonlit river.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ },
+ {
+  "id": "map-citadel",
+  "out": "art/royal/gen/maps/citadel.png",
+  "inputs": [
+   "art/royal/gen/map-guides/citadel-crop.png",
+   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
+  ],
+  "edit": true,
+  "prompt": "Use case: sketch-to-render\nAsset type: painted campaign map (one zone) for the home screen of a medieval fantasy strategy game, Crownroad: Siege of Ash.\nInput images: Image 1 is the EDIT TARGET, a flat-colour layout guide; Image 2 is a STYLE REFERENCE only (do not copy its layout or its interface).\nPrimary request: repaint Image 1 as a beautiful, highly detailed hand-painted 3D fantasy map in exactly the style, camera angle and finish of the map in Image 2 (a top-down three-quarter view at about 45 degrees, painterly but crisp, warm light from the upper left, rich forests, tiny detailed props, a deep sea with foam along the coast).\nFollow the guide EXACTLY: the coastline shape and the dark-blue sea, the blue river course and the three brown bridges, the tan road and its curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open ground; these spots must stay clear because castles and markers are placed there later. Elsewhere add hills, rocks, fields, small scattered cottages and trees to make it lively.\nZone theme: Crownfall Citadel: scorched black volcanic land with red-lit cracks, ruined fortress walls, burning siege camps, ash and a blood-red river under a dark sky.\nConstraints: keep the same framing and every guide feature in place; no castles or buildings on the red or white dots; no fog, no clouds over the land, no text, no labels, no interface, no frame, no compass, no watermark."
+ }
+]

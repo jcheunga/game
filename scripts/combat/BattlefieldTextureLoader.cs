@@ -6,13 +6,7 @@ public static class BattlefieldTextureLoader
 	private static readonly Dictionary<string, Texture2D> Cache = new();
 	private static readonly HashSet<string> Missing = new();
 
-	private const string BackgroundPath = "res://assets/backgrounds/";
 	private const string StructurePath = "res://assets/structures/";
-
-	public static Texture2D TryLoadBackground(string terrainId)
-	{
-		return TryLoad(BackgroundPath, terrainId) ?? (terrainId is "urban" or "highway" ? TryLoad(BackgroundPath, "kings_road") : null);
-	}
 
 	public static Texture2D TryLoadStructure(string structureId)
 	{

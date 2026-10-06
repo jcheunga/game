@@ -1,0 +1,886 @@
+{
+ "screen": "preparation",
+ "ref": "art/royal/ref/ui-09-battle-preparation.png",
+ "elements": [
+  {
+   "id": "panel.board",
+   "kind": "rect",
+   "rect": [
+    46,
+    134,
+    1200,
+    519
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.header",
+   "kind": "rect",
+   "rect": [
+    67,
+    45,
+    678,
+    98
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "header.helmet",
+   "kind": "rect",
+   "rect": [
+    104,
+    55,
+    81,
+    85
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Prepare for battle",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 387,
+   "size": 37,
+   "x": 202,
+   "baseline": 110,
+   "align": "left",
+   "color": "#f6e1b4",
+   "style": "gold",
+   "pen_x": 202
+  },
+  {
+   "id": "header.compass",
+   "kind": "rect",
+   "rect": [
+    606,
+    76,
+    44,
+    41
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "close",
+   "kind": "rect",
+   "rect": [
+    1145,
+    62,
+    66,
+    68
+   ],
+   "role": "button"
+  },
+  {
+   "id": "close.icon",
+   "kind": "rect",
+   "rect": [
+    1170,
+    87,
+    17,
+    18
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "panel.mission",
+   "kind": "rect",
+   "rect": [
+    62,
+    156,
+    402,
+    470
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "mission.kicker",
+   "kind": "text",
+   "text": "CHALLENGE THE LEADER",
+   "font": "cinzel",
+   "weight": 400,
+   "width": 179,
+   "size": 14,
+   "x": 86,
+   "baseline": 187,
+   "align": "left",
+   "color": "#32271e",
+   "pen_x": 86
+  },
+  {
+   "id": "mission.leader",
+   "kind": "text",
+   "text": "Rolf the Tollkeeper",
+   "font": "crimson",
+   "weight": 710,
+   "width": 257,
+   "size": 31,
+   "x": 87,
+   "baseline": 223,
+   "align": "left",
+   "color": "#120a06",
+   "pen_x": 87
+  },
+  {
+   "id": "mission.portrait",
+   "kind": "rect",
+   "rect": [
+    255,
+    157,
+    207,
+    141
+   ],
+   "role": "portrait"
+  },
+  {
+   "id": "mission.badge",
+   "kind": "rect",
+   "rect": [
+    87,
+    232,
+    50,
+    66
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "mission.picture",
+   "kind": "rect",
+   "rect": [
+    78,
+    305,
+    372,
+    147
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "mission.objective.icon",
+   "kind": "rect",
+   "rect": [
+    92,
+    464,
+    26,
+    25
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "mission.objective.title",
+   "kind": "text",
+   "text": "DESTROY THE ENEMY GATEHOUSE",
+   "font": "cinzel",
+   "weight": 680,
+   "width": 267,
+   "size": 14,
+   "x": 130,
+   "baseline": 478,
+   "align": "left",
+   "color": "#1e1710",
+   "pen_x": 130
+  },
+  {
+   "id": "mission.objective.line.1",
+   "kind": "text",
+   "text": "Bring down the gatehouse and rout the enemy",
+   "font": "crimson",
+   "weight": 410,
+   "width": 287,
+   "size": 15,
+   "x": 133,
+   "baseline": 498,
+   "align": "left",
+   "color": "#31261b",
+   "pen_x": 133
+  },
+  {
+   "id": "mission.objective.line.2",
+   "kind": "text",
+   "text": "forces within.",
+   "font": "crimson",
+   "weight": 410,
+   "width": 86,
+   "size": 16,
+   "x": 132,
+   "baseline": 515,
+   "align": "left",
+   "color": "#31261b",
+   "pen_x": 132
+  },
+  {
+   "id": "mission.reward",
+   "kind": "rect",
+   "rect": [
+    75,
+    530,
+    375,
+    82
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "mission.reward.coins",
+   "kind": "rect",
+   "rect": [
+    93,
+    547,
+    90,
+    54
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "mission.reward.rule",
+   "kind": "rect",
+   "rect": [
+    209,
+    563,
+    71,
+    1
+   ],
+   "role": "rule"
+  },
+  {
+   "id": "mission.reward.caption",
+   "kind": "text",
+   "text": "VICTORY REWARD",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 148,
+   "size": 15,
+   "x": 208,
+   "baseline": 557,
+   "align": "left",
+   "color": "#c6ac8b",
+   "pen_x": 209
+  },
+  {
+   "id": "mission.reward.value",
+   "kind": "text",
+   "text": "50 GOLD",
+   "font": "cinzel",
+   "weight": 750,
+   "width": 124,
+   "size": 27,
+   "x": 208,
+   "baseline": 594,
+   "align": "left",
+   "color": "#f8cf80",
+   "style": "gold",
+   "pen_x": 208
+  },
+  {
+   "id": "panel.warband",
+   "kind": "rect",
+   "rect": [
+    475,
+    156,
+    744,
+    485
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "warband.title",
+   "kind": "text",
+   "text": "Your Warband",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 221,
+   "size": 27,
+   "x": 489,
+   "baseline": 199,
+   "align": "left",
+   "color": "#ffebc2",
+   "style": "gold",
+   "pen_x": 491
+  },
+  {
+   "id": "warband.rule",
+   "kind": "rect",
+   "rect": [
+    724,
+    190,
+    197,
+    2
+   ],
+   "role": "rule"
+  },
+  {
+   "id": "warband.underline",
+   "kind": "rect",
+   "rect": [
+    484,
+    213,
+    523,
+    9
+   ],
+   "role": "rule"
+  },
+  {
+   "id": "warband.banner",
+   "kind": "rect",
+   "rect": [
+    943,
+    155,
+    46,
+    70
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.edit",
+   "kind": "rect",
+   "rect": [
+    1018,
+    167,
+    190,
+    48
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.edit.icon",
+   "kind": "rect",
+   "rect": [
+    1044,
+    181,
+    21,
+    21
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.edit.label",
+   "kind": "text",
+   "text": "EDIT SQUAD",
+   "font": "cinzel",
+   "weight": 600,
+   "width": 99,
+   "size": 15,
+   "x": 1083,
+   "baseline": 198,
+   "align": "left",
+   "color": "#f4e6c4",
+   "pen_x": 1083
+  },
+  {
+   "id": "card.1",
+   "kind": "rect",
+   "rect": [
+    484,
+    234,
+    112,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.1.art",
+   "kind": "rect",
+   "rect": [
+    491,
+    241,
+    99,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.1.icon",
+   "kind": "rect",
+   "rect": [
+    525,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.1.name",
+   "kind": "text",
+   "text": "Swordsman",
+   "font": "crimson",
+   "weight": 700,
+   "width": 81,
+   "size": 15,
+   "x": 540.5,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "card.2",
+   "kind": "rect",
+   "rect": [
+    601,
+    234,
+    114,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.2.art",
+   "kind": "rect",
+   "rect": [
+    608,
+    241,
+    101,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.2.icon",
+   "kind": "rect",
+   "rect": [
+    643,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.2.name",
+   "kind": "text",
+   "text": "Archer",
+   "font": "crimson",
+   "weight": 700,
+   "width": 47,
+   "size": 15,
+   "x": 658.5,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "card.3",
+   "kind": "rect",
+   "rect": [
+    719,
+    234,
+    117,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.3.art",
+   "kind": "rect",
+   "rect": [
+    726,
+    241,
+    103,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.3.icon",
+   "kind": "rect",
+   "rect": [
+    762,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.3.name",
+   "kind": "text",
+   "text": "Shield Knight",
+   "font": "crimson",
+   "weight": 700,
+   "width": 91,
+   "size": 15,
+   "x": 777.5,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "card.4",
+   "kind": "rect",
+   "rect": [
+    842,
+    234,
+    117,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.4.art",
+   "kind": "rect",
+   "rect": [
+    849,
+    241,
+    103,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.4.icon",
+   "kind": "rect",
+   "rect": [
+    885,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.4.name",
+   "kind": "text",
+   "text": "Spearman",
+   "font": "crimson",
+   "weight": 700,
+   "width": 68,
+   "size": 14,
+   "x": 900.5,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "card.5",
+   "kind": "rect",
+   "rect": [
+    965,
+    234,
+    118,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.5.art",
+   "kind": "rect",
+   "rect": [
+    972,
+    241,
+    104,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.5.icon",
+   "kind": "rect",
+   "rect": [
+    1009,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.5.name",
+   "kind": "text",
+   "text": "Crossbowman",
+   "font": "crimson",
+   "weight": 700,
+   "width": 92,
+   "size": 14,
+   "x": 1023.5,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "card.6",
+   "kind": "rect",
+   "rect": [
+    1089,
+    234,
+    120,
+    244
+   ],
+   "role": "card"
+  },
+  {
+   "id": "card.6.art",
+   "kind": "rect",
+   "rect": [
+    1096,
+    241,
+    106,
+    173
+   ],
+   "role": "illustration"
+  },
+  {
+   "id": "card.6.icon",
+   "kind": "rect",
+   "rect": [
+    1134,
+    405,
+    30,
+    30
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "card.6.name",
+   "kind": "text",
+   "text": "Mage",
+   "font": "crimson",
+   "weight": 700,
+   "width": 35,
+   "size": 14,
+   "x": 1150.0,
+   "baseline": 453,
+   "align": "center",
+   "color": "#fef0c6"
+  },
+  {
+   "id": "panel.spells",
+   "kind": "rect",
+   "rect": [
+    477,
+    500,
+    400,
+    128
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "spells.icon",
+   "kind": "rect",
+   "rect": [
+    492,
+    511,
+    20,
+    17
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "spells.label",
+   "kind": "text",
+   "text": "EQUIPPED SPELLS",
+   "font": "cinzel",
+   "weight": 450,
+   "width": 115,
+   "size": 13,
+   "x": 524,
+   "baseline": 524,
+   "align": "left",
+   "color": "#b3c0c7",
+   "pen_x": 524
+  },
+  {
+   "id": "spell.1",
+   "kind": "rect",
+   "rect": [
+    489,
+    538,
+    72,
+    74
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "spell.1.pip",
+   "kind": "rect",
+   "rect": [
+    516,
+    598,
+    18,
+    18
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "spell.2",
+   "kind": "rect",
+   "rect": [
+    568,
+    538,
+    71,
+    74
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "spell.2.pip",
+   "kind": "rect",
+   "rect": [
+    595,
+    598,
+    18,
+    18
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "spell.3",
+   "kind": "rect",
+   "rect": [
+    645,
+    538,
+    71,
+    74
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "spell.3.pip",
+   "kind": "rect",
+   "rect": [
+    672,
+    598,
+    18,
+    18
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "spell.4",
+   "kind": "rect",
+   "rect": [
+    722,
+    538,
+    72,
+    74
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "spell.4.pip",
+   "kind": "rect",
+   "rect": [
+    749,
+    598,
+    18,
+    18
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "spell.5",
+   "kind": "rect",
+   "rect": [
+    800,
+    538,
+    72,
+    74
+   ],
+   "role": "slot"
+  },
+  {
+   "id": "spell.5.pip",
+   "kind": "rect",
+   "rect": [
+    827,
+    598,
+    18,
+    18
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "deploy.rule",
+   "kind": "rect",
+   "rect": [
+    889,
+    501,
+    328,
+    4
+   ],
+   "role": "rule"
+  },
+  {
+   "id": "button.deploy",
+   "kind": "rect",
+   "rect": [
+    894,
+    522,
+    318,
+    101
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.deploy.icon",
+   "kind": "rect",
+   "rect": [
+    965,
+    543,
+    65,
+    55
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.deploy.label",
+   "kind": "text",
+   "text": "Deploy",
+   "font": "cinzel",
+   "weight": 620,
+   "width": 110,
+   "size": 28,
+   "x": 1046,
+   "baseline": 573,
+   "align": "left",
+   "color": "#1a0e06",
+   "pen_x": 1046
+  },
+  {
+   "id": "button.deploy.diamond.left",
+   "kind": "rect",
+   "rect": [
+    907,
+    566,
+    14,
+    14
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "button.deploy.diamond.right",
+   "kind": "rect",
+   "rect": [
+    1184,
+    566,
+    13,
+    14
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "button.deploy.cost.icon",
+   "kind": "rect",
+   "rect": [
+    1051,
+    583,
+    12,
+    14
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.deploy.cost",
+   "kind": "text",
+   "text": "4 FOOD",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 68,
+   "size": 16,
+   "x": 1077,
+   "baseline": 598,
+   "align": "left",
+   "color": "#1e1107",
+   "pen_x": 1077
+  }
+ ],
+ "notes": "Modal 'Prepare for battle' over a dimmed castle backdrop. panel.board is the dark wooden board held between two brass poles (left pole ~x46, right pole ~x1246, bottom rail y641-652); the header band (panel.header) sits on its top rail and stops at x745, and the red/brass close button floats on its own to the right. No selection, hover or disabled states are shown: all six warband cards are filled (full squad), all five spell slots are filled (fire, ward shield, whirlwind, lightning, radiant burst) and every slot pip is the same lit blue diamond. Card art backgrounds alternate warm and cool (bronze, blue, gold, blue, gold, blue); there is no selected card. Card frames widen slightly from left to right in the concept (112 to 120 px, pitch about 121); the frames can be equal width when rebuilt. Each card has a round class medallion (card.N.icon) sitting on the seam between the art and the name plaque. Mission card: parchment with a leader portrait that bleeds off the top-right with no frame (mission.portrait is the art area), a red skull shield badge, a fortress picture well with a thin dark frame and corner studs, an objective with a crossed-swords icon, and a dark inset victory-reward plaque with a short rule under its caption. The concept's second description line ends with a stray ' -' after 'forces within.', left out here. The two description lines are one paragraph (same x-height); the fit gives 15 and 16 because the concept tracks the second line slightly looser. EDIT SQUAD is a secondary steel button with a quill icon. DEPLOY is the primary gold parchment button: drumstick food icon, two diamond studs at the ends, and a small four-point star before the 4 FOOD cost. A thin rule (deploy.rule) above it mirrors the spells panel top rail. warband.rule is the hairline right of the heading; warband.underline is the double hairline with a diamond end ornament under it, which runs behind the banner. Text x values are placed as specview draws them: x is the pen origin, and the ink starts 0 to 2 px to the right (the glyph side bearing). The concept lettering is taller and narrower than Cinzel, so width-fitted Cinzel caps come out 2 to 4 px shorter than the concept (title, Deploy, EDIT SQUAD, 50 GOLD)."
+}

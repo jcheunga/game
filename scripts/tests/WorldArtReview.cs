@@ -39,30 +39,30 @@ public partial class WorldArtReview : Node
             var combat = GameData.Combat;
             var ground = new Rect2(combat.BattlefieldLeft,combat.BattlefieldTop,combat.BattlefieldRight-combat.BattlefieldLeft,combat.BattlefieldBottom-combat.BattlefieldTop);
             var world = combat.BattlefieldLeft + combat.BattlefieldRight;
-            // Each zone battles in front of one Blender backdrop rendered for the exact battle world.
+            // Each zone battles in front of painted parallax layers: far, mid, ground and near behind the troops, front before them.
             foreach (var zone in AssetCoverageCatalog.RouteIds)
             {
                 var backdrop = WorldEnvironmentArt.LoadZoneBackdrop(zone);
-                Check(backdrop is { Layers.Count: 3 }, $"{zone} has a layered Blender battle backdrop");
+                Check(backdrop is { Layers.Count: 5 }, $"{zone} has a layered painted battle backdrop");
                 if (backdrop == null) continue;
-                var near = backdrop.Layers[^1];
-                Check(backdrop.Layers.All(l => Mathf.IsEqualApprox(l.Texture.GetWidth() / (float)l.Texture.GetHeight(), l.Rect.Size.X / l.Rect.Size.Y, .01f))
-                    && near.Texture.GetWidth() >= 4096, $"{zone} layers import at full resolution and the proportions of their world rects");
-                Check(near.Parallax == 1 && backdrop.Layers.Select(l => l.Parallax).SequenceEqual(backdrop.Layers.Select(l => l.Parallax).OrderBy(p => p)),
-                    $"{zone} layers run far to near and the road layer is locked to the field");
-                Check(backdrop.Layers.All(l => l.Rect.Position.X <= 0 && l.Rect.End.X >= world) && near.Rect.Encloses(ground), $"{zone} backdrop covers the whole battle world and band");
-                var path = ProjectSettings.GlobalizePath(WorldEnvironmentArt.BackdropDirectory + zone + ".png");
-                Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(path)))), $"{zone} backdrop is a distinct image");
+                var behind = backdrop.Layers.Where(l => !l.Front).ToArray();
+                Check(backdrop.Layers.All(l => Mathf.IsEqualApprox(l.Texture.GetWidth() / (float)l.Texture.GetHeight(), l.Rect.Size.X / l.Rect.Size.Y, .01f)),
+                    $"{zone} layers keep the proportions of their world rects");
+                Check(behind[0].Parallax < behind[1].Parallax && behind[^1].Parallax == 1 && backdrop.Layers.Single(l => l.Front).Parallax > 1,
+                    $"{zone} layers run far to near, the road is locked to the field and the foreground moves fastest");
+                var road = behind.Single(l => l.Parallax == 1 && l.Tile && l.Rect.Size.Y > 120);
+                Check(road.Rect.Position.Y <= ground.Position.Y && road.Rect.End.Y >= ground.End.Y, $"{zone} road layer spans the whole band");
+                Check(backdrop.Layers.All(l => !l.Tile ? l.Rect.Position.X <= 280 && l.Rect.End.X >= 920 : true), $"{zone} untiled layers cover the camera's sweep");
+                var path = ProjectSettings.GlobalizePath(WorldEnvironmentArt.RoyalBackdropDirectory + zone + "_far.png");
+                Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(path)))), $"{zone} backdrop is a distinct painting");
             }
-            for (var material = 0; material < 9; material++)
-                Check(AdventureAtlasArt.Material(material) != null, $"Map material {material} loads");
-            for (var sprite = 0; sprite < 29; sprite++)
-                Check(AdventureAtlasArt.Sprite(sprite) != null, $"Map scenery {sprite} loads");
-            var plate = WorldEnvironmentArt.CoverRect(new Vector2(1984,800),new Rect2(0,ground.Position.Y-180,combat.BattlefieldLeft+combat.BattlefieldRight,267));
-            Check(Mathf.IsEqualApprox(plate.Size.X / 1984, plate.Size.Y / 800), "Battle scenery preserves its authored proportions");
-            Check(plate.Position.X <= 0 && plate.End.X >= combat.BattlefieldLeft + combat.BattlefieldRight, "Scene mapping covers the whole one-screen field");
-            Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             foreach (var zone in AssetCoverageCatalog.RouteIds)
+                Check(ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.png") && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
+                    $"{zone} has a painted campaign map");
+            Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
+            // --zones=city,harbor limits the map and battle captures to those zones (the art checks above still cover all).
+            var only = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--zones="))?["--zones=".Length..].Split(',');
+            foreach (var zone in AssetCoverageCatalog.RouteIds.Where(z => only == null || only.Contains(z)))
             {
                 state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
                 var zoneIndex = Array.IndexOf(AssetCoverageCatalog.RouteIds, zone);
@@ -71,7 +71,8 @@ public partial class WorldArtReview : Node
                 var stage = GameData.GetStagesForMap(zone).First().StageNumber; state.SetSelectedStage(stage);
                 var map = (MapMenu)await LiveUiReview.Open(this, "MainMenu"); await Wait(.4);
                 var canvas = Read<MapPathCanvas>(map,"_mapCanvas");
-                Check(AdventureAtlasArt.Material(AdventureAtlasArt.GroundMaterial(zone)) != null && canvas.ActiveMapId == zone, zone + " artwork is connected to its map screen");
+                Check(Read<Texture2D>(canvas, "_painted") is { } painting && painting.ResourcePath.EndsWith($"/maps/{zone}.png") && canvas.ActiveMapId == zone,
+                    zone + " painting is connected to its map screen");
                 await Capture("zone-" + zone + "-fresh");
                 var explored = state.BuildSaveData();
                 explored.AdventureOpenTiles = AdventureTileCatalog.ForMap(zone).Select(tile => tile.Id).ToArray();
@@ -81,7 +82,7 @@ public partial class WorldArtReview : Node
                 await Wait(); await Capture("zone-" + zone + "-explored"); map.QueueFree(); await Wait();
                 state.PrepareCampaignBattle();
                 var battle = (BattleController)await LiveUiReview.Open(this, "Battle"); battle.SetPhysicsProcess(false); await Wait(.4);
-                Check(Read<Texture2D>(battle,"_stageArtwork") is { } drawn && drawn.ResourcePath == WorldEnvironmentArt.BackdropDirectory + zone + ".png",
+                Check(Read<Texture2D>(battle,"_stageArtwork") is { } drawn && drawn.ResourcePath.StartsWith(WorldEnvironmentArt.RoyalBackdropDirectory + zone + "_"),
                     $"Stage {stage:00} battles in front of the {zone} backdrop");
                 await Capture($"battle-{stage:00}-normal");
                 var camera = Read<Camera2D>(battle,Phone ? "_mobileCamera" : "_battleCamera");

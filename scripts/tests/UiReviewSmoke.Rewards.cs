@@ -124,7 +124,8 @@ public partial class UiReviewSmoke
         }
 
         restore.Invoke(state, new object[] { baseline });
-        typeof(MapMenu).GetMethod("SelectSite", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(menu, new object[] { start });
+        // Reselect the start without entering it (selecting a playable stage would open its preparation).
+        typeof(MapMenu).GetField("_selected", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(menu, start);
         close.Invoke(menu, null); canvas.ShowMap("city", start.Id); refresh.Invoke(menu, null);
         await Wait(.15);
     }

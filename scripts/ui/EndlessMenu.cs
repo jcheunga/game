@@ -2,478 +2,242 @@ using System;
 using System.Linq;
 using Godot;
 
-public partial class EndlessMenu : Control
+/// <summary>
+/// Endless survival on the approved concept: route picture with pager, three opening boons, the
+/// warband and spells marching out, and Begin endless march with its food cost.
+/// </summary>
+public partial class EndlessMenu : RoyalScreen
 {
-
-    private OptionButton _routeSelector = null!;
-    private OptionButton _boonSelector = null!;
-    private HBoxContainer _resourcesRow = null!;
-    private Label _routeTitleLabel = null!;
-    private Label _routeSummaryLabel = null!;
-    private Label _recordLabel = null!;
-    private Label _rulesLabel = null!;
-    private VBoxContainer _historyStack = null!;
-    private Label _deckStatusLabel = null!;
-    private VBoxContainer _squadStack = null!;
-    private Button _deployButton = null!;
-
     private string _selectedRouteId = "city";
     private string _selectedBoonId = EndlessBoonCatalog.SurplusCourageId;
+    private int _boonPage;
+    private Control _layer;
 
-    private readonly System.Collections.Generic.List<Control> _entrancePanels = new();
+    public EndlessMenu() { PlateName = "endless"; }
 
-    public override void _Ready()
+    private static RoyalSpec Spec => RoyalSpec.For("endless");
+    private static string[] Routes => GameData.Stages.Select(stage => RouteCatalog.Normalize(stage.MapId)).Distinct().ToArray();
+
+    protected override void Build()
     {
-        _selectedRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
+        _selectedRouteId = RouteCatalog.Normalize(GameState.Instance.SelectedEndlessRouteId);
         _selectedBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
-        BuildUi();
-        RefreshUi();
-        AnimateEntrance();
+        _boonPage = Math.Max(0, Array.FindIndex(OrderedBoons(), b => b.Id == _selectedBoonId)) / 3;
+        _layer = Layer("Live");
+        Refresh();
     }
 
-    private void AnimateEntrance()
+    /// <summary>The concept's opening trio first: courage, supplies, then the wagon.</summary>
+    private static EndlessBoonDefinition[] OrderedBoons()
     {
-        for (var i = 0; i < _entrancePanels.Count; i++)
+        var first = new[] { EndlessBoonCatalog.SurplusCourageId, EndlessBoonCatalog.SalvageCacheId, EndlessBoonCatalog.ReinforcedBusId };
+        return EndlessBoonCatalog.GetAll().OrderBy(b => Array.IndexOf(first, b.Id) is var i && i >= 0 ? i : 9).ToArray();
+    }
+
+    private static string BoonArt(string id) => id switch
+    {
+        EndlessBoonCatalog.SurplusCourageId => "boon-courage",
+        EndlessBoonCatalog.SalvageCacheId or EndlessBoonCatalog.SplitterBaneId => "boon-supplies",
+        EndlessBoonCatalog.ReinforcedBusId or EndlessBoonCatalog.ShieldFormationId => "boon-wagon",
+        EndlessBoonCatalog.RelicForgeId => "activity-bounties",
+        _ => "activity-endless"
+    };
+
+    private void Refresh()
+    {
+        RoyalUiTools.Clear(_layer);
+        var spec = Spec;
+        var state = GameState.Instance;
+        _layer.AddChild(spec.Label("title", "Endless Survival", 460));
+        var close = RoyalButton.Over(spec.Rect("close"), "Close panel", Close, 6);
+        close.SetGlyph(RoyalKit.Texture("icon-close-x"), new Rect2(spec.Rect("close.icon").Position - spec.Rect("close").Position, spec.Rect("close.icon").Size));
+        _layer.AddChild(close);
+        _layer.AddChild(spec.Label("route.label", "ROUTE", 120));
+        _layer.AddChild(spec.Label("boon.label", "OPENING BOON", 220));
+
+        // Route card.
+        var routes = Routes;
+        var index = Math.Max(0, Array.IndexOf(routes, _selectedRouteId));
+        var art = spec.Rect("route.art");
+        var picture = ResourceLoader.Exists($"res://assets/ui/royal/missions/{_selectedRouteId}.png") ? RoyalArt.Load($"res://assets/ui/royal/missions/{_selectedRouteId}.png") : null;
+        _layer.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
+            Texture = picture, Position = art.Position, Size = art.Size, MouseFilter = MouseFilterEnum.Ignore });
+        var plaque = spec.Rect("route.plaque");
+        var name = spec.Label("route.name", RouteCatalog.Get(_selectedRouteId).Title.Replace("'", "’"), 360, new Color("060504"));
+        name.ShadowOffset = Vector2.Zero;
+        var plaqueWidth = Mathf.Max(plaque.Size.X, name.Position.X - plaque.Position.X + name.TextWidth(name.FontSize) + 40);
+        _layer.AddChild(new Panel { Position = plaque.Position, Size = new Vector2(plaqueWidth, plaque.Size.Y), MouseFilter = MouseFilterEnum.Ignore }
+            .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("endless-plaque", 14, 8, 40, 8))));
+        _layer.AddChild(name);
+        _layer.AddChild(RoyalKit.Image("endless-banner", spec.Rect("route.banner")));
+        void Route(int step) { _selectedRouteId = routes[(index + step + routes.Length) % routes.Length]; GameState.Instance.SetSelectedEndlessRoute(_selectedRouteId); Refresh(); }
+        var previous = RoyalButton.Over(spec.Rect("route.prev").Grow(12), "Previous route", () => Route(-1), 6);
+        previous.SetGlyph(RoyalKit.Texture("icon-chevron-left"), new Rect2(10, 10, spec.Rect("route.prev").Size.X + 4, spec.Rect("route.prev").Size.Y + 4));
+        var next = RoyalButton.Over(spec.Rect("route.next").Grow(12), "Next route", () => Route(1), 6);
+        next.SetGlyph(RoyalKit.Texture("icon-chevron-right"), new Rect2(10, 10, spec.Rect("route.next").Size.X + 4, spec.Rect("route.next").Size.Y + 4));
+        _layer.AddChild(previous); _layer.AddChild(next);
+        var dot = spec.Rect("route.dot.1");
+        var dotsLeft = art.GetCenter().X - routes.Length * 9;
+        for (var i = 0; i < routes.Length; i++)
+            _layer.AddChild(RoyalKit.Image(i == index ? "route-dot-on" : "pip-off", new Rect2(dotsLeft + i * 18, dot.Position.Y, dot.Size.X, dot.Size.Y)));
+        _layer.AddChild(new Control { Position = art.Position, Size = art.Size, TooltipText = RouteCatalog.Get(_selectedRouteId).EndlessSummary, MouseFilter = MouseFilterEnum.Pass });
+
+        // Boons.
+        var boons = OrderedBoons();
+        var pages = (boons.Length + 2) / 3;
+        _boonPage = Math.Clamp(_boonPage, 0, pages - 1);
+        for (var i = 0; i < 3; i++)
         {
-            var panel = _entrancePanels[i];
-            panel.Modulate = new Color(1f, 1f, 1f, 0f);
-            var delay = 0.06f + (i * 0.05f);
-            var tween = CreateTween();
-            tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-                .SetDelay(delay)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
+            var at = _boonPage * 3 + i;
+            var key = $"boon.{i + 1}";
+            var rect = spec.Rect(key);
+            if (at >= boons.Length) continue;
+            var boon = boons[at];
+            var selected = boon.Id == _selectedBoonId;
+            var card = RoyalButton.Over(rect, boon.Title, () => { _selectedBoonId = boon.Id; GameState.Instance.SetSelectedEndlessBoon(boon.Id); Refresh(); }, 6);
+            card.SetStates(RoyalKit.Slice(selected ? "boon-card-selected" : "boon-card", 12), 6);
+            card.TooltipText = boon.Summary;
+            var origin = spec.Rect("boon.1").Position;
+            var artRect = spec.Rect("boon.1.art");
+            card.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
+                Texture = RoyalKit.Texture(BoonArt(boon.Id)), Position = artRect.Position - origin, Size = new Vector2(rect.Size.X - 10, artRect.Size.Y), MouseFilter = MouseFilterEnum.Ignore });
+            var title = spec.Label("boon.1.name", boon.Title, rect.Size.X - 10);
+            title.Position = new Vector2(5, title.Position.Y - origin.Y);
+            title.Size = new Vector2(rect.Size.X - 10, title.Size.Y);
+            card.AddChild(title);
+            card.AddChild(RoyalKit.Image("boon-divider", new Rect2(rect.Size.X / 2 - 60, spec.Rect("boon.1.divider").Position.Y - origin.Y, 120, spec.Rect("boon.1.divider").Size.Y)));
+            var description = RoyalText.Paragraph(boon.Summary, 15, new Color("e3ddcd"), 500, HorizontalAlignment.Center);
+            description.Position = new Vector2(8, spec.Number("boon.1.desc.1", "baseline", 540) - origin.Y - 14);
+            description.Size = new Vector2(rect.Size.X - 16, rect.Size.Y - description.Position.Y - 8);
+            description.AddThemeConstantOverride("line_spacing", -3);
+            RoyalText.FitLines(description, 3, 11);
+            card.AddChild(description);
+            _layer.AddChild(card);
         }
-    }
-
-    private void BuildUi()
-    {
-        var route = RouteCatalog.Get(_selectedRouteId);
-
-        MedievalUi.Apply(this);
-
-        var titlePanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 20f),
-            Size = new Vector2(1232f, 82f)
-        };
-        AddChild(titlePanel);
-        _entrancePanels.Add(titlePanel);
-
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", 16);
-        titlePanel.AddChild(titleRow);
-
-        titleRow.AddChild(new Label
-        {
-            Text = "Endless March",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
-        _resourcesRow = new HBoxContainer();
-        _resourcesRow.AddThemeConstantOverride("separation", 12);
-        titleRow.AddChild(_resourcesRow);
-
-        var missionPanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 122f),
-            Size = new Vector2(520f, 480f)
-        };
-        AddChild(missionPanel);
-        _entrancePanels.Add(missionPanel);
-
-        var missionPadding = new MarginContainer();
-        missionPadding.AddThemeConstantOverride("margin_left", 18);
-        missionPadding.AddThemeConstantOverride("margin_right", 18);
-        missionPadding.AddThemeConstantOverride("margin_top", 18);
-        missionPadding.AddThemeConstantOverride("margin_bottom", 18);
-        missionPanel.AddChild(missionPadding);
-
-        var missionScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        missionPadding.AddChild(missionScroll);
-
-        var missionStack = new VBoxContainer();
-        missionStack.AddThemeConstantOverride("separation", 12);
-        missionStack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        missionScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
-        missionScroll.AddChild(missionStack);
-
-        missionStack.AddChild(new Label
-        {
-            Text = "Route"
-        });
-
-        _routeSelector = new OptionButton
-        {
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
-        _routeSelector.ItemSelected += OnRouteSelected;
-        missionStack.AddChild(_routeSelector);
-
-        foreach (var stage in GameData.Stages)
-        {
-            var mapId = NormalizeRouteId(stage.MapId);
-            var alreadyAdded = false;
-            for (var i = 0; i < _routeSelector.ItemCount; i++)
+        if (pages > 1)
+            for (var side = -1; side <= 1; side += 2)
             {
-                if (NormalizeRouteId(_routeSelector.GetItemMetadata(i).AsString()) == mapId)
-                {
-                    alreadyAdded = true;
-                    break;
-                }
+                var direction = side;
+                var anchor = side < 0 ? spec.Rect("boon.1") : spec.Rect("boon.3");
+                var rect = new Rect2(side < 0 ? anchor.Position.X - 13 : anchor.End.X - 13, anchor.GetCenter().Y - 18, 26, 36);
+                var pager = RoyalButton.Over(rect, side < 0 ? "Previous boons" : "More boons", () => { _boonPage = (_boonPage + direction + pages) % pages; Refresh(); }, 6);
+                pager.SetStates(RoyalKit.Slice("chevron-button", 8), 6);
+                pager.SetGlyph(RoyalKit.Texture(side < 0 ? "icon-chevron-left" : "icon-chevron-right"), new Rect2(7, 8, 12, 20));
+                _layer.AddChild(pager);
             }
 
-            if (alreadyAdded)
-            {
-                continue;
-            }
+        Button("fieldguide", "icon-open-book", "Field Guide", () => RealmUi.Details(this, "Endless field guide",
+            $"{RouteCatalog.Get(_selectedRouteId).EndlessSummary}\n\nOpening boon: {EndlessBoonCatalog.Get(_selectedBoonId).Title}\n{EndlessBoonCatalog.Get(_selectedBoonId).Summary}\n\nBest wave {state.BestEndlessWave} · {state.EndlessRuns} runs"));
+        Button("runhistory", "icon-scroll", "Run History", () => RealmUi.Details(this, "Run history", RunHistoryText()));
+        Button("back", "icon-back-chevron", "Back", Close);
 
-            var index = _routeSelector.ItemCount;
-            _routeSelector.AddItem(stage.MapName);
-            _routeSelector.SetItemMetadata(index, mapId);
+        // Warband and spells.
+        _layer.AddChild(spec.Label("warband.title", "Your Warband", 300));
+        Button("editwarband", "icon-people-gold", "Edit Warband", () => SceneRouter.Instance.GoToShop(0));
+        var units = state.GetActiveDeckUnits().ToArray();
+        var firstCard = spec.Rect("unit.1");
+        for (var i = 0; i < 6; i++)
+        {
+            var rect = spec.Has($"unit.{i + 1}") ? spec.Rect($"unit.{i + 1}") : new Rect2(firstCard.Position + new Vector2(i * 103, 0), firstCard.Size);
+            _layer.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("endless-unit-card", 12))));
+            var tab = spec.Rect("unit.1.tab"); tab.Position += rect.Position - firstCard.Position;
+            _layer.AddChild(RoyalKit.Image("endless-tab", tab));
+            var number = spec.Label("unit.1.number", (i + 1).ToString(), 30);
+            number.Position += rect.Position - firstCard.Position; number.ShadowOffset = Vector2.Zero;
+            _layer.AddChild(number);
+            if (i >= units.Length) { _layer.AddChild(RoyalKit.Image("empty-plus", new Rect2(rect.GetCenter() - new Vector2(16, 30), new Vector2(32, 32)), new Color(1, 1, 1, .6f))); continue; }
+            var unit = units[i];
+            var origin = firstCard.Position;
+            Rect2 Part(string part) => new(spec.Rect("unit.1" + part).Position - origin + rect.Position, spec.Rect("unit.1" + part).Size);
+            var figure = new UnitFigure { Position = Part(".figure").Position, Size = Part(".figure").Size };
+            figure.SetUnit(unit);
+            _layer.AddChild(figure);
+            _layer.AddChild(RoyalKit.Image(UnitClassIcon(unit), Part(".class")));
+            var level = spec.Label("unit.1.level", $"Lv {state.GetUnitLevel(unit.Id)}", 60);
+            level.Position += rect.Position - origin;
+            _layer.AddChild(level);
+            var pips = Part(".pips");
+            _layer.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(state.GetUnitLevel(unit.Id), 4), 4, pips.Size.X / 4f, pips.Size.Y));
+            var hotspot = RoyalButton.Over(rect, unit.DisplayName, () => ModelShowcase.Show(this, GameState.Instance.GetActiveDeckUnits().ToArray(), unit.Id), 6);
+            hotspot.TooltipText = $"{unit.DisplayName} · Level {state.GetUnitLevel(unit.Id)} · {unit.Cost} courage";
+            _layer.AddChild(hotspot);
+        }
+        _layer.AddChild(RoyalKit.Image("icon-flame-gold", spec.Rect("spells.icon")));
+        _layer.AddChild(spec.Label("spells.label", "Spells", 160));
+        var spells = state.GetActiveDeckSpells().ToArray();
+        var firstSpell = spec.Rect("spell.1");
+        for (var i = 0; i < 5; i++)
+        {
+            var rect = spec.Has($"spell.{i + 1}") ? spec.Rect($"spell.{i + 1}") : new Rect2(firstSpell.Position + new Vector2(i * 82, 0), firstSpell.Size);
+            _layer.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("endless-spell-slot", 10, 10, 10, 18))));
+            var gem = spec.Rect("spell.1.gem"); gem.Position += rect.Position - firstSpell.Position;
+            _layer.AddChild(RoyalKit.Image("endless-gem", gem));
+            if (i >= spells.Length) continue;
+            var spell = spells[i];
+            var slot = RoyalButton.Over(rect, spell.DisplayName, () => SpellShowcase.Show(this, spell), 6);
+            slot.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                Texture = ResourceLoader.Exists($"res://assets/ui/royal/items/{spell.Id}.png") ? RoyalArt.Load($"res://assets/ui/royal/items/{spell.Id}.png") : UiArtLoader.TryLoadSpellIcon(spell),
+                Position = new Vector2(7, 6), Size = rect.Size - new Vector2(14, 18), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+            _layer.AddChild(slot);
         }
 
-        missionStack.AddChild(new Label
-        {
-            Text = "Opening boon"
-        });
-
-        _boonSelector = new OptionButton
-        {
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
-        _boonSelector.ItemSelected += OnBoonSelected;
-        missionStack.AddChild(_boonSelector);
-
-        foreach (var boon in EndlessBoonCatalog.GetAll())
-        {
-            var index = _boonSelector.ItemCount;
-            _boonSelector.AddItem(boon.Title);
-            _boonSelector.SetItemMetadata(index, boon.Id);
-        }
-
-        var referenceActions = new HBoxContainer();
-        missionStack.AddChild(referenceActions);
-        var guideButton = RealmUi.Button("book", "Field guide", () => RealmUi.Details(this, "Endless march", _routeSummaryLabel.TooltipText + "\n\n" + _rulesLabel.Text));
-        guideButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        referenceActions.AddChild(guideButton);
-        var historyButton = RealmUi.Button("clock", "Run history", () => RealmUi.Details(this, "Run history", string.Join("\n", _historyStack.GetChildren().OfType<Label>().Select(x => x.Text))));
-        historyButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        referenceActions.AddChild(historyButton);
-
-        _routeTitleLabel = new Label();
-        missionStack.AddChild(_routeTitleLabel);
-
-        _routeSummaryLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        missionStack.AddChild(_routeSummaryLabel);
-
-        _recordLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        missionStack.AddChild(_recordLabel);
-
-        _rulesLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        missionStack.AddChild(_rulesLabel);
-
-        _historyStack = new VBoxContainer();
-        _historyStack.AddThemeConstantOverride("separation", 4);
-        missionStack.AddChild(_historyStack);
-        _historyStack.Visible = false;
-        _rulesLabel.Visible = false;
-
-        var squadPanel = new PanelContainer
-        {
-            Position = new Vector2(568f, 122f),
-            Size = new Vector2(688f, 480f)
-        };
-        AddChild(squadPanel);
-        _entrancePanels.Add(squadPanel);
-
-        var squadPadding = new MarginContainer();
-        squadPadding.AddThemeConstantOverride("margin_left", 18);
-        squadPadding.AddThemeConstantOverride("margin_right", 18);
-        squadPadding.AddThemeConstantOverride("margin_top", 18);
-        squadPadding.AddThemeConstantOverride("margin_bottom", 18);
-        squadPanel.AddChild(squadPadding);
-
-        var squadScroll = new ScrollContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        squadPadding.AddChild(squadScroll);
-
-        _squadStack = new VBoxContainer();
-        _squadStack.AddThemeConstantOverride("separation", 12);
-        _squadStack.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        squadScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
-        squadScroll.AddChild(_squadStack);
-
-        var bottomPanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 618f),
-            Size = new Vector2(1232f, 76f)
-        };
-        AddChild(bottomPanel);
-        _entrancePanels.Add(bottomPanel);
-
-        var bottomRow = new HBoxContainer();
-        bottomRow.AddThemeConstantOverride("separation", 12);
-        bottomPanel.AddChild(bottomRow);
-
-        var backButton = new RealmButton
-        {
-            Text = "Back to title",
-            CustomMinimumSize = new Vector2(180f, 0f)
-        };
-        backButton.Pressed += () => SceneRouter.Instance.GoToMainMenu();
-        bottomRow.AddChild(backButton);
-
-        var editSquadButton = new RealmButton
-        {
-            Text = "Caravan Armory",
-            CustomMinimumSize = new Vector2(220f, 0f)
-        };
-        editSquadButton.Pressed += () => SceneRouter.Instance.GoToShop();
-        bottomRow.AddChild(editSquadButton);
-
-        var settingsButton = new RealmButton
-        {
-            Text = "Settings",
-            CustomMinimumSize = new Vector2(150f, 0f)
-        };
-        settingsButton.Pressed += () => SceneRouter.Instance.GoToSettings();
-        bottomRow.AddChild(settingsButton);
-
-        bottomRow.AddChild(new Control
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        });
-
-        _deployButton = new RealmButton
-        {
-            Text = "Start endless run",
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
-        _deployButton.Pressed += StartRun;
-        bottomRow.AddChild(_deployButton);
+        // Begin.
+        var begin = spec.Rect("button.begin");
+        var canStart = state.CanStartBattle(out var reason);
+        var march = RoyalButton.Over(begin, "Begin endless march", StartRun, 8);
+        march.Disabled = !canStart;
+        march.TooltipText = canStart ? "Begin endless march" : reason;
+        march.SetGlyph(RoyalKit.Texture("icon-swords-dark"), new Rect2(spec.Rect("button.begin.icon").Position - begin.Position, spec.Rect("button.begin.icon").Size));
+        var label = spec.Label("button.begin.label", "Begin Endless March", 330);
+        label.Ink = new Color("080603"); label.ShadowInk = new Color(1, .95f, .8f, .3f);
+        label.Position -= begin.Position;
+        march.SetCaption(label, new Rect2(label.Position, label.Size));
+        // Endless runs cost no food; the concept's cost slot shows the best wave reached instead.
+        var food = spec.Rect("button.begin.food");
+        var record = RoyalText.Caps(state.BestEndlessWave > 0 ? $"BEST {state.BestEndlessWave}" : "FREE", 19, new Color("060402"), 700);
+        record.ShadowInk = new Color(1, .95f, .8f, .3f);
+        record.Align = HorizontalAlignment.Center;
+        record.Position = new Vector2(food.Position.X - begin.Position.X - 4, 0); record.Size = new Vector2(begin.End.X - food.Position.X - 8, begin.Size.Y);
+        march.AddChild(record);
+        _layer.AddChild(march);
     }
 
-    private void RefreshUi()
+    private void Button(string key, string icon, string text, Action action)
     {
-        SyncSelector();
-        SyncBoonSelector();
-        RebuildResourcesRow();
-
-        var templateStage = GameData.GetLatestStageForMap(_selectedRouteId);
-        var routeStages = GameData.GetStagesForMap(_selectedRouteId);
-        var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);
-        var bossCheckpoint = EndlessBossCheckpointCatalog.GetForRoute(_selectedRouteId);
-
-        _routeTitleLabel.Text = $"{templateStage.MapName} endless run";
-        _routeSummaryLabel.Text =
-            $"{BuildRouteDescription(_selectedRouteId)}\n\n" +
-            $"District stages in campaign: {routeStages.Count}\n" +
-            $"{StageEncounterIntel.BuildCompactSummary(templateStage)}\n\n" +
-            $"Boss checkpoint: wave {EndlessBossCheckpointCatalog.BossCheckpointInterval} - {bossCheckpoint.Title}\n" +
-            $"{bossCheckpoint.Summary}\n" +
-            $"{bossCheckpoint.RewardSummary}\n\n" +
-            $"Opening boon: {selectedBoon.Title}\n{selectedBoon.Summary}";
-        _routeSummaryLabel.TooltipText = _routeSummaryLabel.Text;
-        _routeSummaryLabel.Text = $"{BuildRouteDescription(_selectedRouteId)}\n\n{selectedBoon.Summary}";
-        _recordLabel.Text = $"Best wave {GameState.Instance.BestEndlessWave}   ·   {GameState.Instance.EndlessRuns} runs";
-        _rulesLabel.Text =
-            $"Run rules:\n" +
-            "- Waves scale up continuously.\n" +
-            $"- Every {EndlessBossCheckpointCatalog.BossCheckpointInterval}th wave is a boss checkpoint with extra rewards.\n" +
-            "- Pick one temporary opening boon before deploying.\n" +
-            "- Use Caravan Armory to change the active squad or buy upgrades.\n" +
-            "- Retreat to bank the gold and food recovered so far.\n" +
-            "- Gold and food rewards scale with wave reached, time alive, and kills.";
-
-        RebuildRunHistory();
-        RebuildSquadPanels();
-
-        var canStartBattle = GameState.Instance.CanStartBattle(out var deployMessage);
-        _deckStatusLabel.Text = deployMessage;
-        _deployButton.Disabled = !canStartBattle;
-        _deployButton.Text = canStartBattle ? "Begin endless march" : "Caravan not ready";
+        var spec = Spec;
+        var rect = spec.Rect($"button.{key}");
+        var button = RoyalButton.Over(rect, text, action, 6);
+        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
+        var label = spec.Label($"button.{key}.label", text, rect.Size.X);
+        label.Position -= rect.Position;
+        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        _layer.AddChild(button);
     }
 
-    private void RebuildResourcesRow()
+    private static string UnitClassIcon(UnitDefinition unit) => unit.Id switch
     {
-        foreach (var child in _resourcesRow.GetChildren())
-        {
-            child.QueueFree();
-        }
+        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
+        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
+        _ => "class-melee"
+    };
 
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
-    }
-
-    private void RebuildRunHistory()
+    private static string RunHistoryText()
     {
-        foreach (var child in _historyStack.GetChildren())
-        {
-            child.QueueFree();
-        }
-
         var history = GameState.Instance.GetEndlessRunHistory();
-        if (history.Count == 0)
+        if (history.Count == 0) return "No endless runs yet.";
+        var best = GameState.Instance.BestEndlessWave;
+        return string.Join("\n", history.Take(10).Select((run, i) =>
         {
-            return;
-        }
-
-        _historyStack.AddChild(new Label
-        {
-            Text = "Run history"
-        });
-
-        var bestWave = GameState.Instance.BestEndlessWave;
-        var displayCount = Math.Min(history.Count, 10);
-        for (var i = 0; i < displayCount; i++)
-        {
-            var run = history[i];
-            var minutes = (int)(run.TimeSeconds / 60f);
-            var seconds = (int)(run.TimeSeconds % 60f);
             var routeName = GameData.GetLatestStageForMap(run.RouteId).MapName;
-            var diffTitle = DifficultyCatalog.GetById(run.DifficultyId).Title;
-            var line = $"#{i + 1}  Wave {run.Wave} · {minutes}:{seconds:D2} · {routeName} · +{run.GoldEarned} gold · {diffTitle}";
-
-            var isBestWave = run.Wave >= bestWave && bestWave > 0;
-            var label = new Label
-            {
-                Text = line,
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            };
-
-            if (isBestWave)
-            {
-                label.AddThemeColorOverride("font_color", new Color("ffd700"));
-            }
-
-            _historyStack.AddChild(label);
-        }
-    }
-
-    private void RebuildSquadPanels()
-    {
-        RealmUi.Clear(_squadStack);
-        var headingRow = new HBoxContainer(); _squadStack.AddChild(headingRow);
-        headingRow.AddChild(RealmUi.Heading("Your warband", 28));
-        headingRow.AddChild(RealmUi.Button("sword", "Edit warband", () => SceneRouter.Instance.GoToShop()));
-        var cards = new HBoxContainer(); _squadStack.AddChild(cards);
-        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
-        {
-            var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            cards.AddChild(card);
-            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(150, 170)));
-            card.AddChild(RealmUi.Label(unit.DisplayName, 17));
-            card.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)} · {unit.Cost} courage", 13, true));
-        }
-        _squadStack.AddChild(RealmUi.Label(GameState.Instance.BuildActiveDeckSynergyInlineSummary(), 14, true));
-        var spells = new HBoxContainer(); _squadStack.AddChild(spells);
-        foreach (var spell in GameState.Instance.GetActiveDeckSpells())
-            spells.AddChild(RealmUi.Button("bolt", spell.DisplayName, () => RealmUi.Details(this, spell.DisplayName, SpellText.BuildInlineSummary(spell))));
-        _deckStatusLabel = RealmUi.Label("", 14, true); _squadStack.AddChild(_deckStatusLabel);
-    }
-
-    private void OnRouteSelected(long index)
-    {
-        if (index < 0 || index >= _routeSelector.ItemCount)
-        {
-            return;
-        }
-
-        _selectedRouteId = NormalizeRouteId(_routeSelector.GetItemMetadata((int)index).AsString());
-        GameState.Instance.SetSelectedEndlessRoute(_selectedRouteId);
-        RefreshUi();
-    }
-
-    private void OnBoonSelected(long index)
-    {
-        if (index < 0 || index >= _boonSelector.ItemCount)
-        {
-            return;
-        }
-
-        _selectedBoonId = EndlessBoonCatalog.Normalize(_boonSelector.GetItemMetadata((int)index).AsString());
-        GameState.Instance.SetSelectedEndlessBoon(_selectedBoonId);
-        RefreshUi();
+            var marker = run.Wave >= best && best > 0 ? " · best" : "";
+            return $"#{i + 1}  Wave {run.Wave} · {(int)(run.TimeSeconds / 60f)}:{(int)(run.TimeSeconds % 60f):D2} · {routeName} · +{run.GoldEarned} gold · {DifficultyCatalog.GetById(run.DifficultyId).Title}{marker}";
+        }));
     }
 
     private void StartRun()
     {
-        if (!GameState.Instance.CanStartBattle(out _))
-        {
-            RefreshUi();
-            return;
-        }
-
+        if (!GameState.Instance.CanStartBattle(out var reason)) { RoyalToast.Show(this, reason); return; }
         GameState.Instance.PrepareEndlessBattle(_selectedRouteId);
         SceneRouter.Instance.GoToBattle();
-    }
-
-    private void SyncSelector()
-    {
-        for (var i = 0; i < _routeSelector.ItemCount; i++)
-        {
-            if (NormalizeRouteId(_routeSelector.GetItemMetadata(i).AsString()) != _selectedRouteId)
-            {
-                continue;
-            }
-
-            _routeSelector.Select(i);
-            return;
-        }
-
-        if (_routeSelector.ItemCount > 0)
-        {
-            _routeSelector.Select(0);
-            _selectedRouteId = NormalizeRouteId(_routeSelector.GetItemMetadata(0).AsString());
-        }
-    }
-
-    private void SyncBoonSelector()
-    {
-        for (var i = 0; i < _boonSelector.ItemCount; i++)
-        {
-            if (EndlessBoonCatalog.Normalize(_boonSelector.GetItemMetadata(i).AsString()) != _selectedBoonId)
-            {
-                continue;
-            }
-
-            _boonSelector.Select(i);
-            return;
-        }
-
-        if (_boonSelector.ItemCount > 0)
-        {
-            _boonSelector.Select(0);
-            _selectedBoonId = EndlessBoonCatalog.Normalize(_boonSelector.GetItemMetadata(0).AsString());
-        }
-    }
-
-    private static string BuildRouteDescription(string routeId)
-    {
-        return RouteCatalog.Get(routeId).EndlessSummary;
-    }
-
-    private static string NormalizeRouteId(string routeId)
-    {
-        return RouteCatalog.Normalize(routeId);
     }
 }

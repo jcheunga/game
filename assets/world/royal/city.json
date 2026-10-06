@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "city_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    398.73,
+    198.16,
+    402.54,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    2117,
+    567
+   ],
+   "file": "city_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    301.55,
+    300.28,
+    596.89,
+    172.3
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    588
+   ],
+   "file": "city_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    437.09,
+    233.78,
+    325.82,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2117,
+    533
+   ],
+   "file": "city_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    411.49,
+    399.72,
+    377.02,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    395
+   ],
+   "file": "city_front.png"
+  }
+ ],
+ "sky": "7c9dc7",
+ "generator": "art/royal/backdrops.py"
+}

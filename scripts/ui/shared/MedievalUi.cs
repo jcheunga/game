@@ -52,39 +52,10 @@ public static class MedievalUi
         tween.TweenProperty(panel, "scale", Vector2.One, 0.18f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
     }
 
-    public static void ShowQuickSettings(Control host)
-    {
-        var stack = CreateModal(host, new Vector2(500f, 0f), 12, out var veil, out var center, out _);
-        stack.AddChild(new Label { Text = "CAMPFIRE SETTINGS", HorizontalAlignment = HorizontalAlignment.Center });
-        var summary = new Label { HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        stack.AddChild(summary);
-
-        void Refresh() => summary.Text = $"Music {GameState.Instance.MusicVolumePercent}%  ·  Effects {GameState.Instance.EffectsVolumePercent}%  ·  " +
-            (GameState.Instance.AudioMuted ? "Muted" : "Sound on") + "\n" +
-            (GameState.Instance.ShowHints ? "Field hints enabled" : "Field hints hidden");
-        Button SettingButton(string text, Action action)
-        {
-            var button = new RealmButton { Text = text, CustomMinimumSize = new Vector2(0f, 40f) };
-            button.Pressed += () => { action(); Refresh(); };
-            stack.AddChild(button);
-            return button;
-        }
-        SettingButton("Music −", () => GameState.Instance.SetMusicVolumePercent(GameState.Instance.MusicVolumePercent - 10));
-        SettingButton("Music +", () => GameState.Instance.SetMusicVolumePercent(GameState.Instance.MusicVolumePercent + 10));
-        SettingButton("Toggle sound", () => GameState.Instance.SetAudioMuted(!GameState.Instance.AudioMuted));
-        SettingButton("Toggle field hints", () => GameState.Instance.SetShowHints(!GameState.Instance.ShowHints));
-        var advanced = new RealmButton { Text = "Open full settings", CustomMinimumSize = new Vector2(0f, 42f) };
-        advanced.Pressed += () => SceneRouter.Instance.GoToSettings();
-        stack.AddChild(advanced);
-        var close = new RealmButton { Text = "Return to camp", CustomMinimumSize = new Vector2(0f, 40f) };
-        close.Pressed += () => { veil.QueueFree(); center.QueueFree(); };
-        stack.AddChild(close);
-        Refresh();
-    }
-
     private static Theme BuildTheme()
     {
         var theme = new Theme();
+        theme.DefaultFont = RealmUi.TitleFont;
         var ink = new Color("eae5d9");
         var goldLight = new Color("f3d78c");
 
@@ -106,8 +77,8 @@ public static class MedievalUi
         theme.SetColor("caret_color", "LineEdit", goldLight);
         theme.SetColor("font_color", "LineEdit", ink);
 
-        theme.SetStylebox("panel", "Panel", Engraved("inset", 10, 6));
-        theme.SetStylebox("panel", "PanelContainer", Engraved("engraved_panel", 18, 14));
+        theme.SetStylebox("panel", "Panel", new ModalSurface(ModalMaterial.Inset, 10));
+        theme.SetStylebox("panel", "PanelContainer", new ModalSurface(ModalMaterial.Wood, 14));
         theme.SetStylebox("normal", "Button", Engraved("button", 18, 10));
         theme.SetStylebox("hover", "Button", Engraved("button_hover", 18, 10));
         theme.SetStylebox("pressed", "Button", Engraved("button_pressed", 18, 10));
@@ -177,7 +148,7 @@ public static class MedievalUi
     {
         var slice = asset switch { "engraved_panel"=>32,
             "scroll_thumb" or "scroll_thumb_hover" or "scroll_thumb_horizontal" or "scroll_thumb_horizontal_hover"=>6,
-            "meter_track" or "meter_fill"=>4, "cost_badge"=>8, "separator"=>1, _=>16 };
+            "meter_track" or "meter_fill"=>4, "separator"=>1, _=>16 };
         var tileVertical=asset is "engraved_panel" or "inset" or "input_focus" or "input_disabled" or "surface_body" or "surface_rim";
         return new StyleBoxTexture
         {

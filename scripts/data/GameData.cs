@@ -318,6 +318,18 @@ public static class GameData
         throw new InvalidOperationException($"Unit id '{unitId}' was not found in data.");
     }
 
+    public static UnitDefinition TryGetUnit(string unitId)
+    {
+        EnsureLoaded();
+        return unitId != null && _units.TryGetValue(unitId, out var unit) ? unit : null;
+    }
+
+    public static SpellDefinition TryGetSpell(string spellId)
+    {
+        EnsureLoaded();
+        return spellId != null && _spells.TryGetValue(spellId, out var spell) ? spell : null;
+    }
+
     public static SpellDefinition GetSpell(string spellId)
     {
         EnsureLoaded();

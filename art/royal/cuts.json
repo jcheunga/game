@@ -1,0 +1,4243 @@
+[
+ {
+  "name": "icon-squad",
+  "from": "warband",
+  "rect": [
+   155,
+   92,
+   30,
+   24
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-warband",
+  "from": "warband",
+  "rect": [
+   660,
+   64,
+   40,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-spells",
+  "from": "warband",
+  "rect": [
+   774,
+   64,
+   32,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-wagon",
+  "from": "warband",
+  "rect": [
+   876,
+   64,
+   44,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-relics",
+  "from": "warband",
+  "rect": [
+   995,
+   64,
+   36,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-adviser",
+  "from": "warband",
+  "rect": [
+   1106,
+   64,
+   34,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "class-melee",
+  "from": "warband",
+  "rect": [
+   74,
+   222,
+   30,
+   28
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "class-ranged",
+  "from": "warband",
+  "rect": [
+   463,
+   218,
+   32,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "class-shield",
+  "from": "warband",
+  "rect": [
+   658,
+   220,
+   30,
+   30
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "stat-health",
+  "from": "warband",
+  "rect": [
+   761,
+   393,
+   38,
+   34
+  ],
+  "mode": "key-light",
+  "tighten": true,
+  "tighten_margin": 30,
+  "ink": "auto"
+ },
+ {
+  "name": "stat-damage",
+  "from": "warband",
+  "rect": [
+   952,
+   393,
+   40,
+   38
+  ],
+  "mode": "key-light",
+  "tighten": true,
+  "tighten_margin": 30,
+  "ink": "auto"
+ },
+ {
+  "name": "stat-courage",
+  "from": "warband",
+  "rect": [
+   763,
+   468,
+   30,
+   38
+  ],
+  "mode": "key-light",
+  "tighten": true,
+  "tighten_margin": 30,
+  "ink": "auto"
+ },
+ {
+  "name": "stat-range",
+  "from": "warband",
+  "rect": [
+   953,
+   472,
+   40,
+   32
+  ],
+  "mode": "key-light",
+  "tighten": true,
+  "tighten_margin": 30,
+  "ink": "auto"
+ },
+ {
+  "name": "stat-recovery",
+  "from": "warband",
+  "rect": [
+   762,
+   544,
+   34,
+   38
+  ],
+  "mode": "key-light",
+  "tighten": true,
+  "tighten_margin": 30,
+  "ink": "auto"
+ },
+ {
+  "name": "chip-support",
+  "from": "warband",
+  "rect": [
+   998,
+   322,
+   34,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "pip-on",
+  "from": "warband",
+  "rect": [
+   885,
+   337,
+   17,
+   18
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "pip-off",
+  "from": "warband",
+  "rect": [
+   903,
+   337,
+   16,
+   18
+  ],
+  "mode": "key-light",
+  "tighten": false
+ },
+ {
+  "name": "coin-pile",
+  "from": "warband",
+  "rect": [
+   1168,
+   621,
+   43,
+   38
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 35
+ },
+ {
+  "name": "empty-plus",
+  "from": "warband",
+  "rect": [
+   1112,
+   168,
+   48,
+   46
+  ],
+  "mode": "key-light",
+  "tighten": true
+ },
+ {
+  "name": "tab-selected",
+  "from": "warband",
+  "rect": [
+   620,
+   57,
+   121,
+   67
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     12,
+     7,
+     97,
+     53
+    ],
+    "column": 9
+   }
+  ]
+ },
+ {
+  "name": "card-selected",
+  "from": "warband",
+  "rect": [
+   455,
+   147,
+   186,
+   111
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "cell-empty",
+  "from": "warband",
+  "rect": [
+   50,
+   347,
+   95,
+   94
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     4,
+     4,
+     87,
+     86
+    ],
+    "column": 89
+   }
+  ]
+ },
+ {
+  "name": "cell-selected-empty",
+  "from": "warband",
+  "rect": [
+   153,
+   347,
+   95,
+   94
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     85,
+     84
+    ],
+    "column": 88
+   }
+  ]
+ },
+ {
+  "name": "chip",
+  "from": "warband",
+  "rect": [
+   999,
+   321,
+   188,
+   36
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     37,
+     3,
+     148,
+     30
+    ],
+    "column": 35
+   }
+  ]
+ },
+ {
+  "name": "spellicon-fireball",
+  "from": "spells",
+  "rect": [
+   57,
+   340,
+   19,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-heal",
+  "from": "spells",
+  "rect": [
+   164,
+   341,
+   19,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-frost_burst",
+  "from": "spells",
+  "rect": [
+   265,
+   341,
+   19,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-lightning_strike",
+  "from": "spells",
+  "rect": [
+   59,
+   435,
+   16,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-barrier_ward",
+  "from": "spells",
+  "rect": [
+   163,
+   435,
+   14,
+   18
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-stone_barricade",
+  "from": "spells",
+  "rect": [
+   264,
+   437,
+   20,
+   18
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-war_cry",
+  "from": "spells",
+  "rect": [
+   56,
+   528,
+   20,
+   17
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-earthquake",
+  "from": "spells",
+  "rect": [
+   163,
+   528,
+   20,
+   19
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-polymorph",
+  "from": "spells",
+  "rect": [
+   265,
+   528,
+   19,
+   16
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellicon-resurrect",
+  "from": "spells",
+  "rect": [
+   57,
+   617,
+   19,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "wagon-card-selected",
+  "from": "wagon",
+  "rect": [
+   880,
+   106,
+   381,
+   116
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "level-square-on",
+  "from": "wagon",
+  "rect": [
+   1011,
+   183,
+   22,
+   21
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "chevron-button",
+  "from": "wagon",
+  "rect": [
+   341,
+   336,
+   38,
+   38
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     9,
+     6,
+     20,
+     26
+    ],
+    "column": 6
+   }
+  ]
+ },
+ {
+  "name": "chevron",
+  "from": "wagon",
+  "rect": [
+   352,
+   343,
+   16,
+   24
+  ],
+  "mode": "key-light",
+  "ink": "auto",
+  "tighten": true
+ },
+ {
+  "name": "upgrade-hull_plating",
+  "from": "wagon",
+  "rect": [
+   37,
+   157,
+   96,
+   88
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "upgrade-convoy_pantry",
+  "from": "wagon",
+  "rect": [
+   37,
+   298,
+   96,
+   88
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "upgrade-wagon_ballista",
+  "from": "wagon",
+  "rect": [
+   892,
+   118,
+   104,
+   92
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "upgrade-dispatch_console",
+  "from": "wagon",
+  "rect": [
+   898,
+   251,
+   97,
+   87
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "upgrade-signal_relay",
+  "from": "wagon",
+  "rect": [
+   898,
+   380,
+   97,
+   87
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "upgrade-wide-wagon_ballista",
+  "from": "wagon",
+  "rect": [
+   215,
+   508,
+   358,
+   174
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "relic-card",
+  "from": "relics",
+  "rect": [
+   56,
+   212,
+   120,
+   132
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     3,
+     3,
+     114,
+     126
+    ],
+    "column": 115
+   }
+  ]
+ },
+ {
+  "name": "relic-card-selected-empty",
+  "from": "relics",
+  "rect": [
+   54,
+   354,
+   123,
+   134
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     113,
+     124
+    ],
+    "column": 116
+   }
+  ]
+ },
+ {
+  "name": "relicicon-pendant",
+  "from": "relics",
+  "rect": [
+   64,
+   218,
+   19,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-boots",
+  "from": "relics",
+  "rect": [
+   194,
+   220,
+   18,
+   21
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-fang",
+  "from": "relics",
+  "rect": [
+   322,
+   220,
+   21,
+   19
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-lantern",
+  "from": "relics",
+  "rect": [
+   64,
+   359,
+   18,
+   28
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-ring",
+  "from": "relics",
+  "rect": [
+   195,
+   363,
+   18,
+   22
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-cloak",
+  "from": "relics",
+  "rect": [
+   322,
+   363,
+   21,
+   21
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-crown",
+  "from": "relics",
+  "rect": [
+   62,
+   506,
+   23,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-talisman",
+  "from": "relics",
+  "rect": [
+   192,
+   505,
+   24,
+   25
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicicon-signet",
+  "from": "relics",
+  "rect": [
+   323,
+   506,
+   20,
+   22
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "relicstat-damage",
+  "from": "relics",
+  "rect": [
+   918,
+   297,
+   25,
+   39
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "relicstat-cooldown",
+  "from": "relics",
+  "rect": [
+   913,
+   363,
+   35,
+   29
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "relicstat-rarity",
+  "from": "relics",
+  "rect": [
+   917,
+   420,
+   27,
+   35
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "relic-title-icon",
+  "from": "relics",
+  "rect": [
+   895,
+   162,
+   33,
+   57
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-helm",
+  "from": "relics",
+  "rect": [
+   963,
+   512,
+   33,
+   45
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-hammers",
+  "from": "relics",
+  "rect": [
+   953,
+   600,
+   52,
+   44
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "icon-back-chevron",
+  "from": "relics",
+  "rect": [
+   122,
+   648,
+   18,
+   28
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-endless",
+  "from": "hub",
+  "rect": [
+   68,
+   262,
+   373,
+   170
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-endless",
+  "from": "hub",
+  "rect": [
+   84,
+   391,
+   36,
+   36
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-tower",
+  "from": "hub",
+  "rect": [
+   463,
+   262,
+   355,
+   170
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-tower",
+  "from": "hub",
+  "rect": [
+   482,
+   391,
+   28,
+   36
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-bounties",
+  "from": "hub",
+  "rect": [
+   840,
+   262,
+   372,
+   170
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-bounties",
+  "from": "hub",
+  "rect": [
+   857,
+   392,
+   33,
+   35
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-bossrush",
+  "from": "hub",
+  "rect": [
+   68,
+   450,
+   373,
+   171
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-bossrush",
+  "from": "hub",
+  "rect": [
+   87,
+   577,
+   31,
+   40
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-weeklyraid",
+  "from": "hub",
+  "rect": [
+   463,
+   450,
+   355,
+   171
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-weeklyraid",
+  "from": "hub",
+  "rect": [
+   477,
+   581,
+   49,
+   35
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "activity-event",
+  "from": "hub",
+  "rect": [
+   840,
+   450,
+   372,
+   171
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hubicon-event",
+  "from": "hub",
+  "rect": [
+   859,
+   580,
+   31,
+   37
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hub-card",
+  "from": "hub",
+  "rect": [
+   459,
+   257,
+   363,
+   179
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hub-card-bar",
+  "from": "hub",
+  "rect": [
+   465,
+   384,
+   353,
+   47
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     3,
+     341,
+     41
+    ],
+    "column": 345
+   }
+  ]
+ },
+ {
+  "name": "hub-chevron",
+  "from": "hub",
+  "rect": [
+   787,
+   394,
+   19,
+   33
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hub-badge",
+  "from": "hub",
+  "rect": [
+   151,
+   535,
+   211,
+   35
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     16,
+     4,
+     187,
+     27
+    ],
+    "column": 10
+   }
+  ]
+ },
+ {
+  "name": "icon-tools",
+  "from": "hub",
+  "rect": [
+   178,
+   540,
+   24,
+   25
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hubtab-adventure",
+  "from": "hub",
+  "rect": [
+   259,
+   192,
+   35,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hubtab-caravan",
+  "from": "hub",
+  "rect": [
+   562,
+   194,
+   42,
+   33
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hubtab-community",
+  "from": "hub",
+  "rect": [
+   852,
+   193,
+   41,
+   33
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-account",
+  "from": "hub",
+  "rect": [
+   96,
+   653,
+   26,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-profile",
+  "from": "hub",
+  "rect": [
+   339,
+   654,
+   21,
+   24
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-quit",
+  "from": "hub",
+  "rect": [
+   594,
+   654,
+   21,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-map-scroll",
+  "from": "hub",
+  "rect": [
+   982,
+   644,
+   41,
+   39
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "hub-tab-selected",
+  "from": "hub",
+  "rect": [
+   203,
+   180,
+   286,
+   60
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     8,
+     266,
+     44
+    ],
+    "column": 9
+   }
+  ]
+ },
+ {
+  "name": "icon-arrow-left",
+  "from": "hub",
+  "rect": [
+   486,
+   35,
+   22,
+   23
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-arrow-right",
+  "from": "hub",
+  "rect": [
+   773,
+   35,
+   21,
+   23
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "settings-row",
+  "from": "settings",
+  "rect": [
+   450,
+   292,
+   690,
+   67
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     88,
+     4,
+     596,
+     59
+    ],
+    "column": 88
+   },
+   {
+    "rect": [
+     17,
+     9,
+     50,
+     49
+    ],
+    "column": 15
+   }
+  ]
+ },
+ {
+  "name": "slider-track",
+  "from": "settings",
+  "rect": [
+   657,
+   317,
+   353,
+   17
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     4,
+     0,
+     343,
+     17
+    ],
+    "column": 346
+   }
+  ]
+ },
+ {
+  "name": "slider-fill",
+  "from": "settings",
+  "rect": [
+   660,
+   395,
+   253,
+   11
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "slider-knob",
+  "from": "settings",
+  "rect": [
+   818,
+   309,
+   31,
+   32
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 30
+ },
+ {
+  "name": "value-box",
+  "from": "settings",
+  "rect": [
+   1030,
+   307,
+   96,
+   37
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     5,
+     84,
+     27
+    ],
+    "column": 5
+   }
+  ]
+ },
+ {
+  "name": "toggle-track",
+  "from": "settings",
+  "rect": [
+   981,
+   533,
+   75,
+   37
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     3,
+     3,
+     42,
+     31
+    ],
+    "column": 60
+   }
+  ]
+ },
+ {
+  "name": "toggle-knob",
+  "from": "settings",
+  "rect": [
+   983,
+   534,
+   34,
+   34
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 30
+ },
+ {
+  "name": "settingsicon-music",
+  "from": "settings",
+  "rect": [
+   471,
+   306,
+   44,
+   41
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "settingsicon-effects",
+  "from": "settings",
+  "rect": [
+   474,
+   382,
+   37,
+   38
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "settingsicon-ambience",
+  "from": "settings",
+  "rect": [
+   471,
+   456,
+   43,
+   38
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "settingsicon-mute",
+  "from": "settings",
+  "rect": [
+   474,
+   529,
+   37,
+   43
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "settingstab-sound",
+  "from": "settings",
+  "rect": [
+   265,
+   172,
+   29,
+   31
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "settingstab-gameplay",
+  "from": "settings",
+  "rect": [
+   470,
+   171,
+   33,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "settingstab-online",
+  "from": "settings",
+  "rect": [
+   716,
+   171,
+   37,
+   29
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "settingstab-account",
+  "from": "settings",
+  "rect": [
+   938,
+   170,
+   28,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "settings-tab-selected",
+  "from": "settings",
+  "rect": [
+   208,
+   155,
+   221,
+   64
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     8,
+     201,
+     48
+    ],
+    "column": 9
+   }
+  ]
+ },
+ {
+  "name": "icon-restore",
+  "from": "settings",
+  "rect": [
+   483,
+   612,
+   28,
+   28
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-map-pin",
+  "from": "settings",
+  "rect": [
+   884,
+   607,
+   37,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "ach-card",
+  "from": "achievements",
+  "rect": [
+   466,
+   200,
+   350,
+   190
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     6,
+     338,
+     178
+    ],
+    "column": 340
+   }
+  ]
+ },
+ {
+  "name": "ach-card-ready",
+  "from": "achievements",
+  "rect": [
+   98,
+   198,
+   357,
+   194
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     341,
+     178
+    ],
+    "column": 345
+   }
+  ]
+ },
+ {
+  "name": "ach-claim",
+  "from": "achievements",
+  "rect": [
+   240,
+   332,
+   198,
+   48
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     6,
+     178,
+     36
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "ach-claimed",
+  "from": "achievements",
+  "rect": [
+   985,
+   333,
+   183,
+   45
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     22,
+     6,
+     139,
+     33
+    ],
+    "column": 20
+   }
+  ]
+ },
+ {
+  "name": "icon-check",
+  "from": "achievements",
+  "rect": [
+   1013,
+   348,
+   19,
+   16
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "ach-track",
+  "from": "achievements",
+  "rect": [
+   619,
+   320,
+   183,
+   17
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     3,
+     3,
+     177,
+     11
+    ],
+    "column": 178
+   }
+  ]
+ },
+ {
+  "name": "ach-fill-gold",
+  "from": "achievements",
+  "rect": [
+   239,
+   296,
+   194,
+   10
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "ach-fill-blue",
+  "from": "achievements",
+  "rect": [
+   623,
+   533,
+   100,
+   10
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "coin-small",
+  "from": "achievements",
+  "rect": [
+   370,
+   340,
+   38,
+   33
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "ach-art-firstblood",
+  "from": "achievements",
+  "rect": [
+   105,
+   220,
+   128,
+   160
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-firstblood",
+  "from": "achievements",
+  "rect": [
+   240,
+   222,
+   26,
+   30
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "ach-art-districtmarshal",
+  "from": "achievements",
+  "rect": [
+   475,
+   224,
+   138,
+   156
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-districtmarshal",
+  "from": "achievements",
+  "rect": [
+   612,
+   220,
+   24,
+   32
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "ach-art-bossslayer",
+  "from": "achievements",
+  "rect": [
+   834,
+   205,
+   148,
+   178
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-bossslayer",
+  "from": "achievements",
+  "rect": [
+   988,
+   219,
+   24,
+   33
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "ach-art-untouchable",
+  "from": "achievements",
+  "rect": [
+   110,
+   426,
+   133,
+   164
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-untouchable",
+  "from": "achievements",
+  "rect": [
+   259,
+   421,
+   26,
+   34
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "ach-art-survivor",
+  "from": "achievements",
+  "rect": [
+   472,
+   420,
+   145,
+   175
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-survivor",
+  "from": "achievements",
+  "rect": [
+   623,
+   424,
+   23,
+   32
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "ach-art-arcanescholar",
+  "from": "achievements",
+  "rect": [
+   839,
+   418,
+   140,
+   177
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "achicon-arcanescholar",
+  "from": "achievements",
+  "rect": [
+   982,
+   426,
+   33,
+   29
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "achtab-all",
+  "from": "achievements",
+  "rect": [
+   215,
+   136,
+   25,
+   27
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "achtab-campaign",
+  "from": "achievements",
+  "rect": [
+   359,
+   135,
+   26,
+   30
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "achtab-combat",
+  "from": "achievements",
+  "rect": [
+   536,
+   136,
+   28,
+   29
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "achtab-endless",
+  "from": "achievements",
+  "rect": [
+   708,
+   143,
+   31,
+   15
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "achtab-collection",
+  "from": "achievements",
+  "rect": [
+   871,
+   137,
+   29,
+   27
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "achtab-mastery",
+  "from": "achievements",
+  "rect": [
+   1051,
+   136,
+   29,
+   29
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "ach-tab-selected",
+  "from": "achievements",
+  "rect": [
+   170,
+   119,
+   150,
+   60
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     8,
+     134,
+     46
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "codex-cell",
+  "from": "codex",
+  "rect": [
+   317,
+   208,
+   149,
+   136
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     139,
+     126
+    ],
+    "column": 143
+   }
+  ]
+ },
+ {
+  "name": "codex-cell-selected",
+  "from": "codex",
+  "rect": [
+   155,
+   206,
+   153,
+   140
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     137,
+     124
+    ],
+    "column": 144
+   }
+  ]
+ },
+ {
+  "name": "codex-corner",
+  "from": "codex",
+  "rect": [
+   321,
+   211,
+   20,
+   20
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-all",
+  "from": "codex",
+  "rect": [
+   650,
+   69,
+   32,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-enemies",
+  "from": "codex",
+  "rect": [
+   749,
+   69,
+   21,
+   27
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-bosses",
+  "from": "codex",
+  "rect": [
+   839,
+   69,
+   28,
+   28
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-units",
+  "from": "codex",
+  "rect": [
+   931,
+   69,
+   31,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-spells",
+  "from": "codex",
+  "rect": [
+   1031,
+   68,
+   20,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codextab-relics",
+  "from": "codex",
+  "rect": [
+   1119,
+   69,
+   31,
+   25
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codex-tab-selected",
+  "from": "codex",
+  "rect": [
+   617,
+   55,
+   98,
+   72
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     9,
+     8,
+     80,
+     56
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "codex-page-button",
+  "from": "codex",
+  "rect": [
+   549,
+   166,
+   32,
+   33
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     5,
+     20,
+     23
+    ],
+    "column": 5
+   }
+  ]
+ },
+ {
+  "name": "codex-arrow",
+  "from": "codex",
+  "rect": [
+   559,
+   174,
+   13,
+   18
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "codex-ribbon",
+  "from": "codex",
+  "rect": [
+   714,
+   226,
+   164,
+   42
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     50,
+     5,
+     102,
+     32
+    ],
+    "column": 154
+   }
+  ]
+ },
+ {
+  "name": "codex-ribbon-shield",
+  "from": "codex",
+  "rect": [
+   714,
+   226,
+   46,
+   42
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "codex-stat",
+  "from": "codex",
+  "rect": [
+   966,
+   303,
+   203,
+   64
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     7,
+     187,
+     50
+    ],
+    "column": 194
+   }
+  ]
+ },
+ {
+  "name": "codexstat-health",
+  "from": "codex",
+  "rect": [
+   983,
+   320,
+   34,
+   31
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "codexstat-damage",
+  "from": "codex",
+  "rect": [
+   983,
+   389,
+   35,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "codex-divider",
+  "from": "codex",
+  "rect": [
+   963,
+   445,
+   135,
+   25
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "codex-back",
+  "from": "codex",
+  "rect": [
+   953,
+   573,
+   227,
+   64
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     12,
+     8,
+     203,
+     48
+    ],
+    "column": 10
+   }
+  ]
+ },
+ {
+  "name": "icon-book-map",
+  "from": "codex",
+  "rect": [
+   984,
+   591,
+   31,
+   30
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "codex-rule",
+  "from": "codex",
+  "rect": [
+   317,
+   174,
+   111,
+   18
+  ],
+  "mode": "key-gold",
+  "tolerance": 24,
+  "softness": 30
+ },
+ {
+  "name": "codex-ornament",
+  "from": "codex",
+  "rect": [
+   326,
+   630,
+   111,
+   21
+  ],
+  "mode": "key-gold",
+  "tolerance": 24,
+  "softness": 30
+ },
+ {
+  "name": "prep-card-warm",
+  "from": "preparation",
+  "rect": [
+   484,
+   234,
+   112,
+   244
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     96,
+     186
+    ],
+    "column": 7
+   },
+   {
+    "rect": [
+     8,
+     192,
+     96,
+     46
+    ],
+    "column": 7
+   }
+  ]
+ },
+ {
+  "name": "prep-card-cool",
+  "from": "preparation",
+  "rect": [
+   601,
+   234,
+   114,
+   244
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     98,
+     186
+    ],
+    "column": 7
+   },
+   {
+    "rect": [
+     8,
+     192,
+     98,
+     46
+    ],
+    "column": 7
+   }
+  ]
+ },
+ {
+  "name": "prep-card-gold",
+  "from": "preparation",
+  "rect": [
+   719,
+   234,
+   117,
+   244
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     101,
+     186
+    ],
+    "column": 7
+   },
+   {
+    "rect": [
+     8,
+     192,
+     101,
+     46
+    ],
+    "column": 7
+   }
+  ]
+ },
+ {
+  "name": "prep-class-sword",
+  "from": "preparation",
+  "rect": [
+   525,
+   405,
+   30,
+   30
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "prep-spell-slot",
+  "from": "preparation",
+  "rect": [
+   489,
+   538,
+   72,
+   74
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     7,
+     7,
+     58,
+     60
+    ],
+    "column": 6
+   }
+  ]
+ },
+ {
+  "name": "prep-spell-pip",
+  "from": "preparation",
+  "rect": [
+   516,
+   598,
+   18,
+   18
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 30
+ },
+ {
+  "name": "prep-skull-shield",
+  "from": "preparation",
+  "rect": [
+   87,
+   232,
+   50,
+   66
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "icon-crossed-swords",
+  "from": "preparation",
+  "rect": [
+   91,
+   463,
+   28,
+   27
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "coin-heap",
+  "from": "preparation",
+  "rect": [
+   93,
+   547,
+   90,
+   54
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "icon-roast",
+  "from": "preparation",
+  "rect": [
+   965,
+   543,
+   65,
+   55
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 40
+ },
+ {
+  "name": "icon-quill",
+  "from": "preparation",
+  "rect": [
+   1043,
+   180,
+   23,
+   23
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-book-small",
+  "from": "preparation",
+  "rect": [
+   491,
+   510,
+   22,
+   19
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-star-small",
+  "from": "preparation",
+  "rect": [
+   1050,
+   582,
+   14,
+   16
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 30
+ },
+ {
+  "name": "endless-plaque",
+  "from": "endless",
+  "rect": [
+   64,
+   168,
+   226,
+   56
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     14,
+     6,
+     186,
+     44
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "endless-banner",
+  "from": "endless",
+  "rect": [
+   96,
+   216,
+   76,
+   110
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "icon-chevron-left",
+  "from": "endless",
+  "rect": [
+   70,
+   225,
+   19,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-chevron-right",
+  "from": "endless",
+  "rect": [
+   562,
+   225,
+   19,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "boon-courage",
+  "from": "endless",
+  "rect": [
+   64,
+   381,
+   164,
+   106
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "boon-supplies",
+  "from": "endless",
+  "rect": [
+   246,
+   383,
+   157,
+   104
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "boon-wagon",
+  "from": "endless",
+  "rect": [
+   420,
+   381,
+   167,
+   106
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "boon-card",
+  "from": "endless",
+  "rect": [
+   242,
+   380,
+   163,
+   203
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     6,
+     151,
+     191
+    ],
+    "column": 156
+   }
+  ]
+ },
+ {
+  "name": "boon-card-selected",
+  "from": "endless",
+  "rect": [
+   57,
+   374,
+   177,
+   214
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     9,
+     9,
+     159,
+     196
+    ],
+    "column": 167
+   }
+  ]
+ },
+ {
+  "name": "boon-divider",
+  "from": "endless",
+  "rect": [
+   86,
+   516,
+   119,
+   10
+  ],
+  "mode": "key-gold",
+  "tolerance": 24,
+  "softness": 30
+ },
+ {
+  "name": "icon-open-book",
+  "from": "endless",
+  "rect": [
+   106,
+   606,
+   30,
+   24
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-scroll",
+  "from": "endless",
+  "rect": [
+   383,
+   605,
+   27,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-people-gold",
+  "from": "endless",
+  "rect": [
+   1038,
+   152,
+   28,
+   23
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-flame-gold",
+  "from": "endless",
+  "rect": [
+   636,
+   415,
+   24,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-swords-dark",
+  "from": "endless",
+  "rect": [
+   662,
+   615,
+   47,
+   49
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "route-dot-on",
+  "from": "endless",
+  "rect": [
+   240,
+   322,
+   14,
+   16
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "result-tile",
+  "from": "victory",
+  "rect": [
+   314,
+   255,
+   149,
+   170
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     7,
+     7,
+     135,
+     156
+    ],
+    "column": 141
+   }
+  ]
+ },
+ {
+  "name": "result-mastery",
+  "from": "victory",
+  "rect": [
+   465,
+   443,
+   349,
+   109
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     7,
+     7,
+     335,
+     95
+    ],
+    "column": 341
+   }
+  ]
+ },
+ {
+  "name": "reward-gold",
+  "from": "victory",
+  "rect": [
+   349,
+   273,
+   81,
+   65
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 40
+ },
+ {
+  "name": "reward-rations",
+  "from": "victory",
+  "rect": [
+   512,
+   267,
+   83,
+   71
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 40
+ },
+ {
+  "name": "reward-shards",
+  "from": "victory",
+  "rect": [
+   691,
+   272,
+   64,
+   66
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 40
+ },
+ {
+  "name": "reward-season",
+  "from": "victory",
+  "rect": [
+   862,
+   272,
+   61,
+   61
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 40
+ },
+ {
+  "name": "result-star",
+  "from": "victory",
+  "rect": [
+   609,
+   169,
+   63,
+   63
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "result-diamond",
+  "from": "victory",
+  "rect": [
+   510,
+   191,
+   20,
+   22
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 30
+ },
+ {
+  "name": "icon-map-large",
+  "from": "victory",
+  "rect": [
+   303,
+   589,
+   62,
+   51
+  ],
+  "mode": "key-gold",
+  "tolerance": 44,
+  "softness": 40
+ },
+ {
+  "name": "icon-restart",
+  "from": "victory",
+  "rect": [
+   702,
+   601,
+   30,
+   31
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-wheat",
+  "from": "victory",
+  "rect": [
+   886,
+   597,
+   44,
+   37
+  ],
+  "mode": "key-gold",
+  "tolerance": 44,
+  "softness": 40
+ },
+ {
+  "name": "hud-fill-hull",
+  "from": "hud-battle",
+  "rect": [
+   141,
+   32,
+   159,
+   21
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hud-fill-courage",
+  "from": "hud-battle",
+  "rect": [
+   141,
+   76,
+   97,
+   21
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "hud-coin",
+  "from": "hud-battle",
+  "rect": [
+   1034,
+   23,
+   38,
+   31
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "hud-pause-icon",
+  "from": "hud-battle",
+  "rect": [
+   1227,
+   24,
+   24,
+   28
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "hud-card-selected",
+  "from": "hud-battle",
+  "rect": [
+   306,
+   535,
+   130,
+   144
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "forge-slot-blue",
+  "from": "forge",
+  "rect": [
+   174,
+   218,
+   80,
+   78
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     70,
+     58
+    ],
+    "column": 74
+   }
+  ]
+ },
+ {
+  "name": "forge-slot-purple",
+  "from": "forge",
+  "rect": [
+   352,
+   305,
+   80,
+   78
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     70,
+     58
+    ],
+    "column": 74
+   }
+  ]
+ },
+ {
+  "name": "forge-slot-grey",
+  "from": "forge",
+  "rect": [
+   174,
+   480,
+   80,
+   78
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     70,
+     58
+    ],
+    "column": 74
+   }
+  ]
+ },
+ {
+  "name": "forge-slot-selected",
+  "from": "forge",
+  "rect": [
+   81,
+   217,
+   85,
+   80
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     7,
+     7,
+     71,
+     66
+    ],
+    "column": 79
+   }
+  ]
+ },
+ {
+  "name": "forge-check",
+  "from": "forge",
+  "rect": [
+   85,
+   221,
+   26,
+   27
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "forge-recipe",
+  "from": "forge",
+  "rect": [
+   868,
+   280,
+   95,
+   67
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     85,
+     47
+    ],
+    "column": 89
+   }
+  ]
+ },
+ {
+  "name": "forge-recipe-selected",
+  "from": "forge",
+  "rect": [
+   864,
+   202,
+   103,
+   73
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     87,
+     57
+    ],
+    "column": 95
+   }
+  ]
+ },
+ {
+  "name": "forge-gold",
+  "from": "forge",
+  "rect": [
+   815,
+   63,
+   41,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "forge-shard",
+  "from": "forge",
+  "rect": [
+   1000,
+   60,
+   31,
+   41
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "forge-cost-gold",
+  "from": "forge",
+  "rect": [
+   1015,
+   507,
+   42,
+   35
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "forge-cost-shard",
+  "from": "forge",
+  "rect": [
+   1121,
+   506,
+   29,
+   38
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "icon-dismantle",
+  "from": "forge",
+  "rect": [
+   167,
+   566,
+   41,
+   41
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 40
+ },
+ {
+  "name": "icon-fuse",
+  "from": "forge",
+  "rect": [
+   586,
+   570,
+   43,
+   34
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 40
+ },
+ {
+  "name": "icon-craft",
+  "from": "forge",
+  "rect": [
+   1037,
+   569,
+   36,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 45,
+  "softness": 40
+ },
+ {
+  "name": "icon-armory",
+  "from": "forge",
+  "rect": [
+   177,
+   657,
+   32,
+   40
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "icon-map-gold",
+  "from": "forge",
+  "rect": [
+   953,
+   659,
+   51,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 40,
+  "softness": 40
+ },
+ {
+  "name": "season-card",
+  "from": "season",
+  "rect": [
+   655,
+   281,
+   179,
+   164
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     6,
+     6,
+     167,
+     106
+    ],
+    "column": 172
+   }
+  ]
+ },
+ {
+  "name": "season-card-ready",
+  "from": "season",
+  "rect": [
+   470,
+   280,
+   177,
+   167
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     8,
+     8,
+     161,
+     105
+    ],
+    "column": 169
+   }
+  ]
+ },
+ {
+  "name": "season-claimed",
+  "from": "season",
+  "rect": [
+   288,
+   399,
+   168,
+   41
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     24,
+     6,
+     134,
+     29
+    ],
+    "column": 20
+   }
+  ]
+ },
+ {
+  "name": "season-claim",
+  "from": "season",
+  "rect": [
+   477,
+   398,
+   163,
+   43
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     6,
+     143,
+     31
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "season-locked",
+  "from": "season",
+  "rect": [
+   660,
+   399,
+   168,
+   41
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     20,
+     6,
+     138,
+     29
+    ],
+    "column": 16
+   }
+  ]
+ },
+ {
+  "name": "icon-lock-small",
+  "from": "season",
+  "rect": [
+   690,
+   410,
+   17,
+   22
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-check-green",
+  "from": "season",
+  "rect": [
+   319,
+   410,
+   20,
+   19
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "season-corner-check",
+  "from": "season",
+  "rect": [
+   423,
+   281,
+   39,
+   39
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "season-xp-fill",
+  "from": "season",
+  "rect": [
+   541,
+   177,
+   227,
+   13
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "season-tier-current",
+  "from": "season",
+  "rect": [
+   526,
+   231,
+   64,
+   57
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "season-gold",
+  "from": "season",
+  "rect": [
+   322,
+   303,
+   95,
+   72
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "season-food",
+  "from": "season",
+  "rect": [
+   508,
+   301,
+   100,
+   72
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "season-tome",
+  "from": "season",
+  "rect": [
+   695,
+   298,
+   103,
+   79
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "season-gold-large",
+  "from": "season",
+  "rect": [
+   684,
+   477,
+   118,
+   73
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 40
+ },
+ {
+  "name": "hud-banner",
+  "from": "hud-battle",
+  "rect": [
+   13,
+   0,
+   86,
+   157
+  ],
+  "mode": "plate",
+  "plate": true
+ },
+ {
+  "name": "hud-hull",
+  "from": "hud-battle",
+  "rect": [
+   86,
+   20,
+   380,
+   43
+  ],
+  "mode": "plate",
+  "plate": true
+ },
+ {
+  "name": "hud-courage",
+  "from": "hud-battle",
+  "rect": [
+   86,
+   64,
+   337,
+   43
+  ],
+  "mode": "plate",
+  "plate": true
+ },
+ {
+  "name": "hud-gold",
+  "from": "hud-battle",
+  "rect": [
+   1021,
+   18,
+   190,
+   40
+  ],
+  "mode": "plate",
+  "plate": true
+ },
+ {
+  "name": "hud-pause",
+  "from": "hud-battle",
+  "rect": [
+   1211,
+   14,
+   56,
+   49
+  ],
+  "mode": "plate",
+  "plate": true
+ },
+ {
+  "name": "hud-dock",
+  "from": "hud-battle",
+  "rect": [
+   298,
+   544,
+   673,
+   143
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     9,
+     0,
+     655,
+     133
+    ],
+    "column": 12
+   }
+  ],
+  "mirror_top": 10
+ },
+ {
+  "name": "hud-card",
+  "from": "hud-battle",
+  "rect": [
+   443,
+   545,
+   119,
+   131
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     109,
+     121
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "hud-cost",
+  "from": "hud-battle",
+  "rect": [
+   515,
+   545,
+   44,
+   43
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "hud-heart",
+  "from": "hud-battle",
+  "rect": [
+   101,
+   32,
+   25,
+   23
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 34
+ },
+ {
+  "name": "hud-flame",
+  "from": "hud-battle",
+  "rect": [
+   99,
+   71,
+   28,
+   32
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 34
+ },
+ {
+  "name": "season-row-free",
+  "from": "season",
+  "rect": [
+   53,
+   280,
+   219,
+   164
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     116,
+     73.6,
+     92,
+     21.849999999999998
+    ],
+    "column": 114
+   }
+  ]
+ },
+ {
+  "name": "season-row-premium",
+  "from": "season",
+  "rect": [
+   53,
+   458,
+   219,
+   163
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     96,
+     63.2,
+     112,
+     19.95
+    ],
+    "column": 94
+   }
+  ]
+ },
+ {
+  "name": "mp-room",
+  "from": "multiplayer",
+  "rect": [
+   52,
+   398,
+   1178,
+   99
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     5,
+     1166,
+     89
+    ],
+    "column": 440
+   }
+  ]
+ },
+ {
+  "name": "mp-room-selected",
+  "from": "multiplayer",
+  "rect": [
+   50,
+   289,
+   1182,
+   103
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     7,
+     6,
+     1168,
+     91
+    ],
+    "column": 440
+   }
+  ]
+ },
+ {
+  "name": "mp-tab",
+  "from": "multiplayer",
+  "rect": [
+   57,
+   292,
+   47,
+   37
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     12,
+     6,
+     25,
+     23
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "mp-banner",
+  "from": "multiplayer",
+  "rect": [
+   133,
+   291,
+   75,
+   96
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "mp-sidebanner",
+  "from": "multiplayer",
+  "rect": [
+   865,
+   297,
+   52,
+   88
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "mp-slot",
+  "from": "multiplayer",
+  "rect": [
+   638,
+   302,
+   76,
+   76
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     5,
+     5,
+     66,
+     66
+    ],
+    "column": 5
+   }
+  ]
+ },
+ {
+  "name": "mp-join",
+  "from": "multiplayer",
+  "rect": [
+   1056,
+   308,
+   166,
+   64
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     12,
+     8,
+     142,
+     48
+    ],
+    "column": 10
+   }
+  ]
+ },
+ {
+  "name": "mp-join-idle",
+  "from": "multiplayer",
+  "rect": [
+   1056,
+   416,
+   166,
+   65
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     12,
+     8,
+     142,
+     49
+    ],
+    "column": 10
+   }
+  ]
+ },
+ {
+  "name": "mp-ready",
+  "from": "multiplayer",
+  "rect": [
+   931,
+   318,
+   110,
+   45
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     5,
+     98,
+     35
+    ],
+    "column": 5
+   }
+  ]
+ },
+ {
+  "name": "mp-dot-green",
+  "from": "multiplayer",
+  "rect": [
+   940,
+   331,
+   19,
+   19
+  ],
+  "mode": "key-gold",
+  "tolerance": 30,
+  "softness": 30
+ },
+ {
+  "name": "mp-players",
+  "from": "multiplayer",
+  "rect": [
+   466,
+   315,
+   33,
+   25
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mptab-rooms",
+  "from": "multiplayer",
+  "rect": [
+   103,
+   133,
+   37,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mptab-daily",
+  "from": "multiplayer",
+  "rect": [
+   359,
+   132,
+   30,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mptab-featured",
+  "from": "multiplayer",
+  "rect": [
+   582,
+   134,
+   31,
+   31
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mptab-saved",
+  "from": "multiplayer",
+  "rect": [
+   834,
+   133,
+   25,
+   33
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mptab-squad",
+  "from": "multiplayer",
+  "rect": [
+   1067,
+   133,
+   37,
+   32
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "mp-tab-selected",
+  "from": "multiplayer",
+  "rect": [
+   48,
+   123,
+   232,
+   53
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     10,
+     8,
+     216,
+     39
+    ],
+    "column": 8
+   }
+  ]
+ },
+ {
+  "name": "icon-map-small",
+  "from": "multiplayer",
+  "rect": [
+   354,
+   214,
+   34,
+   34
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "icon-skull-red",
+  "from": "multiplayer",
+  "rect": [
+   601,
+   207,
+   43,
+   49
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "icon-scroll-gold",
+  "from": "multiplayer",
+  "rect": [
+   837,
+   214,
+   40,
+   36
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "icon-skull-lit",
+  "from": "multiplayer",
+  "rect": [
+   663,
+   235,
+   17,
+   21
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "icon-skull-dim",
+  "from": "multiplayer",
+  "rect": [
+   715,
+   235,
+   16,
+   21
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 36
+ },
+ {
+  "name": "mp-room-art-1",
+  "from": "multiplayer",
+  "rect": [
+   56,
+   293,
+   372,
+   94
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "mp-room-art-2",
+  "from": "multiplayer",
+  "rect": [
+   56,
+   402,
+   372,
+   92
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "mp-room-art-3",
+  "from": "multiplayer",
+  "rect": [
+   56,
+   510,
+   372,
+   92
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "icon-refresh",
+  "from": "multiplayer",
+  "rect": [
+   430,
+   631,
+   27,
+   29
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-match",
+  "from": "multiplayer",
+  "rect": [
+   599,
+   633,
+   32,
+   26
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-host",
+  "from": "multiplayer",
+  "rect": [
+   770,
+   629,
+   38,
+   31
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "icon-start",
+  "from": "multiplayer",
+  "rect": [
+   970,
+   628,
+   33,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "spellstat-cooldown",
+  "from": "spells",
+  "rect": [
+   767,
+   490,
+   34,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto",
+  "tighten": true,
+  "tighten_margin": 30
+ },
+ {
+  "name": "spellstat-radius",
+  "from": "spells",
+  "rect": [
+   962,
+   491,
+   34,
+   34
+  ],
+  "mode": "key-light",
+  "ink": "auto",
+  "tighten": true,
+  "tighten_margin": 30
+ },
+ {
+  "name": "endless-unit-card",
+  "from": "endless",
+  "rect": [
+   723,
+   197,
+   91,
+   199
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     4,
+     34,
+     83,
+     161
+    ],
+    "column": 86
+   },
+   {
+    "rect": [
+     34,
+     4,
+     53,
+     32
+    ],
+    "column": 86
+   }
+  ]
+ },
+ {
+  "name": "endless-tab",
+  "from": "endless",
+  "rect": [
+   725,
+   202,
+   31,
+   29
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     5,
+     19,
+     17
+    ],
+    "column": 4
+   }
+  ]
+ },
+ {
+  "name": "endless-spell-slot",
+  "from": "endless",
+  "rect": [
+   711,
+   454,
+   73,
+   79
+  ],
+  "mode": "plain",
+  "clear": [
+   {
+    "rect": [
+     6,
+     6,
+     61,
+     57
+    ],
+    "column": 5
+   }
+  ]
+ },
+ {
+  "name": "endless-gem",
+  "from": "endless",
+  "rect": [
+   736,
+   522,
+   19,
+   20
+  ],
+  "mode": "key-gold",
+  "tolerance": 34,
+  "softness": 30
+ },
+ {
+  "name": "icon-close-x",
+  "from": "spells",
+  "rect": [
+   1199,
+   40,
+   27,
+   27
+  ],
+  "mode": "key-light",
+  "ink": "auto"
+ },
+ {
+  "name": "level-square-off",
+  "from": "wagon",
+  "rect": [
+   176,
+   219,
+   22,
+   22
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "level-bar-off",
+  "from": "wagon",
+  "rect": [
+   643,
+   640,
+   37,
+   23
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "level-bar-on-full",
+  "from": "wagon",
+  "rect": [
+   604,
+   640,
+   37,
+   23
+  ],
+  "mode": "plain"
+ },
+ {
+  "name": "res-bar",
+  "from": "hud-home",
+  "rect": [
+   19,
+   13,
+   391,
+   62
+  ],
+  "mode": "plate",
+  "plate": true,
+  "clear": [
+   {
+    "rect": [
+     125,
+     9,
+     12,
+     48
+    ],
+    "column": 121
+   },
+   {
+    "rect": [
+     270,
+     9,
+     12,
+     48
+    ],
+    "column": 266
+   }
+  ]
+ },
+ {
+  "name": "res-divider",
+  "from": "hud-home",
+  "rect": [
+   145,
+   22,
+   10,
+   48
+  ],
+  "mode": "key-gold",
+  "tolerance": 22,
+  "softness": 26
+ },
+ {
+  "name": "dock-warband",
+  "from": "hud-home",
+  "rect": [
+   199.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "dock-spells",
+  "from": "hud-home",
+  "rect": [
+   359.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "dock-upgrades",
+  "from": "hud-home",
+  "rect": [
+   520.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "dock-achievements",
+  "from": "hud-home",
+  "rect": [
+   687.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "dock-codex",
+  "from": "hud-home",
+  "rect": [
+   848.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "dock-more",
+  "from": "hud-home",
+  "rect": [
+   1008.5,
+   587.5,
+   70,
+   70
+  ],
+  "mode": "circle"
+ },
+ {
+  "name": "settings-face",
+  "from": "hud-home",
+  "rect": [
+   1210,
+   25,
+   41,
+   40
+  ],
+  "mode": "circle"
+ }
+]

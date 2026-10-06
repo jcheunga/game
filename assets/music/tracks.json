@@ -1,0 +1,97 @@
+{
+  "battle": {
+    "bpm": 128,
+    "bars": 32,
+    "seconds": 60.0
+  },
+  "battle_basilica": {
+    "bpm": 100,
+    "bars": 32,
+    "seconds": 76.8
+  },
+  "battle_boss": {
+    "bpm": 140,
+    "bars": 32,
+    "seconds": 54.857
+  },
+  "battle_boss_final": {
+    "bpm": 132,
+    "bars": 32,
+    "seconds": 58.182
+  },
+  "battle_citadel": {
+    "bpm": 136,
+    "bars": 32,
+    "seconds": 56.471
+  },
+  "battle_foundry": {
+    "bpm": 132,
+    "bars": 32,
+    "seconds": 58.182
+  },
+  "battle_gloamwood": {
+    "bpm": 108,
+    "bars": 32,
+    "seconds": 71.111
+  },
+  "battle_harbor": {
+    "bpm": 204,
+    "bars": 32,
+    "seconds": 56.471
+  },
+  "battle_mire": {
+    "bpm": 92,
+    "bars": 32,
+    "seconds": 83.478
+  },
+  "battle_pass": {
+    "bpm": 116,
+    "bars": 32,
+    "seconds": 66.207
+  },
+  "battle_quarantine": {
+    "bpm": 104,
+    "bars": 32,
+    "seconds": 73.846
+  },
+  "battle_road": {
+    "bpm": 126,
+    "bars": 32,
+    "seconds": 60.952
+  },
+  "battle_steppe": {
+    "bpm": 138,
+    "bars": 32,
+    "seconds": 55.652
+  },
+  "campaign": {
+    "bpm": 198,
+    "bars": 40,
+    "seconds": 72.727
+  },
+  "endless_prep": {
+    "bpm": 66,
+    "bars": 16,
+    "seconds": 58.182
+  },
+  "loadout": {
+    "bpm": 84,
+    "bars": 24,
+    "seconds": 68.571
+  },
+  "multiplayer": {
+    "bpm": 112,
+    "bars": 28,
+    "seconds": 60.0
+  },
+  "shop": {
+    "bpm": 116,
+    "bars": 32,
+    "seconds": 66.207
+  },
+  "title": {
+    "bpm": 76,
+    "bars": 32,
+    "seconds": 101.053
+  }
+}

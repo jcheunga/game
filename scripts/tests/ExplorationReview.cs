@@ -114,7 +114,8 @@ public partial class ExplorationReview : Node
             var bossTile=cityTiles.Single(t=>t.Site?.Kind==AdventureSiteKind.Leader && state.IsAdventureBoss(t.Site.Stage));
             Check(Read<AdventureMapNode>(menu,"_selected").Id==start.Id && canvas.GetChildren().OfType<AdventureMapToken>().Count(t=>t.Visible)==1,"A fresh map selects the first stage and hides distant landmark markers");
             await Wait(.2);
-            Check(Read<NoiseTexture2D>(canvas,"_atlasMist")!=null && Read<Vector2[][]>(canvas,"_landscapeFrontier").Length>0,"Rendered veil uses textured mist with a frontier around known tiles");
+            var fog=Read<MapFogLayer>(canvas,"_fogLayer");
+            Check(fog.Visible && fog.Mask!=null && fog.MaskRect.HasArea(),"The cloud bank covers the hidden tiles around the known one");
             Check(cityTiles.Count(state.IsAdventureTileOpen)==1 && !state.IsAdventureTileOpen(bossTile),"The veil conceals everything except the first stage, including the distant boss");
             await Capture("01-fresh-veil");
             var opened=state.BuildSaveData(); opened.Food=0; opened.FoodRechargedAtUnixSeconds=DateTimeOffset.UtcNow.ToUnixTimeSeconds();

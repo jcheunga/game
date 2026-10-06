@@ -13,7 +13,8 @@ public partial class BattleController
     private const float BattleCameraFollowRate = 3f;
     // Where the band sits within the clear rows when it fits with room to spare: low on screen, like a
     // road under the scenery, with the bases and troops standing up into the space above.
-    private const float BandRowFraction = .73f;
+    // .81 puts the road where the approved battle concept has it (screen rows ~411-516 at 1280x720).
+    private const float BandRowFraction = .81f;
     // Match the existing left-side margin at the far end of the field.
     private float BattleWorldWidth => BattlefieldRight + BattlefieldLeft;
     private float FrameTop => BattlefieldTop + SpawnVerticalPadding - FrameHeadroom;
@@ -82,19 +83,6 @@ public partial class BattleController
         }
         else center = Mathf.Clamp(desired.Y + offset, FrameTop + windowHalf, FrameBottom - windowHalf);
         return new Vector2(x, center - offset);
-    }
-
-    // Every world row the fitted camera can see, along the whole field. Scenery plates cover it; closer
-    // views only ever see less.
-    private Rect2 BattleCoverRect
-    {
-        get
-        {
-            var zoom = BattleFitZoom;
-            var height = GetViewportRect().Size.Y / zoom;
-            var top = CameraPositionFor(Vector2.Zero, zoom).Y - height * .5f;
-            return new Rect2(0, top, BattleWorldWidth, height).Grow(6f);
-        }
     }
 
     private void SetBattleCameraFollow(bool follow)
@@ -228,12 +216,4 @@ public partial class BattleController
         if (_battleCamera != null) GetViewport().SizeChanged -= RefreshBattleCamera;
     }
 
-    private void DrawBattleBackground(Texture2D texture)
-    {
-        // The overview can see above and below the world; give that space a deliberate backdrop.
-        DrawSetTransformMatrix(GetGlobalTransformWithCanvas().AffineInverse());
-        DrawRect(GetViewportRect(), ResolveTerrainPalette().SkyColor.Darkened(.55f));
-        DrawSetTransform(Vector2.Zero);
-        DrawTextureRect(texture, WorldEnvironmentArt.CoverRect(texture.GetSize(), BattleCoverRect), false);
-    }
 }

@@ -1,0 +1,110 @@
+[
+ {
+  "id": "activity-expeditions",
+  "out": "art/royal/gen/activities/expeditions.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a small party of caravan scouts with lanterns setting out along a misty forest road at dawn, a map and backpacks.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-forge",
+  "out": "art/royal/gen/activities/forge.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a blacksmith's relic forge: glowing anvil, sparks flying, a hammer striking a magical glowing amulet, warm firelight.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-gifts",
+  "out": "art/royal/gen/activities/gifts.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a pile of wrapped gift bundles, a small chest of coins and a sack of grain beside a lantern on a wooden table, festive warm light.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-season",
+  "out": "art/royal/gen/activities/season.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a royal herald's table with a laurel crown, gold coins and a ribbon-tied scroll under teal banners, celebratory.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-codex",
+  "out": "art/royal/gen/activities/codex.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: an open ancient tome on a lectern with illustrated monster pages, candles and a quill, scholarly library.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-store",
+  "out": "art/royal/gen/activities/store.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a medieval royal storehouse with shelves of gold, gems, grain sacks and barrels, a merchant's counter and lanterns.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-prestige",
+  "out": "art/royal/gen/activities/prestige.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a radiant golden crown floating above an altar with a sunrise behind a castle, new age dawning.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-guild",
+  "out": "art/royal/gen/activities/guild.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a great hall with long tables and teal guild banners where knights raise tankards, firelight.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-friends",
+  "out": "art/royal/gen/activities/friends.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: two knights shaking hands in front of a campfire under starry sky with their caravan behind.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-challenges",
+  "out": "art/royal/gen/activities/challenges.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: two rival knights' banners crossed over a challenge board with pinned scrolls and a sand timer.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-arena",
+  "out": "art/royal/gen/activities/arena.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a stone tournament arena with cheering crowds, banners and two armoured champions facing each other.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-rankings",
+  "out": "art/royal/gen/activities/rankings.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a tall stone tablet engraved with ranked names under a golden trophy and laurel, torchlight.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ }
+]

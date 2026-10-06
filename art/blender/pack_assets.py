@@ -13,20 +13,6 @@ ROOT=Path(__file__).resolve().parents[2]
 ART=ROOT/'art/blender'
 REVIEW=ROOT/'artifacts/blender'
 UNITS=json.loads((ROOT/'data/units.json').read_text())['Units']
-SPELLS=json.loads((ROOT/'data/spells.json').read_text())['Spells']
-RELICS=json.loads((ROOT/'data/equipment.json').read_text())['Equipment']
-STAGES=json.loads((ROOT/'data/stages.json').read_text())['Stages']
-CODEX=re.findall(r'new\("([^"]+)", "([^"]+)", "([^"]+)"', (ROOT/'scripts/core/CodexCatalog.cs').read_text())
-ALIASES={
-    'enemy_heavy':'enemy_brute','enemy_exploder':'enemy_bloater','enemy_ranged':'enemy_spitter',
-    'enemy_rusher':'enemy_saboteur','enemy_buffer':'enemy_howler','enemy_hexer':'enemy_jammer','enemy_tank':'enemy_crusher',
-    'boss_grave_lord':'enemy_boss','boss_tidecaller':'enemy_boss_docks','boss_iron_warden':'enemy_boss_forge',
-    'boss_plague_archon':'enemy_boss_ward','boss_thornwall':'enemy_boss_pass','boss_bone_pontiff':'enemy_boss_basilica',
-    'boss_mire_behemoth':'enemy_boss_mire','boss_steppe_warlord':'enemy_boss_steppe',
-    'boss_gloamwood_witch':'enemy_boss_verge','boss_dread_sovereign':'enemy_boss_citadel',
-    'spell_frost':'spell_frost_burst','spell_lightning':'spell_lightning_strike','spell_barrier':'spell_barrier_ward',
-    'spell_barricade':'spell_stone_barricade','spell_warcry':'spell_war_cry',
-}
 
 
 def copy_image(source,target,size=None):
@@ -83,21 +69,6 @@ def pack_units():
     (REVIEW/'unit-framing-report.json').write_text(json.dumps({'packed':packed,'clipped':clipped},indent=2)+'\n')
     print(json.dumps({'unit_sheets':len(packed),'class_fallbacks':len(representatives),'clipped_frames':clipped}))
     return packed
-
-
-def codex():
-    missing=[]
-    for ident,kind,title in CODEX:
-        resolved=ALIASES.get(ident,ident)
-        category='units' if kind in ('unit','enemy','boss') else 'spells' if kind=='spell' else 'relics'
-        icon=ROOT/'assets/ui/icons'/category/f'{resolved}.png'
-        portrait=ROOT/'assets/ui/portraits/codex'/f'{resolved}.png'
-        if icon.exists(): copy_image(icon,ROOT/'assets/ui/icons/codex'/f'{ident}.png')
-        else: missing.append(ident)
-        if not portrait.exists(): portrait=icon
-        output=ROOT/'assets/ui/portraits/codex'/f'{ident}.png'
-        if portrait.exists() and portrait!=output: copy_image(portrait,output,512)
-    print('CODEX_MISSING '+json.dumps(missing))
 
 
 def pack_previews():
@@ -177,19 +148,12 @@ def audit():
         'unit_icons':[f'assets/ui/icons/units/{u["Id"]}.png' for u in UNITS],
         'model_previews':[f'assets/ui/models/{u["Id"]}.png' for u in UNITS],
         'model_preview_metadata':[f'assets/ui/models/{u["Id"]}.json' for u in UNITS],
-        'battlefields':[f'assets/backgrounds/{i}.png' for i in sorted({s['TerrainId'] for s in STAGES})],
         'structures':[f'assets/structures/{i}.png' for i in catalog_array('StructureIds')],
         'caravan_skins':['assets/structures/war_wagon.png']+[f'assets/structures/war_wagon_skin_{i}.png' for i in ('iron','royal','bone','flame','shadow','guild','legendary')],
-        'weapon_mounts':[f'assets/structures/mount_{i}.png' for i in ('arrows','ballista','firepot','frost','hex')],
+        'weapon_mounts':[f'assets/structures/mount_{i}.png' for i in ('arrows','ballista','firepot')],
         'particles':[f'assets/particles/{i}.png' for i in catalog_array('ParticleTextureIds')],
-        'stage_environments':[f'assets/world/battles/stage-{s["StageNumber"]:02}.png' for s in STAGES],
-        'map_atlases':[f'assets/world/overworld/polished-v3/{i}.png' for i in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery')],
-        'spell_icons':[f'assets/ui/icons/spells/{s["Id"]}.png' for s in SPELLS],
-        'relic_icons':[f'assets/ui/icons/relics/{r["Id"]}.png' for r in RELICS],
         'reward_icons':[f'assets/ui/icons/rewards/{i}.png' for i in catalog_array('RewardIconIds')],
         'meta_icons':[f'assets/ui/icons/meta/{i}.png' for i in catalog_array('MetaIconIds')],
-        'codex_icons':[f'assets/ui/icons/codex/{i}.png' for i,_,_ in CODEX],
-        'codex_portraits':[f'assets/ui/portraits/codex/{i}.png' for i,_,_ in CODEX],
     }
     report={}
     for group,paths in groups.items():
@@ -203,7 +167,7 @@ def audit():
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('action',choices=['units','previews','codex','audit','sheets','all'])
+    parser.add_argument('action',choices=['units','previews','audit','sheets','all'])
     args=parser.parse_args()
     REVIEW.mkdir(parents=True,exist_ok=True)
     # Native finish previews are review artifacts, never runtime resources.
@@ -211,16 +175,11 @@ if __name__=='__main__':
     if finish_review.exists(): (finish_review/'.gdignore').touch(exist_ok=True)
     if args.action in ('units','all'): pack_units()
     if args.action in ('units','previews','all'): pack_previews()
-    if args.action in ('codex','all'): codex()
     if args.action in ('sheets','all'):
         print(animation_preview())
         for cat,entries in [('units',[(u['DisplayName'],ROOT/'assets/ui/icons/units'/f'{u["Id"]}.png') for u in UNITS]),
-                            ('relics',[(r['DisplayName'],ROOT/'assets/ui/icons/relics'/f'{r["Id"]}.png') for r in RELICS]),
-                            ('spells',[(s['DisplayName'],ROOT/'assets/ui/icons/spells'/f'{s["Id"]}.png') for s in SPELLS]),
-                            ('battlefields',[(i,ROOT/'assets/backgrounds'/f'{i}.png') for i in sorted({s['TerrainId'] for s in STAGES})]),
-                            ('map-atlases',[(i,ROOT/'assets/world/overworld/polished-v3'/f'{i}.png') for i in ('terrain-materials','medieval-scenery','utility-scenery','resource-scenery')]),
                             ('caravans',[('standard',ROOT/'assets/structures/war_wagon.png')]+[(i,ROOT/'assets/structures'/f'war_wagon_skin_{i}.png') for i in ('iron','royal','bone','flame','shadow','guild','legendary')]),
-                            ('mounts',[(i,ROOT/'assets/structures'/f'mount_{i}.png') for i in ('arrows','ballista','firepot','frost','hex')]),
+                            ('mounts',[(i,ROOT/'assets/structures'/f'mount_{i}.png') for i in ('arrows','ballista','firepot')]),
                             ('particles',[(i.replace('particle_',''),ROOT/'assets/particles'/f'{i}.png') for i in catalog_array('ParticleTextureIds')])]:
             print(contact_sheet(cat,entries))
     audit()

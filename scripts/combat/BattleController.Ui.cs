@@ -36,7 +36,7 @@ public partial class BattleController
 
 		var unitRow = new HBoxContainer();
 		unitRow.AddThemeConstantOverride("separation", 10);
-		var cardScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 130) };
+        var cardScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 164) };
         spawnStack.AddChild(cardScroll); cardScroll.AddChild(unitRow);
 
 		foreach (var definition in _deck.Roster)
@@ -45,7 +45,7 @@ public partial class BattleController
 			var button = new RealmButton
 			{
 				SizeFlagsHorizontal = Control.SizeFlags.Fill,
-				CustomMinimumSize = new Vector2(112f, 124f)
+				CustomMinimumSize = new Vector2(140f, 160f)
 			};
 			button.AddThemeColorOverride("font_color", Colors.White);
 			button.AddThemeColorOverride("font_hover_color", Colors.White);
@@ -67,7 +67,7 @@ public partial class BattleController
 				var button = new RealmButton
 				{
 					SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-					CustomMinimumSize = new Vector2(112f, 124f)
+					CustomMinimumSize = new Vector2(140f, 160f)
 				};
 				button.AddThemeColorOverride("font_color", Colors.White);
 				button.AddThemeColorOverride("font_hover_color", Colors.White);
@@ -252,9 +252,22 @@ public partial class BattleController
 		button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.45f));
 	}
 
-	private static BattleActionCard AttachBattleCardContent(Button button, Texture2D icon)
+    private static BattleActionCard AttachBattleCardContent(Button button, Texture2D icon)
 	{
-		button.Text = string.Empty;
+        button.Text = string.Empty;
+        // The concept card: a thin bronze frame around full-bleed art, lifted slightly on hover.
+        var frame = RoyalKit.Slice("hud-card", 8);
+        frame.ContentMarginLeft = frame.ContentMarginRight = frame.ContentMarginTop = frame.ContentMarginBottom = 0;
+        var hover = new StyleBoxFlat { BgColor = new Color(1f, .9f, .66f, .10f), BorderColor = new Color(1f, .86f, .55f, .7f), AntiAliasing = true };
+        hover.SetBorderWidthAll(1); hover.SetCornerRadiusAll(4);
+        button.AddThemeStyleboxOverride("normal", frame);
+        button.AddThemeStyleboxOverride("hover", new StackedStyle(frame, hover));
+        button.AddThemeStyleboxOverride("pressed", new StackedStyle(frame, new StyleBoxFlat { BgColor = new Color(0, 0, 0, .2f) }));
+        button.AddThemeStyleboxOverride("hover_pressed", new StackedStyle(frame, hover));
+        button.AddThemeStyleboxOverride("disabled", frame);
+        var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color(1f, .87f, .56f, .9f), AntiAliasing = true };
+        focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4);
+        button.AddThemeStyleboxOverride("focus", focus);
 		var card = new BattleActionCard();
 		button.AddChild(card);
 		card.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);

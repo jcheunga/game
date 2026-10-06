@@ -1,0 +1,468 @@
+{
+ "screen": "victory",
+ "ref": "art/royal/ref/ui-10-victory-rewards.png",
+ "elements": [
+  {
+   "id": "panel.banner",
+   "kind": "rect",
+   "rect": [
+    214,
+    13,
+    854,
+    687
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "panel.board",
+   "kind": "rect",
+   "rect": [
+    284,
+    85,
+    712,
+    568
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "banner.crown",
+   "kind": "rect",
+   "rect": [
+    548,
+    13,
+    186,
+    88
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "text": "Victory",
+   "font": "cinzel",
+   "weight": 700,
+   "width": 343,
+   "size": 76,
+   "x": 641.0,
+   "baseline": 159,
+   "align": "center",
+   "color": "#f9d68b",
+   "style": "gold"
+  },
+  {
+   "id": "stars",
+   "kind": "rect",
+   "rect": [
+    510,
+    171,
+    263,
+    59
+   ],
+   "role": "pips"
+  },
+  {
+   "id": "star.1",
+   "kind": "rect",
+   "rect": [
+    544,
+    171,
+    59,
+    59
+   ],
+   "role": "star"
+  },
+  {
+   "id": "star.2",
+   "kind": "rect",
+   "rect": [
+    611,
+    171,
+    59,
+    59
+   ],
+   "role": "star"
+  },
+  {
+   "id": "star.3",
+   "kind": "rect",
+   "rect": [
+    679,
+    172,
+    59,
+    58
+   ],
+   "role": "star"
+  },
+  {
+   "id": "stars.diamond.left",
+   "kind": "rect",
+   "rect": [
+    510,
+    191,
+    20,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "stars.diamond.right",
+   "kind": "rect",
+   "rect": [
+    752,
+    191,
+    20,
+    22
+   ],
+   "role": "pip"
+  },
+  {
+   "id": "reward.1",
+   "kind": "rect",
+   "rect": [
+    314,
+    255,
+    149,
+    170
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "reward.1.icon",
+   "kind": "rect",
+   "rect": [
+    352,
+    276,
+    75,
+    59
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.1.amount",
+   "kind": "text",
+   "text": "+50",
+   "font": "crimson",
+   "weight": 590,
+   "width": 55,
+   "size": 34,
+   "x": 386.5,
+   "baseline": 378,
+   "align": "center",
+   "color": "#f8eecf"
+  },
+  {
+   "id": "reward.1.caption",
+   "kind": "text",
+   "text": "GOLD",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 43,
+   "size": 14,
+   "x": 388.5,
+   "baseline": 406,
+   "align": "center",
+   "color": "#e6d9be"
+  },
+  {
+   "id": "reward.2",
+   "kind": "rect",
+   "rect": [
+    477,
+    255,
+    156,
+    170
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "reward.2.icon",
+   "kind": "rect",
+   "rect": [
+    515,
+    270,
+    77,
+    65
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.2.amount",
+   "kind": "text",
+   "text": "+1",
+   "font": "crimson",
+   "weight": 590,
+   "width": 29,
+   "size": 32,
+   "x": 551.5,
+   "baseline": 378,
+   "align": "center",
+   "color": "#f8eecf"
+  },
+  {
+   "id": "reward.2.caption",
+   "kind": "text",
+   "text": "RATIONS",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 66,
+   "size": 14,
+   "x": 554.5,
+   "baseline": 406,
+   "align": "center",
+   "color": "#e6d9be"
+  },
+  {
+   "id": "reward.3",
+   "kind": "rect",
+   "rect": [
+    647,
+    255,
+    154,
+    170
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "reward.3.icon",
+   "kind": "rect",
+   "rect": [
+    694,
+    275,
+    58,
+    60
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.3.amount",
+   "kind": "text",
+   "text": "+1",
+   "font": "crimson",
+   "weight": 590,
+   "width": 29,
+   "size": 32,
+   "x": 722.5,
+   "baseline": 378,
+   "align": "center",
+   "color": "#f8eecf"
+  },
+  {
+   "id": "reward.3.caption",
+   "kind": "text",
+   "text": "SHARDS",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 60,
+   "size": 14,
+   "x": 725.0,
+   "baseline": 406,
+   "align": "center",
+   "color": "#e6d9be"
+  },
+  {
+   "id": "reward.4",
+   "kind": "rect",
+   "rect": [
+    816,
+    255,
+    152,
+    170
+   ],
+   "role": "tile"
+  },
+  {
+   "id": "reward.4.icon",
+   "kind": "rect",
+   "rect": [
+    865,
+    275,
+    55,
+    55
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "reward.4.amount",
+   "kind": "text",
+   "text": "+10 XP",
+   "font": "crimson",
+   "weight": 590,
+   "width": 95,
+   "size": 34,
+   "x": 893.0,
+   "baseline": 378,
+   "align": "center",
+   "color": "#f8eecf"
+  },
+  {
+   "id": "reward.4.caption",
+   "kind": "text",
+   "text": "SEASON",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 60,
+   "size": 14,
+   "x": 893.5,
+   "baseline": 406,
+   "align": "center",
+   "color": "#e6d9be"
+  },
+  {
+   "id": "mastery",
+   "kind": "rect",
+   "rect": [
+    465,
+    443,
+    349,
+    109
+   ],
+   "role": "card"
+  },
+  {
+   "id": "mastery.portrait",
+   "kind": "rect",
+   "rect": [
+    472,
+    449,
+    138,
+    97
+   ],
+   "role": "portrait"
+  },
+  {
+   "id": "mastery.value",
+   "kind": "text",
+   "text": "+840 XP",
+   "font": "crimson",
+   "weight": 590,
+   "width": 133,
+   "size": 37,
+   "x": 709.5,
+   "baseline": 500,
+   "align": "center",
+   "color": "#f9ecce"
+  },
+  {
+   "id": "mastery.caption",
+   "kind": "text",
+   "text": "MASTERY",
+   "font": "cinzel",
+   "weight": 550,
+   "width": 78,
+   "size": 16,
+   "x": 712.0,
+   "baseline": 531,
+   "align": "center",
+   "color": "#c8bca7"
+  },
+  {
+   "id": "button.back",
+   "kind": "rect",
+   "rect": [
+    236,
+    575,
+    397,
+    80
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.back.icon",
+   "kind": "rect",
+   "rect": [
+    303,
+    589,
+    62,
+    51
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.back.label",
+   "kind": "text",
+   "text": "BACK TO MAP",
+   "font": "cinzel",
+   "weight": 650,
+   "width": 171,
+   "size": 24,
+   "x": 386,
+   "baseline": 625,
+   "align": "left",
+   "color": "#160a03",
+   "pen_x": 386
+  },
+  {
+   "id": "button.restart",
+   "kind": "rect",
+   "rect": [
+    659,
+    575,
+    391,
+    80
+   ],
+   "role": "button"
+  },
+  {
+   "id": "button.restart.icon",
+   "kind": "rect",
+   "rect": [
+    703,
+    602,
+    28,
+    29
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.restart.label",
+   "kind": "text",
+   "text": "RESTART",
+   "font": "cinzel",
+   "weight": 800,
+   "width": 88,
+   "size": 18,
+   "x": 750,
+   "baseline": 625,
+   "align": "left",
+   "color": "#fff4d3",
+   "pen_x": 750
+  },
+  {
+   "id": "button.restart.divider",
+   "kind": "rect",
+   "rect": [
+    860,
+    600,
+    2,
+    34
+   ],
+   "role": "divider"
+  },
+  {
+   "id": "button.restart.cost.icon",
+   "kind": "rect",
+   "rect": [
+    886,
+    597,
+    44,
+    37
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "button.restart.cost",
+   "kind": "text",
+   "text": "4 FOOD",
+   "font": "cinzel",
+   "weight": 780,
+   "width": 66,
+   "size": 16,
+   "x": 942,
+   "baseline": 625,
+   "align": "left",
+   "color": "#fde3af",
+   "pen_x": 942
+  }
+ ],
+ "notes": "Victory banner modal over the live battlefield. There is no dark scrim; the sunset battlefield stays visible around the banner. panel.banner is the overall decoration bounds: from the left rod finial (x214) to the right finial (x1067), and from the crown top (y13) to the tip of the ornament under the buttons (y~699). panel.board is the dark wooden board behind the content, from the curtain rod (y85) down to its bottom edge (~y652). The board is partly hidden by the teal side drapes (lanterns on the upper drapes, diamond emblems near the bottoms) and by the two buttons, which overhang it on both sides. The crown sits on the centre of the rod above the teal valance that carries the title. State: 3 of 3 stars earned, all lit gold, with a small gold four-point diamond on each side (stars is the whole row including the diamonds). The title is arched in the concept: V and Y are drawn larger and drop to y~175 while ICTOR sit on y~159. The spec uses 'Victory' (tall V, small caps) on the central baseline, which matches ICTOR exactly. Four reward tiles (gold +50, rations +1, shards +1, season +10 XP) have no claimed, locked or highlight states. Tile widths vary from 149 to 156 px in the concept; they can be equal (pitch about 167) when rebuilt. Icons are the measured art bounds and sit in the top half of each tile. The mastery card has a unit portrait well on the left; the knight's helmet breaks above the card's top edge (to y~437). +840 XP and MASTERY are centred in the right part of the card. BACK TO MAP is the primary gold button with a map-scroll icon. RESTART is a secondary steel button with a circular-arrow icon, a thin vertical divider, and a cost section (wheat-and-bread food icon, 4 FOOD). The tile amounts, tile captions, MASTERY, RESTART and 4 FOOD are set in a humanist sans in the concept. They are mapped here to Crimson Pro (numbers, weight 590) and Cinzel (caps labels). The amounts are one size in the concept (digits about 23 px tall), but the width fits give 32 to 34. Text x values are placed as specview draws them: x is the pen origin, and the ink starts 0 to 2 px to the right (the glyph side bearing)."
+}

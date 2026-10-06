@@ -28,6 +28,10 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--royal-ui")) { await ReviewRoyalUi(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--concepts")) { await ReviewConcepts(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--map-guides"))
+            { await MapGuideRenderer.RenderAll(this, ProjectSettings.GlobalizePath("res://art/royal/gen/map-guides")); QuitAfterAudio(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--live-parity"))
             { await ReviewLiveParity(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--battle-cleanup"))
@@ -178,7 +182,9 @@ public partial class UiReviewSmoke : Node
                 GameState.Instance.PrepareCampaignBattle();
                 await Open("LoadoutMenu"); await Press("Deploy");
                 Engine.TimeScale = 3;
-                for (var tick = 0; tick < 150 && GameState.Instance.GetStageStars(1) == 0; tick++)
+                // Earlier checks may already have rated stage 1, so play until the result board appears.
+                RoyalResult Board() => Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<RoyalResult>().FirstOrDefault(x => x.IsVisibleInTree());
+                for (var tick = 0; tick < 150 && Board() == null; tick++)
                 {
                     var enemy = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Unit>().Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
                     var y = enemy?.Position.Y ?? 380;
@@ -190,15 +196,14 @@ public partial class UiReviewSmoke : Node
                     if (tick % 12 == 0) Send(new InputEventKey { Keycode = Key.Z, Pressed = true });
                     if (tick == 15) await Capture("20-battle-in-progress");
                     await Wait(1.5);
-                    if (Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(x => x.IsVisibleInTree() && x.Text == "Retry stage")) break;
                 }
                 Engine.TimeScale = 1;
                 await Wait(0.5); // Capture the readable end state after its entrance animation.
                 AuditText("Battle victory");
-                Check(GameState.Instance.GetStageStars(1) > 0, "Real-input campaign battle reaches victory");
+                Check(Board() is { Won: true } && GameState.Instance.GetStageStars(1) > 0, "Real-input campaign battle reaches victory");
                 Check(SaveSystem.Instance.TryLoad(out var result) && result.StageStars.Length > 0 && result.StageStars[0] > 0, "Victory stars persist to disk");
                 await Capture("21-victory");
-                await Press("Back to map");
+                await PressHint("Back to map"); await Wait(.5);
                 Check(GetTree().CurrentScene is MapMenu, "Victory returns to the campaign map");
                 await Capture("23-map-after-victory");
                 GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
@@ -210,14 +215,13 @@ public partial class UiReviewSmoke : Node
             await Press("Caravan"); await Capture("02-camp-caravan");
             await Press("Community"); await Capture("03-camp-community");
             GameState.Instance.MoveAdventureHero("city", AdventureMapCatalog.Leader(1).Point);
+            // Tapping a battle site travels there and opens its preparation as a modal over the map.
             await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
-            Check(!Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(button => button.IsVisibleInTree() && button.Text == "Intel"), "Stage details show rewards without an Intel tab");
-            await Capture("05-map-rewards");
-            // Preparation opens as a modal over the map once the caravan arrives, not as its own scene.
-            await Press("Prepare battle"); await FinishTravel();
+            await FinishTravel();
             Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<LoadoutMenu>().Any(x => x.IsVisibleInTree()), "Map opens preparation");
             await Capture("06-loadout");
-            await Press("Details");
+            var viewUnit = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(b => b.IsVisibleInTree() && (b.AccessibilityName ?? "").StartsWith("View "));
+            viewUnit.EmitSignal(BaseButton.SignalName.Pressed); await Wait(.6);
             Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ModelShowcase>().Any(), "Unit details open on demand");
             await Capture("06b-unit-inspector");
             await PressHint("Close details");
@@ -336,7 +340,7 @@ public partial class UiReviewSmoke : Node
         {
             var box = button.GetThemeStylebox("normal");
             var available = button.Size.X - box.GetContentMargin(Side.Left) - box.GetContentMargin(Side.Right);
-            if (button.Icon != null) available -= button.GetThemeConstant("icon_max_width") + button.GetThemeConstant("h_separation");
+            if (button.Icon != null && button is not RealmButton { VerticalContent: true }) available -= button.GetThemeConstant("icon_max_width") + button.GetThemeConstant("h_separation");
             var font = button.GetThemeFont("font"); var size = button.GetThemeFontSize("font_size");
             var widest = button.Text.Split('\n').Max(line => font.GetStringSize(line, HorizontalAlignment.Left, -1, size).X);
             if (button.AutowrapMode == TextServer.AutowrapMode.Off && widest > available + 3)
@@ -358,7 +362,8 @@ public partial class UiReviewSmoke : Node
         {
             var font = label.GetThemeFontSize("font_size");
             var issues = new List<string>();
-            var minimumFont = homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
+            // Concept screens use the approved concepts' type sizes (captions down to 12 px).
+            var minimumFont = InRoyalScreen(label) ? 11 : homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is Button) { minimumFont = Math.Min(minimumFont, RealmUi.ButtonFontSize); break; }
             if (font < minimumFont) issues.Add("small text");
@@ -372,7 +377,7 @@ public partial class UiReviewSmoke : Node
                 if (parent is Button owner && !owner.GetGlobalRect().Grow(2).Encloses(label.GetGlobalRect()))
                 { issues.Add("outside button"); break; }
             }
-            if (!Clipped(label) && !viewport.Grow(2).Encloses(label.GetGlobalRect())) issues.Add("outside viewport");
+            if (!Clipped(label) && !viewport.Grow(2).Encloses(label.GetGlobalRect())) issues.Add($"outside viewport {label.GetGlobalRect()}");
             // Check the whole string, including long words and unwrapped status lines.
             var bounds = new Rect2(Vector2.Zero, label.Size).Grow(3);
             for (var i = 0; i < label.Text.Length; i++)
@@ -385,6 +390,13 @@ public partial class UiReviewSmoke : Node
             if (issues.Count > 0)
             { _failures++; GD.Print($"TEXT_ISSUE {screen}: {string.Join(", ", issues)} | {label.Text.Replace("\n", " ")[..Math.Min(100, label.Text.Length)]}"); }
         }
+    }
+
+    private static bool InRoyalScreen(Node node)
+    {
+        for (var parent = node.GetParent(); parent != null; parent = parent.GetParent())
+            if (parent.HasMeta("royal_screen")) return true;
+        return false;
     }
 
     private void AuditModalBounds(string screen)

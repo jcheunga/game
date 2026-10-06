@@ -7,147 +7,78 @@ public static class UiArtLoader
 {
     private static readonly Dictionary<string, Texture2D> Cache = new();
     private static readonly HashSet<string> Missing = new();
+    private static readonly Dictionary<ulong, Texture2D> Trimmed = new();
+
+    public static Texture2D Portrait(Texture2D source)
+    {
+        if (source == null) return null;
+        var key = source.GetInstanceId();
+        if (Trimmed.TryGetValue(key, out var cached)) return cached;
+        using var pixels = source.GetImage();
+        if (pixels == null) return source;
+        if (pixels.IsCompressed()) pixels.Decompress();
+        var used = pixels.GetUsedRect();
+        if (used.Size.X <= 0 || used.Size.Y <= 0) return source;
+        return Trimmed[key] = new AtlasTexture { Atlas = source, Region = used, FilterClip = true };
+    }
 
     private const string UnitIconPath = "res://assets/ui/icons/units/";
-    private const string SpellIconPath = "res://assets/ui/icons/spells/";
-    private const string RelicIconPath = "res://assets/ui/icons/relics/";
     private const string RewardIconPath = "res://assets/ui/icons/rewards/";
     private const string MetaIconPath = "res://assets/ui/icons/meta/";
-    private const string CodexIconPath = "res://assets/ui/icons/codex/";
     private const string CodexPortraitPath = "res://assets/ui/portraits/codex/";
 
     public static Texture2D TryLoadUnitIcon(UnitDefinition unit)
     {
-        if (unit == null)
-        {
-            return null;
-        }
-
-        var unitId = AssetCoverageCatalog.NormalizeId(unit.Id);
-        if (!string.IsNullOrWhiteSpace(unitId))
-        {
-            var byUnitId = TryLoad(UnitIconPath, unitId);
-            if (byUnitId != null)
-            {
-                return byUnitId;
-            }
-        }
-
-        var visualClass = AssetCoverageCatalog.NormalizeId(unit.VisualClass);
-        return TryLoad(UnitIconPath, visualClass) ?? LoadPortrait(unit.Id) ?? RealmUi.Icon(visualClass switch
-        { "shield" => "shield", "gunner" or "sniper" => "arrow", "support" => "heart", "boss" => "crown", _ => "sword" });
+        if (unit == null) return null;
+        var icon = TryLoad(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.Id))
+            ?? TryLoad(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.VisualClass));
+        return Portrait(icon) ?? RealmUi.Icon(AssetCoverageCatalog.NormalizeId(unit.VisualClass) switch
+            { "shield" => "shield", "gunner" or "sniper" => "arrow", "support" => "heart", "boss" => "crown", _ => "sword" });
     }
 
-    private static Texture2D LoadPortrait(string unitId)
-    {
-        var ids = new[] { "player_brawler", "player_shooter", "player_defender", "player_spear",
-            "player_ranger", "player_raider", "player_mechanic", "player_marksman",
-            "player_breacher", "player_grenadier", "player_coordinator", "enemy_boss" };
-        var index = Array.IndexOf(ids, unitId);
-        if (index < 0) return null;
-        var key = "portrait:" + unitId;
-        if (Cache.TryGetValue(key, out var cached)) return cached;
-        var atlas = ResourceLoader.Load<Texture2D>("res://assets/ui/portraits/warband_atlas.png");
-        if (atlas == null) return null;
-        var cell = atlas.GetSize() / new Vector2(4, 3);
-        return Cache[key] = new AtlasTexture { Atlas = atlas, Region = new Rect2(new Vector2(index % 4, index / 4) * cell, cell) };
-    }
-
+    /// <summary>A spell's painted image (art/royal/items.py), or a plain glyph if one is missing.</summary>
     public static Texture2D TryLoadSpellIcon(SpellDefinition spell)
     {
-        if (spell == null)
-        {
-            return null;
-        }
-
-        var spellId = AssetCoverageCatalog.NormalizeId(spell.Id);
-        if (!string.IsNullOrWhiteSpace(spellId))
-        {
-            var bySpellId = TryLoad(SpellIconPath, spellId);
-            if (bySpellId != null)
-            {
-                return bySpellId;
-            }
-        }
-
-        var effectType = AssetCoverageCatalog.NormalizeId(spell.EffectType);
-        return string.IsNullOrWhiteSpace(effectType)
-            ? null
-            : TryLoad(SpellIconPath, effectType) ?? RealmUi.Icon(effectType.Contains("heal") ? "heart" : effectType.Contains("barrier") ? "shield" : effectType.Contains("fire") ? "flame" : "bolt");
+        if (spell == null) return null;
+        if (RoyalItem(spell.Id) is { } painted) return painted;
+        var effect = AssetCoverageCatalog.NormalizeId(spell.EffectType) ?? "";
+        return RealmUi.Icon(effect.Contains("heal") ? "heart" : effect.Contains("barrier") ? "shield" : effect.Contains("fire") ? "flame" : "bolt");
     }
 
-    public static Texture2D TryLoadRelicIcon(EquipmentDefinition relic)
+    /// <summary>A relic's painted image (art/royal/items.py), or null if one is missing.</summary>
+    public static Texture2D TryLoadRelicIcon(EquipmentDefinition relic) => relic == null ? null : RoyalItem(relic.Id);
+
+    /// <summary>The painted item image (art/royal/items.py) when one is installed.</summary>
+    private static Texture2D RoyalItem(string id)
     {
-        return relic == null
-            ? null
-            : TryLoad(RelicIconPath, AssetCoverageCatalog.NormalizeId(relic.Id));
+        var path = $"res://assets/ui/royal/items/{id}.png";
+        return ResourceLoader.Exists(path) ? ResourceLoader.Load<Texture2D>(path) : null;
     }
 
-    public static Texture2D TryLoadCodexIcon(CodexEntry entry)
-    {
-        if (entry == null)
-        {
-            return null;
-        }
-
-        var codexId = AssetCoverageCatalog.NormalizeId(entry.Id);
-        if (!string.IsNullOrWhiteSpace(codexId))
-        {
-            var codexIcon = TryLoad(CodexIconPath, codexId);
-            if (codexIcon != null)
-            {
-                return codexIcon;
-            }
-        }
-
-        if (TryResolveUnit(entry, out var unit))
-        {
-            return TryLoadUnitIcon(unit);
-        }
-
-        if (TryResolveSpell(entry, out var spell))
-        {
-            return TryLoadSpellIcon(spell);
-        }
-
-        if (TryResolveRelic(entry, out var relic))
-        {
-            return TryLoadRelicIcon(relic);
-        }
-
-        return null;
-    }
-
+    /// <summary>
+    /// A codex entry's picture: spells and relics use their painted images, the legacy foes and raid bosses
+    /// their own portraits, and units without one their battle icon.
+    /// </summary>
     public static Texture2D TryLoadCodexPortrait(CodexEntry entry)
     {
-        if (entry == null)
-        {
-            return null;
-        }
-
-        var portrait = TryLoad(CodexPortraitPath, AssetCoverageCatalog.NormalizeId(entry.Id));
-        return portrait ?? TryLoadCodexIcon(entry);
+        if (entry == null) return null;
+        if (TryResolveSpell(entry, out var spell)) return TryLoadSpellIcon(spell);
+        if (TryResolveRelic(entry, out var relic) && TryLoadRelicIcon(relic) is { } painted) return painted;
+        return TryLoad(CodexPortraitPath, AssetCoverageCatalog.NormalizeId(entry.Id))
+            ?? (TryResolveUnit(entry, out var unit) ? TryLoadUnitIcon(unit) : null);
     }
 
     public static Texture2D TryLoadRewardIcon(string rewardType, string rewardItemId = "")
     {
         var itemId = AssetCoverageCatalog.NormalizeId(rewardItemId);
-        if (!string.IsNullOrWhiteSpace(itemId))
-        {
-            var byItemId = TryLoad(RewardIconPath, itemId);
-            if (byItemId != null)
-            {
-                return byItemId;
-            }
-        }
-
+        if (!string.IsNullOrWhiteSpace(itemId) && TryLoad(RewardIconPath, itemId) is { } byItemId) return byItemId;
         var typeId = AssetCoverageCatalog.NormalizeId(rewardType);
         // Currency rewards share the painted icons used by the home map.
         if (typeId is "gold" or "food") return HomeMapArt.Icon(typeId);
         if (typeId is "tomes" or "essence") return HomeMapArt.Icon(typeId == "tomes" ? "book" : "flame");
         return string.IsNullOrWhiteSpace(typeId)
             ? null
-            : TryLoad(RewardIconPath, typeId) ?? RealmUi.Icon(typeId == "gold" ? "gold" : typeId == "food" ? "food" : typeId.Contains("star") ? "star" : "gift");
+            : TryLoad(RewardIconPath, typeId) ?? RealmUi.Icon(typeId.Contains("star") ? "star" : "gift");
     }
 
     public static Texture2D TryLoadMetaIcon(string metaId)
@@ -158,58 +89,29 @@ public static class UiArtLoader
             : TryLoad(MetaIconPath, normalizedId) ?? RealmUi.Icon(normalizedId.Contains("friend") || normalizedId.Contains("guild") ? "people" : "crown");
     }
 
-    public static bool HasUnitIconAsset(UnitDefinition unit)
-    {
-        if (unit == null)
-        {
-            return false;
-        }
+    public static bool HasUnitIconAsset(UnitDefinition unit) => unit != null &&
+        (HasPng(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.Id)) || HasPng(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.VisualClass)));
 
-        return HasPng(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.Id))
-            || HasPng(UnitIconPath, AssetCoverageCatalog.NormalizeId(unit.VisualClass));
-    }
+    public static bool HasSpellIconAsset(SpellDefinition spell) => spell != null && HasPng("res://assets/ui/royal/items/", spell.Id);
 
-    public static bool HasSpellIconAsset(SpellDefinition spell)
-    {
-        if (spell == null)
-        {
-            return false;
-        }
+    public static bool HasRelicIconAsset(EquipmentDefinition relic) => relic != null && HasPng("res://assets/ui/royal/items/", relic.Id);
 
-        return HasPng(SpellIconPath, AssetCoverageCatalog.NormalizeId(spell.Id))
-            || HasPng(SpellIconPath, AssetCoverageCatalog.NormalizeId(spell.EffectType));
-    }
-
-    public static bool HasRelicIconAsset(EquipmentDefinition relic)
-    {
-        return relic != null && HasPng(RelicIconPath, AssetCoverageCatalog.NormalizeId(relic.Id));
-    }
-
-    public static bool HasCodexPortraitAsset(CodexEntry entry)
-    {
-        return entry != null && HasPng(CodexPortraitPath, AssetCoverageCatalog.NormalizeId(entry.Id));
-    }
-
-    public static bool HasCodexIconAsset(CodexEntry entry)
-    {
-        return entry != null && HasPng(CodexIconPath, AssetCoverageCatalog.NormalizeId(entry.Id));
-    }
+    /// <summary>Whether a codex entry has a picture of its own (painted image, portrait or battle icon).</summary>
+    public static bool HasCodexPictureAsset(CodexEntry entry) => entry != null &&
+        (TryResolveSpell(entry, out var spell) ? HasSpellIconAsset(spell)
+            : TryResolveRelic(entry, out var relic) && HasRelicIconAsset(relic)
+            || HasPng(CodexPortraitPath, AssetCoverageCatalog.NormalizeId(entry.Id))
+            || TryResolveUnit(entry, out var unit) && HasUnitIconAsset(unit));
 
     public static bool HasRewardIconAsset(string rewardType, string rewardItemId = "")
     {
         var itemId = AssetCoverageCatalog.NormalizeId(rewardItemId);
-        if (!string.IsNullOrWhiteSpace(itemId) && HasPng(RewardIconPath, itemId))
-        {
-            return true;
-        }
-
-        return HasPng(RewardIconPath, AssetCoverageCatalog.NormalizeId(rewardType));
+        if (!string.IsNullOrWhiteSpace(itemId) && HasPng(RewardIconPath, itemId)) return true;
+        var typeId = AssetCoverageCatalog.NormalizeId(rewardType);
+        return typeId is "gold" or "food" or "tomes" or "essence" || HasPng(RewardIconPath, typeId);
     }
 
-    public static bool HasMetaIconAsset(string metaId)
-    {
-        return HasPng(MetaIconPath, AssetCoverageCatalog.NormalizeId(metaId));
-    }
+    public static bool HasMetaIconAsset(string metaId) => HasPng(MetaIconPath, AssetCoverageCatalog.NormalizeId(metaId));
 
     private static Texture2D TryLoad(string basePath, string id)
     {

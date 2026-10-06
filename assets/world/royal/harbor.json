@@ -1,0 +1,91 @@
+{
+ "layers": [
+  {
+   "name": "far",
+   "rect": [
+    215.62,
+    58.09,
+    768.75,
+    256.25
+   ],
+   "parallax": 0.12,
+   "tile": false,
+   "front": false,
+   "size": [
+    2172,
+    724
+   ],
+   "file": "harbor_far.png"
+  },
+  {
+   "name": "mid",
+   "rect": [
+    438.37,
+    198.16,
+    323.25,
+    107.81
+   ],
+   "parallax": 0.42,
+   "tile": true,
+   "front": false,
+   "size": [
+    1739,
+    580
+   ],
+   "file": "harbor_mid.png"
+  },
+  {
+   "name": "ground",
+   "rect": [
+    317.39,
+    303.83,
+    565.22,
+    145.4
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2037,
+    524
+   ],
+   "file": "harbor_ground.png"
+  },
+  {
+   "name": "near",
+   "rect": [
+    442.86,
+    233.78,
+    314.28,
+    82.03
+   ],
+   "parallax": 1.0,
+   "tile": true,
+   "front": false,
+   "size": [
+    2111,
+    551
+   ],
+   "file": "harbor_near.png"
+  },
+  {
+   "name": "front",
+   "rect": [
+    440.55,
+    399.72,
+    318.89,
+    70.31
+   ],
+   "parallax": 1.35,
+   "tile": true,
+   "front": true,
+   "size": [
+    2118,
+    467
+   ],
+   "file": "harbor_front.png"
+  }
+ ],
+ "sky": "688ba1",
+ "generator": "art/royal/backdrops.py"
+}

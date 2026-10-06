@@ -2,72 +2,180 @@ using System;
 using System.Linq;
 using Godot;
 
-public partial class AchievementsPanel : VBoxContainer
+/// <summary>
+/// Achievements on the approved concept: six category tabs and six illustrated cards per page with
+/// progress, and the claim / claimed state of each reward.
+/// </summary>
+public partial class AchievementsPanel : RoyalScreen
 {
-    private GridContainer _grid;
-    private Label _summary, _status, _pageLabel;
-    private Button _previous, _next;
-    private int _page;
-    private string _category = "All";
+    private static readonly string[] Categories = { "All", "Campaign", "Combat", "Endless", "Collection", "Mastery" };
+    private static readonly string[] CardKeys = { "firstblood", "districtmarshal", "bossslayer", "untouchable", "survivor", "arcanescholar" };
     private const int PageSize = 6;
+    private int _category, _page;
+    private Control _layer;
 
-    public override void _Ready()
+    public AchievementsPanel() { PlateName = "achievements"; }
+
+    private static RoyalSpec Spec => RoyalSpec.For("achievements");
+
+    protected override void Build()
     {
-        AddThemeConstantOverride("separation", 12);
-        _summary = RealmUi.Label("", 18, true); AddChild(_summary); _summary.Hide();
-        var categories = new[] { "All", "Campaign", "Combat", "Endless", "Collection", "Mastery" };
-        var tabs = RealmUi.Tabs(this, index => { _category = categories[index]; _page = 0; Refresh(); }, categories); RealmModal.Polish(tabs);
-        var stack = RealmUi.Scroll(this);
-        _grid = new GridContainer { Columns = 3 }; _grid.AddThemeConstantOverride("h_separation", 14); _grid.AddThemeConstantOverride("v_separation", 14); stack.AddChild(_grid);
-        var footer = new HBoxContainer(); footer.AddThemeConstantOverride("separation", 10); AddChild(footer);
-        _previous = HomeMapUi.IconButton("back", "Previous achievement page", () => { _page--; Refresh(); }); footer.AddChild(_previous);
-        _pageLabel = RealmUi.Label("", 18, true); _pageLabel.CustomMinimumSize = new Vector2(72, 0); _pageLabel.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _pageLabel.HorizontalAlignment = HorizontalAlignment.Center; _pageLabel.VerticalAlignment = VerticalAlignment.Center; _pageLabel.AutowrapMode = TextServer.AutowrapMode.Off; footer.AddChild(_pageLabel);
-        _next = HomeMapUi.IconButton("arrow", "Next achievement page", () => { _page++; Refresh(); }); footer.AddChild(_next);
-        ModalUi.StyleButton(_previous); ModalUi.StyleButton(_next);
-        _status = RealmUi.Label("", 18, true); _status.VerticalAlignment = VerticalAlignment.Center; footer.AddChild(_status);
+        _layer = Layer("Live");
         Refresh();
+    }
+
+    /// <summary>One of the six concept dioramas that best fits an achievement.</summary>
+    private static string Diorama(AchievementDefinition entry)
+    {
+        var id = entry.Id;
+        if (id == "first_blood") return "firstblood";
+        if (id.Contains("endless") || id.Contains("tower") || id.Contains("streak") || id.Contains("daily")) return "survivor";
+        if (id.Contains("boss") || id.Contains("raid") || id.Contains("hard_mode") || id.Contains("arena")) return "bossslayer";
+        if (id.Contains("no_damage") || id.Contains("combo") || id.Contains("speed")) return "untouchable";
+        if (id.Contains("spell") || id.Contains("codex") || id.Contains("talent") || id.Contains("enchant") || id.Contains("forge") || id.Contains("mastery") || id.Contains("master")) return "arcanescholar";
+        if (entry.Category.Equals("campaign", StringComparison.OrdinalIgnoreCase) || id.Contains("district") || id.Contains("expedition") || id.Contains("guild")) return "districtmarshal";
+        if (entry.Category.Equals("collection", StringComparison.OrdinalIgnoreCase)) return "arcanescholar";
+        return "firstblood";
     }
 
     private void Refresh()
     {
+        if (_layer == null) return;
+        RoyalUiTools.Clear(_layer);
+        var spec = Spec;
         var state = GameState.Instance;
-        RealmModal.UpdateHeading(this, subtitle: $"{state.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} complete · {state.GetUnclaimedAchievementRewardCount()} rewards ready");
-        _summary.Text = $"{state.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} completed · {state.GetUnclaimedAchievementRewardCount()} rewards ready";
-        var entries = AchievementCatalog.GetAll().Where(a => _category == "All" || a.Category.Equals(_category, StringComparison.OrdinalIgnoreCase)).ToArray();
-        var pages = Math.Max(1, (entries.Length + PageSize - 1) / PageSize); _page = Math.Clamp(_page, 0, pages - 1);
-        _previous.Disabled = _page == 0; _next.Disabled = _page >= pages - 1; _pageLabel.Text = $"{_page + 1} of {pages}";
-        RealmUi.Clear(_grid);
-        foreach (var entry in entries.Skip(_page * PageSize).Take(PageSize))
+        _layer.AddChild(spec.Label("title", "Achievements", 700));
+        _layer.AddChild(RoyalButton.Over(spec.Rect("close"), "Close panel", Close, 6));
+        for (var i = 0; i < Categories.Length; i++)
         {
-            bool done = state.IsAchievementUnlocked(entry.Id), claimed = state.HasClaimedAchievementReward(entry.Id);
-            var panel = new PanelContainer { CustomMinimumSize = new Vector2(0, 176), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            var accent = entry.Category.ToLowerInvariant() switch { "campaign" => new Color("6387b9"), "combat" => new Color("bb6671"), "endless" => new Color("bc7b46"), "collection" => new Color("8265b1"), _ => new Color("599b7d") };
-            panel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 12)); _grid.AddChild(panel);
-            var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 8); panel.AddChild(stack);
-            var cap = new PanelContainer(); cap.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Tab, 8, accent, done)); stack.AddChild(cap);
-            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 10); cap.AddChild(row);
-            row.AddChild(new TextureRect { Texture = HomeMapArt.Icon(entry.Category.ToLowerInvariant() switch { "campaign" => "star", "combat" => "sword", "endless" => "flame", "collection" => "book", _ => "hammer" }), CustomMinimumSize = new Vector2(42,42), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Modulate = done ? Colors.White : new Color(.7f,.75f,.74f) });
-            var title = RealmUi.Heading(entry.Title, 18); title.VerticalAlignment = VerticalAlignment.Center; row.AddChild(title);
-            title.AddThemeColorOverride("font_color", done ? new Color("ffe3a1") : ModalUi.Cream);
-            var description = RealmUi.Label(entry.Description, 18, true); description.AddThemeFontSizeOverride("font_size", 18); description.SizeFlagsVertical = SizeFlags.ExpandFill; stack.AddChild(description);
-            var (value, target) = Progress(entry.Id);
-            var progress = new ProgressBar { MaxValue = target, Value = done ? target : value, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 8) }; ModalUi.StyleProgress(progress, done ? new Color("8dd274") : accent.Lightened(.25f)); stack.AddChild(progress);
-            var reward = AchievementRewardCatalog.GetForAchievement(entry.Id);
-            var amount = reward == null ? "" : $"+{reward.RewardAmount:N0}";
-            var text = claimed ? $"Claimed · {amount}" : done ? "Claim " + amount : target > 1 ? $"{value}/{target} · {amount}" : amount;
-            var button = RealmUi.Button(done && !claimed ? "gift" : claimed ? "star" : "lock", text, () => { state.TryClaimAchievementReward(entry.Id, out var message); _status.Text = message; Refresh(); }, done && !claimed);
-            if (reward != null)
-            {
-                button.Icon = UiArtLoader.TryLoadRewardIcon(reward.RewardType, reward.RewardItemId);
-                button.SetMeta("painted_resource_icon", true);
-                button.AddThemeConstantOverride("icon_max_width", 24);
-                button.AccessibilityName = $"{entry.Title}, {reward.RewardLabel}, {(claimed ? "claimed" : done ? "ready to claim" : "in progress")}";
-                button.TooltipText = button.AccessibilityName;
-            }
-            button.CustomMinimumSize = new Vector2(0, 44); button.Disabled = !done || claimed || reward == null; ModalUi.StyleButton(button, done && !claimed); stack.AddChild(button);
-            if (claimed) button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Tab, 8, new Color("5e9971"), true));
-            RealmModal.Polish(description);
+            var index = i; var key = "tab." + Categories[i].ToLowerInvariant();
+            var rect = spec.Rect(key);
+            var tab = RoyalButton.Over(rect, Categories[i], () => { _category = index; _page = 0; Refresh(); }, 4);
+            if (i == _category) tab.SetStates(RoyalKit.Slice("ach-tab-selected", 12), 4);
+            tab.MarkTab(i == _category);
+            var icon = spec.Rect(key + ".icon");
+            tab.SetGlyph(RoyalKit.Texture("achtab-" + Categories[i].ToLowerInvariant()), new Rect2(icon.Position - rect.Position, icon.Size));
+            var label = spec.Label(key + ".label", Categories[i], 140, i == _category ? new Color("f4eabf") : new Color("dcdddf"));
+            label.Position -= rect.Position;
+            tab.SetCaption(label, new Rect2(label.Position, label.Size));
+            _layer.AddChild(tab);
         }
+
+        var entries = AchievementCatalog.GetAll().Where(a => _category == 0 || a.Category.Equals(Categories[_category], StringComparison.OrdinalIgnoreCase)).ToArray();
+        var pages = Math.Max(1, (entries.Length + PageSize - 1) / PageSize);
+        _page = Math.Clamp(_page, 0, pages - 1);
+        var shown = entries.Skip(_page * PageSize).Take(PageSize).ToArray();
+        for (var i = 0; i < shown.Length; i++) _layer.AddChild(Card(spec, i, shown[i]));
+
+        var back = spec.Rect("button.back");
+        var backButton = RoyalButton.Over(back, "Back to map", Close, 6);
+        backButton.SetGlyph(RoyalKit.Texture("icon-back-chevron"), new Rect2(spec.Rect("button.back.icon").Position - back.Position, spec.Rect("button.back.icon").Size));
+        var backLabel = spec.Label("button.back.label", "BACK TO MAP", 200);
+        backLabel.Position -= back.Position;
+        backButton.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
+        _layer.AddChild(backButton);
+        if (pages > 1)
+        {
+            for (var side = -1; side <= 1; side += 2)
+            {
+                var direction = side;
+                var rect = new Rect2(back.GetCenter().X + side * (back.Size.X / 2 + 50) - 21, back.GetCenter().Y - 21, 42, 42);
+                var arrow = RoyalButton.Over(rect, side < 0 ? "Previous achievement page" : "Next achievement page", () => { _page += direction; Refresh(); }, 6);
+                arrow.SetStates(RoyalKit.Slice("chevron-button", 8), 6);
+                arrow.SetGlyph(RoyalKit.Texture("chevron"), new Rect2(14, 10, 14, 22));
+                if (side < 0) arrow.Glyph.FlipH = true;
+                arrow.Disabled = side < 0 ? _page == 0 : _page >= pages - 1;
+                _layer.AddChild(arrow);
+            }
+            var page = RoyalText.Caps($"{_page + 1} / {pages}", 15, RoyalText.Muted);
+            page.Align = HorizontalAlignment.Center;
+            RoyalText.Place(_layer, page, back.GetCenter().X + back.Size.X / 2 + 76, back.GetCenter().Y - 12, 60, 24);
+        }
+    }
+
+    private Control Card(RoyalSpec spec, int slot, AchievementDefinition entry)
+    {
+        var state = GameState.Instance;
+        // Every card uses the concept's card at its grid position; the first-row card supplies the layout.
+        var key = "card." + CardKeys[slot];
+        var cell = spec.Rect(key);
+        var template = slot < 3 ? "card.firstblood" : "card.untouchable";
+        var origin = spec.Rect(template).Position;
+        Rect2 Part(string part) => new(spec.Rect(template + part).Position - origin, spec.Rect(template + part).Size);
+        bool done = state.IsAchievementUnlocked(entry.Id), claimed = state.HasClaimedAchievementReward(entry.Id);
+        var ready = done && !claimed;
+        var card = new Control { Position = cell.Position, Size = new Vector2(cell.Size.X, slot < 3 ? 190 : 201), MouseFilter = MouseFilterEnum.Pass };
+        card.AddChild(new Panel { Size = card.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice(ready ? "ach-card-ready" : "ach-card", 14))));
+        var art = Part(".art");
+        card.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            Texture = RoyalKit.Texture("ach-art-" + Diorama(entry)), Position = art.Position, Size = art.Size, MouseFilter = MouseFilterEnum.Ignore,
+            SelfModulate = done ? Colors.White : new Color(.72f, .72f, .74f) });
+        card.AddChild(RoyalKit.Image("achicon-" + Diorama(entry), Part(".icon")));
+        var title = spec.Label(template + ".title", entry.Title, card.Size.X - (spec.Number(template + ".title", "pen_x", 0) - origin.X) - 10);
+        title.Position -= origin;
+        card.AddChild(title);
+        var description = RoyalText.Paragraph(entry.Description, 17, new Color("dedfdf"), 450);
+        var descTop = spec.Number(template + ".desc.1", "baseline", 0) - origin.Y - 15;
+        var trackRect = Part(".track");
+        description.Position = new Vector2(spec.Number(template + ".desc.1", "x", 0) - origin.X, descTop);
+        description.Size = new Vector2(card.Size.X - description.Position.X - 12, trackRect.Position.Y - descTop - 2);
+        description.AddThemeConstantOverride("line_spacing", -2);
+        RoyalText.FitLines(description, slot < 3 ? 2 : 3, 13);
+        card.AddChild(description);
+
+        var (value, target) = Progress(entry.Id);
+        if (done) value = target;
+        card.AddChild(new Panel { Position = trackRect.Position, Size = trackRect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-track", 7, 5, 7, 5))));
+        var fill = Part(".fill");
+        var fraction = target <= 0 ? 0 : Mathf.Clamp(value / (float)target, 0, 1);
+        if (fraction > 0)
+            card.AddChild(new Panel { Position = fill.Position, Size = new Vector2(Mathf.Max(10, fill.Size.X * fraction), fill.Size.Y), MouseFilter = MouseFilterEnum.Ignore }
+                .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice(done ? "ach-fill-gold" : "ach-fill-blue", 5, 3, 5, 3))));
+        var progress = spec.Label(template + ".progress", $"{value} / {target}", 120);
+        progress.Position -= origin;
+        card.AddChild(progress);
+
+        var reward = AchievementRewardCatalog.GetForAchievement(entry.Id);
+        var buttonRect = Part(".button");
+        if (ready && reward != null)
+        {
+            var claim = RoyalButton.Over(buttonRect, $"Claim {reward.RewardLabel}", () =>
+            {
+                state.TryClaimAchievementReward(entry.Id, out var message);
+                RoyalToast.Show(this, message);
+                Refresh();
+            }, 6);
+            claim.SetStates(RoyalKit.Slice("ach-claim", 12), 6);
+            var label = RoyalText.Caps($"CLAIM +{reward.RewardAmount:N0}", 17, new Color("341f0b"), 700);
+            label.ShadowInk = new Color(1, .95f, .8f, .3f);
+            label.Align = HorizontalAlignment.Center;
+            claim.SetCaption(label, new Rect2(8, 0, buttonRect.Size.X - 52, buttonRect.Size.Y));
+            claim.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                Texture = UiArtLoader.TryLoadRewardIcon(reward.RewardType, reward.RewardItemId) ?? RoyalKit.Texture("coin-small"),
+                Position = new Vector2(buttonRect.Size.X - 46, 8), Size = new Vector2(34, buttonRect.Size.Y - 16), MouseFilter = MouseFilterEnum.Ignore });
+            card.AddChild(claim);
+        }
+        else if (claimed)
+        {
+            var plate = new Panel { Position = buttonRect.Position, Size = buttonRect.Size, MouseFilter = MouseFilterEnum.Pass,
+                TooltipText = reward != null ? $"Claimed {reward.RewardLabel}" : "Claimed" };
+            plate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-claimed", 24, 10, 24, 10));
+            card.AddChild(plate);
+            var label = RoyalText.Caps("CLAIMED", 16, new Color("e5c79b"), 600);
+            var width = label.TextWidth(16);
+            label.Position = new Vector2(buttonRect.GetCenter().X - width / 2 + 11, buttonRect.Position.Y); label.Size = new Vector2(width + 4, buttonRect.Size.Y);
+            card.AddChild(label);
+            card.AddChild(RoyalKit.Image("icon-check", new Rect2(label.Position.X - 25, buttonRect.GetCenter().Y - 7, 17, 14)));
+        }
+        else if (reward != null)
+        {
+            var hint = RoyalText.Serif($"Reward · {reward.RewardLabel}", 15, new Color("a9a49a"), 500);
+            hint.Align = HorizontalAlignment.Center;
+            hint.Position = buttonRect.Position; hint.Size = buttonRect.Size;
+            card.AddChild(hint);
+        }
+        card.AccessibilityName = entry.Title;
+        return card;
     }
 
     private static (int Value, int Target) Progress(string id)

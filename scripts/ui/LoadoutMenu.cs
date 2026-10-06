@@ -1,138 +1,176 @@
 using System.Linq;
 using Godot;
 
-public partial class LoadoutMenu : Control
+/// <summary>
+/// Prepare for battle, on the approved concept: the mission card (leader, battlefield, objective
+/// and victory reward), the squad and spells going into battle, and Deploy with its food cost.
+/// </summary>
+public partial class LoadoutMenu : RoyalScreen
 {
     private StageDefinition _stage;
-    private Label _status;
-    private Button _deployButton;
-    public override void _Process(double delta) { if (_deployButton != null) _deployButton.Disabled = !GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out _); }
+    private RoyalButton _deployButton;
 
-    public override void _Ready()
+    public LoadoutMenu() { PlateName = "preparation"; Veil = Colors.Transparent; }
+
+    private static RoyalSpec Spec => RoyalSpec.For("preparation");
+
+    public override void _Process(double delta)
+    {
+        if (_deployButton != null) _deployButton.Disabled = !GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out _);
+    }
+
+    protected override void Build()
     {
         _stage = GameData.GetStage(Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameState.Instance.MaxStage));
-        BuildUi();
-    }
+        var spec = Spec;
+        var layer = Layer("Live");
+        var state = GameState.Instance;
+        layer.AddChild(spec.Label("title", "Prepare for battle", 400));
+        layer.AddChild(RoyalButton.Over(spec.Rect("close"), "Close panel", Close, 8));
 
-    private void BuildUi()
-    {
-        if(MobilePresentation.Enabled) { BuildMobileUi(); return; }
+        // Mission card.
+        var ink = new Color("120a06");
+        var leader = AdventureMapCatalog.Leader(_stage.StageNumber);
         var route = RouteCatalog.Get(_stage.MapId);
-
-        MedievalUi.Apply(this);
-        RealmUi.Header(this, $"{route.Title} / Stage {_stage.StageNumber:00}", _stage.StageName, () => SceneRouter.Instance.GoToMap());
-        var mission = RealmUi.Panel(this, new Rect2(28, 108, 438, 490), out _);
-        mission.AddChild(RealmUi.Label($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}", 18, true));
-        mission.AddChild(RealmUi.Heading(AdventureMapCatalog.Leader(_stage.StageNumber).Title, 25));
-        mission.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
-        mission.AddChild(BuildVictoryRewards());
-
-        var roster = RealmUi.Panel(this, new Rect2(486, 108, 766, 490), out _);
-        var heading = new HBoxContainer();
-        heading.AddChild(RealmUi.Heading("Your warband", 27));
-        heading.AddChild(RealmUi.Button("sword", "Edit squad", () => SceneRouter.Instance.GoToShop()));
-        roster.AddChild(heading);
-        var cardScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled }; roster.AddChild(cardScroll);
-        cardScroll.SetMeta("modal_min_height", 0);
-        var cards = new HBoxContainer(); cardScroll.AddChild(cards);
-        foreach (var unit in GameState.Instance.GetActiveDeckUnits())
+        var boss = state.IsAdventureBoss(_stage.StageNumber);
+        var kicker = spec.Label("mission.kicker", boss ? "DEFEAT THE ZONE BOSS" : "CHALLENGE THE LEADER", 300, new Color("32271e"));
+        kicker.ShadowOffset = Vector2.Zero; layer.AddChild(kicker);
+        // The concept shows the rival standing on the parchment: the stage's toughest enemy.
+        var portraitRect = spec.Rect("mission.portrait");
+        var champion = _stage.Waves.SelectMany(wave => wave.Entries).Select(entry => GameData.TryGetUnit(entry.UnitId))
+            .Where(unit => unit != null).OrderByDescending(unit => unit.MaxHealth).FirstOrDefault();
+        if (champion != null)
         {
-            var frame = new PanelContainer { CustomMinimumSize = new Vector2(180, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            frame.SetMeta("modal_min_width", 180);
-            cards.AddChild(frame);
-            var card = new VBoxContainer();
-            frame.AddChild(card);
-            card.AddChild(UiBadgeFactory.CreateUnitBadge(unit, new Vector2(140, RealmModal.Embedded(this) ? 96 : 120)));
-            card.AddChild(RealmUi.Label(unit.DisplayName, 17));
-            var statRow = new HBoxContainer();
-            statRow.AddThemeConstantOverride("separation", 8);
-            card.AddChild(statRow);
-            statRow.AddChild(RealmUi.Label($"Level {GameState.Instance.GetUnitLevel(unit.Id)}", 12, true));
-            AddStat(statRow, "bolt", $"{unit.Cost}", "Courage cost");
-            card.AddChild(RealmUi.Button("eye", "Details", () => ModelShowcase.Show(this, GameState.Instance.GetActiveDeckUnits().ToArray(), unit.Id)));
+            var figure = new UnitFigure { Position = portraitRect.Position + new Vector2(portraitRect.Size.X * .42f, 4), Size = new Vector2(portraitRect.Size.X * .56f, portraitRect.Size.Y - 6) };
+            figure.SetUnit(champion);
+            figure.TooltipText = champion.DisplayName;
+            layer.AddChild(figure);
         }
-        var magic = new HBoxContainer();
-        magic.AddThemeConstantOverride("separation", 8);
+        var name = spec.Label("mission.leader", leader.Title, portraitRect.Position.X + portraitRect.Size.X * .42f - spec.Number("mission.leader", "pen_x", 87), ink);
+        name.ShadowOffset = Vector2.Zero; layer.AddChild(name);
+        layer.AddChild(RoyalKit.Image("prep-skull-shield", spec.Rect("mission.badge")));
+        var picture = spec.Rect("mission.picture");
+        layer.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
+            Texture = MissionPicture(), Position = picture.Position, Size = picture.Size, MouseFilter = MouseFilterEnum.Ignore });
+        layer.AddChild(RoyalKit.Image("icon-crossed-swords", spec.Rect("mission.objective.icon")));
+        var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE ENEMY GATEHOUSE", 320, new Color("1e1710"));
+        objectiveTitle.ShadowOffset = Vector2.Zero; layer.AddChild(objectiveTitle);
+        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}. Bring down the gatehouse and rout the enemy forces within.", 15, new Color("31261b"), 410);
+        line.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        line.Position = new Vector2(spec.Number("mission.objective.line.1", "pen_x", 133), spec.Number("mission.objective.line.1", "baseline", 498) - 15);
+        line.Size = new Vector2(spec.Rect("panel.mission").End.X - line.Position.X - 14, 40);
+        line.AddThemeConstantOverride("line_spacing", -2);
+        RoyalText.FitLines(line, 2, 12);
+        layer.AddChild(line);
+        layer.AddChild(RoyalKit.Image("coin-heap", spec.Rect("mission.reward.coins")));
+        layer.AddChild(spec.Label("mission.reward.caption", "VICTORY REWARD", 200));
+        var reward = _stage.RewardFood > 0 ? $"{_stage.RewardGold:N0} GOLD · {_stage.RewardFood} FOOD" : $"{_stage.RewardGold:N0} GOLD";
+        layer.AddChild(spec.Label("mission.reward.value", reward, 230));
 
-        foreach (var spell in GameState.Instance.GetActiveDeckSpells())
+        // Warband.
+        layer.AddChild(spec.Label("warband.title", "Your Warband", 240));
+        var edit = RoyalButton.Over(spec.Rect("button.edit"), "Edit squad", () => SceneRouter.Instance.GoToShop(0), 6);
+        edit.SetGlyph(RoyalKit.Texture("icon-quill"), new Rect2(spec.Rect("button.edit.icon").Position - spec.Rect("button.edit").Position, spec.Rect("button.edit.icon").Size));
+        var editLabel = spec.Label("button.edit.label", "EDIT SQUAD", 120);
+        editLabel.Position -= spec.Rect("button.edit").Position;
+        edit.SetCaption(editLabel, new Rect2(editLabel.Position, editLabel.Size));
+        layer.AddChild(edit);
+        var units = state.GetActiveDeckUnits().ToArray();
+        string[] tints = { "warm", "cool", "gold", "cool", "warm", "cool" };
+        for (var i = 0; i < 6; i++)
         {
-            var button = RealmUi.IconButton(spell.EffectType.Contains("heal") ? "heart" : "bolt", spell.DisplayName,
-                () => SpellShowcase.Show(this, spell));
-            if (UiArtLoader.TryLoadSpellIcon(spell) is { } icon) { button.Icon = icon; button.SetMeta("painted_resource_icon", true); }
-            button.AddThemeConstantOverride("icon_max_width", 28);
-            button.CustomMinimumSize = new Vector2(56, 48);
-            magic.AddChild(button);
+            var key = $"card.{i + 1}";
+            var rect = spec.Rect(key);
+            if (i >= units.Length) { layer.AddChild(EmptySlot(rect)); continue; }
+            var unit = units[i];
+            var card = RoyalButton.Over(rect, "View " + unit.DisplayName, null, 6);
+            card.SetStates(RoyalKit.Slice("prep-card-" + tints[i], 10, 10, 10, 54), 6);
+            card.TooltipText = $"{unit.DisplayName} · Level {state.GetUnitLevel(unit.Id)} · {unit.Cost} courage";
+            var unitId = unit.Id;
+            card.Pressed += () => ModelShowcase.Show(this, GameState.Instance.GetActiveDeckUnits().ToArray(), unitId);
+            var art = spec.Rect(key + ".art");
+            var figure = new UnitFigure { Position = art.Position - rect.Position + new Vector2(2, 4), Size = art.Size - new Vector2(4, 4) };
+            figure.SetUnit(unit);
+            card.AddChild(figure);
+            var icon = spec.Rect(key + ".icon");
+            card.AddChild(RoyalKit.Image("prep-class-sword", new Rect2(icon.Position - rect.Position, icon.Size)));
+            card.AddChild(RoyalKit.Image(ShopIcon(unit), new Rect2(icon.Position - rect.Position + new Vector2(7, 7), icon.Size - new Vector2(14, 14))));
+            var label = spec.Label(key + ".name", unit.DisplayName, rect.Size.X - 8);
+            label.Position -= rect.Position;
+            card.AddChild(label);
+            layer.AddChild(card);
         }
-        var footer = RealmUi.Panel(this, new Rect2(28, 616, 1224, 78), out _);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 12);
-        footer.AddChild(row);
-        _status = RealmUi.Label("", 18, true);
-        _status.VerticalAlignment = VerticalAlignment.Center;
-        row.AddChild(_status);
-        row.AddChild(magic);
-        var canDeploy = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var reason);
-        var deploy = RealmUi.Button("flag", "Deploy", () =>
+
+        // Spells.
+        layer.AddChild(RoyalKit.Image("icon-book-small", spec.Rect("spells.icon")));
+        layer.AddChild(spec.Label("spells.label", "EQUIPPED SPELLS", 220));
+        var spells = state.GetActiveDeckSpells().ToArray();
+        var first = spec.Rect("spell.1");
+        var pitch = spec.Has("spell.2") ? spec.Rect("spell.2").Position.X - first.Position.X : 80;
+        for (var i = 0; i < 5; i++)
         {
-            if (!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber, out var message)) { _status.Text = message; return; }
+            var rect = new Rect2(first.Position + new Vector2(i * pitch, 0), first.Size);
+            var slot = RoyalButton.Over(rect, i < spells.Length ? spells[i].DisplayName : "Empty spell slot", null, 6);
+            slot.SetStates(RoyalKit.Slice("prep-spell-slot", 10), 6);
+            if (i < spells.Length)
+            {
+                var spell = spells[i];
+                slot.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                    Texture = ResourceLoader.Exists($"res://assets/ui/royal/items/{spell.Id}.png") ? RoyalArt.Load($"res://assets/ui/royal/items/{spell.Id}.png") : UiArtLoader.TryLoadSpellIcon(spell),
+                    Position = new Vector2(6, 6), Size = rect.Size - new Vector2(12, 12), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+                slot.Pressed += () => SpellShowcase.Show(this, spell);
+            }
+            else slot.Disabled = true;
+            var pip = spec.Rect("spell.1.pip");
+            slot.AddChild(RoyalKit.Image("prep-spell-pip", new Rect2(pip.Position - first.Position, pip.Size)));
+            layer.AddChild(slot);
+        }
+
+        // Deploy.
+        var deployRect = spec.Rect("button.deploy");
+        var deploy = RoyalButton.Over(deployRect, "Deploy", () =>
+        {
+            if (!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber, out var message)) { RoyalToast.Show(this, message); return; }
             GameState.Instance.PrepareCampaignBattle();
             SceneRouter.Instance.GoToBattle();
-        }, true);
-        HomeResourceUi.SetEntryCost(deploy, GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber));
-        deploy.CustomMinimumSize = new Vector2(260, 50);
-        deploy.Disabled = !canDeploy; _deployButton = deploy;
-        if (!canDeploy) _status.Text = reason;
-        row.AddChild(deploy);
+        }, 8);
+        deploy.SetGlyph(RoyalKit.Texture("icon-roast"), new Rect2(spec.Rect("button.deploy.icon").Position - deployRect.Position, spec.Rect("button.deploy.icon").Size));
+        var deployLabel = spec.Label("button.deploy.label", "Deploy", 140);
+        deployLabel.Ink = new Color("1a0e06"); deployLabel.ShadowInk = new Color(1, .95f, .8f, .3f);
+        deployLabel.Position -= deployRect.Position;
+        deploy.SetCaption(deployLabel, new Rect2(deployLabel.Position, deployLabel.Size));
+        deploy.AddChild(RoyalKit.Image("icon-star-small", new Rect2(spec.Rect("button.deploy.cost.icon").Position - deployRect.Position, spec.Rect("button.deploy.cost.icon").Size)));
+        var cost = spec.Label("button.deploy.cost", $"{state.GetStageEntryFoodCost(_stage.StageNumber)} FOOD", 120);
+        cost.Ink = new Color("1e1107"); cost.ShadowInk = deployLabel.ShadowInk;
+        cost.Position -= deployRect.Position;
+        deploy.AddChild(cost);
+        var canDeploy = state.CanStartCampaignBattle(_stage.StageNumber, out var reason);
+        deploy.Disabled = !canDeploy;
+        deploy.TooltipText = canDeploy ? $"Deploy · {state.GetStageEntryFoodCost(_stage.StageNumber)} food" : reason;
+        _deployButton = deploy;
+        layer.AddChild(deploy);
+        if (!canDeploy) RoyalToast.Show(this, reason, 690);
     }
 
-    private Control BuildVictoryRewards(bool compact = false)
+    private static string ShopIcon(UnitDefinition unit) => unit.Id switch
     {
-        if (compact)
-        {
-            var panel = new PanelContainer { Name = "VictoryRewards" };
-            panel.SetMeta("modal_unframed", true);
-            panel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
-            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 16); panel.AddChild(row);
-            var title = RealmUi.Label("Victory rewards", 18, true); title.VerticalAlignment = VerticalAlignment.Center; row.AddChild(title);
-            row.AddChild(HomeResourceUi.Amount("gold", $"+{_stage.RewardGold:N0}", $"Victory · {_stage.RewardGold:N0} gold"));
-            if (_stage.RewardFood > 0) row.AddChild(HomeResourceUi.Amount("food", $"+{_stage.RewardFood:N0}", $"Victory · {_stage.RewardFood:N0} rations"));
-            return panel;
-        }
-        var section = new VBoxContainer { Name = "VictoryRewards" };
-        section.AddThemeConstantOverride("separation", 12);
-        section.AddChild(RealmUi.SectionTitle("Victory rewards"));
-        var rewards = new HBoxContainer();
-        rewards.AddThemeConstantOverride("separation", 12);
-        section.AddChild(rewards);
-        void Reward(string icon, string name, int amount)
-        {
-            var card = new PanelContainer { Name = "VictoryReward" + icon, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            card.SetMeta("modal_unframed", true);
-            card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 12));
-            rewards.AddChild(card);
-            var stack = new VBoxContainer();
-            stack.AddThemeConstantOverride("separation", 6);
-            card.AddChild(stack);
-            var value = HomeResourceUi.Amount(icon, $"+{amount:N0}", $"Victory · {amount:N0} {name.ToLowerInvariant()}", 48);
-            value.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            value.GetChild<Label>(1).AddThemeFontSizeOverride("font_size", 30);
-            value.GetChild<Label>(1).AddThemeColorOverride("font_color", ModalUi.Cream);
-            stack.AddChild(value);
-            var caption = RealmUi.Label(name, 18, true);
-            caption.HorizontalAlignment = HorizontalAlignment.Center;
-            stack.AddChild(caption);
-        }
-        Reward("gold", "Gold", _stage.RewardGold);
-        if (_stage.RewardFood > 0) Reward("food", "Rations", _stage.RewardFood);
-        return section;
+        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
+        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
+        _ => "class-melee"
+    };
+
+    /// <summary>The battlefield the stage is fought on, from its zone's backdrop; the concept gatehouse otherwise.</summary>
+    private Texture2D MissionPicture()
+    {
+        var path = $"res://assets/ui/royal/missions/{_stage.MapId}.png";
+        return ResourceLoader.Exists(path) ? RoyalArt.Load(path) : null;
     }
 
-    private static void AddStat(HBoxContainer row, string icon, string value, string hint)
+    private static Control EmptySlot(Rect2 rect)
     {
-        var metric = new HBoxContainer { TooltipText = hint, MouseFilter = MouseFilterEnum.Stop, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        metric.AddThemeConstantOverride("separation", 6);
-        metric.AddChild(new TextureRect { Texture = RealmUi.Icon(icon), CustomMinimumSize = new Vector2(16, 16), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
-        var number = RealmUi.Label(value, 18); number.AutowrapMode = TextServer.AutowrapMode.Off; metric.AddChild(number);
-        row.AddChild(metric);
+        var panel = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore };
+        panel.AddThemeStyleboxOverride("panel", RoyalKit.Slice("prep-card-cool", 10, 10, 10, 54).Tinted(new Color(.45f, .45f, .5f)));
+        panel.AddChild(RoyalKit.Image("empty-plus", new Rect2(rect.Size.X / 2 - 17, rect.Size.Y / 2 - 40, 34, 34)));
+        return panel;
     }
 }

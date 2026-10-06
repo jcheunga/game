@@ -29,11 +29,6 @@
     "expected": 52,
     "missing": []
   },
-  "battlefields": {
-    "present": 31,
-    "expected": 31,
-    "missing": []
-  },
   "structures": {
     "present": 2,
     "expected": 2,
@@ -45,8 +40,8 @@
     "missing": []
   },
   "weapon_mounts": {
-    "present": 5,
-    "expected": 5,
+    "present": 3,
+    "expected": 3,
     "missing": []
   },
   "particles": {
@@ -54,44 +49,14 @@
     "expected": 11,
     "missing": []
   },
-  "stage_environments": {
-    "present": 60,
-    "expected": 60,
-    "missing": []
-  },
-  "map_atlases": {
-    "present": 4,
-    "expected": 4,
-    "missing": []
-  },
-  "spell_icons": {
-    "present": 10,
-    "expected": 10,
-    "missing": []
-  },
-  "relic_icons": {
-    "present": 33,
-    "expected": 33,
-    "missing": []
-  },
   "reward_icons": {
-    "present": 10,
-    "expected": 10,
+    "present": 6,
+    "expected": 6,
     "missing": []
   },
   "meta_icons": {
-    "present": 8,
-    "expected": 8,
-    "missing": []
-  },
-  "codex_icons": {
-    "present": 83,
-    "expected": 83,
-    "missing": []
-  },
-  "codex_portraits": {
-    "present": 83,
-    "expected": 83,
+    "present": 5,
+    "expected": 5,
     "missing": []
   },
   "scope": "Required visual assets. Existing procedural music/SFX retained."

@@ -62,7 +62,7 @@ campaign, including the direct-input playtest, is archived in
 - Wagon health and courage sit at the upper left and gold at the upper right.
   Deployment cards sit individually over the scene. Battle text is combat
   numbers only.
-- The bottom-left gear or Escape pauses the battle with Resume, Restart, Game
+- The pause button at the top right or Escape pauses the battle with Resume, Restart, Game
   settings and Quit battle. Restart shows the stage's ration cost. Menu restarts
   and result-screen retries charge it once and refuse without enough rations;
   shared matches cannot restart individually. Game settings opens Sound and

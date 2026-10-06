@@ -19,10 +19,10 @@ public partial class BattleController
         AddChild(_shadowCanvas);
         AddChild(new BattleBaseCanvas { Name = "Caravan", Position = WagonSortPosition,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-            Paint = canvas => { DrawPlayerBus(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)); DrawBaseArmaments(canvas, true); } });
+            Paint = canvas => { DrawPlayerBus(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)); DrawWagonArmaments(canvas); } });
         AddChild(new BattleBaseCanvas { Name = "Castle", Position = CastleGround,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-            Paint = canvas => { DrawEnemyBarricade(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)); DrawBaseArmaments(canvas, false); } });
+            Paint = canvas => DrawEnemyBarricade(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)) });
         BuildOutworks();
     }
 
@@ -64,12 +64,10 @@ public partial class BattleController
         }
     }
 
-    private Vector2 BaseMountPosition(bool player, int index = 0)
+    private Vector2 WagonMountPosition(int index)
     {
-        var art = player ? WagonArt : CastleArt;
-        var ground = player ? WagonGround : CastleGround;
-        if (art != null && art.Mounts.Length > 0)
-            return art.Point(ground, art.Mounts[Mathf.Clamp(index, 0, art.Mounts.Length - 1)]);
-        return ground + (player ? new Vector2(-20 + index * 27, -38) : new Vector2(32, -62));
+        if (WagonArt != null && WagonArt.Mounts.Length > 0)
+            return WagonArt.Point(WagonGround, WagonArt.Mounts[Mathf.Clamp(index, 0, WagonArt.Mounts.Length - 1)]);
+        return WagonGround + new Vector2(-20 + index * 27, -38);
     }
 }

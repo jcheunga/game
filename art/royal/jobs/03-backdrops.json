@@ -1,0 +1,452 @@
+[
+ {
+  "id": "bg-city-far",
+  "out": "art/royal/gen/backdrops/city_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'King's Road' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: warm golden late-afternoon sun from the left, soft blue sky with big painted cumulus clouds. In the lower half: hazy blue-violet mountain ranges and, on a distant green hill in the centre, a grand fairy-tale castle with many slender slate-blue conical spires; rolling farmland and small tree clusters below. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-city-mid",
+  "out": "art/royal/gen/backdrops/city_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'King's Road' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: a medieval market town: half-timbered houses with red clay roofs and chimneys, round stone towers with dark conical roofs, leafy oak trees between them. Lit by warm golden late-afternoon sun from the left, soft blue sky with big painted cumulus clouds. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-city-near",
+  "out": "art/royal/gen/backdrops/city_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'King's Road' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: a row of market stalls with red-white, yellow-white and teal-white striped awnings, produce crates and baskets, tall teal banners with a golden lantern emblem on poles, iron lamp posts, and a low grey stone wall with green hedges. Lit by warm golden late-afternoon sun from the left, soft blue sky with big painted cumulus clouds. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-city-ground",
+  "out": "art/royal/gen/backdrops/city_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'King's Road' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by warm golden late-afternoon sun from the left, soft blue sky with big painted cumulus clouds: the top 62% is a warm sun-lit cobbled market road of irregular grey-brown stones with dusty dirt patches and wheel ruts, flat and uniform enough for small soldiers to walk on, with no objects on it; then a weathered wooden post-and-rail fence along the front edge with green grass and wild flowers; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-city-front",
+  "out": "art/royal/gen/backdrops/city_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'King's Road' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: lush dark-green bushes, a few round grey rocks and tall grass along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-harbor-far",
+  "out": "art/royal/gen/backdrops/harbor_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Saltwake Docks' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: cool late-afternoon light with a warm low sun, pale teal sky with streaky clouds, seagulls. In the lower half: a calm grey-blue sea with a distant lighthouse on a rocky headland, tall sailing ships at anchor and misty cliffs. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-harbor-mid",
+  "out": "art/royal/gen/backdrops/harbor_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Saltwake Docks' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: a harbour front of tall timber warehouses and stone storehouses with slate roofs, wooden dock cranes and ship masts with furled sails. Lit by cool late-afternoon light with a warm low sun, pale teal sky with streaky clouds, seagulls. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-harbor-near",
+  "out": "art/royal/gen/backdrops/harbor_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Saltwake Docks' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: stacked crates and barrels, coiled ropes and fishing nets on posts, mooring bollards, lantern posts with teal banners and a low quay wall of wet stone. Lit by cool late-afternoon light with a warm low sun, pale teal sky with streaky clouds, seagulls. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-harbor-ground",
+  "out": "art/royal/gen/backdrops/harbor_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Saltwake Docks' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by cool late-afternoon light with a warm low sun, pale teal sky with streaky clouds, seagulls: the top 62% is a broad quay of worn wet cobbles and tarred wooden planks, with puddles reflecting the sky, flat and uniform enough for small soldiers to walk on, with no objects on it; then thick mooring ropes strung between squat wooden posts along the front edge, with sea grass; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-harbor-front",
+  "out": "art/royal/gen/backdrops/harbor_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Saltwake Docks' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: dark wet crates, a coil of rope, barnacled rocks and sea grass along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-foundry-far",
+  "out": "art/royal/gen/backdrops/foundry_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Emberforge March' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: smoky orange dusk, glowing furnace light, ash drifting in the air, dark amber sky. In the lower half: jagged dark volcanic mountains with glowing lava seams and tall brick smokestacks pouring smoke into an orange sky. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-foundry-mid",
+  "out": "art/royal/gen/backdrops/foundry_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Emberforge March' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: a forge district of soot-blackened stone workshops with iron chimneys, glowing furnace doors and water wheels. Lit by smoky orange dusk, glowing furnace light, ash drifting in the air, dark amber sky. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-foundry-near",
+  "out": "art/royal/gen/backdrops/foundry_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Emberforge March' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: anvils, coal carts, stacked iron bars, glowing braziers, chain fences and soot-stained banners on poles in front of a low brick wall. Lit by smoky orange dusk, glowing furnace light, ash drifting in the air, dark amber sky. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-foundry-ground",
+  "out": "art/royal/gen/backdrops/foundry_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Emberforge March' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by smoky orange dusk, glowing furnace light, ash drifting in the air, dark amber sky: the top 62% is a road of blackened cobbles and cinders with iron rail tracks and glowing ember specks, flat and uniform enough for small soldiers to walk on, with no objects on it; then a low iron chain fence on squat stone posts along the front edge with scorched grass; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-foundry-front",
+  "out": "art/royal/gen/backdrops/foundry_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Emberforge March' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: heaps of black slag, glowing embers and broken iron along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-quarantine-far",
+  "out": "art/royal/gen/backdrops/quarantine_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Ashen Ward' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: grim overcast light with a sickly green-grey sky and drifting ash. In the lower half: a walled old city with tall church spires and plumes of grey smoke, under heavy clouds. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-quarantine-mid",
+  "out": "art/royal/gen/backdrops/quarantine_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Ashen Ward' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: crooked plague-quarter houses with boarded windows, painted warning crosses on doors, and bare trees. Lit by grim overcast light with a sickly green-grey sky and drifting ash. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-quarantine-near",
+  "out": "art/royal/gen/backdrops/quarantine_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Ashen Ward' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: wooden barricades, sealed gates with chains, carts loaded with sacks, smoking braziers and tattered warning banners. Lit by grim overcast light with a sickly green-grey sky and drifting ash. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-quarantine-ground",
+  "out": "art/royal/gen/backdrops/quarantine_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Ashen Ward' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by grim overcast light with a sickly green-grey sky and drifting ash: the top 62% is a muddy cobbled street strewn with ash and straw, flat and uniform enough for small soldiers to walk on, with no objects on it; then a broken wooden barricade fence along the front edge with dead weeds; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-quarantine-front",
+  "out": "art/royal/gen/backdrops/quarantine_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Ashen Ward' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: dead brush, broken crates and a toppled barrel along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-thornwall-far",
+  "out": "art/royal/gen/backdrops/thornwall_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Thornwall Pass' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: cold crisp morning light, pale blue sky, light snow in the air. In the lower half: towering snow-capped mountain peaks and a stone fortress perched on a cliff, glaciers and mist. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-thornwall-mid",
+  "out": "art/royal/gen/backdrops/thornwall_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Thornwall Pass' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: snowy pine forest on rocky slopes and grey cliffs. Lit by cold crisp morning light, pale blue sky, light snow in the air. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-thornwall-near",
+  "out": "art/royal/gen/backdrops/thornwall_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Thornwall Pass' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: a sharpened-log palisade wall, snow-covered tents, rocks and wooden watch posts with frost-white banners. Lit by cold crisp morning light, pale blue sky, light snow in the air. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-thornwall-ground",
+  "out": "art/royal/gen/backdrops/thornwall_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Thornwall Pass' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by cold crisp morning light, pale blue sky, light snow in the air: the top 62% is a snowy mountain dirt road packed by wheels, with slush and stones, flat and uniform enough for small soldiers to walk on, with no objects on it; then a low snow-dusted log rail fence along the front edge with icy rocks; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-thornwall-front",
+  "out": "art/royal/gen/backdrops/thornwall_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Thornwall Pass' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: snow-covered boulders and small dark pine branches along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-basilica-far",
+  "out": "art/royal/gen/backdrops/basilica_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Hollow Basilica' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: violet dusk with shafts of light through broken stained glass, candle glow. In the lower half: the towering ruined facade of a gothic cathedral with a broken rose window glowing, a purple sky beyond. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-basilica-mid",
+  "out": "art/royal/gen/backdrops/basilica_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Hollow Basilica' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: broken gothic arches, crumbling stone columns and flying buttresses with ivy. Lit by violet dusk with shafts of light through broken stained glass, candle glow. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-basilica-near",
+  "out": "art/royal/gen/backdrops/basilica_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Hollow Basilica' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: barricades of wooden church pews, tall candle stands, saint statues on plinths and torn purple banners. Lit by violet dusk with shafts of light through broken stained glass, candle glow. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-basilica-ground",
+  "out": "art/royal/gen/backdrops/basilica_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Hollow Basilica' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by violet dusk with shafts of light through broken stained glass, candle glow: the top 62% is a cracked marble and flagstone cathedral floor with scattered rubble, flat and uniform enough for small soldiers to walk on, with no objects on it; then a low broken stone balustrade along the front edge with moss; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-basilica-front",
+  "out": "art/royal/gen/backdrops/basilica_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Hollow Basilica' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: fallen masonry, melted candles and rubble along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-mire-far",
+  "out": "art/royal/gen/backdrops/mire_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Mire of Saints' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: misty green-gold twilight, soft fog, fireflies. In the lower half: a foggy swamp horizon with a half-drowned stone chapel and dead trees silhouetted. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-mire-mid",
+  "out": "art/royal/gen/backdrops/mire_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Mire of Saints' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: gnarled dead trees and weeping willows draped with moss rising from dark water. Lit by misty green-gold twilight, soft fog, fireflies. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-mire-near",
+  "out": "art/royal/gen/backdrops/mire_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Mire of Saints' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: wooden walkway posts, tall reeds, tilted grave markers and lantern poles over murky water. Lit by misty green-gold twilight, soft fog, fireflies. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-mire-ground",
+  "out": "art/royal/gen/backdrops/mire_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Mire of Saints' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by misty green-gold twilight, soft fog, fireflies: the top 62% is a causeway of old wooden planks laid over black mud, flat and uniform enough for small soldiers to walk on, with no objects on it; then half-sunk wooden stakes along the front edge with reeds and lily pads; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-mire-front",
+  "out": "art/royal/gen/backdrops/mire_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Mire of Saints' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: tall reeds, mossy logs and mushrooms along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-steppe-far",
+  "out": "art/royal/gen/backdrops/steppe_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Sunfall Steppe' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: blazing low sunset, orange and pink sky, long shadows. In the lower half: an endless golden grassland with distant flat-topped mesas and a huge setting sun. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-steppe-mid",
+  "out": "art/royal/gen/backdrops/steppe_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Sunfall Steppe' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: a burned waystation: charred timber shelters, round felt tents and a broken windmill. Lit by blazing low sunset, orange and pink sky, long shadows. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-steppe-near",
+  "out": "art/royal/gen/backdrops/steppe_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Sunfall Steppe' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: a wooden stockade fence, charred carts, hay bales and tall poles with sun-bleached banners. Lit by blazing low sunset, orange and pink sky, long shadows. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-steppe-ground",
+  "out": "art/royal/gen/backdrops/steppe_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Sunfall Steppe' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by blazing low sunset, orange and pink sky, long shadows: the top 62% is a wide dusty dirt road with wheel ruts and dry grass at its sides, flat and uniform enough for small soldiers to walk on, with no objects on it; then a sagging rope-and-post fence along the front edge with dry golden grass; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-steppe-front",
+  "out": "art/royal/gen/backdrops/steppe_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Sunfall Steppe' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: tall dry grass tufts and a few sun-baked rocks along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-gloamwood-far",
+  "out": "art/royal/gen/backdrops/gloamwood_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Gloamwood Verge' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: deep blue-green dusk with moonlight shafts and glowing fireflies. In the lower half: a wall of enormous ancient dark trees with a pale moon and mist between the trunks. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-gloamwood-mid",
+  "out": "art/royal/gen/backdrops/gloamwood_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Gloamwood Verge' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: dense twisted forest thickets and hanging moss. Lit by deep blue-green dusk with moonlight shafts and glowing fireflies. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-gloamwood-near",
+  "out": "art/royal/gen/backdrops/gloamwood_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Gloamwood Verge' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: thorny bramble hedges, fallen mossy logs, glowing blue mushrooms and old wooden shrine posts. Lit by deep blue-green dusk with moonlight shafts and glowing fireflies. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-gloamwood-ground",
+  "out": "art/royal/gen/backdrops/gloamwood_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Gloamwood Verge' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by deep blue-green dusk with moonlight shafts and glowing fireflies: the top 62% is a forest dirt path with roots, fallen leaves and patches of moss, flat and uniform enough for small soldiers to walk on, with no objects on it; then a low bramble hedge and crooked stakes along the front edge with ferns; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-gloamwood-front",
+  "out": "art/royal/gen/backdrops/gloamwood_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Gloamwood Verge' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: large dark ferns, thorny branches and glowing mushrooms along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-citadel-far",
+  "out": "art/royal/gen/backdrops/citadel_far.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: far parallax layer (sky and distant vista), opaque for the battle backdrop of the zone 'Crownfall Citadel' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: Fill the whole canvas: ominous red storm light, dark clouds with distant lightning, embers in the air. In the lower half: a colossal dark citadel of many towers on a crag, with a burning sky. The distant horizon line sits at about 78% of the image height; below it only soft hazy distance. Keep the upper 45% open painted sky.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-citadel-mid",
+  "out": "art/royal/gen/backdrops/citadel_mid.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: middle parallax layer, on a TRANSPARENT background for the battle backdrop of the zone 'Crownfall Citadel' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous horizontal row of scenery standing on the bottom edge and spanning the full width: massive stone bastions, bridges and battlements with torches. Lit by ominous red storm light, dark clouds with distant lightning, embers in the air. Heights vary between 35% and 75% of the image height. Everything above the scenery (the sky) must be fully transparent; the bottom 10% is solid ground-coloured foliage cut cleanly.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-citadel-near",
+  "out": "art/royal/gen/backdrops/citadel_near.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: near background row behind the battle road, on a TRANSPARENT background for the battle backdrop of the zone 'Crownfall Citadel' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: A single continuous row along the bottom edge, spanning the full width: siege barricades, broken siege engines, iron spikes, braziers and tattered crimson banners. Lit by ominous red storm light, dark clouds with distant lightning, embers in the air. Objects are between 30% and 65% of the image height, evenly spread with small gaps. Everything above them must be fully transparent; their bases end in a clean straight line at the bottom edge.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-citadel-ground",
+  "out": "art/royal/gen/backdrops/citadel_ground.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: battle road ground layer, opaque for the battle backdrop of the zone 'Crownfall Citadel' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image.\nScene: A flat strip of ground seen from slightly above, filling the whole canvas, evenly lit by ominous red storm light, dark clouds with distant lightning, embers in the air: the top 62% is a great stone bridge road of dark flagstones, scorched and cracked, flat and uniform enough for small soldiers to walk on, with no objects on it; then a heavy stone parapet with iron spikes along the front edge; the bottom 20% is the grassy verge. The road continues seamlessly off both sides.\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "bg-citadel-front",
+  "out": "art/royal/gen/backdrops/citadel_front.png",
+  "inputs": [
+   "output/crownroad-ui-ideas-2026-10-06/02-clean-steel-battle.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: blurred foreground layer on a TRANSPARENT background for the battle backdrop of the zone 'Crownfall Citadel' in a side-scrolling medieval fantasy battle game.\nCanvas: a very wide 3:1 landscape image with a genuinely transparent background (alpha).\nScene: rubble, broken spears and smouldering debris along the BOTTOM edge only, rising to at most 45% of the image height at a few points and much lower elsewhere, with a soft camera depth-of-field blur as if very close to the lens. Everything above them is fully transparent. Leave the centre 40% of the width lower (under 18% of the height).\nStyle: premium painterly 3D-rendered fantasy strategy-game background art matching the attached reference image (Crownroad: Siege of Ash) - rich saturated colour, soft global illumination, crisp detail, gentle atmospheric depth. Straight-on side view at eye level for a side-scrolling 2D battle game, no perspective tilt.\nConstraints: no characters, soldiers, animals in the foreground, no text, no UI, no frame, no watermark."
+ }
+]

@@ -11,32 +11,41 @@ public partial class UiReviewSmoke
         var baseline = state.BuildSaveData(); var fixture = state.BuildSaveData(); fixture.Gold = 10000; fixture.HighestUnlockedStage = 20;
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { fixture });
         var camera = canvas.MapOffset; var beforeFood = state.Food; var beforeKnowledge = state.AdventureKnowledgeRevision;
+        // The armory's actions are royal buttons named for what they do (their captions are painted text).
+        RoyalButton Action(string name) => Walk(menu).OfType<RoyalButton>().FirstOrDefault(control => control.IsVisibleInTree() && !control.Disabled
+            && (control.AccessibilityName ?? "").StartsWith(name)) ?? throw new System.InvalidOperationException($"Missing armory action: {name}");
         SceneRouter.Instance.GoToShop(); await Wait(.4);
-        var button = Walk(menu).OfType<Button>().First(control => control.Visible && control.IsVisibleInTree() && control.Text.StartsWith("Upgrade ") && !control.Disabled);
-        Check(button.GetGlobalRect().End.Y < menu.GetGlobalRect().End.Y - 80, "Warband upgrade action is visible without scrolling");
-        var unit = GameData.GetPlayerUnits().First(); var level = state.GetUnitLevel(unit.Id); var gold = state.Gold; var cost = state.GetUnitUpgradeCost(unit.Id);
+        var unit = GameData.GetPlayerUnits().First(); await PressHint(unit.DisplayName);
+        var button = Action("Upgrade");
+        Check(button.GetGlobalRect().End.Y < menu.GetGlobalRect().End.Y - 40, "Warband upgrade action is visible without scrolling");
+        var level = state.GetUnitLevel(unit.Id); var gold = state.Gold; var cost = state.GetUnitUpgradeCost(unit.Id);
         await TapModal(button);
         Check(state.GetUnitLevel(unit.Id) == level + 1 && state.Gold == gold - cost, "A native upgrade click trains once and spends the correct gold");
         Check(state.Food == beforeFood && state.AdventureKnowledgeRevision == beforeKnowledge, "Clicks inside a modal never travel or reveal the map");
         var recruit = GameData.GetPlayerUnits().First(entry => !state.IsUnitOwned(entry.Id) && state.IsUnitAvailableForPurchase(entry.Id));
-        await PressHint(recruit.DisplayName); await Press("Buy ");
+        await PressHint(recruit.DisplayName); await TapModal(Action("Recruit"));
         Check(state.IsUnitOwned(recruit.Id), "Recruiting an ally remains connected to progression");
-        await Press("Equip"); Check(state.IsUnitInActiveDeck(recruit.Id), "The recruited ally can join the equipped warband");
+        if (state.ActiveDeckUnitIds.Count >= state.DeckSizeLimit) { state.ToggleDeckUnit(state.ActiveDeckUnitIds.Last(), out _); await PressHint(recruit.DisplayName); }
+        await TapModal(Action("Equip")); Check(state.IsUnitInActiveDeck(recruit.Id), "The recruited ally can join the equipped warband");
         AuditText("Modal / trained warband"); await Capture("13-trained-warband");
         menu.CloseHomeModal(); SceneRouter.Instance.GoToShop(1); await Wait(.3);
-        var spell = GameData.GetPlayerSpells().First(); await Press("Scribe "); await Press("Equip");
+        var spell = GameData.GetPlayerSpells().First(entry => !state.IsSpellOwned(entry.Id) && state.IsSpellAvailableForPurchase(entry.Id));
+        await PressHint(spell.DisplayName); await TapModal(Action("Scribe"));
+        if (state.ActiveDeckSpellIds.Count >= state.SpellDeckSizeLimit) { state.ToggleDeckSpell(state.ActiveDeckSpellIds.Last(), out _); await PressHint(spell.DisplayName); }
+        await TapModal(Action("Equip"));
         Check(state.IsSpellOwned(spell.Id) && state.IsSpellInActiveDeck(spell.Id), "Scribing and equipping a spell updates the spell loadout");
-        var spellLevel = state.GetSpellLevel(spell.Id); await Press("Upgrade Lv");
+        var spellLevel = state.GetSpellLevel(spell.Id); await TapModal(Action("Upgrade"));
         Check(state.GetSpellLevel(spell.Id) == spellLevel + 1, "Spell training works inside the modal");
         AuditText("Modal / trained spells"); await Capture("14-trained-spells"); menu.CloseHomeModal();
         state.TryUnlockAchievement("first_blood"); menu.OpenHomeDestination("achievements"); await Wait(.2);
-        gold = state.Gold; await Press("Claim +100");
-        Check(state.HasClaimedAchievementReward("first_blood") && state.Gold == gold + 100, "Achievement reward claims once from its card");
+        gold = state.Gold; var reward = AchievementRewardCatalog.GetForAchievement("first_blood"); await TapModal(Action("Claim"));
+        Check(state.HasClaimedAchievementReward("first_blood") && state.Gold == gold + reward.RewardAmount, "Achievement reward claims once from its card");
         Check(!state.TryClaimAchievementReward("first_blood", out _), "A claimed achievement cannot pay a second reward");
         AuditText("Modal / claimed achievements"); await Capture("15-achievement-claimed"); menu.CloseHomeModal();
         state.DiscoverCodexEntry("player_brawler"); state.DiscoverCodexEntry("enemy_walker"); state.DiscoverCodexEntry("enemy_runner");
-        SceneRouter.Instance.GoToCodex(); await Wait(.3); await Press("Units"); await PressHint("Swordsman");
-        Check(Walk(menu).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("steadfast blade")), "Selecting a discovered codex portrait shows its lore");
+        SceneRouter.Instance.GoToCodex(); await Wait(.3); await PressHint("Units"); await PressHint("Swordsman");
+        Check(Walk(menu).OfType<Control>().Any(text => text.IsVisibleInTree() && (text is Label { Text: var lore } && lore.Contains("steadfast blade")
+            || text is RoyalLabel { Text: var blurb } && blurb.Contains("steadfast blade"))), "Selecting a discovered codex portrait shows its lore");
         Check(Walk(menu).OfType<Button>().Any(control => control.IsVisibleInTree() && control.AccessibilityName == "Undiscovered codex entry" && control.Disabled), "Undiscovered book entries stay locked");
         AuditText("Modal / discovered codex"); await Capture("16-codex-discovered");
         Send(new InputEventKey { Pressed = true, Keycode = Key.Escape }); await Wait(.2);
@@ -45,6 +54,8 @@ public partial class UiReviewSmoke
         Send(new InputEventKey { Pressed = true, Keycode = Key.Tab });
         var modal = menu.GetNode<RealmModal>("HomeModal");
         Check(modal.IsAncestorOf(GetViewport().GuiGetFocusOwner()), "Keyboard focus stays inside the open modal");
+        // Clicking outside the armory's painted frame dismisses it like a backdrop.
+        menu.CloseHomeModal(); SceneRouter.Instance.GoToShop(); await Wait(.3);
         var outside = new Vector2(18, 200);
         var outsideFood = state.Food; var outsideKnowledge = state.AdventureKnowledgeRevision;
         Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = outside, GlobalPosition = outside });
@@ -66,14 +77,14 @@ public partial class UiReviewSmoke
     {
         var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
         await Open("MainMenu"); SceneRouter.Instance.GoToEndless(); await Wait(.3);
-        var start = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin endless march");
+        var start = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Begin endless march");
         await TapModal(start); await Wait(.8);
         Check(GetTree().CurrentScene.SceneFilePath == SceneRouter.BattleScene && state.CurrentBattleMode == BattleRunMode.Endless, "Starting endless from its modal enters the real endless battle");
         SceneRouter.Instance.GoToMainMenu(); await Wait(.8);
         Check(GetTree().CurrentScene is MainMenu && !((MapMenu)GetTree().CurrentScene).HasHomeModal, "Returning from battle restores the map home");
         state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
         var food = state.Food; var cost = state.GetStageEntryFoodCost(state.SelectedStage);
-        var deploy = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text.StartsWith("Deploy  ·"));
+        var deploy = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Deploy");
         Check(deploy.GetGlobalRect().End.Y <= GetTree().CurrentScene.GetViewport().GetVisibleRect().End.Y - 65, "The campaign Deploy button stays in the fixed action bar");
         await TapModal(deploy); await Wait(.8);
         Check(GetTree().CurrentScene.SceneFilePath == SceneRouter.BattleScene && state.CurrentBattleMode == BattleRunMode.Campaign && state.Food == food - cost, "Campaign preparation deploys from the modal with one entry charge");

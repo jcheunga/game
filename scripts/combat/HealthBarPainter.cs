@@ -38,8 +38,9 @@ public static class HealthBarPainter
 {
     private static Texture2D _frame;
     private static Texture2D _fill;
-    public static Color Friendly(bool highContrast) => new(highContrast ? "78e3ff" : "77d6aa");
-    public static Color Hostile(bool highContrast) => new(highContrast ? "ffbe6a" : "e46c78");
+    // The clean-steel concept: teal-green allies, brick-red enemies.
+    public static Color Friendly(bool highContrast) => new(highContrast ? "78e3ff" : "47b88d");
+    public static Color Hostile(bool highContrast) => new(highContrast ? "ffbe6a" : "cf4636");
 
     public static Rect2 Well(Rect2 bounds)
     {

@@ -29,14 +29,14 @@ public partial class MapPathCanvas : Control
         MouseDefaultCursorShape = CursorShape.Drag;
         Resized += UpdateView;
         GameState.Instance.AdventureDiscoveryFound += OnDiscovery;
+        CreateMapLayers();
     }
     public void ShowMap(string mapId, string selectedId)
     {
         IsTravelling = false;
         ActiveMapId = RouteCatalog.Normalize(mapId); _selectedId = selectedId;
         _tiles = AdventureTileCatalog.ForMap(ActiveMapId);
-        BuildAtlasMaterials();
-        BuildLandscapeScenery();
+        LoadPaintedMap();
         foreach (var token in _tokens) { RemoveChild(token); token.QueueFree(); } _tokens.Clear();
         foreach (var token in _discoveries) { RemoveChild(token); token.QueueFree(); } _discoveries.Clear();
         _rewardBursts.Clear();
@@ -57,7 +57,8 @@ public partial class MapPathCanvas : Control
                 AddChild(token); _discoveries.Add(token);
             }
         }
-        Zoom = Mathf.Max(.86f, Mathf.Max(Size.X / AdventureTileCatalog.WorldSize.X, Size.Y / AdventureTileCatalog.WorldSize.Y));
+        // The atlas concept shows most of a zone at once.
+        Zoom = Mathf.Max(.6f, Mathf.Max(Size.X / MapBounds.Size.X, Size.Y / MapBounds.Size.Y));
         RefreshKnowledge(); FocusCurrentTile(); Callable.From(FocusCurrentTile).CallDeferred();
     }
     public void SelectSite(string id) { _selectedId = id; UpdateView(); }
@@ -65,7 +66,6 @@ public partial class MapPathCanvas : Control
     {
         foreach (var token in _tokens) token.RefreshRating();
         foreach (var token in _discoveries) token.RefreshRating();
-        UpdateLandscapeFrontier();
         UpdateView();
     }
     public void FocusCurrentTile() => FocusPoint(GameState.Instance.GetAdventureCaravanTile(ActiveMapId).Point);
@@ -75,15 +75,18 @@ public partial class MapPathCanvas : Control
     public void ChangeZoom(float factor, Vector2? around = null)
     {
         var anchor = around ?? Size / 2; var world = (anchor - MapOffset) / Zoom;
-        var fit = Mathf.Max(Size.X / AdventureTileCatalog.WorldSize.X, Size.Y / AdventureTileCatalog.WorldSize.Y);
+        var fit = Mathf.Max(Size.X / MapBounds.Size.X, Size.Y / MapBounds.Size.Y);
         Zoom = Mathf.Clamp(Zoom * factor, Mathf.Max(.45f, fit), 1.25f);
         MapOffset = anchor - world * Zoom; UpdateView();
     }
     private void UpdateView()
     {
         if (Size.X < 1) return;
-        var world = AdventureTileCatalog.WorldSize;
-        MapOffset = new Vector2(Mathf.Clamp(MapOffset.X, Math.Min(0, Size.X - world.X * Zoom), 0), Mathf.Clamp(MapOffset.Y, Math.Min(0, Size.Y - world.Y * Zoom), 0));
+        // A zone is framed by its painting, so the view never runs past the painted sea.
+        var bounds = MapBounds;
+        var low = Size - bounds.End * Zoom; var high = -bounds.Position * Zoom;
+        MapOffset = new Vector2(low.X <= high.X ? Mathf.Clamp(MapOffset.X, low.X, high.X) : (low.X + high.X) / 2,
+            low.Y <= high.Y ? Mathf.Clamp(MapOffset.Y, low.Y, high.Y) : (low.Y + high.Y) / 2);
         var view = new Rect2(Vector2.Zero, Size); var state = GameState.Instance;
         foreach (var token in _tokens)
         {
@@ -167,7 +170,6 @@ public partial class MapPathCanvas : Control
     public override void _ExitTree()
     {
         GameState.Instance.AdventureDiscoveryFound -= OnDiscovery;
-        _atlasMist?.Dispose(); _atlasMist = null;
         _atlasVignette?.Dispose(); _atlasVignette = null;
     }
     public override void _Process(double delta)
@@ -177,21 +179,10 @@ public partial class MapPathCanvas : Control
     }
     public override void _Draw()
     {
-        DrawRect(new Rect2(Vector2.Zero, Size), TileMistColor());
         DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
-        DrawLandscapeBackground();
-        DrawAtlasTiles();
-        foreach (var burst in _rewardBursts)
-        {
-            var tile = AdventureTileCatalog.Find(ActiveMapId, burst.Reward.Id);
-            var age = _time - burst.Time;
-            var lift = GameState.Instance.ReducedMotion ? 0 : age * 16;
-            var p = tile.Point + new Vector2(0, -70 - lift);
-            var amount = burst.Reward.Kind == AdventureDiscoveryKind.Survey ? "Nearby terrain revealed" : $"+{burst.Reward.Amount:N0}";
-            HomeResourceUi.DrawAmount(this, p, burst.Reward.Icon, amount, 20, 28,
-                new Color("fff1be") { A = Mathf.Clamp((2.4f - age) * 1.5f, 0, 1) }, true);
-        }
+        DrawPaintedBackground();
+        DrawSiteHighlights();
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-        if (_atlasVignette != null) DrawTextureRect(_atlasVignette, new Rect2(Vector2.Zero, Size), false);
+        UpdateMapLayers();
     }
 }

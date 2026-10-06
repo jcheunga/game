@@ -629,18 +629,17 @@ public static class DataIntegrityValidator
         }
 
         var unitSpriteDir = Path.Combine(assetsDir, "units");
-        var battleBackgroundDir = Path.Combine(assetsDir, "backgrounds");
+        var royalBackdropDir = Path.Combine(assetsDir, "world", "royal");
+        var paintedMapDir = Path.Combine(assetsDir, "world", "royal", "maps");
+        var royalItemDir = Path.Combine(assetsDir, "ui", "royal", "items");
         var structureDir = Path.Combine(assetsDir, "structures");
         var particleDir = Path.Combine(assetsDir, "particles");
         var musicDir = Path.Combine(assetsDir, "music");
         var sfxDir = Path.Combine(assetsDir, "sfx");
 
         var unitIconDir = Path.Combine(assetsDir, "ui", "icons", "units");
-        var spellIconDir = Path.Combine(assetsDir, "ui", "icons", "spells");
-        var relicIconDir = Path.Combine(assetsDir, "ui", "icons", "relics");
         var rewardIconDir = Path.Combine(assetsDir, "ui", "icons", "rewards");
         var metaIconDir = Path.Combine(assetsDir, "ui", "icons", "meta");
-        var codexIconDir = Path.Combine(assetsDir, "ui", "icons", "codex");
         var codexPortraitDir = Path.Combine(assetsDir, "ui", "portraits", "codex");
 
         var visualClasses = units
@@ -651,13 +650,8 @@ public static class DataIntegrityValidator
             .ToArray();
         Console.WriteLine(BuildCoverageLine("Unit sprites", visualClasses, id => HasAnyFile(unitSpriteDir, id, ".png"), "assets/units/{visual_class}.png"));
 
-        var terrainIds = stages
-            .Select(stage => AssetCoverageCatalog.NormalizeId(GetStr(stage, "TerrainId")))
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        Console.WriteLine(BuildCoverageLine("Battle backgrounds", terrainIds, id => HasAnyFile(battleBackgroundDir, id, ".png"), "assets/backgrounds/{terrain_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Zone battle backdrops", AssetCoverageCatalog.RouteIds, id => HasAnyFile(royalBackdropDir, id, ".json"), "assets/world/royal/{zone_id}.json"));
+        Console.WriteLine(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds, id => HasAnyFile(paintedMapDir, id, ".png"), "assets/world/royal/maps/{zone_id}.png"));
         Console.WriteLine(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasAnyFile(structureDir, id, ".png"), "assets/structures/{structure_id}.png"));
         Console.WriteLine(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasAnyFile(particleDir, id, ".png"), "assets/particles/{particle_id}.png"));
 
@@ -667,15 +661,15 @@ public static class DataIntegrityValidator
             unitId => HasUnitIconCoverage(unitIconDir, unitId, units),
             "assets/ui/icons/units/{unit_id}.png (or {visual_class}.png)"));
         Console.WriteLine(BuildCoverageLine(
-            "Spell icons",
+            "Spell pictures",
             spells.Select(spell => GetStr(spell, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
-            spellId => HasSpellIconCoverage(spellIconDir, spellId, spells),
-            "assets/ui/icons/spells/{spell_id}.png (or {effect_type}.png)"));
+            spellId => HasAnyFile(royalItemDir, spellId, ".png"),
+            "assets/ui/royal/items/{spell_id}.png"));
         Console.WriteLine(BuildCoverageLine(
-            "Relic icons",
+            "Relic pictures",
             equipment.Select(item => GetStr(item, "Id")).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
-            relicId => HasAnyFile(relicIconDir, relicId, ".png"),
-            "assets/ui/icons/relics/{relic_id}.png"));
+            relicId => HasAnyFile(royalItemDir, relicId, ".png"),
+            "assets/ui/royal/items/{relic_id}.png"));
         Console.WriteLine(BuildCoverageLine(
             "Reward icons",
             AssetCoverageCatalog.RewardIconIds,
@@ -686,14 +680,13 @@ public static class DataIntegrityValidator
             AssetCoverageCatalog.MetaIconIds,
             metaId => HasAnyFile(metaIconDir, metaId, ".png"),
             "assets/ui/icons/meta/{meta_id}.png"));
-        Console.WriteLine(BuildCoverageLine(
-            "Codex icons",
-            CodexCatalog.GetAll().Select(entry => entry.Id).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
-            entryId => HasAnyFile(codexIconDir, entryId, ".png"),
-            "assets/ui/icons/codex/{entry_id}.png"));
+        // Units, spells and relics show their battle figure or painted picture; other codex foes need a portrait.
+        var named = units.Select(unit => GetStr(unit, "Id")).Concat(spells.Select(spell => GetStr(spell, "Id"))).Concat(equipment.Select(item => GetStr(item, "Id")))
+            .Concat(spells.Select(spell => GetStr(spell, "DisplayName"))).Concat(equipment.Select(item => GetStr(item, "DisplayName")))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         Console.WriteLine(BuildCoverageLine(
             "Codex portraits",
-            CodexCatalog.GetAll().Select(entry => entry.Id).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+            CodexCatalog.GetAll().Where(entry => !named.Contains(entry.Id) && !named.Contains(entry.Title)).Select(entry => entry.Id).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
             entryId => HasAnyFile(codexPortraitDir, entryId, ".png"),
             "assets/ui/portraits/codex/{entry_id}.png"));
         Console.WriteLine(BuildCoverageLine("Music tracks", AssetCoverageCatalog.MusicTrackIds, id => HasAnyFile(musicDir, id, ".ogg", ".mp3", ".wav"), "assets/music/{track_id}.(ogg|mp3|wav)"));
@@ -742,27 +735,6 @@ public static class DataIntegrityValidator
 
             var visualClassId = AssetCoverageCatalog.NormalizeId(GetStr(unit, "VisualClass"));
             return HasAnyFile(unitIconDir, visualClassId, ".png");
-        }
-
-        return false;
-    }
-
-    private static bool HasSpellIconCoverage(string spellIconDir, string spellId, JsonElement[] spells)
-    {
-        if (HasAnyFile(spellIconDir, spellId, ".png"))
-        {
-            return true;
-        }
-
-        foreach (var spell in spells)
-        {
-            if (!GetStr(spell, "Id").Equals(spellId, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var effectTypeId = AssetCoverageCatalog.NormalizeId(GetStr(spell, "EffectType"));
-            return HasAnyFile(spellIconDir, effectTypeId, ".png");
         }
 
         return false;

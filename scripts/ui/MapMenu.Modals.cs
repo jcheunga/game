@@ -30,31 +30,23 @@ public partial class MapMenu
         RealmUi.Clear(_modal.Content);
         Control content;
         if (path == "achievements") content = new AchievementsPanel();
-        else if (path == "more") content = BuildActivitiesPanel();
+        else if (path == "more") content = new CaravanHub(this);
         else content = ResourceLoader.Load<PackedScene>(path).Instantiate<Control>();
         content.SetMeta("home_modal", true);
+        if (content.HasMeta("royal_screen")) { _modal.PresentRoyal(path, content); _hud.Visible = false; return true; }
+        // Screens without a concept of their own share the generic modal chrome.
         _modal.Content.AddChild(content);
         content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        if (content is not ShopMenu && content is not SettingsMenu && content is not CodexMenu && content is not CashShopMenu
-            && !(content is LoadoutMenu && MobilePresentation.Enabled) && path != "achievements" && path != "more")
-            RealmModal.AdaptActivity(content);
+        if (content is not CashShopMenu) RealmModal.AdaptActivity(content);
         var title = path switch {
-            SceneRouter.ShopScene => tab == 0 ? "Warband" : tab == 1 ? "Spells" : "Upgrades",
-            SceneRouter.SettingsScene => "Settings", SceneRouter.CodexScene => "The Crownroad codex",
-            SceneRouter.EndlessScene => "Endless survival", SceneRouter.TowerScene => "Challenge tower",
-            SceneRouter.BountyScene => "Daily bounties", SceneRouter.RaidScene => "Weekly raid",
-            SceneRouter.EventScene => "Seasonal event", SceneRouter.ExpeditionScene => "Expeditions",
-            SceneRouter.ForgeScene => "Relic forge", SceneRouter.CashShopScene => "Royal storehouse",
-            SceneRouter.LoginCalendarScene => "Daily gifts", SceneRouter.SeasonPassScene => "Season rewards",
-            SceneRouter.MultiplayerScene => "Multiplayer challenges", SceneRouter.LanRaceScene => "LAN race",
-            SceneRouter.ArenaScene => "Arena", SceneRouter.GuildScene => "Warband guild", SceneRouter.FriendsScene => "Friends",
-            SceneRouter.LeaderboardScene => "Rankings", SceneRouter.ProfileScene => "Player profile",
-            SceneRouter.SkillTreeScene => "Warband talents", SceneRouter.LoadoutScene => "Prepare for battle",
-            "achievements" => "Achievements", "more" => "The lantern caravan", _ => "Crownroad" };
-        // Subtitles carry live state only; tab names and slogans are already on screen.
-        var subtitle = path == "achievements" ? $"{GameState.Instance.GetUnlockedAchievementCount()}/{AchievementCatalog.GetAll().Count} complete · {GameState.Instance.GetUnclaimedAchievementRewardCount()} rewards ready"
-            : path == SceneRouter.ShopScene ? $"{GameState.Instance.ActiveDeckUnitIds.Count}/{GameState.Instance.DeckSizeLimit} allies · {GameState.Instance.ActiveDeckSpellIds.Count}/{GameState.Instance.SpellDeckSizeLimit} spells equipped" : "";
-        _modal.Present(path, title, subtitle, _modalHistory.Count > 1, path == SceneRouter.SettingsScene ? 840 : 1120);
+            SceneRouter.TowerScene => "Challenge tower", SceneRouter.BountyScene => "Daily bounties", SceneRouter.RaidScene => "Weekly raid",
+            SceneRouter.EventScene => "Seasonal event", SceneRouter.ExpeditionScene => "Expeditions", SceneRouter.CashShopScene => "Royal storehouse",
+            SceneRouter.LoginCalendarScene => "Daily gifts", SceneRouter.LanRaceScene => "LAN race", SceneRouter.ArenaScene => "Arena",
+            SceneRouter.GuildScene => "Warband guild", SceneRouter.FriendsScene => "Friends", SceneRouter.LeaderboardScene => "Rankings",
+            SceneRouter.ProfileScene => "Player profile", SceneRouter.SkillTreeScene => "Warband talents", _ => "Crownroad" };
+        _modal.Present(path, title, "", _modalHistory.Count > 1, 1232);
+        // The home controls would peek out around the frame's corners (the settings ring above its close button).
+        _hud.Visible = false;
 
         return true;
     }
@@ -63,6 +55,7 @@ public partial class MapMenu
     {
         if (_modal == null) return;
         var modal = _modal; _modal = null; RemoveChild(modal); modal.QueueFree(); _modalHistory.Clear();
+        _hud.Visible = true;
         RefreshUi();
         if (GodotObject.IsInstanceValid(_modalReturnFocus) && _modalReturnFocus.IsInsideTree() && _modalReturnFocus.IsVisibleInTree()) _modalReturnFocus.GrabFocus();
         _modalReturnFocus = null;
@@ -77,20 +70,4 @@ public partial class MapMenu
         OpenHomeDestination(previous.Path, false);
     }
 
-    private Control BuildActivitiesPanel()
-    {
-        var root = new VBoxContainer(); root.AddThemeConstantOverride("separation", 16);
-        var sections = RealmUi.Tabs(root, ShowDestinations, "Adventure", "Caravan", "Community");
-        RealmModal.Polish(sections);
-        var scroll = RealmUi.Scroll(root);
-        _destinations = new GridContainer { Columns = 3 };
-        _destinations.AddThemeConstantOverride("h_separation", 14); _destinations.AddThemeConstantOverride("v_separation", 14);
-        scroll.AddChild(_destinations);
-        var footer = new HBoxContainer(); footer.AddThemeConstantOverride("separation", 12); root.AddChild(footer);
-        footer.AddChild(RealmUi.Button("people", "Account", () => AccountDialog.Show(this)));
-        footer.AddChild(RealmUi.Button("star", "Player profile", () => SceneRouter.Instance.GoToProfile()));
-        footer.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        footer.AddChild(RealmUi.Button("back", "Quit game", () => MedievalUi.ShowConfirmation(this, "Leave Crownroad?", "Your progress is saved.", "Quit", () => GetTree().Quit())));
-        RealmModal.Polish(footer); ShowDestinations(0); return root;
-    }
 }

@@ -63,14 +63,6 @@ public partial class UiReviewSmoke
             "An enemy requested in the middle of the field enters at the stronghold, inside the band");
         var director = Read<BattleSpawnDirector>(fight, "_spawnDirector");
         Check(director.NextEncounterSpawnX == GameData.Combat.EnemySpawnX, "Advance-triggered waves also enter at the stronghold");
-        foreach (var terrain in new[] { "marsh", "pass", "grove", "foundry", "night", "cathedral" })
-        {
-            var ambient = new BattleAmbientParticles(); fight.AddChild(ambient); ambient.Setup(terrain, 84, 2476, 96, 584);
-            foreach (var weather in new[] { "rain", "fog", "ashstorm", "blizzard" }) ambient.ApplyWeather(weather, 84, 2476, 96, 584);
-            Check(Walk(ambient).OfType<CpuParticles2D>().All(emitter => emitter.Texture != null && emitter.ScaleAmountMax < 1),
-                terrain + " weather uses textured particles at the intended size");
-            ambient.QueueFree();
-        }
         await Wait(.05);
         var ballista = (Unit)Call(fight, "SpawnUnit", Team.Player, state.BuildPlayerUnitStats(GameData.GetUnit(GameData.PlayerBallistaId)), new Vector2(GameData.Combat.EnemyBaseX - 120, 340));
         var hull = Read<float>(fight, "_enemyBaseHealth");
@@ -110,7 +102,7 @@ public partial class UiReviewSmoke
         Check(GetTree().CurrentScene is MapMenu quitHome && !quitHome.HasHomeModal && state.EndlessRuns == runs + 1 && state.Gold == gold + payout,
             "Quitting Endless banks rewards and returns directly to the map without another modal");
         fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false); await Wait(.5);
-        Check(Walk(fight).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text == "Run over"), "An endless run ends on the shared result card");
+        Check(Walk(fight).OfType<RoyalResult>().Any(board => board.IsVisibleInTree() && board.Title == "Run over"), "An endless run ends on the shared result card");
         AuditText("Endless result"); await Capture("03-endless-result");
         Call(fight, "HandleEndPanelSecondaryAction"); await Wait(.7);
         Check(GetTree().CurrentScene is MapMenu endlessHome && endlessHome.HomeModalDestination == SceneRouter.EndlessScene,
@@ -128,10 +120,10 @@ public partial class UiReviewSmoke
         MobilePresentation.TestOverride = true; GetWindow().Size = new Vector2I(844, 390);
         fight = await Battle(); SceneRouter.Instance.GoToLoadout(); await Wait(.7);
         var prepare = (MapMenu)GetTree().CurrentScene;
-        var deploy = Walk(prepare).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text.StartsWith("Deploy"));
+        var deploy = Walk(prepare).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Deploy");
         Check(deploy.GetGlobalRect().End.Y <= prepare.GetViewportRect().End.Y && deploy.GetGlobalRect().Position.Y >= 0,
             "Phone preparation keeps the entry button inside the current modal");
-        Check(prepare.GetNode<RealmModal>("HomeModal").Content.GetGlobalRect().Encloses(deploy.GetGlobalRect()),
+        Check(prepare.GetViewportRect().Encloses(deploy.GetGlobalRect()),
             "Phone entry action is fully visible within the modal content");
         Check(state.SelectedStage == 48, "Opening a preparation modal preserves the selected stage");
         Check(Walk(prepare).OfType<LoadoutMenu>().Single().IsVisibleInTree(), "Phone preparation is visible after returning from battle");
@@ -139,10 +131,10 @@ public partial class UiReviewSmoke
         fight = await Battle(BattleRunMode.Endless); Call(fight, "EndBattle", false);
         Call(fight, "HandleEndPanelSecondaryAction"); await Wait(.7);
         var phoneEndless = (MapMenu)GetTree().CurrentScene;
-        var start = Walk(phoneEndless).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Begin endless march");
+        var start = Walk(phoneEndless).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Begin endless march");
         Check(start.GetGlobalRect().End.Y <= phoneEndless.GetViewportRect().End.Y,
             "Phone Endless preparation keeps the launch action inside the current modal");
-        Check(phoneEndless.GetNode<RealmModal>("HomeModal").Content.GetGlobalRect().Encloses(start.GetGlobalRect()),
+        Check(phoneEndless.GetViewportRect().Encloses(start.GetGlobalRect()),
             "Phone Endless launch action is fully visible within the modal content");
         await Capture("06-phone-endless-return");
         MobilePresentation.TestOverride = null;

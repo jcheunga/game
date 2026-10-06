@@ -21,9 +21,21 @@ public partial class UiReviewSmoke
         Check(!state.TryAddDeveloperResources(1000, 100) && state.Gold == baseline.Gold && state.Food == baseline.Food,
             "Resource grants are rejected while developer mode is off");
 
+        // Developer tools open from their row in settings, in an inspector over the settings page.
+        async Task<RealmModal> OpenTools(SettingsMenu page)
+        {
+            Button Row() => Walk(page).OfType<Button>().FirstOrDefault(button => button.IsVisibleInTree() && button.AccessibilityName == "Developer tools");
+            foreach (var tab in new[] { "Sound", "Gameplay", "Online", "Account" })
+            {
+                if (Row() != null) break;
+                await TapModal(Walk(page).OfType<Button>().First(button => button.IsVisibleInTree() && button.AccessibilityName == tab));
+            }
+            await TapModal(Row() ?? throw new InvalidOperationException("Settings has no Developer tools row"));
+            return Walk(page).OfType<RealmModal>().Single(modal => modal.IsVisibleInTree());
+        }
         await PressHint("Settings");
         var settings = Walk(menu).OfType<SettingsMenu>().Single();
-        await TapModal(Walk(settings).OfType<Button>().Single(button => button.Text == "Developer"));
+        var tools = await OpenTools(settings);
         var toggle = Walk(settings).OfType<Button>().Single(button => button.Name == "DeveloperModeToggle");
         var grants = Walk(settings).OfType<Button>().Where(button => button.Name.ToString().StartsWith("Developer") && button != toggle).ToArray();
         Check(grants.Length == 4 && grants.All(button => button.Disabled), "Developer tab shows four disabled top-ups until the mode is enabled");
@@ -37,7 +49,7 @@ public partial class UiReviewSmoke
             (Name: "DeveloperFood10", Gold: 0, Food: 10), (Name: "DeveloperFood100", Gold: 0, Food: 100) })
         {
             var button = grants.Single(button => button.Name == grant.Name);
-            Check(menu.GetNode<RealmModal>("HomeModal").Content.GetGlobalRect().Encloses(button.GetGlobalRect()), grant.Name + ": action fits inside the modal");
+            Check(tools.Content.GetGlobalRect().Encloses(button.GetGlobalRect()), grant.Name + ": action fits inside the modal");
             await TapModal(button); gold += grant.Gold; food += grant.Food;
             Check(state.Gold == gold && state.Food == food, grant.Name + ": one native click adds the exact amount");
         }
@@ -49,8 +61,8 @@ public partial class UiReviewSmoke
         await TapModal(Walk(panel).OfType<Button>().Single(button => button.Name == "DeveloperMapGold")); gold += 1000;
         await TapModal(Walk(panel).OfType<Button>().Single(button => button.Name == "DeveloperMapFood")); food += 100;
         Check(state.Gold == gold && state.Food == food, "Map top-ups each grant exactly once");
-        var balances = Walk(menu.GetNode("HomeHud/Resources")).OfType<Label>().Select(label => label.Text).ToArray();
-        Check(balances.Contains(gold.ToString("N0")) && balances.Contains($"{food}/{GameState.FoodRechargeCap}"), "Map balances update immediately after top-ups");
+        var balances = Walk(menu.GetNode("HomeHud/Resources")).OfType<RoyalLabel>().Select(label => label.Text).ToArray();
+        Check(balances.Contains(gold.ToString("N0")) && balances.Contains($"{food} / {GameState.FoodRechargeCap}"), "Map balances update immediately after top-ups");
         Check(state.TotalPurchaseCount == purchases && state.GetUnlockedAchievementCount() == achievements
             && state.HighestUnlockedStage == stage && canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge,
             "Testing supplies leave purchases, achievements, progression, fog and camera unchanged");
@@ -74,7 +86,7 @@ public partial class UiReviewSmoke
             "Reloading a saved game restores the enabled mode and supplies");
         await PressHint("Settings");
         settings = Walk(menu).OfType<SettingsMenu>().Single();
-        await TapModal(Walk(settings).OfType<Button>().Single(button => button.Text == "Developer"));
+        await OpenTools(settings);
         toggle = Walk(settings).OfType<Button>().Single(button => button.Name == "DeveloperModeToggle");
         await TapModal(toggle);
         Check(!state.DeveloperModeEnabled && Walk(settings).OfType<Button>().Where(button => button.Name.ToString().StartsWith("Developer") && button != toggle)

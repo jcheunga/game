@@ -82,6 +82,7 @@ public partial class BattleController
             var repair = _playerBaseMaxHealth * BaseWeaponCatalog.RepairRatio(_wagonRepairLevel);
             _playerBaseHealth = Mathf.Min(_playerBaseMaxHealth, _playerBaseHealth + repair);
             SpawnEffect(PlayerBaseCorePosition, new Color("98dbaa"), 20, 90, 0.5f, false);
+            AudioDirector.Instance?.PlayBusRepair(repair);
             SetStatus("The wagon crew triggered emergency repairs. Repairs are spent for this battle.");
         }
         if (_wagonVolleyLevel <= 0) return;
@@ -113,6 +114,7 @@ public partial class BattleController
         projectile.SetWeaponVisual(weapon.Kind);
         projectile.LaunchGroundY = (BattlefieldTop + BattlefieldBottom) * .5f;
         projectile.Position = WagonMountPosition(Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind)));
+        AudioDirector.Instance?.PlayBaseWeapon(ProjectileStyles.ForBaseWeapon(weapon.Kind).Id, projectile.GlobalPosition);
         projectile.ProcessMode = ProcessModeEnum.Pausable;
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive;
         projectile.Setup(victim, weapon.Damage, weapon.Speed, weapon.Color,

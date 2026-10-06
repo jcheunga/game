@@ -148,12 +148,12 @@ public partial class MapPathCanvas : Control
     public void TravelToTile(AdventureTile tile, Action arrived)
     {
         if (IsTravelling || tile == null || tile.MapId != ActiveMapId) return;
-        if (!GameState.Instance.CanTravelToAdventureTile(tile, out var message)) { TravelFeedback?.Invoke(message); return; }
+        if (!GameState.Instance.CanTravelToAdventureTile(tile, out var message)) { AudioDirector.Instance?.PlayUiError(); TravelFeedback?.Invoke(message); return; }
         IsTravelling = true;
         try
         {
-            if (GameState.Instance.TryReachAdventureTile(tile, out var result)) arrived?.Invoke();
-            else TravelFeedback?.Invoke(result);
+            if (GameState.Instance.TryReachAdventureTile(tile, out var result)) { AudioDirector.Instance?.PlayMapTravel(); arrived?.Invoke(); }
+            else { AudioDirector.Instance?.PlayUiError(); TravelFeedback?.Invoke(result); }
         }
         finally
         {

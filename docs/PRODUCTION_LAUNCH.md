@@ -16,7 +16,7 @@ hide it in the release build and store copy; do not mark its gate complete.
 | Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
 | Payments | Server-side Play/App Store verification and Android billing bridge are present; paid grants fail closed without valid store verification. | Real store configuration and device tests, secure iOS StoreKit 2 bridge, refund/void reconciliation, and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
-| Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. Four original looping music arrangements and 20 authored SFX files are implemented. | Approve visual quality/rights and test the signed build on physical devices. Some route/menu music, ambience and screen variants still use shared or procedural fallbacks; decide which are final for launch. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
+| Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. An original 19-track score (scene themes, a battle track per zone and boss themes), 212 sound-effect cues and 15 ambience soundscapes are implemented, rendered from CC0 recordings by `art/audio` (sources and licences in its README). | Approve visual quality/rights and test the signed build on physical devices. Listen to the score and effects on devices and approve the mix; some screen variants still use shared fallbacks. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
 
 ## Implementation progress and next work
@@ -299,8 +299,9 @@ requirement until a migration and both signed exports have been verified.
   real devices. Otherwise hide/disable internet rooms and remove promises of
   live multiplayer from the listing. LAN/async features need their own device
   acceptance tests if advertised.
-- [ ] Decide whether current visual assets are final. Replace or approve
-  fallback music/SFX and optional route-specific screens; confirm commercial
+- [ ] Decide whether current visual assets are final. Approve the score, sound
+  effects and ambience by ear on devices (all audio sources are CC0, listed in
+  `art/audio/README.md`) and optional route-specific screens; confirm commercial
   rights and attribution obligations. Check full-screen/cropped art on target
   devices, accessibility/legibility, touch controls, performance, battery,
   memory, cold launch, and no network/offline UX.

@@ -32,6 +32,7 @@ public partial class BattleController
             if (attacker.AttackSplashRadius > .05f)
             {
                 ApplySplashDamage(attacker.Team,target.Position,damage,attacker.AttackSplashRadius,attacker.Tint,attacker.UnitName);
+                AudioDirector.Instance?.PlayMeleeHit(attacker,target,damage);
                 ShowWeaponContact(attacker,target,damage,false);
             }
             else
@@ -57,6 +58,7 @@ public partial class BattleController
     private void ResolveMeleeHit(Unit attacker, Unit target, float damage)
     {
         var applied = target.TakeDamage(damage,attacker.UnitName);
+        AudioDirector.Instance?.PlayMeleeHit(attacker,target,applied,MeleeContactProfile(attacker));
         TrackDamageDealt(attacker,applied);
         SpawnDamageFeedback(target.BodyContactPosition,applied,attacker.Tint);
         ApplyImpactReaction(attacker,target,applied,false);

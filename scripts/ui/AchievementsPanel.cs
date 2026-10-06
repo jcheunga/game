@@ -141,7 +141,7 @@ public partial class AchievementsPanel : RoyalScreen
         {
             var claim = RoyalButton.Over(buttonRect, $"Claim {reward.RewardLabel}", () =>
             {
-                state.TryClaimAchievementReward(entry.Id, out var message);
+                AudioDirector.Claimed(state.TryClaimAchievementReward(entry.Id, out var message));
                 RoyalToast.Show(this, message);
                 Refresh();
             }, 6);

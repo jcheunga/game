@@ -164,7 +164,7 @@ public partial class CashShopMenu : Control
         refillRow.AddThemeConstantOverride("separation", 16);
         var refill = RealmUi.Button("food", "10 food · 100 gold", () =>
         {
-            GameState.Instance.TryBuyFoodRefill(out var message);
+            AudioDirector.Purchased(GameState.Instance.TryBuyFoodRefill(out var message));
             RefreshUi();
             _noticeLabel.Text = message;
         }, true);
@@ -395,7 +395,7 @@ public partial class CashShopMenu : Control
                     _statusLabel.Text += $"+{result.FoodCredited} Food  ";
                 if (result.GrantedUnitUnlock)
                     _statusLabel.Text += "\n+ Unit unlock granted!";
-                AudioDirector.Instance?.PlayUpgradeConfirm();
+                AudioDirector.Instance?.PlayRewardClaim();
             }
             else
             {

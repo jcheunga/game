@@ -111,27 +111,47 @@ def creature(seconds, f0_points, vowels, *, scale=1.0, jitter=0.02, shimmer=0.08
     return dsp.highpass(y, 40 * scale, 2)
 
 
-def whisper(seconds, vowels, scale=1.0, rng=None):
-    """Unvoiced, breathy formant noise (hexes, wraiths)."""
+CONSONANTS = {"s": (4500, 10000, 0.07), "sh": (2200, 6000, 0.08), "f": (1500, 9000, 0.05), "h": (500, 3500, 0.05),
+              "t": (2500, 9000, 0.015), "k": (1200, 4000, 0.02), "th": (3000, 8000, 0.05)}
+
+
+def whisper(seconds, vowels=None, scale=1.0, rng=None, rate=4.5):
+    """Whispered speech-like syllables: a fricative or plosive, then a breathy formant vowel."""
     rng = rng or dsp.RNG
     n = dsp.samples(seconds)
-    src = rng.standard_normal(n)
-    syll = 0.55 + 0.45 * np.sin(2 * np.pi * np.cumsum(np.full(n, rng.uniform(3, 5))) / SR) ** 2
-    y = formant_filter(src * syll, vowels, scale, bandwidth_scale=1.8)
-    y += dsp.bandpass(src, 4500, 9000) * 0.25 * syll
-    return y / (np.abs(y).max() + 1e-9) * dsp.env_adsr(n, 0.08, 0, 1, 0.3)
+    out = np.zeros(n + dsp.samples(0.4))
+    t = 0.0
+    vowel_names = ["a", "e", "i", "o", "u", "uh", "aw"]
+    while t < seconds - 0.1:
+        con = CONSONANTS[rng.choice(["s", "s", "sh", "sh", "f", "h", "t", "k", "th"])]
+        c_len = con[2] * rng.uniform(0.8, 1.3)
+        c = dsp.bandpass(rng.standard_normal(dsp.samples(c_len)), con[0], con[1], 2)
+        c *= np.hanning(len(c)) * rng.uniform(0.4, 0.8)
+        v_len = rng.uniform(0.08, 0.2)
+        a, b = rng.choice(vowel_names), rng.choice(vowel_names)
+        v = formant_filter(rng.standard_normal(dsp.samples(v_len)), [(0, a), (1, b)], scale * rng.uniform(0.95, 1.1),
+                           bandwidth_scale=1.6)
+        # Whispered vowels carry little F1 energy; most of the identity is breath in the 1.5-5 kHz formants.
+        v = dsp.eq(dsp.highpass(v, 700, 2), ("peak", 2800, 0.8, 5))
+        v = v / (np.abs(v).max() + 1e-9) * np.hanning(len(v)) * rng.uniform(0.5, 0.9)
+        dsp.place(out, c, t)
+        dsp.place(out, v, t + c_len * 0.8)
+        t += c_len + v_len + rng.uniform(0.02, 1 / rate)
+    out = out[:n]
+    return dsp.highpass(out, 300, 2) / (np.abs(out).max() + 1e-9) * dsp.env_adsr(n, 0.05, 0, 1, 0.2)
 
 
-def crowd_shout(seconds, voices=9, base_f0=150, vowel="a", spread=0.35, rng=None):
-    """Many detuned voices shouting together (war cries)."""
+def crowd_shout(seconds, voices=14, base_f0=150, vowel="a", spread=0.35, rng=None):
+    """Many detuned human voices shouting together (war cries): moderate grit, staggered entries."""
     rng = rng or dsp.RNG
-    out = np.zeros((dsp.samples(seconds) + dsp.samples(0.12), 2))
+    out = np.zeros((dsp.samples(seconds) + dsp.samples(0.2), 2))
     for _ in range(voices):
-        f = base_f0 * rng.uniform(0.75, 1.3)
-        delay = rng.uniform(0, 0.12)
-        dur = seconds * rng.uniform(0.75, 1.0)
-        v = creature(dur, [(0, f * 0.9), (0.15, f * 1.15), (0.7, f), (1, f * 0.8)],
-                     [(0, "uh"), (0.15, vowel), (1, vowel)], scale=rng.uniform(0.92, 1.08), jitter=0.02,
-                     shimmer=0.1, breath=0.3, drive=2.0, attack=0.04, release=0.2, rng=rng)
+        f = base_f0 * rng.uniform(0.8, 1.35)
+        delay = rng.uniform(0, 0.18)
+        dur = seconds * rng.uniform(0.7, 1.0)
+        v = creature(dur, [(0, f * 0.85), (0.12, f * 1.18), (0.6, f * 1.05), (1, f * 0.75)],
+                     [(0, "uh"), (0.12, vowel), (0.8, vowel), (1, "o")], scale=rng.uniform(0.95, 1.1),
+                     jitter=0.015, shimmer=0.08, breath=0.28, roughness=0.12, rough_rate=60, drive=1.3, attack=0.05,
+                     release=0.25, rng=rng)
         dsp.place(out, dsp.pan(v, rng.uniform(-spread, spread) * 2), delay, rng.uniform(0.6, 1.0))
     return out

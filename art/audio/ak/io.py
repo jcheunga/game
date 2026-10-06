@@ -74,3 +74,35 @@ def spectrogram(path, x, title="", seconds=None):
     fig.savefig(path, dpi=80)
     plt.close(fig)
     return path
+
+
+def contact_sheet(paths, out_path, cols=6, title=""):
+    """Grid of small spectrograms + envelopes for many short sounds."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from scipy import signal
+
+    rows = (len(paths) + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 2.6, rows * 1.9), squeeze=False)
+    for ax in axes.flat:
+        ax.axis("off")
+    for ax, path in zip(axes.flat, paths):
+        x, rate = sf.read(str(path), always_2d=True)
+        mono = x.mean(axis=1)
+        if len(mono) < 512:
+            continue
+        f, t, s = signal.spectrogram(mono, rate, nperseg=512, noverlap=384)
+        s_db = 10 * np.log10(s + 1e-14)
+        ax.pcolormesh(t, f, s_db, shading="auto", vmin=s_db.max() - 80, vmax=s_db.max(), cmap="magma")
+        ax.set_yscale("symlog", linthresh=300)
+        ax.set_ylim(40, 20000)
+        ax.set_title(Path(path).stem[:24], fontsize=7)
+        ax.axis("on")
+        ax.tick_params(labelsize=5)
+    if title:
+        fig.suptitle(title, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=70)
+    plt.close(fig)
+    return out_path

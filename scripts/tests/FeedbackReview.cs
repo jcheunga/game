@@ -125,14 +125,15 @@ public partial class FeedbackReview : Node
             await CheckAccountClient();
             Check(ResourceLoader.Load<AudioStreamOggVorbis>("res://assets/music/title.ogg").GetLength() > 40 &&
                 ResourceLoader.Load<AudioStreamOggVorbis>("res://assets/music/battle.ogg").GetLength() > 30, "Music loops are real, complete tracks");
-            Check(Read<Dictionary<string,AudioStream>>(AudioDirector.Instance,"_authoredOverrides").Count >= 20, "Authored impacts, spells and interface sounds are loaded");
+            Check(AudioDirector.Instance.CueCount >= 200 && new[] { "ui_tap", "hit_blade", "bow_release", "risen_groan", "spell_fireball", "victory", "amb_road" }.All(AudioDirector.Instance.HasCue),
+                "The sound catalogue (interface, weapons, voices, spells, stingers and ambience) is loaded");
             var music = MusicPlayer.Instance.GetChildren().OfType<AudioStreamPlayer>().ToArray();
             state.SetAudioMuted(true);
             Check(music.All(p => !p.Playing), "Mute stops background music immediately");
             state.SetAudioMuted(false); await Wait(.1);
             Check(music.Any(p => p.Playing && p.Stream is AudioStreamOggVorbis loop && loop.Loop), "Unmute resumes a looping music track");
             state.SetMusicVolumePercent(0); await Wait(.1);
-            Check(music.Where(p => p.Playing).All(p => p.VolumeDb <= -80), "Music volume reaches silence");
+            Check(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex(AudioDirector.MusicBus)) <= -80, "Music volume reaches silence");
             state.SetMusicVolumePercent(50);
             Check(!Walk(GetTree().Root).OfType<Control>().Any(c => c.IsVisibleInTree() && c.TooltipText.Length > 0), "Touch screens have no hover tooltips");
         }

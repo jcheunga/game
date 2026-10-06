@@ -61,7 +61,7 @@ public partial class LoginCalendarMenu : Control
                 {
                     var claim = RealmUi.Button("gift", "Claim", () =>
                     {
-                        GameState.Instance.TryClaimLoginReward(out var message);
+                        AudioDirector.Claimed(GameState.Instance.TryClaimLoginReward(out var message));
                         _status.Text = message; RefreshUi();
                     }, true);
                     footer.AddChild(claim);

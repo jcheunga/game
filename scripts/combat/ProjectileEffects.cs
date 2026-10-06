@@ -194,6 +194,8 @@ public static class ProjectileEffects
         Func<bool> shouldPause = null)
     {
         if (parent == null) return;
+        // Sound plays even with reduced motion: the impact is heard, only the flourish is trimmed.
+        AudioDirector.Instance?.PlayProjectileImpact(style.Id, at, damage);
         if (Reduced)
         {
             Ring(parent, at, style.GlowColor.A > 0 ? style.GlowColor : new Color("f1e6cf"), 2, 7, .12f, true);

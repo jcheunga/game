@@ -1,0 +1,173 @@
+{
+ "home": {
+  "bed": "amb_home",
+  "details": [
+   "det_songbird",
+   "det_crow",
+   "det_bell_far"
+  ],
+  "gap": [
+   6,
+   14
+  ]
+ },
+ "shop": {
+  "bed": "amb_shop",
+  "details": [
+   "det_coins",
+   "det_wagon_creak"
+  ],
+  "gap": [
+   9,
+   18
+  ]
+ },
+ "endless": {
+  "bed": "amb_endless",
+  "details": [
+   "det_moan_far",
+   "det_toll",
+   "det_crow"
+  ],
+  "gap": [
+   7,
+   15
+  ]
+ },
+ "multiplayer": {
+  "bed": "amb_tourney",
+  "details": [
+   "det_banner",
+   "det_horse_far",
+   "det_war_drums"
+  ],
+  "gap": [
+   8,
+   16
+  ]
+ },
+ "city": {
+  "bed": "amb_road",
+  "details": [
+   "det_songbird",
+   "det_crow",
+   "det_bell_far",
+   "det_cart"
+  ],
+  "gap": [
+   6,
+   14
+  ]
+ },
+ "harbor": {
+  "bed": "amb_harbor",
+  "details": [
+   "det_gull",
+   "det_ship_bell",
+   "det_rope_creak"
+  ],
+  "gap": [
+   5,
+   12
+  ]
+ },
+ "foundry": {
+  "bed": "amb_foundry",
+  "details": [
+   "det_anvil_far",
+   "det_steam",
+   "det_chains"
+  ],
+  "gap": [
+   5,
+   11
+  ]
+ },
+ "quarantine": {
+  "bed": "amb_ward",
+  "details": [
+   "det_toll",
+   "det_moan_far",
+   "det_crow"
+  ],
+  "gap": [
+   7,
+   15
+  ]
+ },
+ "thornwall": {
+  "bed": "amb_pass",
+  "details": [
+   "det_raptor",
+   "det_rockfall",
+   "det_gust"
+  ],
+  "gap": [
+   6,
+   13
+  ]
+ },
+ "basilica": {
+  "bed": "amb_basilica",
+  "details": [
+   "det_drip",
+   "det_choir_far",
+   "det_toll",
+   "det_whisper_far"
+  ],
+  "gap": [
+   6,
+   13
+  ]
+ },
+ "mire": {
+  "bed": "amb_mire",
+  "details": [
+   "det_frog",
+   "det_bubbles",
+   "det_crow"
+  ],
+  "gap": [
+   4,
+   10
+  ]
+ },
+ "steppe": {
+  "bed": "amb_steppe",
+  "details": [
+   "det_raptor",
+   "det_horse_far",
+   "det_embers"
+  ],
+  "gap": [
+   7,
+   14
+  ]
+ },
+ "gloamwood": {
+  "bed": "amb_gloamwood",
+  "details": [
+   "det_owl",
+   "det_branch",
+   "det_whisper_far",
+   "det_crow"
+  ],
+  "gap": [
+   6,
+   13
+  ]
+ },
+ "citadel": {
+  "bed": "amb_citadel",
+  "details": [
+   "det_war_drums",
+   "det_chains",
+   "det_banner",
+   "det_bell_far"
+  ],
+  "gap": [
+   6,
+   13
+  ]
+ }
+}

@@ -244,14 +244,11 @@ def chain_jingle(seconds=0.35, density=120, rng=None, lo=3000, hi=8500):
     rng = _rng(rng)
 
     def jingle(r):
-        if r.random() < 0.6:
-            src = sample(r.choice(["tambourine", "sleigh_bells"]), r.uniform(0.2, 0.6), detune=r.uniform(-7, 3),
-                         seconds=r.uniform(0.05, 0.12), rng=r)
-            return dsp.highpass(src, 1500, 2)
-        f = r.uniform(lo, hi)
-        return resonant_burst([f, f * 1.48, f * 2.11], [90, 70, 50], [1, 0.5, 0.3], 0.06, 0.001, r)
+        src = sample(r.choice(["tambourine", "sleigh_bells", "k_belt"]), r.uniform(0.2, 0.6), detune=r.uniform(-9, 0),
+                     seconds=r.uniform(0.05, 0.12), rng=r)
+        return dsp.lowpass(dsp.highpass(src, 1200, 2), 8000, 2)
 
-    return grains(seconds, max(3, int(density * seconds * 0.35)), jingle, rng, curve=1.2, gain_range=(0.2, 0.9))
+    return grains(seconds, max(3, int(density * seconds * 0.3)), jingle, rng, curve=1.2, gain_range=(0.2, 0.8))
 
 
 def armor_rattle(seconds=0.45, rng=None, weight=1.0):
@@ -312,12 +309,12 @@ def gallop(seconds=1.0, rate=2.6, rng=None):
 def bow_release(rng=None, tension=1.0):
     """Bowstring 'thwip': a recorded contrabass pizzicato (real gut-string slap) shortened, with the arrow's hiss."""
     rng = _rng(rng)
-    string = sample("basses_pizz", rng.uniform(0.7, 1.0), seconds=0.22, rng=rng, midi=int(rng.integers(38, 44)) + int(4 * (tension - 1)))
-    string = dsp.eq(string, ("peak", 180, 1.0, 3), ("highshelf", 3000, 0.7, 4))
-    string *= np.exp(-np.arange(len(string)) / (SR * 0.05))
-    slap = shaped_noise(0.02, 600, 4000, rng=rng) * np.exp(-np.arange(_n(0.02)) / (SR * 0.004))
-    arrow = whoosh(0.25, 2400, 5000, q=2.2, peak=0.15, rng=rng) * 0.6
-    return dsp.mix(string, (slap * 0.4, 0), (arrow, 0.01)).mean(axis=1)
+    string = sample("basses_pizz", 1.0, seconds=0.2, rng=rng, midi=int(rng.integers(38, 44)) + int(4 * (tension - 1)))
+    string = dsp.eq(string, ("peak", 200, 1.0, 4), ("highshelf", 2500, 0.7, 6))
+    string *= np.exp(-np.arange(len(string)) / (SR * 0.045))
+    nock = sample("claves", 0.5, detune=rng.uniform(-14, -10), seconds=0.04, rng=rng)
+    arrow = whoosh(0.2, 2600, 5200, q=2.4, peak=0.12, rng=rng) * 0.25
+    return dsp.mix(string * 1.3, (nock * 0.35, 0), (arrow, 0.015)).mean(axis=1)
 
 
 def crossbow_release(rng=None):

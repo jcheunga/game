@@ -105,8 +105,8 @@ public partial class SettingsMenu : RoyalScreen
                 yield return new SliderRow("settingsicon-ambience", "Ambience", () => state.AmbienceVolumePercent, state.SetAmbienceVolumePercent);
                 yield return new SwitchRow("settingsicon-mute", "Mute all sound", () => state.AudioMuted, muted =>
                 {
+                    // The switch's own latch sound plays (once) after unmuting.
                     state.SetAudioMuted(muted);
-                    if (!muted) AudioDirector.Instance?.PlayUiConfirm();
                 });
                 break;
             case 1:

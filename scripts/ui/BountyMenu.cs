@@ -197,7 +197,7 @@ public partial class BountyMenu : Control
 		if (index >= bounties.Length) return;
 
 		var def = bounties[index];
-		if (GameState.Instance.TryClaimBounty(def.Id, out var message))
+		if (AudioDirector.Claimed(GameState.Instance.TryClaimBounty(def.Id, out var message)))
 		{
 			_statusLabel.Text = message;
 			RefreshUi();

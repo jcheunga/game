@@ -17,7 +17,7 @@ The original library below remains the source for older art.
 The screens, battle backdrops, campaign maps and spell and relic pictures are painted art made in
 `art/royal` (see [`docs/ROYAL_UI.md`](docs/ROYAL_UI.md)).
 
-The original Blender visual asset pass covers the current unit roster, environments, structures, wagon cosmetics, weapon mounts, icons, portraits, and particle textures. Editable scenes and reproducible build instructions live in [`art/blender/README.md`](art/blender/README.md); [`art/blender/coverage.json`](art/blender/coverage.json) records required-file coverage. The game loads rendered PNGs, not live 3D models. The authoring folder is excluded from Godot import. Vector UI, the painted icon and map-piece atlases, fonts, and procedural music/SFX are retained.
+The original Blender visual asset pass covers the current unit roster, environments, structures, wagon cosmetics, weapon mounts, icons, portraits, and particle textures. Editable scenes and reproducible build instructions live in [`art/blender/README.md`](art/blender/README.md); [`art/blender/coverage.json`](art/blender/coverage.json) records required-file coverage. The game loads rendered PNGs, not live 3D models. The authoring folder is excluded from Godot import. Vector UI, the painted icon and map-piece atlases, and fonts are retained. Music and sound effects are rendered by the audio pipeline in [`art/audio`](art/audio/README.md).
 
 The material/lighting finish is defined in [`art/blender/ART_DIRECTION.md`](art/blender/ART_DIRECTION.md). `polish_assets.py` applies editable procedural surfaces and a consistent light rig to saved models, preserving their geometry and animation contracts. Preview first, publish explicitly, then repack the complete animation atlases. The heavier Blender shaders are baked into the images; they add no runtime shader work.
 
@@ -134,8 +134,8 @@ Both paths print the current asset coverage and the exact IDs still missing.
 | Reward icon | `assets/ui/icons/rewards/{reward_type}.png` | Reward badges; gold, food, tomes and essence use the home map's painted resource icons |
 | Meta icon | `assets/ui/icons/meta/{meta_id}.png` | Social, leaderboard, and challenge-status badge art |
 | Codex portrait | `assets/ui/portraits/codex/{entry_id}.png` | Only codex foes without a battle figure (legacy foes and raid bosses) need one |
-| Music | `assets/music/{track_id}.ogg` | `.ogg`, `.mp3`, and `.wav` all load |
-| SFX override | `assets/sfx/{cue_id}.ogg` | `.ogg`, `.mp3`, and `.wav` all load |
+| Music | `assets/music/{track_id}.ogg` | Rendered by `art/audio/build_music.py`; `.ogg`, `.mp3`, and `.wav` all load |
+| Sound effects | `assets/sfx/{cue_id}[_n].ogg` + `sfx.json` | Rendered by `art/audio/build_sfx.py`; the manifest lists each cue's variations and mix settings |
 
 ## Fallback Rules
 
@@ -145,7 +145,7 @@ Both paths print the current asset coverage and the exact IDs still missing.
 - Missing structure images fall back to the current color-block/procedural presentation.
 - Missing particle textures fall back to the existing built-in Godot particle quads.
 - Missing spell pictures fall back to a plain glyph, and missing unit/relic/codex/reward images to generated badges with initials, so the UI still stays readable.
-- Missing music and SFX fall back to the procedural audio already shipped in the repo.
+- A missing music track falls back to the general `battle` or `campaign` track; a cue with no files plays nothing.
 - You can replace assets incrementally. There is no requirement to finish a whole category in one pass.
 
 ## Sizes And Formats
@@ -158,7 +158,7 @@ Both paths print the current asset coverage and the exact IDs still missing.
 - Unit icons: PNG, target `128x128`; spell and relic pictures: square PNG, `512x512`
 - Reward icons: PNG, target `128x128`
 - Codex portraits: PNG, target `512x512` or larger portrait crop
-- Music/SFX: loopable `ogg` preferred, `mp3`/`wav` also supported
+- Music/SFX: Ogg Vorbis at 44.1 kHz; music loops are sample-continuous (see `art/audio/README.md`)
 
 ## Menu and map presentation
 
@@ -311,51 +311,21 @@ Codex portraits are per codex entry, for foes without a battle figure:
 
 ## Music Track IDs
 
-Scene tracks:
+All 19 tracks are original and rendered by `art/audio/build_music.py` (see [art/audio/README.md](art/audio/README.md)).
 
-- `title`
-- `campaign`
-- `shop`
-- `loadout`
-- `endless_prep`
-- `multiplayer`
+Scene tracks: `title`, `campaign`, `shop`, `loadout`, `endless_prep`, `multiplayer`. Home destinations opened
+over the map (shop, loadout, endless, tourney) switch to their track and back.
 
-Battle tracks:
-
-- `battle`
-- `battle_road`
-- `battle_harbor`
-- `battle_foundry`
-- `battle_quarantine`
-- `battle_pass`
-- `battle_basilica`
-- `battle_mire`
-- `battle_steppe`
-- `battle_gloamwood`
-- `battle_citadel`
+Battle tracks: one per zone (`battle_road`, `battle_harbor`, `battle_foundry`, `battle_quarantine`, `battle_pass`,
+`battle_basilica`, `battle_mire`, `battle_steppe`, `battle_gloamwood`, `battle_citadel`), the general `battle`,
+`battle_boss` while a grave lord lives, and `battle_boss_final` for the citadel's sovereigns.
 
 ## SFX Cue IDs
 
-Core interaction:
-
-- `ui_hover`, `ui_confirm`, `scene_change`, `deploy`
-
-Combat:
-
-- `impact_light`, `impact_heavy`, `bus_hit`, `barricade_hit`, `repair`
-- `hazard_warning`, `hazard_strike`, `spell_cast`
-- `boss_spawn`, `boss_death`, `victory`, `defeat`
-
-Progression:
-
-- `upgrade_confirm`, `achievement_unlock`, `relic_pickup`
-
-Ambience:
-
-- `ambience_menu`, `ambience_battle`, `ambience_endless`, `ambience_multiplayer`, `ambience_shop`
-- `ambience_route_road`, `ambience_route_harbor`, `ambience_route_foundry`, `ambience_route_quarantine`
-- `ambience_route_thornwall`, `ambience_route_basilica`, `ambience_route_mire`, `ambience_route_steppe`
-- `ambience_route_gloamwood`, `ambience_route_citadel`
+`assets/sfx/sfx.json` lists every cue (212), its round-robin files, mix bus, cooldown, voice limit, pitch drift and
+whether it plays at a battlefield position. `assets/sfx/ambience.json` picks the looping bed and scattered details for
+each place. Both are written by `art/audio/build_sfx.py`; `scripts/core/AudioCatalog.cs` maps units, weapons,
+projectiles, deaths, abilities and bosses to cues. A cue whose files are missing is silent.
 
 ## Recommended Handoff Order
 

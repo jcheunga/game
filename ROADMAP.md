@@ -331,8 +331,8 @@ All 10 milestones are in code, along with the post-milestone feature batches and
 | Unit sprites (all 52 units, Blender-rendered) | Implemented | `assets/units/{unit_id}.png` + `.json` from [art/remaster](art/remaster/README.md); `{visual_class}.png` is the fallback |
 | Battle backdrops (far/mid/near parallax per zone) | Implemented | `assets/world/backdrops/{zone}.json` + `{zone}_far.png`, `{zone}_mid.png`, `{zone}.png`; per-stage plates and `assets/backgrounds/{terrain_id}.png` are fallbacks |
 | Structures (war wagon + 7 skins, gatehouse, weapon mounts) | Implemented | `assets/structures/` |
-| Music pipeline (17 track slots, 4 authored) | Ready for audio | Drop OGG at `assets/music/{track_id}.ogg` |
-| SFX override pipeline (34 cue IDs plus per-spell cast cues) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
+| Original score (19 loops: scenes, ten zone battles, boss themes) | Done | Rendered by `art/audio/build_music.py` from CC0 instrument recordings |
+| Sound effects and ambience (212 cues, 442 variations, 15 soundscapes) | Done | Rendered by `art/audio/build_sfx.py`; manifest-driven `AudioDirector`, positional battle sounds |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
 | 86 server tests + 11,992 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
@@ -340,7 +340,7 @@ All 10 milestones are in code, along with the post-milestone feature batches and
 ### What remains (non-code)
 
 1. **Art refinement** — units, structures, zone backdrops, projectiles and icons ship as Blender renders; rebuild and review them through [art/remaster/README.md](art/remaster/README.md). ASSETS.md lists every runtime slot and fallback
-2. **Audio production** — `title`, `campaign`, `shop` and `battle` music and 20 SFX overrides are in place; the other tracks fall back to the shared battle, shop or campaign track and the other cues stay procedural (ASSETS.md lists every track and cue ID)
+2. **Audio review** — all music, effects and ambience are in place (see `art/audio/README.md`); listen in context on devices and tune levels or individual cues
 3. **Server deployment** — `docker compose up -d` in `server/`, configure `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in `.env` (see `.env.example`), verify at `/admin`
 4. **Platform builds** — build Godot export templates with `godot-google-play-billing` (Android) and `godot-store-kit` (iOS) GDExtension plugins; `NativeIAPService` connects automatically
 5. **Translation** — create `data/locale/{lang}.json` files for target languages (60+ keys in `en.json` as reference)
@@ -888,8 +888,8 @@ Issues found through code review. All actionable items have been fixed. Remainin
 ## Ship checklist
 
 1. **Review art** — units, structures, zone backdrops and projectiles ship as Blender renders; rebuild through [art/remaster/README.md](art/remaster/README.md) and check them in battle
-2. **Record music** — `title`, `campaign`, `shop` and `battle` are in `assets/music/`; add the scene and per-route tracks
-3. **Record SFX** — replace the remaining procedural cues in `assets/sfx/`; 20 cues have authored files
+2. **Music** — done: 19 original loops in `assets/music/`, one per scene and zone plus boss themes
+3. **Sound effects** — done: 212 cues and 15 soundscapes in `assets/sfx/`; review the mix on devices
 4. **Deploy server** — `cd server && docker compose up -d`, configure `.env`, verify at `http://host:8080/admin`
 5. **Playtest** — run all 10 districts + endless mode, validate balance pass
 6. **Translate** — add `data/locale/{lang}.json` for target markets

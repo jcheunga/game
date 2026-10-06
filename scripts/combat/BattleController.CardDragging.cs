@@ -112,6 +112,7 @@ public partial class BattleController
             _dragSpell = _spellSlots.FirstOrDefault(s => s.Button == hit)?.Definition;
             if (_dragUnit == null && _dragSpell == null) return false;
             _cardPointerDown = true; _cardDragging = _cardScrolling = false;
+            AudioDirector.Instance?.PlayCardPickup();
             _cardPointerId = id; _cardPointerStart = _cardPointerLast = _cardPointerPosition = point;
             _dragCardButton = hit;
             _previousDragMode = _selectionMode; _previousDragSpell = _spellDeck.ArmedSpell;
@@ -153,16 +154,19 @@ public partial class BattleController
         var drop = _cardDragging && CanDropCard(point);
         var tap = !_cardDragging && !_cardScrolling && ScreenPointIn(_dragCardButton, point);
         var unit = _dragUnit; var spell = _dragSpell; var world = ScreenToBattle(point);
+        var scrolled = _cardScrolling;
         if (drop)
         {
             EndCardGesture(false, false);
+            AudioDirector.Instance?.PlayCardDrop();
             // Reuse the authoritative targeting, resource and cooldown paths.
             TryCastSpellAt(spell, world);
         }
         else
         {
             EndCardGesture(true, false);
-            if (tap) { if (unit != null) DeployPlayerUnit(unit); else ArmSpell(spell); }
+            if (tap) { if (unit != null) { AudioDirector.Instance?.PlayCardDrop(); DeployPlayerUnit(unit); } else ArmSpell(spell); }
+            else if (!scrolled) AudioDirector.Instance?.PlayCardCancel();
         }
         return true;
     }

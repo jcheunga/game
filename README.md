@@ -70,8 +70,8 @@ GitHub Actions also runs the game build plus the server/data validation workflow
 | Reward icons | `assets/ui/icons/rewards/{reward_type}.png` | Badges for sigils, shards, relics, season experience, units and spells; gold, food, tomes and essence use the home map's resource icons |
 | Meta icons | `assets/ui/icons/meta/{meta_id}.png` | Social, leaderboard, arena, and challenge-status badges |
 | Codex portraits | `assets/ui/portraits/codex/{entry_id}.png` | Only for codex foes without a battle figure (legacy foes and raid bosses); units show their figure, spells and relics their painted picture |
-| Music | `assets/music/{track_id}.ogg` | Loopable OGG/MP3/WAV |
-| Sound effects | `assets/sfx/{cue_id}.ogg` | Per-cue OGG/MP3/WAV override |
+| Music | `assets/music/{track_id}.ogg` | 19 original loops rendered by `art/audio/build_music.py` |
+| Sound effects | `assets/sfx/{cue_id}[_n].ogg` + `sfx.json` | 212 cues rendered by `art/audio/build_sfx.py` |
 
 Audit coverage with the in-game debug console command `assets` or `cd server && dotnet run -- --test-data ../data`. See `ASSETS.md` for the full ID lists and format specs.
 
@@ -104,7 +104,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 - **SceneRouter** (autoload) — handles all scene transitions with fade + loading tips
 - **GameState** (autoload) — centralized progression, economy, and settings, persisted via SaveSystem
-- **AudioDirector** (autoload) — procedural SFX with authored audio override support
+- **AudioDirector** (autoload) — manifest-driven sound effects on four mix buses, positional battle sounds, ambience beds and details
 - **MusicPlayer** (autoload) — crossfading music tracks mapped to scene/route context
 - **NativeIAPService** (autoload) — platform-detected IAP (Apple StoreKit / Google Play / Stripe)
 - **SafeAreaService** (autoload) — mobile notch/island display inset handling
@@ -208,7 +208,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 - Game flow is routed through `SceneRouter` (autoload).
 - Progression/resources are centralized in `GameState` (autoload) and persisted by `SaveSystem` to `user://savegame.json`.
-- UI/battle audio is centralized in `AudioDirector` (autoload), which synthesizes cues and ambience and plays authored overrides from `assets/sfx/` when present.
+- UI/battle audio is centralized in `AudioDirector` (autoload), which plays the cues in `assets/sfx/sfx.json` and the zone soundscapes; `AudioCatalog` maps units, weapons and spells to cues, and the audio pipeline lives in `art/audio/`.
 - Shared audio/interface options are surfaced through `SettingsMenu` and persisted in `GameState`.
 - Unit and stage tuning are data-driven from JSON files in `data/` and loaded through `GameData`.
 - Global combat pacing/limits (spawn pressure, enemy cap, base approach distance, courage economy, etc.) is in `data/combat_config.json`.

@@ -251,7 +251,7 @@ public partial class EventMenu : Control
 				var btn = new RealmButton { Text = "Claim" };
 				btn.Pressed += () =>
 				{
-					if (gs.TryClaimEventReward(capturedEventId, capturedIndex, out var msg))
+					if (AudioDirector.Claimed(gs.TryClaimEventReward(capturedEventId, capturedIndex, out var msg)))
 					{
 						_statusLabel.Text = msg;
 						RefreshUi();

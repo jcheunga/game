@@ -772,10 +772,15 @@ public partial class BattleController : Node2D
 
 			LanChallengeService.Instance?.ReportLocalBattleLoaded();
 		}
+		// The zone's own score, soundscape and positional effects; the caravan's horn opens the fight.
+		AudioDirector.Instance?.EnterBattle(this, _activeRouteId);
+		MusicPlayer.Instance?.PlayBattle(_activeRouteId);
+		AudioDirector.Instance?.PlayBattleStart();
 	}
 
 	public override void _ExitTree()
 	{
+		AudioDirector.Instance?.ExitBattle(this);
 		if (_hudLayout != null) GetViewport().SizeChanged -= _hudLayout;
 		CleanupBattleCamera();
 		CleanupMobilePresentation();
@@ -1556,6 +1561,7 @@ public partial class BattleController : Node2D
 		UpdateOnlineRoomTelemetry(deltaF);
 		UpdateOnlineRoomMonitor(deltaF);
 		AudioDirector.Instance?.SetBattlePressure(ResolveBattleAudioPressure());
+		TickHordeVoices();
 		UpdateHud();
 		QueueRedraw();
 		CheckBattleEnd();
@@ -2124,6 +2130,7 @@ public partial class BattleController : Node2D
 		_selectionMode = BattleSelectionMode.Spell;
 		_deck.Disarm();
 		_spellDeck.Arm(definition);
+		AudioDirector.Instance?.PlaySpellArm();
 		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to cast" : "Drag to cast")}");
 		TryShowTutorialHint("first_spell_unlock");
 		UpdateHud();
@@ -2168,6 +2175,7 @@ public partial class BattleController : Node2D
 		var resolved = GameState.Instance.BuildSpellStats(definition);
 		if (!_spellDeck.CanCast(definition, resolved.CourageCost, _courage, _battleEnded, _endlessCheckpointActive, out var reason))
 		{
+			AudioDirector.Instance?.PlaySpellDenied();
 			SetStatus(reason);
 			return;
 		}
@@ -2178,7 +2186,7 @@ public partial class BattleController : Node2D
 		_selectionMode = BattleSelectionMode.Unit;
 		_spellsCast++;
 		GameState.Instance.AddBountyProgress("spell_casts", 1);
-		AudioDirector.Instance?.PlaySpellCast(resolved.EffectType);
+		AudioDirector.Instance?.PlaySpellCast(resolved.EffectType, targetPosition);
 		SetStatus($"Cast Lv{resolved.Level} {definition.DisplayName} at lane {Mathf.RoundToInt(targetPosition.Y)}. {effectSummary}");
 		UpdateHud();
 	}
@@ -2192,6 +2200,7 @@ public partial class BattleController : Node2D
 
 		if (!_deck.CanDeploy(definition, _courage, _battleEnded, out var reason))
 		{
+			AudioDirector.Instance?.PlayDeployDenied();
 			SetStatus(reason);
 			UpdateHud();
 			return;
@@ -2210,7 +2219,7 @@ public partial class BattleController : Node2D
 		ApplyDeployMomentum(deployedUnit);
 		ApplyFortifiedDeployBonus(spawnPosition);
 		var commendationFeedback = TryApplyCampaignCommendation(deployedUnit, spawnPosition);
-		AudioDirector.Instance?.PlayDeploy(definition);
+		AudioDirector.Instance?.PlayDeploy(definition, WagonDoorExit);
 		SpawnEffect(WagonDoorExit, stats.Color, 6f, 18f, 0.28f);
 		BattleParticles.SpawnDeployBurst(this, WagonDoorExit, stats.Color);
 
@@ -2252,12 +2261,14 @@ public partial class BattleController : Node2D
 		ApplyCampaignPressureEchoToEnemySpawn(unit);
 		ApplyCampaignAdaptiveWaveToEnemySpawn(unit);
 		SpawnEffect(position, stats.Color.Darkened(0.15f), 10f, 26f, 0.22f, false);
+		AudioDirector.Instance?.PlayEnemySpawn(unit);
 
 		if (stats.VisualClass == "boss")
 		{
 			TriggerBossEntranceBanner(stats);
 			BattleParticles.SpawnBossSpawnBurst(this, position, stats.Color);
 			AudioDirector.Instance?.PlayBossSpawn();
+			MusicPlayer.Instance?.SetBossMusic(true, AudioCatalog.IsFinalBoss(stats.DefinitionId));
 			TryShowTutorialHint("first_boss");
 		}
 	}
@@ -2305,8 +2316,10 @@ public partial class BattleController : Node2D
 		AddChild(projectile);
 		projectile.GlobalPosition = attacker.WeaponContactPosition;
 		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
-		projectile.SetStyle(ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile));
+		var shotStyle = ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile);
+		projectile.SetStyle(shotStyle);
 		projectile.LaunchGroundY = attacker.GlobalPosition.Y;
+		AudioDirector.Instance?.PlayLaunch(attacker, shotStyle.Id);
 
 		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 210f;
 		var color = attacker.Tint.Lightened(0.25f);
@@ -2361,6 +2374,7 @@ public partial class BattleController : Node2D
 					(pos, dmg, hitColor) =>
 					{
 						TrackDamageDealt(attackerName, dmg);
+						AudioDirector.Instance?.PlayShieldBlock(pos);
 						SpawnDamageFeedback(pos, dmg, hitColor);
 						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, interceptor, dmg, true);
 					});
@@ -2553,6 +2567,7 @@ public partial class BattleController : Node2D
 			{
 				if (unit.TryBeginMeleeAttack(meleeThreat))
 				{
+					AudioDirector.Instance?.PlaySwing(unit, MeleeContactProfile(unit));
 					QueueRangedMelee(unit, meleeThreat);
 				}
 			}
@@ -2560,6 +2575,7 @@ public partial class BattleController : Node2D
 			{
 				if (unit.TryBeginAttack(target))
 				{
+					if (!unit.UsesProjectile) AudioDirector.Instance?.PlaySwing(unit);
 					QueueUnitStrike(unit, target);
 				}
 			}
@@ -2894,19 +2910,18 @@ public partial class BattleController : Node2D
 	{
 		var boss = deadUnit.VisualClass == "boss";
 		var corpse = deadUnit.SpawnDeathVisual(this);
-		if (boss) AudioDirector.Instance?.PlayBossDeath();
+		// The boss stinger already played as the kill was counted (CleanupDeadUnits); here the body falls.
+		AudioDirector.Instance?.PlayUnitDeath(deadUnit, corpse?.Style);
+		if (boss && !_units.Any(u => u != deadUnit && !u.IsDead && u.VisualClass == "boss")) MusicPlayer.Instance?.SetBossMusic(false);
 		if (corpse == null)
 		{
-			AudioDirector.Instance?.PlayImpact(deadUnit.MaxHealth * 0.5f, deadUnit.VisualClass);
 			BattleParticles.SpawnDeathBurst(this, deadUnit.Position, deadUnit.Tint, boss);
 			return;
 		}
 		BattleDeathEffects.SpawnDeathMoment(this, deadUnit.BodyContactPosition, corpse.Style);
-		var weight = deadUnit.MaxHealth * 0.5f;
-		var visualClass = deadUnit.VisualClass;
 		corpse.Impacted = body =>
 		{
-			AudioDirector.Instance?.PlayImpact(weight, visualClass);
+			AudioDirector.Instance?.PlayBodyFall(body.ImpactPosition, body.Style.Fx, body.Style.Heavy, body.Style.Boss);
 			BattleDeathEffects.SpawnImpact(this, body);
 			if (body.Style.Heavy && !IsReducedMotionEnabled())
 			{
@@ -2944,6 +2959,7 @@ public partial class BattleController : Node2D
 		}
 
 		_activeAbilitiesTriggered++;
+		AudioDirector.Instance?.PlayAbility(unit.ActiveAbilityId, unit.Position);
 
 
 
@@ -3287,7 +3303,8 @@ public partial class BattleController : Node2D
 			return false;
 		}
 
-		return unit.SpecialAbilityId switch
+		var origin = unit.Position;
+		var triggered = unit.SpecialAbilityId switch
 		{
 			"rally_call" => TriggerBossRallyCall(unit),
 			"jam_signal" => TriggerEnemySignalJam(unit),
@@ -3297,6 +3314,13 @@ public partial class BattleController : Node2D
 			"burrow" => TriggerEnemyBurrow(unit),
 			_ => false
 		};
+		if (triggered)
+		{
+			var sound = unit.SpecialAbilityId switch { "rally_call" => "rally", "jam_signal" => "jam", "raise_fallen" => "raise", "burrow" => "burrow", _ => "" };
+			AudioDirector.Instance?.PlayEnemySpecial(sound, origin);
+			if (sound == "burrow") AudioDirector.Instance?.PlayEnemySpecial("emerge", unit.Position);
+		}
+		return triggered;
 	}
 
 	private bool TriggerBossRallyCall(Unit boss)
@@ -4502,9 +4526,9 @@ public partial class BattleController : Node2D
 						unitB.ApplyTemporaryDefenseModifier(1f / combo.HealthScaleB, comboBuffDuration);
 					}
 
-					if (!string.IsNullOrEmpty(combo.Id))
+					if (!string.IsNullOrEmpty(combo.Id) && _triggeredComboPairIds.Add(combo.Id))
 					{
-						_triggeredComboPairIds.Add(combo.Id);
+						AudioDirector.Instance?.PlayCombo();
 					}
 				}
 			}
@@ -5283,6 +5307,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		AudioDirector.Instance?.PlayEnemySpecial("burst", deadUnit.Position);
 		SpawnEffect(
 			deadUnit.Position,
 			deadUnit.Tint.Lightened(0.15f),
@@ -5325,6 +5350,7 @@ public partial class BattleController : Node2D
 		}
 
 		var count = deadUnit.SpawnOnDeathCount;
+		AudioDirector.Instance?.PlayEnemySpecial("split", deadUnit.Position);
 		const float spacing = 18f;
 		var startOffset = -((count - 1) * spacing) * 0.5f;
 
@@ -5420,6 +5446,7 @@ public partial class BattleController : Node2D
 		var actualReflected = attacker.TakeDamage(reflectedDamage);
 		if (actualReflected > 0.05f)
 		{
+			AudioDirector.Instance?.PlayEnemySpecial("reflect", reflector.Position);
 			SpawnDamageFeedback(attacker.Position, actualReflected, reflector.Tint.Lightened(0.3f));
 		}
 	}
@@ -5482,6 +5509,7 @@ public partial class BattleController : Node2D
 		}
 
 		// Kill the siege tower after deploying
+		AudioDirector.Instance?.PlayEnemySpecial("tower", siegeTower.Position);
 		siegeTower.TakeDamage(siegeTower.MaxHealth * 10f);
 		return spawned > 0;
 	}
@@ -5566,7 +5594,14 @@ public partial class BattleController : Node2D
 			$"-{Mathf.RoundToInt(damage)}",
 			color.Lightened(0.3f),
 			0.46f);
-		AudioDirector.Instance?.PlayImpact(damage);
+	}
+
+	// Now and then a living enemy groans, shrieks or rattles as the host advances.
+	private void TickHordeVoices()
+	{
+		if (_battleEnded || _battlePaused || AudioDirector.Instance == null) return;
+		var enemies = _units.Where(u => u.Team == Team.Enemy && !u.IsDead).ToList();
+		if (enemies.Count > 0) AudioDirector.Instance.TickHordeVoices(enemies[_rng.RandiRange(0, enemies.Count - 1)]);
 	}
 
 	// Battle text is numbers only (damage, healing, repairs); names and callouts stay off the field.
@@ -6163,6 +6198,8 @@ public partial class BattleController : Node2D
 
 	private void ShowEndPanelAnimated()
 	{
+		// Earned stars ring out one by one as the result appears (D major, in tune with the victory fanfare).
+		if (_endStarRating.Visible) AudioDirector.Instance?.PlayStars(_endStarRating.Stars);
 		if (IsInstanceValid(_royalResult)) { _royalResult.Visible = true; _royalResult.Appear(); return; }
 		_endCenter.Visible = true;
 		_endPanel.Visible = true;

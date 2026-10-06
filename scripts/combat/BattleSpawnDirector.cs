@@ -300,6 +300,8 @@ public sealed class BattleSpawnDirector
                 ? $"Wave {NextScriptedWaveIndex + 1}"
                 : wave.Label;
             setStatus($"Enemy wave {NextScriptedWaveIndex + 1} incoming: {label}.");
+            // The host's war horn announces each wave after the opening one (the caravan's horn opened the battle).
+            if (NextScriptedWaveIndex > 0) AudioDirector.Instance?.PlayWaveHorn();
             NextScriptedWaveIndex++;
         }
     }

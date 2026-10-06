@@ -3,852 +3,700 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
+/// <summary>
+/// Plays every sound effect and the ambience. Cues come from assets/sfx/sfx.json (rendered by
+/// art/audio/build_sfx.py): each cue has round-robin variants, a mix bus, a cooldown, a voice limit and pitch drift.
+/// Battle sounds are positional on the battlefield; ambience is a looping bed per place plus scattered details.
+/// </summary>
 public partial class AudioDirector : Node
 {
-	private const int SampleRate = 22050;
-	private const string UiHoverCueId = "ui_hover";
-	private const string UiConfirmCueId = "ui_confirm";
-	private const string SceneChangeCueId = "scene_change";
-	private const string DeployCueId = "deploy";
-	private const string ImpactLightCueId = "impact_light";
-	private const string ImpactHeavyCueId = "impact_heavy";
-	private const string BusHitCueId = "bus_hit";
-	private const string BarricadeHitCueId = "barricade_hit";
-	private const string RepairCueId = "repair";
-	private const string HazardWarningCueId = "hazard_warning";
-	private const string HazardStrikeCueId = "hazard_strike";
-	private const string VictoryCueId = "victory";
-	private const string DefeatCueId = "defeat";
-	private const string SpellCastCueId = "spell_cast";
-	private const string BossSpawnCueId = "boss_spawn";
-	private const string UpgradeConfirmCueId = "upgrade_confirm";
-	private const string AchievementUnlockCueId = "achievement_unlock";
-	private const string RelicPickupCueId = "relic_pickup";
-	private const string BossDeathCueId = "boss_death";
-	private const string MenuAmbienceCueId = "ambience_menu";
-	private const string BattleAmbienceCueId = "ambience_battle";
-	private const string EndlessAmbienceCueId = "ambience_endless";
-	private const string MultiplayerAmbienceCueId = "ambience_multiplayer";
-	private const string ShopAmbienceCueId = "ambience_shop";
-	private const string RoadAmbienceCueId = "ambience_route_road";
-	private const string HarborAmbienceCueId = "ambience_route_harbor";
-	private const string FoundryAmbienceCueId = "ambience_route_foundry";
-	private const string QuarantineAmbienceCueId = "ambience_route_quarantine";
-	private const string ThornwallAmbienceCueId = "ambience_route_thornwall";
-	private const string BasilicaAmbienceCueId = "ambience_route_basilica";
-	private const string MireAmbienceCueId = "ambience_route_mire";
-	private const string SteppeAmbienceCueId = "ambience_route_steppe";
-	private const string GloamwoodAmbienceCueId = "ambience_route_gloamwood";
-	private const string CitadelAmbienceCueId = "ambience_route_citadel";
+	public const string MusicBus = "Music";
+	public const string EffectsBus = "Effects";
+	public const string InterfaceBus = "Interface";
+	public const string AmbienceBus = "Ambience";
+	private const string ManifestPath = "res://assets/sfx/sfx.json";
+	private const string AmbiencePath = "res://assets/sfx/ambience.json";
+	private const int MaxVoices = 32;
+	private const float BedFadeSeconds = 2.5f;
+	private const float HordeMinGap = 2.4f, HordeMaxGap = 5.5f;
 
-	private readonly struct ToneLayer
+	private sealed class CueSet
 	{
-		public ToneLayer(float startFrequency, float endFrequency, float gain, bool square = false)
-		{
-			StartFrequency = startFrequency;
-			EndFrequency = endFrequency;
-			Gain = gain;
-			Square = square;
-		}
+		public string Id = "";
+		public AudioStream[] Streams = Array.Empty<AudioStream>();
+		public StringName Bus = EffectsBus;
+		public bool Positional, Loop;
+		public float Cooldown, Pitch, VolumeDb;
+		public int Voices = 4, Playing, Last = -1;
+	}
 
-		public float StartFrequency { get; }
-		public float EndFrequency { get; }
-		public float Gain { get; }
-		public bool Square { get; }
+	private sealed class AmbienceProfile
+	{
+		public string Bed = "";
+		public string[] Details = Array.Empty<string>();
+		public Vector2 Gap = new(8, 14);
 	}
 
 	public static AudioDirector Instance { get; private set; }
 
-	private readonly List<Control> _touchControls = new();
-	private readonly Dictionary<string, AudioStreamWav> _cues = new(StringComparer.OrdinalIgnoreCase);
-	private readonly Dictionary<string, double> _lastCueTimes = new(StringComparer.OrdinalIgnoreCase);
-	private readonly RandomNumberGenerator _rng = new();
+	/// <summary>Raised whenever a cue actually plays (review drivers count these).</summary>
+	public event Action<string> CuePlayed;
 
-	private Timer _ambienceTimer = null!;
-	private string _currentScenePath = string.Empty;
-	private string _currentAmbienceContextKey = string.Empty;
-	private string _currentAmbienceCueId = string.Empty;
-	private float _currentAmbienceVolumeDb = -24f;
-	private Vector2 _currentAmbienceIntervalRange = new(5.8f, 7.4f);
-	private Vector2 _currentAmbiencePitchRange = new(0.985f, 1.015f);
+	/// <summary>The ambience bed currently looping and the place it belongs to.</summary>
+	public string AmbienceBed => _bedCue;
+	public string AmbienceContext => _ambienceContext;
+
+	private readonly Dictionary<string, CueSet> _cues = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, double> _lastPlayed = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, AmbienceProfile> _ambience = new(StringComparer.Ordinal);
+	private readonly RandomNumberGenerator _rng = new();
+	private readonly List<Control> _touchControls = new();
+	private int _playing;
+	private Node2D _world;
+	private string _battleRoute = "";
+	private AudioStreamPlayer _bedA, _bedB, _din;
+	private bool _bedOnA = true;
+	private string _bedCue = "", _ambienceContext = "", _currentScenePath = "";
+	private Timer _detailTimer;
+	private Tween _bedTween;
 	private float _battlePressure;
+	private double _nextHordeVoice;
 
 	public override void _EnterTree()
 	{
 		Instance = this;
+		// Menus and the pause screen still click while the tree is paused, and the ambience keeps breathing.
+		ProcessMode = ProcessModeEnum.Always;
+		EnsureBuses();
 	}
 
 	public override void _ExitTree()
 	{
-		if (IsInsideTree())
-		{
-			GetTree().NodeAdded -= OnTreeNodeAdded;
-		}
-
-		if (Instance == this)
-		{
-			Instance = null;
-		}
+		if (IsInsideTree()) GetTree().NodeAdded -= OnTreeNodeAdded;
+		if (Instance == this) Instance = null;
 	}
 
 	public override void _Ready()
 	{
 		_rng.Randomize();
-		BuildCueLibrary();
-
-		_ambienceTimer = new Timer
-		{
-			OneShot = true,
-			ProcessCallback = Timer.TimerProcessCallback.Idle
-		};
-		_ambienceTimer.Timeout += OnAmbienceTimerTimeout;
-		AddChild(_ambienceTimer);
-
+		LoadManifest();
+		LoadAmbienceProfiles();
+		_bedA = MakeLoopPlayer("BedA");
+		_bedB = MakeLoopPlayer("BedB");
+		_din = MakeLoopPlayer("BattleDin");
+		_detailTimer = new Timer { OneShot = true, ProcessCallback = Timer.TimerProcessCallback.Idle };
+		_detailTimer.Timeout += OnDetailTimer;
+		AddChild(_detailTimer);
 		GetTree().NodeAdded += OnTreeNodeAdded;
-		BindButtonsRecursive(GetTree().Root);
-		UpdateSceneContext(true);
+		BindControlsRecursive(GetTree().Root);
+		RefreshMixFromState();
 	}
 
 	public override void _Process(double delta)
 	{
-        // Touch UI uses visible labels and accessible names instead of hover tooltips.
-        for (var i = _touchControls.Count - 1; i >= 0; i--)
-        {
-            var control = _touchControls[i];
-            if (!IsInstanceValid(control)) { _touchControls.RemoveAt(i); continue; }
-            if (control.TooltipText.Length == 0) continue;
-            if (control.AccessibilityName.Length == 0) control.AccessibilityName = control.TooltipText;
-            control.TooltipText = "";
-        }
+		// Touch UI uses visible labels and accessible names instead of hover tooltips.
+		for (var i = _touchControls.Count - 1; i >= 0; i--)
+		{
+			var control = _touchControls[i];
+			if (!IsInstanceValid(control)) { _touchControls.RemoveAt(i); continue; }
+			if (control.TooltipText.Length == 0) continue;
+			if (control.AccessibilityName.Length == 0) control.AccessibilityName = control.TooltipText;
+			control.TooltipText = "";
+		}
 		UpdateSceneContext();
 	}
 
-	public void PlayUiHover()
-	{
-		PlayCue(UiHoverCueId, -26f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.045f);
-	}
+	// ------------------------------------------------------------------ core playback
 
-	public void PlayUiConfirm()
-	{
-		PlayCue(UiConfirmCueId, -19f, 1f + _rng.RandfRange(-0.025f, 0.025f), 0.06f);
-	}
+	/// <summary>Plays a cue (non-positional). Returns false when it was throttled, missing or muted.</summary>
+	public bool Play(string cueId, float volumeDb = 0f, float pitch = 1f) => PlayInternal(cueId, volumeDb, pitch, null);
 
-	public void PlaySceneChange()
-	{
-		PlayCue(SceneChangeCueId, -21f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.08f);
-	}
+	/// <summary>Plays a cue at a battlefield position (panned and attenuated by the battle camera).</summary>
+	public bool PlayAt(string cueId, Vector2 worldPosition, float volumeDb = 0f, float pitch = 1f) =>
+		PlayInternal(cueId, volumeDb, pitch, worldPosition);
 
-	public void PlayDeploy(UnitDefinition definition)
-	{
-		var pitchScale = 0.92f + Mathf.Clamp(definition.Cost / 38f, 0f, 0.16f);
-		pitchScale += ResolveVisualClassPitchOffset(definition.VisualClass);
-		PlayCue(DeployCueId, -10f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.05f);
-	}
+	public bool HasCue(string cueId) => _cues.TryGetValue(cueId ?? "", out var cue) && cue.Streams.Length > 0;
 
-	public void PlayImpact(float damage, string visualClass = "")
+	public int CueCount => _cues.Count(entry => entry.Value.Streams.Length > 0);
+
+	private bool PlayInternal(string cueId, float volumeDb, float pitch, Vector2? position)
 	{
-		var heavy = damage >= 18f;
-		var pitchScale = 1f + _rng.RandfRange(-0.06f, 0.06f);
-		if (!string.IsNullOrWhiteSpace(visualClass))
+		if (string.IsNullOrEmpty(cueId) || !_cues.TryGetValue(cueId, out var cue) || cue.Streams.Length == 0) return false;
+		if (GameState.Instance != null && GameState.Instance.AudioMuted) return false;
+		var now = Time.GetTicksMsec() / 1000.0;
+		if (cue.Cooldown > 0f && _lastPlayed.TryGetValue(cueId, out var last) && now - last < cue.Cooldown) return false;
+		if (cue.Playing >= cue.Voices) return false;
+		// Interface and big moments always get through; battle chatter yields when the mix is crowded.
+		if (_playing >= MaxVoices && cue.Bus == EffectsBus && cue.Positional) return false;
+		_lastPlayed[cueId] = now;
+
+		var index = cue.Streams.Length == 1 ? 0 : _rng.RandiRange(0, cue.Streams.Length - 1);
+		if (index == cue.Last && cue.Streams.Length > 1) index = (index + 1) % cue.Streams.Length;
+		cue.Last = index;
+		var pitchScale = Mathf.Max(0.5f, pitch * (1f + _rng.RandfRange(-cue.Pitch, cue.Pitch)));
+
+		Node player;
+		if (position is { } at && cue.Positional && IsInstanceValid(_world) && _world.IsInsideTree())
 		{
-			pitchScale += ResolveVisualClassPitchOffset(visualClass);
+			var spatial = new AudioStreamPlayer2D
+			{
+				Stream = cue.Streams[index], VolumeDb = cue.VolumeDb + volumeDb, PitchScale = pitchScale, Bus = cue.Bus,
+				MaxDistance = 2600f, Attenuation = 0.85f, PanningStrength = 1.4f,
+			};
+			_world.AddChild(spatial);
+			spatial.GlobalPosition = at;
+			spatial.Play();
+			player = spatial;
 		}
-		PlayCue(
-			heavy ? ImpactHeavyCueId : ImpactLightCueId,
-			heavy ? -11f : -15f,
-			pitchScale,
-			heavy ? 0.08f : 0.045f,
-			heavy ? "impact_heavy" : "impact_light");
-	}
-
-	public void PlayBaseHit(bool playerBase, float damage)
-	{
-		var volume = damage >= 12f ? -7.5f : -10.5f;
-		PlayCue(
-			playerBase ? BusHitCueId : BarricadeHitCueId,
-			volume,
-			1f + _rng.RandfRange(-0.04f, 0.04f),
-			0.09f,
-			playerBase ? "bus_hit" : "barricade_hit");
-	}
-
-	public void PlayBusRepair(float amount)
-	{
-		var volume = amount >= 12f ? -9f : -12f;
-		PlayCue(RepairCueId, volume, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.08f, "bus_repair");
-	}
-
-	public void PlayHazardWarning()
-	{
-		PlayCue(HazardWarningCueId, -11.5f, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.18f, "hazard_warning");
-	}
-
-	public void PlayHazardStrike()
-	{
-		PlayCue(HazardStrikeCueId, -9.5f, 1f + _rng.RandfRange(-0.04f, 0.04f), 0.08f, "hazard_strike");
-	}
-
-	public void PlayVictory()
-	{
-		PlayCue(VictoryCueId, -8f, 1f, 0.3f);
-	}
-
-	public void PlayDefeat()
-	{
-		PlayCue(DefeatCueId, -7f, 1f, 0.3f);
-	}
-
-	public void PlaySpellCast(string effectType)
-	{
-		var pitchScale = effectType switch
+		else
 		{
-			"fireball" => 0.88f,
-			"heal" => 1.12f,
-			"frost_burst" => 1.04f,
-			"lightning_strike" => 0.94f,
-			"barrier_ward" => 1.08f,
-			"stone_barricade" => 0.82f,
-			"war_cry" => 0.78f,
-			"earthquake" => 0.72f,
-			"polymorph" => 1.18f,
-			"resurrect" => 1.06f,
-			_ => 1f
-		};
-		PlayCue(_authoredOverrides.ContainsKey($"spell_{effectType}") ? $"spell_{effectType}" : SpellCastCueId, -13f, pitchScale + _rng.RandfRange(-0.03f, 0.03f), 0.1f, "spell_cast");
+			var flat = new AudioStreamPlayer
+			{
+				Stream = cue.Streams[index], VolumeDb = cue.VolumeDb + volumeDb, PitchScale = pitchScale, Bus = cue.Bus,
+			};
+			AddChild(flat);
+			flat.Play();
+			player = flat;
+		}
+		cue.Playing++;
+		_playing++;
+		CuePlayed?.Invoke(cueId);
+		// Release the voice once - when it finishes, or when its scene is torn down first.
+		var released = false;
+		void Release()
+		{
+			if (released) return;
+			released = true;
+			cue.Playing = Math.Max(0, cue.Playing - 1);
+			_playing = Math.Max(0, _playing - 1);
+		}
+		player.TreeExiting += Release;
+		player.Connect(AudioStreamPlayer.SignalName.Finished, Callable.From(() => { Release(); player.QueueFree(); }));
+		return true;
 	}
 
-	public void PlayBossSpawn()
+	// ------------------------------------------------------------------ interface
+
+	public void PlayUiHover() => Play("ui_hover");
+	public void PlayUiConfirm() => Play("ui_confirm");
+	public void PlayUiTap() => Play("ui_tap");
+	public void PlayUiBack() => Play("ui_back");
+	public void PlayUiError() => Play("ui_error");
+	public void PlaySceneChange() => Play("scene_change");
+	public void PlayModalOpen() => Play("modal_open");
+	public void PlayModalClose() => Play("modal_close", -2f);
+	public void PlayPurchase() => Play("purchase");
+	public void PlayCoin() => Play("coin");
+	public void PlayRewardClaim() => Play("reward_claim");
+	public void PlayUpgradeConfirm() => Play("upgrade_confirm");
+	public void PlayLevelUp() => Play("level_up");
+	public void PlayMapTravel() => Play("map_travel");
+	public void PlayMapSelect() => Play("map_select");
+	public void PlayCardPickup() => Play("card_pickup");
+	public void PlayCardDrop() => Play("card_drop");
+	public void PlayCardCancel() => Play("card_cancel");
+	public void PlaySpellArm() => Play("spell_arm");
+	public void PlaySpellDenied() => Play("spell_denied");
+
+	/// <summary>Reward claim result: a satisfying bag-and-sparkle, or a dull knock when refused. Returns ok.</summary>
+	public static bool Claimed(bool ok)
 	{
-		PlayCue(BossSpawnCueId, -6f, 1f + _rng.RandfRange(-0.02f, 0.02f), 0.4f, "boss_spawn");
+		if (ok) Instance?.PlayRewardClaim();
+		else Instance?.PlayUiError();
+		return ok;
 	}
 
-	public void PlayUpgradeConfirm()
+	/// <summary>Purchase result: coins into the purse, or a dull knock when refused. Returns ok.</summary>
+	public static bool Purchased(bool ok)
 	{
-		PlayCue(UpgradeConfirmCueId, -10f, 1f + _rng.RandfRange(-0.03f, 0.03f), 0.08f, "upgrade_confirm");
+		if (ok) Instance?.PlayPurchase();
+		else Instance?.PlayUiError();
+		return ok;
 	}
 
 	public void PlayAchievementUnlock()
 	{
-		PlayCue(AchievementUnlockCueId, -8f, 1.18f + _rng.RandfRange(-0.02f, 0.02f), 0f, "achievement_unlock");
-		PlayCue(AchievementUnlockCueId, -9f, 1.26f + _rng.RandfRange(-0.02f, 0.02f), 0f, "achievement_unlock_tap");
+		if (Play("achievement_unlock")) MusicPlayer.Instance?.Duck(-6f, 1.6f);
 	}
 
-	public void PlayRelicPickup()
+	public void PlayRelicPickup() => Play("relic_pickup");
+
+	/// <summary>Results stars, one after another.</summary>
+	public void PlayStars(int stars)
 	{
-		PlayCue(RelicPickupCueId, -8f, 1.14f + _rng.RandfRange(-0.03f, 0.03f), 0.12f, "relic_pickup");
+		for (var i = 1; i <= Mathf.Clamp(stars, 0, 3); i++)
+		{
+			var id = $"star_{i}";
+			GetTree().CreateTimer(0.35 + 0.32 * i, true).Timeout += () => Play(id);
+		}
 	}
 
-	public void PlayBossDeath()
-	{
-		PlayCue(BossDeathCueId, -6f, 0.72f + _rng.RandfRange(-0.02f, 0.02f), 0.3f, "boss_death");
-		PlayCue(AchievementUnlockCueId, -10f, 1.32f + _rng.RandfRange(-0.02f, 0.02f), 0f, "boss_death_chime");
-	}
+	// ------------------------------------------------------------------ battle
 
-	public void RefreshMixFromState()
+	/// <summary>Called by the battle when it starts: positional sounds attach to its world, the zone's ambience plays.</summary>
+	public void EnterBattle(Node2D world, string routeId)
 	{
+		_world = world;
+		_battleRoute = RouteCatalog.Normalize(routeId ?? "");
+		_battlePressure = 0f;
+		_nextHordeVoice = Time.GetTicksMsec() / 1000.0 + 3.0;
 		UpdateSceneContext(true);
+	}
+
+	public void ExitBattle(Node2D world)
+	{
+		if (_world != world) return;
+		_world = null;
+		_battleRoute = "";
+		SetDinLevel(0f, 1.5f);
 	}
 
 	public void SetBattlePressure(float pressure)
 	{
-		var clamped = Mathf.Clamp(pressure, 0f, 1f);
-		if (Mathf.Abs(clamped - _battlePressure) < 0.06f)
+		_battlePressure = Mathf.Clamp(pressure, 0f, 1f);
+		if (IsInstanceValid(_world)) SetDinLevel(_battlePressure, 2f);
+	}
+
+	public void PlayBattleStart() => Play("battle_start");
+
+	public void PlayWaveHorn()
+	{
+		if (Play("wave_horn")) MusicPlayer.Instance?.Duck(-5f, 2.5f);
+	}
+
+	/// <summary>The swing's whoosh as an attack begins (profile overrides the sprite's, e.g. a ranged unit's melee).</summary>
+	public void PlaySwing(Unit attacker, string profile = null)
+	{
+		if (attacker == null) return;
+		var cue = AudioCatalog.Swing(profile ?? attacker.MotionProfile);
+		if (cue.Length > 0) PlayAt(cue, attacker.Position, -2f);
+	}
+
+	public void PlayMeleeHit(Unit attacker, Unit target, float damage, string profile = null)
+	{
+		if (attacker == null || target == null) return;
+		var at = target.Position;
+		var heavy = damage >= 24f || attacker.Radius >= 20f;
+		var cue = target.VisualClass == "shield" ? "hit_shield" : AudioCatalog.Hit(profile ?? attacker.MotionProfile);
+		PlayAt(cue, at, heavy ? 1.5f : 0f, heavy ? 0.94f : 1f);
+		// Bone rattles under some blows on the undead (not every one, so a melee doesn't turn to clatter).
+		if (AudioCatalog.IsSkeletal(target.Team == Team.Enemy, target.VisualClass) && (heavy || _rng.Randf() < 0.5f)) PlayAt("hit_bone", at, -5f);
+	}
+
+	public void PlayLaunch(Unit attacker, string styleId)
+	{
+		if (attacker == null) return;
+		PlayAt(AudioCatalog.Launch(styleId), attacker.Position);
+	}
+
+	public void PlayProjectileImpact(string styleId, Vector2 at, float damage)
+	{
+		PlayAt(AudioCatalog.Impact(styleId), at, damage >= 30f ? 1.5f : 0f);
+	}
+
+	public void PlayShieldBlock(Vector2 at) => PlayAt("shield_block", at);
+
+	public void PlayDeploy(UnitDefinition definition, Vector2 at)
+	{
+		if (definition == null) return;
+		foreach (var cue in AudioCatalog.Deploy(definition.Id, definition.VisualClass)) PlayAt(cue, at);
+	}
+
+	public void PlayDeploy(UnitDefinition definition) => PlayDeploy(definition, IsInstanceValid(_world) ? WorldCentre() : Vector2.Zero);
+
+	public void PlayDeployDenied() => Play("ui_error");
+
+	/// <summary>Enemy arrival: a voice for the unit (sparingly), or the grave lord's roar.</summary>
+	public void PlayEnemySpawn(Unit unit)
+	{
+		if (unit == null) return;
+		if (unit.VisualClass == "boss")
 		{
+			PlayAt(AudioCatalog.BossRoarFor(unit.DefinitionId), unit.Position, 2f);
 			return;
 		}
+		var cue = AudioCatalog.EnemyVoiceFor(unit.DefinitionId);
+		if (cue.Length > 0 && _rng.Randf() < 0.45f) PlayAt(cue, unit.Position, -3f);
+	}
 
-		_battlePressure = clamped;
+	/// <summary>Called each battle tick with a living enemy: the host groans and shrieks now and then as it advances.</summary>
+	public void TickHordeVoices(Unit sample)
+	{
+		var now = Time.GetTicksMsec() / 1000.0;
+		if (sample == null || now < _nextHordeVoice) return;
+		_nextHordeVoice = now + _rng.RandfRange(HordeMinGap, HordeMaxGap) * Mathf.Lerp(1.3f, 0.7f, _battlePressure);
+		var cue = sample.VisualClass == "boss" ? "" : AudioCatalog.EnemyVoiceFor(sample.DefinitionId);
+		if (cue.Length > 0) PlayAt(cue, sample.Position, -6f);
+	}
+
+	public void PlayUnitDeath(Unit unit, DeathStyle style)
+	{
+		if (unit == null) return;
+		var fx = style?.Fx ?? "dust";
+		foreach (var cue in AudioCatalog.Death(fx, unit.Team == Team.Player, unit.DefinitionId, unit.VisualClass))
+			PlayAt(cue, unit.Position, unit.VisualClass == "boss" ? 2f : 0f, unit.VisualClass == "boss" ? 0.85f : 1f);
+	}
+
+	public void PlayBodyFall(Vector2 at, string fx, bool heavy, bool boss) =>
+		PlayAt(AudioCatalog.BodyFall(fx, heavy), at, boss ? 3f : 0f, boss ? 0.8f : 1f);
+
+	public void PlayAbility(string abilityId, Vector2 at)
+	{
+		foreach (var cue in AudioCatalog.Ability(abilityId)) PlayAt(cue, at);
+	}
+
+	/// <summary>The host's special moves: rally, jam, raise, burrow, emerge, tower, reflect, split, burst.</summary>
+	public void PlayEnemySpecial(string kind, Vector2 at)
+	{
+		var cue = kind switch
+		{
+			"rally" => "herald_howl", "jam" => "hex_jam", "raise" => "necro_raise", "burrow" => "dig_burrow",
+			"emerge" => "dig_emerge", "tower" => "tower_open", "reflect" => "reflect", "split" => "bone_nest_crack",
+			"burst" => "explosion", _ => "",
+		};
+		PlayAt(cue, at);
+		if (kind == "burst") PlayAt("death_gas", at, -2f);
+	}
+
+	public void PlayBaseWeapon(string styleId, Vector2 at)
+	{
+		var cue = styleId switch
+		{
+			"arrow" => "base_arrows", "ballista_bolt" => "ballista_release", "firepot" => "base_firepot",
+			"harpoon" => "harpoon_release", "frost_shard" => "cast_frost", "hex" => "cast_hex", _ => AudioCatalog.Launch(styleId),
+		};
+		PlayAt(cue, at);
+	}
+
+	public void PlayWagonDoor(bool open, Vector2 at) => PlayAt(open ? "wagon_door_open" : "wagon_door_close", at, -2f);
+
+	public void PlayImpact(float damage, string visualClass = "") =>
+		Play(damage >= 18f ? "hit_heavy" : "hit_blunt", damage >= 18f ? -3f : -5f);
+
+	public void PlayBaseHit(bool playerBase, float damage)
+	{
+		var cue = playerBase ? "bus_hit" : "barricade_hit";
+		var volume = damage >= 12f ? 0f : -3f;
+		if (IsInstanceValid(_world)) PlayAt(cue, BaseAnchor(playerBase), volume);
+		else Play(cue, volume);
+	}
+
+	public void PlayBusRepair(float amount) => Play("repair", amount >= 12f ? 0f : -3f);
+
+	public void PlayHazardWarning() => Play("hazard_warning");
+
+	public void PlayHazardStrike() => Play("hazard_strike");
+
+	public void PlayCombo() => Play("combo");
+
+	public void PlayBossPhase()
+	{
+		if (Play("boss_phase")) MusicPlayer.Instance?.Duck(-6f, 2.5f);
+	}
+
+	public void PlayVictory()
+	{
+		Play("victory");
+		MusicPlayer.Instance?.FadeOut(1.2f);
+	}
+
+	public void PlayDefeat()
+	{
+		Play("defeat");
+		MusicPlayer.Instance?.FadeOut(1.0f);
+	}
+
+	public void PlaySpellCast(string effectType, Vector2 at)
+	{
+		var cue = $"spell_{effectType}";
+		if (!HasCue(cue)) cue = "spell_fireball";
+		if (PlayAt(cue, at) && effectType is "war_cry" or "earthquake" or "lightning_strike" or "resurrect")
+			MusicPlayer.Instance?.Duck(-4f, 1.5f);
+	}
+
+	public void PlaySpellCast(string effectType) => PlaySpellCast(effectType, IsInstanceValid(_world) ? WorldCentre() : Vector2.Zero);
+
+	public void PlayBossSpawn()
+	{
+		if (Play("boss_spawn")) MusicPlayer.Instance?.Duck(-8f, 2.5f);
+	}
+
+	public void PlayBossDeath()
+	{
+		if (Play("boss_death")) MusicPlayer.Instance?.Duck(-8f, 2.5f);
+	}
+
+	private Vector2 WorldCentre()
+	{
+		var camera = _world?.GetViewport()?.GetCamera2D();
+		return camera != null ? camera.GetScreenCenterPosition() : Vector2.Zero;
+	}
+
+	private Vector2 BaseAnchor(bool playerBase)
+	{
+		var centre = WorldCentre();
+		var half = (_world?.GetViewportRect().Size.X ?? 1280f) * 0.5f;
+		return centre + new Vector2(playerBase ? -half : half, 0f);
+	}
+
+	// ------------------------------------------------------------------ mix
+
+	public void RefreshMixFromState()
+	{
+		EnsureBuses();
+		var state = GameState.Instance;
+		var muted = state?.AudioMuted ?? false;
+		AudioServer.SetBusMute(0, muted);
+		SetBusVolume(EffectsBus, PercentToDb(state?.EffectsVolumePercent ?? 85));
+		SetBusVolume(InterfaceBus, PercentToDb(state?.EffectsVolumePercent ?? 85));
+		SetBusVolume(AmbienceBus, PercentToDb(state?.AmbienceVolumePercent ?? 65));
+		SetBusVolume(MusicBus, PercentToDb(state?.MusicVolumePercent ?? 50));
 		UpdateSceneContext(true);
 	}
 
-	private static float ResolveVisualClassPitchOffset(string visualClass)
+	private static void EnsureBuses()
 	{
-		return (visualClass ?? "") switch
+		foreach (var name in new[] { MusicBus, EffectsBus, InterfaceBus, AmbienceBus })
 		{
-			"hound" => 0.18f,
-			"banner" => -0.12f,
-			"necromancer" => -0.20f,
-			"berserker" => -0.16f,
-			"skirmisher" => 0.08f,
-			"shield" => -0.08f,
-			"sniper" => 0.12f,
-			"boss" => -0.25f,
-			"bloater" => -0.14f,
-			"siegetower" => -0.22f,
-			_ => 0f
-		};
+			if (AudioServer.GetBusIndex(name) >= 0) continue;
+			AudioServer.AddBus();
+			var index = AudioServer.BusCount - 1;
+			AudioServer.SetBusName(index, name);
+			AudioServer.SetBusSend(index, "Master");
+		}
+		// A gentle safety limiter so a pile-up of hits never clips.
+		if (AudioServer.GetBusEffectCount(0) == 0)
+			AudioServer.AddBusEffect(0, new AudioEffectHardLimiter { CeilingDb = -0.6f, PreGainDb = 0f, Release = 0.1f });
 	}
 
-	private void OnTreeNodeAdded(Node node)
+	private static void SetBusVolume(string bus, float db)
 	{
-		if (node is Control control && !_touchControls.Contains(control)) _touchControls.Add(control);
-		if (node is Button button)
-		{
-			BindButton(button);
-		}
+		var index = AudioServer.GetBusIndex(bus);
+		if (index >= 0) AudioServer.SetBusVolumeDb(index, db);
 	}
 
-	private void BindButtonsRecursive(Node node)
+	public static float PercentToDb(int percent)
 	{
-		if (node is Control control && !_touchControls.Contains(control)) _touchControls.Add(control);
-		if (node is Button button)
-		{
-			BindButton(button);
-		}
-
-		foreach (Node child in node.GetChildren())
-		{
-			BindButtonsRecursive(child);
-		}
+		var normalized = Mathf.Clamp(percent / 100f, 0f, 1f);
+		return normalized <= 0.001f ? -80f : 20f * Mathf.Log(normalized) / Mathf.Log(10f);
 	}
 
-	private void BindButton(Button button)
-	{
-		const string audioBoundMeta = "audio_bound";
-		if (button.HasMeta(audioBoundMeta))
-		{
-			return;
-		}
-
-		button.SetMeta(audioBoundMeta, true);
-		button.Pressed += () => PlayUiConfirm();
-	}
+	// ------------------------------------------------------------------ ambience
 
 	private void UpdateSceneContext(bool force = false)
 	{
 		var scenePath = GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
-		if (scenePath != SceneRouter.BattleScene)
-		{
-			_battlePressure = 0f;
-		}
-
-		var contextKey = ResolveAmbienceContextKey(scenePath);
-		if (!force && scenePath == _currentScenePath && contextKey == _currentAmbienceContextKey)
-		{
-			return;
-		}
-
+		if (!force && scenePath == _currentScenePath) return;
 		_currentScenePath = scenePath;
-		_currentAmbienceContextKey = contextKey;
-
-		var nextCueId = ResolveAmbienceCueId(scenePath);
-		var nextVolumeDb = ResolveAmbienceVolumeDb(scenePath);
-		var nextIntervalRange = ResolveAmbienceIntervalRange(scenePath);
-		var nextPitchRange = ResolveAmbiencePitchRange(scenePath);
-		var ambienceChanged =
-			nextCueId != _currentAmbienceCueId ||
-			Mathf.Abs(nextVolumeDb - _currentAmbienceVolumeDb) > 0.05f ||
-			nextIntervalRange != _currentAmbienceIntervalRange ||
-			nextPitchRange != _currentAmbiencePitchRange;
-
-		_currentAmbienceCueId = nextCueId;
-		_currentAmbienceVolumeDb = nextVolumeDb;
-		_currentAmbienceIntervalRange = nextIntervalRange;
-		_currentAmbiencePitchRange = nextPitchRange;
-
-		if (string.IsNullOrWhiteSpace(_currentAmbienceCueId))
-		{
-			_ambienceTimer.Stop();
-			return;
-		}
-
-		if (ambienceChanged || !_ambienceTimer.IsStopped())
-		{
-			ScheduleNextAmbiencePulse(0.35f);
-		}
+		var route = scenePath == SceneRouter.BattleScene ? _battleRoute : scenePath == SceneRouter.LoadoutScene ? SelectedRoute() : "";
+		var context = AudioCatalog.AmbienceContext(scenePath, route);
+		if (!_ambience.ContainsKey(context)) context = "home";
+		if (scenePath == SceneRouter.SettingsScene && _ambienceContext.Length > 0) context = _ambienceContext;
+		if (!force && context == _ambienceContext) return;
+		var changed = context != _ambienceContext;
+		_ambienceContext = context;
+		if (scenePath != SceneRouter.BattleScene) SetDinLevel(0f, 1.5f);
+		if (changed || !_bedA.Playing && !_bedB.Playing) StartBed(_ambience.TryGetValue(context, out var p) ? p.Bed : "");
+		ScheduleDetail(_rng.RandfRange(2f, 5f));
 	}
 
-	private string ResolveAmbienceCueId(string scenePath)
+	private static string SelectedRoute()
 	{
-		var routeCueId = ResolveRouteAmbienceCueId(ResolveContextRouteId(scenePath));
-		return scenePath switch
+		var state = GameState.Instance;
+		if (state == null || state.MaxStage <= 0) return "";
+		return RouteCatalog.Get(GameData.GetStage(Mathf.Clamp(state.SelectedStage, 1, state.MaxStage)).MapId).Id;
+	}
+
+	private void StartBed(string cueId)
+	{
+		if (cueId == _bedCue && (_bedA.Playing || _bedB.Playing)) return;
+		_bedCue = cueId;
+		_bedTween?.Kill();
+		var outgoing = _bedOnA ? _bedA : _bedB;
+		var incoming = _bedOnA ? _bedB : _bedA;
+		_bedOnA = !_bedOnA;
+		_bedTween = CreateTween().SetParallel(true);
+		if (outgoing.Playing) _bedTween.TweenProperty(outgoing, "volume_db", -60f, BedFadeSeconds);
+		if (_cues.TryGetValue(cueId, out var cue) && cue.Streams.Length > 0 && !(GameState.Instance?.AudioMuted ?? false))
 		{
-			SceneRouter.MainMenuScene => MenuAmbienceCueId,
-			SceneRouter.MapScene => string.IsNullOrWhiteSpace(routeCueId) ? MenuAmbienceCueId : routeCueId,
-			SceneRouter.LoadoutScene => string.IsNullOrWhiteSpace(routeCueId) ? MenuAmbienceCueId : routeCueId,
-			SceneRouter.ShopScene => string.IsNullOrWhiteSpace(routeCueId) ? ShopAmbienceCueId : routeCueId,
-			SceneRouter.EndlessScene => string.IsNullOrWhiteSpace(routeCueId) ? EndlessAmbienceCueId : routeCueId,
-			SceneRouter.MultiplayerScene => string.IsNullOrWhiteSpace(routeCueId) ? MultiplayerAmbienceCueId : routeCueId,
-			SceneRouter.BattleScene => string.IsNullOrWhiteSpace(routeCueId) ? BattleAmbienceCueId : routeCueId,
-			_ => string.Empty
+			incoming.Stream = cue.Streams[0];
+			incoming.VolumeDb = -60f;
+			incoming.Play(_rng.RandfRange(0f, 30f));
+			_bedTween.TweenProperty(incoming, "volume_db", cue.VolumeDb, BedFadeSeconds);
+		}
+		_bedTween.Chain().TweenCallback(Callable.From(() => { if (outgoing.VolumeDb <= -59f) outgoing.Stop(); }));
+	}
+
+	private void SetDinLevel(float pressure, float seconds)
+	{
+		if (_din == null) return;
+		var target = pressure <= 0.02f ? -60f : Mathf.Lerp(-22f, -3f, pressure);
+		if (target > -59f && !_din.Playing && _cues.TryGetValue("battle_din", out var din) && din.Streams.Length > 0)
+		{
+			_din.Stream = din.Streams[0];
+			_din.VolumeDb = -60f;
+			_din.Play(_rng.RandfRange(0f, 30f));
+		}
+		var tween = CreateTween();
+		tween.TweenProperty(_din, "volume_db", target, seconds);
+		if (target <= -59f) tween.TweenCallback(Callable.From(() => _din.Stop()));
+	}
+
+	private void ScheduleDetail(float seconds)
+	{
+		if (_detailTimer == null) return;
+		_detailTimer.Start(Mathf.Max(0.5f, seconds));
+	}
+
+	private void OnDetailTimer()
+	{
+		if (!_ambience.TryGetValue(_ambienceContext, out var profile)) return;
+		if (profile.Details.Length > 0 && !(GameState.Instance?.AudioMuted ?? false))
+		{
+			var cueId = profile.Details[_rng.RandiRange(0, profile.Details.Length - 1)];
+			PlayDetail(cueId);
+		}
+		ScheduleDetail(_rng.RandfRange(profile.Gap.X, profile.Gap.Y));
+	}
+
+	/// <summary>A detail somewhere in the stereo field: left, right or behind the scene.</summary>
+	private void PlayDetail(string cueId)
+	{
+		if (!_cues.TryGetValue(cueId, out var cue) || cue.Streams.Length == 0) return;
+		var size = GetViewport().GetVisibleRect().Size;
+		var camera = GetViewport().GetCamera2D();
+		var centre = camera != null ? camera.GetScreenCenterPosition() : size * 0.5f;
+		var zoom = camera?.Zoom.X ?? 1f;
+		var player = new AudioStreamPlayer2D
+		{
+			Stream = cue.Streams[_rng.RandiRange(0, cue.Streams.Length - 1)], Bus = cue.Bus, VolumeDb = cue.VolumeDb + _rng.RandfRange(-4f, 0f),
+			PitchScale = 1f + _rng.RandfRange(-cue.Pitch, cue.Pitch), MaxDistance = 100000f, Attenuation = 0f, PanningStrength = 1.2f,
 		};
-	}
-
-	private float ResolveAmbienceVolumeDb(string scenePath)
-	{
-		return scenePath switch
-		{
-			SceneRouter.BattleScene => Mathf.Lerp(-23f, -18.5f, _battlePressure),
-			SceneRouter.EndlessScene => -23f,
-			SceneRouter.MultiplayerScene => -24f,
-			SceneRouter.ShopScene => -24f,
-			_ => -25f
-		};
-	}
-
-	private Vector2 ResolveAmbienceIntervalRange(string scenePath)
-	{
-		return scenePath switch
-		{
-			SceneRouter.BattleScene => new Vector2(
-				Mathf.Lerp(3.6f, 1.9f, _battlePressure),
-				Mathf.Lerp(4.8f, 3.1f, _battlePressure)),
-			SceneRouter.EndlessScene => new Vector2(3.1f, 4.2f),
-			SceneRouter.MultiplayerScene => new Vector2(4.3f, 5.4f),
-			SceneRouter.ShopScene => new Vector2(4.6f, 5.8f),
-			_ => new Vector2(5.2f, 6.8f)
-		};
-	}
-
-	private Vector2 ResolveAmbiencePitchRange(string scenePath)
-	{
-		var routeId = ResolveContextRouteId(scenePath);
-		var range = routeId switch
-		{
-			RouteCatalog.CityId => new Vector2(0.99f, 1.02f),
-			RouteCatalog.HarborId => new Vector2(0.94f, 0.98f),
-			RouteCatalog.FoundryId => new Vector2(0.88f, 0.93f),
-			RouteCatalog.QuarantineId => new Vector2(0.9f, 0.95f),
-			RouteCatalog.ThornwallId => new Vector2(1f, 1.04f),
-			RouteCatalog.BasilicaId => new Vector2(0.86f, 0.91f),
-			RouteCatalog.MireId => new Vector2(0.83f, 0.89f),
-			RouteCatalog.SteppeId => new Vector2(1.03f, 1.08f),
-			RouteCatalog.GloamwoodId => new Vector2(0.88f, 0.94f),
-			RouteCatalog.CitadelId => new Vector2(0.94f, 1f),
-			_ => new Vector2(0.985f, 1.015f)
-		};
-
-		if (scenePath == SceneRouter.BattleScene)
-		{
-			return new Vector2(
-				Mathf.Max(0.78f, range.X - (_battlePressure * 0.03f)),
-				Mathf.Min(1.12f, range.Y + (_battlePressure * 0.04f)));
-		}
-
-		return range;
-	}
-
-	private string ResolveAmbienceContextKey(string scenePath)
-	{
-		var routeId = ResolveContextRouteId(scenePath);
-		var pressureBucket = scenePath == SceneRouter.BattleScene
-			? Mathf.RoundToInt(_battlePressure * 4f)
-			: 0;
-		return $"{scenePath}|{routeId}|{pressureBucket}";
-	}
-
-	private string ResolveContextRouteId(string scenePath)
-	{
-		if (GameState.Instance == null)
-		{
-			return "";
-		}
-
-		return scenePath switch
-		{
-			SceneRouter.MapScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
-			SceneRouter.LoadoutScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
-			SceneRouter.ShopScene => ResolveStageRouteId(GameState.Instance.SelectedStage),
-			SceneRouter.EndlessScene => RouteCatalog.Get(GameData.GetLatestStageForMap(GameState.Instance.SelectedEndlessRouteId).MapId).Id,
-			SceneRouter.MultiplayerScene => ResolveStageRouteId(GameState.Instance.GetSelectedAsyncChallenge().Stage),
-			SceneRouter.BattleScene => ResolveBattleRouteId(),
-			_ => ""
-		};
-	}
-
-	private string ResolveBattleRouteId()
-	{
-		if (GameState.Instance == null)
-		{
-			return "";
-		}
-
-		return GameState.Instance.CurrentBattleMode switch
-		{
-			BattleRunMode.Endless => RouteCatalog.Get(GameData.GetLatestStageForMap(GameState.Instance.SelectedEndlessRouteId).MapId).Id,
-			BattleRunMode.AsyncChallenge => ResolveStageRouteId(GameState.Instance.GetSelectedAsyncChallenge().Stage),
-			_ => ResolveStageRouteId(GameState.Instance.SelectedStage)
-		};
-	}
-
-	private static string ResolveStageRouteId(int stage)
-	{
-		if (GameState.Instance == null || GameState.Instance.MaxStage <= 0)
-		{
-			return "";
-		}
-
-		var clampedStage = Mathf.Clamp(stage, 1, GameState.Instance.MaxStage);
-		return RouteCatalog.Get(GameData.GetStage(clampedStage).MapId).Id;
-	}
-
-	private static string ResolveRouteAmbienceCueId(string routeId)
-	{
-		return routeId switch
-		{
-			RouteCatalog.CityId => RoadAmbienceCueId,
-			RouteCatalog.HarborId => HarborAmbienceCueId,
-			RouteCatalog.FoundryId => FoundryAmbienceCueId,
-			RouteCatalog.QuarantineId => QuarantineAmbienceCueId,
-			RouteCatalog.ThornwallId => ThornwallAmbienceCueId,
-			RouteCatalog.BasilicaId => BasilicaAmbienceCueId,
-			RouteCatalog.MireId => MireAmbienceCueId,
-			RouteCatalog.SteppeId => SteppeAmbienceCueId,
-			RouteCatalog.GloamwoodId => GloamwoodAmbienceCueId,
-			RouteCatalog.CitadelId => CitadelAmbienceCueId,
-			_ => ""
-		};
-	}
-
-	private void OnAmbienceTimerTimeout()
-	{
-		if (string.IsNullOrWhiteSpace(_currentAmbienceCueId))
-		{
-			return;
-		}
-
-		PlayCue(
-			_currentAmbienceCueId,
-			_currentAmbienceVolumeDb,
-			_rng.RandfRange(_currentAmbiencePitchRange.X, _currentAmbiencePitchRange.Y),
-			isAmbience: true);
-		ScheduleNextAmbiencePulse();
-	}
-
-	private void ScheduleNextAmbiencePulse(float delaySeconds = -1f)
-	{
-		if (string.IsNullOrWhiteSpace(_currentAmbienceCueId))
-		{
-			_ambienceTimer.Stop();
-			return;
-		}
-
-		var waitTime = delaySeconds >= 0f
-			? delaySeconds
-			: _rng.RandfRange(_currentAmbienceIntervalRange.X, _currentAmbienceIntervalRange.Y);
-		_ambienceTimer.Start(waitTime);
-	}
-
-	private void PlayCue(
-		string cueId,
-		float volumeDb,
-		float pitchScale,
-		float minIntervalSeconds = 0f,
-		string cooldownKey = "",
-		bool isAmbience = false)
-	{
-		if (!_cues.TryGetValue(cueId, out var cue))
-		{
-			return;
-		}
-
-		if (GameState.Instance != null && GameState.Instance.AudioMuted)
-		{
-			return;
-		}
-
-		var throttleKey = string.IsNullOrWhiteSpace(cooldownKey) ? cueId : cooldownKey;
-		var now = Time.GetTicksMsec() / 1000.0;
-		if (minIntervalSeconds > 0f &&
-			_lastCueTimes.TryGetValue(throttleKey, out var lastPlayedAt) &&
-			now - lastPlayedAt < minIntervalSeconds)
-		{
-			return;
-		}
-
-		_lastCueTimes[throttleKey] = now;
-		var resolvedVolumeDb = ResolveMixedVolumeDb(volumeDb, isAmbience);
-
-		AudioStream stream = _authoredOverrides.TryGetValue(cueId, out var authored) ? authored : cue;
-
-		if (GetChildren().OfType<AudioStreamPlayer>().Count(p => p.Playing) >= 16) return;
-		var player = new AudioStreamPlayer
-		{
-			Stream = stream,
-			VolumeDb = resolvedVolumeDb,
-			PitchScale = Mathf.Max(0.5f, pitchScale),
-			Bus = "Master"
-		};
+		var parent = IsInstanceValid(_world) ? (Node)_world : this;
+		parent.AddChild(player);
+		player.GlobalPosition = centre + new Vector2(_rng.RandfRange(-0.5f, 0.5f) * size.X / zoom, 0f);
 		player.Finished += () => player.QueueFree();
-		AddChild(player);
 		player.Play();
 	}
 
-	private void BuildCueLibrary()
+	private AudioStreamPlayer MakeLoopPlayer(string name)
+	{
+		var player = new AudioStreamPlayer { Name = name, Bus = AmbienceBus, VolumeDb = -60f };
+		AddChild(player);
+		return player;
+	}
+
+	// ------------------------------------------------------------------ data
+
+	private void LoadManifest()
 	{
 		_cues.Clear();
-		RegisterCue(UiHoverCueId, CreateUiTapCue(0.08f, 280f, 0.14f));
-		RegisterCue(UiConfirmCueId, CreateUiTapCue(0.13f, 240f, 0.28f));
-		RegisterCue(SceneChangeCueId, CreateUiTapCue(0.18f, 196f, 0.3f));
-		RegisterCue(DeployCueId, CreateCue(0.18f, 0.005f, 0.09f, 0.46f, 0.015f, 0f, 0f, 0f,
-			new ToneLayer(180f, 320f, 1f, true),
-			new ToneLayer(320f, 480f, 0.34f)));
-		RegisterCue(ImpactLightCueId, CreateCue(0.08f, 0.002f, 0.05f, 0.42f, 0.18f, 0f, 0f, 0f,
-			new ToneLayer(260f, 140f, 1f, true),
-			new ToneLayer(420f, 220f, 0.2f)));
-		RegisterCue(ImpactHeavyCueId, CreateCue(0.16f, 0.003f, 0.1f, 0.5f, 0.22f, 0f, 0f, 0f,
-			new ToneLayer(170f, 84f, 1f, true),
-			new ToneLayer(260f, 110f, 0.35f)));
-		RegisterCue(BusHitCueId, CreateCue(0.19f, 0.004f, 0.12f, 0.48f, 0.16f, 0f, 0f, 0f,
-			new ToneLayer(120f, 72f, 1f, true),
-			new ToneLayer(220f, 98f, 0.35f)));
-		RegisterCue(BarricadeHitCueId, CreateCue(0.15f, 0.004f, 0.09f, 0.42f, 0.1f, 0f, 0f, 0f,
-			new ToneLayer(180f, 92f, 1f, true),
-			new ToneLayer(280f, 160f, 0.24f)));
-		RegisterCue(RepairCueId, CreateCue(0.2f, 0.01f, 0.12f, 0.38f, 0.02f, 2.5f, 0.01f, 0f,
-			new ToneLayer(260f, 420f, 1f),
-			new ToneLayer(390f, 620f, 0.32f)));
-		RegisterCue(HazardWarningCueId, CreateCue(0.18f, 0.004f, 0.12f, 0.36f, 0.08f, 0f, 0f, 7.5f,
-			new ToneLayer(820f, 920f, 1f, true),
-			new ToneLayer(980f, 1180f, 0.18f)));
-		RegisterCue(HazardStrikeCueId, CreateCue(0.24f, 0.003f, 0.18f, 0.44f, 0.12f, 0f, 0f, 0f,
-			new ToneLayer(640f, 180f, 1f, true),
-			new ToneLayer(300f, 90f, 0.34f)));
-		RegisterCue(VictoryCueId, CreateCue(0.58f, 0.02f, 0.22f, 0.42f, 0.01f, 0f, 0f, 0f,
-			new ToneLayer(260f, 392f, 1f),
-			new ToneLayer(392f, 520f, 0.44f),
-			new ToneLayer(520f, 660f, 0.26f)));
-		RegisterCue(DefeatCueId, CreateCue(0.66f, 0.02f, 0.28f, 0.4f, 0.03f, 0f, 0f, 0f,
-			new ToneLayer(260f, 160f, 1f, true),
-			new ToneLayer(200f, 116f, 0.4f),
-			new ToneLayer(132f, 74f, 0.24f)));
-		RegisterCue(SpellCastCueId, CreateCue(0.26f, 0.008f, 0.14f, 0.38f, 0.02f, 3.2f, 0.01f, 0f,
-			new ToneLayer(340f, 580f, 1f),
-			new ToneLayer(540f, 860f, 0.32f),
-			new ToneLayer(720f, 1120f, 0.14f)));
-		RegisterCue(BossSpawnCueId, CreateCue(0.72f, 0.02f, 0.32f, 0.38f, 0.06f, 0f, 0f, 3.8f,
-			new ToneLayer(110f, 86f, 1f, true),
-			new ToneLayer(168f, 128f, 0.38f),
-			new ToneLayer(220f, 172f, 0.18f)));
-		RegisterCue(UpgradeConfirmCueId, CreateCue(0.2f, 0.008f, 0.1f, 0.4f, 0.01f, 0f, 0f, 0f,
-			new ToneLayer(380f, 560f, 1f),
-			new ToneLayer(560f, 760f, 0.38f)));
-		RegisterCue(AchievementUnlockCueId, CreateCue(0.18f, 0.006f, 0.1f, 0.46f, 0.01f, 0f, 0f, 0f,
-			new ToneLayer(680f, 1020f, 1f),
-			new ToneLayer(1020f, 1360f, 0.36f),
-			new ToneLayer(1360f, 1640f, 0.14f)));
-		RegisterCue(RelicPickupCueId, CreateCue(0.28f, 0.008f, 0.16f, 0.42f, 0.02f, 5.5f, 0.012f, 0f,
-			new ToneLayer(520f, 780f, 1f),
-			new ToneLayer(780f, 1040f, 0.34f),
-			new ToneLayer(1040f, 1300f, 0.16f)));
-		RegisterCue(BossDeathCueId, CreateCue(0.48f, 0.006f, 0.28f, 0.52f, 0.14f, 0f, 0f, 0f,
-			new ToneLayer(82f, 48f, 1f, true),
-			new ToneLayer(140f, 72f, 0.38f),
-			new ToneLayer(210f, 96f, 0.16f)));
-		RegisterCue(MenuAmbienceCueId, CreateCue(1.8f, 0.12f, 0.36f, 0.22f, 0.04f, 0.18f, 0.01f, 0.55f,
-			new ToneLayer(108f, 112f, 1f),
-			new ToneLayer(162f, 166f, 0.3f),
-			new ToneLayer(216f, 220f, 0.16f)));
-		RegisterCue(ShopAmbienceCueId, CreateCue(1.7f, 0.08f, 0.32f, 0.2f, 0.03f, 0.25f, 0.008f, 1.4f,
-			new ToneLayer(124f, 132f, 1f),
-			new ToneLayer(248f, 264f, 0.24f),
-			new ToneLayer(372f, 396f, 0.12f)));
-		RegisterCue(BattleAmbienceCueId, CreateCue(1.6f, 0.08f, 0.22f, 0.26f, 0.08f, 0.3f, 0.012f, 2.2f,
-			new ToneLayer(88f, 92f, 1f, true),
-			new ToneLayer(176f, 184f, 0.28f),
-			new ToneLayer(264f, 276f, 0.1f)));
-		RegisterCue(EndlessAmbienceCueId, CreateCue(1.7f, 0.08f, 0.24f, 0.24f, 0.1f, 0.34f, 0.015f, 2.8f,
-			new ToneLayer(82f, 86f, 1f, true),
-			new ToneLayer(164f, 172f, 0.26f),
-			new ToneLayer(246f, 258f, 0.12f)));
-		RegisterCue(MultiplayerAmbienceCueId, CreateCue(1.45f, 0.08f, 0.2f, 0.2f, 0.04f, 0f, 0f, 5.2f,
-			new ToneLayer(164f, 168f, 1f, true),
-			new ToneLayer(328f, 336f, 0.2f),
-			new ToneLayer(492f, 504f, 0.08f)));
-		RegisterCue(RoadAmbienceCueId, CreateCue(1.75f, 0.11f, 0.34f, 0.22f, 0.04f, 0.16f, 0.008f, 0.6f,
-			new ToneLayer(108f, 112f, 1f),
-			new ToneLayer(164f, 168f, 0.32f),
-			new ToneLayer(218f, 224f, 0.14f)));
-		RegisterCue(HarborAmbienceCueId, CreateCue(1.9f, 0.12f, 0.38f, 0.2f, 0.06f, 0.24f, 0.01f, 0.4f,
-			new ToneLayer(96f, 100f, 1f),
-			new ToneLayer(144f, 148f, 0.28f),
-			new ToneLayer(286f, 292f, 0.1f)));
-		RegisterCue(FoundryAmbienceCueId, CreateCue(1.58f, 0.08f, 0.28f, 0.24f, 0.08f, 0f, 0f, 1.8f,
-			new ToneLayer(76f, 82f, 1f, true),
-			new ToneLayer(152f, 160f, 0.24f),
-			new ToneLayer(228f, 244f, 0.08f)));
-		RegisterCue(QuarantineAmbienceCueId, CreateCue(1.66f, 0.08f, 0.3f, 0.22f, 0.05f, 0.28f, 0.014f, 1.2f,
-			new ToneLayer(84f, 88f, 1f),
-			new ToneLayer(168f, 174f, 0.24f),
-			new ToneLayer(336f, 348f, 0.08f)));
-		RegisterCue(ThornwallAmbienceCueId, CreateCue(1.72f, 0.1f, 0.34f, 0.22f, 0.04f, 0.18f, 0.01f, 0.75f,
-			new ToneLayer(116f, 122f, 1f),
-			new ToneLayer(174f, 182f, 0.26f),
-			new ToneLayer(234f, 244f, 0.1f)));
-		RegisterCue(BasilicaAmbienceCueId, CreateCue(1.82f, 0.14f, 0.42f, 0.2f, 0.03f, 0.12f, 0.006f, 0.3f,
-			new ToneLayer(92f, 94f, 1f),
-			new ToneLayer(184f, 188f, 0.22f),
-			new ToneLayer(368f, 376f, 0.12f)));
-		RegisterCue(MireAmbienceCueId, CreateCue(1.86f, 0.12f, 0.4f, 0.2f, 0.07f, 0.22f, 0.012f, 0.25f,
-			new ToneLayer(78f, 82f, 1f),
-			new ToneLayer(118f, 124f, 0.3f),
-			new ToneLayer(236f, 244f, 0.08f)));
-		RegisterCue(SteppeAmbienceCueId, CreateCue(1.68f, 0.08f, 0.28f, 0.22f, 0.03f, 0.3f, 0.012f, 0.9f,
-			new ToneLayer(132f, 138f, 1f),
-			new ToneLayer(198f, 206f, 0.24f),
-			new ToneLayer(396f, 408f, 0.08f)));
-		RegisterCue(GloamwoodAmbienceCueId, CreateCue(1.74f, 0.1f, 0.36f, 0.2f, 0.05f, 0.2f, 0.012f, 0.55f,
-			new ToneLayer(88f, 92f, 1f),
-			new ToneLayer(132f, 136f, 0.28f),
-			new ToneLayer(264f, 272f, 0.1f)));
-		RegisterCue(CitadelAmbienceCueId, CreateCue(1.62f, 0.08f, 0.3f, 0.24f, 0.03f, 0f, 0f, 1.4f,
-			new ToneLayer(110f, 114f, 1f, true),
-			new ToneLayer(220f, 228f, 0.24f),
-			new ToneLayer(330f, 342f, 0.1f)));
-        foreach (var effect in new[] { "fireball", "heal", "frost_burst", "lightning_strike", "barrier_ward" })
-            RegisterCue($"spell_{effect}", _cues[SpellCastCueId]);
-	}
-
-	private static readonly string[] SfxExtensions = { ".ogg", ".mp3", ".wav" };
-	private const string SfxAssetPath = "res://assets/sfx/";
-
-	private void RegisterCue(string id, AudioStreamWav proceduralFallback)
-	{
-		// Check for an authored audio file first
-		foreach (var ext in SfxExtensions)
+		var data = ReadJson(ManifestPath);
+		if (data.VariantType != Variant.Type.Dictionary) return;
+		foreach (var (key, value) in data.AsGodotDictionary())
 		{
-			var path = $"{SfxAssetPath}{id}{ext}";
-			if (!ResourceLoader.Exists(path)) continue;
-			var authored = ResourceLoader.Load<AudioStream>(path);
-			if (authored is AudioStreamWav wav)
+			var entry = value.AsGodotDictionary();
+			var streams = new List<AudioStream>();
+			foreach (var file in entry["files"].AsGodotArray())
 			{
-				_cues[id] = wav;
-				return;
+				var path = file.AsString();
+				if (!ResourceLoader.Exists(path)) continue;
+				var stream = ResourceLoader.Load<AudioStream>(path);
+				if (stream == null) continue;
+				var loop = entry.ContainsKey("loop") && entry["loop"].AsBool();
+				if (stream is AudioStreamOggVorbis ogg) ogg.Loop = loop;
+				streams.Add(stream);
 			}
-			// For OGG/MP3, wrap in a one-shot player approach — store the procedural
-			// but mark it as overridden so PlayCue can detect it
-			if (authored != null)
+			var id = key.AsString();
+			_cues[id] = new CueSet
 			{
-				_authoredOverrides[id] = authored;
-				_cues[id] = proceduralFallback;
-				return;
-			}
+				Id = id, Streams = streams.ToArray(), Bus = entry["bus"].AsString(), Positional = entry["positional"].AsBool(),
+				Cooldown = (float)entry["cooldown"].AsDouble(), Voices = Math.Max(1, entry["voices"].AsInt32()),
+				Pitch = (float)entry["pitch"].AsDouble(), VolumeDb = (float)entry["volume_db"].AsDouble(),
+				Loop = entry.ContainsKey("loop") && entry["loop"].AsBool(),
+			};
 		}
-
-		_cues[id] = proceduralFallback;
 	}
 
-	private readonly Dictionary<string, AudioStream> _authoredOverrides = new(StringComparer.OrdinalIgnoreCase);
-
-	private AudioStreamWav CreateUiTapCue(float duration, float frequency, float gain)
+	private void LoadAmbienceProfiles()
 	{
-		// Damped wood resonances and a filtered contact transient avoid a beeping tone.
-		var sampleCount = Mathf.RoundToInt(duration * SampleRate);
-		var pcmData = new byte[sampleCount * sizeof(short)];
-		var noiseAlpha = 1f - Mathf.Exp(-Mathf.Tau * 1000f / SampleRate);
-		var filteredNoise = 0f;
-		for (var i = 0; i < sampleCount; i++)
+		_ambience.Clear();
+		var data = ReadJson(AmbiencePath);
+		if (data.VariantType != Variant.Type.Dictionary) return;
+		foreach (var (key, value) in data.AsGodotDictionary())
 		{
-			var t = i / (float)SampleRate;
-			var phase = Mathf.Tau * frequency * t;
-			var sample = 0.72f * Mathf.Sin(phase) * Mathf.Exp(-t * 32f)
-				+ 0.21f * Mathf.Sin(phase * 1.62f) * Mathf.Exp(-t * 48f)
-				+ 0.07f * Mathf.Sin(phase * 2.55f) * Mathf.Exp(-t * 68f);
-			filteredNoise += noiseAlpha * (_rng.RandfRange(-1f, 1f) - filteredNoise);
-			sample += filteredNoise * 0.06f * Mathf.Exp(-t * 90f);
-			var attack = 0.5f - 0.5f * Mathf.Cos(Mathf.Pi * Mathf.Min(t / 0.004f, 1f));
-			var release = Mathf.Clamp(((sampleCount - 1 - i) / (float)SampleRate) / 0.025f, 0f, 1f);
-			var value = (short)Mathf.RoundToInt(Mathf.Tanh(sample * gain * attack * release * 0.9f) * short.MaxValue);
-			pcmData[i * 2] = (byte)(value & 0xff);
-			pcmData[i * 2 + 1] = (byte)((value >> 8) & 0xff);
-		}
-		return new AudioStreamWav
-		{
-			Data = pcmData,
-			Format = AudioStreamWav.FormatEnum.Format16Bits,
-			MixRate = SampleRate,
-			Stereo = false
-		};
-	}
-
-	private AudioStreamWav CreateCue(
-		float durationSeconds,
-		float attackSeconds,
-		float releaseSeconds,
-		float masterGain,
-		float noiseMix,
-		float vibratoHz,
-		float vibratoDepth,
-		float tremoloHz,
-		params ToneLayer[] layers)
-	{
-		var duration = Mathf.Max(0.04f, durationSeconds);
-		var sampleCount = Math.Max(2, Mathf.RoundToInt(duration * SampleRate));
-		var pcmData = new byte[sampleCount * sizeof(short)];
-		var phases = new float[layers.Length];
-
-		for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
-		{
-			var t = sampleIndex / (float)SampleRate;
-			var blend = sampleCount <= 1 ? 0f : sampleIndex / (float)(sampleCount - 1);
-			var sampleValue = 0f;
-
-			for (var layerIndex = 0; layerIndex < layers.Length; layerIndex++)
+			var entry = value.AsGodotDictionary();
+			var gap = entry["gap"].AsGodotArray();
+			_ambience[key.AsString()] = new AmbienceProfile
 			{
-				var layer = layers[layerIndex];
-				var frequency = Mathf.Lerp(layer.StartFrequency, layer.EndFrequency, blend);
-				if (vibratoHz > 0f && vibratoDepth > 0f)
-				{
-					frequency *= 1f + (Mathf.Sin(t * Mathf.Tau * vibratoHz) * vibratoDepth);
-				}
-
-				phases[layerIndex] += Mathf.Tau * frequency / SampleRate;
-				var wave = layer.Square
-					? Mathf.Sign(Mathf.Sin(phases[layerIndex]))
-					: Mathf.Sin(phases[layerIndex]);
-				sampleValue += wave * layer.Gain;
-			}
-
-			sampleValue /= Math.Max(1, layers.Length);
-			if (noiseMix > 0f)
-			{
-				sampleValue = Mathf.Lerp(sampleValue, _rng.RandfRange(-1f, 1f), Mathf.Clamp(noiseMix, 0f, 1f));
-			}
-
-			var attack = attackSeconds <= 0f ? 1f : Mathf.Clamp(t / attackSeconds, 0f, 1f);
-			var release = releaseSeconds <= 0f
-				? 1f
-				: Mathf.Clamp((duration - t) / releaseSeconds, 0f, 1f);
-			var tremolo = tremoloHz > 0f
-				? 0.8f + (Mathf.Sin(t * Mathf.Tau * tremoloHz) * 0.2f)
-				: 1f;
-			var enveloped = Mathf.Clamp(sampleValue * masterGain * attack * release * tremolo, -1f, 1f);
-			var sampleShort = (short)Mathf.RoundToInt(enveloped * short.MaxValue);
-			var byteIndex = sampleIndex * sizeof(short);
-			pcmData[byteIndex] = (byte)(sampleShort & 0xff);
-			pcmData[byteIndex + 1] = (byte)((sampleShort >> 8) & 0xff);
+				Bed = entry["bed"].AsString(),
+				Details = entry["details"].AsGodotArray().Select(v => v.AsString()).ToArray(),
+				Gap = new Vector2((float)gap[0].AsDouble(), (float)gap[1].AsDouble()),
+			};
 		}
-
-		return new AudioStreamWav
-		{
-			Data = pcmData,
-			Format = AudioStreamWav.FormatEnum.Format16Bits,
-			MixRate = SampleRate,
-			Stereo = false
-		};
 	}
 
-	private float ResolveMixedVolumeDb(float baseVolumeDb, bool isAmbience)
+	private static Variant ReadJson(string path)
 	{
-		if (GameState.Instance == null)
-		{
-			return baseVolumeDb;
-		}
-
-		var percent = isAmbience
-			? GameState.Instance.AmbienceVolumePercent
-			: GameState.Instance.EffectsVolumePercent;
-		return baseVolumeDb + ConvertPercentToDbOffset(percent);
+		if (!FileAccess.FileExists(path)) return new Variant();
+		using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+		return file == null ? new Variant() : Json.ParseString(file.GetAsText());
 	}
 
-	private static float ConvertPercentToDbOffset(int percent)
-	{
-		var normalized = Mathf.Clamp(percent / 100f, 0f, 1f);
-		if (normalized <= 0.001f)
-		{
-			return -80f;
-		}
+	// ------------------------------------------------------------------ automatic control sounds
 
-		return 20f * Mathf.Log(normalized) / Mathf.Log(10f);
+	private void OnTreeNodeAdded(Node node) => BindControl(node);
+
+	private void BindControlsRecursive(Node node)
+	{
+		BindControl(node);
+		foreach (Node child in node.GetChildren()) BindControlsRecursive(child);
+	}
+
+	private void BindControl(Node node)
+	{
+		if (node is Control control && !_touchControls.Contains(control)) _touchControls.Add(control);
+		const string boundMeta = "audio_bound";
+		if (node is not Control target || target.HasMeta(boundMeta)) return;
+		switch (node)
+		{
+			case OptionButton option:
+				target.SetMeta(boundMeta, true);
+				option.ItemSelected += _ => PlayUiTap();
+				break;
+			case BaseButton button:
+				target.SetMeta(boundMeta, true);
+				button.Pressed += () => PlayButtonCue(button);
+				break;
+			case Godot.Range range when range is Slider:
+				target.SetMeta(boundMeta, true);
+				range.ValueChanged += _ => { if (range.HasFocus() || Input.IsMouseButtonPressed(MouseButton.Left)) Play("ui_slider"); };
+				break;
+		}
+	}
+
+	/// <summary>Each button sounds like what it does: tabs turn a page, toggles latch, back steps away, primaries ring.</summary>
+	private void PlayButtonCue(BaseButton button)
+	{
+		if (button.HasMeta("audio_silent")) return;
+		if (button.HasMeta("audio_cue")) { Play(button.GetMeta("audio_cue").AsString()); return; }
+		var typeName = button.GetType().Name;
+		if (typeName.StartsWith("Adventure", StringComparison.Ordinal)) { PlayMapSelect(); return; }
+		if (button.ButtonGroup != null || button.GetParent()?.HasMeta("realm_tabs") == true) { Play("ui_tab"); return; }
+		if (button.ToggleMode) { Play(button.ButtonPressed ? "ui_toggle_on" : "ui_toggle_off"); return; }
+		if (IsBackButton(button)) { PlayUiBack(); return; }
+		if (button.HasMeta("realm_primary")) { PlayUiConfirm(); return; }
+		PlayUiTap();
+	}
+
+	private static bool IsBackButton(BaseButton button)
+	{
+		var icon = (button as Button)?.Icon?.ResourcePath ?? "";
+		if (icon.EndsWith("/back.svg", StringComparison.Ordinal) || icon.EndsWith("/close.svg", StringComparison.Ordinal)) return true;
+		var text = ((button as Button)?.Text ?? "").Trim();
+		var name = button.AccessibilityName.Length > 0 ? button.AccessibilityName : button.TooltipText;
+		return text.StartsWith("Back", StringComparison.OrdinalIgnoreCase) || text.StartsWith("Close", StringComparison.OrdinalIgnoreCase)
+			|| name.StartsWith("Back", StringComparison.OrdinalIgnoreCase) || name.StartsWith("Close", StringComparison.OrdinalIgnoreCase)
+			|| name.StartsWith("Return", StringComparison.OrdinalIgnoreCase);
 	}
 }

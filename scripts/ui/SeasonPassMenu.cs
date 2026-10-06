@@ -138,7 +138,7 @@ public partial class SeasonPassMenu : RoyalScreen
         {
             var claim = RoyalButton.Over(buttonRect, $"Claim {label}", () =>
             {
-                var ok = GameState.Instance.TryClaimSeasonReward(tier, premium, out var message);
+                var ok = AudioDirector.Claimed(GameState.Instance.TryClaimSeasonReward(tier, premium, out var message));
                 RoyalToast.Show(this, message);
                 if (ok) Refresh();
             }, 6);

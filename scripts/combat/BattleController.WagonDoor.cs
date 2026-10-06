@@ -11,6 +11,7 @@ public partial class BattleController
     private const float WagonExitSeconds = .45f;
     private readonly Dictionary<Unit, float> _wagonExits = new();
     private float _wagonDoorAmount, _wagonDoorHold;
+    private bool _wagonDoorOpening;
 
     // The wagon stands so the foot of its troop ramp lands on the centre line.
     private Vector2 WagonGround => WagonArt is { Door: { } door } art
@@ -62,6 +63,12 @@ public partial class BattleController
         }
         _wagonDoorHold = Mathf.Max(0f, _wagonDoorHold - delta);
         var open = _wagonDoorHold > 0f || _wagonExits.Count > 0;
+        // The door creaks open when it starts to swing out and thuds shut as it closes.
+        if (open != _wagonDoorOpening && WagonArt?.Door != null)
+        {
+            _wagonDoorOpening = open;
+            AudioDirector.Instance?.PlayWagonDoor(open, WagonDoorExit);
+        }
         _wagonDoorAmount = Mathf.MoveToward(_wagonDoorAmount, open ? 1f : 0f, delta / WagonDoorSwingSeconds);
     }
 }

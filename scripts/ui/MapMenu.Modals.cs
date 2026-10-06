@@ -20,11 +20,14 @@ public partial class MapMenu
         CloseSiteDetails();
         if (_modal == null)
         {
+            AudioDirector.Instance?.PlayModalOpen();
             _modalReturnFocus = GetViewport().GuiGetFocusOwner();
             _modal = new RealmModal(); AddChild(_modal);
             if (MobilePresentation.Enabled) _modal.UseMobileCanvas();
             _modal.Closed = CloseHomeModal; _modal.Back = BackHomeModal;
         }
+        // Destinations with a score of their own (shop, loadout, endless, tourney) bring it with them.
+        MusicPlayer.Instance?.PlayOverlay(path);
         var tab = path == SceneRouter.ShopScene ? SceneRouter.Instance.InitialShopTab : 0;
         if (remember) _modalHistory.Add((path, tab));
         RealmUi.Clear(_modal.Content);
@@ -55,6 +58,8 @@ public partial class MapMenu
     {
         if (_modal == null) return;
         var modal = _modal; _modal = null; RemoveChild(modal); modal.QueueFree(); _modalHistory.Clear();
+        AudioDirector.Instance?.PlayModalClose();
+        MusicPlayer.Instance?.EndOverlay();
         _hud.Visible = true;
         RefreshUi();
         if (GodotObject.IsInstanceValid(_modalReturnFocus) && _modalReturnFocus.IsInsideTree() && _modalReturnFocus.IsVisibleInTree()) _modalReturnFocus.GrabFocus();

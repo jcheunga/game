@@ -9,7 +9,7 @@ The game deliberately uses a small number of folders with clear runtime roles:
 - `ui/` — individual navigable menus and menu-specific interaction code.
 - `ui/shared/` — shared UI theme, layout/backdrop, asset loading, and badge components. New reusable UI code belongs here, not in a screen class.
 - `tests/` — game data, behavior and presentation reviews. Navigable screen reviews use the production router; see [live UI parity](../docs/LIVE_UI_TEST_PARITY.md).
-- `tools/` — editor/development helpers, including `build_site.py` (public website) and `create_audio.py` (music and SFX).
+- `tools/` — editor/development helpers, including `build_site.py` (public website). Music and sound effects are rendered by `art/audio/` (see its README).
 - `platform/` — native store bridges; `GooglePlayBillingBridge.gd` adapts the Google Play Billing plug-in for `NativeIAPService`.
 - `smoke/` — shell runners for headless reviews and smoke tests (combat, UI, live UI parity, typography, privacy, stage stars, adventure map, LAN races, and the HTTP multiplayer providers against a local stub). Game-driving reviews pass a unique `--save-suffix` so personal saves are untouched.
 - `analysis/` — offline Python tools. `expand_campaign.py` generates the 100-stage campaign from `legacy/stages-60.json`; the review and audit scripts summarize benchmark logs into reports.

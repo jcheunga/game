@@ -219,7 +219,7 @@ public partial class RaidMenu : Control
 	private void OnClaimMilestone(int milestoneIndex)
 	{
 		var gs = GameState.Instance;
-		if (gs.TryClaimRaidReward(_weekId, milestoneIndex, out var message))
+		if (AudioDirector.Claimed(gs.TryClaimRaidReward(_weekId, milestoneIndex, out var message)))
 		{
 			_statusLabel.Text = message;
 			RefreshUi();

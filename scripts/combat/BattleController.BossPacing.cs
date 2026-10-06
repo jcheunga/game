@@ -38,6 +38,7 @@ public partial class BattleController
         if (!_pendingBossPhases.TryGetValue(boss, out var triggerAt))
         {
             _pendingBossPhases[boss] = _elapsed + BossPhaseWarningSeconds;
+            AudioDirector.Instance?.PlayBossPhase();
             var title = StageEncounterIntel.GetBossPhaseTitle(boss.DefinitionId);
             SetStatus($"{boss.UnitName} is preparing {title}. Reinforce, heal, or finish the commander!");
             return false;

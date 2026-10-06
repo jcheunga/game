@@ -104,6 +104,10 @@ public static class LiveUiReview
         {
             player.Stop(); player.Stream = null;
         }
+        foreach (var player in driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer2D", true, false).OfType<AudioStreamPlayer2D>())
+        {
+            player.Stop(); player.Stream = null;
+        }
         await Task.Delay(100);
     }
 }

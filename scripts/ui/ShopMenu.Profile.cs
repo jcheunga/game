@@ -145,7 +145,7 @@ public partial class ShopMenu
         else if (!entry.Owned)
         {
             var cost = state.GetUnitPurchaseCost(unit.Id);
-            right = new Action2("Recruit", cost, state.Gold >= cost, () => { state.TryPurchaseUnit(unit.Id, out var message); Toast(message); Refresh(); });
+            right = new Action2("Recruit", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseUnit(unit.Id, out var message)); Toast(message); Refresh(); });
         }
         else if (level >= state.MaxUnitLevel)
         {
@@ -191,7 +191,7 @@ public partial class ShopMenu
         else if (!entry.Owned)
         {
             var cost = state.GetSpellPurchaseCost(spell.Id);
-            right = new Action2(cost > 0 ? "Scribe" : "Prepare", cost, state.Gold >= cost, () => { state.TryPurchaseSpell(spell.Id, out var message); Toast(message); Refresh(); });
+            right = new Action2(cost > 0 ? "Scribe" : "Prepare", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseSpell(spell.Id, out var message)); Toast(message); Refresh(); });
         }
         else if (level < state.MaxSpellLevel)
         {

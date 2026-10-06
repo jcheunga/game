@@ -1,35 +1,35 @@
 {
-  "frameWidth": 577,
-  "frameHeight": 454,
-  "drawScale": 2.84741413343861,
+  "frameWidth": 632,
+  "frameHeight": 508,
+  "drawScale": 2.8423588649090155,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 16,
       "duration": 0.08,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "ash",
       "motion": "topple-rigid",
       "impactPoint": [
-        0.182633,
-        0.042716
+        0.183025,
+        0.057921
       ]
     },
     "deploy": {
-      "start": 38,
+      "start": 42,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_boss_citadel",
   "title": "Dread Sovereign",
   "source": "art/remaster/units/enemy_boss_citadel.py",
-  "anchorY": 0.794262,
-  "anchorX": 0.305719,
+  "anchorY": 0.766906,
+  "anchorX": 0.305035,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.340672
+      -0.321762
     ],
     "contact": [
-      -0.000791,
-      0.18836
+      -0.000644,
+      0.216979
     ]
   },
-  "healthBarY": 0.764632
+  "healthBarY": 0.735615
 }

@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 1.674298173892572,
+  "frameWidth": 151,
+  "frameHeight": 198,
+  "drawScale": 1.1984126984126982,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -42,7 +42,7 @@
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_splitter",
   "title": "Bone Nest",
   "source": "art/remaster/units/enemy_splitter.py",
-  "anchorY": 0.6745786070823669,
-  "anchorX": 0.457325,
+  "anchorY": 0.807164,
+  "anchorX": 0.497227,
   "motion": {
     "revision": "remaster-v1",
     "profile": "nest-pulse",
     "body": [
       0.0,
-      -0.147848
+      -0.189651
     ],
     "contact": [
-      0.361244,
-      -0.092208
+      0.504871,
+      -0.089312
     ]
   },
-  "healthBarY": 0.371454
+  "healthBarY": 0.480839
 }

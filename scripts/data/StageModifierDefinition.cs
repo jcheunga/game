@@ -1,5 +1,3 @@
-using System;
-
 public sealed class StageModifierDefinition
 {
     public string Type { get; set; } = "";

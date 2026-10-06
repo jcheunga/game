@@ -156,7 +156,7 @@ public partial class LanChallengeService : Node
 		var challenge = GameState.Instance.GetSelectedAsyncChallenge();
 		var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
 		var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
-		var boardTitle = $"{stage.MapName} S{stage.StageNumber}  |  {mutator.Title}";
+		var boardTitle = $"{stage.MapName} S{stage.StageNumber} · {mutator.Title}";
 		var lockedDeckIds = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
 			? GameState.Instance.GetSelectedAsyncChallengeDeckUnits().Select(unit => unit.Id)
 			: Array.Empty<string>();
@@ -214,7 +214,7 @@ public partial class LanChallengeService : Node
 		var challenge = GameState.Instance.GetSelectedAsyncChallenge();
 		var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
 		var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
-		var boardTitle = $"{stage.MapName} S{stage.StageNumber}  |  {mutator.Title}";
+		var boardTitle = $"{stage.MapName} S{stage.StageNumber} · {mutator.Title}";
 		var lockedDeckIds = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
 			? GameState.Instance.GetSelectedAsyncChallengeDeckUnits().Select(unit => unit.Id)
 			: Array.Empty<string>();
@@ -809,7 +809,7 @@ public partial class LanChallengeService : Node
 				? "no clear"
 				: $"{entry.BestTimeSeconds:0.0}s best";
 			lines.Add(
-				$"{i + 1}. {entry.DisplayName}  |  Wins {entry.Wins}  |  Races {entry.Races}  |  Total {entry.TotalScore} pts  |  Best {entry.BestScore} pts  |  {bestTimeText}  |  RET {entry.Retreats}  |  DC {entry.Disconnects}");
+				$"{i + 1}. {entry.DisplayName} · Wins {entry.Wins} · Races {entry.Races} · Total {entry.TotalScore} pts · Best {entry.BestScore} pts · {bestTimeText} · RET {entry.Retreats} · DC {entry.Disconnects}");
 		}
 
 		return string.Join("\n", lines);
@@ -843,7 +843,7 @@ public partial class LanChallengeService : Node
 					? "WIN"
 					: "FAIL";
 			lines.Add(
-				$"{i + 1}. {entry.DisplayName}  |  {outcome}  |  {entry.Score} pts  |  {entry.ElapsedSeconds:0.0}s  |  Hull {entry.HullPercent}%  |  Stars {entry.StarsEarned}/3  |  Defeats {entry.EnemyDefeats}  |  {(entry.UsedLockedDeck ? "locked" : "player")} deck");
+				$"{i + 1}. {entry.DisplayName} · {outcome} · {entry.Score} pts · {entry.ElapsedSeconds:0.0}s · Hull {entry.HullPercent}% · Stars {entry.StarsEarned}/3 · Defeats {entry.EnemyDefeats} · {(entry.UsedLockedDeck ? "locked" : "player")} deck");
 		}
 
 		return string.Join("\n", lines);
@@ -1068,14 +1068,14 @@ public partial class LanChallengeService : Node
 		{
 			PeerPhaseSpectating => "spectating current race",
 			PeerPhaseLoading => ResolvePeerLoaded(peerId)
-				? "loaded  |  waiting for countdown"
+				? "loaded · waiting for countdown"
 				: "loading battle",
 			PeerPhaseRacing => string.IsNullOrWhiteSpace(telemetryText)
 				? "in battle"
-				: $"in battle  |  {telemetryText}",
+				: $"in battle · {telemetryText}",
 			PeerPhaseSubmitted => string.IsNullOrWhiteSpace(telemetryText)
 				? "result submitted"
-				: $"result submitted  |  {telemetryText}",
+				: $"result submitted · {telemetryText}",
 			_ => _readyPeers.TryGetValue(peerId, out var ready) && ready ? "ready" : "not ready"
 		};
 	}
@@ -1087,7 +1087,7 @@ public partial class LanChallengeService : Node
 			return "";
 		}
 
-		return $"{telemetry.ElapsedDeciseconds / 10f:0.0}s  |  Hull {telemetry.HullPercent}%  |  Defeats {telemetry.EnemyDefeats}";
+		return $"{telemetry.ElapsedDeciseconds / 10f:0.0}s · Hull {telemetry.HullPercent}% · Defeats {telemetry.EnemyDefeats}";
 	}
 
 	private int ResolvePeerMonitorRank(int peerId)
@@ -1115,27 +1115,27 @@ public partial class LanChallengeService : Node
 					? "WIN"
 					: "FAIL";
 			return
-				$"{submission.DisplayName}  |  {outcome}  |  {submission.Score} pts  |  {submission.ElapsedSeconds:0.0}s  |  Hull {submission.HullPercent}%  |  Defeats {submission.EnemyDefeats}";
+				$"{submission.DisplayName} · {outcome} · {submission.Score} pts · {submission.ElapsedSeconds:0.0}s · Hull {submission.HullPercent}% · Defeats {submission.EnemyDefeats}";
 		}
 
 		if (phase == PeerPhaseRacing)
 		{
 			var telemetryText = BuildPeerTelemetryText(peerId);
 			return string.IsNullOrWhiteSpace(telemetryText)
-				? $"{ResolvePeerLabel(peerId)}  |  LIVE  |  telemetry pending"
-				: $"{ResolvePeerLabel(peerId)}  |  LIVE  |  {telemetryText}";
+				? $"{ResolvePeerLabel(peerId)} · LIVE · telemetry pending"
+				: $"{ResolvePeerLabel(peerId)} · LIVE · {telemetryText}";
 		}
 
 		if (phase == PeerPhaseLoading)
 		{
 			return ResolvePeerLoaded(peerId)
-				? $"{ResolvePeerLabel(peerId)}  |  LOADED  |  waiting for shared countdown"
-				: $"{ResolvePeerLabel(peerId)}  |  LOADING  |  entering battle scene";
+				? $"{ResolvePeerLabel(peerId)} · LOADED · waiting for shared countdown"
+				: $"{ResolvePeerLabel(peerId)} · LOADING · entering battle scene";
 		}
 
 		if (phase == PeerPhaseSpectating)
 		{
-			return $"{ResolvePeerLabel(peerId)}  |  SPECTATE  |  waiting for next rematch";
+			return $"{ResolvePeerLabel(peerId)} · SPECTATE · waiting for next rematch";
 		}
 
 		var deckState = HasSharedLockedDeck()
@@ -1143,7 +1143,7 @@ public partial class LanChallengeService : Node
 			: ResolvePeerDeckIsFull(peerId)
 				? "deck synced"
 				: "deck incomplete";
-		return $"{ResolvePeerLabel(peerId)}  |  {(LocalReadyState(peerId) ? "READY" : "WAIT")}  |  {deckState}";
+		return $"{ResolvePeerLabel(peerId)} · {(LocalReadyState(peerId) ? "READY" : "WAIT")} · {deckState}";
 	}
 
 	private bool LocalReadyState(int peerId)
@@ -1181,11 +1181,11 @@ public partial class LanChallengeService : Node
 		var deckNames = string.Join(", ", deckUnits.Select(unit => unit.DisplayName));
 		if (deckUnits.Count == 0)
 		{
-			return $"{ResolvePeerLabel(peerId)}: {deckNames}  |  incomplete deck ({deckUnits.Count}/{GameState.Instance.DeckSizeLimit})";
+			return $"{ResolvePeerLabel(peerId)}: {deckNames} · incomplete deck ({deckUnits.Count}/{GameState.Instance.DeckSizeLimit})";
 		}
 
 		var synergy = GameState.Instance.BuildDeckSynergyInlineSummary(deckUnits);
-		return $"{ResolvePeerLabel(peerId)}: {deckNames}  |  {synergy}";
+		return $"{ResolvePeerLabel(peerId)}: {deckNames} · {synergy}";
 	}
 
 	private int[] GetKnownPeerIds()

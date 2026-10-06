@@ -142,7 +142,8 @@ public partial class BattleController
                 (1f - GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.ProjectileWardId) * 0.08f);
         var projectile = ProjectilePool.Acquire();
         AddChild(projectile);
-        projectile.SetWeaponVisual(weapon.Kind);
+        projectile.SetWeaponVisual(weapon.Kind, weapon.Shot);
+        projectile.LaunchGroundY = (BattlefieldTop + BattlefieldBottom) * .5f;
         var mountIndex = Mathf.Max(0, _wagonMounts.FindIndex(mount => mount.Weapon.Kind == weapon.Kind));
         projectile.Position = BaseMountPosition(team == Team.Player, mountIndex);
         projectile.ProcessMode = ProcessModeEnum.Pausable;

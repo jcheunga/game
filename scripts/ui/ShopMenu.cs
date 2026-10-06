@@ -219,7 +219,7 @@ public partial class ShopMenu : Control
         var doctrineRetrainCost = GameState.Instance.GetUnitDoctrineRetrainCost(unit.Id);
         var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
         var statusLine = owned ? $"Lv {level} · {role} · {(inDeck ? "Equipped" : "Reserve")}" : $"{role} · {(available ? "Recruit" : $"Stage {unit.UnlockStage:00}")}";
-        var panel = DetailShell(unit.DisplayName, statusLine, unit.Id, false, out var stack);
+        var panel = DetailShell(unit.DisplayName, statusLine, out var stack);
         stack.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit)));
         var extra = UnitExtraDetails(stack, unit, owned, level, isMaxLevel);
         var row = new HBoxContainer
@@ -401,7 +401,7 @@ public partial class ShopMenu : Control
         // One status line: the action buttons already show ownership and equip state.
         var purpose = ArmoryDetailUi.SpellPurpose(spell.EffectType);
         var statusLine = owned ? $"Lv {resolved.Level} · {(purpose.Length > 0 ? purpose : role)}" : purpose.Length > 0 ? purpose : role;
-        var panel = DetailShell(spell.DisplayName, statusLine, spell.Id, true, out var stack);
+        var panel = DetailShell(spell.DisplayName, statusLine, out var stack);
         var metrics = ArmoryDetailUi.SpellStats(resolved);
         stack.AddChild(ArmoryDetailUi.Stats(metrics, metrics.Count <= 4 ? 2 : 3));
         var extra = ArmoryDetailUi.Disclosure(stack, "Effects & training", _profileExpanded, value => _profileExpanded = value);
@@ -492,21 +492,17 @@ public partial class ShopMenu : Control
     private void RebuildBaseUpgradePanels()
     {
         RealmUi.Clear(_baseStack);
-        var upgradesHost = (Control)_baseStack;
+        var grid = new GridContainer
         {
-            var grid = new GridContainer
-            {
-                Columns = MobilePresentation.Enabled ? 1 : 2,
-                SizeFlagsHorizontal = SizeFlags.ExpandFill
-            };
-            grid.AddThemeConstantOverride("h_separation", 14);
-            grid.AddThemeConstantOverride("v_separation", 14);
-            _baseStack.AddChild(grid);
-            upgradesHost = grid;
-        }
+            Columns = MobilePresentation.Enabled ? 1 : 2,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        grid.AddThemeConstantOverride("h_separation", 14);
+        grid.AddThemeConstantOverride("v_separation", 14);
+        _baseStack.AddChild(grid);
 
         foreach (var upgrade in BaseUpgradeCatalog.GetAll())
-            upgradesHost.AddChild(BuildBaseUpgradePanel(upgrade));
+            grid.AddChild(BuildBaseUpgradePanel(upgrade));
     }
 
     private Control BuildBaseUpgradePanel(BaseUpgradeDefinition upgrade)

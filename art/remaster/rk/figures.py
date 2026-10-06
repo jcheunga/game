@@ -3,7 +3,7 @@ poses, flags and scarves) and heroic knight statues. Built at the origin facing 
 import math
 import random
 
-from mathutils import Matrix, Vector
+from mathutils import Vector
 
 from . import env, geo
 from . import shaders as S

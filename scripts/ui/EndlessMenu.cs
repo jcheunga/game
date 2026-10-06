@@ -278,7 +278,6 @@ public partial class EndlessMenu : Control
         SyncBoonSelector();
         RebuildResourcesRow();
 
-        var route = RouteCatalog.Get(_selectedRouteId);
         var templateStage = GameData.GetLatestStageForMap(_selectedRouteId);
         var routeStages = GameData.GetStagesForMap(_selectedRouteId);
         var selectedBoon = EndlessBoonCatalog.Get(_selectedBoonId);

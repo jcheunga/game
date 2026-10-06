@@ -3,7 +3,7 @@
 Every skin shares the wagon geometry and camera so the runtime can swap textures
 in the same 180x140 rect; skins change materials, heraldry and a few dressing
 props (trophies, braziers, crystals, coin chests, plating)."""
-from rk import palette as P, shaders as S
+from rk import shaders as S
 from rk import structures as ST
 
 

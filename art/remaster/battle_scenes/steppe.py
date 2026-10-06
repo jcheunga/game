@@ -1,5 +1,4 @@
 """Sunfall Steppe battlefields: grassland, siegecamp, waystation."""
-import math
 import random
 
 from rk import arch, env

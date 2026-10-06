@@ -26,6 +26,15 @@ android/
 .DS_Store
 Thumbs.db
 
+# Python bytecode (art pipeline and analysis scripts)
+__pycache__/
+*.pyc
+
+# Local development database (the server creates it on first run)
+server/*.db
+server/*.db-shm
+server/*.db-wal
+
 # Release credentials and local environment settings
 server/.env
 server/.env.production

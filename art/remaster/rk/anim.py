@@ -1,4 +1,4 @@
-"""Stances and the six game clips (idle 4, walk 6, attack 10, hit 2, death 6, deploy 4).
+"""Stances and the game clips (idle 6, walk 8, attack 10, hit 2, death 6, deploy 4, and melee 7 for ranged units).
 
 Units listed in roster/deaths.py replace the generic death below with a Performance (rk/death.py).
 
@@ -9,13 +9,21 @@ Attack contact/release is local frame 4.
 """
 import math
 
-from mathutils import Vector
-
 from .rig import LAT, YAW, ROLL, add_poses, blend_poses, smooth
 
-CLIPS = [('idle', 4, .16, True), ('walk', 6, .10, True), ('attack', 10, .07, False),
-         ('hit', 2, .09, False), ('death', 6, .11, False), ('deploy', 4, .10, False)]
+# Loops keep their cycle time whatever their frame count (a 0.64 s breath, a 0.6 s stride).
+IDLE_FRAMES = 6
+WALK_FRAMES = 8
+CLIPS = [('idle', IDLE_FRAMES, .64 / IDLE_FRAMES, True), ('walk', WALK_FRAMES, .6 / WALK_FRAMES, True),
+         ('attack', 10, .07, False),
+         ('hit', 2, .09, False), ('death', 6, .11, False), ('deploy', 4, .10, False), ('melee', 7, .065, False)]
 CONTACT = 4
+# Ranged units also carry a close-quarters strike, played when an enemy is inside melee reach.
+# Other units leave it out; it is last, so their frame layout is unchanged.
+OPTIONAL_CLIPS = {'melee'}
+MELEE_CONTACT = 3
+MELEE_PROFILE = {'bow-draw': 'front-kick', 'crossbow': 'spear-thrust', 'staff-cast': 'staff-strike',
+                 'flask-toss': 'sword-cut', 'hammer-command': 'heavy-smash'}
 
 
 def P(**kw):
@@ -216,8 +224,37 @@ def attack_frames(stance, profile, heavy=1.0, low_strike=False, overrides=None):
     return frames
 
 
+def melee_keys(profile):
+    if profile == 'front-kick':
+        # The off hand holds a bow and the draw hand is tied to the string, so archers kick.
+        return dict(
+            wind=P(thigh_R=80, shin_R=-110, foot_R=20, thigh_L=6, spine=[(12, LAT)], head=[(-6, LAT)],
+                   upper_arm_L=[(-24, LAT)], move={'root': (-0.05, 0, 0.03)}),
+            contact=P(thigh_R=100, shin_R=8, foot_R=35, thigh_L=-14, shin_L=-6, spine=[(22, LAT)], head=[(-14, LAT)],
+                      upper_arm_L=[(-30, LAT)], move={'root': (0.1, 0, 0.02)}),
+            follow=P(thigh_R=60, shin_R=-60, foot_R=15, spine=[(10, LAT)], upper_arm_L=[(-14, LAT)],
+                     move={'root': (0.07, 0, 0.01)}))
+    return attack_keys(profile)
+
+
+def melee_frames(stance, ranged_profile):
+    """Seven frames, contact on local frame 3: a quick strike with whatever the ranged unit holds."""
+    keys = melee_keys(MELEE_PROFILE.get(ranged_profile, 'sword-cut'))
+    rest = {}
+    seq = [(0, rest), (1, blend_poses(rest, keys['wind'], .6)), (2, keys['wind']), (3, keys['contact']),
+           (4, keys['follow']), (6, rest)]
+    frames = []
+    for f in range(7):
+        for (a, pa), (b, pb) in zip(seq, seq[1:]):
+            if a <= f <= b:
+                t = 0 if b == a else (f - a) / (b - a)
+                frames.append(add_poses(stance, blend_poses(pa, pb, smooth(t))))
+                break
+    return frames
+
+
 # ------------------------------------------------------------------ locomotion and reactions
-def idle_frames(stance, n=4, amount=1.0, cape=True):
+def idle_frames(stance, n=IDLE_FRAMES, amount=1.0, cape=True):
     out = []
     for i in range(n):
         ph = math.tau * i / n
@@ -233,7 +270,7 @@ def idle_frames(stance, n=4, amount=1.0, cape=True):
     return out
 
 
-def walk_frames(stance, n=6, stride=26.0, arm_swing=(14, 14), bob=0.03, lean=-4.0, style='march', cape=True):
+def walk_frames(stance, n=WALK_FRAMES, stride=26.0, arm_swing=(14, 14), bob=0.03, lean=-4.0, style='march', cape=True):
     out = []
     for i in range(n):
         ph = math.tau * i / n
@@ -322,21 +359,23 @@ def deploy_frames(stance, flourish=None):
 
 
 def all_clips(stance, profile, gait='march', heavy=1.0, low_strike=False, death='back', attack_override=None,
-              float_mode=False, cape=True, flourish=None):
+              float_mode=False, cape=True, flourish=None, melee=False):
     clips = {}
+    if melee and profile in MELEE_PROFILE:
+        clips['melee'] = melee_frames(stance, profile)
     if float_mode:
-        clips['idle'] = float_frames(stance, 4)
-        clips['walk'] = float_frames(stance, 6, 'walk')
+        clips['idle'] = float_frames(stance, IDLE_FRAMES)
+        clips['walk'] = float_frames(stance, WALK_FRAMES, 'walk')
     else:
-        clips['idle'] = idle_frames(stance, 4, cape=cape)
+        clips['idle'] = idle_frames(stance, IDLE_FRAMES, cape=cape)
         if gait == 'heavy':
-            clips['walk'] = walk_frames(stance, 6, stride=22, bob=0.04, lean=-6, cape=cape)
+            clips['walk'] = walk_frames(stance, WALK_FRAMES, stride=22, bob=0.04, lean=-6, cape=cape)
         elif gait == 'shamble':
-            clips['walk'] = walk_frames(stance, 6, stride=20, bob=0.025, lean=-10, style='shamble', cape=cape)
+            clips['walk'] = walk_frames(stance, WALK_FRAMES, stride=20, bob=0.025, lean=-10, style='shamble', cape=cape)
         elif gait == 'prowl':
-            clips['walk'] = walk_frames(stance, 6, stride=30, bob=0.035, lean=-10, style='prowl', cape=cape)
+            clips['walk'] = walk_frames(stance, WALK_FRAMES, stride=30, bob=0.035, lean=-10, style='prowl', cape=cape)
         else:
-            clips['walk'] = walk_frames(stance, 6, cape=cape)
+            clips['walk'] = walk_frames(stance, WALK_FRAMES, cape=cape)
     clips['attack'] = attack_frames(stance, profile, heavy, low_strike, attack_override)
     clips['hit'] = hit_frames(stance)
     if isinstance(death, dict):

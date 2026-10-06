@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using Godot;
 
 public partial class MapPathCanvas
@@ -13,7 +11,7 @@ public partial class MapPathCanvas
     private Color TileRoofColor() => new(ActiveMapId switch {
         "harbor" => "4b7376", "foundry" => "763f2a", "quarantine" => "526357", "thornwall" => "546475",
         "basilica" => "a39a77", "mire" => "514f42", "steppe" => "97613d", "gloamwood" => "475578", "citadel" => "665d75", _ => "8c5741" });
-    private void DrawTree(Vector2 p, Color color, float height, uint hash)
+    private void DrawTree(Vector2 p, Color color, float height)
     {
         DrawColoredPolygon(new[] { p + new Vector2(-12, 3), p + new Vector2(12, 3), p + new Vector2(24, 9), p + new Vector2(0, 12) }, new Color(0, 0, 0, .15f));
         DrawLine(p, p - new Vector2(0, height * .7f), color.Darkened(.45f), 3, true);

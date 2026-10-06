@@ -31,7 +31,7 @@ The follow-up tactical starter-squad sweep cleared 57 of 60 stages, compared wit
 
 The Reliquary counter-squad benchmark also produced long fights after the fixes: one run reached the 210-second limit with 98.1% hull and a breached gate; another lost at 193.5 seconds. Engine outcomes can vary despite seeding the encounter controller. A surviving wagon at timeout does not count as a clear.
 
-Detailed first-pass results and profile definitions are in [COMBAT_BENCHMARK.md](COMBAT_BENCHMARK.md). The broader stage, wave, and boss changes are in [COMBAT_REVIEW.md](COMBAT_REVIEW.md).
+Detailed first-pass results and profile definitions are in [COMBAT_BENCHMARK_60_STAGE.md](COMBAT_BENCHMARK_60_STAGE.md). The broader stage, wave, and boss changes are in [COMBAT_REVIEW.md](../COMBAT_REVIEW.md).
 
 ## Scope
 

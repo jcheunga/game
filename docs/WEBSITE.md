@@ -93,7 +93,7 @@ configuration. Update the page in the same change if any of these move:
 | Hashed IPs for rate limiting expire after about a minute | `server/RateLimitStore.cs` |
 | API access logs rotate (5 × 20 MB) | `caddy` logging options in `server/docker-compose.production.yml` |
 | No website access logs | No `log` directive in the website block of `server/Caddyfile` |
-| Analytics off until the player opts in | `scripts/core/AnalyticsService.cs`, first-run prompt in `scripts/ui/MainMenu.cs` |
+| Analytics off until the player opts in | `scripts/core/AnalyticsService.cs`, and the Privacy section of the Account tab in `scripts/ui/SettingsMenu.cs` (there is no first-run prompt) |
 | Crash reports off until a separate opt-in; withdrawing analytics discards queued events | `scripts/core/CrashReporter.cs`, `AnalyticsService.cs`, and the Account tab in `scripts/ui/SettingsMenu.cs` |
 | Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
 | No third-party analytics or ad SDKs | `Game.csproj`, `addons/` |

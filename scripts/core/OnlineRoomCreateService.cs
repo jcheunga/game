@@ -107,10 +107,10 @@ public static class OnlineRoomCreateService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room host ({_hostedRoom.ProviderDisplayName}):");
 		builder.AppendLine(_hostedRoom.Summary);
-		builder.AppendLine($"Room: {_hostedRoom.Title}  |  ID: {_hostedRoom.RoomId}  |  Status: {_hostedRoom.Status}");
-		builder.AppendLine($"Board: {_hostedRoom.BoardCode}  |  Host: {_hostedRoom.HostCallsign}  |  Region: {_hostedRoom.Region}");
-		builder.AppendLine($"Players: {_hostedRoom.CurrentPlayers}/{_hostedRoom.MaxPlayers}  |  Spectators: {_hostedRoom.SpectatorCount}");
-		builder.AppendLine($"Transport: {_hostedRoom.TransportHint}  |  Relay: {_hostedRoom.RelayEndpoint}");
+		builder.AppendLine($"Room: {_hostedRoom.Title} · ID: {_hostedRoom.RoomId} · Status: {_hostedRoom.Status}");
+		builder.AppendLine($"Board: {_hostedRoom.BoardCode} · Host: {_hostedRoom.HostCallsign} · Region: {_hostedRoom.Region}");
+		builder.AppendLine($"Players: {_hostedRoom.CurrentPlayers}/{_hostedRoom.MaxPlayers} · Spectators: {_hostedRoom.SpectatorCount}");
+		builder.AppendLine($"Transport: {_hostedRoom.TransportHint} · Relay: {_hostedRoom.RelayEndpoint}");
 		builder.Append($"Deck mode: {(_hostedRoom.UsesLockedDeck ? BuildLockedDeckSummary(_hostedRoom.LockedDeckUnitIds) : "player squad seats")}");
 		return builder.ToString();
 	}

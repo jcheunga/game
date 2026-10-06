@@ -9,6 +9,7 @@ import math
 from mathutils import Matrix, Vector
 
 from . import geo
+from . import shaders as S
 from .body import ellipse, torso_sections
 
 
@@ -456,6 +457,7 @@ def boot(J, side, mat, coll, size=1.0, shaft=0.18, cuff=None, toe='round', sole=
     L = (toe_p - an).length * 1.25 * size
     W = 0.068 * size
     secs = []
+    outline = []
     n = 8
     for k in range(n + 1):
         t = k / n
@@ -471,6 +473,7 @@ def boot(J, side, mat, coll, size=1.0, shaft=0.18, cuff=None, toe='round', sole=
             zz = 0.01 + (math.sin(a) * 0.5 + 0.5) * h
             sec.append(_v(x, an.y + yy, zz))
         secs.append(sec)
+        outline.append((x, w))
     foot = geo.loft('Boot', secs, plate or mat, coll)
     _sub(foot, 1)
     out.append((foot, 'foot.' + side))
@@ -485,8 +488,16 @@ def boot(J, side, mat, coll, size=1.0, shaft=0.18, cuff=None, toe='round', sole=
             _solid(cf, 0.012, 0)
             geo.place(cf, an + _v(0, 0, shaft - 0.02))
             out.append((cf, 'shin.' + side))
-    if sole is not None:
-        so = geo.box('Sole', (L * 1.02, W * 2.1, 0.025), _v(an.x - 0.07 + L * 0.5, an.y, 0.012), sole, coll, bevel=0.01)
+    # Boots stand on a darker welted sole that follows the foot's outline, which separates foot from ground at
+    # sprite size. Bare feet (no shaft, plate or explicit sole) go without.
+    if sole is not False and (shaft or plate is not None or sole is not None):
+        rings = []
+        for k, (x, w) in enumerate(outline):
+            ws = w * (0.9 if 0 < k < n else 0.8)
+            rings.append([_v(x, an.y + math.cos(i * math.tau / 12) * ws, (math.sin(i * math.tau / 12) * 0.5 + 0.5) * 0.03)
+                          for i in range(12)])
+        so = geo.loft('Sole', rings, sole or S.leather('1c1612', name='Boot sole', rough=0.7), coll)
+        _sub(so, 1)
         out.append((so, 'foot.' + side))
     return out
 

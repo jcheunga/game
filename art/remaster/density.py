@@ -4,12 +4,12 @@ A battle frame is drawn Radius * 2 * VisualScale * drawScale canvas pixels wide 
 1280x720 battle canvas (scripts/combat/Unit.cs). The helpers below mirror
 Unit.ResolveVisualScale and Unit.ResolveRadius; keep them in step with that file.
 
-The regular roster packs 192x240 frames at a density of roughly 2 (Swordsman 2.5), which
-stays sharp when the canvas is stretched to a 1080p-1440p window or zoomed on mobile.
-Bosses and the Siege Tower are drawn three to four times larger from the same 192 px frame,
-so they fall to 0.5-0.8 and look soft and blocky. Units below MIN_DENSITY are rendered
+A legacy 192x240 frame gives a regular soldier a density of about 2 and a boss 0.5-0.8,
+which looks soft at the battle zoom. Units below MIN_DENSITY (all but the small hound) are rendered
 from larger masters and packed into atlases cropped to their animation envelope at
-TARGET_DENSITY instead.
+TARGET_DENSITY. The largest units (bosses, the Siege Tower) have so many big frames that
+the MAX_ATLAS texture limit caps them lower, at about 1.8-3; pack.py records the density
+each unit actually reaches in artifacts/remaster/unit-framing-report.json.
 
 Pure Python (no bpy) so both build_units.py and pack.py can import it.
 """
@@ -17,8 +17,10 @@ import math
 
 STANDARD_FRAME = (192, 240)  # regular battle-atlas frame
 MASTER_FRAME = (256, 320)    # Blender master frame at res_scale 1
-TARGET_DENSITY = 2.0
-MIN_DENSITY = 1.25
+# At the battle zoom (ViewWidth 600) one battle pixel covers about 5 screen pixels on a Retina display, so every
+# unit renders large masters and packs an envelope-cropped atlas near 1:1 there.
+TARGET_DENSITY = 4.5
+MIN_DENSITY = 4.5
 # Masters are rendered this much larger than the packed frame, like the regular 256 -> 192 pack.
 SUPERSAMPLE = 4 / 3
 MAX_ATLAS = 4096  # widely supported mobile texture limit

@@ -1,9 +1,8 @@
 """Saltwake Docks: a stone quay on a bright sea morning. Bollards, crates and a crane line the quay; behind it the
 harbour basin with moored ships and a breakwater light; beyond, open sea, sails and a lighthouse headland."""
-import math
 import random
 
-from rk import arch, env, geo
+from rk import arch, env
 from rk import dressing as P
 from battle_scenes import kit as K
 

@@ -200,14 +200,16 @@ def build_body(name, s, J, coll, mats, voxel=0.018, smooth=8, extra_parts=None, 
                            [0.085 * b * th, 0.075 * b * th], None, coll, sides=12), 'neck'))
     for side, sy in (('R', -1), ('L', 1)):
         sp, el, wr, ht = J['shoulder.' + side], J['elbow.' + side], J['wrist.' + side], J['hand_tip.' + side]
-        pts = [sp + Vector((0, -sy * 0.03, 0.03)), sp.lerp(el, .35), sp.lerp(el, .7), el]
-        parts.append((geo.tube('upper arm', pts, [0.105 * b * th, 0.092 * b * th, 0.085 * b * th, 0.07 * b * th],
-                               None, coll, sides=12), 'uarm.' + side))
+        # deltoid cap, biceps swell, then the narrow elbow
+        pts = [sp + Vector((0, -sy * 0.03, 0.03)), sp.lerp(el, .2), sp.lerp(el, .45), sp.lerp(el, .7), el]
+        parts.append((geo.tube('upper arm', pts, [0.108 * b * th, 0.096 * b * th, 0.094 * b * th, 0.082 * b * th,
+                                                  0.066 * b * th], None, coll, sides=14), 'uarm.' + side))
         parts.append((geo.sphere('shoulder ball', 0.11 * b * th, sp + Vector((0, sy * .01, .01)), None, coll, 14, 10),
                       'uarm.' + side))
-        pts = [el, el.lerp(wr, .35), wr]
-        parts.append((geo.tube('forearm', pts, [0.07 * b * th, 0.075 * b * th, 0.052 * b], None, coll, sides=12),
-                      'farm.' + side))
+        # forearm swells just below the elbow and tapers to a slim wrist
+        pts = [el, el.lerp(wr, .22), el.lerp(wr, .55), wr]
+        parts.append((geo.tube('forearm', pts, [0.068 * b * th, 0.079 * b * th, 0.066 * b * th, 0.048 * b], None,
+                               coll, sides=14), 'farm.' + side))
         hs = s['hand']
         parts.append((geo.sphere('hand', 1, wr.lerp(ht, .5), None, coll, 14, 10,
                                  scale=(0.06 * hs * b, 0.045 * hs * b, 0.085 * hs)), 'hand.' + side))
@@ -215,12 +217,13 @@ def build_body(name, s, J, coll, mats, voxel=0.018, smooth=8, extra_parts=None, 
                                          wr.lerp(ht, .55) + Vector((.07 * hs, -sy * .01, 0))],
                                [0.026 * hs, 0.02 * hs], None, coll, sides=8), 'hand.' + side))
         hp, kn, an = J['hip.' + side], J['knee.' + side], J['ankle.' + side]
-        pts = [hp + Vector((0, 0, 0.06)), hp.lerp(kn, .3), hp.lerp(kn, .7), kn]
-        parts.append((geo.tube('thigh', pts, [0.13 * b * th, 0.12 * b * th, 0.1 * b * th, 0.085 * b * th],
-                               None, coll, sides=12), 'thigh.' + side))
-        pts = [kn, kn.lerp(an, .3) + Vector((-.012, 0, 0)), kn.lerp(an, .75), an]
-        parts.append((geo.tube('shin', pts, [0.085 * b * th, 0.088 * b * th, 0.065 * b * th, 0.058 * b],
-                               None, coll, sides=12), 'shin.' + side))
+        pts = [hp + Vector((0, 0, 0.06)), hp.lerp(kn, .25), hp.lerp(kn, .55), hp.lerp(kn, .82), kn]
+        parts.append((geo.tube('thigh', pts, [0.132 * b * th, 0.126 * b * th, 0.112 * b * th, 0.094 * b * th,
+                                              0.082 * b * th], None, coll, sides=14), 'thigh.' + side))
+        # calf swell high on the back of the shin, then a slim ankle
+        pts = [kn, kn.lerp(an, .25) + Vector((-.016, 0, 0)), kn.lerp(an, .5) + Vector((-.008, 0, 0)), kn.lerp(an, .8), an]
+        parts.append((geo.tube('shin', pts, [0.082 * b * th, 0.094 * b * th, 0.082 * b * th, 0.06 * b * th,
+                                             0.054 * b], None, coll, sides=14), 'shin.' + side))
         parts.append((geo.sphere('knee', 0.085 * b * th, kn, None, coll, 12, 8), 'shin.' + side))
     if extra_parts:
         parts.extend(extra_parts)

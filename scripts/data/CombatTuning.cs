@@ -3,12 +3,12 @@ using System;
 public sealed class CombatTuning
 {
 	public float PlayerBaseX { get; set; } = 48f;
-	public float EnemyBaseX { get; set; } = 900f;
+	public float EnemyBaseX { get; set; } = 1152f;
 	public float PlayerSpawnX { get; set; } = 70f;
-	public float EnemySpawnX { get; set; } = 878f;
+	public float EnemySpawnX { get; set; } = 1130f;
 
 	public float BattlefieldLeft { get; set; } = 42f;
-	public float BattlefieldRight { get; set; } = 906f;
+	public float BattlefieldRight { get; set; } = 1158f;
 	// About two screens from wagon to stronghold at Dead Ahead-like proportions.
 	// A shallow band: a unit marching out of the wagon's centre line can reach an enemy on either
 	// edge, but a unit pulled to one edge cannot see the other. Every unit's AggroRangeY sits in
@@ -22,9 +22,14 @@ public sealed class CombatTuning
 	public float BaseApproachDistance { get; set; } = 40f;
 	// The wagon and stronghold plates are drawn at this fraction of their authored width, about two
 	// soldiers tall.
-	public float StructureScale { get; set; } = 0.51f;
+	public float StructureScale { get; set; } = 0.58f;
 	// World units visible across the screen: sets the soldier scale (about 14% of screen height).
-	public float ViewWidth { get; set; } = 474f;
+	public float ViewWidth { get; set; } = 600f;
+
+	// Ranged units strike in melee instead of shooting when an enemy is this close (centre to centre,
+	// plus how far either body extends past a regular soldier's), at this fraction of their damage.
+	public float RangedMeleeReach { get; set; } = 34f;
+	public float RangedMeleeDamageScale { get; set; } = 0.8f;
 
 	public float CourageStart { get; set; } = 0f;
 	public float CourageMax { get; set; } = 100f;

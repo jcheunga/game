@@ -112,7 +112,7 @@ public static class ModalUi
         var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 18); panel.AddChild(row);
         row.AddChild(new TextureRect { Texture = ModalArt.Illustration(illustration), CustomMinimumSize = new Vector2(148, 82), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true, MouseFilter = Control.MouseFilterEnum.Ignore });
         var words = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter }; words.AddThemeConstantOverride("separation", 6); row.AddChild(words);
-        var heading = RealmUi.Heading(title, 22); heading.AddThemeFontOverride("font", HeadingFont); heading.AddThemeColorOverride("font_color", Cream); words.AddChild(heading);
+        var heading = RealmUi.Heading(title, 22); heading.AddThemeColorOverride("font_color", Cream); words.AddChild(heading);
         var text = RealmUi.Label(description, 18); text.AddThemeFontSizeOverride("font_size", 18); text.AddThemeColorOverride("font_color", Muted); words.AddChild(text);
         return panel;
     }

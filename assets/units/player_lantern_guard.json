@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.231040883508528,
+  "frameWidth": 327,
+  "frameHeight": 289,
+  "drawScale": 2.0689079203109815,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "dust",
       "motion": "topple-rigid",
       "impactPoint": [
-        0.176054,
-        0.025394
+        0.275043,
+        0.077556
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "player_lantern_guard",
   "title": "Lantern Guard",
   "source": "art/remaster/units/player_lantern_guard.py",
-  "anchorY": 0.69261634349823,
-  "anchorX": 0.477886,
+  "anchorY": 0.834008,
+  "anchorX": 0.349719,
   "motion": {
     "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
       0.0,
-      -0.18898
+      -0.40204
     ],
     "contact": [
-      0.210476,
-      -0.128611
+      0.328894,
+      -0.227209
     ]
   },
-  "healthBarY": 0.355116
+  "healthBarY": 0.753997
 }

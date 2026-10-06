@@ -2,7 +2,7 @@
 import math
 import random
 
-from mathutils import Matrix, Vector
+from mathutils import Vector
 
 from rk import geo
 from . import itemkit as P
@@ -74,7 +74,7 @@ def relic_crown_of_valor(K):
 # ============================================================================ shared relic helpers
 from rk import weapons as W  # noqa: E402
 from rk import shaders as S  # noqa: E402
-from .base import xform, aim_rot, AMBER, TEAL, SOUL, PLAGUE  # noqa: E402
+from .base import xform, aim_rot, AMBER, TEAL, SOUL  # noqa: E402
 
 
 def kit_mats(K, **over):

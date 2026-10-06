@@ -156,6 +156,42 @@ database, validate player, purchase, wallet, and ledger counts, then cut the
 API over to PostgreSQL. Keep the SQLite snapshot immutable until the recovery
 window closes. A new deployment has no data migration step.
 
+## Account sign-in
+
+Players sign in from **Account** in the home map's More panel or in Settings.
+Email uses a six-digit one-time code (ten-minute lifetime, five attempts).
+Google uses browser authorization with PKCE, a random state and a separate
+device poll secret. The client registers an offline guest first; the server
+links that guest only with a valid session, and new identities keep local guest
+progress. Email and Google identities stay separate unless linked from the
+signed-in account. Sign-out revokes the current server session when online.
+
+To enable live sign-in:
+
+1. Set the game's HTTPS API origin (see below), or for local development enter
+   the server endpoint under Settings → Account → Payments → Connection details.
+2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER` and `SMTP_PASSWORD`
+   for email delivery over TLS.
+3. Create a Google OAuth **Web application** client. Set `GOOGLE_CLIENT_ID`,
+   `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI` on the server, and register
+   that exact HTTPS callback URI, ending in `/auth/google/callback`, with
+   Google. Local callbacks may use loopback HTTP.
+4. Restart the server. `/auth/providers` reports which sign-in methods are
+   configured; the game disables buttons for unavailable providers.
+
+Provider credentials are not included. Live email delivery and Google's consent
+flow need the configured services and a manual device check. The server
+exchanges the authorization code directly with Google and reads the verified
+identity from its userinfo endpoint, following
+[Google's OpenID Connect flow](https://developers.google.com/identity/openid-connect/openid-connect).
+
+Before switching accounts, the game downloads the selected account's cloud
+save when available and writes current local progress to
+`user://account-backups/`. A failed download leaves the current account intact.
+Account labels and session secrets are excluded from cloud saves. Cloud upload
+is manual, from Settings. Backup files include the device session, so treat
+them like private saves.
+
 ## Game release configuration
 
 Deploying the API alone does not make a mobile build use it. Before exporting a
@@ -179,9 +215,10 @@ session as well as the claimed profile ID; the relay additionally requires an
 active room seat. Challenge uploads are acknowledged per submission and are
 idempotent, so mobile retry cannot double-record a score.
 
-The current player identity is still anonymous and bound to a device session,
-so it cannot restore paid currency after a lost device. Google/Apple account
-sign-in and recovery are required before a public paid launch. The game also
+Email and Google sign-in are implemented but need live SMTP and OAuth
+credentials and a real-device lost-device check before a public paid launch;
+until then a player who never signs in stays a device-bound guest and cannot
+recover paid currency after losing the device. The game also
 does not yet connect its battle simulation to the authenticated WebSocket
 relay; keep internet rooms in closed testing until that client transport and
 real-device latency/reconnect testing are complete.

@@ -11,6 +11,51 @@ public static class RealmUi
     public static readonly Color Muted = new("9eada9");
     private static readonly Dictionary<string, Texture2D> Icons = new();
     public static readonly Font TitleFont = new SystemFont { FontNames = new[] { "Georgia", "Noto Serif", "serif" } };
+    private static readonly FontFile DisplayFace = ResourceLoader.Load<FontFile>("res://assets/fonts/GrenzeGotisch-Variable.ttf");
+    private static readonly Dictionary<(int, bool), Font> DisplayFonts = new();
+    private static readonly System.Text.RegularExpressions.Regex CapitalRun = new(@"\p{Lu}{2,}");
+    private const string DisplaySizeMeta = "display_size";
+    private static bool _warnedMissingDisplayFace;
+
+    /// <summary>Grenze Gotisch, the blackletter face the website also uses, for headings only: body text, buttons and
+    /// numbers stay in the text faces. Its tall accent and descender room is trimmed so a heading line is no taller
+    /// than a text line, which keeps layouts built around the old heading face intact. <paramref name="roman"/>
+    /// selects the face's roman letterforms (stylistic set 1).</summary>
+    public static Font DisplayFont(int size, bool roman = false)
+    {
+        if (DisplayFace == null)
+        {
+            if (!_warnedMissingDisplayFace) GD.PushWarning("RealmUi: the Grenze Gotisch display font failed to load; headings fall back to the serif face.");
+            _warnedMissingDisplayFace = true;
+            return TitleFont;
+        }
+        if (DisplayFonts.TryGetValue((size, roman), out var font)) return font;
+        var variation = new FontVariation { BaseFont = DisplayFace, VariationOpentype = new Godot.Collections.Dictionary { { "wght", 600 } } };
+        if (roman) variation.OpentypeFeatures = new Godot.Collections.Dictionary { { TextServerManager.GetPrimaryInterface().NameToTag("ss01"), 1 } };
+        variation.SetSpacing(TextServer.SpacingType.Top, -Mathf.RoundToInt(size * .30f));
+        variation.SetSpacing(TextServer.SpacingType.Bottom, -Mathf.RoundToInt(size * .16f));
+        return DisplayFonts[(size, roman)] = variation;
+    }
+
+    /// <summary>Sets a heading in the display face. Blackletter capitals run short, so it is set a tenth larger and
+    /// never below 22px. They also only read as initials, so a heading with an all-caps word ("LAN race") is roman.
+    /// Change the text afterwards with <see cref="SetDisplayText"/> so that choice follows it.</summary>
+    public static Label Display(Label label, int size)
+    {
+        size = Mathf.RoundToInt(Mathf.Max(size, 20) * 1.1f);
+        label.AddThemeFontOverride("font", DisplayFont(size, CapitalRun.IsMatch(label.Text)));
+        label.AddThemeFontSizeOverride("font_size", size);
+        label.SetMeta(DisplaySizeMeta, size);
+        return label;
+    }
+
+    /// <summary>Replaces a display heading's text and re-picks blackletter or roman letterforms for it.</summary>
+    public static void SetDisplayText(Label label, string text)
+    {
+        label.Text = text;
+        if (label.HasMeta(DisplaySizeMeta))
+            label.AddThemeFontOverride("font", DisplayFont(label.GetMeta(DisplaySizeMeta).AsInt32(), CapitalRun.IsMatch(text)));
+    }
 
     public static Texture2D Icon(string id)
     {
@@ -29,19 +74,16 @@ public static class RealmUi
 
     public static Label Heading(string text, int size = 30)
     {
-        var label = Label(text, size < 38 ? size + 4 : size);
-        label.AddThemeFontOverride("font", TitleFont);
-        return label;
+        return Display(Label(text), size < 38 ? size + 4 : size);
     }
 
     public static readonly Color SectionInk = new("e8c88a");
 
-    /// <summary>A left-aligned panel heading in the shared heading face.</summary>
+    /// <summary>A left-aligned panel heading in the display face.</summary>
     public static Label SectionTitle(string text, int size = 20)
     {
         var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        label.AddThemeFontOverride("font", ModalUi.HeadingFont);
-        label.AddThemeFontSizeOverride("font_size", size);
+        Display(label, size);
         label.AddThemeColorOverride("font_color", SectionInk);
         label.SetMeta("section_title", true);
         return label;

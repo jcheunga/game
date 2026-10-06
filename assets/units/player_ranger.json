@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 2.3292839527130127,
+  "frameWidth": 231,
+  "frameHeight": 234,
+  "drawScale": 1.8333333333333328,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,33 +37,40 @@
       "fx": "dust",
       "motion": "sit-slump",
       "impactPoint": [
-        -0.245405,
-        -0.035216
+        -0.311902,
+        -0.07634
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
+    },
+    "melee": {
+      "start": 42,
+      "count": 7,
+      "duration": 0.065,
+      "loop": false,
+      "contactFrame": 3
     }
   },
   "assetId": "player_ranger",
   "title": "Crossbowman",
   "source": "art/remaster/units/player_ranger.py",
-  "anchorY": 0.7671856880187988,
-  "anchorX": 0.469325,
+  "anchorY": 0.810787,
+  "anchorX": 0.569658,
   "motion": {
     "revision": "remaster-v1",
     "profile": "crossbow",
     "body": [
       0.0,
-      -0.262141
+      -0.395835
     ],
     "contact": [
-      0.090888,
-      -0.35301
+      0.115644,
+      -0.497515
     ]
   },
-  "healthBarY": 0.489061
+  "healthBarY": 0.736412
 }

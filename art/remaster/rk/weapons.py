@@ -6,7 +6,6 @@ Builders return dict(objs=[...], tip=Vector, grip2=Vector|None, kind=str).
 """
 import math
 
-import bmesh
 from mathutils import Matrix, Vector
 
 from . import geo

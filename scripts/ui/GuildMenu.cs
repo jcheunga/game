@@ -123,7 +123,7 @@ public partial class GuildMenu : Control
 		}
 
 		RebuildInfo(gs, guild, hasGuild);
-		RebuildActions(gs, guild, hasGuild);
+		RebuildActions(hasGuild);
 	}
 
 	private void RebuildResourcesRow(GameState gs)
@@ -195,7 +195,7 @@ public partial class GuildMenu : Control
 		}
 	}
 
-	private void RebuildActions(GameState gs, GuildSnapshot guild, bool hasGuild)
+	private void RebuildActions(bool hasGuild)
 	{
 		foreach (var child in _actionsStack.GetChildren()) child.QueueFree();
 

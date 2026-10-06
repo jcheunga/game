@@ -15,8 +15,8 @@ public partial class BattleController
         // Aim at the struck point of the base, not its foundation line.
         projectile.TargetOffset = (team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition) - target.Position + new Vector2(0, -12);
         projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
-        if (attacker.MotionProfile == "ballista") projectile.SetWeaponVisual(BaseWeaponKind.Ballista);
-        else if (attacker.MotionProfile is "bow-draw" or "crossbow") projectile.SetWeaponVisual(BaseWeaponKind.Arrows);
+        projectile.SetStyle(ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile));
+        projectile.LaunchGroundY = attacker.GlobalPosition.Y;
         projectile.Setup(target, damage, attacker.ProjectileSpeed > 0 ? attacker.ProjectileSpeed : 210,
             tint.Lightened(.25f), value => {
                 ApplyUnitBaseHit(team, value, tint, attacker, lifetime);

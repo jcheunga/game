@@ -8,7 +8,9 @@ public enum UnitAnimState
 	Attack,
 	Hit,
 	Death,
-	Deploy
+	Deploy,
+	// Ranged units' close-quarters strike; units without one reuse Attack.
+	Melee
 }
 
 public sealed class UnitSpriteSheet

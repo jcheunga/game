@@ -21,7 +21,6 @@ public partial class BattleController : Node2D
 	private const float TargetFocusScoreBonus = 1800f;
 	private const float TargetFinisherScoreBonus = 2600f;
 	private const float CampaignBossPhaseThresholdRatio = 0.55f;
-	private const float CampaignConvoyCommandBaseChargeSeconds = 10f;
 	private const float CampaignMissionAftermathLeadSeconds = 2.1f;
 	private const float CampaignCounterSurgeTelegraphLeadSeconds = 2.8f;
 	private const float CampaignBonusObjectivePressureLeadSeconds = 2.2f;
@@ -506,6 +505,7 @@ public partial class BattleController : Node2D
 		_playerBaseHealth = _playerBaseMaxHealth;
 		_playerHullTookDamage = false;
 		_enemyBaseHealth = _enemyBaseMaxHealth;
+		Projectile.FieldTint = FieldLighting.Tint;
 		InitializeBaseWeapons();
 		_campaignScoutCourageGainScale = 1f;
 		_campaignScoutBoostRemaining = 0f;
@@ -829,8 +829,11 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var font = ThemeDB.FallbackFont;
-		if (font == null)
+		const int titleFontSize = 33;
+		const int subFontSize = 14;
+		var font = RealmUi.DisplayFont(titleFontSize);
+		var subFont = ThemeDB.FallbackFont;
+		if (subFont == null)
 		{
 			return;
 		}
@@ -849,18 +852,16 @@ public partial class BattleController : Node2D
 		DrawRect(rect, fill, true);
 		DrawRect(rect, outline, false, 3f);
 
-		const int titleFontSize = 24;
-		const int subFontSize = 14;
-		var title = _bossEntranceBannerText.ToUpperInvariant();
+		var title = _bossEntranceBannerText;
 		var titleSize = font.GetStringSize(title, HorizontalAlignment.Left, -1f, titleFontSize);
 		var subline = IsEndlessMode
-			? "Checkpoint threat entered the lane"
-			: "Major route threat entered the battlefield";
-		var subSize = font.GetStringSize(subline, HorizontalAlignment.Left, -1f, subFontSize);
-		var titlePos = new Vector2(rect.Position.X + ((rect.Size.X - titleSize.X) * 0.5f), rect.Position.Y + 31f);
-		var subPos = new Vector2(rect.Position.X + ((rect.Size.X - subSize.X) * 0.5f), rect.Position.Y + 54f);
+			? "Boss wave · checkpoint threat entered the lane"
+			: "Boss arrival · major route threat entered the battlefield";
+		var subSize = subFont.GetStringSize(subline, HorizontalAlignment.Left, -1f, subFontSize);
+		var titlePos = new Vector2(rect.Position.X + ((rect.Size.X - titleSize.X) * 0.5f), rect.Position.Y + 34f);
+		var subPos = new Vector2(rect.Position.X + ((rect.Size.X - subSize.X) * 0.5f), rect.Position.Y + 58f);
 		DrawString(font, titlePos, title, HorizontalAlignment.Left, -1f, titleFontSize, Colors.White);
-		DrawString(font, subPos, subline, HorizontalAlignment.Left, -1f, subFontSize, new Color(1f, 1f, 1f, 0.82f));
+		DrawString(subFont, subPos, subline, HorizontalAlignment.Left, -1f, subFontSize, new Color(1f, 1f, 1f, 0.82f));
 	}
 
 	private void DrawSelectionPreview()
@@ -983,31 +984,26 @@ public partial class BattleController : Node2D
 
 	private string BuildSpellPreviewText(ResolvedSpellStats spell, Vector2 previewPosition)
 	{
-		return spell.EffectType switch
+		int Enemies() => GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length;
+		int Allies() => GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player).Length;
+		var detail = spell.EffectType switch
 		{
-			"fireball" => $"Fireball  |  {GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length} enemy targets",
-			"heal" => $"Heal  |  {GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player).Length} allies in range",
-			"frost_burst" => $"Frost Burst  |  {GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length} enemy targets",
-			"lightning_strike" => $"Lightning  |  {Math.Min(3, GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length)} chain targets",
-			"barrier_ward" => $"Barrier Ward  |  {GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player).Length} allies warded",
-			"stone_barricade" => $"Stone Barricade  |  Holds lane for {spell.Duration:0.0}s",
-			"war_cry" => $"War Cry  |  Buffs {CountTeamUnits(Team.Player)} deployed allies",
-			"earthquake" => $"Earthquake  |  {GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length} enemy targets",
-			"polymorph" => BuildPolymorphPreviewText(previewPosition, spell.Radius),
+			"fireball" or "frost_burst" or "earthquake" => Plural(Enemies(), "enemy", "enemies"),
+			"heal" => $"{Plural(Allies(), "ally", "allies")} in range",
+			"lightning_strike" => Plural(Math.Min(3, Enemies()), "chain target", "chain targets"),
+			"barrier_ward" => $"{Plural(Allies(), "ally", "allies")} warded",
+			"stone_barricade" => $"holds for {spell.Duration:0.0}s",
+			"war_cry" => $"rallies {Plural(CountTeamUnits(Team.Player), "ally", "allies")}",
+			"polymorph" => FindToughestEnemyInRadius(previewPosition, spell.Radius)?.UnitName ?? "no enemy in range",
 			"resurrect" => string.IsNullOrWhiteSpace(_lastDeadPlayerUnitId)
-				? "Resurrect  |  No fallen ally stored"
-				: $"Resurrect  |  Revive {_lastDeadPlayerUnitId}",
-			_ => spell.DisplayName
+				? "no fallen ally"
+				: $"revives {GameData.GetUnit(_lastDeadPlayerUnitId)?.DisplayName ?? _lastDeadPlayerUnitId}",
+			_ => ""
 		};
+		return detail.Length == 0 ? spell.DisplayName : $"{spell.DisplayName} · {detail}";
 	}
 
-	private string BuildPolymorphPreviewText(Vector2 previewPosition, float radius)
-	{
-		var target = FindToughestEnemyInRadius(previewPosition, radius);
-		return target == null
-			? "Polymorph  |  No enemy target"
-			: $"Polymorph  |  {target.UnitName}";
-	}
+	private static string Plural(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
 
 	private TerrainPalette ResolveTerrainPalette()
 	{
@@ -1490,7 +1486,7 @@ public partial class BattleController : Node2D
 		}
 
 		var deltaF = (float)delta;
-		if (HandleLanStartBarrier(deltaF))
+		if (HandleLanStartBarrier())
 		{
 			return;
 		}
@@ -1553,7 +1549,7 @@ public partial class BattleController : Node2D
 
 		_deck.TickCooldowns(deltaF);
 		_spellDeck.TickCooldowns(deltaF);
-		UpdateCampaignField(deltaF);
+		UpdateCampaignField();
 		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
 		UpdateChallengeGhost(deltaF);
 
@@ -1745,7 +1741,7 @@ public partial class BattleController : Node2D
 		_defenseEncounterStartedAt = 0f;
 	}
 
-	private bool HandleLanStartBarrier(float delta)
+	private bool HandleLanStartBarrier()
 	{
 		if (!_lanStartBarrierActive || !IsLanRaceMode)
 		{
@@ -1965,7 +1961,7 @@ public partial class BattleController : Node2D
 		foreach (var entry in snapshot.Entries.Take(Math.Max(1, maxEntries)))
 		{
 			lines.Add(
-				$"#{entry.Rank} {entry.PlayerCallsign}  |  {entry.Score} pts  |  Hull {entry.HullPercent}%  |  {entry.ElapsedSeconds:0.0}s  |  {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
+				$"#{entry.Rank} {entry.PlayerCallsign} · {entry.Score} pts · Hull {entry.HullPercent}% · {entry.ElapsedSeconds:0.0}s · {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
 		}
 
 		return string.Join("\n", lines);
@@ -2187,7 +2183,7 @@ public partial class BattleController : Node2D
 		}
 
 		_courage -= resolved.CourageCost;
-		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(definition, resolved));
+		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(resolved));
 		var effectSummary = ApplySpellEffect(resolved, targetPosition);
 		_selectionMode = BattleSelectionMode.Unit;
 		_spellsCast++;
@@ -2221,14 +2217,14 @@ public partial class BattleController : Node2D
 		RecordChallengeDeployment(definition.Id, spawnPosition.Y);
 		var deployedUnit = SpawnUnit(Team.Player, stats, spawnPosition);
 		BeginWagonExit(deployedUnit);
-		ApplyDeployMomentum(deployedUnit, definition);
+		ApplyDeployMomentum(deployedUnit);
 		ApplyFortifiedDeployBonus(spawnPosition);
 		var commendationFeedback = TryApplyCampaignCommendation(deployedUnit, spawnPosition);
 		AudioDirector.Instance?.PlayDeploy(definition);
 		SpawnEffect(WagonDoorExit, stats.Color, 6f, 18f, 0.28f);
 		BattleParticles.SpawnDeployBurst(this, WagonDoorExit, stats.Color);
 
-		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition, spawnPosition);
+		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition);
 		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
 		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
@@ -2279,9 +2275,7 @@ public partial class BattleController : Node2D
 	private void TriggerBossEntranceBanner(UnitStats stats)
 	{
 		_bossEntranceBannerTimer = 2.2f;
-		_bossEntranceBannerText = IsEndlessMode
-			? $"Boss Wave  |  {stats.Name}"
-			: $"Boss Arrival  |  {stats.Name}";
+		_bossEntranceBannerText = stats.Name;
 		_bossEntranceBannerColor = stats.Color.Lightened(0.12f);
 		_enemyBaseFlashTimer = Mathf.Max(_enemyBaseFlashTimer, 0.32f);
 		SetStatus($"Boss arrival: {stats.Name} entered the battlefield.");
@@ -2321,8 +2315,8 @@ public partial class BattleController : Node2D
 		AddChild(projectile);
 		projectile.GlobalPosition = attacker.WeaponContactPosition;
 		projectile.ShouldPause = () => _battlePaused || _endlessCheckpointActive || _battleEnded;
-		if (attacker.MotionProfile == "bow-draw" || attacker.MotionProfile == "crossbow") projectile.SetWeaponVisual(BaseWeaponKind.Arrows);
-		else if (attacker.MotionProfile == "ballista") projectile.SetWeaponVisual(BaseWeaponKind.Ballista);
+		projectile.SetStyle(ProjectileStyles.ForUnit(attacker.DefinitionId, attacker.MotionProfile));
+		projectile.LaunchGroundY = attacker.GlobalPosition.Y;
 
 		var speed = attacker.ProjectileSpeed > 0f ? attacker.ProjectileSpeed : 210f;
 		var color = attacker.Tint.Lightened(0.25f);
@@ -2562,22 +2556,21 @@ public partial class BattleController : Node2D
 			if (unit.IsAttackCommitted) continue;
 			var prioritizeObjectiveRaid = ShouldPrioritizeObjectiveRaid(unit, target);
 
-			if (target != null && !prioritizeObjectiveRaid && unit.CanAttack(target))
+			// Point-blank, ranged units fight hand to hand instead of shooting: whoever is in their face
+			// comes before the target they would rather shoot, even one out of range.
+			var meleeThreat = unit.UsesProjectile && !prioritizeObjectiveRaid ? FindMeleeThreat(unit) : null;
+			if (meleeThreat != null)
 			{
-				if (unit.UsesProjectile)
+				if (unit.TryBeginMeleeAttack(meleeThreat))
 				{
-					if (unit.TryBeginAttack(target))
-					{
-						QueueUnitStrike(unit, target);
-					}
-
+					QueueRangedMelee(unit, meleeThreat);
 				}
-				else
+			}
+			else if (target != null && !prioritizeObjectiveRaid && unit.CanAttack(target))
+			{
+				if (unit.TryBeginAttack(target))
 				{
-					if (unit.TryBeginAttack(target))
-					{
-						QueueUnitStrike(unit, target);
-					}
+					QueueUnitStrike(unit, target);
 				}
 			}
 			else if (target != null && !prioritizeObjectiveRaid)
@@ -3212,6 +3205,8 @@ public partial class BattleController : Node2D
 		var projectile=ProjectilePool.Acquire();
 		projectile.GlobalPosition=unit.WeaponContactPosition;
 		projectile.ShouldPause=()=>_battlePaused || _endlessCheckpointActive || _battleEnded;
+		projectile.SetStyle(ProjectileStyles.Flask);
+		projectile.LaunchGroundY=unit.GlobalPosition.Y;
 		projectile.Setup(target,damage,unit.ProjectileSpeed>0?unit.ProjectileSpeed:360,tint,
 			d=>{ ApplySplashDamage(team,target.Position,d,radius,tint,name); return d; },
 			()=>!IsInstanceValid(target) || target.IsDead,
@@ -4821,7 +4816,7 @@ public partial class BattleController : Node2D
 		{
 			lines.Add($"{kv.Key}: {Mathf.RoundToInt(kv.Value)} damage");
 		}
-		lines.Add($"Spells cast: {_spellsCast}  |  Abilities triggered: {_activeAbilitiesTriggered}");
+		lines.Add($"Spells cast: {_spellsCast} · Abilities triggered: {_activeAbilitiesTriggered}");
 		return string.Join("\n", lines);
 	}
 
@@ -4922,7 +4917,7 @@ public partial class BattleController : Node2D
 
 				if (deadUnit.VisualClass == "boss")
 				{
-					TryRollRelicDropFromBoss(deadUnit);
+					TryRollRelicDropFromBoss();
 					AudioDirector.Instance?.PlayBossDeath();
 				}
 
@@ -4985,7 +4980,7 @@ public partial class BattleController : Node2D
 
 			TriggerDeathBurst(deadUnit);
 			TriggerSpawnOnDeath(deadUnit);
-				TriggerDamageReflectOnDeath(deadUnit);
+				TriggerDamageReflectOnDeath();
 			TryLichGraveyardReanimate(deadUnit);
 			SpawnEffect(deadUnit.Position, deadUnit.Tint, 8f, 24f, 0.22f);
 			PresentUnitDeath(deadUnit);
@@ -5260,7 +5255,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private void TryRollRelicDropFromBoss(Unit boss)
+	private void TryRollRelicDropFromBoss()
 	{
 		var relicVaultLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.RelicVaultId);
 		var relicBonus = relicVaultLevel * 0.12f;
@@ -5353,6 +5348,20 @@ public partial class BattleController : Node2D
 					BattlefieldBottom - SpawnVerticalPadding));
 			SpawnEnemyUnit(spawnedStats, spawnPosition);
 		}
+	}
+
+	private Unit FindMeleeThreat(Unit unit)
+	{
+		Unit closest = null;
+		var best = float.MaxValue;
+		foreach (var other in _units)
+		{
+			// CanAttack too: a threat the unit could not swing at would hold it in place.
+			if (other.IsDead || other.Team == unit.Team || other.IsUntargetable || !unit.InMeleeReach(other) || !unit.CanAttack(other)) continue;
+			var d = unit.Position.DistanceSquaredTo(other.Position);
+			if (d < best) { best = d; closest = other; }
+		}
+		return closest;
 	}
 
 	private Unit FindProjectileShieldInterceptor(Unit attacker, Unit target)
@@ -5487,7 +5496,7 @@ public partial class BattleController : Node2D
 		return spawned > 0;
 	}
 
-	private void TriggerDamageReflectOnDeath(Unit deadUnit)
+	private void TriggerDamageReflectOnDeath()
 	{
 		// Placeholder for any reflect-on-death cleanup. Mirror reflect is handled on damage.
 	}
@@ -5620,7 +5629,7 @@ public partial class BattleController : Node2D
 		return bestTarget;
 	}
 
-	private void ApplyDeployMomentum(Unit unit, UnitDefinition definition)
+	private void ApplyDeployMomentum(Unit unit)
 	{
 		if (!IsInstanceValid(unit) || unit.IsDead || unit.Team != Team.Player)
 		{
@@ -5643,7 +5652,7 @@ public partial class BattleController : Node2D
 			"lightning_strike" => ApplyLightningStrikeSpell(spell, targetPosition),
 			"barrier_ward" => ApplyBarrierWardSpell(spell, targetPosition),
 			"stone_barricade" => ApplyStoneBarricadeSpell(spell, targetPosition),
-			"war_cry" => ApplyWarCrySpell(spell, targetPosition),
+			"war_cry" => ApplyWarCrySpell(spell),
 			"earthquake" => ApplyEarthquakeSpell(spell, targetPosition),
 			"polymorph" => ApplyPolymorphSpell(spell, targetPosition),
 			"resurrect" => ApplyResurrectSpell(spell, targetPosition),
@@ -5658,8 +5667,9 @@ public partial class BattleController : Node2D
 		var hits = 0;
 		var totalDamage = 0f;
 
+		FireballStreak.Spawn(this, targetPosition, color, () => _battlePaused || _endlessCheckpointActive);
 		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
-		BattleParticles.SpawnFireballParticles(this, targetPosition, color, spell.Radius);
+		BattleParticles.SpawnFireballParticles(this, targetPosition, spell.Radius);
 
 		foreach (var target in targets)
 		{
@@ -5823,18 +5833,18 @@ public partial class BattleController : Node2D
 		_barricades.Add((barricadeUnit, _elapsed + spell.Duration));
 
 		SpawnEffect(clampedPosition, color, 10f, spell.Radius, 0.24f, false);
-		BattleParticles.SpawnStoneBarricadeParticles(this, clampedPosition, color, spell.Radius);
+		BattleParticles.SpawnStoneBarricadeParticles(this, clampedPosition, spell.Radius);
 
 		return $"Stone Barricade raised at the target lane with {Mathf.RoundToInt(spell.Power)} durability.";
 	}
 
-	private string ApplyWarCrySpell(ResolvedSpellStats spell, Vector2 targetPosition)
+	private string ApplyWarCrySpell(ResolvedSpellStats spell)
 	{
 		var color = spell.GetTint();
 		var buffed = 0;
 
 		SpawnEffect(PlayerBaseCorePosition, color, 18f, 60f, 0.32f, false);
-		BattleParticles.SpawnWarCryParticles(this, PlayerBaseCorePosition, color, 60f);
+		BattleParticles.SpawnWarCryParticles(this, PlayerBaseCorePosition, 60f);
 
 		foreach (var unit in _units)
 		{
@@ -5861,7 +5871,7 @@ public partial class BattleController : Node2D
 		var totalDamage = 0f;
 
 		SpawnEffect(targetPosition, color, 20f, spell.Radius, 0.34f, false);
-		BattleParticles.SpawnEarthquakeParticles(this, targetPosition, color, spell.Radius);
+		BattleParticles.SpawnEarthquakeParticles(this, targetPosition, spell.Radius);
 
 		foreach (var target in targets)
 		{
@@ -5909,7 +5919,7 @@ public partial class BattleController : Node2D
 		bestTarget.ApplyTemporaryDefenseModifier(2.5f, spell.Duration);
 
 		SpawnEffect(bestTarget.Position, color, 10f, 32f, 0.26f, false, BattleEffectStyle.WardSigil);
-		BattleParticles.SpawnPolymorphParticles(this, bestTarget.Position, color);
+		BattleParticles.SpawnPolymorphParticles(this, bestTarget.Position);
 
 		return $"Polymorph transformed {bestTarget.UnitName} into a harmless creature for {spell.Duration:0.0}s.";
 	}
@@ -5952,7 +5962,7 @@ public partial class BattleController : Node2D
 		spawnedUnit.TakeDamage(halfDamage);
 
 		SpawnEffect(spawnPos, color, 12f, 38f, 0.28f, false, BattleEffectStyle.HealBloom);
-		BattleParticles.SpawnResurrectParticles(this, spawnPos, color);
+		BattleParticles.SpawnResurrectParticles(this, spawnPos);
 		_lastDeadPlayerUnitId = "";
 
 		return $"Resurrect restored {resurrectDef.DisplayName} at {Mathf.RoundToInt(spell.Power * 100f)}% health.";
@@ -6075,13 +6085,7 @@ public partial class BattleController : Node2D
 		return Mathf.Max(1.5f, cooldown);
 	}
 
-	private float ResolvePlayerSpellCooldown(SpellDefinition definition)
-	{
-		var resolved = GameState.Instance.BuildSpellStats(definition);
-		return ResolvePlayerSpellCooldown(definition, resolved);
-	}
-
-	private float ResolvePlayerSpellCooldown(SpellDefinition definition, ResolvedSpellStats resolved)
+	private float ResolvePlayerSpellCooldown(ResolvedSpellStats resolved)
 	{
 		var cooldown = GameState.Instance.ApplyPlayerDeployCooldownUpgrade(resolved.Cooldown);
 		if (IsChallengeMode)
@@ -6711,7 +6715,7 @@ public partial class BattleController : Node2D
 		var laneAnchor = new Vector2(Mathf.Lerp(PlayerBaseX, EnemyBaseX, 0.54f), unit.Position.Y);
 		var status = _campaignPressureEchoFriendly
 			? ApplyFriendlyCampaignPressureEcho(unit, laneAnchor, color)
-			: ApplyEnemyCampaignPressureEcho(unit, laneAnchor, color);
+			: ApplyEnemyCampaignPressureEcho(unit, color);
 
 		if (_campaignPressureEchoChargesRemaining > 0)
 		{
@@ -6753,7 +6757,7 @@ public partial class BattleController : Node2D
 
 		if (_campaignAdaptiveWaveChargesRemaining <= 0)
 		{
-			var completionStatus = ResolveCampaignAdaptiveWaveCompletion(unit, laneAnchor, color);
+			var completionStatus = ResolveCampaignAdaptiveWaveCompletion(laneAnchor, color);
 			var baseStatus = _campaignAdaptiveWaveFriendly
 				? $"{_campaignAdaptiveWaveLabel} spent across the opening of {_campaignAdaptiveWaveWaveLabel}."
 				: $"{_campaignAdaptiveWaveLabel} finished hardening the opening of {_campaignAdaptiveWaveWaveLabel}.";
@@ -6762,7 +6766,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private string ResolveCampaignAdaptiveWaveCompletion(Unit unit, Vector2 laneAnchor, Color color)
+	private string ResolveCampaignAdaptiveWaveCompletion(Vector2 laneAnchor, Color color)
 	{
 		if (_campaignAdaptiveWaveDirective == CampaignAdaptiveWaveDirective.None || _campaignAdaptiveWaveRewardReady)
 		{
@@ -7127,7 +7131,7 @@ public partial class BattleController : Node2D
 			RouteCatalog.ThornwallId => ApplyThornwallCommendation(unit, anchor, color),
 			RouteCatalog.BasilicaId => ApplyBasilicaCommendation(unit, spawnPosition, color),
 			RouteCatalog.MireId => ApplyMireCommendation(anchor, color),
-			RouteCatalog.SteppeId => ApplySteppeCommendation(unit, color),
+			RouteCatalog.SteppeId => ApplySteppeCommendation(unit),
 			RouteCatalog.GloamwoodId => ApplyGloamwoodCommendation(unit, color),
 			RouteCatalog.CitadelId => ApplyCitadelCommendation(unit, anchor, color),
 			_ => " The route commendation emboldened the next squad."
@@ -7195,7 +7199,7 @@ public partial class BattleController : Node2D
 		return $"{_campaignCommendationLabel} dragged the next enemy knot into the mire.";
 	}
 
-	private string ApplySteppeCommendation(Unit unit, Color color)
+	private string ApplySteppeCommendation(Unit unit)
 	{
 		unit.ApplyTemporaryCombatBuff(1.08f, 1.18f, 6f);
 		_courage = Mathf.Min(_maxCourage, _courage + 3f);
@@ -7333,7 +7337,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private string ApplyEnemyCampaignPressureEcho(Unit unit, Vector2 laneAnchor, Color color)
+	private string ApplyEnemyCampaignPressureEcho(Unit unit, Color color)
 	{
 		unit.ApplyTemporaryCombatBuff(
 			_campaignPressureEchoOffensive ? 1.12f : 1.06f,
@@ -7407,7 +7411,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private string BuildChallengeGhostDeployFeedback(UnitDefinition definition, Vector2 spawnPosition)
+	private string BuildChallengeGhostDeployFeedback(UnitDefinition definition)
 	{
 		if (!HasChallengeGhostRun())
 		{
@@ -7459,27 +7463,7 @@ public partial class BattleController : Node2D
 				? $"Slower by {Mathf.Abs(timeDelta):0.0}s"
 				: "Time matched";
 		return
-			$"Ghost comparison: {FormatSignedInt(scoreDelta)} pts  |  {timeText}  |  Hull {FormatSignedInt(hullDelta)}%  |  Deploys {FormatSignedInt(deployDelta)}  |  Stars {FormatSignedInt(starDelta)}";
-	}
-
-	private string BuildWaveEntrySummary(StageWaveDefinition wave)
-	{
-		var parts = new List<string>();
-		for (var i = 0; i < wave.Entries.Length; i++)
-		{
-			var entry = wave.Entries[i];
-			if (entry == null || string.IsNullOrWhiteSpace(entry.UnitId))
-			{
-				continue;
-			}
-
-			var displayName = GameData.GetUnit(entry.UnitId).DisplayName;
-			parts.Add($"{displayName} x{Mathf.Max(1, entry.Count)}");
-		}
-
-		return parts.Count > 0
-			? string.Join(", ", parts)
-			: "No enemy composition data.";
+			$"Ghost comparison: {FormatSignedInt(scoreDelta)} pts · {timeText} · Hull {FormatSignedInt(hullDelta)}% · Deploys {FormatSignedInt(deployDelta)} · Stars {FormatSignedInt(starDelta)}";
 	}
 
 	private void MaybeOpenEndlessDraft()
@@ -7730,7 +7714,7 @@ public partial class BattleController : Node2D
 		}
 
 		var definition = EndlessBossCheckpointCatalog.GetForWave(_spawnDirector.EndlessWaveNumber, _activeRouteId);
-		return $"[OK] {definition.Title}  |  {definition.RewardSummary}";
+		return $"[OK] {definition.Title} · {definition.RewardSummary}";
 	}
 
 	private void ResolveEndlessBossCheckpoint()
@@ -7990,7 +7974,7 @@ public partial class BattleController : Node2D
 			var challengeStatsBreakdown = BuildBattleStatsBreakdown();
 			_lanChallengeEndBaseText =
 				$"Challenge {_challengeDefinition.Code}\n" +
-				$"{(playerWon ? "Cleared" : "Failed")}  |  Score {scoreBreakdown.FinalScore}  |  Tier {medalLabel}\n" +
+				$"{(playerWon ? "Cleared" : "Failed")} · Score {scoreBreakdown.FinalScore} · Tier {medalLabel}\n" +
 				$"{BuildStageBattleStatsText(stageResult)}\n" +
 				$"{AsyncChallengeCatalog.BuildScoreSummary(scoreBreakdown)}\n" +
 				$"{AsyncChallengeCatalog.BuildTargetSummary(_challengeDefinition, scoreBreakdown.FinalScore)}\n" +
@@ -8294,9 +8278,9 @@ public partial class BattleController : Node2D
 		var routeLabel = ResolveRouteLabel(_activeRouteId);
 		var hullPercent = Mathf.RoundToInt(Mathf.Clamp(result.PlayerBaseHealth / Mathf.Max(1f, result.PlayerBaseMaxHealth), 0f, 1f) * 100f);
 		return
-			$"{routeLabel}  |  Stage {_stage}  |  {_stageData.StageName}\n" +
-			$"Time {result.Elapsed:0.0}s  |  Hull {hullPercent}%  |  Enemy defeats {result.EnemyDefeats}  |  Deployments {result.PlayerDeployments}\n" +
-			$"Hazard hits {result.PlayerHazardHits}  |  Signal jam {result.PlayerSignalJamSeconds:0.0}s";
+			$"{routeLabel} · Stage {_stage} · {_stageData.StageName}\n" +
+			$"Time {result.Elapsed:0.0}s · Hull {hullPercent}% · Enemy defeats {result.EnemyDefeats} · Deployments {result.PlayerDeployments}\n" +
+			$"Hazard hits {result.PlayerHazardHits} · Signal jam {result.PlayerSignalJamSeconds:0.0}s";
 	}
 
 	private float ResolveBattleAudioPressure()

@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 2.759452488111413,
+  "frameWidth": 533,
+  "frameHeight": 547,
+  "drawScale": 2.311111111111111,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "bones",
       "motion": "fall-forward",
       "impactPoint": [
-        0.162578,
-        0.024996
+        0.19419,
+        0.050265
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_crusher",
   "title": "Bone Juggernaut",
   "source": "art/remaster/units/enemy_crusher.py",
-  "anchorY": 0.7255343496799469,
-  "anchorX": 0.474107,
+  "anchorY": 0.702344,
+  "anchorX": 0.431947,
   "motion": {
     "revision": "remaster-v1",
     "profile": "heavy-smash",
     "body": [
       0.0,
-      -0.215144
+      -0.301352
     ],
     "contact": [
-      0.140399,
-      0.086837
+      0.167921,
+      0.181245
     ]
   },
-  "healthBarY": 0.447409
+  "healthBarY": 0.630542
 }

@@ -1,35 +1,35 @@
 {
-  "frameWidth": 378,
-  "frameHeight": 426,
-  "drawScale": 1.989708260342272,
+  "frameWidth": 503,
+  "frameHeight": 578,
+  "drawScale": 1.9653821942233474,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 16,
       "duration": 0.08,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "holy",
       "motion": "spin-fall",
       "impactPoint": [
-        0.138522,
-        0.031899
+        0.140307,
+        0.043804
       ]
     },
     "deploy": {
-      "start": 38,
+      "start": 42,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_boss_reliquary",
   "title": "Reliquary Tyrant",
   "source": "art/remaster/units/enemy_boss_reliquary.py",
-  "anchorY": 0.76392,
-  "anchorX": 0.423458,
+  "anchorY": 0.746821,
+  "anchorX": 0.422473,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.340377
+      -0.325502
     ],
     "contact": [
-      -0.005056,
-      0.022712
+      -0.004966,
+      0.049962
     ]
   },
-  "healthBarY": 0.717526
+  "healthBarY": 0.690656
 }

@@ -73,8 +73,8 @@ class Handler(BaseHTTPRequestHandler):
                     "postedScore": 18450,
                     "postedRank": 1,
                     "presenceText": "result submitted, provisional #1",
-                    "monitorText": "IronBell  |  submitted  |  #1  |  18450 pts",
-                    "deckText": "IronBell  |  locked squad"
+                    "monitorText": "IronBell · submitted · #1 · 18450 pts",
+                    "deckText": "IronBell · locked squad"
                 },
                 {
                     "peerId": 2,
@@ -90,8 +90,8 @@ class Handler(BaseHTTPRequestHandler):
                     "hullPercent": 91,
                     "enemyDefeats": 6,
                     "presenceText": "racing live: 12.4s, hull 91%",
-                    "monitorText": "SmokeConvoy  |  racing  |  12.4s  |  Hull 91%  |  Defeats 6",
-                    "deckText": "SmokeConvoy  |  locked squad"
+                    "monitorText": "SmokeConvoy · racing · 12.4s · Hull 91% · Defeats 6",
+                    "deckText": "SmokeConvoy · locked squad"
                 }
             ]
         }

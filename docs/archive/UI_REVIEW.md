@@ -4,21 +4,21 @@ Reviewed and updated on 6 September 2026, using Godot 4.6.1 Mono on macOS.
 
 This is a historical review of the September screens and results. For the
 current October map overlays, test entry paths, and verified coverage, see
-[Live UI test parity](LIVE_UI_TEST_PARITY.md). The scene and label counts below
+[Live UI test parity](../LIVE_UI_TEST_PARITY.md). The scene and label counts below
 describe the earlier run; they are not current parity evidence.
 
 ## Delivered
 
 - An illustrated camp home with a clear campaign action, three portraits, resource icons, and three compact navigation tabs. The home has no scroll containers.
 - Mission preparation built around portrait cards, three essential stats, optional detail dialogs, and a permanently visible deployment action.
-- A freely explorable illustrated atlas with fog of war, resource sites, independent leader encounters, and gated regional bosses. See [the adventure map guide](ADVENTURE_MAP.md) for the subsequent map overhaul.
+- A freely explorable illustrated atlas with fog of war, resource sites, independent leader encounters, and gated regional bosses. See [the adventure map guide](../ADVENTURE_MAP.md) for the subsequent map overhaul.
 - An armory with selectable portraits and one detail panel, plus tabs for rites, wagon upgrades, relics, and advice. Existing purchase, upgrade, equip, and progression actions remain connected to GameState.
 - Compact endless preparation, challenge boards, LAN lobby, and settings tabs. Narrow store lists now use their available width.
 - A battle HUD with health, courage, waves, time, icon commands, one row of unit/spell cards, optional intel, a pause card, and a full result report in a bounded reading area.
 - Original generated art: camp, map, battlefield, twelve portraits, two structures, and six common unit poses. Special classes retain existing procedural rendering. Painted poses use movement bobbing and attack lunges; they are not full animation sheets.
 - Twenty-five scalable navigation icons, shared colors, spacing, surfaces, headings, focus styles, and tooltips. The 1280 × 720 canvas letterboxes at other aspect ratios.
 
-The generated files and exact prompts are listed in [generated-art.json](generated-art.json). These images were created using the built-in image generation tool. No external asset pack or downloaded font is required.
+The generated files and exact prompts are listed in [generated-art.json](../generated-art.json). These images were created using the built-in image generation tool. No external asset pack or downloaded font is required.
 
 ## Code cleanup and fixed defects
 

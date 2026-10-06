@@ -87,7 +87,7 @@ public static class OnlineRoomReportService
 			var (subjectType, subjectLabel, _) = ResolveSubject(ticket);
 			return
 				"Online room moderation:\n" +
-				$"Next subject: {subjectType}  |  {subjectLabel}\n" +
+				$"Next subject: {subjectType} · {subjectLabel}\n" +
 				$"Default reason: {defaultReason.Title}\n" +
 				$"Provider status: {_lastStatus}";
 		}
@@ -96,7 +96,7 @@ public static class OnlineRoomReportService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room moderation ({currentResult.ProviderDisplayName}):");
 		builder.AppendLine(currentResult.Summary);
-		builder.AppendLine($"Subject: {currentResult.SubjectType}  |  {currentResult.SubjectLabel}");
+		builder.AppendLine($"Subject: {currentResult.SubjectType} · {currentResult.SubjectLabel}");
 		builder.AppendLine($"Reason: {reason.Title}");
 		builder.Append($"Status: {currentResult.Status}");
 		return builder.ToString();

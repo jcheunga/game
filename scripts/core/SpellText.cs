@@ -63,7 +63,7 @@ public static class SpellText
     public static string BuildInlineSummary(SpellDefinition spell)
     {
         return
-            $"{BuildCostSummary(spell)}  |  {BuildEffectSummary(spell)}";
+            $"{BuildCostSummary(spell)} · {BuildEffectSummary(spell)}";
     }
 
     public static string BuildTooltipSummary(SpellDefinition spell, bool isReady, float cooldownRemaining)
@@ -82,13 +82,13 @@ public static class SpellText
         return
             $"Lv{resolved.Level} {spell.DisplayName}\n" +
             $"{status}\n" +
-            $"Cost {resolved.CourageCost} courage  |  Cooldown {resolved.Cooldown:0.#}s\n" +
+            $"Cost {resolved.CourageCost} courage · Cooldown {resolved.Cooldown:0.#}s\n" +
             $"{BuildResolvedEffectSummary(resolved)}";
     }
 
     private static string BuildCostSummary(SpellDefinition spell)
     {
-        return $"Cost {spell.CourageCost} courage  |  Cooldown {spell.Cooldown:0.#}s";
+        return $"Cost {spell.CourageCost} courage · Cooldown {spell.Cooldown:0.#}s";
     }
 
     private static int BuildReductionPercent(float damageTakenScale)

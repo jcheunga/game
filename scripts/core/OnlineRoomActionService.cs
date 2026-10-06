@@ -103,7 +103,7 @@ public static class OnlineRoomActionService
 			return "Waitlisted";
 		}
 
-		return GetDesiredReadyState(ticket) ? "Stand down" : "Ready up";
+		return GetDesiredReadyState() ? "Stand down" : "Ready up";
 	}
 
 	public static string BuildLaunchRoundLabel()
@@ -180,7 +180,7 @@ public static class OnlineRoomActionService
 			return false;
 		}
 
-		return SetReady(!GetDesiredReadyState(ticket), out message);
+		return SetReady(!GetDesiredReadyState(), out message);
 	}
 
 	public static bool LaunchRound(out string message)
@@ -202,7 +202,7 @@ public static class OnlineRoomActionService
 			return false;
 		}
 
-		return SendAction(LaunchRoundActionId, GetDesiredReadyState(ticket), out message);
+		return SendAction(LaunchRoundActionId, GetDesiredReadyState(), out message);
 	}
 
 	public static bool ResetRound(out string message)
@@ -294,7 +294,7 @@ public static class OnlineRoomActionService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room action ({_lastResult.ProviderDisplayName}):");
 		builder.AppendLine(_lastResult.Summary);
-		builder.AppendLine($"Action: {_lastResult.ActionId}  |  Ready: {(_lastResult.ReadyState ? "yes" : "no")}  |  Status: {_lastResult.Status}");
+		builder.AppendLine($"Action: {_lastResult.ActionId} · Ready: {(_lastResult.ReadyState ? "yes" : "no")} · Status: {_lastResult.Status}");
 		builder.AppendLine($"Next toggle: {BuildToggleReadyLabel()}");
 		if (BuildLaunchRoundLabel() == "Launch Online Room" || BuildLaunchRoundLabel() == "Round Live")
 		{
@@ -354,7 +354,7 @@ public static class OnlineRoomActionService
 		return SendAction(SetReadyActionId, desiredReadyState, out message);
 	}
 
-	private static bool GetDesiredReadyState(OnlineRoomJoinTicket ticket)
+	private static bool GetDesiredReadyState()
 	{
 		return GetReadyStateHint() ?? false;
 	}

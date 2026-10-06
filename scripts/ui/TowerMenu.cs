@@ -179,7 +179,7 @@ public partial class TowerMenu : Control
 		var isLocked = _selectedFloor > highest + 1;
 		var def = ChallengeTowerCatalog.GetFloor(_selectedFloor);
 
-		_detailFloorLabel.Text = $"Floor {def.Floor}";
+		RealmUi.SetDisplayText(_detailFloorLabel, $"Floor {def.Floor}");
 		RealmUi.Clear(_detailFacts);
 		var stage = GameData.GetStage(def.BaseStageNumber);
 		_detailFacts.AddChild(RealmUi.KeyValue("Battlefield", stage != null ? $"{stage.MapName} · {stage.StageName}" : $"Stage {def.BaseStageNumber}"));

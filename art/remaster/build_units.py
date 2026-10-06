@@ -4,12 +4,11 @@ blender --background --factory-startup --python-exit-code 1 --python art/remaste
     --ids player_brawler [--preview] [--samples 96] [--no-blend]
 
 --preview renders a representative subset of frames plus the portrait and a
-contact sheet to artifacts/remaster/preview/<id>/. Without it, all 32 frames
-are rendered to artifacts/remaster/units/<id>/ (the packing source).
+contact sheet to artifacts/remaster/preview/<id>/. Without it, every frame of every
+clip is rendered to artifacts/remaster/units/<id>/ (the packing source).
 
-Units drawn large in battle (bosses, Siege Tower) render their masters above 256x320 so
-pack.py can keep them as sharp as the regular roster; see density.py. --res-scale forces
-a multiplier for every unit in the run.
+Masters render above 256x320, sized per unit so pack.py can reach its texel density;
+see density.py. --res-scale forces a multiplier for every unit in the run.
 """
 import argparse
 import json
@@ -45,7 +44,19 @@ titles = {u['Id']: u['DisplayName'] for u in units}
 by_id = {u['Id']: u for u in units}
 registry = load_all()
 ids = [u['Id'] for u in units if u['Id'] in registry] if args.ids == 'all' else args.ids.split(',')
-PREVIEW_FRAMES = [1, 5, 7, 12, 14, 15, 17, 21, 24, 26, 28, 31]
+# Representative frames per clip (local indices; negative counts from the end).
+PREVIEW_PICKS = {'idle': [0], 'walk': [1, 5], 'attack': [2, 4, 6], 'hit': [0], 'death': [2, -1], 'deploy': [1],
+                 'melee': [3]}
+
+
+def preview_frames(meta):
+    out = []
+    for name, picks in PREVIEW_PICKS.items():
+        clip = meta.get(name)
+        if clip:
+            out += [clip['start'] + 1 + (i % clip['count']) for i in picks]
+    return sorted(set(out))
+
 
 for ident in ids:
     if ident not in registry:
@@ -67,8 +78,11 @@ for ident in ids:
             shaders.reset_cache()
             ch, opts = registry[ident](ident, titles.get(ident, ident))
             blend = None if args.no_blend or args.preview else HERE / 'blend' / 'units' / f'{ident}.blend'
-            frames = PREVIEW_FRAMES if args.preview else None
+            frames = preview_frames(ch.clip_meta) if args.preview else None
             if args.preview and args.clip:
+                if args.clip not in ch.clip_meta:
+                    print(f'UNIT_NO_CLIP {ident} has no {args.clip} clip (it has {", ".join(ch.clip_meta)})', flush=True)
+                    break
                 clip = ch.clip_meta[args.clip]
                 frames = [clip['start'] + 1 + i for i in range(clip['count'])]
             meta = render_character(ch, out, samples=args.samples, portrait=not args.no_portrait,

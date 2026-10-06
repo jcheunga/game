@@ -285,8 +285,8 @@ public static class OnlineRoomSessionService
 				? $"result submitted, provisional #{entry.Rank}"
 				: "result submitted, awaiting standings",
 			MonitorText = entry.Rank > 0
-				? $"{peer.Label}  |  submitted  |  #{entry.Rank}  |  {entry.Score} pts"
-				: $"{peer.Label}  |  submitted  |  {entry.Score} pts",
+				? $"{peer.Label} · submitted · #{entry.Rank} · {entry.Score} pts"
+				: $"{peer.Label} · submitted · {entry.Score} pts",
 			DeckText = peer.DeckText
 		};
 	}

@@ -1,35 +1,35 @@
 {
-  "frameWidth": 423,
-  "frameHeight": 442,
-  "drawScale": 2.3272447183098586,
+  "frameWidth": 496,
+  "frameHeight": 567,
+  "drawScale": 2.132265038858739,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 16,
       "duration": 0.08,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "holy",
       "motion": "pray-slump",
       "impactPoint": [
-        0.133742,
-        0.02173
+        0.14602,
+        0.029975
       ]
     },
     "deploy": {
-      "start": 38,
+      "start": 42,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_boss_basilica",
   "title": "Bone Pontiff",
   "source": "art/remaster/units/enemy_boss_basilica.py",
-  "anchorY": 0.818286,
-  "anchorX": 0.394838,
+  "anchorY": 0.791238,
+  "anchorX": 0.428015,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
       0.0,
-      -0.32227
+      -0.309667
     ],
     "contact": [
-      0.49578,
-      0.043377
+      0.541336,
+      0.083089
     ]
   },
-  "healthBarY": 0.715072
+  "healthBarY": 0.661494
 }

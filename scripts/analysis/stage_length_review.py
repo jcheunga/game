@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ART = ROOT / "artifacts/stage-length-review"
-OUT = ROOT / "docs/STAGE_LENGTH_REVIEW.md"
+OUT = ROOT / "docs/archive/STAGE_LENGTH_REVIEW.md"
 
 
 def records(path, prefix):

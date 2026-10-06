@@ -83,7 +83,7 @@ public static class MultiplayerRoomFormatter
 				: $"Ready: {readyCount}/{launchEligiblePeers.Length}";
 		if (spectatorCount > 0)
 		{
-			roomStatusSummary += $"  |  Spectators {spectatorCount}";
+			roomStatusSummary += $" · Spectators {spectatorCount}";
 		}
 
 		var readyLines = snapshot.Peers.Count == 0
@@ -98,9 +98,9 @@ public static class MultiplayerRoomFormatter
 		var roomIdentityLine = string.IsNullOrWhiteSpace(snapshot.RoomTitle) && string.IsNullOrWhiteSpace(snapshot.RoomId)
 			? ""
 			: $"Room: {(string.IsNullOrWhiteSpace(snapshot.RoomTitle) ? "Active Room" : snapshot.RoomTitle)}" +
-				(string.IsNullOrWhiteSpace(snapshot.RoomId) ? "" : $"  |  ID: {snapshot.RoomId}");
+				(string.IsNullOrWhiteSpace(snapshot.RoomId) ? "" : $" · ID: {snapshot.RoomId}");
 		return
-			$"{snapshot.RoleLabel} room active  |  Peers: {snapshot.PeerCount}\n" +
+			$"{snapshot.RoleLabel} room active · Peers: {snapshot.PeerCount}\n" +
 			$"{(string.IsNullOrWhiteSpace(roomIdentityLine) ? "" : roomIdentityLine + "\n")}" +
 			$"Board: {snapshot.SharedChallengeCode}\n" +
 			$"{snapshot.SharedChallengeTitle}\n" +
@@ -145,7 +145,7 @@ public static class MultiplayerRoomFormatter
 			lines.Add("Round status: lobby open for launch.");
 		}
 
-		lines.Add($"Runner pool: {launchEligiblePeers.Length}  |  Ready {readyPeers.Length}/{launchEligiblePeers.Length}");
+		lines.Add($"Runner pool: {launchEligiblePeers.Length} · Ready {readyPeers.Length}/{launchEligiblePeers.Length}");
 		lines.Add(readyPeers.Length > 0
 			? $"Ready now: {BuildPeerListText(readyPeers)}"
 			: "Ready now: none yet");
@@ -327,7 +327,7 @@ public static class MultiplayerRoomFormatter
 				parts.Add($"{peer.EnemyDefeats} defeats");
 			}
 
-			return string.Join("  |  ", parts);
+			return string.Join(" · ", parts);
 		}
 
 		return peer.PresenceText;
@@ -345,7 +345,7 @@ public static class MultiplayerRoomFormatter
 			var defeatGap = leader.EnemyDefeats - localPeer.EnemyDefeats;
 			if (defeatGap > 0)
 			{
-				return $"  |  {defeatGap} defeat{(defeatGap == 1 ? "" : "s")} behind";
+				return $" · {defeatGap} defeat{(defeatGap == 1 ? "" : "s")} behind";
 			}
 		}
 
@@ -354,7 +354,7 @@ public static class MultiplayerRoomFormatter
 			var elapsedGap = localPeer.RaceElapsedSeconds - leader.RaceElapsedSeconds;
 			if (elapsedGap > 0.05f)
 			{
-				return $"  |  +{elapsedGap:0.0}s";
+				return $" · +{elapsedGap:0.0}s";
 			}
 		}
 
@@ -363,7 +363,7 @@ public static class MultiplayerRoomFormatter
 			var hullGap = leader.HullPercent - localPeer.HullPercent;
 			if (hullGap > 0)
 			{
-				return $"  |  {hullGap}% less hull";
+				return $" · {hullGap}% less hull";
 			}
 		}
 

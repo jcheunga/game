@@ -6,7 +6,6 @@ from mathutils import Matrix, Vector
 
 from rk import geo, palette, shaders as S
 from . import itemkit as P
-from rk.core import srgb
 
 REGISTRY = {}
 ORDER = []

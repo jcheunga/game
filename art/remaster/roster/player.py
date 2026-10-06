@@ -6,7 +6,7 @@ from mathutils import Matrix, Vector
 from rk import armor as A, geo, heads as H, palette, shaders as S, undead as U, weapons as W
 from rk.anim import P, STANCES
 from rk.character import Character
-from rk.rig import LAT, YAW, ROLL, add_poses
+from rk.rig import LAT, ROLL, add_poses
 
 from . import unit
 from .common import (add_head, boots, finish, gloves, head_frame, pelt, plate_arms, plate_legs, profile_of,

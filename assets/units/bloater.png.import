@@ -3,28 +3,30 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://7q34r8f2ytiq"
-path="res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.ctex"
+path.bptc="res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.bptc.ctex"
+path.astc="res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/units/bloater.png"
-dest_files=["res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.ctex"]
+dest_files=["res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.bptc.ctex", "res://.godot/imported/bloater.png-ef546f38efcc62cc78ae586bd54f535a.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
-mipmaps/limit=-1
+mipmaps/generate=true
+mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""
 process/channel_remap/red=0

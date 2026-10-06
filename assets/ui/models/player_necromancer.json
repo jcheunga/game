@@ -1,22 +1,22 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.2784219765515057,
+  "frameWidth": 247,
+  "frameHeight": 318,
+  "drawScale": 1.9603174603174602,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "player_necromancer",
   "title": "Necromancer",
   "source": "art/remaster/units/player_necromancer.py",
-  "anchorY": 0.773150160908699,
-  "anchorX": 0.46864,
+  "anchorY": 0.730361,
+  "anchorX": 0.374089,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-cast",
     "body": [
       0.0,
-      -0.275236
+      -0.299148
     ],
     "contact": [
-      0.286193,
-      -0.501569
+      0.332824,
+      -0.513556
     ]
   },
-  "healthBarY": 0.5419
+  "healthBarY": 0.587415
 }

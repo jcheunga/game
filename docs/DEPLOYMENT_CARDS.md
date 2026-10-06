@@ -1,6 +1,6 @@
 # Icon-first battle cards
 
-The in-battle unit and spell buttons are now portrait-led. Their ordinary ready
+The in-battle unit and spell buttons are portrait-led. Their ordinary ready
 state shows only the artwork and a brass courage-cost badge at the top-right—no
 `DEPLOY`, `CAST`, name, level, or repeated `Ready` line. Names and detailed stats
 remain in hover tooltips, accessible button labels, and the mobile placement hint
@@ -17,7 +17,7 @@ after selecting a card.
 - Battle ended/checkpoint: existing disabled-button rules remain in effect.
 
 Desktop card height is unchanged. Phone cards retain a 96-logical-pixel height and
-use a 112-pixel minimum width, so the normal three-unit/two-spell deck fits without
+use a 112-pixel minimum width, so a three-unit/two-spell deck fits without
 scrolling. Larger decks can still scroll. All decorative children ignore mouse
 and touch input: tapping either the portrait or the price activates the same
 card. Number keys deploy units; Q–T select magic.
@@ -46,18 +46,19 @@ it. The camera does not pan or follow units while a card is held.
 
 ## Battlefield proportions
 
-The battle uses lane-game proportions like Dead Ahead: a soldier is about 14% of
-the screen, the wagon and stronghold are about two soldiers tall, and the field
-runs about two screens from base to base (`data/combat_config.json`: a 948-unit
-world, `ViewWidth` 474 units across the screen, `StructureScale` 0.51 for the
-base plates). The camera keeps that scale (about 2.7×), runs the band low across
-the screen under the scenery and above the card tray, and follows the fighting.
-Stage plates cover the whole field at their own proportions, so the bases stand
-on the plate's floor and its scenery fills the screen.
+The battle uses lane-game proportions like Dead Ahead: the wagon and stronghold
+are about two soldiers tall, and the field runs about two screens from base to
+base (`data/combat_config.json`: a world about 1,200 units wide with the field
+from x 42 to 1158, `ViewWidth` 600 units across the screen, `StructureScale`
+0.58 for the wagon and stronghold art). The camera keeps that scale (about 2.1×
+in a 1280-pixel-wide window), runs the band low across the screen under the
+scenery and above the card tray, and follows the fighting. Behind the band, each
+zone's layered parallax backdrop (far, mid and near Blender layers, the near one
+locked to the field) fills the screen; painted stage plates are only a fallback.
 
 The walking band is about one soldier deep: 30 units walkable
 (`BattlefieldTop`/`BattlefieldBottom` minus `SpawnVerticalPadding`). Every
-fighter's `AggroRangeY` (18–22) lies between half and all of that depth. A unit
+fighter's `AggroRangeY` (15–22) lies between half and all of that depth. A unit
 walking straight out of the wagon reaches an enemy on either edge, but a unit on
 one edge cannot see an enemy on the other. Enemies leave the stronghold on any
 line across the band. `DataIntegrityValidator` fails if a unit's `AggroRangeY` or
@@ -72,8 +73,7 @@ The stronghold straddles the band, its mass on the centre line, with outworks
 on its flanks: a curtain wall, a beacon tower, a brazier, a palisade and a bone
 totem. They are scenery only; troops walk past them and nothing targets them.
 
-Battle text is numbers only: damage, healing and repairs. Spell names, ability
-shouts, quotes and objective callouts no longer float over the field.
+Battle text is numbers only: damage, healing and repairs.
 
 Support troops wait for a leader ahead of them but never fall back to one
 behind. Out in front, they keep marching. Only melee troops and units flagged
@@ -122,7 +122,7 @@ The drag review sends actual viewport mouse/touch events and checks unit taps
 deploying at the wagon, magic damage and healing at the drop position, spending
 and cooldowns, invalid and interrupted gestures, duplicate releases, multiple
 fingers, emulated mouse events and overflowing card-row scrolling. Its desktop
-and phone screenshots are written to `artifacts/card-drag-review/`. The lanes
+and phone screenshots are written to `artifacts/card-drag-review/`. The `--lanes`
 review checks the aggro rule against real units, enemy entry lines, the
 no-retreat rule for support troops and which troops can hit a base.
 

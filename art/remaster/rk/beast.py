@@ -4,9 +4,8 @@ import math
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
-from . import geo
-from .anim import P
-from .heads import catmull
+from . import geo, shaders as S
+from .anim import IDLE_FRAMES, P, WALK_FRAMES
 from .rig import LAT, YAW, ROLL, Skeleton, add_poses, blend_poses, smooth, weight_by_bones
 
 # Side-profile anatomy tables (x forward, z up). Barrel rows: (x, top z, bottom z, half-width).
@@ -140,19 +139,40 @@ def build_body(ch, mat, head_mat=None, voxel=0.02, gaunt=0.0, mane=None):
     jaw_a = _v(m0x - 0.04, 0, m0z - (0.07 if horse else 0.06))
     jaw_b = _v(m1x - 0.02, 0, m1z - (0.06 if horse else 0.05))
     parts.append((geo.tube('Lower jaw', [jaw_a, jaw_b], [r0 * .6, r1 * .5], None, ch.coll, sides=10), 'jaw'))
-    tl = [J['tail0'], J['tail1'], J['tail2']]
-    parts.append((geo.tube('Tail', tl, [0.045, 0.035, 0.015] if not horse else [0.07, 0.05, 0.03], None, ch.coll, sides=8), 'tail'))
+    if horse:
+        # a short dock; the hair strands below make the tail
+        tl = [J['tail0'], J['tail0'] + _v(-0.1, 0, -0.03), J['tail0'] + _v(-0.17, 0, -0.1)]
+        parts.append((geo.tube('Tail', tl, [0.07, 0.055, 0.035], None, ch.coll, sides=8), 'tail'))
+    else:
+        tl = [J['tail0'], J['tail1'], J['tail2']]
+        parts.append((geo.tube('Tail', tl, [0.045, 0.035, 0.015], None, ch.coll, sides=8), 'tail'))
     for side in ('R', 'L'):
         f = 'fl.' + side
         fr = k['fore_r']
-        pts = [J[f + '.top'] + _v(0.02, 0, 0.1), J[f + '.elbow'], J[f + '.wrist'], J[f + '.paw'] + _v(0, 0, 0.04)]
-        parts.append((geo.tube('Foreleg', pts, [fr[0] * g, fr[1], fr[2], fr[3]], None, ch.coll, sides=12), f))
+        if horse:
+            # forearm swell, knobbly knee, slim cannon, fetlock bulge and pastern down to the hoof
+            top, el, wr, pw = J[f + '.top'] + _v(0.02, 0, 0.1), J[f + '.elbow'], J[f + '.wrist'], J[f + '.paw']
+            pts = [top, top.lerp(el, .5), el, el.lerp(wr, .4), wr, wr.lerp(pw, .5), pw + _v(-0.01, 0, 0.13),
+                   pw + _v(0.0, 0, 0.09)]
+            radii = [fr[0] * g, 0.122 * g, 0.088, 0.078, 0.068, 0.047, 0.062, 0.05]
+            parts.append((geo.tube('Foreleg', pts, radii, None, ch.coll, sides=14), f))
+        else:
+            pts = [J[f + '.top'] + _v(0.02, 0, 0.1), J[f + '.elbow'], J[f + '.wrist'], J[f + '.paw'] + _v(0, 0, 0.04)]
+            parts.append((geo.tube('Foreleg', pts, [fr[0] * g, fr[1], fr[2], fr[3]], None, ch.coll, sides=12), f))
         parts.append((geo.sphere('Shoulder muscle', 1, J[f + '.top'] + _v(0.0, 0, -0.04), None, ch.coll, 12, 8,
                                  scale=(fr[0] * 1.3, fr[0] * .8, fr[0] * 2.0)), f))
         b = 'bl.' + side
         hr = k['hind_r']
-        pts = [J[b + '.top'] + _v(0.04, 0, 0.08), J[b + '.knee'], J[b + '.hock'], J[b + '.paw'] + _v(0, 0, 0.04)]
-        parts.append((geo.tube('Hindleg', pts, [hr[0] * g, hr[1], hr[2], hr[3]], None, ch.coll, sides=12), b))
+        if horse:
+            # stifle, gaskin muscle, hock point, cannon, fetlock and pastern
+            top, kn, hk, pw = J[b + '.top'] + _v(0.04, 0, 0.08), J[b + '.knee'], J[b + '.hock'], J[b + '.paw']
+            pts = [top, top.lerp(kn, .55), kn, kn.lerp(hk, .35), hk, hk.lerp(pw, .5), pw + _v(-0.01, 0, 0.13),
+                   pw + _v(0.0, 0, 0.09)]
+            radii = [hr[0] * g, 0.145 * g, 0.102, 0.098, 0.074, 0.048, 0.062, 0.05]
+            parts.append((geo.tube('Hindleg', pts, radii, None, ch.coll, sides=14), b))
+        else:
+            pts = [J[b + '.top'] + _v(0.04, 0, 0.08), J[b + '.knee'], J[b + '.hock'], J[b + '.paw'] + _v(0, 0, 0.04)]
+            parts.append((geo.tube('Hindleg', pts, [hr[0] * g, hr[1], hr[2], hr[3]], None, ch.coll, sides=12), b))
         parts.append((geo.sphere('Haunch', 1, J[b + '.top'] + _v(0.03, 0, -0.06), None, ch.coll, 12, 8,
                                  scale=(hr[0] * 1.4, hr[0] * .85, hr[0] * 1.8)), b))
         if not horse:
@@ -188,6 +208,28 @@ def build_body(ch, mat, head_mat=None, voxel=0.02, gaunt=0.0, mane=None):
             p.material_index = 1
     geo.store_rest(bod)
     ch.body = bod
+    if horse:
+        # Plain dark horn: a sheen layer turns such small shapes grey at sprite size.
+        hoof = S.flat('16110e', name='Hoof', rough=0.62)
+        for leg in ('fl.R', 'fl.L', 'bl.R', 'bl.L'):
+            pw = J[leg + '.paw']
+            # Tall enough to sleeve the leg end, which the remesh and smoothing pull up off the ground.
+            top = pw.z + 0.15
+            h = geo.lathe('Hoof', [(0.076, 0.0), (0.074, 0.025), (0.066, top * 0.55), (0.056, top)], 16, hoof, ch.coll,
+                          close_top=True, close_bottom=True)
+            geo.place(h, _v(pw.x + 0.01, pw.y, 0.0))
+            ch.parts.append((h, leg + '.foot'))
+        tail_hair = mane if mane is not None else head_mat or mat
+        base = J['tail0']
+        for i in range(13):
+            a_ = (i - 6) * 0.022
+            spread = abs(i - 6) / 6
+            p0 = base + _v(-0.08, a_ * 0.5, -0.02)
+            p1 = base + _v(-0.22, a_ * 1.2, -0.1)
+            p2 = base + _v(-0.3 - 0.04 * spread, a_ * 1.6, -0.36)
+            p3 = base + _v(-0.3 - 0.07 * spread + 0.02 * (i % 3), a_ * 1.9, -0.66 - 0.04 * (i % 3) + 0.08 * spread)
+            ch.parts.append((geo.tube('Tail hair', [p0, p1, p2, p3], [0.038, 0.034, 0.024, 0.005], tail_hair,
+                                      ch.coll, sides=6, flatten=.55), 'tail.0' if i % 2 else 'tail.1'))
 
     def skin(body_obj, arm, tags=tags):
         allowed = [set(TAGS.get(t, DEFORM)) for t in tags]
@@ -263,16 +305,16 @@ def clips(kind, profile='pounce', mounted=False):
     st = stance(kind)
     C = {}
     idle = []
-    for i in range(4):
-        ph = math.tau * i / 4
+    for i in range(IDLE_FRAMES):
+        ph = math.tau * i / IDLE_FRAMES
         s = math.sin(ph)
         idle.append(add_poses(st, P(spine=[(1.2 * s, LAT)], neck=[(2 * s, LAT)], head=[(-2 * s, LAT)],
                                     move={'root': (0, 0, -0.006 * (1 - math.cos(ph)))}),
                               {'tail.0': [(6 * s, YAW)], 'tail.1': [(8 * math.sin(ph - .8), YAW)]}))
     C['idle'] = idle
     walk = []
-    for i in range(6):
-        ph = math.tau * i / 6
+    for i in range(WALK_FRAMES):
+        ph = math.tau * i / WALK_FRAMES
         s = math.sin(ph)
         base = add_poses(st, P(spine=[(2 * math.sin(2 * ph), LAT)], neck=[(3 * math.sin(2 * ph), LAT)],
                                move={'root': (0, 0, 0.025 * abs(math.sin(ph)) - 0.01)}),

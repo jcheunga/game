@@ -67,11 +67,11 @@ public partial class CodexMenu
         var selected = entries.FirstOrDefault(entry => entry.Id == _selectedEntryId && state.IsCodexEntryDiscovered(entry.Id));
         if (selected == null)
         {
-            var heading = Ink("A world waiting to be discovered", 26); heading.AddThemeFontOverride("font", ModalUi.HeadingFont); heading.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(heading);
+            var heading = RealmUi.Display(Ink("A world waiting to be discovered"), 26); heading.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(heading);
             var hint = Ink("Meet enemies and collect allies, spells and relics to fill these pages.", 18); hint.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(hint);
             return;
         }
-        var title = Ink(selected.Title, 28); title.AddThemeFontOverride("font", ModalUi.HeadingFont); title.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(title);
+        var title = RealmUi.Display(Ink(selected.Title), 28); title.HorizontalAlignment = HorizontalAlignment.Center; _bookDetail.AddChild(title);
         var art = new CenterContainer(); var portrait = UiBadgeFactory.CreateCodexPortrait(selected, new Vector2(168, 168)); portrait.SetMeta("badge_tint", new Color("947543")); RealmModal.Polish(portrait); art.AddChild(portrait); _bookDetail.AddChild(art);
         _bookDetail.AddChild(Ink(selected.LoreText));
         if (!string.IsNullOrEmpty(selected.StatSummary)) _bookDetail.AddChild(Ink(selected.StatSummary, 18));

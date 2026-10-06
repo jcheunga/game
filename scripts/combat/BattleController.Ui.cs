@@ -1,6 +1,4 @@
 using Godot;
-using System;
-using System.Linq;
 
 public partial class BattleController
 {
@@ -302,7 +300,7 @@ public partial class BattleController
 
 			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
-			var totalSpellCd = ResolvePlayerSpellCooldown(slot.Definition, resolved);
+			var totalSpellCd = ResolvePlayerSpellCooldown(resolved);
 			slot.Card.SetState(resolved.CourageCost, _courage, cooldown, totalSpellCd, armed, _battleEnded || _endlessCheckpointActive);
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.CourageCost} courage";
 			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");

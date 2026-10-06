@@ -4,10 +4,10 @@ import random
 
 from mathutils import Matrix, Vector
 
-from rk import anim, armor as A, beast as B, geo, heads as H, machine as MC, palette, shaders as S, undead as U, weapons as W
+from rk import anim, armor as A, beast as B, geo, heads as H, machine as MC, palette, shaders as S, weapons as W
 from rk.anim import P, STANCES
 from rk.character import Character
-from rk.rig import LAT, YAW, ROLL, add_poses, blend_poses, bind_rigid
+from rk.rig import LAT, ROLL, add_poses
 
 from . import unit
 from .common import add_head, boots, finish_clips, gloves, head_frame, plate_arms, plate_legs, profile_of
@@ -128,7 +128,7 @@ def horse(ident, title, M, coat, mane, skeletal=False, barding=None, emblem=None
         hc.parts.append((geo.tube('Ghost tail', [J['tail0'], J['tail1'], J['tail2'] + Vector((-0.1, 0, -0.2))],
                                   [0.07, 0.05, 0.01], flame, hc.coll, sides=8), 'tail.0'))
     else:
-        B.build_body(hc, coat, coat)
+        B.build_body(hc, coat, coat, mane=mane)
         B.head_details(hc, M, M['eye'], teeth=False, horse=True)
         from rk import fur as F
         grp = F.density_group(hc.body, lambda co, mi: 0.0 if co.z < 0.1 else 1.0)
@@ -185,7 +185,11 @@ def horse(ident, title, M, coat, mane, skeletal=False, barding=None, emblem=None
 
 
 def rider_on(horse_ch, rider):
-    """Parent the rider armature to the horse saddle so it follows every gait."""
+    """Parent the rider armature to the horse saddle so it follows every gait.
+
+    The rider is bound first, at the origin where its meshes were built, so moving the rig carries them along."""
+    rider.finalize_bones()
+    rider.bind()
     J = horse_ch.J
     seat = J['spine'] + Vector((0.02, 0, 0.27))
     pel = rider.J['pelvis']
@@ -208,10 +212,10 @@ RIDING = P(thigh_R=[(72, LAT), (-14, ROLL)], thigh_L=[(72, LAT), (14, ROLL)], sh
 
 def rider_clips(stance, profile):
     C = {}
-    C['idle'] = anim.idle_frames(stance, 4, cape=True)
+    C['idle'] = anim.idle_frames(stance, anim.IDLE_FRAMES, cape=True)
     walk = []
-    for i in range(6):
-        ph = math.tau * i / 6
+    for i in range(anim.WALK_FRAMES):
+        ph = math.tau * i / anim.WALK_FRAMES
         walk.append(add_poses(stance, P(spine=[(-3 + 3 * math.sin(2 * ph), LAT)], head=[(-2 * math.sin(2 * ph), LAT)],
                                         move={'root': (0, 0, 0.02 * math.sin(2 * ph))}),
                               {'cape.0': 10 + 4 * math.sin(ph), 'cape.1': 12 + 5 * math.sin(ph - .8), 'cape.2': 14}))
@@ -376,11 +380,13 @@ def ballista_crew(ident, title):
     boots(crew, M, shaft=0.2)
     _, MCc = MC.clips('ballista', ch.J, recoil=0.1)
     cc = {
-        'idle': anim.idle_frames(cst, 4, cape=False),
-        'walk': anim.walk_frames(cst, 6, stride=20, cape=False),
+        'idle': anim.idle_frames(cst, anim.IDLE_FRAMES, cape=False),
+        'walk': anim.walk_frames(cst, anim.WALK_FRAMES, stride=20, cape=False),
         'attack': [add_poses(cst, P(upper_arm_R=[(20 * math.sin(f / 9 * math.tau), LAT)], spine=[(4 * math.sin(f / 9 * math.pi), LAT)]))
                    for f in range(10)],
         'hit': anim.hit_frames(cst), 'death': anim.death_frames(cst), 'deploy': anim.deploy_frames(cst),
+        # keeps step with the engine's ram: the crewman kicks out at whoever got close
+        'melee': anim.melee_frames(cst, 'bow-draw'),
     }
     opts = finish_clips(ch, MCc, profile_of(ident), release=bolt, body_z=0.75, cam_z=0.75, min_scale=3.4,
                         companions=[(crew, cc, cst)], portrait=dict(target=(0.0, 0, 0.8), distance=7.5))

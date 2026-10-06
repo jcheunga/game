@@ -101,8 +101,8 @@ public static class OnlineRoomRecoveryService
 
 		var builder = new StringBuilder();
 		builder.AppendLine("Online room recovery:");
-		builder.AppendLine($"Mode: {_lastRecoveryMode}  |  Room: {_lastRecoveredTicket.RoomTitle}");
-		builder.AppendLine($"Board: {_lastRecoveredTicket.BoardCode}  |  Seat: {_lastRecoveredTicket.SeatLabel}");
+		builder.AppendLine($"Mode: {_lastRecoveryMode} · Room: {_lastRecoveredTicket.RoomTitle}");
+		builder.AppendLine($"Board: {_lastRecoveredTicket.BoardCode} · Seat: {_lastRecoveredTicket.SeatLabel}");
 		builder.AppendLine($"Status: {_lastRecoveredTicket.Status}");
 		builder.AppendLine($"Recovered at: {FormatUnixTime(_lastRecoveredAtUnixSeconds)}");
 		builder.Append($"Provider status: {_lastStatus}");

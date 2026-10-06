@@ -384,8 +384,8 @@ public static class AsyncChallengeCatalog
     public static string BuildScoreSummary(AsyncChallengeScoreBreakdown breakdown)
     {
         return
-            $"Outcome +{breakdown.CompletionBonus}  |  Stars +{breakdown.StarBonus}  |  Kills +{breakdown.KillBonus}\n" +
-            $"Hull +{breakdown.HullBonus}  |  Time +{breakdown.TimeBonus}  |  Deploys -{breakdown.DeployPenalty}\n" +
+            $"Outcome +{breakdown.CompletionBonus} · Stars +{breakdown.StarBonus} · Kills +{breakdown.KillBonus}\n" +
+            $"Hull +{breakdown.HullBonus} · Time +{breakdown.TimeBonus} · Deploys -{breakdown.DeployPenalty}\n" +
             $"Raw {breakdown.RawScore}  x{breakdown.Multiplier:0.##}  =  {breakdown.FinalScore}";
     }
 
@@ -395,9 +395,9 @@ public static class AsyncChallengeCatalog
         return
             "Score model:\n" +
             "- Outcome: clear +1000, fail +250\n" +
-            "- Stars: +240 each   |   Kills: +22 each   |   Hull: up to +280\n" +
+            "- Stars: +240 each · Kills: +22 each · Hull: up to +280\n" +
             "- Time: clear up to +1200 before 120s, fail survival up to +225\n" +
-            $"- Deploys: -18 each   |   Mutator multiplier: x{mutator.ScoreMultiplier:0.##}";
+            $"- Deploys: -18 each · Mutator multiplier: x{mutator.ScoreMultiplier:0.##}";
     }
 
     public static AsyncChallengeTargetScores GetTargetScores(AsyncChallengeDefinition challenge)
@@ -445,7 +445,7 @@ public static class AsyncChallengeCatalog
     {
         var targets = GetTargetScores(challenge);
         var summary =
-            $"Targets: Bronze {targets.Bronze}  |  Silver {targets.Silver}  |  Gold {targets.Gold}  |  Ace {targets.Ace}";
+            $"Targets: Bronze {targets.Bronze} · Silver {targets.Silver} · Gold {targets.Gold} · Ace {targets.Ace}";
         if (score < 0)
         {
             return summary;

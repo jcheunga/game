@@ -3,28 +3,30 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ciuufujksnvy8"
-path="res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.ctex"
+path.bptc="res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.bptc.ctex"
+path.astc="res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/units/hound.png"
-dest_files=["res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.ctex"]
+dest_files=["res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.bptc.ctex", "res://.godot/imported/hound.png-18b9c3dbdc90308cf7498dd48e3a680e.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
-mipmaps/limit=-1
+mipmaps/generate=true
+mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""
 process/channel_remap/red=0

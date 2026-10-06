@@ -510,6 +510,7 @@ public partial class Unit : Node2D
 
         _specialTimer = SpecialCooldown;
         _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.18f);
+        SelectAttackClip(false);
         BeginSpriteAttack();
         return true;
     }
@@ -549,6 +550,7 @@ public partial class Unit : Node2D
 
         _activeAbilityTimer = ActiveAbilityCooldown;
         _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.22f);
+        SelectAttackClip(false);
         BeginSpriteAttack();
         return true;
     }
@@ -576,6 +578,14 @@ public partial class Unit : Node2D
     }
 
     public bool TryBeginAttackPosition(Vector2 position, float targetRadius = 0f)
+        => BeginAttackAt(position, targetRadius, false);
+
+    public bool TryBeginAttack(Unit target) => BeginAttackOn(target, false);
+
+    /// <summary>A ranged unit's close-quarters strike, used when <paramref name="target"/> is inside melee reach.</summary>
+    public bool TryBeginMeleeAttack(Unit target) => BeginAttackOn(target, true);
+
+    private bool BeginAttackAt(Vector2 position, float targetRadius, bool melee)
     {
         if (IsDead || IsAttackCommitted || _attackTimer > 0f || !CanAttackPosition(position, targetRadius))
         {
@@ -584,14 +594,15 @@ public partial class Unit : Node2D
 
         _attackTimer = AttackCooldown;
         _contactTarget = null;
+        SelectAttackClip(melee);
         FaceCombatPosition(position);
         BeginSpriteAttack();
         return true;
     }
 
-    public bool TryBeginAttack(Unit target)
+    private bool BeginAttackOn(Unit target, bool melee)
     {
-        if (target.IsDead || target.IsUntargetable || !TryBeginAttackPosition(target.Position))
+        if (target.IsDead || target.IsUntargetable || !BeginAttackAt(target.Position, 0f, melee))
         {
             return false;
         }
@@ -754,8 +765,8 @@ public partial class Unit : Node2D
     private void BeginSpriteAttack()
     {
         EnsureSpriteLoaded();
-        _spriteAttackRemaining = SpriteClipDuration(UnitAnimState.Attack, 0.45f);
-        if (_spriteAnimState != UnitAnimState.Attack) return;
+        _spriteAttackRemaining = SpriteClipDuration(_attackClip, 0.45f);
+        if (_spriteAnimState != _attackClip) return;
         _spriteAnimFrame = 0;
         _spriteAnimTimer = 0f;
     }
@@ -765,7 +776,7 @@ public partial class Unit : Node2D
         if (_spriteSheet == null) return;
         UpdateSpriteAnimState(delta);
         if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim)) return;
-        if (_contactMotionActive && _spriteAnimState == UnitAnimState.Attack)
+        if (_contactMotionActive && _spriteAnimState == _attackClip)
         {
             _spriteAnimFrame = Mathf.Clamp((int)((_contactClock + .00001f) / AttackFrameSeconds(anim)),0,anim.FrameCount-1);
             return;
@@ -813,12 +824,15 @@ public partial class Unit : Node2D
 
         var drawSize = new Vector2(_spriteSheet.FrameWidth * drawScale, _spriteSheet.FrameHeight * drawScale);
         var drawPos = new Vector2(-drawSize.X * _spriteSheet.AnchorX, -drawSize.Y * _spriteSheet.AnchorY + bobOffset);
-        var offset = ContactDrawOffset();
         var reduced = GameState.Instance?.ReducedMotion ?? false;
         var recoil = reduced ? 0 : _hitReaction.Amount;
 
         // Mirror around the unit's position; a negative destination width shifts AtlasTexture regions.
-        DrawSetTransform(Vector2.Zero, 0, new Vector2(facing < 0 ? -1 : 1, 1));
+        // A blow shears the body away from it about the feet, with a slight squash, so hits read
+        // without the feet sliding.
+        var mirror = facing < 0 ? -1f : 1f;
+        DrawSetTransformMatrix(new Transform2D(new Vector2(mirror, 0), new Vector2(-recoil * .14f, 1f - Mathf.Abs(recoil) * .04f),
+            Vector2.Zero));
 
         var modulate = EnvironmentTint * LocalLightTint;
         if (_hitFlashTimer > 0f && !reduced)
@@ -839,9 +853,9 @@ public partial class Unit : Node2D
         _spriteWalkRemaining = moved ? 0.1f : Mathf.Max(0f, _spriteWalkRemaining - delta);
 
         if (_contactMotionActive)
-            _spriteAnimState = UnitAnimState.Attack;
+            _spriteAnimState = _attackClip;
         else if (_spriteAttackRemaining > 0f)
-            _spriteAnimState = UnitAnimState.Attack;
+            _spriteAnimState = _attackClip;
         else if (_spriteDeployRemaining > 0f)
             _spriteAnimState = UnitAnimState.Deploy;
         else if (_spriteWalkRemaining > 0f)
@@ -1406,18 +1420,9 @@ public partial class Unit : Node2D
         var hpRatio = HealthRatio;
         var spriteHeight = _spriteSheet == null ? Radius + 16f : Radius * 2f * VisualScale * _spriteSheet.DrawScale
             * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth * _spriteSheet.HealthBarY + 6f;
-        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -spriteHeight - hpBarHeight + 4f) + ContactDrawOffset();
+        var barOrigin = new Vector2(-hpBarWidth * 0.5f, -spriteHeight - hpBarHeight + 4f);
         HealthBarPainter.Draw(this, new Rect2(barOrigin, new Vector2(hpBarWidth, hpBarHeight)), hpRatio,
             _healthBarMotion.TrailRatio, Team == Team.Player, boss ? HealthBarKind.Boss : HealthBarKind.Unit, highContrast);
-
-        if (Team == Team.Player)
-        {
-            // A faint team mark at the feet.
-            DrawRect(
-                new Rect2(new Vector2(-Radius * 0.44f, 1.5f), new Vector2(Radius * 0.88f, 1.5f)),
-                new Color(1f, 1f, 1f, 0.22f),
-                true);
-        }
     }
 
     private void DrawAuraIndicators(Color accentColor)

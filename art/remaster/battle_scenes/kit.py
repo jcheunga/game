@@ -9,7 +9,7 @@ from rk import arch, env, geo
 from rk import dressing as P
 from rk import shaders as S
 from rk.env import C
-from rk.palette import PLAGUE, ROT_CRIMSON
+from rk.palette import PLAGUE
 
 
 def _v(*a):

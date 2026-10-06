@@ -3,16 +3,14 @@ Hollow Basilica (cathedral, ossuary, reliquary) battlefield fallbacks."""
 import math
 import random
 
-from mathutils import Vector
-
-from rk import arch, core, env, geo
+from rk import arch, env
 from rk import dressing as P
-from rk.palette import LANTERN_TEAL, PLAGUE, ROT_CRIMSON
+from rk.palette import PLAGUE
 
-from menu_scenes.common import golden, night, rocks, trees, tufts
+from menu_scenes.common import golden
 
 from . import kit as K
-from .common import BF, back_band, drifts, field_height, ground, row, scatter_front, shafts
+from .common import BF, back_band, drifts, field_height, ground, row, scatter_front
 
 
 def _ward_ground(name):

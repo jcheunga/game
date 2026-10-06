@@ -12,7 +12,6 @@ from mathutils import Matrix, Vector
 
 from rk import arch, env, geo
 from rk import dressing as P
-from rk import shaders as S
 from rk.core import srgb
 from rk.env import C
 from rk.nodekit import material

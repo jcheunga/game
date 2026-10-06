@@ -77,7 +77,7 @@ public static class OnlineRoomTelemetryService
 		return
 			$"Online room telemetry ({currentSubmission.ProviderDisplayName}):\n" +
 			$"{currentSubmission.Summary}\n" +
-			$"Room: {currentSubmission.RoomId}  |  Board: {currentSubmission.BoardCode}\n" +
+			$"Room: {currentSubmission.RoomId} · Board: {currentSubmission.BoardCode}\n" +
 				$"Status: {currentSubmission.Status}";
 	}
 

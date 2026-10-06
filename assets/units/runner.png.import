@@ -3,28 +3,30 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://p04n8175221x"
-path="res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.ctex"
+path.bptc="res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.bptc.ctex"
+path.astc="res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/units/runner.png"
-dest_files=["res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.ctex"]
+dest_files=["res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.bptc.ctex", "res://.godot/imported/runner.png-c08f1ea53778daa71f57516d78ef7316.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
-mipmaps/limit=-1
+mipmaps/generate=true
+mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""
 process/channel_remap/red=0

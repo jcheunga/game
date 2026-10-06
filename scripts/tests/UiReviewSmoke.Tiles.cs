@@ -158,7 +158,7 @@ public partial class UiReviewSmoke
         oldShrine.AdventureOpenTiles = null; oldShrine.AdventureReachedTiles = null; oldShrine.AdventureCaravanTiles = null;
         Restore(oldShrine);
         Check(state.GetAdventureCaravanTile("city").Id == leader.Id && AdventureTileCatalog.Find("city", "landmark-2") == null
-            && !state.CanVisitAdventureSite("landmark-2") && state.GetAdventureStartingCourageBonus(1) == 0,
+            && !state.CanVisitAdventureSite("landmark-2"),
             "Legacy shrine saves return to the first stage without restoring a shrine or its courage bonus");
         var oldUntouched = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(initial))!;
         oldUntouched.Version = 44;

@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.22504769200864,
+  "frameWidth": 292,
+  "frameHeight": 232,
+  "drawScale": 2.3174603174603177,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "dust",
       "motion": "fall-back",
       "impactPoint": [
-        -0.178694,
-        -0.025636
+        -0.248763,
+        -0.077606
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "player_brawler",
   "title": "Swordsman",
   "source": "art/remaster/units/player_brawler.py",
-  "anchorY": 0.6929742991924286,
-  "anchorX": 0.477845,
+  "anchorY": 0.858362,
+  "anchorX": 0.587442,
   "motion": {
     "revision": "remaster-v1",
     "profile": "sword-cut",
     "body": [
       0.0,
-      -0.189331
+      -0.399248
     ],
     "contact": [
-      0.27692,
-      -0.119177
+      0.385564,
+      -0.199143
     ]
   },
-  "healthBarY": 0.364849
+  "healthBarY": 0.763699
 }

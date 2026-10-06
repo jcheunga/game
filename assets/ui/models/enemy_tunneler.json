@@ -1,22 +1,22 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.974944788476695,
+  "frameWidth": 226,
+  "frameHeight": 169,
+  "drawScale": 2.405278842060451,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "enemy_tunneler",
   "title": "Tunneler",
   "source": "art/remaster/units/enemy_tunneler.py",
-  "anchorY": 0.709197610616684,
-  "anchorX": 0.475982,
+  "anchorY": 0.812436,
+  "anchorX": 0.522957,
   "motion": {
     "revision": "remaster-v1",
     "profile": "claw-rake",
     "body": [
       0.0,
-      -0.179932
+      -0.3583
     ],
     "contact": [
-      0.275037,
-      -0.010718
+      0.340336,
+      0.024113
     ]
   },
-  "healthBarY": 0.315448
+  "healthBarY": 0.614975
 }

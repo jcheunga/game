@@ -60,7 +60,7 @@ public static class RelayHub
         roomActivity[profileId] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         // Notify room about new peer
-        await BroadcastSystemMessage(roomPeers, profileId, new
+        await BroadcastSystemMessage(roomPeers, new
         {
             type = "peer_joined",
             roomId,
@@ -120,7 +120,7 @@ public static class RelayHub
             }
             else
             {
-                await BroadcastSystemMessage(roomPeers, profileId, new
+                await BroadcastSystemMessage(roomPeers, new
                 {
                     type = "peer_left",
                     roomId,
@@ -164,14 +164,15 @@ public static class RelayHub
             await Task.WhenAll(tasks);
     }
 
-    private static async Task BroadcastSystemMessage(ConcurrentDictionary<string, WebSocket> peers, string excludeId, object message)
+    // Every open peer receives it, the joining or leaving one included, so each client learns the new peer count.
+    private static async Task BroadcastSystemMessage(ConcurrentDictionary<string, WebSocket> peers, object message)
     {
         var json = JsonSerializer.Serialize(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         var bytes = Encoding.UTF8.GetBytes(json);
         var segment = new ArraySegment<byte>(bytes);
 
         var tasks = new List<Task>();
-        foreach (var (peerId, peer) in peers)
+        foreach (var peer in peers.Values)
         {
             if (peer.State != WebSocketState.Open)
             {

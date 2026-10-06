@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cnx2eh2j1geak"
-path="res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.ctex"
+path.bptc="res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.bptc.ctex"
+path.astc="res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/units/enemy_boss_reliquary.png"
-dest_files=["res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.ctex"]
+dest_files=["res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.bptc.ctex", "res://.godot/imported/enemy_boss_reliquary.png-5ad3d0e220e3e13db8f6dfadcd6f82ff.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
@@ -24,7 +26,7 @@ compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
-mipmaps/limit=-1
+mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""
 process/channel_remap/red=0

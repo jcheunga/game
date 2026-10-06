@@ -1,6 +1,4 @@
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Godot;
 
 /// <summary>The adventure map presents world sites; progression and rewards remain in GameState.</summary>
@@ -85,7 +83,7 @@ public partial class MapMenu : Control
         var canTravel = state.CanTravelToAdventureTile(tile, out var reason);
         _portrait.Texture = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _siteEyebrow.Text = "Resource tile";
-        _siteName.Text = _selectedDiscovery.Title;
+        RealmUi.SetDisplayText(_siteName, _selectedDiscovery.Title);
         _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : "Open tile · ready to gather";
         ShowDiscoveryRewards();
         _description.Text = reason; _description.Visible = !canTravel;
@@ -104,7 +102,7 @@ public partial class MapMenu : Control
         var visited = state.HasVisitedAdventureSite(_selected.Id);
         var stage = GameData.GetStage(_selected.Stage);
         var tile = AdventureTileCatalog.Find(_activeMapId, _selected.Id);
-        _mapTitle.Text = RouteCatalog.Get(_activeMapId).Title;
+        RealmUi.SetDisplayText(_mapTitle, RouteCatalog.Get(_activeMapId).Title);
         RefreshZoneNavigation();
         _gold.Text = state.Gold.ToString("N0");
         _food.Text = $"{state.Food}/{GameState.FoodRechargeCap}";
@@ -119,7 +117,7 @@ public partial class MapMenu : Control
         }
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
         _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
-        _siteName.Text = known ? _selected.Title : "Beyond the mist";
+        RealmUi.SetDisplayText(_siteName, known ? _selected.Title : "Beyond the mist");
         _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);

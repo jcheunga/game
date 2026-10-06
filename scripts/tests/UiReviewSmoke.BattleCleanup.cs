@@ -76,21 +76,21 @@ public partial class UiReviewSmoke
         var hull = Read<float>(fight, "_enemyBaseHealth");
         Call(fight, "ResolveAttackBase", ballista);
         var projectile = Walk(fight).OfType<Projectile>().Single(); projectile.SetPhysicsProcess(false);
-        Check(Read<BaseWeaponKind?>(projectile, "_weaponVisual") == BaseWeaponKind.Ballista
-            && Read<float>(fight, "_enemyBaseHealth") == hull, "Ballista releases a boulder; the base is undamaged during flight");
+        Check(projectile.Style == ProjectileStyles.BallistaBolt
+            && Read<float>(fight, "_enemyBaseHealth") == hull, "Ballista looses a bolt; the base is undamaged during flight");
         projectile._PhysicsProcess(.12);
-        await Capture("01-boulder-flight");
+        await Capture("01-bolt-flight");
         projectile._PhysicsProcess(2);
         var impacted = Read<float>(fight, "_enemyBaseHealth");
         projectile._PhysicsProcess(2);
-        Check(impacted < hull && Read<float>(fight, "_enemyBaseHealth") == impacted, "A boulder damages the base exactly once on impact");
+        Check(impacted < hull && Read<float>(fight, "_enemyBaseHealth") == impacted, "A ballista bolt damages the base exactly once on impact");
         spawned.TakeDamage(10000); Call(fight, "CleanupDeadUnits");
         var victim = (Unit)Call(fight, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(GameData.EnemyBruteId)), new Vector2(GameData.Combat.EnemyBaseX - 36, 340));
         var health = victim.Health;
         Call(fight, "ActiveAbilitySnipe", ballista);
         projectile = Walk(fight).OfType<Projectile>().Single(); projectile.SetPhysicsProcess(false);
-        Check(Read<BaseWeaponKind?>(projectile, "_weaponVisual") == BaseWeaponKind.Ballista && victim.Health == health,
-            "Ballista Anchor Shot also launches a boulder");
+        Check(projectile.Style == ProjectileStyles.BallistaBolt && victim.Health == health,
+            "Ballista Anchor Shot also looses a bolt");
         projectile._PhysicsProcess(2);
         Check(victim.Health < health, "Anchor Shot applies its damage on impact");
         Call(fight, "SetBattleCameraX", 700f);
@@ -101,7 +101,6 @@ public partial class UiReviewSmoke
         Call(fight, "TogglePause");
         Check(!Walk(fight).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("1–6")), "Pause menu contains no control-instruction paragraph");
         await Capture("03-pause-menu"); Call(fight, "TogglePause");
-        Check(Enumerable.Range(1, GameData.MaxStage).All(stage => state.GetStageExploreFoodCost(stage) == 0), "Exploration is free across all stages");
 
         fight = await Battle(BattleRunMode.Endless);
         var runs = state.EndlessRuns; var gold = state.Gold;

@@ -133,7 +133,7 @@ public partial class RaidMenu : Control
 		// In offline mode the community damage is just the player's own contribution.
 		var communityDamage = (long)gs.RaidDamageContributed;
 
-		RebuildBossInfo(gs, communityDamage);
+		RebuildBossInfo(gs);
 		RebuildMilestones(gs, communityDamage);
 
 		// Update HP bar
@@ -143,7 +143,7 @@ public partial class RaidMenu : Control
 		_hpLabel.Text = $"Raid progress · {pct}%";
 	}
 
-	private void RebuildBossInfo(GameState gs, long communityDamage)
+	private void RebuildBossInfo(GameState gs)
 	{
 		foreach (var child in _bossStack.GetChildren()) child.QueueFree();
 

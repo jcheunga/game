@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 
 public partial class GameState
 {
@@ -14,7 +13,6 @@ public partial class GameState
         (_openAdventureTiles.Contains(tile.Id) || AdventureTileCatalog.Starting(tile.MapId).Id == tile.Id);
     public bool HasReachedAdventureTile(string id) => id.StartsWith("camp-", StringComparison.Ordinal) || _reachedAdventureTiles.Contains(id)
         || AdventureMapCatalog.Find(id) is { Kind: AdventureSiteKind.Leader } site && AdventureTileCatalog.Starting(site.MapId).Id == id;
-    public int GetAdventureTileTravelFoodCost(AdventureTile tile) => 0;
     public bool IsAdventureTileComplete(AdventureTile tile) => tile?.Site is { } site
         ? site.Kind == AdventureSiteKind.Leader ? GetStageStars(site.Stage) > 0 : HasVisitedAdventureSite(site.Id) || site.Kind == AdventureSiteKind.Camp
         : tile?.Discovery is { } reward ? HasClaimedAdventureDiscovery(reward.Id) : false;

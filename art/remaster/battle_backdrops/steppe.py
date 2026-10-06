@@ -1,9 +1,8 @@
 """Sunfall Steppe: a dirt road through a war camp at sunset. Tents, banners, campfires and wagons stand behind it;
 beyond, the camp's pavilions and stake palisade; far off, endless golden grassland under a huge sky."""
-import math
 import random
 
-from rk import arch, env
+from rk import env
 from rk import dressing as P
 from rk.palette import LANTERN_TEAL
 from battle_scenes import kit as K

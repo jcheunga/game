@@ -1,35 +1,35 @@
 {
-  "frameWidth": 624,
-  "frameHeight": 560,
-  "drawScale": 3.0793525463876827,
+  "frameWidth": 558,
+  "frameHeight": 496,
+  "drawScale": 3.0810703087075075,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 16,
       "duration": 0.08,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "gas",
       "motion": "burst",
       "impactPoint": [
-        -0.026202,
-        -0.007068
+        -0.0262,
+        -0.009864
       ]
     },
     "deploy": {
-      "start": 38,
+      "start": 42,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_boss_plague_monarch",
   "title": "Plague Monarch",
   "source": "art/remaster/units/enemy_boss_plague_monarch.py",
-  "anchorY": 0.735506,
-  "anchorX": 0.569239,
+  "anchorY": 0.726643,
+  "anchorX": 0.569129,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.268602
+      -0.261045
     ],
     "contact": [
-      -0.036718,
-      0.044869
+      -0.036579,
+      0.072146
     ]
   },
-  "healthBarY": 0.503064
+  "healthBarY": 0.488582
 }

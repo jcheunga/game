@@ -1,5 +1,3 @@
-using System;
-
 public static class AssetCoverageCatalog
 {
     public static readonly string[] RouteIds =

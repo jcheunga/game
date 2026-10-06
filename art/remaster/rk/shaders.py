@@ -298,9 +298,13 @@ def cloth(color, name='Woven cloth', var='', weave=60.0, sheen=0.6, rough=0.86, 
     w2 = nb.wave(weave * scale, 0, 0, 'Y', profile='SIN')
     h = nb.math('MULTIPLY', nb.math('ADD', w1, w2), .5)
     h = nb.math('ADD', h, nb.math('MULTIPLY', nb.noise(10 * scale, 3, .6), .6))
+    # Drape: broad vertical folds that read at sprite size, darkening slightly in their troughs.
+    folds = nb.noise(5.5 * scale, 3, .55, vec=nb.scaled((1.0, 1.0, 0.18)), distortion=.6)
+    col = nb.mixc(nb.maprange(folds, .62, .32, 0, .22), col, scale_rgb(base, .62))
+    nrm = nb.bump(h, .1, .01, normal=nb.bump(folds, .55, .06))
     nb.principled(**{'Base Color': col, 'Roughness': rough, 'Sheen Weight': sheen,
                      'Sheen Roughness': .45, 'Sheen Tint': scale_rgb(base, 1.6),
-                     'Normal': nb.bump(h, .12, .01)})
+                     'Normal': nrm})
     return m
 
 
@@ -314,7 +318,11 @@ def leather(color='4a3324', name='Worked leather', rough=0.58, edge=1.5, scale=1
     pores = nb.voronoi(70 * scale, 'F1')
     h = nb.math('ADD', nb.math('MULTIPLY', pores, .4), nb.math('MULTIPLY', n, .6))
     r = nb.math('ADD', rough, nb.maprange(n, .3, .7, -.12, .12))
-    nb.principled(**{'Base Color': col, 'Roughness': r, 'Sheen Weight': .15, 'Normal': nb.bump(h, .18, .01)})
+    # creases worn into the leather, wide enough to catch the light at sprite size
+    crease = nb.noise(9 * scale, 3, .55, vec=nb.scaled((1.0, 1.0, 0.35)), distortion=.8)
+    col = nb.mixc(nb.maprange(crease, .64, .36, 0, .2), col, scale_rgb(base, .6))
+    nb.principled(**{'Base Color': col, 'Roughness': r, 'Sheen Weight': .15,
+                     'Normal': nb.bump(h, .16, .01, normal=nb.bump(crease, .4, .04))})
     return m
 
 
@@ -447,15 +455,24 @@ def flesh(color='7c8a6e', name='Rotting flesh', wet=0.4, rot='4a3f2c', vein='5d2
     m, nb = _new(name)
     base = srgb(color)
     n = nb.noise(4, 5, .65)
-    col = nb.mixc(nb.maprange(n, .3, .75, 0, .6), base, srgb(rot))
-    veins = nb.maprange(nb.voronoi(6, 'DISTANCE_TO_EDGE'), 0, .04, 1, 0)
-    col = nb.mixc(nb.math('MULTIPLY', veins, .5), col, srgb(vein))
+    col = nb.mixc(nb.maprange(n, .3, .75, 0, .5), base, srgb(rot))
+    # broad mottling: rotting bruises and bloodless pale patches
+    blot = nb.noise(1.6, 3, .5, distortion=.4)
+    col = nb.mixc(nb.maprange(blot, .56, .7, 0, .6), col, scale_rgb(srgb(vein), 1.15))
+    col = nb.mixc(nb.maprange(blot, .44, .3, 0, .4), col, scale_rgb(base, 1.25))
+    # thin branching veins under the skin, only in places (a cell network read as polygon cracks)
+    vn = nb.noise(3.2, 4, .55, distortion=1.4)
+    veins = nb.maprange(nb.math('ABSOLUTE', nb.math('SUBTRACT', vn, .5)), 0, .022, 1, 0)
+    veins = nb.math('MULTIPLY', veins, nb.maprange(nb.noise(2.2, 2, .5), .42, .58))
+    col = nb.mixc(nb.math('MULTIPLY', veins, .6), col, srgb(vein))
     col = nb.finish_color(col, .45, .12, .08)
     wetm = nb.maprange(nb.noise(7, 3, .6), .5, .65)
     r = nb.mixf(nb.math('MULTIPLY', wetm, wet), .7, .18)
+    pores = nb.voronoi(90, 'F1')
+    h = nb.math('ADD', nb.math('ADD', n, nb.math('MULTIPLY', veins, .18)), nb.math('MULTIPLY', pores, .12))
     nb.principled(**{'Base Color': col, 'Roughness': r, 'Subsurface Weight': .12,
                      'Subsurface Radius': (.7, .45, .25), 'Subsurface Scale': .03,
-                     'Normal': nb.bump(nb.math('ADD', n, nb.math('MULTIPLY', veins, .3)), .3, .02)})
+                     'Normal': nb.bump(h, .28, .015)})
     return m
 
 

@@ -1,6 +1,5 @@
 """Mire of Saints: a causeway through a foggy swamp. Reeds, mooring posts and lanterns line it; behind, dead trees
 and a drowned chapel stand in still water; far off, a misty treeline and a sunken bell tower."""
-import math
 import random
 
 from rk import arch, env, geo

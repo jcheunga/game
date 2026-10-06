@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.4212260512831785,
+  "frameWidth": 346,
+  "frameHeight": 302,
+  "drawScale": 2.1129822607200266,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "ash",
       "motion": "topple-rigid",
       "impactPoint": [
-        0.166313,
-        0.023809
+        0.269379,
+        0.076337
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_shieldwall",
   "title": "Shield Wall",
   "source": "art/remaster/units/enemy_shieldwall.py",
-  "anchorY": 0.6819088459014893,
-  "anchorX": 0.479115,
+  "anchorY": 0.83503,
+  "anchorX": 0.344988,
   "motion": {
     "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
-      -0.0,
-      -0.178475
+      0.0,
+      -0.398597
     ],
     "contact": [
-      0.209226,
-      -0.054068
+      0.33897,
+      -0.071092
     ]
   },
-  "healthBarY": 0.331909
+  "healthBarY": 0.744472
 }

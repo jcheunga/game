@@ -2,8 +2,6 @@
 import math
 import random
 
-from mathutils import Vector
-
 from rk import geo
 from . import itemkit as P
 from rk.heads import catmull
@@ -11,7 +9,7 @@ from .base import icon, V
 
 from rk import weapons as W  # noqa: E402
 from rk import shaders as S  # noqa: E402
-from .base import xform, aim_rot, TEAL, AMBER, SOUL  # noqa: E402
+from .base import xform, TEAL, AMBER, SOUL  # noqa: E402
 
 
 def sparkles(K, pts, color, size=0.12, hot='ffffff', strength=6.0):

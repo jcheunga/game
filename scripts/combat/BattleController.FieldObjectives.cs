@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -22,7 +21,7 @@ public partial class BattleController
         Mathf.Lerp(BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding, y));
     private bool HasUnitNear(Team team, Vector2 point, float radius) => _units.Any(u => !u.IsDead && u.Team == team && u.Position.DistanceTo(point) <= radius);
 
-    private void UpdateCampaignField(float delta)
+    private void UpdateCampaignField()
     {
         if (!HasCampaignField) return;
         _spawnDirector.SetPlayerFrontline(_units.Where(u => !u.IsDead && u.Team == Team.Player)

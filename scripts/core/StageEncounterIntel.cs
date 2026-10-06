@@ -73,16 +73,16 @@ public static class StageEncounterIntel
             : "";
 
         return
-            $"Threat: {ResolveThreatRating(stage)}  |  Contacts: {totalEnemies}  |  Enemy types: {counts.Count}\n" +
-            $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")}  |  " +
-            $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")}  |  " +
-            $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")}  |  " +
-            $"Boss phase: {(string.IsNullOrWhiteSpace(bossUnitId) ? "n/a" : GetBossPhaseTitle(bossUnitId))}  |  " +
+            $"Threat: {ResolveThreatRating(stage)} · Contacts: {totalEnemies} · Enemy types: {counts.Count}\n" +
+            $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")} · " +
+            $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")} · " +
+            $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")} · " +
+            $"Boss phase: {(string.IsNullOrWhiteSpace(bossUnitId) ? "n/a" : GetBossPhaseTitle(bossUnitId))} · " +
             $"Boss command: {(string.IsNullOrWhiteSpace(bossPressureTitle) ? "n/a" : bossPressureTitle)}\n" +
             $"{supportPressure}\n" +
             $"{missionSummary}" +
             (missionSummary.Length > 0 ? "\n" : "") +
-            $"Modifiers: {StageModifiers.BuildInlineSummary(stage)}  |  Hazards: {StageHazards.BuildInlineSummary(stage)}";
+            $"Modifiers: {StageModifiers.BuildInlineSummary(stage)} · Hazards: {StageHazards.BuildInlineSummary(stage)}";
     }
 
     public static string BuildEncounterIntel(StageDefinition stage)
@@ -128,7 +128,7 @@ public static class StageEncounterIntel
         builder.AppendLine("Encounter intel:");
         builder.AppendLine($"Threat rating: {ResolveThreatRating(stage)}");
         builder.AppendLine(
-            $"Scheduled contacts: {totalEnemies}  |  Enemy types: {counts.Count}  |  Peak wave: {peakWave.TriggerTime:0}s");
+            $"Scheduled contacts: {totalEnemies} · Enemy types: {counts.Count} · Peak wave: {peakWave.TriggerTime:0}s");
         builder.AppendLine($"Threat mix: {string.Join(", ", topThreats)}");
         builder.AppendLine(BuildSupportPressureSummary(counts));
         var missionInlineSummary = ResolveMissionInlineSummary(stage, includeCampaignMissionFallback);
@@ -143,12 +143,12 @@ public static class StageEncounterIntel
             var bossName = GameData.GetUnit(bossUnitId).DisplayName;
             var bossPressureTitle = GetBossPressureTitle(bossUnitId);
             builder.AppendLine(
-                $"Boss warning: {bossWave.TriggerTime:0}s  |  {bossName}  |  " +
+                $"Boss warning: {bossWave.TriggerTime:0}s · {bossName} · " +
                 $"Phase at ~55% HP: {BuildBossPhaseSummary(bossUnitId)}");
             if (!string.IsNullOrWhiteSpace(bossPressureTitle))
             {
                 builder.AppendLine(
-                    $"Boss command: {bossPressureTitle} every {GetBossPressureIntervalSeconds(stage.StageNumber):0.#}s after the phase  |  " +
+                    $"Boss command: {bossPressureTitle} every {GetBossPressureIntervalSeconds(stage.StageNumber):0.#}s after the phase · " +
                     $"{BuildBossPressureSummary(bossUnitId)}");
             }
         }
@@ -274,8 +274,8 @@ public static class StageEncounterIntel
             var label = string.IsNullOrWhiteSpace(wave.Label) ? $"Wave {i + 1}" : wave.Label;
             var pressureFlags = BuildWavePressureFlags(wave);
             builder.AppendLine(
-                $"{i + 1}. {wave.TriggerTime:0}s  |  {label}  |  {BuildWaveEntrySummary(wave, maxEntriesPerWave)}" +
-                (string.IsNullOrWhiteSpace(pressureFlags) ? "" : $"  |  {pressureFlags}"));
+                $"{i + 1}. {wave.TriggerTime:0}s · {label} · {BuildWaveEntrySummary(wave, maxEntriesPerWave)}" +
+                (string.IsNullOrWhiteSpace(pressureFlags) ? "" : $" · {pressureFlags}"));
         }
 
         return builder.ToString().TrimEnd();

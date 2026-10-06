@@ -28,7 +28,9 @@ public static class MedievalUi
     public static void ShowConfirmation(Control host, string title, string body, string confirmText, Action onConfirm)
     {
         var stack = CreateModal(host, new Vector2(460f, 0f), 14, out var veil, out var center, out var panel);
-        stack.AddChild(new Label { Text = title.ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center });
+        var heading = RealmUi.Heading(title, 24);
+        heading.HorizontalAlignment = HorizontalAlignment.Center;
+        stack.AddChild(heading);
         stack.AddChild(new Label { Text = body, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center });
 
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
@@ -212,8 +214,7 @@ public static class MedievalUi
             if (node is not PanelContainer panel || panel.Position.Y > 30 || panel.Size.X < 1000) continue;
             var label = FindFirstLabel(panel);
             if (label == null) continue;
-            label.AddThemeFontOverride("font", RealmUi.TitleFont);
-            label.AddThemeFontSizeOverride("font_size", 32);
+            RealmUi.Display(label, 32);
             label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             label.AddThemeColorOverride("font_color", new Color("f0d9a1"));
             if (!label.HasMeta("heraldic_title"))

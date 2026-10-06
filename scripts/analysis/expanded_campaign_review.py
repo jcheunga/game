@@ -65,5 +65,5 @@ lines += ['', 'Specialist squads: stages 25/26/46/50 use Defender, Grenadier, Co
     'godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-campaign-check --tactical --field-tactics --time-limit=300',
     'python3 scripts/analysis/expanded_campaign_review.py', '```', '',
     'Raw final logs and the machine-readable report with source hashes are in `artifacts/expanded-campaign/`. The summarizer expects the recorded `final-early`, `final-late`, `final-repeat`, and `final-counter-*` logs. Earlier exploratory logs are retained separately and excluded from the final totals.', '']
-(ROOT / 'docs/EXPANDED_CAMPAIGN.md').write_text('\n'.join(lines))
+(ROOT / 'docs/archive/EXPANDED_CAMPAIGN.md').write_text('\n'.join(lines))
 print(f'Report: {len(core)} stages, {len(passed)} starter wins, {len(winning_stages)} stages with a verified win; {len(all_runs)} final simulations.')

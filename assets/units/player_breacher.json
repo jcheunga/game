@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 2.4004263907485863,
+  "frameWidth": 259,
+  "frameHeight": 344,
+  "drawScale": 1.8294371266959377,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "dust",
       "motion": "stagger-back",
       "impactPoint": [
-        0.15455,
-        0.023121
+        0.202862,
+        0.03948
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "player_breacher",
   "title": "Halberdier",
   "source": "art/remaster/units/player_breacher.py",
-  "anchorY": 0.7592669874429703,
-  "anchorX": 0.470234,
+  "anchorY": 0.721335,
+  "anchorX": 0.440132,
   "motion": {
     "revision": "remaster-v1",
     "profile": "axe-cleave",
     "body": [
-      -0.0,
-      -0.247497
+      0.0,
+      -0.294365
     ],
     "contact": [
-      0.17188,
-      0.024363
+      0.225839,
+      0.079423
     ]
   },
-  "healthBarY": 0.524892
+  "healthBarY": 0.595647
 }

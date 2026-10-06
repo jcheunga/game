@@ -272,10 +272,10 @@ public partial class MapPathCanvas
                 else if (ActiveMapId is "thornwall" or "gloamwood" || hash % 4 == 0) DrawPine(p, forest, prop.Size, ActiveMapId == "thornwall");
                 else DrawBroadleafTree(p, forest, prop.Size, hash);
                 break;
-            case 1: DrawBoulder(p, prop.Size, hash); break;
-            case 2: DrawMountain(p, prop.Size, hash); break;
+            case 1: DrawBoulder(p, prop.Size); break;
+            case 2: DrawMountain(p, prop.Size); break;
             case 3: DrawZoneDetail(p, hash); break;
-            case 5: DrawHamlet(p, hash); break;
+            case 5: DrawHamlet(p); break;
             default:
                 for (var i = 0; i < 3; i++) DrawLine(p + new Vector2(i * 3, 0), p + new Vector2(i * 3 - 2, -prop.Size + i * 2), forest.Lightened(.12f), 1, true);
                 if (hash % 5 == 0) DrawCircle(p - new Vector2(0, 5), 1.5f, new Color(ActiveMapId == "gloamwood" ? "aa9cba" : "c4b67d"));
@@ -303,7 +303,7 @@ public partial class MapPathCanvas
     private void DrawPine(Vector2 p, Color color, float height, bool snowy)
     {
         DrawEllipse(p + new Vector2(6, 4), new Vector2(height * .25f, height * .08f), new Color(0, 0, 0, .18f));
-        DrawTree(p, color, height, 0);
+        DrawTree(p, color, height);
         if (snowy)
             for (var tier = 0; tier < 3; tier++)
             {
@@ -325,7 +325,7 @@ public partial class MapPathCanvas
     }
     private void DrawEllipse(Vector2 p, Vector2 radius, Color color) => DrawColoredPolygon(Enumerable.Range(0, 18)
         .Select(i => p + new Vector2(Mathf.Cos(i / 18f * Mathf.Tau) * radius.X, Mathf.Sin(i / 18f * Mathf.Tau) * radius.Y)).ToArray(), color);
-    private void DrawBoulder(Vector2 p, float size, uint hash)
+    private void DrawBoulder(Vector2 p, float size)
     {
         var stone = new Color(ActiveMapId == "foundry" ? "776b59" : ActiveMapId == "thornwall" ? "9fa799" : "8a8e76");
         var shape = new[] { p + new Vector2(-size, 0), p + new Vector2(-size * .6f, -size), p + new Vector2(size * .25f, -size * 1.3f), p + new Vector2(size, -size * .4f), p + new Vector2(size * .9f, size * .2f), p + new Vector2(0, size * .4f) };
@@ -333,7 +333,7 @@ public partial class MapPathCanvas
         DrawColoredPolygon(new[] { shape[2], shape[3], shape[4], shape[5] }, stone.Darkened(.23f));
         DrawLine(shape[1], shape[2], stone.Lightened(.32f), 1.3f, true);
     }
-    private void DrawMountain(Vector2 p, float height, uint hash)
+    private void DrawMountain(Vector2 p, float height)
     {
         var stone = new Color(ActiveMapId switch { "foundry" => "756454", "thornwall" => "81918d", "gloamwood" => "67746c", "citadel" => "727884", _ => "838772" });
         var w = height * .72f; var peak = p + new Vector2(-height * .08f, -height);
@@ -376,7 +376,7 @@ public partial class MapPathCanvas
         }
         DrawIsoBlock(a + side, 6, 4, 13, stone); DrawIsoBlock(b + side, 6, 4, 13, stone);
     }
-    private void DrawHamlet(Vector2 p, uint hash)
+    private void DrawHamlet(Vector2 p)
     {
         if (ActiveMapId == "harbor") { DrawHarborDock(p); return; }
         if (ActiveMapId == "foundry") { DrawForgeOutwork(p); return; }
@@ -408,7 +408,7 @@ public partial class MapPathCanvas
             case "steppe": DrawFarm(p); break;
             case "gloamwood": DrawRuinedArch(p); break;
             case "citadel": DrawIsoBlock(p, 32, 11, 29, new Color("8a8790")); DrawBanner(p - new Vector2(0, 30), new Color("755675")); break;
-            default: DrawBoulder(p, 18, hash); break;
+            default: DrawBoulder(p, 18); break;
         }
     }
     private void DrawWindmill(Vector2 p)
@@ -455,7 +455,7 @@ public partial class MapPathCanvas
         DrawIsoBlock(p + new Vector2(-16, 0), 7, 5, 34, stone);
         DrawIsoBlock(p + new Vector2(16, 0), 7, 5, 26, stone.Darkened(.1f));
         DrawIsoBlock(p + new Vector2(-8, -33), 16, 5, 8, stone.Lightened(.1f));
-        DrawBoulder(p + new Vector2(20, 9), 10, 0);
+        DrawBoulder(p + new Vector2(20, 9), 10);
         DrawLine(p + new Vector2(-19, -32), p + new Vector2(-19, -5), ForestColor(), 3, true);
     }
     private void DrawGraveyard(Vector2 p)

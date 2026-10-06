@@ -26,6 +26,6 @@ if [[ "${1:-}" == "--campaign" ]]; then
       cat "artifacts/combat-review/$profile.log"
       exit 1
     fi
-    echo "Completed 60-stage $profile benchmark (wins, losses and timeouts are recorded as balance observations)."
+    echo "Completed full-campaign $profile benchmark (wins, losses and timeouts are recorded as balance observations)."
   done
 fi

@@ -15,9 +15,9 @@ Quiet textured water surrounds the playable coast on the same world-aligned 2:1 
 
 World-aligned painted materials cover meadow, forest floor, earth, coast, marsh, ash, snow and cobbles. Material UVs follow the map's 2:1 ground projection. Roads use worn earth, banks use finer shoreline textures, and rivers have layered water detail. Mipmaps keep textures and scenery smooth at wider zoom levels. Scenery and buildings sort by ground height, with clearings around sites; harbor docks sit at riverbanks. Bridges follow their local crossing angle while vertical posts remain upright. Terrain borders remain beneath foliage, while selected sites keep their stronger outline.
 
-The painted forts and pickups are the selectable site objects. Labels beneath every point of interest are removed, while earned stage ratings remain above the roofs. Hit targets and world art share the same ground position and zoom scale. Individual ground anchors account for each sprite's footprint and cast shadow. Click regions use sprite alpha and a small foundation target, preventing transparent marker margins from intercepting adjacent pickups. Tile borders, selected-region outlines and hover footprints are drawn beneath roads, rivers, bridges, buildings and foliage. Gold, food, books, essence and survey charts have distinct painted pickup art. The Map guide, its activity-panel link and the persistent tutorial sentence are removed.
+The painted forts and pickups are the selectable site objects. Points of interest have no labels beneath them; earned stage stars sit above the roofs. Hit targets and world art share the same ground position and zoom scale. Individual ground anchors account for each sprite's footprint and cast shadow. Click regions use sprite alpha and a small foundation target, preventing transparent marker margins from intercepting adjacent pickups. Tile borders, selected-region outlines and hover footprints are drawn beneath roads, rivers, bridges, buildings and foliage. Gold, food, books, essence and survey charts have distinct painted pickup art.
 
-Site details have one page, with no Intel tab. Painted resource icons identify reward amounts and battle entry costs. Travel and resource collection are free. The same icons appear in collection bursts and deployment costs. Mission information remains in battle preparation. Heroic directives (optional harder replays of cleared stages) were removed on 2026-10-05; old saves drop their armed directive and claimed bounties.
+Site details have one page. Painted resource icons identify reward amounts and battle entry costs. Travel and resource collection are free. The same icons appear in collection bursts and deployment costs. Mission information remains in battle preparation.
 
 Point-of-interest names, rewards and stage entry costs remain available in tooltips and site details at every zoom. The map itself shows the painted objects and earned stage stars without persistent captions.
 
@@ -31,27 +31,28 @@ Source artwork, exact generation prompts and hashes live in `assets/world/overwo
 
 Forest clusters, boulders and grasses fill the landscape around clearings for landmarks. The main stages follow a winding road, with stone bridges across the river. King's Road has farmsteads and windmills; Saltwake has docks and sails; Emberforge has furnaces, chimneys and ash ridges; Thornwall has snowy pines and peaks. The remaining zones add graves, ruined arches, reeds, fields and citadel outworks in their own palettes.
 
-Geography is deterministic and cosmetic. Stable tile IDs and their logical neighborhood relationships preserve existing saves, completion routes, food prices and revelation rules.
+Geography is deterministic and cosmetic. Stable tile IDs and their logical neighborhood relationships preserve existing saves, completion routes, entry costs and revelation rules.
 
 ## Playing
 
-- Tap a stage or landmark to open its details. Tap a resource to travel and collect it. Drag to pan; pinch or scroll to zoom. The left-side zoom and current-position buttons are removed.
+- Tap a stage or landmark to open its details. Tap a resource to travel and collect it. Drag to pan; pinch or scroll to zoom.
 - Travelling to any open destination and collecting resources are free, including with zero rations. Only battle entry costs food, shown in stage details and preparation; entry is charged when deploying.
 - Each zone starts on its first stage, with only that tile visible. Clearing a stage or collecting a resource opens the eight tiles around that destination. Preparing, travelling, defeat and retreat do not reveal additional tiles.
-- Scout towers, Lantern Camp and Shrines of Resolve are removed. Former camp and shrine tiles are ordinary terrain; nearby discoveries keep their positions. Saves with a retired destination return to the first stage and retain explored surroundings. Shrine courage bonuses are removed, including previously collected blessings. Every completion, including a survey chart, opens one neighboring ring. Forgotten treasuries are available when their tile opens.
-- Open regular encounters can be challenged in any order. Defeat the five regular leaders to open the boss gate, then defeat that boss to reveal the next zone.
+- Every completion, including a survey chart, opens one neighboring ring. Forgotten treasuries are available when their tile opens.
+- Open regular encounters can be challenged in any order. Defeat the zone's nine regular leaders to open the boss gate, then defeat that boss to reveal the next zone.
 - Claimed resources disappear; completed stages retain earned stars. Sites beneath the dark tile veil remain hidden.
 - Tile travel completes immediately, without a moving cart or travel animation. Empty terrain cannot initiate travel.
 - Food checks apply only to battle entry and restart. Reaching a stage does not reserve or spend rations. Failed entry leaves the food balance unchanged.
 
 ## Saves
 
-Save version 45 records open and reached tile IDs and the current caravan tile, alongside existing stars, claims and zone access. Version 44 and earlier saves translate known legacy points to the corresponding atlas tiles. Retired camp and shrine IDs map to their former terrain regions; visited sites retain explored surroundings. Cleared stages and collected resources open their surroundings; old rewards never pay again. Legacy terrain coordinates remain available for migration. Reset and prestige clear tile progress.
+Saves (version 46) record open and reached tile IDs and the current caravan tile, alongside existing stars, claims and zone access. Version 44 and earlier saves translate known legacy points to the corresponding atlas tiles. Saves from the 60-stage campaign have their stage-numbered site and tile IDs moved onto the current stages by `CampaignRenumbering`. The former Lantern Camp tile is ordinary terrain that keeps the camp's revealed state; nearby discoveries keep their positions and visited sites retain explored surroundings. A saved caravan at the retired camp returns to the first stage, and Shrine of Resolve courage blessings no longer apply. Cleared stages and collected resources open their surroundings; old rewards never pay again. Legacy terrain coordinates remain available for migration. Reset and prestige clear tile progress.
 
-Old tower IDs and coordinates remain in the legacy catalog to preserve discovery
-placement, visit history and access to previously played zones. They have no atlas
-tile or interaction. A saved caravan at a removed tower returns to the starting
-stage; known tiles, balances, stage stars and collected resources are retained.
+Old scout tower and shrine IDs and coordinates remain in the legacy catalog to
+preserve discovery placement, visit history and access to previously played zones.
+They have no atlas tile or interaction. A saved caravan at one of them returns to
+the starting stage; known tiles, balances, stage stars and collected resources are
+retained.
 
 `AdventureTileCatalog` owns stable point IDs and logical neighbors. `AdventureAtlasLandscape` owns site positions, curved regions, coastline, rivers and roads. `GameState.AdventureTiles` owns costs, arrival, claims, revelation and migration. `MapPathCanvas` owns camera, selection and immediate travel; `MapPathCanvas.Landscape` and `MapPathCanvas.Art` draw the landscape and landmarks. The saved caravan tile remains the current destination for save compatibility; no caravan is rendered.
 

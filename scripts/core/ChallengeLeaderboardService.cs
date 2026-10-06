@@ -76,7 +76,7 @@ public partial class ChallengeLeaderboardService : Node
 		foreach (var entry in snapshot.Entries.Take(Math.Max(1, maxEntries)))
 		{
 			builder.AppendLine(
-				$"#{entry.Rank} {entry.PlayerCallsign}  |  {entry.Score} pts  |  Hull {entry.HullPercent}%  |  {entry.ElapsedSeconds:0.0}s  |  {(entry.UsedLockedDeck ? "locked" : "player")} deck");
+				$"#{entry.Rank} {entry.PlayerCallsign} · {entry.Score} pts · Hull {entry.HullPercent}% · {entry.ElapsedSeconds:0.0}s · {(entry.UsedLockedDeck ? "locked" : "player")} deck");
 		}
 
 		return builder.ToString().TrimEnd();

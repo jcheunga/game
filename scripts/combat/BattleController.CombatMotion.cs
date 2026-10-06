@@ -2,6 +2,9 @@ using Godot;
 
 public partial class BattleController
 {
+    // How far past melee reach a target may slip during a ranged unit's windup and still be struck.
+    private const float RangedMeleeContactSlack = 8f;
+
     private void ShowReleaseTrace(Unit attacker, Unit target)
         => ShowReleaseTraceTo(attacker,target.BodyContactPosition);
 
@@ -33,14 +36,46 @@ public partial class BattleController
             }
             else
             {
-                var applied = target.TakeDamage(damage,attacker.UnitName);
-                TrackDamageDealt(attacker,applied);
-                SpawnDamageFeedback(target.BodyContactPosition,applied,attacker.Tint);
-                ApplyImpactReaction(attacker,target,applied,false);
-                ApplyDamageReflect(target,attacker,applied);
-                ApplyMirrorPressureReflect(attacker,target,applied);
+                ResolveMeleeHit(attacker,target,damage);
             }
         });
+    }
+
+    // A ranged unit's close-quarters strike: one target, no splash, at a share of its shot damage. It only
+    // lands if the target is still at arm's length when the blow arrives.
+    private void QueueRangedMelee(Unit attacker, Unit target)
+    {
+        var targetLife = target.CombatLifetime;
+        var damage = attacker.CurrentAttackDamage * GameData.Combat.RangedMeleeDamageScale;
+        attacker.ScheduleAttackImpact(() =>
+        {
+            if (!attacker.CanResolveContact(target,targetLife,false) || !attacker.InMeleeReach(target,RangedMeleeContactSlack)) return;
+            ResolveMeleeHit(attacker,target,damage);
+        });
+    }
+
+    private void ResolveMeleeHit(Unit attacker, Unit target, float damage)
+    {
+        var applied = target.TakeDamage(damage,attacker.UnitName);
+        TrackDamageDealt(attacker,applied);
+        SpawnDamageFeedback(target.BodyContactPosition,applied,attacker.Tint);
+        ApplyImpactReaction(attacker,target,applied,false);
+        ApplyDamageReflect(target,attacker,applied);
+        ApplyMirrorPressureReflect(attacker,target,applied);
+    }
+
+    /// <summary>The swing a melee contact draws: ranged units' close-quarters strikes have their own.</summary>
+    internal static string MeleeContactProfile(Unit attacker)
+    {
+        if (!attacker.IsMeleeStrike) return attacker.MotionProfile;
+        return attacker.MotionProfile switch
+        {
+            "bow-draw" => "kick-smash",
+            "crossbow" => "stock-thrust",
+            "staff-cast" => "staff-strike",
+            "hammer-command" or "ballista" or "bombard" => "heavy-smash",
+            _ => attacker.MotionProfile
+        };
     }
 
     private void ShowWeaponContact(Unit attacker, Unit target, float damage, bool ranged)
@@ -53,7 +88,7 @@ public partial class BattleController
         if (!ranged)
         {
             var stroke = new WeaponContactEffect();
-            stroke.Setup(attacker.MotionProfile,direction,attacker.Tint,IsReducedMotionEnabled());
+            stroke.Setup(MeleeContactProfile(attacker),direction,attacker.Tint,IsReducedMotionEnabled());
             stroke.ShouldPause = () => _battlePaused || _endlessCheckpointActive;
             AddChild(stroke);
             stroke.GlobalPosition = point;

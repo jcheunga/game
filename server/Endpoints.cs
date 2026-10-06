@@ -1,23 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
 namespace CrownroadServer;
 
 public static class Endpoints
 {
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = false
-    };
-
     private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     private static string NewId(string prefix) =>
@@ -1129,76 +1119,6 @@ public static class Endpoints
         cmd.ExecuteNonQuery();
     }
 
-    private static List<object> GetPeerSnapshots(DbConnection conn, string roomId, string localProfileId)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            SELECT profile_id, callsign, seat_label, is_ready, race_status, score, elapsed_seconds, hull_remaining, enemy_defeats
-            FROM room_seats WHERE room_id = @rid AND status != 'left'
-            ORDER BY score DESC, elapsed_seconds ASC, joined_at ASC
-        """;
-        cmd.Parameters.AddWithValue("@rid", roomId);
-
-        var peers = new List<object>();
-        using var reader = cmd.ExecuteReader();
-        var rank = 0;
-        while (reader.Read())
-        {
-            rank++;
-            var peerProfileId = reader.GetString(0);
-            var callsign = reader.GetString(1);
-            var seatLabel = reader.GetString(2);
-            var isReady = reader.GetInt32(3) == 1;
-            var raceStatus = reader.GetString(4);
-            var score = reader.GetInt32(5);
-            var elapsedSeconds = reader.GetDouble(6);
-            var hullRemaining = reader.GetDouble(7);
-            var enemyDefeats = reader.GetInt32(8);
-            var isRunner = !seatLabel.Equals("spectator", StringComparison.OrdinalIgnoreCase);
-            var isActive = raceStatus.Equals("racing", StringComparison.OrdinalIgnoreCase);
-            var isComplete = raceStatus.Equals("submitted", StringComparison.OrdinalIgnoreCase)
-                || raceStatus.Equals("complete", StringComparison.OrdinalIgnoreCase);
-            peers.Add(new
-            {
-                // The canonical room-session shape is consumed by the Godot
-                // client, avoiding a second scoreboard request on each poll.
-                peerId = rank,
-                label = callsign,
-                isLocalPlayer = peerProfileId.Equals(localProfileId, StringComparison.Ordinal),
-                phase = raceStatus,
-                isReady,
-                isLoaded = isActive || isComplete,
-                isLaunchEligible = isRunner,
-                hasFullDeck = true,
-                monitorRank = rank,
-                raceElapsedSeconds = elapsedSeconds,
-                hullPercent = (int)Math.Round(hullRemaining),
-                enemyDefeats,
-                postedScore = score,
-                postedRank = score > 0 ? rank : 0,
-                presenceText = isRunner
-                    ? isReady ? "ready" : "waiting"
-                    : "spectating",
-                monitorText = isComplete
-                    ? $"#{rank}  {score} pts"
-                    : isActive ? $"racing  {elapsedSeconds:0.0}s" : "lobby",
-                deckText = "server-validated room seat",
-
-                // Retain the compact fields for older clients and external
-                // consumers during the rolling deployment.
-                playerProfileId = peerProfileId,
-                callsign,
-                seatLabel,
-                raceStatus,
-                score,
-                elapsedSeconds,
-                hullRemaining
-            });
-        }
-
-        return peers;
-    }
-
     private static async Task<List<object>> GetPeerSnapshotsAsync(
         DbConnection conn,
         string roomId,
@@ -1309,15 +1229,6 @@ public static class Endpoints
     {
         var scheme = request.IsHttps ? "wss" : "ws";
         return $"{scheme}://{request.Host}/ws/relay/{Uri.EscapeDataString(roomId)}";
-    }
-
-    private static bool HasActiveRoomSeat(DbConnection conn, string roomId, string profileId)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT 1 FROM room_seats WHERE room_id = @rid AND profile_id = @pid AND status != 'left' LIMIT 1";
-        cmd.Parameters.AddWithValue("@rid", roomId);
-        cmd.Parameters.AddWithValue("@pid", profileId);
-        return cmd.ExecuteScalar() != null;
     }
 
     private static async Task<bool> HasActiveRoomSeatAsync(

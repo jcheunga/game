@@ -14,7 +14,7 @@ import random
 
 import bmesh
 import bpy
-from mathutils import Euler, Matrix, Vector, noise
+from mathutils import Euler, Matrix, Vector
 
 from . import core, geo, shaders as S
 from .core import scale_rgb, srgb

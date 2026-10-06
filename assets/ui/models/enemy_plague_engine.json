@@ -1,22 +1,22 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 1.9592109304037153,
+  "frameWidth": 356,
+  "frameHeight": 330,
+  "drawScale": 1.6718324410632104,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "enemy_plague_engine",
   "title": "Plague Engine",
   "source": "art/remaster/units/enemy_plague_engine.py",
-  "anchorY": 0.733422577381134,
-  "anchorX": 0.463531,
+  "anchorY": 0.781862,
+  "anchorX": 0.503501,
   "motion": {
     "revision": "remaster-v1",
     "profile": "bombard",
     "body": [
       0.0,
-      -0.224618
+      -0.341878
     ],
     "contact": [
-      0.141876,
-      -0.300485
+      0.166322,
+      -0.443853
     ]
   },
-  "healthBarY": 0.380298
+  "healthBarY": 0.595131
 }

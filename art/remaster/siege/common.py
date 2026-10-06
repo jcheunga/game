@@ -4,7 +4,6 @@ Each structure keeps the camera, canvas and ground placement of the asset it
 replaces (see build_structures.py CONTRACT), so it drops into the fixed runtime
 rects (wagon 180x140, gatehouse 180x160, mounts 60x75) without re-tuning.
 """
-import math
 import time
 
 import bpy

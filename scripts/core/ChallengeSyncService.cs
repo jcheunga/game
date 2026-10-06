@@ -44,7 +44,7 @@ public partial class ChallengeSyncService : Node
 			: "never";
 		var provider = ResolveProvider();
 		SyncStatus =
-			$"Idle  |  {provider.DisplayName}  |  Auto {(gameState.ChallengeSyncAutoFlush ? "on" : "off")}  |  Pending {gameState.PendingChallengeSubmissionCount}  |  Synced {gameState.TotalChallengeSubmissionsSynced}  |  Last sync {lastSync}";
+			$"Idle · {provider.DisplayName} · Auto {(gameState.ChallengeSyncAutoFlush ? "on" : "off")} · Pending {gameState.PendingChallengeSubmissionCount} · Synced {gameState.TotalChallengeSubmissionsSynced} · Last sync {lastSync}";
 	}
 
 	public string BuildStatusSummary()
@@ -96,15 +96,15 @@ public partial class ChallengeSyncService : Node
 			var flushed = gameState.CompleteChallengeSubmissions(acceptedIds, attemptedAtUnixSeconds);
 			RefreshStatusFromState();
 			_lastBatchSummary =
-				$"{result.BatchId}  |  {result.RemoteStatus}  |  accepted {flushed}" +
-				(rejectedIds.Length > 0 ? $"  |  rejected {rejectedIds.Length}" : "");
+				$"{result.BatchId} · {result.RemoteStatus} · accepted {flushed}" +
+				(rejectedIds.Length > 0 ? $" · rejected {rejectedIds.Length}" : "");
 			message = $"Flushed {flushed} challenge packet{(flushed == 1 ? "" : "s")} via {provider.DisplayName}." +
 				(rejectedIds.Length > 0 ? $" {rejectedIds.Length} packet{(rejectedIds.Length == 1 ? "" : "s")} stayed queued." : "");
 			return true;
 		}
 		catch (Exception ex)
 		{
-			SyncStatus = $"Flush failed  |  {ex.Message}";
+			SyncStatus = $"Flush failed · {ex.Message}";
 			_lastBatchSummary = "Last batch failed before provider acceptance.";
 			message = $"Challenge outbox flush failed: {ex.Message}";
 			return false;

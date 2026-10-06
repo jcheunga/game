@@ -1,10 +1,9 @@
-using System;
 using Godot;
 
 public partial class ShopMenu
 {
     private bool _profileExpanded;
-    private PanelContainer DetailShell(string title, string status, string id, bool spell, out VBoxContainer stack)
+    private PanelContainer DetailShell(string title, string status, out VBoxContainer stack)
     {
         var panel = new PanelContainer
         {

@@ -13,10 +13,10 @@ public partial class CombatReviewSmoke
         Unit Spawn(string id, Team team, Vector2 position) => (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)), position);
         var ally = Spawn("player_defender", Team.Player, point);
         var enemy = Spawn("enemy_walker", Team.Enemy, point + new Vector2(50, 0));
-        Invoke(battle, "UpdateCampaignField", 4f);
+        Invoke(battle, "UpdateCampaignField");
         enemy.Position = new Vector2(2400, 340);
         var allyStart = ally.Position;
-        Invoke(battle, "UpdateCampaignField", plan.CaptureSeconds + .01f);
+        Invoke(battle, "UpdateCampaignField");
         Check(typeof(BattleController).GetField("_outpostCaptured",System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null,
             "Standing near a removed post never creates forward deployments");
         Check(ally.Position == allyStart, "Field updates leave troop positions unchanged");
@@ -32,7 +32,7 @@ public partial class CombatReviewSmoke
             "Deployment consumes the normal courage and cooldown");
         ally.Position = (Vector2)Invoke(battle, "FieldPoint", plan.SupplyXRatio, plan.SupplyYRatio);
         var gate = Read<float>(battle, "_enemyBaseHealth");
-        Invoke(battle, "UpdateCampaignField", 3f);
+        Invoke(battle, "UpdateCampaignField");
         Check(Read<float>(battle, "_enemyBaseHealth") == gate,
             "Standing near a removed supply cache grants no capture reward");
         var summoner = Spawn("enemy_lich", Team.Enemy, ally.Position + new Vector2(50, 0));
@@ -95,7 +95,8 @@ public partial class CombatReviewSmoke
         director.Tick(1, 1, () => 0, (_, p) => positions.Add(p), _ => { });
         Check(director.EncounterWarningActive && positions.Count == 0, "Encounters warn before spawning");
         director.Tick(3, 4, () => 0, (_, p) => positions.Add(p), _ => { });
-        Check(positions.Count == 1 && positions[0].X < GameData.Combat.EnemySpawnX, "Approach encounters use their local entry point");
+        // Every encounter enters from the enemy base; SpawnXRatio no longer moves the entry point.
+        Check(positions.Count == 1 && Mathf.IsEqualApprox(positions[0].X, GameData.Combat.EnemySpawnX), "Approach encounters enter from the enemy base");
         director.SetPlayerFrontline(Mathf.Lerp(GameData.Combat.PlayerSpawnX, GameData.Combat.EnemySpawnX, .55f));
         director.Tick(1, 5, () => 100, (_, p) => positions.Add(p), _ => { });
         Check(director.IsScriptedWaveHeld && positions.Count == 1, "Advancement respects the active enemy cap");

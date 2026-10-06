@@ -131,10 +131,10 @@ public static class PlayerProfileSyncService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Player profile sync ({_cachedSnapshot.ProviderDisplayName}):");
 		builder.AppendLine(_cachedSnapshot.Summary);
-		builder.AppendLine($"Profile: {_cachedSnapshot.PlayerProfileId}  |  Callsign: {_cachedSnapshot.PlayerCallsign}");
-		builder.AppendLine($"Auth: {_cachedSnapshot.AuthState}  |  Token: {MaskToken(_cachedSnapshot.SessionToken)}");
-		builder.AppendLine($"Rooms: {(_cachedSnapshot.CanJoinRooms ? "enabled" : "blocked")}  |  Relay: {(_cachedSnapshot.RelayEnabled ? "enabled" : "blocked")}");
-		builder.Append($"Challenges: {(_cachedSnapshot.CanSubmitChallenges ? "enabled" : "blocked")}  |  Synced: {FormatUnixTime(_cachedSnapshot.SyncedAtUnixSeconds)}");
+		builder.AppendLine($"Profile: {_cachedSnapshot.PlayerProfileId} · Callsign: {_cachedSnapshot.PlayerCallsign}");
+		builder.AppendLine($"Auth: {_cachedSnapshot.AuthState} · Token: {MaskToken(_cachedSnapshot.SessionToken)}");
+		builder.AppendLine($"Rooms: {(_cachedSnapshot.CanJoinRooms ? "enabled" : "blocked")} · Relay: {(_cachedSnapshot.RelayEnabled ? "enabled" : "blocked")}");
+		builder.Append($"Challenges: {(_cachedSnapshot.CanSubmitChallenges ? "enabled" : "blocked")} · Synced: {FormatUnixTime(_cachedSnapshot.SyncedAtUnixSeconds)}");
 		return builder.ToString();
 	}
 

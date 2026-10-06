@@ -87,7 +87,7 @@ public partial class UiReviewSmoke
                 var unitCooldown=(float)Call("ResolvePlayerDeployCooldown",deck.Roster[0]);
                 deck.MarkDeployed(deck.Roster[0],unitCooldown*.5f);
                 var spellStats=GameState.Instance.BuildSpellStats(spells.Roster[0]);
-                var spellCooldown=(float)Call("ResolvePlayerSpellCooldown",spells.Roster[0],spellStats);
+                var spellCooldown=(float)Call("ResolvePlayerSpellCooldown",spellStats);
                 spells.MarkCast(spells.Roster[0],spellCooldown*.5f);
                 Call("UpdateHud"); await Wait(.1);
                 foreach(var art in new[]{cards[0],cards[deck.Roster.Count]})

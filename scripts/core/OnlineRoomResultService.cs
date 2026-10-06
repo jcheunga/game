@@ -118,8 +118,8 @@ public static class OnlineRoomResultService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room result ({currentSubmission.ProviderDisplayName}):");
 		builder.AppendLine(currentSubmission.Summary);
-		builder.AppendLine($"Room: {currentSubmission.RoomId}  |  Board: {currentSubmission.BoardCode}");
-		builder.AppendLine($"Score: {currentSubmission.Score}  |  Provisional rank: {(currentSubmission.ProvisionalRank > 0 ? $"#{currentSubmission.ProvisionalRank}" : "pending")}");
+		builder.AppendLine($"Room: {currentSubmission.RoomId} · Board: {currentSubmission.BoardCode}");
+		builder.AppendLine($"Score: {currentSubmission.Score} · Provisional rank: {(currentSubmission.ProvisionalRank > 0 ? $"#{currentSubmission.ProvisionalRank}" : "pending")}");
 		builder.Append($"Status: {currentSubmission.Status}");
 		return builder.ToString();
 	}

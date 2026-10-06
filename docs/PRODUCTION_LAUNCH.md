@@ -12,11 +12,11 @@ hide it in the release build and store copy; do not mark its gate complete.
 
 | Area | Verified in this repository | Still needed for public release |
 | --- | --- | --- |
-| Build and tests | Game build, 7,492 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
+| Build and tests | Game build, 11,992 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
 | Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
 | Payments | Server-side Play/App Store verification and Android billing bridge are present; paid grants fail closed without valid store verification. | Real store configuration and device tests, secure iOS StoreKit 2 bridge, refund/void reconciliation, and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
-| Art and audio | 60 distinct stage backgrounds and 10 distinct zone main maps are connected and pass desktop/phone preview checks. Existing sprites, structures, icons and branding remain present. Four original looping music arrangements and 20 authored SFX files are implemented. | Approve visual quality/rights and test the signed build on physical devices. Some route/menu music, ambience and screen variants still use shared or procedural fallbacks; decide which are final for launch. Artwork provenance and all 70 prompts are in `assets/world/manifest.json`. |
+| Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. Four original looping music arrangements and 20 authored SFX files are implemented. | Approve visual quality/rights and test the signed build on physical devices. Some route/menu music, ambience and screen variants still use shared or procedural fallbacks; decide which are final for launch. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
 
 ## Implementation progress and next work
@@ -48,21 +48,20 @@ remaining requirements have evidence.
   on online sign-out, and protect local progress during account switching.
   Provider credentials, live delivery/consent and mobile recovery remain open
   in the [login rollout gates](#email-and-google-login-rollout) below.
-- [x] Create and connect individual artwork for all 60 campaign stages and
-  all 10 zone main maps. Fit clear battle ground to the simulation bounds;
-  map continuous zone ground and progressive fog to the same isometric tiles
-  used for picking and travel. `WorldArtReview.tscn` passes on desktop and
-  phone previews, including distinct files, imported resolution, every zone's
-  live map/battle screens and captures of fresh/explored maps. See
-  [world artwork notes](../assets/world/README.md). This does not replace
-  physical-device or public-release creative approval.
+- [x] Give each of the ten zones a layered parallax battle backdrop (far, mid
+  and near Blender layers) that covers the battle world and band, with the
+  painted stage plates kept as a fallback. `WorldArtReview.tscn` checks the ten
+  backdrops, the map atlas and each zone's live map and first battle on desktop
+  and phone previews. See [world artwork notes](../assets/world/README.md). This
+  does not replace physical-device or public-release creative approval.
 
-- [x] Expand every zone to 768 tiles, spread landmarks and bosses across the
-  district, and conceal unknown land with animated smoke. Add 40 sparse tile
-  discoveries per zone and step-by-step food payments. Save revision 44 keeps
-  old site claims and relocates caravans onto the new terrain. Local rendered
-  desktop and phone-preview checks cover rewards, exhaustion and migration.
-  See [expansion notes](EXPANSIVE_EXPLORATION.md).
+- [x] Lay out every zone as a 63-tile (9 × 7) atlas holding ten stages, ten
+  supply caches, a forgotten treasury and sparse discoveries, under an opaque
+  cloud layer. Travel and collection are free; each
+  battle costs 4 food. Save version 46 keeps site claims and migrates older
+  tile, landmark and 60-stage saves. The adventure map smoke test and the
+  `--home-map` review cover rewards, free travel, entry-only charges and
+  migration. See [ADVENTURE_MAP.md](ADVENTURE_MAP.md).
 
 | Order | Next deliverable | Completion evidence / dependency |
 | --- | --- | --- |
@@ -146,11 +145,12 @@ is captured by a test sender; these do not prove live provider operation.
 `FeedbackReview.tscn` passes **42 checks on desktop and 42 on phone**, including
 account availability/UI, guest preservation, authenticated cloud download and
 failed-switch protection using a loopback service. See
-[PLAYER_FEEDBACK_UPDATE.md](PLAYER_FEEDBACK_UPDATE.md) for implementation notes.
+[DEPLOYMENT.md](DEPLOYMENT.md#account-sign-in) for sign-in setup and
+account-switch behaviour.
 
 ### Local evidence for the privacy update
 
-- `./scripts/verify_all.sh`: game build, **7,492 data checks**, **82 server
+- `./scripts/verify_all.sh`: game build, **11,992 data checks**, **86 server
   tests**, and public-site preview/link validation. Backend tests use a
   temporary SQLite database; this does not certify PostgreSQL deployment.
 - `./scripts/smoke/privacy_smoke.sh`: **23 passing checks** in Godot 4.6.1

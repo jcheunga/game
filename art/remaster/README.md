@@ -4,12 +4,14 @@ A second-generation Blender pipeline for every Blender-rendered asset the game s
 It sits next to the original library in `art/blender/`, which is untouched, so the two
 can be compared and either can be rebuilt.
 
-The game still loads rendered PNGs. Runtime contracts (frame sizes, atlas layouts,
-metadata fields, anchors, contact frame, motion-profile names, icon and structure
-canvases) match the original pipeline, so the remastered files are drop-in. One exception:
-units drawn large in battle (bosses, Siege Tower) render bigger masters and pack into
-envelope-cropped atlases so they stay as sharp as the regular roster. `density.py` decides
-which units qualify and at what scale; `build_units.py` and `pack.py` apply it automatically.
+The game still loads rendered PNGs. Metadata fields, anchors, motion-profile names, and icon
+and structure canvases match the original pipeline. Unit atlases differ: each clip's start and
+length is recorded in the unit's JSON (the clips themselves are longer, see below), and every
+unit renders a master large enough for about 4.5 atlas pixels per battle pixel (a battle pixel
+covers about 5 Retina pixels at the battle zoom), packed into an envelope-cropped atlas.
+`density.py` sets the scale per unit; `build_units.py` and `pack.py` apply it automatically.
+Bosses and the Siege Tower have so many large frames that the 4096 px atlas limit holds them
+to about 1.8–3; `pack.py` reports the density each unit reaches.
 
 ## What changed
 
@@ -18,10 +20,12 @@ which units qualify and at what scale; `build_units.py` and `pack.py` apply it a
 | Bodies | Boxes and spheres parented to empties | One sculpted, voxel-fused body per character, skinned to a real armature with anatomy-aware weights |
 | Faces | Spheres | Sculpted heads (brow, nose, jaw, cheekbones), conforming beards and hair, skulls with sockets, teeth and mandibles |
 | Kit | Shared archetype with recoloured parts | Per-unit designs from a parts library: 8 helmet types, hoods, crowns, mitres, antlers; plate, mail, brigandine, gambeson; tabards, capes on their own bone chains, robes, mantles; 20+ weapon and shield builders |
-| Rigs | Rigid joint hierarchy | Humanoid, quadruped (hound, horse, skeletal horse) and machine rigs; IK for two-handed weapons, bows and crossbows; mounted riders parented to the saddle |
-| Materials | Flat colour with noise | Procedural PBR with cavity darkening, worn edge highlights, painted top light, chainmail, enamel with chipped edges, wood grain, fur, flesh, bone, ember-cracked iron, gems and glass |
-| Animation | Generic swings | Stances per weapon family plus idle, walk (march / heavy / shamble / prowl / float), ten-frame attacks with contact on frame 4, hit, death (back / forward / crumble) and deploy |
-| Camera | 15° from side | 3/4 view (about 34° from side) so faces, heraldry and shields read; same world-to-screen scale as before |
+| Rigs | Rigid joint hierarchy | Humanoid, quadruped (hound, horse, skeletal horse) and machine rigs; IK for two-handed weapons, bows and crossbows; mounted riders bound at the origin, then parented to the saddle |
+| Materials | Flat colour with noise | Procedural PBR with cavity darkening, worn edge highlights, painted top light, cloth drape folds, creased leather, chainmail, enamel with chipped edges, wood grain, fur, mottled and veined flesh, bone, ember-cracked iron, gems and glass |
+| Anatomy | Straight limbs | Shaped arm and leg stations (deltoid, biceps, forearm, calf), horse legs with hock, fetlock and hooves, a hair tail; zombies with ribs and torn wounds laid on the skin; boots on soles that follow the foot |
+| Animation | Generic swings | Stances per weapon family plus a six-frame idle, an eight-frame walk (march / heavy / shamble / prowl / float), ten-frame attacks with contact on frame 4, hit, a death performance of its own for every unit (`roster/deaths.py`, solved by `rk/death.py`), deploy, and for ranged units a seven-frame close-quarters `melee` clip (contact on frame 3: kick, stock jab, staff strike, backhand, hammer smash or an engine's ram). Cleaving bosses that also shoot reuse their attack instead |
+| Projectiles | Coloured dots | Side-on lit sprites for every physical shot (arrow, crossbow bolt, ballista and bone bolts, harpoon, frost shard, flask, plague pot, firepot, cog, ghost skull, blight glob) from `build_projectiles.py`; the game flies them on arcs with trails, launch flashes and impacts (`scripts/combat/ProjectileStyles.cs`) |
+| Camera | 15° from side | The battle camera's own angle (22° above the ground plane), with each character turned 33.5° toward it so faces, heraldry and shields read, and deaths fall onto the same ground plane as the battlefield |
 
 ## Layout
 
@@ -36,12 +40,14 @@ which units qualify and at what scale; `build_units.py` and `pack.py` apply it a
 | `build_*.py` | One builder per category (see below) |
 | `pack.py` | Packs renders into runtime files under `artifacts/remaster/stage/`; `apply` copies PNG/JSON into `assets/` |
 | `compare.py`, `review_page.py`, `*_sheet.py`, `contact_sheets.py`, `review.py`, `ingame.py`, `sheet.py` | Comparison media, the review page and contact sheets (originals are read from git `HEAD`) |
-| `blend/` | Saved, editable `.blend` scenes for every asset (about 280 MB) |
+| `blend/` | Saved, editable `.blend` scenes for every asset (about 280 MB; gitignored, so only on the machine that rendered them) |
 
 ## Commands
 
 Run from the repository root. Every Blender builder takes `--ids all` or a comma-separated list, falls back to
 the CPU if the GPU runs out of memory (force it with `RK_DEVICE=CPU`), and writes to `artifacts/remaster/<category>/`.
+The exception is `build_projectiles.py`, which writes `assets/projectiles/` directly, so review its diff before
+committing. Backdrop renders are copied into `assets/world/backdrops/` by hand (see its README).
 
 ```sh
 # units: preview a few (subset of frames + portrait), then final renders + .blend sources
@@ -53,6 +59,8 @@ blender --background --factory-startup --python-exit-code 1 --python art/remaste
 # battle presentation bases (assets/structures/battle-v2: 1024x1024 + projected anchor/socket JSON)
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_battle_structures.py -- --ids all --samples 128
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_particles.py -- --ids all --samples 128
+# projectile sprites: written straight to assets/projectiles/ with projectiles.json (size, tip, centre, length, spin)
+blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_projectiles.py -- --ids all --samples 64
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_menus.py -- --ids all --samples 128
 blender --background --factory-startup --python-exit-code 1 --python art/remaster/build_battlefields.py -- --ids all --samples 128
 # zone battle backdrops: three parallax layers per zone (assets/world/backdrops)
@@ -85,5 +93,8 @@ Keys are neutral-warm because the game applies its own per-zone tint. Nothing th
 itself (units, battle-v2 structures, mounts) has a baked ground shadow.
 
 Conventions: characters face +X, their left is +Y, Z is up, ground is Z = 0; the battle
-camera sits on the -Y side. Pose rotations use the `LAT` axis (counter-clockwise as seen by
+camera sits on the -Y side. At render time `render_character` parents every root object to a
+`_Facing` empty yawed -33.5°, so recipes never rotate characters themselves. Riders and crews
+must be bound (`finalize_bones` + `bind`) before their rig is moved onto a mount, or their meshes
+stay behind at the build position. Pose rotations use the `LAT` axis (counter-clockwise as seen by
 the camera), `YAW` and `ROLL` from `rk/rig.py`.

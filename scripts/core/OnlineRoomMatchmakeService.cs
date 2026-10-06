@@ -177,7 +177,7 @@ public static class OnlineRoomMatchmakeService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room matchmaker ({_lastResult.ProviderDisplayName}):");
 		builder.AppendLine(_lastResult.Summary);
-		builder.AppendLine($"Room: {_lastResult.Room.Title}  |  Board: {_lastResult.Room.BoardCode}  |  Status: {_lastResult.Status}");
+		builder.AppendLine($"Room: {_lastResult.Room.Title} · Board: {_lastResult.Room.BoardCode} · Status: {_lastResult.Status}");
 		builder.Append($"Created new room: {(_lastResult.CreatedNewRoom ? "yes" : "no")}");
 		return builder.ToString();
 	}

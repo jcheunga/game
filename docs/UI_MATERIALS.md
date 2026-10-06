@@ -1,6 +1,6 @@
 # Shared UI materials
 
-The game UI now uses one native vector material library: dark, lightly grained
+The game UI uses one native vector material library: dark, lightly grained
 leather/steel faces, aged-brass edges, recessed wells, and enamel meter fills.
 The texture stays quiet behind text; primary actions use a warmer brass face.
 Selected buttons have a lower accent line as well as a depressed surface, and
@@ -13,7 +13,7 @@ keyboard focus has a separate bright outline.
 - `scripts/ui/shared/UiSurfaceStyle.cs` layers a tintable body and rim for cards
   and badges, preserving their existing selection/reward colours.
 - `scripts/combat/hud/BattleHudBar.cs` uses the shared meter track and fill for
-  courage and wave progress, including outlined values and high-contrast edges.
+  war wagon health and courage, including outlined values and high-contrast edges.
 
 Regenerate with `python3 art/ui/build_surfaces.py`, then let Godot import the SVGs.
 No external artwork, bitmap-generation service, shader, or SVG filter is needed.
@@ -31,14 +31,14 @@ ResourceLoader caches the imported textures; no textures are generated per frame
 The shared finish covers menu and battle panels, ordinary/primary/icon buttons,
 tabs, focus/hover/pressed/disabled states, selected cards, badges, input fields,
 drop-downs and popups, checks/radios, scrollbars, separators, tooltips, dialogs,
-progress bars, custom battle meters, the field minimap, boss banners, and
-placement/objective label backings. Existing illustrated icons,
-backgrounds, map tokens, and the previously textured unit health bars remain.
+progress bars, custom battle meters, boss entrance banners, spell-targeting
+labels and the dragged-card hint. Existing illustrated icons, battle backdrops,
+map tokens, and the textured unit health bars remain.
 
 Content padding and font sizing are retained. Mobile touch-button styling keeps
 the primary-action material instead of replacing it with the ordinary surface.
-No combat rules, touch targets, camera settings, or save progression are changed
-by this material pass. Platform-owned window chrome and development/debug UI are
+The materials change no combat rules, touch targets, camera settings, or save
+progression. Platform-owned window chrome and development/debug UI are
 outside the shared game theme.
 
 ## Verification
@@ -55,8 +55,9 @@ godot --path . --scene res://scenes/tests/MobilePresentationReview.tscn -- --sav
 The material review checks imports, visible grain, tile modes, retained padding,
 mobile primary styling, focus, and shared control styles. It also captures normal
 and high-contrast material sheets in `artifacts/ui-material-review/`.
-The full typography review visits 25 menus plus battle and their available tabs;
-screenshots and measured text/layout results are in `artifacts/typography/`.
+The full typography review visits the home screen, all 22 routed activities and
+battle, with their available tabs; screenshots and measured text/layout results
+are in `artifacts/typography/`.
 Phone-sized rendering is captured in `artifacts/mobile-review/`; it is desktop
 simulation, not a physical iOS/Android device certification.
 

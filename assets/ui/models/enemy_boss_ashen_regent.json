@@ -1,22 +1,22 @@
 {
-  "frameWidth": 376,
-  "frameHeight": 453,
-  "drawScale": 1.7794133236412095,
+  "frameWidth": 501,
+  "frameHeight": 610,
+  "drawScale": 1.759981683458906,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "enemy_boss_ashen_regent",
   "title": "Ashen Regent",
   "source": "art/remaster/units/enemy_boss_ashen_regent.py",
-  "anchorY": 0.772812,
-  "anchorX": 0.452297,
+  "anchorY": 0.747727,
+  "anchorX": 0.452627,
   "motion": {
     "revision": "remaster-v1",
     "profile": "royal-cleave",
     "body": [
       0.0,
-      -0.356025
+      -0.343053
     ],
     "contact": [
-      0.037763,
-      0.208505
+      0.038393,
+      0.238407
     ]
   },
-  "healthBarY": 0.709035
+  "healthBarY": 0.687933
 }

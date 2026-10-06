@@ -188,8 +188,8 @@ public static class CampaignPlanCatalog
             ? district.Title
             : "Full campaign target locked";
         return
-            $"Campaign buildout: {GetAuthoredDistrictCount()}/{GetTargetDistrictCount()} districts authored  |  " +
-            $"{GetAuthoredStageCount()}/{GetTargetStageCount()} stages playable  |  " +
+            $"Campaign buildout: {GetAuthoredDistrictCount()}/{GetTargetDistrictCount()} districts authored · " +
+            $"{GetAuthoredStageCount()}/{GetTargetStageCount()} stages playable · " +
             $"Next frontier: {nextFrontier}";
     }
 
@@ -202,8 +202,8 @@ public static class CampaignPlanCatalog
 
         var authoredStages = GetAuthoredStageCount(district.Id);
         return
-            $"Campaign line: district {district.Order}/{GetTargetDistrictCount()}  |  " +
-            $"Authored {authoredStages}/{district.StageTarget} stages  |  " +
+            $"Campaign line: district {district.Order}/{GetTargetDistrictCount()} · " +
+            $"Authored {authoredStages}/{district.StageTarget} stages · " +
             $"Target: {GetTargetStageCount()} total stages";
     }
 

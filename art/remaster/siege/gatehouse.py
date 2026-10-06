@@ -15,7 +15,6 @@ import random
 from mathutils import Matrix, Vector, noise
 
 from rk import core, geo, shaders as S, structures as ST, weapons as W
-from rk.heads import catmull
 from rk.structures import Batch, V
 
 from .wagon import conform

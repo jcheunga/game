@@ -306,7 +306,7 @@ public static class CampaignReadinessEvaluator
         }
 
         var builder = new StringBuilder();
-        builder.AppendLine($"{BuildInlineSummary(report)}  |  Doctrines {report.DoctrineSelections}/{Math.Max(1, report.DoctrineEligibleCount)} forged");
+        builder.AppendLine($"{BuildInlineSummary(report)} · Doctrines {report.DoctrineSelections}/{Math.Max(1, report.DoctrineEligibleCount)} forged");
         builder.AppendLine(report.Summary);
         if (report.Gaps.Count == 0)
         {

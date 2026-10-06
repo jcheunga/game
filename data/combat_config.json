@@ -1,24 +1,26 @@
 {
   "Combat": {
     "PlayerBaseX": 48.0,
-    "EnemyBaseX": 900.0,
+    "EnemyBaseX": 1152.0,
     "PlayerSpawnX": 70.0,
-    "EnemySpawnX": 878.0,
+    "EnemySpawnX": 1130.0,
 
     "BattlefieldLeft": 42.0,
-    "BattlefieldRight": 906.0,
+    "BattlefieldRight": 1158.0,
     "BattlefieldTop": 313.0,
     "BattlefieldBottom": 367.0,
     "SpawnVerticalPadding": 12.0,
 
     "BaseCoreRadius": 22.0,
     "BaseApproachDistance": 40.0,
-    "StructureScale": 0.51,
-    "ViewWidth": 474.0,
+    "StructureScale": 0.58,
+    "ViewWidth": 600.0,
 
     "CourageStart": 0.0,
     "CourageMax": 100.0,
     "CourageGainPerSecond": 3.0,
+    "RangedMeleeReach": 34.0,
+    "RangedMeleeDamageScale": 0.8,
 
     "InitialEnemySpawnDelay": 2.8,
     "EnemySpawnPressureTimeScale": 180.0,

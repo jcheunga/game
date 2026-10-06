@@ -102,8 +102,7 @@ public partial class BountyMenu : Control
         stack.AddChild(new HeraldicEmblem { Symbol = index == 0 ? "crown" : index == 1 ? "mountain" : "sword", CustomMinimumSize = new Vector2(78, 78), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
 
 		_titleLabels[index] = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		_titleLabels[index].AddThemeFontOverride("font", RealmUi.TitleFont);
-        _titleLabels[index].AddThemeFontSizeOverride("font_size", 24);
+		RealmUi.Display(_titleLabels[index], 24);
         _titleLabels[index].AutowrapMode = TextServer.AutowrapMode.WordSmart;
         stack.AddChild(_titleLabels[index]);
 
@@ -163,7 +162,7 @@ public partial class BountyMenu : Control
 		{
 			if (i >= bounties.Length)
 			{
-				_titleLabels[i].Text = "---";
+				RealmUi.SetDisplayText(_titleLabels[i], "No bounty");
 				_descLabels[i].Text = "";
 				_progressLabels[i].Text = "";
 				_progressBars[i].Value = 0;
@@ -177,7 +176,7 @@ public partial class BountyMenu : Control
 			var completed = gs.IsBountyCompleted(def.Id);
 			var reachedTarget = progress >= def.TargetCount;
 
-			_titleLabels[i].Text = def.Title;
+			RealmUi.SetDisplayText(_titleLabels[i], def.Title);
 			_descLabels[i].Text = def.Description;
 			_progressBars[i].MaxValue = def.TargetCount;
 			_progressBars[i].Value = Math.Min(progress, def.TargetCount);

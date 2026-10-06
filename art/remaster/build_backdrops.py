@@ -11,7 +11,6 @@ fog toward the sky's horizon colour and grades. Default out: artifacts/remaster/
 """
 import argparse
 import json
-import math
 import sys
 import time
 import traceback
@@ -36,16 +35,16 @@ ORDER = ('far', 'mid', 'near')
 def make_layer(name, overrides, scale):
     o = dict(overrides.get(name, {}))
     if name == 'far':
-        a = dict(parallax=0.15, horizon=246.0, gy0=-150.0, gy1=332.0, res_x=2560, fov=40.0, cam_h=10.0)
+        a = dict(parallax=0.15, horizon=246.0, gy0=-150.0, gy1=332.0, res_x=3200, fov=40.0, cam_h=10.0)
         a.update(o)
         a['res_x'] = int(a['res_x'] * scale)
         return F.Persp('far', **a)
     if name == 'mid':
-        a = dict(parallax=0.45, pitch=10.0, line=298.0, gy0=100.0, gy1=346.0, res_x=3072)
+        a = dict(parallax=0.45, pitch=10.0, line=298.0, gy0=100.0, gy1=346.0, res_x=3840)
         a.update(o)
         a['res_x'] = int(a['res_x'] * scale)
         return F.Ortho('mid', **a)
-    a = dict(res_x=4096)
+    a = dict(res_x=5120)
     a.update(o)
     a['res_x'] = int(a['res_x'] * scale)
     return F.Near(**a)
@@ -213,7 +212,7 @@ def horizon_color(L, raw, fallback):
 
 
 # ------------------------------------------------------------------ previews (game framing, numpy only)
-DESKTOP = dict(size=(1280, 720), zoom=1280 / 474.0, band_row=92 + 0.73 * (720 - 168 - 92))
+DESKTOP = dict(size=(1280, 720), zoom=1280 / F.combat()['ViewWidth'], band_row=92 + 0.73 * (720 - 168 - 92))
 
 
 def composite(layers, cx, frame=DESKTOP, scale=0.5):

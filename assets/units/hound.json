@@ -1,35 +1,35 @@
 {
   "frameWidth": 192,
   "frameHeight": 240,
-  "drawScale": 1.9087520815570902,
+  "drawScale": 1.9396850411195932,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "dust",
       "motion": "hound-fall",
       "impactPoint": [
-        -0.007296,
-        -0.002017
+        -0.007184,
+        -0.002746
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "player_hound",
   "title": "War Hound",
   "source": "art/remaster/units/player_hound.py",
-  "anchorY": 0.6819541454315186,
-  "anchorX": 0.462567,
+  "anchorY": 0.6775451302528381,
+  "anchorX": 0.45581,
   "motion": {
     "revision": "remaster-v1",
     "profile": "pounce",
     "body": [
       0.0,
-      -0.178681
+      -0.169351
     ],
     "contact": [
-      0.399823,
-      -0.308342
+      0.393586,
+      -0.268555
     ]
   },
-  "healthBarY": 0.306954
+  "healthBarY": 0.283795
 }

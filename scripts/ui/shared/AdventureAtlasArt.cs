@@ -1,4 +1,3 @@
-using System;
 using Godot;
 
 /// <summary>Painted map materials and fitted scenery regions, shared across all zone themes.</summary>

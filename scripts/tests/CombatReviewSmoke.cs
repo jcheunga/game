@@ -71,6 +71,7 @@ public partial class CombatReviewSmoke : Node
             else if (args.Contains("--base-weapons")) await CheckBaseWeapons();
             else if (args.Contains("--economy-export")) ExportProgressionEconomy();
             else if (args.Contains("--regressions")) await Regressions();
+            else if (args.Contains("--projectile-gallery") || args.Contains("--melee-gallery")) await ProjectileGallery();
             else
             {
                 var selected = args.FirstOrDefault(x => x.StartsWith("--stages="))?.Split('=')[1];
@@ -180,6 +181,7 @@ public partial class CombatReviewSmoke : Node
         archer.Position = new Vector2(caster.Position.X - archer.AggroRangeX + 10f, 340);
         Check(ReferenceEquals(Invoke(battle, "FindClosestEnemy", archer), caster), "Ranged troops retain support targeting");
         await CloseBattle(battle);
+        await CheckRangedMelee();
 
         battle = await OpenBattle(64);
         archer = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_shooter")),
@@ -212,6 +214,95 @@ public partial class CombatReviewSmoke : Node
         await CloseBattle(battle);
         await CheckBattleLanes();
         await CheckCouragePacing();
+    }
+
+    // Review captures of every shot in flight: each ranged unit fires at a pinned target across the band.
+    private async Task ProjectileGallery()
+    {
+        if (DisplayServer.GetName() == "headless")
+        {
+            Check(false, "The projectile gallery captures frames, so it needs a window (drop --headless)");
+            return;
+        }
+        var shooters = GameData.GetPlayerUnits().Concat(GameData.GetEnemyUnits())
+            .Where(def => def.UsesProjectile).Select(def => def.Id).ToArray();
+        var dir = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--melee-gallery")
+            ? "res://artifacts/melee-review" : "res://artifacts/projectile-review");
+        System.IO.Directory.CreateDirectory(dir);
+        var rows = new[] { 318f, 331f, 344f, 357f };
+        for (var group = 0; group * 4 < shooters.Length; group++)
+        {
+            var battle = await OpenBattle(1);
+            var units = new List<Unit>();
+            var pins = new List<(Unit unit, Vector2 at)>();
+            var ids = shooters.Skip(group * 4).Take(4).ToArray();
+            for (var i = 0; i < ids.Length; i++)
+            {
+                var def = GameData.GetUnit(ids[i]);
+                var player = ids[i].StartsWith("player_");
+                var x = 470f + (i % 2) * 18f;
+                // --melee-gallery puts every target at arm's length, for the ranged units' close-quarters strikes.
+                var range = OS.GetCmdlineUserArgs().Contains("--melee-gallery") ? 24f : Mathf.Min(def.AttackRange - 4f, 150f);
+                var shooter = (Unit)Invoke(battle, "SpawnUnit", player ? Team.Player : Team.Enemy, new UnitStats(def),
+                    new Vector2(player ? x : x + range, rows[i]));
+                var target = (Unit)Invoke(battle, "SpawnUnit", player ? Team.Enemy : Team.Player,
+                    new UnitStats(GameData.GetUnit(player ? "enemy_walker" : "player_brawler")), new Vector2(player ? x + range : x, rows[i]));
+                target.ApplyTemporaryDefenseModifier(0.01f, 600f);
+                shooter.ApplyTemporaryDefenseModifier(0.01f, 600f);
+                units.Add(shooter);
+                pins.Add((target, target.Position));
+                pins.Add((shooter, shooter.Position));
+            }
+            Invoke(battle, "SetBattleCameraX", 540f);
+            for (var frame = 0; frame < 96; frame++)
+            {
+                Invoke(battle, "SimulateUnits", 1f / 60);
+                foreach (var (unit, at) in pins) unit.Position = at;
+                await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+                if (frame % 8 == 0)
+                    GD.Print($"PROJECTILE_GALLERY frame {frame}: {battle.GetChildren().OfType<Projectile>().Count(p => p.Visible)} in flight, " +
+                        string.Join(" ", units.Select(u => $"{u.DefinitionId}:{(u.IsAttackCommitted ? (u.IsMeleeStrike ? "melee" : "shoot") : "-")}")));
+                if (frame % 3 == 2)
+                {
+                    await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    GetViewport().GetTexture().GetImage().SavePng($"{dir}/group{group}-f{frame:000}.png");
+                }
+            }
+            GD.Print($"PROJECTILE_GALLERY group {group}: {string.Join(", ", ids)}");
+            await CloseBattle(battle);
+        }
+    }
+
+    // Ranged units on either side fight hand to hand when an enemy is inside melee reach, and shoot otherwise.
+    private async Task CheckRangedMelee()
+    {
+        foreach (var (rangedId, rangedTeam, foeId) in new[] { ("player_shooter", Team.Player, "enemy_walker"),
+                                                              ("enemy_spitter", Team.Enemy, "player_brawler") })
+        {
+            var battle = await OpenBattle(1);
+            var foeTeam = rangedTeam == Team.Player ? Team.Enemy : Team.Player;
+            var ranged = (Unit)Invoke(battle, "SpawnUnit", rangedTeam, new UnitStats(GameData.GetUnit(rangedId)), new Vector2(600, 340));
+            var side = rangedTeam == Team.Player ? 1f : -1f;
+            var foe = (Unit)Invoke(battle, "SpawnUnit", foeTeam, new UnitStats(GameData.GetUnit(foeId)), new Vector2(600 + side * 22f, 340));
+            Check(ranged.InMeleeReach(foe), $"{rangedId}: an enemy at arm's length is inside melee reach");
+            var projectiles = battle.GetChildren().OfType<Projectile>().Count(p => p.Visible);
+            Invoke(battle, "SimulateUnits", 1f / 60);
+            Check(ranged.IsAttackCommitted && ranged.IsMeleeStrike, $"{rangedId}: strikes in melee instead of shooting point-blank");
+            var health = foe.Health;
+            for (var i = 0; i < 90 && foe.Health >= health && !foe.IsDead; i++) Invoke(battle, "SimulateUnits", 1f / 60);
+            Check(foe.Health < health, $"{rangedId}: the melee strike lands");
+            Check(battle.GetChildren().OfType<Projectile>().Count(p => p.Visible) == projectiles, $"{rangedId}: no projectile is fired in melee");
+            await CloseBattle(battle);
+
+            battle = await OpenBattle(1);
+            ranged = (Unit)Invoke(battle, "SpawnUnit", rangedTeam, new UnitStats(GameData.GetUnit(rangedId)), new Vector2(600, 340));
+            foe = (Unit)Invoke(battle, "SpawnUnit", foeTeam, new UnitStats(GameData.GetUnit(foeId)),
+                new Vector2(600 + side * (ranged.AttackRange - 6f), 340));
+            Check(!ranged.InMeleeReach(foe), $"{rangedId}: an enemy at shooting range is outside melee reach");
+            Invoke(battle, "SimulateUnits", 1f / 60);
+            Check(ranged.IsAttackCommitted && !ranged.IsMeleeStrike, $"{rangedId}: shoots at range");
+            await CloseBattle(battle);
+        }
     }
 
     private async Task CheckCouragePacing()
@@ -336,6 +427,11 @@ public partial class CombatReviewSmoke : Node
         var handoffAt = handoffArg == null ? float.PositiveInfinity : float.Parse(handoffArg.Split('=')[1], System.Globalization.CultureInfo.InvariantCulture);
         var bosses = new HashSet<string>();
         var snapshotTaken = false;
+        var shotArg = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--shot-every="));
+        var shotEvery = shotArg == null || DisplayServer.GetName() == "headless" ? 0f
+            : float.Parse(shotArg["--shot-every=".Length..], System.Globalization.CultureInfo.InvariantCulture);
+        if (shotEvery > 0) System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts/combat-review"));
+        var nextShot = shotEvery;
         var peak = 0;
         var firstContact = -1f;
         var firstGateDamage = -1f;
@@ -419,6 +515,13 @@ public partial class CombatReviewSmoke : Node
             gateCrowd = Math.Max(gateCrowd, atGate);
             if (firstContact < 0 && tick % 30 == 0 && units.Any(p => !p.IsDead && p.Team == Team.Player &&
                 units.Any(e => !e.IsDead && e.Team == Team.Enemy && p.Position.DistanceTo(e.Position) < 180))) firstContact = elapsed;
+            // --shot-every=S: a frame every S seconds, for reviewing unit art and deaths in play.
+            if (shotEvery > 0 && elapsed >= nextShot)
+            {
+                await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://artifacts/combat-review/stage-{stage}-t{elapsed:000}.png"));
+                nextShot += shotEvery;
+            }
             if (!snapshotTaken && OS.GetCmdlineUserArgs().Contains("--screenshots") &&
                 (Read<Dictionary<Unit, float>>(battle, "_pendingBossPhases").Count > 0 || Read<float>(battle, "_elapsed") > 55))
             {

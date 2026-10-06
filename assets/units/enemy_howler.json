@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 3.034862376147916,
+  "frameWidth": 343,
+  "frameHeight": 363,
+  "drawScale": 2.3550963460989163,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "bones",
       "motion": "crumple",
       "impactPoint": [
-        0.045375,
-        0.003416
+        0.058483,
+        0.007184
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_howler",
   "title": "Dread Herald",
   "source": "art/remaster/units/enemy_howler.py",
-  "anchorY": 0.7050673961639404,
-  "anchorX": 0.476457,
+  "anchorY": 0.778259,
+  "anchorX": 0.358945,
   "motion": {
     "revision": "remaster-v1",
     "profile": "staff-strike",
     "body": [
-      -0.0,
-      -0.206634
+      0.0,
+      -0.302916
     ],
     "contact": [
-      0.457145,
-      -0.202374
+      0.589276,
+      -0.259937
     ]
   },
-  "healthBarY": 0.480067
+  "healthBarY": 0.684194
 }

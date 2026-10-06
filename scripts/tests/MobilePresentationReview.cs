@@ -222,9 +222,10 @@ public partial class MobilePresentationReview : Node
         foreach(var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
         {
             var source=UnitSpriteLoader.LoadOwnedPreview(id);
-            // Hi-res units (bosses, Siege Tower) preview their sharper, cropped battle frames.
+            // Envelope-cropped units preview their sharper battle frames; only legacy 192x240 atlases keep
+            // separate 256x320 preview masters.
             var battle=UnitSpriteLoader.TryLoad(GameData.GetUnit(id).VisualClass,id);
-            var hires=battle!=null && battle.FrameWidth>192;
+            var hires=battle!=null && !(battle.FrameWidth==192 && battle.FrameHeight==240);
             Check(source!=null && source.Animations.Count==3 && (hires
                 ? source.FrameWidth==battle.FrameWidth && source.FrameHeight==battle.FrameHeight
                 : source.FrameWidth==256 && source.FrameHeight==320),
@@ -323,12 +324,12 @@ public partial class MobilePresentationReview : Node
         var emitters=new[] {
             BattleParticles.SpawnImpactSparks(host,p,color,20), BattleParticles.SpawnDeployBurst(host,p,color),
             BattleParticles.SpawnDeathBurst(host,p,color,false), BattleParticles.SpawnDeathBurst(host,p,color,true),
-            BattleParticles.SpawnProjectileTrail(host,color), BattleParticles.SpawnBaseHitDebris(host,p,color),
-            BattleParticles.SpawnFireballParticles(host,p,color,100), BattleParticles.SpawnHealSparkles(host,p,color,100),
+            BattleParticles.SpawnBaseHitDebris(host,p,color),
+            BattleParticles.SpawnFireballParticles(host,p,100), BattleParticles.SpawnHealSparkles(host,p,color,100),
             BattleParticles.SpawnFrostParticles(host,p,color,100), BattleParticles.SpawnLightningParticles(host,p,color),
-            BattleParticles.SpawnWardParticles(host,p,color,100), BattleParticles.SpawnStoneBarricadeParticles(host,p,color,100),
-            BattleParticles.SpawnWarCryParticles(host,p,color,100), BattleParticles.SpawnEarthquakeParticles(host,p,color,100),
-            BattleParticles.SpawnPolymorphParticles(host,p,color), BattleParticles.SpawnResurrectParticles(host,p,color),
+            BattleParticles.SpawnWardParticles(host,p,color,100), BattleParticles.SpawnStoneBarricadeParticles(host,p,100),
+            BattleParticles.SpawnWarCryParticles(host,p,100), BattleParticles.SpawnEarthquakeParticles(host,p,100),
+            BattleParticles.SpawnPolymorphParticles(host,p), BattleParticles.SpawnResurrectParticles(host,p),
             BattleParticles.SpawnBossSpawnBurst(host,p,color)
         };
         foreach(var emitter in emitters)

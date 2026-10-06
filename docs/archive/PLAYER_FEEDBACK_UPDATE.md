@@ -16,14 +16,7 @@ Account sign-in
 
 The title and Settings contain an Account entry. Email uses a six-digit one-time code with a ten-minute lifetime and five attempts; Google uses browser authorization with PKCE, a random state, and a separate device poll secret. Account identities and challenges persist in the shared database. The client registers an offline guest before first sign-in; the server links that guest only with a valid session. New identities retain local guest progress. Email and Google identities are separate unless explicitly linked from the authenticated account. Verified Google subjects identify Google accounts; email addresses do not silently merge accounts. Sign-out revokes the current server session when online.
 
-To enable live sign-in:
-
-1. Set the game's HTTPS API origin, or the local development server endpoint in Settings → Payments → Apply Endpoint.
-2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`, `SMTP_PASSWORD` for email delivery with TLS.
-3. Create a Google OAuth **Web application** client. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` on the server. Register that exact HTTPS callback URI, ending in `/auth/google/callback`, with Google. Local callbacks may use loopback HTTP.
-4. Restart the server. `/auth/providers` reports which sign-in methods are configured. Buttons are disabled when their provider is unavailable.
-
-Provider credentials are not included. Live email delivery and Google's consent flow require the configured services and a manual device check. The server exchanges the authorization code directly with Google and fetches the verified identity from its authenticated userinfo endpoint, following [Google's OpenID Connect flow](https://developers.google.com/identity/openid-connect/openid-connect).
+Setup steps for live sign-in now live in [Deployment · account sign-in](../DEPLOYMENT.md#account-sign-in).
 
 Before switching accounts, the game downloads the selected account's cloud save, when available, then saves current local progress to `user://account-backups/` before changing identity. A failed download leaves the current account intact. Account labels and session secrets are excluded from cloud save payloads. Cloud upload remains available in Settings; this update does not add automatic uploads. Backup files are local and include the device session, so handle them like ordinary private game saves.
 

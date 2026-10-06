@@ -1,6 +1,6 @@
 # Restrained, shared hit reactions
 
-Normal melee and projectile hits no longer offset either combatant's simulation
+Normal melee and projectile hits do not offset either combatant's simulation
 position. Each attack still resolves its own damage at the authored contact
 frame, with the existing range, lifetime and death guards. This lets multiple
 fighters hit a shared target without earlier hits shoving it beyond later
@@ -17,14 +17,14 @@ one even under sustained fire or long presentation frames.
 The rendered translation is capped at 1.1 world pixels and the rotation at
 0.022 radians (about 1.3 degrees); normal hits are substantially below those
 caps. Damage influences strength, heavy target classes resist the reaction, and
-ranged impacts use a smaller weight. The old authored full-body Hit clip stays
-in the asset files but is no longer selected for routine damage. Idle, walking
+ranged impacts use a smaller weight. The authored Hit clip stays in the unit
+atlases but is not played for routine damage. Idle, walking
 and committed attack poses keep playing under the flinch. There is no hit stun
 or attack cancellation added by this presentation layer.
 
-Hit flashes and impact rings are shorter and smaller; mobile floating text keeps
-its HUD-sized scale as the camera zoom changes, instead of growing over the
-models. View-only mode also suppresses the deployment preview overlay.
+Hit flashes and impact rings are short and small. Combat numbers keep a steady
+on-screen size as the camera zoom changes (HUD-sized on phones), so they do not
+grow over the models. View-only mode also suppresses the spell targeting preview.
 Routine hits below 24 applied damage
 do not shake the battlefield; heavier impacts use a capped 0.65-pixel melee or
 0.35-pixel ranged accent. The existing brief movement slow remains. Reduced

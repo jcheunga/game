@@ -1,7 +1,7 @@
 """Shared recipe helpers: head placement, kits and the standard render options."""
 from mathutils import Vector
 
-from rk import anim, armor as A, heads as H, weapons as W
+from rk import anim, armor as A
 
 
 def head_frame(ch, size=1.0):
@@ -55,7 +55,8 @@ def finish(ch, stance, profile, *, gait='march', heavy=1.0, low_strike=False, de
     if release:
         ch.add_prop('nocked', release, None)
     clips = anim.all_clips(stance, profile, gait=gait, heavy=heavy, low_strike=low_strike, death=death,
-                           attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish)
+                           attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish,
+                           melee=_is_ranged(ch.ident))
     ch.key_clips(clips, release=release)
     return dict(profile=profile, portrait_cfg=portrait or {}, body_z=body_z, min_scale=min_scale, cam_target_z=cam_z)
 
@@ -89,6 +90,13 @@ def legacy_profile(spec):
 _SPECS = None
 
 
+def _is_ranged(ident):
+    try:
+        return bool(spec_of(ident).get('UsesProjectile'))
+    except KeyError:
+        return False
+
+
 def spec_of(ident):
     global _SPECS
     if _SPECS is None:
@@ -112,14 +120,17 @@ def finish_clips(ch, clips, profile, release=None, body_z=None, min_scale=3.6, c
     from .deaths import DEATHS
     ch.finalize_bones()
     ch.bind()
+    # Bind crews while the mount is still at rest: keying its clips leaves it posed. Riders arrive already bound.
+    for comp, *_ in companions:
+        if not comp.bound:
+            comp.finalize_bones()
+            comp.bind()
     if release:
         ch.add_prop('nocked', release, None)
     if ch.ident in DEATHS:
         clips = dict(clips, death=performance(stance or {}, DEATHS[ch.ident]))
     ch.key_clips(clips, release=release)
     for comp, comp_clips, *rest in companions:
-        comp.finalize_bones()
-        comp.bind()
         if comp.ident in DEATHS:
             comp_clips = dict(comp_clips, death=performance(rest[0] if rest else {}, DEATHS[comp.ident]))
         comp.key_clips(comp_clips)

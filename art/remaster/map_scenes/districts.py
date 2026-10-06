@@ -2,13 +2,11 @@
 import math
 import random
 
-from mathutils import Vector
-
 from rk import arch, env
 from rk import dressing as P
 from rk.palette import LANTERN_TEAL, PLAGUE, ROT_CRIMSON
 
-from menu_scenes.common import dusk, golden, night
+from menu_scenes.common import golden
 
 from battle_scenes import kit as K
 

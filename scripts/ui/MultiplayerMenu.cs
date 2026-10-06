@@ -1911,8 +1911,8 @@ public partial class MultiplayerMenu : Control
         }
 
         var suffix = includeCode
-            ? $" | {record.Code}"
-            : $" | {record.StarsEarned}/3 stars | {record.EnemyDefeats} defeats";
+            ? $" · {record.Code}"
+            : $" · {record.StarsEarned}/3 stars · {record.EnemyDefeats} defeats";
         var rawScore = Math.Max(0, record.RawScore);
         if (rawScore == 0)
         {
@@ -1923,7 +1923,7 @@ public partial class MultiplayerMenu : Control
         var hullPercent = Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f);
         var deckMode = record.UsedLockedDeck ? "Locked deck" : "Player deck";
         return
-            $"{stamp} | {outcome} | {record.Score} pts | {medal} | {record.ElapsedSeconds:0.0}s{suffix}\n" +
-            $"  Raw {rawScore} x{multiplier:0.##} | Hull {hullPercent}% | Deploys {record.PlayerDeployments} | {deckMode}";
+            $"{stamp} · {outcome} · {record.Score} pts · {medal} · {record.ElapsedSeconds:0.0}s{suffix}\n" +
+            $"  Raw {rawScore} x{multiplier:0.##} · Hull {hullPercent}% · Deploys {record.PlayerDeployments} · {deckMode}";
     }
 }

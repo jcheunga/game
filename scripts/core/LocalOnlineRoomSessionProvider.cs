@@ -48,18 +48,18 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				? "joined and ready"
 				: "joined, standing by";
 		var localMonitor = !localSeatActive
-			? $"{localCallsign}  |  spectating  |  {ticket.SeatLabel}"
+			? $"{localCallsign} · spectating · {ticket.SeatLabel}"
 			: roundComplete && submittedCallsigns.Contains(localCallsign, StringComparer.OrdinalIgnoreCase)
 				? BuildSubmittedMonitorText(localCallsign, rankedEntries)
 			: raceLive && localTelemetry != null
-				? $"{localCallsign}  |  racing  |  {localTelemetry.ElapsedDeciseconds / 10f:0.0}s  |  Hull {localTelemetry.HullPercent}%  |  Defeats {localTelemetry.EnemyDefeats}"
+				? $"{localCallsign} · racing · {localTelemetry.ElapsedDeciseconds / 10f:0.0}s · Hull {localTelemetry.HullPercent}% · Defeats {localTelemetry.EnemyDefeats}"
 			: roundComplete
-				? $"{localCallsign}  |  prep  |  rematch standby"
+				? $"{localCallsign} · prep · rematch standby"
 			: roundLaunched
-				? $"{localCallsign}  |  loading  |  round launch"
+				? $"{localCallsign} · loading · round launch"
 			: localSeatIsHost
-				? $"{localCallsign}  |  prep  |  {(localReady ? "ready" : "host")}  |  host"
-			: $"{localCallsign}  |  prep  |  {(localReady ? "ready" : "not ready")}";
+				? $"{localCallsign} · prep · {(localReady ? "ready" : "host")} · host"
+			: $"{localCallsign} · prep · {(localReady ? "ready" : "not ready")}";
 		var peerSnapshots = localSeatIsHost
 			? BuildHostPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries)
 			: BuildJoinedPeerSnapshots(ticket, localCallsign, localSeatActive, localReady, localPresence, localMonitor, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries);
@@ -137,8 +137,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = localPresence,
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
-					? $"{localCallsign}  |  locked squad"
-					: $"{localCallsign}  |  player squad"
+					? $"{localCallsign} · locked squad"
+					: $"{localCallsign} · player squad"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -159,8 +159,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
-					? "IronBell  |  locked squad"
-					: "IronBell  |  Swordsman, Archer, Shield Knight"
+					? "IronBell · locked squad"
+					: "IronBell · Swordsman, Archer, Shield Knight"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -181,8 +181,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
-					? "Northgate  |  locked squad"
-					: "Northgate  |  Cavalry Rider, Crossbowman, Shield Knight"
+					? "Northgate · locked squad"
+					: "Northgate · Cavalry Rider, Crossbowman, Shield Knight"
 			}
 		];
 	}
@@ -222,8 +222,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = ResolveRemotePresenceText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				MonitorText = ResolveRemoteMonitorText("IronBell", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, true),
 				DeckText = ticket.UsesLockedDeck
-					? "IronBell  |  locked squad"
-					: "IronBell  |  Swordsman, Archer, Shield Knight"
+					? "IronBell · locked squad"
+					: "IronBell · Swordsman, Archer, Shield Knight"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -244,8 +244,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = localPresence,
 				MonitorText = localMonitor,
 				DeckText = ticket.UsesLockedDeck
-					? $"{localCallsign}  |  locked squad"
-					: $"{localCallsign}  |  player squad"
+					? $"{localCallsign} · locked squad"
+					: $"{localCallsign} · player squad"
 			},
 			new MultiplayerRoomPeerSnapshot
 			{
@@ -266,8 +266,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 				PresenceText = ResolveRemotePresenceText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				MonitorText = ResolveRemoteMonitorText("Northgate", ticket, roundLaunched, raceLive, roundComplete, submittedCallsigns, telemetrySnapshots, rankedEntries, false),
 				DeckText = ticket.UsesLockedDeck
-					? "Northgate  |  locked squad"
-					: "Northgate  |  Cavalry Rider, Crossbowman, Shield Knight"
+					? "Northgate · locked squad"
+					: "Northgate · Cavalry Rider, Crossbowman, Shield Knight"
 			}
 		];
 	}
@@ -360,19 +360,19 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 
 		if (roundLaunched)
 		{
-			return $"{callsign}  |  loading  |  round launch";
+			return $"{callsign} · loading · round launch";
 		}
 
 		if (ticket.UsesLockedDeck)
 		{
 			return isHost
-				? $"{callsign}  |  prep  |  ready on locked squad"
-				: $"{callsign}  |  prep  |  ready on locked squad";
+				? $"{callsign} · prep · ready on locked squad"
+				: $"{callsign} · prep · ready on locked squad";
 		}
 
 		return isHost
-			? $"{callsign}  |  prep  |  ready"
-			: $"{callsign}  |  prep  |  waiting on ready";
+			? $"{callsign} · prep · ready"
+			: $"{callsign} · prep · waiting on ready";
 	}
 
 	private static string BuildRacingPresenceText(string callsign, IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
@@ -387,8 +387,8 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 	{
 		var telemetry = telemetrySnapshots.FirstOrDefault(snapshot => snapshot.PlayerCallsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
 		return telemetry == null
-			? $"{callsign}  |  racing  |  live room telemetry"
-			: $"{callsign}  |  racing  |  {telemetry.ElapsedDeciseconds / 10f:0.0}s  |  Hull {telemetry.HullPercent}%  |  Defeats {telemetry.EnemyDefeats}";
+			? $"{callsign} · racing · live room telemetry"
+			: $"{callsign} · racing · {telemetry.ElapsedDeciseconds / 10f:0.0}s · Hull {telemetry.HullPercent}% · Defeats {telemetry.EnemyDefeats}";
 	}
 
 	private static float FindTelemetrySeconds(string callsign, IReadOnlyList<LocalOnlineRoomStubState.TelemetrySnapshot> telemetrySnapshots)
@@ -423,10 +423,10 @@ public sealed class LocalOnlineRoomSessionProvider : IOnlineRoomSessionProvider
 	{
 		var entry = FindSubmittedEntry(callsign, rankedEntries);
 		return entry == null
-			? $"{callsign}  |  submitted  |  awaiting rematch"
+			? $"{callsign} · submitted · awaiting rematch"
 			: entry.Rank > 0
-				? $"{callsign}  |  submitted  |  #{entry.Rank}  |  {entry.Score} pts"
-				: $"{callsign}  |  submitted  |  {entry.Score} pts";
+				? $"{callsign} · submitted · #{entry.Rank} · {entry.Score} pts"
+				: $"{callsign} · submitted · {entry.Score} pts";
 	}
 
 	private static int FindSubmittedScore(string callsign, IReadOnlyList<OnlineRoomScoreboardEntry> rankedEntries)

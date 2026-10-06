@@ -4,14 +4,13 @@ python3 art/remaster/pack.py stage            # build artifacts/remaster/stage/a
 python3 art/remaster/pack.py apply            # copy the staged files over assets/ (review first!)
 python3 art/remaster/pack.py stage --only units,items
 
-Runtime contracts are identical to art/blender/pack_assets.py: 192x240 battle frames
-in an 8-column atlas, 256x320 model-viewer frames in a 5-column atlas, 256 px unit
-icons, 512 px Codex portraits, shared visual-class fallbacks and Codex aliases.
-
-Units drawn large in battle (bosses, Siege Tower; see density.py) are the exception: their
-larger masters are cropped to the animation envelope and packed at TARGET_DENSITY, so frame
-size, column count, drawScale and the normalised anchors differ per unit. The game reads all
-of these from the JSON.
+Runtime contracts follow art/blender/pack_assets.py: 256 px unit icons, 512 px Codex
+portraits, shared visual-class fallbacks and Codex aliases. Unit atlases differ (see
+density.py): large masters are cropped to the animation envelope and packed at
+TARGET_DENSITY, or as close as the atlas limit allows, so frame size, column count,
+drawScale and the normalised anchors vary per unit. The game reads all of these from the
+JSON, and the model viewer reuses the cropped battle frames. Units that still qualify for
+the legacy layout get 192x240 frames in an 8-column atlas.
 """
 import argparse
 import json
@@ -78,7 +77,8 @@ def atlas_columns(count, w, h, limit=density.MAX_ATLAS):
 
 
 def hires_frames(unit, meta, frames, envelope):
-    """Crop to the animation envelope and resample to TARGET_DENSITY; returns frames and metadata."""
+    """Crop to the animation envelope and resample to TARGET_DENSITY (less if the atlas limit forces it);
+    returns frames, metadata, column count and the density reached."""
     sw, sh = meta['frameWidth'], meta['frameHeight']
     x0, y0, x1, y1 = envelope
     scale = density.TARGET_DENSITY * density.frame_canvas_width(unit, meta['drawScale']) / sw
@@ -114,7 +114,8 @@ def hires_frames(unit, meta, frames, envelope):
                   anchorX=round((meta['anchorX'] * sw - bx) / bw, 6),
                   anchorY=round((meta['anchorY'] * sh - by) / bh, 6),
                   healthBarY=round(meta['healthBarY'] * sh / bh, 6), motion=motion, animations=animations)
-    return out, packed, cols
+    reached = scale * sw / density.frame_canvas_width(unit, meta['drawScale'])
+    return out, packed, cols, reached
 
 
 def pack_units():
@@ -143,10 +144,12 @@ def pack_units():
                                                         max(envelope[2], bounds[2]), max(envelope[3], bounds[3]))
             frames.append(frame)
         if density.needs_hires(u, meta['drawScale']):
-            cells, out, cols = hires_frames(u, meta, frames, envelope)
+            cells, out, cols, reached = hires_frames(u, meta, frames, envelope)
             w, h = out['frameWidth'], out['frameHeight']
+            if reached < density.TARGET_DENSITY - 0.05:
+                print(f'NOTE {ident}: the {density.MAX_ATLAS} px atlas limit holds it to density {reached:.2f}')
             hires[ident] = {'frame': [w, h], 'columns': cols, 'master': [sw, sh],
-                            'density': round(density.TARGET_DENSITY, 2),
+                            'density': round(reached, 2),
                             'was': round(density.standard_density(u, meta['drawScale']), 2)}
         else:
             w, h, cols = *density.STANDARD_FRAME, 8

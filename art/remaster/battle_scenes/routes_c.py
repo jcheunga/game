@@ -3,11 +3,10 @@ Crownfall Citadel (bridgefort, breachyard, innerkeep) battlefield fallbacks."""
 import math
 import random
 
-from rk import arch, env, geo
+from rk import arch, env
 from rk import dressing as P
-from rk.palette import LANTERN_TEAL, PLAGUE, ROT_CRIMSON
 
-from menu_scenes.common import golden, night, rocks, trees, tufts
+from menu_scenes.common import golden, trees, tufts
 
 from . import kit as K
 from .common import BF, back_band, field_height, ground, row, scatter_front, shafts

@@ -48,7 +48,7 @@ public partial class AchievementsPanel : VBoxContainer
             var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 10); cap.AddChild(row);
             row.AddChild(new TextureRect { Texture = HomeMapArt.Icon(entry.Category.ToLowerInvariant() switch { "campaign" => "star", "combat" => "sword", "endless" => "flame", "collection" => "book", _ => "hammer" }), CustomMinimumSize = new Vector2(42,42), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Modulate = done ? Colors.White : new Color(.7f,.75f,.74f) });
             var title = RealmUi.Heading(entry.Title, 18); title.VerticalAlignment = VerticalAlignment.Center; row.AddChild(title);
-            title.AddThemeFontOverride("font", ModalUi.HeadingFont); title.AddThemeColorOverride("font_color", done ? new Color("ffe3a1") : ModalUi.Cream);
+            title.AddThemeColorOverride("font_color", done ? new Color("ffe3a1") : ModalUi.Cream);
             var description = RealmUi.Label(entry.Description, 18, true); description.AddThemeFontSizeOverride("font_size", 18); description.SizeFlagsVertical = SizeFlags.ExpandFill; stack.AddChild(description);
             var (value, target) = Progress(entry.Id);
             var progress = new ProgressBar { MaxValue = target, Value = done ? target : value, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 8) }; ModalUi.StyleProgress(progress, done ? new Color("8dd274") : accent.Lightened(.25f)); stack.AddChild(progress);

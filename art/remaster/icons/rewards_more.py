@@ -4,13 +4,11 @@ import random
 
 import bpy
 
-from mathutils import Vector
-
-from rk import geo, weapons as W, heads
+from rk import geo, weapons as W
 from rk import shaders as S
 from rk.heads import catmull
 from . import itemkit as P
-from .base import icon, V, xform, aim_rot, TEAL, AMBER
+from .base import icon, V, xform, TEAL, AMBER
 
 
 def sparkles(K, pts, color, size=0.12, hot='ffffff', strength=6.0):

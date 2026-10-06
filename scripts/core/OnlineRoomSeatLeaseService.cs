@@ -65,7 +65,7 @@ public static class OnlineRoomSeatLeaseService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room seat lease ({currentResult.ProviderDisplayName}):");
 		builder.AppendLine(currentResult.Summary);
-		builder.AppendLine($"Seat: {ticket.RoomTitle}  |  Ticket: {MaskToken(ticket.TicketId)}");
+		builder.AppendLine($"Seat: {ticket.RoomTitle} · Ticket: {MaskToken(ticket.TicketId)}");
 		builder.AppendLine($"Remaining: {FormatRemainingSeconds(OnlineRoomJoinService.GetRemainingLeaseSeconds(ticket))}");
 		builder.AppendLine($"Auto renew: {(ShouldAutoRenew() ? "armed now" : $"armed under {AutoRenewLeadSeconds}s")}");
 		builder.Append($"Status: {currentResult.Status}");

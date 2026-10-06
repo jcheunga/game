@@ -10,6 +10,7 @@ public partial class RealmModal : Control
     public Action Closed, Back;
     private Button _back, _close;
     private Label _title, _subtitle;
+    private int _titleSize = 28;
     private PanelContainer _frame;
     private PanelContainer _header;
     private TextureRect _emblem;
@@ -35,7 +36,7 @@ public partial class RealmModal : Control
         ModalUi.StyleButton(_back);
         _emblem = new TextureRect { CustomMinimumSize = new Vector2(52, 52), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore }; heading.AddChild(_emblem);
         var titles = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter }; titles.AddThemeConstantOverride("separation", 0); heading.AddChild(titles);
-        _title = RealmUi.Heading("", 28); _title.AddThemeFontOverride("font", ModalUi.HeadingFont); _title.AddThemeColorOverride("font_color", new Color("ffe3a1")); titles.AddChild(_title);
+        _title = RealmUi.Heading("", 28); _title.AddThemeColorOverride("font_color", new Color("ffe3a1")); titles.AddChild(_title);
         _subtitle = RealmUi.Label("", 18, true); _subtitle.AddThemeFontSizeOverride("font_size", 18); _subtitle.AddThemeColorOverride("font_color", ModalUi.Muted); titles.AddChild(_subtitle);
         _close = HomeMapUi.IconButton("close", "Close panel", () => Closed?.Invoke()); heading.AddChild(_close);
         ModalUi.StyleButton(_close, material: ModalMaterial.Ruby);
@@ -74,12 +75,12 @@ public partial class RealmModal : Control
         return modal;
     }
 
-    public void SetHeading(string title) => _title.Text = title;
+    public void SetHeading(string title) { _title.Text = title; RealmUi.Display(_title, _titleSize); }
 
     public static void UpdateHeading(Node child, string title = null, string subtitle = null)
     {
         for (var parent = child.GetParent(); parent != null; parent = parent.GetParent())
-            if (parent is RealmModal modal) { if (title != null) { modal._title.Text = title; modal.ApplyIdentity(title); } if (subtitle != null) { modal._subtitle.Text = subtitle; modal.FitToOwnArea(); } return; }
+            if (parent is RealmModal modal) { if (title != null) { modal.SetHeading(title); modal.ApplyIdentity(title); } if (subtitle != null) { modal._subtitle.Text = subtitle; modal.FitToOwnArea(); } return; }
     }
 
     public void FitToArea(Vector2 area)
@@ -90,7 +91,8 @@ public partial class RealmModal : Control
         _frame.OffsetTop = -height / 2; _frame.OffsetBottom = height / 2;
         var compact = area.Y < 500;
         _subtitle.Visible = !compact && _subtitle.Text.Length > 0;
-        _title.AddThemeFontSizeOverride("font_size", compact ? 22 : 28);
+        _titleSize = compact ? 22 : 28;
+        RealmUi.Display(_title, _titleSize);
         _title.ClipText = true;
         _title.AutowrapMode = TextServer.AutowrapMode.Off;
         _title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;

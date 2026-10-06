@@ -7,7 +7,7 @@ from mathutils import Matrix, Vector
 from rk import armor as A, geo, heads as H, palette, shaders as S, undead as U, weapons as W
 from rk.anim import P, STANCES
 from rk.character import Character
-from rk.rig import LAT, YAW, ROLL, add_poses
+from rk.rig import LAT, ROLL, add_poses
 
 from . import unit
 from .common import add_head, boots, finish, gloves, head_frame, pelt, plate_arms, plate_legs, profile_of
@@ -65,6 +65,84 @@ def pustules(ch, M, center, radius, n, bone='chest', mat=None, seed=1, size=0.05
     ch.add(out)
 
 
+def _skin_tree(ch):
+    """The body's rest surface, for detail that must sit exactly on the skin."""
+    from mathutils.bvhtree import BVHTree
+    me, mw = ch.body.data, ch.body.matrix_world
+    return BVHTree.FromPolygons([mw @ v.co for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
+
+
+def _on_skin(tree, centre, direction, reach=0.4):
+    """First skin point met coming in from `direction` towards `centre`: (location, normal) or None."""
+    loc, normal, _, _ = tree.ray_cast(centre + direction * reach, -direction, reach * 1.5)
+    return None if loc is None else (loc, normal)
+
+
+def ribs(ch, M, count=4, span=(0.22, 0.7), arc=(16, 78), radius=0.017, mat=None, lift=0.3):
+    """Ribs pressing through starved skin: tubes laid along the chest surface and skinned with the body."""
+    tree = _skin_tree(ch)
+    lo, hi = ch.J['spine'], ch.J['neck']
+    up = (hi - lo).normalized()
+    fwd = (Vector((1, 0, 0)) - up * up.x).normalized()
+    side = up.cross(fwd)
+    out = []
+    for k in range(count):
+        c = lo.lerp(hi, span[0] + (span[1] - span[0]) * k / max(1, count - 1))
+        for s in (-1, 1):
+            pts = []
+            for i in range(7):
+                a = math.radians(arc[0] + (arc[1] - arc[0]) * i / 6)
+                d = (fwd * math.cos(a) + side * s * math.sin(a)).normalized()
+                # ribs slope down towards the breastbone
+                hit = _on_skin(tree, c - up * 0.06 * (1 - i / 6), d)
+                if hit:
+                    pts.append(hit[0] + hit[1] * radius * lift)
+            if len(pts) >= 4:
+                r = [radius * (0.55 + 0.45 * math.sin(math.pi * i / (len(pts) - 1))) for i in range(len(pts))]
+                out.append((geo.tube('Rib', pts, r, mat or M['skin'], ch.coll, sides=8), {'skin': ['spine', 'chest']}))
+    ch.add(out)
+
+
+def wounds(ch, M, spots, mat=None):
+    """Torn flesh: dark wet gashes sunk into the skin, some with bone showing.
+
+    spots: (joint_a, joint_b, t, around_deg, size, bone_showing). The gash sits on the limb or torso between the
+    two joints, `around_deg` round from its front, and stretches along it."""
+    raw = mat or S.flesh('6a2420', name='Raw wound', rot='2a0d0b', vein='8a3a2c', wet=0.95)
+    rim = S.flesh('3e2e24', name='Bruised rim', rot='261a14', vein='4a2420', wet=0.2)
+    tree = _skin_tree(ch)
+    J = ch.J
+    out = []
+    for k, (a_, b_, t, around, size, bone) in enumerate(spots):
+        rnd = random.Random(k * 31 + len(ch.ident))
+        axis = (J[b_] - J[a_]).normalized()
+        ref = Vector((1, 0, 0)) if abs(axis.x) < 0.8 else Vector((0, 0, 1))
+        ref = (ref - axis * axis.dot(ref)).normalized()
+        d = Matrix.Rotation(math.radians(around), 3, axis) @ ref
+        hit = _on_skin(tree, J[a_].lerp(J[b_], t), d)
+        if hit is None:
+            continue
+        loc, n = hit
+        x = (axis - n * axis.dot(n)).normalized()
+        basis = Matrix((x, n.cross(x), n)).transposed().to_4x4()
+
+        def blob(name, mat, offset, scale):
+            g = geo.sphere(name, 1.0, (0, 0, 0), mat, ch.coll, 14, 8)
+            g.matrix_world = Matrix.Translation(loc + offset) @ basis @ Matrix.Diagonal((*scale, 1))
+            out.append((g, {}))
+        # a bruised rim, then a torn core of two or three ragged lobes
+        blob('Wound rim', rim, -n * size * 0.06, (size * 1.3, size * 0.78, size * 0.1))
+        lobes = rnd.choice((2, 3))
+        for j in range(lobes):
+            off = (j - (lobes - 1) / 2) * size * 0.5
+            blob('Wound', raw, x * off + n.cross(x) * rnd.uniform(-.12, .12) * size - n * size * 0.03,
+                 (size * rnd.uniform(.5, .65), size * rnd.uniform(.32, .42), size * 0.16))
+        if bone:
+            out.append((geo.tube('Exposed bone', [loc - x * size * 0.6 + n * 0.008, loc + x * size * 0.55 + n * 0.02],
+                                 [size * 0.2, size * 0.15], M['bone'], ch.coll, sides=8), {}))
+    ch.add(out)
+
+
 # ------------------------------------------------------------------ infantry
 @unit('enemy_walker')
 def risen(ident, title):
@@ -74,6 +152,7 @@ def risen(ident, title):
                                          upper_arm_L=[(24, LAT)], forearm_L=10))
     ch.set_stance(st)
     flesh_body(ch, M, torso=M['linen'], sleeve=M['skin'], legs=M['trousers'])
+    wounds(ch, M, [('elbow.L', 'wrist.L', 0.45, 0, 0.09, True), ('shoulder.R', 'elbow.R', 0.5, 70, 0.08, False)])
     C, R = head_frame(ch)
     rotten_head(ch, M, C, R, hair=M['hair'])
     add_head(ch, H.kettle_hat(C + Vector((-R * .05, R * .05, R * .2)), R, M, ch.coll))
@@ -97,6 +176,9 @@ def ghoul(ident, title):
     st = STANCES['claws']
     ch.set_stance(st)
     flesh_body(ch, M, legs=M['skin'])
+    # hunched over, so the ribs that show are those round the flanks and back
+    ribs(ch, M, count=5, arc=(40, 150), radius=0.021, lift=0.45)
+    wounds(ch, M, [('hip.L', 'knee.L', 0.55, 20, 0.1, True), ('elbow.R', 'wrist.R', 0.4, 180, 0.07, False)])
     C, R = head_frame(ch)
     add_head(ch, H.ghoul_head(C, R * 1.05, dict(skin=M['skin'], glow=M['glow'], bone=M['bone']), ch.coll))
     for side in ('R', 'L'):
@@ -120,6 +202,7 @@ def rot_hulk(ident, title):
     st = STANCES['brute']
     ch.set_stance(st)
     flesh_body(ch, M, legs=M['trousers'])
+    wounds(ch, M, [('shoulder.R', 'elbow.R', 0.45, 40, 0.11, False), ('elbow.L', 'wrist.L', 0.5, 0, 0.09, True)])
     C, R = head_frame(ch, 0.92)
     rotten_head(ch, M, C + Vector((0.04, 0, -0.06)), R, gaunt=0.0, glow=M['plague'])
     # stitched belly seam and pustules
@@ -148,6 +231,7 @@ def grave_brute(ident, title):
     st = STANCES['brute']
     ch.set_stance(st)
     flesh_body(ch, M, legs=M['trousers'])
+    wounds(ch, M, [('shoulder.L', 'elbow.L', 0.5, 30, 0.1, True), ('spine', 'chest', 0.6, -30, 0.12, False)])
     C, R = head_frame(ch, 0.9)
     C = C + Vector((0.06, 0, -0.08))
     rotten_head(ch, M, C, R, gaunt=0.2)

@@ -12,23 +12,21 @@ mobile preparation, feedback, privacy, world/exploration, and Codex art reviews.
 
 ## Coverage
 
-| Review | What it now covers |
+| Review | What it covers |
 | --- | --- |
 | `--live-parity` | Native clicks on home tabs and Settings, More → Community → Challenges → LAN, modal back/close, all 22 routed activities, and preservation of map/resources. Runs on desktop, smaller windows, and phones. |
 | `--typography`, `--all-menus` | All public activity routes discovered from `SceneRouter`, their live overlays, and the active activity's controls. Typography visits every visible tab. Add `--only=ShopMenu,ArenaMenu` to re-capture just the screens being changed. |
-| `--typography-advanced` | Every unit/spell detail and all 60 campaign stages. Fixtures explicitly open the tiles; the review selects the actual tile and verifies preparation's stage number. |
-| `--core`, `--playthrough` | Preparation, armory, challenges, settings, deployment, battle menus, and result/return flows through production navigation. |
+| `--typography-advanced` | Every armory unit/spell detail, plus the map and preparation screens for every stage in `GameData.Stages` (all 100). Fixtures explicitly open the tiles; the review selects the actual tile and verifies preparation's stage number. |
+| Default run, `--playthrough` | The default run (no review flag) covers home tabs, stage details, preparation and unit details, armory, challenges, endless, settings, deployment and the battle menu; `--playthrough` adds a tower result and a real-input campaign victory and return to the map. All go through production navigation. `ui_review_smoke.sh` passes `--core`, which is not a parsed flag and so selects the default run. |
 | Home, rewards, armory, storehouse, developer, progression and star reviews | Shared live screen loader; existing state fixtures and behavior checks remain in the isolated test save. |
 | `MobilePresentationReview` | Production preparation overlays on both desktop and phone, production armory overlay, full model inspector, and controlled battle presentation. |
 | `FeedbackReview`, `PrivacyReview` | Production home, armory, preparation and Settings; screenshots include the real map/overlay hierarchy. |
 | `ExplorationReview`, `WorldArtReview` | Production home maps. World art battle captures also use the router. |
 | `BlenderAssetSmoke` Codex screenshot | Production Codex overlay, with the Bosses tab and a discovered entry selected through the controls. |
 
-The uncalled free-roam/watchtower/shrine adventure review and the uncalled old
-home review were removed. Current tile-map coverage remains in
-`UiReviewSmoke.Tiles.cs`; `--adventure` is an alias for that current review.
-The shared site helper focuses the current tile coordinates, rather than the
-retired adventure-layout coordinates.
+Tile-map coverage lives in `UiReviewSmoke.Tiles.cs`; `--adventure` runs that
+review, and `--home-map` adds the home subreviews. The shared site helper
+focuses the current tile coordinates.
 
 ## Checks and fixtures
 

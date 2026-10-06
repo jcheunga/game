@@ -10,7 +10,7 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "docs/progression"
+OUT = ROOT / "docs/archive/progression"
 ART = ROOT / "artifacts/progression"
 STARTERS = {"player_brawler", "player_shooter", "player_defender"}
 SUPPORT = {"player_marksman", "player_coordinator", "player_grenadier", "player_breacher"}

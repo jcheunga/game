@@ -1292,7 +1292,7 @@ public partial class GameState : Node
 		}
 
 		return
-			$"Ghost benchmark: {outcome}  |  {record.Score} pts ({medal})  |  Hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Deploys {record.PlayerDeployments}  |  {(record.UsedLockedDeck ? "locked deck" : "player deck")}";
+			$"Ghost benchmark: {outcome} · {record.Score} pts ({medal}) · Hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}% · Deploys {record.PlayerDeployments} · {(record.UsedLockedDeck ? "locked deck" : "player deck")}";
 	}
 
 	public string BuildChallengeRunTapeSummary(ChallengeRunRecord record, int maxDeployments = 6)
@@ -1308,7 +1308,7 @@ public partial class GameState : Node
 			: string.Join(", ", record.DeckUnitIds.Select(unitId => GameData.GetUnit(unitId).DisplayName));
 		builder.AppendLine("Latest run tape:");
 		builder.AppendLine($"Deck ({(record.UsedLockedDeck ? "featured lock" : "player deck")}): {deckNames}");
-		builder.AppendLine($"Deploys {record.PlayerDeployments}  |  War wagon hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}%  |  Stars {record.StarsEarned}/3");
+		builder.AppendLine($"Deploys {record.PlayerDeployments} · War wagon hull {Mathf.RoundToInt(Mathf.Clamp(record.BusHullRatio, 0f, 1f) * 100f)}% · Stars {record.StarsEarned}/3");
 		builder.AppendLine(AsyncChallengeCatalog.BuildScoreSummary(BuildChallengeRunScoreBreakdown(record)));
 
 		if (record.Deployments == null || record.Deployments.Count == 0)
@@ -1330,7 +1330,7 @@ public partial class GameState : Node
 		}
 
 		builder.Append("Deploy log: ");
-		builder.Append(string.Join("  |  ", segments));
+		builder.Append(string.Join(" · ", segments));
 		return builder.ToString().TrimEnd();
 	}
 
@@ -2056,7 +2056,7 @@ public partial class GameState : Node
 		var synergies = GetDeckSynergies(deckUnits);
 		return synergies.Count == 0
 			? "No deck synergy active"
-			: string.Join("  |  ", synergies.Select(synergy => synergy.Title));
+			: string.Join(" · ", synergies.Select(synergy => synergy.Title));
 	}
 
 	public string BuildActiveSpellSummary()
@@ -4701,11 +4701,6 @@ public partial class GameState : Node
 		return Math.Max(1, definition.EntryFoodCost);
 	}
 
-	public int GetStageExploreFoodCost(int stage)
-	{
-		return 0;
-	}
-
 	public bool ToggleDeckUnit(string unitId, out string message)
 	{
 		if (string.IsNullOrWhiteSpace(unitId))
@@ -6078,7 +6073,7 @@ public partial class GameState : Node
 		var rewardText = $"+{district.RewardGold} gold, +{district.RewardFood} food{relicHint}";
 		return HasClaimedDistrictReward(district.Id)
 			? $"District reward claimed: {rewardText}"
-			: $"District reward on full clear: {rewardText}  |  {clearedStages}/{Math.Max(1, totalStages)} cleared";
+			: $"District reward on full clear: {rewardText} · {clearedStages}/{Math.Max(1, totalStages)} cleared";
 	}
 
 	private int GetClearedDistrictStageCount(string districtId)
@@ -7029,7 +7024,7 @@ public partial class GameState : Node
 
 	private string BuildPlayerProfileDisplayId()
 	{
-		return $"{PlayerCallsign}  |  {PlayerProfileId}";
+		return $"{PlayerCallsign} · {PlayerProfileId}";
 	}
 
 	private static string FormatUnixTimestamp(long unixSeconds)
@@ -7057,8 +7052,8 @@ public partial class GameState : Node
 			? $"attempted x{entry.UploadAttempts}"
 			: "queued";
 		return
-			$"{stamp} | {entry.Score} pts | {medal} | {entry.Code} | " +
-			$"{(entry.UsedLockedDeck ? "locked deck" : "player deck")} | {status}";
+			$"{stamp} · {entry.Score} pts · {medal} · {entry.Code} · " +
+			$"{(entry.UsedLockedDeck ? "locked deck" : "player deck")} · {status}";
 	}
 
 	private string NormalizePinnedChallengeCode(string code)

@@ -106,20 +106,6 @@ public static class StageObjectives
         return builder.ToString().TrimEnd();
     }
 
-    public static string BuildResultSummary(
-        StageDefinition stage,
-        StageObjectiveEvaluation evaluation,
-        int rewardGold,
-        int rewardFood,
-        int bestStars)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine(rewardFood > 0 ? $"Reward: +{rewardGold} gold, +{rewardFood} food." : $"Reward: +{rewardGold} gold.");
-        builder.AppendLine($"Stars earned: {evaluation.StarsEarned}/3   |   Best: {bestStars}/3");
-        builder.Append(BuildOutcomeSummary(evaluation));
-        return builder.ToString().TrimEnd();
-    }
-
     public static string BuildOutcomeSummary(StageObjectiveEvaluation evaluation)
     {
         var builder = new StringBuilder();
@@ -165,7 +151,7 @@ public static class StageObjectives
 
             if (!string.IsNullOrWhiteSpace(status.Detail))
             {
-                builder.Append("  |  ");
+                builder.Append(" · ");
                 builder.Append(status.Detail);
             }
 
@@ -308,7 +294,7 @@ public static class StageObjectives
             "mission_event_success" => BuildMissionEventObjectiveLabel(stage, objective),
             "boss_pressure_trigger_limit" => BuildBossPressureLimitLabel(stage, objective),
             "late_condition_trigger_limit" => BuildLateConditionLimitLabel(stage, objective),
-            "adaptive_wave_follow_up_success" => BuildAdaptiveWaveFollowUpLabel(stage),
+            "adaptive_wave_follow_up_success" => "Master the forced adaptive-wave branch",
             _ => objective.Type
         };
     }
@@ -437,11 +423,6 @@ public static class StageObjectives
         return $"Clear before {title} triggers {failCount} times";
     }
 
-    private static string BuildAdaptiveWaveFollowUpLabel(StageDefinition stage)
-    {
-        return "Master the forced adaptive-wave branch";
-    }
-
     private static string BuildAdaptiveWaveBranchClause(StageBattleResult result)
     {
         if (result.CampaignAdaptiveWaveBranchSpawnCount <= 0 ||
@@ -452,10 +433,10 @@ public static class StageObjectives
 
         if (string.IsNullOrWhiteSpace(result.CampaignAdaptiveWaveBranchWaveLabel))
         {
-            return $"  |  {result.CampaignAdaptiveWaveBranchLabel} active";
+            return $" · {result.CampaignAdaptiveWaveBranchLabel} active";
         }
 
-        return $"  |  {result.CampaignAdaptiveWaveBranchLabel} in {result.CampaignAdaptiveWaveBranchWaveLabel}";
+        return $" · {result.CampaignAdaptiveWaveBranchLabel} in {result.CampaignAdaptiveWaveBranchWaveLabel}";
     }
 
     private static StageObjectiveLiveStatus BuildBusHullLiveStatus(
@@ -586,7 +567,7 @@ public static class StageObjectives
 
         var detail = result.TotalMissionEvents <= 0
             ? "No battlefield objective authored"
-            : $"{result.CompletedMissionEvents}/{required} secured  |  {remaining} pending  |  {result.FailedMissionEvents} lost";
+            : $"{result.CompletedMissionEvents}/{required} secured · {remaining} pending · {result.FailedMissionEvents} lost";
 
         return new StageObjectiveLiveStatus
         {
@@ -615,7 +596,7 @@ public static class StageObjectives
         }
 
         var detail = triggers == limit
-            ? $"{triggers}/{limit} safe pulses spent  |  next pulse fails"
+            ? $"{triggers}/{limit} safe pulses spent · next pulse fails"
             : $"{triggers}/{limit} safe pulses spent";
         return new StageObjectiveLiveStatus
         {
@@ -644,7 +625,7 @@ public static class StageObjectives
         }
 
         var detail = triggers == limit
-            ? $"{triggers}/{limit} safe boss commands spent  |  next command fails"
+            ? $"{triggers}/{limit} safe boss commands spent · next command fails"
             : $"{triggers}/{limit} safe boss commands spent";
         return new StageObjectiveLiveStatus
         {
@@ -714,8 +695,8 @@ public static class StageObjectives
         if (result.CampaignAdaptiveWaveChoiceUsed)
         {
             var detail = result.CampaignAdaptiveWaveRewardReady
-                ? $"{choiceLabel} payout armed  |  follow-up pending"
-                : $"{choiceLabel} committed  |  clear the forced read to arm the follow-up";
+                ? $"{choiceLabel} payout armed · follow-up pending"
+                : $"{choiceLabel} committed · clear the forced read to arm the follow-up";
             return new StageObjectiveLiveStatus
             {
                 Label = label,

@@ -92,7 +92,7 @@ internal static class Program
                         PostedScore = -1,
                         PostedRank = -1,
                         PresenceText = "joined and ready",
-                        MonitorText = "IronBell  |  prep  |  ready"
+                        MonitorText = "IronBell · prep · ready"
                     },
                     new MultiplayerRoomPeerSnapshot
                     {
@@ -108,7 +108,7 @@ internal static class Program
                         PostedScore = -1,
                         PostedRank = -1,
                         PresenceText = "joined and ready",
-                        MonitorText = "SmokeConvoy  |  prep  |  ready"
+                        MonitorText = "SmokeConvoy · prep · ready"
                     }
                 }
             }

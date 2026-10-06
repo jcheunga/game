@@ -1,6 +1,6 @@
 # Expansive zone exploration
 
-The home/campaign UI now uses completion-driven atlas tiles. See [Adventure map](ADVENTURE_MAP.md) for current behavior; the terrain and walking details below describe the version 44 implementation retained for save migration.
+The home/campaign UI now uses completion-driven atlas tiles. See [Adventure map](../ADVENTURE_MAP.md) for current behavior; the terrain and walking details below describe the version 44 implementation retained for save migration.
 
 Implemented locally on 2026-10-01. All ten zones now contain a 32 × 24 isometric field: 768 tiles instead of 96. The world measures 3968 × 2176, with tile centers projected from `(1728, 192)` using `(64, 32)` and `(-64, 32)`. Picking, travel, terrain drawing, smoke masking and discovery markers use these same coordinates.
 

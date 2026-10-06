@@ -75,7 +75,7 @@ public static class StageMissionEvents
         foreach (var mission in stage.MissionEvents.Where(mission => mission != null && !string.IsNullOrWhiteSpace(mission.Type)))
         {
             builder.AppendLine(
-                $"- {ResolveTitle(mission)}  |  Starts {Mathf.Max(0f, mission.StartTime):0.#}s  |  Radius {Mathf.Max(1f, mission.Radius):0}");
+                $"- {ResolveTitle(mission)} · Starts {Mathf.Max(0f, mission.StartTime):0.#}s · Radius {Mathf.Max(1f, mission.Radius):0}");
             builder.AppendLine($"  {ResolveSummary(mission)}");
             builder.AppendLine($"  {ResolveRewardSummary(mission)}");
             builder.AppendLine($"  {ResolvePenaltySummary(mission)}");
@@ -204,7 +204,7 @@ public static class StageMissionEvents
         foreach (var mission in missions.Where(mission => mission != null && !string.IsNullOrWhiteSpace(mission.Type)))
         {
             builder.AppendLine(
-                $"- {ResolveTitle(mission)}  |  Starts {Mathf.Max(0f, mission.StartTime):0.#}s  |  Radius {Mathf.Max(1f, mission.Radius):0}");
+                $"- {ResolveTitle(mission)} · Starts {Mathf.Max(0f, mission.StartTime):0.#}s · Radius {Mathf.Max(1f, mission.Radius):0}");
             builder.AppendLine($"  {ResolveSummary(mission)}");
             builder.AppendLine($"  {ResolveRewardSummary(mission)}");
             builder.AppendLine($"  {ResolvePenaltySummary(mission)}");

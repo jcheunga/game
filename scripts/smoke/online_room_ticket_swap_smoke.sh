@@ -120,7 +120,7 @@ internal static class Program
                             HasFullDeck = true,
                             MonitorRank = 1,
                             PresenceText = "joined and ready",
-                            MonitorText = "AlphaRunner  |  prep  |  ready"
+                            MonitorText = "AlphaRunner · prep · ready"
                         }
                     }
                 }

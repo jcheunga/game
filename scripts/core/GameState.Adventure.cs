@@ -58,7 +58,6 @@ public partial class GameState
         return cell == AdventureTerrain.Cell(AdventureMapCatalog.ForMap(mapId).First().Point) ||
             (_adventureTravelledCells.TryGetValue(mapId,out var cells) && cells.Contains(cell));
     }
-    public int GetAdventureTravelFoodCost(string mapId, IReadOnlyList<int> path) => 0;
     public bool TryBeginAdventureTravel(string mapId, IReadOnlyList<int> path, out string message)
     {
         mapId = RouteCatalog.Normalize(mapId);
@@ -107,8 +106,6 @@ public partial class GameState
     }
     public Vector2 GetAdventureHeroPosition(string mapId) => _adventureHeroPositions.TryGetValue(RouteCatalog.Normalize(mapId), out var point)
         ? point : GetAdventureHeroNode(mapId).Point;
-    // Compatibility for legacy callers; retired shrines no longer grant battle bonuses.
-    public int GetAdventureStartingCourageBonus(int stage) => 0;
     public IReadOnlyList<Vector3> GetAdventureRevealAreas(string mapId) => Enumerable.Range(0,AdventureTerrain.CellCount)
         .Where(c => IsAdventureCellRevealed(mapId,c)).Select(c => new Vector3(AdventureTerrain.Point(c).X,AdventureTerrain.Point(c).Y,80)).ToArray();
     public bool MoveAdventureHero(string mapId, Vector2 point, bool persist = true)

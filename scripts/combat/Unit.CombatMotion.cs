@@ -16,6 +16,11 @@ public partial class Unit
     private float _facing;
     private Unit _contactTarget;
     private Vector2 _aimPosition;
+    // The clip the current attack plays: Attack, or Melee for a ranged unit's close-quarters strike.
+    private UnitAnimState _attackClip = UnitAnimState.Attack;
+    /// <summary>True when the latest attack is a ranged unit's melee strike (whatever clip it plays). It stays set
+    /// after the blow until the next attack begins.</summary>
+    public bool IsMeleeStrike { get; private set; }
     private readonly HitReactionMotion _hitReaction = new();
     internal float HitReactionAmount => _hitReaction.Amount;
 
@@ -36,7 +41,7 @@ public partial class Unit
         {
             EnsureSpriteLoaded();
             var tip = _spriteSheet?.ContactOffset ?? new Vector2(.28f,-.25f);
-            return GlobalPosition + new Vector2(tip.X * SpriteDrawSize.X * GetFacing(), tip.Y * SpriteDrawSize.Y) + ContactDrawOffset();
+            return GlobalPosition + new Vector2(tip.X * SpriteDrawSize.X * GetFacing(), tip.Y * SpriteDrawSize.Y);
         }
     }
     public string MotionProfile { get { EnsureSpriteLoaded(); return _spriteSheet?.MotionProfile ?? "sword-cut"; } }
@@ -45,10 +50,26 @@ public partial class Unit
         get
         {
             EnsureSpriteLoaded();
-            if (_spriteSheet != null && _spriteSheet.Animations.TryGetValue(UnitAnimState.Attack, out var clip))
+            if (_spriteSheet != null && _spriteSheet.Animations.TryGetValue(_attackClip, out var clip))
                 return Mathf.Max(.01f,Mathf.Clamp(clip.ContactFrame, 0, clip.FrameCount - 1) * AttackFrameSeconds(clip));
             return .18f;
         }
+    }
+
+    /// <summary>Melee reach for a ranged unit: a soldier's close-quarters distance, grown by however far
+    /// either body extends past a regular soldier's, plus <paramref name="slack"/>.</summary>
+    public bool InMeleeReach(Unit target, float slack = 0f)
+    {
+        var reach = GameData.Combat.RangedMeleeReach + slack + Mathf.Max(0, Radius - 14f) + Mathf.Max(0, target.Radius - 14f);
+        return Position.DistanceTo(target.Position) <= reach;
+    }
+
+    private void SelectAttackClip(bool melee)
+    {
+        EnsureSpriteLoaded();
+        IsMeleeStrike = melee;
+        _attackClip = melee && _spriteSheet != null && _spriteSheet.Animations.ContainsKey(UnitAnimState.Melee)
+            ? UnitAnimState.Melee : UnitAnimState.Attack;
     }
     private float AttackFrameSeconds(SpriteAnimRange clip) => Mathf.Min(clip.FrameDuration, AttackCooldown * .9f / Mathf.Max(1,clip.FrameCount));
 
@@ -70,10 +91,10 @@ public partial class Unit
         _contactMotionActive = true;
         _contactClock = 0;
         _contactTime = AttackContactSeconds;
-        _contactDuration = _spriteSheet != null && _spriteSheet.Animations.TryGetValue(UnitAnimState.Attack,out var clip)
+        _contactDuration = _spriteSheet != null && _spriteSheet.Animations.TryGetValue(_attackClip,out var clip)
             ? clip.FrameCount * AttackFrameSeconds(clip) : .45f;
         _spriteAttackRemaining = _contactDuration;
-        _spriteAnimState = UnitAnimState.Attack;
+        _spriteAnimState = _attackClip;
         _spriteAnimFrame = 0;
         _spriteAnimTimer = 0;
     }
@@ -107,8 +128,6 @@ public partial class Unit
         QueueRedraw();
     }
 
-    private Vector2 ContactDrawOffset() => Vector2.Zero;
-
     private void ResetCombatMotion()
     {
         CombatLifetime++;
@@ -116,6 +135,8 @@ public partial class Unit
         _contactMotionActive = false;
         _contactTarget = null;
         _contactClock = _contactDuration = _contactTime = 0;
+        _attackClip = UnitAnimState.Attack;
+        IsMeleeStrike = false;
         _hitReaction.Reset();
         _facing = 0;
         ShouldPausePresentation = null;

@@ -3,13 +3,10 @@ Emberforge March (railyard, smelter, foundry) battlefield fallbacks."""
 import math
 import random
 
-from mathutils import Vector
-
 from rk import arch, env
 from rk import dressing as P
-from rk.palette import LANTERN_TEAL, ROT_CRIMSON
 
-from menu_scenes.common import golden, rocks, trees, tufts
+from menu_scenes.common import golden, trees, tufts
 
 from . import kit as K
 from .common import BF, back_band, field_height, ground, row, scatter_front

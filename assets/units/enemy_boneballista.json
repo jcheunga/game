@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 2.123744147164481,
+  "frameWidth": 285,
+  "frameHeight": 286,
+  "drawScale": 1.8031766277939743,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -42,28 +42,35 @@
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
+    },
+    "melee": {
+      "start": 42,
+      "count": 7,
+      "duration": 0.065,
+      "loop": false,
+      "contactFrame": 3
     }
   },
   "assetId": "enemy_boneballista",
   "title": "Bone Ballista",
   "source": "art/remaster/units/enemy_boneballista.py",
-  "anchorY": 0.6894365549087524,
-  "anchorX": 0.466356,
+  "anchorY": 0.826144,
+  "anchorX": 0.39675,
   "motion": {
     "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
       0.0,
-      -0.194265
+      -0.274498
     ],
     "contact": [
-      0.275216,
-      -0.20262
+      0.324258,
+      -0.261995
     ]
   },
-  "healthBarY": 0.501937
+  "healthBarY": 0.710906
 }

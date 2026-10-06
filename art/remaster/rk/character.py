@@ -1,10 +1,12 @@
 """Character assembly, animation keying, framing and rendering to the game contract.
 
-Contract (unchanged from the original pipeline):
-  master frames 256x320 RGBA: idle 0-3, walk 4-9, attack 10-19 (contact 14), hit 20-21,
-  then the unit's death performance (12 frames, 16 for bosses; see death.py) and deploy (4);
-  portrait 512x512. res_scale renders the same
-  framing at a multiple of 256x320 for units drawn large in battle (see density.py).
+Contract:
+  master frames 256x320 RGBA, clips in anim.CLIPS order: idle (6), walk (8), attack (10, contact on local
+  frame anim.CONTACT), hit (2), the unit's death performance (12 frames, 16 for bosses; see death.py), deploy (4)
+  and, for ranged units, a close-quarters melee clip (7, contact on anim.MELEE_CONTACT). Start frames are recorded
+  per clip in the metadata ("animations"); never assume global frame numbers. Portrait 512x512.
+  res_scale renders the same framing at a multiple of 256x320 so pack.py can reach its texel density
+  (see density.py).
   metadata: drawScale = 2 * ortho / 3.5 (same world-to-screen scale as before),
   anchorX/anchorY ground projection, motion.body / motion.contact offsets.
 """
@@ -18,9 +20,14 @@ from bpy_extras.object_utils import world_to_camera_view
 
 from . import anim, body, core, geo, rig
 from .death import Performance
-from .rig import LAT, Poser
+from .rig import Poser
 
-CAM_DIR = Vector((0.55, -0.83, 0.28)).normalized()
+# The battle camera: orthographic, 22 degrees above the ground and looking straight along the field's depth
+# axis, exactly like the battlefield, its structures and backdrops. The character stands turned 33.5 degrees
+# toward it (FACING_YAW) for the 3/4 view, so faces and heraldry read while every fall, drop and corpse lands on the
+# same ground plane the battle draws.
+CAM_DIR = Vector((0.0, -math.cos(math.radians(22.0)), math.sin(math.radians(22.0))))
+FACING_YAW = math.radians(-33.5)
 FRAME_W, FRAME_H = 256, 320
 
 
@@ -28,6 +35,7 @@ class Character:
     def __init__(self, ident, title, spec=None, coll=None, extras=None, rig_kind='humanoid', skeleton_fn=None):
         self.ident = ident
         self.title = title
+        self.bound = False
         self.coll = coll or core.collection(title + ' • model')
         self.body_skin = None
         self.props = []      # loose kit for death performances: {'name', 'objs', 'bone'}
@@ -214,6 +222,7 @@ class Character:
         self.poser.world_fix = fixes
 
     def bind(self):
+        self.bound = True
         self.poser.clear()
         bpy.context.view_layer.update()
         if self.body is not None:
@@ -250,6 +259,8 @@ class Character:
         P = self.poser
         pending = []
         for name, count, duration, loop in anim.CLIPS:
+            if name not in clips and name in anim.OPTIONAL_CLIPS:
+                continue
             poses = clips[name]
             if isinstance(poses, Performance):
                 meta[name] = {'start': frame - 1, 'count': poses.count, 'duration': poses.duration, 'loop': loop}
@@ -272,6 +283,8 @@ class Character:
                 P.key(frame)
                 frame += 1
         meta['attack']['contactFrame'] = anim.CONTACT
+        if 'melee' in meta:
+            meta['melee']['contactFrame'] = anim.MELEE_CONTACT
         total = frame - 1
         for fc in _fcurves(self.arm):
             for kp in fc.keyframe_points:
@@ -279,7 +292,8 @@ class Character:
         if release:
             # Nocked projectiles vanish on the release frame and reappear on recovery.
             for obj in release:
-                for f, hidden in ((1, False), (14, False), (15, True), (18, True), (19, False), (total, False)):
+                c = meta['attack']['start'] + 1 + anim.CONTACT
+                for f, hidden in ((1, False), (c - 1, False), (c, True), (c + 3, True), (c + 4, False), (total, False)):
                     obj.hide_render = hidden
                     obj.keyframe_insert('hide_render', frame=f)
         bpy.context.scene.frame_start, bpy.context.scene.frame_end = 1, total
@@ -307,14 +321,14 @@ def _fcurves(obj):
 
 # ------------------------------------------------------------------ rendering
 def light_rig(coll, center=Vector((0, 0, 1.1)), scale=1.0, warm='ffecd6', rim='aecbff', key_power=1150,
-              rim_power=1100, fill_power=320):
+              rim_power=1300, fill_power=420):
     """Battle lighting: sun from the upper left and slightly behind (matching the game's projected
     ground shadows, which fall down-right), a soft camera-side fill so faces read, a cool back rim
     and a broad sky. Neutral-warm key, because the game adds its own per-zone tint."""
     c = center
     core.area_light('Key • sun upper left', c + Vector((-6.5, 1.0, 7.5)) * scale, c, key_power * scale ** 2, core.srgb(warm),
                     3.5 * scale, coll)
-    core.area_light('Fill • camera side', c + Vector((5.5, -6.5, 2.5)) * scale, c, fill_power * scale ** 2,
+    core.area_light('Fill • camera side', c + Vector((2.6, -8.0, 3.2)) * scale, c, fill_power * scale ** 2,
                     core.srgb('fff1e2'), 6.0 * scale, coll)
     core.area_light('Rim • cool back right', c + Vector((4.5, 5.5, 4.5)) * scale, c, rim_power * scale ** 2, core.srgb(rim),
                     3.0 * scale, coll)
@@ -349,6 +363,7 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     scene = bpy.context.scene
     core.setup_render(scene, samples)
     core.studio_world(scene, top='7a8a9c', bottom='3a3128', strength=0.75)
+    turn_toward_camera(scene)
     rc = core.collection('Camera and lighting')
     target = Vector((0.12, 0, cam_target_z))
     cam = core.ortho_camera('Battle camera • 3/4 facing right', target + CAM_DIR * 30, target, 4.0, rc)
@@ -356,7 +371,7 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     scene.render.resolution_x, scene.render.resolution_y = FRAME_W, FRAME_H
     scene.render.fps = 12
     light_rig(rc, Vector((0, 0, 1.1)))
-    total = getattr(ch, 'total_frames', 32)
+    total = ch.total_frames
     scene.frame_start, scene.frame_end = 1, total
     objs = [o for o in bpy.data.objects if o.type == 'MESH' and not o.name.startswith('_')]
     env = frame_envelope(scene, cam, objs, range(1, total + 1))
@@ -377,17 +392,18 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
         return [round(q.x - ground.x, 6), round(ground.y - q.y, 6)]
     bz = body_z if body_z is not None else (ch.arm.matrix_world @ ch.arm.pose.bones['spine'].head).z if 'spine' in ch.arm.pose.bones else 1.2
     body_pt = projected(Vector((0, 0, bz)))
-    scene.frame_set(15)
+    scene.frame_set(ch.clip_meta['attack']['start'] + 1 + anim.CONTACT)
     bpy.context.view_layer.update()
     tip_arm = getattr(ch, 'tip_bone_owner', ch).arm
     if 'weapon_tip' in tip_arm.pose.bones:
         tip = tip_arm.matrix_world @ tip_arm.pose.bones['weapon_tip'].head
     else:
-        tip = Vector(contact_fallback)
+        tip = Matrix.Rotation(FACING_YAW, 3, 'Z') @ Vector(contact_fallback)
     contact_pt = projected(tip)
     death = ch.clip_meta.get('death', {})
     if '_impactWorld' in death:
-        death['impactPoint'] = projected(Vector(death.pop('_impactWorld')))
+        # the solver works before the turn toward the camera
+        death['impactPoint'] = projected(Matrix.Rotation(FACING_YAW, 3, 'Z') @ Vector(death.pop('_impactWorld')))
     meta = {
         'frameWidth': scene.render.resolution_x, 'frameHeight': scene.render.resolution_y,
         'drawScale': draw_scale,
@@ -413,17 +429,37 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     return meta
 
 
+def turn_toward_camera(scene):
+    """Parent everything the character is made of to one root turned FACING_YAW about the ground's vertical, so the
+    animation, ground contact, death physics and world-locked riders keep their relationships exactly."""
+    root = bpy.data.objects.get('_Facing')
+    if root is not None:
+        return root
+    root = bpy.data.objects.new('_Facing', None)
+    scene.collection.objects.link(root)
+    for obj in list(scene.objects):
+        if obj is root or obj.parent is not None or obj.type in ('CAMERA', 'LIGHT'):
+            continue
+        obj.parent = root
+    root.rotation_euler = (0.0, 0.0, FACING_YAW)
+    bpy.context.view_layer.update()
+    return root
+
+
 def render_portrait(ch, path, samples=128, target=None, distance=5.4, lens=85, frame=1, height=None, side=0.0,
                     elevation=0.1, drop=0.32):
     scene = bpy.context.scene
     scene.frame_set(frame)
     bpy.context.view_layer.update()
+    turn = Matrix.Rotation(FACING_YAW, 3, 'Z')
     if target is None:
         hb = ch.arm.pose.bones.get('head')
         t = (ch.arm.matrix_world @ hb.head) if hb else Vector((0, 0, 1.4))
         target = Vector((t.x + 0.05, t.y, t.z - drop if height is None else height))
-    target = Vector(target)
-    d = Vector((0.86, -0.5 + side, elevation)).normalized()
+    else:
+        # Recipes give targets in the character's own frame, before the turn toward the camera.
+        target = turn @ Vector(target)
+    d = (turn @ Vector((0.86, -0.5 + side, elevation))).normalized()
     cam = core.persp_camera('Portrait camera', target + d * distance, target, lens, bpy.data.collections['Camera and lighting'])
     old = scene.camera
     scene.camera = cam

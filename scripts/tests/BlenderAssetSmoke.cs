@@ -32,10 +32,11 @@ public partial class BlenderAssetSmoke : Node
             {
                 var def = GameData.GetUnit(id);
                 var sheet = UnitSpriteLoader.TryLoad(def.VisualClass, id);
-                // Units drawn large in battle ship larger frames cropped to their animation
-                // envelope (art/remaster/density.py), still within a mobile-safe atlas.
+                // Remastered units ship frames cropped to their animation envelope at the density set in
+                // art/remaster/density.py (small units can be narrower than the legacy 192x240 frame), still
+                // within a mobile-safe atlas.
                 Check(sheet != null && sheet.AnchorY > 0.5f && (sheet.FrameWidth == 192 && sheet.FrameHeight == 240
-                    || sheet.FrameWidth > 192 && sheet.Texture.GetWidth() <= 4096 && sheet.Texture.GetHeight() <= 4096),
+                    || sheet.Texture.GetWidth() <= 4096 && sheet.Texture.GetHeight() <= 4096),
                     id + " has compact atlas metadata and ground anchor");
                 if (sheet == null) continue;
                 var probe = new Unit();
@@ -44,8 +45,25 @@ public partial class BlenderAssetSmoke : Node
                 probe.Free();
                 Check(density >= 1.25f, $"{id} keeps {density:0.00} atlas px per battle px, so enlarged units stay sharp");
                 var total = sheet.Texture.GetWidth() / sheet.FrameWidth * (sheet.Texture.GetHeight() / sheet.FrameHeight);
-                Check(Enum.GetValues<UnitAnimState>().All(state => sheet.Animations.TryGetValue(state, out var clip)
-                    && clip.FrameCount > 0 && clip.FrameDuration > 0 && clip.StartFrame + clip.FrameCount <= total), id + " six valid clips");
+                bool Valid(UnitAnimState state) => sheet.Animations.TryGetValue(state, out var clip)
+                    && clip.FrameCount > 0 && clip.FrameDuration > 0 && clip.StartFrame + clip.FrameCount <= total;
+                Check(Enum.GetValues<UnitAnimState>().Where(state => state != UnitAnimState.Melee).All(Valid), id + " six valid clips");
+                // Ranged units fight hand to hand at point-blank; cleaving bosses reuse their swing.
+                if (def.UsesProjectile && sheet.MotionProfile != "royal-cleave")
+                    Check(Valid(UnitAnimState.Melee) && sheet.Animations[UnitAnimState.Melee].ContactFrame is var contact
+                        && contact > 0 && contact < sheet.Animations[UnitAnimState.Melee].FrameCount,
+                        id + " has a close-quarters melee clip");
+                if (def.UsesProjectile)
+                {
+                    var style = ProjectileStyles.ForUnit(id, sheet.MotionProfile);
+                    Check(style != ProjectileStyles.Default && (style.Shape != ProjectileShape.Sprite || ProjectileStyles.Texture(style.Sprite) != null),
+                        $"{id} fires its own {style.Id} projectile");
+                }
+            }
+            foreach (BaseWeaponKind kind in Enum.GetValues<BaseWeaponKind>())
+            {
+                var style = ProjectileStyles.ForBaseWeapon(kind);
+                Check(style.Shape != ProjectileShape.Sprite || ProjectileStyles.Texture(style.Sprite) != null, $"{kind} base weapon shot has art");
             }
             if (!OS.GetCmdlineUserArgs().Contains("--units-only"))
             {

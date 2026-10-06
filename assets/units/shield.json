@@ -1,35 +1,35 @@
 {
-  "frameWidth": 192,
-  "frameHeight": 240,
-  "drawScale": 2.9495079324852607,
+  "frameWidth": 296,
+  "frameHeight": 270,
+  "drawScale": 2.01406580007403,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 12,
       "duration": 0.075,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "dust",
       "motion": "fall-forward",
       "impactPoint": [
-        0.156106,
-        0.021504
+        0.228688,
+        0.059668
       ]
     },
     "deploy": {
-      "start": 34,
+      "start": 38,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "player_defender",
   "title": "Shield Knight",
   "source": "art/remaster/units/player_defender.py",
-  "anchorY": 0.7110017538070679,
-  "anchorX": 0.475775,
+  "anchorY": 0.815264,
+  "anchorX": 0.355545,
   "motion": {
     "revision": "remaster-v1",
     "profile": "guard-cut",
     "body": [
-      -0.0,
-      -0.207018
+      0.0,
+      -0.400144
     ],
     "contact": [
-      0.218263,
-      -0.142639
+      0.319829,
+      -0.230541
     ]
   },
-  "healthBarY": 0.401627
+  "healthBarY": 0.775894
 }

@@ -1,22 +1,22 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 3.5776746939428103,
+  "frameWidth": 372,
+  "frameHeight": 264,
+  "drawScale": 2.7104536075263175,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "player_ballista",
   "title": "Ballista Crew",
   "source": "art/remaster/units/player_ballista.py",
-  "anchorY": 0.6124514639377594,
-  "anchorX": 0.480029,
+  "anchorY": 0.755558,
+  "anchorX": 0.580888,
   "motion": {
     "revision": "remaster-v1",
     "profile": "ballista",
     "body": [
       0.0,
-      -0.115318
+      -0.258224
     ],
     "contact": [
-      0.163371,
-      -0.120277
+      0.215719,
+      -0.246463
     ]
   },
-  "healthBarY": 0.303076
+  "healthBarY": 0.660564
 }

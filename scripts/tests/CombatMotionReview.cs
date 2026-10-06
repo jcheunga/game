@@ -52,12 +52,13 @@ public partial class CombatMotionReview : Node
                 Check(hits==0,id+" wind-up cannot deal damage");
                 attacker.TakeDamage(1); attacker._Process(.01);
                 Check(Read<UnitAnimState>(attacker,"_spriteAnimState")==UnitAnimState.Attack,id+" incoming hit cannot desynchronize committed swing");
+                var feet=attacker.Position;
                 attacker.TickAttackTimer(attacker.AttackContactSeconds*.5f);
                 attacker._Process(.01);
                 Check(hits==1 && Read<int>(attacker,"_spriteAnimFrame")==4,id+" damage coincides with contact pose");
                 if (!attacker.UsesProjectile && attacker.AttackRange>0)
                 {
-                    Check((Vector2)Call(attacker,"ContactDrawOffset")==Vector2.Zero,id+" keeps its feet fixed through contact");
+                    Check(attacker.Position==feet,id+" keeps its feet fixed through contact");
                 }
                 attacker.TickAttackTimer(2); attacker.TickAttackTimer(2);
                 Check(hits==1 && !attacker.IsAttackCommitted,id+" fires once and exits recovery after a large step");

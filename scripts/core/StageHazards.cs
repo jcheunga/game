@@ -32,7 +32,7 @@ public static class StageHazards
         var lines = stage.Hazards
             .Where(hazard => hazard != null)
             .Select(hazard =>
-                $"- {BuildFullLabel(hazard)}  |  {hazard.Damage:0.#} dmg  |  every {hazard.Interval:0.#}s  |  warning {hazard.WarningDuration:0.#}s");
+                $"- {BuildFullLabel(hazard)} · {hazard.Damage:0.#} dmg · every {hazard.Interval:0.#}s · warning {hazard.WarningDuration:0.#}s");
 
         return "Stage hazards:\n" + string.Join("\n", lines);
     }

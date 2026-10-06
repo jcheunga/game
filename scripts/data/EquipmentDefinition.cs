@@ -1,6 +1,3 @@
-using System;
-using Godot;
-
 public sealed class EquipmentDefinition
 {
     public string Id { get; set; } = "";

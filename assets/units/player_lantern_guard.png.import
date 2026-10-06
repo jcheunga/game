@@ -3,28 +3,30 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dcyucbcutvw0n"
-path="res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.ctex"
+path.bptc="res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.bptc.ctex"
+path.astc="res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/units/player_lantern_guard.png"
-dest_files=["res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.ctex"]
+dest_files=["res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.bptc.ctex", "res://.godot/imported/player_lantern_guard.png-5e2d044808d90114c1dc07f59b4c2fb9.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
-mipmaps/limit=-1
+mipmaps/generate=true
+mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""
 process/channel_remap/red=0

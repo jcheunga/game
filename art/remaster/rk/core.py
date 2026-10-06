@@ -111,8 +111,9 @@ def setup_render(scene, samples=96, transparent=True, exposure=0.0, look='AgX - 
     return scene
 
 
-def studio_world(scene, top='3a4654', bottom='1d1a17', strength=0.55):
-    """Soft gradient environment: cool sky above, warm bounce below."""
+def studio_world(scene, top='3a4654', bottom='1d1a17', strength=0.55, reflect=2.2, band='f2e6d2'):
+    """Soft gradient environment: cool sky above, warm bounce below. Reflections see a brighter copy with a
+    soft horizon band, the way a softbox lights a studio model, so metal and gloss read instead of going black."""
     world = scene.world
     world.use_nodes = True
     nt = world.node_tree
@@ -130,7 +131,25 @@ def studio_world(scene, top='3a4654', bottom='1d1a17', strength=0.55):
     ramp.color_ramp.elements[1].color = srgb(top)
     nt.links.new(ramp.outputs['Color'], bg.inputs['Color'])
     bg.inputs['Strength'].default_value = strength
-    nt.links.new(bg.outputs[0], out.inputs[0])
+    if reflect:
+        glossy = nt.nodes.new('ShaderNodeValToRGB')
+        nt.links.new(sep.outputs['Z'], glossy.inputs['Fac'])
+        els = glossy.color_ramp.elements
+        els[0].position, els[0].color = 0.40, srgb(bottom)
+        els[1].position, els[1].color = 0.70, srgb(top)
+        mid = els.new(0.53)
+        mid.color = srgb(band)
+        bg2 = nt.nodes.new('ShaderNodeBackground')
+        nt.links.new(glossy.outputs['Color'], bg2.inputs['Color'])
+        bg2.inputs['Strength'].default_value = strength * reflect
+        lp = nt.nodes.new('ShaderNodeLightPath')
+        mix = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(lp.outputs['Is Glossy Ray'], mix.inputs[0])
+        nt.links.new(bg.outputs[0], mix.inputs[1])
+        nt.links.new(bg2.outputs[0], mix.inputs[2])
+        nt.links.new(mix.outputs[0], out.inputs[0])
+    else:
+        nt.links.new(bg.outputs[0], out.inputs[0])
     return world
 
 

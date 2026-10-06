@@ -116,7 +116,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnFireballParticles(Node parent, Vector2 position, Color color, float radius)
+	public static CpuParticles2D SpawnFireballParticles(Node parent, Vector2 position, float radius)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -262,7 +262,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnStoneBarricadeParticles(Node parent, Vector2 position, Color color, float radius)
+	public static CpuParticles2D SpawnStoneBarricadeParticles(Node parent, Vector2 position, float radius)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -291,7 +291,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnWarCryParticles(Node parent, Vector2 position, Color color, float radius)
+	public static CpuParticles2D SpawnWarCryParticles(Node parent, Vector2 position, float radius)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -320,7 +320,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnEarthquakeParticles(Node parent, Vector2 position, Color color, float radius)
+	public static CpuParticles2D SpawnEarthquakeParticles(Node parent, Vector2 position, float radius)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -349,7 +349,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnPolymorphParticles(Node parent, Vector2 position, Color color)
+	public static CpuParticles2D SpawnPolymorphParticles(Node parent, Vector2 position)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -380,7 +380,7 @@ public static class BattleParticles
 		return particles;
 	}
 
-	public static CpuParticles2D SpawnResurrectParticles(Node parent, Vector2 position, Color color)
+	public static CpuParticles2D SpawnResurrectParticles(Node parent, Vector2 position)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -434,45 +434,6 @@ public static class BattleParticles
 		gradient.AddPoint(1f, new Color(color.Darkened(0.5f), 0f));
 		particles.ColorRamp = gradient;
 		StartAndAutoFree(particles, 0.65f);
-		return particles;
-	}
-
-	public static CpuParticles2D SpawnProjectileTrail(Node parent, Color color)
-	{
-		if (IsReducedMotionEnabled())
-		{
-			return null;
-		}
-
-		var particles = new CpuParticles2D
-		{
-			Amount = 8,
-			OneShot = false,
-			Lifetime = 0.18f,
-			Direction = new Vector2(-1f, 0f),
-			Spread = 20f,
-			InitialVelocityMin = 10f,
-			InitialVelocityMax = 30f,
-			Gravity = Vector2.Zero,
-			ScaleAmountMin = 1.5f,
-			ScaleAmountMax = 3f,
-			ZIndex = 90,
-			Emitting = true
-		};
-		particles.Color = color;
-		var gradient = new Gradient();
-		gradient.SetColor(0, new Color(color.Lightened(0.15f), 0.6f));
-		gradient.AddPoint(0.5f, new Color(color, 0.3f));
-		gradient.AddPoint(1f, new Color(color.Darkened(0.2f), 0f));
-		particles.ColorRamp = gradient;
-		var texture = ParticleTextureLoader.TryLoad("particle_trail") ?? ParticleTextureLoader.SoftTexture;
-		if (texture != null)
-		{
-			particles.Texture = texture;
-		}
-
-		NormalizeTextureSize(particles);
-		parent.AddChild(particles);
 		return particles;
 	}
 

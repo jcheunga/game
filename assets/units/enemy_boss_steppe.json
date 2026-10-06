@@ -1,35 +1,35 @@
 {
-  "frameWidth": 624,
-  "frameHeight": 515,
-  "drawScale": 3.6333993245603815,
+  "frameWidth": 578,
+  "frameHeight": 525,
+  "drawScale": 3.2286411852001633,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
       "contactFrame": 4
     },
     "hit": {
-      "start": 20,
+      "start": 24,
       "count": 2,
       "duration": 0.09,
       "loop": false
     },
     "death": {
-      "start": 22,
+      "start": 26,
       "count": 16,
       "duration": 0.08,
       "loop": false,
@@ -37,12 +37,12 @@
       "fx": "bones",
       "motion": "horse-collapse",
       "impactPoint": [
-        -0.018097,
-        -0.001116
+        -0.020369,
+        -0.001575
       ]
     },
     "deploy": {
-      "start": 38,
+      "start": 42,
       "count": 4,
       "duration": 0.1,
       "loop": false
@@ -51,19 +51,19 @@
   "assetId": "enemy_boss_steppe",
   "title": "Steppe Warlord",
   "source": "art/remaster/units/enemy_boss_steppe.py",
-  "anchorY": 0.863329,
-  "anchorX": 0.340876,
+  "anchorY": 0.824016,
+  "anchorX": 0.327979,
   "motion": {
     "revision": "remaster-v1",
     "profile": "mounted-lance",
     "body": [
       0.0,
-      -0.435675
+      -0.429081
     ],
     "contact": [
-      0.567149,
-      -0.151207
+      0.638508,
+      -0.088074
     ]
   },
-  "healthBarY": 0.576886
+  "healthBarY": 0.659194
 }

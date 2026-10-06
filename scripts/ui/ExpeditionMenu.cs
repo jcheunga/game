@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -193,7 +192,7 @@ public partial class ExpeditionMenu : Control
 			box.AddThemeConstantOverride("separation", 6);
 			box.AddChild(RealmUi.KeyValue(def.Title, $"{def.DurationMinutes} min"));
 			var title = box.GetChild<HBoxContainer>(0).GetChild<Label>(0);
-			title.AddThemeFontOverride("font", ModalUi.HeadingFont); title.AddThemeFontSizeOverride("font_size", 20); title.AddThemeColorOverride("font_color", ModalUi.Cream);
+			RealmUi.Display(title, 20); title.AddThemeColorOverride("font_color", ModalUi.Cream);
 			box.AddChild(RealmUi.Label(def.Description, 18, true));
 			box.AddChild(BuildRewardRow(def.BaseGoldReward, def.BaseFoodReward, def.RelicDropChance, def.MinUnits, def.MaxUnits));
 

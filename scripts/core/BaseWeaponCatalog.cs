@@ -2,8 +2,9 @@ using Godot;
 
 public enum BaseWeaponKind { Arrows, Ballista, Firepot, Frost, Hex }
 
+/// <param name="Shot">A projectile sprite that replaces the kind's usual shot, or null.</param>
 public sealed record BaseWeaponDefinition(string Title, BaseWeaponKind Kind, float Damage,
-    float Range, float Cooldown, float Speed, Color Color, float SplashRadius = 0f);
+    float Range, float Cooldown, float Speed, Color Color, float SplashRadius = 0f, string Shot = null);
 
 public static class BaseWeaponCatalog
 {
@@ -24,7 +25,7 @@ public static class BaseWeaponCatalog
 
     public static BaseWeaponDefinition Stronghold(string routeId) => routeId switch
     {
-        RouteCatalog.HarborId => new("Harpoon ballista", BaseWeaponKind.Ballista, 14, 180, 4.5f, 290, new Color("9bdaf1")),
+        RouteCatalog.HarborId => new("Harpoon ballista", BaseWeaponKind.Ballista, 14, 180, 4.5f, 290, new Color("9bdaf1"), Shot: "harpoon"),
         RouteCatalog.FoundryId => new("Furnace firepots", BaseWeaponKind.Firepot, 8, 150, 5, 145, new Color("ff9955"), 30),
         RouteCatalog.CitadelId => new("Citadel ballista", BaseWeaponKind.Ballista, 16, 190, 4.5f, 300, new Color("e4b96b")),
         RouteCatalog.ThornwallId => new("Frost sentries", BaseWeaponKind.Frost, 8, 165, 3.5f, 215, new Color("a4e7ef")),

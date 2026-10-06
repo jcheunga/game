@@ -104,7 +104,7 @@ public static class OnlineRoomScoreboardService
 		foreach (var entry in currentSnapshot.Entries.Take(Math.Max(1, maxEntries)))
 		{
 			builder.AppendLine(
-				$"#{entry.Rank} {entry.PlayerCallsign}  |  {entry.Score} pts  |  Hull {entry.HullPercent}%  |  {entry.ElapsedSeconds:0.0}s  |  {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
+				$"#{entry.Rank} {entry.PlayerCallsign} · {entry.Score} pts · Hull {entry.HullPercent}% · {entry.ElapsedSeconds:0.0}s · {(entry.Retreated ? "retreated" : entry.Won ? "cleared" : "failed")}");
 		}
 
 		return builder.ToString().TrimEnd();

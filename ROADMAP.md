@@ -27,7 +27,7 @@ Longer-term expansion targets:
 - internet/mobile backend-backed multiplayer after the LAN and async room flows are proven locally
 - real-money cash shop for gold and food packs via native mobile IAP and web payments
 
-## What We Have Already Done
+## What we have already done
 
 The project already has a working vertical slice:
 
@@ -43,35 +43,36 @@ The project already has a working vertical slice:
 
 This means the project is no longer at "empty prototype" status. It has a combat sandbox, a progression shell, and content data that can be evolved instead of replaced.
 
-## Current Verification Snapshot
+## Current verification snapshot
 
-- repo-side roadmap status: complete
-- local verification command: `./scripts/verify_all.sh`
-- current game build state: `0 warnings, 0 errors`
-- current server verification state: `71 passed, 0 failed, 71 total`
-- current data verification state: `6437 passed, 0 failed`
-- remaining roadmap work is external only: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
+- local verification command: `./scripts/verify_all.sh` (builds the game, validates data, runs the server tests and builds the public website)
+- game build: `0 warnings, 0 errors`
+- server tests: 86 passed, 0 failed
+- data checks: 11,992 passed, 0 failed
+- content: 100 campaign stages in 10 zones × 10 (zone boss in slot 10) · 19 player units, 19 enemies, 14 bosses · 10 spells · save version 46
+- remaining code work: boss rush, and the systems marked *Logic only* under [What's ready](#whats-ready)
+- remaining external work: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
-Historical sprint-log test counts later in this document are point-in-time snapshots. Treat this section as the current repo state.
+The sprint log later in this document is a point-in-time record, test counts included. Treat this section as the current repo state.
 
-## What Still Does Not Match The Target
+## What still does not match the target
 
 Main gaps versus the intended DAZW-style experience:
 
-- ~~battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy~~ (war wagon/gatehouse framing implemented with route-themed HUD, heraldic silhouettes, and terrain-specific palettes)
+- ~~battle still uses prototype presentation instead of a strong war wagon/gatehouse fantasy~~ (war wagon/gatehouse framing implemented with Blender-rendered structures, route-accented HUD, and layered parallax zone backdrops)
 - ~~the current content/theme is still too tied to zombie-modern framing and needs a full medieval fantasy conversion~~ (full medieval fantasy theme bible applied; menus, routes, units, stages, spells, and fiction all rethemed)
 - ~~deployment was roster-based rather than deck/card-based~~ (deck/card-based deployment with cooldowns, active deck persistence, and loadout screen implemented)
 - ~~stages are still mostly tuning-driven rather than explicitly scripted~~ (100 stages across 10 districts of ten, with authored waves, battlefield events, hazards, and modifiers)
 - ~~no squad-building metagame beyond basic stage selection~~ (loadout screen, deck synergies, combo pairs, doctrine branches, and relic equipment all implemented)
 - ~~no real shop/payment flow for buying units, unit upgrades, or bus/base upgrades~~ (convoy shop with unit purchases, leveling, spell upgrades, war wagon upgrades, and relic management)
 - ~~current prototype currencies do not match the intended gold/food economy loop~~ (gold/food economy fully replaced scrap/fuel, with stage costs, upgrade costs, and reward tuning)
-- ~~no mission objectives, stars, or encounter scripting~~ (stage-authored objectives, star ratings, heroic directives, and battlefield mission events all implemented)
-- ~~no differentiated enemy abilities or special combat rules~~ (now have shield wall, lich, siege tower, mirror, tunneler, plus 10 unique bosses)
-- placeholder rendering is still carrying too much of the experience — authored art assets are the main remaining gap
+- ~~no mission objectives, stars, or encounter scripting~~ (stage-authored objectives, star ratings, and battlefield mission events all implemented)
+- ~~no differentiated enemy abilities or special combat rules~~ (now have shield wall, lich, siege tower, mirror, tunneler, siege engines, plus 14 bosses)
+- ~~placeholder rendering is still carrying too much of the experience~~ (units, structures, zone backdrops, projectiles and icons ship as Blender renders from the [remaster pipeline](art/remaster/README.md))
 
 ## Milestones
 
-### Milestone 0: Medieval Fantasy Theme Pivot
+### Milestone 0: medieval fantasy theme pivot
 
 Objective: lock the new fiction and content direction before scaling more maps and units.
 
@@ -81,7 +82,7 @@ Objective: lock the new fiction and content direction before scaling more maps a
 - rename/retheme currencies, missions, stage labels, and route presentation where needed
 - create a short art/content bible so later roster, spell, and map work all point at the same setting
 
-### Milestone 1: DAZW-Style Battle Core
+### Milestone 1: DAZW-style battle core
 
 Objective: make the battle feel recognizably closer to the target game.
 
@@ -91,7 +92,7 @@ Objective: make the battle feel recognizably closer to the target game.
 - support **stage wave scripting**
 - tighten battlefield pacing around intentional pressure
 
-### Milestone 2: Squad And Meta Layer
+### Milestone 2: squad and meta layer
 
 Objective: create pre-battle decision making and persistent player growth.
 
@@ -104,7 +105,7 @@ Objective: create pre-battle decision making and persistent player growth.
 - persistent team composition data
 - better rewards and stage completion structure
 
-### Milestone 3: Economy, Shop, And Map Costs
+### Milestone 3: economy, shop, and map costs
 
 Objective: replace the prototype reward model with the long-term progression economy.
 
@@ -115,7 +116,7 @@ Objective: replace the prototype reward model with the long-term progression eco
 - persist owned units, upgrade tiers, and base upgrade levels in save data
 - tune stage rewards so campaign clears feed both upgrade growth and map expansion
 
-### Milestone 4: Mission Structure
+### Milestone 4: mission structure
 
 Objective: move from "sandbox stage" to "campaign mission".
 
@@ -126,7 +127,7 @@ Objective: move from "sandbox stage" to "campaign mission".
 - clearer map progression by district/route
 - fantasy-specific mission events such as ritual sites, gate breaches, relic escorts, cursed weather, or siege objectives
 
-### Milestone 5: Presentation Pass
+### Milestone 5: presentation pass
 
 Objective: replace prototype abstraction with readable game feedback.
 
@@ -137,7 +138,7 @@ Objective: replace prototype abstraction with readable game feedback.
 - audio pass
 - replace zombie/modern placeholder presentation with armor, banners, fortifications, beasts, undead, spell FX, and stronger faction silhouettes
 
-### Milestone 6: Content Expansion And Balance
+### Milestone 6: content expansion and balance
 
 Objective: scale once the systems are trustworthy.
 
@@ -196,15 +197,16 @@ Enemy roster (all now in-game):
 - `Siege Tower` — slow structure that deploys a wave of enemies at the war wagon
 - `Mirror Knight` — reflects 30% of incoming damage back to the attacker
 - `Tunneler` — burrows behind player lines to attack rear units
+- `Bone Ballista` and `Plague Engine` (ranged siege units that can hit the war wagon), `Catacomb Giant`, `Revenant Captain`
 
 Per-district bosses (all now in-game):
 
-- `Grave Lord` (King's Road), `Tidecaller` (Saltwake Docks), `Iron Warden` (Emberforge March)
-- `Plague Archon` (Ashen Ward), `Thornwall Chieftain` (Thornwall Pass), `Bone Pontiff` (Hollow Basilica)
+- `Grave Lord` (King's Road), `Tidecaller` and `Harrow Tidemaster` (Saltwake Docks), `Iron Warden` (Emberforge March)
+- `Plague Archon` and `Plague Monarch` (Ashen Ward), `Thornwall Chieftain` (Thornwall Pass), `Bone Pontiff` and `Reliquary Tyrant` (Hollow Basilica)
 - `Mire Behemoth` (Mire of Saints), `Steppe Warlord` (Sunfall Steppe), `Gloamwood Witch` (Gloamwood Verge)
-- `Dread Sovereign` (Crownfall Citadel) — final boss, highest stats, spawns crushers
+- `Dread Sovereign` and `Ashen Regent` (Crownfall Citadel) — the Ashen Regent is the final boss at stage 100
 
-### Milestone 7: Endless Roguelite Mode
+### Milestone 7: endless roguelite mode
 
 Objective: add a replayable run-based mode that reuses the combat and progression systems without depending on the linear campaign.
 
@@ -214,7 +216,7 @@ Objective: add a replayable run-based mode that reuses the combat and progressio
 - escalating enemy wave generation and boss checkpoints
 - run rewards that feed back into the main progression economy
 
-### Milestone 8: Multiplayer
+### Milestone 8: multiplayer
 
 Objective: support networked play only after combat/state flow is stable enough to stop rewriting core rules.
 
@@ -224,7 +226,7 @@ Objective: support networked play only after combat/state flow is stable enough 
 - build lobby/session flow and disconnect handling
 - rebalance units/objectives around the chosen multiplayer mode
 
-### Milestone 9: Internet Multiplayer And Mobile Backend
+### Milestone 9: internet multiplayer and mobile backend
 
 Objective: extend the current async/LAN multiplayer systems into a store-ready internet stack for mobile release.
 
@@ -238,7 +240,7 @@ Objective: extend the current async/LAN multiplayer systems into a store-ready i
 - add basic anti-cheat, leaderboard validation, and moderation/reporting hooks
 - keep LAN as the local proving ground for room flow before shipping the internet equivalent
 
-### Milestone 10: Cash Shop And Payments
+### Milestone 10: cash shop and payments
 
 Objective: add a real-money shop where players can purchase gold and food packs to accelerate progression.
 
@@ -286,70 +288,65 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - confirm purchases with a second tap before initiating the native store flow
 - surface purchase success/failure feedback clearly
 
-## Immediate Next Sprint
+## Immediate next sprint
 
-**All code work is complete.** The project has reached code-complete status across all 10 milestones plus 28 post-milestone features and full ship-readiness infrastructure. Every remaining task is art production, audio production, deployment, or platform-specific build configuration — not code.
+All 10 milestones are in code, along with the post-milestone feature batches and the ship-readiness infrastructure. Some of those systems have logic and save data but no player entry point; they are marked *Logic only* below. Boss rush is listed on the home screen as in development. Everything else that remains is art, audio, deployment or platform build configuration.
 
-### What's Ready
+### What's ready
 
-| System | Status | How To Use |
+| System | Status | How to use |
 |--------|--------|-----------|
-| 16 player units, 10 spells, 16 enemies, 10 bosses | Implemented | All in `data/units.json`, `data/spells.json` |
-| Relic Forge (dismantle, fuse 3-to-1, craft with shards + gold) | Implemented | Forge menu from Armory |
+| 19 player units, 10 spells, 19 enemies, 14 bosses | Implemented | All in `data/units.json`, `data/spells.json` |
+| 100 campaign stages (10 zones × 10, zone boss in slot 10) | Implemented | All in `data/stages.json` |
+| Relic Forge (dismantle, fuse 3-to-1, craft with shards + gold) | Implemented | Forge menu from Main Menu |
 | Unit Promotion (elite rank at level 5, second equipment slot) | Implemented | Promote from Armory unit cards |
-| Expeditions (3 slots, 30/60/120 min, gold/food/relic rewards) | Implemented | Expeditions menu from Armory or Main Menu |
+| Expeditions (3 slots, 30/60/120 min, gold/food/relic rewards) | Implemented | Expeditions menu from Main Menu |
 | Seasonal Events (time-limited stages, milestone rewards) | Implemented | Event menu from Main Menu when active |
-| 20 relics (5 common, 7 rare, 8 epic) including 2 event-exclusive | Implemented | `data/equipment.json` |
-| Codex / Bestiary (72 entries: enemies, bosses, units, spells, relics) | Implemented | Codex menu from Main Menu |
-| Skill Trees (16 trees x 5 nodes, Tomes currency) | Implemented | Talents button in Armory unit cards |
-| PvP Arena (async, Elo rating, 5 tiers Bronze-Diamond) | Implemented | Arena menu from Main Menu (stage 20+) |
-| Guild / Warband (5 perks, 5 tiers, weekly goals, contribution) | Implemented | Warband menu from Main Menu |
-| 35 achievements across 6 categories | Implemented | Achievement catalog + server sync |
-| Player Profile Dashboard (6-section stats overview) | Implemented | Profile menu from Main Menu |
-| Campaign Hard Mode (50 stages, 1.3x-2.5x scaling, hardened relics) | Implemented | Normal/Hard toggle on campaign map |
-| Enchantment System (10 enchantments, Essence currency, combat hooks) | Implemented | Enchant tab in Relic Forge |
-| Weekly Raid Boss (4 rotating bosses, community HP, milestone rewards) | Implemented | Raid menu from Main Menu (stage 5+) |
 | 33 relics (5 common, 7 rare, 14 epic, 7 hardened) | Implemented | `data/equipment.json` |
+| Codex / Bestiary (83 entries: enemies, bosses, units, spells, relics) | Implemented | Codex menu from Main Menu |
+| Skill Trees (19 trees × 5 nodes, Tomes currency) | Implemented | Talents button in Armory unit cards |
+| PvP Arena (async, Elo rating, 5 tiers Bronze-Diamond) | Implemented | Arena menu from Main Menu (after stage 30) |
+| Guild / Warband (5 perks, 5 tiers, weekly goals, contribution) | Implemented | Warband menu from Main Menu |
+| 46 achievements with reward payouts | Implemented | Achievement catalog + server sync |
+| Player Profile Dashboard (caravan, battle and collection stats) | Implemented | Profile menu from Main Menu |
+| Weekly Raid Boss (4 rotating bosses, community HP, milestone rewards) | Implemented | Raid menu from Main Menu (after the King's Road boss) |
 | Bounty Board (3 daily quests, 15 bounty templates) | Implemented | Bounty menu from Main Menu |
 | Challenge Tower (100 ascending floors, tower relics) | Implemented | Tower menu from Main Menu |
 | Friend List & Gifting (add/remove friends, 3 daily gifts) | Implemented | Friends menu from Main Menu |
-| Mastery System (5 ranks per unit, XP from combat usage) | Implemented | Mastery rank on unit cards |
-| 43 achievements across 7 categories + reward payouts | Implemented | Achievement catalog + rewards |
-| Login Calendar (30-day escalating rewards, monthly reset) | Implemented | Calendar menu from Main Menu |
+| Mastery System (5 ranks per unit, XP from combat usage) | Implemented | XP earned in battle, shown with victory rewards |
+| Login Calendar (30-day escalating rewards, monthly reset) | Implemented | Daily gifts from Main Menu |
 | Leaderboard Hub (Arena/Tower/Endless/Daily tabs) | Implemented | Leaderboard menu from Main Menu |
-| War Wagon Cosmetics (8 milestone skins) | Implemented | Skin selector in Settings |
-| Notification Center (badge counts on menu buttons) | Implemented | MainMenu badge counts |
-| Unit Awakening (1-5 stars via tokens, stat bonuses) | Implemented | Star display on unit cards |
 | Season Pass (50-tier free + premium tracks, Season XP) | Implemented | Season Pass menu from Main Menu |
-| Collection Milestones (24 milestones across 6 categories) | Implemented | Progress bars in Profile/Codex |
-| 46 achievements with reward payouts | Implemented | Achievement catalog + rewards |
-| Battle Mutators (12 gameplay modifiers, reward multiplier) | Implemented | Mutator toggles in Loadout |
-| Battle Summary Screen (post-battle stats breakdown) | Implemented | Shown after every battle |
-| Accessibility Options (colorblind, reduced motion, auto-battle, large text) | Implemented | Settings > Accessibility |
-| Live Config Service (server-side tuning, announcements) | Implemented | /config/live endpoint |
-| 60 campaign stages across 10 districts | Implemented | All in `data/stages.json` |
+| Accessibility (reduced motion, high contrast, text size) | Implemented | Settings → Gameplay |
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
-| Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings |
+| Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings → Account → Payments |
+| Campaign Hard Mode (all 100 stages, 1.3x-2.5x scaling, hardened relics) | Logic only | `HardModeCatalog`; no toggle, battle scaling or victory hook |
+| Enchantment System (10 enchantments, Essence currency, combat hooks) | Logic only | `EnchantmentCatalog`; the Forge has no enchant screen |
+| War Wagon Cosmetics (8 milestone skins) | Logic only | Skin art renders in battle; no skin selector |
+| Unit Awakening (1-5 stars via tokens, stat bonuses) | Logic only | `AwakeningCatalog`; no awaken action |
+| Collection Milestones (24 milestones across 6 categories) | Logic only | `CollectionMilestoneCatalog`; no progress or claim screen |
+| Battle Mutators (12 gameplay modifiers, reward multiplier) | Logic only | `BattleMutatorCatalog`; no mutator toggles |
+| Colorblind, auto-battle and large-text modes | Logic only | Save fields and setters only; no settings toggles |
 | Server (Docker + CI + admin dashboard + backups) | Ready to deploy | `cd server && docker compose up -d` |
-| Unit sprite pipeline | Ready for art | Drop PNG at `assets/units/{visual_class}.png` |
-| Background texture pipeline | Ready for art | Drop PNG at `assets/backgrounds/{terrain_id}.png` |
-| Structure texture pipeline | Ready for art | Drop PNG at `assets/structures/{war_wagon,gatehouse}.png` |
-| Music pipeline (17 track slots) | Ready for audio | Drop OGG at `assets/music/{track_id}.ogg` |
-| SFX override pipeline (26 cue IDs) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
+| Unit sprites (all 52 units, Blender-rendered) | Implemented | `assets/units/{unit_id}.png` + `.json` from [art/remaster](art/remaster/README.md); `{visual_class}.png` is the fallback |
+| Battle backdrops (far/mid/near parallax per zone) | Implemented | `assets/world/backdrops/{zone}.json` + `{zone}_far.png`, `{zone}_mid.png`, `{zone}.png`; per-stage plates and `assets/backgrounds/{terrain_id}.png` are fallbacks |
+| Structures (war wagon + 7 skins, gatehouse, weapon mounts) | Implemented | `assets/structures/` |
+| Music pipeline (17 track slots, 4 authored) | Ready for audio | Drop OGG at `assets/music/{track_id}.ogg` |
+| SFX override pipeline (34 cue IDs plus per-spell cast cues) | Ready for audio | Drop OGG at `assets/sfx/{cue_id}.ogg` |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
-| 71 server tests + 6437 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
+| 86 server tests + 11,992 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
 
-### What Remains (Non-Code)
+### What remains (non-code)
 
-1. **Art production** — author sprite sheets for 44 units + 10 bosses, 31 battlefield backgrounds, 2 structure textures (see ASSETS.md for the full manifest with frame sizes, tint colors, animation states, and silhouette briefs)
-2. **Audio production** — record/compose 17 music tracks and 26 sound effects (see ASSETS.md sections 8-9 for the full cue/track list with mood descriptions and format specs)
+1. **Art refinement** — units, structures, zone backdrops, projectiles and icons ship as Blender renders; rebuild and review them through [art/remaster/README.md](art/remaster/README.md). ASSETS.md lists every runtime slot and fallback
+2. **Audio production** — `title`, `campaign`, `shop` and `battle` music and 20 SFX overrides are in place; the other tracks fall back to the shared battle, shop or campaign track and the other cues stay procedural (ASSETS.md lists every track and cue ID)
 3. **Server deployment** — `docker compose up -d` in `server/`, configure `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in `.env` (see `.env.example`), verify at `/admin`
 4. **Platform builds** — build Godot export templates with `godot-google-play-billing` (Android) and `godot-store-kit` (iOS) GDExtension plugins; `NativeIAPService` connects automatically
 5. **Translation** — create `data/locale/{lang}.json` files for target languages (60+ keys in `en.json` as reference)
-6. **Playtesting** — validate the balance pass (Mage/Rogue/Archer cost changes, Earthquake/Stone Barricade spell changes, late-game reward scaling in stages 42-50)
+6. **Playtesting** — play the 100-stage campaign and endless mode to validate balance; [docs/COMBAT_BENCHMARK.md](docs/COMBAT_BENCHMARK.md) has the current benchmark
 
-## Work Completed In This Sprint
+## Sprint log
 
 - documented the target direction and milestone structure
 - added persistent active-deck state
@@ -379,7 +376,6 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - upgraded endless run closure so defeats and voluntary retreats now open a full route debrief with banked payout, boon/path context, directive/contact reports, and reward-bank telemetry
 - added persistent district-completion rewards with retroactive save reconciliation, so fully securing a campaign route now pays a one-time chapter bonus on top of stage clears
 - added level-gated unit doctrines with persistent save data, armory selection, retraining costs, and real stat bonuses so unit growth now branches instead of stopping at flat levels
-- added optional stage replay heroic directives with one-time bounty rewards, map/loadout/armory surfacing, and extra stage modifiers so campaign replays now carry a real challenge layer instead of only star cleanup
 - upgraded the audio pass with route-specific ambient profiles and battle-pressure-driven pulse timing, so map/prep/combat no longer share one static background texture across every district
 - added a shared campaign readiness evaluator and doctrine-aware armory guidance, so map/loadout/armory prep now calls out real coverage gaps instead of leaving balance reads buried in raw threat text
 - upgraded campaign presentation with themed route maps, stronger stage-node states, route progress banners, and compact stage intel on the map itself
@@ -564,7 +560,7 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - added combo pair proximity bonuses for 6 unit pairings: Phalanx (Shield Knight + Spearman), Hunter Pack (two War Hounds), Arcane Guard (Mage + Shield Knight), Skirmish Line (Cavalry + Rogue), Siege Corps (Halberdier + Alchemist), Holy Order (Battle Monk + Banner Knight)
 - added daily challenge rotation with deterministic date-seeded board selection, alternating locked/free squad days, and stage picks from the mid-campaign range
 - added equipment/relic panel in the caravan armory shop with per-unit equip/unequip buttons, rarity-tinted panels, and stat bonus display
-- wired relic drops from boss kills (60% common, 30% rare, 10% epic) and heroic stage directive completions (40% common, 20% rare, 5% epic)
+- wired relic drops from boss kills (60% common, 30% rare, 10% epic)
 - surfaced daily challenge section in multiplayer menu with date, board label, stage, and squad mode
 - surfaced combo pair hints in loadout menu when matching units are decked together
 - surfaced active ability info in shop and loadout unit cards with unlock level, description, and cooldown
@@ -820,17 +816,17 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 - prestige reset preserves accessibility settings and mutator battle count
 - all 71 server tests pass, 1528 data integrity checks pass, 0 build errors
 
-## Bugs, Stability, And Hardening
+## Bugs, stability, and hardening
 
 Issues found through code review. All actionable items have been fixed. Remaining items are architectural decisions or accepted design tradeoffs.
 
-### Critical: Server Concurrency And Data Races — ALL FIXED
+### Critical: server concurrency and data races — all fixed
 
 - **(FIXED)** **Room join race condition** — `CountActiveSeats()` + `InsertSeat()` now run inside a single transaction so concurrent joins cannot exceed `max_players`.
 - **(FIXED)** **Matchmake race condition** — `RoomMatchmake` find-or-create + seat insert now wrapped in a single transaction.
 - **(FIXED)** **No transaction boundaries** — Room creation, launch, reset, and profile upsert now use explicit transactions so partial failures cannot leave orphaned rows.
 
-### Critical: WebSocket Relay Hardening — ALL FIXED
+### Critical: WebSocket relay hardening — all fixed
 
 - **(FIXED)** **Broadcast can hang forever** — `SendSafe()` now uses a 5-second `CancellationTokenSource` timeout per send.
 - **(FIXED)** **Unbounded room dictionary** — Empty rooms are pruned when the last peer disconnects.
@@ -838,70 +834,67 @@ Issues found through code review. All actionable items have been fixed. Remainin
 - **(ACCEPTED)** **No backpressure** — The 5-second send timeout prevents unbounded memory growth. Full per-peer queue depth limits can be added if load testing shows a need.
 - **(ACCEPTED)** **All state is in-memory** — A server restart loses active WebSocket connections. This is acceptable for relay rooms since clients reconnect automatically and room state is persisted in SQLite.
 
-### High: Input Validation And Anti-Cheat — FIXED
+### High: input validation and anti-cheat — fixed
 
 - **(FIXED)** **No bounds checking on challenge results** — Challenge sync rejects entries with score > 999999, elapsed > 7200s, or defeats > 9999. Room results are clamped to plausible ranges.
 - **(FIXED)** **No rate limiting** — Added per-IP rate limiting middleware (60 requests/minute) with sliding window and stale-entry cleanup.
 - **(FIXED)** **Empty/invalid IDs** — All mutation endpoints now validate profileId is non-empty before processing.
 - **(ACCEPTED)** **Challenge scores are unsigned** — HMAC signing is a design decision that requires client-server key agreement. Bounds validation + rate limiting mitigate casual abuse. Signing can be added when competitive leaderboards launch.
 
-### High: Save Data Integrity — ALL FIXED
+### High: save data integrity — all fixed
 
 - **(FIXED)** **Non-atomic save writes** — `SaveSystem.Save()` now writes to a `.tmp` file, verifies it, rotates the current save to `.bak`, then renames `.tmp` to the real path.
 - **(FIXED)** **No save file backup** — Previous save is now kept as `.bak` and automatically tried if the main save fails to load.
-- **(FIXED)** **Save data versioning** — `GameSaveData.Version` already exists (currently 25) and `ApplySavedData()` already has per-version migration paths for all fields.
+- **(FIXED)** **Save data versioning** — `GameSaveData.Version` already exists (currently 46) and `ApplySavedData()` already has per-version migration paths for all fields; `CampaignRenumbering` moves older 60-stage saves onto the 100-stage numbering.
 - **(FIXED)** **Validation on load** — `ClampState()` already validates all loaded data: Gold/Food >= 0, stages clamped to valid range, all collections normalized, volume percentages clamped 0-100.
 
-### High: State Synchronization — ALL FIXED
+### High: state synchronization — all fixed
 
 - **(FIXED)** **Scoreboard/session merge timestamp** — `MergeScoreboardIntoSnapshot` now skips the merge if the scoreboard data is more than 5 seconds older than the session snapshot.
 - **(FIXED)** **Stale session displayed after fetch failure** — The session service now tracks `_lastFetchFailed` and shows a `[stale data — Xs ago]` warning when the latest fetch failed.
 - **(FIXED)** **Telemetry thundering herd** — Online room telemetry and monitor refresh intervals now include ±200ms and ±300ms random jitter respectively.
 
-### Medium: Resource Cleanup And Memory — FIXED
+### Medium: resource cleanup and memory — fixed
 
 - **(FIXED)** **Projectile trail cleanup** — `Projectile._ExitTree()` now stops and frees the trail particle emitter when the projectile is removed from the scene tree.
 - **(FIXED)** **Projectile visual feedback on cancel** — Projectiles now spawn impact sparks at their current position when the target dies mid-flight.
 - **(ACCEPTED)** **End-screen refresh** — Already stops naturally when the scene changes (BattleController is freed by SceneRouter). The refresh method also guards on `HasActiveTicket()`.
 
-### Medium: Combat Simulation — FIXED / ACCEPTED
+### Medium: combat simulation — fixed / accepted
 
 - **(ACCEPTED)** **Non-deterministic multiplayer simulation** — This is an architecture-level concern that requires fixed-timestep simulation. The current floating-point approach is acceptable for the async challenge and LAN race modes where small divergences don't affect gameplay outcomes. Can be revisited if authoritative server-side simulation is needed.
 - **(FIXED)** **Projectile damage lost on target death** — Projectiles now spawn impact sparks at their current position when the target dies mid-flight.
 - **(FIXED)** **RNG seeded per battle run** — Challenge mode already seeds `_rng` from `_challengeDefinition.Seed`. Campaign and endless modes use `Randomize()` which is correct since they don't need determinism.
 
-### Medium: Database Integrity — ALL FIXED
+### Medium: database integrity — all fixed
 
 - **(FIXED)** **Foreign keys enforced** — `Database.Open()` runs `PRAGMA foreign_keys=ON` on every connection.
 - **(FIXED)** **Index on status columns** — Added `idx_room_seats_status` composite index. `rooms.status` already had `idx_rooms_status`.
 - **(FIXED)** **Duplicate join returns 409** — `RoomJoin` catches `SqliteException` constraint violations and returns `409 Conflict`.
 
-### Low: UI Edge Cases — FIXED / ACCEPTED
+### Low: UI edge cases — fixed / accepted
 
 - **(FIXED)** **Deploy button debounce** — Deploy buttons are already disabled via `button.Disabled` when `!isReady || !hasCourage || _battleEnded`, and `_deck.CanDeploy()` gates on cooldown. Double-deploys are impossible.
 - **(ACCEPTED)** **UI freezes during network calls** — HTTP providers use synchronous `Client.Send()` which blocks briefly. Converting all 15 providers to async/await requires threading changes throughout the Godot call chain. The 15-second timeout (increased from 6s) keeps worst-case freezes bounded. Can be revisited for mobile where main-thread blocking is more impactful.
 - **(ACCEPTED)** **No cancellation support** — Same as above; requires async provider refactor. Scene changes free all nodes, so orphaned requests complete harmlessly.
 
-### Low: Infrastructure — ALL FIXED
+### Low: infrastructure — all fixed
 
 - **(FIXED)** **HttpClient timeout** — All 15 HTTP providers updated from 6-second to 15-second timeout.
 - **(FIXED)** **Structured logging** — Added `RequestLogger` middleware that logs method, path, status code, elapsed time, and profile ID for every request using `ILogger`.
 - **(FIXED)** **Health check endpoint** — Added `/health` endpoint that verifies database connectivity and reports relay room count.
 - **(FIXED)** **Rate limiting** — Added `RateLimiter` middleware with per-IP sliding window (60 requests/minute), `429 Too Many Requests` responses, and periodic stale-entry cleanup.
 
-## Ship Checklist
+## Ship checklist
 
-1. **Start with the 3 starter units** — drop `fighter.png`, `gunner.png`, `shield.png` into `assets/units/` and verify they render in battle
-2. **Art the remaining 41 units** — work through ASSETS.md roster, one visual class at a time; the game renders sprites when present and procedural shapes when absent, so partial art is fine
-3. **Add battlefield backgrounds** — start with `urban.png` and `industrial.png` in `assets/backgrounds/`, then fill remaining 29 terrain IDs
-4. **Add structure textures** — `war_wagon.png` and `gatehouse.png` in `assets/structures/`
-5. **Record music** — start with `title.ogg` and `battle.ogg` in `assets/music/`, then add per-route tracks
-6. **Record SFX** — replace procedural cues starting with `deploy.ogg`, `impact_light.ogg`, `victory.ogg` in `assets/sfx/`
-7. **Deploy server** — `cd server && docker compose up -d`, configure `.env`, verify at `http://host:8080/admin`
-8. **Playtest** — run all 10 districts + endless mode, validate balance pass
-9. **Translate** — add `data/locale/{lang}.json` for target markets
-10. **Build for mobile** — export with IAP plugins, set store IDs in `data/shop_products.json`
-11. **Submit to stores** — App Store / Google Play with screenshots and descriptions
+1. **Review art** — units, structures, zone backdrops and projectiles ship as Blender renders; rebuild through [art/remaster/README.md](art/remaster/README.md) and check them in battle
+2. **Record music** — `title`, `campaign`, `shop` and `battle` are in `assets/music/`; add the scene and per-route tracks
+3. **Record SFX** — replace the remaining procedural cues in `assets/sfx/`; 20 cues have authored files
+4. **Deploy server** — `cd server && docker compose up -d`, configure `.env`, verify at `http://host:8080/admin`
+5. **Playtest** — run all 10 districts + endless mode, validate balance pass
+6. **Translate** — add `data/locale/{lang}.json` for target markets
+7. **Build for mobile** — export with IAP plugins, set store IDs in `data/shop_products.json`
+8. **Submit to stores** — App Store / Google Play with screenshots and descriptions
 
 ## Guardrails
 

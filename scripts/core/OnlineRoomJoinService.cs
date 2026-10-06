@@ -152,11 +152,11 @@ public static class OnlineRoomJoinService
 		var builder = new StringBuilder();
 		builder.AppendLine($"Online room join ({_cachedTicket.ProviderDisplayName}):");
 		builder.AppendLine(_cachedTicket.Summary);
-		builder.AppendLine($"Room: {_cachedTicket.RoomTitle}  |  Status: {_cachedTicket.Status}{(IsTicketExpired(_cachedTicket) ? " (expired)" : "")}");
-		builder.AppendLine($"Board: {_cachedTicket.BoardCode}  |  Seat: {_cachedTicket.SeatLabel}");
-		builder.AppendLine($"Transport: {_cachedTicket.TransportHint}  |  Relay: {_cachedTicket.RelayEndpoint}");
-		builder.AppendLine($"Ticket: {MaskToken(_cachedTicket.TicketId)}  |  Join token: {MaskToken(_cachedTicket.JoinToken)}");
-		builder.AppendLine($"Expires: {expiresLabel}  |  Remaining: {FormatRemainingLease(GetRemainingLeaseSeconds(_cachedTicket))}");
+		builder.AppendLine($"Room: {_cachedTicket.RoomTitle} · Status: {_cachedTicket.Status}{(IsTicketExpired(_cachedTicket) ? " (expired)" : "")}");
+		builder.AppendLine($"Board: {_cachedTicket.BoardCode} · Seat: {_cachedTicket.SeatLabel}");
+		builder.AppendLine($"Transport: {_cachedTicket.TransportHint} · Relay: {_cachedTicket.RelayEndpoint}");
+		builder.AppendLine($"Ticket: {MaskToken(_cachedTicket.TicketId)} · Join token: {MaskToken(_cachedTicket.JoinToken)}");
+		builder.AppendLine($"Expires: {expiresLabel} · Remaining: {FormatRemainingLease(GetRemainingLeaseSeconds(_cachedTicket))}");
 		builder.Append(IsTicketExpired(_cachedTicket)
 			? "Seat health: expired. Renew the room seat before toggling ready or refreshing room state."
 			: "Seat health: active.");

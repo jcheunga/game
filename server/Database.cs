@@ -1,6 +1,4 @@
-using System;
 using System.Data.Common;
-using System.IO;
 #if SQLITE_TEST
 using Microsoft.Data.Sqlite;
 #endif
@@ -16,7 +14,6 @@ public static class Database
 #endif
     private static NpgsqlDataSource? _postgresDataSource;
     private static Provider _provider = Provider.Postgres;
-    private const int CurrentSchemaVersion = 5;
 
     private enum Provider
     {

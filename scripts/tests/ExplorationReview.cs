@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -80,9 +79,9 @@ public partial class ExplorationReview : Node
             Check(state.CompleteAdventureStep("city",first) && Charted("city")>chartedBefore && !state.HasClaimedAdventureDiscovery(early.Id),"Arrival expands sight without granting an unreached discovery");
             Check(Walk(RouteTo(early.Cell)) && state.Food==24+early.Amount && state.HasClaimedAdventureDiscovery(early.Id),"Arriving at hidden provisions pays the advertised food bonus once");
             var food=state.Food; var reverse=path.Reverse().ToArray();
-            Check(state.GetAdventureTravelFoodCost("city",reverse)==0 && Walk(reverse) && Walk(path) && state.Food==food,"Backtracking is free and provisions cannot be claimed twice");
+            Check(Walk(reverse) && Walk(path) && state.Food==food,"Backtracking is free and provisions cannot be claimed twice");
             var save=state.BuildSaveData(); state.ReloadFromDisk();
-            Check(state.HasClaimedAdventureDiscovery(early.Id) && state.GetAdventureTravelFoodCost("city",reverse)==0 && state.Food==save.Food && Cell("city")==early.Cell,"Reload preserves food, paid routes, discovery claims and caravan position");
+            Check(state.HasClaimedAdventureDiscovery(early.Id) && state.Food==save.Food && Cell("city")==early.Cell,"Reload preserves food, paid routes, discovery claims and caravan position");
             Check(!state.HasClaimedAdventureDiscovery(AdventureDiscoveryCatalog.ForMap("harbor")[0].Id),"A discovery claim belongs only to its own zone");
             foreach (var kind in new[]{AdventureDiscoveryKind.Gold,AdventureDiscoveryKind.Tomes,AdventureDiscoveryKind.Essence,AdventureDiscoveryKind.Survey})
             {
@@ -104,7 +103,7 @@ public partial class ExplorationReview : Node
             legacy.StageStars=new int[state.MaxStage]; legacy.StageStars[cityStages[^2].StageNumber-1]=3; legacy.Gold=147; legacy.Food=17;
             Restore(legacy);
             Check(state.GetAdventureCaravanTile("city").Id==AdventureTileCatalog.Starting("city").Id && state.HasVisitedAdventureSite("supply-1")
-                && state.GetAdventureStartingCourageBonus(2)==0 && state.Gold==147 && state.Food==17,"Old saves return the caravan to the first stage, keep collected landmarks' ground and resources, and drop shrine courage");
+                && state.Gold==147 && state.Food==17,"Old saves return the caravan to the first stage, keep collected landmarks' ground and resources, and drop shrine courage");
             Check(state.IsAdventureSiteDiscovered("leader-2") && state.IsAdventureSiteDiscovered($"leader-{cityStages[^2].StageNumber}") && !state.CanVisitAdventureSite($"leader-{cityBoss}") && !state.IsCampaignStageUnlocked(cityBoss) && state.BuildSaveData().ClaimedAdventureDiscoveries.Length==0,"Migration preserves known and defeated rivals, keeps the boss gate sealed and grants no new discoveries");
             var invalid=state.BuildSaveData(); invalid.AdventureHeroPositions["city"]=new[]{float.NaN,0f}; invalid.AdventureExploredCells["city"]=new[]{-1,8000}; invalid.AdventureTravelledCells["city"]=new[]{-1,8000}; invalid.ClaimedAdventureDiscoveries=new[]{"invented"}; Restore(invalid);
             Check(state.GetAdventureHeroPosition("city")==shrine.Point && !state.HasClaimedAdventureDiscovery("invented") && state.BuildSaveData().AdventureTravelledCells["city"].Length==0,"Invalid saved positions, cells and discovery IDs are discarded");

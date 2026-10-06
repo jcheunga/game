@@ -3,8 +3,8 @@ import math
 
 from mathutils import Vector
 
-from .anim import P
-from .rig import LAT, YAW, ROLL, Skeleton, add_poses, blend_poses, smooth
+from .anim import IDLE_FRAMES, P, WALK_FRAMES
+from .rig import LAT, ROLL, Skeleton, blend_poses, smooth
 
 
 def _v(*a):
@@ -42,8 +42,8 @@ def clips(kind, J, recoil=0.12, wheel_r=0.3):
             pose[w] = [(ang, LAT)]
         return pose
     idle = []
-    for i in range(4):
-        ph = math.tau * i / 4
+    for i in range(IDLE_FRAMES):
+        ph = math.tau * i / IDLE_FRAMES
         s = math.sin(ph)
         if kind == 'nest':
             pose = P(scale={'body': (1 + 0.04 * s, 1 + 0.04 * s, 1 - 0.035 * s)})
@@ -56,14 +56,14 @@ def clips(kind, J, recoil=0.12, wheel_r=0.3):
         idle.append(pose)
     C['idle'] = idle
     walk = []
-    for i in range(6):
-        ph = math.tau * i / 6
+    for i in range(WALK_FRAMES):
+        ph = math.tau * i / WALK_FRAMES
         if kind == 'nest':
             pose = P(body=[(4 * math.sin(ph), LAT)], scale={'body': (1 + 0.06 * math.sin(ph * 2), 1, 1 - 0.05 * math.sin(ph * 2))},
                      move={'root': (0.03 * math.sin(ph), 0, 0)})
         else:
             pose = P(body=[(1.2 * math.sin(ph * 2), LAT)], move={'body': (0, 0, 0.012 * abs(math.sin(ph * 2)))})
-            roll(pose, 0.09 * i)
+            roll(pose, 0.54 * i / WALK_FRAMES)
         walk.append(pose)
     C['walk'] = walk
     if kind == 'ballista':
@@ -97,6 +97,22 @@ def clips(kind, J, recoil=0.12, wheel_r=0.3):
                 att.append(blend_poses(pa, pb, smooth(t)))
                 break
     C['attack'] = att
+    if kind in ('ballista', 'bombard'):
+        # Close quarters: the engine bucks back, then rams forward on its wheels (the bombard clubs with its barrel).
+        m_wind = roll(P(body=[(3, LAT)], move={'body': (-0.05, 0, 0.01)}), -0.05)
+        m_contact = roll(P(body=[(-5, LAT)], move={'body': (0.16, 0, -0.01)}), 0.16)
+        if kind == 'bombard':
+            m_contact['arm'] = [(-9, LAT)]
+        m_follow = roll(P(body=[(-2, LAT)], move={'body': (0.1, 0, 0)}), 0.1)
+        mseq = [(0, rest), (1, blend_poses(rest, m_wind, .6)), (2, m_wind), (3, m_contact), (4, m_follow), (6, rest)]
+        melee = []
+        for f in range(7):
+            for (a, pa), (b, pb) in zip(mseq, mseq[1:]):
+                if a <= f <= b:
+                    t = 0 if a == b else (f - a) / (b - a)
+                    melee.append(blend_poses(pa, pb, smooth(t)))
+                    break
+        C['melee'] = melee
     hit = P(body=[(5, LAT), (3, ROLL)], move={'body': (-0.05, 0, 0.02)})
     C['hit'] = [hit, blend_poses({}, hit, .4)]
     death = []

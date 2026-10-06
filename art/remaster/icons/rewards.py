@@ -1,13 +1,11 @@
 """Reward icons: currencies and reward kinds."""
-import math
 import random
 
 from mathutils import Vector
 
 from rk import geo
 from . import itemkit as P
-from rk.heads import catmull
-from .base import icon, V
+from .base import icon
 
 
 def crown_relief(name, center, normal, up, size, mat, coll, depth=0.012):

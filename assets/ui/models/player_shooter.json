@@ -1,22 +1,22 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 2.577338011368461,
+  "frameWidth": 228,
+  "frameHeight": 218,
+  "drawScale": 1.8095238095238098,
   "animations": {
     "idle": {
       "start": 0,
-      "count": 4,
-      "duration": 0.16,
+      "count": 6,
+      "duration": 0.10666666666666667,
       "loop": true
     },
     "walk": {
-      "start": 4,
-      "count": 6,
-      "duration": 0.1,
+      "start": 6,
+      "count": 8,
+      "duration": 0.075,
       "loop": true
     },
     "attack": {
-      "start": 10,
+      "start": 14,
       "count": 10,
       "duration": 0.07,
       "loop": false,
@@ -26,19 +26,19 @@
   "assetId": "player_shooter",
   "title": "Archer",
   "source": "art/remaster/units/player_shooter.py",
-  "anchorY": 0.7414705753326416,
-  "anchorX": 0.472277,
+  "anchorY": 0.859704,
+  "anchorX": 0.312839,
   "motion": {
     "revision": "remaster-v1",
     "profile": "bow-draw",
     "body": [
       0.0,
-      -0.230509
+      -0.413406
     ],
     "contact": [
-      0.177901,
-      -0.312704
+      0.253471,
+      -0.542142
     ]
   },
-  "healthBarY": 0.447721
+  "healthBarY": 0.804891
 }

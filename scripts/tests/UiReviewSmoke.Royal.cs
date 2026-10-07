@@ -12,7 +12,7 @@ public partial class UiReviewSmoke
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance; state.ResetProgress();
         var fixture = state.BuildSaveData();
-        fixture.Gold = 1240; fixture.Food = 21; fixture.RelicShards = 18; fixture.Tomes = 12; fixture.Sigils = 8;
+        fixture.Gold = 1240; fixture.Food = 21; fixture.RelicShards = 18; fixture.Sigils = 8;
         fixture.HighestUnlockedStage = state.MaxStage;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Select(u => u.Id).ToArray();
         fixture.OwnedPlayerSpellIds = GameData.GetPlayerSpells().Select(s => s.Id).ToArray();

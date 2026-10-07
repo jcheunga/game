@@ -34,7 +34,7 @@ def main():
     landmarks = OUT / "landmarks"
     landmarks.mkdir(exist_ok=True)
     # The sites the map draws (MapPathCanvas.LandmarkName); other generations are not installed.
-    used = {"boss", "leader", "camp", "watchtower", "shrine", "food", "gold", "tomes", "essence", "survey"}
+    used = {"boss", "leader", "camp", "watchtower", "shrine", "food", "gold", "essence", "survey"}
     for source in sorted((GEN / "landmarks").glob("*.png")):
         if source.stem not in used:
             continue

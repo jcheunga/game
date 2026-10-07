@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public enum AdventureDiscoveryKind { Food, Gold, Tomes, Essence, Survey }
+public enum AdventureDiscoveryKind { Food, Gold, Essence, Survey }
 public sealed record AdventureDiscovery(string Id, string MapId, int Cell, AdventureDiscoveryKind Kind, int Amount)
 {
     public Vector2 Point => AdventureTerrain.Point(Cell);
-    public string Icon => Kind switch { AdventureDiscoveryKind.Food => "food", AdventureDiscoveryKind.Gold => "gold", AdventureDiscoveryKind.Tomes => "book", AdventureDiscoveryKind.Essence => "flame", _ => "map" };
-    public string Title => Kind switch { AdventureDiscoveryKind.Food => "Hidden provisions", AdventureDiscoveryKind.Gold => "Lost coin purse", AdventureDiscoveryKind.Tomes => "Forgotten writings", AdventureDiscoveryKind.Essence => "Ancient essence", _ => "Surveyor's chart" };
+    public string Icon => Kind switch { AdventureDiscoveryKind.Food => "food", AdventureDiscoveryKind.Gold => "gold", AdventureDiscoveryKind.Essence => "flame", _ => "map" };
+    public string Title => Kind switch { AdventureDiscoveryKind.Food => "Hidden provisions", AdventureDiscoveryKind.Gold => "Lost coin purse", AdventureDiscoveryKind.Essence => "Ancient essence", _ => "Surveyor's chart" };
     public string RewardText => Kind == AdventureDiscoveryKind.Survey ? "Nearby terrain revealed" : $"+{Amount} {Kind.ToString().ToLowerInvariant()}";
 }
 
@@ -29,15 +29,15 @@ public static class AdventureDiscoveryCatalog
         chosen.Add(early);
         foreach (var cell in Enumerable.Range(0,AdventureTerrain.CellCount).OrderBy(c => AdventureTerrain.Hash(seed,c)))
             if (chosen.Count < 40 && Available(cell)) chosen.Add(cell);
-        var cycle = new[] { AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Tomes,
+        var cycle = new[] { AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold,
             AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Survey,
-            AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Tomes };
+            AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold };
         var index = Array.IndexOf(AssetCoverageCatalog.RouteIds,map);
         return Cache[map] = chosen.Select((cell,i) => {
             var kind = cycle[i % cycle.Length]; var hash = AdventureTerrain.Hash(seed,cell + 9000);
             var amount = kind switch { AdventureDiscoveryKind.Food => i == 0 ? 6 : 4 + (int)(hash % 3),
                 AdventureDiscoveryKind.Gold => 20 + Math.Max(0,index) * 5 + (int)(hash % 16),
-                AdventureDiscoveryKind.Tomes or AdventureDiscoveryKind.Essence => 1 + (int)(hash % 2), _ => 4 };
+                AdventureDiscoveryKind.Essence => 1 + (int)(hash % 2), _ => 4 };
             return new AdventureDiscovery($"discovery-{map}-{cell % AdventureTerrain.Columns}-{cell / AdventureTerrain.Columns}",map,cell,kind,amount);
         }).ToArray();
     }

@@ -198,7 +198,6 @@ public partial class TowerMenu : Control
 		rewards.AddChild(amounts);
 		if (def.RewardGold > 0) amounts.AddChild(HomeResourceUi.Amount("gold", $"{def.RewardGold:N0}", $"{def.RewardGold:N0} gold", 28));
 		if (def.RewardFood > 0) amounts.AddChild(HomeResourceUi.Amount("food", $"{def.RewardFood}", $"{def.RewardFood} rations", 28));
-		if (def.RewardTomes > 0) amounts.AddChild(HomeResourceUi.Amount("tomes", $"{def.RewardTomes}", $"{def.RewardTomes} tomes", 28));
 		if (def.RewardEssence > 0) amounts.AddChild(HomeResourceUi.Amount("essence", $"{def.RewardEssence}", $"{def.RewardEssence} essence", 28));
 		_detailFacts.AddChild(rewards);
 

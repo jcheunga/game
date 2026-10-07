@@ -66,7 +66,7 @@ public partial class ExplorationReview : Node
                 GD.Print($"EXPLORATION_LAYOUT: {zone} {walkable} ground, {discoveries.Count} discoveries, landmark spacing {spacing}");
                 Check(walkable>550 && sites.All(n=>AdventureTerrain.Path(zone,camp,AdventureTerrain.Cell(n.Point)).Length>0),zone+" has a large connected landscape with reachable landmarks");
                 Check(spacing>=4 && AdventureTerrain.Distance(camp,AdventureTerrain.Cell(boss.Point))>=35 && sites.Where(n=>n!=boss).All(n=>AdventureTerrain.Distance(AdventureTerrain.Cell(n.Point),AdventureTerrain.Cell(boss.Point))>=5),zone+" separates points of interest and gives the boss a distant approach");
-                Check(discoveries.Count>=32 && discoveries.Count<=40 && discoveries.Select(d=>d.Kind).Distinct().Count()==5 && discoveries.All(d=>AdventureTerrain.Path(zone,camp,d.Cell).Length>0),zone+" has sparse reachable discoveries with all five reward types");
+                Check(discoveries.Count>=32 && discoveries.Count<=40 && discoveries.Select(d=>d.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length && discoveries.All(d=>AdventureTerrain.Path(zone,camp,d.Cell).Length>0),zone+" has sparse reachable discoveries of every reward type");
                 Check(discoveries.SelectMany((a,i)=>discoveries.Skip(i+1).Select(b=>AdventureTerrain.Distance(a.Cell,b.Cell))).All(d=>d>=4) && discoveries.All(d=>sites.All(n=>AdventureTerrain.Distance(d.Cell,AdventureTerrain.Cell(n.Point))>=3)),zone+" spaces discoveries away from one another and from landmarks");
                 Check(discoveries[0].Kind==AdventureDiscoveryKind.Food && AdventureTerrain.Path(zone,camp,discoveries[0].Cell).Length<=7,zone+" offers early provisions within a short expedition");
                 Check(!state.IsAdventureSiteDiscovered(boss.Id) && Charted(zone)<=13 && !state.BuildSaveData().ClaimedAdventureDiscoveries.Any(),zone+" starts with nearby camp ground visible and its distant contents hidden");
@@ -83,17 +83,17 @@ public partial class ExplorationReview : Node
             var save=state.BuildSaveData(); state.ReloadFromDisk();
             Check(state.HasClaimedAdventureDiscovery(early.Id) && state.Food==save.Food && Cell("city")==early.Cell,"Reload preserves food, paid routes, discovery claims and caravan position");
             Check(!state.HasClaimedAdventureDiscovery(AdventureDiscoveryCatalog.ForMap("harbor")[0].Id),"A discovery claim belongs only to its own zone");
-            foreach (var kind in new[]{AdventureDiscoveryKind.Gold,AdventureDiscoveryKind.Tomes,AdventureDiscoveryKind.Essence,AdventureDiscoveryKind.Survey})
+            foreach (var kind in new[]{AdventureDiscoveryKind.Gold,AdventureDiscoveryKind.Essence,AdventureDiscoveryKind.Survey})
             {
                 Reset(); Fund(100);
                 var reward=AdventureDiscoveryCatalog.ForMap("city").First(d=>d.Kind==kind); var near=AdventureTerrain.Neighbors(reward.Cell).First(c=>AdventureTerrain.Walkable("city",c));
                 state.MoveAdventureHero("city",AdventureTerrain.Point(near));
-                var beforeGold=state.Gold; var beforeTomes=state.Tomes; var beforeEssence=state.Essence; var beforeCharted=Charted("city");
+                var beforeGold=state.Gold; var beforeEssence=state.Essence; var beforeCharted=Charted("city");
                 Check(!state.HasClaimedAdventureDiscovery(reward.Id) && state.IsAdventureCellRevealed("city",reward.Cell),kind+" stays unclaimed while merely visible");
                 state.TryPayAdventureStep("city",reward.Cell,out _); state.CompleteAdventureStep("city",reward.Cell);
-                var correct=kind switch { AdventureDiscoveryKind.Gold=>state.Gold==beforeGold+reward.Amount,AdventureDiscoveryKind.Tomes=>state.Tomes==beforeTomes+reward.Amount,AdventureDiscoveryKind.Essence=>state.Essence==beforeEssence+reward.Amount,_=>Charted("city")>beforeCharted+5 };
+                var correct=kind switch { AdventureDiscoveryKind.Gold=>state.Gold==beforeGold+reward.Amount,AdventureDiscoveryKind.Essence=>state.Essence==beforeEssence+reward.Amount,_=>Charted("city")>beforeCharted+5 };
                 var claimed=state.BuildSaveData(); state.CompleteAdventureStep("city",reward.Cell);
-                Check(correct && state.HasClaimedAdventureDiscovery(reward.Id) && state.Gold==claimed.Gold && state.Tomes==claimed.Tomes && state.Essence==claimed.Essence,kind+" grants its real bonus once on arrival");
+                Check(correct && state.HasClaimedAdventureDiscovery(reward.Id) && state.Gold==claimed.Gold && state.Essence==claimed.Essence,kind+" grants its real bonus once on arrival");
             }
             Reset(); var tower=AdventureMapCatalog.Find("landmark-1"); state.MoveAdventureHero("city",tower.Point); var beforeTower=Charted("city"); var beforeTowerFood=state.Food;
             Check(!state.TryVisitAdventureSite(tower.Id,out _) && AdventureTileCatalog.Find("city",tower.Id)==null && !state.HasVisitedAdventureSite(tower.Id) && Charted("city")==beforeTower && state.Food==beforeTowerFood && state.BuildSaveData().ClaimedAdventureDiscoveries.Length==0,"Retired watchtowers cannot be visited and grant no reveal, food or tile rewards");

@@ -10,13 +10,12 @@ public sealed class TowerFloorDefinition
 	public string[] ForcedModifierIds { get; }
 	public int RewardGold { get; }
 	public int RewardFood { get; }
-	public int RewardTomes { get; }
 	public int RewardEssence { get; }
 	public string MilestoneRelicId { get; }
 
 	public TowerFloorDefinition(int floor, int baseStageNumber,
 		float enemyHealthScale, float enemyDamageScale, string[] forcedModifierIds,
-		int rewardGold, int rewardFood, int rewardTomes, int rewardEssence,
+		int rewardGold, int rewardFood, int rewardEssence,
 		string milestoneRelicId = "")
 	{
 		Floor = floor;
@@ -26,7 +25,6 @@ public sealed class TowerFloorDefinition
 		ForcedModifierIds = forcedModifierIds ?? Array.Empty<string>();
 		RewardGold = rewardGold;
 		RewardFood = rewardFood;
-		RewardTomes = rewardTomes;
 		RewardEssence = rewardEssence;
 		MilestoneRelicId = milestoneRelicId;
 	}
@@ -50,9 +48,9 @@ public static class ChallengeTowerCatalog
 			var baseStage = ((i % Math.Max(1, GameData.MaxStage)) + 1); // cycles through all authored campaign stages
 			var healthScale = 1.0f + t * 4.0f; // 1.0x to 5.0x
 			var damageScale = 1.0f + t * 2.5f; // 1.0x to 3.5x
-			var gold = 50 + (int)(t * 250);
+			// Every tenth floor adds a 200 gold bonus.
+			var gold = 50 + (int)(t * 250) + (floor % 10 == 0 ? 200 : 0);
 			var food = 1 + (int)(t * 5);
-			var tomes = (floor % 10 == 0) ? 2 : 0;
 			var essence = (floor % 25 == 0) ? 3 : 0;
 
 			var modifiers = floor switch
@@ -74,7 +72,7 @@ public static class ChallengeTowerCatalog
 			};
 
 			Floors[i] = new TowerFloorDefinition(floor, baseStage, healthScale, damageScale, modifiers,
-				gold, food, tomes, essence, milestoneRelic);
+				gold, food, essence, milestoneRelic);
 			ByFloor[floor] = Floors[i];
 		}
 	}

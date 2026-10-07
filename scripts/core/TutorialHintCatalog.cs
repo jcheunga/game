@@ -164,7 +164,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "bounty_hint",
 			Title = "Bounty Board",
-			Body = "Complete 3 daily bounties for gold, food, tomes, and essence. Bounties reset each day.",
+			Body = "Complete 3 daily bounties for gold, food and essence. Bounties reset each day.",
 			TriggerContext = "first_bounty"
 		},
 		new()

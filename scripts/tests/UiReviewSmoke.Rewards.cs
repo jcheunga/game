@@ -73,12 +73,11 @@ public partial class UiReviewSmoke
             Check(state.HasClaimedAdventureDiscovery(reward.Id) && !token.Visible
                 && state.Gold == before.Gold + (kind == AdventureDiscoveryKind.Gold ? reward.Amount : 0)
                 && state.Food == before.Food + (kind == AdventureDiscoveryKind.Food ? reward.Amount : 0)
-                && state.Tomes == before.Tomes + (kind == AdventureDiscoveryKind.Tomes ? reward.Amount : 0)
                 && state.Essence == before.Essence + (kind == AdventureDiscoveryKind.Essence ? reward.Amount : 0),
                 kind + ": selecting a tile reward grants its contents and removes its marker");
             var claimed = state.BuildSaveData();
             token.EmitSignal(BaseButton.SignalName.Pressed); await FinishTravel();
-            Check(state.Gold == claimed.Gold && state.Food == claimed.Food && state.Tomes == claimed.Tomes && state.Essence == claimed.Essence,
+            Check(state.Gold == claimed.Gold && state.Food == claimed.Food && state.Essence == claimed.Essence,
                 kind + ": a collected tile reward cannot grant its contents again");
             state.ReloadFromDisk(); canvas.ShowMap("city", start.Id); await Wait(.15); canvas.FocusSite(reward.Id);
             Check(state.HasClaimedAdventureDiscovery(reward.Id) && !DiscoveryToken(reward.Id).Visible, kind + ": the removed marker stays gone after reload");

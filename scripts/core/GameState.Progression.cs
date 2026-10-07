@@ -36,7 +36,7 @@ public partial class GameState
                     : $"Victory milestone: {relic.DisplayName}.");
             }
             if (milestone.UnitId.Length > 0)
-                parts.Add($"Victory contract: {GameData.GetUnit(milestone.UnitId).DisplayName} · level {milestone.UnitLevel}\n+{milestone.Tomes} tomes · keeps higher levels.");
+                parts.Add($"Victory contract: {GameData.GetUnit(milestone.UnitId).DisplayName} · level {milestone.UnitLevel}\n+{milestone.Gold} gold · keeps higher levels.");
         }
         if (!_claimedStageMasteryRewards.Contains(stage))
         {
@@ -73,9 +73,9 @@ public partial class GameState
             {
                 _ownedPlayerUnitIds.Add(milestone.UnitId);
                 _unitUpgradeLevels[milestone.UnitId] = Math.Max(GetUnitLevel(milestone.UnitId), milestone.UnitLevel);
-                Tomes += milestone.Tomes;
+                Gold += milestone.Gold;
                 discoveries.Add(milestone.UnitId);
-                parts.Add($"Contract fulfilled: {GameData.GetUnit(milestone.UnitId).DisplayName} level {GetUnitLevel(milestone.UnitId)}; +{milestone.Tomes} tomes.");
+                parts.Add($"Contract fulfilled: {GameData.GetUnit(milestone.UnitId).DisplayName} level {GetUnitLevel(milestone.UnitId)}; +{milestone.Gold} gold.");
             }
         }
         if (starsEarned >= 3 && _claimedStageMasteryRewards.Add(stage))

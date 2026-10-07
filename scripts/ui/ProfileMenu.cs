@@ -159,7 +159,6 @@ public partial class ProfileMenu : Control
 		AddRewardStatRow(_generalStack, "food", "Food", gs.Food.ToString("N0"));
 		AddRewardStatRow(_generalStack, "sigils", "Sigils", gs.Sigils.ToString("N0"));
 		AddRewardStatRow(_generalStack, "shards", "Shards", gs.RelicShards.ToString("N0"));
-		AddRewardStatRow(_generalStack, "tomes", "Tomes", gs.Tomes.ToString("N0"));
 		AddRewardStatRow(_generalStack, "essence", "Essence", gs.Essence.ToString("N0"));
 
 		_generalStack.AddChild(MakeSubheading("Campaign"));

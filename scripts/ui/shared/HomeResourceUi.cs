@@ -8,7 +8,7 @@ public static class HomeResourceUi
         var row = new HBoxContainer { TooltipText = hint, AccessibilityName = hint, MouseFilter = Control.MouseFilterEnum.Pass };
         row.AddThemeConstantOverride("separation", 7);
         row.AddChild(new TextureRect {
-            Texture = icon is "sigils" or "tomes" or "shards" or "essence" ? UiArtLoader.TryLoadRewardIcon(icon) : HomeMapArt.Icon(icon),
+            Texture = icon is "sigils" or "shards" or "essence" ? UiArtLoader.TryLoadRewardIcon(icon) : HomeMapArt.Icon(icon),
             CustomMinimumSize = new Vector2(iconSize, iconSize),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = Control.MouseFilterEnum.Ignore

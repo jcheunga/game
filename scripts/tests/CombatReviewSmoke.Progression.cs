@@ -57,24 +57,24 @@ public partial class CombatReviewSmoke
         state.ApplyVictory(58, 0, 0, 1);
         Check(state.IsUnitOwned("player_lantern_guard") && state.GetUnitLevel("player_lantern_guard") == 4,
             "Out-of-order contract victory grants a trained specialist before its major counter fight");
-        var tomes = state.Tomes;
+        var gold = state.Gold;
         state.ApplyVictory(58, 0, 0, 1);
-        Check(state.Tomes == tomes, "Recruit contracts award training and tomes only once");
+        Check(state.Gold == gold, "Recruit contracts award training and gold only once");
         var levels = Read<Dictionary<string, int>>(state, "_unitUpgradeLevels");
         Read<HashSet<string>>(state, "_ownedPlayerUnitIds").Add("player_marksman");
         levels["player_marksman"] = 5;
         state.ApplyVictory(23, 0, 0, 1);
-        Check(state.GetUnitLevel("player_marksman") == 5 && state.Tomes == tomes + 1,
-            "Already developed recruits retain their levels and receive the advertised tome reward");
+        Check(state.GetUnitLevel("player_marksman") == 5 && state.Gold == gold + 100,
+            "Already developed recruits retain their levels and receive the advertised gold reward");
 
         var save = (GameSaveData)Invoke(state, "BuildSaveData");
         var roundTrip = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(save));
         state.ResetProgress();
         Invoke(state, "ApplySavedData", roundTrip);
         state.PrepareCampaignBattle();
-        tomes = state.Tomes;
+        gold = state.Gold;
         state.ApplyVictory(58, 0, 0, 1);
-        Check(state.Tomes == tomes && state.GetUnitLevel("player_lantern_guard") == 4,
+        Check(state.Gold == gold && state.GetUnitLevel("player_lantern_guard") == 4,
             "Serialized saves preserve contract claims and trained units");
 
         state.ResetProgress();
@@ -110,7 +110,7 @@ public partial class CombatReviewSmoke
         state.PrepareCampaignBattle();
         foreach (var stage in new[] { 58, 68, 78 }) state.ApplyVictory(stage, 0, 0, 1);
         save = (GameSaveData)Invoke(state, "BuildSaveData");
-        save.Gold = 20000; save.Sigils = 30; save.Tomes = 10;
+        save.Gold = 20000; save.Sigils = 30;
         var lateUnits = new[] { "player_lantern_guard", "player_ballista", "player_stormcaller" };
         foreach (var id in lateUnits) save.UnitLevels[id] = 5;
         Invoke(state, "ApplySavedData", save);
@@ -120,7 +120,7 @@ public partial class CombatReviewSmoke
             Check(state.TryPromoteUnit(id, out _) && state.BuildPlayerUnitStats(GameData.GetUnit(id)).MaxHealth > before.MaxHealth,
                 $"{id} has a working promotion with a real combat benefit");
         }
-        Check(state.Gold == 12700 && state.Sigils == 14 && state.Tomes == 10,
+        Check(state.Gold == 12700 && state.Sigils == 14,
             "Late-unit promotions charge the published gold and sigil costs");
     }
 

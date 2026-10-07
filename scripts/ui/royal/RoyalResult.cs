@@ -44,7 +44,6 @@ public partial class RoyalResult : Control
         "shards" => ("reward-shards", "SHARDS"),
         "season_xp" => ("reward-season", "SEASON"),
         "sigils" => ("relicicon-crown", "SIGILS"),
-        "tomes" => ("icon-open-book", "TOMES"),
         "essence" => ("reward-shards", "ESSENCE"),
         "relic" => ("", "RELIC"),
         "unit" => ("", "RECRUIT"),

@@ -18,7 +18,7 @@ public partial class UiReviewSmoke
     {
         var state = GameState.Instance; state.ResetProgress();
         var fixture = state.BuildSaveData();
-        fixture.Gold = 1240; fixture.Food = 21; fixture.RelicShards = 18; fixture.Tomes = 12; fixture.Sigils = 8;
+        fixture.Gold = 1240; fixture.Food = 21; fixture.RelicShards = 18; fixture.Sigils = 8;
         fixture.HighestUnlockedStage = 12;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Where(u => u.UnlockStage <= 12).Select(u => u.Id).ToArray();
         fixture.OwnedPlayerSpellIds = GameData.GetPlayerSpells().Select(s => s.Id).ToArray();

@@ -160,7 +160,6 @@ public partial class GameState : Node
 	private readonly Dictionary<string, string> _unitEquipmentSlots = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _seenHintIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _unlockedAchievementIds = new(StringComparer.OrdinalIgnoreCase);
-	private readonly Dictionary<string, int> _unitPrestigeSelections = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _purchasedProductIds = new(StringComparer.OrdinalIgnoreCase);
 	private int _totalPurchaseCount;
 	private string _purchaseValidationEndpoint = "";
@@ -194,8 +193,6 @@ public partial class GameState : Node
 	private readonly Dictionary<string, int> _codexKillCounts = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, long> _codexFirstSeenAt = new(StringComparer.OrdinalIgnoreCase);
 
-	// Skill Trees
-	public int Tomes { get; private set; }
 
 	// PvP Arena
 	public int ArenaRating { get; private set; } = 1000;
@@ -1759,12 +1756,10 @@ public partial class GameState : Node
 		var keepSpells = new List<string>(_ownedPlayerSpellIds);
 		var keepEquipment = new List<string>(_ownedEquipmentIds);
 		var keepAchievements = new List<string>(_unlockedAchievementIds);
-		var keepPrestige = new Dictionary<string, int>(_unitPrestigeSelections);
 		var keepPromotions = new HashSet<string>(_promotedUnitIds);
 		var keepEquipSlot2 = new Dictionary<string, string>(_unitEquipmentSlot2);
 		var keepShards = RelicShards;
 		var keepSigils = Sigils;
-		var keepTomes = Tomes;
 		var keepArenaRating = ArenaRating;
 		var keepArenaWins = ArenaWins;
 		var keepArenaLosses = ArenaLosses;
@@ -1823,15 +1818,12 @@ public partial class GameState : Node
 		foreach (var id in keepEquipment) _ownedEquipmentIds.Add(id);
 		_unlockedAchievementIds.Clear();
 		foreach (var id in keepAchievements) _unlockedAchievementIds.Add(id);
-		_unitPrestigeSelections.Clear();
-		foreach (var (k, v) in keepPrestige) _unitPrestigeSelections[k] = v;
 		_promotedUnitIds.Clear();
 		foreach (var id in keepPromotions) _promotedUnitIds.Add(id);
 		_unitEquipmentSlot2.Clear();
 		foreach (var (k, v) in keepEquipSlot2) _unitEquipmentSlot2[k] = v;
 		RelicShards = keepShards;
 		Sigils = keepSigils;
-		Tomes = keepTomes;
 		ArenaRating = keepArenaRating;
 		ArenaWins = keepArenaWins;
 		ArenaLosses = keepArenaLosses;
@@ -2714,13 +2706,6 @@ public partial class GameState : Node
 			baseDamageBonus,
 			speedScale);
 
-		var prestigeIndex = GetUnitPrestigeIndex(definition.Id);
-		var prestigeColor = PrestigeColorCatalog.ResolvePrestigeColor(definition.Id, prestigeIndex);
-		if (prestigeColor.HasValue)
-		{
-			stats.Color = prestigeColor.Value;
-		}
-
 		return stats;
 	}
 
@@ -3269,6 +3254,8 @@ public partial class GameState : Node
 		var unitBonus = slot.AssignedUnitIds?.Length ?? 1;
 		var goldReward = def.BaseGoldReward + (rewardRng.RandiRange(0, def.BaseGoldReward / 4));
 		goldReward = (int)(goldReward * (1f + (unitBonus - 1) * 0.15f));
+		// Every expedition brings back extra coin; long ones bring more.
+		goldReward += def.DurationMinutes >= 120 ? 200 : 100;
 		var foodReward = def.BaseFoodReward + rewardRng.RandiRange(0, 2);
 
 		Gold += goldReward;
@@ -3289,16 +3276,13 @@ public partial class GameState : Node
 			}
 		}
 
-		// Tome reward from expeditions
-		var tomeReward = def.DurationMinutes >= 120 ? 2 : 1;
-		Tomes += tomeReward;
 		AddSeasonXP(SeasonPassCatalog.XPPerExpedition);
 
 		_activeExpeditions.RemoveAt(slotIndex);
 		TotalExpeditionsCompleted++;
 		Persist();
 		CheckAchievements();
-		resultMessage = $"+{goldReward} gold, +{foodReward} food, +{tomeReward} tome(s){relicMessage}";
+		resultMessage = $"+{goldReward} gold, +{foodReward} food{relicMessage}";
 		return true;
 	}
 
@@ -3461,17 +3445,6 @@ public partial class GameState : Node
 	public int GetCodexKillCount(string id) => _codexKillCounts.TryGetValue(id, out var c) ? c : 0;
 	public long GetCodexFirstSeenAt(string id) => _codexFirstSeenAt.TryGetValue(id, out var t) ? t : 0;
 	public int DiscoveredCodexCount => _discoveredCodexIds.Count;
-
-	// ── Skill Trees ──────────────────────────────────────────
-
-	public void GrantTomes(int amount)
-	{
-		if (amount > 0)
-		{
-			Tomes += amount;
-			Persist();
-		}
-	}
 
 	// ── PvP Arena ────────────────────────────────────────────
 
@@ -3796,7 +3769,6 @@ public partial class GameState : Node
 		{
 			case "gold": Gold += bounty.RewardAmount; break;
 			case "food": Food += bounty.RewardAmount; break;
-			case "tomes": Tomes += bounty.RewardAmount; break;
 			case "essence": Essence += bounty.RewardAmount; break;
 			case "sigils": Sigils += bounty.RewardAmount; break;
 		}
@@ -3831,7 +3803,6 @@ public partial class GameState : Node
 
 		Gold += floorDef.RewardGold;
 		Food += floorDef.RewardFood;
-		if (floorDef.RewardTomes > 0) Tomes += floorDef.RewardTomes;
 		if (floorDef.RewardEssence > 0) Essence += floorDef.RewardEssence;
 		if (!string.IsNullOrWhiteSpace(floorDef.MilestoneRelicId))
 			TryGrantEquipment(floorDef.MilestoneRelicId);
@@ -3968,7 +3939,6 @@ public partial class GameState : Node
 		{
 			case "gold": Gold += reward.RewardAmount; break;
 			case "food": Food += reward.RewardAmount; break;
-			case "tomes": Tomes += reward.RewardAmount; break;
 			case "essence": Essence += reward.RewardAmount; break;
 			case "sigils": Sigils += reward.RewardAmount; break;
 			case "relic": TryGrantEquipment(reward.RewardItemId); break;
@@ -4031,7 +4001,6 @@ public partial class GameState : Node
 			{
 				case "gold": Gold += reward.RewardAmount; break;
 				case "food": Food += reward.RewardAmount; break;
-				case "tomes": Tomes += reward.RewardAmount; break;
 				case "essence": Essence += reward.RewardAmount; break;
 				case "sigils": Sigils += reward.RewardAmount; break;
 			}
@@ -4192,7 +4161,6 @@ public partial class GameState : Node
 		{
 			case "gold": Gold += rewardAmount; break;
 			case "food": Food += rewardAmount; break;
-			case "tomes": Tomes += rewardAmount; break;
 			case "essence": Essence += rewardAmount; break;
 			case "sigils": Sigils += rewardAmount; break;
 		}
@@ -4243,7 +4211,6 @@ public partial class GameState : Node
 		{
 			case "gold": Gold += milestone.RewardAmount; break;
 			case "food": Food += milestone.RewardAmount; break;
-			case "tomes": Tomes += milestone.RewardAmount; break;
 			case "essence": Essence += milestone.RewardAmount; break;
 			case "sigils": Sigils += milestone.RewardAmount; break;
 		}
@@ -4712,7 +4679,6 @@ public partial class GameState : Node
 		_ownedEquipmentIds.Clear();
 		_unitEquipmentSlots.Clear();
 		_unlockedAchievementIds.Clear();
-		_unitPrestigeSelections.Clear();
 		_purchasedProductIds.Clear();
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
@@ -4788,7 +4754,6 @@ public partial class GameState : Node
 		_discoveredCodexIds.Clear();
 		_codexKillCounts.Clear();
 		_codexFirstSeenAt.Clear();
-		Tomes = 0;
 		ArenaRating = 1000;
 		ArenaWins = 0;
 		ArenaLosses = 0;
@@ -5197,18 +5162,6 @@ public partial class GameState : Node
 			}
 		}
 
-		_unitPrestigeSelections.Clear();
-		if (saved.Version >= 30 && saved.UnitPrestigeSelections != null)
-		{
-			foreach (var (unitId, index) in saved.UnitPrestigeSelections)
-			{
-				if (!string.IsNullOrWhiteSpace(unitId) && index >= 1 && index <= PrestigeColorCatalog.MaxPrestigeIndex)
-				{
-					_unitPrestigeSelections[unitId.Trim()] = index;
-				}
-			}
-		}
-
 		_purchasedProductIds.Clear();
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
@@ -5331,8 +5284,6 @@ public partial class GameState : Node
 					if (!string.IsNullOrWhiteSpace(pair.Key)) _codexFirstSeenAt[pair.Key.Trim()] = pair.Value;
 				}
 			}
-
-			Tomes = Math.Max(0, saved.Tomes);
 
 			ArenaRating = Math.Max(0, saved.ArenaRating);
 			ArenaWins = Math.Max(0, saved.ArenaWins);
@@ -5648,7 +5599,6 @@ public partial class GameState : Node
 			SeenHintIds = _seenHintIds.ToArray(),
 			DailyStreak = _dailyStreak,
 			UnlockedAchievementIds = _unlockedAchievementIds.ToArray(),
-			UnitPrestigeSelections = new Dictionary<string, int>(_unitPrestigeSelections),
 			PurchasedProductIds = _purchasedProductIds.ToArray(),
 			TotalPurchaseCount = _totalPurchaseCount,
 			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? "",
@@ -5674,7 +5624,6 @@ public partial class GameState : Node
 			DiscoveredCodexIds = _discoveredCodexIds.ToArray(),
 			CodexKillCounts = new Dictionary<string, int>(_codexKillCounts),
 			CodexFirstSeenAt = new Dictionary<string, long>(_codexFirstSeenAt),
-			Tomes = Tomes,
 			ArenaRating = ArenaRating,
 			ArenaWins = ArenaWins,
 			ArenaLosses = ArenaLosses,
@@ -6786,7 +6735,7 @@ public partial class GameState : Node
 	{
 		LastDailyDate = GetDailyChallenge().Date;
 		_dailyStreak++;
-		Tomes += 1;
+		Gold += 100;
 		AddSeasonXP(SeasonPassCatalog.XPPerDailyChallenge);
 		Persist();
 		CheckAchievements();
@@ -7075,35 +7024,6 @@ public partial class GameState : Node
 		}
 
 		return normalized.TrimEnd('/');
-	}
-
-	// ── Prestige color selections ──────────────────────────────────────
-
-	public int GetUnitPrestigeIndex(string unitId)
-	{
-		if (string.IsNullOrWhiteSpace(unitId))
-		{
-			return 0;
-		}
-
-		return _unitPrestigeSelections.TryGetValue(unitId, out var index) ? index : 0;
-	}
-
-	public void SetUnitPrestigeIndex(string unitId, int index)
-	{
-		if (string.IsNullOrWhiteSpace(unitId))
-		{
-			return;
-		}
-
-		if (index <= 0)
-		{
-			_unitPrestigeSelections.Remove(unitId);
-		}
-		else
-		{
-			_unitPrestigeSelections[unitId] = Math.Clamp(index, 1, PrestigeColorCatalog.MaxPrestigeIndex);
-		}
 	}
 
 	public void CheckAchievements()

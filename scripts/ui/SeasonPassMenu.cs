@@ -26,7 +26,6 @@ public partial class SeasonPassMenu : RoyalScreen
     {
         "gold" => amount >= 200 ? "season-gold-large" : "season-gold",
         "food" => "season-food",
-        "tomes" or "tome" => "season-tome",
         "sigils" or "sigil" => "relicicon-crown",
         "shards" => "forge-shard",
         _ => ""

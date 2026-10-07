@@ -63,15 +63,6 @@
   "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a covered canvas supply wagon loaded with sacks of grain and barrels.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
  },
  {
-  "id": "mapicon-tomes",
-  "out": "art/royal/gen/landmarks/tomes.png",
-  "inputs": [
-   "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
-  ],
-  "edit": false,
-  "prompt": "Use case: stylized-concept\nAsset type: map landmark sprite placed on a painted fantasy campaign map (Crownroad: Siege of Ash).\nSubject: a small stack of old leather books and scrolls on a wooden lectern.\nStyle/medium: match the tiny painted 3D buildings on the map in the attached reference image exactly: same top-down three-quarter camera angle (about 45 degrees from above), warm light from the upper left, crisp painterly detail, soft contact shadow on its ground patch.\nComposition: a single landmark centred, filling about 80% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha); include only a small irregular patch of ground directly under it.\nConstraints: no text, no stars, no labels, no frame, no watermark."
- },
- {
   "id": "mapicon-essence",
   "out": "art/royal/gen/landmarks/essence.png",
   "inputs": [

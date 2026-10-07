@@ -3313,19 +3313,6 @@
   "softness": 40
  },
  {
-  "name": "season-tome",
-  "from": "season",
-  "rect": [
-   695,
-   298,
-   103,
-   79
-  ],
-  "mode": "key-gold",
-  "tolerance": 30,
-  "softness": 40
- },
- {
   "name": "season-gold-large",
   "from": "season",
   "rect": [

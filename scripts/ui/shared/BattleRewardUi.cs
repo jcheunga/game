@@ -28,7 +28,6 @@ public static class BattleRewardUi
         Currency("gold", before.Gold, after.Gold);
         Currency("food", before.Food, after.Food);
         Currency("sigils", before.Sigils, after.Sigils);
-        Currency("tomes", before.Tomes, after.Tomes);
         Currency("shards", before.RelicShards, after.RelicShards);
         Currency("essence", before.Essence, after.Essence);
         Currency("season_xp", before.SeasonPassXP, after.SeasonPassXP);

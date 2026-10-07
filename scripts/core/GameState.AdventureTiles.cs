@@ -52,7 +52,6 @@ public partial class GameState
         {
             case AdventureDiscoveryKind.Food: Food += reward.Amount; break;
             case AdventureDiscoveryKind.Gold: Gold += reward.Amount; break;
-            case AdventureDiscoveryKind.Tomes: Tomes += reward.Amount; break;
             case AdventureDiscoveryKind.Essence: Essence += reward.Amount; break;
         }
         OpenSurroundingAdventureTiles(tile);

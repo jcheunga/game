@@ -1,4 +1,4 @@
-"""Reward icons beyond gold: provisions, tomes, essence, sigils, shards, relic chest, season XP, unit, spell."""
+"""Reward icons beyond gold: provisions, essence, sigils, shards, relic chest, season XP, unit, spell."""
 import math
 import random
 
@@ -51,67 +51,6 @@ def food(K):
         geo.sphere(f'Cheese hole {k}', 0.03, (-0.5 + k * 0.1, -0.36 - k * 0.03, -0.2 + (k % 2) * 0.05),
                    P.enamel('c8901a', name='Cheese hole'), c, 10, 6, scale=(1, .4, 1))
     return dict(el=24, az=18)
-
-
-def book(K, name, size, cover, loc, rotz, emblem=None, clasp=True, ribbon=None):
-    c = K.coll
-    w, d, h = size
-    t = 0.03
-    brass = K.gilt('d0a048', 0.25)
-    objs = [geo.box(f'{name} back board', (w, d, t), (0, 0, -h / 2 + t / 2), cover, c, bevel=0.012, segments=2),
-            geo.box(f'{name} front board', (w, d, t), (0, 0, h / 2 - t / 2), cover, c, bevel=0.012, segments=2),
-            geo.box(f'{name} pages', (w - 0.06, d - 0.05, h - 2 * t + 0.004), (0.02, 0, 0), P.page_block(), c, bevel=0.004)]
-    spine = geo.cylinder(f'{name} spine', h / 2, d, (0, 0, 0), cover, c, 20, rotation=(90, 0, 0), bevel=0.008)
-    for v in spine.data.vertices:
-        if v.co.x > 0:
-            v.co.x = 0
-    spine.data.update()
-    geo.store_rest(spine)
-    geo.place(spine, (-w / 2 + 0.01, 0, 0))
-    objs.append(spine)
-    for sy in (-1, 1):
-        cg = geo.extrude(f'{name} corner {sy}', [(0, 0), (-0.13, 0), (0, -0.13 * sy)] if sy > 0 else
-                         [(0, 0), (0, 0.13), (-0.13, 0)], 0.014, brass, c, plane='XY', bevel=0.004)
-        geo.place(cg, (w / 2 + 0.004, sy * (d / 2 + 0.004), h / 2 + 0.004))
-        objs.append(cg)
-    objs.append(geo.box(f'{name} spine band', (0.04, d + 0.012, 0.03), (-w / 2 + 0.16, 0, h / 2 + 0.004), brass, c,
-                        bevel=0.008))
-    if clasp:
-        objs.append(geo.box(f'{name} clasp strap', (0.14, 0.09, h + 0.02), (w / 2 + 0.01, 0, 0), K.leather('3a2416'), c,
-                            bevel=0.01))
-        objs.append(geo.box(f'{name} clasp plate', (0.05, 0.11, 0.07), (w / 2 + 0.07, 0, 0.0), brass, c, bevel=0.01))
-    if ribbon is not None:
-        objs.append(P.ribbon(f'{name} ribbon', [V(w / 2 - 0.15 + 0.01 * k, -d / 2 - 0.01 - 0.012 * k, -0.01 - 0.035 * k)
-                                               for k in range(6)], 0.05, ribbon, c, up=(1, 0, 0)))
-    if emblem is not None:
-        objs += emblem
-    xform(objs, rot=(0, 0, rotz), loc=loc)
-    return objs
-
-
-@icon('rewards', 'tomes', bloom=0.45)
-def tomes(K):
-    c = K.coll
-    teal = K.leather('1d6a64')
-    red = K.leather('7a1e22')
-    brown = K.leather('5a3a22')
-    book(K, 'Base tome', (1.0, 0.72, 0.2), brown, (0.0, 0.08, -0.32), 6)
-    book(K, 'Mid tome', (0.9, 0.66, 0.17), red, (-0.04, 0.02, -0.13), -9, clasp=False, ribbon=K.cloth('c8a040'))
-    glow = K.glow(AMBER, 4.0, core='fff0c8')
-    gold = K.gilt('e0b050', 0.22)
-    em = [P.rune('Tome rune', 'othala', V(0.02, 0, 0.083), V(1, 0, 0), V(0, 1, 0), 0.13, 0.018, glow, c,
-                 depth_axis=V(0, 0, 1)),
-          P.torus('Tome seal ring', 0.2, 0.018, gold, c, seg=48, sides=6, location=(0.02, 0, 0.08)),
-          P.torus('Tome seal ring 2', 0.25, 0.01, gold, c, seg=48, sides=6, location=(0.02, 0, 0.08))]
-    for k in range(4):
-        a = k * math.pi / 2 + math.pi / 4
-        em.append(geo.sphere(f'Cover stud {k}', 0.025, (0.02 + math.cos(a) * 0.3, math.sin(a) * 0.22, 0.085), gold, c, 10, 6))
-    book(K, 'Top tome', (0.84, 0.62, 0.16), teal, (0.03, -0.03, 0.05), 16, emblem=em)
-    P.halo_sphere('Rune glow', V(0.05, -0.06, 0.16), 0.22, K.halo('ffb04a', strength=1.4, opacity=.4, power=1.8), c,
-                  scale=(1, 1, 0.4))
-    P.motes('Knowledge motes', V(0.05, -0.05, 0.45), 12, 0.45, 0.016, K.glow('ffe0a0', 5.0), c, seed=2, flatten=(1, 1, 0.6))
-    sparkles(K, [(V(0.45, -0.3, 0.35), 0.7)], 'fff0c8')
-    return dict(el=34, az=22)
 
 
 @icon('rewards', 'essence', bloom=0.6)

@@ -89,7 +89,6 @@ public partial class GameState
             {
                 case AdventureDiscoveryKind.Food: Food += discovery.Amount; FoodChanged?.Invoke(); break;
                 case AdventureDiscoveryKind.Gold: Gold += discovery.Amount; break;
-                case AdventureDiscoveryKind.Tomes: Tomes += discovery.Amount; break;
                 case AdventureDiscoveryKind.Essence: Essence += discovery.Amount; break;
                 case AdventureDiscoveryKind.Survey: RevealAdventurePoint(mapId,discovery.Point,discovery.Amount); break;
             }

@@ -122,7 +122,6 @@ public sealed class GameSaveData
     public string[] SeenHintIds { get; set; } = [];
     public int DailyStreak { get; set; }
     public string[] UnlockedAchievementIds { get; set; } = [];
-    public Dictionary<string, int> UnitPrestigeSelections { get; set; } = new();
     public int MusicVolumePercent { get; set; } = 50;
     public string Language { get; set; } = "en";
     public bool AnalyticsConsent { get; set; }
@@ -163,7 +162,6 @@ public sealed class GameSaveData
     public Dictionary<string, long> CodexFirstSeenAt { get; set; } = new();
 
     // v33: Skill Trees
-    public int Tomes { get; set; }
 
     // v33: PvP Arena
     public int ArenaRating { get; set; } = 1000;

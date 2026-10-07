@@ -162,7 +162,7 @@ public partial class MapPathCanvas
         AdventureSiteKind.Food => "food", AdventureSiteKind.Gold => "gold",
         _ => tile.Discovery?.Kind switch
         {
-            AdventureDiscoveryKind.Food => "food", AdventureDiscoveryKind.Tomes => "tomes", AdventureDiscoveryKind.Essence => "essence",
+            AdventureDiscoveryKind.Food => "food", AdventureDiscoveryKind.Essence => "essence",
             AdventureDiscoveryKind.Survey => "survey", _ => "gold"
         }
     };

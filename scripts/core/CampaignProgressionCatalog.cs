@@ -1,20 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public sealed record CampaignMilestone(int Stage, string RelicId = "", string UnitId = "", int UnitLevel = 1, int Tomes = 0);
+public sealed record CampaignMilestone(int Stage, string RelicId = "", string UnitId = "", int UnitLevel = 1, int Gold = 0);
 
 public static class CampaignProgressionCatalog
 {
     private static readonly CampaignMilestone[] Milestones =
     {
         // Every zone boss grants a relic; unit contracts arrive a zone or so after each unit unlocks.
-        new(10, "relic_iron_pendant"), new(20, "relic_sharpened_edge"), new(23, UnitId: "player_marksman", UnitLevel: 3, Tomes: 1),
-        new(30, "relic_battle_drum"), new(33, UnitId: "player_grenadier", UnitLevel: 3, Tomes: 2),
-        new(38, UnitId: "player_breacher", UnitLevel: 3, Tomes: 2), new(40, "relic_war_brand"),
-        new(45, UnitId: "player_coordinator", UnitLevel: 3, Tomes: 2), new(50, "relic_guardian_shield"),
-        new(53, UnitId: "player_banner", UnitLevel: 4, Tomes: 3), new(58, UnitId: "player_lantern_guard", UnitLevel: 4, Tomes: 3),
-        new(60, "relic_sages_ring"), new(68, UnitId: "player_ballista", UnitLevel: 4, Tomes: 3), new(70, "relic_crown_of_valor"),
-        new(78, UnitId: "player_stormcaller", UnitLevel: 4, Tomes: 3), new(80, "relic_blade_of_ruin"),
+        new(10, "relic_iron_pendant"), new(20, "relic_sharpened_edge"), new(23, UnitId: "player_marksman", UnitLevel: 3, Gold: 100),
+        new(30, "relic_battle_drum"), new(33, UnitId: "player_grenadier", UnitLevel: 3, Gold: 200),
+        new(38, UnitId: "player_breacher", UnitLevel: 3, Gold: 200), new(40, "relic_war_brand"),
+        new(45, UnitId: "player_coordinator", UnitLevel: 3, Gold: 200), new(50, "relic_guardian_shield"),
+        new(53, UnitId: "player_banner", UnitLevel: 4, Gold: 300), new(58, UnitId: "player_lantern_guard", UnitLevel: 4, Gold: 300),
+        new(60, "relic_sages_ring"), new(68, UnitId: "player_ballista", UnitLevel: 4, Gold: 300), new(70, "relic_crown_of_valor"),
+        new(78, UnitId: "player_stormcaller", UnitLevel: 4, Gold: 300), new(80, "relic_blade_of_ruin"),
         new(90, "relic_frostbound_crown"), new(100, "relic_immortal_wreath")
     };
 

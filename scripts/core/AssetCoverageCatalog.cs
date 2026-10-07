@@ -94,7 +94,7 @@ public static class AssetCoverageCatalog
         "ambience_route_citadel"
     };
 
-    // Gold, food, tomes and essence rewards use the home map's painted resource icons (HomeMapArt).
+    // Gold, food and essence rewards use the home map's painted resource icons (HomeMapArt).
     public static readonly string[] RewardIconIds =
     {
         "sigils",

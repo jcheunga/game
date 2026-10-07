@@ -30,7 +30,7 @@ public static class CollectionMilestoneCatalog
 	{
 		// Codex (72 entries)
 		new("codex_25", "codex", "Codex", 25, "gold", 300, "+300 Gold"),
-		new("codex_50", "codex", "Codex", 50, "tomes", 3, "+3 Tomes"),
+		new("codex_50", "codex", "Codex", 50, "gold", 300, "+300 Gold"),
 		new("codex_75", "codex", "Codex", 75, "essence", 5, "+5 Essence"),
 		new("codex_100", "codex", "Codex", 100, "sigils", 5, "+5 Sigils"),
 
@@ -42,19 +42,19 @@ public static class CollectionMilestoneCatalog
 
 		// Units (16)
 		new("units_25", "units", "Units", 25, "gold", 200, "+200 Gold"),
-		new("units_50", "units", "Units", 50, "tomes", 2, "+2 Tomes"),
+		new("units_50", "units", "Units", 50, "gold", 200, "+200 Gold"),
 		new("units_75", "units", "Units", 75, "food", 10, "+10 Food"),
 		new("units_100", "units", "Units", 100, "sigils", 3, "+3 Sigils"),
 
 		// Spells (10)
 		new("spells_25", "spells", "Spells", 25, "gold", 150, "+150 Gold"),
-		new("spells_50", "spells", "Spells", 50, "tomes", 2, "+2 Tomes"),
+		new("spells_50", "spells", "Spells", 50, "gold", 200, "+200 Gold"),
 		new("spells_75", "spells", "Spells", 75, "essence", 3, "+3 Essence"),
 		new("spells_100", "spells", "Spells", 100, "sigils", 2, "+2 Sigils"),
 
 		// Achievements (45)
 		new("achieve_25", "achievements", "Achievements", 25, "gold", 500, "+500 Gold"),
-		new("achieve_50", "achievements", "Achievements", 50, "tomes", 4, "+4 Tomes"),
+		new("achieve_50", "achievements", "Achievements", 50, "gold", 400, "+400 Gold"),
 		new("achieve_75", "achievements", "Achievements", 75, "essence", 6, "+6 Essence"),
 		new("achieve_100", "achievements", "Achievements", 100, "sigils", 8, "+8 Sigils"),
 

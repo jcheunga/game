@@ -203,7 +203,6 @@ public static class UiBadgeFactory
         {
             "gold" => new Color("eab308"),
             "food" => new Color("22c55e"),
-            "tomes" => new Color("38bdf8"),
             "essence" => new Color("14b8a6"),
             "sigils" => new Color("f97316"),
             "shards" => new Color("a78bfa"),
@@ -234,7 +233,6 @@ public static class UiBadgeFactory
         {
             "gold" => "G",
             "food" => "F",
-            "tomes" => "T",
             "essence" => "E",
             "sigils" => "S",
             "shards" => "SH",

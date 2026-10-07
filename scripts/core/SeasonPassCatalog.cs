@@ -52,12 +52,12 @@ public static class SeasonPassCatalog
 			var tier = i + 1;
 			var xp = tier * 100; // 100, 200, ... 5000
 
-			// Free rewards cycle: gold, food, tomes
+			// Free rewards cycle: gold, food, then a larger gold purse
 			var (freeType, freeAmt, freeLabel) = (tier % 3) switch
 			{
 				1 => ("gold", 50 + tier * 10, $"{50 + tier * 10} Gold"),
 				2 => ("food", 2 + tier / 5, $"{2 + tier / 5} Food"),
-				_ => ("tomes", 1 + tier / 10, 1 + tier / 10 == 1 ? "1 Tome" : $"{1 + tier / 10} Tomes")
+				_ => ("gold", (1 + tier / 10) * 100, $"{(1 + tier / 10) * 100} Gold")
 			};
 
 			// Premium rewards cycle: essence, sigils, special at milestones

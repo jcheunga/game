@@ -25,7 +25,7 @@
    "role": "icon"
   },
   {
-   "id": "hull",
+   "id": "courage",
    "kind": "rect",
    "rect": [
     86,
@@ -36,7 +36,7 @@
    "role": "panel"
   },
   {
-   "id": "hull.socket",
+   "id": "courage.socket",
    "kind": "rect",
    "rect": [
     98,
@@ -47,80 +47,11 @@
    "role": "icon"
   },
   {
-   "id": "hull.icon",
-   "kind": "rect",
-   "rect": [
-    103,
-    34,
-    21,
-    19
-   ],
-   "role": "icon"
-  },
-  {
-   "id": "hull.track",
-   "kind": "rect",
-   "rect": [
-    137,
-    28,
-    212,
-    29
-   ],
-   "role": "progress"
-  },
-  {
-   "id": "hull.fill",
-   "kind": "rect",
-   "rect": [
-    141,
-    32,
-    179,
-    21
-   ],
-   "role": "fill",
-   "color": "#0e6353"
-  },
-  {
-   "id": "hull.value",
-   "kind": "text",
-   "text": "240 / 300",
-   "font": "crimson",
-   "weight": 500,
-   "width": 80,
-   "x": 437,
-   "baseline": 51,
-   "align": "right",
-   "color": "#f4f3f1",
-   "size": 20
-  },
-  {
-   "id": "courage",
-   "kind": "rect",
-   "rect": [
-    86,
-    64,
-    337,
-    43
-   ],
-   "role": "panel"
-  },
-  {
-   "id": "courage.socket",
-   "kind": "rect",
-   "rect": [
-    98,
-    70,
-    33,
-    33
-   ],
-   "role": "icon"
-  },
-  {
    "id": "courage.icon",
    "kind": "rect",
    "rect": [
     101,
-    73,
+    29,
     24,
     28
    ],
@@ -131,8 +62,8 @@
    "kind": "rect",
    "rect": [
     137,
-    72,
-    178,
+    28,
+    212,
     29
    ],
    "role": "progress"
@@ -142,17 +73,86 @@
    "kind": "rect",
    "rect": [
     141,
-    76,
-    117,
+    32,
+    179,
     21
    ],
    "role": "fill",
-   "color": "#0d5679"
+   "color": "#b8650f"
   },
   {
    "id": "courage.value",
    "kind": "text",
    "text": "66 / 100",
+   "font": "crimson",
+   "weight": 500,
+   "width": 80,
+   "x": 437,
+   "baseline": 51,
+   "align": "right",
+   "color": "#f4f3f1",
+   "size": 20
+  },
+  {
+   "id": "mana",
+   "kind": "rect",
+   "rect": [
+    86,
+    64,
+    337,
+    43
+   ],
+   "role": "panel"
+  },
+  {
+   "id": "mana.socket",
+   "kind": "rect",
+   "rect": [
+    98,
+    70,
+    33,
+    33
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "mana.icon",
+   "kind": "rect",
+   "rect": [
+    101,
+    73,
+    24,
+    28
+   ],
+   "role": "icon"
+  },
+  {
+   "id": "mana.track",
+   "kind": "rect",
+   "rect": [
+    137,
+    72,
+    178,
+    29
+   ],
+   "role": "progress"
+  },
+  {
+   "id": "mana.fill",
+   "kind": "rect",
+   "rect": [
+    141,
+    76,
+    117,
+    21
+   ],
+   "role": "fill",
+   "color": "#1a4cb0"
+  },
+  {
+   "id": "mana.value",
+   "kind": "text",
+   "text": "12 / 30",
    "font": "crimson",
    "weight": 500,
    "width": 69,
@@ -590,5 +590,5 @@
    "size": 18
   }
  ],
- "notes": "Clean-steel battle HUD over a side-on parallax battlefield (no modal frame). Top-left: teal lantern banner hangs from a rod at the top edge and overlaps the left ends of two stacked dark-steel bar plates (hull on top, courage below; both start behind the banner at x 86 and end in a pointed right tip). Each plate: round dark socket with icon (red heart / orange flame), bronze-edged track, fill, and a right-aligned white Crimson value. Hull fill is teal-green (240 / 300; the drawn fill reaches ~86% of the track interior, not exactly 80%), courage fill is blue (66 / 100, matches 66%). Top-right: gold plaque with pointed left end, coin icon, cream value and a thin vertical divider; the plaque fades out to the right behind the octagonal pause button. Card dock: bronze-edged dark frame bottom-centre with small arrow ornaments at its lower corners; five 119x131 cards on a 132 px pitch, each with full-bleed art, a round brown cost badge with gold ring at the top-right and a white Crimson number. Selected state: card.1 (shield knight, cost 20) is drawn larger (128x142, rising to the dock's top edge) with a thick glowing gold frame and a gold diamond marker (card.1.marker) centred under it on the dock's bottom edge; cards 2-5 have thin grey-bronze frames (card.5 has a teal frame). No card is disabled. Numerals: the concept's digits are more condensed than Crimson Pro, so width-fitted sizes render 2-4 px shorter in cap height (badge numbers: concept cap 16 px vs 12 px). In-world: unit HP bars are small dark-steel capsules (track ~50x8, fill inset 2-4 px): allies green, enemies red. Measured: world.ally.hp over the first archer (full) and world.enemy.hp over the first skeleton (~45%); other bars, approx. fill spans: allies x391-431 y374, x508-549 y378, x612-653 y388; enemy knight x970-989 y393 (~40%). The player wagon (world.wagon, left edge, with its own small green hp bar world.wagon.hp above the roof) and the enemy gate (world.gate, stone towers + red skull banner + spike palisade, cut by the right edge) bound the lane. Floating damage '27' (white, dark outline) sits above the struck skeleton. Scene lines (screen y): units' feet stand on a band y 463-492 (staggered depth: archer 2 ~465, knight 1 ~476, archer 1 ~480, knight 2 ~489, skeletons/enemy knight ~490-492; front-row feet line ~490); dirt road top edge y ~411, bottom edge y ~516 (grass verge below); foreground fence: post tops y ~514, top rail y ~528-545 (sloping), bottom rail y ~555-565; market stalls/back wall y ~285-390; horizon (base of the distant mountains / far fields, at the castle's base) y ~195; distant castle top (central spire tip, x ~837) y ~55; mountain ridges y ~80 (right) to ~145 (left)."
+ "notes": "Clean-steel battle HUD over a side-on parallax battlefield (no modal frame). Top-left: teal lantern banner hangs from a rod at the top edge and overlaps the left ends of two stacked dark-steel bar plates (hull on top, courage below; both start behind the banner at x 86 and end in a pointed right tip). Each plate: round dark socket with icon (red heart / orange flame), bronze-edged track, fill, and a right-aligned white Crimson value. Hull fill is teal-green (240 / 300; the drawn fill reaches ~86% of the track interior, not exactly 80%), courage fill is blue (66 / 100, matches 66%). Top-right: gold plaque with pointed left end, coin icon, cream value and a thin vertical divider; the plaque fades out to the right behind the octagonal pause button. Card dock: bronze-edged dark frame bottom-centre with small arrow ornaments at its lower corners; five 119x131 cards on a 132 px pitch, each with full-bleed art, a round brown cost badge with gold ring at the top-right and a white Crimson number. Selected state: card.1 (shield knight, cost 20) is drawn larger (128x142, rising to the dock's top edge) with a thick glowing gold frame and a gold diamond marker (card.1.marker) centred under it on the dock's bottom edge; cards 2-5 have thin grey-bronze frames (card.5 has a teal frame). No card is disabled. Numerals: the concept's digits are more condensed than Crimson Pro, so width-fitted sizes render 2-4 px shorter in cap height (badge numbers: concept cap 16 px vs 12 px). In-world: unit HP bars are small dark-steel capsules (track ~50x8, fill inset 2-4 px): allies green, enemies red. Measured: world.ally.hp over the first archer (full) and world.enemy.hp over the first skeleton (~45%); other bars, approx. fill spans: allies x391-431 y374, x508-549 y378, x612-653 y388; enemy knight x970-989 y393 (~40%). The player wagon (world.wagon, left edge, with its own small green hp bar world.wagon.hp above the roof) and the enemy gate (world.gate, stone towers + red skull banner + spike palisade, cut by the right edge) bound the lane. Floating damage '27' (white, dark outline) sits above the struck skeleton. Scene lines (screen y): units' feet stand on a band y 463-492 (staggered depth: archer 2 ~465, knight 1 ~476, archer 1 ~480, knight 2 ~489, skeletons/enemy knight ~490-492; front-row feet line ~490); dirt road top edge y ~411, bottom edge y ~516 (grass verge below); foreground fence: post tops y ~514, top rail y ~528-545 (sloping), bottom rail y ~555-565; market stalls/back wall y ~285-390; horizon (base of the distant mountains / far fields, at the castle's base) y ~195; distant castle top (central spire tip, x ~837) y ~55; mountain ridges y ~80 (right) to ~145 (left). In game the two plates show courage (top, the concept's hull slot; flame icon rect sized like the concept's courage flame) and mana (second, blue crystal and royal-blue fill; courage's fill turns amber to match its flame so the two bars differ); the war wagon's health is drawn on the wagon instead. Magic cards wear a blue-centred cost badge."
 }

@@ -63,6 +63,7 @@ public partial class CombatReviewSmoke : Node
             ApplyTuningOverrides(args);
             if (args.Contains("--stage-layout")) ExportStageLayoutReview();
             else if (args.Contains("--courage-pacing")) await CheckCouragePacing();
+            else if (args.Contains("--mana")) await CheckManaFromKills();
             else if (args.Contains("--stage-stars")) await CheckStageStars();
             else if (args.Contains("--field-objectives")) await CheckCampaignFieldObjectives();
             else if (args.Contains("--camera")) await CheckBattleCamera();
@@ -214,6 +215,7 @@ public partial class CombatReviewSmoke : Node
         await CloseBattle(battle);
         await CheckBattleLanes();
         await CheckCouragePacing();
+        await CheckManaFromKills();
     }
 
     // Review captures of every shot in flight: each ranged unit fires at a pinned target across the band.
@@ -338,6 +340,41 @@ public partial class CombatReviewSmoke : Node
         Invoke(state, "ApplySavedData", saved);
     }
 
+    // Magic runs on mana: enemy kills grant it, the bar caps it, and casting spends it without touching courage.
+    private async Task CheckManaFromKills()
+    {
+        var battle = await OpenBattle(1);
+        var tuning = GameData.Combat;
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaStart) && Mathf.IsEqualApprox(Read<float>(battle, "_maxMana"), tuning.ManaMax),
+            "Battles open with the starting mana and the configured cap");
+        Unit Spawn(Team team, string id) => (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)), new Vector2(team == Team.Enemy ? 700 : 300, 340));
+        Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
+        Invoke(battle, "CleanupDeadUnits");
+        var afterKill = tuning.ManaStart + tuning.ManaPerEnemyKill;
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), afterKill), $"Killing an enemy grants {tuning.ManaPerEnemyKill} mana");
+        Spawn(Team.Player, "player_brawler").TakeDamage(1e6f);
+        Invoke(battle, "CleanupDeadUnits");
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), afterKill), "Losing a troop grants no mana");
+        for (var i = 0; i < 40; i++) Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
+        Invoke(battle, "CleanupDeadUnits");
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaMax), "Mana stops at the bar's maximum");
+
+        var fireball = GameData.GetSpell("spell_fireball");
+        var spells = Read<BattleSpellState>(battle, "_spellDeck");
+        spells.Initialize(new[] { fireball });
+        var cost = GameState.Instance.BuildSpellStats(fireball).ManaCost;
+        Write(battle, "_courage", 50f);
+        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(700, 340));
+        Check(Read<int>(battle, "_spellsCast") == 1 && Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaMax - cost)
+            && Read<float>(battle, "_courage") == 50f, "Casting spends the spell's mana cost and leaves courage alone");
+        spells.ReduceCooldowns(1000);
+        Write(battle, "_mana", cost - 1f);
+        Write(battle, "_courage", Read<float>(battle, "_maxCourage"));
+        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(700, 340));
+        Check(Read<int>(battle, "_spellsCast") == 1, "Magic cannot be cast without enough mana, however much courage is banked");
+        await CloseBattle(battle);
+    }
+
     private void CheckSpawnScheduling()
     {
         Check(StageMissionEvents.GetCampaignMissionEvents(GameData.GetStage(1)).Length == 0,
@@ -456,7 +493,8 @@ public partial class CombatReviewSmoke : Node
                 var enemy = units.Where(x => x.Team == Team.Enemy && !x.IsDead).OrderBy(x => x.Position.X).FirstOrDefault();
                 var targetY = enemy?.Position.Y ?? 340;
                 var courage = Read<float>(battle, "_courage");
-                var savingForSpell = false;
+                var mana = Read<float>(battle, "_mana");
+                var bankCourage = false;
                 if (tactical)
                 {
                     var hurt = units.Where(x => x.Team == Team.Player && !x.IsDead && x.HealthRatio < 0.5f)
@@ -465,26 +503,21 @@ public partial class CombatReviewSmoke : Node
                         .OrderByDescending(x => units.Count(y => y.Team == Team.Enemy && !y.IsDead && y.Position.DistanceTo(x.Position) < 76))
                         .FirstOrDefault();
                     var spellDeck = Read<BattleSpellState>(battle, "_spellDeck");
-                    if (hurt != null && spellDeck.GetCooldownRemaining("spell_heal") <= 0)
-                    {
-                        // a player heals when it can still afford troops, not with its last courage
-                        if (courage >= 55) Invoke(battle, "TryCastSpellAt", GameData.GetSpell("spell_heal"), hurt.Position);
-                    }
-                    else if (cluster != null && units.Count(x => x.Team == Team.Enemy && !x.IsDead && x.Position.DistanceTo(cluster.Position) < 76) is var crowd
-                             && (crowd >= 4 || crowd >= 3 && courage >= 60) && spellDeck.GetCooldownRemaining("spell_fireball") <= 0)
-                    {
-                        savingForSpell = courage < 22;
-                        if (!savingForSpell) Invoke(battle, "TryCastSpellAt", GameData.GetSpell("spell_fireball"), cluster.Position);
-                    }
-                    courage = Read<float>(battle, "_courage");
+                    // Magic is paid in mana from kills, so it never competes with troops for courage.
+                    bool Affordable(string id) => spellDeck.GetCooldownRemaining(id) <= 0 && mana >= GameState.Instance.BuildSpellStats(GameData.GetSpell(id)).ManaCost;
+                    if (hurt != null && Affordable("spell_heal"))
+                        Invoke(battle, "TryCastSpellAt", GameData.GetSpell("spell_heal"), hurt.Position);
+                    else if (cluster != null && units.Count(x => x.Team == Team.Enemy && !x.IsDead && x.Position.DistanceTo(cluster.Position) < 76) >= 3
+                             && Affordable("spell_fireball"))
+                        Invoke(battle, "TryCastSpellAt", GameData.GetSpell("spell_fireball"), cluster.Position);
                 }
                 // With no enemy advancing, bank courage and push in groups, so troops reach the gate together
                 // instead of marching into its weapons one at a time.
-                if (tactical && !savingForSpell)
+                if (tactical)
                 {
                     var threat = units.Any(x => x.Team == Team.Enemy && !x.IsDead && x.Position.X < GameData.Combat.EnemyBaseX - 220);
                     if (threat) pushBurst = 0;
-                    else if (pushBurst == 0 && courage < 70) savingForSpell = true;
+                    else if (pushBurst == 0 && courage < 70) bankCourage = true;
                     else if (pushBurst == 0) pushBurst = 3;
                 }
                 var frontline = units.Count(x => x.Team == Team.Player && !x.IsDead && !x.UsesProjectile && Math.Abs(x.Position.Y - targetY) < 110);
@@ -495,7 +528,7 @@ public partial class CombatReviewSmoke : Node
                     deck.Roster.Where(x => x.UsesProjectile).OrderBy(x => units.Count(u => !u.IsDead && u.Team == Team.Player && u.DefinitionId == x.Id)).FirstOrDefault();
                 var order = deck.Roster.OrderBy(x => x == preferred ? 0 : 1);
                 var card = order.FirstOrDefault(x => deck.CanDeploy(x, courage, false, out _));
-                if (card != null && !savingForSpell)
+                if (card != null && !bankCourage)
                 {
                     Invoke(battle, "DeployPlayerUnit", card);
                     if (pushBurst > 0) pushBurst--;
@@ -507,7 +540,7 @@ public partial class CombatReviewSmoke : Node
             if (director.NextScriptedWaveIndex > waveTimes.Count) waveTimes.Add(elapsed);
             if (firstGateDamage < 0 && Read<float>(battle, "_enemyBaseHealth") < Read<float>(battle, "_enemyBaseMaxHealth")) firstGateDamage = elapsed;
             if (OS.GetCmdlineUserArgs().Contains("--trace") && tick % 300 == 0)
-                GD.Print($"TRACE t={elapsed:0} hull={Read<float>(battle, "_playerBaseHealth"):0} courage={Read<float>(battle, "_courage"):0} " +
+                GD.Print($"TRACE t={elapsed:0} hull={Read<float>(battle, "_playerBaseHealth"):0} courage={Read<float>(battle, "_courage"):0} mana={Read<float>(battle, "_mana"):0} " +
                     $"players=[{string.Join(" ", units.Where(x => x.Team == Team.Player && !x.IsDead).Select(x => $"{x.DefinitionId.Replace("player_", "")}@{x.Position.X:0},{x.Position.Y:0}"))}] " +
                     $"enemies=[{string.Join(" ", units.Where(x => x.Team == Team.Enemy && !x.IsDead).Select(x => $"{x.DefinitionId.Replace("enemy_", "")}@{x.Position.X:0},{x.Position.Y:0}{(x.VisualClass == "boss" ? $"[{x.Health:0}/{x.MaxHealth:0}]" : "")}"))}]");
             var atGate = units.Count(x => x.Team == Team.Player && !x.IsDead && x.Position.X > GameData.Combat.EnemyBaseX - 80);

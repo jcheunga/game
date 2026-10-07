@@ -43,6 +43,7 @@ public partial class CombatReviewSmoke
             Check(Read<bool>(battle, "_battleCameraFollow") && !follow.Visible, "The camera follows the fighting by default");
             var deck = Read<BattleDeckState>(battle, "_deck");
             Write(battle, "_courage", 100f);
+            Write(battle, "_mana", Read<float>(battle, "_maxMana"));
             var deployments = Read<int>(battle, "_playerDeployments");
             void Wheel(MouseButton direction, float factor = 1) => battle._UnhandledInput(new InputEventMouseButton
                 { ButtonIndex = direction, Factor = factor, Pressed = true, Position = new Vector2(600, 330) });

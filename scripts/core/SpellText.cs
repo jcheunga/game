@@ -82,13 +82,13 @@ public static class SpellText
         return
             $"Lv{resolved.Level} {spell.DisplayName}\n" +
             $"{status}\n" +
-            $"Cost {resolved.CourageCost} courage · Cooldown {resolved.Cooldown:0.#}s\n" +
+            $"Cost {resolved.ManaCost} mana · Cooldown {resolved.Cooldown:0.#}s\n" +
             $"{BuildResolvedEffectSummary(resolved)}";
     }
 
     private static string BuildCostSummary(SpellDefinition spell)
     {
-        return $"Cost {spell.CourageCost} courage · Cooldown {spell.Cooldown:0.#}s";
+        return $"Cost {spell.ManaCost} mana · Cooldown {spell.Cooldown:0.#}s";
     }
 
     private static int BuildReductionPercent(float damageTakenScale)

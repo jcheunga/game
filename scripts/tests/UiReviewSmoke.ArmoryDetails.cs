@@ -60,7 +60,7 @@ public partial class UiReviewSmoke
         {
             await PressHint(spell.DisplayName);
             var resolved = state.BuildSpellStats(spell);
-            Check(Shows($"Cooldown: {resolved.Cooldown:0.#}s") && Shows($"Courage: {resolved.CourageCost}"), spell.DisplayName + ": profile uses the battle's resolved cost and cooldown");
+            Check(Shows($"Cooldown: {resolved.Cooldown:0.#}s") && Shows($"Mana: {resolved.ManaCost}"), spell.DisplayName + ": profile uses the battle's resolved cost and cooldown");
             AuditText("Profile / " + spell.DisplayName);
             await Capture("spell-" + spell.EffectType);
         }

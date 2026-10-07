@@ -4,7 +4,6 @@ using System.Linq;
 
 public partial class BattleController
 {
-    private BattleHudBar _healthBar;
     private HBoxContainer _goldReadout;
     private PanelContainer _goldFrame;
     private Label _goldAmount, _restartMessage, _endRetryMessage;
@@ -16,7 +15,7 @@ public partial class BattleController
 
     private TextureRect _hudBanner;
 
-    // The clean-steel concept HUD: banner and two bar plates at the top left, the gold plaque and pause
+    // The clean-steel concept HUD: banner and the courage and mana plates at the top left, the gold plaque and pause
     // button at the top right, and the card dock at the bottom centre.
     private void BuildCompactHud(Control root)
     {
@@ -41,8 +40,10 @@ public partial class BattleController
             meters.AddChild(meter);
             return meter;
         }
-        _healthBar = Meter("hull", "hud-hull", "hud-fill-hull", "War wagon", "hud-heart");
-        _courageBar = Meter("courage", "hud-courage", "hud-fill-courage", "Courage", "hud-flame");
+        // Courage (troops) takes the concept's long top plate and mana (magic) the one below it; the war
+        // wagon's health is drawn on the wagon itself. Mana is blue, so courage fills amber like its flame.
+        _courageBar = Meter("courage", "hud-hull", "hud-fill-courage-ember", "Courage", "hud-flame");
+        _manaBar = Meter("mana", "hud-courage", "hud-fill-mana", "Mana", "hud-mana");
         _hudBanner = RoyalKit.Image("hud-banner", spec.Rect("banner"));
         meters.AddChild(_hudBanner);
 

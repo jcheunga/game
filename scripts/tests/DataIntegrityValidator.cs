@@ -129,6 +129,8 @@ public static class DataIntegrityValidator
 
         // ── Spell validation ──
         Console.WriteLine("--- Spells ---");
+        var (manaMax, manaPerKill) = LoadMana(Path.Combine(dataDir, "combat_config.json"));
+        Check(manaMax > 0 && manaPerKill > 0, "combat_config.json must define a positive ManaMax and ManaPerEnemyKill");
         foreach (var spell in spells)
         {
             var id = GetStr(spell, "Id");
@@ -139,7 +141,8 @@ public static class DataIntegrityValidator
             spellIds.Add(id);
 
             Check(!string.IsNullOrWhiteSpace(name), $"Spell {id} has empty DisplayName");
-            Check(GetInt(spell, "CourageCost") > 0, $"Spell {id} has non-positive CourageCost");
+            Check(GetInt(spell, "ManaCost") > 0, $"Spell {id} has non-positive ManaCost");
+            Check(GetInt(spell, "ManaCost") <= manaMax, $"Spell {id} costs {GetInt(spell, "ManaCost")} mana, more than the {manaMax} the bar holds");
             Check(GetFloat(spell, "Cooldown") > 0, $"Spell {id} has non-positive Cooldown");
             Check(!string.IsNullOrWhiteSpace(GetStr(spell, "EffectType")), $"Spell {id} has empty EffectType");
         }
@@ -566,6 +569,14 @@ public static class DataIntegrityValidator
         return (GetFloat(combat, "BattlefieldBottom") - GetFloat(combat, "BattlefieldTop")) * 0.5f - GetFloat(combat, "SpawnVerticalPadding");
     }
 
+    private static (float Max, float PerKill) LoadMana(string path)
+    {
+        if (!File.Exists(path)) return (0, 0);
+        using var doc = JsonDocument.Parse(File.ReadAllText(path));
+        if (!doc.RootElement.TryGetProperty("Combat", out var combat)) return (0, 0);
+        return (GetFloat(combat, "ManaMax"), GetFloat(combat, "ManaPerEnemyKill"));
+    }
+
     private static JsonElement[]? LoadArrayRoot(string path)
     {
         if (!File.Exists(path))
@@ -651,7 +662,7 @@ public static class DataIntegrityValidator
         Console.WriteLine(BuildCoverageLine("Unit sprites", visualClasses, id => HasAnyFile(unitSpriteDir, id, ".png"), "assets/units/{visual_class}.png"));
 
         Console.WriteLine(BuildCoverageLine("Zone battle backdrops", AssetCoverageCatalog.RouteIds, id => HasAnyFile(royalBackdropDir, id, ".json"), "assets/world/royal/{zone_id}.json"));
-        Console.WriteLine(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds, id => HasAnyFile(paintedMapDir, id, ".png"), "assets/world/royal/maps/{zone_id}.png"));
+        Console.WriteLine(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds, id => HasAnyFile(paintedMapDir, id, ".jpg"), "assets/world/royal/maps/{zone_id}.jpg"));
         Console.WriteLine(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasAnyFile(structureDir, id, ".png"), "assets/structures/{structure_id}.png"));
         Console.WriteLine(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasAnyFile(particleDir, id, ".png"), "assets/particles/{particle_id}.png"));
 

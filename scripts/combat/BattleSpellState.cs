@@ -58,12 +58,12 @@ public sealed class BattleSpellState
         ArmedSpell = null!;
     }
 
-    public bool CanCast(SpellDefinition definition, float courage, bool battleEnded, bool checkpointActive, out string reason)
+    public bool CanCast(SpellDefinition definition, float mana, bool battleEnded, bool checkpointActive, out string reason)
     {
-        return CanCast(definition, definition.CourageCost, courage, battleEnded, checkpointActive, out reason);
+        return CanCast(definition, definition.ManaCost, mana, battleEnded, checkpointActive, out reason);
     }
 
-    public bool CanCast(SpellDefinition definition, int resolvedCourageCost, float courage, bool battleEnded, bool checkpointActive, out string reason)
+    public bool CanCast(SpellDefinition definition, int resolvedManaCost, float mana, bool battleEnded, bool checkpointActive, out string reason)
     {
         reason = "";
         if (battleEnded)
@@ -85,9 +85,9 @@ public sealed class BattleSpellState
             return false;
         }
 
-        if (courage < resolvedCourageCost)
+        if (mana < resolvedManaCost)
         {
-            reason = $"Not enough courage for {definition.DisplayName}.";
+            reason = $"Not enough mana for {definition.DisplayName}.";
             return false;
         }
 

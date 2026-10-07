@@ -58,7 +58,7 @@ public partial class BattleActionCard : Control
         _costPlate.SetMeta("frame_inset", 1f);
         _costPlate.AddThemeStyleboxOverride("panel", _costMaterial);
         AddChild(_costPlate);
-        // The concept's round bronze badge with the courage cost in white book serif.
+        // The concept's round bronze badge with the courage cost in white book serif (blue for mana).
         _cost = CardLabel(21);
         _cost.AddThemeFontOverride("font", RoyalFonts.Body(600));
         _cost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -124,10 +124,18 @@ public partial class BattleActionCard : Control
         if (_ownedCrop == null && _sourceIcon != null) SetIcon(_sourceIcon);
     }
 
-    public void SetState(int cost, float courage, float cooldown, float totalCooldown, bool selected, bool blocked)
+    /// <summary>Magic is paid in mana, so its cards wear the blue mana badge instead of the bronze courage one.</summary>
+    public void UseManaCost()
+    {
+        _costPlate.Name = "ManaCost";
+        _costMaterial.Texture = RoyalKit.Texture("hud-cost-mana");
+    }
+
+    /// <param name="funds">The courage (troops) or mana (magic) the player has to pay the cost with.</param>
+    public void SetState(int cost, float funds, float cooldown, float totalCooldown, bool selected, bool blocked)
     {
         var cooling = cooldown > .05f;
-        var affordable = courage >= cost;
+        var affordable = funds >= cost;
         Unaffordable = !affordable;
         _selected = selected;
         _cooldownRatio = cooling && totalCooldown > .1f ? Mathf.Clamp(cooldown / totalCooldown, 0, 1) : 0;

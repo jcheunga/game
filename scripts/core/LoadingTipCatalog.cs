@@ -5,7 +5,7 @@ public static class LoadingTipCatalog
 	private static readonly string[] Tips =
 	{
 		"Deploy units near the front to intercept early rushes.",
-		"Spells don't cost courage at higher levels — upgrade them in the Armory.",
+		"Magic runs on mana, earned by felling enemies. Higher spell levels cost less.",
 		"The Shield Knight blocks damage for nearby allies with its Shield Wall ability.",
 		"Equip relics in the Armory to boost unit stats before battle.",
 		"Combo bonuses trigger when matching unit pairs deploy near each other.",

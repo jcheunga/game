@@ -2063,7 +2063,7 @@ public partial class GameState : Node
 
 		return "Active magic: " + string.Join(
 			", ",
-			resolvedSpells.Select(spell => $"{spell.DisplayName} ({spell.CourageCost})"));
+			resolvedSpells.Select(spell => $"{spell.DisplayName} ({spell.ManaCost} mana)"));
 	}
 
 	public IReadOnlyList<UnitDefinition> GetUnlockedPlayerUnits()
@@ -2206,7 +2206,7 @@ public partial class GameState : Node
 			return 0;
 		}
 
-		return 90 + (Math.Max(0, definition.UnlockStage - 1) * 24) + (definition.CourageCost * 2);
+		return 90 + (Math.Max(0, definition.UnlockStage - 1) * 24) + (definition.ManaCost * 5);
 	}
 
 	public bool TryPurchaseUnit(string unitId, out string message)

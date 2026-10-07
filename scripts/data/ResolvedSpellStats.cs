@@ -16,7 +16,7 @@ public readonly struct ResolvedSpellStats
 		SecondaryPower = definition.SecondaryPower * (1f + (bonusLevel * 0.10f));
 		Radius = definition.Radius * (1f + (bonusLevel * 0.05f));
 		Cooldown = Mathf.Max(4f, definition.Cooldown - (bonusLevel * 0.6f));
-		CourageCost = Math.Max(8, definition.CourageCost - (bonusLevel * 1));
+		ManaCost = Math.Max(4, definition.ManaCost - (bonusLevel * 1));
 		Duration = definition.Duration > 0f
 			? definition.Duration + (bonusLevel * 0.3f)
 			: 0f;
@@ -31,7 +31,7 @@ public readonly struct ResolvedSpellStats
 	public float SecondaryPower { get; }
 	public float Radius { get; }
 	public float Cooldown { get; }
-	public int CourageCost { get; }
+	public int ManaCost { get; }
 	public float Duration { get; }
 
 	public Color GetTint()

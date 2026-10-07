@@ -90,7 +90,7 @@ firing range of a base and hold there. Tooltips show "Hits bases" or
 - `scripts/combat/BattleController.CardDragging.cs`: gesture capture, unit taps,
   magic validation, cancellation and drag preview.
 - `scripts/combat/BattleController.Camera.cs`: soldier-scale zoom, band placement, follow and panning.
-- `scripts/combat/hud/BattleActionCard.cs`: the card art, round courage badge (`hud-cost` kit piece) and cooldown.
+- `scripts/combat/hud/BattleActionCard.cs`: the card art, round cost badge (bronze `hud-cost` for courage on troops, blue `hud-cost-mana` for mana on magic) and cooldown.
 - `assets/ui/icons/units/` and `assets/ui/royal/items/`: unit portraits and painted spell pictures.
 
 The visual crops transparent icon padding at runtime; no source PNG is modified.

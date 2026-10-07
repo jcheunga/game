@@ -60,7 +60,7 @@ public partial class BattleController
 
     private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && !_mobileClearView;
 
-    private bool DragCardAffordable() => _dragSpell != null && _courage >= GameState.Instance.BuildSpellStats(_dragSpell).CourageCost
+    private bool DragCardAffordable() => _dragSpell != null && _mana >= GameState.Instance.BuildSpellStats(_dragSpell).ManaCost
         && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
 
     private bool CanDropCard(Vector2 screen)

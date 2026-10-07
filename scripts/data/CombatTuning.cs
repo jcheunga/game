@@ -35,6 +35,11 @@ public sealed class CombatTuning
 	public float CourageMax { get; set; } = 100f;
 	public float CourageGainPerSecond { get; set; } = 3f;
 
+	// Mana pays for magic, separately from the courage that pays for troops. It is earned from kills, not time.
+	public float ManaStart { get; set; } = 0f;
+	public float ManaMax { get; set; } = 30f;
+	public float ManaPerEnemyKill { get; set; } = 2f;
+
 	public float InitialEnemySpawnDelay { get; set; } = 2.8f;
 	public float EnemySpawnPressureTimeScale { get; set; } = 180f;
 	public float EnemySpawnPressureMin { get; set; } = 1f;

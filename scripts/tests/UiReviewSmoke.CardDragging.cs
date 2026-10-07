@@ -33,7 +33,7 @@ public partial class UiReviewSmoke
                 var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
                 var camera=Read<Camera2D>(touch?"_mobileCamera":"_battleCamera");
                 if(touch) { Write("_mobileFollow",false); camera.Position=new Vector2(340,380); camera.ForceUpdateScroll(); }
-                void Ready() { Write("_courage",100f); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud"); }
+                void Ready() { Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud"); }
                 Vector2 CardPoint(int i)=>cards[i].CostPlate.GetGlobalTransformWithCanvas()*(cards[i].CostPlate.Size*.5f);
                 Vector2 FieldPoint()=>battle.GetGlobalTransformWithCanvas()*new Vector2(380,360);
                 void Down(Vector2 p)
@@ -86,8 +86,9 @@ public partial class UiReviewSmoke
                 Check(Read<bool>("_cardDragging") && Read<SpellDefinition>("_dragSpell")==spells.Roster[0],mode+": magic card has its own drag payload");
                 await Capture(mode+"-magic-preview");
                 Up(point); await Wait(.05);
-                var cost=GameState.Instance.BuildSpellStats(spells.Roster[0]).CourageCost;
-                Check(Read<int>("_spellsCast")==casts+1 && Mathf.IsEqualApprox(Read<float>("_courage"),100-cost),mode+": magic release casts once and charges its resolved cost");
+                var cost=GameState.Instance.BuildSpellStats(spells.Roster[0]).ManaCost;
+                Check(Read<int>("_spellsCast")==casts+1 && Mathf.IsEqualApprox(Read<float>("_mana"),Read<float>("_maxMana")-cost)
+                    && Mathf.IsEqualApprox(Read<float>("_courage"),100),mode+": magic release casts once and charges its resolved mana cost, not courage");
                 Check(target.Health<health && spells.GetCooldownRemaining(spells.Roster[0].Id)>0,mode+": magic hits the drop location and starts cooldown");
                 Up(point);
                 Check(Read<int>("_spellsCast")==casts+1,mode+": duplicate magic release cannot cast twice");
@@ -111,22 +112,24 @@ public partial class UiReviewSmoke
 
                 count=Read<int>("_playerDeployments"); casts=Read<int>("_spellsCast");
                 Start(deck.Roster.Count); Move(CardPoint(0)); Up(CardPoint(0));
-                Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==100,
+                Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_mana")==Read<float>("_maxMana"),
                     mode+": returning a magic card to the bar cancels for free");
                 foreach(var spell in new[]{false,true})
                 {
                     var index=spell?deck.Roster.Count:0;
+                    // Troops are paid in courage, magic in mana.
+                    var funds=spell?"_mana":"_courage"; var full=spell?Read<float>("_maxMana"):100f;
                     Start(index); Move(new Vector2(30,35)); Up(new Vector2(30,35));
-                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==100,
+                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>(funds)==full,
                         mode+": releasing over the HUD never uses the card");
                     Press(index); Up(CardPoint(index),true);
-                    Check(!Read<bool>("_cardPointerDown") && Read<float>("_courage")==100,mode+": OS-canceled unit/magic release is free");
+                    Check(!Read<bool>("_cardPointerDown") && Read<float>(funds)==full,mode+": OS-canceled unit/magic release is free");
                     Start(index); Move(new Vector2(-20,200)); Up(new Vector2(-20,200));
                     Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts,mode+": outside-window release is rejected");
-                    if(spell) { Start(index); Write("_courage",0f); Up(point); }
-                    else { Press(index); Write("_courage",0f); Up(CardPoint(index)); }
-                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_courage")==0,
-                        mode+": release rechecks courage instead of trusting the press");
+                    if(spell) { Start(index); Write(funds,0f); Up(point); }
+                    else { Press(index); Write(funds,0f); Up(CardPoint(index)); }
+                    Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>(funds)==0,
+                        mode+": release rechecks courage or mana instead of trusting the press");
                 }
                 Press(); deck.MarkDeployed(deck.Roster[0],5); Up(CardPoint(0));
                 Check(Read<int>("_playerDeployments")==count,mode+": release rechecks a newly active cooldown");

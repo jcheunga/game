@@ -74,6 +74,7 @@ public partial class BattleController
 				button.AddThemeColorOverride("font_pressed_color", Colors.White);
 				button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.55f));
 				var card = AttachBattleCardContent(button, UiArtLoader.TryLoadSpellIcon(spell));
+				card.UseManaCost();
 				button.Pressed += () => ArmSpell(spell);
 				spellRow.AddChild(button);
 				_spellSlots.Add(new SpellSlot(spell, button, card));
@@ -278,14 +279,15 @@ public partial class BattleController
 	private void UpdateHud()
 	{
 		_fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
-        _healthBar.SetValue(_playerBaseMaxHealth > 0 ? _playerBaseHealth / _playerBaseMaxHealth : 0,
-            $"{Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))}/{Mathf.CeilToInt(_playerBaseMaxHealth)}");
         _goldAmount.Text = GameState.Instance.Gold.ToString("N0");
-        _healthBar.AccessibilityName = $"War wagon health, {Mathf.Max(0, Mathf.CeilToInt(_playerBaseHealth))} of {Mathf.CeilToInt(_playerBaseMaxHealth)}";
         _courageBar.AccessibilityName = $"Courage, {Mathf.FloorToInt(_courage)} of {Mathf.FloorToInt(_maxCourage)}";
 		_courageBar.SetValue(
 			_maxCourage > 0.01f ? _courage / _maxCourage : 0f,
 			$"{Mathf.FloorToInt(_courage)}/{Mathf.FloorToInt(_maxCourage)}");
+		_manaBar.AccessibilityName = $"Mana, {Mathf.FloorToInt(_mana)} of {Mathf.FloorToInt(_maxMana)}";
+		_manaBar.SetValue(
+			_maxMana > 0.01f ? _mana / _maxMana : 0f,
+			$"{Mathf.FloorToInt(_mana)}/{Mathf.FloorToInt(_maxMana)}");
 		foreach (var slot in _deploySlots)
 		{
 			var cooldown = _deck.GetCooldownRemaining(slot.Definition.Id);
@@ -307,16 +309,16 @@ public partial class BattleController
 			var resolved = GameState.Instance.BuildSpellStats(slot.Definition);
 			var cooldown = _spellDeck.GetCooldownRemaining(slot.Definition.Id);
 			var isReady = cooldown <= 0.05f;
-			var hasCourage = _courage >= resolved.CourageCost;
+			var hasMana = _mana >= resolved.ManaCost;
 			var armed = _selectionMode == BattleSelectionMode.Spell && slot.Definition == _spellDeck.ArmedSpell;
-			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasCourage;
+			slot.Button.Disabled = _battleEnded || _endlessCheckpointActive || !isReady || !hasMana;
 
-			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasCourage, armed);
+			slot.Button.SelfModulate = ResolveSpellButtonTint(slot.Definition, isReady, hasMana, armed);
 			slot.Button.TooltipText = SpellText.BuildTooltipSummary(slot.Definition, resolved, isReady, cooldown);
 			var totalSpellCd = ResolvePlayerSpellCooldown(resolved);
-			slot.Card.SetState(resolved.CourageCost, _courage, cooldown, totalSpellCd, armed, _battleEnded || _endlessCheckpointActive);
-			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.CourageCost} courage";
-			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasCourage ? "Not enough courage." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");
+			slot.Card.SetState(resolved.ManaCost, _mana, cooldown, totalSpellCd, armed, _battleEnded || _endlessCheckpointActive);
+			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.ManaCost} mana";
+			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasMana ? "Not enough mana." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");
 		}
 		_hudLayout?.Invoke();
         RefreshMobileHud();

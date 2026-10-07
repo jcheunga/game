@@ -18,6 +18,10 @@ godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.ts
   --save-suffix=combat-review-<id> --tactical --time-limit=300 --stages=10,20,30
 ```
 
+Since 2026-10-07 magic costs mana (2 per enemy kill) instead of courage, so the reference player casts heal on
+a hurt ally and fireball on clusters of three whenever it has the mana. Sweeps from before then are not directly
+comparable.
+
 `--seed-offset=N` changes the seed, `--time-limit=` caps each battle (default 210 s, 60–600) and
 `--armaments` (with `--tactical`) adds the war wagon weapon and skill upgrades. Each run needs its own
 `--save-suffix=combat-review-…` so it never touches a personal save.

@@ -37,14 +37,15 @@ public partial class UiReviewSmoke
                 var spells=Read<BattleSpellState>("_spellDeck");
                 var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
                 var buttons=cards.Select(c=>(Button)c.GetParent()).ToArray();
-                Write("_courage",100f); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud");
+                Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud");
                 await Wait(.1);
                 Check(cards.Length==deck.Roster.Count+spells.Roster.Count,$"{prefix}: every deck action has an icon card");
                 for(var i=0;i<cards.Length;i++)
                 {
                     var art=cards[i]; var button=buttons[i];
-                    var cost=i<deck.Roster.Count?deck.Roster[i].Cost:GameState.Instance.BuildSpellStats(spells.Roster[i-deck.Roster.Count]).CourageCost;
-                    Check(art.CostLabel.Text==cost.ToString(),$"{prefix}: badge uses the actual resolved courage cost");
+                    var cost=i<deck.Roster.Count?deck.Roster[i].Cost:GameState.Instance.BuildSpellStats(spells.Roster[i-deck.Roster.Count]).ManaCost;
+                    Check(art.CostLabel.Text==cost.ToString(),$"{prefix}: badge uses the actual resolved courage or mana cost");
+                    Check(art.CostPlate.Name==(i<deck.Roster.Count?"CourageCost":"ManaCost"),$"{prefix}: troops wear the courage badge, magic the mana badge");
                     Check(art.Portrait.Texture!=null && art.Portrait.Size.Y>=art.Size.Y*.6f && new Rect2(Vector2.Zero,art.Size).Encloses(art.Portrait.GetRect()),$"{prefix}: portrait sits whole inside the card");
                     Check(art.CostPlate.Position.X>art.Size.X*.5f && art.CostPlate.Position.Y<=6
                         && new Rect2(Vector2.Zero,art.Size).Encloses(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),
@@ -77,13 +78,21 @@ public partial class UiReviewSmoke
                 Check(cards.Count(c=>c.Selected)==1 && cards[deck.Roster.Count].Selected,$"{prefix}: deploying a unit keeps the aimed magic selected");
                 deck.ReduceCooldowns(1000);
 
-                Write("_courage",0f); Call("UpdateHud"); await Wait(.1);
+                Write("_courage",0f); Write("_mana",0f); Call("UpdateHud"); await Wait(.1);
                 Check(buttons.All(b=>b.Disabled) && cards.All(c=>c.Unaffordable && c.Portrait.Modulate.R<.9f),
-                    $"{prefix}: insufficient courage is explicit and prevents activation");
+                    $"{prefix}: insufficient courage and mana is explicit and prevents activation");
                 Check(cards.All(c=>c.CostLabel.IsVisibleInTree()),$"{prefix}: unavailable cards still show their price");
                 await Capture(prefix+"-low-courage");
 
-                Write("_courage",100f);
+                // Courage and mana are separate purses: running out of one never blocks the other.
+                Write("_mana",Read<float>("_maxMana")); Call("UpdateHud"); await Wait(.1);
+                Check(buttons.Take(deck.Roster.Count).All(b=>b.Disabled) && buttons.Skip(deck.Roster.Count).All(b=>!b.Disabled),
+                    $"{prefix}: with no courage, magic is still paid for with mana");
+                Write("_courage",100f); Write("_mana",0f); Call("UpdateHud"); await Wait(.1);
+                Check(buttons.Take(deck.Roster.Count).All(b=>!b.Disabled) && buttons.Skip(deck.Roster.Count).All(b=>b.Disabled),
+                    $"{prefix}: with no mana, troops are still paid for with courage");
+
+                Write("_courage",100f); Write("_mana",Read<float>("_maxMana"));
                 var unitCooldown=(float)Call("ResolvePlayerDeployCooldown",deck.Roster[0]);
                 deck.MarkDeployed(deck.Roster[0],unitCooldown*.5f);
                 var spellStats=GameState.Instance.BuildSpellStats(spells.Roster[0]);

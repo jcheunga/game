@@ -17,7 +17,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "courage_basics",
 			Title = "Courage",
-			Body = "Courage fills over time. Spend it to deploy units and cast spells. Don't hoard \u2014 deploy early to hold the line.",
+			Body = "Courage fills over time. Spend it to deploy units; spells run on mana, earned by defeating enemies. Don't hoard \u2014 deploy early to hold the line.",
 			TriggerContext = "first_battle"
 		},
 		new()
@@ -31,7 +31,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "spell_basics",
 			Title = "Spells",
-			Body = "Drag a magic card onto the battlefield. Aim with the preview and release to cast; return to the cards to cancel. Spells cost courage and have cooldowns.",
+			Body = "Drag a magic card onto the battlefield. Aim with the preview and release to cast; return to the cards to cancel. Spells cost mana, earned by defeating enemies, and have cooldowns.",
 			TriggerContext = "first_spell_unlock"
 		},
 		new()

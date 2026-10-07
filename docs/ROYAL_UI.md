@@ -45,7 +45,7 @@ tiles and parchment, `RealmModal` uses the concept header with its castle skylin
 | Relic forge | menu 09 | `ForgeMenu.cs` |
 | Season rewards | menu 10 | `SeasonPassMenu.cs` |
 | Prepare for battle | ui 09 | `LoadoutMenu.cs` |
-| Battle HUD | ui 02 | `BattleController.Menu.cs`, `hud/RoyalMeter.cs`, `hud/BattleActionCard.cs` |
+| Battle HUD | ui 02 | `BattleController.Menu.cs`, `hud/RoyalMeter.cs`, `hud/BattleActionCard.cs` (courage on the top plate, mana below; mana's blue pieces and courage's amber fill from `art/royal/mana.py`) |
 | Victory / defeat | ui 10 | `royal/RoyalResult.cs` (LAN and online rooms keep their scoreboard panel) |
 
 Screens without a concept, and the inspectors opened over screens, share `RealmModal`'s chrome: the

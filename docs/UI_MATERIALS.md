@@ -12,8 +12,8 @@ keyboard focus has a separate bright outline.
 - `scripts/ui/shared/MedievalUi.cs` supplies the shared control theme and slicing.
 - `scripts/ui/shared/UiSurfaceStyle.cs` layers a tintable body and rim for cards
   and badges, preserving their existing selection/reward colours.
-- `scripts/combat/hud/RoyalMeter.cs` draws the battle HUD's hull and courage meters from the
-  clean-steel kit pieces (see `docs/ROYAL_UI.md`).
+- `scripts/combat/hud/RoyalMeter.cs` draws the battle HUD's courage and mana meters from the
+  clean-steel kit pieces (mana's blue pieces and courage's amber fill come from `art/royal/mana.py`) (see `docs/ROYAL_UI.md`).
 
 Regenerate with `python3 art/ui/build_surfaces.py`, then let Godot import the SVGs.
 No external artwork, bitmap-generation service, shader, or SVG filter is needed.

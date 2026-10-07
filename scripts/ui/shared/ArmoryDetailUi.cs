@@ -57,7 +57,7 @@ public static class ArmoryDetailUi
             "polymorph" => new Stat("people", "Targets", "1 enemy"),
             _ => new Stat("sword", "Damage", $"{spell.Power:0.#}")
         };
-        var values = new List<Stat> { primary, new("bolt", "Courage", spell.CourageCost.ToString()), new("clock", "Cooldown", $"{spell.Cooldown:0.#}s") };
+        var values = new List<Stat> { primary, new("crystal", "Mana", spell.ManaCost.ToString()), new("clock", "Cooldown", $"{spell.Cooldown:0.#}s") };
         if (spell.EffectType is not ("war_cry" or "resurrect" or "stone_barricade")) values.Add(new("eye", "Radius", $"{spell.Radius:0.#}"));
         if (spell.Duration > 0) values.Add(new("clock", "Duration", $"{spell.Duration:0.#}s"));
         if (spell.EffectType == "heal") values.Add(new("hammer", "Wagon repair", $"{spell.SecondaryPower:0.#}"));

@@ -175,8 +175,8 @@ public partial class CombatReviewSmoke
         battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
         AddChild(battle);
         battle.SetPhysicsProcess(false);
-        Check(Read<Label>(battle, "_statusLabel") != null && Read<BattleHudBar>(battle, "_healthBar") != null,
-            "Endless battle initializes its health HUD");
+        Check(Read<Label>(battle, "_statusLabel") != null && Read<BattleHudBar>(battle, "_courageBar") != null && Read<BattleHudBar>(battle, "_manaBar") != null,
+            "Endless battle initializes its courage and mana HUD");
         core = Core(true);
         Spawn(Team.Enemy, core + new Vector2(100, 0));
         Invoke(battle, "TickBaseWeapons", 1f);

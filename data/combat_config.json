@@ -19,6 +19,9 @@
     "CourageStart": 0.0,
     "CourageMax": 100.0,
     "CourageGainPerSecond": 3.0,
+    "ManaStart": 0.0,
+    "ManaMax": 30.0,
+    "ManaPerEnemyKill": 2.0,
     "RangedMeleeReach": 34.0,
     "RangedMeleeDamageScale": 0.8,
 

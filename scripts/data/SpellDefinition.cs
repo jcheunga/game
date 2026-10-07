@@ -7,7 +7,7 @@ public sealed class SpellDefinition
     public string DisplayName { get; set; } = "";
     public int UnlockStage { get; set; } = 1;
     public int GoldCost { get; set; }
-    public int CourageCost { get; set; } = 20;
+    public int ManaCost { get; set; } = 8;
     public float Cooldown { get; set; } = 12f;
     public string EffectType { get; set; } = "";
     public float Power { get; set; }

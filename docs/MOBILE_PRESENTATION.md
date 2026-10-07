@@ -16,7 +16,7 @@ and phone share the soldier scale and two-screen field (see
   Both zoom and card visibility preserve the visible focal point. Tracking
   centers the models in the uncovered field instead of behind the HUD.
 - HUD: 1.55× scale, 56-unit minimum top-row touch targets, and icon-first unit and
-  spell cards with the art whole inside the card and the courage cost in the corner.
+  spell cards with the art whole inside the card and the courage (troops) or mana (magic) cost in the corner.
   Cards shrink to share the dock's width, so the row never scrolls.
 - Pause, results, and checkpoint choices fit the smaller layout; long
   result/checkpoint reports scroll.

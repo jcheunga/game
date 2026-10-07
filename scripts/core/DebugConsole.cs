@@ -303,7 +303,7 @@ public partial class DebugConsole : CanvasLayer
 		foreach (var s in spells.OrderBy(x => x.UnlockStage))
 		{
 			var owned = GameState.Instance?.IsSpellOwned(s.Id) == true ? "owned" : "locked";
-			lines.Add($"  {s.DisplayName} (courage:{s.CourageCost} power:{s.Power:F1} cd:{s.Cooldown:F1}s) unlock:S{s.UnlockStage} [{owned}]");
+			lines.Add($"  {s.DisplayName} (mana:{s.ManaCost} power:{s.Power:F1} cd:{s.Cooldown:F1}s) unlock:S{s.UnlockStage} [{owned}]");
 		}
 		return string.Join("\n", lines);
 	}

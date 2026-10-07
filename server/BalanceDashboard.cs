@@ -159,24 +159,25 @@ public static class BalanceDashboard
         var sorted = spells.OrderBy(s => GetInt(s, "UnlockStage")).ToArray();
 
         sb.Append("<h2>Spell Value</h2>");
-        sb.Append("<table><tr><th>Spell</th><th>Courage</th><th>Power</th><th>Radius</th><th>CD</th><th>Duration</th><th>Power/Courage</th><th>Unlock</th></tr>");
+        sb.Append("<table><tr><th>Spell</th><th>Mana</th><th>Power</th><th>Radius</th><th>CD</th><th>Duration</th><th>Power/Mana</th><th>Unlock</th></tr>");
 
         foreach (var spell in sorted)
         {
             var name = GetStr(spell, "DisplayName");
-            var courage = GetInt(spell, "CourageCost");
+            var mana = GetInt(spell, "ManaCost");
             var power = GetFloat(spell, "Power");
             var radius = GetFloat(spell, "Radius");
             var cd = GetFloat(spell, "Cooldown");
             var duration = GetFloat(spell, "Duration");
             var unlock = GetInt(spell, "UnlockStage");
-            var powerPerCourage = courage > 0 && power > 1 ? power / courage : 0;
+            var powerPerMana = mana > 0 && power > 1 ? power / mana : 0;
 
-            var valueClass = powerPerCourage > 1.2 ? "good" : powerPerCourage > 0 && powerPerCourage < 0.8 ? "warn" : "mid";
+            // Mana costs run about 2.5x smaller than the old courage costs, so the value bands scale with them.
+            var valueClass = powerPerMana > 3 ? "good" : powerPerMana > 0 && powerPerMana < 2 ? "warn" : "mid";
 
-            sb.Append($"<tr><td>{name}</td><td>{courage}</td><td>{power:F1}</td><td>{radius:F0}</td>");
+            sb.Append($"<tr><td>{name}</td><td>{mana}</td><td>{power:F1}</td><td>{radius:F0}</td>");
             sb.Append($"<td>{cd:F1}s</td><td>{(duration > 0 ? $"{duration:F1}s" : "-")}</td>");
-            sb.Append($"<td class='{valueClass}'>{(powerPerCourage > 0 ? $"{powerPerCourage:F2}" : "utility")}</td>");
+            sb.Append($"<td class='{valueClass}'>{(powerPerMana > 0 ? $"{powerPerMana:F2}" : "utility")}</td>");
             sb.Append($"<td>S{unlock}</td></tr>");
         }
         sb.Append("</table>");

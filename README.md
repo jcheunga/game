@@ -154,7 +154,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
     Lantern Guard, Ballista Crew and Stormcaller, each unlocked by stage
   - 10 spell cards: Fireball, Heal, Frost Burst, Lightning Strike, Barrier Ward, Stone Barricade, War Cry,
     Earthquake, Polymorph and Resurrect
-  - Unit deploys and spell casts consume courage and enter cooldown
+  - Unit deploys consume courage, which fills over time; spell casts consume mana, earned at 2 per enemy
+    killed (capped at 30). Both enter cooldown. The HUD shows the courage and mana meters; the war wagon
+    shows its own health on the battlefield
   - Units fight when enemies enter their aggro box. Ranged units fire Blender-rendered projectiles on arcs
     and strike in melee at point-blank
   - Enemy roles include Blight Casters (ranged), Sappers (dive for the wagon), Dread Heralds (buff nearby

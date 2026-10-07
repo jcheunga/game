@@ -183,6 +183,7 @@ public partial class BattleController : Node2D
 	private float _eventEnemyHealthScale = 1f;
 	private float _eventEnemyDamageScale = 1f;
 	private BattleHudBar _courageBar = null!;
+	private BattleHudBar _manaBar = null!;
 	private Label _statusLabel = null!;
 	private Label _fpsLabel = null!;
 	private Label _endLabel = null!;
@@ -217,6 +218,8 @@ public partial class BattleController : Node2D
 	private float _enemyBaseMaxHealth;
 	private float _courage;
 	private float _maxCourage;
+	private float _mana;
+	private float _maxMana;
 	private float _courageGainPerSecond;
 	private float _campaignScoutCourageGainScale = 1f;
 	private float _campaignScoutBoostRemaining;
@@ -602,6 +605,8 @@ public partial class BattleController : Node2D
 		var baseCourageMax = _combat.CourageMax + (IsChallengeMode ? _challengeMutator.CourageMaxBonus : 0f);
 		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(baseCourageMax);
 		_courage = 0f;
+		_maxMana = Mathf.Max(0f, _combat.ManaMax);
+		_mana = Mathf.Clamp(_combat.ManaStart, 0f, _maxMana);
 		if (IsCampaignMode && GameState.Instance.HasCampaignScoutBonus(_stage))
 		{
 			_campaignScoutCourageGainScale = GameState.Instance.GetCampaignScoutCourageGainScale(_stage);
@@ -2173,14 +2178,14 @@ public partial class BattleController : Node2D
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
 	{
 		var resolved = GameState.Instance.BuildSpellStats(definition);
-		if (!_spellDeck.CanCast(definition, resolved.CourageCost, _courage, _battleEnded, _endlessCheckpointActive, out var reason))
+		if (!_spellDeck.CanCast(definition, resolved.ManaCost, _mana, _battleEnded, _endlessCheckpointActive, out var reason))
 		{
 			AudioDirector.Instance?.PlaySpellDenied();
 			SetStatus(reason);
 			return;
 		}
 
-		_courage -= resolved.CourageCost;
+		_mana -= resolved.ManaCost;
 		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(resolved));
 		var effectSummary = ApplySpellEffect(resolved, targetPosition);
 		_selectionMode = BattleSelectionMode.Unit;
@@ -4902,6 +4907,7 @@ public partial class BattleController : Node2D
 			if (deadUnit.Team == Team.Enemy)
 			{
 				_enemyDefeats++;
+				GainMana(_combat.ManaPerEnemyKill);
 				if (_campaignAdaptiveWaveChallengeActive && _campaignAdaptiveWaveChallengeMode == CampaignAdaptiveWaveChallengeModeDefeats)
 				{
 					_campaignAdaptiveWaveChallengeProgress = Mathf.Max(0f, _enemyDefeats - _campaignAdaptiveWaveChallengeStartEnemyDefeats);
@@ -5029,6 +5035,11 @@ public partial class BattleController : Node2D
 		}
 
 		PruneTargetLocks();
+	}
+
+	private void GainMana(float amount)
+	{
+		if (amount > 0f) _mana = Mathf.Min(_maxMana, _mana + amount);
 	}
 
 	private bool TryBuildThreatNeutralizedFeedback(
@@ -6065,7 +6076,7 @@ public partial class BattleController : Node2D
 		return tint.Lerp(Colors.White, 0.25f);
 	}
 
-	private Color ResolveSpellButtonTint(SpellDefinition definition, bool isReady, bool hasCourage, bool armed)
+	private Color ResolveSpellButtonTint(SpellDefinition definition, bool isReady, bool hasMana, bool armed)
 	{
 		var tint = definition.GetTint();
 		if (!isReady)
@@ -6073,7 +6084,7 @@ public partial class BattleController : Node2D
 			return tint.Darkened(0.45f);
 		}
 
-		if (!hasCourage)
+		if (!hasMana)
 		{
 			return tint.Darkened(0.28f).Lerp(new Color("6c757d"), 0.35f);
 		}

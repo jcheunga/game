@@ -119,6 +119,8 @@ public partial class BattleController
             // no card edge is clipped.
             if (row.GetParent() is ScrollContainer scroller)
             {
+                // The theme's scrollers keep a right gutter for a scrollbar; this one never scrolls, so drop it.
+                scroller.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
                 scroller.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
                 scroller.VerticalScrollMode = ScrollContainer.ScrollMode.Disabled;
                 scroller.CustomMinimumSize = Vector2.Zero;

@@ -65,13 +65,15 @@ The same script composes a still of each battlefield for mission and route cards
 ## Map
 
 `MapGuideRenderer` (`UiReviewSmoke --map-guides`) draws each zone's own geography (coast, river, bridges, roads and
-site points) as a flat colour guide, plus four overlapping 16:9 section guides and `crops.json` (world rects). A
-zone is too wide for one Codex image (about 1.6 megapixels) to stay sharp, so `art/royal/mapsections.py run` has
-Codex paint it section by section in the atlas concept's style: north-west first, then north-east and south-west,
-then south-east, each edited from a target that already carries its finished neighbours' painted strip so the
-painting continues across the joins. `mapsections.py stitch` colour-matches the sections, feathers them together
-and installs `assets/world/royal/maps/<zone>.png` with its world rect, so roads, river and clearings line up with
-the playable tiles. Sites use painted landmark sprites (`assets/world/royal/maps/landmarks`, installed by
+site points) as a flat colour guide with `crops.json` (its world rect). A zone is too wide for one Codex image
+(about 1.6 megapixels) to stay sharp when zoomed in, so `art/royal/mapsections.py run` has Codex paint it as a
+mosaic of overlapping 16:9 sections (`GRID` × `GRID`, 4 × 4 by default) in diagonal waves from the north-west, each
+edited from a target that already carries its finished neighbours' painted strips so the painting continues across
+the joins, with the zone's previous painting of the same area as a content reference. `mapsections.py stitch`
+colour-matches the sections, feathers them together and installs the map as 2 × 2 GPU-compressed texture tiles
+(`assets/world/royal/maps/<zone>-<k>.jpg`, none wider than 4096 px) listed with the world rect in `<zone>.json`,
+so roads, river and clearings line up with the playable tiles. A zone painted before the mosaic has one
+`<zone>.jpg`. Sites use painted landmark sprites (`assets/world/royal/maps/landmarks`, installed by
 `art/royal/maps.py`), stars sit above castles, hidden tiles lie under a storm-cloud bank and frontier tiles under
 thin mist: `MapFogLayer` draws blurred world-space masks of both through `assets/shaders/royal_fog.gdshader`,
 which frays them into lit, drifting billows using the tileable noise baked by `art/royal/fognoise.py`. Landmarks,

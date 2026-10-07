@@ -57,7 +57,7 @@ public partial class WorldArtReview : Node
                 Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(path)))), $"{zone} backdrop is a distinct painting");
             }
             foreach (var zone in AssetCoverageCatalog.RouteIds)
-                Check(ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.jpg") && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
+                Check((ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}-0.jpg") || ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.jpg")) && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
                     $"{zone} has a painted campaign map");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             // --zones=city,harbor limits the map and battle captures to those zones (the art checks above still cover all).
@@ -71,7 +71,7 @@ public partial class WorldArtReview : Node
                 var stage = GameData.GetStagesForMap(zone).First().StageNumber; state.SetSelectedStage(stage);
                 var map = (MapMenu)await LiveUiReview.Open(this, "MainMenu"); await Wait(.4);
                 var canvas = Read<MapPathCanvas>(map,"_mapCanvas");
-                Check(Read<Texture2D>(canvas, "_painted") is { } painting && painting.ResourcePath.EndsWith($"/maps/{zone}.jpg") && canvas.ActiveMapId == zone,
+                Check(Read<Texture2D>(canvas, "_painted") is { } painting && (painting.ResourcePath.EndsWith($"/maps/{zone}-0.jpg") || painting.ResourcePath.EndsWith($"/maps/{zone}.jpg")) && canvas.ActiveMapId == zone,
                     zone + " painting is connected to its map screen");
                 await Capture("zone-" + zone + "-fresh");
                 var explored = state.BuildSaveData();

@@ -70,10 +70,10 @@ public partial class ExplorationReview : Node
                     zone+" splits its road into three lanes that converge before the boss");
                 Check(AdventureAtlasLandscape.Bridges(zone).Length>=3,zone+" bridges the river where the lanes cross it");
                 var resources=tiles.Where(t=>t.IsResource).ToArray();
-                Check(resources.Length==25 && tiles.Count(t=>!t.HasInterest)>=200 && resources.All(r=>AdventureTileCatalog.Neighbors(r).All(n=>!n.IsResource)),
-                    zone+" scatters 25 resources over mostly plain ground, never side by side");
+                Check(resources.Length==39 && tiles.Count(t=>!t.HasInterest)>=190 && resources.All(r=>AdventureTileCatalog.Neighbors(r).All(n=>!n.IsResource)),
+                    zone+" scatters 39 resources over mostly plain ground, never side by side");
                 var finds=AdventureDiscoveryCatalog.ForMap(zone);
-                Check(finds.Count==14 && finds.Select(f=>f.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length
+                Check(finds.Count==28 && finds.Select(f=>f.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length
                     && finds[0].Kind==AdventureDiscoveryKind.Food && Steps(stages[0],AdventureTileCatalog.Find(zone,finds[0].Id))<=4,zone+" offers every kind of find, with provisions close to the start");
             }
             var city=AdventureTileCatalog.ForMap("city"); var start=AdventureTileCatalog.Starting("city"); var boss=AdventureTileCatalog.Stage("city",9);

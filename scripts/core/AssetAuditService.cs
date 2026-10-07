@@ -39,7 +39,8 @@ public static class AssetAuditService
         lines.Add(BuildCoverageLine("Zone battle backdrops", AssetCoverageCatalog.RouteIds,
             id => WorldEnvironmentArt.LoadZoneBackdrop(id) is { Layers.Count: 5 }, $"{WorldEnvironmentArt.RoyalBackdropDirectory}{{zone_id}}.json (five layers)"));
         lines.Add(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds,
-            id => ResourceLoader.Exists($"{PaintedMapPath}{id}.jpg") && FileAccess.FileExists(PaintedMapPath + id + ".json"), $"{PaintedMapPath}{{zone_id}}.jpg + .json"));
+            id => (ResourceLoader.Exists($"{PaintedMapPath}{id}-0.jpg") || ResourceLoader.Exists($"{PaintedMapPath}{id}.jpg")) && FileAccess.FileExists(PaintedMapPath + id + ".json"),
+            $"{PaintedMapPath}{{zone_id}}-<tile>.jpg + .json"));
         lines.Add(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasPng(StructurePath, id), $"{StructurePath}{{structure_id}}.png"));
         lines.Add(BuildCoverageLine("Caravan skins", WagonSkinCatalog.GetAll().Select(skin => skin.Id).ToArray(),
             id => HasPng(StructurePath, id == WagonSkinCatalog.DefaultSkinId ? "war_wagon" : "war_wagon_" + id), $"{StructurePath}war_wagon_skin_*.png"));

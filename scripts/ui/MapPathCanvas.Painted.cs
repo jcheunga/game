@@ -2,14 +2,15 @@ using System.Linq;
 using Godot;
 
 /// <summary>
-/// The painted campaign map (art/royal/maps.py): one painting per zone, made over the zone's own
-/// geography, drawn in world space beneath the sites, with painted landmark sprites at each site.
-/// A zone without a painting shows plain sea around its sites.
+/// The painted campaign map (art/royal/mapsections.py): one painting per zone, made over the zone's own
+/// geography and installed as a few texture tiles, drawn in world space beneath the sites, with painted
+/// landmark sprites at each site. A zone without a painting shows plain sea around its sites.
 /// </summary>
 public partial class MapPathCanvas
 {
+    // The painting's tiles with their world rects; _painted is the first (or only) one.
+    private readonly System.Collections.Generic.List<(Texture2D Texture, Rect2 Rect)> _paintedTiles = new();
     private Texture2D _painted;
-    private Rect2 _paintedRect;
     private Color _paintedSea = new("1d3b57");
     private static readonly System.Collections.Generic.Dictionary<string, Texture2D> Landmarks = new();
 
@@ -23,20 +24,29 @@ public partial class MapPathCanvas
     {
         _painted = null;
         _mapBounds = AdventureAtlasLandscape.PaintingRect(ActiveMapId);
+        _paintedTiles.Clear();
         var path = $"res://assets/world/royal/maps/{ActiveMapId}";
-        if (!ResourceLoader.Exists(path + ".jpg") || !FileAccess.FileExists(path + ".json")) return;
+        if (!FileAccess.FileExists(path + ".json")) return;
         var meta = Json.ParseString(FileAccess.GetFileAsString(path + ".json")).AsGodotDictionary();
-        var r = meta["rect"].AsGodotArray();
-        _paintedRect = new Rect2((float)r[0].AsDouble(), (float)r[1].AsDouble(), (float)r[2].AsDouble(), (float)r[3].AsDouble());
+        static Rect2 Rect(Godot.Collections.Array r) => new((float)r[0].AsDouble(), (float)r[1].AsDouble(), (float)r[2].AsDouble(), (float)r[3].AsDouble());
         _paintedSea = new Color(meta["sea"].AsString());
-        _painted = ResourceLoader.Load<Texture2D>(path + ".jpg");
+        if (meta.TryGetValue("tiles", out var tiles))
+        {
+            var rects = tiles.AsGodotArray();
+            for (var k = 0; k < rects.Count; k++)
+                if (ResourceLoader.Exists($"{path}-{k}.jpg"))
+                    _paintedTiles.Add((ResourceLoader.Load<Texture2D>($"{path}-{k}.jpg"), Rect(rects[k].AsGodotArray())));
+        }
+        else if (ResourceLoader.Exists(path + ".jpg"))
+            _paintedTiles.Add((ResourceLoader.Load<Texture2D>(path + ".jpg"), Rect(meta["rect"].AsGodotArray())));
+        _painted = _paintedTiles.Count > 0 ? _paintedTiles[0].Texture : null;
     }
 
     private void DrawPaintedBackground()
     {
         var view = new Rect2(-MapOffset / Zoom, Size / Zoom).Grow(48);
         DrawRect(view, _paintedSea);
-        if (Painted) DrawTextureRect(_painted, _paintedRect, false);
+        foreach (var (texture, rect) in _paintedTiles) DrawTextureRect(texture, rect, false);
     }
 
     private MapFogLayer _fogLayer;

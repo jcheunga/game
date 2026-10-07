@@ -662,7 +662,7 @@ public static class DataIntegrityValidator
         Console.WriteLine(BuildCoverageLine("Unit sprites", visualClasses, id => HasAnyFile(unitSpriteDir, id, ".png"), "assets/units/{visual_class}.png"));
 
         Console.WriteLine(BuildCoverageLine("Zone battle backdrops", AssetCoverageCatalog.RouteIds, id => HasAnyFile(royalBackdropDir, id, ".json"), "assets/world/royal/{zone_id}.json"));
-        Console.WriteLine(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds, id => HasAnyFile(paintedMapDir, id, ".jpg"), "assets/world/royal/maps/{zone_id}.jpg"));
+        Console.WriteLine(BuildCoverageLine("Painted maps", AssetCoverageCatalog.RouteIds, id => HasAnyFile(paintedMapDir, id, ".json") && (HasAnyFile(paintedMapDir, id + "-0", ".jpg") || HasAnyFile(paintedMapDir, id, ".jpg")), "assets/world/royal/maps/{zone_id}.json + {zone_id}-<tile>.jpg"));
         Console.WriteLine(BuildCoverageLine("Structures", AssetCoverageCatalog.StructureIds, id => HasAnyFile(structureDir, id, ".png"), "assets/structures/{structure_id}.png"));
         Console.WriteLine(BuildCoverageLine("Particle textures", AssetCoverageCatalog.ParticleTextureIds, id => HasAnyFile(particleDir, id, ".png"), "assets/particles/{particle_id}.png"));
 

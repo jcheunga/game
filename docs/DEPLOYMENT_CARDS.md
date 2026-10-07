@@ -11,9 +11,9 @@ after selecting a card.
 - Ready: large authored portrait, textured price plate.
 - Selected: bright frame and a check mark; unit and spell selections are mutually
   exclusive visually, matching the active targeting mode.
-- Cooldown: portrait shade proportional to remaining cooldown, plus a small
-  seconds label. The price is above the shade and remains readable.
-- Unaffordable: subdued artwork, warmer price plate, explicit `N short` label.
+- Cooldown: portrait shade proportional to remaining cooldown, with no countdown
+  text. The price is above the shade and remains readable.
+- Unaffordable: subdued artwork and a red-tinted price badge.
 - Battle ended/checkpoint: existing disabled-button rules remain in effect.
 
 Desktop card height is unchanged. Phone cards retain a 96-logical-pixel height and

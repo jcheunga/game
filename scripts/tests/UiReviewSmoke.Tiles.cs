@@ -37,9 +37,9 @@ public partial class UiReviewSmoke
                 foreach (var near in AdventureTileCatalog.Neighbors(queue.Dequeue()))
                     if (reached.Add(near.Id)) queue.Enqueue(near);
             Check(tiles.All(tile => reached.Contains(tile.Id)), map + " can be explored tile by tile from its first stage to every tile");
-            Check(tiles.Count(tile => tile.Discovery != null) == 14 && tiles.Count(tile => !tile.HasInterest) >= 200
+            Check(tiles.Count(tile => tile.Discovery != null) == 28 && tiles.Count(tile => !tile.HasInterest) >= 190
                 && tiles.Where(tile => tile.Discovery != null).Select(tile => tile.Discovery.Kind).Distinct().Count() == Enum.GetValues<AdventureDiscoveryKind>().Length,
-                map + " keeps resources sparse: fourteen finds of every kind among mostly plain ground");
+                map + " spreads twenty-eight finds of every kind among mostly plain ground");
         }
         if (OS.GetCmdlineUserArgs().Contains("--atlas-geometry"))
         {

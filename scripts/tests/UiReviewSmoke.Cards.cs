@@ -50,7 +50,7 @@ public partial class UiReviewSmoke
                     Check(art.CostPlate.Position.X>art.Size.X*.5f && art.CostPlate.Position.Y<=6
                         && new Rect2(Vector2.Zero,art.Size).Encloses(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),
                         $"{prefix}: textured cost badge fits the top-right corner");
-                    Check(button.Text=="" && art.StatusLabel.Text=="",$"{prefix}: ready cards show no name/action/state clutter");
+                    Check(button.Text=="" && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel),$"{prefix}: ready cards show no name/action/state clutter");
                     Check(!string.IsNullOrWhiteSpace(button.AccessibilityName) && string.IsNullOrWhiteSpace(button.TooltipText),
                         $"{prefix}: unit/spell identification remains available");
                     Check(Walk(art).OfType<Control>().All(c=>c.MouseFilter==Control.MouseFilterEnum.Ignore),
@@ -102,14 +102,14 @@ public partial class UiReviewSmoke
                 foreach(var art in new[]{cards[0],cards[deck.Roster.Count]})
                 {
                     Check(((Button)art.GetParent()).Disabled && Mathf.IsEqualApprox(art.CooldownRatio,.5f)
-                        && art.StatusLabel.Text.EndsWith("s"),$"{prefix}: unit/spell cooldown keeps its timer and proportional shade");
+                        && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel),$"{prefix}: unit/spell cooldown shows a proportional shade without a countdown");
                     Check(art.CostLabel.IsVisibleInTree() && art.CostLabel.SelfModulate==Colors.White
                         && art.CostPlate.GetIndex()>art.GetChildren().OfType<ColorRect>().Single().GetIndex(),
                         $"{prefix}: cooldown never obscures the cost badge");
                 }
                 await Capture(prefix+"-cooldown");
                 deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud");
-                Check(buttons.All(b=>!b.Disabled) && cards.All(c=>c.StatusLabel.Text=="" && c.CooldownRatio==0),
+                Check(buttons.All(b=>!b.Disabled) && cards.All(c=>c.CooldownRatio==0),
                     $"{prefix}: recovery returns cards to the clean icon-only state");
                 Write("_endlessCheckpointActive",true); Call("UpdateHud");
                 Check(buttons.All(b=>b.Disabled),$"{prefix}: checkpoint blocking is preserved");

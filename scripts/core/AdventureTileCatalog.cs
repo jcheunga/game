@@ -34,12 +34,18 @@ public static class AdventureTileCatalog
         new(.76f, .50f), new(.93f, .54f) };
     /// <summary>The roads between stages (indices in stage order): three lanes leave the second stage and meet at the ninth.</summary>
     public static readonly (int From, int To)[] Roads = { (0, 1), (1, 2), (1, 3), (1, 4), (2, 5), (3, 6), (4, 7), (5, 8), (6, 8), (7, 8), (8, 9) };
-    // Six food, four gold, two essence and two survey charts per zone; the first, near the start, is food.
+    // Twelve food, nine gold, four essence and three survey charts per zone; the first, near the start, is food.
     private static readonly AdventureDiscoveryKind[] FindKinds = {
         AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence,
         AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Survey, AdventureDiscoveryKind.Gold,
         AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food,
-        AdventureDiscoveryKind.Survey, AdventureDiscoveryKind.Food };
+        AdventureDiscoveryKind.Survey, AdventureDiscoveryKind.Food,
+        // Added after the maps were painted: these prefer open ground, where the painting has no forest.
+        AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence,
+        AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Survey, AdventureDiscoveryKind.Gold,
+        AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Food,
+        AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold };
+    private const int PaintedFinds = 14;
     private static readonly Dictionary<string, IReadOnlyList<AdventureTile>> Cache = new();
     private static readonly Dictionary<string, Dictionary<string, AdventureTile>> ById = new();
     private static readonly Dictionary<string, AdventureTile[]> ByCell = new();
@@ -105,10 +111,14 @@ public static class AdventureTileCatalog
         var placed = new List<AdventureDiscovery>();
         var start = Point(stageCells[0]);
         var early = cells.Where(at => Free(at, 70, 220) && start.DistanceTo(Point(at)) is > 250 and < 480).OrderBy(at => Hash(at, 1900)).First();
+        bool Open(Vector2I at) => AdventureAtlasLandscape.ForestDensity(mapId, Point(at)) <= .55f;
         foreach (var kind in FindKinds)
         {
-            var at = placed.Count == 0 ? early : cells.Where(at => Free(at, 60, 200))
-                .OrderByDescending(at => Mathf.Round(InterestDistance(Point(at)) / 40)).ThenBy(at => Hash(at, 2100 + placed.Count)).First();
+            var candidates = placed.Count == 0 ? new[] { early } : cells.Where(at => Free(at, 60, placed.Count < PaintedFinds ? 200 : 170)).ToArray();
+            // Later finds sit on open ground where the land allows, so they don't stand in painted forest.
+            if (placed.Count >= PaintedFinds && candidates.Any(Open)) candidates = candidates.Where(Open).ToArray();
+            if (candidates.Length == 0) break;
+            var at = candidates.OrderByDescending(at => Mathf.Round(InterestDistance(Point(at)) / 40)).ThenBy(at => Hash(at, 2100 + placed.Count)).First();
             var find = AdventureDiscoveryCatalog.Create(mapId, at.X, at.Y, kind);
             interest[at] = (null, find); placed.Add(find);
         }

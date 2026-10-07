@@ -9,6 +9,8 @@ public partial class MapMenu : Control
     // Every other stage in the zone must fall before its boss gate opens.
     private int BossGateLeaders => GameData.GetStagesForMap(GameData.GetStage(_selected.Stage).MapId).Count - 1;
     private AdventureDiscovery _selectedDiscovery;
+    // A plain frontier tile chosen to be opened (its panel only shows when it can't be).
+    private AdventureTile _selectedGround;
     private string _activeMapId;
     private RoyalLabel _mapTitle, _zoneProgress;
     private Label _siteName, _siteEyebrow, _siteStatus, _description;
@@ -48,7 +50,7 @@ public partial class MapMenu : Control
     {
         if (_mapCanvas.IsTravelling || !GameState.Instance.IsAdventureZoneUnlocked(mapId)) return;
         _activeMapId = mapId;
-        _selectedDiscovery = null;
+        _selectedDiscovery = null; _selectedGround = null;
         _selected = GameState.Instance.GetAdventureCaravanTile(mapId).Site ?? AdventureTileCatalog.Starting(mapId).Site;
         GameState.Instance.SetSelectedStage(_selected.Stage);
         CloseSiteDetails();
@@ -60,7 +62,7 @@ public partial class MapMenu : Control
         if (_mapCanvas.IsTravelling || !GameState.Instance.IsAdventureSiteDiscovered(site.Id)) return;
         var reward = site.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
         if (reward && GameState.Instance.HasVisitedAdventureSite(site.Id)) return;
-        _selectedDiscovery = null;
+        _selectedDiscovery = null; _selectedGround = null;
         _selected = site;
         if (site.Kind == AdventureSiteKind.Leader && GameState.Instance.CanVisitAdventureSite(site.Id)) GameState.Instance.SetSelectedStage(site.Stage);
         _mapCanvas.SelectSite(site.Id);
@@ -75,13 +77,40 @@ public partial class MapMenu : Control
     {
         var tile = AdventureTileCatalog.Find(_activeMapId, discovery.Id);
         var state = GameState.Instance;
-        if (_mapCanvas.IsTravelling || !state.IsAdventureTileOpen(tile) || state.HasClaimedAdventureDiscovery(discovery.Id)) return;
-        _selectedDiscovery = discovery;
+        if (_mapCanvas.IsTravelling || !state.IsAdventureTileRevealed(tile) || state.HasClaimedAdventureDiscovery(discovery.Id)) return;
+        _selectedDiscovery = discovery; _selectedGround = null;
         _mapCanvas.SelectSite(discovery.Id);
         var canTravel = state.CanTravelToAdventureTile(tile, out _);
         _sitePanel.Visible = !canTravel;
         RefreshUi();
         if (canTravel) VisitSelected();
+    }
+    /// <summary>A plain frontier tile opens at once for its food; without the food its panel explains the cost.</summary>
+    private void SelectGround(AdventureTile tile)
+    {
+        var state = GameState.Instance;
+        if (_mapCanvas.IsTravelling || !state.IsAdventureTileFrontier(tile)) return;
+        _selectedGround = tile; _selectedDiscovery = null;
+        _mapCanvas.SelectSite(tile.Id);
+        var canOpen = state.CanTravelToAdventureTile(tile, out _);
+        _sitePanel.Visible = !canOpen;
+        RefreshUi();
+        if (canOpen) VisitSelected();
+    }
+    private void RefreshGroundDetails()
+    {
+        var state = GameState.Instance;
+        var canOpen = state.CanTravelToAdventureTile(_selectedGround, out var reason);
+        _portrait.Texture = HomeMapArt.Icon("map");
+        _siteEyebrow.Text = "Frontier";
+        RealmUi.SetDisplayText(_siteName, _selectedGround.Title);
+        _siteStatus.Text = state.IsAdventureTileOpened(_selectedGround) ? "Charted" : $"Costs {GameState.AdventureTileFoodCost} food to open";
+        RealmUi.Clear(_rewards);
+        _rewards.AddChild(RealmUi.Label("Reveals the land around it", 18, true));
+        _description.Text = reason; _description.Visible = !canOpen;
+        _action.Text = _mapCanvas.IsTravelling ? "Opening…" : "Open";
+        _action.Icon = HomeMapArt.Icon("food");
+        _action.Disabled = _mapCanvas.IsTravelling || !canOpen;
     }
     private void RefreshDiscoveryDetails()
     {
@@ -91,7 +120,7 @@ public partial class MapMenu : Control
         _portrait.Texture = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _siteEyebrow.Text = "Resource tile";
         RealmUi.SetDisplayText(_siteName, _selectedDiscovery.Title);
-        _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : $"Open tile · costs {GameState.AdventureTileFoodCost} food to gather";
+        _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : $"Frontier · costs {GameState.AdventureTileFoodCost} food to open";
         ShowDiscoveryRewards();
         _description.Text = reason; _description.Visible = !canTravel;
         _action.Text = _mapCanvas.IsTravelling ? "Collecting…" : "Collect";
@@ -114,6 +143,12 @@ public partial class MapMenu : Control
         _resources.SetValues(state.Gold.ToString("N0"), $"{state.Food} / {GameState.FoodRechargeCap}", state.TotalStarsEarned.ToString());
         _foodHint.TooltipText = state.FoodRechargeText;
         if (_developerPanel != null) _developerPanel.Visible = state.DeveloperModeEnabled;
+        if (_selectedGround != null)
+        {
+            RefreshGroundDetails();
+            _mapCanvas.RefreshKnowledge();
+            return;
+        }
         if (_selectedDiscovery != null)
         {
             RefreshDiscoveryDetails();
@@ -123,7 +158,7 @@ public partial class MapMenu : Control
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
         _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
         RealmUi.SetDisplayText(_siteName, known ? _selected.Title : "Beyond the mist");
-        _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : GameState.IsAdventureResourceTile(tile) ? $"Open tile · costs {GameState.AdventureTileFoodCost} food to gather" : "Open tile · ready to visit";
+        _siteStatus.Text = !known ? "Open the land beside this tile to reach it" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : GameState.IsAdventureResourceTile(tile) ? $"Frontier · costs {GameState.AdventureTileFoodCost} food to open" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);
         _action.Text = _mapCanvas.IsTravelling ? "Travelling…" : !known ? "Tile unopened" : bossLocked ? "Boss gate sealed" : leader ? "Prepare battle" : "Collect";
@@ -145,6 +180,13 @@ public partial class MapMenu : Control
     private void VisitSelected()
     {
         if (_action.Disabled) return;
+        if (_selectedGround != null)
+        {
+            var ground = _selectedGround;
+            _mapCanvas.TravelToTile(ground, () => { GameState.Instance.TryCollectAdventureTile(ground, out _); _selectedGround = null; RefreshUi(); });
+            RefreshUi();
+            return;
+        }
         if (_selectedDiscovery != null)
         {
             var discoveryTile = AdventureTileCatalog.Find(_activeMapId, _selectedDiscovery.Id);
@@ -176,6 +218,7 @@ public partial class MapMenu : Control
     private void CloseSiteDetails()
     {
         _sitePanel.Hide();
+        _selectedGround = null;
     }
 
     // Replaces the atlas when data/*.json is missing or corrupt. GameState refuses to save meanwhile.

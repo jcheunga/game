@@ -113,7 +113,7 @@ public partial class UiReviewSmoke : Node
                 fixture.StageStars = Enumerable.Repeat(1, GameState.Instance.MaxStage).ToArray();
                 fixture.HighestUnlockedStage = GameState.Instance.MaxStage;
                 fixture.AdventureOpenTiles = GameData.Stages.SelectMany(stage => AdventureTileCatalog.ForMap(stage.MapId))
-                    .Where(tile => tile.HasInterest).Select(tile => tile.Id).Distinct().ToArray();
+                    .Where(tile => !tile.IsResource).Select(tile => tile.Id).Distinct().ToArray();
                 typeof(GameState).GetMethod("ApplySavedData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(GameState.Instance, new object[] { fixture });
                 await Open("MainMenu"); await PressHint("More"); await Press("Caravan"); AuditText("MainMenu / all unlocks"); await Capture("type-main-unlocked");

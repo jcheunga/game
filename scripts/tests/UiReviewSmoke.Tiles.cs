@@ -29,20 +29,17 @@ public partial class UiReviewSmoke
             Check(tiles.Count(tile => tile.Site?.Kind == AdventureSiteKind.Leader) == GameData.GetStagesForMap(map).Count && tiles.Count(tile => tile.Discovery != null) == AdventureDiscoveryCatalog.ForMap(map).Count, map + " preserves every stage and discovery");
             Check(tiles.All(tile => tile.Site?.Kind != AdventureSiteKind.Watchtower), map + " has no scout tower destinations");
             var start = AdventureTileCatalog.Starting(map);
-            Check(start.Site.Stage == GameData.GetStagesForMap(map).Min(stage => stage.StageNumber) && start.Column == 1 && start.Row == 5
-                && state.GetAdventureCaravanTile(map).Id == start.Id && tiles.Count(state.IsAdventureTileOpen) == 1, map + " begins on its first stage with only one visible tile");
-            var reached = new[] { start.Id }.ToHashSet();
-            for (var pass = 0; pass < 20; pass++)
-                foreach (var tile in tiles.Where(tile => tile.HasInterest && reached.Contains(tile.Id)).ToArray())
-                {
-                    foreach (var near in AdventureTileCatalog.Surrounding(tile)) reached.Add(near.Id);
-                    if (tile.Site?.Kind == AdventureSiteKind.Leader)
-                        foreach (var next in tiles.Where(other => other.Site?.Kind == AdventureSiteKind.Leader && other.Site.Stage == tile.Site.Stage + 1)) reached.Add(next.Id);
-                }
-            Check(tiles.Where(tile => tile.HasInterest).All(tile => reached.Contains(tile.Id)), map + " has a connected completion route to every point of interest");
-            Check(tiles.Count(tile => tile.Discovery != null) == 6 && tiles.Count(tile => !tile.HasInterest) >= 30
+            Check(start.Site.Stage == GameData.GetStagesForMap(map).Min(stage => stage.StageNumber)
+                && state.GetAdventureCaravanTile(map).Id == start.Id && tiles.Count(state.IsAdventureTileOpened) == 1
+                && tiles.Count(state.IsAdventureTileRevealed) == 1 + AdventureTileCatalog.Neighbors(start).Count, map + " begins on its first stage, with only its neighbours on the frontier");
+            var reached = new[] { start.Id }.ToHashSet(); var queue = new System.Collections.Generic.Queue<AdventureTile>(new[] { start });
+            while (queue.Count > 0)
+                foreach (var near in AdventureTileCatalog.Neighbors(queue.Dequeue()))
+                    if (reached.Add(near.Id)) queue.Enqueue(near);
+            Check(tiles.All(tile => reached.Contains(tile.Id)), map + " can be explored tile by tile from its first stage to every tile");
+            Check(tiles.Count(tile => tile.Discovery != null) == 14 && tiles.Count(tile => !tile.HasInterest) >= 200
                 && tiles.Where(tile => tile.Discovery != null).Select(tile => tile.Discovery.Kind).Distinct().Count() == Enum.GetValues<AdventureDiscoveryKind>().Length,
-                map + " keeps resources sparse: six finds of every kind among mostly plain ground");
+                map + " keeps resources sparse: fourteen finds of every kind among mostly plain ground");
         }
         if (OS.GetCmdlineUserArgs().Contains("--atlas-geometry"))
         {
@@ -54,11 +51,11 @@ public partial class UiReviewSmoke
         var tilesCity = AdventureTileCatalog.ForMap("city");
         var leader = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && tile.Site.Stage == 1);
         var supply = tilesCity.Single(tile => tile.Id == "supply-1");
-        Check(state.IsAdventureTileOpen(leader) && !state.IsAdventureTileOpen(supply) && tilesCity.Count(state.IsAdventureTileOpen) == 1,
-            "A fresh map exposes only the first stage, with surrounding supplies concealed");
-        Check(!state.IsAdventureTileOpen(tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(tile.Site.Stage))), "Distant stages remain under the tile veil");
+        Check(state.IsAdventureTileOpened(leader) && !state.IsAdventureTileOpened(supply) && tilesCity.Count(state.IsAdventureTileOpened) == 1,
+            "A fresh map charts only the first stage, with its supplies still unopened");
+        Check(!state.IsAdventureTileRevealed(tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(tile.Site.Stage))), "Distant stages remain under the tile veil");
         state.ReloadFromDisk();
-        Check(tilesCity.Count(state.IsAdventureTileOpen) == 1 && state.GetAdventureCaravanTile("city").Id == leader.Id,
+        Check(tilesCity.Count(state.IsAdventureTileOpened) == 1 && state.GetAdventureCaravanTile("city").Id == leader.Id,
             "Reloading an untouched campaign keeps only its first stage visible");
         Check(!menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Fresh map keeps details closed");
         Check(!Walk(menu).OfType<Button>().Any(button => button.Text == "Map guide" || button.AccessibilityName == "Map guide"), "The map guide no longer occupies the home map");
@@ -93,19 +90,23 @@ public partial class UiReviewSmoke
         menu.CloseHomeModal(); await Wait(.1); canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
         var far = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(tile.Site.Stage));
         Check(!state.TryReachAdventureTile(far, out _) && state.Food == food, "Unopened destinations reject travel without charging");
-        var openedBeforeVisit = tilesCity.Count(state.IsAdventureTileOpen);
+        var openedBeforeVisit = tilesCity.Count(state.IsAdventureTileRevealed);
         var beforeStageTravel = state.Food;
         Check(state.TryReachAdventureTile(leader, out _) && state.Food == beforeStageTravel, "The caravan starts on the first stage without a travel charge");
-        Check(state.TryCollectAdventureTile(leader, out _) && tilesCity.Count(state.IsAdventureTileOpen) == openedBeforeVisit, "Preparing a stage does not open surrounding tiles");
+        Check(state.TryCollectAdventureTile(leader, out _) && tilesCity.Count(state.IsAdventureTileRevealed) == openedBeforeVisit, "Preparing a stage does not open surrounding tiles");
         state.ApplyDefeat(1); state.ApplyRetreat(1);
-        Check(tilesCity.Count(state.IsAdventureTileOpen) == openedBeforeVisit, "Defeat and retreat do not open surrounding tiles");
+        Check(tilesCity.Count(state.IsAdventureTileRevealed) == openedBeforeVisit, "Defeat and retreat do not open surrounding tiles");
         Check(state.TryReachAdventureTile(leader, out _) && state.Food == beforeStageTravel, "Returning to a reached stage is free");
         var entryFood = state.Food; var entryCost = state.GetStageEntryFoodCost(1);
         Check(state.TrySpendStageEntryFood(1, out _) && state.Food == entryFood - entryCost, "Stage entry charges its existing food cost");
         state.PrepareCampaignBattle(); state.ApplyVictory(1, 0, 0, 3);
         var second = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && tile.Site.Stage == 2);
-        Check(AdventureTileCatalog.Surrounding(leader).All(state.IsAdventureTileOpen) && state.IsAdventureTileOpen(second) && tilesCity.Count(state.IsAdventureTileOpen) == 10
-            && state.GetStageStars(1) == 3, "The first victory opens the surrounding eight tiles and the next stage, and retains stars");
+        Check(AdventureTileCatalog.Neighbors(leader).All(state.IsAdventureTileRevealed) && !state.IsAdventureTileRevealed(second)
+            && tilesCity.Count(state.IsAdventureTileRevealed) == openedBeforeVisit && state.GetStageStars(1) == 3,
+            "The first victory keeps its stars; the next stage still lies beyond the charted land");
+        // Chart a road out to the stage's cache and the first find, as a player would.
+        foreach (var target in new[] { supply, AdventureTileCatalog.Find("city", AdventureDiscoveryCatalog.ForMap("city")[0].Id) })
+            foreach (var step in GameState.AdventureTilePath(leader, target).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(step, out _);
         typeof(MapMenu).GetMethod("RefreshUi", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(menu, null);
         canvas.ShowMap("city", leader.Id); canvas.FocusSite(leader.Id); await Wait(.2);
         await Capture("03-victory-map"); AuditText("Tile map / victory");
@@ -124,7 +125,7 @@ public partial class UiReviewSmoke
         var gold = state.Gold;
         Check(!state.TryCollectAdventureTile(supply, out _) || state.Gold == gold, "Collected caches cannot pay twice");
         await Capture("02-resource-opens-tiles");
-        var discovered = tilesCity.First(tile => tile.Discovery != null && state.IsAdventureTileOpen(tile) && !state.IsAdventureTileComplete(tile));
+        var discovered = tilesCity.First(tile => tile.Discovery != null && state.IsAdventureTileRevealed(tile) && !state.IsAdventureTileComplete(tile));
         var rewardFood = state.Food;
         canvas.TravelToTile(discovered, () => state.TryCollectAdventureTile(discovered, out _)); await FinishTravel();
         Check(state.HasClaimedAdventureDiscovery(discovered.Id) && state.Food == rewardFood - GameState.AdventureTileFoodCost + (discovered.Discovery.Kind == AdventureDiscoveryKind.Food ? discovered.Discovery.Amount : 0), "Discovery spends 2 food and grants its real reward");
@@ -132,34 +133,20 @@ public partial class UiReviewSmoke
         Check(state.TryReachAdventureTile(leader, out _), "The completed starting stage remains reachable after resource collection");
         var saved = state.BuildSaveData();
         state.ReloadFromDisk();
-        Check(state.GetAdventureCaravanTile("city").Id == leader.Id && state.IsAdventureTileOpen(leader) && state.HasClaimedAdventureDiscovery(discovered.Id), "A full disk reload retains tile progression and claims");
+        Check(state.GetAdventureCaravanTile("city").Id == leader.Id && state.IsAdventureTileRevealed(leader) && state.HasClaimedAdventureDiscovery(discovered.Id), "A full disk reload retains tile progression and claims");
         Restore(saved);
-        Check(state.HasVisitedAdventureSite(supply.Id) && state.HasClaimedAdventureDiscovery(discovered.Id) && AdventureTileCatalog.Surrounding(leader).All(state.IsAdventureTileOpen) && state.GetAdventureCaravanTile("city").Id == leader.Id, "Save reload retains reached tiles, claims, caravan destination and opened neighbors");
-        foreach (var retiredId in new[] { "landmark-1", "camp-city", "landmark-2" })
-        {
-            var replacement = tilesCity.FirstOrDefault(tile => tile.RetiredSiteId == retiredId);
-            var retired = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(saved))!;
-            retired.VisitedAdventureSites = retired.VisitedAdventureSites.Append(retiredId).ToArray();
-            retired.AdventureOpenTiles = retired.AdventureOpenTiles.Where(id => id != replacement?.Id).Append(retiredId).ToArray();
-            retired.AdventureReachedTiles = retired.AdventureReachedTiles.Append(retiredId).ToArray();
-            retired.AdventureCaravanTiles["city"] = retiredId;
-            Restore(retired);
-            Check(state.GetAdventureCaravanTile("city").Id == leader.Id && AdventureTileCatalog.Find("city", retiredId) == null
-                && !state.CanVisitAdventureSite(retiredId)
-                && saved.AdventureOpenTiles.Where(id => id != replacement?.Id).All(id => state.IsAdventureTileOpen(AdventureTileCatalog.Find("city", id)))
-                && (replacement == null || state.IsAdventureTileOpen(replacement))
-                && state.Gold == saved.Gold && state.Food == saved.Food, $"Retired {retiredId} returns to the first stage without losing exploration or balances");
-        }
+        Check(state.HasVisitedAdventureSite(supply.Id) && state.HasClaimedAdventureDiscovery(discovered.Id) && AdventureTileCatalog.Neighbors(leader).All(state.IsAdventureTileRevealed) && state.GetAdventureCaravanTile("city").Id == leader.Id, "Save reload retains reached tiles, claims, caravan destination and opened neighbors");
         var survey = tilesCity.First(tile => tile.Discovery?.Kind == AdventureDiscoveryKind.Survey);
         var surveyFixture = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(initial))!;
-        surveyFixture.Food = 100; surveyFixture.AdventureOpenTiles = new[] { survey.Id };
+        var surveyApproach = AdventureTileCatalog.Neighbors(survey).First(tile => !tile.HasInterest);
+        surveyFixture.Food = 100; surveyFixture.AdventureOpenTiles = new[] { surveyApproach.Id };
         Restore(surveyFixture);
-        var surveyExpected = tilesCity.Where(state.IsAdventureTileOpen).Select(tile => tile.Id)
-            .Concat(AdventureTileCatalog.Surrounding(survey).Select(tile => tile.Id)).ToHashSet();
+        var surveyExpected = tilesCity.Where(state.IsAdventureTileOpened).Select(tile => tile.Id).Append(survey.Id)
+            .Concat(AdventureTileCatalog.Neighbors(survey).Where(tile => !tile.HasInterest).Select(tile => tile.Id)).ToHashSet();
         Check(state.TryReachAdventureTile(survey, out _) && state.TryCollectAdventureTile(survey, out _)
-            && surveyExpected.SetEquals(tilesCity.Where(state.IsAdventureTileOpen).Select(tile => tile.Id)), "Survey collection opens exactly one neighboring ring, never a wider area");
+            && surveyExpected.SetEquals(tilesCity.Where(state.IsAdventureTileOpened).Select(tile => tile.Id)), "A survey chart charts only the plain ground touching it");
         state.ReloadFromDisk();
-        Check(surveyExpected.SetEquals(tilesCity.Where(state.IsAdventureTileOpen).Select(tile => tile.Id)), "Reloading a collected chart does not expand its reveal radius");
+        Check(surveyExpected.SetEquals(tilesCity.Where(state.IsAdventureTileOpened).Select(tile => tile.Id)), "Reloading a collected chart does not chart any further");
         Restore(saved);
         var oldShrine = state.BuildSaveData(); oldShrine.Version = 44;
         oldShrine.VisitedAdventureSites = oldShrine.VisitedAdventureSites.Append("landmark-2").ToArray();
@@ -176,14 +163,15 @@ public partial class UiReviewSmoke
         Check(state.IsAdventureZoneUnlocked("city") && AssetCoverageCatalog.RouteIds.Skip(1).All(map => !state.IsAdventureZoneUnlocked(map)),
             "Legacy starting camps do not unlock unplayed zones after becoming ordinary terrain");
         Restore(saved);
-        var unvisited = tilesCity.First(tile => tile.Discovery != null && !state.IsAdventureTileOpen(tile));
-        var withFind = state.BuildSaveData(); withFind.AdventureOpenTiles = withFind.AdventureOpenTiles.Append(unvisited.Id).ToArray();
+        var unvisited = tilesCity.First(tile => tile.Discovery != null && !state.IsAdventureTileRevealed(tile));
+        var withFind = state.BuildSaveData();
+        withFind.AdventureOpenTiles = withFind.AdventureOpenTiles.Append(AdventureTileCatalog.Neighbors(unvisited).First(tile => !tile.HasInterest).Id).ToArray();
         var noFood = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(withFind))!;
         noFood.Food = 1; noFood.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); Restore(noFood);
         var caravan = state.GetAdventureCaravanTile("city").Id;
         Check(!state.TryReachAdventureTile(unvisited, out var costMessage) && costMessage.Contains("2 food") && !state.TryCollectAdventureTile(unvisited, out _)
             && !state.HasClaimedAdventureDiscovery(unvisited.Id) && state.Food == 1 && state.GetAdventureCaravanTile("city").Id == caravan,
-            "Without 2 food an open resource tile explains its cost and stays closed, charging nothing");
+            "Without 2 food a frontier resource tile explains its cost and stays closed, charging nothing");
         Restore(withFind);
         var immediateFood = state.Food - GameState.AdventureTileFoodCost + (unvisited.Discovery.Kind == AdventureDiscoveryKind.Food ? unvisited.Discovery.Amount : 0);
         canvas.TravelToTile(unvisited, () => state.TryCollectAdventureTile(unvisited, out _));
@@ -200,9 +188,9 @@ public partial class UiReviewSmoke
         Restore(saved);
         var legacy = state.BuildSaveData(); legacy.Version = 44; legacy.AdventureOpenTiles = null; legacy.AdventureReachedTiles = null; legacy.AdventureCaravanTiles = null;
         Restore(legacy);
-        Check(state.HasVisitedAdventureSite(supply.Id) && state.HasClaimedAdventureDiscovery(discovered.Id) && state.IsAdventureTileOpen(leader) && state.GetStageStars(1) == 3, "Version 44 saves migrate site claims, resource claims and cleared-stage reveals");
+        Check(state.HasVisitedAdventureSite(supply.Id) && state.HasClaimedAdventureDiscovery(discovered.Id) && state.IsAdventureTileRevealed(leader) && state.GetStageStars(1) == 3, "Version 44 saves migrate site claims, resource claims and cleared-stage reveals");
         Restore(saved);
-        var otherStage = tilesCity.First(tile => tile.Site?.Kind == AdventureSiteKind.Leader && !state.HasReachedAdventureTile(tile.Id));
+        var otherStage = tilesCity.Where(tile => tile.Site?.Kind == AdventureSiteKind.Leader && !state.HasReachedAdventureTile(tile.Id)).OrderBy(tile => tile.Site.Stage).First();
         var tight = state.BuildSaveData(); tight.AdventureOpenTiles = tight.AdventureOpenTiles.Append(otherStage.Id).ToArray();
         tight.Food = state.GetStageEntryFoodCost(otherStage.Site.Stage); Restore(tight);
         Check(state.TryReachAdventureTile(otherStage, out _) && state.Food == tight.Food

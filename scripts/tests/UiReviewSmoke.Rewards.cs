@@ -22,7 +22,8 @@ public partial class UiReviewSmoke
             fixture.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             fixture.VisitedAdventureSites = string.IsNullOrEmpty(requiredVisit) ? Array.Empty<string>() : new[] { requiredVisit };
             fixture.ClaimedAdventureDiscoveries = Array.Empty<string>();
-            fixture.AdventureOpenTiles = AdventureTileCatalog.ForMap("city").Select(tile => tile.Id).ToArray();
+            // Everything but the resources is charted, so every cache and find waits on the frontier.
+            fixture.AdventureOpenTiles = AdventureTileCatalog.ForMap("city").Where(tile => !tile.IsResource).Select(tile => tile.Id).ToArray();
             fixture.AdventureReachedTiles = new[] { start.Id };
             fixture.AdventureCaravanTiles["city"] = start.Id;
             fixture.AdventureHeroNodes["city"] = start.Id;

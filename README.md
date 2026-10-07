@@ -41,7 +41,7 @@ for the go-live checklist and store-listing URLs.
 - Repo-side roadmap work is complete.
 - Primary local verification command: `./scripts/verify_all.sh`
 - Current verified state: game build `0 warnings / 0 errors`, server tests `86 passed`, data checks `11992 passed`
-- New saves start with one Swordsman; a squad holds six units and five spells. Adventure travel is free, each battle costs 4 food, and food recharges 2 every 5 minutes up to 24. Account sign-in setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#account-sign-in). Older reports are in [docs/archive/](docs/archive/README.md).
+- New saves start with one Swordsman; a squad holds six units and five spells. Opening a tile on the adventure map costs 2 food, each battle costs 4 food, and food recharges 2 every 5 minutes up to 24. Account sign-in setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#account-sign-in). Older reports are in [docs/archive/](docs/archive/README.md).
 - Production still requires translations, deployment secrets, email/Google credentials, store signing/credentials, and manual device playtesting.
 
 ## Tests
@@ -128,7 +128,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 - Home map:
   - Opens directly onto the active zone map, with gold, food and stars at the top left and settings at the top right
   - Each zone has irregular medieval terrain with forests, mountains, rivers, villages, forts and resource caches
-  - Clearing a stage or collecting a resource opens the surrounding tiles. Travel is free; each battle costs 4 food
+  - Each zone is a wide 18 × 14 tile atlas: opening a frontier tile costs 2 food and reveals the tiles touching it; winning a stage charts its tile. Three lanes of stages converge on the boss; each battle costs 4 food
   - Select a site to open its floating panel; close it to see the unobstructed map
   - Defeat the zone's nine leaders to open its boss, and the boss to reveal the next zone. The pager shows one zone at a time
   - Bottom tabs: `Warband`, `Spells`, `Upgrades`, `Achievements`, `Codex` and `More`

@@ -7,15 +7,16 @@ public partial class MapPathCanvas
     private void DrawSiteHighlights()
     {
         var state = GameState.Instance;
-        if (AdventureTileCatalog.Find(ActiveMapId, _selectedId) is { } selected && state.IsAdventureTileOpen(selected))
+        if (AdventureTileCatalog.Find(ActiveMapId, _selectedId) is { } selected && state.IsAdventureTileRevealed(selected))
         {
             foreach (var outline in AdventureAtlasLandscape.Land(selected).Where(outline => Geometry2D.IsPointInPolygon(selected.Point, outline)))
                 DrawPolyline(outline.Append(outline[0]).ToArray(), new Color("dac795aa"), 1.8f, true);
         }
         var hoveredId = _dragging ? null :
             _tokens.FirstOrDefault(token => token.Visible && !token.Disabled && token.IsHovered())?.Site.Id ??
-            _discoveries.FirstOrDefault(token => token.Visible && !token.Disabled && token.IsHovered())?.Discovery.Id;
-        if (AdventureTileCatalog.Find(ActiveMapId, hoveredId) is { } hovered && state.IsAdventureTileOpen(hovered))
+            _discoveries.FirstOrDefault(token => token.Visible && !token.Disabled && token.IsHovered())?.Discovery.Id ??
+            _hoverTile?.Id;
+        if (AdventureTileCatalog.Find(ActiveMapId, hoveredId) is { } hovered && state.IsAdventureTileRevealed(hovered))
         {
             foreach (var outline in AdventureAtlasLandscape.Land(hovered).Where(outline => Geometry2D.IsPointInPolygon(hovered.Point, outline)))
             {

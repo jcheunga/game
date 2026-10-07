@@ -57,7 +57,7 @@ public partial class WorldArtReview : Node
                 Check(hashes.Add(Convert.ToHexString(SHA256.HashData(System.IO.File.ReadAllBytes(path)))), $"{zone} backdrop is a distinct painting");
             }
             foreach (var zone in AssetCoverageCatalog.RouteIds)
-                Check(ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.png") && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
+                Check(ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.jpg") && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
                     $"{zone} has a painted campaign map");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             // --zones=city,harbor limits the map and battle captures to those zones (the art checks above still cover all).
@@ -71,14 +71,14 @@ public partial class WorldArtReview : Node
                 var stage = GameData.GetStagesForMap(zone).First().StageNumber; state.SetSelectedStage(stage);
                 var map = (MapMenu)await LiveUiReview.Open(this, "MainMenu"); await Wait(.4);
                 var canvas = Read<MapPathCanvas>(map,"_mapCanvas");
-                Check(Read<Texture2D>(canvas, "_painted") is { } painting && painting.ResourcePath.EndsWith($"/maps/{zone}.png") && canvas.ActiveMapId == zone,
+                Check(Read<Texture2D>(canvas, "_painted") is { } painting && painting.ResourcePath.EndsWith($"/maps/{zone}.jpg") && canvas.ActiveMapId == zone,
                     zone + " painting is connected to its map screen");
                 await Capture("zone-" + zone + "-fresh");
                 var explored = state.BuildSaveData();
                 explored.AdventureOpenTiles = AdventureTileCatalog.ForMap(zone).Select(tile => tile.Id).ToArray();
                 state.RestoreCloudSave(explored);
                 canvas.RefreshKnowledge(); canvas.ChangeZoom(.01f); canvas.FocusOverview();
-                Check(AdventureTileCatalog.ForMap(zone).All(state.IsAdventureTileOpen), zone + " explored capture opens the current tile map");
+                Check(AdventureTileCatalog.ForMap(zone).All(state.IsAdventureTileRevealed), zone + " explored capture opens the current tile map");
                 await Wait(); await Capture("zone-" + zone + "-explored"); map.QueueFree(); await Wait();
                 state.PrepareCampaignBattle();
                 var battle = (BattleController)await LiveUiReview.Open(this, "Battle"); battle.SetPhysicsProcess(false); await Wait(.4);

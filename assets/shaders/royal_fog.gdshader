@@ -1,8 +1,9 @@
 shader_type canvas_item;
 
-// The campaign map's fog of war: a bank of dark storm cloud over every unexplored tile, as in the
-// cartographer's atlas concept. TEXTURE is a blurred mask of the hidden tiles; tileable noise rounds its
-// outline into billows, shades the cloud tops from the upper left and drifts slowly with the wind.
+// The campaign map's fog of war: a bank of dark storm cloud over every hidden tile, as in the
+// cartographer's atlas concept, and a thin pale mist over the frontier tiles beside explored land.
+// TEXTURE holds blurred masks of the hidden tiles (red) and the frontier tiles (green); tileable noise rounds
+// the bank's outline into billows, shades the cloud tops from the upper left and drifts slowly with the wind.
 uniform sampler2D noise_tex : repeat_enable, filter_linear;
 uniform vec2 world_origin = vec2(0.0);
 uniform vec2 world_size = vec2(1024.0);
@@ -10,9 +11,11 @@ uniform float clock = 0.0;
 uniform vec3 deep : source_color = vec3(0.07, 0.074, 0.085);
 uniform vec3 body : source_color = vec3(0.215, 0.222, 0.24);
 uniform vec3 lit : source_color = vec3(0.47, 0.475, 0.49);
+uniform vec3 haze : source_color = vec3(0.83, 0.85, 0.87);
 
 void fragment() {
-	float mask = texture(TEXTURE, UV).r;
+	vec2 masks = texture(TEXTURE, UV).rg;
+	float mask = masks.r;
 	vec2 world = world_origin + UV * world_size;
 	vec2 wind = vec2(clock, clock * 0.4) * 0.0025;
 	vec2 p = world / 1900.0 + wind;
@@ -40,5 +43,9 @@ void fragment() {
 	colour = bank > 0.0 ? mix(colour, lit, bank * 0.55 * (0.4 + puffs * 0.6)) : mix(colour, deep * 0.6, -bank * 0.5);
 	// The thin cloud at the bank's edge catches the most light.
 	colour = mix(colour, lit * 0.85, (1.0 - density) * 0.45);
-	COLOR = vec4(colour, density * 0.97);
+	// The frontier: a thin, drifting mist that pales the land without hiding it.
+	float mist = smoothstep(0.2, 0.85, masks.g + (n - 0.5) * 0.4 + (puffs - 0.5) * 0.2) * 0.58;
+	vec3 veil = haze * (0.92 + n * 0.12);
+	float storm = density * 0.97;
+	COLOR = vec4(mix(veil, colour, storm), storm + mist * (1.0 - storm));
 }

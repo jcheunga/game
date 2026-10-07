@@ -21,7 +21,7 @@ public partial class UiReviewSmoke
         fixture.OwnedEquipmentIds = new[] { "relic_iron_pendant", "relic_sharpened_edge", "relic_swift_boots", "relic_wolftooth_charm", "relic_spectral_lantern" };
         fixture.DiscoveredCodexIds = CodexCatalog.GetAll().Select(e => e.Id).ToArray();
         fixture.SeasonPassXP = 4350; fixture.HasPremiumPass = true;
-        fixture.AdventureOpenTiles = GameData.Stages.SelectMany(s => AdventureTileCatalog.ForMap(s.MapId)).Where(t => t.HasInterest).Select(t => t.Id).Distinct().ToArray();
+        fixture.AdventureOpenTiles = GameData.Stages.SelectMany(s => AdventureTileCatalog.ForMap(s.MapId)).Where(t => !t.IsResource).Select(t => t.Id).Distinct().ToArray();
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(state, new object[] { fixture });
         state.SetShowHints(false); state.SetAnalyticsConsent(false);
         await Open("MainMenu"); await Capture("01-home");

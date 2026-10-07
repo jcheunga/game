@@ -5423,6 +5423,9 @@ public partial class GameState : Node
 			AutoBattleEnabled = saved.AutoBattleEnabled;
 			LargeTextMode = saved.LargeTextMode;
 		}
+
+		// Won stages are charted, so the atlas tiles load once the stars are in.
+		LoadAdventureTiles(saved);
 	}
 
 	private void ClampState()
@@ -5513,7 +5516,7 @@ public partial class GameState : Node
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
 			AdventureHeroNodes = new Dictionary<string, string>(_adventureHeroNodes),
 			AdventureHeroPositions = _adventureHeroPositions.ToDictionary(x => x.Key, x => new[] { x.Value.X, x.Value.Y }),
-			AdventureOpenTiles = _openAdventureTiles.OrderBy(id => id).ToArray(),
+			AdventureOpenTiles = _openedAdventureTiles.OrderBy(id => id).ToArray(),
             AdventureReachedTiles = _reachedAdventureTiles.OrderBy(id => id).ToArray(),
             AdventureCaravanTiles = new Dictionary<string, string>(_adventureCaravanTiles),
 			AdventureExploredCells = _adventureExploredCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),

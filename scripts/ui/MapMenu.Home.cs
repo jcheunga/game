@@ -16,6 +16,7 @@ public partial class MapMenu
         _mapCanvas.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _mapCanvas.SiteSelected += SelectSite;
         _mapCanvas.DiscoverySelected += SelectDiscovery;
+        _mapCanvas.GroundSelected += SelectGround;
         _mapCanvas.TravelStateChanged += RefreshUi;
         _mapCanvas.TravelFeedback += _ => RefreshUi();
         GameState.Instance.FoodChanged += RefreshUi;

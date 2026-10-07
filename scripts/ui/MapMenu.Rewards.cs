@@ -36,7 +36,7 @@ public partial class MapMenu
         RealmUi.Clear(_rewards);
         var survey = _selectedDiscovery.Kind == AdventureDiscoveryKind.Survey;
         AddReward(survey ? "Survey" : "Supplies", _selectedDiscovery.Icon,
-            survey ? "Nearby terrain" : $"+{_selectedDiscovery.Amount:N0}", _selectedDiscovery.RewardText);
-        _rewards.AddChild(RealmUi.Label("Opens surrounding tiles", 18, true));
+            survey ? "Nearby land" : $"+{_selectedDiscovery.Amount:N0}", _selectedDiscovery.RewardText);
+        _rewards.AddChild(RealmUi.Label(survey ? "Charts the plain land around it" : "Reveals the land around it", 18, true));
     }
 }

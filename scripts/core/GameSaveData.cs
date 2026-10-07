@@ -55,7 +55,7 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 46;
+    public int Version { get; set; } = 47;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 24;
     public long FoodRechargedAtUnixSeconds { get; set; }

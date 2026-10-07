@@ -52,15 +52,17 @@ public partial class FeedbackReview : Node
             Check(state.RefreshFoodRecharge(now + 600) && state.Food == 24 && !state.RefreshFoodRecharge(now + 900), "Offline recharge stops at its cap");
             state.ResetProgress(); state.SetShowHints(false);
             Check(state.TryBuyFoodRefill(out _) && state.Gold == 20 && state.Food == 34 && !state.TryBuyFoodRefill(out _), "Gold refills credit food and refuse insufficient funds");
+            Check(!state.RefreshFoodRecharge(DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3600) && state.Food == 34,
+                "Bought and claimed food may exceed the limit, but the timed recharge never adds above it");
             state.ResetProgress(); state.SetShowHints(false);
-            var from = AdventureTerrain.Cell(state.GetAdventureHeroPosition("city")); var discovery = AdventureDiscoveryCatalog.ForMap("city")[0]; var to = discovery.Cell;
+            var from = AdventureTerrain.Cell(state.GetAdventureHeroPosition("city")); var to = AdventureTerrain.Cell(AdventureMapCatalog.Find("supply-1").Point);
             var path = AdventureTerrain.Path("city", from, to);
             Check(path.Length > 0 && path.All(c => AdventureTerrain.Walkable("city", c)) && path.Zip(path.Skip(1)).All(p => AdventureTerrain.Neighbors(p.First).Contains(p.Second)), "Travel paths only cross neighboring ground tiles");
             Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Cell(AdventureTerrain.Point(c)) == c), "Drawn isometric tile centers match movement coordinates");
             Check(!state.TryBeginAdventureTravel("city", new[] { from, to }, out _) && state.Food == 24, "Invalid routes cannot move the hero or spend food");
             Check(state.TryBeginAdventureTravel("city", path, out _) && state.Food == 24, "Exploration is free before walking the route");
             foreach (var cell in path.Skip(1)) { state.TryPayAdventureStep("city",cell,out _); state.CompleteAdventureStep("city",cell); }
-            Check(state.Food == 24 + discovery.Amount, "Entering tiles is free and reaching provisions grants their full amount");
+            Check(state.Food == 24, "Walking the legacy terrain is free");
             var blocked = Enumerable.Range(0,AdventureTerrain.CellCount).First(c => !AdventureTerrain.Walkable("city",c));
             Check(!state.MoveAdventureHero("city", AdventureTerrain.Point(blocked)), "Walked routes are free and obstacles cannot be crossed");
             var save = state.BuildSaveData(); state.ReloadFromDisk();

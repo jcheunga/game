@@ -17,7 +17,7 @@ public static class LoadingTipCatalog
 		"Banner Knight's aura boosts attack and speed for all nearby allies.",
 		"Boss stages appear at the end of each district. Bring your strongest squad.",
 		"Daily Challenges change every day — check Multiplayer for today's board.",
-		"Food is spent to enter stages and explore new districts.",
+		"Food is spent to open new tiles on the map and to enter stages.",
 		"Gold funds unit purchases, level-ups, spell upgrades, and war wagon improvements.",
 		"The Berserker deals more damage as its health drops — high risk, high reward.",
 		"War Hounds are cheap and fast. Deploy them to scout or swarm.",

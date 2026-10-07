@@ -14,19 +14,22 @@ public partial class MapPathCanvas
     private static readonly System.Collections.Generic.Dictionary<string, Texture2D> Landmarks = new();
 
     private bool Painted => _painted != null;
-    private Rect2 MapBounds => Painted ? _paintedRect : new Rect2(Vector2.Zero, AdventureTileCatalog.WorldSize);
+    // The view is framed by the painting's rectangle, which the geography defines (the painting is made to it).
+    private Rect2 _mapBounds;
+    private Rect2 MapBounds => _mapBounds;
     private GradientTexture2D _atlasVignette;
 
     private void LoadPaintedMap()
     {
         _painted = null;
+        _mapBounds = AdventureAtlasLandscape.PaintingRect(ActiveMapId);
         var path = $"res://assets/world/royal/maps/{ActiveMapId}";
-        if (!ResourceLoader.Exists(path + ".png") || !FileAccess.FileExists(path + ".json")) return;
+        if (!ResourceLoader.Exists(path + ".jpg") || !FileAccess.FileExists(path + ".json")) return;
         var meta = Json.ParseString(FileAccess.GetFileAsString(path + ".json")).AsGodotDictionary();
         var r = meta["rect"].AsGodotArray();
         _paintedRect = new Rect2((float)r[0].AsDouble(), (float)r[1].AsDouble(), (float)r[2].AsDouble(), (float)r[3].AsDouble());
         _paintedSea = new Color(meta["sea"].AsString());
-        _painted = ResourceLoader.Load<Texture2D>(path + ".png");
+        _painted = ResourceLoader.Load<Texture2D>(path + ".jpg");
     }
 
     private void DrawPaintedBackground()
@@ -63,38 +66,63 @@ public partial class MapPathCanvas
         _fogLayer.QueueRedraw(); _overlayLayer.QueueRedraw();
     }
 
+    private const float FogCell = 8;
+    private static readonly System.Collections.Generic.Dictionary<string, (int[] Tiles, int Width, int Height, Rect2 Bounds)> FogRasters = new();
+
+    /// <summary>Which tile each fog cell of the zone lies in (-1 for open sea), worked out once per zone.</summary>
+    private (int[] Tiles, int Width, int Height, Rect2 Bounds) FogRaster()
+    {
+        if (FogRasters.TryGetValue(ActiveMapId, out var raster)) return raster;
+        var bounds = AdventureAtlasLandscape.PaintingRect(ActiveMapId).Grow(64);
+        var width = Mathf.CeilToInt(bounds.Size.X / FogCell); var height = Mathf.CeilToInt(bounds.Size.Y / FogCell);
+        var cells = new int[width * height];
+        System.Array.Fill(cells, -1);
+        for (var i = 0; i < _tiles.Count; i++)
+        {
+            var outline = AdventureAtlasLandscape.Outline(_tiles[i]);
+            var box = PolygonBounds(outline);
+            var x0 = Mathf.Max(0, Mathf.FloorToInt((box.Position.X - bounds.Position.X) / FogCell));
+            var y0 = Mathf.Max(0, Mathf.FloorToInt((box.Position.Y - bounds.Position.Y) / FogCell));
+            var x1 = Mathf.Min(width, Mathf.CeilToInt((box.End.X - bounds.Position.X) / FogCell));
+            var y1 = Mathf.Min(height, Mathf.CeilToInt((box.End.Y - bounds.Position.Y) / FogCell));
+            for (var y = y0; y < y1; y++)
+                for (var x = x0; x < x1; x++)
+                    if (Geometry2D.IsPointInPolygon(bounds.Position + new Vector2(x + .5f, y + .5f) * FogCell, outline)) cells[y * width + x] = i;
+        }
+        return FogRasters[ActiveMapId] = (cells, width, height, bounds);
+    }
+
     /// <summary>
-    /// Rasterises every unexplored tile into a coarse world-space mask and softens it, once per change in
-    /// what the player has explored. The fog shader frays this outline into billows.
+    /// Builds the fog mask once per change in what the player has explored: the red channel covers hidden
+    /// tiles (storm cloud), the green channel frontier tiles (thin mist). Both are softened so the shader can
+    /// fray their outlines into billows.
     /// </summary>
     private void BuildFogMask()
     {
         var state = GameState.Instance;
         if (_fogRevision == state.AdventureKnowledgeRevision && _fogMap == ActiveMapId) return;
         _fogRevision = state.AdventureKnowledgeRevision; _fogMap = ActiveMapId;
-        var hidden = _tiles.Where(tile => !state.IsAdventureTileOpen(tile)).Select(AdventureAtlasLandscape.Outline).ToArray();
-        if (hidden.Length == 0) { _fogLayer.Mask = null; return; }
-        const float Cell = 6;
-        var bounds = hidden.Select(PolygonBounds).Aggregate((a, b) => a.Merge(b)).Grow(150);
-        var width = Mathf.CeilToInt(bounds.Size.X / Cell); var height = Mathf.CeilToInt(bounds.Size.Y / Cell);
-        var values = new float[width * height];
-        foreach (var outline in hidden)
+        var raster = FogRaster();
+        var kinds = _tiles.Select(tile => state.IsAdventureTileOpened(tile) ? 0 : state.IsAdventureTileRevealed(tile) ? 1 : 2).ToArray();
+        if (kinds.All(kind => kind == 0)) { _fogLayer.Mask = null; return; }
+        var storm = new float[raster.Tiles.Length]; var mist = new float[raster.Tiles.Length];
+        for (var i = 0; i < raster.Tiles.Length; i++)
         {
-            var box = PolygonBounds(outline);
-            var x0 = Mathf.Max(0, Mathf.FloorToInt((box.Position.X - bounds.Position.X) / Cell));
-            var y0 = Mathf.Max(0, Mathf.FloorToInt((box.Position.Y - bounds.Position.Y) / Cell));
-            var x1 = Mathf.Min(width, Mathf.CeilToInt((box.End.X - bounds.Position.X) / Cell));
-            var y1 = Mathf.Min(height, Mathf.CeilToInt((box.End.Y - bounds.Position.Y) / Cell));
-            for (var y = y0; y < y1; y++)
-                for (var x = x0; x < x1; x++)
-                    if (Geometry2D.IsPointInPolygon(bounds.Position + new Vector2(x + .5f, y + .5f) * Cell, outline)) values[y * width + x] = 1;
+            var tile = raster.Tiles[i];
+            if (tile < 0) continue;
+            if (kinds[tile] == 2) storm[i] = 1; else if (kinds[tile] == 1) mist[i] = 1;
         }
         // Three box passes approximate a gaussian about 50 world units wide.
-        for (var pass = 0; pass < 3; pass++) { BoxBlur(values, width, height, 6, true); BoxBlur(values, width, height, 6, false); }
-        var bytes = new byte[values.Length];
-        for (var i = 0; i < values.Length; i++) bytes[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(values[i] * 255), 0, 255);
-        _fogLayer.Mask = ImageTexture.CreateFromImage(Image.CreateFromData(width, height, false, Image.Format.L8, bytes));
-        _fogLayer.MaskRect = new Rect2(bounds.Position, new Vector2(width, height) * Cell);
+        foreach (var values in new[] { storm, mist })
+            for (var pass = 0; pass < 3; pass++) { BoxBlur(values, raster.Width, raster.Height, 5, true); BoxBlur(values, raster.Width, raster.Height, 5, false); }
+        var bytes = new byte[storm.Length * 2];
+        for (var i = 0; i < storm.Length; i++)
+        {
+            bytes[i * 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(storm[i] * 255), 0, 255);
+            bytes[i * 2 + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(mist[i] * 255), 0, 255);
+        }
+        _fogLayer.Mask = ImageTexture.CreateFromImage(Image.CreateFromData(raster.Width, raster.Height, false, Image.Format.Rg8, bytes));
+        _fogLayer.MaskRect = new Rect2(raster.Bounds.Position, new Vector2(raster.Width, raster.Height) * FogCell);
     }
 
     private static void BoxBlur(float[] values, int width, int height, int radius, bool horizontal)
@@ -124,12 +152,12 @@ public partial class MapPathCanvas
         var state = GameState.Instance;
         var view = new Rect2((-MapOffset - new Vector2(200, 220)) / Zoom, (Size + new Vector2(400, 440)) / Zoom);
         var priced = new System.Collections.Generic.List<AdventureTile>();
-        foreach (var tile in _tiles.Where(tile => state.IsAdventureTileOpen(tile) && view.HasPoint(tile.Point)).OrderBy(tile => tile.Point.Y))
+        foreach (var tile in _tiles.Where(tile => view.HasPoint(tile.Point) && state.IsAdventureTileRevealed(tile)).OrderBy(tile => tile.Point.Y))
         {
             if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !state.HasVisitedAdventureSite(tile.Site.RequiredVisit)) continue;
-            var resource = GameState.IsAdventureResourceTile(tile);
-            if (tile.HasInterest && (!resource || !state.IsAdventureTileComplete(tile))) DrawRoyalLandmark(layer, tile);
-            if (resource && !state.IsAdventureTileComplete(tile)) priced.Add(tile);
+            if (tile.HasInterest && (!tile.IsResource || !state.IsAdventureTileComplete(tile))) DrawRoyalLandmark(layer, tile);
+            // Every frontier tile but a stage (which is won, not bought) shows what it costs to open.
+            if (tile.Site?.Kind != AdventureSiteKind.Leader && state.IsAdventureTileFrontier(tile)) priced.Add(tile);
         }
         foreach (var burst in _rewardBursts)
         {
@@ -144,7 +172,7 @@ public partial class MapPathCanvas
         layer.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         // Price tags keep a readable screen size at every zoom.
         var affordable = state.Food >= GameState.AdventureTileFoodCost;
-        foreach (var tile in priced) DrawOpeningPrice(layer, tile.Point * Zoom + MapOffset + new Vector2(0, 20), affordable);
+        foreach (var tile in priced) DrawOpeningPrice(layer, tile.Point * Zoom + MapOffset + new Vector2(0, tile.HasInterest ? 20 : 0), affordable);
         _atlasVignette ??= new GradientTexture2D {
             Width = 512, Height = 512, Fill = GradientTexture2D.FillEnum.Radial,
             FillFrom = new Vector2(.5f, .43f), FillTo = new Vector2(1, 1),

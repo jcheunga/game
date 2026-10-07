@@ -26,8 +26,7 @@ public partial class GameState
         // Stage numbers span districts, so HighestUnlockedStage is not a zone gate.
         return maps.Skip(index).Any(map => GameData.GetStagesForMap(map).Any(stage => GetStageStars(stage.StageNumber) > 0)
             || AdventureMapCatalog.ForMap(map).Any(site => site.Kind != AdventureSiteKind.Camp && HasVisitedAdventureSite(site.Id))
-            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Site?.Kind != AdventureSiteKind.Camp
-                && tile.RetiredSiteId != $"camp-{map}" && _reachedAdventureTiles.Contains(tile.Id))
+            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Id != AdventureTileCatalog.Starting(map).Id && _reachedAdventureTiles.Contains(tile.Id))
             || _adventureTravelledCells.TryGetValue(map, out var cells)
                 && cells.Any(cell => cell != AdventureTerrain.Cell(AdventureMapCatalog.ForMap(map).First().Point)));
     }
@@ -43,7 +42,7 @@ public partial class GameState
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit));
     public bool IsAdventureSiteDiscovered(string id) => AdventureMapCatalog.Find(id) is { } node &&
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit)) &&
-        IsAdventureTileOpen(AdventureTileCatalog.Find(node.MapId, node.Id));
+        IsAdventureTileRevealed(AdventureTileCatalog.Find(node.MapId, node.Id));
     public bool IsAdventureCellRevealed(string mapId, int cell)
     {
         if (cell < 0 || cell >= AdventureTerrain.CellCount) return false;
@@ -82,19 +81,6 @@ public partial class GameState
     {
         mapId = RouteCatalog.Normalize(mapId);
         if (!IsAdventureCellTravelled(mapId,cell) || !MoveAdventureHero(mapId,AdventureTerrain.Point(cell),false)) return false;
-        var discovery = AdventureDiscoveryCatalog.At(mapId,cell);
-        if (discovery != null && _claimedAdventureDiscoveries.Add(discovery.Id))
-        {
-            switch (discovery.Kind)
-            {
-                case AdventureDiscoveryKind.Food: Food += discovery.Amount; FoodChanged?.Invoke(); break;
-                case AdventureDiscoveryKind.Gold: Gold += discovery.Amount; break;
-                case AdventureDiscoveryKind.Essence: Essence += discovery.Amount; break;
-                case AdventureDiscoveryKind.Survey: RevealAdventurePoint(mapId,discovery.Point,discovery.Amount); break;
-            }
-            LastResultMessage = discovery.RewardText;
-            AdventureDiscoveryFound?.Invoke(discovery);
-        }
         Persist(); return true;
     }
     public AdventureMapNode GetAdventureHeroNode(string mapId)
@@ -138,36 +124,24 @@ public partial class GameState
         var tile = AdventureTileCatalog.Find(node.MapId, node.Id);
         if (!HasReachedAdventureTile(id) || GetAdventureCaravanTile(node.MapId).Id != id)
         { message = "Travel to this tile first."; return false; }
+        // Caches are gathered by opening their tile.
+        if (node.Kind != AdventureSiteKind.Leader)
+        {
+            if (HasVisitedAdventureSite(id)) { message = "Already visited. These rewards have been collected."; return false; }
+            return TryOpenAdventureTile(tile, out message);
+        }
         _adventureHeroPositions[node.MapId] = node.Point;
         _adventureHeroNodes[node.MapId] = id;
-        var resource = node.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
-        if (resource && !HasVisitedAdventureSite(id) && Food < AdventureTileFoodCost)
-        { message = $"Opening this tile costs {AdventureTileFoodCost} food."; return false; }
-        if (node.Kind == AdventureSiteKind.Leader) SelectedStage = node.Stage;
-        var firstVisit = _visitedAdventureSites.Add(id);
-        if (firstVisit)
-        {
-            if (resource) Food -= AdventureTileFoodCost;
-            Gold += node.GoldReward; Food += node.FoodReward;
-            if (node.Kind != AdventureSiteKind.Leader) OpenSurroundingAdventureTiles(tile);
-        }
-        message = node.Kind switch
-        {
-            AdventureSiteKind.Leader => $"You face {node.Title}. Prepare your warband to challenge this leader.",
-            _ when !firstVisit => "Already visited. These rewards have been collected.",
-            AdventureSiteKind.Gold => $"Treasury secured · +{node.GoldReward} gold",
-            AdventureSiteKind.Food => $"Supplies secured · +{node.FoodReward} food",
-            _ => "Nearby tiles opened."
-        };
-        LastResultMessage = message;
-        if (firstVisit && resource) FoodChanged?.Invoke();
+        SelectedStage = node.Stage;
+        _visitedAdventureSites.Add(id);
+        message = LastResultMessage = $"You face {node.Title}. Prepare your warband to challenge this leader.";
         Persist(); return true;
     }
     private void ResetAdventureProgress()
     {
         _visitedAdventureSites.Clear(); _adventureHeroNodes.Clear(); _adventureHeroPositions.Clear(); _adventureExploredCells.Clear();
         _adventureTravelledCells.Clear(); _claimedAdventureDiscoveries.Clear();
-        _openAdventureTiles.Clear(); _reachedAdventureTiles.Clear(); _adventureCaravanTiles.Clear(); AdventureKnowledgeRevision++;
+        _openedAdventureTiles.Clear(); _reachedAdventureTiles.Clear(); _adventureCaravanTiles.Clear(); AdventureKnowledgeRevision++;
     }
     private void LoadAdventureProgress(GameSaveData saved)
     {
@@ -187,8 +161,7 @@ public partial class GameState
                     _adventureTravelledCells[map] = travelled.Where(c => AdventureTerrain.Walkable(map,c)).ToHashSet();
                 if (saved.AdventureHeroPositions?.TryGetValue(map,out var p) == true && p is {Length:2} && float.IsFinite(p[0]) && float.IsFinite(p[1])
                     && AdventureTerrain.Walkable(map,AdventureTerrain.Cell(new Vector2(p[0],p[1])))) _adventureHeroPositions[map] = new(p[0],p[1]);
-                // Claims on retired finds stay recorded so their tiles keep their open surroundings.
-                foreach (var reward in AdventureDiscoveryCatalog.Legacy(map))
+                foreach (var reward in AdventureDiscoveryCatalog.ForMap(map))
                     if ((saved.ClaimedAdventureDiscoveries ?? Array.Empty<string>()).Contains(reward.Id)) _claimedAdventureDiscoveries.Add(reward.Id);
             }
             else
@@ -205,6 +178,5 @@ public partial class GameState
             }
             RevealAdventurePoint(map,GetAdventureHeroPosition(map));
         }
-        LoadAdventureTiles(saved);
     }
 }

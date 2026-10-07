@@ -28,8 +28,11 @@ public partial class UiReviewSmoke
             "relic_windrunner_cloak", "relic_crown_of_valor", "relic_moonfire_talisman", "relic_tower_ascendant" };
         fixture.DiscoveredCodexIds = CodexCatalog.GetAll().Select(e => e.Id).ToArray();
         // King's Road explored up to its sixth stage, as on the atlas concept.
-        var road = AdventureTileCatalog.ForMap("city");
-        fixture.AdventureOpenTiles = road.Where(t => t.Site?.Kind != AdventureSiteKind.Leader || t.Site.Stage <= 7).Select(t => t.Id).ToArray();
+        // The roads out to the seventh stage are charted, with the land beside them.
+        var charted = AdventureTileCatalog.Roads.Where(road => road.From <= 6 && road.To <= 6)
+            .SelectMany(road => GameState.AdventureTilePath(AdventureTileCatalog.Stage("city", road.From), AdventureTileCatalog.Stage("city", road.To)))
+            .SelectMany(t => AdventureTileCatalog.Neighbors(t).Append(t)).Where(t => !t.IsResource && (t.Site == null || t.Site.Stage <= 7));
+        fixture.AdventureOpenTiles = charted.Select(t => t.Id).Distinct().ToArray();
         fixture.StageStars = Enumerable.Range(1, state.MaxStage).Select(stage => stage <= 6 ? (stage % 3 == 0 ? 2 : 3) : 0).ToArray();
         // Tier 8 with 750 of 900 XP toward tier 9, and tier 7 already claimed, as in the season concept.
         fixture.SeasonPassXP = SeasonPassCatalog.GetXPForTier(8) + 750 * (SeasonPassCatalog.GetXPForTier(9) - SeasonPassCatalog.GetXPForTier(8)) / 900;

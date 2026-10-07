@@ -2,28 +2,28 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://df0iwobx04n81"
-path="res://.godot/imported/harbor.png-a2be48d9712518b149056acf9bec2925.ctex"
+uid="uid://c6bi0mrjjle66"
+path="res://.godot/imported/citadel.jpg-25c7e987eb48793bd09cdedc44957eb3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/world/royal/maps/harbor.png"
-dest_files=["res://.godot/imported/harbor.png-a2be48d9712518b149056acf9bec2925.ctex"]
+source_file="res://assets/world/royal/maps/citadel.jpg"
+dest_files=["res://.godot/imported/citadel.jpg-25c7e987eb48793bd09cdedc44957eb3.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=1
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.9
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

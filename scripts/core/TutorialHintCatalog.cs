@@ -52,7 +52,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "food_costs",
 			Title = "Food",
-			Body = "Entering a stage costs food. Earn food from victories and exploration.",
+			Body = "Opening a tile on the map costs 2 food and entering a stage costs more. Find food in supply caches and hidden provisions.",
 			TriggerContext = "first_map"
 		},
 		new()

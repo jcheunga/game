@@ -64,13 +64,18 @@ The same script composes a still of each battlefield for mission and route cards
 
 ## Map
 
-`MapGuideRenderer` (`UiReviewSmoke --map-guides`) draws each zone's own geography (coast, river, bridges, road and
-site points) as a flat colour guide; Codex paints the zone over it in the atlas concept's style, so roads, river
-and clearings line up with the playable tiles (`art/royal/maps.py` installs them with their world rects). Sites
-use painted landmark sprites (`assets/world/royal/maps/landmarks`), stars sit above castles, and unexplored tiles
-lie under a storm-cloud bank: `MapFogLayer` draws a blurred world-space mask of the hidden tiles through
-`assets/shaders/royal_fog.gdshader`, which frays it into lit, drifting billows using the tileable noise baked by
-`art/royal/fognoise.py`. Landmarks, reward bursts and the vignette are drawn above it by `MapOverlayLayer`.
+`MapGuideRenderer` (`UiReviewSmoke --map-guides`) draws each zone's own geography (coast, river, bridges, roads and
+site points) as a flat colour guide, plus four overlapping 16:9 section guides and `crops.json` (world rects). A
+zone is too wide for one Codex image (about 1.6 megapixels) to stay sharp, so `art/royal/mapsections.py run` has
+Codex paint it section by section in the atlas concept's style: north-west first, then north-east and south-west,
+then south-east, each edited from a target that already carries its finished neighbours' painted strip so the
+painting continues across the joins. `mapsections.py stitch` colour-matches the sections, feathers them together
+and installs `assets/world/royal/maps/<zone>.png` with its world rect, so roads, river and clearings line up with
+the playable tiles. Sites use painted landmark sprites (`assets/world/royal/maps/landmarks`, installed by
+`art/royal/maps.py`), stars sit above castles, hidden tiles lie under a storm-cloud bank and frontier tiles under
+thin mist: `MapFogLayer` draws blurred world-space masks of both through `assets/shaders/royal_fog.gdshader`,
+which frays them into lit, drifting billows using the tileable noise baked by `art/royal/fognoise.py`. Landmarks,
+price tags, reward bursts and the vignette are drawn above it by `MapOverlayLayer`.
 
 Tapping a site that can be entered goes straight in: the caravan travels there and a battle opens its
 preparation (which shows the rewards and entry cost). The site panel only appears to explain why a site is

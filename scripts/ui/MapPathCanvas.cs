@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-/// <summary>Selectable atlas tiles. Travel is immediate; completion controls revelation.</summary>
+/// <summary>Selectable atlas tiles. Travel is immediate; opened tiles and won stages reveal the land around them.</summary>
 public partial class MapPathCanvas : Control
 {
     public event Action<AdventureMapNode> SiteSelected;
     public event Action<AdventureDiscovery> DiscoverySelected;
+    /// <summary>A plain frontier tile was chosen to be opened.</summary>
+    public event Action<AdventureTile> GroundSelected;
     public event Action TravelStateChanged;
     public event Action<string> TravelFeedback;
     public string ActiveMapId { get; private set; } = "city";
@@ -19,6 +21,7 @@ public partial class MapPathCanvas : Control
     private readonly List<(AdventureDiscovery Reward, float Time)> _rewardBursts = new();
     private IReadOnlyList<AdventureTile> _tiles = Array.Empty<AdventureTile>();
     private string _selectedId = "";
+    private AdventureTile _hoverTile;
     private bool _dragging;
     private float _dragDistance, _time;
     public override void _Ready()
@@ -69,14 +72,14 @@ public partial class MapPathCanvas : Control
         UpdateView();
     }
     public void FocusCurrentTile() => FocusPoint(GameState.Instance.GetAdventureCaravanTile(ActiveMapId).Point);
-    public void FocusOverview() => FocusPoint(AdventureTileCatalog.WorldSize * .5f);
+    public void FocusOverview() => FocusPoint(MapBounds.GetCenter());
     public void FocusPoint(Vector2 point) { MapOffset = new Vector2(Size.X * .5f, Size.Y * .44f) - point * Zoom; UpdateView(); }
     public void FocusSite(string id) { if (AdventureTileCatalog.Find(ActiveMapId, id) is { } tile) FocusPoint(tile.Point); }
     public void ChangeZoom(float factor, Vector2? around = null)
     {
         var anchor = around ?? Size / 2; var world = (anchor - MapOffset) / Zoom;
         var fit = Mathf.Max(Size.X / MapBounds.Size.X, Size.Y / MapBounds.Size.Y);
-        Zoom = Mathf.Clamp(Zoom * factor, Mathf.Max(.45f, fit), 1.25f);
+        Zoom = Mathf.Clamp(Zoom * factor, Mathf.Max(.3f, fit), 1.25f);
         MapOffset = anchor - world * Zoom; UpdateView();
     }
     private void UpdateView()
@@ -102,7 +105,7 @@ public partial class MapPathCanvas : Control
             var tile = AdventureTileCatalog.Find(ActiveMapId, token.Discovery.Id);
             token.Scale = Vector2.One * Zoom;
             token.Position = tile.Point * Zoom + MapOffset - token.MarkerCenter * token.Scale;
-            token.Visible = state.IsAdventureTileOpen(tile) && !state.IsAdventureTileComplete(tile) && view.Intersects(new Rect2(token.Position, token.Size * token.Scale));
+            token.Visible = state.IsAdventureTileRevealed(tile) && !state.IsAdventureTileComplete(tile) && view.Intersects(new Rect2(token.Position, token.Size * token.Scale));
             token.Disabled = IsTravelling; token.QueueRedraw();
         }
         QueueRedraw();
@@ -120,16 +123,19 @@ public partial class MapPathCanvas : Control
                 {
                     var select = _dragging && _dragDistance < 8 && mouse.ButtonIndex == MouseButton.Left;
                     _dragging = false;
-                    if (select && AdventureTileCatalog.At(ActiveMapId, (mouse.Position - MapOffset) / Zoom) is { } tile && GameState.Instance.IsAdventureTileOpen(tile))
+                    if (select && AdventureTileCatalog.At(ActiveMapId, (mouse.Position - MapOffset) / Zoom) is { } tile && GameState.Instance.IsAdventureTileRevealed(tile))
                     {
                         if (tile.Site != null && GameState.Instance.IsAdventureSiteDiscovered(tile.Id)) SiteSelected?.Invoke(tile.Site);
                         else if (tile.Discovery != null) DiscoverySelected?.Invoke(tile.Discovery);
+                        else if (GameState.Instance.IsAdventureTileFrontier(tile) && !IsTravelling) GroundSelected?.Invoke(tile);
                     }
                 }
                 AcceptEvent();
             }
         }
         if (input is InputEventMouseMotion motion && _dragging) { _dragDistance += motion.Relative.Length(); MapOffset += motion.Relative; UpdateView(); AcceptEvent(); }
+        else if (input is InputEventMouseMotion hover)
+            _hoverTile = AdventureTileCatalog.At(ActiveMapId, (hover.Position - MapOffset) / Zoom) is { } tile && GameState.Instance.IsAdventureTileFrontier(tile) ? tile : null;
         if (input is InputEventScreenDrag drag) { _dragDistance += drag.Relative.Length(); MapOffset += drag.Relative; UpdateView(); AcceptEvent(); }
         if (input is InputEventMagnifyGesture pinch) { ChangeZoom(pinch.Factor, pinch.Position); AcceptEvent(); }
     }

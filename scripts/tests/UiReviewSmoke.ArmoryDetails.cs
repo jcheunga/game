@@ -19,7 +19,6 @@ public partial class UiReviewSmoke
         bool Shows(string stat) => Walk(menu).OfType<Control>().Any(control => control.IsVisibleInTree() && (control.TooltipText == stat || control.AccessibilityName == stat));
         RoyalButton Action(string name) => Walk(menu).OfType<RoyalButton>().FirstOrDefault(button => button.IsVisibleInTree() && !button.Disabled
             && (button.AccessibilityName ?? "").StartsWith(name));
-        bool TraitsOpen() => Walk(menu).OfType<CanvasLayer>().Any(layer => layer.Name == "TraitsLayer" && !layer.IsQueuedForDeletion() && Walk(layer).OfType<RealmModal>().Any());
         SceneRouter.Instance.GoToShop(); await Wait(.3);
         var unit = GameData.GetPlayerUnits().First(); await PressHint(unit.DisplayName);
         var stats = state.BuildPlayerUnitStats(unit);
@@ -32,11 +31,9 @@ public partial class UiReviewSmoke
         stats = state.BuildPlayerUnitStats(unit);
         Check(state.GetUnitLevel(unit.Id) == level + 1 && state.Gold == gold - cost && Shows($"Health: {stats.MaxHealth:0}"),
             "A native training click spends once and updates the displayed stats");
-        await PressHint("Traits & training");
-        Check(TraitsOpen(), "Traits & training opens the full unit breakdown above the profile");
-        AuditText("Profile / unit traits"); await Capture("02-unit-training");
-        await PressHint("Close details"); await Wait(.1);
-        Check(!TraitsOpen(), "Closing the breakdown returns to the profile");
+        // The role chip beside the name is a label; the profile shows everything there is.
+        Check(!Walk(menu).OfType<BaseButton>().Any(button => button.IsVisibleInTree() && button.AccessibilityName == "Traits & training"),
+            "The role chip opens no extra breakdown");
         menu.CloseHomeModal();
         var fixture = state.BuildSaveData(); fixture.Gold = 100000; fixture.Sigils = 100; fixture.HighestUnlockedStage = state.MaxStage;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Select(entry => entry.Id).ToArray();
@@ -52,13 +49,7 @@ public partial class UiReviewSmoke
             var trained = state.BuildPlayerUnitStats(entry);
             Check(Shows($"Health: {trained.MaxHealth:0}") && Shows($"Damage: {trained.AttackDamage:0.#}"), entry.DisplayName + ": core stats show at maximum level");
         }
-        await PressHint(unit.DisplayName); await PressHint("Traits & training");
-        var doctrine = state.GetUnitDoctrineOptions(unit.Id).First();
-        await Press("Choose " + doctrine.Title);
-        Check(state.GetUnitDoctrineId(unit.Id) == doctrine.Id && Walk(menu).OfType<CanvasLayer>().Count(layer => layer.Name == "TraitsLayer") == 1,
-            "Doctrines remain selectable from the breakdown, which reopens in place");
-        AuditText("Profile / doctrine"); await Capture("03-unit-doctrine");
-        await PressHint("Close details"); await Wait(.1);
+        await PressHint(unit.DisplayName);
         if (Action("Promote") is { } promote)
         {
             await TapModal(promote);
@@ -79,8 +70,7 @@ public partial class UiReviewSmoke
         var scribed = state.BuildSpellStats(firstSpell);
         Check(state.GetSpellLevel(firstSpell.Id) == level + 1 && state.Gold == gold - cost && Shows($"Damage: {scribed.Power:0.#}"),
             "Spell training spends once and refreshes the real damage value");
-        await PressHint("Traits & training"); AuditText("Profile / spell traits"); await Capture("04-spell-training");
-        await PressHint("Close details"); await Wait(.1);
+        AuditText("Profile / spell training"); await Capture("04-spell-training");
         Check(state.Food == food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset == camera, "Profile browsing and training preserve the map and travel supplies");
         menu.CloseHomeModal();
         state.ToggleDeckSpell(firstSpell.Id, out _); state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);

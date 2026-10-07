@@ -109,9 +109,9 @@ public partial class CaravanHub : RoyalScreen
         // The hub plate paints the strip; the pairs are spaced from their real widths so large balances fit.
         var strip = new RoyalResourceBar { DrawsBar = false, BarRect = spec.Rect("resources"), Ink = new Color("e9e8e0") };
         _layer.AddChild(strip);
-        strip.Add(spec, "resources", "0", HomeMapArt.Icon("gold"), "Royal storehouse", SceneRouter.Instance.GoToCashShop);
-        strip.Add(spec, "resources", "1", HomeMapArt.Icon("food"), state.FoodRechargeText, SceneRouter.Instance.GoToCashShop);
-        strip.Add(spec, "resources", "2", HomeMapArt.Icon("star"), "Player profile", SceneRouter.Instance.GoToProfile);
+        strip.Add(spec, "resources", "0", HomeMapArt.Icon("gold"), "Royal storehouse", SceneRouter.Instance.GoToCashShop, "00,000");
+        strip.Add(spec, "resources", "1", HomeMapArt.Icon("food"), state.FoodRechargeText, SceneRouter.Instance.GoToCashShop, "00 / 00");
+        strip.Add(spec, "resources", "2", HomeMapArt.Icon("star"), "Player profile", SceneRouter.Instance.GoToProfile, "000");
         strip.SetValues(state.Gold.ToString("N0"), $"{state.Food} / {GameState.FoodRechargeCap}", state.TotalStarsEarned.ToString());
         var maps = GameData.Stages.Select(stage => stage.MapId).Distinct().ToArray();
         var map = _home?.ActiveMapId ?? maps[0];

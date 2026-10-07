@@ -60,9 +60,10 @@ public static class MedievalUi
         var goldLight = new Color("f3d78c");
 
         theme.SetColor("font_color", "Label", ink);
-        theme.SetColor("font_shadow_color", "Label", new Color(0f, 0f, 0f, 0.7f));
-        theme.SetConstant("shadow_offset_x", "Label", 1);
-        theme.SetConstant("shadow_offset_y", "Label", 2);
+        // A soft one-pixel drop keeps light text legible on painted art without doubling the letters.
+        theme.SetColor("font_shadow_color", "Label", new Color(0f, 0f, 0f, 0.55f));
+        theme.SetConstant("shadow_offset_x", "Label", 0);
+        theme.SetConstant("shadow_offset_y", "Label", 1);
         theme.SetFontSize("font_size", "Label", 20);
         theme.SetFontSize("font_size", "Button", RealmUi.ButtonFontSize);
         theme.SetFont("font", "Button", RealmUi.TitleFont);

@@ -58,7 +58,10 @@ public partial class RoyalLabel : Control
         return size;
     }
 
-    public float TextWidth(int size) => Font.GetStringSize(_text, HorizontalAlignment.Left, -1, size).X + Tracking * Mathf.Max(0, _text.Length - 1);
+    public float TextWidth(int size) => TextWidth(_text, size);
+
+    /// <summary>The width another text would take in this label's font, size and tracking.</summary>
+    public float TextWidth(string text, int size) => Font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X + Tracking * Mathf.Max(0, text.Length - 1);
 
     public override Vector2 _GetMinimumSize() => new(ShrinkToFit ? 0 : TextWidth(_fontSize), _fontSize * CapRatio);
 

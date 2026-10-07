@@ -114,14 +114,18 @@ public partial class BattleController
             var cardWidth = pitch - 13;
             var cardHeight = Mathf.Round(cardWidth * 131 / 119f);
             foreach (var child in row.GetChildren().OfType<Control>()) child.CustomMinimumSize = new Vector2(cardWidth, cardHeight);
+            // The cards already shrink to fit, so the row never scrolls; the dock wraps the row's real size so
+            // no card edge is clipped.
             if (row.GetParent() is ScrollContainer scroller)
             {
-                scroller.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-                scroller.CustomMinimumSize = new Vector2(0, cardHeight);
+                scroller.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+                scroller.VerticalScrollMode = ScrollContainer.ScrollMode.Disabled;
+                scroller.CustomMinimumSize = Vector2.Zero;
             }
+            var rowSize = row.GetCombinedMinimumSize();
             var dockRect = spec.Rect("dock");
-            var width = count * pitch - 13 + 18;
-            var height = cardHeight + 20;
+            var width = rowSize.X + 18;
+            var height = rowSize.Y + 20;
             cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
             _battleSettingsModal?.FitToArea(size);

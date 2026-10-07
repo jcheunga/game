@@ -181,9 +181,22 @@ public partial class ShopMenu
     private UnitDefinition EquippedBy(string relicId) =>
         _state.GetOwnedPlayerUnits().FirstOrDefault(unit => _state.GetUnitEquipment(unit.Id)?.Id == relicId);
 
+    /// <summary>An inspector over the armory for choosing a relic's bearer.</summary>
+    private VBoxContainer OpenBearerInspector(string title)
+    {
+        var layer = new CanvasLayer { Layer = 40, Name = "BearerLayer" };
+        AddChild(layer);
+        var modal = RealmModal.OpenInspector(layer, title, "warband", 760, 520);
+        modal.Closed = modal.Back = () => { layer.QueueFree(); Refresh(); };
+        var stack = RealmUi.Scroll(modal.Content);
+        ((ScrollContainer)stack.GetParent()).SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        stack.AddThemeConstantOverride("separation", 12);
+        return stack;
+    }
+
     private void ChooseRelicBearer(EquipmentDefinition relic)
     {
-        var stack = OpenTraits($"Equip {relic.DisplayName}");
+        var stack = OpenBearerInspector($"Equip {relic.DisplayName}");
         stack.AddChild(RealmUi.Label("Choose the ally who carries this relic.", 18, true));
         var grid = new GridContainer { Columns = 4 };
         grid.AddThemeConstantOverride("h_separation", 10); grid.AddThemeConstantOverride("v_separation", 10);
@@ -195,7 +208,7 @@ public partial class ShopMenu
             {
                 _state.TryEquipItem(unit.Id, relic.Id);
                 Toast($"Equipped {relic.DisplayName} on {unit.DisplayName}.");
-                GetNode<CanvasLayer>("TraitsLayer").QueueFree(); Refresh();
+                GetNode<CanvasLayer>("BearerLayer").QueueFree(); Refresh();
             });
             button.Icon = UnitFigure.For(unit);
             button.TooltipText = current != null ? $"Replaces {current.DisplayName}" : unit.DisplayName;

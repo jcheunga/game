@@ -841,7 +841,7 @@ public partial class MultiplayerMenu : Control
 
         stack.AddChild(RealmUi.Heading(definition.DisplayName, 20));
         stack.AddChild(RealmUi.Label(
-            $"Lv {GameState.Instance.GetUnitLevel(definition.Id)} · {SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)} · {GameState.Instance.BuildUnitDoctrineInlineText(definition.Id)}", 18, true));
+            $"Lv {GameState.Instance.GetUnitLevel(definition.Id)} · {SquadSynergyCatalog.GetTagDisplayName(definition.SquadTag)}", 18, true));
         stack.AddChild(RealmUi.Label(
             $"{definition.Cost} courage · {Mathf.RoundToInt(stats.MaxHealth)} health · {stats.AttackDamage:0.#} damage · {stats.BaseDamage} gate damage", 18));
         stack.AddChild(RealmUi.Label(

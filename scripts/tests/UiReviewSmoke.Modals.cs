@@ -69,6 +69,14 @@ public partial class UiReviewSmoke
             Check(GetTree().CurrentScene == menu && menu.HomeModalDestination == path, name + " remains above the existing map");
             menu.CloseHomeModal();
         }
+        // Edit squad opens the armory over preparation; closing it returns to preparation, then to the map.
+        state.PrepareCampaignBattle(); menu.OpenHomeDestination(SceneRouter.LoadoutScene); await Wait(.35);
+        await PressHint("Edit squad");
+        Check(menu.HomeModalDestination == SceneRouter.ShopScene, "Edit squad opens the armory over preparation");
+        await PressHint("Close panel");
+        Check(menu.HasHomeModal && menu.HomeModalDestination == SceneRouter.LoadoutScene, "Closing the armory returns to battle preparation");
+        await PressHint("Close panel");
+        Check(!menu.HasHomeModal, "Closing preparation returns to the map");
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { baseline });
         typeof(MapMenu).GetMethod("RefreshUi", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(menu, null);
     }

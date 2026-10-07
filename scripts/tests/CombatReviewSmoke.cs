@@ -378,7 +378,7 @@ public partial class CombatReviewSmoke : Node
         GameState.Instance.SetAnalyticsConsent(false);
         GameState.Instance.SetShowHints(false);
         GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
-        // A modest reference squad, with normal unit upgrades but no equipment, doctrines or purchases.
+        // A modest reference squad, with normal unit upgrades but no equipment or purchases.
         var tactical = OS.GetCmdlineUserArgs().Contains("--tactical");
         var level = tactical ? (stage < 10 ? 1 : stage < 15 ? 2 : stage < 35 ? 3 : stage < 62 ? 4 : 5) : Math.Min(5, 1 + (stage - 1) / 13);
         var levelDelta = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--unit-level-delta="));

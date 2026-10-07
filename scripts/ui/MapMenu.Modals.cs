@@ -30,6 +30,8 @@ public partial class MapMenu
         MusicPlayer.Instance?.PlayOverlay(path);
         var tab = path == SceneRouter.ShopScene ? SceneRouter.Instance.InitialShopTab : 0;
         if (remember) _modalHistory.Add((path, tab));
+        // Closing a screen opened from another one (Edit squad from preparation) returns to that screen.
+        _modal.Closed = _modalHistory.Count > 1 ? BackHomeModal : CloseHomeModal;
         RealmUi.Clear(_modal.Content);
         Control content;
         if (path == "achievements") content = new AchievementsPanel();

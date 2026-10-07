@@ -7,7 +7,8 @@ public partial class BattleActionCard : Control
     private static readonly Dictionary<ulong, Rect2I> IconBounds = new();
     private AtlasTexture _ownedCrop;
     private Texture2D _sourceIcon;
-    private readonly TextureRect _portrait;
+    private readonly TextureRect _portrait, _face;
+    private static GradientTexture2D _faceTexture;
     private readonly ColorRect _cooldownShade;
     private readonly PanelContainer _costPlate, _statusPlate;
     private readonly Label _cost, _status;
@@ -32,6 +33,15 @@ public partial class BattleActionCard : Control
         TextureFilter = TextureFilterEnum.Linear;
         _selection = MedievalUi.Engraved("focus", 0, 0);
         _costMaterial = new StyleBoxTexture { Texture = RoyalKit.Texture("hud-cost") };
+        // The concept's card face: dark steel-teal, lit softly behind the figure.
+        _faceTexture ??= new GradientTexture2D {
+            Width = 128, Height = 128, Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(.5f, .42f), FillTo = new Vector2(1.05f, 1.1f),
+            Gradient = new Gradient { Offsets = new[] { 0f, 1f }, Colors = new[] { new Color("2a3d40"), new Color("0d1515") } }
+        };
+        _face = new TextureRect { Name = "Face", Texture = _faceTexture, MouseFilter = MouseFilterEnum.Ignore,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale };
+        AddChild(_face);
         _portrait = new TextureRect
         {
             Name = "Portrait", MouseFilter = MouseFilterEnum.Ignore,
@@ -135,6 +145,7 @@ public partial class BattleActionCard : Control
     private void LayoutArt()
     {
         var inner = new Rect2(new Vector2(4, 4), (Size - new Vector2(8, 8)).Max(Vector2.One));
+        _face.Position = inner.Position + Vector2.One; _face.Size = (inner.Size - Vector2.One * 2).Max(Vector2.One);
         // The art sits whole inside the card with a margin, a little below the cost badge.
         _portrait.Position = inner.Position + inner.Size * new Vector2(.14f, .17f);
         _portrait.Size = inner.Size * new Vector2(.72f, .76f);

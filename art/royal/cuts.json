@@ -3454,7 +3454,8 @@
    44,
    43
   ],
-  "mode": "circle"
+  "mode": "circle",
+  "plate": true
  },
  {
   "name": "hud-heart",

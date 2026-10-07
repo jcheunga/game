@@ -102,7 +102,7 @@ public partial class BattleController
         _endCenter.GetParent().AddChild(_royalResult);
         _endPanel.Visible = false;
         // The result board stands alone over the battlefield, as in the concept.
-        foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock })
+        foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock, _battleFollowButton })
             if (IsInstanceValid(hud)) hud.Visible = false;
     }
 }

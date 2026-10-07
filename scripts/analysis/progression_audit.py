@@ -203,7 +203,7 @@ def main():
             samples = row["benchmarks"][p]
             measured.append(f"{sum(s['won'] for s in samples)}/{len(samples)} (L{samples[0]['level']})")
         lines.append(f"| {row['stage']} | {row['name']} | {' | '.join(measured)} | {row['target_unit_level']} | {row['current_gross_gold_before']:,} | {row['candidate_gross_gold_before']:,} | {'; '.join(row['priority'])} |")
-    lines += ["", "## Targeted purchases", "", "Armed adds all six weapon/skill/armor wagon upgrades at the reference wagon level (1 at stages 9–16, 2 at 17–24, 3 thereafter). Counter squads additionally replace the starter trio. All three seeds; no starting gear, doctrines, promotion or mastery. These are complete purchase packages, not proof that every component is required.", "",
+    lines += ["", "## Targeted purchases", "", "Armed adds all six weapon/skill/armor wagon upgrades at the reference wagon level (1 at stages 9–16, 2 at 17–24, 3 thereafter). Counter squads additionally replace the starter trio. All three seeds; no starting gear, promotion or mastery. These are complete purchase packages, not proof that every component is required.", "",
               "| Stage | Purchase profile | Squad | Clears / attempts | Current total gold investment |", "|---|---|---|---|---|"]
     for row in rows:
         for profile in ["armed", "siege-counter", "support-counter"]:

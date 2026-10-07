@@ -92,14 +92,16 @@ public partial class RoyalResult : Control
             tile.AddThemeStyleboxOverride("panel", RoyalKit.Slice("result-tile", 12));
             var icon = spec.Rect("reward.1.icon");
             tile.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                Texture = TileTexture(tiles[i]), Position = new Vector2(rect.Size.X / 2 - icon.Size.X / 2 - 4, icon.Position.Y - origin.Y - 4), Size = icon.Size + new Vector2(8, 8),
+                Texture = TileTexture(tiles[i]), Position = new Vector2(rect.Size.X / 2 - icon.Size.X / 2 - 4, icon.Position.Y - origin.Y - 8), Size = icon.Size + new Vector2(8, 8),
                 MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
             var suffix = tiles[i].Kind == "season_xp" ? " XP" : "";
             var amount = spec.Label("reward.1.amount", tiles[i].Kind == "training" ? $"Lv {tiles[i].Amount}" : $"+{tiles[i].Amount:N0}{suffix}", rect.Size.X - 8);
-            amount.Position = new Vector2(4, amount.Position.Y - origin.Y); amount.Size = new Vector2(rect.Size.X - 8, amount.Size.Y);
+            // The tile's painted rim is deeper than the concept's, so the text sits higher with air above the rim.
+            amount.Position = new Vector2(4, amount.Position.Y - origin.Y - 7); amount.Size = new Vector2(rect.Size.X - 8, amount.Size.Y);
             tile.AddChild(amount);
             var caption = spec.Label("reward.1.caption", TileArt(tiles[i]).Caption, rect.Size.X - 8);
-            caption.Position = new Vector2(4, caption.Position.Y - origin.Y); caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
+            caption.FontSize = Mathf.Min(caption.FontSize, 12);
+            caption.Position = new Vector2(4, caption.Position.Y - origin.Y - 10); caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
             tile.AddChild(caption);
             canvas.AddChild(tile);
         }
@@ -124,8 +126,13 @@ public partial class RoyalResult : Control
             var figure = new UnitFigure { Position = portrait.Position + new Vector2(10, -6), Size = portrait.Size - new Vector2(20, 0) };
             figure.SetUnit(GameData.TryGetUnit(top.ItemId));
             canvas.AddChild(figure);
-            canvas.AddChild(spec.Label("mastery.value", $"+{mastery.Sum(m => m.Amount):N0} XP", 200));
-            canvas.AddChild(spec.Label("mastery.caption", "MASTERY", 200));
+            var value = spec.Label("mastery.value", $"+{mastery.Sum(m => m.Amount):N0} XP", 200);
+            value.Position -= new Vector2(0, 4);
+            canvas.AddChild(value);
+            var masteryCaption = spec.Label("mastery.caption", "MASTERY", 200);
+            masteryCaption.FontSize = Mathf.Min(masteryCaption.FontSize, 14);
+            masteryCaption.Position -= new Vector2(0, 7);
+            canvas.AddChild(masteryCaption);
         }
 
         LeaveButton = RoyalButton.Over(spec.Rect("button.back"), LeaveText, () => Leave?.Invoke(), 8);

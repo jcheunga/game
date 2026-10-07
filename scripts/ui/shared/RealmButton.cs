@@ -55,6 +55,9 @@ public partial class RealmButton : Button
         _groupIcon = new TextureRect { CustomMinimumSize = new Vector2(iconSize,iconSize), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore };
         _groupLabel = new Label { MouseFilter = MouseFilterEnum.Ignore, VerticalAlignment = VerticalAlignment.Center };
+        // Button text has no drop shadow (as on a plain Button): a dark copy beside dark ink reads as doubled text.
+        _groupLabel.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        _groupLabel.AddThemeConstantOverride("shadow_offset_x", 0); _groupLabel.AddThemeConstantOverride("shadow_offset_y", 0);
         if (VerticalContent) { _groupIcon.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _groupLabel.HorizontalAlignment = HorizontalAlignment.Center; }
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
         _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));

@@ -78,6 +78,8 @@ public partial class RoyalButton : Button
     {
         Caption?.QueueFree();
         Caption = label;
+        // Dark lettering on a light plate (gold buttons) reads as doubled with a dark drop shadow.
+        if (!label.Gold && label.Ink.Luminance < .45f) label.ShadowOffset = Vector2.Zero;
         AddChild(label);
         var rect = local ?? new Rect2(Vector2.Zero, Size);
         label.Position = rect.Position; label.Size = rect.Size;

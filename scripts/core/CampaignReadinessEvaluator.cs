@@ -10,23 +10,17 @@ public sealed class CampaignReadinessReport
         int score,
         string rating,
         string summary,
-        int doctrineSelections,
-        int doctrineEligibleCount,
         IReadOnlyList<string> gaps)
     {
         Score = Mathf.Clamp(score, 0, 100);
         Rating = rating;
         Summary = summary;
-        DoctrineSelections = Math.Max(0, doctrineSelections);
-        DoctrineEligibleCount = Math.Max(0, doctrineEligibleCount);
         Gaps = gaps ?? Array.Empty<string>();
     }
 
     public int Score { get; }
     public string Rating { get; }
     public string Summary { get; }
-    public int DoctrineSelections { get; }
-    public int DoctrineEligibleCount { get; }
     public IReadOnlyList<string> Gaps { get; }
 }
 
@@ -50,8 +44,6 @@ public static class CampaignReadinessEvaluator
                 0,
                 "Unknown",
                 "No stage data available.",
-                0,
-                0,
                 Array.Empty<string>());
         }
 
@@ -72,8 +64,6 @@ public static class CampaignReadinessEvaluator
         var fastCount = resolvedUnits.Count(unit => unit.Speed >= 95f);
         var auraCount = resolvedUnits.Count(unit => unit.AuraRadius > 0.05f);
         var spellIds = new HashSet<string>(resolvedSpells.Select(spell => spell.Id), StringComparer.OrdinalIgnoreCase);
-        var doctrineEligibleCount = resolvedUnits.Count(unit => GameState.Instance.IsUnitDoctrineUnlocked(unit.Id));
-        var doctrineSelections = resolvedUnits.Count(unit => !string.IsNullOrWhiteSpace(GameState.Instance.GetUnitDoctrineId(unit.Id)));
         var synergyCount = SquadSynergyCatalog.ResolveActive(resolvedUnits).Count;
         var averageDeployCost = resolvedUnits.Length == 0
             ? 99f
@@ -118,7 +108,6 @@ public static class CampaignReadinessEvaluator
         score += Math.Min(12, resolvedUnits.Length * 4);
         score += Math.Min(6, resolvedSpells.Length * 3);
         score += Math.Min(8, synergyCount * 4);
-        score += Math.Min(10, doctrineSelections * 3);
 
         if (frontlineCount > 0)
         {
@@ -257,12 +246,6 @@ public static class CampaignReadinessEvaluator
             }
         }
 
-        if (doctrineEligibleCount > doctrineSelections)
-        {
-            gaps.Add("Forge doctrines for veteran squad cards so level 3 units stop leaving free power on the table.");
-            score -= Math.Min(8, (doctrineEligibleCount - doctrineSelections) * 2);
-        }
-
         var rating = score switch
         {
             < 45 => "Fragile",
@@ -283,8 +266,6 @@ public static class CampaignReadinessEvaluator
             score,
             rating,
             summary,
-            doctrineSelections,
-            doctrineEligibleCount,
             gaps.Take(3).ToArray());
     }
 
@@ -306,7 +287,7 @@ public static class CampaignReadinessEvaluator
         }
 
         var builder = new StringBuilder();
-        builder.AppendLine($"{BuildInlineSummary(report)} · Doctrines {report.DoctrineSelections}/{Math.Max(1, report.DoctrineEligibleCount)} forged");
+        builder.AppendLine(BuildInlineSummary(report));
         builder.AppendLine(report.Summary);
         if (report.Gaps.Count == 0)
         {

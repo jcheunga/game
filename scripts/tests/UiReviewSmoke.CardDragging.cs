@@ -162,15 +162,15 @@ public partial class UiReviewSmoke
                     Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=point,GlobalPosition=point,Device=-1});
                     Check(Read<int>("_playerDeployments")==count,mode+": emulated mouse events cannot duplicate a touch drop");
 
-                    foreach(var art in cards) ((Button)art.GetParent()).CustomMinimumSize=new Vector2(240,96);
-                    await Wait(.15); Ready();
+                    // The card bar never scrolls: cards shrink to share the dock, so every card stays on screen.
+                    Ready();
+                    var view=battle.GetViewportRect();
+                    Check(cards.All(art=>view.Grow(1).Encloses(((Control)art.GetParent()).GetGlobalRect())),mode+": every card fits on screen without scrolling");
                     source=CardPoint(0); Down(source); Move(source+new Vector2(-150,2));
-                    var scroll=Read<ScrollContainer>("_dragCardScroll");
-                    Check(Read<bool>("_cardScrolling") && !Read<bool>("_cardDragging") && scroll.ScrollHorizontal>0,
-                        mode+": horizontal swipes scroll an overflowing card bar");
+                    Check(!Read<bool>("_cardScrolling"),mode+": horizontal swipes do not scroll the card bar");
                     Up(source+new Vector2(-150,2));
-                    Check(Read<int>("_playerDeployments")==count,mode+": scrolling the card bar cannot deploy");
-                    scroll.ScrollHorizontal=0; await Wait(.1);
+                    Check(Read<int>("_playerDeployments")==count,mode+": a swipe off a card cannot deploy");
+                    await Wait(.1);
                 }
 
                 Ready();
@@ -178,14 +178,14 @@ public partial class UiReviewSmoke
                 bar?.EnsureControlVisible((Control)cards[deck.Roster.Count].GetParent()); await Wait(.1);
                 point=FieldPoint(); Down(CardPoint(deck.Roster.Count)); Move(point);
                 Check(Read<bool>("_cardDragging") && !Read<bool>("_cardScrolling"),
-                    mode+": diagonal lift out of an overflowing card bar remains a magic drag");
+                    mode+": lifting a spell out of the card bar is a magic drag");
                 if(Read<bool>("_cardPointerDown")) CancelHeldCard();
                 if(bar!=null) bar.ScrollHorizontal=0;
                 await Wait(.1);
                 Ready(); Down(CardPoint(0)); Up(CardPoint(0)); await Wait(.05);
                 unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);
                 Check(Read<int>("_playerDeployments")==count+1 && unit.Position.DistanceTo(spawn)<.01,
-                    mode+": a tapped unit deploys at the wagon even with the card bar scrolled");
+                    mode+": a tapped unit deploys at the wagon");
             }
         }
         finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }

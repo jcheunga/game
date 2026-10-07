@@ -15,9 +15,9 @@ and phone share the soldier scale and two-screen field (see
   again restores them. Field taps cannot cast spells in this view-only mode.
   Both zoom and card visibility preserve the visible focal point. Tracking
   centers the models in the uncovered field instead of behind the HUD.
-- HUD: 1.55× scale, 56-unit minimum top-row touch targets, icon-first unit and
-  spell cards with a large portrait and the courage cost in the corner, and
-  horizontal scrolling for larger decks.
+- HUD: 1.55× scale, 56-unit minimum top-row touch targets, and icon-first unit and
+  spell cards with the art whole inside the card and the courage cost in the corner.
+  Cards shrink to share the dock's width, so the row never scrolls.
 - Pause, results, and checkpoint choices fit the smaller layout; long
   result/checkpoint reports scroll.
 - Touch coordinates are transformed through the camera. A unit walks out of the

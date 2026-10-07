@@ -88,7 +88,7 @@ public partial class BattleController
     private void SetBattleCameraFollow(bool follow)
     {
         _battleCameraFollow = follow;
-        if (_battleFollowButton != null) _battleFollowButton.Visible = !follow;
+        if (_battleFollowButton != null) _battleFollowButton.Visible = !follow && !_battleEnded;
     }
 
     private void SetBattleCameraX(float x)

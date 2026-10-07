@@ -83,9 +83,8 @@ forest and oxblood pigments. Metal highlights are soft and thin, keeping the
 painted illustrations as the richest colours in the panels.
 
 Unit and spell profiles use a compact collection sidebar, a tall painted preview
-and icon stat cards. Equip and training actions stay outside the details scroller.
-Traits, doctrines, talents, colour variants and next-level values are available
-through an optional disclosure. Spell cards show effect-specific values from the
+and icon stat cards, with the role and status chip beside the name. Equip and
+training actions stay outside the details scroller. Spell cards show effect-specific values from the
 trained spell rather than the base definition. Battle preparation opens the same
 visual unit and spell inspectors without changing the loadout.
 
@@ -137,8 +136,8 @@ marker removal, saved claims, duplicate prevention, interrupted and blocked
 travel, and permanent landmark visibility at either window size.
 
 Use `--armory-details` for the focused profile review. It covers every unit and
-spell, current trained stats, native upgrades, promotion, doctrine selection,
-optional details, fixed actions and both preparation inspectors. Add
+spell, current trained stats, native upgrades, promotion, fixed actions and both
+preparation inspectors. Add
 `--small-window` for the smaller layout. Captures and typography audits are in
 `artifacts/armory-details/{desktop,small}`.
 

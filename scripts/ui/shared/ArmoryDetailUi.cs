@@ -78,18 +78,4 @@ public static class ArmoryDetailUi
         "polymorph" => "Turn the strongest enemy into a sheep.", "resurrect" => "Bring back your last fallen ally.", _ => ""
     };
 
-    public static VBoxContainer Disclosure(VBoxContainer host, string title, bool expanded, Action<bool> changed = null)
-    {
-        var content = new VBoxContainer { Name = "ExtraProfileDetails", Visible = expanded };
-        content.AddThemeConstantOverride("separation", 10);
-        var toggle = RealmUi.Button("book", title, null);
-        toggle.Name = "ProfileDisclosure";
-        toggle.ToggleMode = true; toggle.ButtonPressed = expanded;
-        toggle.CustomMinimumSize = new Vector2(0, 42);
-        toggle.AccessibilityName = title;
-        toggle.Pressed += () => { content.Visible = toggle.ButtonPressed; changed?.Invoke(content.Visible); };
-        host.AddChild(toggle); host.AddChild(content);
-        return content;
-    }
-
 }

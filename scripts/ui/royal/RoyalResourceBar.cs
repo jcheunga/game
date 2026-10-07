@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using Godot;
 
 /// <summary>
-/// The concept's resource strip: icon and amount pairs with brass dividers between them. The pieces
-/// are laid out from the real text widths, so large balances push the dividers along (and stretch the
-/// parchment) instead of running into them. Without a bar of its own (the hub, whose plate paints the
-/// strip) it only spaces the pairs and shrinks the amounts if they would overflow.
+/// The concept's resource strip: icon and amount pairs with brass dividers between them. Each amount
+/// keeps room for its widest expected value (five-figure gold, three-figure stars), so the dividers stay
+/// put as balances change; anything wider still pushes them along (and stretches the parchment). Without
+/// a bar of its own (the hub, whose plate paints the strip) it only spaces the pairs and shrinks the
+/// amounts if they would overflow.
 /// </summary>
 public partial class RoyalResourceBar : Control
 {
-    private sealed class Pair { public TextureRect Icon; public RoyalLabel Value; public RoyalButton Hotspot; public Rect2 IconRect; }
+    private sealed class Pair { public TextureRect Icon; public RoyalLabel Value; public RoyalButton Hotspot; public Rect2 IconRect; public string Room = ""; }
     private readonly List<Pair> _pairs = new();
     private readonly List<TextureRect> _dividers = new();
     private Panel _bar;
@@ -26,8 +27,9 @@ public partial class RoyalResourceBar : Control
 
     public RoyalResourceBar() { MouseFilter = MouseFilterEnum.Ignore; Position = Vector2.Zero; Size = RoyalArt.Canvas; }
 
-    /// <summary>Adds one pair; icon and value positions come from the spec ids <c>{prefix}.{key}.icon</c> / <c>.value</c>.</summary>
-    public RoyalButton Add(RoyalSpec spec, string prefix, string key, Texture2D icon, string hint, Action open)
+    /// <summary>Adds one pair; icon and value positions come from the spec ids <c>{prefix}.{key}.icon</c> / <c>.value</c>.
+    /// <paramref name="room"/> is the widest value the slot keeps space for, such as "00,000".</summary>
+    public RoyalButton Add(RoyalSpec spec, string prefix, string key, Texture2D icon, string hint, Action open, string room = "")
     {
         _spec = spec; _prefix = prefix;
         if (DrawsBar && _bar == null)
@@ -40,7 +42,7 @@ public partial class RoyalResourceBar : Control
         var iconRect = spec.Rect($"{prefix}.{key}.icon");
         var pair = new Pair
         {
-            IconRect = iconRect,
+            IconRect = iconRect, Room = room,
             Icon = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 Texture = icon, Size = iconRect.Size, MouseFilter = MouseFilterEnum.Ignore },
             Value = spec.Label($"{prefix}.{key}.value", "", 200, Ink),
@@ -67,15 +69,16 @@ public partial class RoyalResourceBar : Control
     private void Layout()
     {
         if (_pairs.Count == 0) return;
-        // Spacing measured on the concept: icon to amount 12, amount to divider 10, divider to icon 12.
-        const float IconGap = 12, BeforeDivider = 10, DividerWidth = 10, AfterDivider = 12, EndPadding = 22;
+        // Amounts sit close to their icons; dividers keep the concept's spacing.
+        const float IconGap = 6, BeforeDivider = 10, DividerWidth = 10, AfterDivider = 12, EndPadding = 22;
         var size = _pairs[0].Value.FontSize;
+        float Slot(Pair pair, int at) => Mathf.Max(pair.Value.TextWidth(at), pair.Value.TextWidth(pair.Room, at));
         float Measure()
         {
             var width = 0f;
             for (var i = 0; i < _pairs.Count; i++)
             {
-                width += _pairs[i].IconRect.Size.X + IconGap + _pairs[i].Value.TextWidth(size);
+                width += _pairs[i].IconRect.Size.X + IconGap + Slot(_pairs[i], size);
                 if (i < _pairs.Count - 1) width += DrawsBar ? BeforeDivider + DividerWidth + AfterDivider : 26;
             }
             return width;
@@ -92,7 +95,7 @@ public partial class RoyalResourceBar : Control
             pair.Icon.Position = new Vector2(x, pair.IconRect.Position.Y);
             var left = x;
             x += pair.IconRect.Size.X + IconGap;
-            var width = pair.Value.TextWidth(size);
+            var width = Slot(pair, size);
             pair.Value.Position = new Vector2(x, pair.Value.Position.Y);
             pair.Value.Size = new Vector2(width + 4, pair.Value.Size.Y);
             x += width;

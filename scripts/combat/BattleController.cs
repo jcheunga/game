@@ -2224,10 +2224,8 @@ public partial class BattleController : Node2D
 		BattleParticles.SpawnDeployBurst(this, WagonDoorExit, stats.Color);
 
 		var ghostDeployFeedback = BuildChallengeGhostDeployFeedback(definition);
-		var doctrine = GameState.Instance.GetUnitDoctrineDefinition(definition.Id);
-		var doctrineSuffix = doctrine == null ? "" : $" [{doctrine.Title}]";
 		SetStatus(
-			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name}{doctrineSuffix} from the war wagon.{commendationFeedback}{ghostDeployFeedback}");
+			$"Deployed Lv{GameState.Instance.GetUnitLevel(definition.Id)} {stats.Name} from the war wagon.{commendationFeedback}{ghostDeployFeedback}");
 		UpdateHud();
 	}
 

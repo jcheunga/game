@@ -45,9 +45,9 @@ public partial class MapMenu
     {
         _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 391, 62), MaxWidth = 412 };
         _hud.AddChild(_resources);
-        _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop());
-        _foodHint = _resources.Add(spec, "res", "food", HomeMapArt.Icon("food"), "Refill food", () => SceneRouter.Instance.GoToCashShop());
-        _resources.Add(spec, "res", "stars", HomeMapArt.Icon("star"), "Player profile", () => SceneRouter.Instance.GoToProfile());
+        _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop(), "00,000");
+        _foodHint = _resources.Add(spec, "res", "food", HomeMapArt.Icon("food"), "Refill food", () => SceneRouter.Instance.GoToCashShop(), "00 / 00");
+        _resources.Add(spec, "res", "stars", HomeMapArt.Icon("star"), "Player profile", () => SceneRouter.Instance.GoToProfile(), "000");
     }
 
     private Button _foodHint;
@@ -63,6 +63,8 @@ public partial class MapMenu
         // The lion banners either side of the plaque page between zones.
         _previousZone = RoyalButton.Over(spec.Rect("zone.banner.left.cloth"), "Previous zone", () => ChangeZone(-1), 4);
         _nextZone = RoyalButton.Over(spec.Rect("zone.banner.right.cloth"), "Next zone", () => ChangeZone(1), 4);
+        // The banners are painted art: an unavailable direction keeps its look rather than darkening.
+        foreach (var banner in new[] { _previousZone, _nextZone }.OfType<RoyalButton>()) banner.SetStates(null, 4, null, new StyleBoxEmpty());
         _hud.AddChild(_previousZone); _hud.AddChild(_nextZone);
         var zoneInfo = RoyalButton.Over(spec.Rect("zone.plaque"), "Zone progress", null, 8);
         zoneInfo.FocusMode = FocusModeEnum.None;

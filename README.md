@@ -142,7 +142,6 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Equip up to six unit cards and five spell cards; one unit is enough to deploy
   - Each unit has a squad role (`Frontline`, `Recon`, `Support`, `Breach`); two cards of one role activate
     `Frontline Drill`, `Recon Link`, `Support Mesh` or `Breach Line`
-  - Owned units unlock doctrine branches at level 3, which can be forged or retrained
   - War wagon: upgrade plating, stores, march drum and rune beacon. The wagon starts with an archer crew;
     upgrade its damage and range, install a mounted ballista and firepot launcher, learn Arrow Volley and
     Emergency Repairs, or fit Reinforced Axles. Installed mounts fire automatically

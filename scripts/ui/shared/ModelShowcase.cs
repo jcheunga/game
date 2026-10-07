@@ -70,14 +70,10 @@ public partial class ModelShowcase : CanvasLayer
         var stats=unit.IsPlayerSide?GameState.Instance.BuildPlayerUnitStats(unit):new UnitStats(unit);
         RealmUi.Clear(_details);
         _details.AddChild(RealmUi.Label(SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag),18,true));
-        _details.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit),2));
-        var extra=ArmoryDetailUi.Disclosure(_details,"More stats",false);
-        extra.AddChild(ArmoryDetailUi.Stats(new[] {
-            new ArmoryDetailUi.Stat("arrow","Move speed",$"{stats.Speed:0.#}"),
-            new ArmoryDetailUi.Stat("clock","Attack interval",$"{stats.AttackCooldown:0.##}s")
-        },2));
+        _details.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.UnitStats(unit).Append(new ArmoryDetailUi.Stat("arrow","Move speed",$"{stats.Speed:0.#}"))
+            .Append(new ArmoryDetailUi.Stat("clock","Attack interval",$"{stats.AttackCooldown:0.##}s")),2));
         var traits=UnitStatText.BuildInlineTraits(stats).Trim(' ','·');
-        if(traits.Length>0) extra.AddChild(RealmUi.Label(traits,18));
+        if(traits.Length>0) _details.AddChild(RealmUi.Label(traits,18));
         RealmModal.Polish(_details);
         Play(UnitAnimState.Idle);
     }

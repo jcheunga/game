@@ -113,7 +113,6 @@ public sealed class GameSaveData
     public int TotalChallengeSubmissionsSynced { get; set; }
     public string[] PinnedChallengeCodes { get; set; } = [];
     public string[] ClaimedDistrictRewardIds { get; set; } = [];
-    public Dictionary<string, string> UnitDoctrineIds { get; set; } = new();
     public List<EndlessRunRecord> EndlessRunHistory { get; set; } = [];
     public string[] OwnedEquipmentIds { get; set; } = [];
     public Dictionary<string, string> UnitEquipmentSlots { get; set; } = new();

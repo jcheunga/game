@@ -31,8 +31,7 @@ public partial class SpellShowcase : CanvasLayer
         details.AddChild(RealmUi.Label($"Level {resolved.Level} · {ArmoryDetailUi.SpellRole(_spell.EffectType)}", 18, true));
         details.AddChild(RealmUi.Label(ArmoryDetailUi.SpellPurpose(_spell.EffectType), 18));
         details.AddChild(ArmoryDetailUi.Stats(ArmoryDetailUi.SpellStats(resolved), 2));
-        var extra = ArmoryDetailUi.Disclosure(details, "Full description", false);
-        extra.AddChild(RealmUi.Label(_spell.Description, 18));
+        details.AddChild(RealmUi.Label(_spell.Description, 18));
         RealmModal.Polish(details);
     }
 }

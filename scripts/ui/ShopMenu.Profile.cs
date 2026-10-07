@@ -29,11 +29,12 @@ public partial class ShopMenu
         }
     }
 
-    private void BuildChip(RoyalSpec spec, string role, string status, Action open)
+    /// <summary>The role and status chip beside the name.</summary>
+    private void BuildChip(RoyalSpec spec, string role, string status)
     {
         var rect = spec.Rect("detail.chip");
-        var chip = RoyalButton.Over(rect, "Traits & training", open, 14);
-        chip.SetStates(RoyalKit.Slice("chip", 16, 6, 16, 6), 14);
+        var chip = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore, AccessibilityName = $"{role} · {status}" };
+        chip.AddThemeStyleboxOverride("panel", RoyalKit.Slice("chip", 16, 6, 16, 6));
         _body.AddChild(chip);
         chip.AddChild(RoyalKit.Image("chip-support", new Rect2(-1, -1, 34, 36)));
         var first = spec.Label("detail.chip.label", role, 100);
@@ -44,8 +45,6 @@ public partial class ShopMenu
         dot.Position = new Vector2(gap + 8, first.Position.Y); dot.Size = new Vector2(10, first.Size.Y); dot.Baseline = first.Baseline;
         chip.AddChild(dot);
         second.Position = new Vector2(gap + 22, second.Position.Y);
-        chip.Text = $"{role} · {status}";
-        chip.CustomMinimumSize = Vector2.Zero;
         chip.Size = new Vector2(Mathf.Max(rect.Size.X, second.Position.X + second.TextWidth(second.FontSize) + 18), rect.Size.Y);
     }
 
@@ -129,7 +128,7 @@ public partial class ShopMenu
         var pips = spec.Rect("detail.pips");
         _body.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(level, UnitPips), UnitPips, pips.Size.X / UnitPips + .5f, pips.Size.Y));
         var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
-        BuildChip(spec, role, entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Recruit" : "Locked", () => ShowUnitTraits(unit));
+        BuildChip(spec, role, entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Recruit" : "Locked");
         var stats = ArmoryDetailUi.UnitStats(unit);
         // The concept profile: health, damage, courage, range and recovery.
         BuildStats(spec, new[] { stats[0], stats[1], stats[3], stats[4], stats[5] });
@@ -180,7 +179,7 @@ public partial class ShopMenu
         _body.AddChild(spec.Label("detail.level", entry.Owned ? $"Lv {level}" : entry.Available ? "Scribe" : $"Stage {spell.UnlockStage}", 120));
         var pips = spec.Rect("detail.pips");
         _body.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(level, state.MaxSpellLevel), state.MaxSpellLevel, pips.Size.X / 4 + .5f, pips.Size.Y));
-        BuildChip(spec, ArmoryDetailUi.SpellRole(spell.EffectType), entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Scribe" : "Locked", () => ShowSpellTraits(spell));
+        BuildChip(spec, ArmoryDetailUi.SpellRole(spell.EffectType), entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Scribe" : "Locked");
         if (spec.Has("detail.desc"))
             _body.AddChild(spec.Label("detail.desc", ArmoryDetailUi.SpellPurpose(spell.EffectType), 470));
         BuildStats(spec, ArmoryDetailUi.SpellStats(resolved).Take(4).ToArray());

@@ -196,7 +196,6 @@ public partial class GameState : Node
 
 	// Skill Trees
 	public int Tomes { get; private set; }
-	private readonly Dictionary<string, HashSet<string>> _unlockedSkillNodes = new(StringComparer.OrdinalIgnoreCase);
 
 	// PvP Arena
 	public int ArenaRating { get; private set; } = 1000;
@@ -1766,7 +1765,6 @@ public partial class GameState : Node
 		var keepShards = RelicShards;
 		var keepSigils = Sigils;
 		var keepTomes = Tomes;
-		var keepSkillNodes = _unlockedSkillNodes.ToDictionary(p => p.Key, p => new HashSet<string>(p.Value, StringComparer.OrdinalIgnoreCase));
 		var keepArenaRating = ArenaRating;
 		var keepArenaWins = ArenaWins;
 		var keepArenaLosses = ArenaLosses;
@@ -1834,8 +1832,6 @@ public partial class GameState : Node
 		RelicShards = keepShards;
 		Sigils = keepSigils;
 		Tomes = keepTomes;
-		_unlockedSkillNodes.Clear();
-		foreach (var (k, v) in keepSkillNodes) _unlockedSkillNodes[k] = v;
 		ArenaRating = keepArenaRating;
 		ArenaWins = keepArenaWins;
 		ArenaLosses = keepArenaLosses;
@@ -2688,13 +2684,6 @@ public partial class GameState : Node
 			}
 		}
 
-		// Skill tree bonuses
-		var skillBonus = ResolveSkillTreeBonus(definition.Id);
-		healthScale *= skillBonus.HealthScale;
-		damageScale *= skillBonus.DamageScale;
-		speedScale *= skillBonus.SpeedScale;
-		cooldownReduction += skillBonus.CooldownReduction;
-
 		// Guild perk bonuses
 		var guildBonus = ResolveGuildBonus();
 		healthScale *= guildBonus.HealthScale;
@@ -3482,85 +3471,6 @@ public partial class GameState : Node
 			Tomes += amount;
 			Persist();
 		}
-	}
-
-	public IReadOnlyCollection<string> GetUnlockedSkillNodes(string unitId)
-	{
-		return _unlockedSkillNodes.TryGetValue(unitId, out var set) ? set : Array.Empty<string>();
-	}
-
-	public bool IsSkillNodeUnlocked(string unitId, string nodeId)
-	{
-		return _unlockedSkillNodes.TryGetValue(unitId, out var set) && set.Contains(nodeId);
-	}
-
-	public SkillTreeBonus ResolveSkillTreeBonus(string unitId)
-	{
-		if (!_unlockedSkillNodes.TryGetValue(unitId, out var set) || set.Count == 0)
-		{
-			return SkillTreeBonus.None;
-		}
-
-		return UnitSkillTreeCatalog.Resolve(unitId, set);
-	}
-
-	public bool TryUnlockSkillNode(string unitId, string nodeId, out string message)
-	{
-		message = "";
-		var node = UnitSkillTreeCatalog.GetNode(unitId, nodeId);
-		if (node == null)
-		{
-			message = "Unknown talent node.";
-			return false;
-		}
-
-		if (IsSkillNodeUnlocked(unitId, nodeId))
-		{
-			message = "Already unlocked.";
-			return false;
-		}
-
-		if (!string.IsNullOrWhiteSpace(node.PrerequisiteNodeId) &&
-			!IsSkillNodeUnlocked(unitId, node.PrerequisiteNodeId))
-		{
-			message = "Prerequisite not met.";
-			return false;
-		}
-
-		if (Gold < node.GoldCost)
-		{
-			message = $"Need {node.GoldCost} gold (have {Gold}).";
-			return false;
-		}
-
-		if (Tomes < node.TomeCost)
-		{
-			message = $"Need {node.TomeCost} tomes (have {Tomes}).";
-			return false;
-		}
-
-		Gold -= node.GoldCost;
-		Tomes -= node.TomeCost;
-
-		if (!_unlockedSkillNodes.ContainsKey(unitId))
-		{
-			_unlockedSkillNodes[unitId] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		}
-
-		_unlockedSkillNodes[unitId].Add(nodeId);
-		TryUnlockAchievement("first_talent");
-
-		// Check if full tree is complete
-		var tree = UnitSkillTreeCatalog.GetTree(unitId);
-		if (tree != null && _unlockedSkillNodes[unitId].Count >= tree.Nodes.Length)
-		{
-			TryUnlockAchievement("talent_master");
-		}
-
-		Persist();
-		CheckAchievements();
-		message = $"Unlocked {node.Title}!";
-		return true;
 	}
 
 	// ── PvP Arena ────────────────────────────────────────────
@@ -4879,7 +4789,6 @@ public partial class GameState : Node
 		_codexKillCounts.Clear();
 		_codexFirstSeenAt.Clear();
 		Tomes = 0;
-		_unlockedSkillNodes.Clear();
 		ArenaRating = 1000;
 		ArenaWins = 0;
 		ArenaLosses = 0;
@@ -5425,23 +5334,6 @@ public partial class GameState : Node
 
 			Tomes = Math.Max(0, saved.Tomes);
 
-			_unlockedSkillNodes.Clear();
-			if (saved.UnlockedSkillNodeIds != null)
-			{
-				foreach (var pair in saved.UnlockedSkillNodeIds)
-				{
-					if (!string.IsNullOrWhiteSpace(pair.Key) && pair.Value != null)
-					{
-						var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-						foreach (var nodeId in pair.Value)
-						{
-							if (!string.IsNullOrWhiteSpace(nodeId)) set.Add(nodeId.Trim());
-						}
-						if (set.Count > 0) _unlockedSkillNodes[pair.Key.Trim()] = set;
-					}
-				}
-			}
-
 			ArenaRating = Math.Max(0, saved.ArenaRating);
 			ArenaWins = Math.Max(0, saved.ArenaWins);
 			ArenaLosses = Math.Max(0, saved.ArenaLosses);
@@ -5783,9 +5675,6 @@ public partial class GameState : Node
 			CodexKillCounts = new Dictionary<string, int>(_codexKillCounts),
 			CodexFirstSeenAt = new Dictionary<string, long>(_codexFirstSeenAt),
 			Tomes = Tomes,
-			UnlockedSkillNodeIds = _unlockedSkillNodes.ToDictionary(
-				p => p.Key,
-				p => p.Value.ToArray()),
 			ArenaRating = ArenaRating,
 			ArenaWins = ArenaWins,
 			ArenaLosses = ArenaLosses,

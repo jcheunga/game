@@ -43,7 +43,6 @@ public static class LiveUiReview
             case SceneRouter.ExpeditionScene: router.GoToExpeditions(); break;
             case SceneRouter.EventScene: router.GoToEvent(); break;
             case SceneRouter.CodexScene: router.GoToCodex(); break;
-            case SceneRouter.SkillTreeScene: router.GoToSkillTree(); break;
             case SceneRouter.ArenaScene: router.GoToArena(); break;
             case SceneRouter.GuildScene: router.GoToGuild(); break;
             case SceneRouter.ProfileScene: router.GoToProfile(); break;

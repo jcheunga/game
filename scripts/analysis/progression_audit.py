@@ -177,7 +177,7 @@ def main():
     source_paths = ["data/stages.json", "data/units.json", "data/spells.json", "data/equipment.json", "data/shop_products.json",
                     "scripts/core/GameState.cs", "scripts/core/GameState.Adventure.cs", "scripts/core/GameState.Progression.cs",
                     "scripts/core/AdventureMapCatalog.cs", "scripts/core/BaseUpgradeDefinition.cs",
-                    "scripts/core/RelicForgeCatalog.cs", "scripts/core/UnitPromotionCatalog.cs", "scripts/core/UnitSkillTreeCatalog.cs",
+                    "scripts/core/RelicForgeCatalog.cs", "scripts/core/UnitPromotionCatalog.cs",
                     "scripts/combat/Unit.cs", "scripts/combat/BattleController.cs",
                     "scripts/tests/CombatReviewSmoke.cs", "scripts/tests/CombatReviewSmoke.Progression.cs"]
     audit = {"date": "2026-09-11", "status": "Analysis and candidate design; candidate prices/rewards are not applied",

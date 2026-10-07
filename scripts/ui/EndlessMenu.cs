@@ -156,8 +156,6 @@ public partial class EndlessMenu : RoyalScreen
             var level = spec.Label("unit.1.level", $"Lv {state.GetUnitLevel(unit.Id)}", 60);
             level.Position += rect.Position - origin;
             _layer.AddChild(level);
-            var pips = Part(".pips");
-            _layer.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(state.GetUnitLevel(unit.Id), 4), 4, pips.Size.X / 4f, pips.Size.Y));
             var hotspot = RoyalButton.Over(rect, unit.DisplayName, () => ModelShowcase.Show(this, GameState.Instance.GetActiveDeckUnits().ToArray(), unit.Id), 6);
             hotspot.TooltipText = $"{unit.DisplayName} · Level {state.GetUnitLevel(unit.Id)} · {unit.Cost} courage";
             _layer.AddChild(hotspot);

@@ -10,7 +10,6 @@ public partial class ShopMenu
     private int _filter;
     private float _gridScroll;
     private static readonly string[] Filters = { "All", "Owned", "Equipped" };
-    private const int UnitPips = 4;
 
     private readonly record struct Entry(string Id, string Name, bool Owned, bool Available, bool Equipped, int Level);
 
@@ -84,7 +83,6 @@ public partial class ShopMenu
     {
         var ids = (spells ? _state.ActiveDeckSpellIds : _state.ActiveDeckUnitIds).ToList();
         var limit = spells ? _state.SpellDeckSizeLimit : _state.DeckSizeLimit;
-        var pips = spells ? _state.MaxSpellLevel : UnitPips;
         var emptySample = Enumerable.Range(1, 6).Select(i => $"slot.{i}").FirstOrDefault(key => spec.Has(key + ".plus")) ?? "slot.6";
         for (var slot = 1; spec.Has($"slot.{slot}"); slot++)
         {
@@ -125,9 +123,12 @@ public partial class ShopMenu
             var level = spec.Label("slot.1.level", $"Lv {entry.Level}", 70);
             level.Position += rect.Position - spec.Rect("slot.1").Position;
             _body.AddChild(level);
-            var pipRect = Relative(spec, ".pips", "slot.1", rect, new Rect2(rect.Size.X - 80, 75, 70, 15));
-            var pitch = pipRect.Size.X / 4f;
-            _body.AddChild(RoyalKit.Pips(pipRect.Position, Mathf.Min(entry.Level, pips), pips, pitch, pipRect.Size.Y));
+            // Spells show their level pips; units only their level number, since unit levels will keep growing.
+            if (spells)
+            {
+                var pipRect = Relative(spec, ".pips", "slot.1", rect, new Rect2(rect.Size.X - 80, 75, 70, 15));
+                _body.AddChild(RoyalKit.Pips(pipRect.Position, Mathf.Min(entry.Level, _state.MaxSpellLevel), _state.MaxSpellLevel, pipRect.Size.X / 4f, pipRect.Size.Y));
+            }
             var id = entry.Id;
             var hotspot = RoyalButton.Over(rect, entry.Name, () => { _selectedId = id; Refresh(); }, 6);
             hotspot.TooltipText = $"{entry.Name} · equipped";

@@ -32,7 +32,7 @@ public partial class AchievementsPanel : RoyalScreen
         if (id.Contains("endless") || id.Contains("tower") || id.Contains("streak") || id.Contains("daily")) return "survivor";
         if (id.Contains("boss") || id.Contains("raid") || id.Contains("hard_mode") || id.Contains("arena")) return "bossslayer";
         if (id.Contains("no_damage") || id.Contains("combo") || id.Contains("speed")) return "untouchable";
-        if (id.Contains("spell") || id.Contains("codex") || id.Contains("talent") || id.Contains("enchant") || id.Contains("forge") || id.Contains("mastery") || id.Contains("master")) return "arcanescholar";
+        if (id.Contains("spell") || id.Contains("codex") || id.Contains("enchant") || id.Contains("forge") || id.Contains("mastery") || id.Contains("master")) return "arcanescholar";
         if (entry.Category.Equals("campaign", StringComparison.OrdinalIgnoreCase) || id.Contains("district") || id.Contains("expedition") || id.Contains("guild")) return "districtmarshal";
         if (entry.Category.Equals("collection", StringComparison.OrdinalIgnoreCase)) return "arcanescholar";
         return "firstblood";

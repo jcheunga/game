@@ -60,8 +60,6 @@ public static class AchievementRewardCatalog
 		new("event_complete", "essence", 8, "+8 essence"),
 
 		// Social/Competitive
-		new("first_talent", "gold", 150, "+150 gold"),
-		new("talent_master", "tomes", 6, "+6 tomes"),
 		new("arena_first_win", "gold", 200, "+200 gold"),
 		new("arena_10_wins", "essence", 6, "+6 essence"),
 		new("arena_gold_tier", "sigils", 5, "+5 sigils"),

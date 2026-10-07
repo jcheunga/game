@@ -59,8 +59,6 @@ public static class AchievementCatalog
         // Social, Competitive, and Knowledge (8)
         new("codex_10", "Lore Seeker", "Discover 10 codex entries.", "collection"),
         new("codex_complete", "Archivist", "Discover all codex entries.", "collection"),
-        new("first_talent", "Scholar", "Unlock your first skill tree node.", "mastery"),
-        new("talent_master", "Talent Master", "Max out a unit's skill tree.", "mastery"),
         new("arena_first_win", "Challenger", "Win your first arena battle.", "combat"),
         new("arena_10_wins", "Arena Champion", "Win 10 arena battles.", "combat"),
         new("arena_gold_tier", "Gold Rank", "Reach Gold tier in the arena.", "mastery"),

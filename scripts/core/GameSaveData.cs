@@ -164,7 +164,6 @@ public sealed class GameSaveData
 
     // v33: Skill Trees
     public int Tomes { get; set; }
-    public Dictionary<string, string[]> UnlockedSkillNodeIds { get; set; } = new();
 
     // v33: PvP Arena
     public int ArenaRating { get; set; } = 1000;

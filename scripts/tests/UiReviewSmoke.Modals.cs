@@ -61,7 +61,7 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = outside, GlobalPosition = outside });
         Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = outside, GlobalPosition = outside }); await Wait(.2);
         Check(!menu.HasHomeModal && state.Food == outsideFood && state.AdventureKnowledgeRevision == outsideKnowledge && canvas.MapOffset == camera, "Clicking the backdrop dismisses without moving the caravan");
-        foreach (var path in new[] { SceneRouter.BountyScene, SceneRouter.ExpeditionScene, SceneRouter.ForgeScene, SceneRouter.CashShopScene, SceneRouter.LoginCalendarScene, SceneRouter.SeasonPassScene, SceneRouter.MultiplayerScene, SceneRouter.LanRaceScene, SceneRouter.ArenaScene, SceneRouter.GuildScene, SceneRouter.FriendsScene, SceneRouter.LeaderboardScene, SceneRouter.ProfileScene, SceneRouter.SkillTreeScene, SceneRouter.RaidScene, SceneRouter.EventScene, SceneRouter.LoadoutScene })
+        foreach (var path in new[] { SceneRouter.BountyScene, SceneRouter.ExpeditionScene, SceneRouter.ForgeScene, SceneRouter.CashShopScene, SceneRouter.LoginCalendarScene, SceneRouter.SeasonPassScene, SceneRouter.MultiplayerScene, SceneRouter.LanRaceScene, SceneRouter.ArenaScene, SceneRouter.GuildScene, SceneRouter.FriendsScene, SceneRouter.LeaderboardScene, SceneRouter.ProfileScene, SceneRouter.RaidScene, SceneRouter.EventScene, SceneRouter.LoadoutScene })
         {
             menu.OpenHomeDestination(path); await Wait(.35);
             var name = System.IO.Path.GetFileNameWithoutExtension(path);

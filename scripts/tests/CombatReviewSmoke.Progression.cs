@@ -119,10 +119,9 @@ public partial class CombatReviewSmoke
             var before = state.BuildPlayerUnitStats(GameData.GetUnit(id));
             Check(state.TryPromoteUnit(id, out _) && state.BuildPlayerUnitStats(GameData.GetUnit(id)).MaxHealth > before.MaxHealth,
                 $"{id} has a working promotion with a real combat benefit");
-            Check(state.TryUnlockSkillNode(id, id + "_t1", out _), $"{id} can develop its new skill tree");
         }
-        Check(state.Gold == 12100 && state.Sigils == 14 && state.Tomes == 7,
-            "Late-unit promotions and skill nodes charge the published gold, sigil and tome costs");
+        Check(state.Gold == 12700 && state.Sigils == 14 && state.Tomes == 10,
+            "Late-unit promotions charge the published gold and sigil costs");
     }
 
     private void ApplyProgressionRelics(int stage)

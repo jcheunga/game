@@ -125,8 +125,6 @@ public partial class ShopMenu
             _body.AddChild(number);
         }
         else _body.AddChild(spec.Label("detail.level", entry.Owned ? $"LEVEL {level}" : entry.Available ? "RECRUIT" : $"STAGE {unit.UnlockStage}", 120));
-        var pips = spec.Rect("detail.pips");
-        _body.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(level, UnitPips), UnitPips, pips.Size.X / UnitPips + .5f, pips.Size.Y));
         var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
         BuildChip(spec, role, entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Recruit" : "Locked");
         var stats = ArmoryDetailUi.UnitStats(unit);

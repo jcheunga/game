@@ -214,13 +214,6 @@ public partial class ProfileMenu : Control
 		var codexPct = codexTotal > 0 ? (int)(codexDiscovered * 100f / codexTotal) : 0;
 		AddStatRow(_collectionStack, "Entries discovered", $"{codexDiscovered}/{codexTotal} · {codexPct}%");
 
-		_collectionStack.AddChild(MakeSubheading("Talents"));
-
-		var totalNodes = 0;
-		foreach (var unit in gs.GetOwnedPlayerUnits())
-			totalNodes += gs.GetUnlockedSkillNodes(unit.Id).Count;
-		AddStatRow(_collectionStack, "Talents unlocked", totalNodes.ToString());
-
 		_collectionStack.AddChild(MakeSubheading("Guild"));
 
 		if (!string.IsNullOrWhiteSpace(gs.GuildId) && gs.CachedGuildInfo != null)

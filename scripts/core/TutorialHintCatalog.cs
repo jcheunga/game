@@ -127,13 +127,6 @@ public static class TutorialHintCatalog
 		},
 		new()
 		{
-			Id = "skill_tree_hint",
-			Title = "Skill Trees",
-			Body = "Each unit has a talent tree with 5 nodes. Unlock nodes with gold and tomes to gain permanent stat bonuses.",
-			TriggerContext = "first_skill_tree"
-		},
-		new()
-		{
 			Id = "arena_hint",
 			Title = "PvP Arena",
 			Body = "Challenge other players' squads in asynchronous PvP. Win to climb the ranks from Bronze to Diamond.",

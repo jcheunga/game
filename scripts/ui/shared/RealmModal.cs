@@ -178,7 +178,7 @@ public partial class RealmModal : Control
         bool Has(params string[] words) => words.Any(title.Contains);
         if (Has("setting")) return "gear";
         if (Has("spell", "endless")) return "flame";
-        if (Has("upgrade", "wagon", "forge", "talent")) return "hammer";
+        if (Has("upgrade", "wagon", "forge")) return "hammer";
         if (Has("codex")) return "book";
         if (Has("storehouse")) return "gold";
         if (Has("achievement", "gift", "season", "ranking", "profile", "event")) return "star";

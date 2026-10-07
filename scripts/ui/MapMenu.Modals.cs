@@ -48,7 +48,7 @@ public partial class MapMenu
             SceneRouter.EventScene => "Seasonal event", SceneRouter.ExpeditionScene => "Expeditions", SceneRouter.CashShopScene => "Royal storehouse",
             SceneRouter.LoginCalendarScene => "Daily gifts", SceneRouter.LanRaceScene => "LAN race", SceneRouter.ArenaScene => "Arena",
             SceneRouter.GuildScene => "Warband guild", SceneRouter.FriendsScene => "Friends", SceneRouter.LeaderboardScene => "Rankings",
-            SceneRouter.ProfileScene => "Player profile", SceneRouter.SkillTreeScene => "Warband talents", _ => "Crownroad" };
+            SceneRouter.ProfileScene => "Player profile", _ => "Crownroad" };
         _modal.Present(path, title, "", _modalHistory.Count > 1, 1232);
         // The home controls would peek out around the frame's corners (the settings ring above its close button).
         _hud.Visible = false;

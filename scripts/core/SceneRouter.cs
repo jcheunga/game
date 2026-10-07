@@ -15,7 +15,6 @@ public partial class SceneRouter : Node
     public const string ExpeditionScene = "res://scenes/ExpeditionMenu.tscn";
     public const string EventScene = "res://scenes/EventMenu.tscn";
     public const string CodexScene = "res://scenes/CodexMenu.tscn";
-    public const string SkillTreeScene = "res://scenes/SkillTreeMenu.tscn";
     public const string ArenaScene = "res://scenes/ArenaMenu.tscn";
     public const string GuildScene = "res://scenes/GuildMenu.tscn";
     public const string ProfileScene = "res://scenes/ProfileMenu.tscn";
@@ -44,7 +43,7 @@ public partial class SceneRouter : Node
 
     private static bool IsHomeActivity(string path) => path is ShopScene or MultiplayerScene or LanRaceScene
         or EndlessScene or LoadoutScene or SettingsScene or CashShopScene or ForgeScene or ExpeditionScene
-        or EventScene or CodexScene or SkillTreeScene or ArenaScene or GuildScene or ProfileScene or RaidScene
+        or EventScene or CodexScene or ArenaScene or GuildScene or ProfileScene or RaidScene
         or BountyScene or TowerScene or FriendsScene or LoginCalendarScene or LeaderboardScene or SeasonPassScene;
 
     public override void _EnterTree()
@@ -153,11 +152,6 @@ public partial class SceneRouter : Node
     public void GoToCodex()
     {
         ChangeScene(CodexScene);
-    }
-
-    public void GoToSkillTree()
-    {
-        ChangeScene(SkillTreeScene);
     }
 
     public void GoToArena()
@@ -310,7 +304,6 @@ public partial class SceneRouter : Node
             ExpeditionScene => "Expeditions",
             EventScene => "Seasonal Event",
             CodexScene => "Codex",
-            SkillTreeScene => "Skill Trees",
             ArenaScene => "PvP Arena",
             GuildScene => "Warband",
             ProfileScene => "Player Profile",

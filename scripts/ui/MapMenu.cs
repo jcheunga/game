@@ -91,7 +91,7 @@ public partial class MapMenu : Control
         _portrait.Texture = HomeMapArt.Icon(_selectedDiscovery.Icon);
         _siteEyebrow.Text = "Resource tile";
         RealmUi.SetDisplayText(_siteName, _selectedDiscovery.Title);
-        _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : "Open tile · ready to gather";
+        _siteStatus.Text = state.HasClaimedAdventureDiscovery(tile.Id) ? "Collected" : $"Open tile · costs {GameState.AdventureTileFoodCost} food to gather";
         ShowDiscoveryRewards();
         _description.Text = reason; _description.Visible = !canTravel;
         _action.Text = _mapCanvas.IsTravelling ? "Collecting…" : "Collect";
@@ -123,7 +123,7 @@ public partial class MapMenu : Control
         _portrait.Texture = !known ? RealmUi.Icon("lock") : leader ? AdventureMapArt.Leader(_selected.Portrait) : AdventureMapArt.Miniature(_selected.Kind);
         _siteEyebrow.Text = !known ? "Uncharted" : leader ? $"{(boss ? "Boss" : "Rival")} · Stage {_selected.Stage}" : "Landmark";
         RealmUi.SetDisplayText(_siteName, known ? _selected.Title : "Beyond the mist");
-        _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : "Open tile · ready to visit";
+        _siteStatus.Text = !known ? "Complete a nearby site to open this tile" : bossLocked ? $"Boss gate · {BossGateLeaders - state.GetAdventureBossRemainingLeaders(_selected.Stage)}/{BossGateLeaders} leaders defeated" : leader ? $"{stage.StageName} · {state.GetStageStars(_selected.Stage)}/3 stars" : visited ? "Visited · rewards collected" : GameState.IsAdventureResourceTile(tile) ? $"Open tile · costs {GameState.AdventureTileFoodCost} food to gather" : "Open tile · ready to visit";
         _description.Text = ""; _description.Visible = false;
         ShowSiteRewards(known, leader, stage);
         _action.Text = _mapCanvas.IsTravelling ? "Travelling…" : !known ? "Tile unopened" : bossLocked ? "Boss gate sealed" : leader ? "Prepare battle" : "Collect";

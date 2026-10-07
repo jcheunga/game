@@ -12,14 +12,34 @@ public sealed record AdventureDiscovery(string Id, string MapId, int Cell, Adven
     public string RewardText => Kind == AdventureDiscoveryKind.Survey ? "Nearby terrain revealed" : $"+{Amount} {Kind.ToString().ToLowerInvariant()}";
 }
 
-/// <summary>Deterministic, sparse discoveries. IDs remain claim keys across reloads.</summary>
+/// <summary>The resource finds placed on a zone's atlas tiles. IDs remain claim keys across reloads.</summary>
 public static class AdventureDiscoveryCatalog
 {
-    private static readonly Dictionary<string,IReadOnlyList<AdventureDiscovery>> Cache = new();
+    private static readonly Dictionary<string,IReadOnlyList<AdventureDiscovery>> Cache = new(), LegacyCache = new();
     public static IReadOnlyList<AdventureDiscovery> ForMap(string map)
     {
         map = RouteCatalog.Normalize(map);
         if (Cache.TryGetValue(map,out var found)) return found;
+        // Nearest the first stage first, as the finds were originally laid out.
+        var order = Legacy(map).Select((find, i) => (find.Id, i)).ToDictionary(pair => pair.Id, pair => pair.i);
+        return Cache[map] = AdventureTileCatalog.ForMap(map).Where(tile => tile.Discovery != null).Select(tile => tile.Discovery)
+            .OrderBy(find => order[find.Id]).ToArray();
+    }
+    /// <summary>A find on one of the zone's few resource tiles, keeping the ID of the former find on that tile.</summary>
+    public static AdventureDiscovery Placed(AdventureDiscovery former, AdventureDiscoveryKind kind)
+    {
+        var hash = AdventureTerrain.Hash(AdventureTerrain.Seed(former.MapId),former.Cell + 9000);
+        var index = Math.Max(0,Array.IndexOf(AssetCoverageCatalog.RouteIds,former.MapId));
+        var amount = kind switch { AdventureDiscoveryKind.Food => 6 + (int)(hash % 3),
+            AdventureDiscoveryKind.Gold => 40 + index * 10 + (int)(hash % 21),
+            AdventureDiscoveryKind.Essence => 2 + (int)(hash % 2), _ => 4 };
+        return former with { Kind = kind, Amount = amount };
+    }
+    /// <summary>The forty finds that once covered every free tile. Their IDs still name those tiles in older saves.</summary>
+    public static IReadOnlyList<AdventureDiscovery> Legacy(string map)
+    {
+        map = RouteCatalog.Normalize(map);
+        if (LegacyCache.TryGetValue(map,out var found)) return found;
         var seed = AdventureTerrain.Seed(map); var sites = AdventureMapCatalog.ForMap(map).Select(n => AdventureTerrain.Cell(n.Point)).ToArray();
         var camp = sites[0]; var chosen = new List<int>();
         bool Available(int c) => AdventureTerrain.Walkable(map,c) && sites.All(s => AdventureTerrain.Distance(s,c) >= 3)
@@ -33,7 +53,7 @@ public static class AdventureDiscoveryCatalog
             AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Essence, AdventureDiscoveryKind.Gold, AdventureDiscoveryKind.Survey,
             AdventureDiscoveryKind.Food, AdventureDiscoveryKind.Gold };
         var index = Array.IndexOf(AssetCoverageCatalog.RouteIds,map);
-        return Cache[map] = chosen.Select((cell,i) => {
+        return LegacyCache[map] = chosen.Select((cell,i) => {
             var kind = cycle[i % cycle.Length]; var hash = AdventureTerrain.Hash(seed,cell + 9000);
             var amount = kind switch { AdventureDiscoveryKind.Food => i == 0 ? 6 : 4 + (int)(hash % 3),
                 AdventureDiscoveryKind.Gold => 20 + Math.Max(0,index) * 5 + (int)(hash % 16),

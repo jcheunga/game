@@ -116,17 +116,20 @@ public partial class MapPathCanvas
         }
     }
 
-    /// <summary>Above the fog: the painted landmarks of explored sites, reward bursts and the vignette.</summary>
+    /// <summary>Above the fog: the painted landmarks of explored sites, the food price of each unopened resource,
+    /// reward bursts and the vignette.</summary>
     private void PaintOverlay(Control layer)
     {
         layer.DrawSetTransform(MapOffset, 0, Vector2.One * Zoom);
         var state = GameState.Instance;
         var view = new Rect2((-MapOffset - new Vector2(200, 220)) / Zoom, (Size + new Vector2(400, 440)) / Zoom);
+        var priced = new System.Collections.Generic.List<AdventureTile>();
         foreach (var tile in _tiles.Where(tile => state.IsAdventureTileOpen(tile) && view.HasPoint(tile.Point)).OrderBy(tile => tile.Point.Y))
         {
             if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !state.HasVisitedAdventureSite(tile.Site.RequiredVisit)) continue;
-            var resource = tile.Discovery != null || tile.Site?.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
+            var resource = GameState.IsAdventureResourceTile(tile);
             if (tile.HasInterest && (!resource || !state.IsAdventureTileComplete(tile))) DrawRoyalLandmark(layer, tile);
+            if (resource && !state.IsAdventureTileComplete(tile)) priced.Add(tile);
         }
         foreach (var burst in _rewardBursts)
         {
@@ -139,6 +142,9 @@ public partial class MapPathCanvas
                 new Color("fff1be") { A = Mathf.Clamp((2.4f - age) * 1.5f, 0, 1) }, true);
         }
         layer.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        // Price tags keep a readable screen size at every zoom.
+        var affordable = state.Food >= GameState.AdventureTileFoodCost;
+        foreach (var tile in priced) DrawOpeningPrice(layer, tile.Point * Zoom + MapOffset + new Vector2(0, 20), affordable);
         _atlasVignette ??= new GradientTexture2D {
             Width = 512, Height = 512, Fill = GradientTexture2D.FillEnum.Radial,
             FillFrom = new Vector2(.5f, .43f), FillTo = new Vector2(1, 1),
@@ -146,6 +152,23 @@ public partial class MapPathCanvas
                 Colors = new[] { new Color("101a2000"), new Color("101a2008"), new Color("101a2078") } }
         };
         layer.DrawTextureRect(_atlasVignette, new Rect2(Vector2.Zero, Size), false);
+    }
+
+    private static readonly StyleBoxFlat PricePill = new()
+    {
+        BgColor = new Color("172521d9"), BorderColor = new Color("d8b46a8c"),
+        BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
+        CornerRadiusTopLeft = 11, CornerRadiusTopRight = 11, CornerRadiusBottomLeft = 11, CornerRadiusBottomRight = 11
+    };
+
+    /// <summary>The food it costs to open an unopened resource tile, red when the caravan can't afford it.</summary>
+    private static void DrawOpeningPrice(CanvasItem layer, Vector2 center, bool affordable)
+    {
+        const int font = 15, icon = 17;
+        var text = GameState.AdventureTileFoodCost.ToString();
+        var width = HomeResourceUi.AmountWidth("food", text, font, icon) + 16;
+        layer.DrawStyleBox(PricePill, new Rect2(center - new Vector2(width / 2, 11), new Vector2(width, 22)));
+        HomeResourceUi.DrawAmount(layer, center, "food", text, font, icon, new Color(affordable ? "fff1be" : "ff9f86"));
     }
 
     private static Texture2D Landmark(string name)

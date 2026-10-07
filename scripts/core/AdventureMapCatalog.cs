@@ -11,7 +11,8 @@ public sealed record AdventureMapNode(string Id, string MapId, int Stage, Advent
     public string Icon => Kind switch { AdventureSiteKind.Gold => "gold", AdventureSiteKind.Food => "food",
         AdventureSiteKind.Shrine => "bolt", AdventureSiteKind.Watchtower => "eye", AdventureSiteKind.Camp => "flag", _ => "sword" };
     public int GoldReward => Kind == AdventureSiteKind.Gold ? 35 + Stage * 9 / 5 : 0;
-    public int FoodReward => Kind == AdventureSiteKind.Food ? 2 + Stage / 33 : 0;
+    // Supply wagons pay well above the food spent opening their tile.
+    public int FoodReward => Kind == AdventureSiteKind.Food ? 5 + Stage / 25 : 0;
 }
 
 /// <summary>Stable node IDs are save keys. Exploration layout is independent of battle balance.</summary>

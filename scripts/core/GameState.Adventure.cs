@@ -140,10 +140,14 @@ public partial class GameState
         { message = "Travel to this tile first."; return false; }
         _adventureHeroPositions[node.MapId] = node.Point;
         _adventureHeroNodes[node.MapId] = id;
+        var resource = node.Kind is AdventureSiteKind.Gold or AdventureSiteKind.Food;
+        if (resource && !HasVisitedAdventureSite(id) && Food < AdventureTileFoodCost)
+        { message = $"Opening this tile costs {AdventureTileFoodCost} food."; return false; }
         if (node.Kind == AdventureSiteKind.Leader) SelectedStage = node.Stage;
         var firstVisit = _visitedAdventureSites.Add(id);
         if (firstVisit)
         {
+            if (resource) Food -= AdventureTileFoodCost;
             Gold += node.GoldReward; Food += node.FoodReward;
             if (node.Kind != AdventureSiteKind.Leader) OpenSurroundingAdventureTiles(tile);
         }
@@ -156,7 +160,7 @@ public partial class GameState
             _ => "Nearby tiles opened."
         };
         LastResultMessage = message;
-        if (firstVisit && node.FoodReward > 0) FoodChanged?.Invoke();
+        if (firstVisit && resource) FoodChanged?.Invoke();
         Persist(); return true;
     }
     private void ResetAdventureProgress()
@@ -183,7 +187,8 @@ public partial class GameState
                     _adventureTravelledCells[map] = travelled.Where(c => AdventureTerrain.Walkable(map,c)).ToHashSet();
                 if (saved.AdventureHeroPositions?.TryGetValue(map,out var p) == true && p is {Length:2} && float.IsFinite(p[0]) && float.IsFinite(p[1])
                     && AdventureTerrain.Walkable(map,AdventureTerrain.Cell(new Vector2(p[0],p[1])))) _adventureHeroPositions[map] = new(p[0],p[1]);
-                foreach (var reward in AdventureDiscoveryCatalog.ForMap(map))
+                // Claims on retired finds stay recorded so their tiles keep their open surroundings.
+                foreach (var reward in AdventureDiscoveryCatalog.Legacy(map))
                     if ((saved.ClaimedAdventureDiscoveries ?? Array.Empty<string>()).Contains(reward.Id)) _claimedAdventureDiscoveries.Add(reward.Id);
             }
             else

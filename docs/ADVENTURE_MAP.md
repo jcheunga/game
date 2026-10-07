@@ -1,6 +1,6 @@
 # Adventure map
 
-The campaign is an isometric medieval atlas with one stage or resource per terrain region. Each of the ten zones is one painting in the cartographer's-atlas style of the concept, made over the zone's own geography so its coast, river, bridges, road and clearings line up with the playable tiles (`art/royal/maps.py`, see `docs/ROYAL_UI.md`). Painted landmarks stand at the sites. There is no player cart on the map.
+The campaign is an isometric medieval atlas of terrain regions, each holding a stage, a resource or plain ground. Each of the ten zones is one painting in the cartographer's-atlas style of the concept, made over the zone's own geography so its coast, river, bridges, road and clearings line up with the playable tiles (`art/royal/maps.py`, see `docs/ROYAL_UI.md`). Painted landmarks stand at the sites. There is no player cart on the map.
 
 ## Landscape
 
@@ -13,9 +13,9 @@ Regions have varied sizes and curved shared boundaries around unevenly spaced si
 
 The painting's own sea surrounds the zone and the view never pans past the painting; a soft vignette frames it. Undiscovered regions lie under a bank of dark storm cloud (`MapFogLayer` with `assets/shaders/royal_fog.gdshader`): a blurred mask of the hidden tiles that tileable noise frays into lit, slowly drifting billows, whose edge stays inside the hidden tiles so explored ground is clear. Reduced motion freezes the drift. The landmarks of explored sites stand above the cloud.
 
-The painted landmarks are the selectable site objects: forts and the boss's castle, camps, watchtowers, shrines, and gold, food, book, essence and survey pickups (`assets/world/royal/maps/landmarks`). Points of interest have no labels beneath them; earned stage stars sit above the roofs. Hit targets follow each landmark's painted pixels plus a small foundation target, so transparent margins never intercept adjacent pickups.
+The painted landmarks are the selectable site objects: forts and the boss's castle, camps, watchtowers, shrines, and gold, food, essence and survey pickups (`assets/world/royal/maps/landmarks`). Points of interest have no labels beneath them; earned stage stars sit above the roofs. Hit targets follow each landmark's painted pixels plus a small foundation target, so transparent margins never intercept adjacent pickups.
 
-Tapping a site that can be entered goes straight in: the caravan reaches it and a battle opens its preparation, which shows the rewards and the entry cost. The site panel only appears to explain why a site is blocked, such as a sealed boss gate or missing rations. Travel and resource collection are free.
+Tapping a site that can be entered goes straight in: the caravan reaches it and a battle opens its preparation, which shows the rewards and the entry cost. The site panel only appears to explain why a site is blocked, such as a sealed boss gate or missing rations. Travel is free; opening a resource tile costs 2 food, shown on a small price tag beneath each unopened resource (red when the caravan can't afford it).
 
 Point-of-interest names, rewards and stage entry costs remain available in tooltips and site details at every zoom. The map itself shows the painted objects and earned stage stars without persistent captions.
 
@@ -31,17 +31,17 @@ Geography is deterministic and cosmetic. Stable tile IDs and their logical neigh
 ## Playing
 
 - Tap a stage to open its battle preparation, or a landmark or resource to travel there and collect it; a blocked site explains why instead. Drag to pan; pinch or scroll to zoom.
-- Travelling to any open destination and collecting resources are free, including with zero rations. Only battle entry costs food, shown in stage details and preparation; entry is charged when deploying.
-- Each zone starts on its first stage, with only that tile visible. Clearing a stage or collecting a resource opens the eight tiles around that destination. Preparing, travelling, defeat and retreat do not reveal additional tiles.
-- Every completion, including a survey chart, opens one neighboring ring. Forgotten treasuries are available when their tile opens.
+- Travelling to any open destination is free. Opening a resource tile to gather it costs 2 food (`GameState.AdventureTileFoodCost`), charged on collection; without 2 food the tile explains the cost instead. Battle entry costs food too, shown in stage details and preparation and charged when deploying.
+- Each zone starts on its first stage, with only that tile visible. Clearing a stage opens the eight tiles around it and the zone's next stage; collecting a resource opens the eight tiles around it. Defeating the boss lifts the rest of the zone's fog. Preparing, travelling, defeat and retreat do not reveal additional tiles.
+- Resources are sparse: each zone has its ten supply caches, a forgotten treasury and six finds (`AdventureTileCatalog.Finds`: two food, two gold, one essence, one survey chart); the remaining free tiles are plain ground. Each find sits beside a stage or cache that opens it, and the survey chart beside the forgotten treasury.
 - Open regular encounters can be challenged in any order. Defeat the zone's nine regular leaders to open the boss gate, then defeat that boss to reveal the next zone.
 - Claimed resources disappear; completed stages retain earned stars. Sites beneath the dark tile veil remain hidden.
 - Tile travel completes immediately, without a moving cart or travel animation. Empty terrain cannot initiate travel.
-- Food checks apply only to battle entry and restart. Reaching a stage does not reserve or spend rations. Failed entry leaves the food balance unchanged.
+- Reaching a stage does not reserve or spend rations. Failed battle entry or resource opening leaves the food balance unchanged.
 
 ## Saves
 
-Saves (version 46) record open and reached tile IDs and the current caravan tile, alongside existing stars, claims and zone access. Version 44 and earlier saves translate known legacy points to the corresponding atlas tiles. Saves from the 60-stage campaign have their stage-numbered site and tile IDs moved onto the current stages by `CampaignRenumbering`. The former Lantern Camp tile is ordinary terrain that keeps the camp's revealed state; nearby discoveries keep their positions and visited sites retain explored surroundings. A saved caravan at the retired camp returns to the first stage, and Shrine of Resolve courage blessings no longer apply. Cleared stages and collected resources open their surroundings; old rewards never pay again. Legacy terrain coordinates remain available for migration. Reset and prestige clear tile progress.
+Saves (version 46) record open and reached tile IDs and the current caravan tile, alongside existing stars, claims and zone access. Version 44 and earlier saves translate known legacy points to the corresponding atlas tiles. Saves from the 60-stage campaign have their stage-numbered site and tile IDs moved onto the current stages by `CampaignRenumbering`. The former Lantern Camp tile is ordinary terrain that keeps the camp's revealed state; visited sites retain explored surroundings. The six finds keep the IDs of the former finds on their tiles; the other 34 former finds became plain ground that keeps their open state and, if claimed, their opened surroundings (`AdventureDiscoveryCatalog.Legacy`). A saved caravan at the retired camp returns to the first stage, and Shrine of Resolve courage blessings no longer apply. Cleared stages and collected resources open their surroundings; old rewards never pay again. Legacy terrain coordinates remain available for migration. Reset and prestige clear tile progress.
 
 Old scout tower and shrine IDs and coordinates remain in the legacy catalog to
 preserve discovery placement, visit history and access to previously played zones.

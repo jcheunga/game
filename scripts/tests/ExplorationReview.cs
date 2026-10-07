@@ -66,7 +66,7 @@ public partial class ExplorationReview : Node
                 GD.Print($"EXPLORATION_LAYOUT: {zone} {walkable} ground, {discoveries.Count} discoveries, landmark spacing {spacing}");
                 Check(walkable>550 && sites.All(n=>AdventureTerrain.Path(zone,camp,AdventureTerrain.Cell(n.Point)).Length>0),zone+" has a large connected landscape with reachable landmarks");
                 Check(spacing>=4 && AdventureTerrain.Distance(camp,AdventureTerrain.Cell(boss.Point))>=35 && sites.Where(n=>n!=boss).All(n=>AdventureTerrain.Distance(AdventureTerrain.Cell(n.Point),AdventureTerrain.Cell(boss.Point))>=5),zone+" separates points of interest and gives the boss a distant approach");
-                Check(discoveries.Count>=32 && discoveries.Count<=40 && discoveries.Select(d=>d.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length && discoveries.All(d=>AdventureTerrain.Path(zone,camp,d.Cell).Length>0),zone+" has sparse reachable discoveries of every reward type");
+                Check(discoveries.Count==6 && discoveries.Select(d=>d.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length && discoveries.All(d=>AdventureTerrain.Path(zone,camp,d.Cell).Length>0),zone+" has sparse reachable discoveries of every reward type");
                 Check(discoveries.SelectMany((a,i)=>discoveries.Skip(i+1).Select(b=>AdventureTerrain.Distance(a.Cell,b.Cell))).All(d=>d>=4) && discoveries.All(d=>sites.All(n=>AdventureTerrain.Distance(d.Cell,AdventureTerrain.Cell(n.Point))>=3)),zone+" spaces discoveries away from one another and from landmarks");
                 Check(discoveries[0].Kind==AdventureDiscoveryKind.Food && AdventureTerrain.Path(zone,camp,discoveries[0].Cell).Length<=7,zone+" offers early provisions within a short expedition");
                 Check(!state.IsAdventureSiteDiscovered(boss.Id) && Charted(zone)<=13 && !state.BuildSaveData().ClaimedAdventureDiscoveries.Any(),zone+" starts with nearby camp ground visible and its distant contents hidden");
@@ -118,11 +118,11 @@ public partial class ExplorationReview : Node
             Check(fog.Visible && fog.Mask!=null && fog.MaskRect.HasArea(),"The cloud bank covers the hidden tiles around the known one");
             Check(cityTiles.Count(state.IsAdventureTileOpen)==1 && !state.IsAdventureTileOpen(bossTile),"The veil conceals everything except the first stage, including the distant boss");
             await Capture("01-fresh-veil");
-            var opened=state.BuildSaveData(); opened.Food=0; opened.FoodRechargedAtUnixSeconds=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var opened=state.BuildSaveData(); opened.Food=GameState.AdventureTileFoodCost; opened.FoodRechargedAtUnixSeconds=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             opened.AdventureOpenTiles=AdventureTileCatalog.Surrounding(start).Select(t=>t.Id).ToArray(); Restore(opened); canvas.ShowMap("city",start.Id);
             var provisions=AdventureTileCatalog.Find("city",early.Id); var arrived=false;
             canvas.TravelToTile(provisions,()=>arrived=state.TryCollectAdventureTile(provisions,out _));
-            Check(!canvas.IsTravelling && arrived && state.Food==early.Amount && state.GetAdventureCaravanTile("city").Id==provisions.Id,"With no food, open provisions are reached immediately and pay their bonus");
+            Check(!canvas.IsTravelling && arrived && state.Food==early.Amount && state.GetAdventureCaravanTile("city").Id==provisions.Id,"With just 2 food, open provisions are reached immediately and pay their bonus");
             Check(AdventureTileCatalog.Surrounding(provisions).All(state.IsAdventureTileOpen) && !state.TryCollectAdventureTile(provisions,out _) && state.Food==early.Amount,"Collected provisions open their ring and cannot be claimed twice");
             canvas.TravelToTile(start,null); Check(state.GetAdventureCaravanTile("city").Id==start.Id && state.Food==early.Amount,"Returning to the first stage is free");
             await Capture("03-first-provisions");

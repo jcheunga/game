@@ -533,7 +533,6 @@ public partial class CombatReviewSmoke : Node
                     Invoke(battle, "DeployPlayerUnit", card);
                     if (pushBurst > 0) pushBurst--;
                 }
-                if (Read<bool>(battle, "_campaignConvoyCommandReady")) Invoke(battle, "TryActivateCampaignConvoyCommand");
             }
             battle._PhysicsProcess(1.0 / 60);
             var elapsed = Read<float>(battle, "_elapsed");
@@ -575,7 +574,7 @@ public partial class CombatReviewSmoke : Node
             mapWidth = GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
             firstContact, firstGateDamage, waveTimes, stars = evaluation.StarsEarned,
             objectives = evaluation.Outcomes, battleResult.CompletedMissionEvents, battleResult.FailedMissionEvents,
-            battleResult.TotalMissionEvents, battleResult.PlayerHazardHits, battleResult.CampaignBossPressureTriggers,
+            battleResult.TotalMissionEvents, battleResult.PlayerHazardHits,
             battleResult.PlayerDeployments,
             milestoneRelics = OS.GetCmdlineUserArgs().Contains("--milestone-relics"), timeLimit,
             stage, level, tactical, seedOffset = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--seed-offset="))?.Split('=')[1] ?? "0", armaments = OS.GetCmdlineUserArgs().Contains("--armaments"), commonRelics = OS.GetCmdlineUserArgs().Contains("--common-relics"), investment, squad = string.Join(",", deck.Roster.Select(x => x.Id)), seconds = Math.Round(Read<float>(battle, "_elapsed"), 1),

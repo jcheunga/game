@@ -64,10 +64,6 @@ public sealed class GameSaveData
     public int HighestUnlockedStage { get; set; } = 1;
     public int SelectedStage { get; set; } = 1;
     public string[] VisitedAdventureSites { get; set; } = [];
-    public Dictionary<string, string> AdventureHeroNodes { get; set; } = new();
-    public Dictionary<string, float[]> AdventureHeroPositions { get; set; } = new();
-    public Dictionary<string, int[]> AdventureExploredCells { get; set; } = new();
-    public Dictionary<string, int[]> AdventureTravelledCells { get; set; } = new();
     public string[] AdventureOpenTiles { get; set; } = [];
     public string[] AdventureReachedTiles { get; set; } = [];
     public Dictionary<string, string> AdventureCaravanTiles { get; set; } = new();
@@ -229,8 +225,6 @@ public sealed class GameSaveData
     public string[] ClaimedCollectionMilestoneIds { get; set; } = [];
 
     // v38: Battle Mutators
-    public string[] ActiveMutatorIds { get; set; } = [];
-    public int MutatorBattlesCompleted { get; set; }
 
     // v38: Accessibility
     public string ColorblindMode { get; set; } = "none";

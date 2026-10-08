@@ -105,6 +105,30 @@ public partial class UiReviewSmoke
             Check(Read<ZoneBackdrop>(battle, "_stageBackdrop") is { Layers.Count: 5 }, $"Stage {stage}: its zone's painted backdrop is in place");
             await Capture($"zone-stage-{stage:00}");
         }
+        // First-time hints show one at a time in a banner above the card dock; a tap moves on, and none repeats.
+        var hinted = state.BuildSaveData(); hinted.ShowHints = true; hinted.SeenHintIds = Array.Empty<string>(); state.RestoreCloudSave(hinted);
+        state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
+        {
+            var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
+            if (Read<bool>(battle, "_battlePaused")) Call(battle, "TogglePause");
+            await Wait(.2);
+            var banner = Read<BattleHintBanner>(battle, "_hintBanner"); var dock = Read<PanelContainer>(battle, "_cardDock");
+            var first = TutorialHintCatalog.GetByContext("first_battle").ToArray();
+            Check(banner.Visible && banner.Title == first[0].Title && banner.Queued == first.Length - 1
+                && banner.GetGlobalRect().End.Y <= dock.GetGlobalRect().Position.Y && !string.IsNullOrWhiteSpace(banner.Body),
+                "The first battle shows its first hint in a banner above the card dock");
+            await Capture("hint-banner");
+            var tap = banner.GetGlobalRect().GetCenter();
+            Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = tap, GlobalPosition = tap });
+            Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = tap, GlobalPosition = tap });
+            await Wait(.1);
+            Check(first.Length < 2 || banner.Visible && banner.Title == first[1].Title, "A tap moves the banner on to the next hint");
+            Check(first.All(hint => state.HasSeenHint(hint.Id)), "Shown hints are remembered");
+        }
+        state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
+        await Wait(.2);
+        Check(!Read<BattleHintBanner>((BattleController)GetTree().CurrentScene, "_hintBanner").Visible, "A later battle doesn't repeat seen hints");
+        state.SetShowHints(false);
         MobilePresentation.TestOverride = null; GetTree().Paused = false;
         await Open("MainMenu");
         await LiveUiReview.StopAudio(this);

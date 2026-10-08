@@ -214,7 +214,6 @@ public partial class UiReviewSmoke : Node
             await PressHint("More");
             await Press("Caravan"); await Capture("02-camp-caravan");
             await Press("Community"); await Capture("03-camp-community");
-            GameState.Instance.MoveAdventureHero("city", AdventureMapCatalog.Leader(1).Point);
             // Tapping a battle site travels there and opens its preparation as a modal over the map.
             await Open("MapMenu"); await ChooseAdventureSite("leader-1"); await Capture("04-map");
             await FinishTravel();

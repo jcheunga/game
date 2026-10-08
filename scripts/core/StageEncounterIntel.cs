@@ -5,11 +5,6 @@ using Godot;
 
 public static class StageEncounterIntel
 {
-    private const int BossPressureVeteranStage = CampaignPacing.VeteranStage;
-    private const int BossPressureEliteStage = CampaignPacing.EliteStage;
-    private const float BossPressureBaseIntervalSeconds = 14f;
-    private const float BossPressureVeteranIntervalSeconds = 12.5f;
-    private const float BossPressureEliteIntervalSeconds = 11f;
 
     public static string ResolveThreatRating(StageDefinition stage)
     {
@@ -64,7 +59,6 @@ public static class StageEncounterIntel
             .FirstOrDefault();
         var bossWave = FindBossWave(stage);
         var bossUnitId = TryGetBossUnitId(bossWave);
-        var bossPressureTitle = GetBossPressureTitle(bossUnitId);
         var supportPressure = BuildSupportPressureSummary(counts);
 
         var missionInlineSummary = ResolveMissionInlineSummary(stage, includeCampaignMissionFallback);
@@ -77,8 +71,7 @@ public static class StageEncounterIntel
             $"First contact: {(firstWave == null ? "dynamic" : $"{firstWave.TriggerTime:0.#}s")} · " +
             $"Peak wave: {(peakWave == null ? "n/a" : $"{peakWave.TriggerTime:0.#}s")} · " +
             $"Boss: {(bossWave == null ? "none" : $"{bossWave.TriggerTime:0.#}s")} · " +
-            $"Boss phase: {(string.IsNullOrWhiteSpace(bossUnitId) ? "n/a" : GetBossPhaseTitle(bossUnitId))} · " +
-            $"Boss command: {(string.IsNullOrWhiteSpace(bossPressureTitle) ? "n/a" : bossPressureTitle)}\n" +
+            $"Boss phase: {(string.IsNullOrWhiteSpace(bossUnitId) ? "n/a" : GetBossPhaseTitle(bossUnitId))}\n" +
             $"{supportPressure}\n" +
             $"{missionSummary}" +
             (missionSummary.Length > 0 ? "\n" : "") +
@@ -141,16 +134,9 @@ public static class StageEncounterIntel
         if (bossWave != null)
         {
             var bossName = GameData.GetUnit(bossUnitId).DisplayName;
-            var bossPressureTitle = GetBossPressureTitle(bossUnitId);
             builder.AppendLine(
                 $"Boss warning: {bossWave.TriggerTime:0}s · {bossName} · " +
                 $"Phase at ~55% HP: {BuildBossPhaseSummary(bossUnitId)}");
-            if (!string.IsNullOrWhiteSpace(bossPressureTitle))
-            {
-                builder.AppendLine(
-                    $"Boss command: {bossPressureTitle} every {GetBossPressureIntervalSeconds(stage.StageNumber):0.#}s after the phase · " +
-                    $"{BuildBossPressureSummary(bossUnitId)}");
-            }
         }
         else
         {
@@ -178,27 +164,12 @@ public static class StageEncounterIntel
         return GetBossPhaseTitle(GetBossUnitIdForStage(stage));
     }
 
-    public static string GetBossPressureTitleForStage(StageDefinition stage)
-    {
-        return GetBossPressureTitle(GetBossUnitIdForStage(stage));
-    }
-
-    public static float GetBossPressureIntervalSeconds(int stageNumber)
-    {
-        return stageNumber >= BossPressureEliteStage
-            ? BossPressureEliteIntervalSeconds
-            : stageNumber >= BossPressureVeteranStage
-                ? BossPressureVeteranIntervalSeconds
-                : BossPressureBaseIntervalSeconds;
-    }
-
     public static string BuildBossPhaseWarning(StageDefinition stage)
     {
         var bossUnitId = GetBossUnitIdForStage(stage);
         return string.IsNullOrWhiteSpace(bossUnitId)
             ? ""
-            : $"Boss phase: {GetBossPhaseTitle(bossUnitId)} at ~55% HP. {BuildBossPhaseSummary(bossUnitId)} " +
-              $"Boss command: {GetBossPressureTitle(bossUnitId)} every {GetBossPressureIntervalSeconds(stage.StageNumber):0.#}s after the phase. {BuildBossPressureSummary(bossUnitId)}";
+            : $"Boss phase: {GetBossPhaseTitle(bossUnitId)} at ~55% HP. {BuildBossPhaseSummary(bossUnitId)}";
     }
 
     public static string GetBossPhaseTitle(string bossUnitId)
@@ -219,28 +190,6 @@ public static class StageEncounterIntel
             GameData.EnemyBossTidemasterId => "Floodgate Break",
             GameData.EnemyBossPlagueMonarchId => "Plague Eclipse",
             GameData.EnemyBossId => "Last Stand",
-            _ => ""
-        };
-    }
-
-    public static string GetBossPressureTitle(string bossUnitId)
-    {
-        return NormalizeBossUnitId(bossUnitId) switch
-        {
-            GameData.EnemyBossDocksId => "Riptide Toll",
-            GameData.EnemyBossForgeId => "Crucible Orders",
-            GameData.EnemyBossWardId => "Signal Eclipse",
-            GameData.EnemyBossPassId => "Pack Horn",
-            GameData.EnemyBossBasilicaId => "Grave Toll",
-            GameData.EnemyBossMireId => "Blight Undertow",
-            GameData.EnemyBossSteppeId => "Hunter Call",
-            GameData.EnemyBossVergeId => "Moonhex",
-            GameData.EnemyBossCitadelId => "Iron Salvo",
-            GameData.EnemyBossReliquaryId => "Ossuary Fire",
-            GameData.EnemyBossAshenRegentId => "Ember Decree",
-            GameData.EnemyBossTidemasterId => "Surge Toll",
-            GameData.EnemyBossPlagueMonarchId => "Black Bloom",
-            GameData.EnemyBossId => "Warlord Orders",
             _ => ""
         };
     }
@@ -746,28 +695,6 @@ public static class StageEncounterIntel
             GameData.EnemyBossPlagueMonarchId => "A major blackout hits courage flow while captains reinforce the push.",
             GameData.EnemyBossId => "The boss rallies nearby undead for one last surge.",
             _ => "Expect a major battlefield swing near half health."
-        };
-    }
-
-    private static string BuildBossPressureSummary(string bossUnitId)
-    {
-        return NormalizeBossUnitId(bossUnitId) switch
-        {
-            GameData.EnemyBossDocksId => "Repeated undertow snaps keep dragging the contested lane backward.",
-            GameData.EnemyBossForgeId => "Fresh forge escorts and short hardening bursts keep the breach crowded.",
-            GameData.EnemyBossWardId => "Signal blackouts keep clipping courage flow and slowing the frontline.",
-            GameData.EnemyBossPassId => "Fast escorts and horn surges keep the lane from settling.",
-            GameData.EnemyBossBasilicaId => "Small grave vows keep restoring the boss and the keep between trades.",
-            GameData.EnemyBossMireId => "Blight pulses keep slowing and rotting defenders around the boss.",
-            GameData.EnemyBossSteppeId => "Hunter calls keep adding tempo and flank runners to the push.",
-            GameData.EnemyBossVergeId => "Moonhex marks keep re-picking the strongest defender for witchlight pressure.",
-            GameData.EnemyBossCitadelId => "Iron salvos keep repairing the keep and shelling the active lane.",
-            GameData.EnemyBossReliquaryId => "Ossuary Fire briefly strengthens surviving bone crews. The Tyrant's raise spell replaces artillery on its normal cooldown, up to two active. Defeat the crews to open a path; repeated commands do not repair the gate.",
-            GameData.EnemyBossAshenRegentId => "Ember decrees keep hammering the lane with ash shock and elite pressure.",
-            GameData.EnemyBossTidemasterId => "Surge tolls push defenders back. Rally calls replace destroyed plague engines, up to two active; clearing the engines opens room to attack.",
-            GameData.EnemyBossPlagueMonarchId => "Black blooms keep renewing signal pressure while plague captains press in.",
-            GameData.EnemyBossId => "Repeated command pulses keep nearby undead surging while the boss lives.",
-            _ => "Expect repeated smaller boss commands after the phase."
         };
     }
 

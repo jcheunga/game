@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 
+/// <summary>Campaign zone access, site visits and find claims. Tile exploration lives in GameState.AdventureTiles.</summary>
 public partial class GameState
 {
     private readonly HashSet<string> _visitedAdventureSites = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _adventureHeroNodes = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Vector2> _adventureHeroPositions = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, HashSet<int>> _adventureExploredCells = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, HashSet<int>> _adventureTravelledCells = new(StringComparer.Ordinal);
     private readonly HashSet<string> _claimedAdventureDiscoveries = new(StringComparer.Ordinal);
     public int AdventureKnowledgeRevision { get; private set; }
     public event Action<AdventureDiscovery> AdventureDiscoveryFound;
@@ -26,9 +22,7 @@ public partial class GameState
         // Stage numbers span districts, so HighestUnlockedStage is not a zone gate.
         return maps.Skip(index).Any(map => GameData.GetStagesForMap(map).Any(stage => GetStageStars(stage.StageNumber) > 0)
             || AdventureMapCatalog.ForMap(map).Any(site => site.Kind != AdventureSiteKind.Camp && HasVisitedAdventureSite(site.Id))
-            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Id != AdventureTileCatalog.Starting(map).Id && _reachedAdventureTiles.Contains(tile.Id))
-            || _adventureTravelledCells.TryGetValue(map, out var cells)
-                && cells.Any(cell => cell != AdventureTerrain.Cell(AdventureMapCatalog.ForMap(map).First().Point)));
+            || AdventureTileCatalog.ForMap(map).Any(tile => tile.Id != AdventureTileCatalog.Starting(map).Id && _reachedAdventureTiles.Contains(tile.Id)));
     }
     public bool IsAdventureBoss(int stage) => stage >= 1 && stage <= MaxStage &&
         GameData.GetStagesForMap(GameData.GetStage(stage).MapId).Max(x => x.StageNumber) == stage;
@@ -43,74 +37,6 @@ public partial class GameState
     public bool IsAdventureSiteDiscovered(string id) => AdventureMapCatalog.Find(id) is { } node &&
         (string.IsNullOrEmpty(node.RequiredVisit) || HasVisitedAdventureSite(node.RequiredVisit)) &&
         IsAdventureTileRevealed(AdventureTileCatalog.Find(node.MapId, node.Id));
-    public bool IsAdventureCellRevealed(string mapId, int cell)
-    {
-        if (cell < 0 || cell >= AdventureTerrain.CellCount) return false;
-        mapId = RouteCatalog.Normalize(mapId);
-        var camp = AdventureTerrain.Cell(AdventureMapCatalog.ForMap(mapId).First().Point);
-        return AdventureTerrain.Distance(cell,camp) <= 2 ||
-            (_adventureExploredCells.TryGetValue(mapId, out var cells) && cells.Contains(cell));
-    }
-    public bool IsAdventureCellTravelled(string mapId, int cell)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        return cell == AdventureTerrain.Cell(AdventureMapCatalog.ForMap(mapId).First().Point) ||
-            (_adventureTravelledCells.TryGetValue(mapId,out var cells) && cells.Contains(cell));
-    }
-    public bool TryBeginAdventureTravel(string mapId, IReadOnlyList<int> path, out string message)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        if (path == null || path.Count == 0 || path[0] != AdventureTerrain.Cell(GetAdventureHeroPosition(mapId)) ||
-            path.Any(cell => !AdventureTerrain.Walkable(mapId, cell)) ||
-            path.Zip(path.Skip(1)).Any(pair => !AdventureTerrain.Neighbors(pair.First).Contains(pair.Second)))
-        { message = "Choose a connected ground tile."; return false; }
-        message = ""; return true;
-    }
-    // Legacy movement records explored routes without spending food.
-    public bool TryPayAdventureStep(string mapId, int cell, out string message)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        var from = AdventureTerrain.Cell(GetAdventureHeroPosition(mapId));
-        if (!AdventureTerrain.Walkable(mapId,cell) || (cell != from && !AdventureTerrain.Neighbors(from).Contains(cell)))
-        { message = "Choose a connected ground tile."; return false; }
-        if (IsAdventureCellTravelled(mapId,cell)) { message = ""; return true; }
-        if (!_adventureTravelledCells.TryGetValue(mapId,out var cells)) _adventureTravelledCells[mapId] = cells = new();
-        cells.Add(cell); Persist(); message = ""; return true;
-    }
-    public bool CompleteAdventureStep(string mapId, int cell)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        if (!IsAdventureCellTravelled(mapId,cell) || !MoveAdventureHero(mapId,AdventureTerrain.Point(cell),false)) return false;
-        Persist(); return true;
-    }
-    public AdventureMapNode GetAdventureHeroNode(string mapId)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        return _adventureHeroNodes.TryGetValue(mapId, out var id) && AdventureMapCatalog.Find(id) is { } node
-            ? node : AdventureMapCatalog.ForMap(mapId).First();
-    }
-    public Vector2 GetAdventureHeroPosition(string mapId) => _adventureHeroPositions.TryGetValue(RouteCatalog.Normalize(mapId), out var point)
-        ? point : GetAdventureHeroNode(mapId).Point;
-    public bool MoveAdventureHero(string mapId, Vector2 point, bool persist = true)
-    {
-        mapId = RouteCatalog.Normalize(mapId);
-        if (!GameData.Stages.Any(x => x.MapId == mapId) || !float.IsFinite(point.X) || !float.IsFinite(point.Y)) return false;
-        var cell = AdventureTerrain.Cell(point);
-        if (!AdventureTerrain.Walkable(mapId, cell)) return false;
-        RevealAdventurePoint(mapId, point);
-        _adventureHeroPositions[mapId] = point;
-        if (persist) Persist();
-        return true;
-    }
-    private void RevealAdventurePoint(string mapId, Vector2 point, int radius = 2)
-    {
-        if (!_adventureExploredCells.TryGetValue(mapId, out var cells)) _adventureExploredCells[mapId] = cells = new();
-        var cell = AdventureTerrain.Cell(point);
-        if (cell < 0) return;
-        var changed = false;
-        foreach (var nearby in AdventureTerrain.Area(cell,radius)) changed |= cells.Add(nearby);
-        if (changed) AdventureKnowledgeRevision++;
-    }
     public bool TryVisitAdventureSite(string id, out string message)
     {
         var node = AdventureMapCatalog.Find(id);
@@ -130,8 +56,6 @@ public partial class GameState
             if (HasVisitedAdventureSite(id)) { message = "Already visited. These rewards have been collected."; return false; }
             return TryOpenAdventureTile(tile, out message);
         }
-        _adventureHeroPositions[node.MapId] = node.Point;
-        _adventureHeroNodes[node.MapId] = id;
         SelectedStage = node.Stage;
         _visitedAdventureSites.Add(id);
         message = LastResultMessage = $"You face {node.Title}. Prepare your warband to challenge this leader.";
@@ -139,44 +63,18 @@ public partial class GameState
     }
     private void ResetAdventureProgress()
     {
-        _visitedAdventureSites.Clear(); _adventureHeroNodes.Clear(); _adventureHeroPositions.Clear(); _adventureExploredCells.Clear();
-        _adventureTravelledCells.Clear(); _claimedAdventureDiscoveries.Clear();
+        _visitedAdventureSites.Clear(); _claimedAdventureDiscoveries.Clear();
         _openedAdventureTiles.Clear(); _reachedAdventureTiles.Clear(); _adventureCaravanTiles.Clear(); AdventureKnowledgeRevision++;
     }
+    /// <summary>Visited sites and claimed finds; the atlas tiles load later, once the stars are in (LoadAdventureTiles).</summary>
     private void LoadAdventureProgress(GameSaveData saved)
     {
         ResetAdventureProgress();
         foreach (var id in saved.VisitedAdventureSites ?? Array.Empty<string>())
             if (AdventureMapCatalog.Find(id) != null) _visitedAdventureSites.Add(id);
-        foreach (var pair in saved.AdventureHeroNodes ?? new Dictionary<string, string>())
-            if (AdventureMapCatalog.Find(pair.Value) is { } node && node.MapId == pair.Key) _adventureHeroNodes[pair.Key] = pair.Value;
+        var claimed = (saved.ClaimedAdventureDiscoveries ?? Array.Empty<string>()).ToHashSet(StringComparer.Ordinal);
         foreach (var map in GameData.Stages.Select(x => x.MapId).Distinct())
-        {
-            var camp = AdventureTerrain.Cell(AdventureMapCatalog.ForMap(map)[0].Point);
-            if (saved.Version >= 44)
-            {
-                if (saved.AdventureExploredCells?.TryGetValue(map,out var explored) == true && explored != null)
-                    _adventureExploredCells[map] = explored.Where(c => c >= 0 && c < AdventureTerrain.CellCount).ToHashSet();
-                if (saved.AdventureTravelledCells?.TryGetValue(map,out var travelled) == true && travelled != null)
-                    _adventureTravelledCells[map] = travelled.Where(c => AdventureTerrain.Walkable(map,c)).ToHashSet();
-                if (saved.AdventureHeroPositions?.TryGetValue(map,out var p) == true && p is {Length:2} && float.IsFinite(p[0]) && float.IsFinite(p[1])
-                    && AdventureTerrain.Walkable(map,AdventureTerrain.Cell(new Vector2(p[0],p[1])))) _adventureHeroPositions[map] = new(p[0],p[1]);
-                foreach (var reward in AdventureDiscoveryCatalog.ForMap(map))
-                    if ((saved.ClaimedAdventureDiscoveries ?? Array.Empty<string>()).Contains(reward.Id)) _claimedAdventureDiscoveries.Add(reward.Id);
-            }
-            else
-            {
-                // Move the old caravan with its stable landmark ID; retain known/visited sites,
-                // while the new surrounding land and all new discoveries remain unclaimed.
-                _adventureHeroPositions[map] = GetAdventureHeroNode(map).Point;
-                var oldCells = saved.AdventureExploredCells?.GetValueOrDefault(map) ?? Array.Empty<int>();
-                foreach (var node in AdventureMapCatalog.ForMap(map))
-                    if (HasVisitedAdventureSite(node.Id) || oldCells.Contains(AdventureMapCatalog.LegacyCell(node))
-                        || node.Kind == AdventureSiteKind.Leader && ((saved.StageStars?.ElementAtOrDefault(node.Stage - 1) ?? 0) > 0 || saved.Version < 43 && node.Stage <= saved.HighestUnlockedStage))
-                        RevealAdventurePoint(map,node.Point);
-                _adventureTravelledCells[map] = AdventureMapCatalog.ForMap(map).Where(n => HasVisitedAdventureSite(n.Id)).Select(n => AdventureTerrain.Cell(n.Point)).Append(camp).ToHashSet();
-            }
-            RevealAdventurePoint(map,GetAdventureHeroPosition(map));
-        }
+            foreach (var find in AdventureDiscoveryCatalog.ForMap(map))
+                if (claimed.Contains(find.Id)) _claimedAdventureDiscoveries.Add(find.Id);
     }
 }

@@ -20,7 +20,6 @@ public sealed class BattleSummaryData
 	public Dictionary<string, int> MasteryXPPerUnit { get; set; } = new();
 	public string BattleMode { get; set; } = "";
 	public int Stage { get; set; }
-	public float MutatorGoldMultiplier { get; set; } = 1f;
 	public List<BattleReward> Rewards { get; set; } = new();
 
 	public static BattleSummaryData Current { get; set; }

@@ -5,6 +5,8 @@ public partial class GameState
     public const int FoodRechargeCap = 24;
     public const int FoodRechargeAmount = 2;
     public const int FoodRechargeSeconds = 300;
+    /// <summary>Rations paid for a campaign stage's first win, so exploring a zone's atlas doesn't rest on the recharge alone.</summary>
+    public const int CampaignFirstClearFood = 6;
     public long FoodRechargedAtUnixSeconds { get; private set; }
     private double _foodRefreshClock;
     public event Action FoodChanged;

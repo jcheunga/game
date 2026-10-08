@@ -137,7 +137,6 @@ public partial class BattleController
                 TrackDamageDealt(weapon.Title, dealt);
                 SpawnDamageFeedback(ToLocal(position), dealt, color);
             });
-        SpawnEffect(projectile.Position, weapon.Color, 3, 15, 0.16f, false);
     }
 
     private void DrawWagonArmaments(CanvasItem canvas)

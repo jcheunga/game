@@ -45,7 +45,6 @@ public static class CampaignRenumbering
         saved.VisitedAdventureSites = (saved.VisitedAdventureSites ?? Array.Empty<string>()).Select(Site).ToArray();
         saved.AdventureOpenTiles = (saved.AdventureOpenTiles ?? Array.Empty<string>()).Select(Site).ToArray();
         saved.AdventureReachedTiles = (saved.AdventureReachedTiles ?? Array.Empty<string>()).Select(Site).ToArray();
-        saved.AdventureHeroNodes = Remap(saved.AdventureHeroNodes);
         saved.AdventureCaravanTiles = Remap(saved.AdventureCaravanTiles);
         foreach (var run in saved.ChallengeHistory ?? new()) run.Stage = Stage(run.Stage);
         foreach (var pending in saved.PendingChallengeSubmissions ?? new()) pending.Stage = Stage(pending.Stage);

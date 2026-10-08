@@ -52,7 +52,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "food_costs",
 			Title = "Food",
-			Body = "Opening a tile on the map costs 2 food and entering a stage costs more. Find food in supply caches and hidden provisions.",
+			Body = "Opening a tile on the map costs 2 food and entering a stage costs more. Find food in supply caches and hidden provisions, and win each stage for the first time for 6 more.",
 			TriggerContext = "first_map"
 		},
 		new()
@@ -79,14 +79,14 @@ public static class TutorialHintCatalog
 		new()
 		{
 			Id = "boss_warning",
-			Title = "Boss Encounter",
+			Title = "Boss encounter",
 			Body = "Bosses rally nearby undead and spawn escorts. Focus fire the boss or deal with the adds first.",
 			TriggerContext = "first_boss"
 		},
 		new()
 		{
 			Id = "endless_basics",
-			Title = "Endless Mode",
+			Title = "Endless mode",
 			Body = "Survive escalating waves. Choose boons at the start, draft upgrades at checkpoints, pick route forks for risk vs reward.",
 			TriggerContext = "first_endless"
 		},
@@ -222,13 +222,6 @@ public static class TutorialHintCatalog
 			Title = "Season Pass",
 			Body = "Earn Season XP from battles, bounties, and challenges. Claim free and premium rewards as you climb 50 tiers.",
 			TriggerContext = "first_season_pass"
-		},
-		new()
-		{
-			Id = "mutator_hint",
-			Title = "Battle Mutators",
-			Body = "Toggle mutators before battle to change the rules. Harder mutators increase gold rewards. Stack them for maximum risk and reward.",
-			TriggerContext = "first_mutator"
 		},
 		new()
 		{

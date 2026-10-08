@@ -82,7 +82,6 @@ public static class AchievementRewardCatalog
 		new("first_skin", "gold", 200, "+200 gold"),
 		new("first_awakening", "gold", 300, "+300 gold"),
 		new("collector_complete", "sigils", 10, "+10 sigils"),
-		new("mutator_5", "essence", 5, "+5 essence"),
 	};
 
 	private static readonly Dictionary<string, AchievementReward> ById;

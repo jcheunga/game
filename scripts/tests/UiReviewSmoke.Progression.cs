@@ -18,9 +18,9 @@ public partial class UiReviewSmoke
             var progress = state.BuildSaveData();
             progress.StageStars = Enumerable.Range(1, state.MaxStage).Select(s => s < stage ? 1 : 0).ToArray();
             progress.AdventureOpenTiles = progress.AdventureOpenTiles.Append(AdventureTileCatalog.Find(node.MapId, node.Id).Id).Distinct().ToArray();
+            progress.AdventureCaravanTiles[node.MapId] = node.Id;
             typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { progress });
             state.SetSelectedStage(stage);
-            state.MoveAdventureHero(node.MapId, node.Point);
             await Open("MapMenu");
             typeof(MapMenu).GetMethod("SelectSite", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(GetTree().CurrentScene, new object[] { node });

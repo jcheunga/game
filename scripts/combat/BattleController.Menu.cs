@@ -79,10 +79,14 @@ public partial class BattleController
     }
 
     private PanelContainer _cardDock;
+    // First-time hints (TutorialHintCatalog) appear in a banner above the card dock.
+    private BattleHintBanner _hintBanner;
 
     private void ConfigureCompactHudLayout(PanelContainer cards, HBoxContainer row)
     {
         _cardDock = cards;
+        _hintBanner = new BattleHintBanner();
+        _battleHudRoot.AddChild(_hintBanner);
         var spec = RoyalSpec.For("battle");
         var dock = RoyalKit.Slice("hud-dock", 30, 22, 30, 22);
         dock.ContentMarginLeft = dock.ContentMarginRight = 9; dock.ContentMarginTop = 9; dock.ContentMarginBottom = 11;
@@ -131,6 +135,7 @@ public partial class BattleController
             var height = rowSize.Y + 20;
             cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
+            _hintBanner.Place(size, cards.Position.Y);
             _battleSettingsModal?.FitToArea(size);
         };
         GetViewport().SizeChanged += _hudLayout;

@@ -22,8 +22,7 @@ public partial class CombatReviewSmoke
                 var result = new StageBattleResult {
                     PlayerBaseHealth = health, PlayerBaseMaxHealth = 100f,
                     PlayerBaseTookDamage = damaged, Elapsed = 99999,
-                    PlayerDeployments = 999, FailedMissionEvents = 99,
-                    CampaignBossPressureTriggers = 999, CampaignLateConditionTriggers = 999
+                    PlayerDeployments = 999, FailedMissionEvents = 99
                 };
                 Check(StageObjectives.EvaluateBattle(stage, result, won).StarsEarned == expected,
                     $"Stage {stage.StageNumber}: health {health}%, damaged {damaged}, victory {won} awards {expected} stars regardless of battle objectives");

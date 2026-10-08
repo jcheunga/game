@@ -28,7 +28,8 @@ public partial class MapPathCanvas : Control
     {
         ClipContents = true;
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
-        TextureRepeat = TextureRepeatEnum.Enabled;
+        // The painting is drawn in tiles: repeat would wrap each tile's far edge into its seams.
+        TextureRepeat = TextureRepeatEnum.Disabled;
         MouseDefaultCursorShape = CursorShape.Drag;
         Resized += UpdateView;
         GameState.Instance.AdventureDiscoveryFound += OnDiscovery;
@@ -143,13 +144,6 @@ public partial class MapPathCanvas : Control
     {
         if (destination == null || destination.MapId != ActiveMapId) return;
         TravelToTile(AdventureTileCatalog.Find(ActiveMapId, destination.Id), arrived);
-    }
-    // Compatibility for callers that hold a legacy site's coordinates; empty terrain never initiates travel.
-    public void TravelToPoint(Vector2 destination, Action arrived = null)
-    {
-        var tile = _tiles.FirstOrDefault(tile => tile.Site?.Point == destination || tile.Discovery?.Point == destination);
-        if (tile == null) return;
-        TravelToTile(tile, arrived ?? (tile.Discovery != null ? () => GameState.Instance.TryCollectAdventureTile(tile, out _) : null));
     }
     public void TravelToTile(AdventureTile tile, Action arrived)
     {

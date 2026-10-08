@@ -29,7 +29,7 @@ Geography is deterministic and cosmetic: it never depends on saved progress.
 
 - A tile is **opened** (charted, clear), on the **frontier** (touching opened ground: seen through mist and ready to open) or **hidden** under the storm cloud. Each zone starts with only its first stage opened.
 - Opening a frontier tile costs 2 food (`GameState.AdventureTileFoodCost`) and only reveals the tiles touching it. A cache or find on the tile is gathered as it opens; a survey chart also charts the plain ground around it for free. Without 2 food the tile explains the cost instead and nothing is charged.
-- A stage on the frontier is challenged rather than bought: its battle costs its entry rations, charged when deploying, and winning it charts its tile. Preparing, defeat and retreat chart nothing.
+- A stage on the frontier is challenged rather than bought: its battle costs its entry rations, charged when deploying, and winning it charts its tile. A stage's first win also pays 6 food (`GameState.CampaignFirstClearFood`). With every road opened and every food source gathered, a zone costs about 15 food net (`ExplorationReview` prints `EXPLORATION_ECONOMY` per zone). Preparing, defeat and retreat chart nothing.
 - Open regular encounters can be challenged in any order. Defeat the zone's nine regular leaders to open the boss gate, then defeat that boss to reveal the next zone.
 - Gathered resources disappear; completed stages retain earned stars. Sites beneath the storm cloud remain hidden.
 - Tile travel completes immediately, without a moving cart or travel animation.
@@ -38,7 +38,7 @@ Geography is deterministic and cosmetic: it never depends on saved progress.
 
 Saves (version 47) record opened and reached tile IDs and the current caravan tile, alongside existing stars, claims and zone access. Saves from the smaller atlas (version 46 and earlier) keep their stars and gathered caches: on loading, the roads between the stages they won (from each zone's first stage) are charted, a zone whose boss fell is charted apart from its resources, and the caravan returns to the first stage. Finds from the smaller atlas are gone, along with their claims. Saves from the 60-stage campaign have their stage-numbered site IDs moved onto the current stages by `CampaignRenumbering` first. Tile progress loads after the stars, since won stages are charted. Reset and prestige clear tile progress.
 
-Old scout tower, shrine and camp IDs remain in the legacy catalog with their legacy terrain coordinates; they have no atlas tile or interaction.
+Old scout tower, shrine and camp IDs remain in `AdventureMapCatalog` as retired sites so older saves' visits stay valid; they have no atlas tile or interaction. The former 32 × 24 walking terrain and its saved hero positions, explored and travelled cells are gone; older saves' copies are ignored.
 
 `AdventureTileCatalog` owns the grid, stable tile IDs and placement. `AdventureAtlasLandscape` owns site positions, curved regions, adjacency, coastline, river, roads, bridges and the painting's sections. `GameState.AdventureTiles` owns opening costs, the frontier, claims and migration. `MapPathCanvas` owns camera, selection and immediate travel; `MapPathCanvas.Painted` draws the painting, fog, price tags and landmarks and `MapPathCanvas.Landscape` the selection and hover outlines. The saved caravan tile remains the current destination for save compatibility; no caravan is rendered.
 

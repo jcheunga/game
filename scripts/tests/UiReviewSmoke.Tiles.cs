@@ -67,8 +67,8 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = click + new Vector2(-200,55), GlobalPosition = click + new Vector2(-200,55) });
         await Wait(.1);
         Check(state.Food == food && state.AdventureKnowledgeRevision == knowledge && state.GetAdventureCaravanTile("city").Id == position, "Panning never spends food, moves the caravan or reveals tiles");
-        canvas.TravelToPoint(new Vector2(500, 500)); await Wait(.1);
-        Check(!canvas.IsTravelling && state.GetAdventureCaravanTile("city").Id == position, "Empty ground cannot initiate movement");
+        canvas.TravelToTile(tilesCity.First(tile => !tile.HasInterest && !state.IsAdventureTileRevealed(tile)), null); await Wait(.1);
+        Check(!canvas.IsTravelling && state.GetAdventureCaravanTile("city").Id == position, "Hidden ground cannot be travelled to");
         canvas.FocusCurrentTile();
         var originalZoom = canvas.Zoom;
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = true, Position = click, GlobalPosition = click });
@@ -150,7 +150,6 @@ public partial class UiReviewSmoke
         Restore(saved);
         var oldShrine = state.BuildSaveData(); oldShrine.Version = 44;
         oldShrine.VisitedAdventureSites = oldShrine.VisitedAdventureSites.Append("landmark-2").ToArray();
-        oldShrine.AdventureHeroNodes["city"] = "landmark-2";
         oldShrine.AdventureOpenTiles = null; oldShrine.AdventureReachedTiles = null; oldShrine.AdventureCaravanTiles = null;
         Restore(oldShrine);
         Check(state.GetAdventureCaravanTile("city").Id == leader.Id && AdventureTileCatalog.Find("city", "landmark-2") == null

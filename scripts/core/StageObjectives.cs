@@ -16,24 +16,6 @@ public sealed class StageBattleResult
     public int CompletedMissionEvents { get; init; }
     public int FailedMissionEvents { get; init; }
     public int TotalMissionEvents { get; init; }
-    public int CampaignBossPressureTriggers { get; init; }
-    public int CampaignLateConditionTriggers { get; init; }
-    public bool CampaignAdaptiveWaveChoiceReady { get; init; }
-    public bool CampaignAdaptiveWaveChoiceUsed { get; init; }
-    public bool CampaignAdaptiveWaveOverrideQueued { get; init; }
-    public bool CampaignAdaptiveWaveRewardReady { get; init; }
-    public bool CampaignAdaptiveWaveFollowUpActive { get; init; }
-    public bool CampaignAdaptiveWaveFollowUpCompleted { get; init; }
-    public bool CampaignAdaptiveWaveFollowUpFailed { get; init; }
-    public string CampaignAdaptiveWaveFollowUpMode { get; init; } = "";
-    public float CampaignAdaptiveWaveFollowUpTimer { get; init; }
-    public float CampaignAdaptiveWaveFollowUpProgress { get; init; }
-    public float CampaignAdaptiveWaveFollowUpTarget { get; init; }
-    public string CampaignAdaptiveWaveChoiceLabel { get; init; } = "";
-    public string CampaignAdaptiveWaveBranchLabel { get; init; } = "";
-    public string CampaignAdaptiveWaveBranchWaveLabel { get; init; } = "";
-    public int CampaignAdaptiveWaveBranchSpawnCount { get; init; }
-    public string CampaignAdaptiveWaveFollowUpLabel { get; init; } = "";
 }
 
 public sealed class StageObjectiveOutcome
@@ -175,79 +157,7 @@ public static class StageObjectives
                 new StageObjectiveDefinition { Type = "clear_within", Value = stage.ThreeStarTimeLimitSeconds }
             };
 
-        return ApplyCampaignObjectiveOverrides(stage, objectives);
-    }
-
-    private static StageObjectiveDefinition[] ApplyCampaignObjectiveOverrides(
-        StageDefinition stage,
-        StageObjectiveDefinition[] objectives)
-    {
-        if (stage == null || GameState.Instance?.CurrentBattleMode != BattleRunMode.Campaign)
-        {
-            return objectives;
-        }
-
-        StageObjectiveDefinition replacement = null!;
-        if (!string.IsNullOrWhiteSpace(StageEncounterIntel.GetBossPressureTitleForStage(stage)))
-        {
-            replacement = new StageObjectiveDefinition
-            {
-                Type = "boss_pressure_trigger_limit",
-                Value = ResolveBossPressureTriggerLimit(stage, null)
-            };
-        }
-        else if (HasAdaptiveWaveFollowUpObjective(stage))
-        {
-            replacement = new StageObjectiveDefinition
-            {
-                Type = "adaptive_wave_follow_up_success"
-            };
-        }
-        else if (GameState.Instance.HasCampaignLateCondition(stage.StageNumber))
-        {
-            replacement = new StageObjectiveDefinition
-            {
-                Type = "late_condition_trigger_limit",
-                Value = ResolveLateConditionTriggerLimit(stage, null)
-            };
-        }
-
-        if (replacement == null || !ShouldOverrideCampaignThirdObjective(objectives))
-        {
-            return objectives;
-        }
-
-        if (objectives.Length >= 3)
-        {
-            objectives[2] = replacement;
-            return objectives;
-        }
-
-        return objectives.Concat(new[] { replacement }).Take(3).ToArray();
-    }
-
-    private static bool ShouldOverrideCampaignThirdObjective(StageObjectiveDefinition[] objectives)
-    {
-        if (objectives == null || objectives.Length < 3)
-        {
-            return true;
-        }
-
-        var third = objectives[2];
-        if (third == null)
-        {
-            return true;
-        }
-
-        var type = NormalizeType(third.Type);
-        return type switch
-        {
-            "boss_pressure_trigger_limit" => false,
-            "late_condition_trigger_limit" => false,
-            "adaptive_wave_follow_up_success" => false,
-            "mission_event_success" => false,
-            _ => true
-        };
+        return objectives;
     }
 
     private static bool EvaluateObjective(
@@ -267,9 +177,6 @@ public static class StageObjectives
             "hazard_hits_limit" => result.PlayerHazardHits <= Mathf.RoundToInt(Mathf.Max(0f, objective.Value)),
             "signal_jam_limit" => result.PlayerSignalJamSeconds <= Mathf.Max(0f, objective.Value),
             "mission_event_success" => result.CompletedMissionEvents >= ResolveMissionEventTarget(objective),
-            "boss_pressure_trigger_limit" => result.CampaignBossPressureTriggers <= ResolveBossPressureTriggerLimit(stage, objective),
-            "late_condition_trigger_limit" => result.CampaignLateConditionTriggers <= ResolveLateConditionTriggerLimit(stage, objective),
-            "adaptive_wave_follow_up_success" => playerWon && result.CampaignAdaptiveWaveFollowUpCompleted,
             _ => false
         };
     }
@@ -292,9 +199,6 @@ public static class StageObjectives
             "hazard_hits_limit" => $"Take no more than {Mathf.RoundToInt(Mathf.Max(0f, objective.Value))} hazard hits",
             "signal_jam_limit" => $"Spend no more than {Mathf.Max(0f, objective.Value):0.#}s under signal jam",
             "mission_event_success" => BuildMissionEventObjectiveLabel(stage, objective),
-            "boss_pressure_trigger_limit" => BuildBossPressureLimitLabel(stage, objective),
-            "late_condition_trigger_limit" => BuildLateConditionLimitLabel(stage, objective),
-            "adaptive_wave_follow_up_success" => "Master the forced adaptive-wave branch",
             _ => objective.Type
         };
     }
@@ -321,9 +225,6 @@ public static class StageObjectives
             "hazard_hits_limit" => BuildHazardHitLiveStatus(objective, result, label),
             "signal_jam_limit" => BuildSignalJamLiveStatus(objective, result, label),
             "mission_event_success" => BuildMissionEventLiveStatus(objective, result, label),
-            "boss_pressure_trigger_limit" => BuildBossPressureLimitLiveStatus(stage, objective, result, label),
-            "late_condition_trigger_limit" => BuildLateConditionLimitLiveStatus(stage, objective, result, label),
-            "adaptive_wave_follow_up_success" => BuildAdaptiveWaveFollowUpLiveStatus(result, label),
             _ => new StageObjectiveLiveStatus
             {
                 Label = label,
@@ -353,31 +254,6 @@ public static class StageObjectives
         return Mathf.Max(1, Mathf.RoundToInt(objective.Value <= 0f ? 1f : objective.Value));
     }
 
-    private static int ResolveLateConditionTriggerLimit(StageDefinition stage, StageObjectiveDefinition objective)
-    {
-        if (objective != null && objective.Value > 0f)
-        {
-            return Mathf.Max(1, Mathf.RoundToInt(objective.Value));
-        }
-
-        var interval = GameState.Instance?.GetCampaignLateConditionIntervalSeconds(stage.StageNumber) ?? 18f;
-        return Mathf.Max(1, Mathf.FloorToInt(Mathf.Max(interval, stage.ThreeStarTimeLimitSeconds) / interval));
-    }
-
-    private static int ResolveBossPressureTriggerLimit(StageDefinition stage, StageObjectiveDefinition objective)
-    {
-        if (objective != null && objective.Value > 0f)
-        {
-            return Mathf.Max(1, Mathf.RoundToInt(objective.Value));
-        }
-
-        return stage.StageNumber >= CampaignPacing.EliteStage
-            ? 4
-            : stage.StageNumber >= CampaignPacing.VeteranStage
-                ? 3
-                : 2;
-    }
-
     private static string BuildMissionEventObjectiveLabel(StageDefinition stage, StageObjectiveDefinition objective)
     {
         var required = ResolveMissionEventTarget(objective);
@@ -392,51 +268,11 @@ public static class StageObjectives
             : $"Secure {required} battlefield objectives";
     }
 
-    private static bool HasAdaptiveWaveFollowUpObjective(StageDefinition stage)
-    {
-        return stage != null &&
-            GameState.Instance?.CurrentBattleMode == BattleRunMode.Campaign &&
-            GameState.Instance.HasCampaignAdaptiveWaveRead(stage.StageNumber) &&
-            stage.HasScriptedWaves &&
-            stage.Waves.Length >= 2 &&
-            string.IsNullOrWhiteSpace(StageEncounterIntel.GetBossPressureTitleForStage(stage));
-    }
-
     private static string NormalizeType(string type)
     {
         return string.IsNullOrWhiteSpace(type)
             ? "clear_route"
             : type.Trim().ToLowerInvariant();
-    }
-
-    private static string BuildLateConditionLimitLabel(StageDefinition stage, StageObjectiveDefinition objective)
-    {
-        var failCount = ResolveLateConditionTriggerLimit(stage, objective) + 1;
-        var title = GameState.Instance?.GetCampaignLateConditionTitle(stage.MapId) ?? "late district condition";
-        return $"Clear before {title} hits {failCount} times";
-    }
-
-    private static string BuildBossPressureLimitLabel(StageDefinition stage, StageObjectiveDefinition objective)
-    {
-        var failCount = ResolveBossPressureTriggerLimit(stage, objective) + 1;
-        var title = StageEncounterIntel.GetBossPressureTitleForStage(stage);
-        return $"Clear before {title} triggers {failCount} times";
-    }
-
-    private static string BuildAdaptiveWaveBranchClause(StageBattleResult result)
-    {
-        if (result.CampaignAdaptiveWaveBranchSpawnCount <= 0 ||
-            string.IsNullOrWhiteSpace(result.CampaignAdaptiveWaveBranchLabel))
-        {
-            return "";
-        }
-
-        if (string.IsNullOrWhiteSpace(result.CampaignAdaptiveWaveBranchWaveLabel))
-        {
-            return $" · {result.CampaignAdaptiveWaveBranchLabel} active";
-        }
-
-        return $" · {result.CampaignAdaptiveWaveBranchLabel} in {result.CampaignAdaptiveWaveBranchWaveLabel}";
     }
 
     private static StageObjectiveLiveStatus BuildBusHullLiveStatus(
@@ -577,149 +413,4 @@ public static class StageObjectives
         };
     }
 
-    private static StageObjectiveLiveStatus BuildLateConditionLimitLiveStatus(
-        StageDefinition stage,
-        StageObjectiveDefinition objective,
-        StageBattleResult result,
-        string label)
-    {
-        var limit = ResolveLateConditionTriggerLimit(stage, objective);
-        var triggers = Mathf.Max(0, result.CampaignLateConditionTriggers);
-        if (triggers > limit)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{triggers}/{limit} safe pulses spent",
-                State = StageObjectiveLiveState.Failed
-            };
-        }
-
-        var detail = triggers == limit
-            ? $"{triggers}/{limit} safe pulses spent · next pulse fails"
-            : $"{triggers}/{limit} safe pulses spent";
-        return new StageObjectiveLiveStatus
-        {
-            Label = label,
-            Detail = detail,
-            State = StageObjectiveLiveState.Active
-        };
-    }
-
-    private static StageObjectiveLiveStatus BuildBossPressureLimitLiveStatus(
-        StageDefinition stage,
-        StageObjectiveDefinition objective,
-        StageBattleResult result,
-        string label)
-    {
-        var limit = ResolveBossPressureTriggerLimit(stage, objective);
-        var triggers = Mathf.Max(0, result.CampaignBossPressureTriggers);
-        if (triggers > limit)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{triggers}/{limit} safe boss commands spent",
-                State = StageObjectiveLiveState.Failed
-            };
-        }
-
-        var detail = triggers == limit
-            ? $"{triggers}/{limit} safe boss commands spent · next command fails"
-            : $"{triggers}/{limit} safe boss commands spent";
-        return new StageObjectiveLiveStatus
-        {
-            Label = label,
-            Detail = detail,
-            State = StageObjectiveLiveState.Active
-        };
-    }
-
-    private static StageObjectiveLiveStatus BuildAdaptiveWaveFollowUpLiveStatus(
-        StageBattleResult result,
-        string label)
-    {
-        var choiceLabel = string.IsNullOrWhiteSpace(result.CampaignAdaptiveWaveChoiceLabel)
-            ? "override"
-            : result.CampaignAdaptiveWaveChoiceLabel;
-        var followUpLabel = string.IsNullOrWhiteSpace(result.CampaignAdaptiveWaveFollowUpLabel)
-            ? "follow-up"
-            : result.CampaignAdaptiveWaveFollowUpLabel;
-
-        if (result.CampaignAdaptiveWaveFollowUpCompleted)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{followUpLabel} secured{BuildAdaptiveWaveBranchClause(result)}",
-                State = StageObjectiveLiveState.Completed
-            };
-        }
-
-        if (result.CampaignAdaptiveWaveFollowUpFailed)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{followUpLabel} slipped{BuildAdaptiveWaveBranchClause(result)}",
-                State = StageObjectiveLiveState.Failed
-            };
-        }
-
-        if (result.CampaignAdaptiveWaveFollowUpActive)
-        {
-            var detail = result.CampaignAdaptiveWaveFollowUpMode switch
-            {
-                "hold" => $"{followUpLabel}: hold {result.CampaignAdaptiveWaveFollowUpTimer:0.0}s without hull damage",
-                "defeats" => $"{followUpLabel}: {Mathf.RoundToInt(result.CampaignAdaptiveWaveFollowUpProgress)}/{Mathf.RoundToInt(result.CampaignAdaptiveWaveFollowUpTarget)} enemy defeats in {result.CampaignAdaptiveWaveFollowUpTimer:0.0}s",
-                _ => $"{followUpLabel}: {Mathf.RoundToInt(result.CampaignAdaptiveWaveFollowUpProgress)}/{Mathf.RoundToInt(result.CampaignAdaptiveWaveFollowUpTarget)} keep damage in {result.CampaignAdaptiveWaveFollowUpTimer:0.0}s"
-            };
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{detail}{BuildAdaptiveWaveBranchClause(result)}",
-                State = StageObjectiveLiveState.Active
-            };
-        }
-
-        if (result.CampaignAdaptiveWaveOverrideQueued)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{choiceLabel} queued for the next scripted wave{BuildAdaptiveWaveBranchClause(result)}",
-                State = StageObjectiveLiveState.Active
-            };
-        }
-
-        if (result.CampaignAdaptiveWaveChoiceUsed)
-        {
-            var detail = result.CampaignAdaptiveWaveRewardReady
-                ? $"{choiceLabel} payout armed · follow-up pending"
-                : $"{choiceLabel} committed · clear the forced read to arm the follow-up";
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = $"{detail}{BuildAdaptiveWaveBranchClause(result)}",
-                State = StageObjectiveLiveState.Active
-            };
-        }
-
-        if (result.CampaignAdaptiveWaveChoiceReady)
-        {
-            return new StageObjectiveLiveStatus
-            {
-                Label = label,
-                Detail = "[V] Rescue or [B] Breakthrough ready",
-                State = StageObjectiveLiveState.Active
-            };
-        }
-
-        return new StageObjectiveLiveStatus
-        {
-            Label = label,
-            Detail = "Spend the first adaptive read to unlock Rescue / Breakthrough",
-            State = StageObjectiveLiveState.Active
-        };
-    }
 }

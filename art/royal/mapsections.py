@@ -11,7 +11,10 @@ and props stay consistent. `stitch` colour-matches the sections, feathers them t
 2 x 2 texture tiles (none wider than 4096 px, for older phone GPUs).
 
   python3 art/royal/mapsections.py run [--zones city,harbor] [--parallel 3]   # targets + Codex, wave by wave
-  python3 art/royal/mapsections.py stitch [--zones ...]                      # assets/world/royal/maps/<zone>-<k>.jpg + .json
+  python3 art/royal/mapsections.py stitch [--zones ...] [--fill]             # assets/world/royal/maps/<zone>-<k>.jpg + .json
+
+`--fill` stitches a zone with sections still missing by cutting them from its current painting (softer), without
+saving them as sections, so a later `run` still paints them and a later `stitch` replaces them.
 """
 import argparse
 import json
@@ -19,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageStat
+from PIL import Image, ImageChops, ImageFilter, ImageStat
 
 ROOT = Path(__file__).resolve().parents[2]
 GEN = ROOT / "art/royal/gen"
@@ -32,6 +35,12 @@ TARGETS = SECTIONS / "targets"
 REFERENCES = SECTIONS / "references"
 JOBS = ROOT / "art/royal/jobs/08-map-sections.json"
 OUT = ROOT / "assets/world/royal/maps"
+# The zones' first wide paintings (one 2 x 2 painting each, art/royal/gen/maps-wide/<zone>.jpg + .json): the content
+# reference for every section and the open sea the stitch keeps away from the coast.
+WIDE = GEN / "maps-wide"
+# The guide's sea colour, and how far (world units) past the guide's coast the new painting is kept.
+GUIDE_SEA = (0x1d, 0x3b, 0x57)
+SEA_MARGIN = 90
 CONCEPT = "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
 TARGET_SIZE = (1920, 1080)
 TILES = 2
@@ -125,7 +134,9 @@ def paste_world(canvas, canvas_rect, image, image_rect):
 
 
 def previous_painting(zone):
-    """The zone's installed painting as one image with its world rect (tiled or single), for content references."""
+    """The zone's first wide painting (or else its installed one) as one image with its world rect."""
+    if (WIDE / f"{zone}.jpg").exists():
+        return Image.open(WIDE / f"{zone}.jpg").convert("RGB"), json.loads((WIDE / f"{zone}.json").read_text())["rect"]
     meta = json.loads((OUT / f"{zone}.json").read_text())
     rect = meta["rect"]
     if "tiles" not in meta:
@@ -169,7 +180,8 @@ def prompt(i, j, theme):
         "the tan roads and their curves, and the dark-green blobs as forests. At every RED dot paint a small empty flat "
         "clearing of trampled ground (no buildings, nothing on it) and at every WHITE dot a smaller empty patch of open "
         "ground; these spots must stay clear because castles and markers are placed there later. Keep the scale of "
-        "trees, roads and props the same as in Image 2, scaled up to this tile.\n")
+        "trees, roads and props the same as in Image 2, scaled up to this tile. Wherever the guide is plain dark-blue sea, "
+        "paint only open sea: never add islands, land, rocks or boats there.\n")
     if edges:
         text += (
             f"Continuity: the strip along the {' and '.join(edges)} edge of Image 1 is ALREADY PAINTED: it is the finished "
@@ -235,14 +247,27 @@ def ramp(size, start, band, horizontal):
     return line.resize(size)
 
 
-def stitch(zones):
+def keep_sea(zone, canvas, rect, sea):
+    """Replaces everything farther than SEA_MARGIN out to sea (by the guide) with `sea`, feathered at the edge."""
+    small = (max(1, canvas.width // 8), max(1, canvas.height // 8))
+    guide = Image.open(GUIDES / f"{zone}.png").convert("RGB").resize(small, Image.NEAREST)
+    land = ImageChops.difference(guide, Image.new("RGB", small, GUIDE_SEA)).convert("L").point(lambda v: 255 if v > 24 else 0)
+    reach = SEA_MARGIN * small[0] / rect[2]
+    land = land.filter(ImageFilter.MaxFilter(2 * round(reach) + 1)).filter(ImageFilter.GaussianBlur(reach / 3))
+    open_sea = crop_world(sea[0], sea[1], rect, canvas.size)
+    return Image.composite(canvas, open_sea, land.resize(canvas.size, Image.BILINEAR))
+
+
+def stitch(zones, fill=False):
     OUT.mkdir(parents=True, exist_ok=True)
     for zone in zones:
         rect = painting_rect(zone)
         rects = section_rects(rect)
-        if not all(section_path(zone, i, j).exists() for (i, j) in rects):
+        missing = [key for key in rects if not section_path(zone, *key).exists()]
+        if missing and not (fill and section_path(zone, 0, 0).exists()):
             print("skip", zone, "(sections missing)")
             continue
+        previous = previous_painting(zone) if missing else None
         scale = Image.open(section_path(zone, 0, 0)).width / rects[(0, 0)][2]
         size = (round(rect[2] * scale), round(rect[3] * scale))
         canvas = Image.new("RGB", size)
@@ -253,7 +278,8 @@ def stitch(zones):
             r = rects[(i, j)]
             x, y = round((r[0] - rect[0]) * scale), round((r[1] - rect[1]) * scale)
             w, h = min(round(r[2] * scale), size[0] - x), min(round(r[3] * scale), size[1] - y)
-            piece = Image.open(section_path(zone, i, j)).convert("RGB").resize((w, h), Image.LANCZOS)
+            piece = (crop_world(previous[0], previous[1], r, (w, h)) if (i, j) in missing
+                     else Image.open(section_path(zone, i, j)).convert("RGB").resize((w, h), Image.LANCZOS))
             box = (x, y, x + w, y + h)
             under = laid.crop(box)
             if i or j:
@@ -268,6 +294,8 @@ def stitch(zones):
             alpha = ImageChops.lighter(alpha, ImageChops.invert(under))
             canvas.paste(piece, (x, y), alpha)
             laid.paste(255, box)
+        # Out at sea the sections sometimes invent islands, so away from the guide's coast keep the first painting's sea.
+        canvas = keep_sea(zone, canvas, rect, previous or previous_painting(zone))
         # Split into 2 x 2 tiles that overlap by a few pixels, so no hairline shows where they meet.
         tiles, pad = [], 4
         for k in range(TILES * TILES):
@@ -285,7 +313,7 @@ def stitch(zones):
         sea = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
         (OUT / f"{zone}.json").write_text(json.dumps({"rect": rect, "sea": "%02x%02x%02x" % sea,
                                                      "tiles": [[round(v, 2) for v in t] for t in tiles]}, indent=1))
-        print("map", zone, canvas.size)
+        print("map", zone, canvas.size, f"({len(missing)} sections filled from the previous painting)" if missing else "")
 
 
 def main():
@@ -293,12 +321,13 @@ def main():
     parser.add_argument("command", choices=["run", "stitch"])
     parser.add_argument("--zones", default="")
     parser.add_argument("--parallel", type=int, default=3)
+    parser.add_argument("--fill", action="store_true", help="stitch: fill missing sections from the current painting")
     args = parser.parse_args()
     zones = [z for z in args.zones.split(",") if z] or list(json.loads((GUIDES / "crops.json").read_text()))
     if args.command == "run":
         run(zones, args.parallel)
     else:
-        stitch(zones)
+        stitch(zones, args.fill)
 
 
 if __name__ == "__main__":

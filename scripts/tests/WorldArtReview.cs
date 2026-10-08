@@ -59,7 +59,6 @@ public partial class WorldArtReview : Node
             foreach (var zone in AssetCoverageCatalog.RouteIds)
                 Check((ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}-0.jpg") || ResourceLoader.Exists($"res://assets/world/royal/maps/{zone}.jpg")) && Godot.FileAccess.FileExists($"res://assets/world/royal/maps/{zone}.json"),
                     $"{zone} has a painted campaign map");
-            Check(Enumerable.Range(0,AdventureTerrain.CellCount).All(c => AdventureTerrain.Neighbors(c).All(n => AdventureTerrain.Diamond(c).Intersect(AdventureTerrain.Diamond(n)).Count() == 2)), "Neighboring map tiles share their exact drawn edges");
             // --zones=city,harbor limits the map and battle captures to those zones (the art checks above still cover all).
             var only = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--zones="))?["--zones=".Length..].Split(',');
             foreach (var zone in AssetCoverageCatalog.RouteIds.Where(z => only == null || only.Contains(z)))

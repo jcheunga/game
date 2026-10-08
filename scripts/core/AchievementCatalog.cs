@@ -87,7 +87,6 @@ public static class AchievementCatalog
         new("collector_complete", "Grand Collector", "Claim all 100% collection milestones.", "collection"),
 
         // Gameplay variety (1)
-        new("mutator_5", "Rule Breaker", "Complete 5 battles with mutators active.", "combat"),
     };
 
     private static readonly Dictionary<string, AchievementDefinition> ById;

@@ -66,11 +66,6 @@ public partial class GameState
         if (!CanTravelToAdventureTile(tile, out message)) return false;
         _reachedAdventureTiles.Add(tile.Id);
         _adventureCaravanTiles[tile.MapId] = tile.Id;
-        if (tile.Site != null)
-        {
-            _adventureHeroNodes[tile.MapId] = tile.Site.Id;
-            _adventureHeroPositions[tile.MapId] = tile.Site.Point;
-        }
         Persist();
         return true;
     }

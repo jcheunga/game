@@ -36,12 +36,12 @@ public partial class UiReviewSmoke
         Check(!panel.Visible && NoBottomNotice(), "Opening and closing settings cannot revive the sealed-gate popup");
 
         var food = state.Food; var knowledge = state.AdventureKnowledgeRevision;
-        canvas.TravelToPoint(new Vector2(-10000, -10000)); await Wait(.1);
+        canvas.TravelToTile(AdventureTileCatalog.Stage("city", 9), null); await Wait(.1);
         Check(NoBottomNotice() && state.Food == food && state.AdventureKnowledgeRevision == knowledge, "Rejected travel does not display a popup or change resources and exploration");
         AuditText("Home / no bottom messages"); await Capture("map-no-bottom-messages");
         refresh.Invoke(menu, null);
-        canvas.TravelToPoint(new Vector2(-10000, -10000)); await Wait(.1);
-        canvas.TravelToPoint(new Vector2(-10000, -10000)); await Wait(.1);
+        canvas.TravelToTile(AdventureTileCatalog.Stage("city", 9), null); await Wait(.1);
+        canvas.TravelToTile(AdventureTileCatalog.Stage("city", 9), null); await Wait(.1);
         refresh.Invoke(menu, null);
         Check(NoBottomNotice(), "Repeated travel messages and refreshes cannot recreate the bottom popup");
         Send(new InputEventKey { Pressed = true, Keycode = Key.Escape }); await Wait(.1);

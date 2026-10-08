@@ -239,7 +239,7 @@ public partial class BattleController
 				continue;
 			}
 
-			SetStatus($"{hint.Title}: {hint.Body}");
+			_hintBanner?.Enqueue(hint.Title, hint.Body);
 			GameState.Instance.MarkHintSeen(hint.Id);
 		}
 	}

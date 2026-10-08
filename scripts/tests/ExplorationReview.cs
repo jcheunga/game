@@ -72,6 +72,21 @@ public partial class ExplorationReview : Node
                 var resources=tiles.Where(t=>t.IsResource).ToArray();
                 Check(resources.Length==39 && tiles.Count(t=>!t.HasInterest)>=190 && resources.All(r=>AdventureTileCatalog.Neighbors(r).All(n=>!n.IsResource)),
                     zone+" scatters 39 resources over mostly plain ground, never side by side");
+                // Food economy: tiles to open every road, then the shortest detours to every food source.
+                var opened=new System.Collections.Generic.HashSet<string>(AdventureTileCatalog.Roads.SelectMany(road=>GameState.AdventureTilePath(stages[road.From],stages[road.To])).Select(t=>t.Id));
+                var roadTiles=opened.Count(id=>AdventureTileCatalog.Find(zone,id).Site?.Kind!=AdventureSiteKind.Leader);
+                var foodSources=tiles.Where(t=>t.Discovery?.Kind==AdventureDiscoveryKind.Food || t.Site?.Kind==AdventureSiteKind.Food).ToArray();
+                var detour=0;
+                foreach (var source in foodSources.OrderBy(t=>opened.Contains(t.Id)?0:1))
+                {
+                    var best=opened.Select(id=>GameState.AdventureTilePath(AdventureTileCatalog.Find(zone,id),source)).Where(path=>path.Count>0).OrderBy(path=>path.Count).FirstOrDefault();
+                    if (best==null) continue;
+                    foreach (var step in best.Skip(1).SkipLast(1)) if (opened.Add(step.Id)) detour++;
+                    opened.Add(source.Id);
+                }
+                var foodGained=foodSources.Sum(t=>t.Discovery?.Amount ?? t.Site.FoodReward);
+                var entry=stages.Sum(t=>GameState.Instance.GetStageEntryFoodCost(t.Site.Stage));
+                GD.Print($"EXPLORATION_ECONOMY: {zone} road tiles {roadTiles} ({roadTiles*GameState.AdventureTileFoodCost} food), food detours {detour} tiles, {foodSources.Length} food sources pay {foodGained} for {foodSources.Length*GameState.AdventureTileFoodCost} to open, battles {entry}, first wins pay {stages.Length*GameState.CampaignFirstClearFood}; net {foodGained+stages.Length*GameState.CampaignFirstClearFood-(roadTiles+detour+foodSources.Length)*GameState.AdventureTileFoodCost-entry}");
                 var finds=AdventureDiscoveryCatalog.ForMap(zone);
                 Check(finds.Count==28 && finds.Select(f=>f.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length
                     && finds[0].Kind==AdventureDiscoveryKind.Food && Steps(stages[0],AdventureTileCatalog.Find(zone,finds[0].Id))<=4,zone+" offers every kind of find, with provisions close to the start");
@@ -141,6 +156,8 @@ public partial class ExplorationReview : Node
             Fund(100);
             foreach (var tile in GameState.AdventureTilePath(start,AdventureTileCatalog.Stage("city",1)).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(tile,out _);
             canvas.RefreshKnowledge(); await Wait(.3); await Capture("03-road-to-second-stage");
+            // The painting holds up at the closest zoom.
+            canvas.ChangeZoom(10f); canvas.FocusSite(AdventureTileCatalog.Stage("city",1).Id); await Wait(.3); await Capture("04-closest-zoom");
             menu.QueueFree(); await Wait(.2);
             Reset(); menu=await Map("citadel"); await Capture("06-citadel-veil"); menu.QueueFree(); await Wait(.2);
         }

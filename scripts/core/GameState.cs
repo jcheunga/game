@@ -53,12 +53,6 @@ public partial class GameState : Node
 	private const float CampaignReserveRallySpeedScale = 1.1f;
 	private const float CampaignReserveRallyDurationSeconds = 7f;
 	private const int CampaignRouteDoctrineBaseThreshold = 7;
-	private const int CampaignAdaptiveWaveStage = CampaignPacing.VeteranStage;
-	private const int CampaignAdaptiveWaveEliteStage = CampaignPacing.EliteStage;
-	private const int CampaignLateConditionStage = CampaignPacing.LateConditionStage;
-	private const int CampaignLateConditionEliteStage = CampaignPacing.EliteStage;
-	private const float CampaignLateConditionBaseIntervalSeconds = 18f;
-	private const float CampaignLateConditionEliteIntervalSeconds = 15f;
 	private static readonly string DefaultAsyncChallengeCode =
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
@@ -276,8 +270,6 @@ public partial class GameState : Node
 	private readonly HashSet<string> _claimedCollectionMilestoneIds = new(StringComparer.OrdinalIgnoreCase);
 
 	// Battle Mutators
-	private readonly HashSet<string> _activeMutatorIds = new(StringComparer.OrdinalIgnoreCase);
-	public int MutatorBattlesCompleted { get; private set; }
 
 	// Accessibility
 	public string ColorblindMode { get; private set; } = "none";
@@ -578,43 +570,6 @@ public partial class GameState : Node
 		};
 	}
 
-	public string GetCampaignCounterSurgeTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Press-Gang Rush",
-			RouteCatalog.HarborId => "Tidebreaker Boarders",
-			RouteCatalog.FoundryId => "Smelter Guard",
-			RouteCatalog.QuarantineId => "Hex Sweep",
-			RouteCatalog.ThornwallId => "Pass Stampede",
-			RouteCatalog.BasilicaId => "Crypt Procession",
-			RouteCatalog.MireId => "Rot Flood",
-			RouteCatalog.SteppeId => "Flank Riders",
-			RouteCatalog.GloamwoodId => "Witch Ambush",
-			RouteCatalog.CitadelId => "Iron Reprisals",
-			_ => "Counter-Surge"
-		};
-	}
-
-	public string BuildCampaignCounterSurgeStatusText(string routeId)
-	{
-		var title = GetCampaignCounterSurgeTitle(routeId);
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => $"Counter-surge: {title}. Securing the battlefield objective provokes a fast morale push from the keep.",
-			RouteCatalog.HarborId => $"Counter-surge: {title}. Securing the battlefield objective provokes dock raiders into the same lane.",
-			RouteCatalog.FoundryId => $"Counter-surge: {title}. Securing the battlefield objective provokes armored forge reinforcements.",
-			RouteCatalog.QuarantineId => $"Counter-surge: {title}. Securing the battlefield objective provokes a brief curse sweep with hex support.",
-			RouteCatalog.ThornwallId => $"Counter-surge: {title}. Securing the battlefield objective provokes a downhill stampede.",
-			RouteCatalog.BasilicaId => $"Counter-surge: {title}. Securing the battlefield objective provokes a ritual procession to reclaim the lane.",
-			RouteCatalog.MireId => $"Counter-surge: {title}. Securing the battlefield objective provokes a blight-heavy flood down the lane.",
-			RouteCatalog.SteppeId => $"Counter-surge: {title}. Securing the battlefield objective provokes a fast flank rider response.",
-			RouteCatalog.GloamwoodId => $"Counter-surge: {title}. Securing the battlefield objective provokes a hex-heavy ambush.",
-			RouteCatalog.CitadelId => $"Counter-surge: {title}. Securing the battlefield objective provokes a disciplined armored reprisal.",
-			_ => $"Counter-surge: {title}. Securing the battlefield objective provokes a one-time enemy response."
-		};
-	}
-
 	public string GetCampaignMissionFollowThroughTitle(string routeId)
 	{
 		return RouteCatalog.Normalize(routeId) switch
@@ -671,86 +626,6 @@ public partial class GameState : Node
 		};
 	}
 
-	public string GetCampaignConvoyCommandTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Lantern Call",
-			RouteCatalog.HarborId => "Harpoon Break",
-			RouteCatalog.FoundryId => "Fire Mission",
-			RouteCatalog.QuarantineId => "Ward Column",
-			RouteCatalog.ThornwallId => "Stonefall",
-			RouteCatalog.BasilicaId => "Sanctuary Oath",
-			RouteCatalog.MireId => "Fen Lure",
-			RouteCatalog.SteppeId => "Dust Run",
-			RouteCatalog.GloamwoodId => "Night Mark",
-			RouteCatalog.CitadelId => "Counterbattery",
-			_ => "Convoy Command"
-		};
-	}
-
-	public string BuildCampaignConvoyCommandStatusText(string routeId)
-	{
-		var title = GetCampaignConvoyCommandTitle(routeId);
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => $"Convoy command: {title}. Charges under pressure; press C once ready to call a militia rally into the active lane.",
-			RouteCatalog.HarborId => $"Convoy command: {title}. Charges under pressure; press C once ready to snap chains and dock fire across the active lane.",
-			RouteCatalog.FoundryId => $"Convoy command: {title}. Charges under pressure; press C once ready to walk a furnace barrage onto the frontline.",
-			RouteCatalog.QuarantineId => $"Convoy command: {title}. Charges under pressure; press C once ready to clear curse pressure and harden the convoy.",
-			RouteCatalog.ThornwallId => $"Convoy command: {title}. Charges under pressure; press C once ready to drop a heavy shove across the pass.",
-			RouteCatalog.BasilicaId => $"Convoy command: {title}. Charges under pressure; press C once ready to bless the line and patch the wagon.",
-			RouteCatalog.MireId => $"Convoy command: {title}. Charges under pressure; press C once ready to drag the nearest enemy knot into the bog.",
-			RouteCatalog.SteppeId => $"Convoy command: {title}. Charges under pressure; press C once ready to send outriders through the lane.",
-			RouteCatalog.GloamwoodId => $"Convoy command: {title}. Charges under pressure; press C once ready to hex the heaviest threat.",
-			RouteCatalog.CitadelId => $"Convoy command: {title}. Charges under pressure; press C once ready to correct the convoy guns onto the keep.",
-			_ => $"Convoy command: {title}. Charges under pressure; press C once ready for a one-time route response."
-		};
-	}
-
-	public string GetCampaignFieldOrderAssaultTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Lantern Advance",
-			RouteCatalog.HarborId => "Tidecut Push",
-			RouteCatalog.FoundryId => "Furnace Push",
-			RouteCatalog.QuarantineId => "Purge March",
-			RouteCatalog.ThornwallId => "Avalanche Push",
-			RouteCatalog.BasilicaId => "Crusade Step",
-			RouteCatalog.MireId => "Bog Hunt",
-			RouteCatalog.SteppeId => "Rider Sweep",
-			RouteCatalog.GloamwoodId => "Hex Hunt",
-			RouteCatalog.CitadelId => "Siege Step",
-			_ => "Assault Order"
-		};
-	}
-
-	public string GetCampaignFieldOrderBulwarkTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Shield Ring",
-			RouteCatalog.HarborId => "Breakwater Hold",
-			RouteCatalog.FoundryId => "Iron Screen",
-			RouteCatalog.QuarantineId => "Ward Line",
-			RouteCatalog.ThornwallId => "Stone Brace",
-			RouteCatalog.BasilicaId => "Sanctuary Hold",
-			RouteCatalog.MireId => "Reed Bastion",
-			RouteCatalog.SteppeId => "Dust Circle",
-			RouteCatalog.GloamwoodId => "Night Veil",
-			RouteCatalog.CitadelId => "Bastion Stance",
-			_ => "Bulwark Order"
-		};
-	}
-
-	public string BuildCampaignFieldOrderStatusText(string routeId)
-	{
-		var assault = GetCampaignFieldOrderAssaultTitle(routeId);
-		var bulwark = GetCampaignFieldOrderBulwarkTitle(routeId);
-		return $"Field order: after the first battlefield event resolves, choose [Z] {assault} or [X] {bulwark} to arm a follow-up battlefield objective and swing the next reinforcement beat.";
-	}
-
 	public string GetCampaignRouteSupportTitle(string routeId)
 	{
 		return RouteCatalog.Normalize(routeId) switch
@@ -784,153 +659,6 @@ public partial class GameState : Node
 			RouteCatalog.GloamwoodId => "District tactic: Witchlight Ambush. On the first major enemy swell, the toughest enemy is hexed and its escort stumbles.",
 			RouteCatalog.CitadelId => "District tactic: Citadel Cannon. On the first major enemy swell, the caravan lands a siege volley on the enemy keep and frontline.",
 			_ => "District tactic: none."
-		};
-	}
-
-	public bool HasCampaignAdaptiveWaveRead(int stage)
-	{
-		return stage >= CampaignAdaptiveWaveStage;
-	}
-
-	public string GetCampaignAdaptiveWaveFriendlyTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Lantern Read",
-			RouteCatalog.HarborId => "Breakwater Read",
-			RouteCatalog.FoundryId => "Cooling Read",
-			RouteCatalog.QuarantineId => "Ward Read",
-			RouteCatalog.ThornwallId => "Pass Read",
-			RouteCatalog.BasilicaId => "Reliquary Read",
-			RouteCatalog.MireId => "Fen Read",
-			RouteCatalog.SteppeId => "Outrider Read",
-			RouteCatalog.GloamwoodId => "Witchlight Read",
-			RouteCatalog.CitadelId => "Range Read",
-			_ => "Convoy Read"
-		};
-	}
-
-	public string GetCampaignAdaptiveWaveEnemyTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Press-Gang Read",
-			RouteCatalog.HarborId => "Boarding Read",
-			RouteCatalog.FoundryId => "Crucible Read",
-			RouteCatalog.QuarantineId => "Blackout Read",
-			RouteCatalog.ThornwallId => "Stampede Read",
-			RouteCatalog.BasilicaId => "Procession Read",
-			RouteCatalog.MireId => "Blight Read",
-			RouteCatalog.SteppeId => "Hunter Read",
-			RouteCatalog.GloamwoodId => "Hexmoon Read",
-			RouteCatalog.CitadelId => "Iron Read",
-			_ => "Enemy Read"
-		};
-	}
-
-	public string GetCampaignAdaptiveWaveRescueFollowUpTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Lantern Recovery",
-			RouteCatalog.HarborId => "Harbormaster Relief",
-			RouteCatalog.FoundryId => "Cooling Window",
-			RouteCatalog.QuarantineId => "Ward Lockdown",
-			RouteCatalog.ThornwallId => "Pass Hold",
-			RouteCatalog.BasilicaId => "Reliquary Shelter",
-			RouteCatalog.MireId => "Fen Refuge",
-			RouteCatalog.SteppeId => "Outrider Screen",
-			RouteCatalog.GloamwoodId => "Witchlight Shelter",
-			RouteCatalog.CitadelId => "Bastion Hold",
-			_ => "Rescue Window"
-		};
-	}
-
-	public string GetCampaignAdaptiveWaveBreakthroughFollowUpTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Gatecrash Window",
-			RouteCatalog.HarborId => "Chainbreak Window",
-			RouteCatalog.FoundryId => "Slag Break",
-			RouteCatalog.QuarantineId => "Ward Breach",
-			RouteCatalog.ThornwallId => "Avalanche Break",
-			RouteCatalog.BasilicaId => "Reliquary Break",
-			RouteCatalog.MireId => "Fen Break",
-			RouteCatalog.SteppeId => "Rider Break",
-			RouteCatalog.GloamwoodId => "Hexbreak Window",
-			RouteCatalog.CitadelId => "Range Break",
-			_ => "Breakthrough Window"
-		};
-	}
-
-	public string BuildCampaignAdaptiveWaveStatusText(int stage, string routeId)
-	{
-		if (!HasCampaignAdaptiveWaveRead(stage))
-		{
-			return $"Adaptive wave read: dormant until stage {CampaignAdaptiveWaveStage}.";
-		}
-
-		var charges = stage >= CampaignAdaptiveWaveEliteStage ? 3 : 2;
-		var friendly = GetCampaignAdaptiveWaveFriendlyTitle(routeId);
-		var enemy = GetCampaignAdaptiveWaveEnemyTitle(routeId);
-		var rescueFollowUp = GetCampaignAdaptiveWaveRescueFollowUpTitle(routeId);
-		var breakthroughFollowUp = GetCampaignAdaptiveWaveBreakthroughFollowUpTitle(routeId);
-		return $"Adaptive wave read: {friendly} / {enemy}. On scripted waves, lane control bends the first {charges} enemy spawn{(charges == 1 ? "" : "s")}: if the convoy is bending, route support clips the swell; if you own the road, the enemy hardens it instead. After the first read spends, [V] Rescue or [B] Breakthrough can force the next scripted wave read; Rescue biases escort screens and hunter counterpacks, while Breakthrough biases spearhead assaults and bastion counterpacks. That override now also splices a real branch into the next scripted wave: Rescue inserts a Hunter Branch, while Breakthrough inserts a Bastion Branch. Clearing that forced branch arms a small route reward on victory and opens {rescueFollowUp} or {breakthroughFollowUp} to upgrade it. The follow-up test is route-specific: some districts ask for a clean hold, others want the counterpush cut down, and siege routes demand real keep damage. Securing that follow-up completes a battle objective. Star ratings depend on caravan health: complete without damage for 3 stars, finish with at least 70% health for 2, or complete the mission for 1.";
-	}
-
-	public bool HasCampaignLateCondition(int stage)
-	{
-		return stage >= CampaignLateConditionStage;
-	}
-
-	public float GetCampaignLateConditionIntervalSeconds(int stage)
-	{
-		return stage >= CampaignLateConditionEliteStage
-			? CampaignLateConditionEliteIntervalSeconds
-			: CampaignLateConditionBaseIntervalSeconds;
-	}
-
-	public string GetCampaignLateConditionTitle(string routeId)
-	{
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => "Riot Signal",
-			RouteCatalog.HarborId => "Undertow Bell",
-			RouteCatalog.FoundryId => "Slag Front",
-			RouteCatalog.QuarantineId => "Ward Sweep",
-			RouteCatalog.ThornwallId => "Rockfall Cycle",
-			RouteCatalog.BasilicaId => "Reliquary Toll",
-			RouteCatalog.MireId => "Rot Tide",
-			RouteCatalog.SteppeId => "Windlane",
-			RouteCatalog.GloamwoodId => "Hex Moon",
-			RouteCatalog.CitadelId => "Crossfire Window",
-			_ => "Late District Condition"
-		};
-	}
-
-	public string BuildCampaignLateConditionStatusText(int stage, string routeId)
-	{
-		if (!HasCampaignLateCondition(stage))
-		{
-			return $"Late district condition: dormant until stage {CampaignLateConditionStage}.";
-		}
-
-		var title = GetCampaignLateConditionTitle(routeId);
-		var interval = GetCampaignLateConditionIntervalSeconds(stage);
-		return RouteCatalog.Normalize(routeId) switch
-		{
-			RouteCatalog.CityId => $"Late district condition: {title}. Every {interval:0}s, the active lane gets a militia tempo burst with courage and faster cooldown recovery.",
-			RouteCatalog.HarborId => $"Late district condition: {title}. Every {interval:0}s, undertow chains rip through the active lane and slow the enemy push.",
-			RouteCatalog.FoundryId => $"Late district condition: {title}. Every {interval:0}s, slag shells walk across the hottest frontline.",
-			RouteCatalog.QuarantineId => $"Late district condition: {title}. Every {interval:0}s, ward lanterns clear signal pressure and stabilize the lane.",
-			RouteCatalog.ThornwallId => $"Late district condition: {title}. Every {interval:0}s, a downhill shove hits the contested pass.",
-			RouteCatalog.BasilicaId => $"Late district condition: {title}. Every {interval:0}s, reliquary tolls bless the line and patch the wagon.",
-			RouteCatalog.MireId => $"Late district condition: {title}. Every {interval:0}s, bog pressure drags the nearest enemy knot down.",
-			RouteCatalog.SteppeId => $"Late district condition: {title}. Every {interval:0}s, the active lane gets a speed-heavy outrider tempo surge.",
-			RouteCatalog.GloamwoodId => $"Late district condition: {title}. Every {interval:0}s, the heaviest enemy is hexed and the lane stumbles.",
-			RouteCatalog.CitadelId => $"Late district condition: {title}. Every {interval:0}s, convoy guns open a fresh crossfire on the lane and keep.",
-			_ => $"Late district condition: {title}. Every {interval:0}s, the route throws a recurring battlefield pulse."
 		};
 	}
 
@@ -1107,6 +835,7 @@ public partial class GameState : Node
 		Gold += rewardGold;
 		Food += rewardFood;
 		var firstClear = CurrentBattleMode == BattleRunMode.Campaign && GetStageStars(stage) <= 0;
+		if (firstClear) { Food += CampaignFirstClearFood; rewardFood += CampaignFirstClearFood; }
 		var bestStars = RecordStageStars(stage, starsEarned);
 		if (CurrentBattleMode == BattleRunMode.Campaign) RevealAdventureStageVictory(stage);
 		var progressionRewardSummary = ClaimCampaignProgressionRewards(stage, starsEarned);
@@ -1793,7 +1522,6 @@ public partial class GameState : Node
 		var keepReducedMotion = ReducedMotion;
 		var keepAutoBattle = AutoBattleEnabled;
 		var keepLargeText = LargeTextMode;
-		var keepMutatorBattles = MutatorBattlesCompleted;
 
 		// Reset campaign state
 		ResetAdventureProgress();
@@ -1871,7 +1599,6 @@ public partial class GameState : Node
 		ReducedMotion = keepReducedMotion;
 		AutoBattleEnabled = keepAutoBattle;
 		LargeTextMode = keepLargeText;
-		MutatorBattlesCompleted = keepMutatorBattles;
 
 		// Keep active deck if units are still owned
 		var validDeck = new List<string>();
@@ -4229,46 +3956,6 @@ public partial class GameState : Node
 
 	// ── Battle Mutators ──────────────────────────────────────
 
-	public void ToggleMutator(string mutatorId)
-	{
-		if (_activeMutatorIds.Contains(mutatorId))
-			_activeMutatorIds.Remove(mutatorId);
-		else
-			_activeMutatorIds.Add(mutatorId);
-		Persist();
-	}
-
-	public IReadOnlyCollection<string> GetActiveMutatorIds() => _activeMutatorIds;
-
-	public bool IsMutatorActive(string mutatorId) => _activeMutatorIds.Contains(mutatorId);
-
-	public float GetMutatorRewardMultiplier()
-	{
-		var mult = 1f;
-		foreach (var id in _activeMutatorIds)
-		{
-			var def = BattleMutatorCatalog.GetById(id);
-			if (def != null) mult *= def.GoldRewardMultiplier;
-		}
-		return mult;
-	}
-
-	public void RecordMutatorBattleComplete()
-	{
-		if (_activeMutatorIds.Count > 0)
-		{
-			MutatorBattlesCompleted++;
-			if (MutatorBattlesCompleted >= 5) TryUnlockAchievement("mutator_5");
-			Persist();
-		}
-	}
-
-	public void ClearMutators()
-	{
-		_activeMutatorIds.Clear();
-		Persist();
-	}
-
 	// ── Accessibility ────────────────────────────────────────
 
 	public void SetColorblindMode(string mode)
@@ -4701,8 +4388,6 @@ public partial class GameState : Node
 		SelectedEventStageIndex = 0;
 
 		// v38
-		_activeMutatorIds.Clear();
-		MutatorBattlesCompleted = 0;
 		ColorblindMode = "none";
 		ReducedMotion = false;
 		AutoBattleEnabled = false;
@@ -5409,15 +5094,9 @@ public partial class GameState : Node
 					if (!string.IsNullOrWhiteSpace(id)) _claimedCollectionMilestoneIds.Add(id.Trim());
 		}
 
-		// v38: Battle Mutators, Accessibility
+		// v38: Accessibility
 		if (saved.Version >= 38)
 		{
-			_activeMutatorIds.Clear();
-			if (saved.ActiveMutatorIds != null)
-				foreach (var id in saved.ActiveMutatorIds)
-					if (!string.IsNullOrWhiteSpace(id)) _activeMutatorIds.Add(id.Trim());
-			MutatorBattlesCompleted = Math.Max(0, saved.MutatorBattlesCompleted);
-
 			ColorblindMode = saved.ColorblindMode?.Trim() ?? "none";
 			ReducedMotion = saved.ReducedMotion;
 			AutoBattleEnabled = saved.AutoBattleEnabled;
@@ -5514,13 +5193,9 @@ public partial class GameState : Node
 			FoodRechargedAtUnixSeconds = FoodRechargedAtUnixSeconds,
 			HighestUnlockedStage = HighestUnlockedStage,
 			VisitedAdventureSites = _visitedAdventureSites.OrderBy(x => x).ToArray(),
-			AdventureHeroNodes = new Dictionary<string, string>(_adventureHeroNodes),
-			AdventureHeroPositions = _adventureHeroPositions.ToDictionary(x => x.Key, x => new[] { x.Value.X, x.Value.Y }),
 			AdventureOpenTiles = _openedAdventureTiles.OrderBy(id => id).ToArray(),
             AdventureReachedTiles = _reachedAdventureTiles.OrderBy(id => id).ToArray(),
             AdventureCaravanTiles = new Dictionary<string, string>(_adventureCaravanTiles),
-			AdventureExploredCells = _adventureExploredCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
-            AdventureTravelledCells = _adventureTravelledCells.ToDictionary(x => x.Key, x => x.Value.OrderBy(cell => cell).ToArray()),
             ClaimedAdventureDiscoveries = _claimedAdventureDiscoveries.OrderBy(id => id).ToArray(),
 			SelectedStage = SelectedStage,
 			SelectedAsyncChallengeCode = SelectedAsyncChallengeCode,
@@ -5672,8 +5347,6 @@ public partial class GameState : Node
 			ClaimedCollectionMilestoneIds = _claimedCollectionMilestoneIds.ToArray(),
 
 			// v38
-			ActiveMutatorIds = _activeMutatorIds.ToArray(),
-			MutatorBattlesCompleted = MutatorBattlesCompleted,
 			ColorblindMode = ColorblindMode ?? "none",
 			ReducedMotion = ReducedMotion,
 			AutoBattleEnabled = AutoBattleEnabled,

@@ -16,8 +16,6 @@ public partial class UiReviewSmoke
         state.ApplyVictory(2, 0, 0, 2);
         state.ApplyVictory(3, 0, 0, 1);
         state.ReloadFromDisk();
-        foreach (var stage in GameData.GetStagesForMap("city"))
-            state.MoveAdventureHero("city", AdventureMapCatalog.Leader(stage.StageNumber).Point);
         state.SetSelectedStage(3);
         await Open("MapMenu");
         var canvas = Walk(GetTree().CurrentScene).OfType<MapPathCanvas>().Single();

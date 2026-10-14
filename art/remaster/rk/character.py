@@ -18,7 +18,9 @@ import bpy
 from mathutils import Euler, Matrix, Vector
 from bpy_extras.object_utils import world_to_camera_view
 
-from . import anim, body, core, geo, rig
+from . import anim, body, core, geo, rig, hero, hands as HANDS, sdf as SDF, skin as SKIN, bones as BONES
+import numpy as np
+import os
 from .death import Performance
 from .rig import Poser
 
@@ -27,7 +29,16 @@ from .rig import Poser
 # toward it (FACING_YAW) for the 3/4 view, so faces and heraldry read while every fall, drop and corpse lands on the
 # same ground plane the battle draws.
 CAM_DIR = Vector((0.0, -math.cos(math.radians(22.0)), math.sin(math.radians(22.0))))
-FACING_YAW = math.radians(-33.5)
+import os as _os
+FACING_DEFAULT = math.radians(float(_os.environ.get('RK_FACING', '-45')))
+FACING_YAW = FACING_DEFAULT
+
+
+def set_facing(degrees=None):
+    """Turn this unit toward the camera by its own angle (long-bodied mounts and engines read best nearer
+    profile); None restores the roster default. Build scripts reset it before each recipe."""
+    global FACING_YAW
+    FACING_YAW = FACING_DEFAULT if degrees is None else math.radians(degrees)
 FRAME_W, FRAME_H = 256, 320
 
 
@@ -52,16 +63,23 @@ class Character:
             self.poser = Poser(self.arm)
             self.stance = {}
             return
-        self.s = body.spec(**(spec or {}))
-        self.J = body.joints(self.s)
         self.parts = []
         self.body = None
+        self.body_field = None
         self.tip_rest = None
         self.release_objs = []
         self.ik = []
         self.extra_bones = []
         self._extras = extras
-        self.arm, _ = body.skeleton(ident, self.s, self.coll, extras=extras)
+        self.rig_kind = rig_kind
+        if rig_kind == 'hero':
+            self.s = hero.spec(**(spec or {}))
+            self.J = hero.joints(self.s)
+            self.arm, _ = hero.skeleton(ident, self.s, self.coll, extras=extras)
+        else:
+            self.s = body.spec(**(spec or {}))
+            self.J = body.joints(self.s)
+            self.arm, _ = body.skeleton(ident, self.s, self.coll, extras=extras)
         self.poser = Poser(self.arm)
         self.stance = {}
 
@@ -79,9 +97,140 @@ class Character:
             self.parts.append((o, bone))
         return objs
 
+    def _hand_field(self, size, pose, side):
+        thumb = -1 if side == 'R' else 1
+        if getattr(self, 'bone_hands', False):
+            return BONES.bone_hand_field(1.12 * self.s.get('hand', 1.0) * size, pose, thumb)
+        return HANDS.hand_field(1.12 * self.s.get('hand', 1.0) * size, pose, thumb=thumb,
+                                claws=getattr(self, 'claws', 0.0))
+
+    def build_bones(self, mat, thick=1.45, **kw):
+        """A skeleton for the body: the bones are the visible, skinned mesh; a thin human sculpt (hidden) is
+        what garments and armour are grown from."""
+        ghost = hero.spec(**dict(self.s, thin=max(0.6, self.s.get('thin', 0.0))))
+        self.body_field = hero.body_field(ghost, self.J)
+        bf = BONES.skeleton_field(self.s, self.J, thick=thick, **kw)
+        self.body = bf.mesh(0.0045, self.coll, mat, name=self.ident + ' bones', smooth=2)
+        self.body_skin = lambda obj, arm: hero.skin_from_field(obj, arm, bf, sigma=0.012, smooth=1)
+        self.bone_hands = True
+        self.visible = dict(field=bf, mat=mat, h=0.0045, smooth=2, sigma=0.012, name=self.ident + ' bones')
+        return self.body
+
     def build_body(self, mats, **kw):
+        if self.rig_kind == 'hero':
+            mat = mats['skin'] if isinstance(mats, dict) else mats
+            self.body, self.body_field = hero.build_body(self.ident + ' body', self.s, self.J, self.coll, mat, **kw)
+            field = self.body_field
+            self.body_skin = lambda obj, arm: hero.skin_from_field(obj, arm, field)
+            self.visible = dict(field=field, mat=mat, h=kw.get('h', 0.006), smooth=6, sigma=0.03,
+                                name=self.ident + ' body')
+            return self.body
         self.body = body.build_body(self.ident + ' body', self.s, self.J, self.coll, mats, **kw)
         return self.body
+
+    # ---------------------------------------------------------- dressing in the stance
+    JOINT_BONES = {'pelvis': ('hips', 0), 'spine': ('spine', 0), 'chest': ('chest', 0), 'neck': ('neck', 0),
+                   'head': ('head', 0), 'head_top': ('head', 1), 'root': ('root', 0)}
+
+    def bone_mats(self):
+        """Armature-space deformation of every bone in the current pose (pose @ rest^-1), numpy 4x4."""
+        bpy.context.view_layer.update()
+        out = {}
+        for pb in self.arm.pose.bones:
+            M = pb.matrix @ pb.bone.matrix_local.inverted()
+            out[pb.name] = np.array(M)
+        return out
+
+    def dress(self):
+        """Grow garments around the body as it stands in its stance: posed joints and a posed body sculpt.
+        Call after set_stance() and build_body(); garb.Kit and plate.Smith then work in the stance."""
+        self.stance_mats = self.bone_mats()
+        pb = self.arm.pose.bones
+        Jp = {}
+        for key, (bone, end) in self.JOINT_BONES.items():
+            if bone in pb:
+                Jp[key] = (pb[bone].tail if end else pb[bone].head).copy()
+        for side in ('R', 'L'):
+            for key, bone, end in (('clav', 'shoulder', 0), ('shoulder', 'upper_arm', 0), ('elbow', 'forearm', 0),
+                                   ('wrist', 'hand', 0), ('hand_tip', 'hand', 1), ('hip', 'thigh', 0),
+                                   ('knee', 'shin', 0), ('ankle', 'foot', 0), ('toe', 'foot', 1)):
+                b = pb[bone + '.' + side]
+                Jp[key + '.' + side] = (b.tail if end else b.head).copy()
+        self.Jp = Jp
+        self.posed_field = self.body_field.posed(self.stance_mats)
+        self.posed = True
+        vis = getattr(self, 'visible', None)
+        if vis is not None and self.body is not None:
+            # re-mesh the body in the stance so it matches its garments exactly; bind() carries it back to rest
+            bpy.data.objects.remove(self.body, do_unlink=True)
+            pf = vis['field'].posed(self.stance_mats)
+            self.body = pf.mesh(vis['h'], self.coll, vis['mat'], name=vis['name'], smooth=vis['smooth'])
+            self.visible_posed = pf
+            self.body_skin = None
+        return self
+
+    def grip(self, wd_res, side='R', mat=None, pose='grip', size=1.0, toward_tip=True, at=None, glove=None):
+        """A hand closed around a held weapon (result of hold()) or around a grip2 point (two-handed).
+        at: 'grip2' wraps the off hand at the weapon's second grip."""
+        conv_bone = 'hand.' + side
+        _, posed = self._conv(conv_bone)
+        wrist = posed @ Vector((0, 0, 0))
+        stance_M = wd_res['stance_matrix']
+        axis = wd_res['axis_world']
+        if at == 'grip2' and wd_res.get('grip2') is not None:
+            center = stance_M @ wd_res['grip2']
+        else:
+            center = wd_res['grip_world']
+        f, gl = self._hand_field(size, pose, side)
+        if side in getattr(self, 'hand_frames', {}):
+            M = self.hand_frames[side]
+        else:
+            M, _ = HANDS.grip_frame(side, axis, center, wrist, gl, toward_tip)
+        obj = HANDS.build(f, mat, self.coll, M, name='Hand.' + side)
+        if glove is not None:
+            obj.data.materials.clear()
+            obj.data.materials.append(glove)
+        conv_h, _ = self._conv(conv_bone)
+        geo.transform(obj, conv_h)
+        self.parts.append((obj, conv_bone))
+        return obj
+
+    def grip2(self, wd_res, mat, side='L', pose='grip', size=1.0, pole=(-0.3, 0.25, -0.3), toward_tip=True):
+        """Off hand on a two-handed weapon: the hand closes on the weapon's second grip and rides the
+        IK target bone, which sits at the hand's wrist so the forearm meets it."""
+        main = wd_res.get('bone', 'hand.R')
+        conv_m, _ = self._conv(main)
+        stance_M = wd_res['stance_matrix']
+        center = stance_M @ wd_res['grip2']
+        axis = wd_res['axis_world']
+        _, posed = self._conv('hand.' + side)
+        wrist_now = posed @ Vector((0, 0, 0))
+        f, gl = self._hand_field(size, pose, side)
+        if side in getattr(self, 'hand_frames', {}):
+            M = self.hand_frames[side]
+        else:
+            M, _ = HANDS.grip_frame(side, axis, center, wrist_now, gl, toward_tip)
+        obj = HANDS.build(f, mat, self.coll, M, name='Hand.' + side)
+        geo.transform(obj, conv_m)
+        wrist_rest = conv_m @ M.translation
+        self.two_hand(wrist_rest, parent=main, side=side, pole=pole)
+        self.parts.append((obj, 'grip.' + side))
+        return obj
+
+    def rest_hand(self, side, mat, pose='relaxed', size=1.0, turn=0.0):
+        """A hand on its bone in the rest pose (fists, open casting hands, claws)."""
+        f, _ = self._hand_field(size, pose, side)
+        if side in getattr(self, 'hand_frames', {}):
+            # a solved free hand: build at the stance frame, then carry back to the rest pose
+            M = self.hand_frames[side]
+            obj = HANDS.build(f, mat, self.coll, M, name='Hand.' + side)
+            conv_h, _ = self._conv('hand.' + side)
+            geo.transform(obj, conv_h)
+        else:
+            M, _ = HANDS.rest_frame(self.J, side, turn)
+            obj = HANDS.build(f, mat, self.coll, M, name='Hand.' + side)
+        self.parts.append((obj, 'hand.' + side))
+        return obj
 
     def set_stance(self, pose):
         self.stance = pose
@@ -117,6 +266,10 @@ class Character:
         self.add_prop('weapon' if hand == 'R' and not bone.startswith('hand.L') else 'offhand', wd['objs'], bone)
         res = dict(wd)
         res['matrix'] = Mr
+        res['bone'] = bone
+        res['grip_world'] = center.copy()      # stance space: where the hand closes
+        res['axis_world'] = zw.normalized()
+        res['stance_matrix'] = M
         if wd.get('tip') is not None:
             res['tip_rest'] = Mr @ wd['tip']
             if track_tip:
@@ -125,6 +278,56 @@ class Character:
         if wd.get('grip2') is not None:
             res['grip2_rest'] = Mr @ wd['grip2']
         return res
+
+    def hold_at(self, wd, M, side='R', track_tip=True, bone=None, scale=1.0):
+        """Place a weapon by its stance-space matrix (rk.pose.weapon_frame) on a hand bone, optionally scaled
+        about its grip."""
+        bone = bone or 'hand.' + side
+        conv, _ = self._conv(bone)
+        if scale != 1.0:
+            M = M @ Matrix.Scale(scale, 4)
+        Mr = conv @ M
+        for o in wd['objs']:
+            geo.transform(o, Mr)
+            self.parts.append((o, bone))
+        self.add_prop('weapon' if side == 'R' else 'offhand', wd['objs'], bone)
+        res = dict(wd)
+        res.update(matrix=Mr, bone=bone, stance_matrix=M, axis_world=M.col[2].xyz.normalized(),
+                   grip_world=M.translation.copy())
+        if wd.get('tip') is not None:
+            res['tip_rest'] = Mr @ wd['tip']
+            if track_tip:
+                self.tip_rest = res['tip_rest']
+                self.tip_bone = bone
+        if wd.get('grip2') is not None:
+            res['grip2_rest'] = Mr @ wd['grip2']
+        return res
+
+    def strap_at(self, wd, M, side='L', bone=None, prop='shield'):
+        """A shield (or any carried piece) by its stance-space matrix, rigid on the forearm."""
+        bone = bone or 'forearm.' + side
+        conv, _ = self._conv(bone)
+        Mr = conv @ M
+        for o in wd['objs']:
+            geo.transform(o, Mr)
+            self.parts.append((o, bone))
+        self.add_prop(prop, wd['objs'], bone)
+        return Mr
+
+    def draw_hand(self, bow_res, mat, side='R', pose='grip', pole=(-0.6, -0.3, 1.6)):
+        """The draw hand on a bow: an IK target off the bow hand at the solved wrist, carrying the hand mesh
+        (and the nocked arrow); the attack clip pulls and releases it."""
+        bow_bone = bow_res.get('bone', 'hand.L')
+        conv_b, _ = self._conv(bow_bone)
+        M = self.hand_frames[side]
+        f, _ = self._hand_field(1.0, pose, side)
+        obj = HANDS.build(f, mat, self.coll, M, name='Hand.' + side)
+        geo.transform(obj, conv_b)
+        wrist_rest = conv_b @ M.translation
+        self.two_hand(wrist_rest, parent=bow_bone, side=side, pole=pole)
+        self.parts.append((obj, 'grip.' + side))
+        self.draw_frame = M
+        return obj
 
     def strap(self, wd, side='L', forward=0.12, up=0.0, out=0.0, yaw=-10.0, pitch=0.0, bone=None):
         """Shield on the forearm: in the stance its face points forward (+X) and its long axis is vertical."""
@@ -221,11 +424,52 @@ class Character:
         self.poser = Poser(self.arm)
         self.poser.world_fix = fixes
 
+    def _bind_posed(self, obj, field, sigma=0.03, adjust=None, smooth=2):
+        V = SDF.verts(obj)
+        W = field.weights(V, sigma)
+        if adjust:
+            W = adjust(V, W)
+        quads = SDF.quads(obj) if len(obj.data.loops) == 4 * len(obj.data.polygons) else None
+        bones, Wq = SDF.write_weights(obj, W, quads, smooth=smooth)
+        rest = SKIN.unpose(V, Wq, bones, self.stance_mats)
+        obj.data.vertices.foreach_set('co', rest.astype(np.float32).ravel())
+        obj.data.update()
+        rig._armature_mod(obj, self.arm)
+
+    def mask_body(self, margin=0.004):
+        """Delete body faces hidden inside solid garments in the stance (no poke-through at bent joints)."""
+        import bmesh
+        body = self.body
+        Vp = SDF.verts(body)   # the body is meshed in the stance (Character.dress)
+        inside = np.zeros(len(Vp), bool)
+        for obj, b in self.parts:
+            if isinstance(b, dict) and b.get('posed') and b.get('sdf') and obj.name in SDF.FIELDS:
+                inside |= SDF.FIELDS[obj.name].eval(Vp) < -margin
+        if not inside.any():
+            return 0
+        bm = bmesh.new()
+        bm.from_mesh(body.data)
+        bm.verts.ensure_lookup_table()
+        kill = [f for f in bm.faces if all(inside[v.index] for v in f.verts)]
+        bmesh.ops.delete(bm, geom=kill, context='FACES_ONLY')
+        loose = [v for v in bm.verts if not v.link_faces]
+        bmesh.ops.delete(bm, geom=loose, context='VERTS')
+        bm.to_mesh(body.data)
+        bm.free()
+        body.data.update()
+        geo.store_rest(body)
+        return len(kill)
+
     def bind(self):
         self.bound = True
         self.poser.clear()
         bpy.context.view_layer.update()
-        if self.body is not None:
+        posed_body = getattr(self, 'visible_posed', None) is not None
+        if posed_body and not getattr(self, 'bone_hands', False):
+            self.mask_body()
+        if posed_body:
+            self._bind_posed(self.body, self.visible_posed, self.visible['sigma'])
+        elif self.body is not None:
             if self.body_skin is not None:
                 self.body_skin(self.body, self.arm)
             else:
@@ -235,6 +479,36 @@ class Character:
         for obj, b in self.parts:
             if isinstance(b, str):
                 rig.bind_rigid(obj, self.arm, b)
+            elif isinstance(b, dict) and b.get('sdf'):
+                V = SDF.verts(obj)
+                posed = b.get('posed')
+                field = self.posed_field if posed else self.body_field
+                W = field.weights(V, b.get('sigma') or 0.03)
+                if b.get('adjust'):
+                    W = b['adjust'](V, W)
+                quads = SDF.quads(obj) if len(obj.data.loops) == 4 * len(obj.data.polygons) else None
+                bones, Wq = SDF.write_weights(obj, W, quads, smooth=b.get('smooth', 2))
+                if posed:
+                    rest = SKIN.unpose(V, Wq, bones, self.stance_mats)
+                    obj.data.vertices.foreach_set('co', rest.astype(np.float32).ravel())
+                    obj.data.update()
+                rig._armature_mod(obj, self.arm)
+            elif isinstance(b, dict) and b.get('fieldw') is not None:
+                V = SDF.verts(obj)
+                W = b['fieldw'].weights(V, b.get('sigma') or 0.04)
+                if b.get('restrict'):
+                    W = {k: v for k, v in W.items() if k in b['restrict']} or {b['restrict'][0]: np.ones(len(V))}
+                quads = SDF.quads(obj) if len(obj.data.loops) == 4 * len(obj.data.polygons) else None
+                SDF.write_weights(obj, W, quads, smooth=2)
+                rig._armature_mod(obj, self.arm)
+            elif isinstance(b, dict) and b.get('rigid_posed'):
+                bone = b['rigid_posed']
+                M = np.linalg.inv(self.stance_mats[bone])
+                V = SDF.verts(obj)
+                rest = V @ M[:3, :3].T + M[:3, 3]
+                obj.data.vertices.foreach_set('co', rest.astype(np.float32).ravel())
+                obj.data.update()
+                rig.bind_rigid(obj, self.arm, bone)
             elif isinstance(b, dict):
                 if b.get('fn'):
                     rig.weight_fn(obj, self.arm, b['fn'])
@@ -320,24 +594,47 @@ def _fcurves(obj):
 
 
 # ------------------------------------------------------------------ rendering
-def light_rig(coll, center=Vector((0, 0, 1.1)), scale=1.0, warm='ffecd6', rim='aecbff', key_power=1150,
-              rim_power=1300, fill_power=420):
-    """Battle lighting: sun from the upper left and slightly behind (matching the game's projected
-    ground shadows, which fall down-right), a soft camera-side fill so faces read, a cool back rim
-    and a broad sky. Neutral-warm key, because the game adds its own per-zone tint."""
+def light_rig(coll, center=Vector((0, 0, 1.1)), scale=1.0, warm='fff0dc', rim='e9f0ff', key_power=None,
+              rim_power=None, fill_power=None):
+    """Roster-sheet studio lighting, agreeing with the battle sun (upper left; the game projects ground
+    shadows down-right): a broad warm key from the camera's upper left, a cool fill from the right, a bright
+    rim from behind on the right that outlines the figure, a soft sky and a warm bounce from the ground.
+    Kept near-neutral because the game tints each zone."""
     c = center
-    core.area_light('Key • sun upper left', c + Vector((-6.5, 1.0, 7.5)) * scale, c, key_power * scale ** 2, core.srgb(warm),
-                    3.5 * scale, coll)
-    core.area_light('Fill • camera side', c + Vector((2.6, -8.0, 3.2)) * scale, c, fill_power * scale ** 2,
-                    core.srgb('fff1e2'), 6.0 * scale, coll)
-    core.area_light('Rim • cool back right', c + Vector((4.5, 5.5, 4.5)) * scale, c, rim_power * scale ** 2, core.srgb(rim),
-                    3.0 * scale, coll)
-    core.area_light('Sky • soft top', c + Vector((0.5, -1.0, 8.0)) * scale, c, 520 * scale ** 2, core.srgb('dfe9ff'),
+    k = scale ** 2
+    env = lambda key, d: float(os.environ.get(key, d))
+    key_power = key_power or env('RK_KEY', 1550)
+    rim_power = rim_power or env('RK_RIM', 1100)
+    fill_power = fill_power or env('RK_FILL', 55)
+    core.area_light('Key • upper left, camera side', c + Vector((-4.6, -5.4, 6.4)) * scale, c, key_power * k,
+                    core.srgb(warm), 4.2 * scale, coll)
+    core.area_light('Fill • camera right', c + Vector((5.5, -6.0, 1.4)) * scale, c, fill_power * k,
+                    core.srgb('dbe6ff'), 7.0 * scale, coll)
+    core.area_light('Rim • back right', c + Vector((4.2, 6.2, 4.8)) * scale, c, rim_power * k, core.srgb(rim),
+                    2.6 * scale, coll)
+    core.area_light('Rim • back left', c + Vector((-5.0, 5.0, 3.0)) * scale, c, rim_power * 0.35 * k,
+                    core.srgb('ffe2bc'), 3.0 * scale, coll)
+    core.area_light('Sky • soft top', c + Vector((0.5, -1.0, 8.0)) * scale, c, env('RK_SKY', 120) * k, core.srgb('e4ecff'),
                     8.0 * scale, coll)
+    core.area_light('Bounce • warm ground', c + Vector((1.0, -5.0, -3.5)) * scale, c, 160 * k, core.srgb('ffcf9a'),
+                    6.0 * scale, coll)
 
 
 def mesh_objects(root):
     return [o for o in root.children_recursive if o.type == 'MESH' and not o.hide_render]
+
+
+def world_for(scene):
+    """The studio environment every unit renders in: a dim neutral dome for soft ambient light, and the
+    roster sheet's exposure and contrast."""
+    scene.view_settings.view_transform = os.environ.get('RK_VIEW', 'Khronos PBR Neutral')
+    scene.view_settings.exposure = float(os.environ.get('RK_EXPOSURE', '0.0'))
+    try:
+        scene.view_settings.look = 'None'
+    except TypeError:
+        pass
+    return core.studio_world(scene, top='8a96a6', bottom='4a3e32', strength=float(os.environ.get('RK_AMBIENT', '0.15')),
+                             reflect=4.5, band='fff4e2')
 
 
 def frame_envelope(scene, cam, objs, frames, margin=0.92):
@@ -359,10 +656,10 @@ def frame_envelope(scene, cam, objs, frames, margin=0.92):
 
 def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, portrait_cfg=None,
                      body_z=None, contact_fallback=(1.12, 0, 1.1), profile='sword-cut', save_blend=None,
-                     min_scale=3.6, frames=None, scale_override=None, res_scale=1.0):
+                     min_scale=3.6, frames=None, scale_override=None, res_scale=1.0, paint=None, back_guide=False):
     scene = bpy.context.scene
     core.setup_render(scene, samples)
-    core.studio_world(scene, top='7a8a9c', bottom='3a3128', strength=0.75)
+    world_for(scene)
     turn_toward_camera(scene)
     rc = core.collection('Camera and lighting')
     target = Vector((0.12, 0, cam_target_z))
@@ -383,6 +680,23 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
     scene.render.resolution_x, scene.render.resolution_y = round(FRAME_W * k), round(FRAME_H * k)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    if back_guide:
+        # the stance seen from behind, under the same camera and lights (the character turned 180 degrees): the
+        # guide for the back painting (art/remaster/paintover.py back), which covers what the front cannot see
+        root = bpy.data.objects['_Facing']
+        root.rotation_euler.z += math.pi
+        scene.frame_set(1)
+        bpy.context.view_layer.update()
+        core.render_to(scene, out / 'back000.png')
+        root.rotation_euler.z -= math.pi
+        bpy.context.view_layer.update()
+        return {'back_guide': str(out / 'back000.png'), 'drawScale': draw_scale,
+                'frameWidth': scene.render.resolution_x, 'frameHeight': scene.render.resolution_y}
+    if paint:
+        # the roster-sheet paintings of this unit, projected at the stance (rk/paint.py): the front from this camera,
+        # the back (when painted) from the same camera turned 180 degrees about the character
+        from . import paint as PT
+        PT.project(scene, cam, paint, back_cam=PT.back_camera(cam, rc) if PT.has_back(paint) else None)
     scene.frame_set(1)
     bpy.context.view_layer.update()
     ground = world_to_camera_view(scene, cam, Vector((0, 0, 0)))
@@ -423,7 +737,9 @@ def render_character(ch, out_dir, samples=96, portrait=True, cam_target_z=1.15, 
         scene.render.filepath = str(out / f'{f - 1:03}.png')
         bpy.ops.render.render(write_still=True)
     if portrait:
-        render_portrait(ch, out / 'portrait.png', samples=max(samples, 128), **(portrait_cfg or {}))
+        # the roster-sheet icon (bust or whole figure); the legacy portrait camera remains for reference renders
+        if render_icon(ch, out / 'portrait.png', samples=max(samples, 128)) is None:
+            render_portrait(ch, out / 'portrait.png', samples=max(samples, 128), **(portrait_cfg or {}))
     (out / 'metadata.json').write_text(json.dumps(meta, indent=2) + '\n')
     (out / 'complete.json').write_text(json.dumps({'id': ch.ident, 'frames': total, 'revision': 'remaster-v2'}, indent=2) + '\n')
     return meta
@@ -471,3 +787,87 @@ def render_portrait(ch, path, samples=128, target=None, distance=5.4, lens=85, f
     scene.cycles.samples = old_samples
     scene.render.resolution_x, scene.render.resolution_y = rx, ry
     scene.camera = old
+
+
+def render_icon(ch, path, size=1024, samples=128, mode=None, frame=1, turn_deg=16.0, elevation=9.0, rim_boost=1.5,
+                pad=1.1, fill=420.0):
+    """Unit icon: a three-quarter front bust (humanoids) or the whole figure (beasts, mounts, machines),
+    framed from the posed geometry, transparent background."""
+    from bpy_extras.object_utils import world_to_camera_view
+    scene = bpy.context.scene
+    scene.frame_set(frame)
+    bpy.context.view_layer.update()
+    turn = Matrix.Rotation(FACING_YAW, 3, 'Z')
+    hero_rig = getattr(ch, 'rig_kind', None) == 'hero'
+    mode = mode or ('bust' if hero_rig else 'full')
+    dg = bpy.context.evaluated_depsgraph_get()
+    pts = []
+    body_names = ('body', 'Head', 'Hand', 'bones', 'Skull', 'Mandible', 'Hair', 'Beard', 'Helm', 'Hood', 'Cuirass',
+                  'Pauldron', 'Gambeson', 'Tabard', 'Kettle', 'Great helm', 'Armet', 'Cap', 'Crown', 'Bandana', 'Scarf',
+                  'Mitre', 'Collar', 'Shirt', 'Cape')
+    z_cut = None
+    if mode == 'bust':
+        # head and shoulders down to the lower chest: the face carries the card at small sizes
+        pb = ch.arm.pose.bones
+        z_cut = (ch.arm.matrix_world @ pb['chest'].head).z - 0.12 if 'chest' in pb else None
+    for o in bpy.data.objects:
+        if o.type != 'MESH' or o.hide_render or o.name.startswith('_'):
+            continue
+        if mode == 'bust' and not (o.name.startswith(body_names) or ' body' in o.name or ' bones' in o.name):
+            continue
+        ev = o.evaluated_get(dg)
+        me = ev.to_mesh()
+        mw = ev.matrix_world
+        step = max(1, len(me.vertices) // 1500)
+        verts = me.vertices
+        for i in range(0, len(verts), step):
+            p = mw @ verts[i].co
+            if z_cut is None or p.z > z_cut:
+                pts.append(p)
+        ev.to_mesh_clear()
+    if not pts:
+        return None
+    # Orthographic, from the battle camera's side turned a little toward the unit's front: faces catch the
+    # key light, mounts and engines show their length. Framed exactly from the posed geometry.
+    a, e = math.radians(turn_deg), math.radians(elevation)
+    d = Vector((math.sin(a), -math.cos(a), math.tan(e))).normalized()
+    fwd = -d
+    right = fwd.cross(Vector((0, 0, 1))).normalized()
+    up = right.cross(fwd).normalized()
+    xs = [p.dot(right) for p in pts]
+    ys = [p.dot(up) for p in pts]
+    zs = [p.dot(d) for p in pts]
+    cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+    span = max(max(xs) - min(xs), max(ys) - min(ys)) * pad
+    center = right * cx + up * cy + d * (sum(zs) / len(zs))
+    rc = bpy.data.collections.get('Camera and lighting') or core.collection('Camera and lighting')
+    data = bpy.data.cameras.new('Icon camera')
+    data.type = 'ORTHO'
+    data.ortho_scale = span
+    data.clip_start, data.clip_end = 0.05, 200
+    cam = bpy.data.objects.new('Icon camera', data)
+    rc.objects.link(cam)
+    cam.location = center + d * 30.0
+    cam.rotation_euler = fwd.to_track_quat('-Z', 'Y').to_euler()
+    fill_light = core.area_light('Icon fill', center + d * 8.0 + up * 2.5 - right * 1.5, center, fill,
+                                 core.srgb('fff3e4'), 5.0, rc)
+    old_cam = scene.camera
+    scene.camera = cam
+    rx, ry = scene.render.resolution_x, scene.render.resolution_y
+    scene.render.resolution_x = scene.render.resolution_y = size
+    bpy.context.view_layer.update()
+    lights = [o for o in rc.objects if o.type == 'LIGHT' and o.name.startswith('Rim')]
+    saved = [(l, l.data.energy) for l in lights]
+    for l in lights:
+        l.data.energy *= rim_boost
+    old_samples = scene.cycles.samples
+    scene.cycles.samples = samples
+    core.render_to(scene, path)
+    scene.cycles.samples = old_samples
+    for l, e_ in saved:
+        l.data.energy = e_
+    scene.render.resolution_x, scene.render.resolution_y = rx, ry
+    scene.camera = old_cam
+    bpy.data.objects.remove(cam, do_unlink=True)
+    bpy.data.objects.remove(fill_light, do_unlink=True)
+    return path

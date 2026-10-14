@@ -1,0 +1,45 @@
+{
+  "frameWidth": 345,
+  "frameHeight": 266,
+  "drawScale": 2.3958333333333335,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14251
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_chain_penitent",
+  "title": "Chain Penitent",
+  "source": "art/remaster/puppet/build.py (enemy_chain_penitent)",
+  "anchorY": 0.907857,
+  "anchorX": 0.680511,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "heavy-smash",
+    "body": [
+      0.026344,
+      -0.540714
+    ],
+    "contact": [
+      -0.21869,
+      -0.352274
+    ]
+  },
+  "healthBarY": 0.807014
+}

@@ -104,12 +104,6 @@ public partial class ShopMenu
         }
     }
 
-    private void Toast(string message)
-    {
-        if (string.IsNullOrWhiteSpace(message)) return;
-        RoyalToast.Show(this, message);
-    }
-
     private void BuildUnitProfile(RoyalSpec spec, UnitDefinition unit, Entry entry)
     {
         var state = _state;
@@ -130,19 +124,24 @@ public partial class ShopMenu
         var stats = ArmoryDetailUi.UnitStats(unit);
         // The concept profile: health, damage, courage, range and recovery.
         BuildStats(spec, new[] { stats[0], stats[1], stats[3], stats[4], stats[5] });
+        if (spec.Has("detail.desc"))
+        {
+            var resolved=state.BuildPlayerUnitStats(unit);
+            _body.AddChild(spec.Label("detail.desc", $"Armor {resolved.Armor:0.#} · Physical {resolved.PhysicalResistance:0.#}% · Magic {resolved.MagicalResistance:0.#}% · Crit {resolved.CriticalChance:0.#}% / +{resolved.CriticalDamageBonus:0.#}%", 470));
+        }
 
         var left = new Action2(entry.Equipped ? "Unequip" : "Equip", 0, entry.Owned, () =>
         {
-            state.ToggleDeckUnit(unit.Id, out var message);
+            state.ToggleDeckUnit(unit.Id, out _);
             state.SetSelectedStage(state.SelectedStage);
-            Toast(message); Refresh();
+            Refresh();
         });
         Action2 right;
         if (!entry.Available) right = new Action2($"Stage {unit.UnlockStage}", 0, false, null);
         else if (!entry.Owned)
         {
             var cost = state.GetUnitPurchaseCost(unit.Id);
-            right = new Action2("Recruit", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseUnit(unit.Id, out var message)); Toast(message); Refresh(); });
+            right = new Action2("Recruit", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseUnit(unit.Id, out _)); Refresh(); });
         }
         else if (level >= state.MaxUnitLevel)
         {
@@ -150,8 +149,8 @@ public partial class ShopMenu
             if (promo != null && !state.IsUnitPromoted(unit.Id))
                 right = new Action2("Promote", promo.GoldCost, state.CanPromoteUnit(unit.Id), () =>
                 {
-                    if (state.TryPromoteUnit(unit.Id, out var message)) AudioDirector.Instance?.PlayUpgradeConfirm();
-                    Toast(message); Refresh();
+                    if (state.TryPromoteUnit(unit.Id, out _)) AudioDirector.Instance?.PlayUpgradeConfirm();
+                    Refresh();
                 });
             else right = new Action2(state.IsUnitPromoted(unit.Id) ? promo?.PromotedTitle ?? "Promoted" : "Max level", 0, false, null);
         }
@@ -160,8 +159,8 @@ public partial class ShopMenu
             var cost = state.GetUnitUpgradeCost(unit.Id);
             right = new Action2("Upgrade", cost, state.Gold >= cost, () =>
             {
-                if (state.TryUpgradeUnit(unit.Id, out var message)) AudioDirector.Instance?.PlayUpgradeConfirm();
-                Toast(message); Refresh();
+                if (state.TryUpgradeUnit(unit.Id, out _)) AudioDirector.Instance?.PlayUpgradeConfirm();
+                Refresh();
             });
         }
         BuildActions(spec, left, right, entry.Owned);
@@ -182,21 +181,21 @@ public partial class ShopMenu
             _body.AddChild(spec.Label("detail.desc", ArmoryDetailUi.SpellPurpose(spell.EffectType), 470));
         BuildStats(spec, ArmoryDetailUi.SpellStats(resolved).Take(4).ToArray());
 
-        var left = new Action2(entry.Equipped ? "Unequip" : "Equip", 0, entry.Owned, () => { state.ToggleDeckSpell(spell.Id, out var message); Toast(message); Refresh(); });
+        var left = new Action2(entry.Equipped ? "Unequip" : "Equip", 0, entry.Owned, () => { state.ToggleDeckSpell(spell.Id, out _); Refresh(); });
         Action2 right;
         if (!entry.Available) right = new Action2($"Stage {spell.UnlockStage}", 0, false, null);
         else if (!entry.Owned)
         {
             var cost = state.GetSpellPurchaseCost(spell.Id);
-            right = new Action2(cost > 0 ? "Scribe" : "Prepare", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseSpell(spell.Id, out var message)); Toast(message); Refresh(); });
+            right = new Action2(cost > 0 ? "Scribe" : "Prepare", cost, state.Gold >= cost, () => { AudioDirector.Purchased(state.TryPurchaseSpell(spell.Id, out _)); Refresh(); });
         }
         else if (level < state.MaxSpellLevel)
         {
             var cost = state.GetSpellUpgradeCost(spell.Id);
             right = new Action2("Upgrade", cost, state.Gold >= cost, () =>
             {
-                if (state.TryUpgradeSpell(spell.Id, out var message)) AudioDirector.Instance?.PlayUpgradeConfirm();
-                Toast(message); Refresh();
+                if (state.TryUpgradeSpell(spell.Id, out _)) AudioDirector.Instance?.PlayUpgradeConfirm();
+                Refresh();
             });
         }
         else right = new Action2("Max level", 0, false, null);

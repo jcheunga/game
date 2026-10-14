@@ -234,7 +234,7 @@ public partial class EndlessMenu : RoyalScreen
 
     private void StartRun()
     {
-        if (!GameState.Instance.CanStartBattle(out var reason)) { RoyalToast.Show(this, reason); return; }
+        if (!GameState.Instance.CanStartBattle(out _)) return;
         GameState.Instance.PrepareEndlessBattle(_selectedRouteId);
         SceneRouter.Instance.GoToBattle();
     }

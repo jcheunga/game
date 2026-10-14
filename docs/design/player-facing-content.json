@@ -1,0 +1,154 @@
+{
+  "enemy_walker": {
+    "description": "A slow foot soldier that advances straight toward the wagon.",
+    "weakness": "Affordable melee troops can hold it while ranged allies attack."
+  },
+  "enemy_runner": {
+    "description": "A fast, fragile attacker that rushes gaps in the frontline.",
+    "weakness": "Keep a cheap melee blocker ready rather than relying on ranged troops alone."
+  },
+  "enemy_bloater": {
+    "description": "A swollen undead attacker that bursts when defeated, damaging nearby allies.",
+    "weakness": "Use ranged attacks or spread your melee bodies before the killing blow."
+  },
+  "enemy_brute": {
+    "description": "A durable melee fighter that trades speed for heavy close-range blows.",
+    "weakness": "Hold it with a blocker while ranged allies wear it down."
+  },
+  "enemy_spitter": {
+    "description": "An ordinary ranged enemy that attacks from behind its frontline.",
+    "weakness": "Break through its escorts or use a spell to reach the backline."
+  },
+  "enemy_splitter": {
+    "description": "Splits into two smaller enemies when defeated.",
+    "weakness": "Save courage for a second blocker and use a cleave against the small bodies."
+  },
+  "enemy_saboteur": {
+    "description": "A swift raider that prioritizes reaching and damaging the wagon.",
+    "weakness": "Intercept it early with an affordable melee unit."
+  },
+  "enemy_howler": {
+    "description": "Rallies nearby enemies, increasing their damage and movement speed.",
+    "weakness": "Defeat the Herald before its escorts gather around it."
+  },
+  "enemy_jammer": {
+    "description": "Disrupts the wagon signal, briefly delaying troop deployment.",
+    "weakness": "Keep an existing melee line alive and deploy again when the disruption ends."
+  },
+  "enemy_crusher": {
+    "description": "An armored tank that absorbs ordinary physical attacks.",
+    "weakness": "Use armor-breaking attacks or magical damage while keeping a blocker in front."
+  },
+  "enemy_shieldwall": {
+    "description": "Intercepts projectiles to protect nearby enemies.",
+    "weakness": "Engage the formation with melee troops and attack its exposed support."
+  },
+  "enemy_lich": {
+    "description": "Periodically calls undead reinforcements into the fight.",
+    "weakness": "Focus the Lich before repeated summons overwhelm your frontline."
+  },
+  "enemy_siegetower": {
+    "description": "A slow reinforcement carrier that delivers enemies near the wagon.",
+    "weakness": "Destroy it before it reaches your defenses."
+  },
+  "enemy_mirror": {
+    "description": "Reflects part of direct damage back to its attacker.",
+    "weakness": "Support attackers with healing and avoid committing a fragile ally alone."
+  },
+  "enemy_tunneler": {
+    "description": "Burrows behind the rearmost troop to threaten the backline.",
+    "weakness": "Keep a spare melee troop ready to protect ranged and support allies."
+  },
+  "enemy_boneballista": {
+    "description": "Long-range artillery that can strike the wagon.",
+    "weakness": "Advance melee pressure or use a spell to interrupt the artillery line."
+  },
+  "enemy_catacomb_giant": {
+    "description": "A giant whose sweeping melee attacks hit nearby troops; three smaller enemies emerge when it falls.",
+    "weakness": "Spread the frontline and reserve a cleave or spell for its smaller bodies."
+  },
+  "enemy_revenant_captain": {
+    "description": "An undead commander that rallies its escorts.",
+    "weakness": "Defeat the Captain while holding its escorts away from your support."
+  },
+  "enemy_plague_engine": {
+    "description": "Heavy artillery that threatens the wagon from behind enemy escorts.",
+    "weakness": "Push through the escorts and keep the wagon repaired while closing the distance."
+  },
+  "player_hound": {
+    "description": "A swift, inexpensive melee scout that reaches threats quickly.",
+    "weakness": ""
+  },
+  "player_grenadier": {
+    "description": "A ranged alchemist whose thrown mixtures damage clustered enemies.",
+    "weakness": ""
+  },
+  "player_necromancer": {
+    "description": "A support caster that raises temporary servants from fallen enemies.",
+    "weakness": ""
+  },
+  "player_lantern_guard": {
+    "description": "A defensive melee guard that protects nearby allies.",
+    "weakness": ""
+  },
+  "player_stormcaller": {
+    "description": "A magical ranged specialist that strikes clustered enemies.",
+    "weakness": ""
+  },
+  "enemy_boss": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_docks": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_forge": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_ward": {
+    "description": "Disrupts troop deployment while commanding its escorts.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_pass": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_basilica": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_mire": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_steppe": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_verge": {
+    "description": "Raises reinforcements to rebuild its line during the battle.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_citadel": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_reliquary": {
+    "description": "Raises reinforcements to rebuild its line during the battle.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_ashen_regent": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_tidemaster": {
+    "description": "Rallies nearby enemies and calls escorts while leading the assault.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  },
+  "enemy_boss_plague_monarch": {
+    "description": "Disrupts troop deployment while commanding its escorts.",
+    "weakness": "Protect a melee line, support wounded troops, and interrupt marked casts when possible. Bosses recover quickly from control."
+  }
+}

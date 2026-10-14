@@ -1,44 +1,45 @@
 {
-  "frameWidth": 496,
-  "frameHeight": 567,
-  "drawScale": 2.132265038858739,
+  "frameWidth": 1328,
+  "frameHeight": 969,
+  "drawScale": 3.247261345852895,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14003
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_basilica",
   "title": "Bone Pontiff",
-  "source": "art/remaster/units/enemy_boss_basilica.py",
-  "anchorY": 0.791238,
-  "anchorX": 0.428015,
+  "source": "art/remaster/puppet/build.py (enemy_boss_basilica)",
+  "anchorY": 0.936091,
+  "anchorX": 0.427385,
   "motion": {
-    "revision": "remaster-v1",
-    "profile": "staff-strike",
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.309667
+      -0.008793,
+      -0.512379
     ],
     "contact": [
-      0.541336,
-      0.083089
+      0.161938,
+      -0.740343
     ]
   },
-  "healthBarY": 0.661494
+  "healthBarY": 0.775075
 }

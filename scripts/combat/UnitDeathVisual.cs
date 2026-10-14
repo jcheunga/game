@@ -27,6 +27,9 @@ public partial class UnitDeathVisual : Node2D
     public DeathStyle Style => _style;
     internal static int ActiveCount => _active;
 
+    /// <summary>The battlefield zone, for the same light grade as the living (UnitLook).</summary>
+    public string Zone { get; set; }
+
     public void Setup(UnitSpriteSheet sheet, SpriteAnimRange clip, Vector2 size, float facing, Color tint, bool groundShadowsManaged,
         DeathStyle style = null)
     {
@@ -58,16 +61,29 @@ public partial class UnitDeathVisual : Node2D
 
     public override void _Ready()
     {
-        _rest = Reduced ? .45f : _active > CrowdLimit ? .3f : _style.Linger;
+        _rest = Reduced ? .45f : _active > CrowdLimit ? .3f : _style.Linger * 1.6f;
         _dissolve = Reduced ? .3f : _style.Dissolve;
         if (Reduced) return;
-        _material = DeathDissolve.CreateMaterial(_style);
+        _material = DeathDissolve.CreateMaterial(_style, Zone);
         Material = _material;
     }
+
+    /// <summary>Direction the killing blow travelled (+1 right, -1 left): the body is driven back along it as it falls.</summary>
+    public float KnockDirection { get; set; }
+    private Vector2 _home;
+    private bool _homeSet;
 
     public override void _Process(double delta)
     {
         _age += (float)delta;
+        if (!_homeSet) { _home = Position; _homeSet = true; }
+        if (KnockDirection != 0 && !Reduced)
+        {
+            // a lighter body is thrown further; the push decelerates over the first part of the fall
+            var reach = (_style.Boss ? 4f : _style.Heavy ? 7f : 13f);
+            var u = Mathf.Clamp(_age / .4f, 0, 1);
+            Position = _home + new Vector2(KnockDirection * reach * (1 - (1 - u) * (1 - u) * (1 - u)), 0);
+        }
         if (!_impacted && (Frame >= ImpactFrame || _age >= ClipSeconds))
         {
             _impacted = true;
@@ -87,8 +103,9 @@ public partial class UnitDeathVisual : Node2D
         }
         if (_material != null)
         {
-            var src = UnitSpriteLoader.GetFrameRect(_sheet, _clip.StartFrame + Frame);
-            var tex = _sheet.Texture.GetSize();
+            var piece = UnitSpriteLoader.Frame(_sheet, _clip.StartFrame + Frame);
+            var src = piece.Source;
+            var tex = piece.Texture.GetSize();
             _material.SetShaderParameter("region", new Vector4(src.Position.X / tex.X, src.Position.Y / tex.Y, src.Size.X / tex.X, src.Size.Y / tex.Y));
             _material.SetShaderParameter("progress", DissolveProgress);
             _material.SetShaderParameter("rest", Mathf.Clamp((_age - ClipSeconds * .7f) / .6f, 0, 1));
@@ -100,9 +117,10 @@ public partial class UnitDeathVisual : Node2D
     {
         if (!_groundShadowsManaged) DrawGroundShadow(this, BattleLighting.ForZone("city"));
         DrawSetTransform(Vector2.Zero, 0f, new Vector2(_facing < 0 ? -1 : 1, 1));
-        DrawTextureRectRegion(_sheet.Texture,
-            new Rect2(new Vector2(-_size.X * _sheet.AnchorX, -_size.Y * _sheet.AnchorY), _size),
-            UnitSpriteLoader.GetFrameRect(_sheet, _clip.StartFrame + Frame), new Color(_tint, Alpha));
+        var piece = UnitSpriteLoader.Frame(_sheet, _clip.StartFrame + Frame);
+        DrawTextureRectRegion(piece.Texture,
+            UnitSpriteLoader.Place(_sheet, piece, new Rect2(new Vector2(-_size.X * _sheet.AnchorX, -_size.Y * _sheet.AnchorY), _size)),
+            piece.Source, new Color(_tint, Alpha));
     }
 
     public void DrawGroundShadow(CanvasItem canvas, BattleLighting lighting)
@@ -110,7 +128,8 @@ public partial class UnitDeathVisual : Node2D
         var feet = canvas == this ? Vector2.Zero : Position;
         var fade = 1 - DissolveProgress;
         var rect = new Rect2(new Vector2(-_size.X * _sheet.AnchorX, -_size.Y * _sheet.AnchorY), _size);
-        lighting.DrawShadow(canvas, _sheet.Texture, UnitSpriteLoader.GetFrameRect(_sheet, _clip.StartFrame + Frame), rect, feet, _facing, .85f, fade);
+        var piece = UnitSpriteLoader.Frame(_sheet, _clip.StartFrame + Frame);
+        lighting.DrawShadow(canvas, piece.Texture, piece.Source, UnitSpriteLoader.Place(_sheet, piece, rect), feet, _facing, .85f, fade);
         var r = _style.Radius;
         lighting.DrawContact(canvas, feet, new Vector2(r * .48f, r * .16f), fade * .8f);
     }

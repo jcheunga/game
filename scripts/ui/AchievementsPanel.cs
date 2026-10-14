@@ -20,6 +20,10 @@ public partial class AchievementsPanel : RoyalScreen
 
     protected override void Build()
     {
+        // Draw uninterrupted wood over the obsolete button baked into the plate.
+        AddChild(new TextureRect { Texture = RoyalArt.Cut("achievements", new Rect2(101, 550, 1080, 64)),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            Position = new Vector2(101, 611), Size = new Vector2(1080, 64), MouseFilter = MouseFilterEnum.Ignore });
         _layer = Layer("Live");
         Refresh();
     }
@@ -68,18 +72,12 @@ public partial class AchievementsPanel : RoyalScreen
         for (var i = 0; i < shown.Length; i++) _layer.AddChild(Card(spec, i, shown[i]));
 
         var back = spec.Rect("button.back");
-        var backButton = RoyalButton.Over(back, "Back to map", Close, 6);
-        backButton.SetGlyph(RoyalKit.Texture("icon-back-chevron"), new Rect2(spec.Rect("button.back.icon").Position - back.Position, spec.Rect("button.back.icon").Size));
-        var backLabel = spec.Label("button.back.label", "BACK TO MAP", 200);
-        backLabel.Position -= back.Position;
-        backButton.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
-        _layer.AddChild(backButton);
         if (pages > 1)
         {
             for (var side = -1; side <= 1; side += 2)
             {
                 var direction = side;
-                var rect = new Rect2(back.GetCenter().X + side * (back.Size.X / 2 + 50) - 21, back.GetCenter().Y - 21, 42, 42);
+                var rect = new Rect2(back.GetCenter().X + side * 90 - 21, back.GetCenter().Y - 21, 42, 42);
                 var arrow = RoyalButton.Over(rect, side < 0 ? "Previous achievement page" : "Next achievement page", () => { _page += direction; Refresh(); }, 6);
                 arrow.SetStates(RoyalKit.Slice("chevron-button", 8), 6);
                 arrow.SetGlyph(RoyalKit.Texture("chevron"), new Rect2(14, 10, 14, 22));
@@ -89,7 +87,7 @@ public partial class AchievementsPanel : RoyalScreen
             }
             var page = RoyalText.Caps($"{_page + 1} / {pages}", 15, RoyalText.Muted);
             page.Align = HorizontalAlignment.Center;
-            RoyalText.Place(_layer, page, back.GetCenter().X + back.Size.X / 2 + 76, back.GetCenter().Y - 12, 60, 24);
+            RoyalText.Place(_layer, page, back.GetCenter().X - 45, back.GetCenter().Y - 12, 90, 24);
         }
     }
 
@@ -141,8 +139,7 @@ public partial class AchievementsPanel : RoyalScreen
         {
             var claim = RoyalButton.Over(buttonRect, $"Claim {reward.RewardLabel}", () =>
             {
-                AudioDirector.Claimed(state.TryClaimAchievementReward(entry.Id, out var message));
-                RoyalToast.Show(this, message);
+                AudioDirector.Claimed(state.TryClaimAchievementReward(entry.Id, out _));
                 Refresh();
             }, 6);
             claim.SetStates(RoyalKit.Slice("ach-claim", 12), 6);

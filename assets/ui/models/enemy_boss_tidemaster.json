@@ -1,44 +1,45 @@
 {
-  "frameWidth": 498,
-  "frameHeight": 617,
-  "drawScale": 1.7703076694516384,
+  "frameWidth": 1217,
+  "frameHeight": 890,
+  "drawScale": 2.7266063004545393,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.15103
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_tidemaster",
   "title": "Harrow Tidemaster",
-  "source": "art/remaster/units/enemy_boss_tidemaster.py",
-  "anchorY": 0.770732,
-  "anchorX": 0.46831,
+  "source": "art/remaster/puppet/build.py (enemy_boss_tidemaster)",
+  "anchorY": 0.931856,
+  "anchorX": 0.338888,
   "motion": {
-    "revision": "remaster-v1",
-    "profile": "royal-cleave",
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
     "body": [
-      0.0,
-      -0.326104
+      -0.001989,
+      -0.580303
     ],
     "contact": [
-      -0.118399,
-      0.185913
+      0.437848,
+      -0.131564
     ]
   },
-  "healthBarY": 0.628521
+  "healthBarY": 0.829406
 }

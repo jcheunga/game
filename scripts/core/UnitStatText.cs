@@ -6,6 +6,10 @@ public static class UnitStatText
     public static string BuildInlineTraits(UnitStats stats)
     {
         var parts = new List<string>();
+        parts.Add($"Armor {stats.Armor:0.#} · Physical resist {stats.PhysicalResistance:0.#}% · Magic resist {stats.MagicalResistance:0.#}%");
+        parts.Add($"Critical chance {stats.CriticalChance:0.#}% · Critical damage +{stats.CriticalDamageBonus:0.#}%");
+        parts.Add(stats.AttackDamageType == CombatDamageType.Magical ? "Magical attacks" : "Physical attacks");
+        if (stats.Definition.BodiesPerDeployment > 1) parts.Add($"{stats.Definition.BodiesPerDeployment} bodies per card");
 
         if (stats.AttackSplashRadius > 0.05f)
         {

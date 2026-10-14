@@ -1,0 +1,45 @@
+{
+  "frameWidth": 421,
+  "frameHeight": 361,
+  "drawScale": 3.1185185185185187,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.10732
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_soul_standard",
+  "title": "Soul Standard",
+  "source": "art/remaster/puppet/build.py (enemy_soul_standard)",
+  "anchorY": 0.930372,
+  "anchorX": 0.5,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.002438,
+      -0.368458
+    ],
+    "contact": [
+      0.371948,
+      -0.689221
+    ]
+  },
+  "healthBarY": 0.751262
+}

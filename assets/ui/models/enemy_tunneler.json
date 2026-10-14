@@ -1,44 +1,45 @@
 {
-  "frameWidth": 226,
-  "frameHeight": 169,
-  "drawScale": 2.405278842060451,
+  "frameWidth": 208,
+  "frameHeight": 153,
+  "drawScale": 2.2137079608343972,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.23869
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_tunneler",
   "title": "Tunneler",
-  "source": "art/remaster/units/enemy_tunneler.py",
-  "anchorY": 0.812436,
-  "anchorX": 0.522957,
+  "source": "art/remaster/puppet/build.py (enemy_tunneler)",
+  "anchorY": 0.874124,
+  "anchorX": 0.602588,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "claw-rake",
     "body": [
-      0.0,
-      -0.3583
+      0.040457,
+      -0.481397
     ],
     "contact": [
-      0.340336,
-      0.024113
+      0.129414,
+      -0.290154
     ]
   },
-  "healthBarY": 0.614975
+  "healthBarY": 0.737179
 }

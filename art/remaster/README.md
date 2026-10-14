@@ -25,7 +25,135 @@ to about 1.8–3; `pack.py` reports the density each unit reaches.
 | Anatomy | Straight limbs | Shaped arm and leg stations (deltoid, biceps, forearm, calf), horse legs with hock, fetlock and hooves, a hair tail; zombies with ribs and torn wounds laid on the skin; boots on soles that follow the foot |
 | Animation | Generic swings | Stances per weapon family plus a six-frame idle, an eight-frame walk (march / heavy / shamble / prowl / float), ten-frame attacks with contact on frame 4, hit, a death performance of its own for every unit (`roster/deaths.py`, solved by `rk/death.py`), deploy, and for ranged units a seven-frame close-quarters `melee` clip (contact on frame 3: kick, stock jab, staff strike, backhand, hammer smash or an engine's ram). Cleaving bosses that also shoot reuse their attack instead |
 | Projectiles | Coloured dots | Side-on lit sprites for every physical shot (arrow, crossbow bolt, ballista and bone bolts, harpoon, flask, plague pot, firepot, cog, ghost skull, blight glob) from `build_projectiles.py`; the game flies them on arcs with trails, launch flashes and impacts (`scripts/combat/ProjectileStyles.cs`) |
-| Camera | 15° from side | The battle camera's own angle (22° above the ground plane), with each character turned 33.5° toward it so faces, heraldry and shields read, and deaths fall onto the same ground plane as the battlefield |
+| Camera | 15° from side | The battle camera's own angle (22° above the ground plane), with each character turned toward it (45° by default, less for mounts and engines) so faces, heraldry and shields read, and deaths fall onto the same ground plane as the battlefield |
+
+## Roster-sheet style (October 2026)
+
+Every unit and enemy is rebuilt to match the stylised "royal fantasy" roster sheet (`output/units.png`;
+crops of its 16 cells live in `ref/<id>.png`). The new recipes are `roster/caravan.py` (Lantern Caravan),
+`host.py`, `host2.py`, `host3.py` (creatures, giants, the siege tower), `host4.py` (bosses), `mounts.py` and
+`siege.py`. They register after the older recipe modules, so they win.
+
+| Piece | What it does |
+| --- | --- |
+| `rk/sdf.py` | Signed-distance sculpting: primitives, smooth union/cut/keep, narrow-band surface nets, projection and smoothing, bone weights from tagged primitives, posed fields |
+| `rk/hero.py`, `faces.py`, `hands.py`, `bones.py` | The hero body, sculpted heads (beards, hair, brows, lids), posed hands, skeletons and skulls |
+| `rk/garb.py`, `plate.py`, `helms.py`, `arms.py`, `sigil.py` | Garments (dressed in the stance, then carried back to rest by inverse dual-quaternion skinning), plate harness, helmets, weapons and heraldry |
+| `rk/pose.py`, `motion.py`, `skin.py` | Two-bone IK for grips and planted feet; idle, walk, attack (weapon-space keys), hit, deploy and melee clips |
+| `rk/steed.py`, `engines.py`, `creatures.py` | Horses, hounds and tack; ballista and catapult; blobs, serpents, wisps |
+| `rk/character.py` | Assembly, binding, lighting, the battle render and `render_icon` (the unit icon: an orthographic bust for people, the whole figure for beasts, mounts and machines) |
+
+Most units face 45° toward the camera; long-bodied ones turn less (`character.set_facing`, called by
+the mount, engine and siege-tower recipes, and reset before every recipe). Engines are modelled at crew
+scale and grown after binding (`finish_clips(..., scale=)`), so the sheet's big engines stay big.
+
+Lookdev and production:
+
+```sh
+# one unit's stance at battle framing (+ its icon), compared with its roster-sheet cell
+blender --background --factory-startup --python art/remaster/lookdev.py -- --ids enemy_walker --samples 24 --size 600 --tag v5 --portrait
+python3 art/remaster/lookdev_compare.py enemy_walker --tag v5
+# every unit, a few per Blender process: lookdev, or the production masters
+LOG=artifacts/remaster/lookdev/all.log art/remaster/lookdev_all.sh ids.txt v5
+LOG=artifacts/remaster/build_a.log art/remaster/build_all.sh ids.txt
+```
+
+`look_stats.py` and `relight.py` calibrate the look (tone, exposure, light balance) against the sheet.
+
+### Paint-over (the sheet's finish on every frame)
+
+The sculpted models carry the shapes, rigs and animation; the roster sheet's painted finish comes from a paint-over.
+Each unit's stance frame is repainted by Codex image generation in the sheet's style (same pose and silhouette,
+richer textures), aligned back onto the model's silhouette and projected from the battle camera onto the rigged
+mesh (`rk/paint.py`), so every frame of every clip carries the painting. Surfaces the camera cannot see in the
+stance keep their procedural materials. Icons are cropped from the same painting.
+
+Each unit has two paintings: the stance as the battle camera sees it, and the stance seen from behind (rendered by
+turning the character 180 degrees under the same camera and lights, painted by Codex to match the front painting).
+In death poses the camera sees about half the body's surface from angles the front view never saw; the back
+painting covers most of it. What neither view sees in the stance (inside the legs, under shields and arms) borrows
+the nearest painted colour, slightly darker; `coverage.json` records the split per unit.
+
+```sh
+art/remaster/guide_all.sh ids.txt                       # stance guides only (build_units.py --guide)
+EXTRA="--back-guide" art/remaster/build_all.sh ids.txt  # back guides (units/<id>/back000.png)
+python3 art/remaster/paintover.py paint-back all        # Codex: back_painted.png, matched to the front painting
+python3 art/remaster/paintover.py paint all --jobs 3    # Codex: artifacts/remaster/paint/<id>/painted.png
+python3 art/remaster/paintover.py sheet all             # guide | painting review sheet
+EXTRA="--paint" SAMPLES=32 art/remaster/build_all.sh ids.txt   # painted masters (all clips)
+python3 art/remaster/paintover.py icons all             # units/<id>/portrait.png from the painting
+python3 art/remaster/tone.py apply all                  # the sheet's tone on every frame and icon (once per render)
+python3 art/remaster/look_stats.py ref --frames         # measured match to the 16 reference cells
+python3 art/remaster/qa_frames.py all && python3 art/remaster/unit_review.py <ids>
+python3 art/remaster/paint_drift.py all                 # how far each painting strayed from its model's colours
+# in the engine: the art contract for every unit, then every unit on a real battlefield, 8 per screenshot
+godot --path . scenes/tests/BlenderAssetSmoke.tscn -- --save-suffix=blender-review-x --screenshots --lineups
+```
+
+Codex runs as `codex exec -m gpt-5.6-sol` (the default model in `~/.codex/config.toml` is not available on a
+ChatGPT account) and its image generation has a usage limit: a full roster of 111 paintings fits, a second full pass
+does not. Units that turn little toward the camera (mounts, engines, serpents) call `character.set_facing`; long
+low bodies need it or their near end draws below the ground anchor (BlenderAssetSmoke checks `AnchorY > 0.5`).
+
+`tone.py` holds one curve (`tone_curve.json`: gamma 0.65, contrast 1.55, saturation 0.7) fitted so the reference
+units' stance frames match the sheet's mean luminance and contrast; the paintings keep their models' darker values,
+so without it the roster sits about 29 luminance levels under the sheet. A second step warms bright, low-colour areas
+(linen, bone, pale cloth) toward the sheet's cream; strongly coloured glows are masked out and keep their brightness.
+Compressing highlights to the sheet's level instead was tried and rejected: it greys the whites and costs contrast. A fresh render clears `tone.json`, so the
+new frames are toned again; icons made after toning get the same curve.
+
+After changing a model, re-render its guide and repaint it (`paintover.py prep <id>` keeps the first guide unless
+forced; delete `artifacts/remaster/paint/<id>/` to start over), or the painting no longer fits the mesh.
+
+### 2D puppets (the sheet's art, cut out and animated)
+
+The paint-over keeps each sculpted model's silhouette and proportions, so units still read as the old models with
+new texture. The units now ship as 2D cutout puppets instead (`puppet/`): every unit is painted afresh by Codex in
+the sheet's style, with its proportions, cut into layers, rigged with a 2D skeleton and animated in Blender.
+
+| Step | What it does |
+| --- | --- |
+| `puppet/masters.py` | Per unit, resumable: `master.png` (Codex: the unit by the sheet's artist, full body, facing right, on transparency; sheet units keep their sheet cell's design, the rest take only *what* they are from `paint/<id>/painted.png`), `landmarks.json` (`puppet/landmarks.py`: Codex vision on a gridded copy; a master painted facing left is mirrored), then Codex edits: `body.png` (what the hands hold painted out) and `torso.png` (both arms painted out), `horse.png` (a mount's rider painted out) or `nowheels.png` (a machine's wheels painted out); `layers`; `icon`. A usage-limit message makes it sleep until the time Codex gives |
+| `puppet/layers.py` | Registers each edit onto the master (SIFT + RANSAC similarity; the arms edit rescales) and cuts what it removed into layers: weapon and off-hand item (a straight weapon is a band along the line through the grip with the most removed paint, as far as that paint runs, so a haft crossing a belt of its own colour is kept and a shield behind the pommel is not; the shaft is painted in under the fists), each arm, the rider, each wheel; the base is the body with the edit's paint where the arms were. `layers.json` holds the draw order and the weapon line and grips. Runs under `puppet/run.sh` (uv: numpy, scipy, OpenCV) |
+| `puppet/build.py` | Blender: one grid mesh per layer (its texture is the layer), skinned only to its own bones; hands are IK targets (a `wield` bone carries the weapon, between the hands for two-handed weapons), so attacks say where the hand goes around the shoulder and which way the weapon points (`HAND_PROFILES`), whatever the painted pose. Clip lengths, timings, contact and impact frames come from the unit's `units/<id>/metadata.json`; deaths follow `roster/deaths.py` (motion, and when the weapon leaves the hand, its toss and spin: it is thrown, lands, tips flat and skids) |
+| `puppet/creatures.py` | Rigs and motion for four-legged beasts (trot, crouch-and-pounce, sprawl), serpents (travelling wave, rear and strike), blobs and floaters (squash and stretch, hover), mounts (canter, couched-lance charge, the mount pitching onto its chest) and machines (wheels that turn as it rolls, draw-and-loose recoil, a lurching wreck) |
+
+```sh
+python3 art/remaster/puppet/masters.py all --jobs 3                 # sources (resumes; waits out Codex limits)
+art/remaster/puppet/follow.sh                                     # or: later stages as masters land
+blender --background --factory-startup --python-exit-code 1 --python art/remaster/puppet/build.py -- \
+    --ids $(python3 art/remaster/puppet/ready.py)                   # frames, metadata, complete.json
+python3 art/remaster/pack.py stage --source puppet_units && python3 art/remaster/pack.py apply
+```
+
+Frames render at the density `pack.py` packs to (`density.TARGET_DENSITY`, supersampled), under a camera wide
+enough for the body lying either way from its feet; `drawScale` keeps each unit's on-screen height. The paintings
+carry the sheet's lighting; the battle adds each unit's cast and contact shadows from its silhouette
+(`BattleLighting`). Icons (`puppet_units/<id>/portrait.png`) come from the master: a head-and-shoulders crop on the
+head landmarks for people, the whole figure for beasts, mounts and machines.
+
+### Combat feel
+
+The puppet clips are rendered at about twice the old frame count (`build.py new_contract`: attack 16 frames with
+contact on 6 at the same contact time as before, death 20-24, walk and idle 12), eased per segment (windups decelerate
+and hold a beat, strikes accelerate into contact, follow-throughs settle) with a motion-blur trail of the weapon alone
+on the frames around contact. Deaths add a jolt from the killing blow, a fall that accelerates into the ground, one
+bounce and a settle (`dramatize_death`); the weapon is thrown with the table's toss and spin and lies where it lands.
+The walk clip records `stride` (ground covered per cycle), and the game plays the cycle at the speed that keeps the
+planted foot still. Packed atlases are trimmed per frame and shelf-packed on as many 4096 px pages as needed
+(`pack.py trimmed_pack`), so every unit keeps the full target density.
+
+In the battle: `UnitLook` lights each unit with its zone's colours (key, ambient, sky rim, road bounce, depth haze,
+measured from the painted backdrop) and gives a true white hit flash; blows freeze both fighters for a few frames
+(hit-stop) and shake the camera's offset (the old shake moved the cameras with the world, so nothing shook);
+`BattleGore` sprays and stains light blood coloured by what the creature is made of (painted sprites from
+`fx_cut.py`), chips bone and wood, and pools blood under the fallen, who are knocked back along the killing blow;
+arrows stay in a target while it fights and stick in the road when they miss. Review it on a real battlefield:
+
+```sh
+godot --path . --fixed-fps 30 scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-feel --feel-only [--zoom=2.2] [--take=deaths]
+godot --path . scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-feel --feel-only --projectiles
+```
 
 ## Layout
 
@@ -87,7 +215,8 @@ itself (units, battle-v2 structures, mounts) has a baked ground shadow.
 
 Conventions: characters face +X, their left is +Y, Z is up, ground is Z = 0; the battle
 camera sits on the -Y side. At render time `render_character` parents every root object to a
-`_Facing` empty yawed -33.5°, so recipes never rotate characters themselves. Riders and crews
+`_Facing` empty yawed toward the camera (`character.FACING_YAW`, -45° unless the recipe called
+`set_facing`), so recipes never rotate characters themselves. Riders and crews
 must be bound (`finalize_bones` + `bind`) before their rig is moved onto a mount, or their meshes
 stay behind at the build position. Pose rotations use the `LAT` axis (counter-clockwise as seen by
 the camera), `YAW` and `ROLL` from `rk/rig.py`.

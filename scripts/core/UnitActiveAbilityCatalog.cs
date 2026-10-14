@@ -157,6 +157,15 @@ public static class UnitActiveAbilityCatalog
         {
             return null;
         }
+        try
+        {
+            var unit = GameData.GetUnit(unitId);
+            if (!string.IsNullOrWhiteSpace(unit.ContentBehavior))
+                return new UnitActiveAbilityDefinition("content:" + unit.Id, unit.Id,
+                    System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(unit.ContentBehavior.Replace('_', ' ')),
+                    unit.Description, unit.SpecialCooldown, 1);
+        }
+        catch (InvalidOperationException) { }
 
         for (var i = 0; i < Definitions.Length; i++)
         {
@@ -175,6 +184,8 @@ public static class UnitActiveAbilityCatalog
         {
             return null;
         }
+        if (abilityId.StartsWith("content:", StringComparison.OrdinalIgnoreCase))
+            return GetForUnit(abilityId.Substring(8));
 
         for (var i = 0; i < Definitions.Length; i++)
         {

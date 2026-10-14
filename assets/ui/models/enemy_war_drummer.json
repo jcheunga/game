@@ -1,0 +1,45 @@
+{
+  "frameWidth": 283,
+  "frameHeight": 216,
+  "drawScale": 2.096296296296297,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17821
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_war_drummer",
+  "title": "War Drummer",
+  "source": "art/remaster/puppet/build.py (enemy_war_drummer)",
+  "anchorY": 0.914344,
+  "anchorX": 0.674623,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "hammer-command",
+    "body": [
+      -0.019668,
+      -0.563862
+    ],
+    "contact": [
+      0.09046,
+      -0.646359
+    ]
+  },
+  "healthBarY": 0.804074
+}

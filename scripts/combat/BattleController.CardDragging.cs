@@ -58,7 +58,7 @@ public partial class BattleController
         return root.MouseFilter != Control.MouseFilterEnum.Ignore && ScreenPointIn(root, point) ? root : null;
     }
 
-    private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && !_mobileClearView;
+    private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && !_mobileClearView && SceneRouter.Instance?.IsTransitioning != true;
 
     private bool DragCardAffordable() => _dragSpell != null && _mana >= GameState.Instance.BuildSpellStats(_dragSpell).ManaCost
         && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
@@ -67,7 +67,9 @@ public partial class BattleController
     {
         if (!CardActionAvailable || !DragCardAffordable() || !GetViewportRect().HasPoint(screen)) return false;
         if (_mobileHud != null && (screen.Y < _mobileFieldTop || screen.Y > _mobileFieldBottom)) return false;
-        return CardHitControl(_battleUiRoot, screen) == null && IsInBattlefield(ScreenToBattle(screen));
+        var point = ScreenToBattle(screen);
+        return CardHitControl(_battleUiRoot, screen) == null && IsInBattlefield(point)
+            && CanResolveSpellTarget(GameState.Instance.BuildSpellStats(_dragSpell), point, out _);
     }
 
     private bool HandleCardDragInput(InputEvent input)
@@ -199,8 +201,8 @@ public partial class BattleController
         if (!_cardDragging) return;
         var valid = CanDropCard(_cardPointerPosition);
         _cardDragPortrait.Modulate = valid ? new Color("d8ffebcc") : new Color("ffb5a2aa");
-        _cardDragHint.Text = !DragCardAffordable() ? "Unavailable · cancel" : !valid ? "Move onto the battlefield" :
-            "Release · " + _dragSpell.DisplayName;
+        _cardDragHint.Text = valid ? "Release · " + _dragSpell.DisplayName : "";
+        _cardDragHint.GetParent<Control>().Visible = valid;
         var scale = _mobileHud != null ? 1.4f : 1f;
         _cardDragGhost.Scale = Vector2.One * scale;
         var size = _cardDragGhost.Size * scale;

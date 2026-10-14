@@ -15,26 +15,44 @@ public sealed class UnitStats
         float damageScale = 1f,
         float cooldownReduction = 0f,
         int baseDamageBonus = 0,
-        float speedScale = 1f)
+        float speedScale = 1f,
+        float armorBonus = 0f,
+        float physicalResistanceBonus = 0f,
+        float magicalResistanceBonus = 0f,
+        float criticalChanceBonus = 0f,
+        float criticalDamageBonus = 0f,
+        float rangeScale = 1f,
+        float structureScale = 1f,
+        float attackIntervalScale = 1f,
+        int level = 1,
+        float auraRangeScale = 1f)
     {
+        Definition = definition;
+        Level = level;
         DefinitionId = definition.Id;
         Name = definition.DisplayName;
-        MaxHealth = definition.MaxHealth * healthScale;
+        MaxHealth = MathF.Round(definition.MaxHealth * healthScale);
         Speed = definition.Speed * speedScale;
         AttackDamage = definition.AttackDamage * damageScale;
-        AttackRange = definition.AttackRange;
-        AttackCooldown = Mathf.Max(0.45f, definition.AttackCooldown - cooldownReduction);
+        AttackRange = definition.AttackRange * rangeScale;
+        AttackCooldown = Mathf.Max(0.25f, definition.AttackCooldown * attackIntervalScale - cooldownReduction);
+        Armor = Mathf.Max(0f, definition.Armor + armorBonus);
+        PhysicalResistanceBonus = definition.PhysicalResistanceBonus + physicalResistanceBonus;
+        MagicalResistance = Mathf.Clamp(definition.MagicalResistance + magicalResistanceBonus, 0f, 75f);
+        CriticalChance = Mathf.Clamp(definition.CriticalChance + criticalChanceBonus, 0f, 60f);
+        CriticalDamageBonus = Mathf.Clamp(definition.CriticalDamageBonus + criticalDamageBonus, 0f, 200f);
+        AttackDamageType = UnitBalance.ParseDamageType(definition.DamageType);
         AttackSplashRadius = definition.AttackSplashRadius;
         UsesProjectile = definition.UsesProjectile;
         DamagesStructures = definition.DamagesStructures ?? !definition.UsesProjectile;
         ProjectileSpeed = definition.ProjectileSpeed;
         AggroRangeX = Mathf.Max(AttackRange, definition.AggroRangeX);
         AggroRangeY = definition.AggroRangeY;
-        BaseDamage = definition.BaseDamage + baseDamageBonus;
+        BaseDamage = definition.BaseDamage * damageScale * structureScale + baseDamageBonus;
         BusRepairAmount = definition.BusRepairAmount * Mathf.Lerp(1f, damageScale, 0.8f);
         DamageTakenScale = definition.DamageTakenScale;
         DamageReflectScale = definition.DamageReflectScale;
-        AuraRadius = definition.AuraRadius;
+        AuraRadius = definition.AuraRadius * auraRangeScale;
         AuraAttackDamageScale = definition.AuraAttackDamageScale;
         AuraSpeedScale = definition.AuraSpeedScale;
         SpecialAbilityId = definition.SpecialAbilityId ?? "";
@@ -60,6 +78,15 @@ public sealed class UnitStats
         AbilityQuote = definition.AbilityQuote ?? "";
     }
 
+    public UnitDefinition Definition { get; }
+    public int Level { get; }
+    public float Armor { get; }
+    public float PhysicalResistanceBonus { get; }
+    public float PhysicalResistance => UnitBalance.PhysicalResistance(Armor, PhysicalResistanceBonus);
+    public float MagicalResistance { get; }
+    public float CriticalChance { get; }
+    public float CriticalDamageBonus { get; }
+    public CombatDamageType AttackDamageType { get; }
     public string DefinitionId { get; }
     public string Name { get; }
     public float MaxHealth { get; }
@@ -73,7 +100,7 @@ public sealed class UnitStats
     public float ProjectileSpeed { get; }
     public float AggroRangeX { get; }
     public float AggroRangeY { get; }
-    public int BaseDamage { get; }
+    public float BaseDamage { get; }
     public float BusRepairAmount { get; }
     public float DamageTakenScale { get; }
     public float DamageReflectScale { get; }
@@ -222,6 +249,16 @@ public partial class Unit : Node2D
 {
     public Team Team { get; private set; }
     public string DefinitionId { get; private set; } = "";
+    public UnitDefinition Definition { get; private set; }
+    public int Level { get; private set; } = 1;
+    public float Armor { get; private set; }
+    public float PhysicalResistanceBonus { get; private set; }
+    public float PhysicalResistance => UnitBalance.PhysicalResistance(Mathf.Max(0f, Armor - ArmorBreak), PhysicalResistanceBonus);
+    public float MagicalResistance { get; private set; }
+    public float CriticalChance { get; private set; }
+    public float CriticalDamageBonus { get; private set; }
+    public CombatDamageType AttackDamageType { get; private set; }
+    public bool NonCombatant => Definition?.NonCombatant ?? false;
     public string UnitName { get; private set; } = "";
     public float MaxHealth { get; private set; } = 1f;
     public float Health { get; private set; } = 1f;
@@ -235,7 +272,7 @@ public partial class Unit : Node2D
     public float ProjectileSpeed { get; private set; }
     public float AggroRangeX { get; private set; }
     public float AggroRangeY { get; private set; }
-    public int BaseDamage { get; private set; }
+    public float BaseDamage { get; private set; }
     public float BusRepairAmount { get; private set; }
     public float DamageTakenScale { get; private set; } = 1f;
     public float DamageReflectScale { get; private set; }
@@ -264,6 +301,8 @@ public partial class Unit : Node2D
     public string KillQuote { get; private set; } = "";
     public string AbilityQuote { get; private set; } = "";
     public string LastDamagedBy { get; set; } = "";
+    // Runtime spawn provenance, reset on pool reuse. Summons and revived bodies cannot farm packs.
+    public bool CanDropCourage { get; set; }
     public string VisualClass { get; private set; } = "fighter";
     public float VisualScale { get; private set; } = 1f;
     public float Radius { get; private set; } = 16f;
@@ -280,6 +319,11 @@ public partial class Unit : Node2D
     private float _activeAbilityTimer;
     private float _untargetableTimer;
     private float _hitFlashTimer;
+    private float _walkSpeed;
+    /// <summary>How far up the walking band the unit stands (0 front, 1 back), set by the battle for depth haze.</summary>
+    public float DepthInField { get; set; }
+    /// <summary>The battlefield zone whose light this unit is drawn in (UnitLook), or null outside a battle.</summary>
+    public string LookZone { get; set; }
     private float _attackFlashTimer;
     private float _auraFlashTimer;
     private float _idleTimer;
@@ -309,11 +353,21 @@ public partial class Unit : Node2D
     public void Setup(Team team, UnitStats stats, Vector2 startPosition)
     {
         ResetCombatMotion();
+        ResetContentState();
         EnvironmentTint = Colors.White;
         LocalLightTint = Colors.White;
         GroundShadowsManaged = false;
         Team = team;
+        CanDropCourage = false;
         DefinitionId = stats.DefinitionId;
+        Definition = stats.Definition;
+        Level = stats.Level;
+        Armor = stats.Armor;
+        PhysicalResistanceBonus = stats.PhysicalResistanceBonus;
+        MagicalResistance = stats.MagicalResistance;
+        CriticalChance = stats.CriticalChance;
+        CriticalDamageBonus = stats.CriticalDamageBonus;
+        AttackDamageType = stats.AttackDamageType;
         UnitName = stats.Name;
         MaxHealth = stats.MaxHealth;
         Health = stats.MaxHealth;
@@ -367,6 +421,7 @@ public partial class Unit : Node2D
     public void ResetForPool()
     {
         ResetCombatMotion();
+        ResetContentState();
         EnvironmentTint = Colors.White;
         LocalLightTint = Colors.White;
         GroundShadowsManaged = false;
@@ -376,6 +431,7 @@ public partial class Unit : Node2D
         _activeAbilityTimer = 0f;
         _untargetableTimer = 0f;
         _hitFlashTimer = 0f;
+        _fadeTimer = 0f; _fadeFromFrame = -1; _poseHold = 0f; _walkSpeed = 0f;
         _attackFlashTimer = 0f;
         _auraFlashTimer = 0f;
         _idleTimer = 0f;
@@ -465,6 +521,7 @@ public partial class Unit : Node2D
         }
 
         var appliedScale = Mathf.Clamp(speedScale, 0.35f, 2.5f);
+        if (appliedScale < 1f) duration *= SlowDurationScale;
         _temporarySpeedScale = appliedScale < 1f
             ? Mathf.Min(_temporarySpeedScale, appliedScale)
             : Mathf.Max(_temporarySpeedScale, appliedScale);
@@ -503,7 +560,7 @@ public partial class Unit : Node2D
 
     public bool TryTriggerSpecialAbility()
     {
-        if (!HasSpecialAbility || _specialTimer > 0f)
+        if (!HasSpecialAbility || IsSilenced || _specialTimer > 0f)
         {
             return false;
         }
@@ -587,12 +644,14 @@ public partial class Unit : Node2D
 
     private bool BeginAttackAt(Vector2 position, float targetRadius, bool melee)
     {
-        if (IsDead || IsAttackCommitted || _attackTimer > 0f || !CanAttackPosition(position, targetRadius))
+        if (IsDead || IsControlled || IsAttackCommitted || _attackTimer > 0f || !CanAttackPosition(position, targetRadius))
         {
             return false;
         }
 
-        _attackTimer = AttackCooldown;
+        _attackTimer = AttackCooldown * AttackIntervalModifier;
+        CommittedAttacks++;
+        LastAttackAge = ContentAge;
         _contactTarget = null;
         SelectAttackClip(melee);
         FaceCombatPosition(position);
@@ -642,6 +701,7 @@ public partial class Unit : Node2D
 
     public void MoveToward(Vector2 target, float delta, float minX, float maxX, float minY, float maxY)
     {
+        if (MovementControlled) return;
         var offset = target - Position;
         if (offset.LengthSquared() <= 0.0001f)
         {
@@ -658,6 +718,7 @@ public partial class Unit : Node2D
 
     public void Advance(float delta, float minX, float maxX, float minY, float maxY)
     {
+        if (MovementControlled) return;
         var direction = Team == Team.Player ? 1f : -1f;
         _facing = direction;
         Position += new Vector2(direction * Speed * Mathf.Max(0.4f, _currentSpeedScale) * delta, 0f);
@@ -666,10 +727,23 @@ public partial class Unit : Node2D
             Mathf.Clamp(Position.Y, minY, maxY));
     }
 
-    public float TakeDamage(float damage, string attackerName = null)
+    public float TakeDamage(float damage, string attackerName = null, CombatDamageType damageType = CombatDamageType.Physical, float armorPenetration = 0f)
     {
+        if (damage <= 0f || IsDead) return 0f;
         var previousHealth = Health;
-        Health -= damage * Mathf.Max(0.05f, DamageTakenScale * _currentDamageTakenScale);
+        var resistance = damageType switch
+        {
+            CombatDamageType.Physical => UnitBalance.PhysicalResistance(Mathf.Max(0f, Armor - ArmorBreak) * (1f - Mathf.Clamp(armorPenetration, 0f, 1f)), PhysicalResistanceBonus),
+            CombatDamageType.Magical => MagicalResistance,
+            _ => 0f
+        };
+        var received = damage * (1f - resistance / 100f);
+        if (damageType == CombatDamageType.Physical) received *= 1f - PhysicalGuard;
+        if (damageType != CombatDamageType.True) received *= Mathf.Max(.05f, DamageTakenScale * _currentDamageTakenScale);
+        var absorbed = damageType == CombatDamageType.True ? 0f : Mathf.Min(ShieldHealth, received);
+        ShieldHealth -= absorbed;
+        Health = Mathf.Max(0f, Health - received + absorbed);
+        if (received > absorbed) BreakRootFromDamage();
         if (Health < 0f)
         {
             Health = 0f;
@@ -694,7 +768,7 @@ public partial class Unit : Node2D
         }
 
         var previousHealth = Health;
-        Health = Mathf.Min(MaxHealth, Health + amount);
+        Health = Mathf.Min(MaxHealth, Health + amount * HealingReceivedScale * (HealthRatio < .35f ? 1f + LowHealthHealingBonus : 1f));
         _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.18f);
         return Mathf.Max(0f, Health - previousHealth);
     }
@@ -703,16 +777,20 @@ public partial class Unit : Node2D
     {
         if (ShouldPausePresentation?.Invoke() ?? false) return;
         var deltaF = (float)delta;
+        // Hit-stop: the drawn pose freezes for a few frames at contact (the flash and flinch still show).
+        var held = _poseHold > 0f;
+        _poseHold = Mathf.Max(0f, _poseHold - deltaF);
         if (GameState.Instance?.ReducedMotion ?? false) _hitReaction.Reset();
         else _hitReaction.Advance(deltaF);
         _healthBarMotion.Update(HealthRatio, deltaF, GameState.Instance?.ReducedMotion ?? false);
         _idleTimer += deltaF;
         _hitFlashTimer = Mathf.Max(0f, _hitFlashTimer - deltaF);
+        _fadeTimer = Mathf.Max(0f, _fadeTimer - deltaF);
         _attackFlashTimer = Mathf.Max(0f, _attackFlashTimer - deltaF);
         _auraFlashTimer = Mathf.Max(0f, _auraFlashTimer - deltaF);
         _temporaryCombatBuffTimer = Mathf.Max(0f, _temporaryCombatBuffTimer - deltaF);
         EnsureSpriteLoaded();
-        AdvanceSpriteAnimation(deltaF);
+        if (!held) AdvanceSpriteAnimation(deltaF);
         if (!_contactMotionActive) _spriteAttackRemaining = Mathf.Max(0f, _spriteAttackRemaining - deltaF);
         _spriteDeployRemaining = Mathf.Max(0f, _spriteDeployRemaining - deltaF);
         QueueRedraw();
@@ -729,6 +807,7 @@ public partial class Unit : Node2D
         else
             DrawProceduralUnit();
         DrawHealthBar();
+        DrawContentFeedback();
     }
 
     private void EnsureSpriteLoaded()
@@ -751,9 +830,8 @@ public partial class Unit : Node2D
         var width = Radius * 2 * VisualScale * _spriteSheet.DrawScale;
         var size = new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth);
         var rect = new Rect2(new Vector2(-size.X * _spriteSheet.AnchorX, -size.Y * _spriteSheet.AnchorY), size);
-        lighting.DrawShadow(ground, _spriteSheet.Texture,
-            UnitSpriteLoader.GetFrameRect(_spriteSheet, anim.StartFrame + Mathf.Min(_spriteAnimFrame, anim.FrameCount - 1)),
-            rect, feet, GetFacing(), .85f);
+        var piece = UnitSpriteLoader.Frame(_spriteSheet, anim.StartFrame + Mathf.Min(_spriteAnimFrame, anim.FrameCount - 1));
+        lighting.DrawShadow(ground, piece.Texture, piece.Source, UnitSpriteLoader.Place(_spriteSheet, piece, rect), feet, GetFacing(), .85f);
     }
 
     private float SpriteClipDuration(UnitAnimState state, float fallback)
@@ -783,6 +861,13 @@ public partial class Unit : Node2D
         }
         _spriteAnimTimer += delta;
         var duration = Mathf.Max(0.01f, anim.FrameDuration);
+        if (_spriteAnimState == UnitAnimState.Walk && anim.Stride > 0f && _walkSpeed > 1f)
+        {
+            // Play the walk cycle at the speed the unit actually covers ground, so the planted foot stays put:
+            // one cycle covers `stride` frame widths.
+            var cycleWorld = anim.Stride * Radius * 2f * VisualScale * _spriteSheet.DrawScale;
+            duration = Mathf.Clamp(cycleWorld / _walkSpeed / anim.FrameCount, .025f, .16f);
+        }
         while (_spriteAnimTimer >= duration)
         {
             _spriteAnimTimer -= duration;
@@ -800,7 +885,8 @@ public partial class Unit : Node2D
         var visual = new UnitDeathVisual();
         var style = DeathStyle.For(_spriteSheet.DeathFx, Team == Team.Player, VisualClass == "boss", Radius);
         visual.Setup(_spriteSheet, clip, new Vector2(width, width * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth), GetFacing(),
-            EnvironmentTint * LocalLightTint, GroundShadowsManaged, style);
+            Material is ShaderMaterial ? LocalLightTint : EnvironmentTint * LocalLightTint, GroundShadowsManaged, style);
+        visual.Zone = LookZone;
         parent.AddChild(visual);
         visual.Position = Position;
         visual.ZIndex = ZIndex;
@@ -816,7 +902,8 @@ public partial class Unit : Node2D
         }
 
         var globalFrame = anim.StartFrame + Mathf.Min(_spriteAnimFrame, anim.FrameCount - 1);
-        var srcRect = UnitSpriteLoader.GetFrameRect(_spriteSheet, globalFrame);
+        var piece = UnitSpriteLoader.Frame(_spriteSheet, globalFrame);
+        var srcRect = piece.Source;
 
         var facing = GetFacing();
         var drawScale = (Radius * 2f) / _spriteSheet.FrameWidth * VisualScale * _spriteSheet.DrawScale;
@@ -835,19 +922,35 @@ public partial class Unit : Node2D
             Vector2.Zero));
 
         var modulate = EnvironmentTint * LocalLightTint;
-        if (_hitFlashTimer > 0f && !reduced)
+        var flash = _hitFlashTimer > 0f && !reduced ? Mathf.Clamp(_hitFlashTimer / .12f, 0, 1) * .7f : 0f;
+        if (Material is ShaderMaterial look)
         {
-            modulate = modulate.Lerp(new Color(1.25f,1.16f,1.08f),Mathf.Clamp(_hitFlashTimer/.12f,0,1));
+            // the battle's light (UnitLook): the zone grade carries the field's tint, so only local lamps multiply
+            modulate = LocalLightTint;
+            UnitLook.SetFrame(look, piece.Texture, srcRect, flash, facing, DepthInField);
+        }
+        else if (flash > 0f)
+        {
+            modulate = modulate.Lerp(new Color(1.25f,1.16f,1.08f),flash);
         }
 
-        DrawTextureRectRegion(_spriteSheet.Texture, new Rect2(drawPos, drawSize), srcRect, modulate);
+        DrawTextureRectRegion(piece.Texture, UnitSpriteLoader.Place(_spriteSheet, piece, new Rect2(drawPos, drawSize)), srcRect, modulate);
+        if (_fadeTimer > 0f && _fadeFromFrame >= 0 && !reduced)
+        {
+            var old = UnitSpriteLoader.Frame(_spriteSheet, _fadeFromFrame);
+            var k = _fadeTimer / ClipFadeSeconds;
+            DrawTextureRectRegion(old.Texture, UnitSpriteLoader.Place(_spriteSheet, old, new Rect2(drawPos, drawSize)), old.Source,
+                new Color(modulate, modulate.A * k * k * .85f));
+        }
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 
     private void UpdateSpriteAnimState(float delta)
     {
         var prevState = _spriteAnimState;
-        var moved = Position.DistanceSquaredTo(_prevPosition) > 0.0025f;
+        var step = Position.DistanceTo(_prevPosition);
+        var moved = step * step > 0.0025f;
+        if (delta > 0f && moved) _walkSpeed = Mathf.Lerp(_walkSpeed <= 0f ? step / delta : _walkSpeed, step / delta, .2f);
         _prevPosition = Position;
         // Rendering may run faster than physics; preserve walk between movement ticks.
         _spriteWalkRemaining = moved ? 0.1f : Mathf.Max(0f, _spriteWalkRemaining - delta);
@@ -865,10 +968,25 @@ public partial class Unit : Node2D
 
         if (_spriteAnimState != prevState)
         {
+            // Cross-fade out of the clip being left, so a change of action (walk to swing, swing to idle) does not
+            // pop from one painted pose to another.
+            if (_spriteSheet != null && _spriteSheet.Animations.TryGetValue(prevState, out var from))
+            {
+                _fadeFromFrame = from.StartFrame + Mathf.Min(_spriteAnimFrame, from.FrameCount - 1);
+                _fadeTimer = ClipFadeSeconds;
+            }
             _spriteAnimFrame = 0;
             _spriteAnimTimer = 0f;
+            // a crowd at rest should not breathe in unison
+            if (_spriteAnimState == UnitAnimState.Idle && _spriteSheet != null
+                && _spriteSheet.Animations.TryGetValue(UnitAnimState.Idle, out var idle) && idle.FrameCount > 1)
+                _spriteAnimFrame = (int)(GD.Randi() % (uint)idle.FrameCount);
         }
     }
+
+    private const float ClipFadeSeconds = .09f;
+    private int _fadeFromFrame = -1;
+    private float _fadeTimer;
 
     private void DrawProceduralUnit()
     {

@@ -79,6 +79,7 @@ public partial class BattleController
         {
             if (!IsInstanceValid(root)) return;
             CancelCardDrag();
+            CancelCouragePickupGesture();
             _mobilePointerDown=false;
             var scale=MobilePresentation.HudScale;
             root.Size=GetViewportRect().Size/scale;
@@ -194,9 +195,11 @@ public partial class BattleController
 
     public override void _Input(InputEvent input)
     {
+        if (_couragePickupPointerDown && HandleCouragePickupInput(input)) return;
         if (HandleBattleMenuInput(input)) return;
         if(HandleCardDragInput(input)) return;
         if(ContinueBattleCameraDrag(input)) return;
+        if(HandleCouragePickupInput(input)) return;
         if(!_mobilePointerDown || _mobileCamera==null) return;
         Vector2 point; bool released=false, canceled=false;
         if(input is InputEventScreenDrag drag && drag.Index==_mobilePointerId) point=drag.Position;
@@ -215,6 +218,7 @@ public partial class BattleController
         }
         _mobilePointerLast=point;
         if(!released) return;
+        if (_mobilePointerId >= 0) _cardMouseBlockUntil = Time.GetTicksMsec() + 250;
         _mobilePointerDown=false;
         var world=ScreenToBattle(point);
         if(!_mobileClearView && !_mobileDragging && point.Y>=_mobileFieldTop && point.Y<=_mobileFieldBottom && IsInBattlefield(world)) TryUseSelectionAt(world);
@@ -226,6 +230,7 @@ public partial class BattleController
         if(what==NotificationApplicationPaused || what==NotificationApplicationFocusOut || what==NotificationWMWindowFocusOut)
         {
             CancelCardDrag();
+            CancelCouragePickupGesture();
             _mobilePointerDown=false;
             _battleCameraDragging=false;
         }

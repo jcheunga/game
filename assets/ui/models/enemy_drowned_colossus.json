@@ -1,0 +1,45 @@
+{
+  "frameWidth": 653,
+  "frameHeight": 483,
+  "drawScale": 2.1475671320276914,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13609
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_drowned_colossus",
+  "title": "Drowned Colossus",
+  "source": "art/remaster/puppet/build.py (enemy_drowned_colossus)",
+  "anchorY": 0.912906,
+  "anchorX": 0.65057,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "heavy-smash",
+    "body": [
+      0.020386,
+      -0.56872
+    ],
+    "contact": [
+      -0.202952,
+      -0.288343
+    ]
+  },
+  "healthBarY": 0.832715
+}

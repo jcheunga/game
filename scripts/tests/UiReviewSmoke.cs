@@ -28,6 +28,7 @@ public partial class UiReviewSmoke : Node
             System.IO.Directory.CreateDirectory(_output);
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
+            if (OS.GetCmdlineUserArgs().Contains("--production-polish")) { await ReviewProductionPolishUi(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--royal-ui")) { await ReviewRoyalUi(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--concepts")) { await ReviewConcepts(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--map-guides"))
@@ -44,6 +45,12 @@ public partial class UiReviewSmoke : Node
             { await ReviewTileMap(includeHome: true); return; }
             if (OS.GetCmdlineUserArgs().Contains("--armory-details"))
             { await ReviewArmoryDetails(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--equipment-preview"))
+            { await ReviewEquipmentPreview(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--enchantments"))
+            { await ReviewEnchantments(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--expansion"))
+            { await ReviewExpansion(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--developer"))
             {
                 _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");

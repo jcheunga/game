@@ -12,25 +12,25 @@ public partial class CombatReviewSmoke
         director.TryBuildEnemyStats(GameData.EnemyBossTidemasterId, out var stats);
         var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(900, 220));
         var units = Read<List<Unit>>(battle, "_units");
-        int Engines() => units.Count(unit => !unit.IsDead && unit.DefinitionId == GameData.EnemyPlagueEngineId);
-        // Include an authored engine: the boss must account for siege units already on the field.
-        director.TryBuildEnemyStats(GameData.EnemyPlagueEngineId, out var engineStats);
+        int Escorts() => units.Count(unit => !unit.IsDead && unit.DefinitionId == boss.SpecialSpawnUnitId);
+        // Reinforcement types are authored data; the cap includes existing bodies of that type.
+        director.TryBuildEnemyStats(boss.SpecialSpawnUnitId, out var engineStats);
         Invoke(battle, "SpawnUnit", Team.Enemy, engineStats, new Vector2(880, 260));
         for (var call = 0; call < 5; call++)
         {
             boss.TickSpecialTimer(100);
             Invoke(battle, "TryTriggerEnemySpecialAbility", boss);
         }
-        Check(Engines() == 2, "Tidemaster rally replacements respect existing siege engines and stop at two");
+        Check(Escorts() == 2, "Tidemaster rally replacements respect existing escorts and stop at two");
         Invoke(battle, "ApplyCampaignBossPhase", boss);
-        Check(Engines() == 2, "Tidemaster phase cannot add engines above its rally limit");
-        units.First(unit => !unit.IsDead && unit.DefinitionId == GameData.EnemyPlagueEngineId).TakeDamage(10000);
+        Check(Escorts() == 2, "Tidemaster phase cannot add escorts above its rally limit");
+        units.First(unit => !unit.IsDead && unit.DefinitionId == boss.SpecialSpawnUnitId).TakeDamage(10000);
         boss.TickSpecialTimer(100);
         Invoke(battle, "TryTriggerEnemySpecialAbility", boss);
-        Check(Engines() == 2, "Tidemaster can replace a destroyed siege engine");
+        Check(Escorts() == 2, "Tidemaster can replace a defeated escort");
         Invoke(battle, "SpawnEnemyEscortsNear", boss, GameData.EnemySpitterId, 1, 32f, 58f);
         Check(units.Any(unit => !unit.IsDead && unit.DefinitionId == GameData.EnemySpitterId),
-            "Siege limit does not suppress other escort types");
+            "Escort cap does not suppress other enemy types");
         await CloseBattle(battle);
 
         battle = await OpenBattle(30);
@@ -44,7 +44,7 @@ public partial class CombatReviewSmoke
             Invoke(battle, "TryTriggerEnemySpecialAbility", forge);
         }
         Check(units.Count(u => !u.IsDead && u.DefinitionId == forge.SpecialSpawnUnitId) == 2,
-            "Iron Warden's rally and phase pressure share a two-heavy-escort limit");
+            "Iron Warden's rally and phase pressure share a two-escort limit");
         var escort = units.First(u => !u.IsDead && u.DefinitionId == forge.SpecialSpawnUnitId);
         escort.TakeDamage(10000);
         forge.TickSpecialTimer(100);

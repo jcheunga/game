@@ -26,18 +26,12 @@ public partial class ShopMenu
 
     public static Texture2D RelicArt(EquipmentDefinition relic) => UiArtLoader.TryLoadRelicIcon(relic);
 
-    private static string Percent(float value) => $"{(value >= 0 ? "+" : "")}{Mathf.RoundToInt(value * 100)}%";
-
     /// <summary>The relic's modifiers as stat rows (value, caption, icon), most important first.</summary>
     private static List<(string Value, string Caption, string Icon)> RelicRows(EquipmentDefinition relic)
     {
-        var rows = new List<(string, string, string)>();
-        if (Mathf.Abs(relic.DamageScale - 1) > .001f) rows.Add((Percent(relic.DamageScale - 1), "Damage", "relicstat-damage"));
-        if (Mathf.Abs(relic.HealthScale - 1) > .001f) rows.Add((Percent(relic.HealthScale - 1), "Health", "stat-health"));
-        if (Mathf.Abs(relic.CooldownReduction) > .001f) rows.Add((Percent(-relic.CooldownReduction), "Cooldown", "relicstat-cooldown"));
-        if (Mathf.Abs(relic.SpeedScale - 1) > .001f) rows.Add((Percent(relic.SpeedScale - 1), "Speed", "stat-courage"));
-        if (relic.BaseDamageBonus != 0) rows.Add(($"+{relic.BaseDamageBonus}", "Gate damage", "class-melee"));
-        return rows;
+        return RelicStatText.Stats(relic).Select(row=>(row.Value,row.Label,row.Icon switch
+        {"heart"=>"stat-health","shield"=>"class-shield","crystal"=>"crystal",
+         "clock"=>"relicstat-cooldown","eye"=>"stat-range","arrow"=>"stat-courage",_=>"relicstat-damage"})).ToList();
     }
 
     private void BuildRelics()
@@ -96,23 +90,14 @@ public partial class ShopMenu
             card.AddChild(label);
             grid.AddChild(card);
         }
-        var thumb = new Panel { MouseFilter = MouseFilterEnum.Ignore, Position = track.Position, Size = new Vector2(track.Size.X, 60) };
-        thumb.AddThemeStyleboxOverride("panel", ThumbStyle());
-        _body.AddChild(thumb);
-        void PlaceThumb()
-        {
-            var range = Mathf.Max(1, grid.CustomMinimumSize.Y - view.Size.Y);
-            var length = Mathf.Clamp(track.Size.Y * view.Size.Y / grid.CustomMinimumSize.Y, 30, track.Size.Y);
-            thumb.Size = new Vector2(track.Size.X, length);
-            thumb.Position = new Vector2(track.Position.X, track.Position.Y + (track.Size.Y - length) * Mathf.Clamp(scroll.ScrollVertical / range, 0, 1));
-            _relicScroll = scroll.ScrollVertical;
-        }
-        scroll.GetVScrollBar().ValueChanged += _ => PlaceThumb();
+        RoyalUiTools.ClearPaintedScrollTrack(_body, "relics", spec);
+        _body.AddChild(new RoyalScrollHint { Name = "CollectionScrollbar", Position = track.Position, Size = track.Size, Scroll = scroll });
+        scroll.GetVScrollBar().ValueChanged += value => _relicScroll = (float)value;
         // Keep the selected relic in view when the page opens or the selection moves.
         var selectedRow = visible.FindIndex(r => r.Id == _selectedRelic) / 3;
         var rowTop = 4 + selectedRow * pitch.Y;
         if (rowTop < _relicScroll || rowTop + cell.Y > _relicScroll + view.Size.Y) _relicScroll = Mathf.Max(0, rowTop - 4);
-        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_relicScroll; PlaceThumb(); } }).CallDeferred();
+        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_relicScroll; } }).CallDeferred();
 
         var back = RoyalButton.Over(spec.Rect("button.back"), "Back", Close, 6);
         back.SetGlyph(RoyalKit.Texture("icon-back-chevron"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
@@ -131,6 +116,13 @@ public partial class ShopMenu
         void Step(int delta) { _selectedRelic = visible[(index + delta + visible.Count) % visible.Count].Id; Refresh(); }
         _body.AddChild(RoyalButton.Over(spec.Rect("preview.prev").Grow(10), "Previous relic", () => Step(-1), 8));
         _body.AddChild(RoyalButton.Over(spec.Rect("preview.next").Grow(10), "Next relic", () => Step(1), 8));
+        var details=RoyalButton.Over(new Rect2(preview.Position.X+44,preview.End.Y-70,preview.Size.X-88,48),
+            "View all bonuses",()=>RelicEquipmentInspector.Show(this,selected,Refresh),6);
+        details.SetStates(new ModalSurface(ModalMaterial.Steel,8));
+        var detailsCaption=RoyalText.Caps("View all bonuses",18);
+        detailsCaption.Align=HorizontalAlignment.Center;detailsCaption.Baseline=30;
+        details.SetCaption(detailsCaption,new Rect2(8,0,preview.Size.X-104,48));
+        _body.AddChild(details);
 
         // Detail card.
         _body.AddChild(RoyalKit.Image(RelicIcon(selected) == "relicicon-lantern" ? "relic-title-icon" : RelicIcon(selected), spec.Rect("detail.icon")));
@@ -158,11 +150,11 @@ public partial class ShopMenu
         var equipRect = spec.Rect("button.equip");
         var equip = RoyalButton.Over(equipRect, holder != null ? "Unequip" : "Equip", () =>
         {
-            if (holder != null) { state.UnequipItem(holder.Id); Toast($"Unequipped {selected.DisplayName} from {holder.DisplayName}."); Refresh(); }
+            if (holder != null) RelicEquipmentInspector.Show(this,selected,Refresh,holder.Unit,holder.Slot);
             else ChooseRelicBearer(selected);
         }, 6);
         equip.Disabled = !have2;
-        equip.TooltipText = !have2 ? "Not owned yet · craft it in the forge" : holder != null ? $"Equipped on {holder.DisplayName}" : "Choose an ally to carry it";
+        equip.TooltipText = !have2 ? "Not owned yet · craft it in the forge" : holder != null ? $"Equipped on {holder.Unit.DisplayName} · slot {holder.Slot}" : "Choose an ally to compare";
         equip.SetGlyph(RoyalKit.Texture("icon-helm"), new Rect2(spec.Rect("button.equip.icon").Position - equipRect.Position, spec.Rect("button.equip.icon").Size));
         var equipLabel = spec.Label("button.equip.label", holder != null ? "Unequip" : "Equip", 200);
         equipLabel.Position -= equipRect.Position;
@@ -178,43 +170,19 @@ public partial class ShopMenu
         _body.AddChild(forge);
     }
 
-    private UnitDefinition EquippedBy(string relicId) =>
-        _state.GetOwnedPlayerUnits().FirstOrDefault(unit => _state.GetUnitEquipment(unit.Id)?.Id == relicId);
-
-    /// <summary>An inspector over the armory for choosing a relic's bearer.</summary>
-    private VBoxContainer OpenBearerInspector(string title)
+    private sealed record RelicBearer(UnitDefinition Unit,int Slot);
+    private RelicBearer EquippedBy(string relicId)
     {
-        var layer = new CanvasLayer { Layer = 40, Name = "BearerLayer" };
-        AddChild(layer);
-        var modal = RealmModal.OpenInspector(layer, title, "warband", 760, 520);
-        modal.Closed = modal.Back = () => { layer.QueueFree(); Refresh(); };
-        var stack = RealmUi.Scroll(modal.Content);
-        ((ScrollContainer)stack.GetParent()).SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        stack.AddThemeConstantOverride("separation", 12);
-        return stack;
+        foreach(var unit in _state.GetOwnedPlayerUnits())
+        {
+            if(_state.GetUnitEquipment(unit.Id)?.Id==relicId)return new RelicBearer(unit,1);
+            if(_state.GetUnitEquipment2(unit.Id)?.Id==relicId)return new RelicBearer(unit,2);
+        }
+        return null;
     }
 
     private void ChooseRelicBearer(EquipmentDefinition relic)
     {
-        var stack = OpenBearerInspector($"Equip {relic.DisplayName}");
-        stack.AddChild(RealmUi.Label("Choose the ally who carries this relic.", 18, true));
-        var grid = new GridContainer { Columns = 4 };
-        grid.AddThemeConstantOverride("h_separation", 10); grid.AddThemeConstantOverride("v_separation", 10);
-        stack.AddChild(grid);
-        foreach (var unit in _state.GetOwnedPlayerUnits())
-        {
-            var current = _state.GetUnitEquipment(unit.Id);
-            var button = RealmUi.Button("shield", unit.DisplayName, () =>
-            {
-                _state.TryEquipItem(unit.Id, relic.Id);
-                Toast($"Equipped {relic.DisplayName} on {unit.DisplayName}.");
-                GetNode<CanvasLayer>("BearerLayer").QueueFree(); Refresh();
-            });
-            button.Icon = UnitFigure.For(unit);
-            button.TooltipText = current != null ? $"Replaces {current.DisplayName}" : unit.DisplayName;
-            button.CustomMinimumSize = new Vector2(160, 56);
-            grid.AddChild(button);
-        }
-        RealmModal.Polish(stack);
+        RelicEquipmentInspector.Show(this,relic,Refresh);
     }
 }

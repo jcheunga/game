@@ -23,12 +23,12 @@ public static class RelicForgeCatalog
     public const int ShardsPerDismantle_Rare = 3;
     public const int ShardsPerDismantle_Epic = 9;
 
-    private const int CraftCost_Common_Shards = 5;
-    private const int CraftCost_Common_Gold = 200;
-    private const int CraftCost_Rare_Shards = 15;
-    private const int CraftCost_Rare_Gold = 600;
-    private const int CraftCost_Epic_Shards = 40;
-    private const int CraftCost_Epic_Gold = 1500;
+    private const int CraftCost_Common_Shards = 4;
+    private const int CraftCost_Common_Gold = 90;
+    private const int CraftCost_Rare_Shards = 10;
+    private const int CraftCost_Rare_Gold = 220;
+    private const int CraftCost_Epic_Shards = 25;
+    private const int CraftCost_Epic_Gold = 450;
 
     private static readonly Dictionary<string, RelicForgeRecipe> Recipes;
 
@@ -50,6 +50,7 @@ public static class RelicForgeCatalog
             {
                 "rare" => (CraftCost_Rare_Shards, CraftCost_Rare_Gold),
                 "epic" => (CraftCost_Epic_Shards, CraftCost_Epic_Gold),
+                "hardened" => (40, 700),
                 _ => (CraftCost_Common_Shards, CraftCost_Common_Gold)
             };
             Recipes[equip.Id] = new RelicForgeRecipe(equip.Id, shards, gold);

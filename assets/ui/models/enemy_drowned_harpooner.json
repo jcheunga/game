@@ -1,0 +1,45 @@
+{
+  "frameWidth": 327,
+  "frameHeight": 220,
+  "drawScale": 2.5952380952380953,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18736
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_drowned_harpooner",
+  "title": "Drowned Harpooner",
+  "source": "art/remaster/puppet/build.py (enemy_drowned_harpooner)",
+  "anchorY": 0.888007,
+  "anchorX": 0.594491,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      -0.022726,
+      -0.572908
+    ],
+    "contact": [
+      0.384273,
+      -0.153097
+    ]
+  },
+  "healthBarY": 0.817067
+}

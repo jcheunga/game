@@ -1,44 +1,45 @@
 {
-  "frameWidth": 221,
-  "frameHeight": 280,
-  "drawScale": 2.148267388328979,
+  "frameWidth": 266,
+  "frameHeight": 227,
+  "drawScale": 2.585697399527187,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14432
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_marksman",
   "title": "Mage",
-  "source": "art/remaster/units/player_marksman.py",
-  "anchorY": 0.793676,
-  "anchorX": 0.373932,
+  "source": "art/remaster/puppet/build.py (player_marksman)",
+  "anchorY": 0.874906,
+  "anchorX": 0.39038,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.277389
+      -0.004797,
+      -0.410356
     ],
     "contact": [
-      0.301964,
-      -0.499872
+      0.184366,
+      -0.6048
     ]
   },
-  "healthBarY": 0.592172
+  "healthBarY": 0.675129
 }

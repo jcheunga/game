@@ -1,44 +1,45 @@
 {
-  "frameWidth": 216,
-  "frameHeight": 221,
-  "drawScale": 1.647717910693689,
+  "frameWidth": 332,
+  "frameHeight": 245,
+  "drawScale": 2.5326034553254844,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18478
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_grenadier",
   "title": "Alchemist",
-  "source": "art/remaster/units/player_grenadier.py",
-  "anchorY": 0.886198,
-  "anchorX": 0.358025,
+  "source": "art/remaster/puppet/build.py (player_grenadier)",
+  "anchorY": 0.909951,
+  "anchorX": 0.616749,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "flask-toss",
     "body": [
-      0.0,
-      -0.436054
+      0.026812,
+      -0.51736
     ],
     "contact": [
-      0.18237,
-      -0.674264
+      0.294273,
+      -0.759244
     ]
   },
-  "healthBarY": 0.800466
+  "healthBarY": 0.770776
 }

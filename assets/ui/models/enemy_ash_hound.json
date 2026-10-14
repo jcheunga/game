@@ -1,0 +1,45 @@
+{
+  "frameWidth": 186,
+  "frameHeight": 129,
+  "drawScale": 1.4761904761904763,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.09022
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_ash_hound",
+  "title": "Ash Hound",
+  "source": "art/remaster/puppet/build.py (enemy_ash_hound)",
+  "anchorY": 0.919272,
+  "anchorX": 0.507288,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "pounce",
+    "body": [
+      -0.15447,
+      -0.575591
+    ],
+    "contact": [
+      0.255633,
+      -0.629742
+    ]
+  },
+  "healthBarY": 0.813326
+}

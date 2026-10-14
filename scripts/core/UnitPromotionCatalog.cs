@@ -18,11 +18,11 @@ public sealed class UnitPromotionDefinition
     {
         BaseUnitId = baseUnitId;
         PromotedTitle = promotedTitle;
-        HealthScale = healthScale;
-        DamageScale = damageScale;
-        SpeedScale = speedScale;
-        GoldCost = goldCost;
-        SigilCost = sigilCost;
+        HealthScale = 1f + Math.Min(.02f, Math.Max(0f, healthScale - 1f));
+        DamageScale = 1f + Math.Min(.02f, Math.Max(0f, damageScale - 1f));
+        SpeedScale = 1f + Math.Min(.02f, Math.Max(0f, speedScale - 1f));
+        GoldCost = Math.Min(350, goldCost);
+        SigilCost = Math.Min(2, sigilCost);
         GlowColorHex = glowColorHex;
     }
 }
@@ -33,7 +33,7 @@ public static class UnitPromotionCatalog
 
     private static readonly UnitPromotionDefinition[] Definitions =
     {
-        new("player_brawler", "Knight", 1.15f, 1.10f, 1.0f, 1500, 3, "ffd700"),
+        new("player_brawler", "Veteran Swordsman", 1.15f, 1.10f, 1.0f, 1500, 3, "ffd700"),
         new("player_spear", "Lancer", 1.10f, 1.12f, 1.05f, 1500, 3, "c0c0ff"),
         new("player_defender", "Bastion", 1.20f, 1.05f, 1.0f, 1500, 3, "6090d0"),
         new("player_shooter", "Sharpshooter", 1.08f, 1.15f, 1.0f, 1800, 4, "40d040"),
@@ -65,10 +65,18 @@ public static class UnitPromotionCatalog
         }
     }
 
-    public static IReadOnlyList<UnitPromotionDefinition> GetAll() => Definitions;
+    public static IReadOnlyList<UnitPromotionDefinition> GetAll() => System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(GameData.GetPlayerUnits(), unit => TryGet(unit.Id)));
 
     public static UnitPromotionDefinition TryGet(string baseUnitId)
     {
-        return ById.TryGetValue(baseUnitId, out var def) ? def : null;
+        if (ById.TryGetValue(baseUnitId, out var def)) return def;
+        try
+        {
+            var unit = GameData.GetUnit(baseUnitId);
+            if (!unit.IsPlayerSide) return null;
+            return ById[baseUnitId] = new UnitPromotionDefinition(baseUnitId, "Veteran " + unit.DisplayName,
+                1.02f, 1.02f, 1f, 350, 2, "d8bb78");
+        }
+        catch (InvalidOperationException) { return null; }
     }
 }

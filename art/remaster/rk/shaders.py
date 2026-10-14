@@ -580,3 +580,227 @@ def coral(color='3f7f78', name='Barnacled coral'):
     nb.principled(**{'Base Color': col, 'Roughness': .55, 'Coat Weight': .4, 'Coat Roughness': .2,
                      'Normal': nb.bump(bump, .5, .02)})
     return m
+
+
+@cached
+def iris_eye(iris='5a3a22', name='Eye', sclera='e8e0d2', glow=0.0, pupil=0.32, size=0.42):
+    """Eyeball with sclera, iris ring, pupil and a wet coat. Reads the `eye_local` attribute (unit sphere,
+    +X forward) written by faces.eyeball."""
+    m, nb = _new(name)
+    attr = nb.node('ShaderNodeAttribute', attribute_type='GEOMETRY', attribute_name='eye_local')
+    sep = nb.node('ShaderNodeSeparateXYZ')
+    nb.links.new(attr.outputs['Vector'], sep.inputs[0])
+    # angular distance from the forward axis: 1 - x
+    ang = nb.math('SUBTRACT', 1.0, sep.outputs['X'])
+    iris_c = srgb(iris)
+    ring = nb.maprange(ang, size * size * .5, size * size * .5 + .02, 1, 0)
+    pup = nb.maprange(ang, (size * pupil) ** 2 * .5, (size * pupil) ** 2 * .5 + .01, 1, 0)
+    rim = nb.maprange(ang, size * size * .5 - .03, size * size * .5, 0, 1)
+    icol = nb.mixc(nb.maprange(ang, 0, size * size * .5, 0, 1), scale_rgb(iris_c, 1.5), scale_rgb(iris_c, .55))
+    icol = nb.mixc(rim, icol, scale_rgb(iris_c, .25))
+    col = nb.mixc(ring, srgb(sclera), icol)
+    col = nb.mixc(pup, col, (0.01, 0.01, 0.012, 1))
+    # sclera darkens toward the corners
+    col = nb.mixc(nb.maprange(ang, .35, 1.1, 0, .45), col, srgb('a8907c'))
+    nb.principled(**{'Base Color': col, 'Roughness': .3, 'Coat Weight': 1.0, 'Coat Roughness': .03,
+                     'Emission Color': iris_c, 'Emission Strength': nb.math('MULTIPLY', ring, glow)})
+    return m
+
+
+# ------------------------------------------------------------------ stylised (roster-sheet) materials
+import colorsys as _colorsys
+import os as _os
+
+# The roster sheet is muted and painterly: every stylised base colour passes through this tone.
+STYLE = dict(sat=float(_os.environ.get('RK_SAT', '0.86')), val=float(_os.environ.get('RK_VAL', '1.0')))
+
+
+def tone(hex_color):
+    """Apply the style's saturation/value to an sRGB hex colour (returns hex)."""
+    h = hex_color.lstrip('#')
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    hh, ss, vv = _colorsys.rgb_to_hsv(r, g, b)
+    r, g, b = _colorsys.hsv_to_rgb(hh, ss * STYLE['sat'], min(1.0, vv * STYLE['val']))
+    return '%02x%02x%02x' % (round(r * 255), round(g * 255), round(b * 255))
+
+def _paint(nb, base, cavity=0.45, cav_dist=0.08, edge=0.35, edge_col=None, ground=0.28, top=0.1, var=0.12,
+           var_scale=2.5, warm_shadow='3a2418', edge_radius=0.008):
+    """Hand-painted finish: broad tonal variation, warm cavity shading, light-catching edges, and a
+    gentle darkening toward the ground (legs and boots sit lower in value, as on the roster sheet)."""
+    col = base
+    if var:
+        n = nb.noise(var_scale, 3, .55)
+        col = nb.mixc(nb.maprange(n, .3, .7, 0, var), col, nb.hsv(col, .5, 1.1, .78))
+        n2 = nb.noise(var_scale * 4, 2, .5)
+        col = nb.mixc(nb.maprange(n2, .35, .65, 0, var * .6), col, nb.hsv(col, .5, .95, 1.12))
+    if ground:
+        z = nb.node('ShaderNodeSeparateXYZ')
+        nb.links.new(nb.coord(), z.inputs[0])
+        fac = nb.maprange(z.outputs['Z'], 0.75, 0.0, 0, ground)
+        col = nb.mixc(fac, col, nb.mixc(.5, col, srgb(warm_shadow), 'MULTIPLY'))
+    if cavity:
+        dark = nb.mixc(1.0, col, nb.mixc(.35, srgb(warm_shadow), col), 'MULTIPLY')
+        fac = nb.maprange(nb.cavity(cav_dist), 1.0, 0.35, 0, cavity)
+        col = nb.mixc(fac, col, dark)
+    if top:
+        fac = nb.maprange(nb.normal_z(), 0.0, 1.0, 0.0, top)
+        col = nb.mixc(fac, col, (1, 0.97, 0.9, 1), 'SCREEN')
+    if edge and edge_col is not None:
+        fac = nb.math('MULTIPLY', nb.edge(edge_radius, .015, .12), edge, clamp=True)
+        col = nb.mixc(fac, col, edge_col)
+    return col
+
+
+@cached
+def st_cloth(color, name='Cloth', shadow='', sheen=0.7, rough=0.82, weave=90.0, edge=0.25, folds=0.0, var=0.1,
+             ground=0.25):
+    sheen = sheen * 0.3
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    col = base
+    if shadow:
+        col = nb.mixc(nb.maprange(nb.noise(1.6, 2, .5), .35, .65, 0, .35), base, srgb(tone(shadow)))
+    col = _paint(nb, col, cavity=.5, cav_dist=.07, edge=edge, edge_col=nb.hsv(base, .5, .85, 1.35), var=var,
+                 ground=ground)
+    w1 = nb.wave(weave, 0, 0, 'X', profile='SIN')
+    w2 = nb.wave(weave, 0, 0, 'Z', profile='SIN')
+    h = nb.math('MULTIPLY', nb.math('ADD', w1, w2), .5)
+    h = nb.math('ADD', h, nb.math('MULTIPLY', nb.noise(25, 3, .6), .5))
+    nb.principled(**{'Base Color': col, 'Roughness': rough, 'Sheen Weight': sheen, 'Sheen Roughness': .4,
+                     'Sheen Tint': scale_rgb(base, 1.8), 'Specular IOR Level': .3,
+                     'Normal': nb.bump(h, .12, .004)})
+    return m
+
+
+@cached
+def st_leather(color='6b4126', name='Leather', rough=0.5, edge=0.45, sheen=0.08, var=0.18, ground=0.25):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    col = _paint(nb, base, cavity=.6, cav_dist=.05, edge=edge * .7, edge_col=nb.hsv(base, .5, 1.1, 1.45), var=var,
+                 ground=ground, top=.05)
+    n = nb.noise(18, 4, .6)
+    scuff = nb.maprange(nb.noise(7, 3, .6, distortion=.5), .55, .7, 0, .18)
+    col = nb.mixc(scuff, col, nb.hsv(base, .5, .85, 1.25))
+    r = nb.math('ADD', rough, nb.maprange(n, .3, .7, -.12, .12))
+    nb.principled(**{'Base Color': col, 'Roughness': r, 'Sheen Weight': sheen, 'Sheen Roughness': .5,
+                     'Specular IOR Level': .45, 'Coat Weight': .08, 'Coat Roughness': .35,
+                     'Normal': nb.bump(nb.math('ADD', nb.voronoi(120, 'F1'), nb.math('MULTIPLY', n, 2)), .08, .004)})
+    return m
+
+
+@cached
+def st_metal(color='3e4752', name='Blued steel', rough=0.32, edge_col='c4cdd6', edge=0.75, cavity=0.55, wear=0.0,
+             rust='6b3e22', var=0.1, ground=0.2):
+    """Stylised plate: deep blue-grey faces, bright worn edges, soft broad highlights."""
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    col = _paint(nb, base, cavity=cavity, cav_dist=.05, edge=edge, edge_col=srgb(edge_col), var=var, ground=ground,
+                 warm_shadow='1a1a1e', edge_radius=.006)
+    r = nb.math('ADD', rough, nb.maprange(nb.noise(10, 3, .6), .3, .7, -.06, .08))
+    metal = 1.0
+    if wear:
+        rmask = nb.maprange(nb.noise(5, 5, .7, distortion=.6), .5, .64, 0, wear)
+        rmask = nb.math('MAXIMUM', rmask, nb.math('MULTIPLY', nb.maprange(nb.cavity(.06), .75, .3), wear))
+        col = nb.mixc(rmask, col, nb.mixc(nb.maprange(nb.noise(30, 3, .6), .3, .7), srgb(rust), scale_rgb(srgb(rust), .55)))
+        r = nb.mixf(rmask, r, .85)
+        metal = nb.math('SUBTRACT', 1.0, rmask)
+    if not wear:
+        metal = 0.78
+    nb.principled(**{'Base Color': col, 'Metallic': metal, 'Roughness': r, 'Anisotropic': .2,
+                     'Specular IOR Level': .6,
+                     'Normal': nb.bump(nb.noise(60, 2, .5, vec=nb.scaled((1, 1, 8))), .04, .003)})
+    return m
+
+
+@cached
+def st_gold(color='c99a43', name='Brass', rough=0.3, edge_col='ffe2a0', cavity=0.6):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    col = _paint(nb, base, cavity=cavity, cav_dist=.03, edge=.8, edge_col=srgb(edge_col), var=.12, ground=.1,
+                 warm_shadow='3a2208', edge_radius=.004)
+    nb.principled(**{'Base Color': col, 'Metallic': 1.0, 'Roughness': nb.math('ADD', rough, nb.maprange(
+        nb.noise(20, 3, .6), .3, .7, -.08, .1))})
+    return m
+
+
+@cached
+def st_skin(color='c98d6a', name='Skin', blush='b8574a', rough=0.5, sss=0.18, shadow='7a3f2e'):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    n = nb.noise(4, 3, .5)
+    col = nb.mixc(nb.maprange(n, .4, .7, 0, .25), base, srgb(blush))
+    col = _paint(nb, col, cavity=.45, cav_dist=.03, edge=.12, edge_col=scale_rgb(base, 1.25), var=.06, ground=0,
+                 warm_shadow=shadow, top=.06)
+    nb.principled(**{'Base Color': col, 'Roughness': nb.math('ADD', rough, nb.maprange(n, .3, .7, -.08, .08)),
+                     'Subsurface Weight': sss, 'Subsurface Radius': (1.0, .45, .25), 'Subsurface Scale': .02,
+                     'Specular IOR Level': .4, 'Normal': nb.bump(nb.noise(90, 2, .5), .03, .002)})
+    return m
+
+
+@cached
+def st_hair(color='3b2416', name='Hair', tip='', rough=0.45, axis='Y', stripes=160.0):
+    """Sculpted stylised hair: fine strand stripes and a soft sheen."""
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    stretch = {'X': (1, 9, 9), 'Y': (9, 1, 9), 'Z': (9, 9, 1)}[axis]
+    strands = nb.noise(stripes, 2, .5, vec=nb.scaled(tuple(1 / s for s in stretch)))
+    col = nb.mixc(nb.maprange(strands, .3, .75), scale_rgb(base, .6), srgb(tip) if tip else scale_rgb(base, 1.35))
+    col = _paint(nb, col, cavity=.6, cav_dist=.025, edge=.25, edge_col=scale_rgb(base, 1.7), var=.12, ground=0)
+    nb.principled(**{'Base Color': col, 'Roughness': rough, 'Specular IOR Level': .55, 'Sheen Weight': .4,
+                     'Sheen Roughness': .35, 'Coat Weight': .15, 'Coat Roughness': .3,
+                     'Normal': nb.bump(strands, .25, .003)})
+    return m
+
+
+@cached
+def st_wood(color='6e4628', name='Wood', grain=7.0, rough=0.62, edge=0.4):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    vec = nb.scaled((8, 8, 1))
+    g = nb.noise(grain, 5, .6, vec=vec, distortion=1.4)
+    col = nb.ramp(nb.maprange(g, .35, .65), [(0, scale_rgb(base, .6)), (.5, base), (1, scale_rgb(base, 1.3))])
+    col = _paint(nb, col, cavity=.55, cav_dist=.05, edge=edge, edge_col=scale_rgb(base, 1.7), var=.1, ground=.15)
+    nb.principled(**{'Base Color': col, 'Roughness': rough, 'Specular IOR Level': .35,
+                     'Normal': nb.bump(nb.noise(grain * 5, 3, .6, vec=vec), .15, .004)})
+    return m
+
+
+@cached
+def st_bone(color='d8c9a3', name='Bone', stain='6e5534', rough=0.55, crack=0.3):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    n = nb.noise(5, 4, .6)
+    col = nb.mixc(nb.maprange(n, .35, .8, 0, .45), base, srgb(stain))
+    cr = nb.maprange(nb.voronoi(9, 'DISTANCE_TO_EDGE'), 0, .02, 1, 0)
+    cr = nb.math('MULTIPLY', cr, nb.maprange(nb.noise(3, 2, .5), .45, .6))
+    col = nb.mixc(nb.math('MULTIPLY', cr, crack), col, srgb('3b2b1c'))
+    col = _paint(nb, col, cavity=.65, cav_dist=.04, edge=.35, edge_col=scale_rgb(base, 1.18), var=.08, ground=.2,
+                 warm_shadow='3a2a18')
+    nb.principled(**{'Base Color': col, 'Roughness': rough, 'Subsurface Weight': .06, 'Subsurface Radius': (.6, .5, .3),
+                     'Subsurface Scale': .01, 'Specular IOR Level': .4,
+                     'Normal': nb.bump(nb.math('SUBTRACT', n, nb.math('MULTIPLY', cr, .6)), .15, .004)})
+    return m
+
+
+@cached
+def st_flesh(color='9fa184', name='Grave flesh', bruise='6b4a52', rough=0.5, wet=0.3):
+    m, nb = _new(name)
+    color = tone(color)
+    base = srgb(color)
+    blot = nb.noise(2.2, 3, .55, distortion=.4)
+    col = nb.mixc(nb.maprange(blot, .56, .72, 0, .45), base, srgb(bruise))
+    col = _paint(nb, col, cavity=.6, cav_dist=.05, edge=.18, edge_col=scale_rgb(base, 1.25), var=.1, ground=.15,
+                 warm_shadow='2e2a1e')
+    wetm = nb.maprange(nb.noise(6, 3, .6), .55, .7, 0, wet)
+    nb.principled(**{'Base Color': col, 'Roughness': nb.mixf(wetm, rough, .2), 'Subsurface Weight': .1,
+                     'Subsurface Radius': (.7, .5, .3), 'Subsurface Scale': .02, 'Specular IOR Level': .45,
+                     'Normal': nb.bump(nb.noise(40, 3, .6), .08, .004)})
+    return m

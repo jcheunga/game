@@ -25,7 +25,6 @@ public partial class SettingsMenu : RoyalScreen
         if (AppLifecycleService.Instance != null) AppLifecycleService.Instance.StateChanged += OnAppLifecycleStateChanged;
         GameState.Instance.DeveloperStateChanged += Rebuild;
         Rebuild();
-        TryShowMenuHint();
     }
 
     public override void _ExitTree()
@@ -35,17 +34,6 @@ public partial class SettingsMenu : RoyalScreen
     }
 
     private void OnAppLifecycleStateChanged() { if (IsInsideTree()) Rebuild(); }
-
-    private void TryShowMenuHint()
-    {
-        if (!GameState.Instance.ShowHints) return;
-        foreach (var hint in TutorialHintCatalog.GetByContext("first_settings"))
-        {
-            if (GameState.Instance.HasSeenHint(hint.Id)) continue;
-            RoyalToast.Show(this, $"{hint.Title}: {hint.Body}");
-            GameState.Instance.MarkHintSeen(hint.Id);
-        }
-    }
 
     private void Rebuild()
     {
@@ -117,7 +105,7 @@ public partial class SettingsMenu : RoyalScreen
                     var index = Math.Max(0, all.ToList().FindIndex(d => d.Id == state.DifficultyId));
                     state.SetDifficulty(all[(index + 1) % all.Count].Id);
                 }, state.GetDifficulty().Description);
-                yield return new SwitchRow("book", "Tutorial hints", () => state.ShowHints, state.SetShowHints);
+                yield return new SwitchRow("book", "Enemy introductions", () => state.ShowHints, state.SetShowHints);
                 yield return new SwitchRow("eye", "Reduced motion", () => state.ReducedMotion, state.SetReducedMotion);
                 yield return new SwitchRow("flame", "High contrast", () => state.HighContrast, state.SetHighContrast);
                 yield return new SwitchRow("clock", "FPS counter", () => state.ShowFpsCounter, state.SetShowFpsCounter);
@@ -127,8 +115,8 @@ public partial class SettingsMenu : RoyalScreen
                     var index = Math.Max(0, Array.IndexOf(supported, state.Language));
                     state.SetLanguage(supported[(index + 1) % supported.Length]);
                 });
-                yield return new ChoiceRow("plus", "Text size", () => $"{16 + state.FontSizeOffset} px", () =>
-                    state.SetFontSizeOffset(state.FontSizeOffset >= 6 ? -2 : state.FontSizeOffset + 2), "Tap to step through sizes");
+                yield return new ChoiceRow("plus", "Text size", () => state.FontSizeOffset == 0 ? "Normal" : $"{(state.FontSizeOffset > 0 ? "+" : "")}{state.FontSizeOffset}", () =>
+                    state.SetFontSizeOffset(state.FontSizeOffset >= 6 ? -2 : state.FontSizeOffset + 2), "Change reading text in descriptions and detail panels");
                 break;
             case 2:
                 yield return new InfoRow("people", "Account", () => string.IsNullOrEmpty(state.AccountProvider) ? "Playing locally" : $"Connected · {state.AccountProvider}");
@@ -145,6 +133,7 @@ public partial class SettingsMenu : RoyalScreen
                 break;
             default:
                 yield return new ActionRow("people", "Account", "Manage", () => AccountDialog.Show(this));
+                yield return new InfoRow("book", "Local save", () => SaveSystem.Instance?.PlayerStatus ?? "Local save unavailable.");
                 yield return new ActionRow("book", "Cloud save", "Upload", () => { CloudSaveService.Upload(out var message); _status = message; });
                 yield return new ActionRow("arrow", "Restore cloud save", "Restore", () =>
                 {
@@ -177,6 +166,8 @@ public partial class SettingsMenu : RoyalScreen
         var pitch = spec.Rect("row.effects").Position.Y - first.Position.Y;
         var area = new Rect2(first.Position.X - 2, first.Position.Y - 2, first.Size.X + 6, spec.Rect("button.restore").Position.Y - first.Position.Y - 6);
         var rows = RowsFor(_tab).ToList();
+        if (_tab >= 2 && _status.Length > 0)
+            rows.Insert(0, new InfoRow("book", "Last account action", () => _status));
         var scroll = new ScrollContainer { Position = area.Position, Size = area.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
         _layer.AddChild(scroll);
         var needed = (rows.Count - 1) * pitch + first.Size.Y + 4;
@@ -191,7 +182,6 @@ public partial class SettingsMenu : RoyalScreen
         }
         scroll.GetVScrollBar().ValueChanged += value => _rowsScroll = (float)value;
         Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) scroll.ScrollVertical = (int)_rowsScroll; }).CallDeferred();
-        if (_status.Length > 0) { RoyalToast.Show(this, _status, 690); _status = ""; }
     }
 
     private Control BuildRow(RoyalSpec spec, Row row, Rect2 rect)
@@ -330,12 +320,7 @@ public partial class SettingsMenu : RoyalScreen
         var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
         var backText = RealmModal.Embedded(this) || HasMeta("battle_modal") ? "Back to Map" : $"Back to {returnLabel}";
         if (HasMeta("battle_modal")) backText = "Back to Battle";
-        var back = RoyalButton.Over(spec.Rect("button.back"), backText, Leave, 6);
-        back.SetGlyph(RoyalKit.Texture("icon-map-pin"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
-        var backLabel = spec.Label("button.back.label", backText, 220);
-        backLabel.Position -= spec.Rect("button.back").Position;
-        back.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
-        _layer.AddChild(back);
+        _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.back"), Leave, backText));
     }
 
     private void Leave()
@@ -346,26 +331,8 @@ public partial class SettingsMenu : RoyalScreen
 
     private void RestoreDefaults()
     {
-        var state = GameState.Instance;
-        state.SetPlayerCallsign("Lantern");
-        state.ClearPlayerProfileSession();
-        state.SetAudioMuted(false);
-        state.SetEffectsVolumePercent(85);
-        state.SetAmbienceVolumePercent(65);
-        state.SetMusicVolumePercent(50);
-        state.SetLanguage("en");
-        state.SetFontSizeOffset(0);
-        state.SetHighContrast(false);
-        state.SetShowDevUi(true);
-        state.SetDeveloperMode(false);
-        state.SetShowFpsCounter(true);
-        state.SetChallengeSyncProvider(ChallengeSyncProviderCatalog.LocalJournalId);
-        state.SetChallengeSyncEndpoint("");
-        state.SetChallengeSyncAutoFlush(false);
-        state.SetDifficulty(DifficultyCatalog.NormalId);
-        state.SetShowHints(true);
-        state.SetPurchaseValidationEndpoint("");
-        _status = "Settings restored to defaults.";
+        GameState.Instance.RestorePlayerPreferences();
+        _status = "";
         Rebuild();
     }
 
@@ -394,7 +361,13 @@ public partial class RoyalScrollHint : Control
 {
     public ScrollContainer Scroll;
     public RoyalScrollHint() { MouseFilter = MouseFilterEnum.Ignore; }
-    public override void _Process(double delta) => QueueRedraw();
+    public override void _Process(double delta)
+    {
+        if (!GodotObject.IsInstanceValid(Scroll)) { Hide(); return; }
+        var bar = Scroll.GetVScrollBar();
+        Visible = bar.MaxValue > bar.Page + 1;
+        QueueRedraw();
+    }
     public override void _Draw()
     {
         if (!GodotObject.IsInstanceValid(Scroll)) return;
@@ -403,7 +376,9 @@ public partial class RoyalScrollHint : Control
         var length = Mathf.Clamp(Size.Y * (float)(bar.Page / Mathf.Max(1, bar.MaxValue)), 24, Size.Y);
         var top = (Size.Y - length) * (float)(bar.Value / range);
         DrawRect(new Rect2(0, 0, Size.X, Size.Y), new Color(.1f, .08f, .06f, .55f));
-        DrawRect(new Rect2(0, top, Size.X, length), new Color("b89458"));
+        var thumb = new Rect2(0, top, Size.X, length);
+        DrawRect(thumb, new Color("8d7046"));
+        DrawRect(thumb, new Color("d8b878"), false, 1);
     }
 }
 

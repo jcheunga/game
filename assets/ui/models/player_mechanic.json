@@ -1,44 +1,45 @@
 {
-  "frameWidth": 223,
-  "frameHeight": 236,
-  "drawScale": 1.8428168157447626,
+  "frameWidth": 304,
+  "frameHeight": 222,
+  "drawScale": 2.512180771239497,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.15032
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_mechanic",
-  "title": "Siege Engineer",
-  "source": "art/remaster/units/player_mechanic.py",
-  "anchorY": 0.826341,
-  "anchorX": 0.404971,
+  "title": "Caravan Engineer",
+  "source": "art/remaster/puppet/build.py (player_mechanic)",
+  "anchorY": 0.907778,
+  "anchorX": 0.370139,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "hammer-command",
     "body": [
-      0.0,
-      -0.376939
+      -0.003078,
+      -0.535343
     ],
     "contact": [
-      0.20946,
-      -0.023735
+      0.117785,
+      -0.651024
     ]
   },
-  "healthBarY": 0.690034
+  "healthBarY": 0.772632
 }

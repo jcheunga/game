@@ -1,44 +1,45 @@
 {
-  "frameWidth": 181,
-  "frameHeight": 224,
-  "drawScale": 1.4365079365079365,
+  "frameWidth": 309,
+  "frameHeight": 274,
+  "drawScale": 2.452380952380952,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.12753
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_walker",
   "title": "Risen",
-  "source": "art/remaster/units/enemy_walker.py",
-  "anchorY": 0.834993,
-  "anchorX": 0.373204,
+  "source": "art/remaster/puppet/build.py (enemy_walker)",
+  "anchorY": 0.895076,
+  "anchorX": 0.44722,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "sword-cut",
     "body": [
-      0.0,
-      -0.413508
+      0.019346,
+      -0.399997
     ],
     "contact": [
-      0.586562,
-      -0.064028
+      0.173948,
+      -0.30272
     ]
   },
-  "healthBarY": 0.768921
+  "healthBarY": 0.612082
 }

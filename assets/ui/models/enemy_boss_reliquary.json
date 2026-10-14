@@ -1,44 +1,45 @@
 {
-  "frameWidth": 503,
-  "frameHeight": 578,
-  "drawScale": 1.9653821942233474,
+  "frameWidth": 1197,
+  "frameHeight": 935,
+  "drawScale": 2.800330144185421,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14755
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_reliquary",
   "title": "Reliquary Tyrant",
-  "source": "art/remaster/units/enemy_boss_reliquary.py",
-  "anchorY": 0.746821,
-  "anchorX": 0.422473,
+  "source": "art/remaster/puppet/build.py (enemy_boss_reliquary)",
+  "anchorY": 0.935172,
+  "anchorX": 0.638821,
   "motion": {
-    "revision": "remaster-v1",
-    "profile": "royal-cleave",
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.325502
+      0.005048,
+      -0.525027
     ],
     "contact": [
-      -0.004966,
-      0.049962
+      0.178067,
+      -0.735476
     ]
   },
-  "healthBarY": 0.690656
+  "healthBarY": 0.785363
 }

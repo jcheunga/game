@@ -23,6 +23,7 @@ sys.path.insert(0, str(HERE))
 import bpy  # noqa: E402
 
 from rk import core, shaders  # noqa: E402
+from rk import character  # noqa: E402
 from rk.character import render_character  # noqa: E402
 from roster import load_all  # noqa: E402
 import density  # noqa: E402
@@ -37,6 +38,13 @@ parser.add_argument('--no-portrait', action='store_true')
 parser.add_argument('--resume', action='store_true')
 parser.add_argument('--res-scale', type=float, default=None)
 parser.add_argument('--clip', default=None, help='with --preview, render only this clip (e.g. death)')
+parser.add_argument('--guide', action='store_true',
+                    help='render only the stance frame (units/<id>/000.png + metadata) as the guide for paintover.py')
+parser.add_argument('--back-guide', action='store_true',
+                    help='render only the stance seen from behind (units/<id>/back000.png) for the back painting')
+parser.add_argument('--paint', action='store_true',
+                    help='project artifacts/remaster/paint/<id>/painted.png (paintover.py) onto the model; '
+                         'units without a painting are skipped, and the icon comes from the painting')
 args = parser.parse_args(core.args_after_dashes(sys.argv))
 
 units = json.loads((ROOT / 'data/units.json').read_text())['Units']
@@ -68,6 +76,9 @@ for ident in ids:
         continue
     t0 = time.time()
     import os
+    if args.paint and not (core.REVIEW / 'paint' / ident / 'painted.png').exists():
+        print('UNIT_NO_PAINT ' + ident, flush=True)
+        continue
     for attempt in ('gpu', 'cpu'):
         if attempt == 'cpu':
             # The GPU is shared; fall back to CPU rendering when Metal runs out of memory.
@@ -76,22 +87,33 @@ for ident in ids:
         try:
             core.reset()
             shaders.reset_cache()
+            character.set_facing()
             ch, opts = registry[ident](ident, titles.get(ident, ident))
             blend = None if args.no_blend or args.preview else HERE / 'blend' / 'units' / f'{ident}.blend'
-            frames = preview_frames(ch.clip_meta) if args.preview else None
+            frames = preview_frames(ch.clip_meta) if args.preview else ([1] if args.guide else None)
             if args.preview and args.clip:
                 if args.clip not in ch.clip_meta:
                     print(f'UNIT_NO_CLIP {ident} has no {args.clip} clip (it has {", ".join(ch.clip_meta)})', flush=True)
                     break
                 clip = ch.clip_meta[args.clip]
                 frames = [clip['start'] + 1 + i for i in range(clip['count'])]
-            meta = render_character(ch, out, samples=args.samples, portrait=not args.no_portrait,
+            if args.back_guide:
+                meta = render_character(ch, out, samples=args.samples, portrait=False, back_guide=True,
+                                        profile=opts['profile'], body_z=opts.get('body_z'),
+                                        min_scale=opts.get('min_scale', 3.6), cam_target_z=opts.get('cam_target_z', 1.15),
+                                        res_scale=args.res_scale or (lambda ds, u=by_id.get(ident, {}): density.master_scale(u, ds)))
+                print(f'UNIT_BACK_GUIDE {ident} {time.time() - t0:.1f}s', flush=True)
+                break
+            (out / 'tone.json').unlink(missing_ok=True)   # fresh frames: tone.py must tone them again
+            meta = render_character(ch, out, samples=args.samples,
+                                    portrait=not (args.no_portrait or args.paint or args.guide),
+                                    paint=ident if args.paint else None,
                                     frames=frames, save_blend=blend,
                                     profile=opts['profile'], portrait_cfg=opts.get('portrait_cfg'),
                                     body_z=opts.get('body_z'), min_scale=opts.get('min_scale', 3.6),
                                     cam_target_z=opts.get('cam_target_z', 1.15),
                                     res_scale=args.res_scale or (lambda ds, u=by_id.get(ident, {}): density.master_scale(u, ds)))
-            if args.preview:
+            if args.preview or args.guide:
                 (out / 'complete.json').unlink(missing_ok=True)
             print(f'UNIT_COMPLETE {ident} {time.time() - t0:.1f}s scale={meta["drawScale"]:.3f} '
                   f'frame={meta["frameWidth"]}x{meta["frameHeight"]}', flush=True)

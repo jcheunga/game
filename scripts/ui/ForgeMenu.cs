@@ -52,7 +52,15 @@ public partial class ForgeMenu : RoyalScreen
         BuildFuse(spec);
         BuildCraft(spec);
         Footer(spec, "armory", "icon-armory", "ARMORY", () => SceneRouter.Instance.GoToShop(3));
-        Footer(spec, "map", "icon-map-gold", "BACK TO MAP", Close);
+        _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.map"), Close));
+        var enchant=RoyalButton.Over(new Rect2(470,651,350,52),"Enchantments",
+            ()=>ForgeEnchantmentInspector.Show(this,id=>{_dismantleId=id;RefreshUi();},_dismantleId),6);
+        enchant.SetStates(new ModalSurface(ModalMaterial.Steel,8));
+        enchant.SetGlyph(RealmUi.Icon("crystal"),new Rect2(22,12,28,28));
+        var caption=RoyalText.Caps("Enchantments",20);caption.Align=HorizontalAlignment.Center;caption.Baseline=33;
+        enchant.SetCaption(caption,new Rect2(56,0,272,52));
+        enchant.TooltipText=$"Enchant an owned relic · {state.Essence} Essence available";
+        _layer.AddChild(enchant);
     }
 
     private RoyalButton Action(RoyalSpec spec, string key, string icon, string text, Action run, bool enabled, string hint)
@@ -118,6 +126,12 @@ public partial class ForgeMenu : RoyalScreen
                 TooltipText = $"{relic.DisplayName} · {relic.Rarity} · {RelicForgeCatalog.GetDismantleShards(relic.Rarity)} shards", MouseDefaultCursorShape = CursorShape.PointingHand };
             slot.SetStates(RoyalKit.Slice(selected ? "forge-slot-selected" : Frame(relic), 10), 6);
             slot.AddChild(Art(relic, new Rect2(8, 7, rect.Size.X - 16, rect.Size.Y - 14), inFuse));
+            var enchantment=state.GetRelicEnchantment(relic.Id);
+            if(enchantment!=null)
+            {
+                slot.AddChild(RoyalKit.Image("crystal",new Rect2(rect.Size.X-26,rect.Size.Y-26,20,20),RealmUi.Gold));
+                slot.TooltipText+=$" · {enchantment.Title}";
+            }
             if (selected) slot.AddChild(RoyalKit.Image("forge-check", new Rect2(4, 4, 26, 27)));
             var id = relic.Id;
             slot.Pressed += () => { _dismantleId = id; RefreshUi(); };
@@ -128,9 +142,8 @@ public partial class ForgeMenu : RoyalScreen
         var chosen = _dismantleId.Length > 0 ? GameData.GetEquipment(_dismantleId) : null;
         Action(spec, "dismantle", "icon-dismantle", "Dismantle", () =>
         {
-            if (GameState.Instance.TryDismantleRelic(_dismantleId, out var gained))
+            if (GameState.Instance.TryDismantleRelic(_dismantleId, out _))
             {
-                RoyalToast.Show(this, $"Dismantled for +{gained} shards.");
                 _selectedFuseRelics.Remove(_dismantleId);
                 RefreshUi();
             }
@@ -193,9 +206,8 @@ public partial class ForgeMenu : RoyalScreen
         _layer.AddChild(RoyalKit.Pips(new Vector2(pips.Position.X + 22, pips.Position.Y + 5), tier, 5, 16, 15));
         Action(spec, "fuse", "icon-fuse", "Fuse", () =>
         {
-            if (GameState.Instance.TryFuseRelics(_selectedFuseRelics.ToArray(), out var made))
+            if (GameState.Instance.TryFuseRelics(_selectedFuseRelics.ToArray(), out _))
             {
-                RoyalToast.Show(this, "Fused into " + GameData.GetEquipment(made).DisplayName + ".");
                 _selectedFuseRelics.Clear();
                 RefreshUi();
             }
@@ -268,8 +280,7 @@ public partial class ForgeMenu : RoyalScreen
         var affordable = state.Gold >= recipe.GoldCost && state.RelicShards >= recipe.ShardCost;
         Action(spec, "craft", "icon-craft", "Craft", () =>
         {
-            GameState.Instance.TryForgeRelic(_craftId, out var message);
-            RoyalToast.Show(this, message);
+            GameState.Instance.TryForgeRelic(_craftId, out _);
             RefreshUi();
         }, affordable, affordable ? $"Forge {chosen.DisplayName}" : "Not enough gold or shards");
     }

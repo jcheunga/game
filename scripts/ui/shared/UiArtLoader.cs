@@ -46,7 +46,7 @@ public static class UiArtLoader
     }
 
     /// <summary>A relic's painted image (art/royal/items.py), or null if one is missing.</summary>
-    public static Texture2D TryLoadRelicIcon(EquipmentDefinition relic) => relic == null ? null : RoyalItem(relic.Id);
+    public static Texture2D TryLoadRelicIcon(EquipmentDefinition relic) => relic == null ? null : RoyalArt.Item(relic.Id);
 
     /// <summary>The painted item image (art/royal/items.py) when one is installed.</summary>
     private static Texture2D RoyalItem(string id)

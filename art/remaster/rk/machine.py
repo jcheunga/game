@@ -75,6 +75,10 @@ def clips(kind, J, recoil=0.12, wheel_r=0.3):
         contact = P(arm=[(10, LAT)], move={'barrel': (-0.2, 0, 0), 'body': (-recoil, 0, 0)}, body=[(-4, LAT)],
                     scale={'barrel': (1.0, 1.08, 1.0)})
         follow = P(arm=[(7, LAT)], move={'barrel': (-0.1, 0, 0), 'body': (-recoil * .7, 0, 0)}, body=[(-2, LAT)])
+    elif kind == 'catapult':
+        wind = P(arm=[(-14, LAT)], body=[(1.5, LAT)], move={'body': (0.01, 0, 0)})
+        contact = P(arm=[(52, LAT)], body=[(-4, LAT)], move={'body': (-recoil, 0, 0.01)})
+        follow = P(arm=[(44, LAT)], body=[(-2, LAT)], move={'body': (-recoil * .6, 0, 0)})
     elif kind == 'siege':
         wind = P(body=[(4, LAT)], move={'body': (-0.06, 0, 0)})
         contact = P(body=[(-5, LAT)], ramp=[(-80, LAT)], move={'body': (0.14, 0, 0)})
@@ -97,11 +101,11 @@ def clips(kind, J, recoil=0.12, wheel_r=0.3):
                 att.append(blend_poses(pa, pb, smooth(t)))
                 break
     C['attack'] = att
-    if kind in ('ballista', 'bombard'):
+    if kind in ('ballista', 'bombard', 'catapult'):
         # Close quarters: the engine bucks back, then rams forward on its wheels (the bombard clubs with its barrel).
         m_wind = roll(P(body=[(3, LAT)], move={'body': (-0.05, 0, 0.01)}), -0.05)
         m_contact = roll(P(body=[(-5, LAT)], move={'body': (0.16, 0, -0.01)}), 0.16)
-        if kind == 'bombard':
+        if kind in ('bombard', 'catapult'):
             m_contact['arm'] = [(-9, LAT)]
         m_follow = roll(P(body=[(-2, LAT)], move={'body': (0.1, 0, 0)}), 0.1)
         mseq = [(0, rest), (1, blend_poses(rest, m_wind, .6)), (2, m_wind), (3, m_contact), (4, m_follow), (6, rest)]

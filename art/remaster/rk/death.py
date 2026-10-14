@@ -154,7 +154,8 @@ class Geometry:
 
     def min_z(self, exclude=()):
         pts = self.points(exclude=exclude)
-        return float(pts[:, 2].min()) if len(pts) else 0.0
+        z = pts[:, 2][np.isfinite(pts[:, 2])] if len(pts) else pts[:, 2]
+        return float(z.min()) if len(z) else 0.0
 
     def all_objects(self):
         return [o for o, _ in self.rigid] + list(self.deformed)
@@ -177,10 +178,14 @@ def update():
 
 # ------------------------------------------------------------------ rigid bodies
 def _principal_thin_axis(rel):
+    rel = rel[np.isfinite(rel).all(axis=1)]
     if len(rel) < 3:
         return Vector((0, 0, 1))
     cov = np.cov((rel - rel.mean(axis=0)).T)
-    w, v = np.linalg.eigh(cov)
+    try:
+        w, v = np.linalg.eigh(cov)
+    except np.linalg.LinAlgError:
+        return Vector((0, 0, 1))
     a = v[:, 0]
     return Vector((float(a[0]), float(a[1]), float(a[2]))).normalized()
 
@@ -635,6 +640,8 @@ def _drape(ch, chain, lag):
     pbs = arm.pose.bones
     parent = pbs[chain[0]].parent.name if pbs[chain[0]].parent else 'root'
     R = _body_frame(arm, parent).normalized()
+    if not all(math.isfinite(x) for row in R for x in row) or abs(R.determinant()) < 1e-6:
+        return
     Ri = R.inverted()
     axis = (R @ Vector(LAT)).normalized()
     gb = Ri @ Vector((0, 0, -1))

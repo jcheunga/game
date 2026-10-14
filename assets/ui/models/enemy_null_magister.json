@@ -1,0 +1,45 @@
+{
+  "frameWidth": 336,
+  "frameHeight": 241,
+  "drawScale": 2.6666666666666665,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.21013
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_null_magister",
+  "title": "Null Magister",
+  "source": "art/remaster/puppet/build.py (enemy_null_magister)",
+  "anchorY": 0.917064,
+  "anchorX": 0.721326,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      -0.009651,
+      -0.584637
+    ],
+    "contact": [
+      -0.169577,
+      -0.479655
+    ]
+  },
+  "healthBarY": 0.78622
+}

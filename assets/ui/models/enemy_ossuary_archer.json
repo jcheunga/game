@@ -1,0 +1,45 @@
+{
+  "frameWidth": 342,
+  "frameHeight": 276,
+  "drawScale": 2.7142857142857135,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.19419
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_ossuary_archer",
+  "title": "Ossuary Archer",
+  "source": "art/remaster/puppet/build.py (enemy_ossuary_archer)",
+  "anchorY": 0.917234,
+  "anchorX": 0.546821,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "bow-draw",
+    "body": [
+      0.003158,
+      -0.443892
+    ],
+    "contact": [
+      0.114084,
+      -0.687854
+    ]
+  },
+  "healthBarY": 0.704852
+}

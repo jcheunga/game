@@ -15,6 +15,9 @@ public sealed class EnchantmentDefinition
 	public float CritMultiplier { get; }
 	public int GoldCost { get; }
 	public int EssenceCost { get; }
+	public float ArmorBonus { get; init; }
+	public float MagicalResistanceBonus { get; init; }
+	public float AttackIntervalReductionPct { get; init; }
 
 	public EnchantmentDefinition(string id, string title, string description,
 		float healthScale, float damageScale, float speedScale,
@@ -41,16 +44,16 @@ public static class EnchantmentCatalog
 {
 	private static readonly EnchantmentDefinition[] Definitions =
 	{
-		new("ench_flame_touch", "Flame Touch", "+12% damage", 1f, 1.12f, 1f, 0f, 0f, 0f, 1f, 500, 3),
-		new("ench_lifesteal", "Lifesteal", "Heal 8% of damage dealt", 1f, 1f, 1f, 0.08f, 0f, 0f, 1f, 600, 4),
-		new("ench_thorns", "Thorns", "Reflect 15% of damage taken", 1f, 1f, 1f, 0f, 0.15f, 0f, 1f, 600, 4),
-		new("ench_haste", "Haste", "+10% movement speed", 1f, 1f, 1.10f, 0f, 0f, 0f, 1f, 400, 2),
-		new("ench_shielding", "Shielding", "+15% max health", 1.15f, 1f, 1f, 0f, 0f, 0f, 1f, 400, 2),
-		new("ench_vampiric", "Vampiric", "+5% damage, heal 5% of damage dealt", 1f, 1.05f, 1f, 0.05f, 0f, 0f, 1f, 700, 5),
-		new("ench_crit_strike", "Crit Strike", "15% chance for 1.5x damage", 1f, 1f, 1f, 0f, 0f, 0.15f, 1.5f, 600, 4),
-		new("ench_poison", "Poison", "+8% damage", 1f, 1.08f, 1f, 0f, 0f, 0f, 1f, 450, 3),
-		new("ench_fortify", "Fortify", "+20% health, -5% speed", 1.20f, 1f, 0.95f, 0f, 0f, 0f, 1f, 500, 3),
-		new("ench_arcane_echo", "Arcane Echo", "+10% damage, +5% health", 1.05f, 1.10f, 1f, 0f, 0f, 0f, 1f, 650, 5),
+		new("ench_flame_touch", "Flame Touch", "+2% damage, +2 critical damage points; periodic burn", 1f, 1.02f, 1f, 0f, 0f, 0f, 1.02f, 180, 2),
+		new("ench_lifesteal", "Lifesteal", "+1% damage; heal 3% of direct troop damage", 1f, 1.01f, 1f, 0.03f, 0f, 0f, 1f, 220, 2),
+		new("ench_thorns", "Thorns", "+3 armor; reflect 5% of direct melee damage", 1f, 1f, 1f, 0f, 0.05f, 0f, 1f, 220, 2) { ArmorBonus = 3f },
+		new("ench_haste", "Haste", "+3% movement, 1% faster attack recovery", 1f, 1f, 1.03f, 0f, 0f, 0f, 1f, 160, 1) { AttackIntervalReductionPct = 1f },
+		new("ench_shielding", "Shielding", "+3% health, +2 magical resistance points", 1.03f, 1f, 1f, 0f, 0f, 0f, 1f, 160, 1) { MagicalResistanceBonus = 2f },
+		new("ench_vampiric", "Vampiric", "+1% damage, +2 critical damage points; 2% lifesteal", 1f, 1.01f, 1f, 0.02f, 0f, 0f, 1.02f, 240, 3),
+		new("ench_crit_strike", "Crit Strike", "+2 critical chance points, +4 critical damage points", 1f, 1f, 1f, 0f, 0f, 0.02f, 1.04f, 220, 2),
+		new("ench_poison", "Poison", "+1% damage, +1 magical resistance point; periodic blight", 1f, 1.01f, 1f, 0f, 0f, 0f, 1f, 180, 2) { MagicalResistanceBonus = 1f },
+		new("ench_fortify", "Fortify", "+3% health, +4 armor, -3% movement", 1.03f, 1f, 0.97f, 0f, 0f, 0f, 1f, 180, 2) { ArmorBonus = 4f },
+		new("ench_arcane_echo", "Arcane Echo", "+2% damage, +2 magical resistance points; a limited echo", 1f, 1.02f, 1f, 0f, 0f, 0f, 1f, 240, 3) { MagicalResistanceBonus = 2f },
 	};
 
 	private static readonly Dictionary<string, EnchantmentDefinition> ById;
@@ -68,6 +71,7 @@ public static class EnchantmentCatalog
 
 	public static EnchantmentDefinition GetById(string id)
 	{
+		if(string.IsNullOrWhiteSpace(id))return null;
 		return ById.TryGetValue(id, out var d) ? d : null;
 	}
 }

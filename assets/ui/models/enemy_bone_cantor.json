@@ -1,0 +1,45 @@
+{
+  "frameWidth": 293,
+  "frameHeight": 218,
+  "drawScale": 2.3253968253968256,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18699
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_bone_cantor",
+  "title": "Bone Cantor",
+  "source": "art/remaster/puppet/build.py (enemy_bone_cantor)",
+  "anchorY": 0.909669,
+  "anchorX": 0.693398,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.001958,
+      -0.604197
+    ],
+    "contact": [
+      -0.157242,
+      -0.726438
+    ]
+  },
+  "healthBarY": 0.853269
+}

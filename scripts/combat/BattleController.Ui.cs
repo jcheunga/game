@@ -224,26 +224,6 @@ public partial class BattleController
 		_statusLabel.Text = text;
 	}
 
-	private void TryShowTutorialHint(string context)
-	{
-		if (!GameState.Instance.ShowHints)
-		{
-			return;
-		}
-
-		var hints = TutorialHintCatalog.GetByContext(context);
-		foreach (var hint in hints)
-		{
-			if (GameState.Instance.HasSeenHint(hint.Id))
-			{
-				continue;
-			}
-
-			_hintBanner?.Enqueue(hint.Title, hint.Body);
-			GameState.Instance.MarkHintSeen(hint.Id);
-		}
-	}
-
 	private static void ApplyBattleButtonTheme(Button button, RouteDefinition route)
 	{
 		button.SelfModulate = Colors.White;

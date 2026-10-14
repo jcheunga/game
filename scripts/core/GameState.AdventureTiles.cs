@@ -10,7 +10,7 @@ using System.Linq;
 public partial class GameState
 {
     /// <summary>Food spent to open one frontier tile.</summary>
-    public const int AdventureTileFoodCost = 2;
+    public const int AdventureTileFoodCost = 1;
     private readonly HashSet<string> _openedAdventureTiles = new(StringComparer.Ordinal);
     private readonly HashSet<string> _reachedAdventureTiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _adventureCaravanTiles = new(StringComparer.Ordinal);

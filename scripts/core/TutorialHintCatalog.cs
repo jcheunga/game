@@ -17,7 +17,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "courage_basics",
 			Title = "Courage",
-			Body = "Courage fills over time. Spend it to deploy units; spells run on mana, earned by defeating enemies. Don't hoard \u2014 deploy early to hold the line.",
+			Body = "Courage fills over time. Spend it to deploy units, and click or tap dropped courage packs before they fade. Spells use mana earned from defeating enemies.",
 			TriggerContext = "first_battle"
 		},
 		new()
@@ -25,7 +25,7 @@ public static class TutorialHintCatalog
 			Id = "cooldown_basics",
 			Title = "Cooldowns",
 			Body = "Tap a unit card to send it out from the war wagon. Each card has a cooldown; the dark overlay shows remaining time.",
-			TriggerContext = "first_battle"
+			TriggerContext = "first_deploy"
 		},
 		new()
 		{
@@ -38,7 +38,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "deck_building",
 			Title = "Squad Building",
-			Body = "Pick 3 units and up to 3 spells. Matching squad tags (Frontline, Recon, etc.) activates synergy bonuses.",
+			Body = "Bring up to 6 units and 5 spells or tactical tools. Start with affordable melee troops, protect a ranged ally, and add a specialist for the encounter. Matching squad tags activates synergy bonuses.",
 			TriggerContext = "first_loadout"
 		},
 		new()
@@ -52,14 +52,14 @@ public static class TutorialHintCatalog
 		{
 			Id = "food_costs",
 			Title = "Food",
-			Body = "Opening a tile on the map costs 2 food and entering a stage costs more. Find food in supply caches and hidden provisions, and win each stage for the first time for 6 more.",
+			Body = "Travel and collecting supplies are free. Starting or restarting a campaign battle costs 4 food. Your first victory in each stage grants 6 extra food. Gather map supplies when you need more.",
 			TriggerContext = "first_map"
 		},
 		new()
 		{
 			Id = "relic_basics",
 			Title = "Relics",
-			Body = "Equip relics on units in the Armory to boost their stats. Earn relics from boss kills and district completion.",
+			Body = "Choose a relic and compare its effect on an ally before equipping. Promoted allies have two slots. Armor protects against physical damage; magical resistance protects against magic. Shared limits keep early troops competitive.",
 			TriggerContext = "first_relic"
 		},
 		new()
@@ -80,7 +80,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "boss_warning",
 			Title = "Boss encounter",
-			Body = "Bosses rally nearby undead and spawn escorts. Focus fire the boss or deal with the adds first.",
+			Body = "Keep affordable melee troops in front of your support units. Amber warnings show a boss preparing a special attack. Silence or stun can interrupt some casts; boss control effects are brief.",
 			TriggerContext = "first_boss"
 		},
 		new()
@@ -115,7 +115,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "polymorph_hint",
 			Title = "Polymorph",
-			Body = "Transforms the toughest enemy in range. Use it on bosses, crushers, or mirror knights to neutralize threats.",
+			Body = "Briefly disables the toughest enemy in range. Bosses recover quickly and resist repeated control; time the spell to interrupt a dangerous cast.",
 			TriggerContext = "first_polymorph_spell"
 		},
 		new()

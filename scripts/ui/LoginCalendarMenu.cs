@@ -3,7 +3,6 @@ using Godot;
 public partial class LoginCalendarMenu : Control
 {
     private VBoxContainer _days;
-    private Label _status;
     private int _page;
 
     public override void _Ready()
@@ -15,9 +14,6 @@ public partial class LoginCalendarMenu : Control
         RealmUi.Tabs(body, page => { _page = page; RefreshUi(); }, "Days 1–10", "Days 11–20", "Days 21–30");
         _days = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         body.AddChild(_days);
-        var footer = RealmUi.Panel(this, new Rect2(24, 618, 1232, 80), out _);
-        _status = RealmUi.Label("Return each day to collect the next gift.", 18, true);
-        footer.AddChild(_status);
         RefreshUi();
     }
 
@@ -61,8 +57,8 @@ public partial class LoginCalendarMenu : Control
                 {
                     var claim = RealmUi.Button("gift", "Claim", () =>
                     {
-                        AudioDirector.Claimed(GameState.Instance.TryClaimLoginReward(out var message));
-                        _status.Text = message; RefreshUi();
+                        AudioDirector.Claimed(GameState.Instance.TryClaimLoginReward(out _));
+                        RefreshUi();
                     }, true);
                     footer.AddChild(claim);
                 }

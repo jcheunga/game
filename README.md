@@ -40,8 +40,8 @@ for the go-live checklist and store-listing URLs.
 
 - Repo-side roadmap work is complete.
 - Primary local verification command: `./scripts/verify_all.sh`
-- Current verified state: game build `0 warnings / 0 errors`, server tests `86 passed`, data checks `11992 passed`
-- New saves start with one Swordsman; a squad holds six units and five spells. Opening a tile on the adventure map costs 2 food, each battle costs 4 food, and food recharges 2 every 5 minutes up to 24. Account sign-in setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#account-sign-in). Older reports are in [docs/archive/](docs/archive/README.md).
+- Current verified state: game build `0 warnings / 0 errors`, server tests `86 passed`, data checks `11481 passed`
+- New saves start with a Peasant. The core has 32 recruits (22 melee, 2 siege), level 1–20 progression, armor, magical resistance and critical stats. A squad holds six unit cards and five shared spell/tactical cards. The content prototype includes 59 ordinary hostile types, 14 bosses, 100 equipment relics, 30 spells and 12 tactical tools, using placeholder art where needed. See [current content stats](docs/catalogs/CURRENT_CONTENT_STATS.md) and [implementation notes](docs/CONTENT_IMPLEMENTATION.md). Opening a tile on the adventure map costs 2 food, each battle costs 4 food, and food recharges 2 every 5 minutes up to 24. Account sign-in setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#account-sign-in). Older reports are in [docs/archive/](docs/archive/README.md).
 - Production still requires translations, deployment secrets, email/Google credentials, store signing/credentials, and manual device playtesting.
 
 ## Tests
@@ -49,7 +49,7 @@ for the go-live checklist and store-listing URLs.
 | Command | What | Count |
 |---------|------|-------|
 | `cd server && dotnet run -- --test` | Server endpoint tests (happy path + validation) | 86 |
-| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 11992 |
+| `cd server && dotnet run -- --test-data ../data` | Game data, locale, and store-config checks | 11481 |
 | `./scripts/verify_all.sh` | Full local repo verification | game build + data checks + server tests + website build |
 
 GitHub Actions also runs the game build plus the server/data validation workflow on `server/`, `data/`, `scripts/`, `scenes/`, and project/workflow changes, supports manual dispatch, and cancels stale in-progress runs per ref.
@@ -157,6 +157,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Unit deploys consume courage, which fills over time; spell casts consume mana, earned at 2 per enemy
     killed (capped at 30). Both enter cooldown. The HUD shows the courage and mana meters; the war wagon
     shows its own health on the battlefield
+  - Defeated authored enemies can leave courage packs: click or tap one for +20 courage before its
+    8-second lifetime expires. Packs fade in the final 2 seconds; pauses freeze their timers. Summons
+    and split bodies do not drop packs
   - Units fight when enemies enter their aggro box. Ranged units fire Blender-rendered projectiles on arcs
     and strike in melee at point-blank
   - Enemy roles include Blight Casters (ranged), Sappers (dive for the wagon), Dread Heralds (buff nearby

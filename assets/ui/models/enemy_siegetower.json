@@ -1,44 +1,44 @@
 {
-  "frameWidth": 451,
-  "frameHeight": 654,
-  "drawScale": 1.9388135736397005,
+  "frameWidth": 1099,
+  "frameHeight": 1083,
+  "drawScale": 2.8548622188820794,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_siegetower",
   "title": "Siege Tower",
-  "source": "art/remaster/units/enemy_siegetower.py",
-  "anchorY": 0.884517,
-  "anchorX": 0.397765,
+  "source": "art/remaster/puppet/build.py (enemy_siegetower)",
+  "anchorY": 0.974257,
+  "anchorX": 0.356688,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "siege-deploy",
     "body": [
-      0.0,
-      -0.329783
+      0.11557,
+      -0.436726
     ],
     "contact": [
-      0.30777,
-      -0.32792
+      0.11557,
+      -0.547524
     ]
   },
-  "healthBarY": 0.815782
+  "healthBarY": 0.915163
 }

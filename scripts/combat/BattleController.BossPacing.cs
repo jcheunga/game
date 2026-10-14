@@ -8,7 +8,12 @@ public partial class BattleController
     // These commanders replace casualties instead of accumulating an unbounded escort wall.
     private bool CanAddBossReinforcement(Unit source, string unitId)
     {
-        if (source.DefinitionId == GameData.EnemyBossForgeId && !IsCampaignMode) return true;
+        if(IsBossRushMode && source.Definition.IsBoss)
+        {
+            var count=0;foreach(var unit in _units)if(!unit.IsDead && unit.Team==Team.Enemy && unit.DefinitionId==unitId)count++;
+            return count<2;
+        }
+        if (source.DefinitionId == GameData.EnemyBossForgeId && !IsCampaignMode && !IsBossRushMode) return true;
         if ((source.DefinitionId != GameData.EnemyBossReliquaryId && source.DefinitionId != GameData.EnemyBossTidemasterId &&
              source.DefinitionId != GameData.EnemyBossForgeId) ||
             unitId != source.SpecialSpawnUnitId) return true;

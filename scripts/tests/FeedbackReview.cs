@@ -44,12 +44,12 @@ public partial class FeedbackReview : Node
             Check(state.ActiveDeckUnitIds.SequenceEqual(new[] { GameData.PlayerBrawlerId }) && state.GetOwnedPlayerUnits().Count == 1, "A new game starts with only a swordsman");
             Check(state.GetOwnedPlayerSpells().Count == 0 && state.CanStartBattle(out _), "One unit and no spells is a valid starting squad");
             Check(state.DeckSizeLimit == 6 && state.SpellDeckSizeLimit == 5, "Expanded unit and spell capacities");
-            Check(GameData.Stages.All(s => state.GetStageEntryFoodCost(s.StageNumber) == 4 && s.RewardFood == 0), "Bosses and ordinary stages cost the same, and wins do not refill entry costs");
-            Check(state.TrySpendStageEntryFood(1, out _) && state.Food == 20, "Battle entry spends food once");
+            Check(GameData.Stages.All(s => state.GetStageEntryFoodCost(s.StageNumber) == 2 && s.RewardFood == 0), "Bosses and ordinary stages cost the same, and wins do not refill entry costs");
+            Check(state.TrySpendStageEntryFood(1, out _) && state.Food == 22, "Battle entry spends food once");
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            Check(!state.RefreshFoodRecharge(now + 299) && state.Food == 20, "Food does not recharge early");
-            Check(state.RefreshFoodRecharge(now + 300) && state.Food == 22, "Two food recharges after five minutes");
-            Check(state.RefreshFoodRecharge(now + 600) && state.Food == 24 && !state.RefreshFoodRecharge(now + 900), "Offline recharge stops at its cap");
+            Check(!state.RefreshFoodRecharge(now + 299) && state.Food == 22, "Food does not recharge early");
+            Check(state.RefreshFoodRecharge(now + 300) && state.Food == 24, "Two food recharges after five minutes");
+            Check(!state.RefreshFoodRecharge(now + 600) && state.Food == 24 && !state.RefreshFoodRecharge(now + 900), "Offline recharge stops at its cap");
             state.ResetProgress(); state.SetShowHints(false);
             Check(state.TryBuyFoodRefill(out _) && state.Gold == 20 && state.Food == 34 && !state.TryBuyFoodRefill(out _), "Gold refills credit food and refuse insufficient funds");
             Check(!state.RefreshFoodRecharge(DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3600) && state.Food == 34,

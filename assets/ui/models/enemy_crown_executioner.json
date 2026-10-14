@@ -1,0 +1,45 @@
+{
+  "frameWidth": 363,
+  "frameHeight": 307,
+  "drawScale": 2.880952380952381,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16013
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_crown_executioner",
+  "title": "Crown Executioner",
+  "source": "art/remaster/puppet/build.py (enemy_crown_executioner)",
+  "anchorY": 0.922802,
+  "anchorX": 0.521496,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "axe-cleave",
+    "body": [
+      0.005986,
+      -0.385665
+    ],
+    "contact": [
+      0.319096,
+      -0.124474
+    ]
+  },
+  "healthBarY": 0.590773
+}

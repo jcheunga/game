@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Godot;
 
@@ -27,7 +28,13 @@ public partial class BlenderAssetSmoke : Node
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
             var ids = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct().ToArray();
-            Check(ids.Length == 52, "All 52 active unit definitions covered");
+            // Every combat unit in data/units.json is checked (the roster grows; the count comes from the data).
+            using (var json = JsonDocument.Parse(Godot.FileAccess.GetFileAsString("res://data/units.json")))
+            {
+                var defined = json.RootElement.GetProperty("Units").EnumerateArray().Select(u => u.GetProperty("Id").GetString())
+                    .Where(id => !GameData.GetUnit(id).NonCombatant).ToArray();
+                Check(defined.Length > 0 && defined.All(ids.Contains), $"All {defined.Length} active unit definitions covered");
+            }
             foreach (var id in ids)
             {
                 var def = GameData.GetUnit(id);
@@ -35,8 +42,9 @@ public partial class BlenderAssetSmoke : Node
                 // Remastered units ship frames cropped to their animation envelope at the density set in
                 // art/remaster/density.py (small units can be narrower than the legacy 192x240 frame), still
                 // within a mobile-safe atlas.
+                // Puppet units ship trimmed frames on one or more pages, each within the mobile-safe atlas size.
                 Check(sheet != null && sheet.AnchorY > 0.5f && (sheet.FrameWidth == 192 && sheet.FrameHeight == 240
-                    || sheet.Texture.GetWidth() <= 4096 && sheet.Texture.GetHeight() <= 4096),
+                    || (sheet.Pages ?? new[] { sheet.Texture }).All(t => t != null && t.GetWidth() <= 4096 && t.GetHeight() <= 4096)),
                     id + " has compact atlas metadata and ground anchor");
                 if (sheet == null) continue;
                 var probe = new Unit();
@@ -44,7 +52,8 @@ public partial class BlenderAssetSmoke : Node
                 var density = sheet.FrameWidth / (probe.Radius * 2 * probe.VisualScale * sheet.DrawScale);
                 probe.Free();
                 Check(density >= 1.25f, $"{id} keeps {density:0.00} atlas px per battle px, so enlarged units stay sharp");
-                var total = sheet.Texture.GetWidth() / sheet.FrameWidth * (sheet.Texture.GetHeight() / sheet.FrameHeight);
+                var total = sheet.Frames?.Length > 0 ? sheet.Frames.Length
+                    : sheet.Texture.GetWidth() / sheet.FrameWidth * (sheet.Texture.GetHeight() / sheet.FrameHeight);
                 bool Valid(UnitAnimState state) => sheet.Animations.TryGetValue(state, out var clip)
                     && clip.FrameCount > 0 && clip.FrameDuration > 0 && clip.StartFrame + clip.FrameCount <= total;
                 Check(Enum.GetValues<UnitAnimState>().Where(state => state != UnitAnimState.Melee).All(Valid), id + " six valid clips");
@@ -96,6 +105,13 @@ public partial class BlenderAssetSmoke : Node
             {
                 foreach (var stage in new[] { 1, 54, 100 }) await CaptureBattle(stage);
                 await CaptureCodex();
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--lineups"))
+            {
+                // Every unit on a real battlefield, a few at a time, at its true in-battle size and shadow.
+                var all = GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct().ToArray();
+                for (var page = 0; page * LineupSize < all.Length; page++)
+                    await CaptureLineup(all.Skip(page * LineupSize).Take(LineupSize).ToArray(), page);
             }
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
@@ -193,15 +209,53 @@ public partial class BlenderAssetSmoke : Node
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
     }
 
+    private const int LineupSize = 8;
+
+    private async Task CaptureLineup(string[] ids, int page)
+    {
+        // A zone that suits the first unit (player pages use stage 1; enemy pages their own zone's first stage).
+        var first = GameData.GetUnit(ids[0]);
+        GameState.Instance.SetSelectedStage(first.IsPlayerSide ? 1 : Math.Clamp(page * 7 + 1, 1, 100));
+        GameState.Instance.PrepareCampaignBattle();
+        var battle = GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
+        AddChild(battle);
+        battle.SetPhysicsProcess(false);
+        for (var i = 0; i < ids.Length; i++)
+        {
+            var def = GameData.GetUnit(ids[i]);
+            var unit = new Unit();
+            // two staggered rows across the opening view, so big units do not hide small ones
+            unit.Setup(def.IsPlayerSide ? Team.Player : Team.Enemy, new UnitStats(def),
+                new Vector2(90 + i * 62, i % 2 == 0 ? 318 : 362));
+            battle.AddChild(unit); unit.ZIndex = 5 + i % 2;
+        }
+        for (var i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree().CreateTimer(0.5), SceneTreeTimer.SignalName.Timeout);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        RenderingServer.ForceDraw();
+        var folder = ProjectSettings.GlobalizePath("res://artifacts/blender/lineups");
+        Directory.CreateDirectory(folder);
+        var result = GetViewport().GetTexture().GetImage().SavePng($"{folder}/lineup-{page:00}.png");
+        Check(result == Error.Ok, $"Lineup {page}: {string.Join(", ", ids)}");
+        battle.QueueFree();
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+    }
+
     private async Task CaptureCodex()
     {
         foreach (var entry in CodexCatalog.GetAll()) GameState.Instance.DiscoverCodexEntry(entry.Id);
         var menu = await LiveUiReview.Open(this, "CodexMenu");
-        var bosses = menu.FindChildren("*", "Button", true, false).OfType<Button>().Single(button => button.Text == "Bosses");
+        // Royal tabs carry their name as accessibility text (the label is painted on the plate).
+        var bosses = menu.FindChildren("*", "Button", true, false).OfType<Button>()
+            .First(button => button.Text == "Bosses" || button.AccessibilityName == "Bosses");
         bosses.ButtonPressed = true; bosses.EmitSignal(Button.SignalName.Pressed);
-        var sovereign = menu.FindChildren("*", "Button", true, false).OfType<Button>()
-            .Single(button => button.AccessibilityName == "Dread Sovereign");
-        sovereign.EmitSignal(Button.SignalName.Pressed);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        // The first discovered boss on the page (the boss list is paged, so a named boss may sit further on).
+        var titles = CodexCatalog.GetAll().Where(e => e.Category == "boss").Select(e => e.Title).ToHashSet();
+        for (var i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var boss = menu.FindChildren("*", "", true, false).OfType<BaseButton>()
+            .First(button => titles.Contains(button.AccessibilityName) && !button.Disabled);
+        boss.EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         RenderingServer.ForceDraw();
         var output = ProjectSettings.GlobalizePath("res://artifacts/blender/codex-in-game.png");

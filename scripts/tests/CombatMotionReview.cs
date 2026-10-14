@@ -31,6 +31,13 @@ public partial class CombatMotionReview : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(x=>x.StartsWith("--save-suffix=motion-review-")))
                 throw new InvalidOperationException("Requires isolated motion-review save.");
+            if (OS.GetCmdlineUserArgs().Contains("--feel-only"))
+            {
+                GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
+                await CaptureBattleFeel();
+                GD.Print($"COMBAT_MOTION_RESULT: {_failures} failures");
+                await LiveUiReview.StopAudio(this); GetTree().Quit(0); return;
+            }
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
             foreach (var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
@@ -39,7 +46,8 @@ public partial class CombatMotionReview : Node
                 var target=Spawn("enemy_walker",Team.Enemy,new Vector2(400+Mathf.Max(0,attacker.AttackRange-1),340));
                 var sheet=UnitSpriteLoader.TryLoad(attacker.VisualClass,id);
                 var clip=sheet.Animations[UnitAnimState.Attack];
-                Check(clip.FrameCount==10 && clip.ContactFrame==4,id+" authored ten-frame/contact contract");
+                // puppet clips: sixteen frames, contact on frame 6, at the same contact time as the old ten-frame clips
+                Check(clip.FrameCount==16 && clip.ContactFrame==6,id+" authored sixteen-frame/contact contract");
                 Check(attacker.TryBeginAttack(target),id+" begins attack");
                 var life=target.CombatLifetime;
                 var before=target.Health;
@@ -55,7 +63,7 @@ public partial class CombatMotionReview : Node
                 var feet=attacker.Position;
                 attacker.TickAttackTimer(attacker.AttackContactSeconds*.5f);
                 attacker._Process(.01);
-                Check(hits==1 && Read<int>(attacker,"_spriteAnimFrame")==4,id+" damage coincides with contact pose");
+                Check(hits==1 && Read<int>(attacker,"_spriteAnimFrame")==clip.ContactFrame,id+" damage coincides with contact pose");
                 if (!attacker.UsesProjectile && attacker.AttackRange>0)
                 {
                     Check(attacker.Position==feet,id+" keeps its feet fixed through contact");
@@ -74,6 +82,7 @@ public partial class CombatMotionReview : Node
             await CheckStructureContacts();
             if (OS.GetCmdlineUserArgs().Contains("--capture")) await CaptureDuels();
             if (OS.GetCmdlineUserArgs().Contains("--capture-crowd")) await CaptureCrowdContacts();
+            if (OS.GetCmdlineUserArgs().Contains("--feel")) await CaptureBattleFeel();
         }
         catch(Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
         GD.Print($"COMBAT_MOTION_RESULT: {_failures} failures");
@@ -108,6 +117,10 @@ public partial class CombatMotionReview : Node
         var battle=GD.Load<PackedScene>("res://scenes/Battle.tscn").Instantiate<BattleController>();
         AddChild(battle); battle.SetPhysicsProcess(false);
         await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+        // The game pauses a battle when its window loses OS focus (AppLifecycleService -> TogglePause); these checks
+        // drive combat synthetically, so run them on an unpaused battle whatever the review window's focus is.
+        AppLifecycleService.Instance?.Notification((int)Node.NotificationWMWindowFocusIn);
+        if (Read<bool>(battle,"_battlePaused")) Call(battle,"TogglePause");
         return battle;
     }
     private async Task CheckBattleIntegration()

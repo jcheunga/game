@@ -11,6 +11,7 @@ public partial class CombatReviewSmoke
         var state = GameState.Instance;
         state.ResetProgress();
         state.SetAnalyticsConsent(false);
+        Read<HashSet<string>>(state,"_ownedPlayerUnitIds").Add("player_defender");
         foreach (var (id, expected) in new[] { ("relic_iron_pendant", 1), ("relic_war_brand", 3), ("relic_crown_of_valor", 9) })
         {
             var before = state.RelicShards;
@@ -39,6 +40,7 @@ public partial class CombatReviewSmoke
     {
         var state = GameState.Instance;
         state.ResetProgress();
+        Read<HashSet<string>>(state,"_ownedPlayerUnitIds").Add("player_defender");
         state.PrepareCampaignBattle();
         var reward = state.ApplyVictory(10, 0, 0, 1);
         Check(reward.Contains("Iron Pendant") && state.TryEquipItem("player_defender", "relic_iron_pendant"),
@@ -55,16 +57,16 @@ public partial class CombatReviewSmoke
             "Claimed rewards disappear from the preview");
 
         state.ApplyVictory(58, 0, 0, 1);
-        Check(state.IsUnitOwned("player_lantern_guard") && state.GetUnitLevel("player_lantern_guard") == 4,
-            "Out-of-order contract victory grants a trained specialist before its major counter fight");
+        Check(state.IsUnitOwned("player_quartermaster") && state.GetUnitLevel("player_quartermaster") == 1,
+            "Out-of-order contract victory grants the new core specialist without a free stat tier");
         var gold = state.Gold;
         state.ApplyVictory(58, 0, 0, 1);
         Check(state.Gold == gold, "Recruit contracts award training and gold only once");
         var levels = Read<Dictionary<string, int>>(state, "_unitUpgradeLevels");
-        Read<HashSet<string>>(state, "_ownedPlayerUnitIds").Add("player_marksman");
-        levels["player_marksman"] = 5;
-        state.ApplyVictory(23, 0, 0, 1);
-        Check(state.GetUnitLevel("player_marksman") == 5 && state.Gold == gold + 100,
+        Read<HashSet<string>>(state, "_ownedPlayerUnitIds").Add("player_warhammer_knight");
+        levels["player_warhammer_knight"] = 12;
+        state.ApplyVictory(78, 0, 0, 1);
+        Check(state.GetUnitLevel("player_warhammer_knight") == 12 && state.Gold == gold + 40,
             "Already developed recruits retain their levels and receive the advertised gold reward");
 
         var save = (GameSaveData)Invoke(state, "BuildSaveData");
@@ -74,12 +76,12 @@ public partial class CombatReviewSmoke
         state.PrepareCampaignBattle();
         gold = state.Gold;
         state.ApplyVictory(58, 0, 0, 1);
-        Check(state.Gold == gold && state.GetUnitLevel("player_lantern_guard") == 4,
+        Check(state.Gold == gold && state.GetUnitLevel("player_quartermaster") == 1,
             "Serialized saves preserve contract claims and trained units");
 
         state.ResetProgress();
         state.PrepareEndlessBattle("city");
-        Check((string)Invoke(state, "ClaimCampaignProgressionRewards", 58, 3) == "" && !state.IsUnitOwned("player_lantern_guard"),
+        Check((string)Invoke(state, "ClaimCampaignProgressionRewards", 58, 3) == "" && !state.IsUnitOwned("player_quartermaster"),
             "Other game modes cannot claim campaign contracts");
         state.PrepareCampaignBattle();
         state.TryGrantEquipment("relic_iron_pendant");
@@ -112,6 +114,7 @@ public partial class CombatReviewSmoke
         save = (GameSaveData)Invoke(state, "BuildSaveData");
         save.Gold = 20000; save.Sigils = 30;
         var lateUnits = new[] { "player_lantern_guard", "player_ballista", "player_stormcaller" };
+        save.OwnedPlayerUnitIds=save.OwnedPlayerUnitIds.Concat(lateUnits).Distinct().ToArray();
         foreach (var id in lateUnits) save.UnitLevels[id] = 5;
         Invoke(state, "ApplySavedData", save);
         foreach (var id in lateUnits)
@@ -120,7 +123,8 @@ public partial class CombatReviewSmoke
             Check(state.TryPromoteUnit(id, out _) && state.BuildPlayerUnitStats(GameData.GetUnit(id)).MaxHealth > before.MaxHealth,
                 $"{id} has a working promotion with a real combat benefit");
         }
-        Check(state.Gold == 12700 && state.Sigils == 14,
+        Check(state.Gold == 20000-lateUnits.Sum(id=>UnitPromotionCatalog.TryGet(id).GoldCost) &&
+            state.Sigils == 30-lateUnits.Sum(id=>UnitPromotionCatalog.TryGet(id).SigilCost),
             "Late-unit promotions charge the published gold and sigil costs");
     }
 
@@ -187,8 +191,8 @@ public partial class CombatReviewSmoke
         {
             id = unit.Id, name = unit.DisplayName, unlock = unit.UnlockStage,
             recruit = state.GetUnitPurchaseCost(unit.Id), courage = unit.Cost,
-            upgrades = ProgressionCosts("_unitUpgradeLevels", unit.Id, 1, 5, state.GetUnitUpgradeCost),
-            levels = Enumerable.Range(1, 5).Select(level =>
+            upgrades = ProgressionCosts("_unitUpgradeLevels", unit.Id, 1, state.MaxUnitLevel, state.GetUnitUpgradeCost),
+            levels = Enumerable.Range(1, state.MaxUnitLevel).Select(level =>
             {
                 // Empty deck removes synergy; fresh save removes gear and other persistent power.
                 var stats = state.BuildPlayerUnitStatsAtLevelForDeck(unit, level, Array.Empty<UnitDefinition>());

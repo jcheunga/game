@@ -31,6 +31,8 @@ public partial class CombatReviewSmoke : Node
         battle.SetPhysicsProcess(false);
         var seedArg = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--seed-offset="));
         Read<RandomNumberGenerator>(battle, "_rng").Seed = 4100UL + (ulong)stage + (seedArg == null ? 0UL : ulong.Parse(seedArg.Split('=')[1]));
+        Invoke(battle,"InitializeContent",Read<RandomNumberGenerator>(battle,"_rng").Seed);
+        Invoke(battle,"InitializeCourageDrops",Read<RandomNumberGenerator>(battle,"_rng").Seed);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         return battle;
     }
@@ -61,9 +63,14 @@ public partial class CombatReviewSmoke : Node
                 GameData.Combat.BattlefieldRight = 1196f;
             }
             ApplyTuningOverrides(args);
-            if (args.Contains("--stage-layout")) ExportStageLayoutReview();
+            if (args.Contains("--production-polish")) await CheckProductionPolish();
+            else if (args.Contains("--performance")) await ReviewCombatPerformance();
+            else if (args.Contains("--stage-layout")) ExportStageLayoutReview();
             else if (args.Contains("--courage-pacing")) await CheckCouragePacing();
             else if (args.Contains("--mana")) await CheckManaFromKills();
+            else if (args.Contains("--courage-drops")) await CheckCourageDrops();
+            else if (args.Contains("--progression-rewards")) CheckProgressionRewards();
+            else if(args.Contains("--bossrush-gameplay"))await ReviewBossRushGameplay();
             else if (args.Contains("--stage-stars")) await CheckStageStars();
             else if (args.Contains("--field-objectives")) await CheckCampaignFieldObjectives();
             else if (args.Contains("--camera")) await CheckBattleCamera();
@@ -89,6 +96,7 @@ public partial class CombatReviewSmoke : Node
 
     private async Task Regressions()
     {
+        await CheckCourageDrops();
         CheckDataLoadFailureKeepsSave();
         CheckSpawnScheduling();
         CheckProgressionRewards();
@@ -185,6 +193,9 @@ public partial class CombatReviewSmoke : Node
         await CheckRangedMelee();
 
         battle = await OpenBattle(64);
+        var curseFixture = System.Text.Json.JsonSerializer.Deserialize<StageDefinition>(System.Text.Json.JsonSerializer.Serialize(GameData.GetStage(64)));
+        curseFixture.Modifiers = new[] { new StageModifierDefinition { Type = "cursed_ground" } };
+        Write(battle, "_stageData", curseFixture);
         archer = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_shooter")),
             new Vector2(500, GameData.Combat.BattlefieldTop + GameData.Combat.SpawnVerticalPadding));
         var health = archer.Health;
@@ -302,7 +313,9 @@ public partial class CombatReviewSmoke : Node
                 new Vector2(600 + side * (ranged.AttackRange - 6f), 340));
             Check(!ranged.InMeleeReach(foe), $"{rangedId}: an enemy at shooting range is outside melee reach");
             Invoke(battle, "SimulateUnits", 1f / 60);
-            Check(ranged.IsAttackCommitted && !ranged.IsMeleeStrike, $"{rangedId}: shoots at range");
+            Check(ranged.IsAttackCommitted && !ranged.IsMeleeStrike ||
+                ((System.Collections.IDictionary)typeof(BattleController).GetField("_contentCasts", Hidden).GetValue(battle)).Contains(ranged),
+                $"{rangedId}: begins a shot or marked volley at range");
             await CloseBattle(battle);
         }
     }
@@ -313,6 +326,9 @@ public partial class CombatReviewSmoke : Node
         var saved = state.BuildSaveData();
         state.ResetProgress(); state.SetAnalyticsConsent(false); state.SetShowHints(false);
         state.SetDifficulty(DifficultyCatalog.NormalId);
+        Read<HashSet<string>>(state, "_ownedPlayerUnitIds").Add("player_brawler");
+        Read<List<string>>(state, "_activeDeckUnitIds").Clear();
+        Read<List<string>>(state, "_activeDeckUnitIds").Add("player_brawler");
         var battle = await OpenBattle(1);
         Check(Read<float>(battle, "_courage") == 0f && state.HasCampaignScoutBonus(1) &&
             Mathf.IsEqualApprox(Read<float>(battle, "_campaignScoutCourageGainScale"), state.GetCampaignScoutCourageGainScale(1)),
@@ -358,6 +374,7 @@ public partial class CombatReviewSmoke : Node
         for (var i = 0; i < 40; i++) Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
         Invoke(battle, "CleanupDeadUnits");
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaMax), "Mana stops at the bar's maximum");
+        Spawn(Team.Enemy, GameData.EnemyBruteId);
 
         var fireball = GameData.GetSpell("spell_fireball");
         var spells = Read<BattleSpellState>(battle, "_spellDeck");
@@ -381,19 +398,19 @@ public partial class CombatReviewSmoke : Node
             "The opening teaches combat before adding side missions");
         var stage = new StageDefinition { Waves = new[] { new StageWaveDefinition { TriggerTime = 100 } } };
         var director = new BattleSpawnDirector(new RandomNumberGenerator { Seed = 42 });
-        director.Initialize(1, stage, new CombatTuning(), GameData.GetEnemyUnits());
+        director.Initialize(2, stage, new CombatTuning(), GameData.GetEnemyUnits());
         director.QueueScriptedWaveSupplement(20, 1, new[] { new StageWaveEntryDefinition { UnitId = "enemy_brute" } });
         director.QueueScriptedWaveSupplement(2, 1, new[] { new StageWaveEntryDefinition { UnitId = "enemy_runner", Count = 3 } });
         var spawned = new List<string>();
         director.Tick(2, 2, () => 0, (stats, _) => spawned.Add(stats.DefinitionId), _ => { });
-        Check(spawned.SequenceEqual(new[] { "enemy_runner" }), "Earlier reinforcements are not blocked by a later queued wave");
-        director.Tick(8, 10, () => 5, (stats, _) => spawned.Add(stats.DefinitionId), _ => { });
+        Check(spawned.SequenceEqual(new[] { "enemy_runner" }), $"Earlier reinforcements are not blocked by a later queued wave ({string.Join(",", spawned)})");
+        director.Tick(8, 10, () => director.GetMaxActiveEnemies(), (stats, _) => spawned.Add(stats.DefinitionId), _ => { });
         Check(spawned.Count == 1, "Full enemy cap delays pending spawns");
         director.Tick(1, 11, () => 0, (stats, _) => spawned.Add(stats.DefinitionId), _ => { });
         Check(spawned.Count == 2, "Delayed enemies do not all burst out in one frame");
         director.Initialize(GameData.MaxStage, GameData.GetStage(GameData.MaxStage), new CombatTuning(), GameData.GetEnemyUnits());
-        director.TryBuildEnemyStats("enemy_crusher", out var stats60);
-        Check(Math.Abs(stats60.AttackCooldown - GameData.GetUnit("enemy_crusher").AttackCooldown) < 0.001,
+        director.TryBuildEnemyStats(GameData.EnemyBruteId, out var stats60);
+        Check(Math.Abs(stats60.AttackCooldown - GameData.GetUnit(GameData.EnemyBruteId).AttackCooldown) < 0.001,
             "Late heavy enemies retain their authored attack rhythm");
         var quiet = new StageDefinition { Waves = new[] {
             new StageWaveDefinition { TriggerTime = 1 }, new StageWaveDefinition { TriggerTime = 90 }
@@ -417,15 +434,16 @@ public partial class CombatReviewSmoke : Node
         GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
         // A modest reference squad, with normal unit upgrades but no equipment or purchases.
         var tactical = OS.GetCmdlineUserArgs().Contains("--tactical");
-        var level = tactical ? (stage < 10 ? 1 : stage < 15 ? 2 : stage < 35 ? 3 : stage < 62 ? 4 : 5) : Math.Min(5, 1 + (stage - 1) / 13);
+        var level = CampaignProgressionCatalog.SuggestedLevel(stage);
         var levelDelta = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--unit-level-delta="));
-        if (levelDelta != null) level = Math.Clamp(level + int.Parse(levelDelta.Split('=')[1]), 1, 5);
+        if (levelDelta != null) level = Math.Clamp(level + int.Parse(levelDelta.Split('=')[1]), 1, GameState.Instance.MaxUnitLevel);
+        if (tactical) FieldStageSpells(stage);
         var squad = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--squad="))?.Split('=')[1];
         if (squad != null)
         {
             var selected = squad.Split(',');
-            if (selected.Length != 3 || selected.Any(id => GameData.GetUnit(id).UnlockStage > stage))
-                throw new InvalidOperationException("Benchmark squad must have three stage-available units.");
+            if (selected.Length is < 1 or > 6 || selected.Any(id => GameData.GetUnit(id).UnlockStage > stage))
+                throw new InvalidOperationException("Benchmark squad must have one to six stage-available units.");
             var owned = Read<HashSet<string>>(GameState.Instance, "_ownedPlayerUnitIds");
             var active = Read<List<string>>(GameState.Instance, "_activeDeckUnitIds");
             active.Clear();
@@ -475,6 +493,7 @@ public partial class CombatReviewSmoke : Node
         var waveTimes = new List<float>();
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         var tick = 0;
+        var packsCollected = 0;
         var pushBurst = 0;
         var gateSeconds = 0f;
         var gateCrowd = 0;
@@ -482,6 +501,16 @@ public partial class CombatReviewSmoke : Node
         var timeLimit = limitArg == null ? 210 : Math.Clamp(int.Parse(limitArg.Split('=')[1]), 60, 600);
         while (!Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_elapsed") < timeLimit)
         {
+            if (OS.GetCmdlineUserArgs().Contains("--collect-packs") && tick % 30 == 0)
+            {
+                foreach (var pack in Read<List<CouragePickup>>(battle, "_couragePickups").Where(p => p.Available).ToArray())
+                {
+                    var screen = pack.GetGlobalTransformWithCanvas() * new Vector2(0, -7);
+                    battle._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen, GlobalPosition = screen });
+                    battle._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = screen, GlobalPosition = screen });
+                    if (pack.Collected) packsCollected++;
+                }
+            }
             if (Read<float>(battle, "_elapsed") >= handoffAt ||
                 (OS.GetCmdlineUserArgs().Contains("--handoff-boss") && units.Any(x => !x.IsDead && x.Team == Team.Enemy && x.VisualClass == "boss")))
             {
@@ -504,7 +533,7 @@ public partial class CombatReviewSmoke : Node
                         .FirstOrDefault();
                     var spellDeck = Read<BattleSpellState>(battle, "_spellDeck");
                     // Magic is paid in mana from kills, so it never competes with troops for courage.
-                    bool Affordable(string id) => spellDeck.GetCooldownRemaining(id) <= 0 && mana >= GameState.Instance.BuildSpellStats(GameData.GetSpell(id)).ManaCost;
+                    bool Affordable(string id) => spellDeck.Roster.Any(s => s.Id == id) && spellDeck.GetCooldownRemaining(id) <= 0 && mana >= GameState.Instance.BuildSpellStats(GameData.GetSpell(id)).ManaCost;
                     if (hurt != null && Affordable("spell_heal"))
                         Invoke(battle, "TryCastSpellAt", GameData.GetSpell("spell_heal"), hurt.Position);
                     else if (cluster != null && units.Count(x => x.Team == Team.Enemy && !x.IsDead && x.Position.DistanceTo(cluster.Position) < 76) >= 3
@@ -522,10 +551,12 @@ public partial class CombatReviewSmoke : Node
                 }
                 var frontline = units.Count(x => x.Team == Team.Player && !x.IsDead && !x.UsesProjectile && Math.Abs(x.Position.Y - targetY) < 110);
                 // An empty front line gets the strongest melee type that is least represented on the field.
-                var preferred = frontline == 0 ? deck.Roster.Where(x => !x.UsesProjectile)
+                var preferred = frontline < 2 ? deck.Roster.Where(x => !x.UsesProjectile && x.SquadTag!=SquadSynergyCatalog.SupportTag)
                         .OrderBy(x => units.Count(u => !u.IsDead && u.Team == Team.Player && u.DefinitionId == x.Id))
                         .ThenByDescending(x => Math.Sqrt(x.MaxHealth * x.AttackDamage / Math.Max(.3, x.AttackCooldown))).FirstOrDefault() :
                     deck.Roster.Where(x => x.UsesProjectile).OrderBy(x => units.Count(u => !u.IsDead && u.Team == Team.Player && u.DefinitionId == x.Id)).FirstOrDefault();
+                if(tactical && frontline>=2 && units.Any(u=>u.Team==Team.Player && !u.IsDead && u.HealthRatio<.75f) && !units.Any(u=>u.Team==Team.Player && !u.IsDead && u.Definition.ContentBehavior=="field_heal"))
+                    preferred=deck.Roster.FirstOrDefault(x=>x.ContentBehavior=="field_heal")??preferred;
                 var order = deck.Roster.OrderBy(x => x == preferred ? 0 : 1);
                 var card = order.FirstOrDefault(x => deck.CanDeploy(x, courage, false, out _));
                 if (card != null && !bankCourage)
@@ -570,6 +601,7 @@ public partial class CombatReviewSmoke : Node
         var evaluation = StageObjectives.EvaluateBattle(Read<StageDefinition>(battle, "_stageData"), battleResult, victory);
         GD.Print("COMBAT_SAMPLE: " + System.Text.Json.JsonSerializer.Serialize(new {
             fieldTactics = OS.GetCmdlineUserArgs().Contains("--field-tactics"),
+            manualPackCollection = OS.GetCmdlineUserArgs().Contains("--collect-packs"), packsCollected,
             baseCouragePerSecond = GameData.Combat.CourageGainPerSecond,
             mapWidth = GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
             firstContact, firstGateDamage, waveTimes, stars = evaluation.StarsEarned,
@@ -634,6 +666,11 @@ public partial class CombatReviewSmoke : Node
         var active = Read<List<string>>(state, "_activeDeckUnitIds");
         active.Clear();
         foreach (var unit in melee.Concat(ranged)) { owned.Add(unit.Id); active.Add(unit.Id); }
+    }
+
+    private void FieldStageSpells(int stage)
+    {
+        var state = GameState.Instance;
         var spells = GameData.PlayerSpellIds.Select(GameData.GetSpell).Where(x => x.UnlockStage <= stage)
             .OrderBy(x => x.Id is "spell_heal" or "spell_fireball" ? 0 : 1).ThenByDescending(x => x.UnlockStage).Take(5).ToArray();
         var ownedSpells = Read<HashSet<string>>(state, "_ownedPlayerSpellIds");

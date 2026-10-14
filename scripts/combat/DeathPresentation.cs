@@ -14,8 +14,9 @@ public sealed class DeathStyle
     public Color Mote = new(1f, .82f, .45f);
     public float EdgeWidth = .09f;
     public float Rise = .45f;        // 0 = even dissolve, 1 = top first (ash carried upward)
-    public float Desaturate = .25f;  // drained of colour while the body rests
-    public float Darken;
+    public float Desaturate = .08f;  // drained of a little colour while the body rests
+    // and darkened a little, so the dead read as fallen and the living stand out
+    public float Darken = .24f;
     public float Linger = 1.1f;
     public float Dissolve = .75f;
 
@@ -44,15 +45,15 @@ public sealed class DeathStyle
         {
             switch (s.Fx)
             {
-                case "bones": s.Edge = new Color(.55f, 1f, .9f, .95f); s.Mote = new Color(.72f, 1f, .94f); s.Rise = .6f; s.Desaturate = .35f; break;
-                case "gas": s.Edge = new Color(.72f, 1f, .3f, .9f); s.Mote = new Color(.62f, .82f, .3f); s.Rise = .3f; s.Desaturate = .2f; break;
-                case "embers": s.Edge = new Color(1f, .55f, .18f, 1f); s.Mote = new Color(1f, .62f, .25f); s.Rise = .8f; s.Desaturate = .3f; s.Darken = .2f; break;
-                case "water": s.Edge = new Color(.62f, .86f, 1f, .85f); s.Mote = new Color(.7f, .9f, 1f); s.Rise = .15f; s.Desaturate = .2f; break;
+                case "bones": s.Edge = new Color(.55f, 1f, .9f, .95f); s.Mote = new Color(.72f, 1f, .94f); s.Rise = .6f; s.Desaturate = .18f; break;
+                case "gas": s.Edge = new Color(.72f, 1f, .3f, .9f); s.Mote = new Color(.62f, .82f, .3f); s.Rise = .3f; s.Desaturate = .12f; break;
+                case "embers": s.Edge = new Color(1f, .55f, .18f, 1f); s.Mote = new Color(1f, .62f, .25f); s.Rise = .8f; s.Desaturate = .15f; s.Darken = .24f; break;
+                case "water": s.Edge = new Color(.62f, .86f, 1f, .85f); s.Mote = new Color(.7f, .9f, 1f); s.Rise = .15f; s.Desaturate = .12f; break;
                 case "arcane": s.Edge = new Color(.72f, .45f, 1f, .95f); s.Mote = new Color(.78f, .6f, 1f); s.Rise = .55f; break;
                 case "holy": s.Edge = new Color(1f, .86f, .5f, .95f); s.Mote = new Color(1f, .92f, .65f); s.Rise = .65f; break;
                 case "glass": s.Edge = new Color(.9f, .96f, 1f, 1f); s.Mote = new Color(.92f, .97f, 1f); s.Rise = .3f; s.EdgeWidth = .05f; break;
-                case "debris": s.Edge = new Color(0, 0, 0, 0); s.Mote = new Color(.45f, .42f, .38f); s.Rise = .5f; s.Darken = .3f; s.Desaturate = .3f; break;
-                default: s.Edge = new Color(1f, .45f, .15f, .85f); s.Mote = new Color(.28f, .26f, .25f); s.Rise = .75f; s.Desaturate = .45f; break; // ash, dust
+                case "debris": s.Edge = new Color(0, 0, 0, 0); s.Mote = new Color(.45f, .42f, .38f); s.Rise = .5f; s.Darken = .3f; s.Desaturate = .15f; break;
+                default: s.Edge = new Color(1f, .45f, .15f, .85f); s.Mote = new Color(.28f, .26f, .25f); s.Rise = .75f; s.Desaturate = .1f; s.Darken = .26f; break; // ash, dust
             }
         }
         if (boss)
@@ -86,9 +87,14 @@ uniform float edge_width = 0.09;
 uniform float rise = 0.45;
 uniform float desaturate = 0.25;
 uniform float darken = 0.0;
+uniform vec3 key_light = vec3(1.0);
+uniform vec3 ambient = vec3(1.0);
+uniform float exposure = 1.0;
 
 void fragment() {
     vec4 c = COLOR; // already texture * modulate in Godot 4
+    float l0 = dot(c.rgb, vec3(0.3, 0.59, 0.11));
+    c.rgb = c.rgb * mix(ambient, key_light, smoothstep(0.05, 0.75, l0 + 0.25)) * exposure;
     vec2 local = (UV - region.xy) / max(region.zw, vec2(1e-5));
     float n = texture(noise, local * 2.2).r * 0.7 + texture(noise, local * 6.1 + vec2(0.37, 0.71)).r * 0.3;
     float h = mix(n, local.y * 0.62 + n * 0.38, rise);
@@ -102,10 +108,17 @@ void fragment() {
     COLOR = c;
 }";
 
-    public static ShaderMaterial CreateMaterial(DeathStyle style)
+    public static ShaderMaterial CreateMaterial(DeathStyle style, string zone = null)
     {
         _shader ??= new Shader { Code = Code };
         var m = new ShaderMaterial { Shader = _shader };
+        if (zone != null)
+        {
+            var z = UnitLook.For(zone);
+            m.SetShaderParameter("key_light", new Vector3(z.Key.R, z.Key.G, z.Key.B));
+            m.SetShaderParameter("ambient", new Vector3(z.Ambient.R, z.Ambient.G, z.Ambient.B));
+            m.SetShaderParameter("exposure", z.Exposure);
+        }
         m.SetShaderParameter("noise", Noise);
         m.SetShaderParameter("edge_color", style.Edge);
         m.SetShaderParameter("edge_width", style.EdgeWidth);

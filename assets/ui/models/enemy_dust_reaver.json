@@ -1,0 +1,45 @@
+{
+  "frameWidth": 334,
+  "frameHeight": 240,
+  "drawScale": 2.6507936507936507,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.19659
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_dust_reaver",
+  "title": "Dust Reaver",
+  "source": "art/remaster/puppet/build.py (enemy_dust_reaver)",
+  "anchorY": 0.888092,
+  "anchorX": 0.557078,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.009944,
+      -0.486795
+    ],
+    "contact": [
+      0.412718,
+      -0.33111
+    ]
+  },
+  "healthBarY": 0.734199
+}

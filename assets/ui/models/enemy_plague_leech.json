@@ -1,0 +1,44 @@
+{
+  "frameWidth": 131,
+  "frameHeight": 89,
+  "drawScale": 1.0396825396825398,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_plague_leech",
+  "title": "Plague Leech",
+  "source": "art/remaster/puppet/build.py (enemy_plague_leech)",
+  "anchorY": 0.870048,
+  "anchorX": 0.409818,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.024462,
+      -0.225763
+    ],
+    "contact": [
+      0.323292,
+      -0.564409
+    ]
+  },
+  "healthBarY": 0.665327
+}

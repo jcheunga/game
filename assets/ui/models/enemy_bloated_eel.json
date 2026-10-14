@@ -1,0 +1,44 @@
+{
+  "frameWidth": 145,
+  "frameHeight": 91,
+  "drawScale": 1.2393162393162394,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_bloated_eel",
+  "title": "Bloated Eel",
+  "source": "art/remaster/puppet/build.py (enemy_bloated_eel)",
+  "anchorY": 0.910376,
+  "anchorX": 0.449464,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      -0.013846,
+      -0.274539
+    ],
+    "contact": [
+      0.364591,
+      -0.629966
+    ]
+  },
+  "healthBarY": 0.732473
+}

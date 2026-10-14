@@ -19,6 +19,19 @@ Zone k holds stages 10k+1 to 10k+10, and its tenth stage is the zone boss.
 Four zones also field a mid-zone boss in slot 5: Tidecaller (stage 15), Plague
 Archon (35, returning at 37), Bone Pontiff (55) and Dread Sovereign (95).
 
+## Planned enemy introduction cadence
+
+The next encounter-design pass should make familiar enemies the backbone of
+each stage. After a small opening tutorial palette, introduce at most **one
+previously unseen regular enemy type per zone**. Once introduced, that type
+can recur in later stages and later zones, alongside the growing pool of
+familiar foes. Boss escorts must use already taught types too.
+
+The [expansion plan](docs/CONTENT_EXPANSION_PLAN.md) has provisional debut picks
+and returning-enemy examples. Other regional designs remain a reserve for
+later chapters, optional areas, or future updates. This is planned pacing;
+the live stage data has not yet been rewritten to follow it.
+
 Zone titles and summaries live in `scripts/core/RouteCatalog.cs`. Each zone's
 stage target and clear reward (gold, food and a relic) live in
 `scripts/core/CampaignPlanCatalog.cs`. Late-campaign systems switch on at zone

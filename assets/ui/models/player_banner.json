@@ -1,44 +1,45 @@
 {
-  "frameWidth": 320,
-  "frameHeight": 407,
-  "drawScale": 2.117612180505262,
+  "frameWidth": 433,
+  "frameHeight": 427,
+  "drawScale": 2.865393981746183,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13141
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_banner",
   "title": "Banner Knight",
-  "source": "art/remaster/units/player_banner.py",
-  "anchorY": 0.827677,
-  "anchorX": 0.335986,
+  "source": "art/remaster/puppet/build.py (player_banner)",
+  "anchorY": 0.764783,
+  "anchorX": 0.327759,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "sword-cut",
     "body": [
-      0.0,
-      -0.272941
+      0.014462,
+      -0.393469
     ],
     "contact": [
-      0.458606,
-      -0.13775
+      0.096322,
+      -0.326411
     ]
   },
-  "healthBarY": 0.753768
+  "healthBarY": 0.710607
 }

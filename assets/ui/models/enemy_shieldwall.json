@@ -1,44 +1,45 @@
 {
-  "frameWidth": 346,
-  "frameHeight": 302,
-  "drawScale": 2.1129822607200266,
+  "frameWidth": 461,
+  "frameHeight": 463,
+  "drawScale": 2.8152740525778386,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.20771
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_shieldwall",
   "title": "Shield Wall",
-  "source": "art/remaster/units/enemy_shieldwall.py",
-  "anchorY": 0.83503,
-  "anchorX": 0.344988,
+  "source": "art/remaster/puppet/build.py (enemy_shieldwall)",
+  "anchorY": 0.904316,
+  "anchorX": 0.495575,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "guard-cut",
     "body": [
-      0.0,
-      -0.398597
+      0.015147,
+      -0.339402
     ],
     "contact": [
-      0.33897,
-      -0.071092
+      0.421651,
+      -0.226898
     ]
   },
-  "healthBarY": 0.744472
+  "healthBarY": 0.479951
 }

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 250,
+  "drawScale": 2.031746031746032,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.06804
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_outrider",
+  "title": "Outrider",
+  "source": "art/remaster/puppet/build.py (player_outrider)",
+  "anchorY": 0.935775,
+  "anchorX": 0.489381,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.23561,
+      -0.481164
+    ],
+    "contact": [
+      0.40762,
+      -0.6625
+    ]
+  },
+  "healthBarY": 0.850347
+}

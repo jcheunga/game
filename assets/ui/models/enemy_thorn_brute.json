@@ -1,0 +1,45 @@
+{
+  "frameWidth": 353,
+  "frameHeight": 242,
+  "drawScale": 2.4513888888888884,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14425
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_thorn_brute",
+  "title": "Thorn Brute",
+  "source": "art/remaster/puppet/build.py (enemy_thorn_brute)",
+  "anchorY": 0.906627,
+  "anchorX": 0.564672,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.01754,
+      -0.501929
+    ],
+    "contact": [
+      -0.210273,
+      -0.238375
+    ]
+  },
+  "healthBarY": 0.760032
+}

@@ -259,12 +259,15 @@ public partial class RealmModal : Control
         // Some newer screens have one full-height container instead of panels.
         if (body.Length == 0)
         {
-            foreach (var child in children.Where(child => !child.HasMeta("medieval_backdrop") && child is Container))
+            foreach (var child in children.Where(child => !child.HasMeta("medieval_backdrop") && child is Container && !footers.Contains(child)))
             {
                 menu.RemoveChild(child); stack.AddChild(child); child.Show(); RelaxMinimums(child);
             }
         }
+        bool HasActions(Node node) => node is BaseButton or LineEdit or Godot.Range || node.GetChildren().Any(HasActions);
         foreach (var footer in footers) {
+            // Message-only strips stay hidden and reserve no space; preserve the action rows.
+            if (!HasActions(footer)) continue;
             menu.RemoveChild(footer);
             if (MobilePresentation.Enabled)
             {

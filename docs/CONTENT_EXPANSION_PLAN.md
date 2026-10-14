@@ -1,10 +1,14 @@
 # Crownroad — full roster expansion design
 
-Design proposal · 8 October 2026 · Not implemented or balance-tested.
+Expansion reference · Implemented core prototype, 9 October 2026. The 32-card melee core, 59 hostile types, 14 bosses, 100 relics, 30 spells and 12 tactical cards are registered and playable with placeholder art. The broader 50-card player draft remains a reserve pool. See [implementation notes](CONTENT_IMPLEMENTATION.md) and [current stats](catalogs/CURRENT_CONTENT_STATS.md).
 
 ## Direction and target
 
-Build Crownroad into a substantial collection game about the Lantern Caravan reclaiming a fallen kingdom. Recruitment, enemy discoveries, and equipment should keep revealing new tactics throughout the ten districts. The medieval siege identity anchors the roster: levies, mounted scouts, field healers, ward casters, engineers, mercenaries, blighted beasts, and the Rotbound Host.
+Build Crownroad into a substantial collection game about the Lantern Caravan reclaiming a fallen kingdom. Recruitment, enemy discoveries, and equipment should keep revealing new tactics throughout the ten districts. **Melee infantry now anchors player recruitment: start with Peasant and Militia, then branch into spear, sword, axe, mace, polearm, and armored professional roles.** Ranged troops, support, spells, and a maximum of two dedicated siege specialists complement that infantry.
+
+The latest [melee roster and recruitment progression](/Users/jason/side/game/docs/MELEE_ROSTER_DESIGN.md) defines an initial **32-card core with 20 foot melee and 2 mounted melee units**, about 69% melee. It takes priority over the older player recruitment tables and unit delivery packs below. The seven additional melee concepts have complete level 1–20 numeric profiles in [the revised roster reference](/Users/jason/side/game/docs/design/melee-roster-revision.json). The live game has adopted the melee core, starter path, names and stat changes.
+
+The table below records the earlier full collection draft. Its 50 player cards are a reference pool, while the long-term collection target remains 50 useful recruits. Twenty-five of those earlier cards are outside the proposed initial core and remain reserve candidates. The enemy, relic, spell, and tactical gear targets are unchanged.
 
 | Collection | Existing | Additions | Designed total |
 |---|---:|---:|---:|
@@ -17,6 +21,8 @@ Build Crownroad into a substantial collection game about the Lantern Caravan rec
 
 The 60 non-boss encounters comprise **59 hostile enemy types and one optional Ash Pilgrim encounter**. Summoned minions, illusions, temporary blockers, and promoted titles do not inflate the collection count. There are 124 collectible/encounter roster definitions across allies, non-boss encounters, and bosses, plus separately authored summoned objects as needed.
 
+The enemy total is the **long-term collection target**, not a requirement to introduce every type during the first 100 stages. The main campaign now targets **one new regular enemy type per zone**, with earlier types continuing into later zones. Of the forty proposed regional combat enemies, ten are provisional campaign debut picks and thirty are available in regional endless pools, with campaign debuts reserved for later chapters or optional areas.
+
 Keep a battle squad at six unit cards. The proposed utility loadout has **five shared slots for spells and tactical items**: taking a turret or trap means leaving out one spell. These are reusable battle actions bought/unlocked once and paid for with mana on use; they are not a new inventory of consumables. This creates a composition choice without adding another row of battle controls. The armory can browse Spells and Tactical Gear separately while preparation shows one combined utility loadout.
 
 Relics continue to use one slot initially and two after promotion. The eight relic families below are **collection/filter labels**, not automatic set bonuses. Each item works individually; equipping a second item combines two readable effects. No four-slot gear migration or random substat farming is assumed by this design.
@@ -24,19 +30,68 @@ Relics continue to use one slot initially and two after promotion. The eight rel
 ## Design rules
 
 1. Every new troop has a defining combat rule, a weakness, and a readable silhouette. Some accessible troops remain simple; complexity increases through the campaign.
-2. Enemy variants have different counterplay, not just different health or tint. A threat must expose its charge, channel, stance, ward, or vulnerable window through animation and effects.
+2. New enemy types have different counterplay, not just different health or tint. A threat must expose its charge, channel, stance, ward, or vulnerable window through animation and effects. Cosmetic regional variations retain the familiar type's behavior and do not count as new collection entries.
 3. Common relics explain one useful relationship. Rare relics support a recognizable build. Epic and hardened relics enable more specialized combinations. Higher rarity does not always replace a lower-rarity counter item.
 4. Most recruits provide an alternative to an established role. Existing Swordsman, Archer, War Hound, and other early recruits remain useful through cost, deployment cadence, and specific matchups.
 5. Every required enemy answer has multiple sources: a unit, a utility card, positioning/timing, or a broadly obtainable relic. A premium recruit or rare drop must never be the only answer.
 6. Keep the shallow battlefield, courage/mana loop, six-card squad, and established district progression. New companions and paired deployments consume the active-body budget; adding collection entries does not automatically increase battle density.
+7. Familiar enemies form the backbone of every stage. After the opening tutorial's small starting palette, introduce at most one previously unseen regular enemy type per zone. Once introduced, it can recur in that zone and any later zone. Recombine known roles before adding more novelty.
+8. Keep no more than two dedicated siege specialists in the core playable roster. Ordinary melee troops can still damage the stronghold; that eligibility does not make them siege specialists. The Breach squad tag also includes area damage, anti-armor, ward removal, and control roles.
+9. Make roughly two thirds of the initial core melee units and preserve at least 65% melee as it expands. Peasant and Militia lead recruitment, and new infantry branches introduce distinct reach, attack commitment, shielding, armor interaction, formation, or mobility decisions. Every separate unit can level to 20; recruiting a knight does not erase the low-cost role of the earlier levy.
+10. Preserve early-card usefulness with shallow common growth and a shared permanent bonus budget. A later recruit pays for a modest strength increase or specialized skill through courage, attack/deployment recovery, reduced stats elsewhere, or a clear weakness. Recruitment stage and rarity never add a hidden stat tier. See [progression and power budgets](/Users/jason/side/game/docs/PROGRESSION_BALANCE.md).
+
+## Roster uniqueness review and limited siege direction
+
+The user wants a distinct unit collection with few siege units and a much larger historical-inspired melee component. The current 50-unit Word catalog remains a snapshot of the earlier concept pool. The [melee revision](/Users/jason/side/game/docs/MELEE_ROSTER_DESIGN.md) now defines core membership, new melee concepts, starter progression, and unit implementation priority; it is now implemented in the live content prototype.
+
+Keep **Ballista Crew** as the sustained ranged siege option and **Sapper Crew** as the close-range demolition option, with setup and protection requirements distinguishing the two. **Trebuchet Crew is outside the proposed initial core** because its long-range structure damage overlaps Ballista Crew and its splash overlaps several existing casters. Prioritize an uncovered infantry role over another artillery weapon or maintaining a round collection count.
+
+Treat **Siege Engineer** primarily as caravan repair and construction support; its proposed core name is now **Caravan Engineer**, preserving the existing ownership ID. Reframe **Halberdier** around troop-fighting reach and a frontal sweep, with ordinary level 1 structure damage now 12 in the version 3 core, compared with 38 originally and 24 in the earlier core revision. Neither support construction nor ordinary stronghold finishing should require a siege-heavy squad.
+
+The strongest distinguishing mechanics are courage collection support, corpse conversion, concealment and decoys, single-patient healing, damage sharing, and companion commands. The next review should check the Archer/Crossbowman/Longbowman group, the Shield Knight/Lantern Guard/Iron Sentinel group, and the Field Medic/Battle Monk/Druid group through actual squad choices. Keep a unit when its cost, movement, attack pattern, defining ability, and weakness give it a useful choice over another recruit; a different weapon or one conditional bonus alone is insufficient.
 
 Prototype courage values below are starting design estimates, not final balance. Health, damage, cooldown, gold price, effect durations, and acquisition rates remain tuning work. New and existing units need comparison at the same progression level before final values are assigned.
+
+## Complete stat catalogs and level 20 progression
+
+The earlier [unit and enemy stat catalog](/Users/jason/side/game/docs/catalogs/Crownroad_Unit_and_Enemy_Stats.docx), [item stat catalog](/Users/jason/side/game/docs/catalogs/Crownroad_Item_Stats.docx), and [original balance reference](/Users/jason/side/game/docs/design/balance-stat-catalog.json) are snapshots of the first-pass collection pool. Their compounded growth and larger proposed equipment packages are superseded. Use [the melee core reference](/Users/jason/side/game/docs/design/melee-roster-revision.json) for the implemented core player stats and [the version 3 progression reference](/Users/jason/side/game/docs/design/progression-balance-policy.json) for all 74 hostile/boss/optional profiles, 100 revised relic packages, 10 enchantments, and shared upgrade limits. The 12 tactical profiles are implemented as finite battlefield tools. Encounter testing and further tuning remain ongoing.
+
+**Player units can level from 1 to 20 in the target design.** Version 3 uses **+1.5% of base HP and +1% of base attack/structure damage per level gained, without compounding**. Level 20 totals are +28.5% HP and +19% damage. Armor, magical resistance, critical chance, critical damage bonus, speed, range, attack timing, deployment price/cooldown, and splash radius stay fixed with level. Every recruit and rarity uses the same curve, with no free later-zone level advantage.
+
+Enemy levels rise from 1–2 in King's Road through 19–20 in Crownfall Citadel, with named bosses at the higher level in each zone. Returning enemy types use their current encounter zone's level and the same shallow HP/damage curves; their type defenses and critical stats stay fixed. Apply growth once and deliberately rebudget the old stage multipliers. Build difficulty mainly through learned compositions, timing, positioning, and bounded boss mechanics so earlier troops can still contribute. Hard and endless modes can extend enemy levels separately.
+
+Promotion, mastery, awakening, relics, enchantments, guild/account perks, and passive squad stat bonuses share one permanent bonus layer. Combined limits include +10% HP, +10% damage, +10 armor, +8 magical-resistance points, +5 critical-chance points, +10 critical-damage points, and 5% ordinary attack interval reduction. The full limits and arithmetic audit are in [the power budget](/Users/jason/side/game/docs/PROGRESSION_BALANCE.md). Rebalanced gear packages support different builds without supplying an independent multiplier ladder.
+
+Peasant, Militia, Spearman, Swordsman, and Archer must pass comparable-investment playtests in zones 8–10. Each needs several real uses, and Swordsman/Spearman must remain useful fighters rather than every early troop becoming only a disposable sacrifice. Later discoveries can be stronger per body while preserving meaningful early-card courage efficiency and faster deployment.
+
+The catalogs are an initial quantitative balance model. Existing bare HP, damage, movement, and recruitment data are distinguished from proposed defenses, critical stats, new entities, and new equipment packages. The live game now caps player units at 20 and implements armor, magical resistance, critical stats and shared permanent caps. The older Word catalogs remain historical snapshots.
+
+## Unit armor, resistance, and critical damage — requested additions
+
+Add these to the unit stat and equipment design for both the Lantern Caravan and hostile troops. These systems are implemented in the content prototype.
+
+| Stat | Meaning | Sources and build choices |
+|---|---|---|
+| **Armor** | A unit's armor rating contributes to its physical resistance. Worn armor and its material/enchantment determine the protection it supplies. | Base unit armor, armor equipment, upgrades, relics, and enchantments. Heavy plate favors physical protection; enchanted armor or robes can also supply magical protection. |
+| **Physical Resistance** | Reduces incoming damage explicitly classified as physical. Display the resulting percentage, including the contribution from armor. | Armor plus authored physical-resistance bonuses. Armor-breaking and penetration effects act on this defense. |
+| **Magical Resistance** | A separate visible stat reducing incoming damage explicitly classified as magical. Armor pieces can grant this resistance according to their type or enchantment. | Base unit traits, enchanted armor, protective robes, relics, enchantments, and temporary magical defenses. Physical and magical protection can have different strengths on the same unit. |
+| **Critical Damage** | The extra damage of a successful critical hit, separate from the chance of scoring one. | Unit base stats, upgrades, weapons/relics, and enchantments. For example, +50% critical damage turns a 100-damage hit into 150 before the target's defenses apply. |
+| Critical Chance | Determines how often eligible attacks critically hit; it does not determine the size of their bonus. | A supporting stat needed to resolve critical damage properly, including the existing Crit Strike enchantment design. |
+
+The armory, unit inspection, codex, and equipment comparison should show Armor, Physical Resistance, Magical Resistance, Critical Chance, and Critical Damage with consistent labels and units. Show the final values after equipment and upgrades, so a player can see how a piece of armor changes both defenses. A dedicated armor slot and appearance swapping still need a separate equipment-layout decision; this requirement does not silently add more relic slots.
+
+Damage resolution should distinguish physical and magical components, apply an eligible critical multiplier, then apply the relevant defense and other explicitly authored modifiers. Projectile delivery is not automatically physical: an arrow can be physical, while a mage bolt is magical. Mixed attacks resolve each component separately. Shields remain separate temporary health pools. Critical hits do not automatically bypass armor or magical resistance.
+
+The latest references provide armor conversion, shallow growth, caps, critical profiles, and smaller equipment budgets. Physical resistance derives from `100 × armor / (100 + armor)` plus explicit resistance-point bonuses, capped at 75%; magical resistance is separately capped at 75%. The 60% critical-chance and 200% critical-damage safety caps remain ceilings, with actual core profiles far below them. When migrating the existing generic damage-reduction values, deliberately author the two defenses and avoid counting the old reduction a second time. Validate permanent and conditional bonus stacking and encounter performance before implementation.
+
+Make Maceman/Molten Brand physical-armor counters and keep ward removal distinct from permanent magical resistance. Update eligible unit attacks and abilities to use their owner's critical stats, and wire the catalog's existing critical enchantment fields through actual combat. Player-command spells need their own explicit critical policy; they must not inherit an arbitrary squad member's stats.
 
 ## Shared mechanics that make the expanded roster possible
 
 | Foundation | Proposed rule | Enables |
 |---|---|---|
-| Armor and wards | Physical armor and magical wards are explicit defenses with distinct visual cues. Ordinary defenses reduce rather than erase damage; rare immunity states have short, clear vulnerable windows. | Maceman, Wardbreaker, Rustguard, Furnace Knight, Reliquary Eye. |
+| Armor, resistances, and wards | Armor contributes to physical resistance; magical resistance is separate and can also come from enchanted armor. Temporary wards/shields remain distinct effects. Ordinary defenses reduce rather than erase damage; rare immunity states have clear vulnerable windows. | Maceman, Wardbreaker, Rustguard, Furnace Knight, Reliquary Eye, and defensive equipment builds. |
+| Critical hits | Separate Critical Chance and Critical Damage stats; eligible attacks use their owner's values, with the target's relevant resistance still applied. | Precision troops, aggressive melee builds, weapons/relics, and the existing critical enchantment designs. |
 | Status effects | Burn, chill/root, blight/wound, and conceal/reveal use a consistent duration/stack model. Blight applies attrition and healing penalties; it does not secretly alter several unrelated stats. | Flame Adept, Frost Witch, Plague Doctor, Shade, control and cleansing relics. |
 | Control resistance | After hard control, a target gets a resistance window. Bosses shorten control and take capped alternatives to execution; no permanent freeze or interrupt loops. | Pikeman, Frost Witch, Briar Witch, Crown Executioner. |
 | Shields and interception | A shield is a visible temporary health pool; damage reduction remains a separate effect. Interception redirects eligible projectiles, while Iron Sentinel's damage sharing has its own cap. | Shield Knight, Runesmith, Iron Sentinel, defensive relics. |
@@ -49,7 +104,31 @@ Prototype courage values below are starting design estimates, not final balance.
 
 Resource-granting equipment uses actual paid courage and qualifying natural enemy kills. A shared objective reward pays once per objective across the whole squad. Damage caused by a proc cannot recursively generate itself, another identical proc, reflection loops, or repeated lifesteal. Enemy summons have a bounded reward budget rather than unlimited farmable income.
 
-## The 50-unit warband
+## Courage drops — implemented
+
+Add an occasional random courage reward from defeated enemies that noticeably helps the next deployment. The current game has baseline courage regeneration of **3 per second**, **2 mana per enemy defeat**, small deterministic courage rewards for selected priority threats, and courage rewards for clean defense and some objectives/modes. It now rolls a general random courage pack drop for eligible authored enemy kills. These are separate resource sources; the proposal preserves their identities.
+
+Dead Ahead's wiki describes a chance for killed enemies to drop **25-courage packs**. Crownroad's revised prototype uses **20 courage** alongside its faster baseline regeneration. A pack covers the courage cost of one Swordsman or two War Hounds and represents about **6.7 seconds** of baseline regeneration. This better delivers an occasional reinforcement opportunity than the earlier 10-courage proposal. Source: [Dead Ahead Courage](https://deadahead.wiki.gg/wiki/Courage). Current Crownroad evidence: [combat tuning](/Users/jason/side/game/data/combat_config.json), [unit costs](/Users/jason/side/game/data/units.json), and [kill/threat rewards](/Users/jason/side/game/scripts/combat/BattleController.cs).
+
+| Rule | Current implementation |
+|---|---|
+| Normal drop chance | **10% per eligible enemy defeat**. |
+| Pack value | **+20 courage**, limited by the current maximum. |
+| Collection | A small amber caravan token remains at the death location. **Click or tap it to collect**; only then does it fly to the courage meter and grant its reward. |
+| Lifetime | **8 seconds of active battle time** with the initial live tuning. An uncollected pack fades during its final 2 seconds, then disappears without granting courage. Pausing also pauses its lifetime. |
+| Bad-luck protection | After **15 eligible misses**, the next eligible defeat guarantees a pack. Spawning a pack resets the counter, even if the player later misses it. |
+| Eligible enemies | Authored hostile enemies and bosses, once per qualifying original instance. Every zone can produce these drops. |
+| Exclusions | Summoned reinforcements, split bodies, illusions, already-rewarded revived copies, self-destroying carriers, scripted despawns, player-created targets, and non-hostile Ash Pilgrim encounters. |
+| Full meter | Drops can still appear. Clicking at full courage leaves the pack in place with its timer running, allowing the player to spend courage first. A collected pack grants up to the current cap, with any overflow lost. Packs cannot be carried into another battle. |
+| Fair challenges | Use a dedicated seeded reward sequence so comparable challenge attempts receive reproducible rolls; cosmetic randomness must not change rewards. |
+
+These are baseline battle drops: Quartermaster, Supply Crate, and equipment rewards remain separate tools with their own stated limits. Test their combined income against the existing deployment costs and encounter pace. Start with the modest fixed pack across the campaign; only add zone/elite-specific pack sizes if playtesting demonstrates a need. The ordinary enemy drop system is implemented; the selected melee core, relics, tactical cards and spells are now implemented. See [implementation and checks](/Users/jason/side/game/docs/COURAGE_DROPS.md).
+
+Physical courage packs produced by Quartermaster or Supply Crate follow the same manual collection and expiry rules. Direct accounting effects such as Supply Ledger's courage refund remain direct meter changes. Give packs a generous click/touch area and keep them visible above ground clutter. A simple click on a pack collects it before ground-targeted magic; collecting does not spend mana or disarm the selected spell. An explicit spell drag or camera-pan gesture does not collect packs it crosses. Each pack can be claimed only once.
+
+## Earlier 50-unit warband reference
+
+The following player identities and recruitment tables describe the earlier broad draft. Core membership and proposed discovery stages are now superseded by the 32-card [melee roster](/Users/jason/side/game/docs/MELEE_ROSTER_DESIGN.md). Retain these entries as reference and reserve concepts.
 
 The complete warband has **13 Frontline, 12 Recon, 13 Support, and 12 Breach cards**. Role tags remain compatible with the current four squad synergies.
 
@@ -196,9 +275,9 @@ The Ash Pilgrim is a separate optional encounter. The first implementation can k
 | Revenant Captain | Add a periodic visible escort rally instead of only a different Herald stat profile. |
 | Plague Engine | Retain heavy artillery; optionally add a short marked blight patch after the status system exists. |
 
-### The 41 new encounters
+### The 41 new encounter designs
 
-Each district gets four new hostile types. Introduce them separately before mixing their rules. The optional Ash Pilgrim can appear on authored routes without replacing a required enemy pack.
+Each district has four themed hostile designs in the larger catalog, but **only one is a provisional debut for that zone's main campaign**. The remaining three are a reserve for later content. These regional groupings describe origin and theme, not exclusive spawn boundaries: an introduced enemy can return in later zones. The optional Ash Pilgrim can appear on authored routes without replacing a required enemy pack.
 
 #### King's Road
 
@@ -488,7 +567,7 @@ The first eight families each contain six additions, for 48 new family relics. N
 
 ## The 12 tactical item cards
 
-All twelve compete with the thirty spells for the five shared utility slots, creating **42 utility choices** in the collection. Objects cost mana on placement and have their own cooldown. Placement previews show range and footprint. Invalid placement spends nothing. Refills, repairs, or pickup effects are automatic when the required condition is met; they do not add a separate tiny collect button on mobile.
+All twelve compete with the thirty spells for the five shared utility slots, creating **42 utility choices** in the collection. Objects cost mana on placement and have their own cooldown. Placement previews show range and footprint. Invalid placement spends nothing. Repairs and timed object effects run when their conditions are met. Physical courage packs require a click or tap and expire; collecting uses the pack's generous touch area rather than a separate tiny button.
 
 | Tactical item / availability | Behavior | Tradeoff | Visual brief |
 |---|---|---|---|
@@ -539,20 +618,28 @@ The [complete spell roster design](/Users/jason/side/game/docs/SPELL_ROSTER_DESI
 
 ## Ten district identities and collection pacing
 
-| District | Recruits introduced | Four new hostile threats | What the player learns |
-|---|---|---|---|
-| King's Road | Militia, Maceman, Field Medic | Grave Rat, Rustguard, Bellringer, Highwayman | Bodies, armor, interruption, single-patient healing. |
-| Saltwake Docks | Longbowman, Javelin Skirmisher, Quartermaster | Drowned Harpooner, Salt Wraith, Barnacle Guard, Hookblade Raider | Displacement, second-line protection, weapon recovery, reserve courage. |
-| Emberforge March | Iron Sentinel, Firepot Thrower, Runesmith, Flame Adept | Ash Hound, Cinder Spitter, Furnace Knight, Powder Bandit | Charge warnings, fire fields, shields, setup and destruction. |
-| Ashen Ward | Plague Doctor, Flagellant, Paladin | Plague Leech, Miasma Priest, Rot Surgeon, Sealbreaker | Cleansing, healing denial, support targeting, temporary wards. |
-| Thornwall Pass | Pikeman, Trapper, Earthshaper | Cliff Stalker, Thorn Brute, Briar Witch, Avalanche Bearer | Charge interception, backline reserve, traps, conditional retaliation. |
-| Hollow Basilica | Gravebound Knight, Spirit Keeper, Wardbreaker | Chain Penitent, Ossuary Archer, Bone Cantor, Reliquary Eye | Corpse competition, piercing, revival limits, vulnerability windows. |
-| Mire of Saints | Druid, Frost Witch, Sapper Crew | Swamp Maw, Bog Spore, Drowned Colossus, Bloated Eel | Terrain, status buildup, limited collateral damage, planted siege charges. |
-| Sunfall Steppe | Outrider, Mounted Archer, Executioner | Bone Lancer, Dust Reaver, Carrion Banner, War Drummer | Interception, mobile fire, reload opportunities, attack tempo. |
-| Gloamwood Verge | Falconer, Duelist, Illusionist | Shade, Mirror Wisp, Wicker Giant, Dream Weaver | Reveal, lure, parry, concealment, counter selection. |
-| Crownfall Citadel | Chanter, Trebuchet Crew, Dragon Tamer | Gate Breaker, Crown Executioner, Null Magister, Soul Standard | Combining learned counters while protecting expensive specialist troops. |
+The following remains the proposed **enemy** introduction schedule. Its older player recruit column is reference material; the revised player schedule appears in [the melee roster](/Users/jason/side/game/docs/MELEE_ROSTER_DESIGN.md). Returning enemies are examples, not a requirement to include every eligible type in each wave. Player recruitment and spell discoveries are separate collection schedules.
 
-Within each ten-stage district, a useful starting sequence is: establish the district with familiar enemies; introduce a new type around local stages 2, 4, 6, and 8; rehearse a pair before a commander battle. Existing mid-district boss stages remain. This schedule needs individual encounter editing; it is not an instruction to insert all new enemies into every wave.
+| District | Recruit discoveries | One regular enemy debut | Familiar enemies that can return | New lesson |
+|---|---|---|---|---|
+| King's Road | Militia, Maceman, Field Medic | **Rustguard** | Opening palette: Risen, Ghoul, Grave Brute, Blight Caster | Physical armor and varied damage answers. |
+| Saltwake Docks | Longbowman, Javelin Skirmisher, Quartermaster | **Drowned Harpooner** | Opening palette and Rustguard | Protecting formations from a telegraphed pull. |
+| Emberforge March | Iron Sentinel, Firepot Thrower, Runesmith, Flame Adept | **Cinder Spitter** | Ghouls, Rustguards, Blight Casters; other previously introduced types where appropriate | Short-lived fire fields and positioning. |
+| Ashen Ward | Plague Doctor, Flagellant, Paladin | **Miasma Priest** | Rustguards and Cinder Spitters supporting familiar melee bodies | Blight, healing penalties, and cleansing. |
+| Thornwall Pass | Pikeman, Trapper, Earthshaper | **Cliff Stalker** | Ghouls, Rustguards, and established ranged support | A warning before a leap into the backline. |
+| Hollow Basilica | Gravebound Knight, Spirit Keeper, Wardbreaker | **Bone Cantor** | Rustguards, Miasma Priests, and ordinary ranged/melee escorts | Interrupting a corpse-consuming ritual. |
+| Mire of Saints | Druid, Frost Witch, Sapper Crew | **Swamp Maw** | Drowned Harpooners, Miasma Priests, and previously learned summoner pressure | Reading and provoking a visible ground ambush. |
+| Sunfall Steppe | Outrider, Mounted Archer, Executioner | **Bone Lancer** | Ghouls, Cinder Spitters, Rustguards, and occasional Cliff Stalkers | Blocking or interrupting a committed charge. |
+| Gloamwood Verge | Falconer, Duelist, Illusionist | **Shade** | Cliff Stalkers, Bone Cantors, and familiar troops | Revealing concealment while keeping a rear guard. |
+| Crownfall Citadel | Chanter, Trebuchet Crew, Dragon Tamer | **Null Magister** | Selected combinations of all previously introduced types | A local anti-magic field amid already learned threats. |
+
+The opening tutorial establishes a small starting palette; the four basic types above are a provisional palette to teach before the first regional debut. Do **not** assume all nineteen retained enemy types are familiar to a new player. Apply the same first-appearance budget to retained specials: assign them a later content debut or replace a provisional zone pick, rather than quietly adding another unknown type in the same zone.
+
+Within each ten-stage district, start local stages 1–3 with familiar enemies, introduce the zone's single debut around local stage 4 in a small readable pack, then practice it with known escorts. Later stages vary composition, timing, positioning, and the balance of familiar roles. Existing mid-district and final boss milestones remain. Boss escorts and summoned bodies must also come from already taught types; a boss cannot introduce extra unseen regular types as hidden reinforcements. Boss identities remain separate commander milestones.
+
+Returning enemies are eligible for later zones, rather than being locked to their origin. Use regional enemies where the theme makes sense, such as Drowned Harpooners in the Mire or Cinder Spitters on the burned Steppe. Do not place a later debut into an earlier zone, including replays. Reappearance raises tactical complexity through known combinations, without silently adding a new special rule to the familiar silhouette. Most bodies in an introductory encounter should be familiar; its new type gets enough repeated practice to become familiar too.
+
+This is a pacing proposal. The live campaign's existing enemy waves have not been rewritten to this schedule. Implementing it requires an audit of first appearances, authored waves, boss escorts, summons, and available counters in the campaign source/generator.
 
 Early discovery previews can appear before purchase eligibility, showing the silhouette, primary job, and one counter example. Unlocks should come from campaign progress and optional contracts; rare relics should also have a visible crafting path. Core counter tools must be available before their required threats. Existing Fireball, disposable troops, and ranged focus cover initial charges before specialized Pikeman interception arrives.
 
@@ -560,7 +647,7 @@ Equipment families have broad acquisition identities: Vanguard/Restoration throu
 
 ## Example full squads
 
-These are mature collection examples, not recommended opening-game purchases. Each has six unit cards and five utility cards.
+These are mature examples from the earlier concept pool, not recommended opening-game purchases. Each has six unit cards and five utility cards. The melee core can begin with four melee selections, one ranged recruit, and one support recruit; reserve units below are not required core purchases.
 
 | Build | Six-unit squad | Five utilities | Main compromise |
 |---|---|---|---|
@@ -574,11 +661,11 @@ Useful paired relic examples include Cinder Ring + Ashen Rosary for burn offense
 
 ## Expansion delivery order
 
-The final target stays large. The packs below make implementation and art review manageable; they do not reduce the designed roster.
+The final collection target stays large. **Unit implementation priority is now the melee-first sequence in the revised roster**, beginning with Peasant, Militia, Spearman, Swordsman, and Archer, then Axeman, Maceman, Field Medic, and Caravan Engineer. The earlier pack unit lists below are retained as reference pools, including recruits now in reserve. Their enemy totals are **not** instructions to introduce that many types in the main campaign. Build and validate the ten campaign debut picks first. The thirty other proposed combat types remain reserve content, and retained specials also need an explicit introduction assignment.
 
 | Pack | New units | New hostile enemies | New relics | New tactical gear | New spells | Focus |
 |---|---:|---:|---:|---:|---:|---|
-| 1 — Caravan foundations | 8 | 10 | 16 | 4 | 5 | Repair existing promises; armor, healing, shields, channels, charges, and readable utility objects. |
+| 1 — Caravan foundations | 8 | 10 | 16 | 4 | 5 | Repair existing promises; armor, physical/magical resistance, critical stats, healing, shields, channels, charges, and readable utility objects. |
 | 2 — Fire and blight | 8 | 10 | 17 | 3 | 5 | Burn, chill, cleanse, field hazards, and proper equipment triggers. |
 | 3 — Graves and pursuit | 8 | 10 | 17 | 3 | 5 | Corpse tokens, bounded revival, leaps, mobile weapons, and decoys. |
 | 4 — Royal siege | 7 | 10 | 17 | 2 | 5 | Expensive siege, companions, advanced counters, and commander refinements. |
@@ -643,6 +730,7 @@ Implementation packs do not dictate campaign order: a later-pack counter cannot 
 - Paired troops, cavalry, the falcon, drake, siege crews, and placed objects need explicit footprint, hitbox, owner, and animation decisions. Apparent flight is not automatic immunity or a new aerial lane.
 - Equipment needs 67 new item pictures plus reviewed existing descriptions. Tactical items need 12 card pictures and their visible battlefield objects/effects. The twenty new spells need their own card pictures, targeting feedback, and combat effects. Reuse rigs and materials where sensible, but do not finish a roster entry as a recolored shared silhouette.
 - Adding JSON definitions alone is insufficient: roster registration, promotions, level-4 abilities, squad tags, targeting, projectiles, codex, locale strings, audio, reward sources, enemy waves, endless/challenge selection, save handling, and asset checks must agree.
+- Carry Armor, Physical Resistance, Magical Resistance, Critical Chance, and Critical Damage through definitions, resolved unit stats, equipment/enchantments, damage resolution, and all stat previews. Verify damage types, armor contribution, penetration, critical multipliers, shields, and resistance stacking with representative physical and magical attacks.
 - Existing IDs and ownership stay stable. Adding a new item category and changing utilities to shared slots needs an explicit save migration; current equipped spells should retain their loadout positions.
 - Verify trigger eligibility, hard-control resistance, corpse consumption, summon limits, revive origin state, resource refunds, and reflection recursion before content-wide playtests. Then check mobile cards/armory browsing and actual-sized battle art.
 - Test encounter composition, not only isolated stats. A shielded healer, rooting caster behind artillery, or corpse-denial enemy against a summoner squad is a different balance problem from either unit alone.

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 460,
+  "frameHeight": 407,
+  "drawScale": 3.0065359477124183,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1594
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_furnace_knight",
+  "title": "Furnace Knight",
+  "source": "art/remaster/puppet/build.py (enemy_furnace_knight)",
+  "anchorY": 0.906595,
+  "anchorX": 0.491878,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "heavy-smash",
+    "body": [
+      0.013647,
+      -0.355361
+    ],
+    "contact": [
+      0.388682,
+      -0.051237
+    ]
+  },
+  "healthBarY": 0.525936
+}

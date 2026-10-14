@@ -1,0 +1,45 @@
+{
+  "frameWidth": 299,
+  "frameHeight": 272,
+  "drawScale": 2.3730158730158726,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13532
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_maceman",
+  "title": "Maceman",
+  "source": "art/remaster/puppet/build.py (player_maceman)",
+  "anchorY": 0.936863,
+  "anchorX": 0.666444,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.00751,
+      -0.452082
+    ],
+    "contact": [
+      0.268595,
+      -0.291151
+    ]
+  },
+  "healthBarY": 0.669956
+}

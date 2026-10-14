@@ -9,6 +9,7 @@ public partial class BattleController
     private Label _goldAmount, _restartMessage, _endRetryMessage;
     private Button _hudSettingsButton, _restartButton, _resumeButton;
     private RealmModal _battleSettingsModal;
+    private CanvasLayer _battleSettingsLayer;
     private Control _battleHudRoot;
     private Action _hudLayout;
     private bool _restartPending;
@@ -79,14 +80,10 @@ public partial class BattleController
     }
 
     private PanelContainer _cardDock;
-    // First-time hints (TutorialHintCatalog) appear in a banner above the card dock.
-    private BattleHintBanner _hintBanner;
 
     private void ConfigureCompactHudLayout(PanelContainer cards, HBoxContainer row)
     {
         _cardDock = cards;
-        _hintBanner = new BattleHintBanner();
-        _battleHudRoot.AddChild(_hintBanner);
         var spec = RoyalSpec.For("battle");
         var dock = RoyalKit.Slice("hud-dock", 30, 22, 30, 22);
         dock.ContentMarginLeft = dock.ContentMarginRight = 9; dock.ContentMarginTop = 9; dock.ContentMarginBottom = 11;
@@ -135,7 +132,6 @@ public partial class BattleController
             var height = rowSize.Y + 20;
             cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
-            _hintBanner.Place(size, cards.Position.Y);
             _battleSettingsModal?.FitToArea(size);
         };
         GetViewport().SizeChanged += _hudLayout;
@@ -145,7 +141,7 @@ public partial class BattleController
 
     private void BuildBattleMenu(Control root)
     {
-        _pauseOverlay = new CenterContainer { Visible = false };
+        _pauseOverlay = new CenterContainer { Visible = false, ZIndex = 100 };
         root.AddChild(_pauseOverlay); _pauseOverlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var veil = new ColorRect { Color = new Color("081018ac"), MouseFilter = Control.MouseFilterEnum.Stop };
         _pauseOverlay.AddChild(veil); veil.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -163,20 +159,36 @@ public partial class BattleController
         _restartButton.CustomMinimumSize = new Vector2(0, 52); ModalUi.StyleButton(_restartButton);
         StyleRestartButton(_restartButton); stack.AddChild(_restartButton);
         ActionButton("gear", "Game settings", OpenBattleSettings);
+        ActionButton("book", "Battle guide",()=>
+        {
+            var layer=new CanvasLayer {Layer=66,Name="CombatGuide"};AddChild(layer);
+            var modal=RealmModal.OpenInspector(layer,"Combat guide","codex",850,540);
+            var body=RealmUi.Scroll(modal.Content);((ScrollContainer)body.GetParent()).SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            body.AddChild(RealmUi.Label(CombatGuideCatalog.StatusLegend,22));
+            body.AddChild(RealmUi.SectionTitle("Encounter tip"));body.AddChild(RealmUi.Label(CombatGuideCatalog.StageTip(_stage),22));RealmModal.Polish(body);
+        });
         ActionButton("back", "Quit battle", RetreatToMap);
         _restartMessage = RealmUi.Label("", 18, true); _restartMessage.Visible = false; stack.AddChild(_restartMessage);
     }
 
     private void StyleRestartButton(Button button)
     {
-        var cost = GameState.Instance.GetStageEntryFoodCost(_stage);
+        var cost = IsBossRushMode?0:GameState.Instance.GetStageEntryFoodCost(_stage);
         button.Text = $"Restart  ·  {cost}";
         button.SetMeta("painted_resource_icon", true); button.Icon = HomeMapArt.Icon("food");
         button.IconAlignment = HorizontalAlignment.Right; button.AddThemeConstantOverride("icon_max_width", 28);
         button.TooltipText = $"Restart this battle · {cost} rations";
         button.AccessibilityName = $"Restart battle, {cost} rations";
-        button.Disabled = IsLanRaceMode || IsOnlineRoomMode;
-        if (button.Disabled) { button.Text = "Restart unavailable"; button.TooltipText = "Shared matches cannot be restarted individually."; }
+        button.Disabled = _restartPending || IsLanRaceMode || IsOnlineRoomMode || GameState.Instance.Food < cost;
+        if (IsLanRaceMode || IsOnlineRoomMode) { button.Text = "Restart unavailable"; button.TooltipText = "Shared matches cannot be restarted individually."; }
+    }
+
+    private void RefreshRestartAvailability()
+    {
+        if (_restartButton != null)
+            _restartButton.Disabled = _restartPending || IsLanRaceMode || IsOnlineRoomMode || (!IsBossRushMode && GameState.Instance.Food < GameState.Instance.GetStageEntryFoodCost(_stage));
+        if (IsInstanceValid(_royalResult) && !IsLanRaceMode && !IsOnlineRoomMode)
+            _royalResult.RetryButton.Disabled = _restartPending || (!IsBossRushMode && GameState.Instance.Food < GameState.Instance.GetStageEntryFoodCost(_stage));
     }
 
     private void TryRestartBattle()
@@ -184,15 +196,11 @@ public partial class BattleController
         if (_restartPending || SceneRouter.Instance.IsTransitioning || IsLanRaceMode || IsOnlineRoomMode || _endlessCheckpointActive) return;
         var state = GameState.Instance;
         string message;
-        var paid = IsCampaignMode ? state.TrySpendStageEntryFood(_stage, out message) : state.TrySpendBattleRestartFood(_stage, out message);
+        var paid = IsBossRushMode?state.PrepareBossRush(out message):IsCampaignMode ? state.TrySpendStageEntryFood(_stage, out message) : state.TrySpendBattleRestartFood(_stage, out message);
         if (!paid)
         {
-            var reason = state.Food < state.GetStageEntryFoodCost(_stage)
-                ? $"Need {state.GetStageEntryFoodCost(_stage)} rations · Have {state.Food}" : message;
-            // After the battle the reason shows on the result board; the old card is only used by shared rooms.
-            if (_battleEnded && IsInstanceValid(_royalResult)) { RoyalToast.Show(_royalResult, reason, 690); return; }
-            var label = _battleEnded ? _endRetryMessage : _restartMessage;
-            label.Text = reason; label.Visible = true; return;
+            RefreshRestartAvailability();
+            return;
         }
         _restartPending = true; _restartButton.Disabled = true; _endPrimaryButton.Disabled = true; if (IsInstanceValid(_royalResult)) _royalResult.RetryButton.Disabled = true;
         CancelCardDrag(); _battlePaused = true; GetTree().Paused = false; ResetBattleSpeed();
@@ -204,20 +212,20 @@ public partial class BattleController
     {
         if (_battleSettingsModal != null || !_battlePaused) return;
         _pauseOverlay.Hide();
+        _battleSettingsLayer = new CanvasLayer { Layer = 100, Name = "BattleSettingsLayer", ProcessMode = ProcessModeEnum.Always };
+        AddChild(_battleSettingsLayer);
         _battleSettingsModal = new RealmModal { ProcessMode = ProcessModeEnum.Always };
-        _battleHudRoot.AddChild(_battleSettingsModal);
+        _battleSettingsLayer.AddChild(_battleSettingsModal);
         _battleSettingsModal.Closed = CloseBattleSettings; _battleSettingsModal.Back = CloseBattleSettings;
         var settings = GD.Load<PackedScene>(SceneRouter.SettingsScene).Instantiate<SettingsMenu>();
-        settings.SetMeta("home_modal", true); settings.SetMeta("battle_modal", true); _battleSettingsModal.Content.AddChild(settings);
-        settings.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        _battleSettingsModal.Present(SceneRouter.SettingsScene, "Game settings", "Battle paused", true, 840);
-        _battleSettingsModal.FitToArea(_battleHudRoot.Size);
+        settings.SetMeta("home_modal", true); settings.SetMeta("battle_modal", true);
+        _battleSettingsModal.PresentRoyal(SceneRouter.SettingsScene, settings);
     }
 
     public void CloseBattleSettings()
     {
         if (_battleSettingsModal == null) return;
-        _battleSettingsModal.QueueFree(); _battleSettingsModal = null;
+        _battleSettingsLayer.QueueFree(); _battleSettingsLayer = null; _battleSettingsModal = null;
         _pauseOverlay.Show(); ApplyDevUiSettings();
         _resumeButton.GrabFocus();
     }

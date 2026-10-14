@@ -61,6 +61,8 @@ public partial class BattleController
             var warm = Mathf.Max(0, 1 - unit.Position.DistanceTo(PlayerBaseCorePosition) / 60f) * strength;
             var cool = Mathf.Max(0, 1 - unit.Position.DistanceTo(EnemyBaseCorePosition) / 60f) * strength;
             unit.LocalLightTint = new Color(1 + warm * .15f - cool * .025f, 1 + warm * .06f + cool * .09f, 1 - warm * .025f + cool * .12f);
+            var band = Mathf.Max(1f, (BattlefieldBottom - SpawnVerticalPadding) - (BattlefieldTop + SpawnVerticalPadding));
+            unit.DepthInField = Mathf.Clamp(((BattlefieldBottom - SpawnVerticalPadding) - unit.Position.Y) / band, 0, 1);
         }
     }
 

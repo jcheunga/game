@@ -1,0 +1,45 @@
+{
+  "frameWidth": 370,
+  "frameHeight": 306,
+  "drawScale": 2.9365079365079363,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17796
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_warhammer_knight",
+  "title": "Warhammer Knight",
+  "source": "art/remaster/puppet/build.py (player_warhammer_knight)",
+  "anchorY": 0.931205,
+  "anchorX": 0.556182,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      0.014276,
+      -0.395911
+    ],
+    "contact": [
+      0.415948,
+      -0.354226
+    ]
+  },
+  "healthBarY": 0.627207
+}

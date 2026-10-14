@@ -54,10 +54,21 @@ public partial class WeaponContactEffect : Node2D
             return;
         }
         if (_reduced) { DrawCircle(Vector2.Zero,2.5f,new Color(_color,fade*.85f)); return; }
+        // The unit frames carry the weapon's own motion-blur smear now (art/remaster/puppet/build.py); the
+        // overlay is a faint echo of it, the flash of the contact and a ring of air knocked out by the blow.
         DrawSetTransform(Vector2.Zero,_tilt*_direction,new Vector2(_direction,1));
-        if (_thrust) DrawThrust(t,fade);
-        else DrawSwing(t,fade);
+        var echo=fade*fade*.45f;
+        if (_thrust) DrawThrust(t,echo);
+        else DrawSwing(t,echo);
         DrawSetTransform(Vector2.Zero,0,Vector2.One);
+        var ring=Mathf.Clamp(t*1.6f,0,1);
+        if (ring<1)
+        {
+            var r=(_heavy?16f:11f)*(.35f+.65f*ring);
+            DrawSetTransform(Vector2.Zero,0,new Vector2(1,.62f));
+            DrawArc(Vector2.Zero,r,0,Mathf.Tau,24,new Color(1,.95f,.85f,.5f*(1-ring)),(_heavy?2.4f:1.6f)*(1-ring)+.4f,true);
+            DrawSetTransform(Vector2.Zero,0,Vector2.One);
+        }
         // The hot point of contact flares and shrinks quickly.
         var flash=Mathf.Clamp(1-t*2.2f,0,1);
         if (flash>0)

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 385,
+  "frameHeight": 266,
+  "drawScale": 3.055555555555556,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.15172
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_pikeman",
+  "title": "Pikeman",
+  "source": "art/remaster/puppet/build.py (player_pikeman)",
+  "anchorY": 0.928459,
+  "anchorX": 0.495579,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.005124,
+      -0.447532
+    ],
+    "contact": [
+      0.480069,
+      -0.253479
+    ]
+  },
+  "healthBarY": 0.657534
+}

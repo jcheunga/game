@@ -1,0 +1,45 @@
+{
+  "frameWidth": 281,
+  "frameHeight": 262,
+  "drawScale": 2.23015873015873,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18582
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_miasma_priest",
+  "title": "Miasma Priest",
+  "source": "art/remaster/puppet/build.py (enemy_miasma_priest)",
+  "anchorY": 0.909194,
+  "anchorX": 0.669137,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      -0.016397,
+      -0.455411
+    ],
+    "contact": [
+      0.215108,
+      -0.690275
+    ]
+  },
+  "healthBarY": 0.733128
+}

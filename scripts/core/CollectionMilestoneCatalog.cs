@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public sealed class CollectionMilestone
 {
@@ -87,15 +88,17 @@ public static class CollectionMilestoneCatalog
 	{
 		if (gs == null) return 0;
 
-		return category switch
+		var core=GameData.GetPlayerUnits().Where(u=>!u.LegacyRecruit).ToArray();
+		var codex=CodexCatalog.GetAll().Where(e=>!GameData.GetPlayerUnits().Any(u=>u.LegacyRecruit && u.Id==e.Id)).ToArray();
+		return Math.Clamp(category switch
 		{
-			"codex" => CodexCatalog.TotalEntries > 0 ? gs.DiscoveredCodexCount * 100 / CodexCatalog.TotalEntries : 0,
+			"codex" => codex.Count(e=>gs.IsCodexEntryDiscovered(e.Id))*100/Math.Max(1,codex.Length),
 			"relics" => gs.OwnedRelicCount * 100 / Math.Max(1, GameData.GetAllEquipment().Count),
-			"units" => gs.OwnedUnitCount * 100 / Math.Max(1, 16),
-			"spells" => gs.OwnedSpellCount * 100 / Math.Max(1, 10),
+			"units" => core.Count(u=>gs.IsUnitOwned(u.Id))*100/Math.Max(1,core.Length),
+			"spells" => gs.OwnedSpellCount * 100 / Math.Max(1, GameData.GetPlayerSpells().Count),
 			"achievements" => gs.AchievementUnlockedCount * 100 / Math.Max(1, AchievementCatalog.GetAll().Count),
 			"tower" => gs.TowerHighestFloor * 100 / ChallengeTowerCatalog.MaxFloor,
 			_ => 0
-		};
+		},0,100);
 	}
 }

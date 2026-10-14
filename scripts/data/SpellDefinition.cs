@@ -15,6 +15,12 @@ public sealed class SpellDefinition
     public float Radius { get; set; } = 80f;
     public float Duration { get; set; }
     public string Description { get; set; } = "";
+    public string CardKind { get; set; } = "spell";
+    public string Family { get; set; } = "";
+    public float ObjectHealth { get; set; }
+    public float ObjectArmor { get; set; }
+    public float ObjectMagicalResistance { get; set; }
+    public int Charges { get; set; }
     public string ColorHex { get; set; } = "ffffff";
 
     public Color GetTint()

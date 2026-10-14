@@ -1,0 +1,45 @@
+{
+  "frameWidth": 291,
+  "frameHeight": 247,
+  "drawScale": 2.3095238095238098,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16954
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_quartermaster",
+  "title": "Quartermaster",
+  "source": "art/remaster/puppet/build.py (player_quartermaster)",
+  "anchorY": 0.906364,
+  "anchorX": 0.681476,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.022423,
+      -0.501936
+    ],
+    "contact": [
+      0.176645,
+      -0.736114
+    ]
+  },
+  "healthBarY": 0.737414
+}

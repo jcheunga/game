@@ -165,6 +165,7 @@ public static class MedievalUi
 
     public static void StyleButton(Button button,float horizontal,float vertical)
     {
+        if (button.HasMeta("map_navigation")) { ModalUi.StyleButton(button); return; }
         var primary=button.HasMeta("realm_primary");
         foreach(var state in new[]{"normal","hover","pressed","hover_pressed","disabled"})
         {

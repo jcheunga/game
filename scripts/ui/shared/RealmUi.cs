@@ -50,7 +50,7 @@ public static class RealmUi
     public static Label Label(string text, int size = 20, bool muted = false)
     {
         var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        label.AddThemeFontSizeOverride("font_size", size < 15 ? 18 : size < 20 ? 20 : size);
+        label.AddThemeFontSizeOverride("font_size", ReadingText.Size(size < 15 ? 18 : size < 20 ? 20 : size));
         if (muted) label.AddThemeColorOverride("font_color", Muted);
         return label;
     }

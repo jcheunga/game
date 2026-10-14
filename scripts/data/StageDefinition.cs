@@ -11,8 +11,8 @@ public sealed class StageDefinition
     public string Description { get; set; } = "";
     public int RewardGold { get; set; } = 40;
     public int RewardFood { get; set; } = 2;
-    public int EntryFoodCost { get; set; } = 1;
-    public int ExploreFoodCost { get; set; } = 2;
+    public int EntryFoodCost { get; set; } = 2;
+    public int ExploreFoodCost { get; set; } = 1;
     public int RewardScrap { get => RewardGold; set => RewardGold = value; }
     public float MapX { get; set; } = 120f;
     public float MapY { get; set; } = 220f;
@@ -22,6 +22,8 @@ public sealed class StageDefinition
     public float EnemySpawnMax { get; set; } = 3f;
     public float EnemyHealthScale { get; set; } = 1f;
     public float EnemyDamageScale { get; set; } = 1f;
+    public int EnemyLevel { get; set; } = 1;
+    public string NewEnemyId { get; set; } = "";
     public float WalkerWeight { get; set; } = 1f;
     public float RunnerWeight { get; set; } = 0f;
     public float BruteWeight { get; set; } = 0f;

@@ -1,44 +1,45 @@
 {
-  "frameWidth": 507,
-  "frameHeight": 503,
-  "drawScale": 2.6904412229267445,
+  "frameWidth": 1137,
+  "frameHeight": 992,
+  "drawScale": 2.9424323589922747,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.12356
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_verge",
   "title": "Gloamwood Witch",
-  "source": "art/remaster/units/enemy_boss_verge.py",
-  "anchorY": 0.818524,
-  "anchorX": 0.419447,
+  "source": "art/remaster/puppet/build.py (enemy_boss_verge)",
+  "anchorY": 0.895808,
+  "anchorX": 0.409968,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.317226
+      0.006636,
+      -0.426633
     ],
     "contact": [
-      0.304755,
-      -0.550877
+      0.24575,
+      -0.652005
     ]
   },
-  "healthBarY": 0.778267
+  "healthBarY": 0.716969
 }

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 358,
+  "frameHeight": 311,
+  "drawScale": 2.841269841269842,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1372
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_greatswordsman",
+  "title": "Greatswordsman",
+  "source": "art/remaster/puppet/build.py (player_greatswordsman)",
+  "anchorY": 0.942871,
+  "anchorX": 0.536134,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.005265,
+      -0.390625
+    ],
+    "contact": [
+      0.401416,
+      -0.181227
+    ]
+  },
+  "healthBarY": 0.642086
+}

@@ -127,17 +127,18 @@ DEATHS = {
         fx='ash'),
     'enemy_mirror': dict(  # Mirror Knight: spins away as the mirror-steel shatters
         motion='spin_fall', params=dict(side=1.0, turn=1.0),
-        drops={'weapon': dict(release=0.15, toss=(-0.15, -0.2, 0.2), spin=[(800, LAT)]),
-               'shield': dict(release=0.3, toss=(0.1, -0.2, 0.1), spin=[(500, ROLL)])},
+        drops={'weapon': dict(release=0.15, toss=(-0.15, -0.2, 0.2), spin=[(800, LAT)], inherit=0.15),
+               'shield': dict(release=0.3, toss=(0.1, -0.2, 0.1), spin=[(500, ROLL)], inherit=0.3)},
         fx='glass'),
     'enemy_revenant_captain': dict(  # Revenant Captain: the sword stays standing over him like a grave marker
         motion='crumple', params=dict(side=-1.0, jolt=0.8, forward=0.8), plant='weapon',
         drops={'shield': dict(release=0.4, toss=(-0.3, 0.3, 0.1), spin=[(200, ROLL)]),
                '@Crown': dict(release=0.62, toss=(-0.6, -0.5, 0.9), spin=[(500, LAT)], roll=0.5)},
         fx='ash'),
-    'enemy_spitter': dict(  # Blight Caster: retches, folds and rots where it falls
+    'enemy_spitter': dict(  # Blight Caster: retches, folds and rots where it falls; the fire in its claw dies
         motion='crumple', params=dict(side=-1.0, jolt=1.2, forward=0.9),
-        drops={'weapon': dict(release=0.25, toss=(0.3, -0.3, 0.1), spin=[(-300, LAT)])}, fx='gas'),
+        drops={'weapon': dict(release=0.25, toss=(0.3, -0.3, 0.1), spin=[(-300, LAT)])},
+        hide={'Hand fire': 0.3}, fx='gas'),
     'enemy_jammer': dict(  # Hexer: the hex rebounds, lifting and twisting it before it drops
         motion='rise_collapse', params=dict(side=-1.0, lift=0.08, spin=-0.6),
         drops={'weapon': dict(release=0.5, inherit=0.15, toss=(-0.3, 0.3, 0.4), spin=[(500, LAT)])}, fx='arcane'),
@@ -157,11 +158,11 @@ DEATHS = {
         fx='bones'),
     'enemy_saboteur': dict(  # Sapper: spins; the lit charge drops and flares
         motion='spin_fall', params=dict(side=-1.0, turn=-1.1),
-        drops={'nocked': dict(release=0.05, toss=(0.4, -0.3, 0.8), spin=[(700, LAT)])},
+        drops={'weapon': dict(release=0.05, toss=(0.45, -0.3, 0.25), spin=[(700, LAT)], inherit=0.2)},
         fx='embers'),
     'enemy_tunneler': dict(  # Tunneler: thrown onto its back, claws curling
         motion='fall_back', params=dict(side=-1.0, stagger=0.5, sprawl=1.3, arms=0.7),
-        drops={'weapon': dict(release=0.1, toss=(0.4, -0.3, 0.6), spin=[(600, LAT)])}, fx='dust'),
+        drops={'weapon': dict(release=0.1, toss=(0.25, -0.2, 0.3), spin=[(600, LAT)], inherit=0.2)}, fx='dust'),
     'enemy_catacomb_giant': dict(  # Catacomb Giant: reels, kneels, and shatters on impact
         motion='stagger_back', params=dict(side=0.4, steps=0.9, weight=1.6),
         scatter={'head': dict(release=0.84, toss=(0.6, -0.5, 1.2), spin=[(600, LAT)], roll=0.6),

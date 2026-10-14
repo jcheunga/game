@@ -120,7 +120,7 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = native, GlobalPosition = native });
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = native, GlobalPosition = native });
         await FinishTravel();
-        Check(state.HasVisitedAdventureSite(supply.Id) && state.Gold == cacheGold + supply.Site.GoldReward && state.Food == food - GameState.AdventureTileFoodCost, "Native cache tap spends 2 food and grants the advertised gold");
+        Check(state.HasVisitedAdventureSite(supply.Id) && state.Gold == cacheGold + supply.Site.GoldReward && state.Food == food - GameState.AdventureTileFoodCost, "Native cache tap spends 1 food and grants the advertised gold");
         Check(state.AdventureKnowledgeRevision > knowledge && !supplyToken.Visible && !menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Gathering opens surrounding tiles and removes the cache marker");
         var gold = state.Gold;
         Check(!state.TryCollectAdventureTile(supply, out _) || state.Gold == gold, "Collected caches cannot pay twice");
@@ -128,7 +128,7 @@ public partial class UiReviewSmoke
         var discovered = tilesCity.First(tile => tile.Discovery != null && state.IsAdventureTileRevealed(tile) && !state.IsAdventureTileComplete(tile));
         var rewardFood = state.Food;
         canvas.TravelToTile(discovered, () => state.TryCollectAdventureTile(discovered, out _)); await FinishTravel();
-        Check(state.HasClaimedAdventureDiscovery(discovered.Id) && state.Food == rewardFood - GameState.AdventureTileFoodCost + (discovered.Discovery.Kind == AdventureDiscoveryKind.Food ? discovered.Discovery.Amount : 0), "Discovery spends 2 food and grants its real reward");
+        Check(state.HasClaimedAdventureDiscovery(discovered.Id) && state.Food == rewardFood - GameState.AdventureTileFoodCost + (discovered.Discovery.Kind == AdventureDiscoveryKind.Food ? discovered.Discovery.Amount : 0), "Discovery spends 1 food and grants its real reward");
         Check(!state.TryCollectAdventureTile(discovered, out _), "Discovery claims reject duplicates");
         Check(state.TryReachAdventureTile(leader, out _), "The completed starting stage remains reachable after resource collection");
         var saved = state.BuildSaveData();
@@ -168,14 +168,14 @@ public partial class UiReviewSmoke
         var noFood = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(withFind))!;
         noFood.Food = 1; noFood.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); Restore(noFood);
         var caravan = state.GetAdventureCaravanTile("city").Id;
-        Check(!state.TryReachAdventureTile(unvisited, out var costMessage) && costMessage.Contains("2 food") && !state.TryCollectAdventureTile(unvisited, out _)
+        Check(!state.TryReachAdventureTile(unvisited, out var costMessage) && costMessage.Contains("1 food") && !state.TryCollectAdventureTile(unvisited, out _)
             && !state.HasClaimedAdventureDiscovery(unvisited.Id) && state.Food == 1 && state.GetAdventureCaravanTile("city").Id == caravan,
-            "Without 2 food a frontier resource tile explains its cost and stays closed, charging nothing");
+            "Without 1 food a frontier resource tile explains its cost and stays closed, charging nothing");
         Restore(withFind);
         var immediateFood = state.Food - GameState.AdventureTileFoodCost + (unvisited.Discovery.Kind == AdventureDiscoveryKind.Food ? unvisited.Discovery.Amount : 0);
         canvas.TravelToTile(unvisited, () => state.TryCollectAdventureTile(unvisited, out _));
         Check(!canvas.IsTravelling && state.Food == immediateFood && state.HasClaimedAdventureDiscovery(unvisited.Id)
-            && state.GetAdventureCaravanTile("city").Id == unvisited.Id, "Tile travel immediately opens the tile for 2 food and collects without a cart animation");
+            && state.GetAdventureCaravanTile("city").Id == unvisited.Id, "Tile travel immediately opens the tile for 1 food and collects without a cart animation");
         await Open("MainMenu");
         Check(state.Food == immediateFood && state.HasClaimedAdventureDiscovery(unvisited.Id)
             && state.GetAdventureCaravanTile("city").Id == unvisited.Id, "Reopening the map retains the immediate destination and collection");

@@ -14,6 +14,9 @@ public static class BattleDeathEffects
     public static void SpawnDeathMoment(Node parent, Vector2 chest, DeathStyle style)
     {
         if (Reduced) return;
+        // A plain physical death has its blow in the blood and the fall (BattleGore); only magic, fire, glass,
+        // water and gas get a burst of their own at the chest.
+        if (style.Fx is "ash" or "dust" or "bones" or "debris" or "" ) return;
         var k = Scale(style);
         var c = style.PlayerSide ? style.Mote : style.Fx switch
         {
@@ -55,7 +58,7 @@ public static class BattleDeathEffects
         var spread = new Vector2(Mathf.Max(8f, corpse.BodyLength * .5f), 2f);
 
         // Dust kicked up along the length of the body.
-        var dust = Emitter(parent, at, Mathf.RoundToInt((style.Heavy ? 22 : 14) * k), "particle_smoke", style.Boss ? 1.15f : .75f);
+        var dust = Emitter(parent, at, Mathf.RoundToInt((style.Heavy ? 22 : 14) * k), "particle_smoke", style.Boss ? .8f : .45f);
         dust.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
         dust.EmissionRectExtents = spread;
         dust.Explosiveness = .9f;
@@ -66,9 +69,12 @@ public static class BattleDeathEffects
         dust.Gravity = new Vector2(0, 26f);
         dust.DampingMin = 20f;
         dust.DampingMax = 40f;
-        dust.ScaleAmountMin = 9f * k;
-        dust.ScaleAmountMax = 22f * k;
-        dust.ColorRamp = Ramp(style.Fx == "gas" ? new Color(.5f, .6f, .32f) : Dust, .55f);
+        // a low, quick scuff along the ground where the body lands (it draws over the body, so it must not linger)
+        dust.ScaleAmountMin = 4f * k;
+        dust.ScaleAmountMax = 9f * k;
+        dust.Amount = Mathf.Max(4, dust.Amount / 2);
+        dust.InitialVelocityMax = 40f * k;
+        dust.ColorRamp = Ramp(style.Fx == "gas" ? new Color(.5f, .6f, .32f) : Dust, .24f);
         Start(dust, (float)dust.Lifetime + .2f);
 
         var (count, texture, color, up, gravity) = style.Fx switch

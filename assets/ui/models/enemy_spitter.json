@@ -1,44 +1,45 @@
 {
-  "frameWidth": 244,
-  "frameHeight": 273,
-  "drawScale": 1.9365079365079365,
+  "frameWidth": 339,
+  "frameHeight": 299,
+  "drawScale": 2.6904761904761902,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1471
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_spitter",
   "title": "Blight Caster",
-  "source": "art/remaster/units/enemy_spitter.py",
-  "anchorY": 0.855247,
-  "anchorX": 0.359684,
+  "source": "art/remaster/puppet/build.py (enemy_spitter)",
+  "anchorY": 0.927695,
+  "anchorX": 0.427803,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.348226
+      0.014268,
+      -0.430906
     ],
     "contact": [
-      0.381777,
-      -0.515362
+      0.23387,
+      -0.718444
     ]
   },
-  "healthBarY": 0.687451
+  "healthBarY": 0.635744
 }

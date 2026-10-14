@@ -21,3 +21,5 @@ The game deliberately uses a small number of folders with clear runtime roles:
 - Put reusable controls, modal helpers, and visual primitives in `ui/shared/`.
 - Keep resource paths (`res://…`) in scene files or dedicated loaders, never spread across menus.
 - Keep a feature’s display-only pieces close to its runtime owner. For example, battle HUD widgets live in `combat/hud/`.
+
+Production polish is reviewed with `smoke/production_polish_smoke.sh`. Loading-art slots are documented in [loading screens](../docs/LOADING_SCREENS.md). `tools/audit_release_package.py` checks a completed Godot ZIP export and its compiled assembly for excluded development content.

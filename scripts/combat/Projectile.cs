@@ -151,10 +151,20 @@ public partial class Projectile : Node2D
 
         if (!IsInstanceValid(_target) || (_target is Unit pooled && pooled.CombatLifetime != _targetLifetime) || (_shouldCancel != null && _shouldCancel()))
         {
-            // Target died mid-flight: the shot fizzles where it is instead of vanishing silently.
+            // Target died mid-flight: an arrow or bolt flies on and sticks in the ground where it would have
+            // fallen; anything else fizzles where it is instead of vanishing silently.
             if (GetParent() != null)
             {
-                BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition + _drawOffset, _style.GlowColor.A > 0 ? _style.GlowColor : _color, _damage * 0.5f);
+                if (_style.Sticks && !(GameState.Instance?.ReducedMotion ?? false))
+                {
+                    var ground = LaunchGroundY + 6f + (GD.Randf() - .5f) * 10f;
+                    var landing = new Vector2(GlobalPosition.X + _travelDirection.X * 26f, ground);
+                    GetParent().AddChild(new GroundedProjectile(_style, landing, _travelDirection.X >= 0 ? 1 : -1, ShouldPause));
+                }
+                else
+                {
+                    BattleParticles.SpawnImpactSparks(GetParent(), GlobalPosition + _drawOffset, _style.GlowColor.A > 0 ? _style.GlowColor : _color, _damage * 0.5f);
+                }
             }
             CleanupTrail(GetParent());
             ProjectilePool.Release(this);

@@ -28,7 +28,17 @@ public sealed class UnitSpriteSheet
 	// Death presentation family authored with the clip (art/remaster/roster/deaths.py).
 	public string DeathFx { get; set; } = "";
 	public Dictionary<UnitAnimState, SpriteAnimRange> Animations { get; set; } = new();
+	// Trimmed atlases (pack.py trimmed_pack): each frame's page, rectangle on it, and offset inside the logical
+	// FrameWidth x FrameHeight frame. Null for regular grid atlases.
+	public Texture2D[] Pages { get; set; }
+	public FramePiece[] Frames { get; set; }
 }
+
+public readonly record struct FramePiece(int Page, Rect2 Source, Vector2 Offset);
+
+/// <summary>One frame ready to draw: the texture holding it, its rectangle there, and where that rectangle sits
+/// inside the logical frame (in frame pixels).</summary>
+public readonly record struct FrameDraw(Texture2D Texture, Rect2 Source, Rect2 InFrame);
 
 public sealed class SpriteAnimRange
 {
@@ -41,6 +51,8 @@ public sealed class SpriteAnimRange
 	// units relative to the ground anchor (same convention as motion.body).
 	public int ImpactFrame { get; set; } = -1;
 	public Vector2 ImpactPoint { get; set; }
+	// Walk clips: ground covered in one cycle, in frame widths (the game plays the cycle to match its speed).
+	public float Stride { get; set; }
 }
 
 public static class UnitSpriteLoader
@@ -175,6 +187,25 @@ public static class UnitSpriteLoader
 			}
 			if (root.TryGetProperty("healthBarY", out var hy) && hy.TryGetSingle(out var hyVal))
 				sheet.HealthBarY = Mathf.Clamp(hyVal, 0.1f, 1f);
+			if (root.TryGetProperty("frames", out var framesEl) && framesEl.ValueKind == System.Text.Json.JsonValueKind.Array)
+			{
+				var pageCount = root.TryGetProperty("pages", out var pc) && pc.TryGetInt32(out var pcv) ? pcv : 1;
+				var baseId = root.TryGetProperty("sheet", out var sheetEl) ? sheetEl.GetString() : null;
+				var stem = path[..path.LastIndexOf('.')];
+				if (!string.IsNullOrEmpty(baseId)) stem = stem[..(stem.LastIndexOf('/') + 1)] + baseId;
+				sheet.Pages = new Texture2D[pageCount];
+				for (var i = 0; i < pageCount; i++)
+				{
+					var pagePath = i == 0 ? stem + ".png" : $"{stem}_{i}.png";
+					sheet.Pages[i] = i == 0 && string.IsNullOrEmpty(baseId) ? sheet.Texture
+						: ResourceLoader.Exists(pagePath) ? ResourceLoader.Load<Texture2D>(pagePath) : null;
+				}
+				var list = new List<FramePiece>();
+				foreach (var f in framesEl.EnumerateArray())
+					list.Add(new FramePiece(f[0].GetInt32(), new Rect2(f[1].GetSingle(), f[2].GetSingle(), f[3].GetSingle(), f[4].GetSingle()),
+						new Vector2(f[5].GetSingle(), f[6].GetSingle())));
+				sheet.Frames = list.ToArray();
+			}
 
 			if (root.TryGetProperty("animations", out var anims) && anims.ValueKind == System.Text.Json.JsonValueKind.Object)
 			{
@@ -203,6 +234,8 @@ public static class UnitSpriteLoader
 					};
 					if (prop.Value.TryGetProperty("impactFrame", out var impact) && impact.TryGetInt32(out var impactVal))
 						range.ImpactFrame = Mathf.Clamp(impactVal, 0, frameCount - 1);
+					if (prop.Value.TryGetProperty("stride", out var stride) && stride.TryGetSingle(out var strideVal))
+						range.Stride = Mathf.Max(0f, strideVal);
 					if (prop.Value.TryGetProperty("impactPoint", out var point) && point.GetArrayLength() == 2)
 						range.ImpactPoint = new Vector2(point[0].GetSingle(), point[1].GetSingle());
 					if (state == UnitAnimState.Death && prop.Value.TryGetProperty("fx", out var fx))
@@ -247,6 +280,27 @@ public static class UnitSpriteLoader
 				Loop = state is UnitAnimState.Idle or UnitAnimState.Walk
 			};
 		}
+	}
+
+	public static FrameDraw Frame(UnitSpriteSheet sheet, int globalFrame)
+	{
+		if (sheet.Frames != null && sheet.Frames.Length > 0)
+		{
+			var f = sheet.Frames[Mathf.Clamp(globalFrame, 0, sheet.Frames.Length - 1)];
+			var tex = sheet.Pages != null && f.Page < sheet.Pages.Length && sheet.Pages[f.Page] != null ? sheet.Pages[f.Page] : sheet.Texture;
+			return new FrameDraw(tex, f.Source, new Rect2(f.Offset, f.Source.Size));
+		}
+		var rect = GetFrameRect(sheet, globalFrame);
+		return new FrameDraw(sheet.Texture, rect, new Rect2(Vector2.Zero, rect.Size));
+	}
+
+	/// <summary>Where a frame's pixels land, given the rectangle the whole logical frame is drawn into.</summary>
+	public static Rect2 Place(UnitSpriteSheet sheet, FrameDraw f, Rect2 frameRect)
+	{
+		var sx = frameRect.Size.X / Mathf.Max(1, sheet.FrameWidth);
+		var sy = frameRect.Size.Y / Mathf.Max(1, sheet.FrameHeight);
+		return new Rect2(frameRect.Position + new Vector2(f.InFrame.Position.X * sx, f.InFrame.Position.Y * sy),
+			new Vector2(f.InFrame.Size.X * sx, f.InFrame.Size.Y * sy));
 	}
 
 	public static Rect2 GetFrameRect(UnitSpriteSheet sheet, int globalFrame)

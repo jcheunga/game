@@ -1,0 +1,44 @@
+{
+  "frameWidth": 136,
+  "frameHeight": 127,
+  "drawScale": 0.8888888888888887,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_bog_spore",
+  "title": "Bog Spore",
+  "source": "art/remaster/puppet/build.py (enemy_bog_spore)",
+  "anchorY": 0.943448,
+  "anchorX": 0.502507,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.017685,
+      0.0
+    ],
+    "contact": [
+      0.017685,
+      -0.794508
+    ]
+  },
+  "healthBarY": 0.797776
+}

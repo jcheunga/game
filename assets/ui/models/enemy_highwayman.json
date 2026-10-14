@@ -1,0 +1,45 @@
+{
+  "frameWidth": 310,
+  "frameHeight": 220,
+  "drawScale": 2.4603174603174605,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17962
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_highwayman",
+  "title": "Highwayman",
+  "source": "art/remaster/puppet/build.py (enemy_highwayman)",
+  "anchorY": 0.92233,
+  "anchorX": 0.64241,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "crossbow",
+    "body": [
+      -0.014369,
+      -0.570263
+    ],
+    "contact": [
+      0.187873,
+      -0.518685
+    ]
+  },
+  "healthBarY": 0.822123
+}

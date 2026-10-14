@@ -35,15 +35,16 @@ public partial class MapMenu
         RealmUi.Clear(_modal.Content);
         Control content;
         if (path == "achievements") content = new AchievementsPanel();
-        else if (path == "more") content = new CaravanHub(this);
+        else if (path == "more") content = new CaravanHub();
         else content = ResourceLoader.Load<PackedScene>(path).Instantiate<Control>();
         content.SetMeta("home_modal", true);
         if (content.HasMeta("royal_screen")) { _modal.PresentRoyal(path, content); _hud.Visible = false; return true; }
         // Screens without a concept of their own share the generic modal chrome.
         _modal.Content.AddChild(content);
         content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        if (content is not CashShopMenu) RealmModal.AdaptActivity(content);
+        if (content is not CashShopMenu && !content.HasMeta("self_modal_layout")) RealmModal.AdaptActivity(content);
         var title = path switch {
+            SceneRouter.ProgressionScene=>"Caravan progression",SceneRouter.BossRushScene=>"Boss rush",
             SceneRouter.TowerScene => "Challenge tower", SceneRouter.BountyScene => "Daily bounties", SceneRouter.RaidScene => "Weekly raid",
             SceneRouter.EventScene => "Seasonal event", SceneRouter.ExpeditionScene => "Expeditions", SceneRouter.CashShopScene => "Royal storehouse",
             SceneRouter.LoginCalendarScene => "Daily gifts", SceneRouter.LanRaceScene => "LAN race", SceneRouter.ArenaScene => "Arena",

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 301,
+  "frameHeight": 261,
+  "drawScale": 2.3888888888888884,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17232
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_peasant",
+  "title": "Peasant",
+  "source": "art/remaster/puppet/build.py (player_peasant)",
+  "anchorY": 0.919116,
+  "anchorX": 0.658009,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      0.008782,
+      -0.454184
+    ],
+    "contact": [
+      0.263577,
+      -0.271288
+    ]
+  },
+  "healthBarY": 0.692453
+}

@@ -18,7 +18,7 @@ public partial class ShopMenu
         var state = _state;
         IEnumerable<Entry> all = spells
             ? GameData.GetPlayerSpells().Select(s => new Entry(s.Id, s.DisplayName, state.IsSpellOwned(s.Id), state.IsSpellAvailableForPurchase(s.Id), state.IsSpellInActiveDeck(s.Id), state.GetSpellLevel(s.Id)))
-            : GameData.GetPlayerUnits().Select(u => new Entry(u.Id, u.DisplayName, state.IsUnitOwned(u.Id), state.IsUnitAvailableForPurchase(u.Id), state.IsUnitInActiveDeck(u.Id), state.GetUnitLevel(u.Id)));
+            : GameData.GetPlayerUnits().Where(u => !u.LegacyRecruit || state.IsUnitOwned(u.Id)).Select(u => new Entry(u.Id, u.DisplayName, state.IsUnitOwned(u.Id), state.IsUnitAvailableForPurchase(u.Id), state.IsUnitInActiveDeck(u.Id), state.GetUnitLevel(u.Id)));
         return all.ToList();
     }
 
@@ -46,12 +46,8 @@ public partial class ShopMenu
         else BuildUnitProfile(spec, GameData.GetUnit(selected.Id), selected);
     }
 
-    private static string ClassIcon(UnitDefinition unit) => unit.Id switch
-    {
-        "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
-        "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
-        _ => unit.SquadTag == SquadSynergyCatalog.SupportTag ? "class-shield" : "class-melee"
-    };
+    private static string ClassIcon(UnitDefinition unit) => unit.UsesProjectile ? "class-ranged" :
+        unit.Armor >= 25 || unit.SquadTag == SquadSynergyCatalog.SupportTag ? "class-shield" : "class-melee";
 
     private static string SpellIcon(SpellDefinition spell) => "spellicon-" + spell.Id.Replace("spell_", "");
 
@@ -166,31 +162,13 @@ public partial class ShopMenu
             var at = new Vector2(4 + i % 3 * pitch.X, 4 + i / 3 * pitch.Y);
             grid.AddChild(Cell(spells, spec, visible[i], new Rect2(at, cell)));
         }
-        // The plate paints the scroll track; a brass thumb follows the list.
-        var thumb = new Panel { MouseFilter = MouseFilterEnum.Ignore, Size = new Vector2(track.Size.X, 40), Position = track.Position };
-        thumb.AddThemeStyleboxOverride("panel", ThumbStyle());
-        _body.AddChild(thumb);
-        void PlaceThumb()
-        {
-            var range = Mathf.Max(1, grid.CustomMinimumSize.Y - view.Size.Y);
-            var length = Mathf.Clamp(track.Size.Y * view.Size.Y / grid.CustomMinimumSize.Y, 30, track.Size.Y);
-            thumb.Size = new Vector2(track.Size.X, length);
-            thumb.Position = new Vector2(track.Position.X, track.Position.Y + (track.Size.Y - length) * Mathf.Clamp(scroll.ScrollVertical / range, 0, 1));
-            thumb.Visible = grid.CustomMinimumSize.Y > view.Size.Y + 1;
-            _gridScroll = scroll.ScrollVertical;
-        }
-        scroll.GetVScrollBar().ValueChanged += _ => PlaceThumb();
+        RoyalUiTools.ClearPaintedScrollTrack(_body, spells ? "spells" : "warband", spec);
+        _body.AddChild(new RoyalScrollHint { Name = "CollectionScrollbar", Position = track.Position, Size = track.Size, Scroll = scroll });
+        scroll.GetVScrollBar().ValueChanged += value => _gridScroll = (float)value;
         var selectedRow = visible.FindIndex(e => e.Id == _selectedId) / 3;
         var rowTop = 4 + selectedRow * pitch.Y;
         if (selectedRow >= 0 && (rowTop < _gridScroll || rowTop + cell.Y > _gridScroll + view.Size.Y)) _gridScroll = Mathf.Max(0, rowTop - 4);
-        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_gridScroll; PlaceThumb(); } }).CallDeferred();
-    }
-
-    private static StyleBox ThumbStyle()
-    {
-        var box = new StyleBoxFlat { BgColor = new Color("8d7046"), BorderColor = new Color("d8b878"), AntiAliasing = true };
-        box.SetBorderWidthAll(1); box.SetCornerRadiusAll(3);
-        return box;
+        Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_gridScroll; } }).CallDeferred();
     }
 
     private Control Cell(bool spells, RoyalSpec spec, Entry entry, Rect2 rect)

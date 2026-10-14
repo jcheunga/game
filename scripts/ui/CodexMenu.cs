@@ -87,13 +87,7 @@ public partial class CodexMenu : RoyalScreen
         var chosen = entries.FirstOrDefault(entry => entry.Id == _selectedEntryId && state.IsCodexEntryDiscovered(entry.Id));
         if (chosen == null) BuildEmptyPage(spec);
         else BuildDetail(spec, chosen);
-        var back = RoyalButton.Over(spec.Rect("button.back"), "Back to map", Close, 6);
-        back.SetStates(RoyalKit.Slice("codex-back", 16), 6);
-        back.SetGlyph(RoyalKit.Texture("icon-book-map"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
-        var backLabel = spec.Label("button.back.label", "BACK TO MAP", 160);
-        backLabel.Position -= spec.Rect("button.back").Position;
-        back.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
-        _layer.AddChild(back);
+
     }
 
     private Control Cell(RoyalSpec spec, int index, CodexEntry entry)

@@ -12,7 +12,7 @@ The painting's own sea surrounds the zone and the view never pans past the paint
 
 The painted landmarks are the selectable site objects: forts and the boss's castle, and gold, food, essence and survey pickups (`assets/world/royal/maps/landmarks`). Points of interest have no labels beneath them; earned stage stars sit above the roofs. Hit targets follow each landmark's painted pixels plus a small foundation target, so transparent margins never intercept adjacent pickups.
 
-Tapping a stage that can be entered goes straight in: a battle opens its preparation, which shows the rewards and the entry cost. Tapping a frontier tile opens it at once for 2 food; every frontier tile but a stage shows that price on a small tag (red when the caravan can't afford it). The site panel only appears to explain why something is blocked, such as a sealed boss gate or missing rations.
+Tapping a stage that can be entered goes straight in: a battle opens its preparation, which shows the rewards and the entry cost. Tapping a frontier tile opens it at once for 1 food; every frontier tile but a stage shows that price on a small tag (red when the caravan can't afford it). The site panel only appears to explain why something is blocked, such as a sealed boss gate or missing rations.
 
 Point-of-interest names, rewards and stage entry costs remain available in tooltips and site details at every zoom. The map itself shows the painted objects and earned stage stars without persistent captions.
 
@@ -28,7 +28,7 @@ Geography is deterministic and cosmetic: it never depends on saved progress.
 ## Playing
 
 - A tile is **opened** (charted, clear), on the **frontier** (touching opened ground: seen through mist and ready to open) or **hidden** under the storm cloud. Each zone starts with only its first stage opened.
-- Opening a frontier tile costs 2 food (`GameState.AdventureTileFoodCost`) and only reveals the tiles touching it. A cache or find on the tile is gathered as it opens; a survey chart also charts the plain ground around it for free. Without 2 food the tile explains the cost instead and nothing is charged.
+- Opening a frontier tile costs 1 food (`GameState.AdventureTileFoodCost`) and only reveals the tiles touching it. A cache or find on the tile is gathered as it opens; a survey chart also charts the plain ground around it for free. Without 1 food the tile explains the cost instead and nothing is charged.
 - A stage on the frontier is challenged rather than bought: its battle costs its entry rations, charged when deploying, and winning it charts its tile. A stage's first win also pays 6 food (`GameState.CampaignFirstClearFood`). With every road opened and every food source gathered, a zone costs about 15 food net (`ExplorationReview` prints `EXPLORATION_ECONOMY` per zone). Preparing, defeat and retreat chart nothing.
 - Open regular encounters can be challenged in any order. Defeat the zone's nine regular leaders to open the boss gate, then defeat that boss to reveal the next zone.
 - Gathered resources disappear; completed stages retain earned stars. Sites beneath the storm cloud remain hidden.

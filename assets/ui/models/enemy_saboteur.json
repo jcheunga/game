@@ -1,44 +1,45 @@
 {
-  "frameWidth": 229,
-  "frameHeight": 166,
-  "drawScale": 2.1472829837669156,
+  "frameWidth": 228,
+  "frameHeight": 185,
+  "drawScale": 2.1379062021784137,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.22902
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_saboteur",
   "title": "Sapper",
-  "source": "art/remaster/units/enemy_saboteur.py",
-  "anchorY": 0.906294,
-  "anchorX": 0.517165,
+  "source": "art/remaster/puppet/build.py (enemy_saboteur)",
+  "anchorY": 0.890164,
+  "anchorX": 0.647837,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "flask-toss",
     "body": [
-      0.0,
-      -0.438424
+      0.013917,
+      -0.478642
     ],
     "contact": [
-      0.221359,
-      -0.628485
+      0.145169,
+      -0.721905
     ]
   },
-  "healthBarY": 0.753205
+  "healthBarY": 0.760084
 }

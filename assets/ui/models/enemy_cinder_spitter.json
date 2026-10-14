@@ -1,0 +1,45 @@
+{
+  "frameWidth": 316,
+  "frameHeight": 255,
+  "drawScale": 2.507936507936508,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.21364
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_cinder_spitter",
+  "title": "Cinder Spitter",
+  "source": "art/remaster/puppet/build.py (enemy_cinder_spitter)",
+  "anchorY": 0.910631,
+  "anchorX": 0.610598,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.004819,
+      -0.466811
+    ],
+    "contact": [
+      0.17319,
+      -0.672246
+    ]
+  },
+  "healthBarY": 0.682079
+}

@@ -1,0 +1,893 @@
+[
+ {
+  "id": "item-spell_aegis_bolt",
+  "out": "art/royal/gen/items/spell_aegis_bolt.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a streaking bolt of pale-gold light whose head opens into a small round glowing buckler of light with a bright rim.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_radiant_rebuke",
+  "out": "art/royal/gen/items/spell_radiant_rebuke.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gauntleted fist of white-gold holy light punching through a violet magic rune circle that shatters into glowing fragments.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_tidal_push",
+  "out": "art/royal/gen/items/spell_tidal_push.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a curling sea-green ocean wave surging forward with white foam crests and flying spray.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_anchor_hex",
+  "out": "art/royal/gen/items/spell_anchor_hex.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a heavy rusted iron ship's anchor bound by glowing purple hex chains and floating violet runes.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_molten_brand",
+  "out": "art/royal/gen/items/spell_molten_brand.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a red-hot branding iron with a rune-shaped head glowing orange-white, dripping molten metal and sparks.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_meteor",
+  "out": "art/royal/gen/items/spell_meteor.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a massive dark purple-black cratered boulder falling straight down from above, its leading underside white-hot, a tall column of smoke and embers trailing vertically above it, and a glowing red target ring hovering flat beneath it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_purifying_light",
+  "out": "art/royal/gen/items/spell_purifying_light.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a radiant white-gold sunburst orb burning away curling wisps of sickly green blight smoke.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_withering_seal",
+  "out": "art/royal/gen/items/spell_withering_seal.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a cracked black wax seal stamped with a withered rose, leaking dark violet decay and wilted petals.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_gale_step",
+  "out": "art/royal/gen/items/spell_gale_step.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a swirling spiral of pale teal wind carrying streaming leaves around a glowing silver footprint rune.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_gravitation_well",
+  "out": "art/royal/gen/items/spell_gravitation_well.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a dark violet vortex sphere with a glowing core pulling rocks and debris inward in a tight spiral.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_soul_harvest",
+  "out": "art/royal/gen/items/spell_soul_harvest.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a curved silver reaper's sickle drawing pale-blue soul wisps into a glowing blue mana crystal.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_consecrated_ground",
+  "out": "art/royal/gen/items/spell_consecrated_ground.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a round slab of pale stone carved with a glowing golden sun circle, small lit candles around its edge and light rising from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_verdant_renewal",
+  "out": "art/royal/gen/items/spell_verdant_renewal.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a young green sapling curling around a glowing emerald seed, with drifting leaves and soft green light.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_bramble_snare",
+  "out": "art/royal/gen/items/spell_bramble_snare.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a tangle of thorny dark-green bramble vines coiling into a tight snare loop, with sharp thorns and a few red berries.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_chain_lightning",
+  "out": "art/royal/gen/items/spell_chain_lightning.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a crackling blue-white lightning arc zigzagging between three glowing sparks in a linked chain.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_rallying_advance",
+  "out": "art/royal/gen/items/spell_rallying_advance.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold-trimmed teal pennant on a lance tilted forward, golden speed streaks behind it and snapped vines falling from its shaft.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_revealing_flare",
+  "out": "art/royal/gen/items/spell_revealing_flare.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a signal flare bursting into a brilliant white-gold star of light with radiating sparks and a bright glint at its core.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_mirror_ward",
+  "out": "art/royal/gen/items/spell_mirror_ward.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a round polished silver mirror shield with a glowing pale-blue rim, an arrow rebounding off its surface in a bright flash.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_banish",
+  "out": "art/royal/gen/items/spell_banish.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a swirling purple-black rift closing shut, ghostly wisps being sucked into it and a golden sealing rune across its centre.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-spell_royal_edict",
+  "out": "art/royal/gen/items/spell_royal_edict.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an unrolled royal parchment scroll with a gold ribbon and a red wax crown seal, glowing with golden light; the parchment shows only faint decorative flourishes, no writing.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_palisade_kit",
+  "out": "art/royal/gen/items/tactic_palisade_kit.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a short row of sharpened wooden stakes lashed together with rope, a wooden mallet leaning against it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_firepot_mine",
+  "out": "art/royal/gen/items/tactic_firepot_mine.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a clay pot half-buried in a mound of earth, packed with pitch, a lit fuse spitting sparks from its top.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_healing_shrine",
+  "out": "art/royal/gen/items/tactic_healing_shrine.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small stone wayside shrine with a glowing green crystal in its arched niche and wildflowers at its base.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_bolt_turret",
+  "out": "art/royal/gen/items/tactic_bolt_turret.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a compact wooden bolt-thrower on a sturdy tripod, iron-banded, loaded with a heavy iron bolt.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_supply_crate",
+  "out": "art/royal/gen/items/tactic_supply_crate.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a sturdy wooden supply crate with iron corners, its lid ajar, holding bread loaves, a coil of rope and small glowing gold tokens.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_frost_trap",
+  "out": "art/royal/gen/items/tactic_frost_trap.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an open iron jaw trap rimed with pale-blue ice, frost crystals growing along its teeth.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_decoy_lantern",
+  "out": "art/royal/gen/items/tactic_decoy_lantern.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a battered tin lantern hung on a wooden stake, its warm orange flame swirling in a mesmerising spiral.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_smoke_pot",
+  "out": "art/royal/gen/items/tactic_smoke_pot.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a round clay pot with a cloth-bound neck, thick grey-white smoke billowing out of it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_purifying_censer",
+  "out": "art/royal/gen/items/tactic_purifying_censer.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a tall standing bronze brazier-censer on three legs, burning bundled herbs with a clean pale-blue flame and white smoke.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_repair_cache",
+  "out": "art/royal/gen/items/tactic_repair_cache.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an open wooden carpenter's toolbox holding a hammer, nails, a saw and a coil of iron bands, planks strapped to its side.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_grounding_rod",
+  "out": "art/royal/gen/items/tactic_grounding_rod.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a tall iron rod staked into a small mound of earth, wound with a copper coil, a crackling blue spark caught at its tip.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-tactic_war_horn",
+  "out": "art/royal/gen/items/tactic_war_horn.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a ram's-horn signal horn with brass fittings and a crimson pennant tied to it, a glowing red target sigil behind it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_rampart_seal",
+  "out": "art/royal/gen/items/relic_rampart_seal.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a heavy bronze seal stamp with a crenellated castle rampart on its face, a faint pale-blue shimmer around it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_tower_charm",
+  "out": "art/royal/gen/items/relic_tower_charm.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small carved grey stone watchtower figurine hanging from a leather cord.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_last_wall_token",
+  "out": "art/royal/gen/items/relic_last_wall_token.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a cracked silver shield-shaped token with a glowing red gem set in its central fissure.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_iron_prayer",
+  "out": "art/royal/gen/items/relic_iron_prayer.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a string of dark iron prayer beads ending in a small silver gauntlet charm, with a faint warm glow.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_sentinel_buckle",
+  "out": "art/royal/gen/items/relic_sentinel_buckle.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an ornate gold belt buckle shaped like a guardian's helm, set with a glowing blue ward gem.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_oathbound_chain",
+  "out": "art/royal/gen/items/relic_oathbound_chain.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a loop of heavy gold chain bound with glowing white oath runes, a pendant of two clasped hands hanging from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_farwatch_lens",
+  "out": "art/royal/gen/items/relic_farwatch_lens.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a brass extending spyglass with a leather grip, its lens catching a bright glint.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_windstring",
+  "out": "art/royal/gen/items/relic_windstring.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a coiled bowstring of pale twisted gut with small grey feathers tied along it and faint wind wisps.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_falcon_feather",
+  "out": "art/royal/gen/items/relic_falcon_feather.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a long brown-and-white falcon feather with a silver-capped quill and a small sapphire bead.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_huntsman_s_knot",
+  "out": "art/royal/gen/items/relic_huntsman_s_knot.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an intricate hunter's knot of green-dyed cord with a silver arrowhead charm hanging from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_trailfinder_boots",
+  "out": "art/royal/gen/items/relic_trailfinder_boots.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a pair of moss-green ranger's boots with gold buckles, glowing golden footprint runes trailing from the soles.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_twinbolt_clasp",
+  "out": "art/royal/gen/items/relic_twinbolt_clasp.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold cloak clasp shaped like two crossed crossbow bolts with glowing teal fletching.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_breach_writ",
+  "out": "art/royal/gen/items/relic_breach_writ.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a rolled parchment writ tied with red cord and stamped with a wax seal showing a broken gate.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_demolition_rune",
+  "out": "art/royal/gen/items/relic_demolition_rune.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a cracked chunk of granite carved with a glowing orange blast rune, small sparks escaping its cracks.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_counterweight",
+  "out": "art/royal/gen/items/relic_counterweight.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: an iron trebuchet counterweight block with silver bands and a heavy hook on top.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_gateward_medallion",
+  "out": "art/royal/gen/items/relic_gateward_medallion.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver medallion embossed with a portcullis gate, set with a blue gem.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_sapper_s_fuse",
+  "out": "art/royal/gen/items/relic_sapper_s_fuse.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a coiled fuse cord leading to a round black powder bomb with gold bands, the fuse spitting golden sparks.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_chain_hoist_charm",
+  "out": "art/royal/gen/items/relic_chain_hoist_charm.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold pulley-and-chain charm, the chain links glowing with amber light.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_cinder_ring",
+  "out": "art/royal/gen/items/relic_cinder_ring.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a bronze ring set with a smouldering ember coal, thin smoke curling from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_ashen_rosary",
+  "out": "art/royal/gen/items/relic_ashen_rosary.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a rosary of grey ash-wood beads with a scorched bronze flame-shaped pendant.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_coalglass_vial",
+  "out": "art/royal/gen/items/relic_coalglass_vial.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a stoppered glass vial filled with glowing orange coals and swirling smoke, a silver cap and chain.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_fireward_clasp",
+  "out": "art/royal/gen/items/relic_fireward_clasp.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver cloak clasp shaped like a flame enclosed in a ring, its inner flame enamelled cool blue.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_phoenix_ember",
+  "out": "art/royal/gen/items/relic_phoenix_ember.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a golden phoenix feather curling around a blazing ember, small flames rising from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_hearthstone",
+  "out": "art/royal/gen/items/relic_hearthstone.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a smooth round river stone glowing warm gold from within, carved with a hearth rune, gentle wisps of smoke.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_rime_needle",
+  "out": "art/royal/gen/items/relic_rime_needle.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a long slender iron needle coated in white rime frost, a few ice crystals along its length.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_winter_ribbon",
+  "out": "art/royal/gen/items/relic_winter_ribbon.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a pale-blue silk ribbon tied in a bow, its edges frosted with ice crystals.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_hoarfrost_medal",
+  "out": "art/royal/gen/items/relic_hoarfrost_medal.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver medal on a pale-blue ribbon, its face covered in hoarfrost around a snowflake emblem.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_icebound_hourglass",
+  "out": "art/royal/gen/items/relic_icebound_hourglass.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver hourglass with ice crystals forming on its frame and frozen blue sand inside.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_glacial_band",
+  "out": "art/royal/gen/items/relic_glacial_band.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold arm band set with glacier-blue crystals, cold mist spilling from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_thawstone",
+  "out": "art/royal/gen/items/relic_thawstone.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a split stone, one half ice-blue and the other warm amber, glowing where they meet with melting droplets.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_mercy_bell",
+  "out": "art/royal/gen/items/relic_mercy_bell.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small bronze hand bell with a turned wooden handle and a faint green glow.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_field_surgeon_s_badge",
+  "out": "art/royal/gen/items/relic_field_surgeon_s_badge.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a pewter badge embossed with a sprig of healing herbs, a rolled linen bandage tied beneath it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_bloodroot_pendant",
+  "out": "art/royal/gen/items/relic_bloodroot_pendant.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver pendant cradling a gnarled red bloodroot, small crimson droplets glistening on it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_springwater_charm",
+  "out": "art/royal/gen/items/relic_springwater_charm.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small silver flask charm filled with clear spring water, a blue droplet gem on its stopper.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_mender_s_thread",
+  "out": "art/royal/gen/items/relic_mender_s_thread.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a golden spool of glowing thread with a silver needle threaded through it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_second_breath_seal",
+  "out": "art/royal/gen/items/relic_second_breath_seal.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold medallion seal with a glowing white swirl of breath on its face.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_nightveil_brooch",
+  "out": "art/royal/gen/items/relic_nightveil_brooch.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a dark iron brooch pinning a fold of black gauze veil that fades into shadow.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_assassin_s_token",
+  "out": "art/royal/gen/items/relic_assassin_s_token.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a black iron coin stamped with a dagger.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_grave_silk",
+  "out": "art/royal/gen/items/relic_grave_silk.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a folded length of pale grey silk shroud stitched with silver sealing runes.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_umbral_coin",
+  "out": "art/royal/gen/items/relic_umbral_coin.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a dark silver coin bearing a crescent moon, faint shadow smoke rising from it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_phantom_bell",
+  "out": "art/royal/gen/items/relic_phantom_bell.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a translucent ghostly bell of pale violet light with a gold clapper.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_moonstep_anklet",
+  "out": "art/royal/gen/items/relic_moonstep_anklet.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold anklet of crescent-moon links with small silver bells, glowing with soft moonlight.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_marshal_s_signet",
+  "out": "art/royal/gen/items/relic_marshal_s_signet.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a bronze signet ring engraved with a marshal's baton.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_supply_ledger",
+  "out": "art/royal/gen/items/relic_supply_ledger.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a leather-bound ledger book with brass corners and a quill tucked into its strap.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_banner_ribbon",
+  "out": "art/royal/gen/items/relic_banner_ribbon.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a teal-and-gold banner ribbon tied around a silver spearhead finial.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_captain_s_whistle",
+  "out": "art/royal/gen/items/relic_captain_s_whistle.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a silver officer's whistle on a braided teal cord.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_caravan_token",
+  "out": "art/royal/gen/items/relic_caravan_token.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold token stamped with a covered wagon, hanging on a teal cord.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_king_s_commission",
+  "out": "art/royal/gen/items/relic_king_s_commission.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a rolled royal commission scroll tied with a gold ribbon and a crimson crown wax seal.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_saint_s_reliquary",
+  "out": "art/royal/gen/items/relic_saint_s_reliquary.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small gold-and-crystal reliquary casket with a glowing white relic inside and a soft halo of light.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_stormglass_prism",
+  "out": "art/royal/gen/items/relic_stormglass_prism.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a triangular prism of storm-blue glass with crackling lightning trapped inside.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_earthbind_idol",
+  "out": "art/royal/gen/items/relic_earthbind_idol.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a squat carved stone idol with mossy roots wrapped around its base and faintly glowing green eyes.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_dragonbone_quiver",
+  "out": "art/royal/gen/items/relic_dragonbone_quiver.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a quiver made of ivory dragon-bone plates holding arrows with dark red fletching.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_emberforge_anvil",
+  "out": "art/royal/gen/items/relic_emberforge_anvil.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a small blacksmith's anvil with glowing orange runes along its side and a hammer resting on top.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_mirror_shard",
+  "out": "art/royal/gen/items/relic_mirror_shard.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a jagged shard of silvered mirror glass wrapped in gold wire, reflecting a bright glint.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_gravewarden_s_key",
+  "out": "art/royal/gen/items/relic_gravewarden_s_key.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a large old iron key with a skull-shaped bow and glowing green runes along its shaft.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_tidemaster_s_pearl",
+  "out": "art/royal/gen/items/relic_tidemaster_s_pearl.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a large luminous sea-green pearl in an open silver clamshell setting, water swirling around it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_sunfall_spur",
+  "out": "art/royal/gen/items/relic_sunfall_spur.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gold rider's spur whose rowel is a sun blazing with light.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_gloam_lantern",
+  "out": "art/royal/gen/items/relic_gloam_lantern.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a hexagonal lantern of dusk-purple glass in a dark silver frame, holding a pale white eye-shaped flame.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_crownroad_charter",
+  "out": "art/royal/gen/items/relic_crownroad_charter.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a folded parchment road map showing a painted winding road, a gold crown wax seal and a teal ribbon; no writing.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_hollow_chalice",
+  "out": "art/royal/gen/items/relic_hollow_chalice.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a dark pewter chalice with hollow openings in its bowl, drawing in wisps of green soul light.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_royal_execution_writ",
+  "out": "art/royal/gen/items/relic_royal_execution_writ.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a blackened steel executioner's axe head with ember-red runes, a crimson wax-sealed writ tag tied to it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_plagueglass_mask",
+  "out": "art/royal/gen/items/relic_plagueglass_mask.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a plague doctor's beaked mask of blackened steel with green glass eye lenses.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_runic_capacitor",
+  "out": "art/royal/gen/items/relic_runic_capacitor.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a blackened iron cylinder caged in copper coils, glowing blue runes and crackling charges around it.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_wandering_shrine",
+  "out": "art/royal/gen/items/relic_wandering_shrine.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a miniature portable shrine of blackened iron and stone on a carrying pole, a warm candle glowing inside.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_basilica_hourglass",
+  "out": "art/royal/gen/items/relic_basilica_hourglass.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a gothic blackened-iron hourglass shaped like a cathedral spire, glowing golden sand frozen mid-fall.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_siegebreaker_s_crest",
+  "out": "art/royal/gen/items/relic_siegebreaker_s_crest.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a blackened steel shield crest bearing a broken tower emblem, with ember-red glowing cracks.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "item-relic_lantern_of_dawn",
+  "out": "art/royal/gen/items/relic_lantern_of_dawn.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: relic (magic item) image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on inventory cards and as a large preview.\nSubject: a lantern of blackened steel holding a blazing white-gold sunrise flame.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: a single object centred, three-quarter view, filling about 82% of a square canvas, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+ }
+]

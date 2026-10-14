@@ -1,0 +1,45 @@
+{
+  "frameWidth": 296,
+  "frameHeight": 205,
+  "drawScale": 2.3492063492063493,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.23107
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_hookblade_raider",
+  "title": "Hookblade Raider",
+  "source": "art/remaster/puppet/build.py (enemy_hookblade_raider)",
+  "anchorY": 0.910336,
+  "anchorX": 0.618219,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "blade-stab",
+    "body": [
+      0.014496,
+      -0.562546
+    ],
+    "contact": [
+      0.274041,
+      -0.54632
+    ]
+  },
+  "healthBarY": 0.81802
+}

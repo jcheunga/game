@@ -2,7 +2,7 @@
 
 Design proposal · 8 October 2026 · 10 existing spells + 20 additions.
 
-The expanded grimoire gives the Lantern Caravan more ways to protect specialist troops, manipulate a formation, answer a particular enemy rule, or combine effects with its recruits and relics. This is proposed content, not an implemented spell patch. New damage, duration, radius, and acquisition values still need encounter testing.
+The expanded grimoire gives the Lantern Caravan more ways to protect specialist troops, manipulate a formation, answer a particular enemy rule, or combine effects with its recruits and relics. All 30 spells and 12 tactical cards now have playable handlers and share five loadout slots. New art uses placeholders. See [the current stat catalog](catalogs/CURRENT_CONTENT_STATS.md) for implemented values; broader encounter and device playtesting remains necessary.
 
 ## Collection and battle loadout
 
@@ -15,6 +15,12 @@ The expanded grimoire gives the Lantern Caravan more ways to protect specialist 
 Keep **five shared utility slots** per battle: spells and tactical items compete for those positions. A large collection gives more build choices without turning each battle into a tray of 42 actions. Spell families are browsing categories, not extra meters, class requirements, or mandatory set bonuses.
 
 The new mana prices and cooldowns are prototype estimates. Existing prices and cooldowns below are copied from the current game data. The new spells fit within the current base mana cap of 30; mana still comes from combat kills rather than passive regeneration. The design does not add a second casting resource.
+
+## Armor, resistance, and critical-stat integration
+
+The [unit-stat plan](/Users/jason/side/game/docs/CONTENT_EXPANSION_PLAN.md) now includes Armor, Physical Resistance, Magical Resistance, and Critical Damage, with Critical Chance resolved separately. Every damaging spell or attack component must explicitly declare physical or magical damage. Its delivery shape or projectile appearance does not choose the resistance automatically. Earthquake and siege impacts need deliberate typing; arcane beams and lightning use magical damage. Mixed impact/burn attacks resolve their components separately.
+
+Molten Brand weakens physical armor. Removing a temporary ward does not remove a unit's permanent magical resistance. Unit-cast magical attacks and eligible abilities use the caster's critical stats; player-command spells need an explicit per-spell critical policy and must not borrow stats from whichever squad member has the highest critical bonus. Critical hits still pass through the appropriate resistance. Healing, shielding, corpse refunds, dispels, and percentage-health effects do not gain damage criticals by default.
 
 ## Spell families
 
@@ -46,7 +52,7 @@ The intended identities in this table include planned refinements. They do not c
 
 ## Twenty new spells across the ten districts
 
-Discovery stages reveal an optional spell purchase/contract and its counter examples. They are proposals; existing unlock stages stay unchanged in this design. Each new spell has a primary job and a tradeoff, rather than being a higher-cost universal replacement for an early spell.
+Discovery stages reveal an optional spell purchase/contract and its counter examples. The listed discovery stages are implemented; the generated playable catalog is authoritative for numerical tuning. Each new spell has a primary job and a tradeoff, rather than being a higher-cost universal replacement for an early spell.
 
 ### King's Road
 

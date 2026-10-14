@@ -1,44 +1,45 @@
 {
-  "frameWidth": 194,
-  "frameHeight": 183,
-  "drawScale": 1.9882264200446018,
+  "frameWidth": 243,
+  "frameHeight": 166,
+  "drawScale": 2.4904073199527743,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1742
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_rogue",
   "title": "Rogue",
-  "source": "art/remaster/units/player_rogue.py",
-  "anchorY": 0.806999,
-  "anchorX": 0.311491,
+  "source": "art/remaster/puppet/build.py (player_rogue)",
+  "anchorY": 0.886713,
+  "anchorX": 0.322298,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "blade-stab",
     "body": [
-      0.0,
-      -0.38137
+      0.013711,
+      -0.538916
     ],
     "contact": [
-      0.292158,
-      -0.217648
+      0.242762,
+      -0.555283
     ]
   },
-  "healthBarY": 0.754733
+  "healthBarY": 0.804558
 }

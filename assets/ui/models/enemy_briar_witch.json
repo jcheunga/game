@@ -1,0 +1,45 @@
+{
+  "frameWidth": 299,
+  "frameHeight": 267,
+  "drawScale": 2.373015873015873,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18718
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_briar_witch",
+  "title": "Briar Witch",
+  "source": "art/remaster/puppet/build.py (enemy_briar_witch)",
+  "anchorY": 0.893477,
+  "anchorX": 0.663638,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.022094,
+      -0.473161
+    ],
+    "contact": [
+      0.222925,
+      -0.679624
+    ]
+  },
+  "healthBarY": 0.716708
+}

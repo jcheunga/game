@@ -17,7 +17,6 @@ public partial class MultiplayerMenu
     private Control _skulls;
     private TextureRect _briefArt;
     private int _board;
-    private string _shownStatus = "";
 
     private static RoyalSpec MpSpec => RoyalSpec.For("multiplayer");
 
@@ -218,8 +217,6 @@ public partial class MultiplayerMenu
             _royalStart.Disabled = _startButton.Disabled;
             _royalStart.TooltipText = _startButton.TooltipText.Length > 0 ? _startButton.TooltipText : "Start challenge";
         }
-        var status = _lastStatusMessage ?? "";
-        if (status.Length > 0 && status != _shownStatus) { _shownStatus = status; RoyalToast.Show(this, status, 606); }
     }
 
     /// <summary>A room on the board, laid out like the concept's room rows.</summary>

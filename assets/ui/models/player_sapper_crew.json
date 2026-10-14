@@ -1,0 +1,45 @@
+{
+  "frameWidth": 294,
+  "frameHeight": 248,
+  "drawScale": 2.3333333333333335,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17032
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_sapper_crew",
+  "title": "Sapper Crew",
+  "source": "art/remaster/puppet/build.py (player_sapper_crew)",
+  "anchorY": 0.909995,
+  "anchorX": 0.682511,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.006159,
+      -0.502966
+    ],
+    "contact": [
+      0.147677,
+      -0.728369
+    ]
+  },
+  "healthBarY": 0.742756
+}

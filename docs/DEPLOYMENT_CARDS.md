@@ -39,6 +39,11 @@ last-fallen-ally Resurrect keep their special targeting. Returning to the cards,
 releasing over other UI or outside the field cancels without spending. Ground
 taps never deploy units.
 
+Courage packs sit on the battlefield until clicked or tapped, and expire after
+8 seconds of active battle time. Pickup taps take priority over aimed magic,
+preserve the armed spell and spend no mana. A dragged spell still lands normally
+over a pack; a camera-pan gesture does not collect it. See [courage drops](COURAGE_DROPS.md).
+
 One pointer owns the gesture, so secondary fingers and emulated mouse events
 cannot create duplicate deployments or casts. Small finger jitter on a card
 still counts as a tap. Horizontal swipes inside an overflowing card row scroll

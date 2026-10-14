@@ -250,8 +250,15 @@ class Poser:
         self.arm.pose.bones[bone].scale = s if not isinstance(s, (int, float)) else (s, s, s)
 
     def apply(self, pose):
-        """pose: {bone: [(deg, axis), ...] | deg} plus optional '@move': {bone: vec}."""
+        """pose: {bone: [(deg, axis), ...] | deg} plus optional '@move': {bone: vec}, '@scale' and
+        '@quat': {bone: Quaternion} (a solved base rotation in the bone's local space, applied first)."""
+        for bone, q in pose.get('@quat', {}).items():
+            if bone in self.arm.pose.bones:
+                pb = self.arm.pose.bones[bone]
+                pb.rotation_quaternion = Quaternion(q) @ pb.rotation_quaternion
         for bone, val in pose.items():
+            if bone == '@quat':
+                continue
             if bone == '@move':
                 for b, off in val.items():
                     self.move(b, off)
@@ -278,6 +285,11 @@ def blend_poses(a, b, t):
     out = {}
     keys = set(a) | set(b)
     for k in keys:
+        if k == '@quat':
+            qa, qb = a.get(k, {}), b.get(k, {})
+            out[k] = {bk: Quaternion(qa.get(bk, (1, 0, 0, 0))).slerp(Quaternion(qb.get(bk, (1, 0, 0, 0))), t)
+                      for bk in set(qa) | set(qb)}
+            continue
         if k in ('@move', '@scale'):
             da, db = a.get(k, {}), b.get(k, {})
             sub = {}
@@ -302,6 +314,11 @@ def add_poses(*poses):
     out = {}
     for p in poses:
         for k, v in p.items():
+            if k == '@quat':
+                d = out.setdefault(k, {})
+                for bk, q in v.items():
+                    d[bk] = Quaternion(q) @ Quaternion(d.get(bk, (1, 0, 0, 0)))
+                continue
             if k in ('@move', '@scale'):
                 d = out.setdefault(k, {})
                 for bk, bv in v.items():

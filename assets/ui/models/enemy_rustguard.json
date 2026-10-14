@@ -1,0 +1,45 @@
+{
+  "frameWidth": 303,
+  "frameHeight": 261,
+  "drawScale": 2.404761904761904,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.23015
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_rustguard",
+  "title": "Rustguard",
+  "source": "art/remaster/puppet/build.py (enemy_rustguard)",
+  "anchorY": 0.896341,
+  "anchorX": 0.623697,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      0.031422,
+      -0.457493
+    ],
+    "contact": [
+      0.314508,
+      -0.330524
+    ]
+  },
+  "healthBarY": 0.663964
+}

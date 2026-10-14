@@ -1,0 +1,45 @@
+{
+  "frameWidth": 340,
+  "frameHeight": 237,
+  "drawScale": 2.698412698412698,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.23086
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_shade",
+  "title": "Shade",
+  "source": "art/remaster/puppet/build.py (enemy_shade)",
+  "anchorY": 0.89853,
+  "anchorX": 0.616083,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.014176,
+      -0.57545
+    ],
+    "contact": [
+      -0.024771,
+      -0.468796
+    ]
+  },
+  "healthBarY": 0.820605
+}

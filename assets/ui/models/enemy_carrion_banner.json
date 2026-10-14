@@ -1,0 +1,45 @@
+{
+  "frameWidth": 377,
+  "frameHeight": 336,
+  "drawScale": 2.7925925925925923,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13733
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_carrion_banner",
+  "title": "Carrion Banner",
+  "source": "art/remaster/puppet/build.py (enemy_carrion_banner)",
+  "anchorY": 0.942423,
+  "anchorX": 0.582147,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.001349,
+      -0.395051
+    ],
+    "contact": [
+      0.313236,
+      -0.225373
+    ]
+  },
+  "healthBarY": 0.761478
+}

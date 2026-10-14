@@ -100,10 +100,16 @@ public partial class ExplorationReview : Node
             Check(!state.TryOpenAdventureTile(beyond,out _) && state.Food==food && !state.IsAdventureTileOpened(beyond),"Tiles beyond the frontier cannot be opened and cost nothing");
             Check(state.TryOpenAdventureTile(frontier,out _) && state.Food==food-GameState.AdventureTileFoodCost && state.IsAdventureTileOpened(frontier)
                 && AdventureTileCatalog.Neighbors(frontier).All(state.IsAdventureTileRevealed) && !AdventureTileCatalog.Neighbors(beyond).Where(t=>t.Id!=frontier.Id).All(state.IsAdventureTileRevealed),
-                "Opening a frontier tile costs 2 food and reveals only the tiles touching it");
+                "Opening a frontier tile costs 1 food and reveals only the tiles touching it");
             Check(!state.TryOpenAdventureTile(frontier,out _) && state.Food==food-GameState.AdventureTileFoodCost,"Charted ground cannot be bought twice");
+            Fund(0);
+            Check(!state.TryOpenAdventureTile(beyond,out var cost) && cost.Contains("1 food") && state.Food==0 && !state.IsAdventureTileOpened(beyond),"Without 1 food a frontier tile explains its cost and stays closed");
             Fund(1);
-            Check(!state.TryOpenAdventureTile(beyond,out var cost) && cost.Contains("2 food") && state.Food==1 && !state.IsAdventureTileOpened(beyond),"Without 2 food a frontier tile explains its cost and stays closed");
+            Check(GameData.Stages.All(stage => state.GetStageEntryFoodCost(stage.StageNumber) == 2)
+                && !state.TrySpendStageEntryFood(start.Site.Stage, out _) && state.Food == 1,
+                "Stages cost 2 food and cannot start with only 1 food");
+            Check(state.TryOpenAdventureTile(beyond, out _) && state.Food == 0,
+                "Exactly 1 food opens a frontier tile and is charged once");
             Fund(100);
             var second=AdventureTileCatalog.Stage("city",1);
             foreach (var tile in GameState.AdventureTilePath(start,second).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(tile,out _);
@@ -151,7 +157,7 @@ public partial class ExplorationReview : Node
             menu.GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Pressed=true,Position=click,GlobalPosition=click});
             menu.GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Pressed=false,Position=click,GlobalPosition=click});
             await Wait(.2);
-            Check(state.IsAdventureTileOpened(target) && state.Food==food-GameState.AdventureTileFoodCost,"Clicking a frontier tile on the map opens it for 2 food");
+            Check(state.IsAdventureTileOpened(target) && state.Food==food-GameState.AdventureTileFoodCost,"Clicking a frontier tile on the map opens it for 1 food");
             await Capture("02-first-tile");
             Fund(100);
             foreach (var tile in GameState.AdventureTilePath(start,AdventureTileCatalog.Stage("city",1)).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(tile,out _);

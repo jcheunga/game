@@ -1,0 +1,45 @@
+{
+  "frameWidth": 328,
+  "frameHeight": 310,
+  "drawScale": 2.6031746031746033,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18085
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_paladin",
+  "title": "Paladin",
+  "source": "art/remaster/puppet/build.py (player_paladin)",
+  "anchorY": 0.923433,
+  "anchorX": 0.620142,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      -0.012325,
+      -0.402399
+    ],
+    "contact": [
+      0.345432,
+      -0.312664
+    ]
+  },
+  "healthBarY": 0.594383
+}

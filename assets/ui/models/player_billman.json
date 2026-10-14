@@ -1,0 +1,45 @@
+{
+  "frameWidth": 365,
+  "frameHeight": 316,
+  "drawScale": 2.896825396825397,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16575
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_billman",
+  "title": "Billman",
+  "source": "art/remaster/puppet/build.py (player_billman)",
+  "anchorY": 0.921894,
+  "anchorX": 0.517695,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      0.004579,
+      -0.377688
+    ],
+    "contact": [
+      0.404295,
+      -0.199501
+    ]
+  },
+  "healthBarY": 0.561737
+}

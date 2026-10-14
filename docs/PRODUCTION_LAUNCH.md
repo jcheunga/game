@@ -58,7 +58,7 @@ remaining requirements have evidence.
 - [x] Lay out every zone as a 63-tile (9 × 7) atlas holding ten stages, ten
   supply caches, a forgotten treasury and sparse discoveries, under an opaque
   cloud layer. Travel and collection are free; each
-  battle costs 4 food. Save version 46 keeps site claims and migrates older
+  battle costs 2 food. Save version 46 keeps site claims and migrates older
   tile, landmark and 60-stage saves. The adventure map smoke test and the
   `--home-map` review cover rewards, free travel, entry-only charges and
   migration. See [ADVENTURE_MAP.md](ADVENTURE_MAP.md).

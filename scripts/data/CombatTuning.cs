@@ -34,6 +34,11 @@ public sealed class CombatTuning
 	public float CourageStart { get; set; } = 0f;
 	public float CourageMax { get; set; } = 100f;
 	public float CourageGainPerSecond { get; set; } = 3f;
+	public float CourageDropChance { get; set; } = 0.10f;
+	public float CourageDropAmount { get; set; } = 20f;
+	public float CourageDropLifetime { get; set; } = 8f;
+	public float CourageDropFadeDuration { get; set; } = 2f;
+	public int CourageDropGuaranteeAfterMisses { get; set; } = 15;
 
 	// Mana pays for magic, separately from the courage that pays for troops. It is earned from kills, not time.
 	public float ManaStart { get; set; } = 0f;
@@ -63,6 +68,12 @@ public sealed class CombatTuning
 
 	public void Normalize()
 	{
+		CourageDropChance = Math.Clamp(CourageDropChance, 0f, 1f);
+		CourageDropAmount = Math.Max(0f, CourageDropAmount);
+		CourageDropLifetime = Math.Max(0.1f, CourageDropLifetime);
+		CourageDropFadeDuration = Math.Clamp(CourageDropFadeDuration, 0f, CourageDropLifetime);
+		CourageDropGuaranteeAfterMisses = Math.Max(0, CourageDropGuaranteeAfterMisses);
+
 		if (BattlefieldRight <= BattlefieldLeft)
 		{
 			BattlefieldRight = BattlefieldLeft + 100f;

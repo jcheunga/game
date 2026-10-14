@@ -1,0 +1,44 @@
+{
+  "frameWidth": 161,
+  "frameHeight": 105,
+  "drawScale": 1.1180555555555556,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_swamp_maw",
+  "title": "Swamp Maw",
+  "source": "art/remaster/puppet/build.py (enemy_swamp_maw)",
+  "anchorY": 0.935092,
+  "anchorX": 0.502018,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.013057,
+      -0.001144
+    ],
+    "contact": [
+      0.013057,
+      -0.785913
+    ]
+  },
+  "healthBarY": 0.790964
+}

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 310,
+  "frameHeight": 274,
+  "drawScale": 2.4603174603174605,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.19119
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_man_at_arms",
+  "title": "Man-at-Arms",
+  "source": "art/remaster/puppet/build.py (player_man_at_arms)",
+  "anchorY": 0.921235,
+  "anchorX": 0.639646,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      0.006217,
+      -0.440252
+    ],
+    "contact": [
+      0.210486,
+      -0.386525
+    ]
+  },
+  "healthBarY": 0.665068
+}

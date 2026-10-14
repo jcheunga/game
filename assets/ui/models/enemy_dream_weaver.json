@@ -1,0 +1,45 @@
+{
+  "frameWidth": 338,
+  "frameHeight": 256,
+  "drawScale": 2.6825396825396823,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17014
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_dream_weaver",
+  "title": "Dream Weaver",
+  "source": "art/remaster/puppet/build.py (enemy_dream_weaver)",
+  "anchorY": 0.910412,
+  "anchorX": 0.696164,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.029906,
+      -0.56467
+    ],
+    "contact": [
+      0.039421,
+      -0.543764
+    ]
+  },
+  "healthBarY": 0.827464
+}

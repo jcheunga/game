@@ -1,44 +1,45 @@
 {
-  "frameWidth": 491,
-  "frameHeight": 644,
-  "drawScale": 1.8195428114766312,
+  "frameWidth": 1097,
+  "frameHeight": 993,
+  "drawScale": 2.8389167087198994,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13832
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss",
   "title": "Grave Lord",
-  "source": "art/remaster/units/enemy_boss.py",
-  "anchorY": 0.734601,
-  "anchorX": 0.442064,
+  "source": "art/remaster/puppet/build.py (enemy_boss)",
+  "anchorY": 0.935119,
+  "anchorX": 0.404196,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "royal-cleave",
     "body": [
-      0.0,
-      -0.299706
+      -0.018679,
+      -0.42828
     ],
     "contact": [
-      0.072733,
-      0.2518
+      0.341091,
+      -0.138348
     ]
   },
-  "healthBarY": 0.630513
+  "healthBarY": 0.663022
 }

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 320,
+  "frameHeight": 248,
+  "drawScale": 2.53968253968254,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.20999
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_powder_bandit",
+  "title": "Powder Bandit",
+  "source": "art/remaster/puppet/build.py (enemy_powder_bandit)",
+  "anchorY": 0.907244,
+  "anchorX": 0.607186,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.001766,
+      -0.496045
+    ],
+    "contact": [
+      0.105023,
+      -0.653907
+    ]
+  },
+  "healthBarY": 0.722193
+}

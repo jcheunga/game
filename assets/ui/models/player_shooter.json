@@ -1,44 +1,45 @@
 {
-  "frameWidth": 228,
-  "frameHeight": 218,
-  "drawScale": 1.8095238095238098,
+  "frameWidth": 340,
+  "frameHeight": 250,
+  "drawScale": 2.698412698412699,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16513
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_shooter",
   "title": "Archer",
-  "source": "art/remaster/units/player_shooter.py",
-  "anchorY": 0.859704,
-  "anchorX": 0.312839,
+  "source": "art/remaster/puppet/build.py (player_shooter)",
+  "anchorY": 0.901211,
+  "anchorX": 0.581947,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "bow-draw",
     "body": [
-      0.0,
-      -0.413406
+      0.004609,
+      -0.472856
     ],
     "contact": [
-      0.253471,
-      -0.542142
+      0.318881,
+      -0.48722
     ]
   },
-  "healthBarY": 0.804891
+  "healthBarY": 0.730118
 }

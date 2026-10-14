@@ -1,0 +1,45 @@
+{
+  "frameWidth": 318,
+  "frameHeight": 220,
+  "drawScale": 2.717948717948718,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.19415
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_sealbreaker",
+  "title": "Sealbreaker",
+  "source": "art/remaster/puppet/build.py (enemy_sealbreaker)",
+  "anchorY": 0.905195,
+  "anchorX": 0.566235,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "spear-thrust",
+    "body": [
+      0.005671,
+      -0.529367
+    ],
+    "contact": [
+      0.405006,
+      -0.334496
+    ]
+  },
+  "healthBarY": 0.754182
+}

@@ -1,44 +1,45 @@
 {
-  "frameWidth": 317,
-  "frameHeight": 357,
-  "drawScale": 2.326066027989105,
+  "frameWidth": 323,
+  "frameHeight": 273,
+  "drawScale": 2.370092514323284,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16885
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_stormcaller",
   "title": "Stormcaller",
-  "source": "art/remaster/units/player_stormcaller.py",
-  "anchorY": 0.871229,
-  "anchorX": 0.439689,
+  "source": "art/remaster/puppet/build.py (player_stormcaller)",
+  "anchorY": 0.91754,
+  "anchorX": 0.355936,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.288211
+      -0.001746,
+      -0.495958
     ],
     "contact": [
-      0.275835,
-      -0.51266
+      0.183944,
+      -0.722519
     ]
   },
-  "healthBarY": 0.56914
+  "healthBarY": 0.729825
 }

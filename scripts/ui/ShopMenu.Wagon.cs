@@ -179,8 +179,8 @@ public partial class ShopMenu
         var rect = spec.Rect("button.upgrade");
         var button = RoyalButton.Over(rect, max ? "Fully trained" : "Upgrade", () =>
         {
-            if (state.TryUpgradeBase(upgrade.Id, out var message)) AudioDirector.Instance?.PlayUpgradeConfirm();
-            Toast(message); Refresh();
+            if (state.TryUpgradeBase(upgrade.Id, out _)) AudioDirector.Instance?.PlayUpgradeConfirm();
+            Refresh();
         }, 6);
         button.Disabled = max || state.Gold < cost;
         _wagonStage.AddChild(button);

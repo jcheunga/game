@@ -1,0 +1,45 @@
+{
+  "frameWidth": 322,
+  "frameHeight": 249,
+  "drawScale": 2.555555555555556,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.2236
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_bellringer",
+  "title": "Bellringer",
+  "source": "art/remaster/puppet/build.py (enemy_bellringer)",
+  "anchorY": 0.878104,
+  "anchorX": 0.56131,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.035357,
+      -0.481461
+    ],
+    "contact": [
+      0.175426,
+      -0.643655
+    ]
+  },
+  "healthBarY": 0.730782
+}

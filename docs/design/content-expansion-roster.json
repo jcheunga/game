@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "design_only",
+  "status": "reference pool; selected 32-card core, enemies, relics, spells and tactical cards implemented",
   "date": "2026-10-08",
   "targets": {
     "playable_units": 50,
@@ -12,7 +12,12 @@
     "spells": 30,
     "tactical_items": 12,
     "zone_bosses": 10,
-    "mid_zone_bosses": 4
+    "mid_zone_bosses": 4,
+    "main_campaign_new_enemy_debuts": 10,
+    "reserve_regional_enemy_designs": 30,
+    "initial_core_playable_units": 32,
+    "initial_core_melee_units": 22,
+    "initial_core_siege_specialists": 2
   },
   "existing_units": [
     {
@@ -1093,7 +1098,8 @@
         "BaseDamage": 14,
         "ColorHex": "84a98c"
       },
-      "planned_identity": "Retain the basic teaching enemy."
+      "planned_identity": "Retain the basic teaching enemy.",
+      "planned_campaign_role": "provisional_opening_palette"
     },
     {
       "id": "enemy_runner",
@@ -1116,7 +1122,8 @@
         "BaseDamage": 12,
         "ColorHex": "6d597a"
       },
-      "planned_identity": "Retain fast fragile pressure."
+      "planned_identity": "Retain fast fragile pressure.",
+      "planned_campaign_role": "provisional_opening_palette"
     },
     {
       "id": "enemy_bloater",
@@ -1141,7 +1148,8 @@
         "DeathBurstRadius": 54.0,
         "ColorHex": "c77dff"
       },
-      "planned_identity": "Retain death blast; use a clearly labeled variant only if enabling enemy collateral damage."
+      "planned_identity": "Retain death blast; use a clearly labeled variant only if enabling enemy collateral damage.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_brute",
@@ -1164,7 +1172,8 @@
         "BaseDamage": 24,
         "ColorHex": "9d0208"
       },
-      "planned_identity": "Retain the uncomplicated heavy melee body."
+      "planned_identity": "Retain the uncomplicated heavy melee body.",
+      "planned_campaign_role": "provisional_opening_palette"
     },
     {
       "id": "enemy_spitter",
@@ -1188,7 +1197,8 @@
         "BaseDamage": 15,
         "ColorHex": "bdb2ff"
       },
-      "planned_identity": "Retain ordinary ranged pressure; specialized blight belongs to Miasma Priest."
+      "planned_identity": "Retain ordinary ranged pressure; specialized blight belongs to Miasma Priest.",
+      "planned_campaign_role": "provisional_opening_palette"
     },
     {
       "id": "enemy_splitter",
@@ -1212,7 +1222,8 @@
         "SpawnOnDeathCount": 2,
         "ColorHex": "43aa8b"
       },
-      "planned_identity": "Retain two-body death split; split bodies are not corpse-token or reward farms."
+      "planned_identity": "Retain two-body death split; split bodies are not corpse-token or reward farms.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_saboteur",
@@ -1235,7 +1246,8 @@
         "BaseDamage": 32,
         "ColorHex": "f94144"
       },
-      "planned_identity": "Retain wagon rush; correct suicide-bomber lore or add a separately telegraphed one-use strike."
+      "planned_identity": "Retain wagon rush; correct suicide-bomber lore or add a separately telegraphed one-use strike.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_howler",
@@ -1261,7 +1273,8 @@
         "AuraSpeedScale": 1.18,
         "ColorHex": "f8961e"
       },
-      "planned_identity": "Retain passive nearby damage/movement buff; War Drummer uses interruptible attack tempo instead."
+      "planned_identity": "Retain passive nearby damage/movement buff; War Drummer uses interruptible attack tempo instead.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_jammer",
@@ -1289,7 +1302,8 @@
         "SpecialBuffDuration": 5.2,
         "ColorHex": "577590"
       },
-      "planned_identity": "Retain global deployment disruption with its recovery window; Null Magister uses a local field."
+      "planned_identity": "Retain global deployment disruption with its recovery window; Null Magister uses a local field.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_crusher",
@@ -1313,7 +1327,8 @@
         "DamageTakenScale": 0.76,
         "ColorHex": "7f5539"
       },
-      "planned_identity": "Retain a readable physical tank; adopt explicit armor once counters are taught."
+      "planned_identity": "Retain a readable physical tank; adopt explicit armor once counters are taught.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_shieldwall",
@@ -1340,7 +1355,8 @@
         "ColorHex": "adb5bd",
         "DeployQuote": "Formation!"
       },
-      "planned_identity": "Retain formation projectile interception."
+      "planned_identity": "Retain formation projectile interception.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_lich",
@@ -1371,7 +1387,8 @@
         "ColorHex": "7b2d8e",
         "DeployQuote": "The dead obey!"
       },
-      "planned_identity": "Retain periodic simple reinforcements; Bone Cantor requires corpse tokens and channels for an elite."
+      "planned_identity": "Retain periodic simple reinforcements; Bone Cantor requires corpse tokens and channels for an elite.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_siegetower",
@@ -1398,7 +1415,8 @@
         "SpecialSpawnCount": 4,
         "ColorHex": "6c584c"
       },
-      "planned_identity": "Retain the moving reinforcement carrier."
+      "planned_identity": "Retain the moving reinforcement carrier.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_mirror",
@@ -1423,7 +1441,8 @@
         "ColorHex": "b8c0ff",
         "DeployQuote": "Your own blade!"
       },
-      "planned_identity": "Retain general direct-damage reflection; Thorn Brute reflects only contact in a visible stance."
+      "planned_identity": "Retain general direct-damage reflection; Thorn Brute reflects only contact in a visible stance.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_tunneler",
@@ -1449,7 +1468,8 @@
         "ColorHex": "8d6e63",
         "DeployQuote": "From below!"
       },
-      "planned_identity": "Retain movement behind the rearmost troop; Cliff Stalker selects ranged-primary targets and telegraphs a leap."
+      "planned_identity": "Retain movement behind the rearmost troop; Cliff Stalker selects ranged-primary targets and telegraphs a leap.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_boneballista",
@@ -1478,7 +1498,8 @@
         "ColorHex": "cdb4db",
         "DeployQuote": "Loose the spine bolt!"
       },
-      "planned_identity": "Retain long-range ordinary artillery."
+      "planned_identity": "Retain long-range ordinary artillery.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_catacomb_giant",
@@ -1506,7 +1527,8 @@
         "ColorHex": "7f5539",
         "DeployQuote": "Break them!"
       },
-      "planned_identity": "Retain splash melee and three-body death split."
+      "planned_identity": "Retain splash melee and three-body death split.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_revenant_captain",
@@ -1533,7 +1555,8 @@
         "ColorHex": "ff9f1c",
         "DeployQuote": "Advance!"
       },
-      "planned_identity": "Add a periodic visible escort rally instead of only a different Herald stat profile."
+      "planned_identity": "Add a periodic visible escort rally instead of only a different Herald stat profile.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     },
     {
       "id": "enemy_plague_engine",
@@ -1562,7 +1585,8 @@
         "ColorHex": "588157",
         "DeployQuote": "Shatter the wagon!"
       },
-      "planned_identity": "Retain heavy artillery; optionally add a short marked blight patch after the status system exists."
+      "planned_identity": "Retain heavy artillery; optionally add a short marked blight patch after the status system exists.",
+      "planned_campaign_role": "requires_explicit_debut_assignment"
     }
   ],
   "new_enemies": [
@@ -1578,7 +1602,9 @@
       "id": "enemy_grave_rat",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Rustguard",
@@ -1592,7 +1618,21 @@
       "id": "enemy_rustguard",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 4,
+      "eligible_later_zones": [
+        "harbor",
+        "foundry",
+        "quarantine",
+        "thornwall",
+        "basilica",
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Bellringer",
@@ -1606,7 +1646,9 @@
       "id": "enemy_bellringer",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Highwayman",
@@ -1620,7 +1662,9 @@
       "id": "enemy_highwayman",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Drowned Harpooner",
@@ -1634,7 +1678,20 @@
       "id": "enemy_drowned_harpooner",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 14,
+      "eligible_later_zones": [
+        "foundry",
+        "quarantine",
+        "thornwall",
+        "basilica",
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Salt Wraith",
@@ -1648,7 +1705,9 @@
       "id": "enemy_salt_wraith",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Barnacle Guard",
@@ -1662,7 +1721,9 @@
       "id": "enemy_barnacle_guard",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Hookblade Raider",
@@ -1676,7 +1737,9 @@
       "id": "enemy_hookblade_raider",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Ash Hound",
@@ -1690,7 +1753,9 @@
       "id": "enemy_ash_hound",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Cinder Spitter",
@@ -1704,7 +1769,19 @@
       "id": "enemy_cinder_spitter",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 24,
+      "eligible_later_zones": [
+        "quarantine",
+        "thornwall",
+        "basilica",
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Furnace Knight",
@@ -1718,7 +1795,9 @@
       "id": "enemy_furnace_knight",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 1
+      "delivery_pack": 1,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Powder Bandit",
@@ -1732,7 +1811,9 @@
       "id": "enemy_powder_bandit",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Plague Leech",
@@ -1746,7 +1827,9 @@
       "id": "enemy_plague_leech",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Miasma Priest",
@@ -1760,7 +1843,18 @@
       "id": "enemy_miasma_priest",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 34,
+      "eligible_later_zones": [
+        "thornwall",
+        "basilica",
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Rot Surgeon",
@@ -1774,7 +1868,9 @@
       "id": "enemy_rot_surgeon",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Sealbreaker",
@@ -1788,7 +1884,9 @@
       "id": "enemy_sealbreaker",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Cliff Stalker",
@@ -1802,7 +1900,17 @@
       "id": "enemy_cliff_stalker",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 44,
+      "eligible_later_zones": [
+        "basilica",
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Thorn Brute",
@@ -1816,7 +1924,9 @@
       "id": "enemy_thorn_brute",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Briar Witch",
@@ -1830,7 +1940,9 @@
       "id": "enemy_briar_witch",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Avalanche Bearer",
@@ -1844,7 +1956,9 @@
       "id": "enemy_avalanche_bearer",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Chain Penitent",
@@ -1858,7 +1972,9 @@
       "id": "enemy_chain_penitent",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Ossuary Archer",
@@ -1872,7 +1988,9 @@
       "id": "enemy_ossuary_archer",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Bone Cantor",
@@ -1886,7 +2004,16 @@
       "id": "enemy_bone_cantor",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 54,
+      "eligible_later_zones": [
+        "mire",
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Reliquary Eye",
@@ -1900,7 +2027,9 @@
       "id": "enemy_reliquary_eye",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Swamp Maw",
@@ -1914,7 +2043,15 @@
       "id": "enemy_swamp_maw",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 64,
+      "eligible_later_zones": [
+        "steppe",
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Bog Spore",
@@ -1928,7 +2065,9 @@
       "id": "enemy_bog_spore",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Drowned Colossus",
@@ -1942,7 +2081,9 @@
       "id": "enemy_drowned_colossus",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Bloated Eel",
@@ -1956,7 +2097,9 @@
       "id": "enemy_bloated_eel",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Bone Lancer",
@@ -1970,7 +2113,14 @@
       "id": "enemy_bone_lancer",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 74,
+      "eligible_later_zones": [
+        "gloamwood",
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Dust Reaver",
@@ -1984,7 +2134,9 @@
       "id": "enemy_dust_reaver",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Carrion Banner",
@@ -1998,7 +2150,9 @@
       "id": "enemy_carrion_banner",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "War Drummer",
@@ -2012,7 +2166,9 @@
       "id": "enemy_war_drummer",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Shade",
@@ -2026,7 +2182,13 @@
       "id": "enemy_shade",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 3
+      "delivery_pack": 3,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 84,
+      "eligible_later_zones": [
+        "citadel"
+      ],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Mirror Wisp",
@@ -2040,7 +2202,9 @@
       "id": "enemy_mirror_wisp",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Wicker Giant",
@@ -2054,7 +2218,9 @@
       "id": "enemy_wicker_giant",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 2
+      "delivery_pack": 2,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Dream Weaver",
@@ -2068,7 +2234,9 @@
       "id": "enemy_dream_weaver",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Gate Breaker",
@@ -2082,7 +2250,9 @@
       "id": "enemy_gate_breaker",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Crown Executioner",
@@ -2096,7 +2266,9 @@
       "id": "enemy_crown_executioner",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Null Magister",
@@ -2110,7 +2282,11 @@
       "id": "enemy_null_magister",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "provisional_main_campaign_debut",
+      "proposed_debut_stage": 94,
+      "eligible_later_zones": [],
+      "can_recur_in_later_chapters": true
     },
     {
       "name": "Soul Standard",
@@ -2124,7 +2300,9 @@
       "id": "enemy_soul_standard",
       "status": "proposed",
       "hostile": true,
-      "delivery_pack": 4
+      "delivery_pack": 4,
+      "planned_campaign_role": "reserve_for_later_content",
+      "main_campaign_debut_stage": null
     },
     {
       "name": "Ash Pilgrim",
@@ -2138,7 +2316,9 @@
       "id": "enemy_ash_pilgrim",
       "status": "proposed",
       "hostile": false,
-      "delivery_pack": 0
+      "delivery_pack": 0,
+      "planned_campaign_role": "optional_non_hostile_encounter",
+      "counts_toward_regular_enemy_debut_limit": false
     }
   ],
   "existing_bosses": [
@@ -4364,6 +4544,20 @@
         "Tidal Push",
         "Molten Brand",
         "Gale Step"
+      ],
+      "provisional_campaign_enemy_debuts": [
+        "Rustguard",
+        "Drowned Harpooner"
+      ],
+      "reserve_enemy_designs": [
+        "Grave Rat",
+        "Bellringer",
+        "Highwayman",
+        "Salt Wraith",
+        "Barnacle Guard",
+        "Hookblade Raider",
+        "Ash Hound",
+        "Furnace Knight"
       ]
     },
     {
@@ -4420,6 +4614,20 @@
         "Gravitation Well",
         "Verdant Renewal",
         "Bramble Snare"
+      ],
+      "provisional_campaign_enemy_debuts": [
+        "Cinder Spitter",
+        "Miasma Priest"
+      ],
+      "reserve_enemy_designs": [
+        "Powder Bandit",
+        "Plague Leech",
+        "Rot Surgeon",
+        "Sealbreaker",
+        "Thorn Brute",
+        "Briar Witch",
+        "Bog Spore",
+        "Wicker Giant"
       ]
     },
     {
@@ -4476,6 +4684,20 @@
         "Consecrated Ground",
         "Revealing Flare",
         "Mirror Ward"
+      ],
+      "provisional_campaign_enemy_debuts": [
+        "Cliff Stalker",
+        "Bone Cantor",
+        "Swamp Maw",
+        "Shade"
+      ],
+      "reserve_enemy_designs": [
+        "Avalanche Bearer",
+        "Chain Penitent",
+        "Ossuary Archer",
+        "Reliquary Eye",
+        "Drowned Colossus",
+        "Bloated Eel"
       ]
     },
     {
@@ -4530,6 +4752,20 @@
         "Rallying Advance",
         "Banish",
         "Royal Edict"
+      ],
+      "provisional_campaign_enemy_debuts": [
+        "Bone Lancer",
+        "Null Magister"
+      ],
+      "reserve_enemy_designs": [
+        "Dust Reaver",
+        "Carrion Banner",
+        "War Drummer",
+        "Mirror Wisp",
+        "Dream Weaver",
+        "Gate Breaker",
+        "Crown Executioner",
+        "Soul Standard"
       ]
     }
   ],
@@ -4894,5 +5130,565 @@
       "id": "spell_royal_edict",
       "status": "proposed"
     }
-  ]
+  ],
+  "battle_reward_design": {
+    "status": "implemented",
+    "courage_drops": {
+      "purpose": "An occasional noticeable reinforcement boost alongside normal courage regeneration.",
+      "chance_per_eligible_defeat": 0.1,
+      "courage_per_pack": 20,
+      "guarantee_after_eligible_misses": 15,
+      "guarantee_semantics": "After 15 misses, guarantee on the next eligible defeat.",
+      "collection": "manual click or tap; pack remains at its drop location until collected, then flies to the courage meter and grants its reward",
+      "eligible": "authored hostile enemies and bosses, once per original qualifying instance",
+      "excluded": [
+        "summons",
+        "split bodies",
+        "illusions",
+        "already rewarded revived instances",
+        "self-destroying carriers",
+        "scripted despawns",
+        "player-created targets",
+        "non-hostile encounters"
+      ],
+      "full_meter": "drops still spawn; clicking at full courage leaves the pack and its running timer in place; collection clamps reward to capacity and loses overflow; no carryover between battles",
+      "challenge_randomness": "dedicated seeded reward sequence",
+      "balance_status": "Initial live tuning: 10% chance, +20 courage, 8-second lifetime, 2-second fade, guarantee after 15 eligible misses. Requires further balance and physical-device playtesting.",
+      "balance_rationale": "20 courage covers one current Swordsman or two War Hounds and equals about 6.7 seconds of baseline regeneration; revised from the earlier 10-courage proposal.",
+      "pickup_lifetime_seconds": 8,
+      "expiry_warning_seconds": 2,
+      "lifetime_clock": "active battle time; paused while the battle is paused",
+      "uncollected_expiry": "disappears with no courage granted",
+      "pity_reset": "when a pack spawns, whether or not it is later collected",
+      "other_pack_sources": "Quartermaster and Supply Crate physical packs use the same manual collection and lifetime rules; direct courage refunds remain direct meter accounting",
+      "input_rules": {
+        "pickup_tap": "takes priority over a simple ground spell-target tap; no mana spent and armed spell remains selected",
+        "spell_drag": "does not collect crossed packs",
+        "camera_pan": "does not collect crossed packs",
+        "claim_limit": "one reward per pack",
+        "touch_target": "generous hit area, visible above ground clutter"
+      },
+      "status": "implemented",
+      "implementation_notes": "Ordinary enemy packs are implemented; Quartermaster, Supply Crate and expanded roster entries remain proposals.",
+      "runtime_tuning_path": "data/combat_config.json"
+    }
+  },
+  "unit_stat_design": {
+    "status": "proposed",
+    "requested_by_user": [
+      "Armor contributing to physical resistance",
+      "Magical resistance, including protection from armor types/enchantments",
+      "Critical Damage as a separate unit stat"
+    ],
+    "applies_to": [
+      "player units",
+      "hostile units"
+    ],
+    "stats": {
+      "Armor": {
+        "kind": "rating",
+        "purpose": "Contributes to Physical Resistance; armor pieces can also grant Magical Resistance according to their material or enchantment.",
+        "sources": [
+          "unit base armor",
+          "worn armor equipment",
+          "upgrades",
+          "relics",
+          "enchantments"
+        ],
+        "conversion_formula": "Physical resistance = min(75, 100 * final armor / (100 + final armor) + direct physical resistance pp)."
+      },
+      "PhysicalResistance": {
+        "kind": "percentage",
+        "purpose": "Reduces explicitly physical damage; final displayed value includes armor contribution.",
+        "counters": [
+          "armor break",
+          "authored physical penetration"
+        ]
+      },
+      "MagicalResistance": {
+        "kind": "percentage",
+        "purpose": "Reduces explicitly magical damage independently of physical defense.",
+        "sources": [
+          "unit traits",
+          "enchanted armor",
+          "protective robes",
+          "relics",
+          "enchantments",
+          "temporary magical protection"
+        ]
+      },
+      "CriticalDamage": {
+        "kind": "percentage bonus",
+        "purpose": "Extra damage on a successful eligible critical hit; separate from Critical Chance.",
+        "example": {
+          "normal_damage": 100,
+          "critical_bonus_percent": 50,
+          "critical_damage_before_defenses": 150
+        },
+        "sources": [
+          "unit base stats",
+          "upgrades",
+          "weapon/relic bonuses",
+          "enchantments"
+        ]
+      },
+      "CriticalChance": {
+        "kind": "percentage",
+        "purpose": "Supporting stat controlling critical-hit frequency rather than critical-hit magnitude."
+      }
+    },
+    "display": [
+      "armory",
+      "unit inspection",
+      "codex",
+      "equipment comparison"
+    ],
+    "damage_resolution": [
+      "explicit physical/magical components",
+      "eligible critical multiplier",
+      "relevant resistance and authored modifiers",
+      "separate shield pool handling"
+    ],
+    "spell_critical_policy": "Unit attacks and eligible abilities use owner stats. Player-command spells require an explicit per-spell policy; never inherit an arbitrary squad member's stats.",
+    "equipment_layout": "Dedicated armor slot and visible appearance swapping require a separate design decision; retain current planned relic-slot count.",
+    "balance_pending": [
+      "Equal-investment early-card tests in late campaign zones",
+      "Conditional skill and item proc power budgets",
+      "Upgrade economy and save migration",
+      "Physical-device stat preview checks"
+    ],
+    "migration": "Replace or deliberately map generic reduction; avoid applying the old reduction a second time.",
+    "delivery_pack": 1,
+    "player_level_cap": 20,
+    "reference_model": "docs/design/melee-roster-revision.json",
+    "permanent_bonus_reference": "docs/design/progression-balance-policy.json"
+  },
+  "campaign_enemy_pacing": {
+    "status": "proposed",
+    "max_unseen_regular_enemy_types_per_zone": 1,
+    "provisional_opening_palette": [
+      "Risen",
+      "Ghoul",
+      "Grave Brute",
+      "Blight Caster"
+    ],
+    "opening_palette_note": "Teach a small initial palette before the first regional debut; do not assume every retained enemy is familiar to a new player.",
+    "scope": "Enemy encounter pacing; player recruitment and spell discovery schedules are separate.",
+    "first_appearance_budget_applies_to": [
+      "retained regular enemy types",
+      "new regional regular enemy types",
+      "boss escorts and summoned regular types"
+    ],
+    "recurrence": "A taught type can recur in its debut zone and later zones; no earlier-zone appearances even on replay.",
+    "first_campaign_debuts": [
+      {
+        "zone": "city",
+        "zone_order": 1,
+        "enemy_id": "enemy_rustguard",
+        "name": "Rustguard",
+        "proposed_stage": 4,
+        "eligible_later_zones": [
+          "harbor",
+          "foundry",
+          "quarantine",
+          "thornwall",
+          "basilica",
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "harbor",
+        "zone_order": 2,
+        "enemy_id": "enemy_drowned_harpooner",
+        "name": "Drowned Harpooner",
+        "proposed_stage": 14,
+        "eligible_later_zones": [
+          "foundry",
+          "quarantine",
+          "thornwall",
+          "basilica",
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "foundry",
+        "zone_order": 3,
+        "enemy_id": "enemy_cinder_spitter",
+        "name": "Cinder Spitter",
+        "proposed_stage": 24,
+        "eligible_later_zones": [
+          "quarantine",
+          "thornwall",
+          "basilica",
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "quarantine",
+        "zone_order": 4,
+        "enemy_id": "enemy_miasma_priest",
+        "name": "Miasma Priest",
+        "proposed_stage": 34,
+        "eligible_later_zones": [
+          "thornwall",
+          "basilica",
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "thornwall",
+        "zone_order": 5,
+        "enemy_id": "enemy_cliff_stalker",
+        "name": "Cliff Stalker",
+        "proposed_stage": 44,
+        "eligible_later_zones": [
+          "basilica",
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "basilica",
+        "zone_order": 6,
+        "enemy_id": "enemy_bone_cantor",
+        "name": "Bone Cantor",
+        "proposed_stage": 54,
+        "eligible_later_zones": [
+          "mire",
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "mire",
+        "zone_order": 7,
+        "enemy_id": "enemy_swamp_maw",
+        "name": "Swamp Maw",
+        "proposed_stage": 64,
+        "eligible_later_zones": [
+          "steppe",
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "steppe",
+        "zone_order": 8,
+        "enemy_id": "enemy_bone_lancer",
+        "name": "Bone Lancer",
+        "proposed_stage": 74,
+        "eligible_later_zones": [
+          "gloamwood",
+          "citadel"
+        ]
+      },
+      {
+        "zone": "gloamwood",
+        "zone_order": 9,
+        "enemy_id": "enemy_shade",
+        "name": "Shade",
+        "proposed_stage": 84,
+        "eligible_later_zones": [
+          "citadel"
+        ]
+      },
+      {
+        "zone": "citadel",
+        "zone_order": 10,
+        "enemy_id": "enemy_null_magister",
+        "name": "Null Magister",
+        "proposed_stage": 94,
+        "eligible_later_zones": []
+      }
+    ],
+    "reserve_new_enemy_ids": [
+      "enemy_grave_rat",
+      "enemy_bellringer",
+      "enemy_highwayman",
+      "enemy_salt_wraith",
+      "enemy_barnacle_guard",
+      "enemy_hookblade_raider",
+      "enemy_ash_hound",
+      "enemy_furnace_knight",
+      "enemy_powder_bandit",
+      "enemy_plague_leech",
+      "enemy_rot_surgeon",
+      "enemy_sealbreaker",
+      "enemy_thorn_brute",
+      "enemy_briar_witch",
+      "enemy_avalanche_bearer",
+      "enemy_chain_penitent",
+      "enemy_ossuary_archer",
+      "enemy_reliquary_eye",
+      "enemy_bog_spore",
+      "enemy_drowned_colossus",
+      "enemy_bloated_eel",
+      "enemy_dust_reaver",
+      "enemy_carrion_banner",
+      "enemy_war_drummer",
+      "enemy_mirror_wisp",
+      "enemy_wicker_giant",
+      "enemy_dream_weaver",
+      "enemy_gate_breaker",
+      "enemy_crown_executioner",
+      "enemy_soul_standard"
+    ],
+    "retained_specials": "Assign an explicit later debut or replace a provisional zone pick; never bypass the budget by treating an unseen retained enemy as familiar.",
+    "bosses": "Separate commander milestones; regular escorts must already be taught.",
+    "zone_pattern": {
+      "local_stages_1_to_3": "familiar encounters",
+      "local_stage_4": "one readable debut pack",
+      "remaining_stages": "practice and recombine known types; authored commander milestones remain"
+    },
+    "live_stage_data_changed": false
+  },
+  "progression_design": {
+    "status": "proposed",
+    "player_level_cap": 20,
+    "enemy_levels_by_zone": [
+      {
+        "zone": "city",
+        "enemy_level_early": 1,
+        "enemy_level_late": 2,
+        "boss_level": 2
+      },
+      {
+        "zone": "harbor",
+        "enemy_level_early": 3,
+        "enemy_level_late": 4,
+        "boss_level": 4
+      },
+      {
+        "zone": "foundry",
+        "enemy_level_early": 5,
+        "enemy_level_late": 6,
+        "boss_level": 6
+      },
+      {
+        "zone": "quarantine",
+        "enemy_level_early": 7,
+        "enemy_level_late": 8,
+        "boss_level": 8
+      },
+      {
+        "zone": "thornwall",
+        "enemy_level_early": 9,
+        "enemy_level_late": 10,
+        "boss_level": 10
+      },
+      {
+        "zone": "basilica",
+        "enemy_level_early": 11,
+        "enemy_level_late": 12,
+        "boss_level": 12
+      },
+      {
+        "zone": "mire",
+        "enemy_level_early": 13,
+        "enemy_level_late": 14,
+        "boss_level": 14
+      },
+      {
+        "zone": "steppe",
+        "enemy_level_early": 15,
+        "enemy_level_late": 16,
+        "boss_level": 16
+      },
+      {
+        "zone": "gloamwood",
+        "enemy_level_early": 17,
+        "enemy_level_late": 18,
+        "boss_level": 18
+      },
+      {
+        "zone": "citadel",
+        "enemy_level_early": 19,
+        "enemy_level_late": 20,
+        "boss_level": 20
+      }
+    ],
+    "returning_enemies": "Use encounter zone level while retaining learned behavior.",
+    "balance_reference": "docs/design/progression-balance-policy.json",
+    "live_game_level_cap_changed": false,
+    "growth_mode": "Shallow common linear HP/damage growth; defenses and critical profiles fixed with level"
+  },
+  "roster_review": {
+    "status": "superseded for player core by melee_roster_design; two-siege limit retained",
+    "user_preference": "Distinct units, few siege specialists, and a medieval infantry emphasis starting with Peasant and Militia",
+    "maximum_dedicated_siege_specialists_in_core_roster": 2,
+    "recommended_core_siege_units": [
+      "Ballista Crew",
+      "Sapper Crew"
+    ],
+    "recommended_future_reserve": [
+      "Trebuchet Crew"
+    ],
+    "recommended_role_revisions": [
+      {
+        "name": "Siege Engineer",
+        "direction": "Proposed core name Caravan Engineer; repair and construction support; ownership ID preserved"
+      },
+      {
+        "name": "Halberdier",
+        "direction": "Troop-fighting polearm sweep with ordinary structure damage; revised level 1 structure value 24"
+      }
+    ],
+    "overlap_groups_to_review": [
+      [
+        "Archer",
+        "Crossbowman",
+        "Longbowman"
+      ],
+      [
+        "Shield Knight",
+        "Lantern Guard",
+        "Iron Sentinel"
+      ],
+      [
+        "Field Medic",
+        "Battle Monk",
+        "Druid"
+      ]
+    ],
+    "structure_eligibility_is_not_siege_specialization": true,
+    "collection_total_is_not_a_reason_to_keep_a_duplicate": true,
+    "live_game_changed": false
+  },
+  "melee_roster_design": {
+    "status": "latest proposed player core direction; previous unit pool retained as reference",
+    "reference": "docs/MELEE_ROSTER_DESIGN.md",
+    "numeric_reference": "docs/design/melee-roster-revision.json",
+    "core_units": 32,
+    "foot_melee": 20,
+    "mounted_melee": 2,
+    "melee_share_pct": 68.75,
+    "ranged": 3,
+    "support": 5,
+    "dedicated_siege": 2,
+    "starter": "Peasant",
+    "next_recruit": "Militia",
+    "new_melee_concepts": [
+      "Peasant",
+      "Axeman",
+      "Billman",
+      "Man-at-Arms",
+      "Greatswordsman",
+      "Warhammer Knight",
+      "Poleaxe Knight"
+    ],
+    "core_unit_ids": [
+      "player_peasant",
+      "player_militia",
+      "player_spear",
+      "player_shooter",
+      "player_brawler",
+      "player_field_medic",
+      "player_axeman",
+      "player_maceman",
+      "player_mechanic",
+      "player_billman",
+      "player_man_at_arms",
+      "player_ranger",
+      "player_defender",
+      "player_coordinator",
+      "player_paladin",
+      "player_pikeman",
+      "player_breacher",
+      "player_raider",
+      "player_gravebound_knight",
+      "player_greatswordsman",
+      "player_quartermaster",
+      "player_berserker",
+      "player_sapper_crew",
+      "player_outrider",
+      "player_longbowman",
+      "player_warhammer_knight",
+      "player_rogue",
+      "player_duelist",
+      "player_marksman",
+      "player_poleaxe_knight",
+      "player_banner",
+      "player_ballista"
+    ],
+    "reserve_prior_unit_ids": [
+      "player_grenadier",
+      "player_hound",
+      "player_necromancer",
+      "player_lantern_guard",
+      "player_stormcaller",
+      "player_javelin_skirmisher",
+      "player_iron_sentinel",
+      "player_firepot_thrower",
+      "player_runesmith",
+      "player_flame_adept",
+      "player_plague_doctor",
+      "player_flagellant",
+      "player_trapper",
+      "player_earthshaper",
+      "player_spirit_keeper",
+      "player_wardbreaker",
+      "player_druid",
+      "player_frost_witch",
+      "player_mounted_archer",
+      "player_executioner",
+      "player_falconer",
+      "player_illusionist",
+      "player_chanter",
+      "player_trebuchet_crew",
+      "player_dragon_tamer"
+    ],
+    "recruitment_progression": "Distinct recruitment branches; all cards level to 20; cheap troops retain a courage and deployment role",
+    "preserve_existing_save_ownership": true,
+    "enemy_introduction_policy_changed": false,
+    "previous_docx_catalog_status": "superseded first-pass stat snapshot; current core stats and smaller gear packages live in version 3 references",
+    "previous_unit_delivery_packs_status": "reference pool; melee-first build priority supersedes them",
+    "live_game_changed": false,
+    "minimum_melee_share_when_expanding_pct": 65,
+    "balance_version": 3,
+    "power_budget_reference": "docs/PROGRESSION_BALANCE.md"
+  },
+  "power_creep_design": {
+    "status": "latest version 3 proposed balance direction; live gameplay unchanged",
+    "reference": "docs/PROGRESSION_BALANCE.md",
+    "numeric_reference": "docs/design/progression-balance-policy.json",
+    "core_stat_reference": "docs/design/melee-roster-revision.json",
+    "intent": "Early recruits retain several useful late-campaign roles; later recruits add modest strength or a bounded specialization with costs and weaknesses",
+    "growth_mode": "linear percentages of level 1 base; no compounding",
+    "health_pct_per_level": 1.5,
+    "attack_and_structure_pct_per_level": 1,
+    "level_20_health_gain_pct": 28.5,
+    "level_20_attack_gain_pct": 19,
+    "fixed_defense_and_critical_profiles_with_level": true,
+    "same_growth_for_all_rarities": true,
+    "shared_permanent_bonus_budget": true,
+    "rebudgeted_core_units": 32,
+    "rebudgeted_relics": 100,
+    "rebudgeted_enchantments": 10,
+    "enemy_profiles_with_shallow_growth": 74,
+    "early_cards_for_late_zone_viability_checks": [
+      "Peasant",
+      "Militia",
+      "Spearman",
+      "Swordsman",
+      "Archer"
+    ],
+    "late_zone_playtests_completed": false,
+    "live_game_changed": false
+  },
+  "runtime_catalog": "docs/design/playable-content-catalog.json"
 }

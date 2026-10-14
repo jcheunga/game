@@ -1,0 +1,44 @@
+{
+  "frameWidth": 84,
+  "frameHeight": 112,
+  "drawScale": 0.6666666666666666,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_mirror_wisp",
+  "title": "Mirror Wisp",
+  "source": "art/remaster/puppet/build.py (enemy_mirror_wisp)",
+  "anchorY": 0.923482,
+  "anchorX": 0.508078,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.049556,
+      0.0
+    ],
+    "contact": [
+      0.049556,
+      -0.785347
+    ]
+  },
+  "healthBarY": 0.790014
+}

@@ -14,7 +14,7 @@ public partial class RoyalResult : Control
     public string Detail = "";
     public int Stars;
     public IReadOnlyList<BattleReward> Rewards = Array.Empty<BattleReward>();
-    public string LeaveText = "Back to map", RetryText = "Restart";
+    public string LeaveText = MapNavigation.Caption, RetryText = "Restart";
     public int RetryFoodCost;
     public Action Leave, Retry;
     public RoyalButton RetryButton { get; private set; }
@@ -134,12 +134,7 @@ public partial class RoyalResult : Control
             canvas.AddChild(masteryCaption);
         }
 
-        LeaveButton = RoyalButton.Over(spec.Rect("button.back"), LeaveText, () => Leave?.Invoke(), 8);
-        LeaveButton.SetGlyph(RoyalKit.Texture("icon-map-large"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
-        var leave = spec.Label("button.back.label", LeaveText.ToUpperInvariant(), 240);
-        leave.Ink = new Color("160a03"); leave.ShadowInk = new Color(1, .95f, .8f, .3f);
-        leave.Position -= spec.Rect("button.back").Position;
-        LeaveButton.SetCaption(leave, new Rect2(leave.Position, leave.Size));
+        LeaveButton = MapNavigation.Fixed(spec.Rect("button.back"), () => Leave?.Invoke(), LeaveText);
         canvas.AddChild(LeaveButton);
         var retryRect = spec.Rect("button.restart");
         RetryButton = RoyalButton.Over(retryRect, RetryText, () => Retry?.Invoke(), 8);

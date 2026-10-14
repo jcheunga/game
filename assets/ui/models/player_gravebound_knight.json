@@ -1,0 +1,45 @@
+{
+  "frameWidth": 309,
+  "frameHeight": 270,
+  "drawScale": 2.4523809523809526,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.172
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_gravebound_knight",
+  "title": "Gravebound Knight",
+  "source": "art/remaster/puppet/build.py (player_gravebound_knight)",
+  "anchorY": 0.929012,
+  "anchorX": 0.640712,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      0.021657,
+      -0.431599
+    ],
+    "contact": [
+      0.165468,
+      -0.432972
+    ]
+  },
+  "healthBarY": 0.669309
+}

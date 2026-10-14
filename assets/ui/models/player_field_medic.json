@@ -1,0 +1,45 @@
+{
+  "frameWidth": 335,
+  "frameHeight": 252,
+  "drawScale": 2.6587301587301586,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17659
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_field_medic",
+  "title": "Field Medic",
+  "source": "art/remaster/puppet/build.py (player_field_medic)",
+  "anchorY": 0.912442,
+  "anchorX": 0.570189,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.034804,
+      -0.474668
+    ],
+    "contact": [
+      0.320984,
+      -0.585268
+    ]
+  },
+  "healthBarY": 0.719408
+}

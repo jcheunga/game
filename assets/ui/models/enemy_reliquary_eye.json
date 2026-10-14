@@ -1,0 +1,44 @@
+{
+  "frameWidth": 157,
+  "frameHeight": 147,
+  "drawScale": 1.0261437908496733,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_reliquary_eye",
+  "title": "Reliquary Eye",
+  "source": "art/remaster/puppet/build.py (enemy_reliquary_eye)",
+  "anchorY": 0.930691,
+  "anchorX": 0.497844,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.00959,
+      -0.000853
+    ],
+    "contact": [
+      0.00959,
+      -0.791238
+    ]
+  },
+  "healthBarY": 0.796894
+}

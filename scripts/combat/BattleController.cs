@@ -291,6 +291,8 @@ public partial class BattleController : Node2D
 			_rng.Randomize();
 		}
 
+		InitializeCourageDrops(_rng.Seed);
+		InitializeContent(_rng.Seed);
 		_spawnDirector = new BattleSpawnDirector(_rng);
 		_lanRaceTelemetryTimer = IsLanRaceMode ? 0.2f : 0f;
 		_onlineRoomTelemetryTimer = IsOnlineRoomMode ? 0.2f : 0f;
@@ -301,7 +303,12 @@ public partial class BattleController : Node2D
 		_onlineRoomStartCountdownRemaining = 0f;
 		_lanChallengeEndBaseText = "";
 
-		if (IsEndlessMode)
+		if (IsBossRushMode)
+		{
+			_stageData=RushStage(0);_stage=_stageData.StageNumber;_activeRouteId="city";
+			_playerBaseMaxHealth=400;_enemyBaseMaxHealth=100000;
+		}
+		else if (IsEndlessMode)
 		{
 			_activeRouteId = NormalizeRouteId(GameState.Instance.SelectedEndlessRouteId);
 			_endlessBoonId = EndlessBoonCatalog.Normalize(GameState.Instance.SelectedEndlessBoonId);
@@ -389,7 +396,7 @@ public partial class BattleController : Node2D
 
 		var baseCourageMax = _combat.CourageMax + (IsChallengeMode ? _challengeMutator.CourageMaxBonus : 0f);
 		_maxCourage = GameState.Instance.ApplyPlayerCourageMaxUpgrade(baseCourageMax);
-		_courage = 0f;
+		_courage = IsBossRushMode?Mathf.Min(40,_maxCourage):0f;
 		_maxMana = Mathf.Max(0f, _combat.ManaMax);
 		_mana = Mathf.Clamp(_combat.ManaStart, 0f, _maxMana);
 		if (IsCampaignMode && GameState.Instance.HasCampaignScoutBonus(_stage))
@@ -546,11 +553,6 @@ public partial class BattleController : Node2D
 		SetStatus(IsEndlessMode ? "Defend your wagon."
 			: IsChallengeMode ? $"Challenge {_challengeDefinition.Code}"
 			: "Tap a unit card to deploy.");
-		TryShowTutorialHint("first_battle");
-		if (IsEndlessMode)
-		{
-			TryShowTutorialHint("first_endless");
-		}
 		UpdateHud();
 		if (IsLanRaceMode)
 		{
@@ -565,10 +567,15 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.EnterBattle(this, _activeRouteId);
 		MusicPlayer.Instance?.PlayBattle(_activeRouteId);
 		AudioDirector.Instance?.PlayBattleStart();
+		if (AppLifecycleService.Instance != null)
+			AppLifecycleService.Instance.StateChanged += OnBattleApplicationStateChanged;
 	}
 
 	public override void _ExitTree()
 	{
+		if (AppLifecycleService.Instance != null)
+			AppLifecycleService.Instance.StateChanged -= OnBattleApplicationStateChanged;
+		if (_battlePaused && GetTree().Paused) GetTree().Paused = false;
 		AudioDirector.Instance?.ExitBattle(this);
 		if (_hudLayout != null) GetViewport().SizeChanged -= _hudLayout;
 		CleanupBattleCamera();
@@ -679,6 +686,7 @@ public partial class BattleController : Node2D
 	{
 		var previewPosition = ResolveSpellPreviewPosition(spell, requestedTargetPosition);
 		var color = spell.GetTint().Lightened(0.08f);
+		if (!CanResolveSpellTarget(spell, previewPosition, out _)) color = new Color("ef998b");
 		var radius = Mathf.Max(18f, spell.Radius);
 
 		if (spell.EffectType == "war_cry")
@@ -719,7 +727,8 @@ public partial class BattleController : Node2D
 				BattleGroundPlane.Ring(this, enemy.Position, enemy.Radius + 8f, new Color(color, .45f));
 			}
 		}
-		else if (spell.EffectType is "heal" or "barrier_ward")
+		else if (spell.EffectType is "heal" or "barrier_ward" or "purifying_light" or "rallying_advance" or "mirror_ward"
+			or "aegis_bolt" or "gale_step" or "verdant_renewal")
 		{
 			foreach (var ally in GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player))
 			{
@@ -768,6 +777,7 @@ public partial class BattleController : Node2D
 
 	private string BuildSpellPreviewText(ResolvedSpellStats spell, Vector2 previewPosition)
 	{
+		if (!CanResolveSpellTarget(spell, previewPosition, out _)) return "";
 		int Enemies() => GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Enemy).Length;
 		int Allies() => GetLivingUnitsInRadius(previewPosition, spell.Radius, Team.Player).Length;
 		var detail = spell.EffectType switch
@@ -782,7 +792,10 @@ public partial class BattleController : Node2D
 			"resurrect" => string.IsNullOrWhiteSpace(_lastDeadPlayerUnitId)
 				? "no fallen ally"
 				: $"revives {GameData.GetUnit(_lastDeadPlayerUnitId)?.DisplayName ?? _lastDeadPlayerUnitId}",
-			_ => ""
+			"aegis_bolt" or "gale_step" or "verdant_renewal" => ContentSpellTarget(Team.Player, previewPosition)?.UnitName ?? "",
+			"radiant_rebuke" or "anchor_hex" or "molten_brand" or "chain_lightning" or "banish" => ContentSpellTarget(Team.Enemy, previewPosition)?.UnitName ?? "",
+			"soul_harvest" => Plural(_contentCorpses.Count(c => c.Team == Team.Enemy && c.Position.DistanceTo(previewPosition) < spell.Radius), "fallen enemy", "fallen enemies"),
+			_ => $"{spell.ManaCost} mana"
 		};
 		return detail.Length == 0 ? spell.DisplayName : $"{spell.DisplayName} · {detail}";
 	}
@@ -1263,7 +1276,7 @@ public partial class BattleController : Node2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused || SceneRouter.Instance?.IsTransitioning == true)
 		{
 			ResetImpactShake();
 			return;
@@ -1281,6 +1294,7 @@ public partial class BattleController : Node2D
 		}
 
 		_elapsed += deltaF;
+		TickCouragePickups(deltaF);
 		_playerBaseFlashTimer = Mathf.Max(0f, _playerBaseFlashTimer - deltaF);
 		_enemyBaseFlashTimer = Mathf.Max(0f, _enemyBaseFlashTimer - deltaF);
 		_bossEntranceBannerTimer = Mathf.Max(0f, _bossEntranceBannerTimer - deltaF);
@@ -1334,7 +1348,8 @@ public partial class BattleController : Node2D
 		_deck.TickCooldowns(deltaF);
 		_spellDeck.TickCooldowns(deltaF);
 		UpdateCampaignField();
-		_spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
+		if(IsBossRushMode)TickBossRush(deltaF);
+		else _spawnDirector.Tick(deltaF, _elapsed, () => CountTeamUnits(Team.Enemy), SpawnEnemyUnit, SetStatus);
 		UpdateChallengeGhost(deltaF);
 
 		SimulateUnits(deltaF);
@@ -1358,7 +1373,9 @@ public partial class BattleController : Node2D
 
 	public override void _Process(double delta)
 	{
+		RefreshRestartAvailability();
 		UpdateActorLighting();
+		UpdateCouragePickupPresentation();
 		UpdateCardDragPreview();
 		UpdateBattleCamera((float)delta);
 		var reducedMotion = IsReducedMotionEnabled();
@@ -1394,10 +1411,13 @@ public partial class BattleController : Node2D
 
 		_impactShakeTimer = Mathf.Max(0f, _impactShakeTimer - delta);
 		var intensity = Mathf.Clamp(_impactShakeTimer / ImpactShakeDurationSeconds, 0f, 1f);
-		var amplitude = _impactShakeStrength * intensity;
-		Position = _restingScenePosition + new Vector2(
-			_rng.RandfRange(-amplitude, amplitude),
-			_rng.RandfRange(-amplitude, amplitude));
+		var amplitude = _impactShakeStrength * intensity * 6f;
+		// The cameras are children of this node, so moving the node moves the view with it and nothing shakes:
+		// the shake goes on the active camera's offset, in screen pixels, mostly vertical like a heavy blow.
+		var camera = ActiveShakeCamera();
+		if (camera != null)
+			camera.Offset = new Vector2(_rng.RandfRange(-amplitude, amplitude) * .6f, _rng.RandfRange(-amplitude, amplitude))
+				/ Mathf.Max(.01f, camera.Zoom.X);
 
 		if (_impactShakeTimer <= 0.001f)
 		{
@@ -1405,11 +1425,15 @@ public partial class BattleController : Node2D
 		}
 	}
 
+	private Camera2D ActiveShakeCamera() => _mobileCamera ?? _battleCamera;
+
 	private void ResetImpactShake()
 	{
 		_impactShakeTimer = 0f;
 		_impactShakeStrength = 0f;
 		Position = _restingScenePosition;
+		var camera = ActiveShakeCamera();
+		if (camera != null) camera.Offset = Vector2.Zero;
 	}
 
 	private void UpdateDefenseMomentumRewards()
@@ -1738,7 +1762,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused || SceneRouter.Instance?.IsTransitioning == true)
 		{
 			return;
 		}
@@ -1817,7 +1841,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		if (_battleEnded || _endlessCheckpointActive || _battlePaused)
+		if (_battleEnded || _endlessCheckpointActive || _battlePaused || SceneRouter.Instance?.IsTransitioning == true)
 		{
 			return;
 		}
@@ -1860,6 +1884,7 @@ public partial class BattleController : Node2D
 		if (_restartPending || _battleEnded || _endlessCheckpointActive) return;
 		if (_battleSettingsModal != null) { CloseBattleSettings(); return; }
 		CancelCardDrag();
+		CancelCouragePickupGesture();
 		_mobilePointerDown = false;
 		_battlePaused = !_battlePaused;
 		GetTree().Paused = _battlePaused;
@@ -1898,7 +1923,6 @@ public partial class BattleController : Node2D
 		_spellDeck.Arm(definition);
 		AudioDirector.Instance?.PlaySpellArm();
 		SetStatus($"{definition.DisplayName} · {(_cardDragging ? "Release to cast" : "Drag to cast")}");
-		TryShowTutorialHint("first_spell_unlock");
 		UpdateHud();
 	}
 
@@ -1938,6 +1962,7 @@ public partial class BattleController : Node2D
 
 	private void TryCastSpellAt(SpellDefinition definition, Vector2 targetPosition)
 	{
+		if (_battlePaused || _restartPending || SceneRouter.Instance?.IsTransitioning == true) return;
 		var resolved = GameState.Instance.BuildSpellStats(definition);
 		if (!_spellDeck.CanCast(definition, resolved.ManaCost, _mana, _battleEnded, _endlessCheckpointActive, out var reason))
 		{
@@ -1946,10 +1971,17 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		if (!CanResolveSpellTarget(resolved, targetPosition, out reason))
+		{
+			AudioDirector.Instance?.PlaySpellDenied();
+			SetStatus(reason);
+			return;
+		}
 		_mana -= resolved.ManaCost;
 		_spellDeck.MarkCast(definition, ResolvePlayerSpellCooldown(resolved));
 		var effectSummary = ApplySpellEffect(resolved, targetPosition);
 		_selectionMode = BattleSelectionMode.Unit;
+		ApplyContentSpellEquipment();
 		_spellsCast++;
 		GameState.Instance.AddBountyProgress("spell_casts", 1);
 		AudioDirector.Instance?.PlaySpellCast(resolved.EffectType, targetPosition);
@@ -1959,7 +1991,7 @@ public partial class BattleController : Node2D
 
 	private void DeployPlayerUnit(UnitDefinition definition)
 	{
-		if (_battleEnded || _battlePaused || _endlessCheckpointActive)
+		if (_battleEnded || _battlePaused || _endlessCheckpointActive || SceneRouter.Instance?.IsTransitioning == true)
 		{
 			return;
 		}
@@ -1972,6 +2004,9 @@ public partial class BattleController : Node2D
 			return;
 		}
 
+		var bodies = Math.Clamp(definition.BodiesPerDeployment, 1, 2);
+		if (_units.Count(u => !u.IsDead && u.Team == Team.Player) + bodies > 32)
+		{ SetStatus("The battlefield is full."); return; }
 		var spawnPosition = CaravanDeployPosition;
 		var stats = BuildPlayerUnitStatsForBattle(definition);
 		_courage -= stats.Cost;
@@ -1980,9 +2015,15 @@ public partial class BattleController : Node2D
 		GameState.Instance.AddBountyProgress("unit_deploys", 1);
 		GameState.Instance.AddUnitMasteryXP(definition.Id, MasteryCatalog.XPPerDeploy);
 		RecordChallengeDeployment(definition.Id, spawnPosition.Y);
-		var deployedUnit = SpawnUnit(Team.Player, stats, spawnPosition);
-		BeginWagonExit(deployedUnit);
-		ApplyDeployMomentum(deployedUnit);
+		var crew = ++_crewSequence;
+		for (var body = 0; body < bodies; body++)
+		{
+			var deployedUnit = SpawnUnit(Team.Player, stats, spawnPosition + new Vector2(0, body == 0 ? -3 : 3));
+			deployedUnit.CrewGroup = crew;
+			deployedUnit.SecondaryBody = body > 0;
+			BeginWagonExit(deployedUnit);
+			ApplyDeployMomentum(deployedUnit);
+		}
 		ApplyFortifiedDeployBonus(spawnPosition);
 		AudioDirector.Instance?.PlayDeploy(definition, WagonDoorExit);
 		BattleParticles.SpawnDeployBurst(this, WagonDoorExit, stats.Color);
@@ -2018,8 +2059,11 @@ public partial class BattleController : Node2D
 		// All reinforcements leave the stronghold, including scripted waves and boss escorts,
 		// and may take any line across the band, right up to either edge.
 		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
+		var previouslySeen=GameState.Instance.IsCodexEntryDiscovered(stats.DefinitionId);
 		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
+		TeachEnemy(stats.Definition,previouslySeen);
 		var unit = SpawnUnit(Team.Enemy, stats, position);
+		unit.CanDropCourage = true;
 		AudioDirector.Instance?.PlayEnemySpawn(unit);
 
 		if (stats.VisualClass == "boss")
@@ -2028,8 +2072,14 @@ public partial class BattleController : Node2D
 			BattleParticles.SpawnBossSpawnBurst(this, position, stats.Color);
 			AudioDirector.Instance?.PlayBossSpawn();
 			MusicPlayer.Instance?.SetBossMusic(true, AudioCatalog.IsFinalBoss(stats.DefinitionId));
-			TryShowTutorialHint("first_boss");
 		}
+	}
+
+	private void SpawnEnemyReinforcement(UnitStats stats, Vector2 position)
+	{
+		SpawnEnemyUnit(stats, position);
+		_units[^1].CanDropCourage = false;
+		_units[^1].IsSummoned = true;
 	}
 
 	private void TriggerBossEntranceBanner(UnitStats stats)
@@ -2046,6 +2096,8 @@ public partial class BattleController : Node2D
 		var unit = UnitPool.Acquire();
 		unit.Setup(team, stats, position);
 		unit.EnvironmentTint = FieldLighting.Tint;
+		unit.Material = UnitLook.CreateMaterial(_activeRouteId);
+		unit.LookZone = _activeRouteId ?? "city";
 		unit.GroundShadowsManaged = true;
 		unit.TextureFilter = TextureFilterEnum.LinearWithMipmaps;
 		_campaignPeriodicSummons.Remove(unit);
@@ -2063,6 +2115,7 @@ public partial class BattleController : Node2D
 
 		AddChild(unit);
 		_units.Add(unit);
+		InitializeContentUnit(unit);
 		return unit;
 	}
 
@@ -2087,15 +2140,32 @@ public partial class BattleController : Node2D
 		var shotTint = attacker.Tint;
 		var shotSplash = attacker.AttackSplashRadius;
 		var shotLifetime = attacker.CombatLifetime;
+		var shotDamageType = attacker.AttackDamageType;
+		var criticalShot=false;
+		float ResolveShot(Unit victim, float damage)
+		{
+			if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime && !attacker.IsDead)
+			{
+				var hit=ContentDamage(attacker,victim,damage,true,false,shotDamageType);
+				if(criticalShot && hit>0)SpawnCombatNumber(victim.Position+new Vector2(0,-28),"CRIT",new Color("f6d47d"),.6f);
+				return hit;
+			}
+			var actual = victim.TakeDamage(damage, shotName, shotDamageType);
+			TrackDamageDealt(shotName, actual);
+			SpawnDamageFeedback(victim.Position, actual, shotTint);
+			return actual;
+		}
 
 		// Arrow Ward: reduce incoming projectile damage against player units
 		var projectileDamage = attacker.CurrentAttackDamage * damageScale;
+		criticalShot=_contentRng.Randf()*100<attacker.CriticalChance;
+		if(criticalShot)projectileDamage*=1f+attacker.CriticalDamageBonus/100f;
 		if (attacker.Team == Team.Enemy && target.Team == Team.Player)
 		{
 			var wardLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.ProjectileWardId);
 			if (wardLevel > 0)
 			{
-				projectileDamage *= Mathf.Max(0.2f, 1f - (wardLevel * 0.08f));
+				projectileDamage *= 1f - Mathf.Min(.08f, wardLevel * .016f);
 			}
 		}
 
@@ -2108,7 +2178,7 @@ public partial class BattleController : Node2D
 				color,
 				_ =>
 				{
-					ApplySplashDamage(shotTeam, target.GlobalPosition, projectileDamage, shotSplash, shotTint, shotName);
+					ApplySplashDamage(shotTeam, target.GlobalPosition, projectileDamage, shotSplash, shotTint, shotName, shotDamageType, criticalShot);
 					return 0f;
 				},
 				() => !IsInstanceValid(target) || target.IsDead,
@@ -2128,13 +2198,11 @@ public partial class BattleController : Node2D
 					projectileDamage,
 					speed,
 					color,
-					d => interceptor.TakeDamage(d, attackerName),
+					d => ResolveShot(interceptor, d),
 					() => !IsInstanceValid(interceptor) || interceptor.IsDead,
 					(pos, dmg, hitColor) =>
 					{
-						TrackDamageDealt(attackerName, dmg);
 						AudioDirector.Instance?.PlayShieldBlock(pos);
-						SpawnDamageFeedback(pos, dmg, hitColor);
 						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, interceptor, dmg, true);
 					});
 			}
@@ -2146,12 +2214,10 @@ public partial class BattleController : Node2D
 					projectileDamage,
 					speed,
 					color,
-					d => target.TakeDamage(d, attackerName2),
+					d => ResolveShot(target, d),
 					() => !IsInstanceValid(target) || target.IsDead,
 					(pos, dmg, hitColor) =>
 					{
-						TrackDamageDealt(attackerName2, dmg);
-						SpawnDamageFeedback(pos, dmg, hitColor);
 						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, target, dmg, true);
 					});
 			}
@@ -2161,6 +2227,7 @@ public partial class BattleController : Node2D
 
 	private void TryAttackBase(Unit attacker)
 	{
+		if(IsBossRushMode && attacker.Team==Team.Player)return;
 		if ((IsEndlessMode && attacker.Team == Team.Player) || !attacker.DamagesStructures)
 		{
 			return;
@@ -2181,7 +2248,12 @@ public partial class BattleController : Node2D
 			SpawnUnitBaseProjectile(attacker);
 			return;
 		}
-		ApplyUnitBaseHit(attacker.Team, attacker.BaseDamage, attacker.Tint, attacker, attacker.CombatLifetime);
+		var power=attacker.BaseDamage;
+		if (attacker.Team==Team.Player && _elapsed<_gateExposedUntil) power*=1.05f;
+		if (attacker.Team==Team.Player && ContentEquipment(attacker).Any(i=>i.Id=="relic_breach_writ") && attacker.TryEffect("breach_writ",999)) _gateExposedUntil=_elapsed+3;
+		if (attacker.Definition.ContentBehavior=="demolition" && !attacker.SecondaryBody && _units.Any(u=>u!=attacker && !u.IsDead && u.CrewGroup==attacker.CrewGroup) && attacker.TryEffect("demolition",12)) power*=1.25f;
+		if (attacker.Definition.ContentBehavior=="structure_splash") foreach(var defender in NearbyContentUnits(attacker.Team==Team.Player?Team.Enemy:Team.Player,attacker.Team==Team.Player?EnemyBaseCorePosition:PlayerBaseCorePosition,50).Take(2)) ContentDamage(attacker,defender,3,false,false);
+		ApplyUnitBaseHit(attacker.Team, power, attacker.Tint, attacker, attacker.CombatLifetime);
 	}
 
 	private void ApplyUnitBaseHit(Team team, float damage, Color tint, Unit attacker, uint attackerLifetime)
@@ -2191,7 +2263,7 @@ public partial class BattleController : Node2D
 		{
 			if (_enemyBaseHealth <= 0f) return;
 			var gateBreakLevel = GameState.Instance.GetBaseUpgradeLevel(BaseUpgradeCatalog.GateBreakerId);
-			var baseDamage = damage * (1f + (gateBreakLevel * 0.08f));
+			var baseDamage = damage * (1f + Mathf.Min(.1f, gateBreakLevel * .02f));
 			_enemyBaseHealth -= baseDamage;
 			_enemyBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(false, baseDamage);
@@ -2281,10 +2353,13 @@ public partial class BattleController : Node2D
 		ApplyWeatherUnitModifiers();
 
 		// Reinforcements join on the next tick; summoning must not invalidate iteration.
+		TickContentWorld(delta);
 		var actingCount = _units.Count;
 		for (var unitIndex = 0; unitIndex < actingCount; unitIndex++)
 		{
 			var unit = _units[unitIndex];
+			unit.TickContentState(delta);
+			TickContentEquipment(unit);
 			if (unit.IsDead)
 			{
 				continue;
@@ -2297,6 +2372,8 @@ public partial class BattleController : Node2D
 			unit.TickSpecialTimer(delta);
 			unit.TickActiveAbilityTimer(delta);
 			if (unit.IsDead || unit.IsAttackCommitted) continue;
+			var contentTarget = FindClosestEnemy(unit);
+			if (TryContentAction(unit, contentTarget, delta)) continue;
 			var defendingBase = unit.Team == Team.Player ? EnemyBaseCorePosition : PlayerBaseCorePosition;
 			if (!(IsEndlessMode && unit.Team == Team.Player) && unit.DamagesStructures && unit.IsAttackingPosition(defendingBase) &&
 				unit.CanAttackPosition(defendingBase, BaseCoreRadius) && !ShouldRepairBus(unit))
@@ -2607,6 +2684,9 @@ public partial class BattleController : Node2D
 
 	private void OffsetUnitWithinBattlefield(Unit unit, Vector2 offset)
 	{
+				if (!unit.MovedRecently && ContentEquipment(unit).Any(i => i.Id == "relic_earthbind_idol")) offset *= .5f;
+		if (offset.LengthSquared() > 4 && ContentEquipment(unit).Any(i => i.Id == "relic_tidemaster_s_pearl") && unit.TryEffect("displacement_boost",12))
+		{ unit.ApplyTemporarySpeedModifier(1.05f,2);unit.ApplyAttackRecovery(.95f,2); }
 		var nextPosition = unit.Position + offset;
 		unit.Position = new Vector2(
 			Mathf.Clamp(nextPosition.X, BattlefieldLeft + 18f, BattlefieldRight - 18f),
@@ -2630,6 +2710,19 @@ public partial class BattleController : Node2D
 		var resistance = ResolveImpactResistance(target);
 		ApplyImpactStagger(attacker, target, appliedDamage, resistance, ranged);
 		TriggerImpactShake(appliedDamage, ranged);
+		var direction = Mathf.Sign(target.Position.X - attacker.Position.X);
+		if (direction == 0) direction = attacker.Team == Team.Player ? 1 : -1;
+		var strength = appliedDamage / Mathf.Max(6f, target.MaxHealth * .18f);
+		var wound = target.BodyContactPosition - new Vector2(direction * target.Radius * .2f, 0);
+		BattleGore.SpawnHit(this, target, wound, direction, strength, target.Position.Y + 2f, FieldLighting.Tint);
+		// Hit-stop: both fighters freeze for a few frames at contact, longer for a heavier blow, so the weight of
+		// the hit reads. Ranged hits hold only the target, briefly.
+		if (!IsReducedMotionEnabled())
+		{
+			var hold = Mathf.Clamp(.035f + strength * .05f, .035f, ranged ? .06f : .1f);
+			target.HoldPose(hold);
+			if (!ranged) attacker.HoldPose(hold * .85f);
+		}
 	}
 
 	private static float ResolveImpactResistance(Unit target)
@@ -2675,10 +2768,21 @@ public partial class BattleController : Node2D
 			return;
 		}
 		BattleDeathEffects.SpawnDeathMoment(this, deadUnit.BodyContactPosition, corpse.Style);
+		BattleGore.SpawnHit(this, deadUnit, deadUnit.BodyContactPosition, deadUnit.LastHitDirection, 1.2f,
+			deadUnit.Position.Y + 2f, FieldLighting.Tint);
+		var bleeder = deadUnit;
+		corpse.KnockDirection = deadUnit.LastHitDirection;
 		corpse.Impacted = body =>
 		{
 			AudioDirector.Instance?.PlayBodyFall(body.ImpactPosition, body.Style.Fx, body.Style.Heavy, body.Style.Boss);
 			BattleDeathEffects.SpawnImpact(this, body);
+			BattleGore.SpawnPool(this, new Vector2(body.ImpactPosition.X, body.GlobalPosition.Y + 1f), bleeder, body.BodyLength,
+				FieldLighting.Tint);
+			if (!IsReducedMotionEnabled() && !body.Style.Heavy)
+			{
+				_impactShakeStrength = Mathf.Max(_impactShakeStrength, .12f);
+				_impactShakeTimer = Mathf.Max(_impactShakeTimer, ImpactShakeDurationSeconds * .8f);
+			}
 			if (body.Style.Heavy && !IsReducedMotionEnabled())
 			{
 				_impactShakeStrength = Mathf.Max(_impactShakeStrength, body.Style.Boss ? .6f : .28f);
@@ -2690,13 +2794,13 @@ public partial class BattleController : Node2D
 
 	private void TriggerImpactShake(float appliedDamage, bool ranged)
 	{
-		if (appliedDamage < 24f || IsReducedMotionEnabled())
+		if (appliedDamage < 16f || IsReducedMotionEnabled())
 		{
 			return;
 		}
 
 		// A restrained accent for heavier blows, not a screen shake per sword tap.
-		var strength = Mathf.Clamp((appliedDamage-20f) * (ranged?.01f:.018f), 0, ranged?.35f:.65f);
+		var strength = Mathf.Clamp((appliedDamage-12f) * (ranged?.01f:.018f), 0, ranged?.35f:.65f);
 
 		_impactShakeStrength = Mathf.Max(_impactShakeStrength, strength);
 		_impactShakeTimer = Mathf.Max(_impactShakeTimer, ImpactShakeDurationSeconds * (ranged ? 0.82f : 1f));
@@ -2704,7 +2808,7 @@ public partial class BattleController : Node2D
 
 	private void TryTriggerPlayerActiveAbility(Unit unit, Unit target)
 	{
-		if (unit.Team != Team.Player || unit.IsDead || !unit.HasActiveAbility)
+		if (unit.Team != Team.Player || unit.IsDead || !unit.HasActiveAbility || !string.IsNullOrEmpty(unit.Definition.ContentBehavior))
 		{
 			return;
 		}
@@ -3124,7 +3228,7 @@ public partial class BattleController : Node2D
 						boss.Position.Y + _rng.RandfRange(-58f, 58f),
 						BattlefieldTop + SpawnVerticalPadding,
 						BattlefieldBottom - SpawnVerticalPadding));
-				SpawnEnemyUnit(escortStats, escortPosition);
+				SpawnEnemyReinforcement(escortStats, escortPosition);
 				RecordCampaignPeriodicReinforcement(boss);
 				escortsSpawned++;
 			}
@@ -3167,6 +3271,7 @@ public partial class BattleController : Node2D
 			for (var i = 0; i < jammer.SpecialSpawnCount; i++)
 			{
 				if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+				if(!CanAddBossReinforcement(jammer,jammer.SpecialSpawnUnitId))break;
 				if (!CanAddCampaignPeriodicReinforcement(jammer)) break;
 				if (!_spawnDirector.TryBuildEnemyStats(jammer.SpecialSpawnUnitId, out var escortStats))
 				{
@@ -3179,7 +3284,7 @@ public partial class BattleController : Node2D
 						jammer.Position.Y + _rng.RandfRange(-52f, 52f),
 						BattlefieldTop + SpawnVerticalPadding,
 						BattlefieldBottom - SpawnVerticalPadding));
-				SpawnEnemyUnit(escortStats, escortPosition);
+				SpawnEnemyReinforcement(escortStats, escortPosition);
 				RecordCampaignPeriodicReinforcement(jammer);
 				escortsSpawned++;
 			}
@@ -3225,7 +3330,7 @@ public partial class BattleController : Node2D
 					lich.Position.Y + _rng.RandfRange(-50f, 50f),
 					BattlefieldTop + SpawnVerticalPadding,
 					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyUnit(raisedStats, spawnPosition);
+			SpawnEnemyReinforcement(raisedStats, spawnPosition);
 			RecordCampaignPeriodicReinforcement(lich);
 			spawned++;
 		}
@@ -3377,7 +3482,7 @@ public partial class BattleController : Node2D
 
 	private void TryTriggerCampaignBossPhase()
 	{
-		if (!IsCampaignMode || _battleEnded)
+		if ((!IsCampaignMode && !IsBossRushMode) || _battleEnded)
 		{
 			return;
 		}
@@ -3387,7 +3492,7 @@ public partial class BattleController : Node2D
 		for (var unitIndex = 0; unitIndex < actingCount; unitIndex++)
 		{
 			var unit = _units[unitIndex];
-			if (!IsCampaignBossPhaseUnit(unit) || _campaignBossPhaseTriggeredUnits.Contains(unit))
+			if (!IsCampaignBossPhaseUnit(unit) || unit.IsSilenced || _campaignBossPhaseTriggeredUnits.Contains(unit))
 			{
 				continue;
 			}
@@ -3744,7 +3849,7 @@ public partial class BattleController : Node2D
 					anchor.Position.Y + _rng.RandfRange(-ySpread, ySpread),
 					BattlefieldTop + SpawnVerticalPadding,
 					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyUnit(escortStats, escortPosition);
+			SpawnEnemyReinforcement(escortStats, escortPosition);
 			spawned++;
 		}
 
@@ -3938,7 +4043,7 @@ public partial class BattleController : Node2D
 
 	private Unit FindClosestEnemy(Unit source)
 	{
-		var isBackstab = string.Equals(source.SpecialAbilityId, "backstab", StringComparison.OrdinalIgnoreCase);
+		var isBackstab = string.Equals(source.SpecialAbilityId, "backstab", StringComparison.OrdinalIgnoreCase) || source.Definition.ContentBehavior is "vanish" or "target_priority";
 		Unit bestTarget = null;
 		var bestPriority = int.MaxValue;
 		var bestDistance = isBackstab ? float.MinValue : float.MaxValue;
@@ -3951,7 +4056,7 @@ public partial class BattleController : Node2D
 			bestTarget = lockedTarget;
 			bestPriority = ResolveTargetPriority(source, lockedTarget);
 			bestDistance = isBackstab
-				? lockedTarget.Position.X
+				? lockedTarget.Position.X * (source.Team == Team.Player ? 1f : -1f)
 				: ResolveTargetSelectionScore(source, lockedTarget);
 		}
 		else
@@ -3961,7 +4066,7 @@ public partial class BattleController : Node2D
 
 		foreach (var candidate in _units)
 		{
-			if (candidate.IsDead || candidate.Team == source.Team || candidate.IsUntargetable)
+			if (candidate.IsDead || candidate.Team == source.Team || candidate.IsUntargetable || candidate.IsConcealed)
 			{
 				continue;
 			}
@@ -3975,7 +4080,7 @@ public partial class BattleController : Node2D
 			if (isBackstab)
 			{
 				// Backstab: prefer the farthest enemy (rear of formation) among highest-priority targets
-				var distance = candidate.Position.X;
+				var distance = candidate.Position.X * (source.Team == Team.Player ? 1f : -1f);
 				var replaceDistance = hasLockedTarget && priority == bestPriority
 					? bestDistance + 26f
 					: bestDistance;
@@ -4020,7 +4125,7 @@ public partial class BattleController : Node2D
 			!source.IsDead &&
 			!candidate.IsDead &&
 			candidate.Team != source.Team &&
-			!candidate.IsUntargetable &&
+			!candidate.IsUntargetable && !candidate.IsConcealed &&
 			source.IsInAggroRange(candidate, _weatherAggroScale);
 	}
 
@@ -4095,6 +4200,7 @@ public partial class BattleController : Node2D
 
 	private static int ResolveTargetPriority(Unit source, Unit candidate)
 	{
+		if (source.Team == Team.Player && candidate.FocusMarkTime > 0f) return -1;
 		if (source.Team != Team.Player)
 		{
 			return 5;
@@ -4120,7 +4226,7 @@ public partial class BattleController : Node2D
 		};
 	}
 
-	private void ApplySplashDamage(Team attackerTeam, Vector2 center, float damage, float radius, Color color, string attackerName = null)
+	private void ApplySplashDamage(Team attackerTeam, Vector2 center, float damage, float radius, Color color, string attackerName = null, CombatDamageType damageType = CombatDamageType.Physical, bool criticalHit = false)
 	{
 		if (damage <= 0.05f || radius <= 0.05f)
 		{
@@ -4139,13 +4245,15 @@ public partial class BattleController : Node2D
 				continue;
 			}
 
-			var appliedDamage = candidate.TakeDamage(damage, attackerName);
+			var appliedDamage = candidate.TakeDamage(damage, attackerName, damageType);
 			candidate.ReactToContact(Mathf.Sign(candidate.Position.X-center.X),appliedDamage,ResolveImpactResistance(candidate));
 			if (attackerName != null)
 			{
 				TrackDamageDealt(attackerName, appliedDamage);
 			}
 			SpawnDamageFeedback(candidate.Position, appliedDamage, color);
+			if (criticalHit && appliedDamage > 0)
+				SpawnCombatNumber(candidate.Position + new Vector2(0, -28), "CRIT", new Color("f6d47d"), .6f);
 		}
 	}
 
@@ -4246,8 +4354,11 @@ public partial class BattleController : Node2D
 			}
 
 			var deadUnit = _units[i];
-			if (deadUnit.Team == Team.Enemy)
+			if (TryContentReturn(deadUnit)) continue;
+			RegisterContentDeath(deadUnit);
+			if (deadUnit.Team == Team.Enemy && !deadUnit.IsSummoned && !deadUnit.IsTacticalObject && !deadUnit.NonCombatant)
 			{
+				TryDropCourage(deadUnit);
 				_enemyDefeats++;
 				GainMana(_combat.ManaPerEnemyKill);
 				RegisterCampaignDoctrineDefeat(deadUnit);
@@ -4312,9 +4423,9 @@ public partial class BattleController : Node2D
 					threatSpeedScale = speedScale;
 				}
 			}
-			else if (deadUnit.Team == Team.Player && !string.IsNullOrWhiteSpace(deadUnit.UnitName))
+			else if (deadUnit.Team == Team.Player && !deadUnit.IsSummoned && !deadUnit.IsTacticalObject && !deadUnit.NonCombatant && !deadUnit.HasReturned && !string.IsNullOrWhiteSpace(deadUnit.UnitName))
 			{
-				_lastDeadPlayerUnitId = deadUnit.VisualClass == "walker" ? "" : (deadUnit.UnitName ?? "");
+				_lastDeadPlayerUnitId = deadUnit.DefinitionId;
 				_lastDeadPlayerPosition = deadUnit.Position;
 			}
 
@@ -4329,6 +4440,7 @@ public partial class BattleController : Node2D
 				_targetLocks.Remove(attacker);
 			_targetLocks.Remove(deadUnit);
 			_units.RemoveAt(i);
+			_contentSummons.Remove(deadUnit);
 			UnitPool.Release(deadUnit);
 		}
 
@@ -4681,7 +4793,7 @@ public partial class BattleController : Node2D
 					deadUnit.Position.Y + startOffset + (spacing * i),
 					BattlefieldTop + SpawnVerticalPadding,
 					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyUnit(spawnedStats, spawnPosition);
+			SpawnEnemyReinforcement(spawnedStats, spawnPosition);
 		}
 	}
 
@@ -4701,6 +4813,12 @@ public partial class BattleController : Node2D
 
 	private Unit FindProjectileShieldInterceptor(Unit attacker, Unit target)
 	{
+		if (attacker.Team == Team.Enemy && target.Team == Team.Player)
+		{
+			return NearbyContentUnits(Team.Player, target.Position, 50)
+				.FirstOrDefault(candidate => candidate != target && candidate.Definition.ContentBehavior == "interception" &&
+					candidate.Position.X >= target.Position.X - 8 && candidate.Position.X <= attacker.Position.X && candidate.TryEffect("interception", 8));
+		}
 		if (attacker.Team != Team.Player)
 		{
 			return null;
@@ -4817,7 +4935,7 @@ public partial class BattleController : Node2D
 					siegeTower.Position.Y + _rng.RandfRange(-40f, 40f),
 					BattlefieldTop + SpawnVerticalPadding,
 					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyUnit(spawnedStats, spawnPos);
+			SpawnEnemyReinforcement(spawnedStats, spawnPos);
 			spawned++;
 		}
 
@@ -4829,6 +4947,7 @@ public partial class BattleController : Node2D
 
 		// Kill the siege tower after deploying
 		AudioDirector.Instance?.PlayEnemySpecial("tower", siegeTower.Position);
+		siegeTower.CanDropCourage = false;
 		siegeTower.TakeDamage(siegeTower.MaxHealth * 10f);
 		return spawned > 0;
 	}
@@ -4873,7 +4992,7 @@ public partial class BattleController : Node2D
 			Mathf.Clamp(deadUnit.Position.Y + _rng.RandfRange(-12f, 12f),
 				BattlefieldTop + SpawnVerticalPadding,
 				BattlefieldBottom - SpawnVerticalPadding));
-		SpawnEnemyUnit(reanimatedStats, spawnPosition);
+		SpawnEnemyReinforcement(reanimatedStats, spawnPosition);
 		SpawnEffect(spawnPosition, deadUnit.Tint.Lightened(0.15f), 8f, 32f, 0.24f, false);
 		SetStatus("A fallen enemy reanimated from the lich graveyard.");
 	}
@@ -4998,7 +5117,7 @@ public partial class BattleController : Node2D
 			"earthquake" => ApplyEarthquakeSpell(spell, targetPosition),
 			"polymorph" => ApplyPolymorphSpell(spell, targetPosition),
 			"resurrect" => ApplyResurrectSpell(spell, targetPosition),
-			_ => "The spell fizzled without a scripted effect."
+			_ => ApplyExpandedUtility(spell, targetPosition)
 		};
 	}
 
@@ -5015,7 +5134,7 @@ public partial class BattleController : Node2D
 
 		foreach (var target in targets)
 		{
-			var appliedDamage = target.TakeDamage(spell.Power);
+			var appliedDamage = target.TakeDamage(spell.Power, spell.DisplayName, CombatDamageType.Magical);
 			if (appliedDamage <= 0.05f)
 			{
 				continue;
@@ -5073,7 +5192,7 @@ public partial class BattleController : Node2D
 
 		foreach (var target in targets)
 		{
-			var appliedDamage = target.TakeDamage(spell.Power);
+			var appliedDamage = target.TakeDamage(spell.Power, spell.DisplayName, CombatDamageType.Magical);
 			target.ApplyTemporarySpeedModifier(0.62f, spell.Duration);
 			if (appliedDamage > 0.05f)
 			{
@@ -5109,7 +5228,7 @@ public partial class BattleController : Node2D
 				1 => 0.78f,
 				_ => 0.58f
 			};
-			var appliedDamage = targets[i].TakeDamage(spell.Power * scale);
+			var appliedDamage = targets[i].TakeDamage(spell.Power * scale, spell.DisplayName, CombatDamageType.Magical);
 			if (appliedDamage <= 0.05f)
 			{
 				continue;
@@ -5217,7 +5336,7 @@ public partial class BattleController : Node2D
 
 		foreach (var target in targets)
 		{
-			var appliedDamage = target.TakeDamage(spell.Power);
+			var appliedDamage = target.TakeDamage(spell.Power, spell.DisplayName, CombatDamageType.Magical);
 			target.ApplyTemporarySpeedModifier(0.5f, spell.Duration);
 			if (appliedDamage > 0.05f)
 			{
@@ -5255,20 +5374,20 @@ public partial class BattleController : Node2D
 			return "Polymorph found no enemy to transform.";
 		}
 
-		// Massively debuff the target: near-zero speed, takes 2.5x damage
-		// Note: ApplyTemporaryCombatBuff clamps values UP to 1.0 so cannot be used for debuffs
-		bestTarget.ApplyTemporarySpeedModifier(0.08f, spell.Duration);
-		bestTarget.ApplyTemporaryDefenseModifier(2.5f, spell.Duration);
+		// Control shares the same recovery protection as other disabling effects.
+		var transformed = bestTarget.ApplyControl(Mathf.Min(2f, spell.Duration));
+		if (transformed) bestTarget.Silence(Mathf.Min(2f, spell.Duration));
 
 		SpawnEffect(bestTarget.Position, color, 10f, 32f, 0.26f, false, BattleEffectStyle.WardSigil);
 		BattleParticles.SpawnPolymorphParticles(this, bestTarget.Position);
 
-		return $"Polymorph transformed {bestTarget.UnitName} into a harmless creature for {spell.Duration:0.0}s.";
+		return transformed ? $"Polymorph disabled {bestTarget.UnitName} briefly." : $"{bestTarget.UnitName} resisted another transformation.";
 	}
 
 	private string ApplyResurrectSpell(ResolvedSpellStats spell, Vector2 targetPosition)
 	{
 		var color = spell.GetTint();
+		if (_units.Count(u=>u.Team==Team.Player && !u.IsDead)>=32) return "The battlefield is full.";
 
 		if (string.IsNullOrWhiteSpace(_lastDeadPlayerUnitId))
 		{
@@ -5276,12 +5395,12 @@ public partial class BattleController : Node2D
 			return "Resurrect found no fallen ally to restore.";
 		}
 
-		// Find the unit definition that matches the last dead unit by display name
+		// Ownership IDs remain stable even when a recruit's display name changes.
 		UnitDefinition resurrectDef = null;
 		foreach (var unitId in GameData.PlayerRosterIds)
 		{
 			var def = GameData.GetUnit(unitId);
-			if (def != null && string.Equals(def.DisplayName, _lastDeadPlayerUnitId, StringComparison.OrdinalIgnoreCase))
+			if (def != null && string.Equals(def.Id, _lastDeadPlayerUnitId, StringComparison.OrdinalIgnoreCase))
 			{
 				resurrectDef = def;
 				break;
@@ -5294,14 +5413,15 @@ public partial class BattleController : Node2D
 			return "Resurrect could not restore the fallen unit.";
 		}
 
-		var stats = GameState.Instance.BuildPlayerUnitStatsForDeck(resurrectDef, Array.Empty<UnitDefinition>());
+		var stats = GameState.Instance.BuildPlayerUnitStatsForDeck(resurrectDef, _deck.Roster);
 		var spawnPos = ClampBattlefieldPoint(_lastDeadPlayerPosition);
 		SpawnUnit(Team.Player, stats, spawnPos);
 
 		// Apply half-health penalty
 		var spawnedUnit = _units[_units.Count - 1];
 		var halfDamage = spawnedUnit.MaxHealth * (1f - spell.Power);
-		spawnedUnit.TakeDamage(halfDamage);
+		spawnedUnit.TakeDamage(halfDamage, damageType: CombatDamageType.True);
+		spawnedUnit.MarkReturned();
 
 		SpawnEffect(spawnPos, color, 12f, 38f, 0.28f, false, BattleEffectStyle.HealBloom);
 		BattleParticles.SpawnResurrectParticles(this, spawnPos);
@@ -6005,6 +6125,7 @@ public partial class BattleController : Node2D
 
 	private void CheckBattleEnd()
 	{
+		if(IsBossRushMode){if(_playerBaseHealth<=0)EndBattle(false);return;}
 		if (IsEndlessMode)
 		{
 			if (_playerBaseHealth <= 0f)
@@ -6044,6 +6165,16 @@ public partial class BattleController : Node2D
 		SpawnBattleEndParticles(playerWon);
 		_endStarRating.Visible = !IsEndlessMode;
 		_endStarRating.Stars = StageStarScore.Evaluate(playerWon, _playerBaseHealth, _playerBaseMaxHealth, _playerHullTookDamage);
+		_enemyLesson?.QueueFree();_enemyLesson=null;_enemyLessons.Clear();
+
+		if(IsBossRushMode)
+		{
+			if (playerWon) AudioDirector.Instance?.PlayVictory(); else AudioDirector.Instance?.PlayDefeat();
+			GameState.Instance.ApplyBossRushResult(_rushCleared,_elapsed,0,playerWon);
+			_endStarRating.Visible=false;
+			PresentResult(playerWon,playerWon?"Boss rush complete":"Boss rush ended",$"{_rushCleared}/14 commanders defeated");
+			UpdateHud();return;
+		}
 
 		if (IsEndlessMode)
 		{
@@ -6217,6 +6348,16 @@ public partial class BattleController : Node2D
 	{
 		// Scene transitions must be able to animate when retreating from the pause menu.
 		if (_battlePaused) TogglePause();
+		if (IsBossRushMode)
+		{
+			if (!_battleEnded)
+			{
+				_battleEnded = true;
+				GameState.Instance.ApplyBossRushResult(_rushCleared, _elapsed, 0, false, true);
+			}
+			SceneRouter.Instance.GoToBossRush();
+			return;
+		}
 		if (IsEndlessMode)
 		{
 			if (!_battleEnded)
@@ -6319,6 +6460,7 @@ public partial class BattleController : Node2D
 		{
 			return;
 		}
+		if(IsBossRushMode){SceneRouter.Instance.GoToBossRush();return;}
 
 		if (IsEndlessMode)
 		{

@@ -20,7 +20,18 @@ public static class RoyalArt
     }
 
     public static Texture2D Plate(string name) => Load($"res://assets/ui/royal/plates/{name}.png");
-    public static Texture2D Item(string name) => Load($"res://assets/ui/royal/items/{name}.png");
+    public static Texture2D Item(string name)
+    {
+        var path=$"res://assets/ui/royal/items/{name}.png";
+        if (ResourceLoader.Exists(path)) return Load(path);
+        var fallback=name.StartsWith("tactic_") ? (name.Contains("healing") || name.Contains("repair") ? "spell_heal" : "spell_stone_barricade")
+            : name.StartsWith("spell_") ? (name.Contains("ward") || name.Contains("aegis") ? "spell_barrier_ward" :
+                name.Contains("renewal") || name.Contains("purifying") ? "spell_heal" :
+                name.Contains("snare") || name.Contains("hex") || name.Contains("well") ? "spell_frost_burst" : "spell_fireball")
+            : name.Contains("shield") || name.Contains("wall") || name.Contains("ward") ? "relic_guardian_shield" :
+                name.Contains("blade") || name.Contains("execution") || name.Contains("fang") ? "relic_sharpened_edge" : "relic_iron_pendant";
+        return Load($"res://assets/ui/royal/items/{fallback}.png");
+    }
 
     /// <summary>Plate pixels per canvas unit.</summary>
     public static float Density(Texture2D plate) => plate == null ? 1 : plate.GetWidth() / Canvas.X;

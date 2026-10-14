@@ -1,44 +1,45 @@
 {
-  "frameWidth": 632,
-  "frameHeight": 508,
-  "drawScale": 2.8423588649090155,
+  "frameWidth": 1664,
+  "frameHeight": 1487,
+  "drawScale": 3.6496030179409567,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1489
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_citadel",
   "title": "Dread Sovereign",
-  "source": "art/remaster/units/enemy_boss_citadel.py",
-  "anchorY": 0.766906,
-  "anchorX": 0.305035,
+  "source": "art/remaster/puppet/build.py (enemy_boss_citadel)",
+  "anchorY": 0.941987,
+  "anchorX": 0.537901,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "royal-cleave",
     "body": [
-      0.0,
-      -0.321762
+      0.022172,
+      -0.356452
     ],
     "contact": [
-      -0.000644,
-      0.216979
+      0.287518,
+      -0.04381
     ]
   },
-  "healthBarY": 0.735615
+  "healthBarY": 0.531524
 }

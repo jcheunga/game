@@ -1,44 +1,45 @@
 {
-  "frameWidth": 378,
-  "frameHeight": 322,
-  "drawScale": 3.395201448619285,
+  "frameWidth": 283,
+  "frameHeight": 230,
+  "drawScale": 2.541910079257295,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.07553
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_raider",
   "title": "Cavalry Rider",
-  "source": "art/remaster/units/player_raider.py",
-  "anchorY": 0.81689,
-  "anchorX": 0.3228,
+  "source": "art/remaster/puppet/build.py (player_raider)",
+  "anchorY": 0.943639,
+  "anchorX": 0.475947,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "mounted-lance",
     "body": [
-      0.0,
-      -0.435072
+      -0.172717,
+      -0.439448
     ],
     "contact": [
-      0.591054,
-      -0.100377
+      0.4752,
+      -0.33216
     ]
   },
-  "healthBarY": 0.656389
+  "healthBarY": 0.815066
 }

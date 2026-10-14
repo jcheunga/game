@@ -6,80 +6,22 @@ using Godot;
 
 public static class GameData
 {
-    public static readonly string[] PlayerRosterIds =
+    public static string[] PlayerRosterIds
     {
-        PlayerBrawlerId,
-        PlayerShooterId,
-        PlayerDefenderId,
-        PlayerSpearId,
-        PlayerRangerId,
-        PlayerRaiderId,
-        PlayerMechanicId,
-        PlayerMarksmanId,
-        PlayerBreacherId,
-        PlayerGrenadierId,
-        PlayerCoordinatorId,
-        PlayerHoundId,
-        PlayerBannerId,
-        PlayerNecromancerId,
-        PlayerRogueId,
-        PlayerBerserkerId,
-        PlayerLanternGuardId,
-        PlayerBallistaId,
-        PlayerStormcallerId
-    };
+        get { EnsureLoaded(); return _units.Values.Where(u => u.IsPlayerSide).OrderBy(u => u.UnlockStage).ThenBy(u => u.Id).Select(u => u.Id).ToArray(); }
+    }
 
-    public static readonly string[] PlayerSpellIds =
+    public static string[] PlayerSpellIds
     {
-        SpellFireballId,
-        SpellHealId,
-        SpellFrostBurstId,
-        SpellLightningStrikeId,
-        SpellBarrierWardId,
-        SpellStoneBarricadeId,
-        SpellWarCryId,
-        SpellEarthquakeId,
-        SpellPolymorphId,
-        SpellResurrectId
-    };
+        get { EnsureLoaded(); return _spells.Values.OrderBy(s => s.UnlockStage).ThenBy(s => s.Id).Select(s => s.Id).ToArray(); }
+    }
 
-    public static readonly string[] EnemyRosterIds =
+    public static string[] EnemyRosterIds
     {
-        EnemyWalkerId,
-        EnemyRunnerId,
-        EnemyBloaterId,
-        EnemyBruteId,
-        EnemySpitterId,
-        EnemySplitterId,
-        EnemySaboteurId,
-        EnemyHowlerId,
-        EnemyJammerId,
-        EnemyCrusherId,
-        EnemyBossId,
-        EnemyShieldWallId,
-        EnemyLichId,
-        EnemySiegeTowerId,
-        EnemyMirrorId,
-        EnemyTunnelerId,
-        EnemyBoneBallistaId,
-        EnemyCatacombGiantId,
-        EnemyRevenantCaptainId,
-        EnemyPlagueEngineId,
-        EnemyBossDocksId,
-        EnemyBossForgeId,
-        EnemyBossWardId,
-        EnemyBossPassId,
-        EnemyBossBasilicaId,
-        EnemyBossMireId,
-        EnemyBossSteppeId,
-        EnemyBossVergeId,
-        EnemyBossCitadelId,
-        EnemyBossReliquaryId,
-        EnemyBossAshenRegentId,
-        EnemyBossTidemasterId,
-        EnemyBossPlagueMonarchId
-    };
+        get { EnsureLoaded(); return _units.Values.Where(u => !u.IsPlayerSide && !u.NonCombatant).Select(u => u.Id).ToArray(); }
+    }
 
+    public const string PlayerPeasantId = "player_peasant";
     public const string PlayerBrawlerId = "player_brawler";
     public const string PlayerShooterId = "player_shooter";
     public const string PlayerDefenderId = "player_defender";

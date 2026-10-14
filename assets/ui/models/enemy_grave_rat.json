@@ -1,0 +1,45 @@
+{
+  "frameWidth": 147,
+  "frameHeight": 95,
+  "drawScale": 1.361111111111111,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.08015
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_grave_rat",
+  "title": "Grave Rat",
+  "source": "art/remaster/puppet/build.py (enemy_grave_rat)",
+  "anchorY": 0.878627,
+  "anchorX": 0.532097,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "pounce",
+    "body": [
+      -0.227184,
+      -0.516709
+    ],
+    "contact": [
+      0.289842,
+      -0.578248
+    ]
+  },
+  "healthBarY": 0.752579
+}

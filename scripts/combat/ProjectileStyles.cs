@@ -48,9 +48,9 @@ public static class ProjectileStyles
 {
     private const string SpritePath = "res://assets/projectiles/";
 
-    public static readonly ProjectileStyle Arrow = new("arrow", Sprite: "arrow", Length: 20, Arc: .14f, ArcMax: 26,
+    public static readonly ProjectileStyle Arrow = new("arrow", Sprite: "arrow", Length: 26, Arc: .14f, ArcMax: 26,
         Trail: ProjectileTrail.Streak, TrailColor: "f1e6cf", Impact: ProjectileImpact.Pierce, Sticks: true);
-    public static readonly ProjectileStyle Bolt = new("bolt", Sprite: "bolt", Length: 12, Arc: .05f, ArcMax: 10,
+    public static readonly ProjectileStyle Bolt = new("bolt", Sprite: "bolt", Length: 18, Arc: .05f, ArcMax: 10,
         Trail: ProjectileTrail.Streak, TrailColor: "e3d8c0", Impact: ProjectileImpact.Pierce, Sticks: true);
     public static readonly ProjectileStyle BallistaBolt = new("ballista_bolt", Sprite: "ballista_bolt", Length: 32, Arc: .06f,
         ArcMax: 16, Trail: ProjectileTrail.Streak, TrailColor: "efe3c8", Impact: ProjectileImpact.Heavy,
@@ -61,7 +61,7 @@ public static class ProjectileStyles
     public static readonly ProjectileStyle Harpoon = new("harpoon", Sprite: "harpoon", Length: 32, Arc: .07f, ArcMax: 18,
         Trail: ProjectileTrail.Streak, TrailColor: "cfe6ee", Impact: ProjectileImpact.Heavy, Launch: ProjectileLaunch.Dust,
         MaxSpeed: 620);
-    public static readonly ProjectileStyle Flask = new("flask", Sprite: "flask", Length: 7, Orient: ProjectileOrient.Spin,
+    public static readonly ProjectileStyle Flask = new("flask", Sprite: "flask", Length: 10, Orient: ProjectileOrient.Spin,
         Arc: .32f, ArcMax: 58, Spin: 13, Glow: "ff9a3c", GlowRadius: 9, Trail: ProjectileTrail.Embers, TrailColor: "ff9a3c",
         Impact: ProjectileImpact.Shatter);
     public static readonly ProjectileStyle PlaguePot = new("plague_pot", Sprite: "plague_pot", Length: 10,
@@ -70,7 +70,7 @@ public static class ProjectileStyles
     public static readonly ProjectileStyle Firepot = new("firepot", Sprite: "firepot", Length: 9, Orient: ProjectileOrient.Spin,
         Arc: .3f, ArcMax: 60, Spin: 8, Glow: "ff8a3c", GlowRadius: 10, Trail: ProjectileTrail.Embers, TrailColor: "ff8a3c",
         Impact: ProjectileImpact.Fire, Launch: ProjectileLaunch.Smoke);
-    public static readonly ProjectileStyle Cog = new("cog", Sprite: "cog", Length: 8, Orient: ProjectileOrient.Spin, Arc: .16f,
+    public static readonly ProjectileStyle Cog = new("cog", Sprite: "cog", Length: 10, Orient: ProjectileOrient.Spin, Arc: .16f,
         ArcMax: 26, Spin: 18, Trail: ProjectileTrail.Sparks, TrailColor: "ffd27a", Impact: ProjectileImpact.Metal);
     public static readonly ProjectileStyle BlightGlob = new("blight_glob", Sprite: "blight_glob", Length: 13,
         Orient: ProjectileOrient.Upright, Arc: .12f, ArcMax: 22, Wobble: 1.2f, Glow: "9cf25c", GlowRadius: 7,
@@ -96,6 +96,22 @@ public static class ProjectileStyles
     public static readonly ProjectileStyle Storm = new("storm", ProjectileShape.Lightning, Length: 5, Glow: "9fd8ff",
         GlowRadius: 11, Core: "ffffff", Trail: ProjectileTrail.Sparkle, TrailColor: "cfeaff", Impact: ProjectileImpact.Lightning,
         Launch: ProjectileLaunch.Flash);
+    public static readonly ProjectileStyle Javelin = new("javelin", Sprite: "javelin", Length: 26, Arc: .16f, ArcMax: 30,
+        Trail: ProjectileTrail.Streak, TrailColor: "e8dcc4", Impact: ProjectileImpact.Pierce, Sticks: true);
+    public static readonly ProjectileStyle Bomb = new("bomb", Sprite: "bomb", Length: 10, Orient: ProjectileOrient.Spin,
+        Arc: .34f, ArcMax: 66, Spin: 7, Glow: "ffb04a", GlowRadius: 6, Trail: ProjectileTrail.Smoke, TrailColor: "9a8e80",
+        Impact: ProjectileImpact.Fire, Launch: ProjectileLaunch.Smoke);
+    public static readonly ProjectileStyle Boulder = new("boulder", Sprite: "boulder", Length: 16, Orient: ProjectileOrient.Spin,
+        Arc: .38f, ArcMax: 80, Spin: 4, Trail: ProjectileTrail.Smoke, TrailColor: "a89e90", Impact: ProjectileImpact.Heavy,
+        Launch: ProjectileLaunch.Dust);
+    public static readonly ProjectileStyle HandAxe = new("hand_axe", Sprite: "hand_axe", Length: 11, Orient: ProjectileOrient.Spin,
+        Arc: .2f, ArcMax: 34, Spin: 16, Trail: ProjectileTrail.Streak, TrailColor: "d8d4cc", Impact: ProjectileImpact.Metal);
+    public static readonly ProjectileStyle Pitch = new("pitch", Sprite: "pitch", Length: 11, Orient: ProjectileOrient.Spin,
+        Arc: .3f, ArcMax: 60, Spin: 6, Glow: "ff8a3c", GlowRadius: 11, Trail: ProjectileTrail.Embers, TrailColor: "ff8a3c",
+        Impact: ProjectileImpact.Fire, Launch: ProjectileLaunch.Smoke);
+    public static readonly ProjectileStyle FlaskTeal = new("flask_teal", Sprite: "flask", Length: 11, Orient: ProjectileOrient.Spin,
+        Arc: .32f, ArcMax: 58, Spin: 12, Glow: "5fe6d2", GlowRadius: 9, Trail: ProjectileTrail.Sparkle, TrailColor: "7ff0de",
+        Impact: ProjectileImpact.Shatter);
     public static readonly ProjectileStyle Default = new("orb", ProjectileShape.Orb, Length: 4, Glow: "ffe6b0", GlowRadius: 8,
         Trail: ProjectileTrail.Glow, TrailColor: "ffe6b0");
 
@@ -118,6 +134,18 @@ public static class ProjectileStyles
         ["enemy_boss_verge"] = Hex,
         ["enemy_boss_reliquary"] = Relic,
         ["enemy_boss_tidemaster"] = Harpoon,
+        ["player_longbowman"] = Arrow,
+        ["enemy_ossuary_archer"] = Arrow,
+        ["enemy_highwayman"] = Bolt,
+        ["player_grenadier"] = FlaskTeal,
+        ["player_quartermaster"] = FlaskTeal,
+        ["player_sapper_crew"] = Bomb,
+        ["enemy_saboteur"] = Bomb,
+        ["enemy_powder_bandit"] = Bomb,
+        ["enemy_cinder_spitter"] = Pitch,
+        ["enemy_drowned_harpooner"] = Harpoon,
+        ["enemy_dust_reaver"] = Javelin,
+        ["enemy_avalanche_bearer"] = Boulder,
     };
 
     public static ProjectileStyle ForUnit(string definitionId, string motionProfile)

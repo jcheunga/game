@@ -46,7 +46,7 @@ public partial class UiReviewSmoke
             await TapModal(token); await FinishTravel();
             Check(state.HasVisitedAdventureSite(reward.Id) && state.Gold == 1000 + reward.GoldReward
                 && state.Food == 100 - GameState.AdventureTileFoodCost + reward.FoodReward,
-                reward.Id + ": one native selection spends 2 food and grants the advertised supplies exactly once");
+                reward.Id + ": one native selection spends 1 food and grants the advertised supplies exactly once");
             Check(!token.Visible && token.Disabled && !menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible,
                 reward.Id + ": collection removes the marker without leaving an open details panel");
             Check(!Walk(menu).OfType<Control>().Any(control => control.Name == "TravelNotice"), reward.Id + ": collection never opens a bottom message popup");
@@ -71,7 +71,7 @@ public partial class UiReviewSmoke
                 && state.Gold == before.Gold + (kind == AdventureDiscoveryKind.Gold ? reward.Amount : 0)
                 && state.Food == before.Food - GameState.AdventureTileFoodCost + (kind == AdventureDiscoveryKind.Food ? reward.Amount : 0)
                 && state.Essence == before.Essence + (kind == AdventureDiscoveryKind.Essence ? reward.Amount : 0),
-                kind + ": selecting a tile reward spends 2 food, grants its contents and removes its marker");
+                kind + ": selecting a tile reward spends 1 food, grants its contents and removes its marker");
             var claimed = state.BuildSaveData();
             token.EmitSignal(BaseButton.SignalName.Pressed); await FinishTravel();
             Check(state.Gold == claimed.Gold && state.Food == claimed.Food && state.Essence == claimed.Essence,
@@ -87,7 +87,7 @@ public partial class UiReviewSmoke
             && state.Food == 0 && !canvas.IsTravelling, "With zero rations a gold cache stays closed and charges nothing");
         Check(menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible
             && Walk(menu).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains($"costs {GameState.AdventureTileFoodCost} food"))
-            && !Walk(menu).OfType<Control>().Any(control => control.Name == "TravelNotice"), "A cache the caravan can't afford explains its 2 food cost in the site panel");
+            && !Walk(menu).OfType<Control>().Any(control => control.Name == "TravelNotice"), "A cache the caravan can't afford explains its 1 food cost in the site panel");
         AuditText("Tile map / cache needs food"); await Capture("reward-cache-needs-food");
         var provisions = AdventureDiscoveryCatalog.ForMap("city").First(discovery => discovery.Kind == AdventureDiscoveryKind.Food);
         await Prepare(food: GameState.AdventureTileFoodCost); canvas.FocusSite(provisions.Id);
@@ -108,7 +108,7 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = center, GlobalPosition = center });
         await Wait(.06);
         Check(!canvas.IsTravelling && !pending.Visible && state.HasVisitedAdventureSite(cache.Id)
-            && state.Gold == 1000 + cache.GoldReward && state.Food == 100 - GameState.AdventureTileFoodCost, "A distant reward collects immediately for its 2 food");
+            && state.Gold == 1000 + cache.GoldReward && state.Food == 100 - GameState.AdventureTileFoodCost, "A distant reward collects immediately for its 1 food");
         canvas.ShowMap("city", start.Id); await Wait(.35); canvas.FocusSite(cache.Id);
         Check(state.HasVisitedAdventureSite(cache.Id) && !SiteToken(cache.Id).Visible
             && state.Gold == 1000 + cache.GoldReward && state.Food == 100 - GameState.AdventureTileFoodCost,

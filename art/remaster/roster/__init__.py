@@ -11,4 +11,5 @@ def unit(ident):
 
 def load_all():
     from . import player, enemy, bosses, beasts  # noqa: F401
+    from . import caravan, host, host2, host3, host4, mounts, siege  # noqa: F401  (the roster-sheet style; overrides the older recipes)
     return REGISTRY

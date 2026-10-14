@@ -1,0 +1,45 @@
+{
+  "frameWidth": 351,
+  "frameHeight": 248,
+  "drawScale": 2.785714285714285,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16005
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_militia",
+  "title": "Militia",
+  "source": "art/remaster/puppet/build.py (player_militia)",
+  "anchorY": 0.902056,
+  "anchorX": 0.565794,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.000414,
+      -0.50208
+    ],
+    "contact": [
+      0.40459,
+      -0.391763
+    ]
+  },
+  "healthBarY": 0.732081
+}

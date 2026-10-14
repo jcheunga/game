@@ -9,6 +9,7 @@ public partial class LoadoutMenu : RoyalScreen
 {
     private StageDefinition _stage;
     private RoyalButton _deployButton;
+    private bool _deployPending;
 
     public LoadoutMenu() { PlateName = "preparation"; Veil = Colors.Transparent; }
 
@@ -16,7 +17,10 @@ public partial class LoadoutMenu : RoyalScreen
 
     public override void _Process(double delta)
     {
-        if (_deployButton != null) _deployButton.Disabled = !GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out _);
+        if (_deployButton == null) return;
+        var ready = GameState.Instance.CanStartCampaignBattle(_stage.StageNumber, out var reason);
+        _deployButton.Disabled = _deployPending || SceneRouter.Instance.IsTransitioning || !ready;
+        _deployButton.TooltipText = ready ? $"Deploy · {GameState.Instance.GetStageEntryFoodCost(_stage.StageNumber)} food" : reason;
     }
 
     protected override void Build()
@@ -52,10 +56,11 @@ public partial class LoadoutMenu : RoyalScreen
         var picture = spec.Rect("mission.picture");
         layer.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
             Texture = MissionPicture(), Position = picture.Position, Size = picture.Size, MouseFilter = MouseFilterEnum.Ignore });
+        layer.AddChild(RoyalButton.Over(picture, "Encounter briefing", () => EncounterBriefing.Show(this, _stage), 6));
         layer.AddChild(RoyalKit.Image("icon-crossed-swords", spec.Rect("mission.objective.icon")));
         var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE ENEMY GATEHOUSE", 320, new Color("1e1710"));
         objectiveTitle.ShadowOffset = Vector2.Zero; layer.AddChild(objectiveTitle);
-        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}. Bring down the gatehouse and rout the enemy forces within.", 15, new Color("31261b"), 410);
+        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}. Tap the battlefield picture for enemy counters and battle tips.", 15, new Color("31261b"), 410);
         line.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
         line.Position = new Vector2(spec.Number("mission.objective.line.1", "pen_x", 133), spec.Number("mission.objective.line.1", "baseline", 498) - 15);
         line.Size = new Vector2(spec.Rect("panel.mission").End.X - line.Position.X - 14, 40);
@@ -130,7 +135,10 @@ public partial class LoadoutMenu : RoyalScreen
         var deployRect = spec.Rect("button.deploy");
         var deploy = RoyalButton.Over(deployRect, "Deploy", () =>
         {
-            if (!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber, out var message)) { RoyalToast.Show(this, message); return; }
+            if (_deployPending || SceneRouter.Instance.IsTransitioning) return;
+            if (!GameState.Instance.TrySpendStageEntryFood(_stage.StageNumber, out _)) return;
+            _deployPending = true;
+            _deployButton.Disabled = true;
             GameState.Instance.PrepareCampaignBattle();
             SceneRouter.Instance.GoToBattle();
         }, 8);
@@ -149,13 +157,13 @@ public partial class LoadoutMenu : RoyalScreen
         deploy.TooltipText = canDeploy ? $"Deploy · {state.GetStageEntryFoodCost(_stage.StageNumber)} food" : reason;
         _deployButton = deploy;
         layer.AddChild(deploy);
-        if (!canDeploy) RoyalToast.Show(this, reason, 690);
     }
 
     private static string ShopIcon(UnitDefinition unit) => unit.Id switch
     {
         "player_shooter" or "player_ranger" or "player_marksman" or "player_ballista" => "class-ranged",
         "player_defender" or "player_lantern_guard" or "player_banner" => "class-shield",
+        _ when unit.UsesProjectile => "class-ranged",
         _ => "class-melee"
     };
 

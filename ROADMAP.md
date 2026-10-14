@@ -48,9 +48,10 @@ This means the project is no longer at "empty prototype" status. It has a combat
 - local verification command: `./scripts/verify_all.sh` (builds the game, validates data, runs the server tests and builds the public website)
 - game build: `0 warnings, 0 errors`
 - server tests: 86 passed, 0 failed
-- data checks: 11,992 passed, 0 failed
-- content: 100 campaign stages in 10 zones × 10 (zone boss in slot 10) · 19 player units, 19 enemies, 14 bosses · 10 spells · save version 46
-- remaining code work: boss rush, and the systems marked *Logic only* under [What's ready](#whats-ready)
+- data checks: 11,343 passed, 0 failed
+- content: 100 rebuilt campaign stages in 10 zones · 32 core recruits plus 5 retained ownership IDs · 59 ordinary hostile types, 14 bosses and Ash Pilgrim · 100 relics · 30 spells + 12 tactical cards · units level to 20 · save version 46
+- equipment choices: armor/resistance/critical bonuses, before/after battle stats, shared-limit notices and both promoted relic slots are exposed in the armory; [current content and next priorities](docs/CONTENT_IMPLEMENTATION.md)
+- remaining code work: the systems marked *Logic only* under [What's ready](#whats-ready)
 - remaining external work: art/audio production, real translations, deployment secrets/env, store signing/credentials, and manual playtesting
 
 The sprint log later in this document is a point-in-time record, test counts included. Treat this section as the current repo state.
@@ -290,20 +291,20 @@ Objective: add a real-money shop where players can purchase gold and food packs 
 
 ## Immediate next sprint
 
-All 10 milestones are in code, along with the post-milestone feature batches and the ship-readiness infrastructure. Some of those systems have logic and save data but no player entry point; they are marked *Logic only* below. Boss rush is listed on the home screen as in development. Everything else that remains is art, audio, deployment or platform build configuration.
+The non-art production polish pass now covers save recovery and account-safe preference resets, repeated deployment input, offline pause/resume, readable notices, full-screen battle settings, valid spell targeting, paced hints, enemy briefings, focused first-sighting encounters, combat allocation cleanup and release-package exclusions. See [production polish and verification](docs/PRODUCTION_POLISH.md). Hard Mode and battle mutators are deferred at the user's request. Art remains with the user. Physical-device acceptance, signed builds and the external launch gates remain separate work.
 
 ### What's ready
 
 | System | Status | How to use |
 |--------|--------|-----------|
-| 19 player units, 10 spells, 19 enemies, 14 bosses | Implemented | All in `data/units.json`, `data/spells.json` |
+| 32 core recruits + 5 retained ownership IDs, 42 utility cards, 59 ordinary enemies, 14 bosses | Implemented | All in `data/units.json`, `data/spells.json` |
 | 100 campaign stages (10 zones × 10, zone boss in slot 10) | Implemented | All in `data/stages.json` |
 | Relic Forge (dismantle, fuse 3-to-1, craft with shards + gold) | Implemented | Forge menu from Main Menu |
 | Unit Promotion (elite rank at level 5, second equipment slot) | Implemented | Promote from Armory unit cards |
 | Expeditions (3 slots, 30/60/120 min, gold/food/relic rewards) | Implemented | Expeditions menu from Main Menu |
 | Seasonal Events (time-limited stages, milestone rewards) | Implemented | Event menu from Main Menu when active |
-| 33 relics (5 common, 7 rare, 14 epic, 7 hardened) | Implemented | `data/equipment.json` |
-| Codex / Bestiary (83 entries: enemies, bosses, units, spells, relics) | Implemented | Codex menu from Main Menu |
+| 100 equipment relics, stat comparisons and two-slot equipment | Implemented | Armory → Relics; supplied/applied bonuses and cap notices before a change |
+| Codex / Bestiary (253 entries: enemies, bosses, units, spells, relics) | Implemented | Codex menu from Main Menu |
 | Skill Trees (19 trees × 5 nodes, Tomes currency) | Implemented | Talents button in Armory unit cards |
 | PvP Arena (async, Elo rating, 5 tiers Bronze-Diamond) | Implemented | Arena menu from Main Menu (after stage 30) |
 | Guild / Warband (5 perks, 5 tiers, weekly goals, contribution) | Implemented | Warband menu from Main Menu |
@@ -317,14 +318,14 @@ All 10 milestones are in code, along with the post-milestone feature batches and
 | Login Calendar (30-day escalating rewards, monthly reset) | Implemented | Daily gifts from Main Menu |
 | Leaderboard Hub (Arena/Tower/Endless/Daily tabs) | Implemented | Leaderboard menu from Main Menu |
 | Season Pass (50-tier free + premium tracks, Season XP) | Implemented | Season Pass menu from Main Menu |
-| Accessibility (reduced motion, high contrast, text size) | Implemented | Settings → Gameplay |
+| Accessibility (reduced motion, combat contrast, reading text size) | Implemented | Settings → Gameplay; wrapping descriptions respect reading size |
 | Endless roguelite, multiplayer, daily challenges | Implemented | Full game loop |
 | Cash shop + Stripe + native IAP scaffold | Implemented | Configure endpoint in Settings → Account → Payments |
 | Campaign Hard Mode (all 100 stages, 1.3x-2.5x scaling, hardened relics) | Logic only | `HardModeCatalog`; no toggle, battle scaling or victory hook |
-| Enchantment System (10 enchantments, Essence currency, combat hooks) | Logic only | `EnchantmentCatalog`; the Forge has no enchant screen |
-| War Wagon Cosmetics (8 milestone skins) | Logic only | Skin art renders in battle; no skin selector |
-| Unit Awakening (1-5 stars via tokens, stat bonuses) | Logic only | `AwakeningCatalog`; no awaken action |
-| Collection Milestones (24 milestones across 6 categories) | Logic only | `CollectionMilestoneCatalog`; no progress or claim screen |
+| Enchantment System (10 enchantments, Gold/Essence prices, combat hooks) | Implemented | Forge → Enchantments; wearer stat comparison, shared caps, replacement and free removal |
+| War Wagon Cosmetics (8 milestone skins) | Implemented | More → Caravan → Progression → Wagon looks |
+| Unit Awakening (1-5 stars via tokens, capped stat bonuses) | Implemented | Progression → Awakening; token training and battle-stat preview |
+| Collection Milestones (24 milestones across 6 categories) | Implemented | Progression → Collection; current roster totals and persistent claims |
 | Battle Mutators (12 gameplay modifiers, reward multiplier) | Logic only | `BattleMutatorCatalog`; no mutator toggles |
 | Colorblind, auto-battle and large-text modes | Logic only | Save fields and setters only; no settings toggles |
 | Server (Docker + CI + admin dashboard + backups) | Ready to deploy | `cd server && docker compose up -d` |
@@ -335,7 +336,7 @@ All 10 milestones are in code, along with the post-milestone feature batches and
 | Sound effects and ambience (212 cues, 442 variations, 15 soundscapes) | Done | Rendered by `art/audio/build_sfx.py`; manifest-driven `AudioDirector`, positional battle sounds |
 | Localization (English complete) | Ready for translation | Add `data/locale/{lang}.json` |
 | Export presets (Web, Android, iOS) | Ready to build | `godot --export-release "Web" builds/web/index.html` |
-| 86 server tests + 11,992 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
+| 86 server tests + 11,343 data checks | All passing | `dotnet run -- --test` / `--test-data ../data` |
 
 ### What remains (non-code)
 

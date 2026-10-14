@@ -343,7 +343,10 @@ public partial class FireballStreak : Node2D
 /// <summary>An arrow or bolt left standing in a soldier for a moment: it rides along with them, then fades.</summary>
 public partial class StuckProjectile : Node2D
 {
-    private const float Life = .9f, FadeTime = .3f;
+    // Arrows stay in a soldier while they fight on (a few at most: the oldest pull free) and go with the body.
+    private const float Life = 6f, FadeTime = .3f;
+    private const int MaxPerHost = 4;
+    private static readonly System.Collections.Generic.Dictionary<ulong, System.Collections.Generic.Queue<StuckProjectile>> PerHost = new();
     private Unit _host;
     private uint _lifetime;
     private ProjectileStyle _style;
@@ -362,7 +365,23 @@ public partial class StuckProjectile : Node2D
         ZIndex = 9;
     }
 
-    public override void _Ready() => GlobalPosition = _host.GlobalPosition + _offset;
+    public override void _Ready()
+    {
+        GlobalPosition = _host.GlobalPosition + _offset;
+        var key = _host.GetInstanceId();
+        if (!PerHost.TryGetValue(key, out var q)) PerHost[key] = q = new();
+        q.Enqueue(this);
+        while (q.Count > MaxPerHost)
+        {
+            var old = q.Dequeue();
+            if (IsInstanceValid(old)) old._age = Mathf.Max(old._age, Life - FadeTime);
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        if (_host != null && PerHost.TryGetValue(_host.GetInstanceId(), out var q) && q.Count > 0 && q.Peek() == this) q.Dequeue();
+    }
 
     public override void _Process(double delta)
     {
@@ -390,6 +409,48 @@ public partial class StuckProjectile : Node2D
         var src = new Rect2(0, 0, texture.GetWidth() * (meta.Tip.X - .3f), texture.GetHeight());
         DrawTextureRectRegion(texture, new Rect2(-meta.Tip.X * w, -meta.Tip.Y * h, w * (meta.Tip.X - .3f), h), src,
             new Color(Projectile.FieldTint, alpha));
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
+}
+
+/// <summary>An arrow or bolt that missed: stuck slanting in the road where it came down, fading after a while.</summary>
+public partial class GroundedProjectile : Node2D
+{
+    private const float Life = 7f, FadeTime = 1f;
+    private readonly ProjectileStyle _style;
+    private readonly float _dir, _tilt;
+    private float _age;
+    private readonly Func<bool> _shouldPause;
+
+    public GroundedProjectile(ProjectileStyle style, Vector2 at, float dir, Func<bool> shouldPause)
+    {
+        _style = style; _dir = dir; _shouldPause = shouldPause;
+        Position = at; ZIndex = -2;
+        _tilt = Mathf.DegToRad(28f + GD.Randf() * 22f);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!(_shouldPause?.Invoke() ?? false)) _age += (float)delta;
+        if (_age >= Life) { QueueFree(); return; }
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        var texture = ProjectileStyles.Texture(_style.Sprite);
+        if (texture == null) return;
+        var meta = ProjectileStyles.Meta(_style.Sprite);
+        var w = _style.Length;
+        var h = w * texture.GetHeight() / texture.GetWidth();
+        var alpha = Mathf.Clamp((Life - _age) / FadeTime, 0, 1);
+        // pointing down into the ground at the slant it fell, the buried head hidden
+        var angle = _dir > 0 ? _tilt : Mathf.Pi - _tilt;
+        DrawSetTransform(Vector2.Zero, angle, new Vector2(1, _dir > 0 ? 1 : -1));
+        var keep = meta.Tip.X - .22f;
+        var src = new Rect2(0, 0, texture.GetWidth() * keep, texture.GetHeight());
+        // the visible shaft (from the tail to just short of the head) ends at the ground point, the origin
+        DrawTextureRectRegion(texture, new Rect2(-keep * w, -meta.Tip.Y * h, w * keep, h), src, new Color(Projectile.FieldTint, alpha));
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 }

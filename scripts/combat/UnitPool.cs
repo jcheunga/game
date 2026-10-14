@@ -8,7 +8,7 @@ public static class UnitPool
 
 	public static Unit Acquire()
 	{
-		if (Pool.Count > 0)
+		while (Pool.Count > 0)
 		{
 			var unit = Pool.Dequeue();
 			if (IsInstanceValid(unit))

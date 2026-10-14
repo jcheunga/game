@@ -121,8 +121,7 @@ public partial class RaidMenu : Control
 		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
 		bottomRow.AddThemeConstantOverride("separation", 12);
 		AddChild(bottomRow);
-		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
-		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
+		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
 		bottomRow.AddChild(mapBtn);
 	}
 

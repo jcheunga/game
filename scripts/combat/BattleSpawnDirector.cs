@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 public sealed class BattleSpawnDirector
@@ -826,31 +827,23 @@ public sealed class BattleSpawnDirector
 
     private UnitStats BuildEnemyStats(UnitDefinition source)
     {
-        var healthScale = _stageData.EnemyHealthScale * _additionalEnemyHealthScale;
-        var damageScale = _stageData.EnemyDamageScale * _additionalEnemyDamageScale;
-        // Authored health/damage already provide campaign growth. Preserve each enemy's rhythm.
-        var cooldownReduction = 0f;
-        var baseDamageBonus = Math.Min(10, Math.Max(0, (_stage - 1) / 10));
-
-        if (_isEndlessMode)
-        {
-            var waveFactor = Math.Max(0, EndlessWaveNumber - 1);
-            healthScale *= 1f + (waveFactor * 0.07f);
-            damageScale *= 1f + (waveFactor * 0.05f);
-            cooldownReduction = Math.Min(source.AttackCooldown * 0.15f, waveFactor * 0.005f);
-            baseDamageBonus += waveFactor * 2;
-        }
-
-        return new UnitStats(
-            source,
-            healthScale,
-            damageScale,
-            cooldownReduction,
-            baseDamageBonus);
+        var level = _isEndlessMode
+            ? Math.Max(_stageData.EnemyLevel, EndlessWaveNumber)
+            : source.IsBoss ? Math.Max(2, ((_stage - 1) / 10 + 1) * 2) : Math.Max(1, _stageData.EnemyLevel);
+        return new UnitStats(source,
+            UnitBalance.HealthScale(level) * _stageData.EnemyHealthScale * _additionalEnemyHealthScale,
+            UnitBalance.DamageScale(level) * _stageData.EnemyDamageScale * _additionalEnemyDamageScale,
+            level: level);
     }
 
     private UnitDefinition PickEndlessEnemyDefinition(int waveNumber)
     {
+        if (waveNumber >= 6 && _rng.Randf() < .28f)
+        {
+            var regional = _enemyRoster.Where(e => !e.IsBoss && !e.NonCombatant &&
+                e.HomeZone == _endlessRouteId && !string.IsNullOrEmpty(e.ContentBehavior)).ToArray();
+            if (regional.Length > 0) return regional[_rng.RandiRange(0, regional.Length - 1)];
+        }
         var walkerWeight = 7f;
         var runnerWeight = waveNumber >= 2
             ? (_endlessRouteId switch
@@ -1325,6 +1318,8 @@ public sealed class BattleSpawnDirector
             if (_enemyRoster[i].Id == id)
             {
                 definition = _enemyRoster[i];
+                if (!_isEndlessMode && !definition.IsBoss && definition.CampaignDebutStage > _stage)
+                    definition = _enemyRoster.First(e => e.Id == GameData.EnemyWalkerId);
                 return true;
             }
         }

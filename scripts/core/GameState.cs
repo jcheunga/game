@@ -13,7 +13,7 @@ public partial class GameState : Node
 	private const int MaxDeckSize = 6;
 	private const int MaxSpellDeckSize = 5;
 	private const int DefaultUnitLevel = 1;
-	private const int MaxPlayerUnitLevel = 5;
+	private const int MaxPlayerUnitLevel = UnitBalance.MaxPlayerLevel;
 	private const int DefaultSpellLevel = 1;
 	private const int MaxPlayerSpellLevel = 3;
 	private const int MaxPersistentBaseUpgradeLevel = 5;
@@ -57,7 +57,7 @@ public partial class GameState : Node
 		AsyncChallengeCatalog.Create(DefaultUnlockedStage, AsyncChallengeCatalog.PressureSpikeId, 1001).Code;
 	private static readonly string[] DefaultDeckUnitIds =
 	{
-		GameData.PlayerBrawlerId
+		GameData.PlayerPeasantId
 	};
 	private static readonly string[] DefaultDeckSpellIds =
 	{
@@ -1416,21 +1416,27 @@ public partial class GameState : Node
 		}
 
 		CurrentBattleMode = BattleRunMode.BossRush;
-		message = "Boss Rush armed. Deploy to face all 10 district bosses in sequence.";
+		_bossRushResultPending=true;
+		message = "Boss Rush armed. Face all 14 commanders in sequence.";
 		Persist();
 		return true;
 	}
 
-	public void ApplyBossRushResult(int wavesCleared, float elapsedSeconds, int totalGold, bool completed)
+	public void ApplyBossRushResult(int wavesCleared, float elapsedSeconds, int totalGold, bool completed, bool retreated = false)
 	{
+        if(CurrentBattleMode!=BattleRunMode.BossRush || !_bossRushResultPending)return;
+        _bossRushResultPending=false;
+        wavesCleared=Math.Clamp(wavesCleared,0,BossRushCatalog.TotalWaves);
+        completed=completed && wavesCleared==BossRushCatalog.TotalWaves;
+        totalGold=BossRushCatalog.Waves.Take(wavesCleared).Sum(w=>w.RewardGold);
 		BestBossRushWave = Math.Max(BestBossRushWave, wavesCleared);
-		BestBossRushTimeSeconds = BestBossRushTimeSeconds > 0.01f
-			? (completed ? Math.Min(BestBossRushTimeSeconds, elapsedSeconds) : BestBossRushTimeSeconds)
-			: elapsedSeconds;
+		if(completed)BestBossRushTimeSeconds=BestBossRushTimeSeconds>0?Math.Min(BestBossRushTimeSeconds,elapsedSeconds):elapsedSeconds;
 		BossRushRuns++;
 		Gold += totalGold;
 
-		var resultLabel = completed ? "Boss Rush COMPLETE" : $"Boss Rush failed at wave {wavesCleared}/{BossRushCatalog.TotalWaves}";
+		var resultLabel = completed ? "Boss Rush COMPLETE" : retreated
+			? $"Boss rush ended · {wavesCleared}/{BossRushCatalog.TotalWaves} commanders defeated"
+			: $"Boss Rush failed at wave {wavesCleared}/{BossRushCatalog.TotalWaves}";
 		LastResultMessage = $"{resultLabel}. +{totalGold} gold. Best: {BestBossRushWave}/{BossRushCatalog.TotalWaves} waves.";
 
 		Persist();
@@ -2035,7 +2041,7 @@ public partial class GameState : Node
 	{
 		var definition = GameData.GetUnit(unitId);
 		var level = GetUnitLevel(unitId);
-		return definition.Cost + 35 + ((level - 1) * 30);
+		return 35 + ((level - 1) * 7);
 	}
 
 	public bool TryUpgradeUnit(string unitId, out string message)
@@ -2331,7 +2337,7 @@ public partial class GameState : Node
 
 	public float GetPlayerDeployCooldownScaleAtLevel(int level)
 	{
-		return Mathf.Max(0.55f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.06f));
+		return Mathf.Max(0.9f, 1f - (Mathf.Clamp(level, 0, MaxPersistentBaseUpgradeLevel) * 0.02f));
 	}
 
 	public float GetPlayerSignalJamDurationScaleAtLevel(int level)
@@ -2357,84 +2363,68 @@ public partial class GameState : Node
 		float bonusDamageScale,
 		float bonusCooldownReduction,
 		int bonusBaseDamage)
-	{
-		var bonusLevel = Math.Max(0, level - DefaultUnitLevel);
-		var healthScale = (1f + (bonusLevel * 0.12f)) * Math.Max(0.1f, bonusHealthScale);
-		var damageScale = (1f + (bonusLevel * 0.1f)) * Math.Max(0.1f, bonusDamageScale);
-		var cooldownReduction = (bonusLevel * 0.03f) + Math.Max(0f, bonusCooldownReduction);
-		var baseDamageBonus = (bonusLevel * 2) + Math.Max(0, bonusBaseDamage);
-		var synergyBonus = ResolveDeckSynergyBonus(definition, deckUnits);
+    {
+        level = Math.Clamp(level, DefaultUnitLevel, MaxPlayerUnitLevel);
+        var bonuses = CollectPlayerUnitBonuses(definition, deckUnits,
+            GetUnitEquipment(definition.Id), GetUnitEquipment2(definition.Id),
+            bonusHealthScale,bonusDamageScale,bonusCooldownReduction,bonusBaseDamage);
+        return ResolvePlayerUnitStats(definition,level,bonuses);
+    }
 
-		healthScale *= synergyBonus.HealthScale;
-		damageScale *= synergyBonus.DamageScale;
-		cooldownReduction += synergyBonus.CooldownReduction;
-		baseDamageBonus += synergyBonus.BaseDamageBonus;
+    private UnitStatBonuses CollectPlayerUnitBonuses(UnitDefinition definition,
+        IEnumerable<UnitDefinition> deckUnits, EquipmentDefinition first, EquipmentDefinition second,
+        float bonusHealthScale=1f,float bonusDamageScale=1f,float bonusCooldownReduction=0f,int bonusBaseDamage=0,
+        string enchantmentRelicId=null,EnchantmentDefinition enchantmentOverride=null,int? awakeningStars=null)
+    {
+        var bonuses = new UnitStatBonuses();
+        bonuses.AddScales(bonusHealthScale, bonusDamageScale);
+        if (definition.AttackCooldown > 0f) bonuses.AttackInterval += bonusCooldownReduction / definition.AttackCooldown;
+        if (definition.BaseDamage > 0) bonuses.Structure += bonusBaseDamage / (float)definition.BaseDamage;
+        var synergy = ResolveDeckSynergyBonus(definition, deckUnits);
+        bonuses.AddScales(synergy.HealthScale, synergy.DamageScale);
+        if (definition.AttackCooldown > 0f) bonuses.AttackInterval += synergy.CooldownReduction / definition.AttackCooldown;
+        if (definition.BaseDamage > 0) bonuses.Structure += synergy.BaseDamageBonus / (float)definition.BaseDamage;
+        bonuses.AddEquipment(first, definition);
+        var promoted = _promotedUnitIds.Contains(definition.Id);
+        if (promoted)
+        {
+            var promotion = UnitPromotionCatalog.TryGet(definition.Id);
+            if (promotion != null) bonuses.AddScales(promotion.HealthScale, promotion.DamageScale, promotion.SpeedScale);
+            bonuses.AddEquipment(second, definition);
+        }
+        var guild = ResolveGuildBonus();
+        bonuses.AddScales(guild.HealthScale);
+        EnchantmentDefinition EnchantmentFor(EquipmentDefinition item)=>item==null?null:
+            item.Id.Equals(enchantmentRelicId,StringComparison.OrdinalIgnoreCase)?enchantmentOverride:GetRelicEnchantment(item.Id);
+        bonuses.AddEnchantment(EnchantmentFor(first));
+        if (promoted) bonuses.AddEnchantment(EnchantmentFor(second));
+        var mastery = ResolveMasteryBonus(definition.Id);
+        var awakening = awakeningStars.HasValue?AwakeningCatalog.ResolveBonus(awakeningStars.Value):ResolveAwakeningBonus(definition.Id);
+        bonuses.AddScales(mastery.HealthScale, mastery.DamageScale);
+        bonuses.AddScales(awakening.HealthScale, awakening.DamageScale);
+        return bonuses;
+    }
 
-		var speedScale = 1f;
-		var equip = GetUnitEquipment(definition.Id);
-		if (equip != null)
-		{
-			healthScale *= equip.HealthScale;
-			damageScale *= equip.DamageScale;
-			cooldownReduction += equip.CooldownReduction;
-			baseDamageBonus += equip.BaseDamageBonus;
-			speedScale *= equip.SpeedScale;
-		}
-
-		// Promotion bonuses + second equipment slot
-		if (_promotedUnitIds.Contains(definition.Id))
-		{
-			var promo = UnitPromotionCatalog.TryGet(definition.Id);
-			if (promo != null)
-			{
-				healthScale *= promo.HealthScale;
-				damageScale *= promo.DamageScale;
-				speedScale *= promo.SpeedScale;
-			}
-
-			var equip2 = GetUnitEquipment2(definition.Id);
-			if (equip2 != null)
-			{
-				healthScale *= equip2.HealthScale;
-				damageScale *= equip2.DamageScale;
-				cooldownReduction += equip2.CooldownReduction;
-				baseDamageBonus += equip2.BaseDamageBonus;
-				speedScale *= equip2.SpeedScale;
-			}
-		}
-
-		// Guild perk bonuses
-		var guildBonus = ResolveGuildBonus();
-		healthScale *= guildBonus.HealthScale;
-
-		// Enchantment bonuses
-		var equip1Id = GetEquippedRelicId(definition.Id);
-		var equip2Id = GetEquippedRelicId2(definition.Id);
-		var ench1 = GetRelicEnchantment(equip1Id);
-		var ench2 = GetRelicEnchantment(equip2Id);
-		if (ench1 != null) { healthScale *= ench1.HealthScale; damageScale *= ench1.DamageScale; speedScale *= ench1.SpeedScale; }
-		if (ench2 != null) { healthScale *= ench2.HealthScale; damageScale *= ench2.DamageScale; speedScale *= ench2.SpeedScale; }
-
-		// Mastery bonuses
-		var masteryBonus = ResolveMasteryBonus(definition.Id);
-		healthScale *= masteryBonus.HealthScale;
-		damageScale *= masteryBonus.DamageScale;
-
-		// Awakening star bonuses (final layer)
-		var awakeningBonus = ResolveAwakeningBonus(definition.Id);
-		healthScale *= awakeningBonus.HealthScale;
-		damageScale *= awakeningBonus.DamageScale;
-
-		var stats = new UnitStats(
-			definition,
-			healthScale,
-			damageScale,
-			cooldownReduction,
-			baseDamageBonus,
-			speedScale);
-
-		return stats;
-	}
+    private static UnitStats ResolvePlayerUnitStats(UnitDefinition definition,int level,UnitStatBonuses supplied)
+    {
+        var bonuses=supplied.Copy();
+        bonuses.ApplyCaps();
+        return new UnitStats(
+            definition,
+            UnitBalance.HealthScale(level) * (1f + bonuses.Health),
+            UnitBalance.DamageScale(level) * (1f + bonuses.Damage),
+            speedScale: 1f + bonuses.Speed,
+            armorBonus: bonuses.Armor,
+            physicalResistanceBonus: bonuses.PhysicalResistance,
+            magicalResistanceBonus: bonuses.MagicalResistance,
+            criticalChanceBonus: bonuses.CriticalChance,
+            criticalDamageBonus: bonuses.CriticalDamage,
+            rangeScale: 1f + bonuses.Range,
+            structureScale: 1f + bonuses.Structure,
+            attackIntervalScale: 1f - bonuses.AttackInterval,
+            level: level,
+            auraRangeScale: 1f + bonuses.AuraRange);
+    }
 
 	private static SquadSynergyBonus ResolveDeckSynergyBonus(UnitDefinition definition, IEnumerable<UnitDefinition> deckUnits)
 	{
@@ -2472,25 +2462,7 @@ public partial class GameState : Node
 
 	public bool TryEquipItem(string unitId, string equipmentId)
 	{
-		if (string.IsNullOrWhiteSpace(unitId) || string.IsNullOrWhiteSpace(equipmentId))
-		{
-			return false;
-		}
-
-		if (!_ownedEquipmentIds.Contains(equipmentId))
-		{
-			return false;
-		}
-
-		foreach (var pair in _unitEquipmentSlots)
-		{
-			if (pair.Value.Equals(equipmentId, StringComparison.OrdinalIgnoreCase) &&
-				!pair.Key.Equals(unitId, StringComparison.OrdinalIgnoreCase))
-			{
-				return false;
-			}
-		}
-
+		if (!CanEquipRelic(unitId,equipmentId,1,out _)) return false;
 		_unitEquipmentSlots[unitId] = equipmentId;
 		Persist();
 		return true;
@@ -2785,38 +2757,7 @@ public partial class GameState : Node
 
 	public bool TryEquipItem2(string unitId, string equipmentId)
 	{
-		if (string.IsNullOrWhiteSpace(unitId) || string.IsNullOrWhiteSpace(equipmentId))
-		{
-			return false;
-		}
-
-		if (!_promotedUnitIds.Contains(unitId))
-		{
-			return false;
-		}
-
-		if (!_ownedEquipmentIds.Contains(equipmentId))
-		{
-			return false;
-		}
-
-		// Check not equipped by any unit in either slot
-		foreach (var pair in _unitEquipmentSlots)
-		{
-			if (pair.Value.Equals(equipmentId, System.StringComparison.OrdinalIgnoreCase))
-			{
-				return false;
-			}
-		}
-		foreach (var pair in _unitEquipmentSlot2)
-		{
-			if (pair.Value.Equals(equipmentId, System.StringComparison.OrdinalIgnoreCase) &&
-				!pair.Key.Equals(unitId, System.StringComparison.OrdinalIgnoreCase))
-			{
-				return false;
-			}
-		}
-
+		if (!CanEquipRelic(unitId,equipmentId,2,out _)) return false;
 		_unitEquipmentSlot2[unitId] = equipmentId;
 		Persist();
 		return true;
@@ -3319,40 +3260,18 @@ public partial class GameState : Node
 
 	public string GetRelicEnchantmentId(string relicId)
 	{
+		if(string.IsNullOrWhiteSpace(relicId))return null;
 		return _relicEnchantments.TryGetValue(relicId, out var enchId) ? enchId : null;
 	}
 
 	public bool TryApplyEnchantment(string relicId, string enchantmentId, out string message)
 	{
-		message = "";
-		if (!_ownedEquipmentIds.Contains(relicId))
-		{
-			message = "Relic not owned.";
-			return false;
-		}
-
+		if(!CanApplyEnchantment(relicId,enchantmentId,out message))return false;
 		var ench = EnchantmentCatalog.GetById(enchantmentId);
-		if (ench == null)
-		{
-			message = "Unknown enchantment.";
-			return false;
-		}
-
-		if (Gold < ench.GoldCost)
-		{
-			message = $"Need {ench.GoldCost} gold (have {Gold}).";
-			return false;
-		}
-
-		if (Essence < ench.EssenceCost)
-		{
-			message = $"Need {ench.EssenceCost} essence (have {Essence}).";
-			return false;
-		}
 
 		Gold -= ench.GoldCost;
 		Essence -= ench.EssenceCost;
-		_relicEnchantments[relicId] = enchantmentId;
+		_relicEnchantments[relicId] = ench.Id;
 		TryUnlockAchievement("first_enchantment");
 		Persist();
 		message = $"Applied {ench.Title} to relic!";
@@ -3361,7 +3280,7 @@ public partial class GameState : Node
 
 	public void RemoveEnchantment(string relicId)
 	{
-		if (_relicEnchantments.Remove(relicId)) Persist();
+		TryRemoveEnchantment(relicId,out _);
 	}
 
 	private string GetEquippedRelicId(string unitId)
@@ -3785,11 +3704,13 @@ public partial class GameState : Node
 		if (string.IsNullOrWhiteSpace(unitId) || amount <= 0) return;
 		if (_unitTokens.ContainsKey(unitId)) _unitTokens[unitId] += amount;
 		else _unitTokens[unitId] = amount;
+		Persist();
 	}
 
 	public bool TryAwakenUnit(string unitId, out string message)
 	{
 		message = "";
+		if(!IsUnitOwned(unitId)) {message="Recruit this ally first.";return false;}
 		var currentStars = GetUnitStarLevel(unitId);
 		var nextLevel = AwakeningCatalog.GetNextLevel(currentStars);
 		if (nextLevel == null)

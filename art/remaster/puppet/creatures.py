@@ -1,0 +1,530 @@
+"""Puppet rigs for the units that are not standing people: four-legged beasts, serpents, blobs and floaters,
+mounted riders and machines. Imported by build.py (Blender); same clip contract and render loop as the humanoids.
+
+Each rig is a skeleton placed from the painting's landmarks (puppet/landmarks.py KINDS) and an Animator with the
+humanoid one's interface: clear, idle, walk, attack, melee, hit, deploy, death, plus body_bone / contact_bone for the
+metadata points. Layers (puppet/layers.py) are used when the unit has them: a mount's rider and lance, a machine's
+wheels; otherwise the painting is one mesh weighted to the skeleton.
+"""
+import json
+import math
+
+import bpy
+import numpy as np
+from mathutils import Vector
+
+import build as B
+
+UP = np.array([0.0, -40.0])
+
+
+def P(lm, k):
+    return B.P(lm, k)
+
+
+def mid(a, b, t=0.5):
+    return a + (b - a) * t
+
+
+# ------------------------------------------------------------------ skeletons (name, head, tail, parent, radius, deform)
+def quad_bones(lm, foot='paw'):
+    """A four-legged body: spine croup->withers, neck, head, two-piece tail, two-piece legs."""
+    g = lambda k: P(lm, k)
+    wi, cr = g('withers'), g('croup')
+    poll, head = g('poll'), g('head')
+    bones = [('body', cr, wi, 'root', 0.42, True)]
+    if poll is not None:
+        bones.append(('neck', wi, poll, 'body', 0.26, True))
+        if head is not None:
+            bones.append(('head', poll, head, 'neck', 0.24, True))
+    tb, tt = P(lm, 'tail_base'), P(lm, 'tail_tip')
+    if tb is not None and tt is not None:
+        m = mid(tb, tt)
+        bones += [('tail1', tb, m, 'body', 0.09, True), ('tail2', m, tt, 'tail1', 0.08, True)]
+    for leg, top, joint in (('fl', 'shoulder', 'knee'), ('fr', 'shoulder', 'knee'), ('hl', 'hip', 'hock'), ('hr', 'hip', 'hock')):
+        a, b, c = P(lm, f'{leg}_{top}'), P(lm, f'{leg}_{joint}'), P(lm, f'{leg}_{foot}')
+        if a is None or b is None or c is None:
+            continue
+        bones += [(f'{leg}.upper', a, b, 'body', 0.12, True), (f'{leg}.lower', b, c, f'{leg}.upper', 0.1, True)]
+    return bones
+
+
+def serpent_bones(lm):
+    g = lambda k: P(lm, k)
+    pts = [g(k) for k in ('head', 'neck', 'mid1', 'mid2', 'mid3', 'tail_tip')]
+    head, neck, m1, m2, m3, tail = pts
+    return [('mid', m2, m1, 'root', 0.2, True), ('fore', m1, neck, 'mid', 0.19, True),
+            ('head', neck, head, 'fore', 0.17, True), ('hind', m2, m3, 'root', 0.18, True),
+            ('tail', m3, tail, 'hind', 0.13, True)]
+
+
+def blob_bones(lm):
+    top, bot, cen = P(lm, 'top'), P(lm, 'bottom'), P(lm, 'center')
+    # upright bones (straight up from the ground under the centre): squash and stretch along them then stays
+    # vertical instead of shearing the body sideways
+    base = np.array([cen[0], bot[1]])
+    crown = np.array([cen[0], top[1]])
+    return [('body', base, cen, 'root', 0.55, True), ('crown', cen, crown, 'body', 0.45, True)]
+
+
+def rider_bones(lm):
+    g = lambda k: P(lm, k)
+    pel, chest, neck, chin, top = g('pelvis'), g('chest'), g('neck'), g('chin'), g('head_top')
+    bones = [('seat', pel, mid(pel, chest, 0.4), 'body', 0.35, True), ('spine', mid(pel, chest, 0.4), chest, 'seat', 0.35, True),
+             ('chest', chest, neck, 'spine', 0.35, True), ('rneck', neck, chin, 'chest', 0.18, True),
+             ('rhead', chin, top, 'rneck', 0.3, True)]
+    for s in 'RL':
+        sh, el, wr = g('shoulder_' + s), g('elbow_' + s), g('wrist_' + s)
+        if sh is None or el is None or wr is None:
+            continue
+        bones += [('upper_arm.' + s, sh, el, 'chest', 0.17, True), ('forearm.' + s, el, wr, 'upper_arm.' + s, 0.15, True),
+                  ('hand.' + s, wr, wr + (wr - el) * 0.35, 'forearm.' + s, 0.13, True)]
+    return bones
+
+
+def machine_bones(lm):
+    g = lambda k: P(lm, k)
+    body = g('body')
+    bones = [('chassis', body + np.array([0.0, 60.0]), body - np.array([0.0, 60.0]), 'root', 0.9, True)]
+    ap, at = g('arm_pivot'), g('arm_tip')
+    if ap is not None and at is not None:
+        bones.append(('arm', ap, at, 'chassis', 0.08, True))
+    cp, ch = g('crew_pelvis'), g('crew_head')
+    if cp is not None and ch is not None:
+        bones.append(('crew', cp, ch, 'chassis', 0.12, True))
+    return bones
+
+
+def scale_of(kind, lm, paint):
+    """The length the bone radii are fractions of."""
+    def d(a, b):
+        pa, pb = P(lm, a), P(lm, b)
+        return float(np.linalg.norm(pa - pb)) if pa is not None and pb is not None else None
+    if kind == 'quad':
+        return d('withers', 'croup') or paint.fig_w * B.PPU * 0.5
+    if kind == 'mount':
+        return d('horse_withers', 'horse_croup') or paint.fig_w * B.PPU * 0.5
+    if kind == 'serpent':
+        pts = [P(lm, k) for k in ('head', 'neck', 'mid1', 'mid2', 'mid3', 'tail_tip')]
+        return sum(float(np.linalg.norm(a - b)) for a, b in zip(pts, pts[1:])) * 0.5
+    if kind == 'blob':
+        return d('top', 'bottom') or paint.fig_h * B.PPU
+    return max(paint.fig_w, paint.fig_h) * B.PPU * 0.5
+
+
+# ------------------------------------------------------------------ rig
+def rig(ident, d, lm, paint, img, info):
+    kind = lm.get('kind', 'blob')
+    S = scale_of(kind, lm, paint)
+    wpn, wl = None, None
+    root = [('root', None, None, None, 0, False)]
+    if kind == 'quad':
+        bones = quad_bones(lm)
+    elif kind == 'serpent':
+        bones = serpent_bones(lm)
+    elif kind == 'mount':
+        # the mount's landmarks carry a horse_ prefix for the head and spine
+        hb = quad_bones({**lm, 'withers': lm.get('horse_withers'), 'croup': lm.get('horse_croup'),
+                         'poll': lm.get('horse_poll'), 'head': lm.get('horse_head')}, foot='hoof')
+        bones = hb + rider_bones(lm)
+        wl = (info or {}).get('weapon_line')
+        if wl:
+            wpn = (np.array(wl['grip'], float), np.array(wl['tip'], float))
+        elif P(lm, 'weapon_grip') is not None and P(lm, 'weapon_tip') is not None:
+            wpn = (P(lm, 'weapon_grip'), P(lm, 'weapon_tip'))
+        if wpn is not None:
+            side = min('RL', key=lambda s: np.linalg.norm(P(lm, 'wrist_' + s) - wpn[0])
+                       if P(lm, 'wrist_' + s) is not None else 1e9)
+            bones.append(('weapon', wpn[0], wpn[1], 'hand.' + side, 0.07, True))
+    elif kind == 'machine':
+        bones = machine_bones(lm)
+    else:
+        bones = blob_bones(lm)
+    bones = root + bones
+    arm = B.build_armature(paint, bones)
+    layer_obs = []
+    if info and info.get('order'):
+        for k, name in enumerate(info['order']):
+            li, lpx = B.load_rgba(d / f'{name}.png')
+            ob, pix = B.build_mesh(paint, li, lpx[..., 3], name, depth=0.01 * k)
+            allowed = LAYER_BONES.get(kind, {}).get(name.split('_')[0])
+            if name.startswith('wheel'):
+                allowed = ('chassis',)
+            B.skin(ob, arm, pix, bones, S, allowed)
+            layer_obs.append((name, ob))
+    else:
+        ob, pix = B.build_mesh(paint, img, paint.alpha)
+        B.skin(ob, arm, pix, bones, S)
+        layer_obs.append(('master', ob))
+    wheels = []
+    for name, ob in layer_obs:
+        if name.startswith('wheel') and info.get(name, {}).get('spin'):
+            wheels.append((ob, paint.to3(info[name]['center']), info[name]['radius'] / B.PPU))
+    cls = {'quad': QuadAnim, 'serpent': SerpentAnim, 'mount': MountAnim, 'machine': MachineAnim}.get(kind, BlobAnim)
+    return dict(arm=arm, layer_obs=layer_obs, side=None, two=False, wpn=wpn, line=wl,
+                make_anim=lambda profile: cls(arm, paint, lm, profile, S, ident=ident, wheels=wheels, layer_obs=layer_obs))
+
+
+LAYER_BONES = {
+    'mount': {'base': ('body', 'neck', 'head', 'tail1', 'tail2') + tuple(f'{l}.{p}' for l in ('fl', 'fr', 'hl', 'hr')
+                                                                       for p in ('upper', 'lower')),
+              'rider': ('seat', 'spine', 'chest', 'rneck', 'rhead', 'upper_arm.R', 'forearm.R', 'hand.R',
+                                      'upper_arm.L', 'forearm.L', 'hand.L'),
+              'weapon': ('weapon',)},
+}
+
+
+# ------------------------------------------------------------------ animators
+class CreatureAnim:
+    body_bone = 'body'
+    contact_bone = None
+
+    def __init__(self, arm, paint, lm, profile, S, ident='', wheels=(), layer_obs=()):
+        self.arm, self.paint, self.lm, self.profile = arm, paint, lm, profile
+        self.pb = arm.pose.bones
+        self.H = (paint.gy - paint.y0) / B.PPU
+        self.S = S / B.PPU
+        self.ident = ident
+        self.wheels = wheels
+        self.layer_obs = layer_obs
+        self.release, self.wfall, self.drop = 0.0, 0.0, 0.0
+        self.t_death, self.ti_death = 0.0, 0.5
+        self.hand_rig = None
+
+    def clear(self):
+        self.release, self.wfall, self.drop = 0.0, 0.0, 0.0
+        for pb in self.pb:
+            pb.rotation_euler = (0, 0, 0)
+            pb.location = (0, 0, 0)
+            pb.scale = (1, 1, 1)
+        for ob, c, r in self.wheels:
+            ob.rotation_euler = (0, 0, 0)
+            ob.location.x, ob.location.z = 0.0, 0.0
+
+    def rot(self, name, deg):
+        if name in self.pb:
+            self.pb[name].rotation_euler.z += math.radians(deg)
+
+    def place(self, dx=0.0, dz=0.0, rot=0.0, sy=1.0, sx=1.0):
+        r = self.pb['root']
+        r.location = (dx * self.H, dz * self.H, 0.0)
+        r.rotation_euler = (0, 0, math.radians(rot))
+        r.scale = (sx, sy, 1.0)
+
+    def deploy(self, i, n):
+        t = i / max(1, n - 1)
+        self.place(sy=0.86 + 0.14 * B.sm(t), sx=1.06 - 0.06 * B.sm(t))
+
+    def melee(self, i, n, c):
+        self.attack(i, n, c)
+
+    def death_timing(self, i, n, impact):
+        t = i / max(1, n - 1)
+        ti = max(0.2, impact / max(1, n - 1))
+        self.t_death, self.ti_death = t, ti
+        u = min(1.0, max(0.0, t / ti))
+        fall = u ** 2.4                     # accelerating like a body under gravity
+        after = max(0.0, (t - ti) / max(1e-6, 1 - ti))
+        bounce = math.sin(min(1.0, after * 2.4) * math.pi) * (1 - after)
+        return t, ti, fall, after, bounce
+
+
+class QuadAnim(CreatureAnim):
+    """Trot (diagonal pairs), crouch-and-pounce with a snap of the head, a stumble when hit, and a collapse."""
+    contact_bone = 'head'
+
+    def legs(self, ph, amp=22.0, flex=28.0):
+        for leg, off, hind in (('fl', 0.0, False), ('hr', 0.0, True), ('fr', math.pi, False), ('hl', math.pi, True)):
+            s = math.sin(ph + off)
+            self.rot(f'{leg}.upper', amp * s)
+            lift = max(0.0, math.cos(ph + off))
+            # front knees fold back, hocks fold forward, as the foot lifts
+            self.rot(f'{leg}.lower', (flex if hind else -flex) * lift)
+
+    def idle(self, i, n):
+        ph = math.tau * i / n
+        s = math.sin(ph)
+        self.pb['body'].scale = (1.0 + 0.012 * s, 1.0 + 0.02 * s, 1.0)
+        self.rot('neck', 2.0 * math.sin(ph + 0.5))
+        self.rot('head', 2.5 * math.sin(ph + 1.0))
+        self.rot('tail1', 8 * math.sin(ph))
+        self.rot('tail2', 10 * math.sin(ph - 0.8))
+
+    def walk(self, i, n):
+        ph = math.tau * i / n
+        self.legs(ph)
+        self.place(dz=0.018 * abs(math.sin(ph)) - 0.009)
+        self.rot('body', 2.0 * math.sin(2 * ph))
+        self.rot('neck', -2.0 * math.sin(2 * ph))
+        self.rot('tail1', 10 * math.sin(ph))
+        self.rot('tail2', 12 * math.sin(ph - 0.8))
+
+    def attack(self, i, n, c):
+        tc = c / max(1, n - 1)
+        keys = [(0, {}), (tc * 0.55, {'dx': -0.03, 'dz': -0.05, 'pitch': 6, 'fu': 18, 'fl': -30, 'hu': -14, 'hl': 26, 'hd': 6}),
+                (tc, {'dx': 0.22, 'dz': 0.07, 'pitch': -10, 'fu': -40, 'fl': -10, 'hu': 30, 'hl': 0, 'hd': -14}),
+                (min(1, tc + 0.25), {'dx': 0.14, 'dz': 0.0, 'pitch': -3, 'fu': -10, 'hu': 8, 'hd': -4}), (1, {})]
+        p = B.ease_keys(keys, i / max(1, n - 1))
+        self.place(dx=p.get('dx', 0.0), dz=p.get('dz', 0.0))
+        self.rot('body', p.get('pitch', 0.0))
+        for leg in ('fl', 'fr'):
+            self.rot(f'{leg}.upper', p.get('fu', 0.0))
+            self.rot(f'{leg}.lower', p.get('fl', 0.0))
+        for leg in ('hl', 'hr'):
+            self.rot(f'{leg}.upper', p.get('hu', 0.0))
+            self.rot(f'{leg}.lower', p.get('hl', 0.0))
+        self.rot('head', p.get('hd', 0.0))
+        self.rot('tail1', -p.get('pitch', 0.0) * 1.5)
+
+    def hit(self, i, n):
+        k = 1.0 if i == 0 else 0.45
+        self.place(dx=-0.03 * k)
+        self.rot('body', 5 * k)
+        self.rot('head', 9 * k)
+        self.rot('neck', 5 * k)
+
+    def death(self, i, n, impact, forward):
+        t, ti, fall, after, bounce = self.death_timing(i, n, impact)
+        # legs give way and splay (forelegs out ahead, hind legs out behind), the belly comes down to the ground
+        # and the head lolls onto it: a sprawl that reads as dead from the side
+        for leg, hind in (('fl', False), ('fr', False), ('hl', True), ('hr', True)):
+            self.rot(f'{leg}.upper', (62 if not hind else -58) * fall)
+            self.rot(f'{leg}.lower', (18 if not hind else -14) * fall)
+        stagger = B.sm(min(1.0, t / (ti * 0.35)))
+        self.rot('body', 4 * stagger * (1 - fall) - 3 * fall + 2 * bounce)
+        self.rot('neck', -45 * fall)
+        self.rot('head', -22 * fall)
+        self.rot('tail1', -35 * fall)
+        self.rot('tail2', -15 * fall)
+        self.place(dz=-0.02 * bounce, dx=-0.02 * stagger * (1 - fall))
+
+
+class SerpentAnim(CreatureAnim):
+    """A travelling wave down the body; rears and strikes; goes slack and curls in death."""
+    body_bone = 'mid'
+    contact_bone = 'head'
+    CHAIN = ('head', 'fore', 'mid', 'hind', 'tail')
+
+    def wave(self, ph, amp):
+        for k, b in enumerate(self.CHAIN):
+            self.rot(b, amp * math.sin(ph - k * 1.1) * (0.5 if b == 'head' else 1.0))
+
+    def idle(self, i, n):
+        self.wave(math.tau * i / n, 4.0)
+        self.pb['mid'].scale = (1.0, 1.0 + 0.015 * math.sin(math.tau * i / n), 1.0)
+
+    def walk(self, i, n):
+        ph = math.tau * i / n
+        self.wave(ph, 11.0)
+        self.place(dz=0.006 * math.sin(2 * ph))
+
+    def attack(self, i, n, c):
+        tc = c / max(1, n - 1)
+        keys = [(0, {}), (tc * 0.6, {'fore': 18, 'head': 22, 'dx': -0.04, 'tail': -10}),
+                (tc, {'fore': -18, 'head': -24, 'dx': 0.16, 'tail': 8, 'mid': -6}),
+                (min(1, tc + 0.25), {'fore': -6, 'head': -8, 'dx': 0.08}), (1, {})]
+        p = B.ease_keys(keys, i / max(1, n - 1))
+        self.place(dx=p.get('dx', 0.0))
+        for b in ('fore', 'head', 'tail', 'mid'):
+            self.rot(b, p.get(b, 0.0))
+
+    def hit(self, i, n):
+        k = 1.0 if i == 0 else 0.45
+        self.place(dx=-0.03 * k)
+        self.rot('fore', 10 * k)
+        self.rot('head', 12 * k)
+
+    def death(self, i, n, impact, forward):
+        """Thrashes, then the raised fore-body drops to the ground and the whole length goes slack and flat."""
+        t, ti, fall, after, bounce = self.death_timing(i, n, impact)
+        self.wave(math.tau * t * 2.0, 18.0 * (1 - fall))
+        # each raised part is turned back toward the line of the ground by however far it rose
+        for b, k in (('fore', 1.0), ('head', 1.0), ('tail', 0.8), ('hind', 0.6)):
+            if b in self.pb:
+                bone = self.arm.data.bones[b]
+                d = bone.tail_local - bone.head_local
+                ang = math.degrees(math.atan2(d.z, abs(d.x) + 1e-6))
+                self.rot(b, -ang * k * fall * (1 if d.x >= 0 else -1))
+        self.pb['mid'].scale = (1.0 + 0.04 * fall, 1.0 - 0.18 * fall, 1.0)
+        self.place(dz=-0.01 * bounce)
+
+
+class BlobAnim(CreatureAnim):
+    """Squash and stretch: a creeping pulse, a swell and lunge to attack, a collapse to death. Floaters (the
+    reliquary eye, the mirror wisp) hover and bob instead of creeping."""
+    contact_bone = 'crown'
+    FLOAT = {'enemy_reliquary_eye', 'enemy_mirror_wisp'}
+
+    def squash(self, k, lean=0.0):
+        self.pb['body'].scale = (1.0 + 0.6 * k, 1.0 - k, 1.0)
+        self.rot('crown', lean)
+
+    def idle(self, i, n):
+        ph = math.tau * i / n
+        s = math.sin(ph)
+        self.squash(0.03 * s, 2.0 * math.sin(ph + 0.7))
+        if self.ident in self.FLOAT:
+            self.place(dz=0.02 * s)
+
+    def walk(self, i, n):
+        ph = math.tau * i / n
+        s = math.sin(ph)
+        if self.ident in self.FLOAT:
+            self.place(dz=0.025 * math.sin(ph), rot=-3 + 1.5 * s)
+            self.squash(0.02 * s)
+        else:
+            self.squash(0.07 * math.sin(2 * ph), -4 + 3 * s)
+            self.place(dx=0.01 * s)
+
+    def attack(self, i, n, c):
+        tc = c / max(1, n - 1)
+        keys = [(0, {}), (tc * 0.7, {'sq': -0.12, 'lean': 6, 'dx': -0.02}), (tc, {'sq': 0.14, 'lean': -12, 'dx': 0.06}),
+                (min(1, tc + 0.25), {'sq': 0.04, 'lean': -4, 'dx': 0.03}), (1, {})]
+        p = B.ease_keys(keys, i / max(1, n - 1))
+        self.squash(p.get('sq', 0.0), p.get('lean', 0.0))
+        self.place(dx=p.get('dx', 0.0), dz=0.0)
+
+    def hit(self, i, n):
+        k = 1.0 if i == 0 else 0.45
+        self.squash(0.1 * k, 6 * k)
+        self.place(dx=-0.02 * k)
+
+    def death(self, i, n, impact, forward):
+        t, ti, fall, after, bounce = self.death_timing(i, n, impact)
+        # sags and spreads where it sits (floaters drop to the ground first)
+        if self.ident in self.FLOAT:
+            self.place(dz=-0.05 * fall)
+        self.pb['body'].scale = (1.0 + 0.22 * fall, 1.0 - 0.45 * fall + 0.06 * bounce, 1.0)
+        self.pb['crown'].scale = (1.0 + 0.12 * fall, 1.0 - 0.25 * fall, 1.0)
+
+
+class MountAnim(QuadAnim):
+    """A rider on a four-legged mount: a canter, the lance lowered and driven home with the mount's lunge, and a
+    collapse that pitches the mount forward and throws the rider."""
+    contact_bone = 'weapon'
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        if 'weapon' not in self.pb:
+            self.contact_bone = 'head'
+
+    def idle(self, i, n):
+        super().idle(i, n)
+        ph = math.tau * i / n
+        self.rot('spine', 1.2 * math.sin(ph))
+        self.rot('rhead', 1.5 * math.sin(ph + 1.0))
+
+    def walk(self, i, n):
+        ph = math.tau * i / n
+        self.legs(ph, amp=26.0, flex=34.0)
+        self.place(dz=0.022 * abs(math.sin(ph)) - 0.011)
+        self.rot('body', 2.5 * math.sin(2 * ph))
+        self.rot('neck', -4.0 * math.sin(2 * ph))
+        self.rot('seat', -2.5 * math.sin(2 * ph))
+        self.rot('tail1', 8 * math.sin(ph))
+
+    def attack(self, i, n, c):
+        tc = c / max(1, n - 1)
+        if self.profile == 'mounted-lance':
+            # a couched lance stays nearly level: the charge drives it home, the point dips only a little
+            keys = [(0, {}), (tc * 0.6, {'w': 4, 'lean': 5, 'dx': -0.03, 'pitch': 3}),
+                    (tc, {'w': -5, 'lean': -9, 'dx': 0.16, 'pitch': -4, 'fu': -22, 'hu': 16}),
+                    (min(1, tc + 0.25), {'w': -2, 'lean': -4, 'dx': 0.09, 'pitch': -2}), (1, {})]
+        else:
+            keys = [(0, {}), (tc * 0.6, {'w': 12, 'lean': 5, 'dx': -0.02, 'pitch': 3}),
+                    (tc, {'w': -16, 'lean': -10, 'dx': 0.12, 'pitch': -4, 'fu': -18, 'hu': 14}),
+                    (min(1, tc + 0.25), {'w': -8, 'lean': -5, 'dx': 0.07, 'pitch': -2}), (1, {})]
+        p = B.ease_keys(keys, i / max(1, n - 1))
+        self.place(dx=p.get('dx', 0.0))
+        self.rot('body', p.get('pitch', 0.0))
+        self.rot('spine', p.get('lean', 0.0))
+        self.rot('weapon', p.get('w', 0.0))
+        for leg in ('fl', 'fr'):
+            self.rot(f'{leg}.upper', p.get('fu', 0.0))
+        for leg in ('hl', 'hr'):
+            self.rot(f'{leg}.upper', p.get('hu', 0.0))
+
+    def hit(self, i, n):
+        super().hit(i, n)
+        k = 1.0 if i == 0 else 0.45
+        self.rot('spine', 8 * k)
+
+    def death(self, i, n, impact, forward):
+        t, ti, fall, after, bounce = self.death_timing(i, n, impact)
+        # the mount's forelegs buckle and it pitches onto its chest, then rolls flat; the rider is thrown forward
+        # legs fold right under it (forelegs knees-first, hind legs on the hocks) so the belly reaches the ground
+        for leg in ('fl', 'fr'):
+            self.rot(f'{leg}.upper', -55 * fall)
+            self.rot(f'{leg}.lower', 115 * fall)
+        for leg in ('hl', 'hr'):
+            self.rot(f'{leg}.upper', 50 * fall)
+            self.rot(f'{leg}.lower', -110 * fall)
+        self.rot('body', -8 * fall + 3 * bounce)
+        self.rot('neck', -30 * fall)
+        self.rot('seat', -70 * fall)
+        self.rot('rhead', -15 * fall)
+        # the lance is let go and falls flat, not carried round into the ground with the pitching rider
+        self.rot('weapon', 52 * fall)
+        self.place(dx=0.04 * fall)
+
+
+class MachineAnim(CreatureAnim):
+    """Wheels roll as it moves (a painted wheel layer turns about its hub), the throwing arm or bolt draws and
+    looses with a recoil, the crew braces; in death the frame lurches over and settles."""
+    body_bone = 'chassis'
+    contact_bone = 'arm'
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        if 'arm' not in self.pb:
+            self.contact_bone = 'chassis'
+
+    def roll(self, dist):
+        for ob, c, r in self.wheels:
+            ang = -dist / max(1e-6, r)
+            ob.rotation_euler = (0, ang, 0)      # about the view axis (Y), clockwise as it rolls forward
+            # rotate about the hub: shift so the hub stays put
+            rc = Vector((c.x * math.cos(ang) + c.z * math.sin(ang), 0.0, -c.x * math.sin(ang) + c.z * math.cos(ang)))
+            ob.location.x, ob.location.z = c.x - rc.x, c.z - rc.z
+
+    def idle(self, i, n):
+        ph = math.tau * i / n
+        self.rot('chassis', 0.4 * math.sin(ph))
+        self.rot('crew', 1.5 * math.sin(ph + 0.8))
+
+    def walk(self, i, n):
+        ph = math.tau * i / n
+        self.roll(0.18 * self.H * i / n * 2)
+        self.place(dz=0.004 * abs(math.sin(2 * ph)))
+        self.rot('chassis', 0.8 * math.sin(2 * ph))
+        self.rot('crew', 2.0 * math.sin(ph))
+
+    def attack(self, i, n, c):
+        tc = c / max(1, n - 1)
+        if self.profile == 'siege-deploy':
+            keys = [(0, {}), (tc * 0.7, {'tilt': 3}), (tc, {'tilt': -5, 'dx': 0.02}), (min(1, tc + 0.3), {'tilt': -1}), (1, {})]
+        else:
+            keys = [(0, {}), (tc * 0.8, {'pull': 1.0, 'tilt': 1.5, 'sq': 0.02}),
+                    (tc, {'pull': -0.6, 'tilt': -4.0, 'dx': -0.05, 'sq': -0.03}),
+                    (min(1, tc + 0.3), {'pull': 0.0, 'tilt': 1.0, 'dx': -0.02}), (1, {})]
+        p = B.ease_keys(keys, i / max(1, n - 1))
+        self.place(dx=p.get('dx', 0.0), sx=1.0 + p.get('sq', 0.0), sy=1.0 - p.get('sq', 0.0))
+        self.rot('chassis', p.get('tilt', 0.0))
+        self.roll(p.get('dx', 0.0) * self.H)        # the wheels turn back with the recoil
+        if 'arm' in self.pb:
+            self.pb['arm'].location = (0.0, -0.08 * self.H * p.get('pull', 0.0), 0.0)
+        self.rot('crew', 6 * p.get('pull', 0.0))
+
+    def hit(self, i, n):
+        k = 1.0 if i == 0 else 0.45
+        self.rot('chassis', 2.5 * k)
+        self.place(dx=-0.012 * k)
+
+    def death(self, i, n, impact, forward):
+        t, ti, fall, after, bounce = self.death_timing(i, n, impact)
+        # a wheel gives: the frame lurches, tips hard onto its broken side and settles low, the crew slumps
+        jolt = math.sin(min(1.0, t / max(1e-6, ti * 0.4)) * math.pi) * (1 - fall)
+        self.rot('chassis', (-1 if forward else 1) * (-26 * fall + 4 * jolt) + 3 * bounce)
+        self.rot('arm', -25 * fall)
+        self.rot('crew', -32 * fall)
+        self.place(dz=-0.05 * fall, sy=1.0 - 0.08 * fall, sx=1.0 + 0.04 * fall)

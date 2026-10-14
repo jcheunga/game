@@ -49,14 +49,26 @@ def finish(ch, stance, profile, *, gait='march', heavy=1.0, low_strike=False, de
            min_scale=3.6, cam_z=1.15):
     """Bind, key all six clips and return render options."""
     from .deaths import DEATHS
+    hero_rig = getattr(ch, 'rig_kind', None) == 'hero'
+    if hero_rig:
+        from rk import pose as PS
+        ch.poser.clear()
+        ch.poser.apply(stance)
+        feet = getattr(ch, 'feet', None) or PS.feet_from_pose(ch)
     ch.finalize_bones()
     ch.bind()
     death = DEATHS.get(ch.ident, death)
     if release:
         ch.add_prop('nocked', release, None)
-    clips = anim.all_clips(stance, profile, gait=gait, heavy=heavy, low_strike=low_strike, death=death,
-                           attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish,
-                           melee=_is_ranged(ch.ident))
+    if hero_rig:
+        from rk import motion
+        clips = motion.clips(ch, stance, feet, profile, gait=gait, heavy=heavy, low_strike=low_strike, death=death,
+                             attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish,
+                             melee_clip=_is_ranged(ch.ident), front=getattr(ch, 'front_foot', 'L'))
+    else:
+        clips = anim.all_clips(stance, profile, gait=gait, heavy=heavy, low_strike=low_strike, death=death,
+                               attack_override=attack_override, float_mode=float_mode, cape=cape, flourish=flourish,
+                               melee=_is_ranged(ch.ident))
     ch.key_clips(clips, release=release)
     return dict(profile=profile, portrait_cfg=portrait or {}, body_z=body_z, min_scale=min_scale, cam_target_z=cam_z)
 
@@ -73,7 +85,8 @@ def legacy_profile(spec):
     if 'archer' in name: return 'bow-draw'
     if 'crossbow' in name: return 'crossbow'
     if 'spear' in name: return 'spear-thrust'
-    if 'alchemist' in name or 'sapper' in name: return 'flask-toss'
+    if 'alchemist' in name or 'sapper' in name or 'quartermaster' in name: return 'flask-toss'
+    if ('medic' in name or 'bellringer' in name) and spec.get('UsesProjectile'): return 'staff-cast'
     if 'engineer' in name: return 'hammer-command'
     if any(x in name for x in ('mage', 'monk', 'witch', 'lich', 'pontiff', 'necromancer', 'caster', 'hexer', 'stormcaller',
                                'tidecaller', 'archon', 'herald')):
@@ -111,15 +124,20 @@ def profile_of(ident):
 
 
 def finish_clips(ch, clips, profile, release=None, body_z=None, min_scale=3.6, cam_z=1.15, portrait=None,
-                 companions=(), stance=None):
+                 companions=(), stance=None, scale=None):
     """Bind and key explicit clip dictionaries (beasts, machines, mounted riders).
 
     companions: (character, clips[, stance]). Units listed in roster/deaths.py (riders and crews
-    use their own '<id>_rider' / '<id>_crew' entries) get their death performance from there."""
+    use their own '<id>_rider' / '<id>_crew' entries) get their death performance from there.
+    scale: grow a rigid machine after binding (engines are modelled at crew scale, drawn larger)."""
+    import bpy
     from rk.death import performance
     from .deaths import DEATHS
     ch.finalize_bones()
     ch.bind()
+    if scale:
+        ch.arm.scale = (scale, scale, scale)
+        bpy.context.view_layer.update()
     # Bind crews while the mount is still at rest: keying its clips leaves it posed. Riders arrive already bound.
     for comp, *_ in companions:
         if not comp.bound:

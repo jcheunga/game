@@ -87,12 +87,7 @@ public partial class SeasonPassMenu : RoyalScreen
             arrow.Disabled = side < 0 ? _first <= 1 : _first + 5 > tiers.Count;
             _layer.AddChild(arrow);
         }
-        var back = spec.Rect("button.map");
-        var backButton = RoyalButton.Over(back, "Back to map", Close, 6);
-        var label = spec.Label("button.map.label", "Back to Map", 220);
-        label.Position -= back.Position;
-        backButton.SetCaption(label, new Rect2(label.Position, label.Size));
-        _layer.AddChild(backButton);
+        _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.map"), Close));
         if (!state.HasPremiumPass)
         {
             var premium = spec.Rect("row.premium");
@@ -137,8 +132,7 @@ public partial class SeasonPassMenu : RoyalScreen
         {
             var claim = RoyalButton.Over(buttonRect, $"Claim {label}", () =>
             {
-                var ok = AudioDirector.Claimed(GameState.Instance.TryClaimSeasonReward(tier, premium, out var message));
-                RoyalToast.Show(this, message);
+                var ok = AudioDirector.Claimed(GameState.Instance.TryClaimSeasonReward(tier, premium, out _));
                 if (ok) Refresh();
             }, 6);
             claim.SetStates(RoyalKit.Slice("season-claim", 12), 6);

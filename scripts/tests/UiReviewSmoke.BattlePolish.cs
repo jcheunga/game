@@ -62,8 +62,8 @@ public partial class UiReviewSmoke
             if (phone)
             {
                 GetWindow().Size = new Vector2I(667, 375); await Wait(.15);
-                var frame = Walk(Read<RealmModal>(battle, "_battleSettingsModal")).OfType<PanelContainer>().First();
-                Check(new Rect2(Vector2.Zero, battle.GetViewportRect().Size).Encloses(frame.GetGlobalRect()), "Phone settings refits after resizing");
+                var volumeControl = Walk(Read<RealmModal>(battle, "_battleSettingsModal")).OfType<HSlider>().First(s => s.IsVisibleInTree());
+                Check(new Rect2(Vector2.Zero, battle.GetViewportRect().Size).Encloses(volumeControl.GetGlobalRect()), "Phone settings refits after resizing");
                 GetWindow().Size = size; await Wait(.15);
             }
             Send(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Wait(.1);
@@ -71,13 +71,13 @@ public partial class UiReviewSmoke
                 tag + ": Escape returns to pause menu without restarting the fight");
             var empty = state.BuildSaveData(); empty.Food = 0; empty.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); state.RestoreCloudSave(empty);
             Call(battle, "TryRestartBattle");
-            Check(GetTree().CurrentScene == battle && GetTree().Paused && state.Food == 0 && Read<Label>(battle, "_restartMessage").Visible,
-                tag + ": unaffordable restart preserves the paused battle and explains the shortage");
+            Check(GetTree().CurrentScene == battle && GetTree().Paused && state.Food == 0 && Read<Button>(battle, "_restartButton").Disabled && !Read<Label>(battle, "_restartMessage").Visible,
+                tag + ": unaffordable restart stays disabled without a warning popup");
             var stocked = state.BuildSaveData(); stocked.Food = 24; state.RestoreCloudSave(stocked);
             var before = state.Food; var cost = state.GetStageEntryFoodCost(1);
             Call(battle, "TryRestartBattle"); Call(battle, "TryRestartBattle");
             Check(state.Food == before - cost && !GetTree().Paused, tag + ": restart spends exactly one entry price and releases the tree pause");
-            await Wait(.8);
+            await LiveUiReview.Settle(this);
             Check(GetTree().CurrentScene is BattleController replacement && replacement != battle, tag + ": restart opens a fresh fight");
             var fresh = (BattleController)GetTree().CurrentScene; fresh.SetPhysicsProcess(false);
             if (Read<bool>(fresh, "_battlePaused")) Call(fresh, "TogglePause");
@@ -86,14 +86,14 @@ public partial class UiReviewSmoke
                 typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(fresh, new object[] { false }); await Wait(.1);
                 var depleted = state.BuildSaveData(); depleted.Food = 0; depleted.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); state.RestoreCloudSave(depleted);
                 Call(fresh, "HandleEndPanelPrimaryAction");
-                Check(GetTree().CurrentScene == fresh && Walk(fresh).OfType<RoyalToast>().Any(toast => toast.IsVisibleInTree()),
-                    "Result-screen retry also rejects an unaffordable restart and says why on the result board");
+                Check(GetTree().CurrentScene == fresh && Walk(fresh).OfType<RoyalResult>().Single().RetryButton.Disabled && !Walk(fresh).OfType<Control>().Any(c => c.Name == "PlayerNotice"),
+                    "Result-screen retry stays disabled without a warning popup");
                 var retrySave = state.BuildSaveData(); retrySave.Food = 24; state.RestoreCloudSave(retrySave);
                 var retryFood = state.Food; Call(fresh, "HandleEndPanelPrimaryAction"); Call(fresh, "HandleEndPanelPrimaryAction");
                 Check(state.Food == retryFood - cost, "Result-screen retry also charges the ration price exactly once");
-                await Wait(.8); fresh = (BattleController)GetTree().CurrentScene; fresh.SetPhysicsProcess(false);
+                await LiveUiReview.Settle(this); fresh = (BattleController)GetTree().CurrentScene; fresh.SetPhysicsProcess(false);
             }
-            Call(fresh, "TogglePause"); Call(fresh, "RetreatToMap"); await Wait(.8);
+            Call(fresh, "TogglePause"); Call(fresh, "RetreatToMap"); await LiveUiReview.Settle(this);
             Check(GetTree().CurrentScene is MapMenu && !GetTree().Paused, tag + ": quit returns to the map without leaving it paused");
         }
         MobilePresentation.TestOverride = false; GetWindow().Size = new Vector2I(1280, 720);
@@ -105,29 +105,21 @@ public partial class UiReviewSmoke
             Check(Read<ZoneBackdrop>(battle, "_stageBackdrop") is { Layers.Count: 5 }, $"Stage {stage}: its zone's painted backdrop is in place");
             await Capture($"zone-stage-{stage:00}");
         }
-        // First-time hints show one at a time in a banner above the card dock; a tap moves on, and none repeats.
+        // Old saves may enable hints, but bottom tutorial banners have been removed.
         var hinted = state.BuildSaveData(); hinted.ShowHints = true; hinted.SeenHintIds = Array.Empty<string>(); state.RestoreCloudSave(hinted);
         state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
         {
             var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
             if (Read<bool>(battle, "_battlePaused")) Call(battle, "TogglePause");
             await Wait(.2);
-            var banner = Read<BattleHintBanner>(battle, "_hintBanner"); var dock = Read<PanelContainer>(battle, "_cardDock");
-            var first = TutorialHintCatalog.GetByContext("first_battle").ToArray();
-            Check(banner.Visible && banner.Title == first[0].Title && banner.Queued == first.Length - 1
-                && banner.GetGlobalRect().End.Y <= dock.GetGlobalRect().Position.Y && !string.IsNullOrWhiteSpace(banner.Body),
-                "The first battle shows its first hint in a banner above the card dock");
-            await Capture("hint-banner");
-            var tap = banner.GetGlobalRect().GetCenter();
-            Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = tap, GlobalPosition = tap });
-            Send(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = tap, GlobalPosition = tap });
-            await Wait(.1);
-            Check(first.Length < 2 || banner.Visible && banner.Title == first[1].Title, "A tap moves the banner on to the next hint");
-            Check(first.All(hint => state.HasSeenHint(hint.Id)), "Shown hints are remembered");
+            Check(!Walk(battle).OfType<Control>().Any(c => c.Name == "BattleHint" || c.Name == "PlayerNotice"),
+                "A fresh battle creates no bottom tooltip or tutorial banner even with saved hints enabled");
+            await Capture("no-bottom-hints");
         }
         state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
         await Wait(.2);
-        Check(!Read<BattleHintBanner>((BattleController)GetTree().CurrentScene, "_hintBanner").Visible, "A later battle doesn't repeat seen hints");
+        Check(!Walk(GetTree().CurrentScene).OfType<Control>().Any(c => c.Name == "BattleHint" || c.Name == "PlayerNotice"),
+            "Later battles cannot recreate bottom hints");
         state.SetShowHints(false);
         MobilePresentation.TestOverride = null; GetTree().Paused = false;
         await Open("MainMenu");

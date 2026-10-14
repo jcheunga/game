@@ -53,6 +53,8 @@ public static class LiveUiReview
             case SceneRouter.LoginCalendarScene: router.GoToLoginCalendar(); break;
             case SceneRouter.LeaderboardScene: router.GoToLeaderboard(); break;
             case SceneRouter.SeasonPassScene: router.GoToSeasonPass(); break;
+            case SceneRouter.ProgressionScene: router.GoToProgression(); break;
+            case SceneRouter.BossRushScene: router.GoToBossRush(); break;
             default: throw new InvalidOperationException($"No live review route for {path}");
         }
         await Settle(driver);

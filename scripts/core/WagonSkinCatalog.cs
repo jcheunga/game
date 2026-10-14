@@ -60,8 +60,8 @@ public static class WagonSkinCatalog
 		{
 			"skin_default" => true,
 			"skin_iron" => gs.PrestigeLevel >= 1,
-			"skin_royal" => gs.HighestUnlockedStage >= gs.MaxStage,
-			"skin_bone" => gs.DiscoveredCodexCount >= CodexCatalog.TotalEntries,
+			"skin_royal" => gs.GetStageStars(gs.MaxStage)>0 || gs.PrestigeLevel>0,
+			"skin_bone" => CollectionMilestoneCatalog.GetCollectionPercent("codex",gs)>=100,
 			"skin_flame" => gs.TowerHighestFloor >= 50,
 			"skin_shadow" => gs.ArenaRating >= 1300,
 			"skin_guild" => gs.CachedGuildInfo != null && gs.CachedGuildInfo.Tier >= 3,

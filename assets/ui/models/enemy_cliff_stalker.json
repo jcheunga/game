@@ -1,0 +1,45 @@
+{
+  "frameWidth": 318,
+  "frameHeight": 244,
+  "drawScale": 2.523809523809524,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.24997
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_cliff_stalker",
+  "title": "Cliff Stalker",
+  "source": "art/remaster/puppet/build.py (enemy_cliff_stalker)",
+  "anchorY": 0.888386,
+  "anchorX": 0.570395,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      0.034341,
+      -0.416511
+    ],
+    "contact": [
+      -0.201929,
+      -0.347859
+    ]
+  },
+  "healthBarY": 0.678911
+}

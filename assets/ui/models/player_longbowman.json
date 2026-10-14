@@ -1,0 +1,45 @@
+{
+  "frameWidth": 324,
+  "frameHeight": 259,
+  "drawScale": 2.5714285714285716,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.16133
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_longbowman",
+  "title": "Longbowman",
+  "source": "art/remaster/puppet/build.py (player_longbowman)",
+  "anchorY": 0.919673,
+  "anchorX": 0.604049,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "bow-draw",
+    "body": [
+      -0.011442,
+      -0.47316
+    ],
+    "contact": [
+      0.289737,
+      -0.553201
+    ]
+  },
+  "healthBarY": 0.774658
+}

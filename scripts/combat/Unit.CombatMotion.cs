@@ -71,7 +71,7 @@ public partial class Unit
         _attackClip = melee && _spriteSheet != null && _spriteSheet.Animations.ContainsKey(UnitAnimState.Melee)
             ? UnitAnimState.Melee : UnitAnimState.Attack;
     }
-    private float AttackFrameSeconds(SpriteAnimRange clip) => Mathf.Min(clip.FrameDuration, AttackCooldown * .9f / Mathf.Max(1,clip.FrameCount));
+    private float AttackFrameSeconds(SpriteAnimRange clip) => Mathf.Min(clip.FrameDuration, AttackCooldown * .9f / Mathf.Max(1,clip.FrameCount)) * (CommittedAttacks <= 1 ? FirstWindupScale : 1f);
 
     public void FaceCombatTarget(Unit target)
     {
@@ -121,8 +121,18 @@ public partial class Unit
             && Position.DistanceTo(target.Position) <= AttackRange + (ranged ? 24f : 12f);
     }
 
+    /// <summary>Direction (+1 right, -1 left) the last blow travelled, for the spray of a killing hit.</summary>
+    public float LastHitDirection { get; private set; } = 1f;
+
+    // Hit-stop: the pose holds still for a moment at contact, so a blow's weight reads. Only the presentation
+    // holds: the simulation, its timers and damage carry on underneath.
+    private float _poseHold;
+    public void HoldPose(float seconds) => _poseHold = Mathf.Max(_poseHold, seconds);
+    internal bool PoseHeld => _poseHold > 0f;
+
     public void ReactToContact(float direction, float damage, float weight = 1f)
     {
+        if (direction != 0) LastHitDirection = direction;
         if (IsDead || damage <= .05f || (GameState.Instance?.ReducedMotion ?? false)) return;
         _hitReaction.Add(direction, Mathf.Clamp(.18f + damage*.012f, .18f, .85f) * weight);
         QueueRedraw();

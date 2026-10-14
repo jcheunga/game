@@ -1,44 +1,45 @@
 {
-  "frameWidth": 258,
-  "frameHeight": 275,
-  "drawScale": 1.8931389123696816,
+  "frameWidth": 346,
+  "frameHeight": 277,
+  "drawScale": 2.538860711937635,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18043
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_spear",
   "title": "Spearman",
-  "source": "art/remaster/units/player_spear.py",
-  "anchorY": 0.716892,
-  "anchorX": 0.389725,
+  "source": "art/remaster/puppet/build.py (player_spear)",
+  "anchorY": 0.896451,
+  "anchorX": 0.325416,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "spear-thrust",
     "body": [
-      0.0,
-      -0.354459
+      -0.008755,
+      -0.460117
     ],
     "contact": [
-      0.52665,
-      -0.070608
+      0.539388,
+      -0.371984
     ]
   },
-  "healthBarY": 0.673623
+  "healthBarY": 0.686805
 }

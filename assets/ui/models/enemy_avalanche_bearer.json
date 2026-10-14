@@ -1,0 +1,45 @@
+{
+  "frameWidth": 799,
+  "frameHeight": 701,
+  "drawScale": 2.7455629434908855,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.11266
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_avalanche_bearer",
+  "title": "Avalanche Bearer",
+  "source": "art/remaster/puppet/build.py (enemy_avalanche_bearer)",
+  "anchorY": 0.908331,
+  "anchorX": 0.540468,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "flask-toss",
+    "body": [
+      0.024702,
+      -0.386141
+    ],
+    "contact": [
+      0.362523,
+      -0.648362
+    ]
+  },
+  "healthBarY": 0.780248
+}

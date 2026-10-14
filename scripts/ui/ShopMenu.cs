@@ -110,6 +110,19 @@ public static class RoyalUiTools
         foreach (var child in node.GetChildren()) { node.RemoveChild(child); child.QueueFree(); }
     }
 
+    /// <summary>Replace the concept's fixed track and thumb before drawing a live scrollbar.</summary>
+    public static void ClearPaintedScrollTrack(Control layer, string plate, RoyalSpec spec)
+    {
+        var track = spec.Rect("grid.scroll");
+        var thumb = spec.Rect("grid.scroll.thumb");
+        var area = track.Merge(thumb).Grow(3);
+        // Sample the uninterrupted collection background immediately to the left.
+        var background = new Rect2(area.Position - new Vector2(area.Size.X + 2, 0), area.Size);
+        layer.AddChild(new TextureRect { Texture = RoyalArt.Cut(plate, background),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            Position = area.Position, Size = area.Size, MouseFilter = Control.MouseFilterEnum.Ignore });
+    }
+
     public static Control Box(Rect2 rect, bool clip = false) => new() { Position = rect.Position, Size = rect.Size, ClipContents = clip, MouseFilter = Control.MouseFilterEnum.Ignore };
 
 }

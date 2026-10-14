@@ -1,44 +1,45 @@
 {
-  "frameWidth": 343,
-  "frameHeight": 363,
-  "drawScale": 2.3550963460989163,
+  "frameWidth": 366,
+  "frameHeight": 346,
+  "drawScale": 2.5130182585195437,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13417
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_howler",
   "title": "Dread Herald",
-  "source": "art/remaster/units/enemy_howler.py",
-  "anchorY": 0.778259,
-  "anchorX": 0.358945,
+  "source": "art/remaster/puppet/build.py (enemy_howler)",
+  "anchorY": 0.914827,
+  "anchorX": 0.470263,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-strike",
     "body": [
-      0.0,
-      -0.302916
+      0.018041,
+      -0.331278
     ],
     "contact": [
-      0.589276,
-      -0.259937
+      0.436027,
+      -0.209516
     ]
   },
-  "healthBarY": 0.684194
+  "healthBarY": 0.754947
 }

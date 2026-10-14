@@ -1,0 +1,45 @@
+{
+  "frameWidth": 739,
+  "frameHeight": 646,
+  "drawScale": 2.430401394438689,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14935
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_wicker_giant",
+  "title": "Wicker Giant",
+  "source": "art/remaster/puppet/build.py (enemy_wicker_giant)",
+  "anchorY": 0.929903,
+  "anchorX": 0.653125,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "heavy-smash",
+    "body": [
+      0.035546,
+      -0.472678
+    ],
+    "contact": [
+      -0.235582,
+      -0.252328
+    ]
+  },
+  "healthBarY": 0.695822
+}

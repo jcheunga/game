@@ -4,7 +4,7 @@ using Godot;
 // Presentation only: no changes to world coordinates, unit stats, or attack ranges.
 public static class MobilePresentation
 {
-    internal static bool? TestOverride;
+    internal static bool? TestOverride = null;
     public const float HudScale = 1.55f;
     public static bool Enabled => TestOverride ?? (OS.HasFeature("android") || OS.HasFeature("ios")
         || (OS.HasFeature("web") && DisplayServer.IsTouchscreenAvailable())

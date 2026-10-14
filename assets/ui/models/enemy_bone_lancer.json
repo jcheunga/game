@@ -1,0 +1,45 @@
+{
+  "frameWidth": 312,
+  "frameHeight": 261,
+  "drawScale": 2.4761904761904763,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.09363
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_bone_lancer",
+  "title": "Bone Lancer",
+  "source": "art/remaster/puppet/build.py (enemy_bone_lancer)",
+  "anchorY": 0.903582,
+  "anchorX": 0.428981,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      -0.165459,
+      -0.380762
+    ],
+    "contact": [
+      0.477947,
+      -0.404115
+    ]
+  },
+  "healthBarY": 0.728798
+}

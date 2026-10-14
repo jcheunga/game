@@ -1,44 +1,45 @@
 {
-  "frameWidth": 231,
-  "frameHeight": 234,
-  "drawScale": 1.8333333333333328,
+  "frameWidth": 319,
+  "frameHeight": 212,
+  "drawScale": 2.5317460317460316,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17603
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_ranger",
   "title": "Crossbowman",
-  "source": "art/remaster/units/player_ranger.py",
-  "anchorY": 0.810787,
-  "anchorX": 0.569658,
+  "source": "art/remaster/puppet/build.py (player_ranger)",
+  "anchorY": 0.921264,
+  "anchorX": 0.579959,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "crossbow",
     "body": [
-      0.0,
-      -0.395835
+      -0.000609,
+      -0.605643
     ],
     "contact": [
-      0.115644,
-      -0.497515
+      0.257897,
+      -0.587918
     ]
   },
-  "healthBarY": 0.736412
+  "healthBarY": 0.857608
 }

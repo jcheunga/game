@@ -10,6 +10,23 @@ public sealed class UnitDefinition
     public int UnlockStage { get; set; } = 1;
     public int GoldCost { get; set; }
     public int Cost { get; set; }
+    public int BodiesPerDeployment { get; set; } = 1;
+    public bool LegacyRecruit { get; set; }
+    public bool NonCombatant { get; set; }
+    public bool PlaceholderVisual { get; set; }
+    public string PlaceholderWeapon { get; set; } = "sword";
+    public string Description { get; set; } = "";
+    public string Weakness { get; set; } = "";
+    public string ContentBehavior { get; set; } = "";
+    public int CampaignDebutStage { get; set; } = 1;
+    public string HomeZone { get; set; } = "city";
+    public bool IsBoss { get; set; }
+    public float Armor { get; set; }
+    public float PhysicalResistanceBonus { get; set; }
+    public float MagicalResistance { get; set; }
+    public float CriticalChance { get; set; }
+    public float CriticalDamageBonus { get; set; } = 50f;
+    public string DamageType { get; set; } = "physical";
     public float MaxHealth { get; set; } = 50f;
     public float Speed { get; set; } = 60f;
     public float AttackDamage { get; set; } = 10f;

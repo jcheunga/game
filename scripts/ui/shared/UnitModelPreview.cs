@@ -44,7 +44,8 @@ public partial class UnitModelPreview : Control
         if(_sheet!=null)
         {
             var cacheKey=$"{unit.Id}:{_sheet.FrameWidth}x{_sheet.FrameHeight}";
-            if(!Bounds.TryGetValue(cacheKey,out _crop))
+            if(_sheet.Frames!=null) _crop=new Rect2(0,0,_sheet.FrameWidth,_sheet.FrameHeight);
+            else if(!Bounds.TryGetValue(cacheKey,out _crop))
             {
                 // One stable crop across the three preview clips keeps long
                 // weapons in frame and prevents scale jumping between poses.
@@ -114,6 +115,13 @@ public partial class UnitModelPreview : Control
         DrawSetTransform(new Vector2(Size.X*.5f,Size.Y-8),0,new Vector2(Size.X*.34f,6));
         DrawCircle(Vector2.Zero,1,new Color("00000038"));
         DrawSetTransform(Vector2.Zero);
+        if(_sheet.Frames!=null)
+        {
+            // a trimmed battle sheet (no preview strip shipped): each frame drawn where it sits in its full frame
+            var piece=UnitSpriteLoader.Frame(_sheet,_frame);
+            DrawTextureRectRegion(piece.Texture,UnitSpriteLoader.Place(_sheet,piece,ModelRect),piece.Source);
+            return;
+        }
         var source=UnitSpriteLoader.GetFrameRect(_sheet,_frame);
         source.Position+=_crop.Position; source.Size=_crop.Size;
         DrawTextureRectRegion(_sheet.Texture,ModelRect,source);

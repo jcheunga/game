@@ -129,8 +129,7 @@ public partial class FriendsMenu : Control
 		var profileBtn = new RealmButton { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
 		profileBtn.Pressed += () => SceneRouter.Instance.GoToProfile();
 		bottomRow.AddChild(profileBtn);
-		var mapBtn = new RealmButton { Text = "Campaign Map", CustomMinimumSize = new Vector2(140f, 0f) };
-		mapBtn.Pressed += () => SceneRouter.Instance.GoToMap();
+		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
 		bottomRow.AddChild(mapBtn);
 	}
 

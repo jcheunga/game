@@ -1,44 +1,45 @@
 {
-  "frameWidth": 247,
-  "frameHeight": 318,
-  "drawScale": 1.9603174603174602,
+  "frameWidth": 317,
+  "frameHeight": 262,
+  "drawScale": 2.5158730158730154,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.13822
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_necromancer",
   "title": "Necromancer",
-  "source": "art/remaster/units/player_necromancer.py",
-  "anchorY": 0.730361,
-  "anchorX": 0.374089,
+  "source": "art/remaster/puppet/build.py (player_necromancer)",
+  "anchorY": 0.905475,
+  "anchorX": 0.444217,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "staff-cast",
     "body": [
-      0.0,
-      -0.299148
+      -0.000151,
+      -0.462855
     ],
     "contact": [
-      0.332824,
-      -0.513556
+      0.216824,
+      -0.677301
     ]
   },
-  "healthBarY": 0.587415
+  "healthBarY": 0.720874
 }

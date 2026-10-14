@@ -32,7 +32,7 @@ public static class RoyalText
     {
         var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = align, MouseFilter = Control.MouseFilterEnum.Ignore };
         label.AddThemeFontOverride("font", RoyalFonts.Body(weight));
-        label.AddThemeFontSizeOverride("font_size", size);
+        label.AddThemeFontSizeOverride("font_size", ReadingText.Size(size));
         label.AddThemeColorOverride("font_color", ink ?? Cream);
         label.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, .45f));
         label.AddThemeConstantOverride("shadow_offset_x", 0);

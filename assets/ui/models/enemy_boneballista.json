@@ -1,44 +1,44 @@
 {
-  "frameWidth": 285,
-  "frameHeight": 286,
-  "drawScale": 1.8031766277939743,
+  "frameWidth": 318,
+  "frameHeight": 334,
+  "drawScale": 2.0119655004859083,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boneballista",
   "title": "Bone Ballista",
-  "source": "art/remaster/units/enemy_boneballista.py",
-  "anchorY": 0.826144,
-  "anchorX": 0.39675,
+  "source": "art/remaster/puppet/build.py (enemy_boneballista)",
+  "anchorY": 0.931254,
+  "anchorX": 0.440006,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "ballista",
     "body": [
-      0.0,
-      -0.274498
+      0.06527,
+      -0.284447
     ],
     "contact": [
-      0.324258,
-      -0.261995
+      0.50158,
+      -0.405398
     ]
   },
-  "healthBarY": 0.710906
+  "healthBarY": 0.804572
 }

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 346,
+  "frameHeight": 263,
+  "drawScale": 2.7460317460317465,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.18079
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_barnacle_guard",
+  "title": "Barnacle Guard",
+  "source": "art/remaster/puppet/build.py (enemy_barnacle_guard)",
+  "anchorY": 0.909151,
+  "anchorX": 0.539392,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      0.032852,
+      -0.441428
+    ],
+    "contact": [
+      0.439277,
+      -0.403837
+    ]
+  },
+  "healthBarY": 0.646246
+}

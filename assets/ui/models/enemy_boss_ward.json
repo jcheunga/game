@@ -1,44 +1,45 @@
 {
-  "frameWidth": 495,
-  "frameHeight": 622,
-  "drawScale": 1.8343659708369295,
+  "frameWidth": 1171,
+  "frameHeight": 1087,
+  "drawScale": 3.0304206617237943,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.14895
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_ward",
   "title": "Plague Archon",
-  "source": "art/remaster/units/enemy_boss_ward.py",
-  "anchorY": 0.849341,
-  "anchorX": 0.420389,
+  "source": "art/remaster/puppet/build.py (enemy_boss_ward)",
+  "anchorY": 0.938353,
+  "anchorX": 0.383948,
   "motion": {
-    "revision": "remaster-v1",
-    "profile": "staff-strike",
+    "revision": "puppet-v2",
+    "profile": "royal-cleave",
     "body": [
-      0.0,
-      -0.354413
+      0.010612,
+      -0.396719
     ],
     "contact": [
-      0.487237,
-      0.024637
+      0.348087,
+      -0.131865
     ]
   },
-  "healthBarY": 0.666194
+  "healthBarY": 0.580919
 }

@@ -1,0 +1,45 @@
+{
+  "frameWidth": 315,
+  "frameHeight": 217,
+  "drawScale": 2.5,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.11487
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_salt_wraith",
+  "title": "Salt Wraith",
+  "source": "art/remaster/puppet/build.py (enemy_salt_wraith)",
+  "anchorY": 0.940855,
+  "anchorX": 0.662117,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "claw-rake",
+    "body": [
+      -0.02046,
+      -0.602383
+    ],
+    "contact": [
+      -0.092693,
+      -0.449076
+    ]
+  },
+  "healthBarY": 0.892691
+}

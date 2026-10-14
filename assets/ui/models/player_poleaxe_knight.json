@@ -1,0 +1,45 @@
+{
+  "frameWidth": 386,
+  "frameHeight": 330,
+  "drawScale": 3.063492063492064,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.17299
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_poleaxe_knight",
+  "title": "Poleaxe Knight",
+  "source": "art/remaster/puppet/build.py (player_poleaxe_knight)",
+  "anchorY": 0.933885,
+  "anchorX": 0.519412,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "guard-cut",
+    "body": [
+      -0.016041,
+      -0.354168
+    ],
+    "contact": [
+      0.41553,
+      -0.293037
+    ]
+  },
+  "healthBarY": 0.559797
+}

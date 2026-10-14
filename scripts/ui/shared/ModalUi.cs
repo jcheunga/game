@@ -19,7 +19,7 @@ public static class ModalUi
         button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Inset, 8));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("dcc693") }; focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4); button.AddThemeStyleboxOverride("focus", focus);
         var ink = type == ModalMaterial.Gold ? new Color("382316") : Cream;
-        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", RealmUi.ButtonFontSize);
+        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", button.HasMeta("map_navigation") ? MapNavigation.FontSize : RealmUi.ButtonFontSize);
         if (button is RealmButton realm) realm.SetPresentation(HeadingFont, ink, new Color("aaa091"));
         else foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) button.AddThemeColorOverride(key, ink);
         button.AddThemeColorOverride("icon_normal_color", ink);

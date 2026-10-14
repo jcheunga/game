@@ -1,0 +1,45 @@
+{
+  "frameWidth": 302,
+  "frameHeight": 281,
+  "drawScale": 2.396825396825397,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.11674
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_ash_pilgrim",
+  "title": "Ash Pilgrim",
+  "source": "art/remaster/puppet/build.py (enemy_ash_pilgrim)",
+  "anchorY": 0.91736,
+  "anchorX": 0.543823,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "sword-cut",
+    "body": [
+      0.014209,
+      -0.379883
+    ],
+    "contact": [
+      0.383341,
+      -0.170768
+    ]
+  },
+  "healthBarY": 0.582806
+}

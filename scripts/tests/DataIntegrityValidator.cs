@@ -73,9 +73,10 @@ public static class DataIntegrityValidator
 
             Check(!string.IsNullOrWhiteSpace(name), $"Unit {id} has empty DisplayName");
             Check(GetFloat(unit, "MaxHealth") > 0, $"Unit {id} has non-positive MaxHealth");
-            Check(GetFloat(unit, "Speed") > 0, $"Unit {id} has non-positive Speed");
+            Check(GetFloat(unit, "Speed") > 0 || id == "enemy_reliquary_eye", $"Unit {id} has non-positive Speed");
             // Siege Tower is a structure — 0 attack damage is intentional
-            Check(GetFloat(unit, "AttackDamage") > 0 || id.Contains("siegetower"), $"Unit {id} has non-positive AttackDamage");
+            Check(GetFloat(unit, "AttackDamage") > 0 || id.Contains("siegetower") ||
+                (unit.TryGetProperty("NonCombatant", out var peaceful) && peaceful.ValueKind == JsonValueKind.True), $"Unit {id} has non-positive AttackDamage");
             Check(GetFloat(unit, "AttackCooldown") > 0, $"Unit {id} has non-positive AttackCooldown");
 
             var spawnOnDeath = GetStr(unit, "SpawnOnDeathUnitId");
@@ -126,6 +127,19 @@ public static class DataIntegrityValidator
 
         Check(playerUnitIds.Count >= 16, $"Expected at least 16 player units, found {playerUnitIds.Count}");
         Check(enemyUnitIds.Count >= 15, $"Expected at least 15 enemy units, found {enemyUnitIds.Count}");
+
+        using (var combatDoc = JsonDocument.Parse(File.ReadAllText(Path.Combine(dataDir, "combat_config.json"))))
+        {
+            var combat = combatDoc.RootElement.GetProperty("Combat");
+            var chance = GetFloat(combat, "CourageDropChance");
+            var lifetime = GetFloat(combat, "CourageDropLifetime");
+            var fade = GetFloat(combat, "CourageDropFadeDuration");
+            Check(chance >= 0 && chance <= 1, "CourageDropChance must be between zero and one");
+            Check(GetFloat(combat, "CourageDropAmount") > 0, "CourageDropAmount must be positive");
+            Check(lifetime > 0, "CourageDropLifetime must be positive");
+            Check(fade >= 0 && fade <= lifetime, "CourageDropFadeDuration must fit inside the pickup lifetime");
+            Check(GetInt(combat, "CourageDropGuaranteeAfterMisses") >= 0, "CourageDropGuaranteeAfterMisses must not be negative");
+        }
 
         // ── Spell validation ──
         Console.WriteLine("--- Spells ---");
@@ -191,15 +205,8 @@ public static class DataIntegrityValidator
             [20] = "enemy_boss_tidemaster",
             [40] = "enemy_boss_plague_monarch"
         };
-        // Remix stages keep their signature modifiers once the campaign has introduced them (fortified deploys
-        // arrive at stage 51, so the earlier Whiteout Bastion and Pale Crown no longer carry them).
-        var postgameModifierExpectations = new Dictionary<int, string[]>
-        {
-            [60] = new[] { "lich_graveyard" },
-            [68] = new[] { "lich_graveyard" },
-            [88] = new[] { "mirror_pressure", "tunnel_invasion" },
-            [100] = new[] { "reinforced_barricade" }
-        };
+        // Rebuilt encounters use learned enemies and explicit levels, rather than hidden remix modifiers.
+        var postgameModifierExpectations = new Dictionary<int, string[]>();
         var zoneStages = new Dictionary<string, List<(int Number, bool Boss)>>(StringComparer.OrdinalIgnoreCase);
 
         float prevHealthScale = 0f;

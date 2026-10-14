@@ -56,6 +56,7 @@ public partial class BattleController
     {
         if (_battleCamera == null) return;
         CancelCardDrag();
+        CancelCouragePickupGesture();
         _battleCameraDragging = false;
         _battleCamera.Zoom = Vector2.One * BattleFitZoom;
         ClampBattleCamera(_battleCamera);
@@ -123,7 +124,7 @@ public partial class BattleController
     private void UpdateBattleCamera(float delta)
     {
         var camera = _battleCamera ?? _mobileCamera;
-        if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive || _cardPointerDown) return;
+        if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive || _cardPointerDown || _couragePickupPointerDown) return;
         if (_battleCamera != null ? !_battleCameraFollow || _battleCameraDragging
             : _mobileOverview || !_mobileFollow || _mobilePointerDown) return;
         var focus = ResolveBattleFollowFocus(GetViewportRect().Size.X / camera.Zoom.X * .5f);

@@ -1,44 +1,45 @@
 {
-  "frameWidth": 585,
-  "frameHeight": 557,
-  "drawScale": 2.1429503959234335,
+  "frameWidth": 975,
+  "frameHeight": 663,
+  "drawScale": 2.13843926832478,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.11159
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "enemy_boss_mire",
   "title": "Mire Behemoth",
-  "source": "art/remaster/units/enemy_boss_mire.py",
-  "anchorY": 0.739705,
-  "anchorX": 0.21983,
+  "source": "art/remaster/puppet/build.py (enemy_boss_mire)",
+  "anchorY": 0.924512,
+  "anchorX": 0.397279,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "claw-rake",
     "body": [
-      0.0,
-      -0.301304
+      0.09142,
+      -0.492807
     ],
     "contact": [
-      0.311303,
-      -0.275975
+      -0.204433,
+      -0.167488
     ]
   },
-  "healthBarY": 0.545456
+  "healthBarY": 0.818605
 }

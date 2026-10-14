@@ -27,6 +27,7 @@ public partial class DebugConsole : CanvasLayer
 
 	public override void _Ready()
 	{
+		if (!GameState.DeveloperModeAvailable) { SetProcessUnhandledInput(false); return; }
 		Layer = 200;
 		BuildUi();
 		_panel.Visible = false;
@@ -34,6 +35,12 @@ public partial class DebugConsole : CanvasLayer
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
+		if (!GameState.DeveloperModeAvailable || GameState.Instance?.DeveloperModeEnabled != true)
+		{
+			if (_panel != null) _panel.Hide();
+			_visible = false;
+			return;
+		}
 		if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Quoteleft)
 		{
 			Toggle();

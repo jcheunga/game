@@ -15,6 +15,13 @@ public partial class SaveSystem : Node
 
     public static SaveSystem Instance { get; private set; }
     public string ActiveSaveFilePath => ResolveSaveFilePath();
+    public bool LoadedFromBackup { get; private set; }
+    private bool _recoveryNoticePending;
+    public bool LastSaveSucceeded { get; private set; } = true;
+    public string LastSaveError { get; private set; } = "";
+    public string PlayerStatus => !LastSaveSucceeded
+        ? "Progress could not be saved. Free some storage and try again."
+        : LoadedFromBackup ? "Progress recovered from the local backup." : "Progress is saved on this device.";
 
     public override void _EnterTree()
     {
@@ -32,6 +39,7 @@ public partial class SaveSystem : Node
     public bool TryLoad(out GameSaveData saveData)
     {
         saveData = new GameSaveData();
+        LoadedFromBackup = false;
         var saveFilePath = ResolveSaveFilePath();
 
         if (TryLoadFromPath(saveFilePath, out saveData))
@@ -46,6 +54,8 @@ public partial class SaveSystem : Node
             GD.PushWarning($"Main save failed, attempting backup: {backupPath}");
             if (TryLoadFromPath(backupPath, out saveData))
             {
+                LoadedFromBackup = true;
+                _recoveryNoticePending = true;
                 return true;
             }
         }
@@ -96,6 +106,8 @@ public partial class SaveSystem : Node
 
     public void Save(GameSaveData saveData)
     {
+        LastSaveSucceeded = false;
+        LastSaveError = "";
         try
         {
             var json = JsonSerializer.Serialize(saveData, JsonOptions);
@@ -108,17 +120,23 @@ public partial class SaveSystem : Node
             {
                 if (file == null)
                 {
-                    GD.PushError($"Failed to open temp save file for writing: {tempPath}");
+                    FailSave($"Failed to open temp save file for writing: {tempPath}");
                     return;
                 }
 
                 file.StoreString(json);
+                file.Flush();
+                if (file.GetError() != Error.Ok)
+                {
+                    FailSave($"Save write failed: {file.GetError()}");
+                    return;
+                }
             }
 
             // Parse the complete staged save before touching the current save or backup.
             if (!TryLoadFromPath(tempPath, out _))
             {
-                GD.PushError("Temp save file verification failed, keeping the current save.");
+                FailSave("Temp save file verification failed, keeping the current save.");
                 return;
             }
 
@@ -128,19 +146,33 @@ public partial class SaveSystem : Node
                 var backupError = DirAccess.CopyAbsolute(saveFilePath, backupPath);
                 if (backupError != Error.Ok)
                 {
-                    GD.PushError($"Save backup failed ({backupError}); keeping the current save.");
+                    FailSave($"Save backup failed ({backupError}); keeping the current save.");
                     return;
                 }
             }
             var replaceError = DirAccess.RenameAbsolute(tempPath, saveFilePath);
             if (replaceError != Error.Ok)
-                GD.PushError($"Save replacement failed ({replaceError}); previous save and backup retained.");
+                FailSave($"Save replacement failed ({replaceError}); previous save and backup retained.");
+            else LastSaveSucceeded = true;
 
         }
         catch (Exception ex)
         {
-            GD.PushError($"Failed to write save file. {ex.Message}");
+            FailSave($"Failed to write save file. {ex.Message}");
         }
+    }
+
+    private void FailSave(string reason)
+    {
+        LastSaveError = reason;
+        GD.PushError(reason);
+    }
+
+    public bool ConsumeRecoveryNotice()
+    {
+        var pending = _recoveryNoticePending;
+        _recoveryNoticePending = false;
+        return pending;
     }
 
     private static string ResolveSaveFilePath()

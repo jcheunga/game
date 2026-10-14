@@ -1,44 +1,45 @@
 {
-  "frameWidth": 256,
-  "frameHeight": 320,
-  "drawScale": 1.9396850411195932,
+  "frameWidth": 104,
+  "frameHeight": 75,
+  "drawScale": 1.4865127554229132,
   "animations": {
     "idle": {
-      "start": 0,
-      "count": 6,
-      "duration": 0.10666666666666667,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
     },
     "walk": {
-      "start": 6,
-      "count": 8,
-      "duration": 0.075,
-      "loop": true
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.06835
     },
     "attack": {
-      "start": 14,
-      "count": 10,
-      "duration": 0.07,
       "loop": false,
-      "contactFrame": 4
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
     }
   },
   "assetId": "player_hound",
   "title": "War Hound",
-  "source": "art/remaster/units/player_hound.py",
-  "anchorY": 0.6775451302528381,
-  "anchorX": 0.45581,
+  "source": "art/remaster/puppet/build.py (player_hound)",
+  "anchorY": 0.890131,
+  "anchorX": 0.491448,
   "motion": {
-    "revision": "remaster-v1",
+    "revision": "puppet-v2",
     "profile": "pounce",
     "body": [
-      0.0,
-      -0.169351
+      -0.134196,
+      -0.515047
     ],
     "contact": [
-      0.393586,
-      -0.268555
+      0.265615,
+      -0.61087
     ]
   },
-  "healthBarY": 0.283795
+  "healthBarY": 0.757732
 }

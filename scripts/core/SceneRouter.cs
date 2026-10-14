@@ -1,4 +1,5 @@
 using Godot;
+using System;
 
 public partial class SceneRouter : Node
 {
@@ -27,6 +28,10 @@ public partial class SceneRouter : Node
     public const string SeasonPassScene = "res://scenes/SeasonPassMenu.tscn";
 
     public const string BattleScene = "res://scenes/Battle.tscn";
+    public const string ProgressionScene = "res://scenes/ProgressionMenu.tscn";
+    public const string BossRushScene = "res://scenes/BossRushMenu.tscn";
+    public void GoToProgression()=>ChangeScene(ProgressionScene);
+    public void GoToBossRush()=>ChangeScene(BossRushScene);
 
     private const float FadeDuration = 0.18f;
 
@@ -38,13 +43,13 @@ public partial class SceneRouter : Node
     private string _settingsReturnScenePath = MainMenuScene;
     private CanvasLayer _fadeLayer;
     private ColorRect _fadeRect;
-    private Label _tipLabel;
+    private LoadingScreen _loadingScreen;
     private bool _transitioning;
 
     private static bool IsHomeActivity(string path) => path is ShopScene or MultiplayerScene or LanRaceScene
         or EndlessScene or LoadoutScene or SettingsScene or CashShopScene or ForgeScene or ExpeditionScene
         or EventScene or CodexScene or ArenaScene or GuildScene or ProfileScene or RaidScene
-        or BountyScene or TowerScene or FriendsScene or LoginCalendarScene or LeaderboardScene or SeasonPassScene;
+        or BountyScene or TowerScene or FriendsScene or LoginCalendarScene or LeaderboardScene or SeasonPassScene or ProgressionScene or BossRushScene;
 
     public override void _EnterTree()
     {
@@ -61,6 +66,7 @@ public partial class SceneRouter : Node
 
     public override void _Ready()
     {
+        ProcessMode = ProcessModeEnum.Always;
         _fadeLayer = new CanvasLayer { Layer = 128 };
         AddChild(_fadeLayer);
         _fadeRect = new ColorRect
@@ -72,21 +78,9 @@ public partial class SceneRouter : Node
         };
         _fadeLayer.AddChild(_fadeRect);
 
-        _tipLabel = new Label
-        {
-            Text = "",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            AnchorLeft = 0.1f,
-            AnchorRight = 0.9f,
-            AnchorTop = 0.7f,
-            AnchorBottom = 0.85f,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            Modulate = new Color(1f, 1f, 1f, 0f),
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        _tipLabel.AddThemeColorOverride("font_color", new Color("c8c8c8"));
-        _fadeLayer.AddChild(_tipLabel);
+        _loadingScreen = new LoadingScreen { Visible = false, Modulate = new Color(1, 1, 1, 0), ProcessMode = ProcessModeEnum.Always };
+        _fadeLayer.AddChild(_loadingScreen);
+
     }
 
     public void GoToMainMenu()
@@ -242,54 +236,54 @@ public partial class SceneRouter : Node
 
     private async void ChangeScene(string path, bool allowOverlay = true)
     {
+        if (_transitioning) return;
         if (allowOverlay && GetTree().CurrentScene is MapMenu home && home.OpenHomeDestination(path)) return;
-        if (_transitioning)
-        {
-            return;
-        }
-
         _transitioning = true;
-        AudioDirector.Instance?.PlaySceneChange();
-
-        if (_tipLabel != null)
+        try
         {
-            _tipLabel.Text = LoadingTipCatalog.GetRandom();
-        }
-
-        if (_fadeRect != null)
-        {
-            var fadeOut = CreateTween();
-            fadeOut.SetParallel(true);
+            AudioDirector.Instance?.PlaySceneChange();
+            var illustrated = path == BattleScene || GetTree().CurrentScene is BattleController;
+            var started = Time.GetTicksMsec();
+            if (illustrated)
+            {
+                var stageNumber = Mathf.Clamp(GameState.Instance.SelectedStage, 1, GameData.MaxStage);
+                if (path == BattleScene && GameState.Instance.CurrentBattleMode == BattleRunMode.BossRush) stageNumber = 10;
+                if (path == BattleScene && GameState.Instance.CurrentBattleMode == BattleRunMode.Tower)
+                    stageNumber = ChallengeTowerCatalog.GetFloor(GameState.Instance.SelectedTowerFloor)?.BaseStageNumber ?? 1;
+                _loadingScreen.Prepare(GameData.GetStage(stageNumber), path == BattleScene);
+                _loadingScreen.Show();
+            }
+            var fadeOut = CreateTween().SetParallel(true);
             fadeOut.TweenProperty(_fadeRect, "color:a", 1f, FadeDuration);
-            if (_tipLabel != null)
-            {
-                fadeOut.TweenProperty(_tipLabel, "modulate:a", 1f, FadeDuration);
-            }
+            if (illustrated) fadeOut.TweenProperty(_loadingScreen, "modulate:a", 1f, FadeDuration);
             await ToSignal(fadeOut, Tween.SignalName.Finished);
-        }
 
-        var homeActivity = allowOverlay && IsHomeActivity(path);
-        var scenePath = homeActivity ? MainMenuScene : path;
-        GetTree().ChangeSceneToFile(scenePath);
-        // A destination opened from battle uses the same map and modal as a home click.
-        await ToSignal(GetTree(), SceneTree.SignalName.SceneChanged);
-        if (homeActivity && GetTree().CurrentScene is MapMenu destinationHome)
-            destinationHome.OpenHomeDestination(path);
-        MusicPlayer.Instance?.PlayForScene(scenePath);
-
-        if (_fadeRect != null)
-        {
-            var fadeIn = CreateTween();
-            fadeIn.SetParallel(true);
+            var homeActivity = allowOverlay && IsHomeActivity(path);
+            var scenePath = homeActivity ? MainMenuScene : path;
+            var error = GetTree().ChangeSceneToFile(scenePath);
+            if (error != Error.Ok) throw new InvalidOperationException($"Could not open {scenePath}: {error}");
+            await ToSignal(GetTree(), SceneTree.SignalName.SceneChanged);
+            if (homeActivity && GetTree().CurrentScene is MapMenu destinationHome) destinationHome.OpenHomeDestination(path);
+            MusicPlayer.Instance?.PlayForScene(scenePath);
+            // Battle starts only once this overlay clears; quick menu navigation has no holding time.
+            var remaining = 0.65 - (Time.GetTicksMsec() - started) / 1000.0;
+            if (path == BattleScene && remaining > 0)
+                await ToSignal(GetTree().CreateTimer(remaining, true, false, true), SceneTreeTimer.SignalName.Timeout);
+            var fadeIn = CreateTween().SetParallel(true);
             fadeIn.TweenProperty(_fadeRect, "color:a", 0f, FadeDuration);
-            if (_tipLabel != null)
-            {
-                fadeIn.TweenProperty(_tipLabel, "modulate:a", 0f, FadeDuration);
-            }
+            if (illustrated) fadeIn.TweenProperty(_loadingScreen, "modulate:a", 0f, FadeDuration);
             await ToSignal(fadeIn, Tween.SignalName.Finished);
         }
-
-        _transitioning = false;
+        catch (Exception exception)
+        {
+            GD.PushError(exception.Message);
+        }
+        finally
+        {
+            if (IsInstanceValid(_fadeRect)) _fadeRect.Color = new Color(0, 0, 0, 0);
+            if (IsInstanceValid(_loadingScreen)) { _loadingScreen.Modulate = new Color(1, 1, 1, 0); _loadingScreen.Hide(); }
+            _transitioning = false;
+        }
     }
 
     private static string ResolveSceneLabel(string path)
@@ -314,6 +308,8 @@ public partial class SceneRouter : Node
             LoginCalendarScene => "Login Calendar",
             LeaderboardScene => "Leaderboards",
             SeasonPassScene => "Season Pass",
+            ProgressionScene => "Caravan progression",
+            BossRushScene => "Boss rush",
 
             MultiplayerScene => "Multiplayer Challenge",
             LanRaceScene => "LAN Race",

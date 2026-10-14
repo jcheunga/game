@@ -1,0 +1,45 @@
+{
+  "frameWidth": 362,
+  "frameHeight": 264,
+  "drawScale": 2.8730158730158726,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.1735
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "player_duelist",
+  "title": "Duelist",
+  "source": "art/remaster/puppet/build.py (player_duelist)",
+  "anchorY": 0.901632,
+  "anchorX": 0.537528,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "blade-stab",
+    "body": [
+      -0.013868,
+      -0.453243
+    ],
+    "contact": [
+      0.443705,
+      -0.375774
+    ]
+  },
+  "healthBarY": 0.67436
+}

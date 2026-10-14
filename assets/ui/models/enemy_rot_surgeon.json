@@ -1,0 +1,45 @@
+{
+  "frameWidth": 302,
+  "frameHeight": 254,
+  "drawScale": 2.3968253968253967,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.09,
+      "start": 0
+    },
+    "walk": {
+      "loop": true,
+      "count": 12,
+      "duration": 0.06,
+      "start": 12,
+      "stride": 0.20173
+    },
+    "attack": {
+      "loop": false,
+      "count": 16,
+      "contactFrame": 6,
+      "duration": 0.0467,
+      "start": 24
+    }
+  },
+  "assetId": "enemy_rot_surgeon",
+  "title": "Rot Surgeon",
+  "source": "art/remaster/puppet/build.py (enemy_rot_surgeon)",
+  "anchorY": 0.897392,
+  "anchorX": 0.670824,
+  "motion": {
+    "revision": "puppet-v2",
+    "profile": "staff-cast",
+    "body": [
+      0.016622,
+      -0.512734
+    ],
+    "contact": [
+      0.165746,
+      -0.667422
+    ]
+  },
+  "healthBarY": 0.742138
+}

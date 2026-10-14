@@ -16,6 +16,17 @@ public partial class UnitFigure : Control
     {
         if (unit == null) return null;
         var path = $"res://assets/ui/royal/figures/{unit.Id}.png";
+        if (ResourceLoader.Exists(path)) return RoyalArt.Load(path);
+        var fallback = unit.VisualClass switch
+        {
+            "shield" => "player_defender", "support" => "player_mechanic",
+            "gunner" => "player_shooter", "sniper" => "player_marksman",
+            "ballista" => "player_ballista", "skirmisher" => "player_raider",
+            "rogue" => "player_rogue", "banner" => "player_banner",
+            "berserker" => "player_berserker", "hound" => "player_hound",
+            "necromancer" => "player_necromancer", _ => "player_brawler"
+        };
+        path = $"res://assets/ui/royal/figures/{fallback}.png";
         return ResourceLoader.Exists(path) ? RoyalArt.Load(path) : UiArtLoader.TryLoadUnitIcon(unit);
     }
 

@@ -1,0 +1,222 @@
+[
+ {
+  "id": "glyphs-01",
+  "out": "art/royal/gen/glyphs/sheet-01.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "spellicon-aegis_bolt",
+   "spellicon-radiant_rebuke",
+   "spellicon-tidal_push",
+   "spellicon-anchor_hex",
+   "spellicon-molten_brand",
+   "spellicon-meteor",
+   "spellicon-purifying_light",
+   "spellicon-withering_seal",
+   "spellicon-gale_step"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a small round buckler with a short arrow streak trailing behind it\n2. a raised fist with short light rays around it\n3. a curling ocean wave\n4. a ship's anchor\n5. a branding iron with a rune-shaped head and a falling drip\n6. a round rock falling straight down with three straight trail lines above it\n7. a sun disc with eight straight rays\n8. a wilted rose drooping on its stem\n9. a footprint with three curved wind lines beside it\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-02",
+  "out": "art/royal/gen/glyphs/sheet-02.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "spellicon-gravitation_well",
+   "spellicon-soul_harvest",
+   "spellicon-consecrated_ground",
+   "spellicon-verdant_renewal",
+   "spellicon-bramble_snare",
+   "spellicon-chain_lightning",
+   "spellicon-rallying_advance",
+   "spellicon-revealing_flare",
+   "spellicon-mirror_ward"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a spiral vortex\n2. a sickle\n3. a flat ground line with a half-circle of light and three upward rays\n4. a sprouting seedling with two leaves\n5. a looped thorny vine\n6. a zigzag lightning line linking three small dots\n7. a pennant on a pole leaning forward with two speed lines\n8. an open eye with short rays around it\n9. a round mirror with an arrow glancing off it\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-03",
+  "out": "art/royal/gen/glyphs/sheet-03.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "spellicon-banish",
+   "spellicon-royal_edict",
+   "spellicon-tactic_palisade_kit",
+   "spellicon-tactic_firepot_mine",
+   "spellicon-tactic_healing_shrine",
+   "spellicon-tactic_bolt_turret",
+   "spellicon-tactic_supply_crate",
+   "spellicon-tactic_frost_trap",
+   "spellicon-tactic_decoy_lantern"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a circular portal ring with a small wisp being drawn into its centre\n2. a rolled scroll with a small crown above it\n3. three sharpened wooden stakes in a row\n4. a clay pot with a flame rising from its mouth\n5. a small arched shrine with a leaf inside\n6. a small crossbow on a tripod\n7. a wooden crate with cross braces\n8. an open toothed jaw trap with a small snowflake above it\n9. a lantern hanging from a bent post\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-04",
+  "out": "art/royal/gen/glyphs/sheet-04.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "spellicon-tactic_smoke_pot",
+   "spellicon-tactic_purifying_censer",
+   "spellicon-tactic_repair_cache",
+   "spellicon-tactic_grounding_rod",
+   "spellicon-tactic_war_horn",
+   "relicicon-rampart_seal",
+   "relicicon-tower_charm",
+   "relicicon-last_wall_token",
+   "relicicon-iron_prayer"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a round pot with three curling smoke puffs above it\n2. a bowl censer standing on three legs with a small flame\n3. a hammer crossed with a saw\n4. a vertical rod in the ground with a small lightning spark at its tip\n5. a curved horn in front of a target circle\n6. a seal stamp with a crenellated castle top\n7. a small watchtower\n8. a heater shield with a crack down its middle\n9. an armoured gauntlet\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-05",
+  "out": "art/royal/gen/glyphs/sheet-05.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-sentinel_buckle",
+   "relicicon-oathbound_chain",
+   "relicicon-farwatch_lens",
+   "relicicon-windstring",
+   "relicicon-falcon_feather",
+   "relicicon-huntsman_s_knot",
+   "relicicon-trailfinder_boots",
+   "relicicon-twinbolt_clasp",
+   "relicicon-breach_writ"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a knight's closed helm\n2. two linked chain rings\n3. a spyglass\n4. a bow with its string drawn\n5. a feather\n6. a looped knot with an arrowhead hanging beneath it\n7. a boot with two small footprints behind it\n8. two crossed crossbow bolts\n9. a rolled scroll with a round wax seal\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-06",
+  "out": "art/royal/gen/glyphs/sheet-06.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-demolition_rune",
+   "relicicon-counterweight",
+   "relicicon-gateward_medallion",
+   "relicicon-sapper_s_fuse",
+   "relicicon-chain_hoist_charm",
+   "relicicon-cinder_ring",
+   "relicicon-ashen_rosary",
+   "relicicon-coalglass_vial",
+   "relicicon-fireward_clasp"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a cracked rock with a burst star\n2. a heavy weight block with a hook on top\n3. a portcullis gate inside a circle\n4. a round bomb with a sparking fuse\n5. a pulley wheel with a hanging chain\n6. a ring with a small flame on top\n7. a loop of beads with a flame-shaped pendant\n8. a round flask with a flame inside\n9. a flame inside a ring\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-07",
+  "out": "art/royal/gen/glyphs/sheet-07.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-phoenix_ember",
+   "relicicon-hearthstone",
+   "relicicon-rime_needle",
+   "relicicon-winter_ribbon",
+   "relicicon-hoarfrost_medal",
+   "relicicon-icebound_hourglass",
+   "relicicon-glacial_band",
+   "relicicon-thawstone",
+   "relicicon-mercy_bell"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a phoenix with spread wings\n2. an oval stone marked with a small flame\n3. a long needle with small ice crystals along it\n4. a ribbon tied in a bow\n5. a round medal hanging from a ribbon, a snowflake on its face\n6. an hourglass with a snowflake beside it\n7. a wide arm band set with pointed crystals\n8. a stone split into two halves with a drip between them\n9. a hand bell with a handle\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-08",
+  "out": "art/royal/gen/glyphs/sheet-08.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-field_surgeon_s_badge",
+   "relicicon-bloodroot_pendant",
+   "relicicon-springwater_charm",
+   "relicicon-mender_s_thread",
+   "relicicon-second_breath_seal",
+   "relicicon-nightveil_brooch",
+   "relicicon-assassin_s_token",
+   "relicicon-grave_silk",
+   "relicicon-umbral_coin"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a rolled bandage with a herb sprig\n2. a pendant holding a twisted root with a drop beneath it\n3. a small flask with a water drop\n4. a spool of thread with a needle\n5. a round medallion with a swirl on its face\n6. a brooch with a draped veil beneath it\n7. a coin with a dagger on its face\n8. a folded cloth with a stitched rune\n9. a coin with a crescent moon on its face\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-09",
+  "out": "art/royal/gen/glyphs/sheet-09.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-phantom_bell",
+   "relicicon-moonstep_anklet",
+   "relicicon-marshal_s_signet",
+   "relicicon-supply_ledger",
+   "relicicon-banner_ribbon",
+   "relicicon-captain_s_whistle",
+   "relicicon-caravan_token",
+   "relicicon-king_s_commission",
+   "relicicon-saint_s_reliquary"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a ghostly bell with wavy trailing lines\n2. a chain anklet with a crescent moon charm\n3. a signet ring with a baton on its face\n4. a closed book with a quill\n5. a banner flag hanging from a spear\n6. a whistle on a cord\n7. a covered wagon\n8. a sash with a crown badge\n9. a small casket with a halo above it\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-10",
+  "out": "art/royal/gen/glyphs/sheet-10.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-stormglass_prism",
+   "relicicon-earthbind_idol",
+   "relicicon-dragonbone_quiver",
+   "relicicon-emberforge_anvil",
+   "relicicon-mirror_shard",
+   "relicicon-gravewarden_s_key",
+   "relicicon-tidemaster_s_pearl",
+   "relicicon-sunfall_spur",
+   "relicicon-gloam_lantern"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a triangular prism with a lightning bolt inside\n2. a squat idol figure with roots at its base\n3. a quiver of arrows\n4. an anvil\n5. a jagged glass shard\n6. a key with a skull-shaped bow\n7. an open clamshell holding a pearl\n8. a rider's spur with a sun-shaped rowel\n9. a hexagonal lantern with an eye-shaped flame\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-11",
+  "out": "art/royal/gen/glyphs/sheet-11.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "relicicon-crownroad_charter",
+   "relicicon-hollow_chalice",
+   "relicicon-royal_execution_writ",
+   "relicicon-plagueglass_mask",
+   "relicicon-runic_capacitor",
+   "relicicon-wandering_shrine",
+   "relicicon-basilica_hourglass",
+   "relicicon-siegebreaker_s_crest",
+   "relicicon-lantern_of_dawn"
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a folded map with a winding road\n2. a chalice\n3. an executioner's axe\n4. a beaked plague mask\n5. a cylinder wound with a coil and a spark above it\n6. a small shrine on a carrying pole\n7. an hourglass with a pointed spire on top\n8. a shield with a broken tower on it\n9. a lantern with a rising sun inside\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ }
+]

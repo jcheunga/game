@@ -85,10 +85,16 @@ blocked, such as a sealed boss gate or missing rations.
 
 ## Items
 
-Relics and spells are painted images (`art/royal/jobs/02-items.json`, installed by `art/royal/items.py`),
-not model renders, and so are the hub activities and wagon upgrades (`06-activities.json`, `07-upgrades.json`,
-installed by `art/royal/pictures.py`). `UiArtLoader` uses them wherever an item is shown; the codex shows units as
-their battle figures and keeps portraits only for foes without one.
+Relics and spells are painted images (`art/royal/jobs/02-items.json`, and `08-items-expansion.json` for the
+expansion spells, tactics and relics, installed by `art/royal/items.py`), not model renders, and so are the hub
+activities and wagon upgrades (`06-activities.json`, `07-upgrades.json`, installed by `art/royal/pictures.py`).
+`UiArtLoader` uses them wherever an item is shown; the codex shows units as their battle figures and keeps
+portraits only for foes without one.
+
+The small cream glyphs in card corners and detail headers are kit pieces. The first ten spells and the relic
+kinds (`relicicon-boots`, `-crown`, ...) are cut from the concepts; the expansion's are painted as 3x3 sheets
+(`09-glyphs.json`) and cut by `art/royal/glyphs.py` into `kit/spellicon-<id>` and `kit/relicicon-<id>`. A relic
+with a glyph of its own uses it; the rest share one by the kind of object (`ShopMenu.RelicIcon`).
 
 ## Review
 

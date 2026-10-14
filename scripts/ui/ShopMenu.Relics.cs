@@ -10,6 +10,9 @@ public partial class ShopMenu
 
     public static string RelicIcon(EquipmentDefinition relic)
     {
+        // Relics with a glyph of their own (art/royal/glyphs.py); the rest share one by the kind of object.
+        var own = "relicicon-" + relic.Id.Replace("relic_", "");
+        if (ResourceLoader.Exists($"res://assets/ui/royal/kit/{own}.png")) return own;
         var name = relic.DisplayName.ToLowerInvariant();
         if (name.Contains("lantern") || name.Contains("censer")) return "relicicon-lantern";
         if (name.Contains("boot")) return "relicicon-boots";

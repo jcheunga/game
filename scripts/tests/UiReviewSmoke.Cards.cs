@@ -68,6 +68,8 @@ public partial class UiReviewSmoke
                 await Wait(.1);
                 Check(Read<int>("_playerDeployments")==deployments+1 && Read<List<Unit>>("_units").Last().DefinitionId==deck.Roster[1].Id
                     && !target.Selected,$"{prefix}: tapping the corner badge deploys its unit from the wagon");
+                Check(buttons.All(b=>b.GetThemeStylebox("focus") is StyleBoxEmpty && b.GetThemeStylebox("hover")==b.GetThemeStylebox("normal")),
+                    $"{prefix}: a tapped card is left without a hover or focus ring");
                 buttons[deck.Roster.Count].EmitSignal(BaseButton.SignalName.Pressed);
                 Check(cards.Count(c=>c.Selected)==1 && cards[deck.Roster.Count].Selected,$"{prefix}: magic cards are still selected to aim");
                 Send(new InputEventKey {Keycode=Key.Key1,Pressed=true});

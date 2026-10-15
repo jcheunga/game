@@ -236,19 +236,16 @@ public partial class BattleController
     private static BattleActionCard AttachBattleCardContent(Button button, Texture2D icon)
 	{
         button.Text = string.Empty;
-        // The concept card: a thin bronze frame around full-bleed art, lifted slightly on hover.
+        // The concept card: a thin bronze frame around full-bleed art. A tap acts at once, so no hover or focus
+        // ring is left on the last card touched; only an armed spell wears the gold frame (BattleActionCard).
         var frame = RoyalKit.Slice("hud-card", 8);
         frame.ContentMarginLeft = frame.ContentMarginRight = frame.ContentMarginTop = frame.ContentMarginBottom = 0;
-        var hover = new StyleBoxFlat { BgColor = new Color(1f, .9f, .66f, .10f), BorderColor = new Color(1f, .86f, .55f, .7f), AntiAliasing = true };
-        hover.SetBorderWidthAll(1); hover.SetCornerRadiusAll(4);
         button.AddThemeStyleboxOverride("normal", frame);
-        button.AddThemeStyleboxOverride("hover", new StackedStyle(frame, hover));
+        button.AddThemeStyleboxOverride("hover", frame);
         button.AddThemeStyleboxOverride("pressed", new StackedStyle(frame, new StyleBoxFlat { BgColor = new Color(0, 0, 0, .2f) }));
-        button.AddThemeStyleboxOverride("hover_pressed", new StackedStyle(frame, hover));
+        button.AddThemeStyleboxOverride("hover_pressed", frame);
         button.AddThemeStyleboxOverride("disabled", frame);
-        var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color(1f, .87f, .56f, .9f), AntiAliasing = true };
-        focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4);
-        button.AddThemeStyleboxOverride("focus", focus);
+        button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
 		var card = new BattleActionCard();
 		button.AddChild(card);
 		card.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);

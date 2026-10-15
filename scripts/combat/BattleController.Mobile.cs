@@ -78,9 +78,11 @@ public partial class BattleController
             var bottom=(SafeAreaService.Instance?.MarginBottom ?? 0)/scale+8;
             var width=root.Size.X-left-right;
             _hudLayout?.Invoke();
-            _mobilePlacementHint.Position=new Vector2(left,cards.Position.Y-29);
+            // The caravan spell's slot stands taller than the dock, so the hint and Cancel keep above it.
+            var trayTop=Mathf.Min(cards.Position.Y,CaravanSpellTop);
+            _mobilePlacementHint.Position=new Vector2(left,trayTop-29);
             _mobilePlacementHint.Size=new Vector2(width-120,26);
-            _mobileCancelButton.Position=new Vector2(root.Size.X-right-102,cards.Position.Y-60);
+            _mobileCancelButton.Position=new Vector2(root.Size.X-right-102,trayTop-60);
             _mobileCancelButton.Size=new Vector2(102,56);
             var pauseVeil=_pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if(pauseVeil!=null) pauseVeil.CustomMinimumSize=root.Size;
@@ -125,6 +127,7 @@ public partial class BattleController
     {
         if (_couragePickupPointerDown && HandleCouragePickupInput(input)) return;
         if (HandleBattleMenuInput(input)) return;
+        if (HandleCaravanSpellKey(input)) return;
         if(HandleCardDragInput(input)) return;
         if(ContinueBattleCameraDrag(input)) return;
         if(HandleCouragePickupInput(input)) return;

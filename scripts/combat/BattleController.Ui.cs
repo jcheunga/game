@@ -81,6 +81,7 @@ public partial class BattleController
 			}
 		}
 
+        BuildCaravanSpellButton(root, spawnPanel);
         BuildBattleMenu(root);
 
 		_endCenter = new CenterContainer();
@@ -296,6 +297,7 @@ public partial class BattleController
 			slot.Button.AccessibilityName = $"{slot.Definition.DisplayName}, {resolved.ManaCost} mana";
 			slot.Button.AccessibilityDescription = $"Level {resolved.Level}. " + (!isReady ? $"Cooldown {cooldown:0.0} seconds." : !hasMana ? "Not enough mana." : armed ? "Selected. Choose a target on the battlefield." : "Ready. Select to cast.");
 		}
+		UpdateCaravanSpellHud();
 		_hudLayout?.Invoke();
         RefreshMobileHud();
 	}

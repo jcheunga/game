@@ -170,7 +170,7 @@ public partial class CombatReviewSmoke
                 var fireball = GameData.GetSpell("spell_fireball");
                 var spells = Read<BattleSpellState>(battle, "_spellDeck");
                 spells.Initialize(new[] { fireball });
-                Write(battle, "_mana", 30f); Write(battle, "_courage", 12f);
+                Write(battle, "_mana", 99f); Write(battle, "_courage", 12f);
                 Invoke(battle, "ArmSpell", fireball);
                 var casts = Read<int>(battle, "_spellsCast");
                 var pickup = Pack(); var point = Point(pickup);
@@ -179,7 +179,7 @@ public partial class CombatReviewSmoke
                 Check(Read<float>(battle, "_courage") == 12f && Read<bool>(battle, "_couragePickupPointerDown"), mode + ": press captures the pack without collecting");
                 Up(point + new Vector2(2, 1));
                 Check(pickup.Collected && Read<float>(battle, "_courage") == 32f, mode + ": click/tap collects +20 at the transformed camera position");
-                Check(Read<float>(battle, "_mana") == 30f && Read<int>(battle, "_spellsCast") == casts && spells.ArmedSpell == fireball,
+                Check(Read<float>(battle, "_mana") == 99f && Read<int>(battle, "_spellsCast") == casts && spells.ArmedSpell == fireball,
                     mode + ": collection spends no mana, casts no spell and preserves the armed spell");
                 Up(point);
                 Check(Read<float>(battle, "_courage") == 32f, mode + ": duplicate release cannot reward the same pack twice");
@@ -223,7 +223,7 @@ public partial class CombatReviewSmoke
                 Check(packs.Count == 0, mode + ": a pack expiring between press and release cannot be collected");
 
                 // A dragged spell may land over a pack without collecting it.
-                Write(battle, "_courage", 0f); Write(battle, "_mana", 30f); spells.ReduceCooldowns(1000);
+                Write(battle, "_courage", 0f); Write(battle, "_mana", 99f); spells.ReduceCooldowns(1000);
                 pickup = Pack(); point = Point(pickup);
                 Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(GameData.EnemyBruteId)), pickup.Position);
                 var spellCard = Read<Control>(battle, "_battleUiRoot").FindChildren("*", "Control", true, false)

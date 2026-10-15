@@ -190,11 +190,14 @@ spell_power={
  'Rallying Advance':(1.08,1.12,60,4),'Revealing Flare':(5,0,72,5),
  'Mirror Ward':(.5,1,48,5),'Banish':(8,0,40,0),'Royal Edict':(0,0,60,2),
 }
+# Design mana figures predate the x3.5 mana rescale of 2026-10-15 (bar 30 -> 100, 7 mana per kill).
+MANA_SCALE=3.5
 for e in concepts['new_spells']:
     power,secondary,radius,duration=spell_power[e['name']]
+    if e['name']=='Soul Harvest': power*=MANA_SCALE  # mana recovered per corpse
     spells.append({
       'Id':e['id'],'DisplayName':e['name'],'UnlockStage':e['discovery_stage'],
-      'GoldCost':60+e['discovery_stage']*2,'ManaCost':e['prototype_mana'],
+      'GoldCost':60+e['discovery_stage']*2,'ManaCost':round(e['prototype_mana']*MANA_SCALE),
       'Cooldown':e['prototype_cooldown'],'EffectType':e['id'].removeprefix('spell_'),
       'Power':power,'SecondaryPower':secondary,'Radius':radius,'Duration':duration,
       'Description':e['effect']+' '+e['tradeoff'],'ColorHex':'b8a7d3',
@@ -206,7 +209,7 @@ for i,e in enumerate(read('docs/design/balance-stat-catalog.json')['tactical_ite
     power=v['damage'] or v['heal'] or v['courage']
     spells.append({
       'Id':e['id'],'DisplayName':e['name'],'UnlockStage':[6,25,8,28,18,44,84,16,36,21,55,48][i],
-      'GoldCost':70+i*12,'ManaCost':int(v['mana']),'Cooldown':v['cooldown'],
+      'GoldCost':70+i*12,'ManaCost':round(v['mana']*MANA_SCALE),'Cooldown':v['cooldown'],
       'EffectType':e['id'],'Power':power,'Radius':v['radius'],'Duration':v['lifetime'],
       'SecondaryPower':v['control'],'ObjectHealth':v['hp'],'ObjectArmor':v['armor'],
       'ObjectMagicalResistance':v['magic'],'Charges':int(v['charges']),

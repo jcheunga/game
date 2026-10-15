@@ -635,6 +635,18 @@
   "volume_db": 0.0,
   "loop": false
  },
+ "caravan_spell_ready": {
+  "files": [
+   "res://assets/sfx/caravan_spell_ready.ogg"
+  ],
+  "bus": "Interface",
+  "positional": false,
+  "cooldown": 1.0,
+  "voices": 1,
+  "pitch": 0.0,
+  "volume_db": 0.0,
+  "loop": false
+ },
  "card_cancel": {
   "files": [
    "res://assets/sfx/card_cancel_1.ogg",
@@ -2347,6 +2359,18 @@
   "cooldown": 0.15,
   "voices": 3,
   "pitch": 0.02,
+  "volume_db": 0.0,
+  "loop": false
+ },
+ "spell_caravan_barrage": {
+  "files": [
+   "res://assets/sfx/spell_caravan_barrage.ogg"
+  ],
+  "bus": "Effects",
+  "positional": false,
+  "cooldown": 1.0,
+  "voices": 1,
+  "pitch": 0.0,
   "volume_db": 0.0,
   "loop": false
  },

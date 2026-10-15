@@ -39,7 +39,7 @@ public partial class BattleController
         if(!_contentObjectiveRewards.Add(key)) return;
         var friends=NearbyContentUnits(Team.Player,position,100).ToArray();
         if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_caravan_token"))) SpawnCouragePickup(position,2);
-        if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_crownroad_charter"))) GainMana(2);
+        if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_crownroad_charter"))) GainMana(7);
         foreach(var friend in friends)
             if(ContentEquipment(friend).Any(i=>i.Id=="relic_tower_ascendant")) friend.ApplyTemporaryCombatBuff(1.04f,1,2);
     }

@@ -25,6 +25,8 @@ public partial class BattleActionCard : Control
     internal bool Selected => _selected;
     internal float CooldownRatio => _cooldownRatio;
     internal bool Unaffordable { get; private set; }
+    /// <summary>A card without a cost badge (the caravan spell) lets its art fill the face.</summary>
+    public bool FullArt { get; set; }
 
     public BattleActionCard()
     {
@@ -151,8 +153,8 @@ public partial class BattleActionCard : Control
         var inner = new Rect2(new Vector2(4, 4), (Size - new Vector2(8, 8)).Max(Vector2.One));
         _face.Position = inner.Position + Vector2.One; _face.Size = (inner.Size - Vector2.One * 2).Max(Vector2.One);
         // The art sits whole inside the card with a margin, a little below the cost badge.
-        _portrait.Position = inner.Position + inner.Size * new Vector2(.14f, .17f);
-        _portrait.Size = inner.Size * new Vector2(.72f, .76f);
+        _portrait.Position = inner.Position + inner.Size * (FullArt ? new Vector2(.08f, .07f) : new Vector2(.14f, .17f));
+        _portrait.Size = inner.Size * (FullArt ? new Vector2(.84f, .86f) : new Vector2(.72f, .76f));
         _cooldownShade.Position = new Vector2(inner.Position.X, inner.End.Y - inner.Size.Y * _cooldownRatio);
         _cooldownShade.Size = new Vector2(inner.Size.X, inner.Size.Y * _cooldownRatio);
         _cooldownShade.QueueRedraw();

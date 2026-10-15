@@ -25,8 +25,19 @@
     "CourageDropFadeDuration": 2.0,
     "CourageDropGuaranteeAfterMisses": 15,
     "ManaStart": 0.0,
-    "ManaMax": 30.0,
-    "ManaPerEnemyKill": 2.0,
+    "ManaMax": 100.0,
+    "ManaPerEnemyKill": 7.0,
+    "CaravanSpell": {
+      "Id": "caravan_arcane_barrage",
+      "DisplayName": "Arcane Barrage",
+      "Description": "The war wagon's lantern looses arcane missiles across the whole field for three seconds, striking every enemy again and again.",
+      "ManaCost": 100.0,
+      "Cooldown": 60.0,
+      "Duration": 3.0,
+      "MissilesPerSecond": 30.0,
+      "MissileDamage": 14.0,
+      "MaxHitsPerEnemy": 10
+    },
     "RangedMeleeReach": 34.0,
     "RangedMeleeDamageScale": 0.8,
 

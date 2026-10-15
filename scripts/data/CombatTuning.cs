@@ -42,8 +42,10 @@ public sealed class CombatTuning
 
 	// Mana pays for magic, separately from the courage that pays for troops. It is earned from kills, not time.
 	public float ManaStart { get; set; } = 0f;
-	public float ManaMax { get; set; } = 30f;
-	public float ManaPerEnemyKill { get; set; } = 2f;
+	public float ManaMax { get; set; } = 100f;
+	public float ManaPerEnemyKill { get; set; } = 7f;
+	// The war wagon's own spell, which opens beside the card dock once the mana bar is full.
+	public CaravanSpellTuning CaravanSpell { get; set; } = new();
 
 	public float InitialEnemySpawnDelay { get; set; } = 2.8f;
 	public float EnemySpawnPressureTimeScale { get; set; } = 180f;
@@ -68,6 +70,8 @@ public sealed class CombatTuning
 
 	public void Normalize()
 	{
+		CaravanSpell ??= new CaravanSpellTuning();
+		CaravanSpell.Normalize();
 		CourageDropChance = Math.Clamp(CourageDropChance, 0f, 1f);
 		CourageDropAmount = Math.Max(0f, CourageDropAmount);
 		CourageDropLifetime = Math.Max(0.1f, CourageDropLifetime);
@@ -113,5 +117,36 @@ public sealed class CombatTuning
 		{
 			EnemySpawnIntervalFloor = 0.1f;
 		}
+	}
+}
+
+/// <summary>
+/// The caravan spell: the war wagon's lantern looses arcane missiles at every enemy on the field. It is not a
+/// loadout card; it opens beside the card dock when the player holds <see cref="ManaCost"/> mana.
+/// </summary>
+public sealed class CaravanSpellTuning
+{
+	public string Id { get; set; } = "caravan_arcane_barrage";
+	public string DisplayName { get; set; } = "Arcane Barrage";
+	public string Description { get; set; } = "";
+	public float ManaCost { get; set; } = 100f;
+	public float Cooldown { get; set; } = 60f;
+	// Seconds the lantern keeps firing.
+	public float Duration { get; set; } = 3f;
+	public float MissilesPerSecond { get; set; } = 30f;
+	public float MissileDamage { get; set; } = 14f;
+	// Hits one enemy can take from a single barrage; missiles past every enemy's cap burst on open ground.
+	public int MaxHitsPerEnemy { get; set; } = 10;
+
+	public void Normalize()
+	{
+		if (string.IsNullOrWhiteSpace(Id)) Id = "caravan_arcane_barrage";
+		if (string.IsNullOrWhiteSpace(DisplayName)) DisplayName = "Arcane Barrage";
+		ManaCost = Math.Max(1f, ManaCost);
+		Cooldown = Math.Max(0f, Cooldown);
+		Duration = Math.Max(0.1f, Duration);
+		MissilesPerSecond = Math.Max(1f, MissilesPerSecond);
+		MissileDamage = Math.Max(0f, MissileDamage);
+		MaxHitsPerEnemy = Math.Max(1, MaxHitsPerEnemy);
 	}
 }

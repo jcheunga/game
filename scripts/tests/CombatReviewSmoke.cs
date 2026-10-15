@@ -68,6 +68,7 @@ public partial class CombatReviewSmoke : Node
             else if (args.Contains("--stage-layout")) ExportStageLayoutReview();
             else if (args.Contains("--courage-pacing")) await CheckCouragePacing();
             else if (args.Contains("--mana")) await CheckManaFromKills();
+            else if (args.Contains("--caravan-spell")) await CheckCaravanSpell();
             else if (args.Contains("--courage-drops")) await CheckCourageDrops();
             else if (args.Contains("--progression-rewards")) CheckProgressionRewards();
             else if(args.Contains("--bossrush-gameplay"))await ReviewBossRushGameplay();
@@ -228,6 +229,60 @@ public partial class CombatReviewSmoke : Node
         await CheckBattleLanes();
         await CheckCouragePacing();
         await CheckManaFromKills();
+        await CheckCaravanSpell();
+    }
+
+    // The caravan spell opens only on a full mana bar, spends all of it, and its missiles strike every enemy on the
+    // field, none more than its share, before a long cooldown.
+    private async Task CheckCaravanSpell()
+    {
+        var battle = await OpenBattle(12);
+        var tuning = GameData.Combat;
+        var spell = tuning.CaravanSpell;
+        bool Prop(string name) => (bool)battle.GetType().GetProperty(name, Hidden)!.GetValue(battle)!;
+        Check(spell.ManaCost <= tuning.ManaMax, "The caravan spell's cost fits in the mana bar");
+        var slot = Read<CaravanSpellButton>(battle, "_caravanSpellButton");
+        Write(battle, "_mana", spell.ManaCost - 1f);
+        Invoke(battle, "UpdateHud");
+        Check(slot != null && !slot.IsOpen && !Prop("CaravanSpellReady"), "The caravan slot stays shut below a full mana bar");
+        Invoke(battle, "TryCastCaravanSpell");
+        Check(Read<int>(battle, "_caravanCasts") == 0 && Mathf.IsEqualApprox(Read<float>(battle, "_mana"), spell.ManaCost - 1f), "It cannot be cast below its cost");
+
+        Unit Spawn(string id, Vector2 at) => (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(id)), at);
+        var foes = Enumerable.Range(0, 7).Select(i => Spawn(i % 3 == 0 ? GameData.EnemyBruteId : "enemy_walker", new Vector2(220 + i * 125, 325 + i % 3 * 12))).ToList();
+        Read<BattleSpawnDirector>(battle, "_spawnDirector").TryBuildEnemyStats("enemy_boss", out var bossStats);
+        var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(1050, 340));
+        var ally = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_brawler")), new Vector2(300, 340));
+        var bossHealth = boss.Health; var allyHealth = ally.Health;
+        var health = foes.ToDictionary(f => f, f => f.Health);
+        Write(battle, "_mana", Read<float>(battle, "_maxMana"));
+        Write(battle, "_courage", 40f);
+        Invoke(battle, "UpdateHud");
+        Check(slot.IsOpen && Prop("CaravanSpellReady"), "A full mana bar opens the caravan slot, ready to cast");
+        Invoke(battle, "TryCastCaravanSpell");
+        Check(Read<int>(battle, "_caravanCasts") == 1 && Read<float>(battle, "_mana") < .01f && Read<float>(battle, "_courage") == 40f,
+            "Casting spends the mana it costs and leaves courage alone");
+        Check(Mathf.IsEqualApprox(Read<float>(battle, "_caravanSpellCooldown"), spell.Cooldown), "Casting starts the long cooldown");
+        Invoke(battle, "UpdateHud");
+        Check(!slot.IsOpen, "The slot closes once the bar is spent");
+
+        const float step = 1f / 60f;
+        for (var t = 0f; t < spell.Duration + 3f; t += step) Invoke(battle, "TickCaravanSpell", step);
+        var launched = Read<int>(battle, "_caravanMissilesLaunched");
+        Check(Mathf.Abs(launched - spell.Duration * spell.MissilesPerSecond) <= 1.5f, $"The lantern fires for its full duration ({launched} missiles)");
+        Check(Read<int>(battle, "_caravanMissilesLanded") == launched, "Every missile lands within its flight");
+        Check(foes.All(f => f.IsDead || f.Health < health[f]) && boss.Health < bossHealth, "Every enemy on the field is struck");
+        Check(foes.Count(f => f.IsDead) >= 4, $"The barrage kills most rank-and-file enemies ({foes.Count(f => f.IsDead)} of {foes.Count})");
+        Check(bossHealth - boss.Health <= spell.MaxHitsPerEnemy * spell.MissileDamage + .5f, "No enemy takes more than its share of the missiles");
+        Check(ally.Health == allyHealth, "The barrage never strikes the player's troops");
+
+        Write(battle, "_mana", Read<float>(battle, "_maxMana"));
+        Invoke(battle, "TryCastCaravanSpell");
+        Check(Read<int>(battle, "_caravanCasts") == 1, "The cooldown holds back a second barrage, even on a full bar");
+        Write(battle, "_caravanSpellCooldown", 0f);
+        Invoke(battle, "HandleCaravanSpellKey", new InputEventKey { Keycode = Key.Space, Pressed = true });
+        Check(Read<int>(battle, "_caravanCasts") == 2, "Once the cooldown ends, Space casts it again");
+        await CloseBattle(battle);
     }
 
     // Review captures of every shot in flight: each ranged unit fires at a pinned target across the band.
@@ -372,7 +427,7 @@ public partial class CombatReviewSmoke : Node
         Spawn(Team.Player, "player_brawler").TakeDamage(1e6f);
         Invoke(battle, "CleanupDeadUnits");
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), afterKill), "Losing a troop grants no mana");
-        for (var i = 0; i < 40; i++) Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
+        for (var i = 0; i < Mathf.CeilToInt(tuning.ManaMax / tuning.ManaPerEnemyKill) + 1; i++) Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
         Invoke(battle, "CleanupDeadUnits");
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaMax), "Mana stops at the bar's maximum");
         Spawn(Team.Enemy, GameData.EnemyBruteId);

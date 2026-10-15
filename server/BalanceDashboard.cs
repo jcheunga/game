@@ -172,8 +172,8 @@ public static class BalanceDashboard
             var unlock = GetInt(spell, "UnlockStage");
             var powerPerMana = mana > 0 && power > 1 ? power / mana : 0;
 
-            // Mana costs run about 2.5x smaller than the old courage costs, so the value bands scale with them.
-            var valueClass = powerPerMana > 3 ? "good" : powerPerMana > 0 && powerPerMana < 2 ? "warn" : "mid";
+            // The value bands follow the mana scale: costs were rescaled x3.5 on 2026-10-15 (bands were 3 and 2).
+            var valueClass = powerPerMana > .86 ? "good" : powerPerMana > 0 && powerPerMana < .57 ? "warn" : "mid";
 
             sb.Append($"<tr><td>{name}</td><td>{mana}</td><td>{power:F1}</td><td>{radius:F0}</td>");
             sb.Append($"<td>{cd:F1}s</td><td>{(duration > 0 ? $"{duration:F1}s" : "-")}</td>");

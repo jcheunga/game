@@ -18,9 +18,11 @@ godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.ts
   --save-suffix=combat-review-<id> --tactical --time-limit=300 --stages=10,20,30
 ```
 
-Since 2026-10-07 magic costs mana (2 per enemy kill) instead of courage, so the reference player casts heal on
+Since 2026-10-07 magic costs mana (earned per enemy kill) instead of courage, so the reference player casts heal on
 a hurt ally and fireball on clusters of three whenever it has the mana. Sweeps from before then are not directly
-comparable.
+comparable. On 2026-10-15 every mana figure was scaled ×3.5 (7 per kill, a 100 bar, spell costs 14–63) for the
+[caravan spell](CARAVAN_SPELL.md); spell balance is unchanged, but the reference player does not cast the caravan
+spell.
 
 Since 2026-10-14 units and spells share six loadout slots, so the tactical reference fields its two strongest
 frontline and two strongest ranged troops plus two spells (heal and fireball first). Earlier sweeps fielded six

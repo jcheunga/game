@@ -125,6 +125,16 @@ def level_up(rng, k):
     return space(mix((harp, 0, 0.6), (brass, 0.25, 0.7), (bell, 0.25, 0.3)), "hall", 0.2)
 
 
+@cue("caravan_spell_ready", 1, level="reward", cooldown=1.0, voices=1, pitch=0.0, label="rising harp and bell, magic ready", **UI)
+def caravan_spell_ready(rng, k):
+    harp = seq("harp", [62, 65, 69, 74, 77, 81, 86], 0.04, 0.6, 0.6, rng=rng, pan_spread=0.6)
+    swell = F.reverse_swell(note("glockenspiel", 93, 0.5, 0.05, rng=rng), 0.35)
+    bell = note("glockenspiel", 98, 0.5, 0.2, release=1.4, rng=rng)
+    chimes = chord("hand_chimes", [74, 77, 81], 0.5, 0.3, release=1.2, strum=0.03, rng=rng)
+    sparkle = F.shimmer(0.9, (93, 98, 101, 105), rng=rng, spread=0.7)
+    return space(mix((harp, 0, 0.55), (swell, 0, 0.4), (chimes, 0.28, 0.5), (bell, 0.3, 0.35), (sparkle, 0.35, 0.3)), "hall", 0.24)
+
+
 @cue("reward_claim", 2, level="reward", cooldown=0.2, voices=2, pitch=0.01, label="bag of coins and a sparkle", **UI)
 def reward_claim(rng, k):
     bag = s("k_leather", 0.8, detune=rng.uniform(-3, -1), seconds=0.4, rng=rng)

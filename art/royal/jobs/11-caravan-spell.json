@@ -1,0 +1,11 @@
+[
+  {
+    "id": "item-caravan_arcane_barrage",
+    "out": "art/royal/gen/items/caravan_arcane_barrage.png",
+    "inputs": [
+      "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+    ],
+    "edit": false,
+    "prompt": "Use case: stylized-concept\nAsset type: ultimate caravan spell image for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown on a large battle button and inventory cards.\nSubject: the lantern cupola from the roof of a royal war wagon: a small octagonal brass-framed lantern house with a teal-green copper dome and a gilded sun finial, its glass panes blazing with violet-and-ice-blue arcane light. From the lantern a fan of seven glowing arcane missiles bursts upward and outward, each a bright white-violet orb core with a long curling ribbon trail of blue-violet light and tiny sparkles, arcing in different directions like a fireworks volley.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail.\nComposition: the lantern cupola sits low and centred, the missile fan fills the upper part; together they fill about 84% of a square canvas, nothing cropped, readable at small sizes.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground shadow plate.\nConstraints: no text, no watermark, no border."
+  }
+]

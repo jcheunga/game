@@ -130,6 +130,7 @@ public partial class BattleController
             var height = rowSize.Y + 20;
             cards.Position = new Vector2((size.X - width) / 2, size.Y - bottom - (720 - dockRect.End.Y) - height);
             cards.Size = new Vector2(width, height);
+            LayoutCaravanSpellButton(cards, cardWidth, cardHeight, size.X - right);
             _battleSettingsModal?.FitToArea(size);
         };
         GetViewport().SizeChanged += _hudLayout;
@@ -163,6 +164,8 @@ public partial class BattleController
             var modal=RealmModal.OpenInspector(layer,"Combat guide","codex",850,540);
             var body=RealmUi.Scroll(modal.Content);((ScrollContainer)body.GetParent()).SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
             body.AddChild(RealmUi.Label(CombatGuideCatalog.StatusLegend,22));
+            body.AddChild(RealmUi.SectionTitle("Caravan spell"));
+            body.AddChild(RealmUi.Label($"When the mana bar is full, the war wagon's {CaravanSpell.DisplayName} opens beside your cards. Tap it or press Space: the lantern fires arcane missiles at every enemy for {CaravanSpell.Duration:0} seconds, then recharges for {CaravanSpell.Cooldown:0} seconds.",22));
             body.AddChild(RealmUi.SectionTitle("Encounter tip"));body.AddChild(RealmUi.Label(CombatGuideCatalog.StageTip(_stage),22));RealmModal.Polish(body);
         });
         ActionButton("back", "Quit battle", RetreatToMap);

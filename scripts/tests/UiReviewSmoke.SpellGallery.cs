@@ -137,6 +137,41 @@ public partial class UiReviewSmoke
             strip.SavePng($"{_output}/{definition.Id}.png");
             GD.Print($"SPELL_GALLERY {definition.Id} ({effect})");
         }
+        if (only == null || only.Contains("caravan_arcane_barrage") || only.Contains("caravan"))
+        {
+            // The caravan spell: its slot opening beside the dock, then the barrage over a spread-out host.
+            foreach (var unit in units.Where(u => u != anchor).ToArray()) { units.Remove(unit); unit.QueueFree(); }
+            foreach (var leftover in battle.GetChildren().Where(c => c is VfxSprite or VfxBolt or VfxChains or CpuParticles2D)) leftover.QueueFree();
+            Resume();
+            for (var i = 0; i < 12; i++)
+                Dummy(Team.Enemy, i % 3 == 0 ? "enemy_brute" : "enemy_walker", new Vector2(250 + i * 62, top + 14 + (i * 37 % 30)), i % 4 == 0 ? 6f : 1f);
+            type.GetMethod("SetBattleCameraX", hidden)!.Invoke(battle, new object[] { 330f });
+            Write("_mana", 0f);
+            await Wait(.4);
+            void Save(string name)
+            {
+                RenderingServer.ForceDraw();
+                using var frame = GetViewport().GetTexture().GetImage();
+                frame.SavePng($"{_output}/{name}.png");
+            }
+            Write("_mana", Read<float>("_maxMana"));
+            Call("UpdateHud");
+            await Wait(.15); Resume(); Save("caravan_opening");
+            await Wait(.9); Resume(); Save("caravan_ready");
+            Engine.TimeScale = GallerySlowMotion;
+            Call("TryCastCaravanSpell");
+            var clock = 0f;
+            foreach (var at in new[] { .2f, .45f, .7f, 1f, 1.5f, 2.2f, 3f, 3.8f, 4.6f })
+            {
+                await Wait(at - clock);
+                clock = at;
+                Resume();
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                Save($"caravan_barrage_{at:0.00}");
+            }
+            Engine.TimeScale = 1f;
+            GD.Print($"SPELL_GALLERY caravan_arcane_barrage hits {Read<int>("_caravanMissilesLanded")}/{Read<int>("_caravanMissilesLaunched")} mana {Read<float>("_mana")}");
+        }
         GD.Print($"SPELL_GALLERY_RESULT: {_failures} failures");
         QuitAfterAudio(_failures == 0 ? 0 : 1);
     }

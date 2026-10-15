@@ -1945,7 +1945,8 @@ public partial class GameState : Node
 			return 0;
 		}
 
-		return 90 + (Math.Max(0, definition.UnlockStage - 1) * 24) + (definition.ManaCost * 5);
+		// Mana was rescaled x3.5 on 2026-10-15 (the bar grew from 30 to 100); prices keep 5 gold per old mana point.
+		return 90 + (Math.Max(0, definition.UnlockStage - 1) * 24) + (int)Math.Round(definition.ManaCost * 10 / 7.0);
 	}
 
 	public bool TryPurchaseUnit(string unitId, out string message)

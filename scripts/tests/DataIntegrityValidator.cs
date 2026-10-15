@@ -139,6 +139,23 @@ public static class DataIntegrityValidator
             Check(lifetime > 0, "CourageDropLifetime must be positive");
             Check(fade >= 0 && fade <= lifetime, "CourageDropFadeDuration must fit inside the pickup lifetime");
             Check(GetInt(combat, "CourageDropGuaranteeAfterMisses") >= 0, "CourageDropGuaranteeAfterMisses must not be negative");
+
+            // The caravan spell opens when the mana bar is full, so its cost must fit in the bar.
+            Check(combat.TryGetProperty("CaravanSpell", out var caravan), "combat_config.json must define the CaravanSpell");
+            if (caravan.ValueKind == JsonValueKind.Object)
+            {
+                var caravanCost = GetFloat(caravan, "ManaCost");
+                Check(!string.IsNullOrWhiteSpace(GetStr(caravan, "Id")) && !string.IsNullOrWhiteSpace(GetStr(caravan, "DisplayName")),
+                    "CaravanSpell needs an Id and a DisplayName");
+                Check(caravanCost > 0 && caravanCost <= GetFloat(combat, "ManaMax"),
+                    $"CaravanSpell costs {caravanCost} mana; it must be positive and fit in the {GetFloat(combat, "ManaMax")} the bar holds");
+                Check(GetFloat(caravan, "Duration") > 0 && GetFloat(caravan, "MissilesPerSecond") > 0 && GetFloat(caravan, "MissileDamage") > 0,
+                    "CaravanSpell needs a positive Duration, MissilesPerSecond and MissileDamage");
+                Check(GetInt(caravan, "MaxHitsPerEnemy") >= 1, "CaravanSpell MaxHitsPerEnemy must be at least 1");
+                Check(GetFloat(caravan, "Cooldown") >= 0, "CaravanSpell Cooldown must not be negative");
+                var picture = Path.Combine(dataDir, "..", "assets", "ui", "royal", "items", GetStr(caravan, "Id") + ".png");
+                Check(File.Exists(picture), $"CaravanSpell {GetStr(caravan, "Id")} has no painted picture in assets/ui/royal/items");
+            }
         }
 
         // ── Spell validation ──

@@ -5,7 +5,7 @@ public static class LoadingTipCatalog
 	private static readonly string[] Tips =
 	{
 		"Units deploy from the wagon. Keep an affordable melee card ready for early rushes.",
-		"Magic runs on mana, earned by felling enemies. Higher spell levels cost less.",
+		"Magic runs on mana, earned by felling enemies. Fill the bar to open the war wagon's Arcane Barrage.",
 		"The Shield Knight periodically intercepts a projectile aimed at a nearby ally.",
 		"Equip relics in the Armory to boost unit stats before battle.",
 		"Combo bonuses trigger when matching unit pairs deploy near each other.",

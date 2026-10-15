@@ -433,6 +433,7 @@ public partial class BattleController : Node2D
 		_enemyDefeats = 0;
 		_unitDamageDealt.Clear();
 		_spellsCast = 0;
+		ResetCaravanSpell();
 		_activeAbilitiesTriggered = 0;
 		_playerSignalJamSeconds = 0f;
 		_endlessCheckpointActive = false;
@@ -1347,6 +1348,7 @@ public partial class BattleController : Node2D
 		SimulateUnits(deltaF);
 		UpdateWagonDoor(deltaF);
 		TickBaseWeapons(deltaF);
+		TickCaravanSpell(deltaF);
 		ApplyFriendlyUnitSeparation(deltaF);
 		ExpireBarricades();
 		CleanupDeadUnits();
@@ -1370,6 +1372,7 @@ public partial class BattleController : Node2D
 		UpdateCouragePickupPresentation();
 		UpdateCardDragPreview();
 		UpdateBattleCamera((float)delta);
+		TickCaravanSpellAfterBattle((float)delta);
 		var reducedMotion = IsReducedMotionEnabled();
 		_playerHealthBarMotion.Update(_playerBaseHealth / Mathf.Max(1f, _playerBaseMaxHealth), (float)delta, reducedMotion);
 		_enemyHealthBarMotion.Update(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), (float)delta, reducedMotion);

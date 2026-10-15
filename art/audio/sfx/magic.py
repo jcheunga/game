@@ -113,6 +113,29 @@ def spell_resurrect(rng, k):
     return space(mix((rise, 0, 0.5), (voices, 0.3, 0.8), (bell, 0.8, 0.5), (F.shimmer(1.0, (88, 93, 96), rng=rng), 0.9, 0.3)), "cathedral", 0.3)
 
 
+@cue("spell_caravan_barrage", 1, level="event", stereo=True, cooldown=1.0, voices=1, pitch=0.0,
+     label="arcane lantern charging, then a volley of magic bolts")
+def spell_caravan_barrage(rng, k):
+    """The caravan spell: the lantern charges for 0.45 s, ignites, and hums while the missiles stream out."""
+    wind = 0.45
+    n = dsp.samples(wind)
+    t = np.arange(n) / dsp.SR
+    whine = np.sin(2 * np.pi * np.cumsum(260 + 1600 * (t / wind) ** 2) / dsp.SR) * (t / wind) ** 1.5 * 0.25
+    charge = mix((spread(whine), 0, 0.6), (F.reverse_swell(note("glockenspiel", 86, 0.6, 0.05, rng=rng), wind), 0, 0.7),
+                 (F.reverse_swell(dsp.to_mono(F.thump(62, 0.5, drop=0.2, click=0.4, rng=rng)), wind), 0, 0.5))
+    ignite = mix((spread(F.thump(58, 0.6, drop=0.45, click=0.6, rng=rng)), 0, 1.0),
+                 (spread(F.whoosh(0.6, 500, 4200, q=0.9, peak=0.25, rng=rng)), 0, 0.7),
+                 (chord("hand_chimes", [74, 77, 81], 0.7, 0.4, release=1.4, strum=0.02, rng=rng), 0.01, 0.5))
+    # A fast cascade over D minor: missiles scattering in every direction.
+    cascade = seq("glockenspiel", [86, 89, 93, 98, 101, 98, 105, 93, 101, 89, 98, 86, 93, 105, 89, 101], 0.06, 0.45, 0.2,
+                  release=0.5, rng=rng, pan_spread=0.9)
+    bed = hum(147, 3.0, rng, bright=0.7) + hum(220, 3.0, rng, bright=0.6) * 0.6 + hum(73.4, 3.0, rng, bright=0.2) * 0.8
+    tremolo = 1 + 0.25 * np.sin(2 * np.pi * 7 * np.arange(len(bed)) / dsp.SR)
+    sparkle = mix((F.shimmer(1.4, (93, 98, 101, 105), rng=rng, spread=0.8), 0), (F.shimmer(1.2, (89, 93, 98, 101), rng=rng, rise=False, spread=0.8), 1.2))
+    return space(mix((charge, 0, 0.8), (ignite, wind, 1.0), (cascade, wind + 0.05, 0.45), (spread(bed * tremolo), wind, 0.35),
+                     (sparkle, wind + 0.3, 0.35)), "hall", 0.22)
+
+
 @cue("spell_denied", 1, level="ui", bus="Interface", stereo=True, cooldown=0.3, voices=1, pitch=0.0, label="magic fizzling out")
 def spell_denied(rng, k):
     sputter = mix((F.crackle(0.3, 60, rng), 0, 0.6), (F.hiss(0.35, rng, 2000), 0, 0.4), (s("woodblock", 0.4, detune=-8, seconds=0.1, rng=rng), 0.05, 0.5))

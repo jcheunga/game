@@ -257,45 +257,45 @@ These share five loadout slots. Levels 1–3 give flat damage, healing and durab
 
 | Card | Kind | Stage | Mana | Cooldown | Duration | Power | Effect |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fireball | spell | 1 | 8 | 12s | 0s | 34 | Drop an explosive blast that clears clustered enemies. |
-| Heal | spell | 3 | 8 | 13.5s | 0s | 22 | Restore nearby allies and patch the war wagon hull. |
-| Frost Burst | spell | 9 | 8 | 15s | 3.2s | 16 | Burst a choke point and slow a whole enemy pack. |
-| Lightning Strike | spell | 15 | 10 | 16s | 0s | 42 | Arc high damage through priority ranged or support targets. |
-| Barrier Ward | spell | 23 | 10 | 18s | 4.5s | 0.72 | Ward a lane so allied units absorb less incoming damage. |
-| Stone Barricade | spell | 5 | 10 | 20s | 4.5s | 60 | Raise a temporary stone wall that blocks enemy advance. |
-| War Cry | spell | 12 | 12 | 22s | 5s | 1.35 | Rally all deployed units with a burst of attack and speed. |
-| Earthquake | spell | 28 | 12 | 24s | 3.5s | 38 | Shake the ground across a wide area dealing damage and slowing enemies. |
-| Polymorph | spell | 19 | 8 | 18s | 4s | 0 | Briefly disables one enemy. Ordinary targets resist repeated control; bosses recover sooner. |
-| Resurrect | spell | 33 | 12 | 26s | 0s | 0.5 | Bring back the last fallen ally at half health. |
-| Aegis Bolt | spell | 4 | 6 | 12s | 5s | 14 | Give one ally a small temporary shield pool. One target; does not protect the wagon or grant permanent defense. |
-| Radiant Rebuke | spell | 7 | 6 | 14s | 0.3s | 10 | Interrupt a marked channel and deal modest direct damage. Poor raw damage; ordinary attacks are not channels. |
-| Tidal Push | spell | 14 | 8 | 18s | 0.5s | 8 | Push affected enemies a short distance toward their stronghold. No large damage; displacement-resistant enemies move less. |
-| Anchor Hex | spell | 18 | 8 | 18s | 2s | 0 | Temporarily prevent special leap, burrow, phase, or charge movement. Normal walking and attacks continue; it is not a full stun. |
-| Molten Brand | spell | 24 | 10 | 18s | 3s | 12 | Briefly soften physical armor and apply a small burn. Less valuable against unarmored targets or magical wards. |
-| Meteor | spell | 29 | 18 | 28s | 3s | 30 | After a visible delay, deal strong area damage and leave a brief fire patch. High mana cost; mobile enemies may leave the warning area. |
-| Purifying Light | spell | 32 | 8 | 14s | 0s | 8 | Instantly remove blight, wounds, and burn from a few allies, with a small heal. No cleanse of root, sleep, or hostile terrain; modest healing. |
-| Withering Seal | spell | 38 | 10 | 20s | 4s | 0 | Reduce healing received and ward regeneration for a short window. Low direct damage; does not strip an existing shield or stop the stronghold's repair. |
-| Gale Step | spell | 43 | 6 | 14s | 1.5s | 0 | Move one allied troop a short distance along the battle band. No damage; interrupted setup must begin again, and committed melee cannot instantly jump to a new target. |
-| Gravitation Well | spell | 48 | 12 | 22s | 3s | 0 | Briefly draw eligible enemies toward a marked center without changing their target allegiance. No lure and no damage by itself; heavy enemies move less. |
-| Soul Harvest | spell | 53 | 4 | 22s | 0s | 4 | Consume up to three existing corpse tokens to recover mana. Needs corpses and an initial payment; empty casts are canceled for free. |
-| Consecrated Ground | spell | 58 | 10 | 22s | 4s | 3 | Prevent hostile use of corpse tokens in the area for a short window. No damage or healing; friendly conversion can still consume those tokens. |
-| Verdant Renewal | spell | 63 | 8 | 16s | 4s | 4 | Attach a short regeneration effect that follows its recipient. Slow recovery cannot save an ally from immediate lethal burst; wounds reduce it. |
-| Bramble Snare | spell | 68 | 10 | 20s | 1.5s | 3 | Create visible roots that briefly bind a limited number of crossing enemies. Rooted enemies can still attack; ranged threats need another answer. |
-| Chain Lightning | spell | 73 | 14 | 22s | 0s | 15 | Strike the primary target and jump to up to three different nearby enemies with falling damage. Weak against one isolated enemy; chain fails across large gaps. |
-| Rallying Advance | spell | 78 | 10 | 18s | 4s | 1.08 | Remove root or movement slow and briefly boost movement with displacement resistance. No attack-damage boost and no cleanse of sleep, blight, or wounds. |
-| Revealing Flare | spell | 83 | 6 | 12s | 5s | 5 | Reveal concealed enemies and identify the genuine body among illusions. No direct damage; a short local window rather than global detection. |
-| Mirror Ward | spell | 88 | 12 | 24s | 5s | 0.5 | Deflect a limited number of direct projectiles back toward their origin at reduced damage. Melee, splash, and ground fields bypass the ward. |
-| Banish | spell | 93 | 14 | 24s | 0s | 8 | Remove a limited number of temporary enemy summons or illusions; natural enemies lose one removable ward instead. Cannot delete natural elites, bosses, or hostile structures. |
-| Royal Edict | spell | 98 | 16 | 28s | 2s | 0 | Briefly suppress eligible enemy special abilities and command auras. Enemies keep their ordinary attacks and movement; cast cost is high. |
-| Palisade Kit | tactical | 6 | 6 | 18s | 10s | 0 | Builds a cheap wooden blocker after a short, interruptible setup. Buys time against rushers; weaker and slower to appear than Stone Barricade. |
-| Firepot Mine | tactical | 25 | 10 | 20s | 8s | 32 | A ground trap explodes on the first enemy and leaves a short burning patch. Area denial; enemies can destroy the visible mine before triggering it. |
-| Healing Shrine | tactical | 8 | 10 | 24s | 10s | 14 | A stationary shrine emits a limited number of healing pulses. Sustained recovery; cannot heal the wagon and can be destroyed. |
-| Bolt Turret | tactical | 28 | 12 | 26s | 12s | 12 | A placed bolt-thrower fires a finite number of ordinary shots. Rear defense; does not attack structures and needs a safe position. |
-| Supply Crate | tactical | 18 | 10 | 26s | 9s | 8 | A crate yields small courage packets while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate. |
-| Frost Trap | tactical | 44 | 8 | 20s | 8s | 8 | The first enemy triggers a short freeze and consumes the trap. Stops a dangerous advance; control resistance applies to elites. |
-| Decoy Lantern | tactical | 84 | 8 | 22s | 5s | 0 | A placed lantern lures eligible nearby enemies briefly. Protects supports or gathers a pack; bosses resist and area damage destroys it. |
-| Smoke Pot | tactical | 16 | 8 | 20s | 4s | 0 | A small smoke area breaks enemy target locks and conceals moving allies briefly. Enables retreat or setup; attacks reveal allies and hazards still hurt. |
-| Purifying Censer | tactical | 36 | 10 | 24s | 8s | 0 | A temporary field removes one blight or wound per pulse. Allows healing through plague pressure; does not cleanse the entire battlefield. |
-| Repair Cache | tactical | 21 | 10 | 26s | 8s | 16 | A placed cache near the wagon applies a few repair pulses while protected. Emergency repair; never increases maximum wagon health. |
-| Grounding Rod | tactical | 55 | 8 | 22s | 8s | 0 | A placed rod interrupts one marked enemy channel in its radius, then burns out. Answers a summoner or null cast; must be positioned before completion. |
-| War Horn | tactical | 48 | 6 | 18s | 5s | 0 | Marks one enemy near the aimed point as a temporary focus target for eligible allies. Prioritizes a healer or commander; never forces units through blockers. |
+| Fireball | spell | 1 | 28 | 12s | 0s | 34 | Drop an explosive blast that clears clustered enemies. |
+| Heal | spell | 3 | 28 | 13.5s | 0s | 22 | Restore nearby allies and patch the war wagon hull. |
+| Frost Burst | spell | 9 | 28 | 15s | 3.2s | 16 | Burst a choke point and slow a whole enemy pack. |
+| Lightning Strike | spell | 15 | 35 | 16s | 0s | 42 | Arc high damage through priority ranged or support targets. |
+| Barrier Ward | spell | 23 | 35 | 18s | 4.5s | 0.72 | Ward a lane so allied units absorb less incoming damage. |
+| Stone Barricade | spell | 5 | 35 | 20s | 4.5s | 60 | Raise a temporary stone wall that blocks enemy advance. |
+| War Cry | spell | 12 | 42 | 22s | 5s | 1.35 | Rally all deployed units with a burst of attack and speed. |
+| Earthquake | spell | 28 | 42 | 24s | 3.5s | 38 | Shake the ground across a wide area dealing damage and slowing enemies. |
+| Polymorph | spell | 19 | 28 | 18s | 4s | 0 | Briefly disables one enemy. Ordinary targets resist repeated control; bosses recover sooner. |
+| Resurrect | spell | 33 | 42 | 26s | 0s | 0.5 | Bring back the last fallen ally at half health. |
+| Aegis Bolt | spell | 4 | 21 | 12s | 5s | 14 | Give one ally a small temporary shield pool. One target; does not protect the wagon or grant permanent defense. |
+| Radiant Rebuke | spell | 7 | 21 | 14s | 0.3s | 10 | Interrupt a marked channel and deal modest direct damage. Poor raw damage; ordinary attacks are not channels. |
+| Tidal Push | spell | 14 | 28 | 18s | 0.5s | 8 | Push affected enemies a short distance toward their stronghold. No large damage; displacement-resistant enemies move less. |
+| Anchor Hex | spell | 18 | 28 | 18s | 2s | 0 | Temporarily prevent special leap, burrow, phase, or charge movement. Normal walking and attacks continue; it is not a full stun. |
+| Molten Brand | spell | 24 | 35 | 18s | 3s | 12 | Briefly soften physical armor and apply a small burn. Less valuable against unarmored targets or magical wards. |
+| Meteor | spell | 29 | 63 | 28s | 3s | 30 | After a visible delay, deal strong area damage and leave a brief fire patch. High mana cost; mobile enemies may leave the warning area. |
+| Purifying Light | spell | 32 | 28 | 14s | 0s | 8 | Instantly remove blight, wounds, and burn from a few allies, with a small heal. No cleanse of root, sleep, or hostile terrain; modest healing. |
+| Withering Seal | spell | 38 | 35 | 20s | 4s | 0 | Reduce healing received and ward regeneration for a short window. Low direct damage; does not strip an existing shield or stop the stronghold's repair. |
+| Gale Step | spell | 43 | 21 | 14s | 1.5s | 0 | Move one allied troop a short distance along the battle band. No damage; interrupted setup must begin again, and committed melee cannot instantly jump to a new target. |
+| Gravitation Well | spell | 48 | 42 | 22s | 3s | 0 | Briefly draw eligible enemies toward a marked center without changing their target allegiance. No lure and no damage by itself; heavy enemies move less. |
+| Soul Harvest | spell | 53 | 14 | 22s | 0s | 14 | Consume up to three existing corpse tokens to recover mana. Needs corpses and an initial payment; empty casts are canceled for free. |
+| Consecrated Ground | spell | 58 | 35 | 22s | 4s | 3 | Prevent hostile use of corpse tokens in the area for a short window. No damage or healing; friendly conversion can still consume those tokens. |
+| Verdant Renewal | spell | 63 | 28 | 16s | 4s | 4 | Attach a short regeneration effect that follows its recipient. Slow recovery cannot save an ally from immediate lethal burst; wounds reduce it. |
+| Bramble Snare | spell | 68 | 35 | 20s | 1.5s | 3 | Create visible roots that briefly bind a limited number of crossing enemies. Rooted enemies can still attack; ranged threats need another answer. |
+| Chain Lightning | spell | 73 | 49 | 22s | 0s | 15 | Strike the primary target and jump to up to three different nearby enemies with falling damage. Weak against one isolated enemy; chain fails across large gaps. |
+| Rallying Advance | spell | 78 | 35 | 18s | 4s | 1.08 | Remove root or movement slow and briefly boost movement with displacement resistance. No attack-damage boost and no cleanse of sleep, blight, or wounds. |
+| Revealing Flare | spell | 83 | 21 | 12s | 5s | 5 | Reveal concealed enemies and identify the genuine body among illusions. No direct damage; a short local window rather than global detection. |
+| Mirror Ward | spell | 88 | 42 | 24s | 5s | 0.5 | Deflect a limited number of direct projectiles back toward their origin at reduced damage. Melee, splash, and ground fields bypass the ward. |
+| Banish | spell | 93 | 49 | 24s | 0s | 8 | Remove a limited number of temporary enemy summons or illusions; natural enemies lose one removable ward instead. Cannot delete natural elites, bosses, or hostile structures. |
+| Royal Edict | spell | 98 | 56 | 28s | 2s | 0 | Briefly suppress eligible enemy special abilities and command auras. Enemies keep their ordinary attacks and movement; cast cost is high. |
+| Palisade Kit | tactical | 6 | 21 | 18s | 10s | 0 | Builds a cheap wooden blocker after a short, interruptible setup. Buys time against rushers; weaker and slower to appear than Stone Barricade. |
+| Firepot Mine | tactical | 25 | 35 | 20s | 8s | 32 | A ground trap explodes on the first enemy and leaves a short burning patch. Area denial; enemies can destroy the visible mine before triggering it. |
+| Healing Shrine | tactical | 8 | 35 | 24s | 10s | 14 | A stationary shrine emits a limited number of healing pulses. Sustained recovery; cannot heal the wagon and can be destroyed. |
+| Bolt Turret | tactical | 28 | 42 | 26s | 12s | 12 | A placed bolt-thrower fires a finite number of ordinary shots. Rear defense; does not attack structures and needs a safe position. |
+| Supply Crate | tactical | 18 | 35 | 26s | 9s | 8 | A crate yields small courage packets while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate. |
+| Frost Trap | tactical | 44 | 28 | 20s | 8s | 8 | The first enemy triggers a short freeze and consumes the trap. Stops a dangerous advance; control resistance applies to elites. |
+| Decoy Lantern | tactical | 84 | 28 | 22s | 5s | 0 | A placed lantern lures eligible nearby enemies briefly. Protects supports or gathers a pack; bosses resist and area damage destroys it. |
+| Smoke Pot | tactical | 16 | 28 | 20s | 4s | 0 | A small smoke area breaks enemy target locks and conceals moving allies briefly. Enables retreat or setup; attacks reveal allies and hazards still hurt. |
+| Purifying Censer | tactical | 36 | 35 | 24s | 8s | 0 | A temporary field removes one blight or wound per pulse. Allows healing through plague pressure; does not cleanse the entire battlefield. |
+| Repair Cache | tactical | 21 | 35 | 26s | 8s | 16 | A placed cache near the wagon applies a few repair pulses while protected. Emergency repair; never increases maximum wagon health. |
+| Grounding Rod | tactical | 55 | 28 | 22s | 8s | 0 | A placed rod interrupts one marked enemy channel in its radius, then burns out. Answers a summoner or null cast; must be positioned before completion. |
+| War Horn | tactical | 48 | 21 | 18s | 5s | 0 | Marks one enemy near the aimed point as a temporary focus target for eligible allies. Prioritizes a healer or commander; never forces units through blockers. |

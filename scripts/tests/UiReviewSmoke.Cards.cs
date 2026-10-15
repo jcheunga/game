@@ -32,7 +32,8 @@ public partial class UiReviewSmoke
             if(Read<bool>("_battlePaused")) Call("TogglePause");
             var deck=Read<BattleDeckState>("_deck");
             var spells=Read<BattleSpellState>("_spellDeck");
-            var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
+            // Deck cards only; the caravan spell's card is reviewed on its own below.
+            var cards=Walk(battle).OfType<BattleActionCard>().Where(c=>c.GetParent()?.GetParent() is not CaravanSpellButton).ToArray();
             var buttons=cards.Select(c=>(Button)c.GetParent()).ToArray();
             Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud");
             await Wait(.1);
@@ -114,6 +115,26 @@ public partial class UiReviewSmoke
             Check(buttons.All(b=>!b.Disabled) && cards.All(c=>c.CooldownRatio==0 && !c.CooldownShade.Visible
                     && (float)((ShaderMaterial)c.Portrait.Material).GetShaderParameter("split_y")>c.Portrait.Size.Y),
                 $"{prefix}: recovery returns cards to the clean icon-only state");
+            // The caravan spell opens beside the dock on a full mana bar, and a tap on it casts.
+            var caravan=Read<CaravanSpellButton>("_caravanSpellButton");
+            var dock=Read<PanelContainer>("_cardDock");
+            Write("_mana",Read<float>("_maxMana")); Call("UpdateHud"); await Wait(.7);
+            var slot=caravan.GetGlobalRect(); var tray=dock.GetGlobalRect(); var view=GetViewport().GetVisibleRect();
+            Check(caravan.IsOpen && caravan.Visible && !caravan.Card.Disabled,$"{prefix}: a full mana bar opens the caravan spell, ready to cast");
+            Check(slot.Position.X>=tray.End.X && view.Encloses(slot) && Mathf.Abs(slot.End.Y-tray.End.Y)<2 && slot.Size.Y>tray.Size.Y,
+                $"{prefix}: the caravan slot stands right of the dock on its base line, larger than it and inside the screen");
+            Check(!string.IsNullOrWhiteSpace(caravan.Card.AccessibilityName) && caravan.Art.Portrait.Texture!=null && !caravan.Art.CostPlate.Visible,
+                $"{prefix}: the caravan card shows its painted lantern and can be identified");
+            await Capture(prefix+"-caravan-ready");
+            var tap=slot.GetCenter();
+            Send(new InputEventMouseMotion {Position=tap,GlobalPosition=tap});
+            Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=true,Position=tap,GlobalPosition=tap});
+            Send(new InputEventMouseButton {ButtonIndex=MouseButton.Left,Pressed=false,Position=tap,GlobalPosition=tap});
+            await Wait(.1);
+            Check(Read<int>("_caravanCasts")==1 && Read<float>("_mana")<.01f,$"{prefix}: tapping the caravan slot casts it and spends the bar");
+            Call("UpdateHud"); await Wait(.5);
+            Check(!caravan.IsOpen,$"{prefix}: the caravan slot closes once the bar is spent");
+
             Write("_endlessCheckpointActive",true); Call("UpdateHud");
             Check(buttons.All(b=>b.Disabled),$"{prefix}: checkpoint blocking is preserved");
             Write("_endlessCheckpointActive",false); Write("_battleEnded",true); Call("UpdateHud");

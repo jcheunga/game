@@ -39,6 +39,9 @@ last-fallen-ally Resurrect keep their special targeting. Returning to the cards,
 releasing over other UI or outside the field cancels without spending. Ground
 taps never deploy units.
 
+When the mana bar is full, the war wagon's own spell opens in a larger slot on the right of the dock. A tap or
+Space casts it at once, with no aiming. See [caravan spell](CARAVAN_SPELL.md).
+
 Courage packs sit on the battlefield until clicked or tapped, and expire after
 8 seconds of active battle time. Pickup taps take priority over aimed magic,
 preserve the armed spell and spend no mana. A dragged spell still lands normally

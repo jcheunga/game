@@ -101,9 +101,9 @@ public partial class UiReviewSmoke
         Check(state.TrySpendStageEntryFood(1, out _) && state.Food == entryFood - entryCost, "Stage entry charges its existing food cost");
         state.PrepareCampaignBattle(); state.ApplyVictory(1, 0, 0, 3);
         var second = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && tile.Site.Stage == 2);
-        Check(AdventureTileCatalog.Neighbors(leader).All(state.IsAdventureTileRevealed) && !state.IsAdventureTileRevealed(second)
-            && tilesCity.Count(state.IsAdventureTileRevealed) == openedBeforeVisit && state.GetStageStars(1) == 3,
-            "The first victory keeps its stars; the next stage still lies beyond the charted land");
+        Check(AdventureTileCatalog.Neighbors(leader).All(state.IsAdventureTileComplete) && !state.IsAdventureTileRevealed(second)
+            && tilesCity.Count(state.IsAdventureTileRevealed) > openedBeforeVisit && state.GetStageStars(1) == 3,
+            "The first victory keeps its stars and opens every tile around the stage; the next stage still lies beyond the charted land");
         // Chart a road out to the stage's cache and the first find, as a player would.
         foreach (var target in new[] { supply, AdventureTileCatalog.Find("city", AdventureDiscoveryCatalog.ForMap("city")[0].Id) })
             foreach (var step in GameState.AdventureTilePath(leader, target).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(step, out _);
@@ -166,10 +166,10 @@ public partial class UiReviewSmoke
         var withFind = state.BuildSaveData();
         withFind.AdventureOpenTiles = withFind.AdventureOpenTiles.Append(AdventureTileCatalog.Neighbors(unvisited).First(tile => !tile.HasInterest).Id).ToArray();
         var noFood = System.Text.Json.JsonSerializer.Deserialize<GameSaveData>(System.Text.Json.JsonSerializer.Serialize(withFind))!;
-        noFood.Food = 1; noFood.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); Restore(noFood);
+        noFood.Food = 0; noFood.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); Restore(noFood);
         var caravan = state.GetAdventureCaravanTile("city").Id;
         Check(!state.TryReachAdventureTile(unvisited, out var costMessage) && costMessage.Contains("1 food") && !state.TryCollectAdventureTile(unvisited, out _)
-            && !state.HasClaimedAdventureDiscovery(unvisited.Id) && state.Food == 1 && state.GetAdventureCaravanTile("city").Id == caravan,
+            && !state.HasClaimedAdventureDiscovery(unvisited.Id) && state.Food == 0 && state.GetAdventureCaravanTile("city").Id == caravan,
             "Without 1 food a frontier resource tile explains its cost and stays closed, charging nothing");
         Restore(withFind);
         var immediateFood = state.Food - GameState.AdventureTileFoodCost + (unvisited.Discovery.Kind == AdventureDiscoveryKind.Food ? unvisited.Discovery.Amount : 0);

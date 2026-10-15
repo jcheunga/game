@@ -83,10 +83,22 @@ public partial class GameState
         if (tile?.Site?.Kind == AdventureSiteKind.Leader) { message = "Win this stage's battle to chart its tile."; return false; }
         if (!CanTravelToAdventureTile(tile, out message)) return false;
         Food -= AdventureTileFoodCost;
-        OpenAdventureTile(tile);
         _reachedAdventureTiles.Add(tile.Id);
         _adventureCaravanTiles[tile.MapId] = tile.Id;
-        message = "Land charted";
+        message = GatherAdventureTile(tile, spread: true);
+        LastResultMessage = message;
+        Persist();
+        FoodChanged?.Invoke();
+        return true;
+    }
+    /// <summary>
+    /// Opens a tile and gathers whatever lies on it. When it spreads, a survey chart and provisions beside a stage also
+    /// chart the plain ground around them for free; that ground gathers nothing, so it reaches one ring only.
+    /// </summary>
+    private string GatherAdventureTile(AdventureTile tile, bool spread)
+    {
+        OpenAdventureTile(tile);
+        var message = "Land charted";
         if (tile.Site is { } site)
         {
             _visitedAdventureSites.Add(site.Id);
@@ -101,24 +113,24 @@ public partial class GameState
                 case AdventureDiscoveryKind.Food: Food += find.Amount; break;
                 case AdventureDiscoveryKind.Gold: Gold += find.Amount; break;
                 case AdventureDiscoveryKind.Essence: Essence += find.Amount; break;
-                // A surveyor's chart charts the plain ground around it for free.
-                case AdventureDiscoveryKind.Survey:
-                    foreach (var neighbor in AdventureTileCatalog.Neighbors(tile).Where(neighbor => !neighbor.HasInterest)) OpenAdventureTile(neighbor);
-                    break;
             }
             message = find.RewardText;
         }
-        LastResultMessage = message;
-        Persist();
-        FoodChanged?.Invoke();
+        var provisions = tile.Site?.Kind == AdventureSiteKind.Food || tile.Discovery?.Kind == AdventureDiscoveryKind.Food;
+        if (spread && (tile.Discovery?.Kind == AdventureDiscoveryKind.Survey
+            || provisions && AdventureTileCatalog.Neighbors(tile).Any(neighbor => neighbor.Site?.Kind == AdventureSiteKind.Leader)))
+            foreach (var neighbor in AdventureTileCatalog.Neighbors(tile).Where(neighbor => !neighbor.HasInterest)) OpenAdventureTile(neighbor);
         if (tile.Discovery != null) AdventureDiscoveryFound?.Invoke(tile.Discovery);
-        return true;
+        return message;
     }
     private void OpenAdventureTile(AdventureTile tile)
     {
         if (_openedAdventureTiles.Add(tile.Id)) AdventureKnowledgeRevision++;
     }
-    /// <summary>A won stage is charted, so the land around it joins the frontier.</summary>
+    /// <summary>
+    /// A won stage is charted with every tile around it, gathering what lies there for free. Nothing gathered this
+    /// way spreads, so the land beyond only joins the frontier.
+    /// </summary>
     private void RevealAdventureStageVictory(int stage)
     {
         var site = AdventureMapCatalog.Leader(stage);
@@ -126,6 +138,8 @@ public partial class GameState
         var tile = AdventureTileCatalog.Find(site.MapId, site.Id);
         _reachedAdventureTiles.Add(tile.Id);
         OpenAdventureTile(tile);
+        foreach (var neighbor in AdventureTileCatalog.Neighbors(tile).Where(neighbor => neighbor.Site?.Kind != AdventureSiteKind.Leader && !IsAdventureTileComplete(neighbor)))
+            GatherAdventureTile(neighbor, spread: false);
     }
     private void LoadAdventureTiles(GameSaveData saved)
     {

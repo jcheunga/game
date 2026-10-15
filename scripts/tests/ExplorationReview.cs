@@ -54,6 +54,7 @@ public partial class ExplorationReview : Node
                     foreach (var next in AdventureTileCatalog.Neighbors(tile)) if (seen.TryAdd(next.Id,seen[tile.Id]+1)) queue.Enqueue(next); }
                 return int.MaxValue;
             }
+            bool BesideStage(AdventureTile tile) => AdventureTileCatalog.Neighbors(tile).Any(t=>t.Site?.Kind==AdventureSiteKind.Leader);
             foreach (var zone in AssetCoverageCatalog.RouteIds)
             {
                 var tiles=AdventureTileCatalog.ForMap(zone); var stages=Enumerable.Range(0,10).Select(i=>AdventureTileCatalog.Stage(zone,i)).ToArray();
@@ -74,7 +75,10 @@ public partial class ExplorationReview : Node
                     zone+" scatters 39 resources over mostly plain ground, never side by side");
                 // Food economy: tiles to open every road, then the shortest detours to every food source.
                 var opened=new System.Collections.Generic.HashSet<string>(AdventureTileCatalog.Roads.SelectMany(road=>GameState.AdventureTilePath(stages[road.From],stages[road.To])).Select(t=>t.Id));
-                var roadTiles=opened.Count(id=>AdventureTileCatalog.Find(zone,id).Site?.Kind!=AdventureSiteKind.Leader);
+                // Winning a stage opens every tile around it for free, gathering what lies there.
+                var free=stages.SelectMany(AdventureTileCatalog.Neighbors).Select(t=>t.Id).ToHashSet();
+                var roadTiles=opened.Count(id=>AdventureTileCatalog.Find(zone,id).Site?.Kind!=AdventureSiteKind.Leader && !free.Contains(id));
+                opened.UnionWith(free);
                 var foodSources=tiles.Where(t=>t.Discovery?.Kind==AdventureDiscoveryKind.Food || t.Site?.Kind==AdventureSiteKind.Food).ToArray();
                 var detour=0;
                 foreach (var source in foodSources.OrderBy(t=>opened.Contains(t.Id)?0:1))
@@ -86,7 +90,8 @@ public partial class ExplorationReview : Node
                 }
                 var foodGained=foodSources.Sum(t=>t.Discovery?.Amount ?? t.Site.FoodReward);
                 var entry=stages.Sum(t=>GameState.Instance.GetStageEntryFoodCost(t.Site.Stage));
-                GD.Print($"EXPLORATION_ECONOMY: {zone} road tiles {roadTiles} ({roadTiles*GameState.AdventureTileFoodCost} food), food detours {detour} tiles, {foodSources.Length} food sources pay {foodGained} for {foodSources.Length*GameState.AdventureTileFoodCost} to open, battles {entry}, first wins pay {stages.Length*GameState.CampaignFirstClearFood}; net {foodGained+stages.Length*GameState.CampaignFirstClearFood-(roadTiles+detour+foodSources.Length)*GameState.AdventureTileFoodCost-entry}");
+                GD.Print($"EXPLORATION_ECONOMY: {zone} road tiles {roadTiles} ({roadTiles*GameState.AdventureTileFoodCost} food), food detours {detour} tiles, {foodSources.Length} food sources ({foodSources.Count(BesideStage)} beside a stage, gathered free) pay {foodGained} for {foodSources.Count(t=>!free.Contains(t.Id))*GameState.AdventureTileFoodCost} to open, battles {entry}, first wins pay {stages.Length*GameState.CampaignFirstClearFood}; net {foodGained+stages.Length*GameState.CampaignFirstClearFood-(roadTiles+detour+foodSources.Count(t=>!free.Contains(t.Id)))*GameState.AdventureTileFoodCost-entry}");
+                GD.Print($"EXPLORATION_STAGE_RINGS: {zone} resources beside a stage: {string.Join(", ",tiles.Where(t=>t.IsResource && BesideStage(t)).Select(t=>t.Discovery?.Kind.ToString() ?? t.Site.Kind.ToString()))}");
                 var finds=AdventureDiscoveryCatalog.ForMap(zone);
                 Check(finds.Count==28 && finds.Select(f=>f.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length
                     && finds[0].Kind==AdventureDiscoveryKind.Food && Steps(stages[0],AdventureTileCatalog.Find(zone,finds[0].Id))<=4,zone+" offers every kind of find, with provisions close to the start");
@@ -115,8 +120,11 @@ public partial class ExplorationReview : Node
             foreach (var tile in GameState.AdventureTilePath(start,second).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(tile,out _);
             Check(state.IsAdventureTileFrontier(second) && state.CanTravelToAdventureTile(second,out _) && !state.TryOpenAdventureTile(second,out _),
                 "A stage on the frontier is challenged rather than bought");
+            var victoryExpected=city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).Append(second.Id).Concat(AdventureTileCatalog.Neighbors(second).Select(t=>t.Id)).ToHashSet();
             state.PrepareCampaignBattle(); state.ApplyVictory(second.Site.Stage,0,0,3);
-            Check(state.IsAdventureTileOpened(second) && AdventureTileCatalog.Neighbors(second).All(state.IsAdventureTileRevealed),"Winning a stage charts its tile and reveals the land around it");
+            Check(state.IsAdventureTileOpened(second) && city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).ToHashSet().SetEquals(victoryExpected)
+                && AdventureTileCatalog.Neighbors(second).All(state.IsAdventureTileComplete) && AdventureTileCatalog.Neighbors(second).SelectMany(AdventureTileCatalog.Neighbors).All(state.IsAdventureTileRevealed),
+                "Winning a stage opens every tile around it for free and reveals only the land beyond");
             var cache=city.First(t=>t.Id=="supply-1"); var cacheFood=state.Food; var cacheGold=state.Gold;
             foreach (var tile in GameState.AdventureTilePath(start,cache).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(tile,out _);
             cacheFood=state.Food; cacheGold=state.Gold;
@@ -130,6 +138,21 @@ public partial class ExplorationReview : Node
             var charted=state.BuildSaveData(); state.ReloadFromDisk();
             Check(city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).ToHashSet().SetEquals(charted.AdventureOpenTiles.Append(start.Id)) && state.HasVisitedAdventureSite(cache.Id),
                 "A reload keeps every charted tile and gathered cache");
+            // Provisions beside a stage open the frontier around them without food, one ring deep; elsewhere they open like any tile.
+            var cityFood=city.Where(t=>t.Discovery?.Kind==AdventureDiscoveryKind.Food || t.Site?.Kind==AdventureSiteKind.Food).ToArray();
+            Check(cityFood.Any(BesideStage) && cityFood.Any(t=>!BesideStage(t)),"city has provisions both beside a stage and away from one");
+            foreach (var provisions in new[]{cityFood.FirstOrDefault(BesideStage),cityFood.FirstOrDefault(t=>!BesideStage(t))}.Where(t=>t!=null))
+            {
+                var beside=BesideStage(provisions);
+                Reset(); var fixture=state.BuildSaveData(); fixture.Food=10; fixture.FoodRechargedAtUnixSeconds=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                fixture.AdventureOpenTiles=new[]{AdventureTileCatalog.Neighbors(provisions).First(t=>!t.HasInterest).Id}; Restore(fixture);
+                var ring=AdventureTileCatalog.Neighbors(provisions).Where(t=>!t.HasInterest).Select(t=>t.Id).ToArray();
+                var expected=city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).Append(provisions.Id).Concat(beside ? ring : Array.Empty<string>()).ToHashSet();
+                Check(ring.Count(id=>!state.IsAdventureTileOpened(AdventureTileCatalog.Find("city",id)))>=2 && state.TryOpenAdventureTile(provisions,out _)
+                    && state.Food==10-GameState.AdventureTileFoodCost+(provisions.Discovery?.Amount ?? provisions.Site.FoodReward)
+                    && expected.SetEquals(city.Where(state.IsAdventureTileOpened).Select(t=>t.Id)) && AdventureTileCatalog.Neighbors(provisions).All(state.IsAdventureTileRevealed),
+                    provisions.Title+(beside ? " beside a stage opens the plain ground around it for free and nothing beyond" : " away from any stage opens only its own tile"));
+            }
             // Saves from the smaller atlas: chart the roads between won stages, and all but the resources of a beaten zone.
             Reset(); var former=state.BuildSaveData(); former.Version=46; former.AdventureOpenTiles=new[]{"ground-city-3-4","discovery-city-5-7"};
             former.AdventureCaravanTiles["city"]="ground-city-3-4"; former.StageStars=new int[state.MaxStage];

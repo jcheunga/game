@@ -104,12 +104,16 @@ public partial class UiReviewSmoke
                     Check(((Button)art.GetParent()).Disabled && Mathf.IsEqualApprox(art.CooldownRatio,.5f)
                         && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel),$"{prefix}: unit/spell cooldown shows a proportional shade without a countdown");
                     Check(art.CostLabel.IsVisibleInTree() && art.CostLabel.SelfModulate==Colors.White
-                        && art.CostPlate.GetIndex()>art.GetChildren().OfType<ColorRect>().Single().GetIndex(),
+                        && art.CostPlate.GetIndex()>art.CooldownShade.GetIndex(),
                         $"{prefix}: cooldown never obscures the cost badge");
+                    var split=(float)((ShaderMaterial)art.Portrait.Material).GetShaderParameter("split_y");
+                    Check(art.CooldownShade.Visible && split>0 && split<art.Portrait.Size.Y && art.Portrait.Modulate==Colors.White,
+                        $"{prefix}: the art greys below the cooldown edge and keeps full colour above it");
                 }
                 await Capture(prefix+"-cooldown");
                 deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud");
-                Check(buttons.All(b=>!b.Disabled) && cards.All(c=>c.CooldownRatio==0),
+                Check(buttons.All(b=>!b.Disabled) && cards.All(c=>c.CooldownRatio==0 && !c.CooldownShade.Visible
+                        && (float)((ShaderMaterial)c.Portrait.Material).GetShaderParameter("split_y")>c.Portrait.Size.Y),
                     $"{prefix}: recovery returns cards to the clean icon-only state");
                 Write("_endlessCheckpointActive",true); Call("UpdateHud");
                 Check(buttons.All(b=>b.Disabled),$"{prefix}: checkpoint blocking is preserved");

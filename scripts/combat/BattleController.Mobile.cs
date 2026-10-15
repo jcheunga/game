@@ -114,7 +114,8 @@ public partial class BattleController
         _mobilePlacementHint.Text=_mobileClearView?"View only · Drag to explore · Tap Cards to deploy":
             _cardDragging?"Release on the field · Return to the cards to cancel":
             string.IsNullOrEmpty(armed)?"":$"{armed} · Tap the field to cast";
-        _mobileCancelButton.Visible=!_mobileClearView && !string.IsNullOrEmpty(armed);
+        // A held card is cancelled by returning it to the bar; the button is for magic armed by keyboard.
+        _mobileCancelButton.Visible=!_mobileClearView && !_cardDragging && !string.IsNullOrEmpty(armed);
     }
 
     private void ToggleMobileOverview()

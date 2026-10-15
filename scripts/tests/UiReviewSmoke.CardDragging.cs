@@ -111,9 +111,25 @@ public partial class UiReviewSmoke
                     mode+": healing magic reaches allies at the drop location");
 
                 count=Read<int>("_playerDeployments"); casts=Read<int>("_spellsCast");
-                Start(deck.Roster.Count); Move(CardPoint(0)); Up(CardPoint(0));
+                Start(deck.Roster.Count); Move(CardPoint(0));
+                Check(cards[deck.Roster.Count].Selected,mode+": the held magic card stays lit while its drag reads red");
+                Up(CardPoint(0));
                 Check(Read<int>("_playerDeployments")==count && Read<int>("_spellsCast")==casts && Read<float>("_mana")==Read<float>("_maxMana"),
                     mode+": returning a magic card to the bar cancels for free");
+                Check(cards.All(c=>!c.Selected),mode+": a red release drops the magic card's gold frame");
+                Ready(); Down(CardPoint(deck.Roster.Count)); Up(CardPoint(deck.Roster.Count));
+                Check(cards.All(c=>!c.Selected) && Read<object>("_selectionMode").ToString()!="Spell" && Read<int>("_spellsCast")==casts,
+                    mode+": tapping a magic card arms nothing; magic is dragged onto the field");
+                void ArmByKey() { Send(new InputEventKey {Keycode=Key.Q,Pressed=true}); Send(new InputEventKey {Keycode=Key.Q,Pressed=false}); }
+                Ready(); ArmByKey();
+                Check(cards[deck.Roster.Count].Selected,mode+": the Q hotkey still arms the first magic card");
+                Start(deck.Roster.Count+1); Move(CardPoint(0));
+                if(touch) Check(!Read<Button>("_mobileCancelButton").Visible,mode+": the Cancel button hides while a card is held");
+                Up(CardPoint(0));
+                Check(cards.All(c=>!c.Selected) && Read<object>("_selectionMode").ToString()!="Spell",
+                    mode+": a red release disarms all magic, even a spell armed before the drag");
+                Ready(); ArmByKey(); Call("ClearArmedSelection");
+                Check(cards.All(c=>!c.Selected),mode+": cancelling armed magic drops the gold frame");
                 foreach(var spell in new[]{false,true})
                 {
                     var index=spell?deck.Roster.Count:0;

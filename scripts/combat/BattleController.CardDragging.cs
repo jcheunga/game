@@ -8,8 +8,7 @@ public partial class BattleController
     private Label _cardDragHint;
     private Button _dragCardButton;
     private UnitDefinition _dragUnit;
-    private SpellDefinition _dragSpell, _previousDragSpell;
-    private BattleSelectionMode _previousDragMode;
+    private SpellDefinition _dragSpell;
     private ScrollContainer _dragCardScroll;
     private bool _cardPointerDown, _cardDragging, _cardScrolling;
     private int _cardPointerId;
@@ -127,7 +126,6 @@ public partial class BattleController
             AudioDirector.Instance?.PlayCardPickup();
             _cardPointerId = id; _cardPointerStart = _cardPointerLast = _cardPointerPosition = point;
             _dragCardButton = hit;
-            _previousDragMode = _selectionMode; _previousDragSpell = _spellDeck.ArmedSpell;
             _dragCardScroll = null;
             for (var parent = hit.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is ScrollContainer scroll) { _dragCardScroll = scroll; break; }
@@ -177,7 +175,8 @@ public partial class BattleController
         else
         {
             EndCardGesture(true, false);
-            if (tap) { if (unit != null) { AudioDirector.Instance?.PlayCardDrop(); DeployPlayerUnit(unit); } else ArmSpell(spell); }
+            // Magic is only ever dragged onto the field: a tap on its card arms nothing.
+            if (tap && unit != null) { AudioDirector.Instance?.PlayCardDrop(); DeployPlayerUnit(unit); }
             else if (!scrolled) AudioDirector.Instance?.PlayCardCancel();
         }
         return true;
@@ -192,10 +191,11 @@ public partial class BattleController
     {
         if (discardRelease) _discardCardRelease = _cardPointerId;
         if (_cardPointerId >= 0) _cardMouseBlockUntil = Time.GetTicksMsec() + 250;
+        // A cancelled aim leaves no magic armed, even a spell tapped before the drag, so no card stays lit.
         if (restoreSelection && _cardDragging)
         {
-            _selectionMode = _previousDragMode;
-            if (_previousDragSpell != null) _spellDeck.Arm(_previousDragSpell); else _spellDeck.Disarm();
+            _selectionMode = BattleSelectionMode.Unit;
+            _spellDeck.Disarm();
         }
         _cardPointerDown = _cardDragging = _cardScrolling = false;
         _dragCardButton = null; _dragUnit = null; _dragSpell = null; _dragCardScroll = null;

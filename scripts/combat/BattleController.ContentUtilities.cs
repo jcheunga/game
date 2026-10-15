@@ -108,7 +108,7 @@ public partial class BattleController
                 break;
             case "revealing_flare":
                 AddContentField("reveal",Team.Player,point,spell.Radius,spell.Duration,0,spell.DisplayName);
-                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.Reveal();e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical); }
+                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.Reveal();e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical);affected.Add(e); }
                 break;
             case "mirror_ward":
                 foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius).Take(3)) { a.ProjectileMirrorTime=spell.Duration;a.ProjectileMirrorCharges=1;affected.Add(a); }

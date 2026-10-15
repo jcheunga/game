@@ -485,7 +485,11 @@ public partial class BattleController
             if(field.Kind=="reveal" && !friendly) unit.Reveal();
             if(field.Kind=="null" && !friendly) { unit.RemoveShield();unit.Silence(1.2f); }
             if(field.Kind=="gravity" && !friendly)
-            { OffsetUnitWithinBattlefield(unit,(field.Position-unit.Position).LimitLength(10));unit.ApplyTemporarySpeedModifier(.8f,1.1f); }
+            {
+                OffsetUnitWithinBattlefield(unit,(field.Position-unit.Position).LimitLength(10));unit.ApplyTemporarySpeedModifier(.8f,1.1f);
+                // dragged: their feet scrape and grit trails off towards the eye
+                SpellVfx.Burst(this,unit.Position,"p_dust",4,.6f,DustRamp,14,24,20,50,spread:40,direction:(field.Position-unit.Position).Normalized(),additive:false);
+            }
             if(field.Kind=="miasma" && !friendly)
             { unit.ApplyHealingPenalty(.7f,1.4f);unit.ApplyBurn(field.Power,1.4f,field.Label); }
             if(field.Kind is "burn" or "holy" or "rot" && (!friendly || field.Kind=="rot") && unit.TryEffect("field_"+field.Kind,1f))

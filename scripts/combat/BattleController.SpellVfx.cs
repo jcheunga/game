@@ -369,10 +369,43 @@ public partial class BattleController
                 break;
             case "gravitation_well":
                 {
-                    var implode = SpellVfx.Sprite(this, point + new Vector2(0, -10), SpellVfx.Glow, VoidBody, Sz(radius * 3f), Sz(radius * .3f), .5f);
+                    var life = spell.Duration + .3f;
+                    // A dark eye on the road with a turning swirl of light around it, tightening as it pulls.
+                    var core = SpellVfx.Sprite(this, point, SpellVfx.Disc, new Color(.1f, .03f, .18f, .62f), Sz(radius * 2.5f), Sz(radius * 1.9f), life,
+                        SpellVfx.GroundLayer, false, true);
+                    core?.Envelope(.12f, .25f);
+                    // In front of the bodies it catches: a translucent vortex turning at waist height.
+                    for (var band = 0; band < 2; band++)
+                    {
+                        var vortex = SpellVfx.Sprite(this, point + new Vector2(0, -14 - band * 16), SpellVfx.Tex("p_swirl"), new Color(band == 0 ? VoidBody : VoidHot, .5f),
+                            Sz(radius * (2.6f - band * .6f)), Sz(radius * (1.8f - band * .4f)), life, SpellVfx.AirLayer, true, true);
+                        if (vortex != null) { vortex.Spin = band == 0 ? -6f : -9f; vortex.Angle = band * 2.1f; vortex.Envelope(.1f, .25f); }
+                    }
+                    for (var arm = 0; arm < 2; arm++)
+                    {
+                        var swirl = SpellVfx.Sprite(this, point + new Vector2(0, -4), SpellVfx.Tex("p_swirl"), arm == 0 ? VoidBody : VoidHot,
+                            Sz(radius * (2.8f - arm * .7f)), Sz(radius * (1.3f - arm * .3f)), life, SpellVfx.GroundLayer, true, true);
+                        if (swirl != null) { swirl.Spin = arm == 0 ? -4.5f : -7f; swirl.Angle = arm * 1.7f; swirl.Envelope(.08f, .25f); }
+                    }
+                    var implode = SpellVfx.Sprite(this, point + new Vector2(0, -10), SpellVfx.Glow, VoidBody, Sz(radius * 3.4f), Sz(radius * .3f), .45f);
                     implode?.Envelope(.05f, .2f);
-                    SpellVfx.Burst(this, point, "p_pebble", 14, .8f, PaleRamp, 5, 10, 0, 10, additive: false, groundRadius: radius, pull: 260, spin: 200);
-                    SpellVfx.Burst(this, point, "p_swirl", 4, .8f, SpellVfx.Fade(VoidHot, VoidBody), 30, 50, 0, 10, spin: 300);
+                    // Streaks of light and grit sucked in from the rim, wave after wave.
+                    for (var wave = 0; wave < 3; wave++)
+                        for (var i = 0; i < 8; i++)
+                        {
+                            var angle = i * Mathf.Tau / 8 + wave * .4f;
+                            var rim = point + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * BattleGroundPlane.DepthScale) * radius * 1.25f + new Vector2(0, -8);
+                            var streak = SpellVfx.Sprite(this, rim, SpellVfx.Streak, new Color(VoidHot, .8f), new Vector2(70, 10), new Vector2(40, 6), .5f,
+                                delay: wave * (spell.Duration / 3f));
+                            if (streak == null) continue;
+                            streak.Velocity = (point + new Vector2(0, -8) - rim) / .5f * .9f; streak.Angle = (point - rim).Angle();
+                            streak.Pivot = new Vector2(.92f, .5f); streak.Envelope(.1f, .35f);
+                        }
+                    SpellVfx.Burst(this, point, "p_pebble", 24, .9f, PaleRamp, 6, 12, 0, 10, additive: false, groundRadius: radius * 1.2f, pull: 300, spin: 260);
+                    SpellVfx.Burst(this, point, "p_dust", 10, 1f, DustRamp, 18, 30, 0, 8, additive: false, groundRadius: radius * 1.1f, pull: 160, spin: 60);
+                    SpellVfx.Burst(this, point, "p_wisp", 12, .9f, SpellVfx.Fade(VoidHot, VoidBody), 12, 20, 0, 10, groundRadius: radius * 1.1f, pull: 280,
+                        spin: 200, delay: spell.Duration / 2f);
+                    SpellShake(.25f);
                 }
                 break;
             case "soul_harvest":
@@ -442,12 +475,30 @@ public partial class BattleController
                 break;
             case "revealing_flare":
                 {
-                    var sky = point + new Vector2(0, -170); const float climb = .3f;
+                    const float climb = .22f, hang = 1.9f;
+                    var sky = point + new Vector2(0, -105);
                     var flare = SpellVfx.Sprite(this, point, SpellVfx.Streak, HolyHot, new Vector2(70, 14), new Vector2(90, 10), climb);
                     if (flare != null) { flare.Angle = -Mathf.Pi / 2; flare.Pivot = new Vector2(.92f, .5f); flare.Velocity = (sky - point) / climb; flare.Envelope(0, 0); }
-                    SpellVfx.Flash(this, sky, HolyHot, 90, .6f, delay: climb);
-                    SpellVfx.Burst(this, sky, "p_star", 24, 1.6f, SpellVfx.Fade(HolyHot, HolyBody), 6, 12, 40, 140, gravity: 70, delay: climb, damping: 40);
-                    SpellVfx.Flash(this, point, HolyHot, radius, .9f, true, climb);
+                    SpellVfx.Burst(this, point, "p_ember", 10, .4f, SpellVfx.Fade(HolyHot, FireBody), 3, 6, 40, 90, spread: 30, gravity: 200);
+                    // The burst, then the flare itself hanging in the air, flickering as it sinks.
+                    SpellVfx.Flash(this, sky, HolyHot, 150, .55f, delay: climb);
+                    var star = SpellVfx.Sprite(this, sky, SpellVfx.Tex("p_star"), HolyHot, Sz(56), Sz(34), hang, delay: climb);
+                    if (star != null) { star.Velocity = new Vector2(6, 26); star.Spin = 1.2f; star.Flicker = .3f; star.Envelope(.04f, .35f); }
+                    var halo = SpellVfx.Sprite(this, sky, SpellVfx.Glow, new Color(HolyHot, .7f), Sz(130), Sz(90), hang, delay: climb);
+                    if (halo != null) { halo.Velocity = new Vector2(6, 26); halo.Flicker = .2f; halo.Envelope(.04f, .35f); }
+                    // Its light falls on the area: a soft cone and a lit circle on the road.
+                    SpellVfx.Pillar(this, point, new Color(HolyHot, .7f), radius * 2f, 110, hang, climb);
+                    SpellVfx.Flash(this, point, HolyBody, radius * 1.1f, hang, true, climb);
+                    SpellVfx.Sigil(this, point, "holy", HolyBody, radius, hang, .4f, climb);
+                    SpellVfx.Burst(this, sky, "p_star", 30, 1.7f, SpellVfx.Fade(HolyHot, HolyBody), 5, 10, 40, 150, gravity: 80, delay: climb, damping: 40);
+                    // Every hidden thing it finds is picked out in light.
+                    foreach (var unit in affected)
+                    {
+                        var outline = SpellVfx.Sprite(this, Chest(unit) + new Vector2(0, 8), SpellVfx.Ring, new Color(HolyHot, .6f), Sz(unit.Radius * 2.6f),
+                            Sz(unit.Radius * 3.6f), .6f, delay: climb + .05f);
+                        outline?.Envelope(.1f, .6f);
+                        SpellVfx.Flash(this, Chest(unit), HolyHot, 24, .4f, delay: climb + .05f);
+                    }
                 }
                 break;
             case "mirror_ward":
@@ -461,14 +512,34 @@ public partial class BattleController
                 break;
             case "banish":
                 if (target == null) break;
-                SpellVfx.Sigil(this, target.Position, "shadow", VoidBody, 40, 1.1f, 3f);
                 {
-                    var implode = SpellVfx.Sprite(this, Chest(target), SpellVfx.Glow, VoidBody, Sz(130), Sz(16), .45f);
-                    implode?.Envelope(.05f, .1f);
+                    const float open = .5f;
+                    var at = Chest(target) + new Vector2(0, 6);
+                    var tall = Mathf.Max(100f, target.Radius * 5f);
+                    SpellVfx.Sigil(this, target.Position, "shadow", VoidBody, 50, open + .8f, 3f);
+                    // The rift: a dark slit with a burning violet rim that widens, then snaps shut.
+                    var dark = SpellVfx.Sprite(this, at, SpellVfx.Glow, new Color(.08f, .02f, .14f, .95f), new Vector2(6, tall * .8f), new Vector2(54, tall), open,
+                        SpellVfx.AirLayer, false);
+                    if (dark != null) { dark.SizeEase = 3f; dark.Envelope(.1f, 0); }
+                    var rim = SpellVfx.Sprite(this, at, SpellVfx.Ring, VoidHot, new Vector2(8, tall * .85f), new Vector2(62, tall * 1.06f), open);
+                    if (rim != null) { rim.SizeEase = 3f; rim.Flicker = .2f; rim.Envelope(.1f, 0); }
+                    var shutDark = SpellVfx.Sprite(this, at, SpellVfx.Glow, new Color(.08f, .02f, .14f, .95f), new Vector2(54, tall), new Vector2(2, tall * 1.1f), .16f,
+                        SpellVfx.AirLayer, false, delay: open);
+                    shutDark?.Envelope(0, .3f);
+                    var shutRim = SpellVfx.Sprite(this, at, SpellVfx.Ring, VoidHot, new Vector2(62, tall * 1.06f), new Vector2(3, tall * 1.2f), .16f, delay: open);
+                    shutRim?.Envelope(0, .3f);
+                    // Wisps and shadow stream into it from all around.
+                    SpellVfx.Burst(this, at, "p_wisp", 16, .5f, SpellVfx.Fade(VoidHot, VoidBody), 14, 24, 0, 20, groundRadius: 70, pull: 700, spin: 300, explosiveness: .5f);
+                    SpellVfx.Burst(this, at, "p_shadow", 8, .5f, new[] { new Color(.2f, .1f, .3f, 0), new Color(.2f, .1f, .3f, .8f), new Color(.2f, .1f, .3f, 0) },
+                        18, 30, 0, 20, additive: false, groundRadius: 60, pull: 600, spin: 200, explosiveness: .6f);
+                    // Shut: a flash, a line of light where it was, and a ring rolling out.
+                    SpellVfx.Flash(this, at, VoidHot, 80, .4f, delay: open);
+                    var seam = SpellVfx.Sprite(this, at, SpellVfx.Beam, VoidHot, new Vector2(10, tall * 1.3f), new Vector2(2, tall * 1.5f), .3f, delay: open + .05f);
+                    if (seam != null) seam.Pivot = new Vector2(.5f, .5f);
+                    SpellVfx.Shockwave(this, target.Position, VoidBody, 70, .5f, open);
+                    SpellVfx.Burst(this, at, "p_star", 12, .5f, SpellVfx.Fade(VoidHot, VoidBody), 6, 11, 80, 180, delay: open);
+                    SpellShake(.35f, open);
                 }
-                SpellVfx.Burst(this, Chest(target), "p_wisp", 10, .5f, SpellVfx.Fade(VoidHot, VoidBody), 16, 26, 70, 110, pull: 500, spin: 200);
-                SpellVfx.Flash(this, Chest(target), VoidHot, 60, .35f, delay: .4f);
-                SpellVfx.Shockwave(this, target.Position, VoidBody, 50, .4f, .4f);
                 break;
             case "royal_edict":
                 SpellVfx.Sigil(this, point, "war", GoldBody, radius, 1.4f, .3f);

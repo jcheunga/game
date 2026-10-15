@@ -17,7 +17,7 @@ public static class SpellVfx
     private const string TexturePath = "res://assets/fx/spells/";
     private static readonly Dictionary<string, Texture2D> Textures = new();
     private static CanvasItemMaterial _additive;
-    private static Texture2D _glow, _ring, _beam, _streak;
+    private static Texture2D _glow, _ring, _beam, _streak, _disc;
 
     public static bool Reduced => GameState.Instance?.ReducedMotion ?? false;
     public static CanvasItemMaterial Additive => _additive ??= new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
@@ -45,6 +45,10 @@ public static class SpellVfx
         return Mathf.Exp(-Mathf.Pow((d - .85f) / .07f, 2f)) + .18f * Mathf.Exp(-Mathf.Pow((d - .72f) / .16f, 2f)) * (d < 1 ? 1 : 0);
     });
 
+    /// <summary>A filled disc with a soft edge, for darkening or lighting an area evenly.</summary>
+    public static Texture2D Disc => _disc ??= Procedural(128, 128, (x, y) =>
+        Mathf.SmoothStep(1f, .62f, new Vector2(x - .5f, y - .5f).Length() * 2f));
+
     /// <summary>A vertical light column: soft across, fading out towards the top.</summary>
     public static Texture2D Beam => _beam ??= Procedural(64, 256, (x, y) =>
         Mathf.Exp(-Mathf.Pow((x - .5f) / .2f, 2f)) * Mathf.SmoothStep(0f, .55f, y) * Mathf.SmoothStep(1f, .9f, y));
@@ -65,7 +69,7 @@ public static class SpellVfx
     public static void ClearCache()
     {
         Textures.Clear();
-        _glow = _ring = _beam = _streak = null;
+        _glow = _ring = _beam = _streak = _disc = null;
     }
 
     private static T Add<T>(Node parent, T node, Vector2 at, int layer) where T : Node2D

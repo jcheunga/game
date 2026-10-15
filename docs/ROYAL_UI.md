@@ -96,6 +96,21 @@ kinds (`relicicon-boots`, `-crown`, ...) are cut from the concepts; the expansio
 (`09-glyphs.json`) and cut by `art/royal/glyphs.py` into `kit/spellicon-<id>` and `kit/relicicon-<id>`. A relic
 with a glyph of its own uses it; the rest share one by the kind of object (`ShopMenu.RelicIcon`).
 
+## Spell effects
+
+Spells in battle are built from `scripts/combat/SpellVfx.cs` pieces: ground rune circles, glows, shockwaves,
+light pillars, lightning, chains, road decals, painted elements that rise out of the ground and painted particle
+bursts, all on the battlefield's shallow ground plane and pausing with the battle. Each spell's recipe (wind-up,
+impact, aftermath) is in `BattleController.SpellVfx.cs`; the Apply*Spell methods call it, and placed tactics stand
+on the road as their painted item pictures (`Unit.TacticalArt.cs`). Lingering states draw on the body
+(`Unit.StatusVisuals.cs`): flames, thorns, chains, shield shimmer, stun stars, a silence rune. Lasting areas
+(`BattleContentField`) turn their school's rune circle and drift motes; a meteor's circle fills until it lands.
+
+The textures are painted by Codex (`10-spell-vfx.json`) and installed by `art/royal/vfx.py` into
+`assets/fx/spells` (sigils keyed white from black and tinted in code, decals, eruptions, and particle sheets cut
+into `p_*` sprites). `UiReviewSmoke --spell-gallery [--only=meteor,...]` casts every spell on a staged field and
+saves a strip of timed frames per spell to `artifacts/spell-gallery`.
+
 ## Review
 
 ```sh

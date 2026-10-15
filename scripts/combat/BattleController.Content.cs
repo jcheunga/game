@@ -464,7 +464,7 @@ public partial class BattleController
         var existing=_contentFields.FirstOrDefault(f=>f.Kind==kind && f.TeamOwner==owner && f.Position.DistanceTo(point)<radius*.4f);
         if(existing!=null) { existing.Remaining=Math.Max(existing.Remaining,duration);existing.Power=Math.Max(existing.Power,power);return existing; }
         if(_contentFields.Count>=12) { var first=_contentFields[0];_contentFields.RemoveAt(0);first.QueueFree(); }
-        var field=new BattleContentField { Kind=kind,TeamOwner=owner,Position=point,Radius=radius,Remaining=duration,Power=power,Label=label,ZIndex=2 };
+        var field=new BattleContentField { Kind=kind,TeamOwner=owner,Position=point,Radius=radius,Remaining=duration,Power=power,Label=label,ZIndex=SpellVfx.GroundLayer };
         AddChild(field);_contentFields.Add(field);return field;
     }
 
@@ -472,6 +472,7 @@ public partial class BattleController
     {
         if(field.Kind=="meteor")
         {
+            MeteorImpactVfx(field.Position,field.Radius);
             foreach(var enemy in NearbyContentUnits(Team.Enemy,field.Position,field.Radius)) enemy.TakeDamage(field.Power,field.Label,CombatDamageType.Magical);
             field.Kind="burn";field.Power=2;field.Remaining=3;field.QueueRedraw();
         }
@@ -493,6 +494,11 @@ public partial class BattleController
     }
 }
 
+/// <summary>
+/// A lasting area on the road (spell fields and enemy hazards). It lies on the ground plane as a turning rune
+/// circle and a soft glow, or as a stain for smoke and rot, with its own drifting particles; a meteor's field
+/// shows the warning circle filling until the strike. Rules live in BattleController.ApplyContentField.
+/// </summary>
 public partial class BattleContentField : Node2D
 {
     public string Kind="",Label="";
@@ -501,10 +507,119 @@ public partial class BattleContentField : Node2D
     public Unit Follow;
     public long FollowLife;
     public bool SingleTarget;
+    private const float MeteorDelay = 1.2f;
+    private float _age;
+    private string _built;
+    private readonly System.Collections.Generic.List<CpuParticles2D> _motes = new();
+
+    private (string Sigil, Color Tint, bool Glow, float Spin) Look => Kind switch
+    {
+        "burn" => ("fire", new Color(1f, .5f, .16f), true, .3f),
+        "meteor" => ("fire", new Color(1f, .28f, .2f), true, 1.2f),
+        "holy" => ("holy", new Color(1f, .84f, .44f), true, .25f),
+        "heal" => ("nature", new Color(.5f, .92f, .5f), true, .5f),
+        "gravity" => ("shadow", new Color(.7f, .45f, 1f), true, -2.2f),
+        "reveal" => ("holy", new Color(1f, .97f, .84f), true, .4f),
+        "null" => ("arcane", new Color(.62f, .42f, .88f), true, -.6f),
+        "smoke" => ("", new Color(.5f, .49f, .47f), false, 0f),
+        "miasma" or "rot" => ("", new Color(.42f, .5f, .22f), false, 0f),
+        _ => ("arcane", new Color(.66f, .72f, .82f), true, .3f),
+    };
+
+    public override void _Ready() => ProcessMode = ProcessModeEnum.Pausable;
+
+    public override void _Process(double delta)
+    {
+        _age += (float)delta;
+        if (_built != Kind) Rebuild();
+        QueueRedraw();
+    }
+
+    private void Rebuild()
+    {
+        _built = Kind;
+        foreach (var mote in _motes) mote.QueueFree();
+        _motes.Clear();
+        Material = Look.Glow ? SpellVfx.Additive : null;
+        var smoke = new[] { new Color(.55f, .54f, .52f, 0), new Color(.6f, .59f, .57f, .55f), new Color(.66f, .65f, .63f, 0) };
+        var rot = new[] { new Color(.45f, .52f, .25f, 0), new Color(.5f, .58f, .28f, .5f), new Color(.55f, .6f, .35f, 0) };
+        switch (Kind)
+        {
+            case "burn":
+                Motes("p_flame", 10, .8f, SpellVfx.Fade(new Color(1f, .9f, .6f), new Color(.9f, .3f, .05f)), 10, 20, 15, 35, -40, true);
+                Motes("p_ember", 8, 1.2f, SpellVfx.Fade(new Color(1f, .85f, .5f), new Color(1f, .5f, .15f)), 3, 6, 20, 60, -30, true);
+                break;
+            case "holy": Motes("p_orb", 8, 1.6f, SpellVfx.Fade(new Color(1f, .97f, .84f), new Color(1f, .83f, .44f)), 4, 8, 10, 30, -30, true); break;
+            case "heal":
+                Motes("p_orb", 5, 1.3f, SpellVfx.Fade(new Color(.9f, 1f, .78f), new Color(.5f, .92f, .5f)), 4, 7, 10, 25, -40, true);
+                Motes("p_leaf", 2, 1.6f, SpellVfx.Fade(Colors.White), 6, 9, 10, 25, -20, false, 200);
+                break;
+            case "gravity": Motes("p_pebble", 10, .9f, SpellVfx.Fade(Colors.White), 5, 9, 0, 6, 0, false, 200, Radius * 3.2f); break;
+            case "reveal": Motes("p_star", 6, 1.4f, SpellVfx.Fade(new Color(1f, .97f, .84f)), 5, 9, 4, 12, 20, true); break;
+            case "null": Motes("p_rune", 5, 1.4f, SpellVfx.Fade(new Color(.86f, .72f, 1f), new Color(.62f, .42f, .88f)), 7, 11, 8, 20, -25, true); break;
+            case "smoke": Motes("p_smoke", 12, 2.4f, smoke, 40, 70, 6, 18, -6, false, 25); break;
+            case "miasma" or "rot": Motes("p_smoke", 7, 1.8f, rot, 26, 44, 6, 16, -10, false, 25); break;
+        }
+    }
+
+    private void Motes(string texture, int amount, float life, Color[] ramp, float sizeMin, float sizeMax, float speedMin, float speedMax,
+        float gravity, bool additive, float spin = 0f, float pull = 0f)
+    {
+        var tex = SpellVfx.Tex(texture);
+        var scale = 1f / Mathf.Max(1, tex.GetWidth());
+        var points = new Vector2[20];
+        for (var i = 0; i < points.Length; i++)
+        {
+            var angle = GD.Randf() * Mathf.Tau;
+            var distance = pull > 0 ? Radius * (float)GD.RandRange(.75, 1) : Mathf.Sqrt(GD.Randf()) * Radius * .85f;
+            points[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle) * BattleGroundPlane.DepthScale) * distance;
+        }
+        var gradient = new Gradient();
+        gradient.SetColor(0, ramp[0]); gradient.SetColor(1, ramp[^1]);
+        for (var i = 1; i < ramp.Length - 1; i++) gradient.AddPoint(i / (float)(ramp.Length - 1), ramp[i]);
+        var motes = new CpuParticles2D
+        {
+            Amount = SpellVfx.Reduced ? Mathf.Max(1, amount / 3) : amount, Lifetime = life, Texture = tex, LocalCoords = false,
+            EmissionShape = CpuParticles2D.EmissionShapeEnum.Points, EmissionPoints = points,
+            Direction = Vector2.Up, Spread = 30, InitialVelocityMin = speedMin, InitialVelocityMax = speedMax, Gravity = new Vector2(0, gravity),
+            ScaleAmountMin = sizeMin * scale, ScaleAmountMax = sizeMax * scale, AngleMin = 0, AngleMax = 360,
+            AngularVelocityMin = -spin, AngularVelocityMax = spin, ColorRamp = gradient, RadialAccelMin = -pull, RadialAccelMax = -pull,
+            // Above the troops: smoke hides them, flames lick up around them.
+            ZIndex = SpellVfx.AirLayer - SpellVfx.GroundLayer, ProcessMode = ProcessModeEnum.Pausable,
+        };
+        if (additive) motes.Material = SpellVfx.Additive;
+        AddChild(motes);
+        _motes.Add(motes);
+    }
+
     public override void _Draw()
     {
-        var tint=Kind switch { "burn"=>new Color("e09a50"),"miasma" or "rot"=>new Color("94a45c"),"null"=>new Color("826694"),"heal" or "holy"=>new Color("bbd79c"),"smoke"=>new Color("99928c"),_=>new Color("a9b7cf") };
-        DrawCircle(Vector2.Zero,Radius,new Color(tint,.14f));
-        DrawLine(new Vector2(-Radius,1),new Vector2(Radius,1),new Color(tint,.65f),2,true);
+        var look = Look;
+        var fade = Mathf.Clamp(_age / .35f, 0, 1) * Mathf.Clamp(Remaining / .6f, 0, 1);
+        var plane = Transform2D.Identity.Scaled(new Vector2(1, BattleGroundPlane.DepthScale));
+        DrawSetTransformMatrix(plane);
+        if (!look.Glow)
+        {
+            DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.3f, Vector2.One * Radius * 2.6f), false, new Color(look.Tint, .45f * fade));
+            DrawSetTransform(Vector2.Zero);
+            return;
+        }
+        var breathe = .85f + .15f * Mathf.Sin(_age * 3.1f);
+        DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.3f, Vector2.One * Radius * 2.6f), false, new Color(look.Tint, .3f * fade * breathe));
+        if (Kind == "meteor")
+        {
+            // The strike lands when the fill reaches the rim; the rim beats faster as it closes.
+            var progress = Mathf.Clamp(1 - Pulse / MeteorDelay, 0, 1);
+            DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * Radius * 1.2f * progress, Vector2.One * Radius * 2.4f * progress), false,
+                new Color(look.Tint, .8f * fade));
+            var beat = .6f + .4f * Mathf.Abs(Mathf.Sin(_age * (6f + progress * 14f)));
+            for (var rim = 0; rim < 2; rim++)
+                DrawTextureRect(SpellVfx.Ring, new Rect2(-Vector2.One * Radius * 1.18f, Vector2.One * Radius * 2.36f), false, new Color(look.Tint, fade * beat));
+        }
+        var spin = new Transform2D(_age * look.Spin, Vector2.Zero);
+        DrawSetTransformMatrix(plane * spin);
+        DrawTextureRect(SpellVfx.Tex("sigil_" + look.Sigil), new Rect2(-Vector2.One * Radius * 1.05f, Vector2.One * Radius * 2.1f), false,
+            new Color(look.Tint, (Kind == "meteor" ? 1f : .62f) * fade * breathe));
+        DrawSetTransform(Vector2.Zero);
     }
 }

@@ -409,12 +409,29 @@ public partial class AudioDirector : Node
 	public void PlaySpellCast(string effectType, Vector2 at)
 	{
 		var cue = $"spell_{effectType}";
+		if (!HasCue(cue)) cue = "spell_" + SpellCueFamily(effectType);
 		if (!HasCue(cue)) cue = "spell_fireball";
 		if (PlayAt(cue, at) && effectType is "war_cry" or "earthquake" or "lightning_strike" or "resurrect")
 			MusicPlayer.Instance?.Duck(-4f, 1.5f);
 	}
 
 	public void PlaySpellCast(string effectType) => PlaySpellCast(effectType, IsInstanceValid(_world) ? WorldCentre() : Vector2.Zero);
+
+	/// <summary>The recorded spell a newer spell or tactic sounds like, until it has a cue of its own.</summary>
+	private static string SpellCueFamily(string effectType) => effectType switch
+	{
+		"meteor" or "molten_brand" or "tactic_firepot_mine" => "fireball",
+		"tactic_frost_trap" or "tidal_push" => "frost_burst",
+		"chain_lightning" or "tactic_grounding_rod" => "lightning_strike",
+		"verdant_renewal" or "purifying_light" or "tactic_healing_shrine" or "tactic_purifying_censer" => "heal",
+		"radiant_rebuke" or "consecrated_ground" or "revealing_flare" => "resurrect",
+		"aegis_bolt" or "mirror_ward" or "gale_step" => "barrier_ward",
+		"bramble_snare" or "tactic_palisade_kit" or "tactic_bolt_turret" or "tactic_supply_crate" or "tactic_repair_cache"
+			or "tactic_decoy_lantern" or "tactic_smoke_pot" => "stone_barricade",
+		"rallying_advance" or "royal_edict" or "tactic_war_horn" => "war_cry",
+		"anchor_hex" or "withering_seal" or "gravitation_well" or "soul_harvest" or "banish" => "polymorph",
+		_ => "fireball",
+	};
 
 	public void PlayBossSpawn()
 	{

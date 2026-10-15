@@ -294,52 +294,6 @@ public static class ProjectileEffects
     }
 }
 
-/// <summary>The fireball spell's arrival: a comet streak falling from the upper left onto the blast, drawn as
-/// the burst goes off so the damage keeps its timing.</summary>
-public partial class FireballStreak : Node2D
-{
-    private const float Life = .32f;
-    private float _age;
-    private Vector2 _from;
-    private Color _color;
-    private Func<bool> _shouldPause;
-
-    public static void Spawn(Node parent, Vector2 at, Color color, Func<bool> shouldPause = null)
-    {
-        if (parent == null || (GameState.Instance?.ReducedMotion ?? false)) return;
-        var streak = new FireballStreak { _from = new Vector2(-70, -150), _color = color, _shouldPause = shouldPause, ZIndex = 22 };
-        streak.Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
-        parent.AddChild(streak);
-        streak.GlobalPosition = at;
-    }
-
-    public override void _Process(double delta)
-    {
-        if (_shouldPause?.Invoke() ?? false) return;
-        _age += (float)delta;
-        if (_age >= Life) { QueueFree(); return; }
-        QueueRedraw();
-    }
-
-    public override void _Draw()
-    {
-        var t = _age / Life;
-        var fade = 1 - t;
-        // The streak drains into the impact point: its tail shortens as it fades.
-        var tail = _from * (1 - t * .7f);
-        var normal = (-_from).Normalized().Orthogonal();
-        for (var i = 0; i < 3; i++)
-        {
-            var w = (9f - i * 3f) * fade;
-            var color = i == 2 ? new Color(1, .96f, .82f, .9f * fade) : new Color(_color.Lerp(new Color("ff8a2a"), .4f), (.35f + i * .2f) * fade);
-            DrawColoredPolygon(new[] { tail, -normal * w * .5f, normal * w * .5f }, color);
-        }
-        var r = 16f * (1 - t * .5f);
-        DrawTextureRect(ParticleTextureLoader.SoftTexture, new Rect2(-Vector2.One * r, Vector2.One * r * 2), false,
-            new Color(1f, .78f, .45f, .9f * fade));
-    }
-}
-
 /// <summary>An arrow or bolt left standing in a soldier for a moment: it rides along with them, then fades.</summary>
 public partial class StuckProjectile : Node2D
 {

@@ -31,6 +31,7 @@ public partial class UiReviewSmoke : Node
             if (OS.GetCmdlineUserArgs().Contains("--production-polish")) { await ReviewProductionPolishUi(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--royal-ui")) { await ReviewRoyalUi(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--concepts")) { await ReviewConcepts(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--spell-gallery")) { await ReviewSpellGallery(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--map-guides"))
             { await MapGuideRenderer.RenderAll(this, ProjectSettings.GlobalizePath("res://art/royal/gen/map-guides")); QuitAfterAudio(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--live-parity"))

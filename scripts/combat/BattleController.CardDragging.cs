@@ -63,13 +63,23 @@ public partial class BattleController
     private bool DragCardAffordable() => _dragSpell != null && _mana >= GameState.Instance.BuildSpellStats(_dragSpell).ManaCost
         && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
 
-    private bool CanDropCard(Vector2 screen)
+    private bool CanDropCard(Vector2 screen) => CardDropAt(screen, out _, out _);
+
+    /// <summary>
+    /// Whether magic can be released here. Off the road (dragged back down to the cards) the drag cancels;
+    /// on the road without a valid target, <paramref name="reason"/> says why. Either way release cancels.
+    /// </summary>
+    private bool CardDropAt(Vector2 screen, out bool onField, out string reason)
     {
+        onField = false; reason = "Release to cancel";
         if (!CardActionAvailable || !DragCardAffordable() || !GetViewportRect().HasPoint(screen)) return false;
         if (_mobileHud != null && (screen.Y < _mobileFieldTop || screen.Y > _mobileFieldBottom)) return false;
         var point = ScreenToBattle(screen);
-        return CardHitControl(_battleUiRoot, screen) == null && IsInBattlefield(point)
-            && CanResolveSpellTarget(GameState.Instance.BuildSpellStats(_dragSpell), point, out _);
+        if (CardHitControl(_battleUiRoot, screen) != null || !IsInBattlefield(point)) return false;
+        onField = true;
+        var valid = CanResolveSpellTarget(GameState.Instance.BuildSpellStats(_dragSpell), point, out reason);
+        reason = reason.TrimEnd('.');
+        return valid;
     }
 
     private bool HandleCardDragInput(InputEvent input)
@@ -199,10 +209,12 @@ public partial class BattleController
         if (!CardActionAvailable) { CancelCardDrag(); return; }
         _cardDragGhost.Visible = _cardDragging;
         if (!_cardDragging) return;
-        var valid = CanDropCard(_cardPointerPosition);
-        _cardDragPortrait.Modulate = valid ? new Color("d8ffebcc") : new Color("ffb5a2aa");
-        _cardDragHint.Text = valid ? "Release · " + _dragSpell.DisplayName : "";
-        _cardDragHint.GetParent<Control>().Visible = valid;
+        var valid = CardDropAt(_cardPointerPosition, out _, out var reason);
+        // Red means a release cancels: the card goes back to the hand and nothing is spent.
+        _cardDragPortrait.Modulate = valid ? new Color("d8ffebcc") : new Color(1f, .3f, .24f, .85f);
+        _cardDragHint.Text = valid ? "Release · " + _dragSpell.DisplayName : reason;
+        if (valid) _cardDragHint.RemoveThemeColorOverride("font_color");
+        else _cardDragHint.AddThemeColorOverride("font_color", new Color("ff8a78"));
         var scale = _mobileHud != null ? 1.4f : 1f;
         _cardDragGhost.Scale = Vector2.One * scale;
         var size = _cardDragGhost.Size * scale;

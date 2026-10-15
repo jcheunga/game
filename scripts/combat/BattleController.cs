@@ -664,7 +664,10 @@ public partial class BattleController : Node2D
 
 		if (_cardPointerDown)
 		{
-			if (!_cardDragging || !CanDropCard(_cardPointerPosition)) return;
+			// On the road the ring shows where the magic lands (red without a valid target); off it, nothing.
+			if (!_cardDragging) return;
+			CardDropAt(_cardPointerPosition, out var onField, out _);
+			if (!onField) return;
 			var target = ScreenToBattle(_cardPointerPosition);
 			if (_dragSpell != null) DrawSpellPreview(GameState.Instance.BuildSpellStats(_dragSpell), target);
 			return;
@@ -685,8 +688,9 @@ public partial class BattleController : Node2D
 	private void DrawSpellPreview(ResolvedSpellStats spell, Vector2 requestedTargetPosition)
 	{
 		var previewPosition = ResolveSpellPreviewPosition(spell, requestedTargetPosition);
-		var color = spell.GetTint().Lightened(0.08f);
-		if (!CanResolveSpellTarget(spell, previewPosition, out _)) color = new Color("ef998b");
+		var school = SpellSchool(spell.EffectType);
+		var valid = CanResolveSpellTarget(spell, previewPosition, out _);
+		var color = valid ? school.Tint : new Color("ff6a58");
 		var radius = Mathf.Max(18f, spell.Radius);
 
 		if (spell.EffectType == "war_cry")
@@ -698,26 +702,15 @@ public partial class BattleController : Node2D
 			radius = 34f;
 		}
 
-		DrawSetTransform(previewPosition, 0, new Vector2(1f, BattleGroundPlane.DepthScale));
-		DrawCircle(Vector2.Zero, radius, new Color(color, 0.08f));
-		DrawArc(
-			Vector2.Zero,
-			radius,
-			0f,
-			Mathf.Tau,
-			36,
-			new Color(color, 0.62f),
-			2.6f);
-		DrawArc(
-			Vector2.Zero,
-			Mathf.Max(12f, radius * 0.58f),
-			0f,
-			Mathf.Tau,
-			28,
-			new Color(color.Lightened(0.18f), 0.34f),
-			1.8f,
-			true);
-
+		// The spell's own rune circle, turning slowly where it will land, inside a soft rim at its true reach.
+		var spin = (float)Time.GetTicksMsec() / 1000f * (valid ? .6f : .15f);
+		var plane = new Transform2D(0, previewPosition) * Transform2D.Identity.Scaled(new Vector2(1f, BattleGroundPlane.DepthScale));
+		DrawSetTransformMatrix(plane);
+		DrawTextureRect(SpellVfx.Glow, new Rect2(-Vector2.One * radius * 1.2f, Vector2.One * radius * 2.4f), false, new Color(color, valid ? .22f : .16f));
+		DrawTextureRect(SpellVfx.Ring, new Rect2(-Vector2.One * radius * 1.18f, Vector2.One * radius * 2.36f), false, new Color(color, .85f));
+		DrawSetTransformMatrix(plane * new Transform2D(spin, Vector2.Zero));
+		DrawTextureRect(SpellVfx.Tex("sigil_" + school.Sigil), new Rect2(-Vector2.One * radius, Vector2.One * radius * 2f), false,
+			new Color(color.Lightened(.35f), valid ? 1f : .5f));
 		DrawSetTransform(Vector2.Zero);
 
 		if (spell.EffectType is "fireball" or "frost_burst" or "lightning_strike" or "earthquake" or "polymorph")
@@ -5003,8 +4996,7 @@ public partial class BattleController : Node2D
 		float startRadius,
 		float endRadius,
 		float lifetime,
-		bool filled = true,
-		BattleEffectStyle style = BattleEffectStyle.Pulse)
+		bool filled = true)
 	{
 		if (IsReducedMotionEnabled())
 		{
@@ -5014,7 +5006,7 @@ public partial class BattleController : Node2D
 
 		var effect = new BattleEffect();
 		effect.Position = position;
-		effect.Setup(color, startRadius, endRadius, lifetime, filled, style);
+		effect.Setup(color, startRadius, endRadius, lifetime, filled);
 		effect.GroundProjected = true;
 		AddChild(effect);
 	}
@@ -5128,9 +5120,7 @@ public partial class BattleController : Node2D
 		var hits = 0;
 		var totalDamage = 0f;
 
-		FireballStreak.Spawn(this, targetPosition, color, () => _battlePaused || _endlessCheckpointActive);
-		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.26f, false, BattleEffectStyle.Fireburst);
-		BattleParticles.SpawnFireballParticles(this, targetPosition, spell.Radius);
+		FireballVfx(targetPosition, spell.Radius);
 
 		foreach (var target in targets)
 		{
@@ -5157,9 +5147,7 @@ public partial class BattleController : Node2D
 		var healedUnits = 0;
 		var totalHealing = 0f;
 
-		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.HealBloom);
-		BattleParticles.SpawnHealSparkles(this, targetPosition, color, spell.Radius);
-
+		var mended = new List<Unit>();
 		foreach (var ally in allies)
 		{
 			var healed = ally.Heal(spell.Power);
@@ -5170,10 +5158,11 @@ public partial class BattleController : Node2D
 
 			healedUnits++;
 			totalHealing += healed;
-			SpawnEffect(ally.Position, color.Lightened(0.08f), 8f, 22f, 0.18f, false, BattleEffectStyle.HealBloom);
+			mended.Add(ally);
 			SpawnCombatNumber(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
 		}
 
+		HealVfx(targetPosition, spell.Radius, mended);
 		var repaired = RepairBusByAmount(spell.SecondaryPower);
 		return
 			$"Heal restored {Mathf.RoundToInt(totalHealing)} across {healedUnits} allies" +
@@ -5187,8 +5176,7 @@ public partial class BattleController : Node2D
 		var slowed = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 14f, spell.Radius, 0.3f, false, BattleEffectStyle.FrostBurst);
-		BattleParticles.SpawnFrostParticles(this, targetPosition, color, spell.Radius);
+		FrostVfx(targetPosition, spell.Radius, targets);
 
 		foreach (var target in targets)
 		{
@@ -5217,8 +5205,7 @@ public partial class BattleController : Node2D
 			.ToArray();
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 10f, 24f, 0.2f, false, BattleEffectStyle.LightningStrike);
-		BattleParticles.SpawnLightningParticles(this, targetPosition, color);
+		LightningVfx(targetPosition, spell.Radius, targets);
 
 		for (var i = 0; i < targets.Length; i++)
 		{
@@ -5235,7 +5222,6 @@ public partial class BattleController : Node2D
 			}
 
 			totalDamage += appliedDamage;
-			SpawnEffect(targets[i].Position, color, 10f, 30f, 0.2f, false, BattleEffectStyle.LightningStrike);
 			SpawnDamageFeedback(targets[i].Position, appliedDamage, color);
 		}
 
@@ -5250,14 +5236,12 @@ public partial class BattleController : Node2D
 		var allies = GetLivingUnitsInRadius(targetPosition, spell.Radius, Team.Player);
 		var warded = 0;
 
-		SpawnEffect(targetPosition, color, 12f, spell.Radius, 0.28f, false, BattleEffectStyle.WardSigil);
-		BattleParticles.SpawnWardParticles(this, targetPosition, color, spell.Radius);
+		WardVfx(targetPosition, spell.Radius, allies);
 
 		foreach (var ally in allies)
 		{
 			ally.ApplyTemporaryDefenseModifier(spell.Power, spell.Duration);
 			warded++;
-			SpawnEffect(ally.Position, color.Lightened(0.05f), 6f, 18f, 0.18f, false, BattleEffectStyle.WardSigil);
 		}
 
 		return warded > 0
@@ -5293,8 +5277,7 @@ public partial class BattleController : Node2D
 		var barricadeUnit = _units[_units.Count - 1];
 		_barricades.Add((barricadeUnit, _elapsed + spell.Duration));
 
-		SpawnEffect(clampedPosition, color, 10f, spell.Radius, 0.24f, false);
-		BattleParticles.SpawnStoneBarricadeParticles(this, clampedPosition, spell.Radius);
+		BarricadeVfx(clampedPosition);
 
 		return $"Stone Barricade raised at the target lane with {Mathf.RoundToInt(spell.Power)} durability.";
 	}
@@ -5304,9 +5287,7 @@ public partial class BattleController : Node2D
 		var color = spell.GetTint();
 		var buffed = 0;
 
-		SpawnEffect(PlayerBaseCorePosition, color, 18f, 60f, 0.32f, false);
-		BattleParticles.SpawnWarCryParticles(this, PlayerBaseCorePosition, 60f);
-
+		var rallied = new List<Unit>();
 		foreach (var unit in _units)
 		{
 			if (unit.IsDead || unit.Team != Team.Player)
@@ -5316,8 +5297,9 @@ public partial class BattleController : Node2D
 
 			unit.ApplyTemporaryCombatBuff(spell.Power, spell.SecondaryPower, spell.Duration);
 			buffed++;
-			SpawnEffect(unit.Position, color.Lightened(0.08f), 6f, 18f, 0.16f, false);
+			if (!unit.IsTacticalObject) rallied.Add(unit);
 		}
+		WarCryVfx(PlayerBaseCorePosition, rallied);
 
 		return buffed > 0
 			? $"War Cry rallied {buffed} allies with +{Mathf.RoundToInt((spell.Power - 1f) * 100f)}% attack and +{Mathf.RoundToInt((spell.SecondaryPower - 1f) * 100f)}% speed for {spell.Duration:0.0}s."
@@ -5331,8 +5313,7 @@ public partial class BattleController : Node2D
 		var hits = 0;
 		var totalDamage = 0f;
 
-		SpawnEffect(targetPosition, color, 20f, spell.Radius, 0.34f, false);
-		BattleParticles.SpawnEarthquakeParticles(this, targetPosition, spell.Radius);
+		EarthquakeVfx(targetPosition, spell.Radius);
 
 		foreach (var target in targets)
 		{
@@ -5378,8 +5359,7 @@ public partial class BattleController : Node2D
 		var transformed = bestTarget.ApplyControl(Mathf.Min(2f, spell.Duration));
 		if (transformed) bestTarget.Silence(Mathf.Min(2f, spell.Duration));
 
-		SpawnEffect(bestTarget.Position, color, 10f, 32f, 0.26f, false, BattleEffectStyle.WardSigil);
-		BattleParticles.SpawnPolymorphParticles(this, bestTarget.Position);
+		PolymorphVfx(bestTarget);
 
 		return transformed ? $"Polymorph disabled {bestTarget.UnitName} briefly." : $"{bestTarget.UnitName} resisted another transformation.";
 	}
@@ -5423,8 +5403,7 @@ public partial class BattleController : Node2D
 		spawnedUnit.TakeDamage(halfDamage, damageType: CombatDamageType.True);
 		spawnedUnit.MarkReturned();
 
-		SpawnEffect(spawnPos, color, 12f, 38f, 0.28f, false, BattleEffectStyle.HealBloom);
-		BattleParticles.SpawnResurrectParticles(this, spawnPos);
+		ResurrectVfx(spawnPos);
 		_lastDeadPlayerUnitId = "";
 
 		return $"Resurrect restored {resurrectDef.DisplayName} at {Mathf.RoundToInt(spell.Power * 100f)}% health.";

@@ -1,0 +1,134 @@
+[
+ {
+  "id": "vfx-sigil_arcane",
+  "out": "art/royal/gen/vfx/sigil_arcane.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a classic arcane circle: two concentric rings with a band of invented runes between them, a six-pointed star inside and small orbiting circles.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_fire",
+  "out": "art/royal/gen/vfx/sigil_fire.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a fire circle: a ring of stylised flame tongues around the edge, a band of invented fire runes, a central sunburst.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_frost",
+  "out": "art/royal/gen/vfx/sigil_frost.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a frost circle: a large six-fold snowflake geometry inside two thin rings, crystalline spokes and small hexagons.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_holy",
+  "out": "art/royal/gen/vfx/sigil_holy.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a holy circle: radiant sunburst rays, a halo ring set with small crosses and dots, layered arcs like a cathedral rose window.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_nature",
+  "out": "art/royal/gen/vfx/sigil_nature.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a nature circle: an outer ring woven from vines and leaves, an inner ring of seed-like runes, a central blossom.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_storm",
+  "out": "art/royal/gen/vfx/sigil_storm.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a storm circle: jagged lightning glyphs radiating from the centre, broken rings like crackling energy.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_shadow",
+  "out": "art/royal/gen/vfx/sigil_shadow.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a void circle: strokes spiralling inward, crescent moons, an eye-like centre, thorny invented runes.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_earth",
+  "out": "art/royal/gen/vfx/sigil_earth.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: an earth circle: heavy hexagonal and square stone runes, a cracked inner ring, mountain glyphs.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_tide",
+  "out": "art/royal/gen/vfx/sigil_tide.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a tide circle: concentric ripple rings, curling wave scrolls around the edge, droplet runes.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-sigil_war",
+  "out": "art/royal/gen/vfx/sigil_war.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a magic rune circle seen from directly above, used as a glowing ground sigil beneath spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash). It is drawn with additive blending and tinted in code.\nSubject: a war circle: crossed swords and spears radiating like a compass rose, shield shapes and banner glyphs set in the ring.\nStyle: luminous pure white and pale grey line art with a soft glow, intricate but bold enough to read when small: concentric rings, runes and motifs, perfectly circular, centred and symmetric.\nComposition: the circle fills about 94% of a square canvas, centred, nothing cropped.\nBackground: pure solid black (#000000), no texture, no vignette, no stars.\nConstraints: no colour, no text, no letters from real alphabets, no watermark, no border."
+ },
+ {
+  "id": "vfx-decal_scorch",
+  "out": "art/royal/gen/vfx/decal_scorch.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a ground decal seen from directly above, laid flat on the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash) where a spell struck.\nSubject: a scorched blast mark: blackened soot radiating outward from a burnt centre, a few glowing orange embers and hairline cracks at the middle.\nStyle: painted, rich and natural like the game's painted backdrops, soft lighting, crisp detail at the centre.\nComposition: roughly circular, centred, filling about 90% of a square canvas; the edges are ragged and fade gradually to fully transparent so it blends into any ground.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no ground beyond the decal itself.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-decal_frost",
+  "out": "art/royal/gen/vfx/decal_frost.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a ground decal seen from directly above, laid flat on the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash) where a spell struck.\nSubject: a frost patch: pale blue-white rime with feathery ice-crystal patterns radiating outward, a few small ice shards.\nStyle: painted, rich and natural like the game's painted backdrops, soft lighting, crisp detail at the centre.\nComposition: roughly circular, centred, filling about 90% of a square canvas; the edges are ragged and fade gradually to fully transparent so it blends into any ground.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no ground beyond the decal itself.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-decal_cracks",
+  "out": "art/royal/gen/vfx/decal_cracks.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a ground decal seen from directly above, laid flat on the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash) where a spell struck.\nSubject: cracked, broken earth: dark jagged fissures radiating from a shallow crater, loose pebbles and dust.\nStyle: painted, rich and natural like the game's painted backdrops, soft lighting, crisp detail at the centre.\nComposition: roughly circular, centred, filling about 90% of a square canvas; the edges are ragged and fade gradually to fully transparent so it blends into any ground.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no ground beyond the decal itself.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-decal_moss",
+  "out": "art/royal/gen/vfx/decal_moss.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a ground decal seen from directly above, laid flat on the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash) where a spell struck.\nSubject: a patch of fresh green moss and grass blades with tiny white and yellow wildflowers.\nStyle: painted, rich and natural like the game's painted backdrops, soft lighting, crisp detail at the centre.\nComposition: roughly circular, centred, filling about 90% of a square canvas; the edges are ragged and fade gradually to fully transparent so it blends into any ground.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no ground beyond the decal itself.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-decal_blight",
+  "out": "art/royal/gen/vfx/decal_blight.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX texture\nAsset type: a ground decal seen from directly above, laid flat on the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash) where a spell struck.\nSubject: a patch of withered grey grass and dead leaves with purple-black rot veins spreading outward.\nStyle: painted, rich and natural like the game's painted backdrops, soft lighting, crisp detail at the centre.\nComposition: roughly circular, centred, filling about 90% of a square canvas; the edges are ragged and fade gradually to fully transparent so it blends into any ground.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no ground beyond the decal itself.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-sheet_glow",
+  "out": "art/royal/gen/vfx/sheet_glow.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite sheet\nAsset type: a sheet of nine separate particle sprites for spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash).\nStyle: premium painted game VFX, crisp, readable when small, luminous, drawn to be added as light.\nLayout: exactly 3 columns x 3 rows. Each sprite is centred in its cell with wide empty margins; no sprite touches another sprite or the image edge.\nBackground: pure solid black (#000000); every sprite glows against it.\nSprites, left to right, top to bottom:\n1. a single tall flame tongue, orange and yellow with a white-hot core\n2. a wide flickering flame flare, orange with a yellow core\n3. a small glowing ember fleck, orange-gold\n4. a four-pointed white star sparkle with thin lens glints\n5. a soft round white light orb with a faint halo\n6. a pale blue-white ghostly soul wisp with a curling tail\n7. a short jagged white-violet lightning fragment\n8. a single glowing white invented runic glyph\n9. a curling spiral stroke of white light\nConstraints: no text, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "vfx-sheet_matter",
+  "out": "art/royal/gen/vfx/sheet_matter.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite sheet\nAsset type: a sheet of nine separate particle sprites for spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash).\nStyle: premium painted game VFX, crisp, readable when small.\nLayout: exactly 3 columns x 3 rows. Each sprite is centred in its cell with wide empty margins; no sprite touches another sprite or the image edge.\nBackground: genuinely transparent background (alpha).\nSprites, left to right, top to bottom:\n1. a soft billowing grey-white smoke puff\n2. a darker sooty grey-black smoke puff\n3. a tan dust cloud puff\n4. a jagged translucent pale-blue ice shard\n5. a cluster of three small pale-blue ice shards\n6. a chunk of grey stone rubble\n7. a small brown rock fragment\n8. a single green leaf\n9. a soft pink-white flower petal\nConstraints: no text, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "vfx-sheet_bits",
+  "out": "art/royal/gen/vfx/sheet_bits.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite sheet\nAsset type: a sheet of nine separate particle sprites for spell effects in a painted medieval fantasy strategy game (Crownroad: Siege of Ash).\nStyle: premium painted game VFX, crisp, readable when small.\nLayout: exactly 3 columns x 3 rows. Each sprite is centred in its cell with wide empty margins; no sprite touches another sprite or the image edge.\nBackground: genuinely transparent background (alpha).\nSprites, left to right, top to bottom:\n1. a small white feather\n2. a splash of clear blue water droplets\n3. a short segment of thorny dark-green bramble vine, horizontal\n4. a curled pale wood splinter\n5. a grey ash flake with a glowing orange edge\n6. a wisp of purple-black shadow smoke\n7. a single oval link of glowing violet spectral chain, horizontal\n8. a small clear blue water droplet\n9. a tuft of green grass blades\nConstraints: no text, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "vfx-rise_bramble",
+  "out": "art/royal/gen/vfx/rise_bramble.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite\nAsset type: a spell effect element seen from the side, rising out of the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash); it is scaled up from the ground when a spell lands.\nSubject: a cluster of thick thorny dark-green bramble vines erupting upward out of the ground, curling tips, sharp thorns, a few red berries.\nStyle: premium painted 3D-rendered game art matching rich painted fantasy backdrops: warm rim light from the upper left, crisp detail.\nComposition: side view, centred, filling about 88% of a square canvas, the base flat along the bottom edge of the subject, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no ground plate, no shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-rise_ice_spikes",
+  "out": "art/royal/gen/vfx/rise_ice_spikes.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite\nAsset type: a spell effect element seen from the side, rising out of the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash); it is scaled up from the ground when a spell lands.\nSubject: a cluster of jagged pale-blue translucent ice crystals erupting upward from the ground, frost mist around the base.\nStyle: premium painted 3D-rendered game art matching rich painted fantasy backdrops: warm rim light from the upper left, crisp detail.\nComposition: side view, centred, filling about 88% of a square canvas, the base flat along the bottom edge of the subject, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no ground plate, no shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-rise_rock_spikes",
+  "out": "art/royal/gen/vfx/rise_rock_spikes.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite\nAsset type: a spell effect element seen from the side, rising out of the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash); it is scaled up from the ground when a spell lands.\nSubject: jagged grey stone spikes and boulders erupting upward from cracked earth, dust around the base.\nStyle: premium painted 3D-rendered game art matching rich painted fantasy backdrops: warm rim light from the upper left, crisp detail.\nComposition: side view, centred, filling about 88% of a square canvas, the base flat along the bottom edge of the subject, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no ground plate, no shadow plate.\nConstraints: no text, no watermark, no border."
+ },
+ {
+  "id": "vfx-rise_wave",
+  "out": "art/royal/gen/vfx/rise_wave.png",
+  "inputs": [],
+  "prompt": "Use case: game VFX sprite\nAsset type: a spell effect element seen from the side, rising out of the battlefield road in a painted medieval fantasy strategy game (Crownroad: Siege of Ash); it is scaled up from the ground when a spell lands.\nSubject: a cresting sea-green ocean wave rolling from left to right, white foam crest and flying spray, flat along the bottom.\nStyle: premium painted 3D-rendered game art matching rich painted fantasy backdrops: warm rim light from the upper left, crisp detail.\nComposition: side view, centred, filling about 88% of a square canvas, the base flat along the bottom edge of the subject, nothing cropped.\nBackground: genuinely transparent background (alpha). No backdrop, no ground plate, no shadow plate.\nConstraints: no text, no watermark, no border."
+ }
+]

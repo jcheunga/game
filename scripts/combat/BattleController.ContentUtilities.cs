@@ -14,9 +14,18 @@ public partial class BattleController
         if(def.CardKind=="tactical")
         {
             if(def.EffectType=="tactic_smoke_pot")
-            { AddContentField("smoke",Team.Player,point,spell.Radius,spell.Duration,0,spell.DisplayName);_targetLocks.Clear();return "Smoke conceals allies until they attack."; }
+            {
+                AddContentField("smoke",Team.Player,point,spell.Radius,spell.Duration,0,spell.DisplayName);_targetLocks.Clear();
+                ExpandedSpellVfx(spell,point,null,null,System.Array.Empty<Unit>(),System.Array.Empty<Vector2>(),point);
+                return "Smoke conceals allies until they attack.";
+            }
             if(def.EffectType=="tactic_war_horn")
-            { foreach(var enemy in NearbyContentUnits(Team.Enemy,point,spell.Radius).Take(1)) enemy.FocusMarkTime=spell.Duration;_targetLocks.Clear();return "Focus target marked."; }
+            {
+                var marked=NearbyContentUnits(Team.Enemy,point,spell.Radius).Take(1).ToArray();
+                foreach(var enemy in marked) enemy.FocusMarkTime=spell.Duration;_targetLocks.Clear();
+                ExpandedSpellVfx(spell,point,null,null,marked,System.Array.Empty<Vector2>(),point);
+                return "Focus target marked.";
+            }
             if(_units.Count(u=>u.Team==Team.Player && !u.IsDead)>=32) return "The battlefield is full.";
             var objectDef=new UnitDefinition {
                 Id=def.Id,DisplayName=def.DisplayName,Side="Player",MaxHealth=Math.Max(1,def.ObjectHealth),
@@ -32,10 +41,12 @@ public partial class BattleController
             placed.UtilityCharges=def.Charges;placed.ContentCooldown=def.EffectType=="tactic_supply_crate"?3:2;
             placed.EffectReadyAt["utility_pulse"]=placed.ContentCooldown;
             placed.CanDropCourage=false;
+            ExpandedSpellVfx(spell,point,null,null,System.Array.Empty<Unit>(),System.Array.Empty<Vector2>(),point);
             return $"{def.DisplayName} placed.";
         }
         var target=ContentSpellTarget(Team.Enemy,point);
         var ally=ContentSpellTarget(Team.Player,point);
+        var affected=new List<Unit>();var path=new List<Vector2>();var origin=ally?.Position??point;
         switch(spell.EffectType)
         {
             case "aegis_bolt":
@@ -46,7 +57,7 @@ public partial class BattleController
                 break;
             case "tidal_push":
                 foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius))
-                { OffsetUnitWithinBattlefield(e,new Vector2(e.Definition.IsBoss?8:spell.SecondaryPower,0));e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical); }
+                { OffsetUnitWithinBattlefield(e,new Vector2(e.Definition.IsBoss?8:spell.SecondaryPower,0));e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical);affected.Add(e); }
                 break;
             case "anchor_hex":
                 if(target!=null) { target.Root(spell.Duration);target.ContentState="anchored"; }
@@ -58,10 +69,10 @@ public partial class BattleController
                 AddContentField("meteor",Team.Player,point,spell.Radius,4,spell.Power,spell.DisplayName).Pulse=1.2f;
                 break;
             case "purifying_light":
-                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius)) { a.Cleanse();a.Heal(spell.Power); }
+                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius)) { a.Cleanse();a.Heal(spell.Power);if(!a.IsTacticalObject) affected.Add(a); }
                 break;
             case "withering_seal":
-                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) e.ApplyHealingPenalty(.7f,spell.Duration);
+                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.ApplyHealingPenalty(.7f,spell.Duration);affected.Add(e); }
                 break;
             case "gale_step":
                 if(ally!=null) { ally.Cleanse();OffsetUnitWithinBattlefield(ally,new Vector2(Math.Min(44,spell.SecondaryPower),0)); }
@@ -71,7 +82,7 @@ public partial class BattleController
                 break;
             case "soul_harvest":
                 var corpses=_contentCorpses.Where(c=>c.Team==Team.Enemy && c.Position.DistanceTo(point)<spell.Radius).Take(3).ToArray();
-                foreach(var corpse in corpses) _contentCorpses.Remove(corpse);
+                foreach(var corpse in corpses) { _contentCorpses.Remove(corpse);path.Add(corpse.Position); }
                 GainMana(corpses.Length*spell.Power);
                 break;
             case "consecrated_ground":
@@ -81,36 +92,36 @@ public partial class BattleController
                 if(ally!=null) { var field=AddContentField("heal",Team.Player,ally.Position,24,spell.Duration,spell.Power,spell.DisplayName);field.Follow=ally;field.FollowLife=ally.CombatLifetime;field.SingleTarget=true; }
                 break;
             case "bramble_snare":
-                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical);e.Root(spell.Duration); }
+                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical);e.Root(spell.Duration);affected.Add(e); }
                 break;
             case "chain_lightning":
                 var victim=target;var power=spell.Power;var seen=new System.Collections.Generic.HashSet<Unit>();
                 for(var i=0;i<3 && victim!=null;i++)
                 {
-                    seen.Add(victim);victim.TakeDamage(power,spell.DisplayName,CombatDamageType.Magical);
+                    seen.Add(victim);path.Add(Chest(victim));victim.TakeDamage(power,spell.DisplayName,CombatDamageType.Magical);
                     var from=victim.Position;power*=.7f;
                     victim=NearbyContentUnits(Team.Enemy,from,spell.Radius).FirstOrDefault(e=>!seen.Contains(e));
                 }
                 break;
             case "rallying_advance":
-                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius).Take(4)) a.ApplyTemporaryCombatBuff(1.08f,1.12f,spell.Duration);
+                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius).Take(4)) { a.ApplyTemporaryCombatBuff(1.08f,1.12f,spell.Duration);affected.Add(a); }
                 break;
             case "revealing_flare":
                 AddContentField("reveal",Team.Player,point,spell.Radius,spell.Duration,0,spell.DisplayName);
                 foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.Reveal();e.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical); }
                 break;
             case "mirror_ward":
-                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius).Take(3)) { a.ProjectileMirrorTime=spell.Duration;a.ProjectileMirrorCharges=1; }
+                foreach(var a in NearbyContentUnits(Team.Player,point,spell.Radius).Take(3)) { a.ProjectileMirrorTime=spell.Duration;a.ProjectileMirrorCharges=1;affected.Add(a); }
                 break;
             case "banish":
                 if(target!=null) { target.RemoveShield();if(target.IsSummoned) target.Despawn();else target.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical); }
                 break;
             case "royal_edict":
-                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) e.Silence(spell.Duration);
+                foreach(var e in NearbyContentUnits(Team.Enemy,point,spell.Radius)) { e.Silence(spell.Duration);affected.Add(e); }
                 break;
             default:return "No effect at this point.";
         }
-        SpawnEffect(point,spell.GetTint(),5,Math.Max(16,spell.Radius),.4f,false);
+        ExpandedSpellVfx(spell,point,target,ally,affected,path,origin);
         return $"{spell.DisplayName} resolved.";
     }
 
@@ -121,7 +132,7 @@ public partial class BattleController
         {
             if(obj.UtilityCharges<=0) { obj.Despawn();return true; }
             if(target!=null && obj.CanAttack(target) && obj.TryBeginAttack(target))
-            { obj.UtilityCharges--;QueueUnitStrike(obj,target); }
+            { obj.UtilityCharges--;QueueUnitStrike(obj,target);SpellVfx.Flash(this,obj.Position+new Vector2(22,-26),FireHot,16,.2f); }
             return true;
         }
         if(spell.EffectType is "tactic_firepot_mine" or "tactic_frost_trap")
@@ -129,6 +140,7 @@ public partial class BattleController
             var victim=ContentSpellTarget(Team.Enemy,obj.Position,spell.Radius);
             if(victim!=null)
             {
+                TacticPulseVfx(spell.EffectType,obj,victim);
                 if(spell.EffectType=="tactic_frost_trap")
                 { victim.ApplyControl(2);victim.TakeDamage(spell.Power,spell.DisplayName,CombatDamageType.Magical); }
                 else
@@ -153,21 +165,24 @@ public partial class BattleController
         switch(spell.EffectType)
         {
             case "tactic_healing_shrine":
-                foreach(var ally in NearbyContentUnits(Team.Player,obj.Position,spell.Radius).Where(a=>!a.IsTacticalObject).Take(3)) ally.Heal(spell.Power);
+                TacticPulseVfx(spell.EffectType,obj);
+                foreach(var ally in NearbyContentUnits(Team.Player,obj.Position,spell.Radius).Where(a=>!a.IsTacticalObject).Take(3))
+                { ally.Heal(spell.Power);SpellVfx.Burst(this,Chest(ally),"p_star",3,.5f,SpellVfx.Fade(LifeHot,LifeBody),6,10,20,50); }
                 obj.UtilityCharges--;break;
             case "tactic_supply_crate":
                 if(NearbyContentUnits(Team.Player,obj.Position,spell.Radius).Any(a=>!a.IsTacticalObject))
-                { SpawnCouragePickup(obj.Position,spell.Power);obj.UtilityCharges--; }
+                { SpawnCouragePickup(obj.Position,spell.Power);obj.UtilityCharges--;TacticPulseVfx(spell.EffectType,obj); }
                 break;
             case "tactic_purifying_censer":
+                TacticPulseVfx(spell.EffectType,obj);
                 foreach(var ally in NearbyContentUnits(Team.Player,obj.Position,spell.Radius)) ally.Cleanse();
                 obj.UtilityCharges--;break;
             case "tactic_repair_cache":
-                if(obj.Position.DistanceTo(PlayerBaseCorePosition)<60) RepairBusByAmount(spell.Power);
+                if(obj.Position.DistanceTo(PlayerBaseCorePosition)<60) { RepairBusByAmount(spell.Power);TacticPulseVfx(spell.EffectType,obj); }
                 obj.UtilityCharges--;break;
             case "tactic_grounding_rod":
                 var caster=NearbyContentUnits(Team.Enemy,obj.Position,spell.Radius).FirstOrDefault(e=>_contentCasts.ContainsKey(e));
-                if(caster!=null) { caster.Silence(.5f);obj.UtilityCharges--; }
+                if(caster!=null) { caster.Silence(.5f);obj.UtilityCharges--;TacticPulseVfx(spell.EffectType,obj,caster); }
                 break;
         }
         return true;

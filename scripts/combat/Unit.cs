@@ -802,10 +802,12 @@ public partial class Unit : Node2D
 
         if (!GroundShadowsManaged) DrawGroundShadow(this, BattleLighting.ForZone("city"));
 
-        if (_spriteSheet != null)
+        if (DrawTacticalObject()) { }
+        else if (_spriteSheet != null)
             DrawSpriteFrame();
         else
             DrawProceduralUnit();
+        DrawStatusVisuals();
         DrawHealthBar();
         DrawContentFeedback();
     }
@@ -823,6 +825,7 @@ public partial class Unit : Node2D
     {
         EnsureSpriteLoaded();
         var feet = ground == this ? Vector2.Zero : Position;
+        if (TacticalArt != null) { lighting.DrawContact(ground, feet, new Vector2(TacticalWidth * .36f, TacticalWidth * .1f), .9f); return; }
         lighting.DrawContact(ground, feet, new Vector2(Radius * .48f, Radius * .16f), .8f);
         if (_spriteSheet == null) return;
         if (!_spriteSheet.Animations.TryGetValue(_spriteAnimState, out var anim) &&

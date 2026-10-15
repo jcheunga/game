@@ -321,11 +321,6 @@ public partial class MobilePresentationReview : Node
             BattleParticles.SpawnImpactSparks(host,p,color,20), BattleParticles.SpawnDeployBurst(host,p,color),
             BattleParticles.SpawnDeathBurst(host,p,color,false), BattleParticles.SpawnDeathBurst(host,p,color,true),
             BattleParticles.SpawnBaseHitDebris(host,p,color),
-            BattleParticles.SpawnFireballParticles(host,p,100), BattleParticles.SpawnHealSparkles(host,p,color,100),
-            BattleParticles.SpawnFrostParticles(host,p,color,100), BattleParticles.SpawnLightningParticles(host,p,color),
-            BattleParticles.SpawnWardParticles(host,p,color,100), BattleParticles.SpawnStoneBarricadeParticles(host,p,100),
-            BattleParticles.SpawnWarCryParticles(host,p,100), BattleParticles.SpawnEarthquakeParticles(host,p,100),
-            BattleParticles.SpawnPolymorphParticles(host,p), BattleParticles.SpawnResurrectParticles(host,p),
             BattleParticles.SpawnBossSpawnBurst(host,p,color)
         };
         foreach(var emitter in emitters)

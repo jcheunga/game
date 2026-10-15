@@ -74,6 +74,8 @@ public partial class CombatMotionReview
     private Unit CrowdUnit(BattleController battle,string id,Team team,Vector2 position)
     {
         var unit=(Unit)Call(battle,"SpawnUnit",team,new UnitStats(GameData.GetUnit(id),healthScale:100),position);
+        // no critical hits: the checks count exact damage
+        typeof(Unit).GetProperty(nameof(Unit.CriticalChance))!.GetSetMethod(true)!.Invoke(unit,new object[]{0f});
         unit.SetProcess(false); unit._Process(.5); unit._Process(.01);
         return unit;
     }
@@ -105,7 +107,8 @@ public partial class CombatMotionReview
                 a.TickAttackTimer(a.AttackContactSeconds);
                 if(mode=="staggered") target._Process(.025);
             }
-            var expected=attackers.Sum(a=>a.CurrentAttackDamage)*target.DamageTakenScale;
+            // through the target's armour (the Risen wear some), as Unit.TakeDamage applies it
+            var expected=attackers.Sum(a=>a.CurrentAttackDamage)*(1f-target.PhysicalResistance/100f)*target.DamageTakenScale;
             Check(Mathf.Abs(before-target.Health-expected)<.01f,$"{mode}: every valid contact applies its damage exactly once");
             Check(target.Position==feet && positions.SequenceEqual(attackers.Select(a=>a.Position)),
                 $"{mode}: ordinary hits move neither the target nor its attackers out of reach");
@@ -129,14 +132,12 @@ public partial class CombatMotionReview
 
     private async Task CaptureCrowdContacts()
     {
-        MobilePresentation.TestOverride=true;
         GetWindow().Mode=Window.ModeEnum.Windowed; GetWindow().Size=new Vector2I(844,390);
         GetWindow().ContentScaleSize=new Vector2I(1280,720);
         GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
         var battle=await Battle();
-        Call(battle,"CycleMobileZoom"); Call(battle,"ToggleMobileClearView");
-        Write(battle,"_mobileFollow",false);
-        var camera=Read<Camera2D>(battle,"_mobileCamera"); camera.Position=new Vector2(500,335); camera.ForceUpdateScroll();
+        Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
+        var camera=Read<Camera2D>(battle,"_battleCamera"); camera.Position=new Vector2(500,335); camera.ForceUpdateScroll();
         var target=CrowdUnit(battle,"enemy_brute",Team.Enemy,new Vector2(500,360));
         var sword=CrowdUnit(battle,"player_brawler",Team.Player,new Vector2(470,350));
         var spear=CrowdUnit(battle,"player_spear",Team.Player,new Vector2(467,391));
@@ -165,6 +166,6 @@ public partial class CombatMotionReview
         }
         Check(target.Position==feet,"Captured three-on-one exchange leaves the shared target planted");
         battle.QueueFree(); await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
-        UnitPool.Clear(); ProjectilePool.Clear(); MobilePresentation.TestOverride=null;
+        UnitPool.Clear(); ProjectilePool.Clear();
     }
 }

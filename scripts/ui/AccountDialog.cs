@@ -6,7 +6,7 @@ using Godot;
 public partial class AccountDialog : AcceptDialog
 {
     private Label _status;
-    private LineEdit _email, _code;
+    private LineEdit _nickname, _email, _code;
     private Button _emailButton, _verifyButton, _googleButton;
     private string _challenge = "", _secret = "";
     private bool _busy, _closed, _emailAvailable, _googleAvailable;
@@ -14,7 +14,7 @@ public partial class AccountDialog : AcceptDialog
     public static void Show(Control host)
     {
         var dialog = new AccountDialog { Title = "Account", Exclusive = true, Theme = host.Theme, MinSize = new Vector2I(380, 300) };
-        host.AddChild(dialog); dialog.PopupCentered(new Vector2I(540, 430));
+        host.AddChild(dialog); dialog.PopupCentered(new Vector2I(540, 480));
     }
     public override void _Ready()
     {
@@ -27,6 +27,14 @@ public partial class AccountDialog : AcceptDialog
         stack.AddThemeConstantOverride("separation", 12); scroll.AddChild(stack);
         _status = RealmUi.Label(GameState.Instance.AccountProvider.Length > 0 ? $"Signed in · {GameState.Instance.AccountLabel}" : "Save your journey across devices.", 18, true);
         stack.AddChild(_status);
+        if (GameState.Instance.AccountProvider.Length == 0)
+        {
+            // A new account keeps this nickname; signing in to an existing account brings back its own.
+            stack.AddChild(RealmUi.Label("Nickname for a new account", 16, true));
+            _nickname = new LineEdit { Name = "AccountNickname", PlaceholderText = "Nickname", Text = GameState.Instance.PlayerCallsign,
+                MaxLength = GameState.MaxCallsignLength, CustomMinimumSize = new Vector2(0, 48), TooltipText = "Nickname for a new account" };
+            stack.AddChild(_nickname);
+        }
         _email = new LineEdit { PlaceholderText = "Email address", CustomMinimumSize = new Vector2(0, 48), MaxLength = 254 };
         stack.AddChild(_email);
         _emailButton = RealmUi.Button("arrow", "Send sign-in code", () => _ = SendCode()); stack.AddChild(_emailButton);
@@ -43,7 +51,10 @@ public partial class AccountDialog : AcceptDialog
     }
     private void Close() { _closed = true; QueueFree(); }
     private void Busy(bool busy)
-    { _busy = busy; _emailButton.Disabled = busy || !_emailAvailable; _verifyButton.Disabled = busy; _googleButton.Disabled = busy || !_googleAvailable; }
+    {
+        _busy = busy; _emailButton.Disabled = busy || !_emailAvailable; _verifyButton.Disabled = busy; _googleButton.Disabled = busy || !_googleAvailable;
+        if (_nickname != null) _nickname.Editable = !busy;
+    }
     private async Task LoadProviders()
     {
         Busy(true);
@@ -58,9 +69,19 @@ public partial class AccountDialog : AcceptDialog
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
+    /// <summary>Saves the nickname field before an identity is linked, so the new account is created with it.</summary>
+    private bool ApplyNickname()
+    {
+        if (_nickname == null || _nickname.Text.Trim() == GameState.Instance.PlayerCallsign) return true;
+        if (GameState.Instance.TryChooseCallsign(_nickname.Text, out var reason)) return true;
+        _status.Text = $"Nickname: {reason}";
+        _nickname.GrabFocus();
+        return false;
+    }
+
     private async Task SendCode()
     {
-        if (_busy) return; Busy(true); _status.Text = "Sending…";
+        if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Sending…";
         try
         {
             var response = await AccountSignIn.Request("/auth/email/start", new { email = _email.Text }); if (_closed) return;
@@ -72,14 +93,14 @@ public partial class AccountDialog : AcceptDialog
     }
     private async Task Verify()
     {
-        if (_busy) return; Busy(true); _status.Text = "Signing in…";
+        if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
         try { await Finish(await AccountSignIn.Request("/auth/email/verify", new { challengeId = _challenge, secret = _secret, code = _code.Text.Trim() })); }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
     private async Task Google()
     {
-        if (_busy) return; Busy(true); _status.Text = "Finish sign-in in your browser.";
+        if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Finish sign-in in your browser.";
         try
         {
             var response = await AccountSignIn.Request("/auth/google/start", new { }); if (_closed) return;

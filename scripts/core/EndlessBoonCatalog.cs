@@ -2,16 +2,19 @@ using System;
 
 public sealed class EndlessBoonDefinition
 {
-    public EndlessBoonDefinition(string id, string title, string summary)
+    public EndlessBoonDefinition(string id, string title, string summary, string card)
     {
         Id = id;
         Title = title;
         Summary = summary;
+        Card = card;
     }
 
     public string Id { get; }
     public string Title { get; }
     public string Summary { get; }
+    /// <summary>The few words that fit on the boon's card at a size a phone can read.</summary>
+    public string Card { get; }
 }
 
 public static class EndlessBoonCatalog
@@ -29,31 +32,38 @@ public static class EndlessBoonCatalog
         new(
             SurplusCourageId,
             "Surplus Courage",
-            "Courage recovers 20% faster during the run."),
+            "Courage recovers 20% faster during the run.",
+            "Courage +20% faster"),
         new(
             ReinforcedBusId,
             "Reinforced Wagon",
-            "Start with +20% war wagon hull."),
+            "Start with +20% war wagon hull.",
+            "+20% wagon hull"),
         new(
             SalvageCacheId,
             "Supply Cache",
-            "Earn 25% more gold at the end of the run."),
+            "Earn 25% more gold at the end of the run.",
+            "+25% gold at the end"),
         new(
             RelicForgeId,
             "Relic Forge",
-            "Grant a random relic at this checkpoint."),
+            "Grant a random relic at this checkpoint.",
+            "A random relic"),
         new(
             BerserkerBloodId,
             "Berserker Blood",
-            "All units gain +0.5% damage for every 1% missing health."),
+            "All units gain +0.5% damage for every 1% missing health.",
+            "Stronger when wounded"),
         new(
             ShieldFormationId,
             "Shield Formation",
-            "War wagon gains +20% hull armor for the rest of the run."),
+            "War wagon gains +20% hull armor for the rest of the run.",
+            "+20% wagon armor"),
         new(
             SplitterBaneId,
             "Splitter Bane",
-            "Gold rewards from this run increase by 12%.")
+            "Gold rewards from this run increase by 12%.",
+            "+12% gold")
     };
 
     public static EndlessBoonDefinition[] GetAll()

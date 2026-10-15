@@ -22,8 +22,9 @@ public partial class UiReviewSmoke
         fixture.HighestUnlockedStage = 12;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Where(u => u.UnlockStage <= 12).Select(u => u.Id).ToArray();
         fixture.OwnedPlayerSpellIds = GameData.GetPlayerSpells().Select(s => s.Id).ToArray();
-        fixture.ActiveDeckUnitIds = new[] { "player_brawler", "player_ranger", "player_shooter", "player_defender", "player_spear" };
-        fixture.ActiveDeckSpellIds = new[] { "spell_fireball", "spell_barrier_ward", "spell_heal", "spell_lightning_strike" };
+        // Units and spells share six loadout slots; leave one open so every slot state shows.
+        fixture.ActiveDeckUnitIds = new[] { "player_brawler", "player_ranger", "player_shooter" };
+        fixture.ActiveDeckSpellIds = new[] { "spell_fireball", "spell_barrier_ward" };
         fixture.OwnedEquipmentIds = new[] { "relic_iron_pendant", "relic_swift_boots", "relic_wolftooth_charm", "relic_spectral_lantern", "relic_sages_ring",
             "relic_windrunner_cloak", "relic_crown_of_valor", "relic_moonfire_talisman", "relic_tower_ascendant" };
         fixture.DiscoveredCodexIds = CodexCatalog.GetAll().Select(e => e.Id).ToArray();

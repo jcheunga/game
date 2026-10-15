@@ -60,12 +60,12 @@ public partial class LoadoutMenu : RoyalScreen
         layer.AddChild(RoyalKit.Image("icon-crossed-swords", spec.Rect("mission.objective.icon")));
         var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE ENEMY GATEHOUSE", 320, new Color("1e1710"));
         objectiveTitle.ShadowOffset = Vector2.Zero; layer.AddChild(objectiveTitle);
-        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}. Tap the battlefield picture for enemy counters and battle tips.", 15, new Color("31261b"), 410);
+        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}\nTap the picture for battle tips", 15, new Color("31261b"), 410);
         line.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
         line.Position = new Vector2(spec.Number("mission.objective.line.1", "pen_x", 133), spec.Number("mission.objective.line.1", "baseline", 498) - 15);
-        line.Size = new Vector2(spec.Rect("panel.mission").End.X - line.Position.X - 14, 40);
+        line.Size = new Vector2(spec.Rect("panel.mission").End.X - line.Position.X - 14, 44);
         line.AddThemeConstantOverride("line_spacing", -2);
-        RoyalText.FitLines(line, 2, 12);
+        RoyalText.FitLines(line, 2);
         layer.AddChild(line);
         layer.AddChild(RoyalKit.Image("coin-heap", spec.Rect("mission.reward.coins")));
         layer.AddChild(spec.Label("mission.reward.caption", "VICTORY REWARD", 200));
@@ -81,12 +81,14 @@ public partial class LoadoutMenu : RoyalScreen
         edit.SetCaption(editLabel, new Rect2(editLabel.Position, editLabel.Size));
         layer.AddChild(edit);
         var units = state.GetActiveDeckUnits().ToArray();
+        var spells = state.GetActiveDeckSpells().ToArray();
         string[] tints = { "warm", "cool", "gold", "cool", "warm", "cool" };
         for (var i = 0; i < 6; i++)
         {
             var key = $"card.{i + 1}";
             var rect = spec.Rect(key);
-            if (i >= units.Length) { layer.AddChild(EmptySlot(rect)); continue; }
+            // Units and spells share the loadout; a card past the units' room is held by a spell.
+            if (i >= units.Length) { layer.AddChild(EmptySlot(rect, i >= state.LoadoutSizeLimit - spells.Length)); continue; }
             var unit = units[i];
             var card = RoyalButton.Over(rect, "View " + unit.DisplayName, null, 6);
             card.SetStates(RoyalKit.Slice("prep-card-" + tints[i], 10, 10, 10, 54), 6);
@@ -109,13 +111,13 @@ public partial class LoadoutMenu : RoyalScreen
         // Spells.
         layer.AddChild(RoyalKit.Image("icon-book-small", spec.Rect("spells.icon")));
         layer.AddChild(spec.Label("spells.label", "EQUIPPED SPELLS", 220));
-        var spells = state.GetActiveDeckSpells().ToArray();
         var first = spec.Rect("spell.1");
         var pitch = spec.Has("spell.2") ? spec.Rect("spell.2").Position.X - first.Position.X : 80;
         for (var i = 0; i < 5; i++)
         {
             var rect = new Rect2(first.Position + new Vector2(i * pitch, 0), first.Size);
-            var slot = RoyalButton.Over(rect, i < spells.Length ? spells[i].DisplayName : "Empty spell slot", null, 6);
+            var held = i >= spells.Length && i >= state.LoadoutSizeLimit - units.Length;
+            var slot = RoyalButton.Over(rect, i < spells.Length ? spells[i].DisplayName : held ? "Used by a unit" : "Empty spell slot", null, 6);
             slot.SetStates(RoyalKit.Slice("prep-spell-slot", 10), 6);
             if (i < spells.Length)
             {
@@ -125,7 +127,11 @@ public partial class LoadoutMenu : RoyalScreen
                     Position = new Vector2(6, 6), Size = rect.Size - new Vector2(12, 12), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
                 slot.Pressed += () => SpellShowcase.Show(this, spell);
             }
-            else slot.Disabled = true;
+            else
+            {
+                slot.Disabled = true;
+                if (held) slot.AddChild(RoyalKit.Image("tab-warband", new Rect2(rect.Size / 2 - new Vector2(14, 14), new Vector2(28, 28)), new Color(1, 1, 1, .4f)));
+            }
             var pip = spec.Rect("spell.1.pip");
             slot.AddChild(RoyalKit.Image("prep-spell-pip", new Rect2(pip.Position - first.Position, pip.Size)));
             layer.AddChild(slot);
@@ -174,11 +180,13 @@ public partial class LoadoutMenu : RoyalScreen
         return ResourceLoader.Exists(path) ? RoyalArt.Load(path) : null;
     }
 
-    private static Control EmptySlot(Rect2 rect)
+    /// <summary>An open card, or one held by a spell (units and spells share the loadout).</summary>
+    private static Control EmptySlot(Rect2 rect, bool heldBySpell)
     {
         var panel = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", RoyalKit.Slice("prep-card-cool", 10, 10, 10, 54).Tinted(new Color(.45f, .45f, .5f)));
-        panel.AddChild(RoyalKit.Image("empty-plus", new Rect2(rect.Size.X / 2 - 17, rect.Size.Y / 2 - 40, 34, 34)));
+        panel.AddThemeStyleboxOverride("panel", RoyalKit.Slice("prep-card-cool", 10, 10, 10, 54).Tinted(heldBySpell ? new Color(.3f, .3f, .34f) : new Color(.45f, .45f, .5f)));
+        var mark = new Rect2(rect.Size.X / 2 - 17, rect.Size.Y / 2 - 40, 34, 34);
+        panel.AddChild(heldBySpell ? RoyalKit.Image("tab-spells", mark, new Color(1, 1, 1, .4f)) : RoyalKit.Image("empty-plus", mark));
         return panel;
     }
 }

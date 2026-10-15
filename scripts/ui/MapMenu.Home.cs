@@ -30,6 +30,7 @@ public partial class MapMenu
             _hud.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
                 Texture = RoyalArt.Cut("hud-home", piece), Position = piece.Position, Size = piece.Size, MouseFilter = MouseFilterEnum.Ignore });
         BuildResources(spec);
+        BuildPlayerCard();
         BuildDeveloperControls();
         BuildZoneHeading(spec);
         var settings = RoyalButton.Over(spec.Rect("settings.ring"), "Settings", () => SceneRouter.Instance.GoToSettings(), 28);

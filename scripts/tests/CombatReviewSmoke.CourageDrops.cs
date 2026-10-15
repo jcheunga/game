@@ -20,7 +20,6 @@ public partial class CombatReviewSmoke
         var originalChance = tuning.CourageDropChance;
         var originalGuarantee = tuning.CourageDropGuaranteeAfterMisses;
         var originalWindow = GetWindow().Size;
-        var originalMobile = MobilePresentation.TestOverride;
         BattleController battle = null;
         try
         {
@@ -30,7 +29,6 @@ public partial class CombatReviewSmoke
             fixture.OwnedPlayerSpellIds = new[] { "spell_fireball" };
             fixture.ActiveDeckSpellIds = fixture.OwnedPlayerSpellIds;
             GameState.Instance.RestoreCloudSave(fixture);
-            MobilePresentation.TestOverride = false;
             GetWindow().Size = new Vector2I(1280, 720);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             battle = await OpenBattle(1);
@@ -133,12 +131,11 @@ public partial class CombatReviewSmoke
                 "Seeded pack rolls are reproducible and independent of combat/cosmetic RNG consumption");
             await CloseBattle(battle); battle = null;
 
-            // Exercise actual viewport input on both desktop and phone layouts.
+            // Exercise actual viewport input with mouse and touch, at a monitor and a phone size.
             tuning.CourageDropChance = 1;
             foreach (var touch in new[] { false, true })
             {
                 var mode = touch ? "phone" : "desktop";
-                MobilePresentation.TestOverride = touch;
                 GetWindow().Size = touch ? new Vector2I(844, 390) : new Vector2I(1280, 720);
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 battle = await OpenBattle(1);
@@ -147,8 +144,8 @@ public partial class CombatReviewSmoke
                 AppLifecycleService.Instance?.Notification((int)Node.NotificationWMWindowFocusIn);
                 if (Read<bool>(battle, "_battlePaused")) Invoke(battle, "TogglePause");
                 packs = Read<List<CouragePickup>>(battle, "_couragePickups");
-                var camera = Read<Camera2D>(battle, touch ? "_mobileCamera" : "_battleCamera");
-                if (touch) Write(battle, "_mobileFollow", false); else Invoke(battle, "SetBattleCameraFollow", false);
+                var camera = Read<Camera2D>(battle, "_battleCamera");
+                Invoke(battle, "SetBattleCameraFollow", false);
                 camera.Position = new Vector2(700, camera.Position.Y);
                 Invoke(battle, "ClampBattleCamera", camera); camera.ForceUpdateScroll();
                 var world = new Vector2(720, 340);
@@ -237,17 +234,6 @@ public partial class CombatReviewSmoke
                     mode + ": explicit spell drag casts over a pack without collecting it");
                 Invoke(battle, "TickCouragePickups", 10f);
 
-                if (touch)
-                {
-                    Invoke(battle, "ToggleMobileClearView");
-                    pickup = Pack(); point = Point(pickup); Down(point); Up(point);
-                    Check(pickup.Collected && Read<float>(battle, "_courage") == 20f,
-                        "Courage packs remain collectible with the mobile cards hidden");
-                    Invoke(battle, "TickCouragePickups", 1f);
-                    Invoke(battle, "ToggleMobileClearView");
-                    Write(battle, "_courage", 0f);
-                }
-
                 // Capture actual battle presentation with a normal and a fading pack.
                 for (var frame = 0; frame < 40; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 var faded = Pack(); Invoke(battle, "TickCouragePickups", 7f);
@@ -264,7 +250,6 @@ public partial class CombatReviewSmoke
             if (battle != null && IsInstanceValid(battle)) await CloseBattle(battle);
             tuning.CourageDropChance = originalChance;
             tuning.CourageDropGuaranteeAfterMisses = originalGuarantee;
-            MobilePresentation.TestOverride = originalMobile;
             GetWindow().Size = originalWindow;
             GetTree().Paused = false;
         }

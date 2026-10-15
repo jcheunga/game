@@ -104,15 +104,42 @@ public partial class BattleController
         if (_contentCasts.ContainsKey(unit)) return;
         if (unit.Team == Team.Player && !unit.IsSummoned && !unit.IsTacticalObject) _activeAbilitiesTriggered++;
         unit.MarkedTime=delay;
-        var warning=new BattleContentWarning {Position=_targetLocks.TryGetValue(unit,out var victim)?victim.Position:unit.Position,
-            Label=unit.Definition.ContentBehavior switch {"charge"=>"CHARGE","root" or "tether"=>"ROOT","sleep"=>"SLEEP","field_heal" or "healing_channel"=>"HEAL", "channel_summon" or "corpse_channel"=>"SUMMON", "hazard_object" or "marked_splash" or "blight_fields"=>"BLAST",_=>"CAST"},
-            Tint=new Color(unit.Team==Team.Enemy?"e9ac78":"91c7cf"),ZIndex=3};AddChild(warning);
+        var locked=_targetLocks.TryGetValue(unit,out var victim) && IsInstanceValid(victim);
+        var warning=new BattleContentWarning {Position=locked?victim.Position:unit.Position,Follow=locked?victim:unit,
+            Label=unit.Definition.ContentBehavior switch {"charge"=>"Charge","root" or "tether"=>"Root","sleep"=>"Sleep","field_heal" or "healing_channel"=>"Heal", "channel_summon" or "corpse_channel"=>"Summon", "hazard_object" or "marked_splash" or "blight_fields"=>"Blast",_=>"Cast"},
+            Tint=CastTint(unit),Radius=Mathf.Clamp((locked?victim:unit).Radius*1.4f,16f,40f),School=CastSchool(unit)};AddChild(warning);
+        unit.BeginCast(delay+.15f);
+        BattleCastGlow.Spawn(this,unit,CastTint(unit),delay);
         _contentCasts[unit]=new ContentCast {
             Remaining=delay,Generation=unit.CastGeneration,Lifetime=unit.CombatLifetime,
             Origin=unit.Position,Resolve=resolve,Stationary=stationary,Warning=warning,Total=Mathf.Max(.01f,delay)
         };
-        SpawnEffect(unit.Position,unit.Team==Team.Enemy?new Color("edac78"):unit.Tint,4,18,delay,false);
     }
+
+    internal static string CastSchool(Unit unit) => unit.Definition?.ContentBehavior switch
+    {
+        "field_heal" or "healing_channel" or "blessing" => "holy",
+        "channel_summon" or "corpse_channel" or "corpse_raise_ally" or "revival_link" or "corpse_buff" or "wound" => "shadow",
+        "sleep" or "null_field" or "shield_strip" => "arcane",
+        "root" or "tether" => "nature",
+        "hazard_object" or "marked_splash" or "friendly_fire_fields" => "fire",
+        "blight_fields" => "nature",
+        "beam" or "chain_attack" => "storm",
+        _ => "war"
+    };
+
+    /// <summary>The colour of a unit's magic: heals warm gold, summons and the dead sickly green, hexes violet,
+    /// blasts and charges ember; otherwise its side's colour.</summary>
+    internal static Color CastTint(Unit unit) => unit.Definition?.ContentBehavior switch
+    {
+        "field_heal" or "healing_channel" or "blessing" => new Color("ffd77a"),
+        "channel_summon" or "corpse_channel" or "corpse_raise_ally" or "revival_link" or "corpse_buff" => new Color("8cf08a"),
+        "sleep" or "null_field" or "root" or "tether" or "shield_strip" => new Color("b58cff"),
+        "hazard_object" or "marked_splash" or "blight_fields" or "friendly_fire_fields" => new Color("ff9a52"),
+        "charge" or "leap" or "intercept" => new Color("ffc46b"),
+        "beam" or "chain_attack" or "precision_shot" => new Color("8fd8ff"),
+        _ => unit.Team == Team.Enemy ? new Color("e9ac78") : new Color("91c7cf")
+    };
 
     private bool TryContentAction(Unit unit,Unit target,float delta)
     {
@@ -130,20 +157,45 @@ public partial class BattleController
         if (unit.IsSilenced) return false;
         if (behavior=="swarm" && target!=null && target.Position.DistanceTo(unit.Position)<45 &&
             NearbyContentUnits(target.Team,target.Position,50).Count()==1 && unit.TryEffect("slip",10))
+        {
+            SpellVfx.Burst(this,unit.Position,"p_dust",5,.5f,SpellVfx.Fade(new Color(.6f,.54f,.44f,.6f)),4f,8f,10f,30f,70f,Vector2.Up,additive:false,layer:SpellVfx.TroopLayer);
             OffsetUnitWithinBattlefield(unit,new Vector2(unit.Team==Team.Enemy?-36:36,0));
+        }
         if (behavior=="guard" && unit.CommittedAttacks>0 && unit.CommittedAttacks%2==0 && unit.TryEffect("guard",2f))
-            unit.GuardPhysical(.18f,1f);
+        { unit.GuardPhysical(.18f,1f);SpellVfx.Flash(this,unit.WeaponContactPosition,new Color("cfe0f0"),12f,.25f); }
         if (behavior=="vulnerability_cycle")
         {
-            if (unit.ContentAge%5f>3f) unit.ApplyArmorBreak(15f,1f);
+            if (unit.ContentAge%5f>3f)
+            {
+                unit.ApplyArmorBreak(15f,1f);
+                // the furnace vents (or the eye opens): the moment to strike shows as a burst of heat and light
+                if (unit.TryEffect("vent",4.5f))
+                {
+                    var hot=unit.DefinitionId=="enemy_reliquary_eye"?new Color("ffe08a"):new Color("ff8a3a");
+                    SpellVfx.Flash(this,unit.BodyContactPosition,hot,unit.Radius*1.2f,.45f);
+                    SpellVfx.Burst(this,unit.BodyContactPosition,"p_ember",14,.9f,SpellVfx.Fade(hot.Lightened(.3f),hot),2.5f,5f,30f,90f,70f,Vector2.Up,gravity:-40f);
+                }
+            }
             else unit.GuardPhysical(.12f,.2f);
         }
-        if (behavior=="terrain_regen" && unit.TryEffect("regenerate",2f)) unit.Heal(3f);
+        if (behavior=="terrain_regen" && unit.TryEffect("regenerate",2f) && unit.Heal(3f)>.05f)
+            SpellVfx.Burst(this,unit.Position,"p_droplet",6,.8f,SpellVfx.Fade(new Color(.6f,.9f,.85f,.8f)),2f,4f,10f,26f,40f,Vector2.Up,
+                gravity:-30f,groundRadius:unit.Radius*.8f);
         if (behavior=="brace" && !unit.MovedRecently && unit.TryEffect("brace_scan",.25f))
         {
             var charger=_units.FirstOrDefault(e=>!e.IsDead && e.Team!=unit.Team && e.ContentState=="charging" && e.Position.DistanceTo(unit.Position)<82f);
             if (charger!=null && unit.TryEffect("brace_stop",8f))
-            { if(charger.ApplyControl(.65f)) ApplyContentInterruptEquipment(unit);charger.ContentState="";ContentDamage(unit,charger,unit.AttackDamage*.8f,false,false); }
+            {
+                if(charger.ApplyControl(.65f)) ApplyContentInterruptEquipment(unit);
+                charger.ContentState="";ContentDamage(unit,charger,unit.AttackDamage*.8f,false,false);
+                // the charge breaks on the set pikes
+                var at=charger.BodyContactPosition;
+                SpellVfx.Flash(this,at,Colors.White,18f,.22f);
+                ContentSparks(at,new Color("ffd890"),12,new Vector2(Mathf.Sign(charger.Position.X-unit.Position.X),-.5f),180f);
+                SpawnCombatNumber(unit.Position+new Vector2(0,-26),"BRACED",new Color("f3e2b0"),.55f);
+                AudioDirector.Instance?.PlayShieldBlock(at);
+                charger.HoldPose(.1f);unit.HoldPose(.1f);
+            }
         }
         if (behavior is "field_heal" or "healing_channel" or "attachment")
         {
@@ -159,7 +211,7 @@ public partial class BattleController
                     var life=patient.CombatLifetime;
                     BeginContentCast(unit,.45f,()=>{
                         if (IsInstanceValid(patient) && patient.CombatLifetime==life && !patient.IsDead)
-                        { patient.Heal(5f*UnitBalance.DamageScale(unit.Level));ApplyContentHealEquipment(unit,patient); }
+                        { var healed=patient.Heal(5f*UnitBalance.DamageScale(unit.Level));ContentHealFx(unit,patient,healed);ApplyContentHealEquipment(unit,patient); }
                     });
                 }
                 return true;
@@ -181,7 +233,8 @@ public partial class BattleController
                 if (_units.Any(a=>a.Team==unit.Team && !a.IsDead && a.HealthRatio<.85f && a.Position.DistanceTo(unit.Position)<50))
                 {
                     unit.ContentCooldown=14;
-                    foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,50).Take(3)) { ally.Heal(7*UnitBalance.DamageScale(unit.Level));ApplyContentHealEquipment(unit,ally); }
+                    unit.BeginCast(.6f);SpellVfx.Sigil(this,unit.Position,"holy",new Color("ffd77a"),40f,1f,.4f);
+                    foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,50).Take(3)) { var healed=ally.Heal(7*UnitBalance.DamageScale(unit.Level));ContentHealFx(unit,ally,healed);ApplyContentHealEquipment(unit,ally); }
                 }
                 break;
             case "radiant_guard":
@@ -189,19 +242,23 @@ public partial class BattleController
                 if(injured!=null)
                 {
                     unit.ContentCooldown=12;injured.GiveShield(8,4);
+                    SpellVfx.Flash(this,injured.BodyContactPosition,new Color("ffe39a"),20f,.45f);SpellVfx.Sigil(this,injured.Position,"holy",new Color("ffe39a"),22f,.8f,.5f);
                     if(target!=null && unit.CanAttack(target)) ContentDamage(unit,target,unit.AttackDamage*.65f,false,false,CombatDamageType.Magical);
                 }
                 break;
             case "vanish":
                 if(target!=null && target.Position.DistanceTo(unit.Position)<100)
-                { unit.ContentCooldown=12;unit.Conceal(1.5f);unit.ContentState="ambush_strike"; }
+                { unit.ContentCooldown=12;unit.Conceal(1.5f);unit.ContentState="ambush_strike";
+                  SpellVfx.Burst(this,unit.Position,"p_smoke",8,.7f,SpellVfx.Fade(new Color(.3f,.3f,.34f,.6f)),6f,12f,8f,26f,additive:false,layer:SpellVfx.TroopLayer); }
                 break;
             case "frenzy":
-                if(unit.HealthRatio<.5f) { unit.ContentCooldown=12;unit.ApplyAttackRecovery(.9f,3f); }
+                if(unit.HealthRatio<.5f) { unit.ContentCooldown=12;unit.ApplyAttackRecovery(.9f,3f);unit.BeginCast(.4f);
+                    SpellVfx.Flash(this,unit.BodyContactPosition,new Color("ff6a4a"),20f,.4f);SpellVfx.Sigil(this,unit.Position,"war",new Color("ff6a4a"),26f,.8f,.8f); }
                 break;
             case "rally":
-                unit.ContentCooldown=14;
-                foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,55).Take(3)) ally.ApplyTemporaryCombatBuff(1.08f,1f,3f);
+                unit.ContentCooldown=14;unit.BeginCast(.6f);
+                SpellVfx.Sigil(this,unit.Position,"war",new Color("ffd27a"),55f,1f,.5f);SpellVfx.Shockwave(this,unit.Position,new Color("ffd27a"),55f);
+                foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,55).Take(3)) { ally.ApplyTemporaryCombatBuff(1.08f,1f,3f);SpellVfx.Flash(this,ally.BodyContactPosition,new Color("ffd27a"),12f,.35f); }
                 break;
             case "charged_shot":
                 if(target!=null && unit.CanAttack(target) && !unit.IsAttackCommitted)
@@ -220,16 +277,44 @@ public partial class BattleController
                     BeginContentCast(unit,.35f,()=>{
                         if(behavior=="beam")
                         {
-                            foreach(var e in _units.Where(e=>!e.IsDead && e.Team!=unit.Team && Math.Abs(e.Position.Y-unit.Position.Y)<22 && e.Position.DistanceTo(unit.Position)<150).Take(3).ToArray())
+                            // a beam of light along the line: it strikes each foe it passes through
+                            var hits=_units.Where(e=>!e.IsDead && e.Team!=unit.Team && Math.Abs(e.Position.Y-unit.Position.Y)<22 && e.Position.DistanceTo(unit.Position)<150).Take(3).ToArray();
+                            var reach=hits.Length>0?hits.Max(e=>Math.Abs(e.Position.X-unit.Position.X))+10:120;
+                            var dir=unit.Team==Team.Player?1:-1;
+                            ContentBolt(unit,unit.WeaponContactPosition+new Vector2(dir*reach,0),new Color("8fd8ff"),5f);
+                            foreach(var e in hits)
                                 ContentDamage(unit,e,unit.AttackDamage*.8f,true,false,CombatDamageType.Magical);
                         }
-                        else if(behavior is "chain_attack" or "volley")
+                        else if(behavior=="chain_attack")
                         {
-                            foreach(var e in NearbyContentUnits(unit.Team==Team.Player?Team.Enemy:Team.Player,point,65).Take(behavior=="volley"?2:3))
+                            // lightning that jumps from foe to foe
+                            var from=unit.WeaponContactPosition;
+                            foreach(var e in NearbyContentUnits(unit.Team==Team.Player?Team.Enemy:Team.Player,point,65).Take(3))
+                            {
+                                SpellVfx.Bolt(this,from,e.BodyContactPosition,new Color("9fd8ff"),.3f,2.6f);
+                                SpellVfx.Flash(this,e.BodyContactPosition,new Color("9fd8ff"),14f,.25f);
+                                from=e.BodyContactPosition;
                                 ContentDamage(unit,e,unit.AttackDamage*.65f,true,false);
+                            }
+                        }
+                        else if(behavior=="volley")
+                        {
+                            // two shots loosed in quick succession, each landing on its own foe
+                            var k=0;
+                            foreach(var e in NearbyContentUnits(unit.Team==Team.Player?Team.Enemy:Team.Player,point,65).Take(2).ToArray())
+                            {
+                                var victim=e;
+                                FireContentShot(unit,victim,()=>ContentDamage(unit,victim,unit.AttackDamage*.65f,true,false),delay:.09f*k++);
+                            }
                         }
                         else if(IsInstanceValid(target) && !target.IsDead && target.CombatLifetime==life)
-                            ContentDamage(unit,target,unit.AttackDamage*1.25f,true,false);
+                        {
+                            var victim=target;
+                            if(behavior=="volatile_flask")
+                                FireContentShot(unit,victim,()=>ContentDamage(unit,victim,unit.AttackDamage*1.25f,true,false),.9f,ProjectileStyles.Flask);
+                            else
+                                FireContentShot(unit,victim,()=>ContentDamage(unit,victim,unit.AttackDamage*1.25f,true,false),1.6f);
+                        }
                     });
                     return true;
                 }
@@ -239,8 +324,8 @@ public partial class BattleController
                 if(target!=null && unit.ContentState!="intercept_used")
                 {
                     unit.ContentState="intercept_used";unit.ContentCooldown=999;
-                    OffsetUnitWithinBattlefield(unit,new Vector2(Mathf.Clamp(target.Position.X-unit.Position.X-24,0,70),0));
-                    ContentDamage(unit,target,unit.AttackDamage*.8f,false,false);
+                    var victimI=target;
+                    ContentChargeRun(unit,Mathf.Clamp(target.Position.X-unit.Position.X-24,0,70),()=>{ if(IsInstanceValid(victimI) && !victimI.IsDead) ContentDamage(unit,victimI,unit.AttackDamage*.8f,false,false); });
                 }
                 break;
             case "charge":
@@ -249,10 +334,12 @@ public partial class BattleController
                     unit.ContentCooldown=11;unit.ContentState="charging";var point=target.Position;
                     BeginContentCast(unit,.8f,()=> {
                         if(unit.IsControlled) return;
-                        OffsetUnitWithinBattlefield(unit,new Vector2(Mathf.Clamp(point.X-unit.Position.X, -65,65),0));
-                        foreach(var e in NearbyContentUnits(unit.Team==Team.Player?Team.Enemy:Team.Player,unit.Position,42).Take(3))
-                            ContentDamage(unit,e,unit.AttackDamage*.8f,false,false);
-                        unit.ContentState="";
+                        ContentChargeRun(unit,Mathf.Clamp(point.X-unit.Position.X, -65,65),()=>{
+                            SpellVfx.Shockwave(this,unit.Position,new Color("ffc46b"),34f,.35f);
+                            foreach(var e in NearbyContentUnits(unit.Team==Team.Player?Team.Enemy:Team.Player,unit.Position,42).Take(3))
+                                ContentDamage(unit,e,unit.AttackDamage*.8f,false,false);
+                            unit.ContentState="";
+                        });
                     });
                     return true;
                 }
@@ -263,12 +350,17 @@ public partial class BattleController
                     unit.ContentCooldown=9;var victim=target;var life=target.CombatLifetime;
                     BeginContentCast(unit,.8f,()=>{
                         if(!IsInstanceValid(victim) || victim.IsDead || victim.CombatLifetime!=life) return;
-                        if(behavior=="pull") OffsetUnitWithinBattlefield(victim,(unit.Position-victim.Position).Normalized()*30);
-                        if(behavior=="leap") { OffsetUnitWithinBattlefield(unit,(victim.Position-unit.Position).LimitLength(75)+new Vector2(12,0));ContentDamage(unit,victim,unit.AttackDamage*.7f,false,false); }
-                        if(behavior is "root" or "tether") victim.Root(1.4f);
-                        if(behavior=="sleep") victim.Sleep(1.5f);
-                        if(behavior=="shield_strip") { victim.RemoveShield();ContentDamage(unit,victim,6,true,false,CombatDamageType.Magical); }
-                        if(behavior=="wound") { victim.ApplyHealingPenalty(.7f,3);ContentDamage(unit,victim,unit.AttackDamage*.6f,false,false); }
+                        var tint=CastTint(unit);
+                        if(behavior=="pull") { SpellVfx.Chains(this,victim.Position,unit.WeaponContactPosition,new Color("cfc6b4"),1,2f,.45f);OffsetUnitWithinBattlefield(victim,(unit.Position-victim.Position).Normalized()*30); }
+                        if(behavior=="leap")
+                        {
+                            var to=(victim.Position-unit.Position).LimitLength(75)+new Vector2(12,0);
+                            ContentChargeRun(unit,to.X,()=>{ if(IsInstanceValid(victim) && !victim.IsDead) ContentDamage(unit,victim,unit.AttackDamage*.7f,false,false); });
+                        }
+                        if(behavior is "root" or "tether") { victim.Root(1.4f);SpellVfx.Chains(this,victim.Position,victim.BodyContactPosition,behavior=="root"?new Color("7fb86a"):new Color("cfc6b4"),3,10f,1.4f);ContentMarkFx(victim,tint,behavior=="root"?"nature":"shadow"); }
+                        if(behavior=="sleep") { victim.Sleep(1.5f);ContentMarkFx(victim,tint,"arcane");SpellVfx.Burst(this,victim.BodyContactPosition,"p_swirl",6,1.2f,SpellVfx.Fade(tint),3f,6f,6f,14f,40f,Vector2.Up,gravity:-12f); }
+                        if(behavior=="shield_strip") { ContentBolt(unit,victim.BodyContactPosition,tint);victim.RemoveShield();ContentDamage(unit,victim,6,true,false,CombatDamageType.Magical); }
+                        if(behavior=="wound") { ContentMarkFx(victim,new Color("c0392b"),"shadow");victim.ApplyHealingPenalty(.7f,3);ContentDamage(unit,victim,unit.AttackDamage*.6f,false,false); }
                     });
                     return true;
                 }
@@ -294,8 +386,24 @@ public partial class BattleController
                     {
                         unit.ContentCooldown=12;BeginContentCast(unit,1.2f,()=>{
                             if(token!=null && !_contentCorpses.Remove(token)) return;
-                            if(behavior=="corpse_buff") foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,65).Take(3)) ally.ApplyTemporaryCombatBuff(1.08f,1f,3);
-                            else SpawnContentMinion(unit,"raised",unit.Team==Team.Player?28:64,unit.Team==Team.Player?4:9,12);
+                            if(behavior=="corpse_buff")
+                            {
+                                SpellVfx.Sigil(this,unit.Position,"shadow",new Color("8cf08a"),65f,1f,.5f);
+                                foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,65).Take(3)) { ally.ApplyTemporaryCombatBuff(1.08f,1f,3);SpellVfx.Flash(this,ally.BodyContactPosition,new Color("8cf08a"),12f,.35f); }
+                            }
+                            else
+                            {
+                                var at=token?.Position;
+                                var minion=SpawnContentMinion(unit,"raised",unit.Team==Team.Player?28:64,unit.Team==Team.Player?4:9,12);
+                                if(minion!=null)
+                                {
+                                    // the raised come up where the body lay (or beside the caster)
+                                    if(at.HasValue) OffsetUnitWithinBattlefield(minion,at.Value-minion.Position);
+                                    minion.MarkRaised();
+                                    var wisp=new RaiseWisp{Start=unit.WeaponContactPosition,Target=minion.Position+new Vector2(0,-10)};AddChild(wisp);
+                                    BattleParticles.SpawnResurrectRise(this,minion.Position,!at.HasValue);
+                                }
+                            }
                         });
                         return true;
                     }
@@ -303,7 +411,8 @@ public partial class BattleController
                 break;
             case "attack_recovery":
                 unit.ContentCooldown=12;BeginContentCast(unit,.8f,()=>{
-                    foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,60).Take(3)) ally.ApplyAttackRecovery(.9f,3);
+                    SpellVfx.Shockwave(this,unit.Position,new Color("ffb05a"),60f,.5f);SpellVfx.Shockwave(this,unit.Position,new Color("ffb05a"),60f,.5f,.18f);
+                    foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,60).Take(3)) { ally.ApplyAttackRecovery(.9f,3);SpellVfx.Flash(this,ally.BodyContactPosition,new Color("ffb05a"),12f,.3f); }
                 });return true;
             case "ambush":
                 if(target!=null && target.Position.DistanceTo(unit.Position)<70)
@@ -315,7 +424,10 @@ public partial class BattleController
                 return true;
             case "phase":
                 if(target!=null && target.Position.DistanceTo(unit.Position)<60)
-                { unit.ContentCooldown=10;unit.Conceal(.6f);OffsetUnitWithinBattlefield(unit,new Vector2(unit.Team==Team.Enemy?-45:45,0)); }
+                { unit.ContentCooldown=10;unit.Conceal(.6f);
+                  SpellVfx.Burst(this,unit.BodyContactPosition,"p_wisp",8,.6f,SpellVfx.Fade(new Color("a8f0ff")),3f,6f,10f,30f);
+                  OffsetUnitWithinBattlefield(unit,new Vector2(unit.Team==Team.Enemy?-45:45,0));
+                  SpellVfx.Flash(this,unit.BodyContactPosition,new Color("a8f0ff"),16f,.35f); }
                 break;
             case "decoy":
                 unit.ContentCooldown=14;SpawnContentMinion(unit,"decoy",1,0,5);break;
@@ -323,7 +435,7 @@ public partial class BattleController
                 if(!unit.TryEffect("soul_link_once",999)) break;
                 unit.ContentCooldown=15;
                 foreach(var ally in NearbyContentUnits(unit.Team,unit.Position,70).Where(a=>a!=unit && !a.IsSummoned && a.Definition.IsBoss==false).Take(1))
-                    ally.ContentState="soul_link";
+                    { ally.ContentState="soul_link";SpellVfx.Bolt(this,unit.WeaponContactPosition,ally.BodyContactPosition,new Color("8cf08a"),.4f,2f);ContentMarkFx(ally,new Color("8cf08a")); }
                 break;
             case "ammo_movement":
                 if(unit.CommittedAttacks>=2 && unit.ContentState!="retreated")
@@ -358,9 +470,17 @@ public partial class BattleController
     {
         if(!IsInstanceValid(target) || target.IsDead || damage<=0) return 0;
         var validSource=IsInstanceValid(source) && !source.IsDead;
-        if(ranged && target.ProjectileDodgeCharges>0) { target.ProjectileDodgeCharges--;return 0; }
+        if(ranged && target.ProjectileDodgeCharges>0)
+        { target.ProjectileDodgeCharges--;SpawnCombatNumber(target.Position+new Vector2(0,-24),"DODGE",new Color("cfe3f0"),.5f);return 0; }
         if(ranged && target.Definition.ContentBehavior=="projectile_dodge" && target.TryEffect("dodge",12))
-        { OffsetUnitWithinBattlefield(target,new Vector2(-8,4));return 0; }
+        {
+            // the eel ducks under the water: a splash where it was, and the shot passes over
+            SpellVfx.Burst(this,target.Position,"p_splash",9,.5f,SpellVfx.Fade(new Color(.75f,.9f,.95f,.8f),new Color(.4f,.6f,.7f,.4f)),4f,8f,40f,100f,
+                55f,Vector2.Up,gravity:300f,additive:false,layer:SpellVfx.TroopLayer+1);
+            OffsetUnitWithinBattlefield(target,new Vector2(-8,4));
+            SpawnCombatNumber(target.Position+new Vector2(0,-24),"DODGE",new Color("cfe3f0"),.5f);
+            return 0;
+        }
         var dtype=type ?? (validSource?source.AttackDamageType:CombatDamageType.Physical);
         var criticalHit=validSource && critical && _contentRng.Randf()*100<source.CriticalChance;
         if(criticalHit)damage*=1+source.CriticalDamageBonus/100f;
@@ -374,13 +494,24 @@ public partial class BattleController
             if(target.Definition.ContentBehavior=="armor_facing" && (target.Team==Team.Enemy?source.Position.X>target.Position.X+2:source.Position.X<target.Position.X-2)) penetration=1;
             if(target.Definition.ContentBehavior=="armor_burn" && target.IsBurning) penetration=Math.Max(penetration,.4f);
         }
-        if(target.Definition.ContentBehavior=="breakable_armor" && target.DirectHitsTaken<3) damage*=.6f;
+        if(target.Definition.ContentBehavior=="breakable_armor" && target.DirectHitsTaken<3)
+        {
+            damage*=.6f;
+            // barnacle crust breaking away, a chunk a blow until it is bare
+            if(validSource) ContentShardsFx(source,target,new Color(.62f,.66f,.58f),5);
+        }
+        if(validSource && dtype==CombatDamageType.Physical && penetration<=0f && target.Definition.ContentBehavior=="armor_facing" && target.TryEffect("facing_block",.6f))
+            ContentSparks(target.WeaponContactPosition,new Color("ffd890"),6,new Vector2(Mathf.Sign(source.Position.X-target.Position.X),-.4f));
         if(dtype==CombatDamageType.Physical && !ranged && target.Definition.ContentBehavior=="parry" && target.TryEffect("parry",8))
         {
             damage*=.45f;
-            if(validSource) source.TakeDamage(target.AttackDamage*.35f,target.UnitName,CombatDamageType.Physical);
+            if(validSource) { source.TakeDamage(target.AttackDamage*.35f,target.UnitName,CombatDamageType.Physical);ContentParryFx(target,source); }
         }
-        if(validSource && source.Definition.ContentBehavior=="shield_break" && (target.ShieldHealth>0 || target.IsTacticalObject)) damage*=1.3f;
+        if(validSource && source.Definition.ContentBehavior=="shield_break" && (target.ShieldHealth>0 || target.IsTacticalObject))
+        {
+            damage*=1.3f;
+            if(target.TryEffect("shield_shatter",.8f)) ContentShardsFx(source,target,target.ShieldHealth>0?new Color("8bc7e2"):new Color(.6f,.5f,.38f),7);
+        }
         if(validSource && source.ContentState=="ambush_strike") { damage*=1.15f;source.ContentState=""; }
         damage=ModifyContentEquipmentDamage(source,target,damage,ranged);
         if(ranged && dtype==CombatDamageType.Physical && target.ProjectileMirrorTime>0 && target.ProjectileMirrorCharges>0)
@@ -391,6 +522,7 @@ public partial class BattleController
         }
         target.DirectHitsTaken++;
         var actual=target.TakeDamage(damage,validSource?source.UnitName:null,dtype,penetration);
+        if(validSource && penetration>0f && actual>0f) ContentPierceFx(source,target);
         if(validSource)
         {
             source.Reveal();
@@ -406,10 +538,17 @@ public partial class BattleController
     {
         if(damage<=0) return;
         var behavior=source.Definition.ContentBehavior;
-        if(behavior=="armor_break" && source.CommittedAttacks%3==0) target.ApplyArmorBreak(12,2);
-        if(behavior=="stagger" && source.CommittedAttacks%4==0 && target.ApplyControl(.45f)) ApplyContentInterruptEquipment(source);
+        if(behavior=="armor_break" && source.CommittedAttacks%3==0)
+        { target.ApplyArmorBreak(12,2);ContentShardsFx(source,target,new Color(.7f,.72f,.76f)); }
+        if(behavior=="stagger" && source.CommittedAttacks%4==0 && target.ApplyControl(.45f))
+        {
+            ApplyContentInterruptEquipment(source);
+            SpellVfx.Shockwave(this,target.Position,new Color(.85f,.78f,.62f,.7f),Mathf.Max(22f,target.Radius*1.6f),.35f);
+            SpellVfx.Burst(this,target.Position,"p_rubble",6,.5f,SpellVfx.Fade(new Color(.55f,.48f,.38f)),3f,6f,40f,90f,60f,Vector2.Up,
+                gravity:380f,additive:false,layer:SpellVfx.TroopLayer+1);
+        }
         if(behavior=="hook" && source.CommittedAttacks%3==0 && !target.Definition.IsBoss && target.Definition.Speed>0)
-        { OffsetUnitWithinBattlefield(target,(source.Position-target.Position).Normalized()*22);target.ApplyControl(.18f); }
+        { ContentHookChain(source,target);OffsetUnitWithinBattlefield(target,(source.Position-target.Position).Normalized()*22);target.ApplyControl(.18f); }
         if(behavior=="burn_fields") AddContentField("burn",source.Team,target.Position,26,3,2,source.UnitName);
         if(behavior=="wound") target.ApplyHealingPenalty(.7f,3);
         if(source.ContentState=="chill_next") { source.ContentState="";target.ApplyTemporarySpeedModifier(.85f,1.5f); }
@@ -418,13 +557,27 @@ public partial class BattleController
             if(behavior=="great_cut" || behavior=="pierce" || source.CommittedAttacks%3==0)
             {
                 var dir=source.Team==Team.Player?1:-1;
+                var reach=source.Position.DistanceTo(target.Position);
+                var carried=false;
                 foreach(var other in NearbyContentUnits(target.Team,target.Position,behavior=="sweep"?42:32)
                     .Where(e=>e!=target && (e.Position.X-source.Position.X)*dir>=-3).Take(2))
+                {
                     ContentDamage(source,other,damage*.35f,ranged,false,source.AttackDamageType,false);
+                    reach=Mathf.Max(reach,source.Position.DistanceTo(other.Position));
+                    carried=true;
+                    if(behavior=="pierce") ContentPierceFx(source,other);
+                }
+                if(carried && !ranged) ContentSlashArc(source,reach+6f,behavior=="great_cut"?new Color("ffd59a"):new Color("e8eef5"));
             }
         }
         if(target.Definition.ContentBehavior=="conditional_reflect" && !ranged && target.ContentAge%5<2)
+        {
             source.TakeDamage(Math.Min(3,damage*.15f),target.UnitName,CombatDamageType.Physical);
+            // thorns: splinters of bramble driven back into the striker
+            if(target.TryEffect("thorns_fx",.5f))
+                SpellVfx.Burst(this,target.BodyContactPosition,"p_splinter",6,.35f,SpellVfx.Fade(new Color(.5f,.56f,.3f),new Color(.32f,.26f,.16f)),3f,6f,
+                    110f,190f,25f,(source.BodyContactPosition-target.BodyContactPosition).Normalized(),additive:false,layer:SpellVfx.TroopLayer+1);
+        }
         ApplyContentHitEquipment(source,target,damage,ranged);
     }
 
@@ -435,7 +588,14 @@ public partial class BattleController
             _units.Any(u=>!u.IsDead && u.Team==dead.Team && u.Definition.ContentBehavior=="revival_link" && u.Position.DistanceTo(dead.Position)<90)))
         {
             dead.ContentState="";
-            if(dead.TryReturn()) { SpawnEffect(dead.Position,dead.Tint,5,25,.4f,false);return true; }
+            if(dead.TryReturn())
+            {
+                // back from the edge: grave-light (or the soul link's green) wells up and the soldier stands again
+                SpellVfx.Pillar(this,dead.Position,new Color("bff0a8"),26f,70f,.7f);
+                SpellVfx.Sigil(this,dead.Position,"holy",new Color("bff0a8"),24f,.9f,.6f);
+                BattleParticles.SpawnResurrectRise(this,dead.Position,false);
+                return true;
+            }
         }
         return TryContentEquipmentReturn(dead);
     }

@@ -143,7 +143,7 @@ public partial class BattleController
         if (point.DistanceTo(_couragePickupPointerStart) > 14f)
         {
             // A touch drag beginning on a pack becomes an ordinary camera pan, not a pickup.
-            if (_mobileCamera != null && !released)
+            if (!released)
             {
                 _mobilePointerDown = true; _mobileDragging = true; _mobilePointerId = id;
                 _mobilePointerStart = _mobilePointerLast = _couragePickupPointerStart;

@@ -59,12 +59,17 @@ public partial class SliceStyle : StyleBox
         ContentMarginTop = ContentMarginBottom = padY;
     }
 
-    public SliceStyle Tinted(Color modulate)
+    // Duplicate() copies only exported properties, so it would drop the texture and slice fields.
+    private SliceStyle(SliceStyle other)
     {
-        var copy = (SliceStyle)Duplicate();
-        copy.Modulate = modulate; copy.DrawCenter = DrawCenter;
-        return copy;
+        _texture = other._texture; _source = other._source; _density = other._density;
+        _left = other._left; _top = other._top; _right = other._right; _bottom = other._bottom;
+        ContentMarginLeft = other.ContentMarginLeft; ContentMarginRight = other.ContentMarginRight;
+        ContentMarginTop = other.ContentMarginTop; ContentMarginBottom = other.ContentMarginBottom;
+        DrawCenter = other.DrawCenter;
     }
+
+    public SliceStyle Tinted(Color modulate) => new(this) { Modulate = modulate };
 
     public override void _Draw(Rid canvasItem, Rect2 rect)
     {

@@ -3,29 +3,27 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvsj7rokoyo5d"
-path.bptc="res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.bptc.ctex"
-path.astc="res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.astc.ctex"
+path="res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/units/mirror.png"
-dest_files=["res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.bptc.ctex", "res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.astc.ctex"]
+dest_files=["res://.godot/imported/mirror.png-ecd8e9ef3de6aef786944cc00cd87b98.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=true
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""

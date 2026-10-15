@@ -578,7 +578,6 @@ public partial class BattleController : Node2D
 		if (_battlePaused && GetTree().Paused) GetTree().Paused = false;
 		AudioDirector.Instance?.ExitBattle(this);
 		if (_hudLayout != null) GetViewport().SizeChanged -= _hudLayout;
-		CleanupBattleCamera();
 		CleanupMobilePresentation();
 		Engine.TimeScale = 1f;
 		ResetImpactShake();
@@ -636,7 +635,7 @@ public partial class BattleController : Node2D
 		var width = 460f + ((1f - appearRatio) * 36f);
 		var height = 74f;
 		var rect = new Rect2((GetViewportRect().Size.X - width) * 0.5f,
-			_mobileCamera != null ? _mobileFieldTop + 8f : 136f, width, height);
+			_battleCamera != null ? _mobileFieldTop + 44f : 136f, width, height);
 		var fill = new Color(_bossEntranceBannerColor, 0.14f + (pulse * 0.07f));
 		var outline = new Color(_bossEntranceBannerColor.Lightened(0.12f), 0.72f);
 		DrawStyleBox(_battleOverlaySurface ??= MedievalUi.Engraved("inset", 0, 0), rect);
@@ -657,7 +656,7 @@ public partial class BattleController : Node2D
 
 	private void DrawSelectionPreview()
 	{
-		if (_battleEnded || _battlePaused || _endlessCheckpointActive || _mobileClearView)
+		if (_battleEnded || _battlePaused || _endlessCheckpointActive)
 		{
 			return;
 		}
@@ -1418,7 +1417,7 @@ public partial class BattleController : Node2D
 		}
 	}
 
-	private Camera2D ActiveShakeCamera() => _mobileCamera ?? _battleCamera;
+	private Camera2D ActiveShakeCamera() => _battleCamera;
 
 	private void ResetImpactShake()
 	{
@@ -2109,6 +2108,8 @@ public partial class BattleController : Node2D
 		AddChild(unit);
 		_units.Add(unit);
 		InitializeContentUnit(unit);
+		if (unit.AuraRadius > 1f)
+			AddChild(new BattleAuraRing { Owner = unit, Radius = unit.AuraRadius, Tint = team == Team.Player ? new Color("ffd27a") : new Color("c45a4a") });
 		return unit;
 	}
 
@@ -2196,6 +2197,8 @@ public partial class BattleController : Node2D
 					(pos, dmg, hitColor) =>
 					{
 						AudioDirector.Instance?.PlayShieldBlock(pos);
+						SpellVfx.Flash(this, pos, new Color("cfe6ff"), 16f, .3f);
+						SpellVfx.Burst(this, pos, "p_spark_bolt", 6, .3f, SpellVfx.Fade(new Color("e6f2ff")), 1.5f, 3f, 40f, 90f);
 						if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime) ApplyImpactReaction(attacker, interceptor, dmg, true);
 					});
 			}
@@ -2689,6 +2692,14 @@ public partial class BattleController : Node2D
 	private void ApplyImpactReaction(Unit attacker, Unit target, float appliedDamage, bool ranged)
 	{
 		ShowWeaponContact(attacker,target,appliedDamage,ranged);
+		if (appliedDamage > 0.05f && IsInstanceValid(attacker) && IsInstanceValid(target) && !attacker.IsDead && target.IsDead
+			&& !IsReducedMotionEnabled())
+		{
+			// the killing blow lands harder: the killer holds the follow-through and the view takes a small punch
+			attacker.HoldPose(ranged ? .05f : .12f);
+			_impactShakeStrength = Mathf.Max(_impactShakeStrength, ranged ? .14f : .24f);
+			_impactShakeTimer = Mathf.Max(_impactShakeTimer, ImpactShakeDurationSeconds);
+		}
 		if (appliedDamage <= 0.05f ||
 			!IsInstanceValid(attacker) ||
 			!IsInstanceValid(target) ||
@@ -2761,10 +2772,11 @@ public partial class BattleController : Node2D
 			return;
 		}
 		BattleDeathEffects.SpawnDeathMoment(this, deadUnit.BodyContactPosition, corpse.Style);
-		BattleGore.SpawnHit(this, deadUnit, deadUnit.BodyContactPosition, deadUnit.LastHitDirection, 1.2f,
-			deadUnit.Position.Y + 2f, FieldLighting.Tint);
+		BattleGore.SpawnKill(this, deadUnit, deadUnit.LastHitDirection, deadUnit.Position.Y + 2f, FieldLighting.Tint);
+		BattleGore.SpawnTrail(this, corpse, deadUnit, FieldLighting.Tint);
 		var bleeder = deadUnit;
 		corpse.KnockDirection = deadUnit.LastHitDirection;
+		RecordFallen(deadUnit, corpse);
 		corpse.Impacted = body =>
 		{
 			AudioDirector.Instance?.PlayBodyFall(body.ImpactPosition, body.Style.Fx, body.Style.Heavy, body.Style.Boss);
@@ -3227,7 +3239,15 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		SpawnEffect(boss.Position, boss.Tint.Lightened(0.15f), 12f, Mathf.Max(56f, boss.SpecialBuffRadius * 0.55f), 0.28f, false);
+		// a war cry: the commander raises its weapon, a sigil burns under it and the cry rolls out over its troops
+		boss.BeginCast(.8f);
+		var rally = new Color("ff8a4a");
+		var reach = Mathf.Max(56f, boss.SpecialBuffRadius * 0.55f);
+		SpellVfx.Sigil(this, boss.Position, "war", rally, Mathf.Max(40f, boss.Radius * 1.8f), 1.1f, .5f);
+		SpellVfx.Shockwave(this, boss.Position, rally, reach, .5f);
+		SpellVfx.Shockwave(this, boss.Position, rally, reach * .7f, .45f, .15f);
+		foreach (var ally in _units.Where(a => !a.IsDead && a.Team == boss.Team && a != boss && a.Position.DistanceTo(boss.Position) <= Mathf.Max(48f, boss.SpecialBuffRadius)).Take(10))
+			SpellVfx.Flash(this, ally.BodyContactPosition, rally, 12f, .35f, delay: .12f);
 		SetStatus(
 			$"{boss.UnitName} rally call: {buffedCount} undead surged forward" +
 			(escortsSpawned > 0 ? $" and {escortsSpawned} escorts joined the push." : "."));
@@ -3283,8 +3303,13 @@ public partial class BattleController : Node2D
 			}
 		}
 
-		SpawnEffect(jammer.Position, jammer.Tint.Lightened(0.08f), 12f, 54f, 0.26f, false);
-		SpawnEffect(PlayerBaseCorePosition, jammer.Tint, 10f, 36f, 0.24f, false);
+		// a hex thrown at the caravan: a shadow sigil at the hexer, a bolt arcing to the wagon, a pall over it
+		var hexTint = new Color("b58cff");
+		jammer.BeginCast(.8f);
+		SpellVfx.Sigil(this, jammer.Position, "shadow", hexTint, 40f, 1f, -.6f);
+		SpellVfx.Bolt(this, jammer.WeaponContactPosition, PlayerBaseCorePosition + new Vector2(0, -30), hexTint, .4f, 3f);
+		SpellVfx.Sigil(this, PlayerBaseCorePosition, "shadow", hexTint, 44f, jamDuration, .3f);
+		SpellVfx.Burst(this, PlayerBaseCorePosition + new Vector2(0, -30), "p_shadow", 12, 1f, SpellVfx.Fade(hexTint), 4f, 9f, 8f, 26f);
 
 		var statusMsg = $"Enemy hexer disrupted caravan rhythm: courage gain suppressed for {jamDuration:0.0}s and card recovery delayed.";
 		if (escortsSpawned > 0)
@@ -3295,46 +3320,55 @@ public partial class BattleController : Node2D
 		return true;
 	}
 
-	private bool TriggerEnemyRaiseFallen(Unit lich)
+	private bool TriggerEnemyRaiseFallen(Unit caster)
 	{
-		if (!lich.TryTriggerSpecialAbility())
+		if (!caster.TryTriggerSpecialAbility())
 		{
 			return false;
 		}
 
-		if (string.IsNullOrWhiteSpace(lich.SpecialSpawnUnitId) || lich.SpecialSpawnCount <= 0)
+		if (caster.SpecialSpawnCount <= 0)
 		{
 			return false;
 		}
 
-		var spawned = 0;
-		for (var i = 0; i < lich.SpecialSpawnCount; i++)
-		{
-			if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
-			if (!CanAddBossReinforcement(lich, lich.SpecialSpawnUnitId) || !CanAddCampaignPeriodicReinforcement(lich)) break;
-			if (!_spawnDirector.TryBuildEnemyStats(lich.SpecialSpawnUnitId, out var raisedStats))
-			{
-				break;
-			}
-
-			var spawnPosition = new Vector2(
-				Mathf.Clamp(lich.Position.X + _rng.RandfRange(-40f, 40f), BattlefieldLeft + 20f, BattlefieldRight - 20f),
-				Mathf.Clamp(
-					lich.Position.Y + _rng.RandfRange(-50f, 50f),
-					BattlefieldTop + SpawnVerticalPadding,
-					BattlefieldBottom - SpawnVerticalPadding));
-			SpawnEnemyReinforcement(raisedStats, spawnPosition);
-			RecordCampaignPeriodicReinforcement(lich);
-			spawned++;
-		}
-
+		// the Gloamwood Witch raises one more than the rest of her kind
+		var count = caster.SpecialSpawnCount + (caster.DefinitionId == GameData.EnemyBossVergeId ? 1 : 0);
+		caster.BeginCast(1.1f);
+		BattleCastGlow.Spawn(this, caster, new Color("8cf08a"), .8f);
+		var summon = GameData.GetUnit(caster.SpecialSpawnUnitId ?? "");
+		// the Tyrant calls up her catacomb crews (capped, at once); the Witch and the Lich raise the fallen themselves
+		var commands = summon != null && (!IsRaisableKind(summon) || caster.DefinitionId == GameData.EnemyBossReliquaryId);
+		var spawned = commands ? CommandBoneEngines(caster, summon.Id) : RaiseDeadAround(caster, count);
 		if (spawned > 0)
 		{
-			SpawnEffect(lich.Position, lich.Tint.Lightened(0.1f), 10f, 48f, 0.26f, false);
-			SetStatus($"Enemy lich raised {spawned} fallen undead from the battlefield.");
+			SetStatus($"{caster.UnitName} raised {spawned} of the fallen.");
 		}
 
 		return spawned > 0;
+	}
+
+	/// <summary>A necromancer who commands rather than raises (the Reliquary Tyrant's catacomb crews, or servants that
+	/// are engines) calls them up out of the ground where she stands, at once and within the boss's limit.</summary>
+	private int CommandBoneEngines(Unit caster, string unitId)
+	{
+		var spawned = 0;
+		for (var i = 0; i < caster.SpecialSpawnCount; i++)
+		{
+			if (CountTeamUnits(Team.Enemy) >= _spawnDirector.GetMaxActiveEnemies()) break;
+			if (!CanAddBossReinforcement(caster, unitId) || !CanAddCampaignPeriodicReinforcement(caster)) break;
+			if (!_spawnDirector.TryBuildEnemyStats(unitId, out var stats)) break;
+			var at = new Vector2(
+				Mathf.Clamp(caster.Position.X + _rng.RandfRange(-40f, 40f), BattlefieldLeft + 20f, BattlefieldRight - 20f),
+				Mathf.Clamp(caster.Position.Y + _rng.RandfRange(-50f, 50f), BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
+			SpawnEnemyReinforcement(stats, at);
+			_units[^1].MarkRaised();
+			RecordCampaignPeriodicReinforcement(caster);
+			SpellVfx.Sigil(this, at, "shadow", new Color("8cf08a"), 30f, 1f, .5f);
+			BattleParticles.SpawnResurrectRise(this, at, true);
+			spawned++;
+		}
+		return spawned;
 	}
 
 	private bool TriggerEnemyBurrow(Unit tunneler)
@@ -3373,9 +3407,13 @@ public partial class BattleController : Node2D
 				BattlefieldTop + SpawnVerticalPadding,
 				BattlefieldBottom - SpawnVerticalPadding));
 
-		SpawnEffect(tunneler.Position, tunneler.Tint, 8f, 22f, 0.2f, false);
+		// it digs down in a spray of earth and claws up again further along
+		var earth = SpellVfx.Fade(new Color(.42f, .33f, .24f, .9f));
+		SpellVfx.Burst(this, tunneler.Position, "p_rubble", 10, .55f, earth, 2f, 4.5f, 40f, 100f, 70f, Vector2.Up, gravity: 360f, additive: false, layer: SpellVfx.TroopLayer);
+		SpellVfx.Decal(this, tunneler.Position, "cracks", new Color(.35f, .28f, .2f, .8f), 16f, 2.5f);
 		tunneler.Position = burrowTarget;
-		SpawnEffect(tunneler.Position, tunneler.Tint.Lightened(0.12f), 6f, 28f, 0.22f, false);
+		SpellVfx.Burst(this, tunneler.Position, "p_rubble", 12, .6f, earth, 2f, 5f, 50f, 120f, 70f, Vector2.Up, gravity: 360f, additive: false, layer: SpellVfx.TroopLayer, delay: .05f);
+		SpellVfx.Decal(this, tunneler.Position, "cracks", new Color(.35f, .28f, .2f, .8f), 18f, 2.5f);
 		SetStatus("Enemy tunneler burrowed behind the caravan lines.");
 		return true;
 	}
@@ -3575,17 +3613,26 @@ public partial class BattleController : Node2D
 			}
 			case GameData.EnemyBossVergeId:
 			{
+				// Hex Bloom: a bolt of witchlight into the heaviest defender, then every body near her gets up
+				var hex = new Color("b58cff");
+				boss.BeginCast(1.2f);
+				BattleCastGlow.Spawn(this, boss, hex, .5f);
 				var target = FindHighestHealthPlayer();
 				if (target != null)
 				{
+					SpellVfx.Bolt(this, boss.WeaponContactPosition, target.BodyContactPosition, hex, .5f, 4.5f);
+					SpellVfx.Flash(this, boss.WeaponContactPosition, hex, 24f, .35f);
 					var appliedDamage = target.TakeDamage(30f, boss.UnitName);
 					SpawnDamageFeedback(target.Position, appliedDamage, color);
 					target.ApplyTemporarySpeedModifier(0.58f, 4.5f);
 					DamagePlayersNear(target.Position, 36f, 14f, color);
+					SpellVfx.Sigil(this, target.Position, "shadow", hex, 40, 1f, 1.4f);
+					SpellVfx.Flash(this, target.BodyContactPosition, hex, 44, .45f);
+					SpellVfx.Burst(this, target.BodyContactPosition, "p_swirl", 4, .7f, SpellVfx.Fade(VoidHot, hex), 22, 34, 10, 30, spin: 400);
 				}
 
-				var escorts = SpawnEnemyEscortsNear(boss, boss.SpecialSpawnUnitId, Mathf.Max(1, boss.SpecialSpawnCount));
-				SetStatus($"{boss.UnitName} marked the heaviest defender with Hex Bloom" + (escorts > 0 ? $" as {escorts} witchlight escorts closed in." : "."));
+				var raised = RaiseDeadAround(boss, 3 + Mathf.Max(0, boss.SpecialSpawnCount - 1));
+				SetStatus($"{boss.UnitName} cast Hex Bloom" + (raised > 0 ? $": {raised} of the fallen rose to serve her." : "."));
 				break;
 			}
 			case GameData.EnemyBossCitadelId:
@@ -5037,9 +5084,8 @@ public partial class BattleController : Node2D
 	private void SpawnCombatNumber(Vector2 position, string text, Color color, float lifetime = 0.5f)
 	{
 		var floatText = new BattleFloatText();
-		if (_mobileCamera != null) floatText.PresentationScale = () => MobilePresentation.HudScale / _mobileCamera.Zoom.X;
-		// Keep combat text near its old on-screen size while the desktop camera is zoomed in.
-		else if (_battleCamera != null) floatText.PresentationScale = () => 1.2f / _battleCamera.Zoom.X;
+		// Keep combat text near its old on-screen size while the camera is zoomed in.
+		if (_battleCamera != null) floatText.PresentationScale = () => 1.2f / _battleCamera.Zoom.X;
 		floatText.Position = position;
 		floatText.Setup(
 			text,
@@ -6138,6 +6184,7 @@ public partial class BattleController : Node2D
 		// Rations recharged during play are not battle loot.
 		_battleRewardStart.Food = GameState.Instance.Food;
 		_battleEnded = true;
+		AwardPlayerXP(playerWon);
 		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
@@ -6323,6 +6370,18 @@ public partial class BattleController : Node2D
 		UpdateHud();
 	}
 
+	// Paid before the mode's own results: a campaign stage with no stars yet still counts as a first clear,
+	// and the result board's save comparison shows the gain. Retreats earn nothing, except from endless and
+	// boss rush, where withdrawing banks the run.
+	private void AwardPlayerXP(bool won)
+	{
+		var progress = IsEndlessMode ? _spawnDirector.EndlessWaveNumber
+			: IsBossRushMode ? _rushCleared
+			: IsTowerMode ? GameState.Instance.SelectedTowerFloor
+			: 0;
+		GameState.Instance.AwardBattleXP(_battleMode, won, _stage, progress);
+	}
+
 	private void RetreatToMap()
 	{
 		// Scene transitions must be able to animate when retreating from the pause menu.
@@ -6332,6 +6391,7 @@ public partial class BattleController : Node2D
 			if (!_battleEnded)
 			{
 				_battleEnded = true;
+				AwardPlayerXP(false);
 				GameState.Instance.ApplyBossRushResult(_rushCleared, _elapsed, 0, false, true);
 			}
 			SceneRouter.Instance.GoToBossRush();
@@ -6344,6 +6404,7 @@ public partial class BattleController : Node2D
 				_battleEnded = true;
 				_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 				_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
+				AwardPlayerXP(false);
 				FinalizeEndlessRun(true);
 			}
 

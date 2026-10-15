@@ -23,7 +23,7 @@ public partial class MapMenu
             AudioDirector.Instance?.PlayModalOpen();
             _modalReturnFocus = GetViewport().GuiGetFocusOwner();
             _modal = new RealmModal(); AddChild(_modal);
-            if (MobilePresentation.Enabled) _modal.UseMobileCanvas();
+            _modal.UseMobileCanvas();
             _modal.Closed = CloseHomeModal; _modal.Back = BackHomeModal;
         }
         // Destinations with a score of their own (shop, loadout, endless, tourney) bring it with them.
@@ -36,6 +36,7 @@ public partial class MapMenu
         Control content;
         if (path == "achievements") content = new AchievementsPanel();
         else if (path == "more") content = new CaravanHub();
+        else if (path == "levels") content = new PlayerLevelMenu();
         else content = ResourceLoader.Load<PackedScene>(path).Instantiate<Control>();
         content.SetMeta("home_modal", true);
         if (content.HasMeta("royal_screen")) { _modal.PresentRoyal(path, content); _hud.Visible = false; return true; }

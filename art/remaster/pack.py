@@ -77,12 +77,12 @@ def atlas_columns(count, w, h, limit=density.MAX_ATLAS):
     return best and best[1]
 
 
-def hires_frames(unit, meta, frames, envelope, single_page=True):
-    """Crop to the animation envelope and resample to TARGET_DENSITY (less if the atlas limit forces it);
-    returns frames, metadata, column count and the density reached."""
+def hires_frames(unit, meta, frames, envelope, single_page=True, target=None):
+    """Crop to the animation envelope and resample to the target density (TARGET_DENSITY unless given; less if the
+    atlas limit forces it); returns frames, metadata, column count and the density reached."""
     sw, sh = meta['frameWidth'], meta['frameHeight']
     x0, y0, x1, y1 = envelope
-    scale = density.TARGET_DENSITY * density.frame_canvas_width(unit, meta['drawScale']) / sw
+    scale = (target or density.TARGET_DENSITY) * density.frame_canvas_width(unit, meta['drawScale']) / sw
     if scale > 1:
         print(f'WARN {unit["Id"]}: {sw}x{sh} masters are below the target density; '
               'rerender with build_units.py (automatic res scale)')
@@ -144,7 +144,8 @@ def trimmed_pack(unit, meta, frames, envelope, ident):
     """Puppet units: every frame cropped to its own painted pixels at the target density, shelf-packed onto one or
     more atlas pages (<id>.png, <id>_1.png, ...). The JSON keeps the frame's full logical size; each frame records
     its page, its rectangle on the page and its offset inside the logical frame, so the game draws it in place."""
-    cells, out, _, reached = hires_frames(unit, meta, frames, envelope, single_page=False)
+    cells, out, _, reached = hires_frames(unit, meta, frames, envelope, single_page=False,
+                                          target=density.puppet_density(unit))
     rects, sizes, crops = [], [], []
     for im in cells:
         box = im.getchannel('A').point(lambda v: 255 if v > 2 else 0).getbbox() or (0, 0, 1, 1)
@@ -162,6 +163,30 @@ def trimmed_pack(unit, meta, frames, envelope, ident):
         put(pg, f'assets/units/{ident}{"" if pi == 0 else f"_{pi}"}.png')
     out = dict(out, pages=len(pages), frames=frames_meta)
     return out, cells, reached
+
+
+def trimmed_preview(cells, pm):
+    """The model viewer's idle/walk/attack frames, each cropped to its painted pixels and packed on a single page."""
+    scale = 1.0
+    while True:
+        frames = [c if scale == 1.0 else c.resize((max(1, round(c.width * scale)), max(1, round(c.height * scale))),
+                                                   Image.Resampling.LANCZOS) for c in cells]
+        boxes = []
+        for im in frames:
+            box = im.getchannel('A').point(lambda v: 255 if v > 2 else 0).getbbox() or (0, 0, 1, 1)
+            boxes.append((max(0, box[0] - 1), max(0, box[1] - 1), min(im.width, box[2] + 1), min(im.height, box[3] + 1)))
+        places, dims = shelf_pack([(b[2] - b[0], b[3] - b[1]) for b in boxes])
+        if len(dims) == 1:
+            break
+        scale *= .85
+    page = Image.new('RGBA', dims[0])
+    meta = []
+    for im, (_, x, y), box in zip(frames, places, boxes):
+        page.paste(im.crop(box), (x, y))
+        meta.append([0, x, y, box[2] - box[0], box[3] - box[1], box[0], box[1]])
+    pm = dict(pm, frameWidth=frames[0].width, frameHeight=frames[0].height, pages=1, frames=meta)
+    pm.pop('sheet', None)
+    return page, pm
 
 
 def pack_units(source='units'):
@@ -203,9 +228,8 @@ def pack_units(source='units'):
             pm['animations'] = {k: v for k, v in meta['animations'].items() if k in ('idle', 'walk', 'attack')}
             pm.pop('frames', None); pm.pop('pages', None)
             pcount = max(c['start'] + c['count'] for c in pm['animations'].values())
-            prev = Image.new('RGBA', (w * 5, h * math.ceil(pcount / 5)))
-            for i in range(pcount):
-                prev.paste(cells[i], ((i % 5) * w, (i // 5) * h))
+            # trimmed like the battle atlas, on one page (scaled down until it fits): most of a full cell is air
+            prev, pm = trimmed_preview(cells[:pcount], pm)
             put(prev, f'assets/ui/models/{ident}.png')
             (STAGE / f'assets/ui/models/{ident}.json').write_text(json.dumps(pm, indent=2) + '\n')
             put(src / 'portrait.png', f'assets/ui/icons/units/{ident}.png', 256)
@@ -248,11 +272,14 @@ def pack_units(source='units'):
         if u['Id'] in packed:
             reps.setdefault(u['VisualClass'], u['Id'])
     for cls, ident in reps.items():
-        # class fallbacks point at the representative's own pages (a "sheet" field), so no extra pages are copied
+        # class fallbacks point at the representative's own pages (a "sheet" field), so no pages are copied: the
+        # class's own png is a 4 px stand-in that keeps existence checks working (the loader swaps in page 0)
         meta = json.loads((STAGE / f'assets/units/{ident}.json').read_text())
-        if meta.get('pages', 1) > 1:
+        if 'frames' in meta:
             meta['sheet'] = ident
-        shutil.copy2(STAGE / f'assets/units/{ident}.png', STAGE / f'assets/units/{cls}.png')
+            Image.new('RGBA', (4, 4)).save(STAGE / f'assets/units/{cls}.png')
+        else:
+            shutil.copy2(STAGE / f'assets/units/{ident}.png', STAGE / f'assets/units/{cls}.png')
         (STAGE / f'assets/units/{cls}.json').write_text(json.dumps(meta, indent=2) + '\n')
     print(json.dumps({'units': len(packed), 'class_fallbacks': len(reps), 'clipped_frames': len(clipped),
                       'hires': len(hires)}))

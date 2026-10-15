@@ -46,6 +46,9 @@ public partial class UnitDeathVisual : Node2D
     private float ClipSeconds => _clip.FrameCount * _clip.FrameDuration;
     private int ImpactFrame => _clip.ImpactFrame >= 0 ? _clip.ImpactFrame : Mathf.FloorToInt(_clip.FrameCount * .6f);
     private int Frame => Mathf.Min((int)(_age / Mathf.Max(.01f, _clip.FrameDuration)), _clip.FrameCount - 1);
+    /// <summary>The death frame showing now (for a necromancer raising the body from where it lies).</summary>
+    public int CurrentFrame => Frame;
+    public float Facing => _facing;
     private float DissolveProgress => Mathf.Clamp((_age - ClipSeconds - _rest) / Mathf.Max(.01f, _dissolve), 0, 1);
     private float Alpha => _material == null ? 1 - DissolveProgress : 1;
     internal float Lifetime => ClipSeconds + _rest + _dissolve;

@@ -22,7 +22,6 @@ public partial class UiReviewSmoke
         foreach (var size in new[] { new Vector2I(1280, 720), new Vector2I(1024, 768), new Vector2I(844, 390) })
         {
             var phone = size.X == 844;
-            MobilePresentation.TestOverride = phone;
             GetWindow().Size = size;
             state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
             var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
@@ -96,7 +95,7 @@ public partial class UiReviewSmoke
             Call(fresh, "TogglePause"); Call(fresh, "RetreatToMap"); await LiveUiReview.Settle(this);
             Check(GetTree().CurrentScene is MapMenu && !GetTree().Paused, tag + ": quit returns to the map without leaving it paused");
         }
-        MobilePresentation.TestOverride = false; GetWindow().Size = new Vector2I(1280, 720);
+        GetWindow().Size = new Vector2I(1280, 720);
         foreach (var stage in GameData.Stages.GroupBy(stage => stage.MapId).Where(zone => zone.Key != "city").Select(zone => zone.First().StageNumber))
         {
             state.SetSelectedStage(stage); state.PrepareCampaignBattle(); await Open("Battle");
@@ -121,7 +120,7 @@ public partial class UiReviewSmoke
         Check(!Walk(GetTree().CurrentScene).OfType<Control>().Any(c => c.Name == "BattleHint" || c.Name == "PlayerNotice"),
             "Later battles cannot recreate bottom hints");
         state.SetShowHints(false);
-        MobilePresentation.TestOverride = null; GetTree().Paused = false;
+        GetTree().Paused = false;
         await Open("MainMenu");
         await LiveUiReview.StopAudio(this);
         GD.Print($"BATTLE_POLISH_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);

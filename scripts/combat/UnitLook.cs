@@ -46,6 +46,7 @@ uniform float haze = 0.0;
 uniform float flash = 0.0;
 uniform float facing = 1.0;      // the sun is on the left of the screen: the rim falls on the right edges
 uniform float fade = 1.0;
+uniform float raised = 0.0;      // raised from the dead: drained to grave-green, rimmed with soul-light
 
 
 void fragment() {
@@ -63,6 +64,11 @@ void fragment() {
     // bounce: warm road light on the lowest part of the figure
     lit += bounce * c.rgb * smoothstep(0.62, 1.0, local.y) * 0.22;
     lit *= exposure;
+    if (raised > 0.0) {
+        float g = dot(lit, vec3(0.3, 0.59, 0.11));
+        lit = mix(lit, vec3(g * 0.72, g * 1.02, g * 0.78) * 0.9, 0.55 * raised);
+        lit += vec3(0.35, 1.0, 0.5) * edge * 0.9 * raised;
+    }
     lit = mix(lit, haze_color, haze);
     lit = mix(lit, vec3(1.0), flash);
     COLOR = vec4(lit, c.a * fade) * vec4(COLOR.rgb, COLOR.a);

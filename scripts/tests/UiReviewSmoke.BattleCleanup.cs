@@ -117,7 +117,7 @@ public partial class UiReviewSmoke
             Check(GetTree().CurrentScene is MapMenu home && home.HomeModalDestination == destination,
                 System.IO.Path.GetFileNameWithoutExtension(destination) + " opens with the current map modal from battle");
         }
-        MobilePresentation.TestOverride = true; GetWindow().Size = new Vector2I(844, 390);
+        GetWindow().Size = new Vector2I(844, 390);
         fight = await Battle(); SceneRouter.Instance.GoToLoadout(); await Wait(.7);
         var prepare = (MapMenu)GetTree().CurrentScene;
         var deploy = Walk(prepare).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Deploy");
@@ -137,7 +137,6 @@ public partial class UiReviewSmoke
         Check(phoneEndless.GetViewportRect().Encloses(start.GetGlobalRect()),
             "Phone Endless launch action is fully visible within the modal content");
         await Capture("06-phone-endless-return");
-        MobilePresentation.TestOverride = null;
         GD.Print($"BATTLE_CLEANUP_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }
 }

@@ -32,18 +32,18 @@ public partial class BattleController
             };
         _endLabel.Text = "";
         _endReportScroll.Hide();
-        var compact = MobilePresentation.Enabled;
-        var height = rewards.Count > 0 ? BattleRewardUi.PanelHeight(rewards.Count, compact) : compact ? 280 : 330;
-        if (detail.Length > 0) height += compact ? 24 : 30;
-        _endPanel.CustomMinimumSize = new Vector2(compact ? 680 : 880, Mathf.Min(680, height));
+        // The battle HUD keeps the concept's 1:1 sizes (MobilePresentation.BattleHudScale), so the report does too.
+        var height = rewards.Count > 0 ? BattleRewardUi.PanelHeight(rewards.Count, false) : 330;
+        if (detail.Length > 0) height += 30;
+        _endPanel.CustomMinimumSize = new Vector2(880, Mathf.Min(680, height));
         _endPanel.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 12));
-        _endContent.AddThemeConstantOverride("separation", compact ? 8 : 14);
-        var inset = compact ? 12 : 24;
+        _endContent.AddThemeConstantOverride("separation", 14);
+        var inset = 24;
         foreach (var side in new[] { "left", "right" }) _endPadding.AddThemeConstantOverride("margin_" + side, inset - ModalSurface.MinimumSideInset);
         foreach (var side in new[] { "top", "bottom" }) _endPadding.AddThemeConstantOverride("margin_" + side, inset - ModalSurface.MinimumEndInset);
-        _endStarRating.CustomMinimumSize = new Vector2(132, compact ? 36 : 48);
+        _endStarRating.CustomMinimumSize = new Vector2(132, 48);
 
-        var heading = RealmUi.Heading(title.ToUpperInvariant(), compact ? 26 : 48);
+        var heading = RealmUi.Heading(title.ToUpperInvariant(), 48);
         heading.Name = "ResultTitle"; heading.HorizontalAlignment = HorizontalAlignment.Center;
         heading.AddThemeColorOverride("font_color", won ? VictoryInk : DefeatInk);
         _endContent.AddChild(heading); _endContent.MoveChild(heading, 0);
@@ -58,8 +58,8 @@ public partial class BattleController
         if (rewards.Count > 0)
         {
             var scroll = new ScrollContainer { Name = "VictoryRewards", SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-                HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, compact ? 96 : 160) };
-            scroll.AddChild(BattleRewardUi.Cards(rewards, compact));
+                HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 160) };
+            scroll.AddChild(BattleRewardUi.Cards(rewards, false));
             body = scroll;
         }
         else
@@ -102,7 +102,7 @@ public partial class BattleController
         _endCenter.GetParent().AddChild(_royalResult);
         _endPanel.Visible = false;
         // The result board stands alone over the battlefield, as in the concept.
-        foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock, _battleFollowButton })
+        foreach (var hud in new Control[] { _topHudPanel, _goldFrame, _hudSettingsButton, _cardDock })
             if (IsInstanceValid(hud)) hud.Visible = false;
     }
 }

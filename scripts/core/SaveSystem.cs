@@ -15,6 +15,8 @@ public partial class SaveSystem : Node
 
     public static SaveSystem Instance { get; private set; }
     public string ActiveSaveFilePath => ResolveSaveFilePath();
+    /// <summary>True when a --save-file or --save-suffix argument points away from the player's own save (test and review runs).</summary>
+    public bool UsesIsolatedSave => ResolveSaveFilePath() != DefaultSaveFilePath;
     public bool LoadedFromBackup { get; private set; }
     private bool _recoveryNoticePending;
     public bool LastSaveSucceeded { get; private set; } = true;

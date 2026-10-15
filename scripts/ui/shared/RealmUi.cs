@@ -165,13 +165,9 @@ public static class RealmUi
     public static HBoxContainer Tabs(Control host, Action<int> select, params string[] labels)
     {
         var row = new HBoxContainer();
-        if (MobilePresentation.Enabled)
-        {
-            var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
-                CustomMinimumSize = new Vector2(0, 56), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-            scroll.SetMeta("modal_min_height", 0); host.AddChild(scroll); scroll.AddChild(row);
-        }
-        else host.AddChild(row);
+        var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            CustomMinimumSize = new Vector2(0, 56), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        scroll.SetMeta("modal_min_height", 0); host.AddChild(scroll); scroll.AddChild(row);
         row.SetMeta("realm_tabs", true);
         var group = new ButtonGroup();
         for (int i = 0; i < labels.Length; i++)

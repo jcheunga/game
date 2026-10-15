@@ -1,15 +1,17 @@
 using Godot;
 
+// The battle camera. Every screen gets the same one: it frames the band at the soldier scale between the HUD
+// rows, follows the fighting, and pans by touch drag (BattleController.Mobile.cs), mouse wheel, trackpad,
+// middle-drag or the keyboard.
 public partial class BattleController
 {
     private const float BattleScrollStep = 100f;
+    // How long the camera holds where the player panned to before it goes back to following the fighting.
+    private const float BattleCameraPanHold = 4f;
     // Kept in shot around the walking band: room above the top line for a soldier's sprite and
     // health bar, and below the bottom line for feet and shadows.
     private const float FrameHeadroom = 52f;
     private const float FrameFootroom = 14f;
-    // Screen rows the desktop HUD leaves clear, between the meters and the card tray.
-    private const float DesktopFieldTop = 92f;
-    private const float DesktopFieldBottomInset = 168f;
     private const float BattleCameraFollowRate = 3f;
     // Where the band sits within the clear rows when it fits with room to spare: low on screen, like a
     // road under the scenery, with the bases and troops standing up into the space above.
@@ -19,8 +21,9 @@ public partial class BattleController
     private float BattleWorldWidth => BattlefieldRight + BattlefieldLeft;
     private float FrameTop => BattlefieldTop + SpawnVerticalPadding - FrameHeadroom;
     private float FrameBottom => BattlefieldBottom - SpawnVerticalPadding + FrameFootroom;
-    private float FieldScreenTop => _mobileCamera != null ? _mobileFieldTop : DesktopFieldTop;
-    private float FieldScreenBottom => _mobileCamera != null ? _mobileFieldBottom : GetViewportRect().Size.Y - DesktopFieldBottomInset;
+    // Screen rows the HUD leaves clear, between the meters and the card tray (set by the HUD layout).
+    private float FieldScreenTop => _mobileFieldTop;
+    private float FieldScreenBottom => _mobileFieldBottom;
     // The zoom that shows ViewWidth of the field (the soldier scale) and the band with its headroom.
     private float BattleFitZoom => Mathf.Min(GetViewportRect().Size.X / Mathf.Min(_combat.ViewWidth, BattleWorldWidth),
         Mathf.Max(1f, FieldScreenBottom - FieldScreenTop) / (FrameBottom - FrameTop));
@@ -29,39 +32,9 @@ public partial class BattleController
     private float FieldScreenOffset(Camera2D camera) =>
         ((FieldScreenTop + FieldScreenBottom) * .5f - GetViewportRect().Size.Y * .5f) / camera.Zoom.Y;
     private Camera2D _battleCamera;
-    private Button _battleFollowButton;
     private bool _battleCameraDragging, _battleCameraFollow = true;
+    private float _battleCameraHold;
     private Vector2 _battleCameraPointer;
-
-    private void ConfigureBattleCamera(Control root)
-    {
-        if (MobilePresentation.Enabled) return;
-        _battleCamera = new Camera2D
-        {
-            Name = "BattleCamera",
-            Position = new Vector2(0, (FrameTop + FrameBottom) * .5f),
-            PositionSmoothingEnabled = false
-        };
-        AddChild(_battleCamera);
-        _battleCamera.MakeCurrent();
-        _battleFollowButton = RealmUi.IconButton("sword", "Follow the fighting [F]", () => SetBattleCameraFollow(true));
-        _battleFollowButton.Visible = false;
-        root.AddChild(_battleFollowButton);
-
-        GetViewport().SizeChanged += RefreshBattleCamera;
-        RefreshBattleCamera();
-    }
-
-    private void RefreshBattleCamera()
-    {
-        if (_battleCamera == null) return;
-        CancelCardDrag();
-        CancelCouragePickupGesture();
-        _battleCameraDragging = false;
-        _battleCamera.Zoom = Vector2.One * BattleFitZoom;
-        ClampBattleCamera(_battleCamera);
-        _battleCamera.ForceUpdateScroll();
-    }
 
     private void ClampBattleCamera(Camera2D camera) => camera.Position = CameraPositionFor(camera.Position, camera.Zoom.X);
 
@@ -83,13 +56,28 @@ public partial class BattleController
             center = Mathf.Clamp(bandCenter - bandDrop, FrameBottom - windowHalf, FrameTop + windowHalf);
         }
         else center = Mathf.Clamp(desired.Y + offset, FrameTop + windowHalf, FrameBottom - windowHalf);
-        return new Vector2(x, center - offset);
+        // The view stays above the bottom of the painting.
+        var y = center - offset;
+        if (PaintedGroundBottom is float ground) y = Mathf.Min(y, ground - GetViewportRect().Size.Y / zoom * .5f);
+        return new Vector2(x, y);
     }
 
+    private float? PaintedGroundBottom
+    {
+        get
+        {
+            if (_stageBackdrop == null) return null;
+            var bottom = float.MinValue;
+            foreach (var layer in _stageBackdrop.Layers) bottom = Mathf.Max(bottom, layer.Rect.End.Y);
+            return bottom;
+        }
+    }
+
+    /// <summary>Follow the fighting, or hold where the player panned to for a few seconds (F resumes at once).</summary>
     private void SetBattleCameraFollow(bool follow)
     {
         _battleCameraFollow = follow;
-        if (_battleFollowButton != null) _battleFollowButton.Visible = !follow && !_battleEnded;
+        if (!follow) _battleCameraHold = BattleCameraPanHold;
     }
 
     private void SetBattleCameraX(float x)
@@ -123,10 +111,11 @@ public partial class BattleController
 
     private void UpdateBattleCamera(float delta)
     {
-        var camera = _battleCamera ?? _mobileCamera;
+        var camera = _battleCamera;
         if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive || _cardPointerDown || _couragePickupPointerDown) return;
-        if (_battleCamera != null ? !_battleCameraFollow || _battleCameraDragging
-            : _mobileOverview || !_mobileFollow || _mobilePointerDown) return;
+        if (_battleCameraDragging || _mobilePointerDown) return;
+        if (!_battleCameraFollow && (_battleCameraHold -= delta) > 0) return;
+        _battleCameraFollow = true;
         var focus = ResolveBattleFollowFocus(GetViewportRect().Size.X / camera.Zoom.X * .5f);
         var destination = new Vector2(focus.X, focus.Y - FieldScreenOffset(camera));
         camera.Position = camera.Position.Lerp(destination, 1 - Mathf.Exp(-delta * BattleCameraFollowRate));
@@ -135,8 +124,14 @@ public partial class BattleController
 
     private bool HandleBattleCameraInput(InputEvent input)
     {
-        var camera = _battleCamera ?? _mobileCamera;
+        var camera = _battleCamera;
         if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive) return false;
+        if (input is InputEventKey { Pressed: true, Keycode: Key.F })
+        {
+            SetBattleCameraFollow(true);
+            GetViewport().SetInputAsHandled();
+            return true;
+        }
         // The whole field is on screen; there is nothing to pan to.
         if (BattleFieldFitsView(camera)) return false;
         // Controls may pass wheel events through even when they stop clicks.
@@ -153,21 +148,14 @@ public partial class BattleController
         {
             amount = (Mathf.Abs(pan.Delta.X) > Mathf.Abs(pan.Delta.Y) ? pan.Delta.X : pan.Delta.Y) * 48f;
         }
-        else if (_battleCamera != null && input is InputEventMouseButton mouse && mouse.Pressed && mouse.ButtonIndex == MouseButton.Middle)
+        else if (input is InputEventMouseButton mouse && mouse.Pressed && mouse.ButtonIndex == MouseButton.Middle)
         {
             _battleCameraDragging = true;
             _battleCameraPointer = mouse.Position;
             GetViewport().SetInputAsHandled();
             return true;
         }
-        else if (_battleCamera != null && input is InputEventKey { Pressed: true, Keycode: Key.F })
-        {
-            SetBattleCameraFollow(true);
-            GetViewport().SetInputAsHandled();
-            return true;
-        }
-        else if (_battleCamera != null && input is InputEventKey key && key.Pressed &&
-            key.Keycode is Key.Left or Key.Right or Key.Home or Key.End)
+        else if (input is InputEventKey key && key.Pressed && key.Keycode is Key.Left or Key.Right or Key.Home or Key.End)
         {
             SetBattleCameraX(key.Keycode switch
             {
@@ -182,15 +170,8 @@ public partial class BattleController
         else return false;
 
         // Scroll amounts are screen pixels; the camera moves in world units.
-        if (_battleCamera != null) SetBattleCameraX(camera.Position.X + amount / camera.Zoom.X);
-        else if (!_mobileOverview)
-        {
-            _mobilePointerDown = false;
-            PauseMobileFollow();
-            camera.Position += new Vector2(amount / camera.Zoom.X, 0);
-            ClampMobileCamera();
-            camera.ForceUpdateScroll();
-        }
+        _mobilePointerDown = false;
+        SetBattleCameraX(camera.Position.X + amount / camera.Zoom.X);
         GetViewport().SetInputAsHandled();
         return true;
     }
@@ -211,10 +192,4 @@ public partial class BattleController
         GetViewport().SetInputAsHandled();
         return true;
     }
-
-    private void CleanupBattleCamera()
-    {
-        if (_battleCamera != null) GetViewport().SizeChanged -= RefreshBattleCamera;
-    }
-
 }

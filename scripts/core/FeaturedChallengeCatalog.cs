@@ -202,17 +202,21 @@ public static class FeaturedChallengeCatalog
             .OrderBy(unit => unit.UnlockStage)
             .ThenBy(unit => unit.DisplayName)
             .ToArray();
-        var fallbackIndex = 0;
-        while (result.Count < 3 && fallbackUnits.Length > 0)
+        // Each available unit is tried once; early stages can unlock fewer than three.
+        for (var fallbackIndex = 0; result.Count < 3 && fallbackIndex < fallbackUnits.Length; fallbackIndex++)
         {
             var candidate = fallbackUnits[(seed + fallbackIndex) % fallbackUnits.Length];
-            fallbackIndex++;
-            if (result.Contains(candidate.Id, StringComparer.OrdinalIgnoreCase))
+            if (!result.Contains(candidate.Id, StringComparer.OrdinalIgnoreCase))
             {
-                continue;
+                result.Add(candidate.Id);
             }
+        }
 
-            result.Add(candidate.Id);
+        // Then borrow the earliest other allies so the set squad never repeats one.
+        foreach (var unit in GameData.GetPlayerUnits().OrderBy(unit => unit.UnlockStage).ThenBy(unit => unit.DisplayName))
+        {
+            if (result.Count >= 3) break;
+            if (!result.Contains(unit.Id, StringComparer.OrdinalIgnoreCase)) result.Add(unit.Id);
         }
 
         while (result.Count < 3)

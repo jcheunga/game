@@ -103,12 +103,8 @@ public partial class CashShopMenu : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        if (MobilePresentation.Enabled)
-        {
-            var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-            panel.AddChild(scroll); scroll.AddChild(stack);
-        }
-        else panel.AddChild(stack);
+        var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        panel.AddChild(scroll); scroll.AddChild(stack);
         return stack;
     }
 

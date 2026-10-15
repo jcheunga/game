@@ -40,6 +40,7 @@ public partial class MapMenu : Control
         BuildUi();
         _mapCanvas.ShowMap(_activeMapId, _selected.Id);
         RefreshUi();
+        PromptForNicknameIfNeeded();
     }
     public string ActiveMapId => _activeMapId;
 
@@ -142,6 +143,7 @@ public partial class MapMenu : Control
         RefreshZoneNavigation();
         _resources.SetValues(state.Gold.ToString("N0"), $"{state.Food} / {GameState.FoodRechargeCap}", state.TotalStarsEarned.ToString());
         _foodHint.TooltipText = state.FoodRechargeText;
+        RefreshPlayerCard();
         if (_developerPanel != null) _developerPanel.Visible = state.DeveloperModeEnabled;
         if (_selectedGround != null)
         {

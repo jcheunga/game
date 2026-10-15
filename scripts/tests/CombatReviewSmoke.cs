@@ -100,6 +100,7 @@ public partial class CombatReviewSmoke : Node
         CheckDataLoadFailureKeepsSave();
         CheckSpawnScheduling();
         CheckProgressionRewards();
+        CheckPlayerLevels();
         await CheckStageStars();
         await CheckBaseWeapons();
         await CheckFinishPacing();
@@ -437,7 +438,6 @@ public partial class CombatReviewSmoke : Node
         var level = CampaignProgressionCatalog.SuggestedLevel(stage);
         var levelDelta = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--unit-level-delta="));
         if (levelDelta != null) level = Math.Clamp(level + int.Parse(levelDelta.Split('=')[1]), 1, GameState.Instance.MaxUnitLevel);
-        if (tactical) FieldStageSpells(stage);
         var squad = OS.GetCmdlineUserArgs().FirstOrDefault(x => x.StartsWith("--squad="))?.Split('=')[1];
         if (squad != null)
         {
@@ -450,6 +450,7 @@ public partial class CombatReviewSmoke : Node
             foreach (var id in selected) { owned.Add(id); active.Add(id); }
         }
         else if (tactical && !OS.GetCmdlineUserArgs().Contains("--starter-squad")) FieldStageDeck(stage);
+        if (tactical) FieldStageSpells(stage);
         var levels = Read<Dictionary<string, int>>(GameState.Instance, "_unitUpgradeLevels");
         foreach (var id in GameState.Instance.ActiveDeckUnitIds) levels[id] = level;
         if (tactical)
@@ -653,26 +654,28 @@ public partial class CombatReviewSmoke : Node
             }
     }
 
-    // A player at this stage owns what it has unlocked and fields a balanced deck: its three strongest frontline
-    // troops and three strongest ranged troops (by health x damage rate), with every unlocked spell.
+    // A player at this stage owns what it has unlocked and fields a balanced six-slot loadout: its two strongest
+    // frontline troops and two strongest ranged troops (by health x damage rate), with spells in the other slots.
     private void FieldStageDeck(int stage)
     {
         var state = GameState.Instance;
         var available = GameData.GetPlayerUnits().Where(u => u.UnlockStage <= stage).ToArray();
         static double Power(UnitDefinition u) => Math.Sqrt(u.MaxHealth * u.AttackDamage / Math.Max(.3, u.AttackCooldown));
-        var melee = available.Where(u => !u.UsesProjectile).OrderByDescending(Power).Take(3);
-        var ranged = available.Where(u => u.UsesProjectile).OrderByDescending(Power).Take(3);
+        var melee = available.Where(u => !u.UsesProjectile).OrderByDescending(Power).Take(2);
+        var ranged = available.Where(u => u.UsesProjectile).OrderByDescending(Power).Take(2);
         var owned = Read<HashSet<string>>(state, "_ownedPlayerUnitIds");
         var active = Read<List<string>>(state, "_activeDeckUnitIds");
         active.Clear();
         foreach (var unit in melee.Concat(ranged)) { owned.Add(unit.Id); active.Add(unit.Id); }
     }
 
+    // Spells fill whatever loadout slots the fielded units leave open.
     private void FieldStageSpells(int stage)
     {
         var state = GameState.Instance;
         var spells = GameData.PlayerSpellIds.Select(GameData.GetSpell).Where(x => x.UnlockStage <= stage)
-            .OrderBy(x => x.Id is "spell_heal" or "spell_fireball" ? 0 : 1).ThenByDescending(x => x.UnlockStage).Take(5).ToArray();
+            .OrderBy(x => x.Id is "spell_heal" or "spell_fireball" ? 0 : 1).ThenByDescending(x => x.UnlockStage)
+            .Take(state.LoadoutSizeLimit - state.ActiveDeckUnitIds.Count).ToArray();
         var ownedSpells = Read<HashSet<string>>(state, "_ownedPlayerSpellIds");
         var activeSpells = Read<List<string>>(state, "_activeDeckSpellIds");
         activeSpells.Clear();

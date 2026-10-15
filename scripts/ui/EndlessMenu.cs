@@ -106,11 +106,11 @@ public partial class EndlessMenu : RoyalScreen
             title.Size = new Vector2(rect.Size.X - 10, title.Size.Y);
             card.AddChild(title);
             card.AddChild(RoyalKit.Image("boon-divider", new Rect2(rect.Size.X / 2 - 60, spec.Rect("boon.1.divider").Position.Y - origin.Y, 120, spec.Rect("boon.1.divider").Size.Y)));
-            var description = RoyalText.Paragraph(boon.Summary, 15, new Color("e3ddcd"), 500, HorizontalAlignment.Center);
+            var description = RoyalText.Paragraph(boon.Card, 15, new Color("e3ddcd"), 500, HorizontalAlignment.Center);
             description.Position = new Vector2(8, spec.Number("boon.1.desc.1", "baseline", 540) - origin.Y - 14);
             description.Size = new Vector2(rect.Size.X - 16, rect.Size.Y - description.Position.Y - 8);
             description.AddThemeConstantOverride("line_spacing", -3);
-            RoyalText.FitLines(description, 3, 11);
+            RoyalText.FitLines(description, 3);
             card.AddChild(description);
             _layer.AddChild(card);
         }
@@ -135,6 +135,7 @@ public partial class EndlessMenu : RoyalScreen
         _layer.AddChild(spec.Label("warband.title", "Your Warband", 300));
         Button("editwarband", "icon-people-gold", "Edit Warband", () => SceneRouter.Instance.GoToShop(0));
         var units = state.GetActiveDeckUnits().ToArray();
+        var spells = state.GetActiveDeckSpells().ToArray();
         var firstCard = spec.Rect("unit.1");
         for (var i = 0; i < 6; i++)
         {
@@ -145,7 +146,13 @@ public partial class EndlessMenu : RoyalScreen
             var number = spec.Label("unit.1.number", (i + 1).ToString(), 30);
             number.Position += rect.Position - firstCard.Position; number.ShadowOffset = Vector2.Zero;
             _layer.AddChild(number);
-            if (i >= units.Length) { _layer.AddChild(RoyalKit.Image("empty-plus", new Rect2(rect.GetCenter() - new Vector2(16, 30), new Vector2(32, 32)), new Color(1, 1, 1, .6f))); continue; }
+            // Units and spells share the loadout; a card past the units' room is held by a spell.
+            if (i >= units.Length)
+            {
+                var held = i >= state.LoadoutSizeLimit - spells.Length;
+                _layer.AddChild(RoyalKit.Image(held ? "tab-spells" : "empty-plus", new Rect2(rect.GetCenter() - new Vector2(16, 30), new Vector2(32, 32)), new Color(1, 1, 1, held ? .35f : .6f)));
+                continue;
+            }
             var unit = units[i];
             var origin = firstCard.Position;
             Rect2 Part(string part) => new(spec.Rect("unit.1" + part).Position - origin + rect.Position, spec.Rect("unit.1" + part).Size);
@@ -162,7 +169,6 @@ public partial class EndlessMenu : RoyalScreen
         }
         _layer.AddChild(RoyalKit.Image("icon-flame-gold", spec.Rect("spells.icon")));
         _layer.AddChild(spec.Label("spells.label", "Spells", 160));
-        var spells = state.GetActiveDeckSpells().ToArray();
         var firstSpell = spec.Rect("spell.1");
         for (var i = 0; i < 5; i++)
         {
@@ -170,7 +176,12 @@ public partial class EndlessMenu : RoyalScreen
             _layer.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("endless-spell-slot", 10, 10, 10, 18))));
             var gem = spec.Rect("spell.1.gem"); gem.Position += rect.Position - firstSpell.Position;
             _layer.AddChild(RoyalKit.Image("endless-gem", gem));
-            if (i >= spells.Length) continue;
+            if (i >= spells.Length)
+            {
+                if (i >= state.LoadoutSizeLimit - units.Length)
+                    _layer.AddChild(RoyalKit.Image("tab-warband", new Rect2(rect.GetCenter() - new Vector2(13, 16), new Vector2(26, 26)), new Color(1, 1, 1, .35f)));
+                continue;
+            }
             var spell = spells[i];
             var slot = RoyalButton.Over(rect, spell.DisplayName, () => SpellShowcase.Show(this, spell), 6);
             slot.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,

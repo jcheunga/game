@@ -44,6 +44,12 @@ public partial class BattleController
         {
             _pendingBossPhases[boss] = _elapsed + BossPhaseWarningSeconds;
             AudioDirector.Instance?.PlayBossPhase();
+            // the commander gathers its power where everyone can see it: the cast pose, a gathering glow, its sigil
+            boss.BeginCast(BossPhaseWarningSeconds + .2f);
+            var phaseTint = boss.DefinitionId == GameData.EnemyBossVergeId ? new Color("b58cff") : new Color("ffb454");
+            BattleCastGlow.Spawn(this, boss, phaseTint, BossPhaseWarningSeconds);
+            SpellVfx.Sigil(this, boss.Position, boss.DefinitionId == GameData.EnemyBossVergeId ? "shadow" : "war", phaseTint,
+                Mathf.Max(46f, boss.Radius * 2f), BossPhaseWarningSeconds + .4f, .35f);
             var title = StageEncounterIntel.GetBossPhaseTitle(boss.DefinitionId);
             SetStatus($"{boss.UnitName} is preparing {title}. Reinforce, heal, or finish the commander!");
             return false;
@@ -59,9 +65,12 @@ public partial class BattleController
         {
             if (entry.Key.IsDead) continue;
             var progress = Mathf.Clamp(1f - (entry.Value - _elapsed) / BossPhaseWarningSeconds, 0f, 1f);
-            var color = new Color("ffb454");
-            DrawCircle(entry.Key.Position, 120, new Color(color, 0.07f));
-            DrawArc(entry.Key.Position, 120, -Mathf.Pi / 2, -Mathf.Pi / 2 + Mathf.Tau * progress, 48, color, 3, true);
+            var color = entry.Key.DefinitionId == GameData.EnemyBossVergeId ? new Color("b58cff") : new Color("ffb454");
+            // on the ground plane, like every other telegraph
+            DrawSetTransform(entry.Key.Position, 0, new Vector2(1, BattleGroundPlane.DepthScale));
+            DrawCircle(Vector2.Zero, 120, new Color(color, 0.06f));
+            DrawArc(Vector2.Zero, 120, -Mathf.Pi / 2, -Mathf.Pi / 2 + Mathf.Tau * progress, 64, color, 3, true);
+            DrawSetTransform(Vector2.Zero);
         }
     }
 }

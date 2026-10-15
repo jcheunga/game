@@ -102,7 +102,7 @@ public partial class RealmModal : Control
         MedievalUi.Apply(modal);
         layer.AddChild(modal);
         modal.Name = "InspectorModal";
-        if (MobilePresentation.Enabled) modal.UseMobileCanvas();
+        modal.UseMobileCanvas();
         modal.Closed = modal.Back = layer.QueueFree;
         modal._close.TooltipText = modal._close.AccessibilityName = "Close details";
         modal.Present("inspector", title, "", false, width, height, identity);
@@ -244,7 +244,7 @@ public partial class RealmModal : Control
         stack.AddThemeConstantOverride("separation", 14); stack.SizeFlagsVertical = SizeFlags.ExpandFill;
         foreach (var band in body.GroupBy(child => Math.Round(child.Position.Y / 24)).OrderBy(group => group.Key))
         {
-            BoxContainer row = MobilePresentation.Enabled ? new VBoxContainer() : new HBoxContainer();
+            var row = new VBoxContainer();
             row.SizeFlagsVertical = band.Any(child => child is PanelContainer && child.Size.Y > 150) ? SizeFlags.ExpandFill : SizeFlags.Fill;
             row.AddThemeConstantOverride("separation", 14); stack.AddChild(row);
             foreach (var child in band.OrderBy(child => child.Position.X))
@@ -269,20 +269,16 @@ public partial class RealmModal : Control
             // Message-only strips stay hidden and reserve no space; preserve the action rows.
             if (!HasActions(footer)) continue;
             menu.RemoveChild(footer);
-            if (MobilePresentation.Enabled)
-            {
-                var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-                    VerticalScrollMode = ScrollContainer.ScrollMode.Disabled };
-                // Without this, relaxing minimums reserves the default scroll height and the footer crowds out the body.
-                scroll.SetMeta("modal_min_height", 0);
-                root.AddChild(scroll); scroll.AddChild(footer);
-            }
-            else root.AddChild(footer);
+            var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+                VerticalScrollMode = ScrollContainer.ScrollMode.Disabled };
+            // Without this, relaxing minimums reserves the default scroll height and the footer crowds out the body.
+            scroll.SetMeta("modal_min_height", 0);
+            root.AddChild(scroll); scroll.AddChild(footer);
             footer.Show(); RelaxMinimums(footer);
             footer.SizeFlagsHorizontal = SizeFlags.ExpandFill; footer.SizeFlagsVertical = SizeFlags.Fill;
             HideModalNavigation(footer);
             MarkLaunchActions(footer);
-            if (MobilePresentation.Enabled) CompactFooter(footer);
+            CompactFooter(footer);
         }
         MarkLaunchActions(root); Polish(root);
         var upkeep = new ModalActivityLayout { Body = root }; menu.AddChild(upkeep);

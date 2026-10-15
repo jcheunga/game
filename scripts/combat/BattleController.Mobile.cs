@@ -2,40 +2,29 @@ using System;
 using System.Linq;
 using Godot;
 
+// The battle's touch controls, on every screen: the placement hint and Cancel, and the gestures (drag to pan, tap
+// to place). The HUD keeps the battle concept's sizes; MobilePresentation.BattleHudScale scales it as a whole.
 public partial class BattleController
 {
-    private Camera2D _mobileCamera;
     private Control _mobileHud;
-    private Button _mobileViewButton, _mobileCancelButton, _mobileZoomButton, _mobileClearButton;
+    private Button _mobileCancelButton;
     private Label _mobilePlacementHint;
-    private bool _mobileOverview, _mobileFollow = true;
-    private bool _mobileClearView;
-    // Combat zoom steps relative to the fit that shows the whole band between the HUD rows.
-    private static readonly float[] MobileZoomSteps = { 1f, 1.25f, 1.5f };
-    private int _mobileZoomStep;
-    private float MobileCombatZoom => BattleFitZoom * MobileZoomSteps[_mobileZoomStep];
-    private Vector2 _mobileClosePosition;
     private bool _mobilePointerDown, _mobileDragging;
     private int _mobilePointerId;
     private Vector2 _mobilePointerStart, _mobilePointerLast;
     private Action _mobileResize;
     private float _mobileFieldTop, _mobileFieldBottom;
+    // Screen rows the meters (top) and the card tray (bottom) keep, at the HUD's own scale.
+    private const float HudTopRows = 92f, HudCardRows = 168f;
 
     private void ConfigureMobileBattleUi(Control root, PanelContainer cards, HBoxContainer cardRow)
     {
-        if (!MobilePresentation.Enabled) return;
         _mobileHud=root;
         root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopLeft);
-        root.Scale=Vector2.One*MobilePresentation.HudScale;
-        _mobileCamera=new Camera2D { Name="MobileBattleCamera", Position=new Vector2(0,(BattlefieldTop+BattlefieldBottom)*.5f),
+        root.Scale=Vector2.One*MobilePresentation.BattleHudScale;
+        _battleCamera=new Camera2D { Name="BattleCamera", Position=new Vector2(0,(BattlefieldTop+BattlefieldBottom)*.5f),
             PositionSmoothingEnabled=false };
-        AddChild(_mobileCamera); _mobileCamera.MakeCurrent();
-        var views = new HBoxContainer(); views.AddThemeConstantOverride("separation", 6); root.AddChild(views);
-        _mobileViewButton=RealmUi.IconButton("map", "Battlefield overview or follow combat", ToggleMobileOverview);
-        _mobileZoomButton=RealmUi.IconButton("eye", "Change combat zoom", CycleMobileZoom);
-        _mobileClearButton=RealmUi.IconButton("people", "Toggle clear combat view", ToggleMobileClearView);
-        foreach(var button in new[] {_mobileViewButton,_mobileZoomButton,_mobileClearButton})
-        { MobilePresentation.TouchButton(button); views.AddChild(button); }
+        AddChild(_battleCamera); _battleCamera.MakeCurrent();
         _mobilePlacementHint=new Label { MouseFilter=Control.MouseFilterEnum.Ignore, ClipText=true };
         _mobilePlacementHint.AddThemeFontSizeOverride("font_size",20);
         root.AddChild(_mobilePlacementHint);
@@ -81,7 +70,7 @@ public partial class BattleController
             CancelCardDrag();
             CancelCouragePickupGesture();
             _mobilePointerDown=false;
-            var scale=MobilePresentation.HudScale;
+            var scale=MobilePresentation.BattleHudScale;
             root.Size=GetViewportRect().Size/scale;
             var left=(SafeAreaService.Instance?.MarginLeft ?? 0)/scale+10;
             var right=(SafeAreaService.Instance?.MarginRight ?? 0)/scale+10;
@@ -89,19 +78,17 @@ public partial class BattleController
             var bottom=(SafeAreaService.Instance?.MarginBottom ?? 0)/scale+8;
             var width=root.Size.X-left-right;
             _hudLayout?.Invoke();
-            views.Position=new Vector2(root.Size.X-right-views.GetCombinedMinimumSize().X,top+50);
-            cards.Visible=!_mobileClearView;
-            _mobilePlacementHint.Position=new Vector2(left,_mobileClearView?root.Size.Y-bottom-28:cards.Position.Y-29);
+            _mobilePlacementHint.Position=new Vector2(left,cards.Position.Y-29);
             _mobilePlacementHint.Size=new Vector2(width-120,26);
             _mobileCancelButton.Position=new Vector2(root.Size.X-right-102,cards.Position.Y-60);
             _mobileCancelButton.Size=new Vector2(102,56);
             var pauseVeil=_pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if(pauseVeil!=null) pauseVeil.CustomMinimumSize=root.Size;
-            _mobileFieldTop=(top+70)*scale;
-            _mobileFieldBottom=(_mobileClearView?root.Size.Y-bottom-32:cards.Position.Y-30)*scale;
-            _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:MobileCombatZoom);
-            ClampMobileCamera();
-            _mobileCamera.ForceUpdateScroll();
+            _mobileFieldTop=(top+HudTopRows)*scale;
+            _mobileFieldBottom=(root.Size.Y-bottom-HudCardRows)*scale;
+            _battleCamera.Zoom=Vector2.One*BattleFitZoom;
+            ClampBattleCamera(_battleCamera);
+            _battleCamera.ForceUpdateScroll();
         };
         GetViewport().SizeChanged+=_mobileResize;
         _mobileResize();
@@ -111,77 +98,17 @@ public partial class BattleController
     {
         if (_mobileHud==null) return;
         var armed=_selectionMode==BattleSelectionMode.Spell ? _spellDeck.ArmedSpell?.DisplayName : null;
-        _mobilePlacementHint.Text=_mobileClearView?"View only · Drag to explore · Tap Cards to deploy":
-            _cardDragging?"Release on the field · Return to the cards to cancel":
+        _mobilePlacementHint.Text=_cardDragging?"Release on the field · Return to the cards to cancel":
             string.IsNullOrEmpty(armed)?"":$"{armed} · Tap the field to cast";
         // A held card is cancelled by returning it to the bar; the button is for magic armed by keyboard.
-        _mobileCancelButton.Visible=!_mobileClearView && !_cardDragging && !string.IsNullOrEmpty(armed);
-    }
-
-    private void ToggleMobileOverview()
-    {
-        _mobilePointerDown=false;
-        if (!_mobileFollow && !_mobileOverview) _mobileFollow=true;
-        else if(_mobileOverview)
-        {
-            _mobileOverview=false; _mobileFollow=true;
-            _mobileCamera.Position=_mobileClosePosition;
-        }
-        else { _mobileClosePosition=_mobileCamera.Position; _mobileOverview=true; }
-        _mobileViewButton.Icon=RealmUi.Icon(_mobileOverview?"sword":"map");
-        _mobileViewButton.TooltipText=_mobileOverview?"Return to close combat":"Show the whole battlefield";
-        _mobileCamera.Zoom=Vector2.One*(_mobileOverview?MobileOverviewZoom:MobileCombatZoom);
-        if (_mobileOverview) _mobileCamera.Position=new Vector2(BattleWorldWidth*.5f,(FrameTop+FrameBottom)*.5f);
-        else _mobileFollow=true;
-        ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
-    }
-
-    // A hand pan stops tracking; the view button then offers to resume it.
-    private void PauseMobileFollow()
-    {
-        _mobileFollow=false;
-        _mobileViewButton.Icon=RealmUi.Icon("sword");
-        _mobileViewButton.TooltipText="Follow the fighting";
-    }
-
-    private Vector2 MobileVisibleCenter => new(GetViewportRect().Size.X*.5f,(_mobileFieldTop+_mobileFieldBottom)*.5f);
-    private float MobileOverviewZoom => Mathf.Min(GetViewportRect().Size.X / BattleWorldWidth, BattleFitZoom);
-
-    private void CycleMobileZoom()
-    {
-        _mobilePointerDown=false;
-        if(_mobileOverview) ToggleMobileOverview();
-        var focus=ScreenToBattle(MobileVisibleCenter);
-        _mobileZoomStep=(_mobileZoomStep+1)%MobileZoomSteps.Length;
-        _mobileCamera.Zoom=Vector2.One*MobileCombatZoom;
-        _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/MobileCombatZoom;
-        ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
-    }
-
-    private void ToggleMobileClearView()
-    {
-        var focus=ScreenToBattle(MobileVisibleCenter);
-        _mobileClearView=!_mobileClearView;
-        _mobileClearButton.Icon=RealmUi.Icon(_mobileClearView?"people":"eye");
-        _mobileClearButton.TooltipText=_mobileClearView?"Restore deployment cards":"Hide cards for a clear view";
-        _mobileResize(); RefreshMobileHud();
-        if(!_mobileOverview)
-            _mobileCamera.Position=focus-(MobileVisibleCenter-GetViewportRect().Size*.5f)/MobileCombatZoom;
-        ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
-    }
-
-    private void ClampMobileCamera()
-    {
-        if (_mobileCamera==null) return;
-        if (_mobileOverview) _mobileCamera.Zoom=Vector2.One*MobileOverviewZoom;
-        ClampBattleCamera(_mobileCamera);
+        _mobileCancelButton.Visible=!_cardDragging && !string.IsNullOrEmpty(armed);
     }
 
     private Vector2 ScreenToBattle(Vector2 point) => GetGlobalTransformWithCanvas().AffineInverse()*point;
 
     private bool BeginMobileGesture(InputEvent input)
     {
-        if (_mobileCamera==null) return false;
+        if (_battleCamera==null) return false;
         Vector2 point; int id;
         if(input is InputEventScreenTouch touch && touch.Pressed) { point=touch.Position; id=touch.Index; }
         else if(input is InputEventMouseButton mouse && mouse.ButtonIndex==MouseButton.Left && mouse.Pressed)
@@ -201,7 +128,7 @@ public partial class BattleController
         if(HandleCardDragInput(input)) return;
         if(ContinueBattleCameraDrag(input)) return;
         if(HandleCouragePickupInput(input)) return;
-        if(!_mobilePointerDown || _mobileCamera==null) return;
+        if(!_mobilePointerDown || _battleCamera==null) return;
         Vector2 point; bool released=false, canceled=false;
         if(input is InputEventScreenDrag drag && drag.Index==_mobilePointerId) point=drag.Position;
         else if(input is InputEventScreenTouch touch && !touch.Pressed && touch.Index==_mobilePointerId) { point=touch.Position; released=true; canceled=touch.Canceled; }
@@ -211,18 +138,18 @@ public partial class BattleController
         GetViewport().SetInputAsHandled();
         if(canceled || _battlePaused || _battleEnded || _endlessCheckpointActive) { _mobilePointerDown=false; return; }
         _mobileDragging |= point.DistanceTo(_mobilePointerStart)>14;
-        if(_mobileDragging && !_mobileOverview)
+        if(_mobileDragging)
         {
-            PauseMobileFollow();
-            _mobileCamera.Position-=(point-_mobilePointerLast)/_mobileCamera.Zoom;
-            ClampMobileCamera(); _mobileCamera.ForceUpdateScroll();
+            SetBattleCameraFollow(false);
+            _battleCamera.Position-=(point-_mobilePointerLast)/_battleCamera.Zoom;
+            ClampBattleCamera(_battleCamera); _battleCamera.ForceUpdateScroll();
         }
         _mobilePointerLast=point;
         if(!released) return;
         if (_mobilePointerId >= 0) _cardMouseBlockUntil = Time.GetTicksMsec() + 250;
         _mobilePointerDown=false;
         var world=ScreenToBattle(point);
-        if(!_mobileClearView && !_mobileDragging && point.Y>=_mobileFieldTop && point.Y<=_mobileFieldBottom && IsInBattlefield(world)) TryUseSelectionAt(world);
+        if(!_mobileDragging && point.Y>=_mobileFieldTop && point.Y<=_mobileFieldBottom && IsInBattlefield(world)) TryUseSelectionAt(world);
     }
 
     public override void _Notification(int what)

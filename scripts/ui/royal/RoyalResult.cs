@@ -4,8 +4,8 @@ using System.Linq;
 using Godot;
 
 /// <summary>
-/// The approved victory board: crowned banner, stars earned, up to four reward tiles, the mastery card
-/// and the two actions. Defeats and finished runs use the same board with their own title.
+/// The approved victory board: crowned banner, stars earned, up to four reward tiles, the mastery and
+/// player level cards and the two actions. Defeats and finished runs use the same board with their own title.
 /// </summary>
 public partial class RoyalResult : Control
 {
@@ -77,8 +77,9 @@ public partial class RoyalResult : Control
         canvas.AddChild(RoyalKit.Image("result-diamond", spec.Rect("stars.diamond.left")));
         canvas.AddChild(RoyalKit.Image("result-diamond", spec.Rect("stars.diamond.right")));
 
-        var tiles = Rewards.Where(r => r.Amount > 0 && r.Kind != "mastery").Take(4).ToList();
+        var tiles = Rewards.Where(r => r.Amount > 0 && r.Kind is not ("mastery" or "player_xp")).Take(4).ToList();
         var mastery = Rewards.Where(r => r.Kind == "mastery" && GameData.PlayerRosterIds.Contains(r.ItemId)).ToList();
+        var experience = Rewards.FirstOrDefault(r => r.Kind == "player_xp" && r.Amount > 0);
         var tileRects = Enumerable.Range(1, 4).Select(i => spec.Rect($"reward.{i}")).ToArray();
         var pitch = tileRects[1].Position.X - tileRects[0].Position.X;
         var rowWidth = tiles.Count * pitch - (pitch - tileRects[0].Size.X);
@@ -104,11 +105,12 @@ public partial class RoyalResult : Control
             tile.AddChild(caption);
             canvas.AddChild(tile);
         }
-        if (tiles.Count == 0)
+        var cards = mastery.Count > 0 || experience != null;
+        if (tiles.Count == 0 && (Detail.Length > 0 || !cards))
         {
             var none = RoyalText.Serif(Detail.Length > 0 ? Detail : "No rewards this time.", 24, new Color("e6d9be"), 500);
             none.Align = HorizontalAlignment.Center;
-            RoyalText.Place(canvas, none, 340, 320, 600, 40);
+            RoyalText.Place(canvas, none, 340, cards ? 286 : 320, 600, 40);
         }
         else if (Detail.Length > 0)
         {
@@ -116,23 +118,35 @@ public partial class RoyalResult : Control
             line.Align = HorizontalAlignment.Center;
             RoyalText.Place(canvas, line, 340, 232, 600, 24);
         }
+        // Mastery and the player's level share the row under the tiles: one card sits centred, two span the tile row.
+        var slot = spec.Rect("mastery");
+        if (tiles.Count == 0) slot.Position = new Vector2(slot.Position.X, 349);
+        var paired = mastery.Count > 0 && experience != null;
+        var row = new Rect2(tileRects[0].Position.X, slot.Position.Y, tileRects[3].End.X - tileRects[0].Position.X, slot.Size.Y);
+        var masteryRect = paired ? new Rect2(row.Position, new Vector2(row.Size.X / 2 - 7, row.Size.Y)) : slot;
+        var levelRect = paired ? new Rect2(row.Position.X + row.Size.X / 2 + 7, row.Position.Y, row.Size.X / 2 - 7, row.Size.Y) : slot;
         if (mastery.Count > 0)
         {
-            var rect = spec.Rect("mastery");
+            var rect = masteryRect;
+            var shift = rect.Position - spec.Rect("mastery").Position;
             canvas.AddChild(new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("result-mastery", 12))));
             var portrait = spec.Rect("mastery.portrait");
+            portrait.Position += shift;
             var top = mastery.OrderByDescending(m => m.Amount).First();
             var figure = new UnitFigure { Position = portrait.Position + new Vector2(10, -6), Size = portrait.Size - new Vector2(20, 0) };
             figure.SetUnit(GameData.TryGetUnit(top.ItemId));
             canvas.AddChild(figure);
+            // The text centres between the portrait and the card's right edge, wherever the card sits.
+            var textShift = (portrait.End.X + rect.End.X) / 2 - (spec.Rect("mastery.portrait").End.X + spec.Rect("mastery").End.X) / 2;
             var value = spec.Label("mastery.value", $"+{mastery.Sum(m => m.Amount):N0} XP", 200);
-            value.Position -= new Vector2(0, 4);
+            value.Position += new Vector2(textShift, shift.Y - 4);
             canvas.AddChild(value);
             var masteryCaption = spec.Label("mastery.caption", "MASTERY", 200);
             masteryCaption.FontSize = Mathf.Min(masteryCaption.FontSize, 14);
-            masteryCaption.Position -= new Vector2(0, 7);
+            masteryCaption.Position += new Vector2(textShift, shift.Y - 7);
             canvas.AddChild(masteryCaption);
         }
+        if (experience != null) BuildLevelCard(canvas, levelRect, experience.Amount);
 
         LeaveButton = MapNavigation.Fixed(spec.Rect("button.back"), () => Leave?.Invoke(), LeaveText);
         canvas.AddChild(LeaveButton);
@@ -156,6 +170,41 @@ public partial class RoyalResult : Control
             RetryButton.AddChild(plug);
         }
         canvas.AddChild(RetryButton);
+    }
+
+    /// <summary>The player's level: its medallion, the XP this battle paid and the bar toward the next level.</summary>
+    private void BuildLevelCard(Control canvas, Rect2 rect, int gained)
+    {
+        var state = GameState.Instance;
+        var level = state.PlayerLevel;
+        var levelledUp = PlayerLevelCatalog.LevelForXP(state.PlayerXP - gained) < level;
+        var progress = state.IsMaxPlayerLevel ? 1f : state.PlayerXPIntoLevel / (float)Mathf.Max(1, state.PlayerXPForNextLevel);
+        var unlocks = string.Join(" · ", PlayerLevelCatalog.Unlocks(level).Select(u => u.Label.ToLowerInvariant()));
+        var card = new Panel { Name = "LevelCard", Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass,
+            TooltipText = levelledUp ? $"Level {level} reached · reward ready on the level track{(unlocks.Length > 0 ? $" · {unlocks}" : "")}"
+                : state.IsMaxPlayerLevel ? $"Level {level} · highest level" : $"Level {level} · {state.PlayerXPIntoLevel:N0} / {state.PlayerXPForNextLevel:N0} XP" };
+        card.AddThemeStyleboxOverride("panel", RoyalKit.Slice("result-mastery", 12));
+        canvas.AddChild(card);
+        var medallion = new LevelMedallion { Level = level, Progress = progress, Lit = levelledUp, Position = new Vector2(18, 11), Size = new Vector2(87, 87) };
+        card.AddChild(medallion);
+        var left = 118f; var width = rect.Size.X - left - 18;
+        var value = RoyalText.Serif($"+{gained:N0} XP", 34, new Color("f9ecce"));
+        value.Align = HorizontalAlignment.Center;
+        RoyalText.Place(card, value, left, 12, width, 40);
+        card.AddChild(new Panel { Position = new Vector2(left + 8, 58), Size = new Vector2(width - 16, 12), MouseFilter = MouseFilterEnum.Ignore }
+            .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-track", 7, 5, 7, 5))));
+        if (progress > 0)
+            card.AddChild(new Panel { Position = new Vector2(left + 10, 60), Size = new Vector2(Mathf.Max(10, (width - 20) * progress), 8), MouseFilter = MouseFilterEnum.Ignore }
+                .With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("ach-fill-gold", 5, 3, 5, 3))));
+        var caption = RoyalText.Caps(levelledUp ? $"LEVEL UP · {level}" : $"LEVEL {level}", levelledUp ? 16 : 14,
+            levelledUp ? new Color("f6d98f") : new Color("c8bca7"), levelledUp ? 700 : 550);
+        caption.Align = HorizontalAlignment.Center;
+        RoyalText.Place(card, caption, left, 74, width, 24);
+        if (!levelledUp || (GameState.Instance?.ReducedMotion ?? false)) return;
+        medallion.PivotOffset = medallion.Size / 2;
+        var pulse = medallion.CreateTween().SetLoops(2);
+        pulse.TweenProperty(medallion, "scale", new Vector2(1.12f, 1.12f), .28f).SetDelay(.45f).SetTrans(Tween.TransitionType.Sine);
+        pulse.TweenProperty(medallion, "scale", Vector2.One, .32f).SetTrans(Tween.TransitionType.Sine);
     }
 
     public void Appear()

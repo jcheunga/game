@@ -84,7 +84,7 @@ public partial class WorldArtReview : Node
                 Check(Read<Texture2D>(battle,"_stageArtwork") is { } drawn && drawn.ResourcePath.StartsWith(WorldEnvironmentArt.RoyalBackdropDirectory + zone + "_"),
                     $"Stage {stage:00} battles in front of the {zone} backdrop");
                 await Capture($"battle-{stage:00}-normal");
-                var camera = Read<Camera2D>(battle,Phone ? "_mobileCamera" : "_battleCamera");
+                var camera = Read<Camera2D>(battle,"_battleCamera");
                 camera.Zoom = Vector2.One * .45f; camera.Position = new Vector2(GameData.Combat.BattlefieldLeft + GameData.Combat.BattlefieldRight,
                     GameData.Combat.BattlefieldTop + GameData.Combat.BattlefieldBottom) * .5f; camera.ForceUpdateScroll();
                 await Wait(); await Capture($"battle-{stage:00}-overview"); battle.QueueFree(); await Wait();

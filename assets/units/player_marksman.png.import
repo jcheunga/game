@@ -3,29 +3,27 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c04jjvaynblrm"
-path.bptc="res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.bptc.ctex"
-path.astc="res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.astc.ctex"
+path="res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/units/player_marksman.png"
-dest_files=["res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.bptc.ctex", "res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.astc.ctex"]
+dest_files=["res://.godot/imported/player_marksman.png-7fddea6c5ab3e08f3867b053fec3a652.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=true
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""

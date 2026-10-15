@@ -78,28 +78,35 @@ public partial class ShopMenu
     private void BuildEquippedStrip(bool spells, RoyalSpec spec, List<Entry> entries)
     {
         var ids = (spells ? _state.ActiveDeckSpellIds : _state.ActiveDeckUnitIds).ToList();
-        var limit = spells ? _state.SpellDeckSizeLimit : _state.DeckSizeLimit;
+        // Units and spells share the loadout: slots past this page's room are held by the other page's picks.
+        var others = (spells ? _state.ActiveDeckUnitIds : _state.ActiveDeckSpellIds).Count;
+        var room = _state.LoadoutSizeLimit - others;
         var emptySample = Enumerable.Range(1, 6).Select(i => $"slot.{i}").FirstOrDefault(key => spec.Has(key + ".plus")) ?? "slot.6";
         for (var slot = 1; spec.Has($"slot.{slot}"); slot++)
         {
             var key = $"slot.{slot}";
             var rect = spec.Rect(key);
-            if (slot > limit)
-            {
-                _body.AddChild(RoyalKit.Image("lock", new Rect2(rect.GetCenter() - new Vector2(13, 15), new Vector2(26, 30)), new Color(1, 1, 1, .55f)));
-                continue;
-            }
             if (slot > ids.Count)
             {
+                var held = slot > room;
                 // Plus and label are centred in each slot; only their heights come from the concept's empty slot.
                 var plus = Relative(spec, ".plus", emptySample, rect, new Rect2(rect.Size.X / 2 - 17, 22, 34, 34));
                 plus.Position = new Vector2(rect.GetCenter().X - plus.Size.X / 2, plus.Position.Y);
-                _body.AddChild(RoyalKit.Image("empty-plus", plus));
-                var empty = spec.Label(emptySample + ".label", "Empty slot", rect.Size.X);
+                var text = held ? spells ? "Used by a unit" : "Used by a spell" : "Empty slot";
+                if (held)
+                {
+                    var veil = new Panel { Position = rect.Position + new Vector2(5, 5), Size = rect.Size - new Vector2(10, 10), MouseFilter = MouseFilterEnum.Ignore };
+                    veil.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(.02f, .03f, .05f, .5f) });
+                    _body.AddChild(veil);
+                    _body.AddChild(RoyalKit.Image(spells ? "tab-warband" : "tab-spells", plus, new Color(1, 1, 1, .5f)));
+                }
+                else _body.AddChild(RoyalKit.Image("empty-plus", plus));
+                var empty = spec.Label(emptySample + ".label", text, rect.Size.X, held ? new Color(.62f, .6f, .58f) : null);
                 empty.Align = HorizontalAlignment.Center;
                 empty.Position = new Vector2(rect.Position.X, empty.Position.Y + rect.Position.Y - spec.Rect(emptySample).Position.Y);
                 empty.Size = new Vector2(rect.Size.X, empty.Size.Y);
                 _body.AddChild(empty);
+                if (held) _body.AddChild(RoyalButton.Over(rect, text, () => SelectTab(spells ? 0 : 1), 6));
                 continue;
             }
             var entry = entries.FirstOrDefault(e => e.Id == ids[slot - 1]);

@@ -19,7 +19,7 @@ mobile preparation, feedback, privacy, world/exploration, and Codex art reviews.
 | `--typography-advanced` | Every armory unit/spell detail, plus the map and preparation screens for every stage in `GameData.Stages` (all 100). Fixtures explicitly open the tiles; the review selects the actual tile and verifies preparation's stage number. |
 | Default run, `--playthrough` | The default run (no review flag) covers home tabs, stage details, preparation and unit details, armory, challenges, endless, settings, deployment and the battle menu; `--playthrough` adds a tower result and a real-input campaign victory and return to the map. All go through production navigation. `ui_review_smoke.sh` passes `--core`, which is not a parsed flag and so selects the default run. |
 | Home, rewards, armory, storehouse, developer, progression and star reviews | Shared live screen loader; existing state fixtures and behavior checks remain in the isolated test save. |
-| `MobilePresentationReview` | Production preparation overlays on both desktop and phone, production armory overlay, full model inspector, and controlled battle presentation. |
+| `MobilePresentationReview` | Production preparation overlays at phone size, production armory overlay, full model inspector, and controlled battle presentation. |
 | `FeedbackReview`, `PrivacyReview` | Production home, armory, preparation and Settings; screenshots include the real map/overlay hierarchy. |
 | `ExplorationReview`, `WorldArtReview` | Production home maps. World art battle captures also use the router. |
 | `BlenderAssetSmoke` Codex screenshot | Production Codex overlay, with the Bosses tab and a discovered entry selected through the controls. |

@@ -218,6 +218,17 @@ class CreatureAnim:
     def melee(self, i, n, c):
         self.attack(i, n, c)
 
+    @staticmethod
+    def cast_curve(i, n, hold_from):
+        t = min(1.0, i / max(1, hold_from))
+        e = 1 - (1 - t) ** 3
+        breathe = math.sin(math.tau * max(0, i - hold_from) / max(1, n - hold_from)) if i >= hold_from else 0.0
+        return e, breathe
+
+    def cast(self, i, n, hold_from=6):
+        e, b = self.cast_curve(i, n, hold_from)
+        self.place(sy=1 + .05 * e + .01 * b, sx=1 - .02 * e)
+
     def death_timing(self, i, n, impact):
         t = i / max(1, n - 1)
         ti = max(0.2, impact / max(1, n - 1))
@@ -250,12 +261,61 @@ class QuadAnim(CreatureAnim):
         self.rot('tail1', 8 * math.sin(ph))
         self.rot('tail2', 10 * math.sin(ph - 0.8))
 
+    STANCE = .62
+
+    def step_legs(self, cyc, stride=.42, lift=.2):
+        """A trot driven by the paws: diagonal pairs (front-left with hind-right) move together; each paw is planted
+        and slides back under the body, then lifts and swings forward. Upper and lower leg follow by planar two-bone
+        IK, each joint bending the way it does at rest (knees forward, hocks back). Returns ground covered per cycle."""
+        B_ = self.arm.data.bones
+        legs = []
+        for leg, off in (('fl', 0.0), ('hr', 0.0), ('fr', .5), ('hl', .5)):
+            ub, lb = f'{leg}.upper', f'{leg}.lower'
+            if ub not in B_ or lb not in B_:
+                continue
+            top, knee, paw = B_[ub].head_local, B_[lb].head_local, B_[lb].tail_local
+            legs.append((leg, off, top, knee, paw))
+        if not legs:
+            return 0.0
+        leg_len = sum((k - t).length + (p - k).length for _, _, t, k, p in legs) / len(legs)
+        S = stride * leg_len
+        for leg, off, top, knee, paw in legs:
+            L1, L2 = (knee - top).length, (paw - knee).length
+            u = (cyc + off) % 1.0
+            if u < self.STANCE:
+                fx, up = S * (.5 - u / self.STANCE), 0.0
+            else:
+                q = (u - self.STANCE) / (1 - self.STANCE)
+                fx = S * (-.5 + q * q * (3 - 2 * q))
+                up = lift * leg_len * math.sin(math.pi * q) ** .8
+            target = Vector((paw.x + fx, 0, paw.z + up))
+            d = target - top
+            dist = max(1e-6, min(d.length, (L1 + L2) * .999))
+            dirv = d.normalized()
+            a = math.acos(max(-1.0, min(1.0, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist))))
+            # bend the way the rest pose bends: the joint on the same side of the top-paw line
+            line = (paw - top).normalized()
+            side = (knee - top).x * line.z - (knee - top).z * line.x
+            sign = -1.0 if side > 0 else 1.0
+            base = math.atan2(dirv.x, -dirv.z)
+            up_abs = math.degrees(base + sign * a)
+            k = top + Vector((math.sin(math.radians(up_abs)), 0, -math.cos(math.radians(up_abs)))) * L1
+            sv = (top + dirv * dist) - k
+            lo_abs = math.degrees(math.atan2(sv.x, -sv.z))
+            r_up = math.degrees(math.atan2((knee - top).x, -(knee - top).z))
+            r_lo = math.degrees(math.atan2((paw - knee).x, -(paw - knee).z))
+            self.rot(f'{leg}.upper', up_abs - r_up)
+            self.rot(f'{leg}.lower', (lo_abs - up_abs) - (r_lo - r_up))
+        return S / self.STANCE
+
     def walk(self, i, n):
-        ph = math.tau * i / n
-        self.legs(ph)
-        self.place(dz=0.018 * abs(math.sin(ph)) - 0.009)
-        self.rot('body', 2.0 * math.sin(2 * ph))
-        self.rot('neck', -2.0 * math.sin(2 * ph))
+        cyc = i / n
+        ph = math.tau * cyc
+        self.walk_stride = self.step_legs(cyc)
+        self.place(dz=0.012 * (0.5 - 0.5 * math.cos(2 * ph)))
+        self.rot('body', 1.5 * math.sin(2 * ph))
+        self.rot('neck', -2.5 * math.sin(2 * ph + .4))
+        self.rot('head', 2.0 * math.sin(2 * ph + 1.0))
         self.rot('tail1', 10 * math.sin(ph))
         self.rot('tail2', 12 * math.sin(ph - 0.8))
 
@@ -282,6 +342,17 @@ class QuadAnim(CreatureAnim):
         self.rot('body', 5 * k)
         self.rot('head', 9 * k)
         self.rot('neck', 5 * k)
+
+    def cast(self, i, n, hold_from=6):
+        """Rears back on the haunches and throws the head up: a howl, a battle cry."""
+        e, b = self.cast_curve(i, n, hold_from)
+        self.rot('body', 9 * e + 1.2 * b)
+        self.rot('neck', 22 * e + 2 * b)
+        self.rot('head', 14 * e)
+        for leg in ('fl', 'fr'):
+            self.rot(f'{leg}.upper', -14 * e)
+            self.rot(f'{leg}.lower', 20 * e)
+        self.rot('tail1', 18 * e)
 
     def death(self, i, n, impact, forward):
         t, ti, fall, after, bounce = self.death_timing(i, n, impact)
@@ -327,6 +398,13 @@ class SerpentAnim(CreatureAnim):
         self.place(dx=p.get('dx', 0.0))
         for b in ('fore', 'head', 'tail', 'mid'):
             self.rot(b, p.get(b, 0.0))
+
+    def cast(self, i, n, hold_from=6):
+        """Rears its fore-body high and sways, hood up."""
+        e, b = self.cast_curve(i, n, hold_from)
+        self.rot('fore', 26 * e + 3 * b)
+        self.rot('head', -12 * e)
+        self.rot('tail', -8 * e)
 
     def hit(self, i, n):
         k = 1.0 if i == 0 else 0.45
@@ -384,6 +462,13 @@ class BlobAnim(CreatureAnim):
         self.squash(p.get('sq', 0.0), p.get('lean', 0.0))
         self.place(dx=p.get('dx', 0.0), dz=0.0)
 
+    def cast(self, i, n, hold_from=6):
+        """Swells and pulses with whatever it is channelling."""
+        e, b = self.cast_curve(i, n, hold_from)
+        self.squash(-.1 * e - .03 * b)
+        if self.ident in self.FLOAT:
+            self.place(dz=.04 * e + .01 * b)
+
     def hit(self, i, n):
         k = 1.0 if i == 0 else 0.45
         self.squash(0.1 * k, 6 * k)
@@ -415,9 +500,10 @@ class MountAnim(QuadAnim):
         self.rot('rhead', 1.5 * math.sin(ph + 1.0))
 
     def walk(self, i, n):
-        ph = math.tau * i / n
-        self.legs(ph, amp=26.0, flex=34.0)
-        self.place(dz=0.022 * abs(math.sin(ph)) - 0.011)
+        cyc = i / n
+        ph = math.tau * cyc
+        self.walk_stride = self.step_legs(cyc, stride=.5, lift=.24)
+        self.place(dz=0.02 * (0.5 - 0.5 * math.cos(2 * ph)))
         self.rot('body', 2.5 * math.sin(2 * ph))
         self.rot('neck', -4.0 * math.sin(2 * ph))
         self.rot('seat', -2.5 * math.sin(2 * ph))
@@ -443,6 +529,17 @@ class MountAnim(QuadAnim):
             self.rot(f'{leg}.upper', p.get('fu', 0.0))
         for leg in ('hl', 'hr'):
             self.rot(f'{leg}.upper', p.get('hu', 0.0))
+
+    def cast(self, i, n, hold_from=6):
+        """The mount rears, the rider raises the weapon."""
+        e, b = self.cast_curve(i, n, hold_from)
+        self.rot('body', 14 * e + 1.5 * b)
+        self.rot('neck', 18 * e)
+        for leg in ('fl', 'fr'):
+            self.rot(f'{leg}.upper', -30 * e)
+            self.rot(f'{leg}.lower', 55 * e)
+        self.rot('seat', -12 * e)
+        self.rot('weapon', 26 * e)
 
     def hit(self, i, n):
         super().hit(i, n)
@@ -514,6 +611,14 @@ class MachineAnim(CreatureAnim):
         if 'arm' in self.pb:
             self.pb['arm'].location = (0.0, -0.08 * self.H * p.get('pull', 0.0), 0.0)
         self.rot('crew', 6 * p.get('pull', 0.0))
+
+    def cast(self, i, n, hold_from=6):
+        """Cranked back and braced: the arm drawn, the frame settling on its wheels."""
+        e, b = self.cast_curve(i, n, hold_from)
+        if 'arm' in self.pb:
+            self.pb['arm'].location = (0.0, -0.09 * self.H * e, 0.0)
+        self.rot('chassis', 1.5 * e + .4 * b)
+        self.rot('crew', 10 * e + 2 * b)
 
     def hit(self, i, n):
         k = 1.0 if i == 0 else 0.45

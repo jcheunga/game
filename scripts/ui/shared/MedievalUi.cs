@@ -221,7 +221,7 @@ public static class MedievalUi
         return null;
     }
 
-    private static VBoxContainer CreateModal(
+    internal static VBoxContainer CreateModal(
         Control host,
         Vector2 minimumSize,
         int separation,

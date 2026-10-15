@@ -22,7 +22,7 @@ public partial class SeasonPassMenu : RoyalScreen
         Refresh();
     }
 
-    private static string RewardArt(string type, int amount) => type switch
+    internal static string RewardArt(string type, int amount) => type switch
     {
         "gold" => amount >= 200 ? "season-gold-large" : "season-gold",
         "food" => "season-food",

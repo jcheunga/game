@@ -22,7 +22,6 @@ public partial class RoyalButton : Button
         get
         {
             var rect = new Rect2(Vector2.Zero, Size);
-            if (!MobilePresentation.Enabled) return rect;
             var grow = new Vector2(Mathf.Max(0, TouchSize - Size.X), Mathf.Max(0, TouchSize - Size.Y)) / 2;
             return new Rect2(rect.Position - grow, rect.Size + grow * 2);
         }

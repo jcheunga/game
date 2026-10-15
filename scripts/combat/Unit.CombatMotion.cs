@@ -33,6 +33,17 @@ public partial class Unit
                 ? SpriteDrawSize.Y * _spriteSheet.BodyOffset.Y : -Radius * .9f);
         }
     }
+    /// <summary>The figure on the field: how wide the body is, and how high its head and chest stand above the feet.</summary>
+    public Vector2 FigureSize
+    {
+        get
+        {
+            EnsureSpriteLoaded();
+            var head = _spriteSheet != null ? SpriteDrawSize.Y * _spriteSheet.HealthBarY : Radius + 16f;
+            return new Vector2(Radius * 2f * VisualScale, head);
+        }
+    }
+    public float ChestHeight { get { EnsureSpriteLoaded(); return _spriteSheet != null ? -SpriteDrawSize.Y * _spriteSheet.BodyOffset.Y : Radius * .9f; } }
     private Vector2 SpriteDrawSize => new Vector2(Radius * 2 * VisualScale * (_spriteSheet?.DrawScale ?? 1),
         Radius * 2 * VisualScale * (_spriteSheet?.DrawScale ?? 1) * (_spriteSheet != null ? (float)_spriteSheet.FrameHeight / _spriteSheet.FrameWidth : 1));
     public Vector2 WeaponContactPosition

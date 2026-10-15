@@ -17,7 +17,10 @@ public partial class UiReviewSmoke : Node
         {
             if (!OS.GetCmdlineUserArgs().Any(x => x.StartsWith("--save-suffix=ui-review-")))
                 throw new InvalidOperationException("UI smoke requires --save-suffix=ui-review-<unique-id>.");
-            var requestedSize = MobilePresentation.Enabled ? new Vector2I(844, 390)
+            // --window=WxH reviews at any screen size (the canvas scales to fit it; what it shows must not change).
+            var window = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--window="))?["--window=".Length..].Split('x');
+            var requestedSize = window != null ? new Vector2I(int.Parse(window[0]), int.Parse(window[1]))
+                : OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? new Vector2I(844, 390)
                 : OS.GetCmdlineUserArgs().Contains("--small-window") ? new Vector2I(1024, 768) : new Vector2I(1280, 720);
             GetWindow().Mode = Window.ModeEnum.Windowed;
             GetWindow().Size = requestedSize;
@@ -46,6 +49,8 @@ public partial class UiReviewSmoke : Node
             { await ReviewTileMap(includeHome: true); return; }
             if (OS.GetCmdlineUserArgs().Contains("--armory-details"))
             { await ReviewArmoryDetails(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--player-level"))
+            { await ReviewPlayerLevel(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--equipment-preview"))
             { await ReviewEquipmentPreview(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--enchantments"))
@@ -144,7 +149,8 @@ public partial class UiReviewSmoke : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--typography"))
             {
-                _output = ProjectSettings.GlobalizePath(MobilePresentation.Enabled ? "res://artifacts/typography-phone"
+                _output = ProjectSettings.GlobalizePath(window != null ? $"res://artifacts/typography-{window[0]}x{window[1]}"
+                    : OS.GetCmdlineUserArgs().Contains("--mobile-preview") ? "res://artifacts/typography-phone"
                     : OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/typography-small" : "res://artifacts/typography");
                 System.IO.Directory.CreateDirectory(_output);
                 // --only=ShopMenu,ArenaMenu narrows a review to the screens being polished.
@@ -166,6 +172,7 @@ public partial class UiReviewSmoke : Node
                 GameState.Instance.PrepareCampaignBattle();
                 await Open("Battle"); await Capture("type-Battle"); AuditText("Battle");
                 System.IO.File.WriteAllText(_output + "/text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                System.IO.File.WriteAllLines(_output + "/legibility.txt", _legibility);
                 GD.Print($"TYPOGRAPHY_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--all-menus"))
@@ -330,6 +337,7 @@ public partial class UiReviewSmoke : Node
         if (OS.GetCmdlineUserArgs().Contains("--scroll-spacing")) AuditScrollSpacing(screen);
         AuditModalBounds(screen);
         AuditFrameClearance(screen);
+        AuditLegibility(screen);
         var viewport = GetViewport().GetVisibleRect();
         var panels = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
         foreach (var panel in panels)
@@ -369,8 +377,8 @@ public partial class UiReviewSmoke : Node
         {
             var font = label.GetThemeFontSize("font_size");
             var issues = new List<string>();
-            // Concept screens use the approved concepts' type sizes (captions down to 12 px).
-            var minimumFont = InRoyalScreen(label) ? 11 : homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
+            // Concept screens keep the concepts' type sizes, raised to what reads on a phone (capitals down to 16 px).
+            var minimumFont = InRoyalScreen(label) ? ReadingText.PhoneCaps : homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is Button) { minimumFont = Math.Min(minimumFont, RealmUi.ButtonFontSize); break; }
             if (font < minimumFont) issues.Add("small text");
@@ -396,6 +404,31 @@ public partial class UiReviewSmoke : Node
             _textAudit.Add(new { screen, text = label.Text, font, width = label.Size.X, height = label.Size.Y, lines = label.GetLineCount(), visibleLines = label.GetVisibleLineCount(), issues });
             if (issues.Count > 0)
             { _failures++; GD.Print($"TEXT_ISSUE {screen}: {string.Join(", ", issues)} | {label.Text.Replace("\n", " ")[..Math.Min(100, label.Text.Length)]}"); }
+        }
+    }
+
+    // Text as shown on the canvas (after any modal or HUD scale) against the phone floors in ReadingText.
+    internal const int PhoneMinimumText = ReadingText.PhoneBody, PhoneMinimumCaps = ReadingText.PhoneCaps;
+    private readonly List<string> _legibility = new();
+
+    private void AuditLegibility(string screen)
+    {
+        foreach (var control in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Control>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip")))
+        {
+            string text; int size;
+            switch (control)
+            {
+                case Label label when !string.IsNullOrWhiteSpace(label.Text): text = label.Text; size = label.GetThemeFontSize("font_size"); break;
+                case Button button when !string.IsNullOrWhiteSpace(button.Text): text = button.Text; size = button.GetThemeFontSize("font_size"); break;
+                case RichTextLabel rich when !string.IsNullOrWhiteSpace(rich.GetParsedText()): text = rich.GetParsedText(); size = rich.GetThemeFontSize("normal_font_size"); break;
+                case RoyalLabel royal when !string.IsNullOrWhiteSpace(royal.Text): text = royal.Text; size = royal.FittedSize(); break;
+                default: continue;
+            }
+            var shown = size * control.GetGlobalTransformWithCanvas().Scale.Y;
+            var caps = text == text.ToUpperInvariant() || control is RoyalLabel { CapRatio: >= .7f };   // Cinzel has only capitals
+            if (shown >= (caps ? PhoneMinimumCaps : PhoneMinimumText) - .25f) continue;
+            var line = $"SMALL_ON_PHONE {screen}: {shown:0.#}px ({size}) {control.GetType().Name} \"{text.Replace("\n", " ")[..Math.Min(60, text.Length)]}\" {control.GetPath()}";
+            _legibility.Add(line); GD.Print(line);
         }
     }
 

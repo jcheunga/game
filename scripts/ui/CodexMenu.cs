@@ -191,7 +191,7 @@ public partial class CodexMenu : RoyalScreen
         lore.Position = new Vector2(loreRect.Position.X, loreRect.Position.Y - 2);
         lore.Size = new Vector2(loreRect.Size.X + 6, spec.Rect("button.back").Position.Y - loreRect.Position.Y - 8);
         lore.AddThemeConstantOverride("line_spacing", -1);
-        RoyalText.FitLines(lore, 5, 12);
+        RoyalText.FitLines(lore, 5);
         _layer.AddChild(lore);
     }
 

@@ -212,7 +212,6 @@ public partial class BattleController
 			_draftButtons.Add(draftButton);
 		}
 
-		ConfigureBattleCamera(root);
 		ConfigureMobileBattleUi(root,spawnPanel,unitRow);
         ConfigureCompactHudLayout(spawnPanel,unitRow);
 		BuildCardDragPreview(root);

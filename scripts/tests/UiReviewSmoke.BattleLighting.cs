@@ -19,7 +19,6 @@ public partial class UiReviewSmoke
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
         state.RestoreCloudSave(fixture);
-        MobilePresentation.TestOverride = false;
         var world = GameData.Combat;
         foreach (var stage in GameData.Stages.GroupBy(stage => stage.MapId).Select(zone => zone.First()))
         {
@@ -68,7 +67,7 @@ public partial class UiReviewSmoke
             Call(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), enemyGround + new Vector2(-40, 25));
             await Wait(.1); await Capture(stage.MapId + "-castle");
         }
-        MobilePresentation.TestOverride = true; GetWindow().Size = new Vector2I(844, 390);
+        GetWindow().Size = new Vector2I(844, 390);
         state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
         var phone = (BattleController)GetTree().CurrentScene; phone.SetPhysicsProcess(false);
         if ((bool)typeof(BattleController).GetField("_battlePaused", hidden)!.GetValue(phone)!) Call(phone, "TogglePause");
@@ -76,11 +75,10 @@ public partial class UiReviewSmoke
         Call(phone, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), new Vector2(280, 340));
         Call(phone, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_walker")), new Vector2(420, 380));
         await Wait(.15); await Capture("phone-caravan");
-        Call(phone, "ToggleMobileOverview"); await Wait(.15); await Capture("phone-overview");
         var canvases = Walk(phone).OfType<BattleBaseCanvas>().ToArray();
         Check(Walk(phone).OfType<BattleShadowCanvas>().Single().Visible && canvases.Count(b => b.Name == "Caravan" || b.Name == "Castle") == 2
             && canvases.Count(b => b.Name.ToString().StartsWith("Outwork")) == 5,
-            "Phone view and overview retain the same grounded bases, outworks and shadow pass");
+            "Phone view retains the same grounded bases, outworks and shadow pass");
         foreach (var id in new[] { "war_wagon", "gatehouse" }.Concat(WagonSkinCatalog.GetAll().Where(skin => skin.Id != WagonSkinCatalog.DefaultSkinId).Select(skin => "war_wagon_" + skin.Id)))
         {
             var art = BattleStructureArt.Load(id);
@@ -100,7 +98,6 @@ public partial class UiReviewSmoke
         reused.ResetForPool();
         Check(reused.EnvironmentTint == Colors.White && reused.LocalLightTint == Colors.White && !reused.GroundShadowsManaged,
             "Pooled troops release previous zone and lamp lighting"); reused.Free();
-        MobilePresentation.TestOverride = null;
         await Open("MainMenu");
         GD.Print($"BATTLE_LIGHTING_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
     }

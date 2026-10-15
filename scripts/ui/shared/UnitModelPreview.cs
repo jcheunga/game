@@ -44,7 +44,7 @@ public partial class UnitModelPreview : Control
         if(_sheet!=null)
         {
             var cacheKey=$"{unit.Id}:{_sheet.FrameWidth}x{_sheet.FrameHeight}";
-            if(_sheet.Frames!=null) _crop=new Rect2(0,0,_sheet.FrameWidth,_sheet.FrameHeight);
+            if(_sheet.Frames!=null) _crop=TrimmedBounds(_sheet);
             else if(!Bounds.TryGetValue(cacheKey,out _crop))
             {
                 // One stable crop across the three preview clips keeps long
@@ -67,6 +67,23 @@ public partial class UnitModelPreview : Control
             }
         }
         Play(UnitAnimState.Idle);
+    }
+
+    /// <summary>One stable crop across the preview clips of a trimmed sheet: the union of where their frames sit.</summary>
+    private static Rect2 TrimmedBounds(UnitSpriteSheet sheet)
+    {
+        Rect2? used=null;
+        foreach(var state in new[]{UnitAnimState.Idle,UnitAnimState.Walk,UnitAnimState.Attack})
+        {
+            if(!sheet.Animations.TryGetValue(state,out var clip)) continue;
+            for(var i=0;i<clip.FrameCount && clip.StartFrame+i<sheet.Frames.Length;i++)
+            {
+                var f=sheet.Frames[clip.StartFrame+i];
+                var r=new Rect2(f.Offset,f.Source.Size);
+                used=used==null?r:used.Value.Merge(r);
+            }
+        }
+        return used ?? new Rect2(0,0,sheet.FrameWidth,sheet.FrameHeight);
     }
 
     private void ReleaseTexture()
@@ -119,7 +136,8 @@ public partial class UnitModelPreview : Control
         {
             // a trimmed battle sheet (no preview strip shipped): each frame drawn where it sits in its full frame
             var piece=UnitSpriteLoader.Frame(_sheet,_frame);
-            DrawTextureRectRegion(piece.Texture,UnitSpriteLoader.Place(_sheet,piece,ModelRect),piece.Source);
+            var full=new Rect2(ModelRect.Position-_crop.Position*scale,new Vector2(_sheet.FrameWidth,_sheet.FrameHeight)*scale);
+            DrawTextureRectRegion(piece.Texture,UnitSpriteLoader.Place(_sheet,piece,full),piece.Source);
             return;
         }
         var source=UnitSpriteLoader.GetFrameRect(_sheet,_frame);

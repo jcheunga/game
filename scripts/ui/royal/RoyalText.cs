@@ -16,14 +16,14 @@ public static class RoyalText
     /// <summary>Engraved capitals for captions, tab and button labels ("SQUAD 5 / 6", "HEALTH").</summary>
     public static RoyalLabel Caps(string text, int size, Color? ink = null, int weight = 600)
     {
-        return new RoyalLabel { Text = text, Font = RoyalFonts.Display(weight), FontSize = size, CapRatio = .70f, Ink = ink ?? Cream,
+        return new RoyalLabel { Text = text, Font = RoyalFonts.Display(weight), FontSize = Mathf.Max(ReadingText.PhoneCaps, size), CapRatio = .70f, Ink = ink ?? Cream,
             ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .5f) };
     }
 
     /// <summary>Book serif for names, numbers and short descriptions ("Archer", "48").</summary>
     public static RoyalLabel Serif(string text, int size, Color? ink = null, int weight = 600)
     {
-        return new RoyalLabel { Text = text, Font = RoyalFonts.Body(weight), FontSize = size, CapRatio = .58f, Ink = ink ?? Cream,
+        return new RoyalLabel { Text = text, Font = RoyalFonts.Body(weight), FontSize = Mathf.Max(ReadingText.PhoneBody, size), CapRatio = .58f, Ink = ink ?? Cream,
             ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .55f) };
     }
 
@@ -42,8 +42,9 @@ public static class RoyalText
     }
 
     /// <summary>Shrinks a wrapping paragraph until it fits the given number of lines in its width.</summary>
-    public static Label FitLines(Label label, int lines, int minimumSize = 12)
+    public static Label FitLines(Label label, int lines, int minimumSize = ReadingText.PhoneBody)
     {
+        minimumSize = Mathf.Max(minimumSize, ReadingText.PhoneBody);    // never below what reads on a phone
         var font = label.GetThemeFont("font");
         var size = label.GetThemeFontSize("font_size");
         while (size > minimumSize)

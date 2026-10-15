@@ -105,8 +105,6 @@ public partial class BattleController
             var pause = spec.Rect("button.pause");
             _hudSettingsButton.Position = new Vector2(size.X - right - (1280 - pause.Position.X), top + pause.Position.Y); _hudSettingsButton.Size = pause.Size;
             _fpsLabel.Position = new Vector2(size.X - right - 100, top + 64); _fpsLabel.Size = new Vector2(100, 20);
-            if (_battleFollowButton != null)
-            { _battleFollowButton.Position = new Vector2(left + 18, size.Y - bottom - 120); _battleFollowButton.Size = new Vector2(56, 56); }
             var veil = _pauseOverlay.GetChildren().OfType<ColorRect>().FirstOrDefault();
             if (veil != null) veil.CustomMinimumSize = size;
             // Cards keep the concept's 119 x 131 size and 132 px pitch while they fit, then share the width.
@@ -146,8 +144,8 @@ public partial class BattleController
         var veil = new ColorRect { Color = new Color("081018ac"), MouseFilter = Control.MouseFilterEnum.Stop };
         _pauseOverlay.AddChild(veil); veil.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var card = new PanelContainer { CustomMinimumSize = new Vector2(420, 0) };
-        card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, MobilePresentation.Enabled ? 16 : 24)); _pauseOverlay.AddChild(card);
-        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", MobilePresentation.Enabled ? 8 : 12); card.AddChild(stack);
+        card.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Wood, 16)); _pauseOverlay.AddChild(card);
+        var stack = new VBoxContainer(); stack.AddThemeConstantOverride("separation", 8); card.AddChild(stack);
         var title = RealmUi.Heading("Battle paused", 28); title.HorizontalAlignment = HorizontalAlignment.Center; stack.AddChild(title);
         Button ActionButton(string icon, string text, Action action, bool primary = false)
         {

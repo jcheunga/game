@@ -11,6 +11,13 @@ public partial class Unit
     public bool IsControlled => _controlTime > 0f;
     public bool HasReturned { get; private set; }
     public bool IsSummoned { get; set; }
+    /// <summary>Raised from the dead by a necromancer: lit grave-green, and never raised a second time.</summary>
+    public bool IsRaised { get; private set; }
+    public void MarkRaised()
+    {
+        IsRaised = true;
+        if (Material is ShaderMaterial look) look.SetShaderParameter("raised", 1f);
+    }
     public bool IsTacticalObject { get; set; }
     public int CommittedAttacks { get; private set; }
     public float ContentAge { get; private set; }
@@ -202,6 +209,9 @@ public partial class Unit
         _controlImmunity = _rootTime + 3f;
     }
     public bool MovementControlled => IsControlled || _rootTime > 0f;
+    public bool IsRooted => _rootTime > 0f && !IsControlled;
+    public bool IsAsleep => IsControlled && _wakeOnDamage;
+    public bool IsStunned => IsControlled && !_wakeOnDamage;
     private void BreakRootFromDamage()
     {
         _rootTime = 0f;

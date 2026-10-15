@@ -134,21 +134,47 @@ head landmarks for people, the whole figure for beasts, mounts and machines.
 
 ### Combat feel
 
-The puppet clips are rendered at about twice the old frame count (`build.py new_contract`: attack 16 frames with
-contact on 6 at the same contact time as before, death 20-24, walk and idle 12), eased per segment (windups decelerate
-and hold a beat, strikes accelerate into contact, follow-throughs settle) with a motion-blur trail of the weapon alone
-on the frames around contact. Deaths add a jolt from the killing blow, a fall that accelerates into the ground, one
-bounce and a settle (`dramatize_death`); the weapon is thrown with the table's toss and spin and lies where it lands.
-The walk clip records `stride` (ground covered per cycle), and the game plays the cycle at the speed that keeps the
-planted foot still. Packed atlases are trimmed per frame and shelf-packed on as many 4096 px pages as needed
-(`pack.py trimmed_pack`), so every unit keeps the full target density.
+The puppet clips (`build.py new_contract`) are sized for a phone: idle 8 frames, walk 10, attack 16 with contact on
+6 at the same contact time as before, melee 12, hit 3, deploy 6, death 20 (24 for the big), and a 12-frame cast whose
+frames from 6 on are held (`holdFrom`) and looped while the unit channels. Segments are eased (windups decelerate and
+hold a beat, strikes accelerate into contact, follow-throughs settle) with a motion-blur trail of the weapon alone on
+the frames around contact. Deaths add a jolt from the killing blow, a fall that accelerates into the ground, one bounce
+and a settle (`dramatize_death`); the weapon is thrown with the table's toss and spin and lies where it lands.
+
+The walk is driven by the feet, not swung from the hips: each foot follows its own path (planted and sliding back
+for 60% of the cycle, lifted and carried forward for the rest) in its own lane of the 3/4 view, so the legs never
+cross, and planar two-bone IK bends the knee forward to reach it. The hips ride at the height the legs allow (nearly
+straight at passing, lower at double support), which gives the bob. Four-legged beasts and mounts trot on diagonal
+pairs with the same paw IK (`creatures.QuadAnim.step_legs`). The walk clip records `stride` (ground covered per
+cycle), and the game plays the cycle at the speed that keeps the planted foot still. Casts lift a staff high, or
+raise a weapon overhead; beasts rear and howl, blobs swell, engines crank back.
+
+Size: atlases are rendered at `density.PUPPET_DENSITY` (3 pixels per battle pixel; 2 for the siege tower),
+trimmed per frame and shelf-packed on as many 4096 px pages as needed (`pack.py trimmed_pack`).
 
 In the battle: `UnitLook` lights each unit with its zone's colours (key, ambient, sky rim, road bounce, depth haze,
 measured from the painted backdrop) and gives a true white hit flash; blows freeze both fighters for a few frames
 (hit-stop) and shake the camera's offset (the old shake moved the cameras with the world, so nothing shook);
 `BattleGore` sprays and stains light blood coloured by what the creature is made of (painted sprites from
 `fx_cut.py`), chips bone and wood, and pools blood under the fallen, who are knocked back along the killing blow;
-arrows stay in a target while it fights and stick in the road when they miss. Review it on a real battlefield:
+arrows stay in a target while it fights and stick in the road when they miss. A kill throws a heavier spray, a gush
+of droplets and spatter ahead of the body, and the body leaves a smear where it slides.
+
+Abilities (`BattleController.Content.cs`, `AbilityVfx.cs`, `BattleCastFx.cs`): a caster plays its cast clip over a
+ground sigil of its school that fills as the cast charges, with light gathering at its chest; the effect then lands
+as a real shot, bolt, chain, heal (with the amount), charge run or mark. Passive abilities show on the blows that
+carry them: slash arcs when a cleave carries through, sparks for parries and set pikes, a chain for hooks, plate
+shards for armour breaks, a streak for piercing hits. Statuses show on the body: `Unit.StatusVisuals` paints flames,
+brambles or chains, the shield ring, stars and the silence rune on the sprite, and `UnitStatusFx` adds the light and
+motion (a burning glow and rising flame, drifting z's for sleep, embers for battle frenzy); the text chips are left
+for what has no mark (armour broken, wounded, marked, casting, hidden), or for everything in high contrast.
+
+Raise Dead (`BattleController.RaiseDead.cs`): the fallen of both armies are remembered for 14 s. The Gloamwood Witch
+(and the Lich and the other necromancers) sends a soul-wisp to each body near her, and it gets back up, its death
+played backwards and lit grave-green, as an undead of the Host: Caravan soldiers come back at 60% health and 80%
+damage. With no bodies near, the dead claw up out of the ground. Bosses, engines and the already raised stay down.
+
+Review it on a real battlefield (takes: melee, ranged, beasts, deaths, abilities, witch):
 
 ```sh
 godot --path . --fixed-fps 30 scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-feel --feel-only [--zoom=2.2] [--take=deaths]

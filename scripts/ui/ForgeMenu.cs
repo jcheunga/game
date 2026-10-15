@@ -237,15 +237,8 @@ public partial class ForgeMenu : RoyalScreen
             var selected = relic.Id == _craftId;
             var slot = RoyalButton.Over(rect, relic.DisplayName, null, 6);
             slot.SetStates(RoyalKit.Slice(selected ? "forge-recipe-selected" : "forge-recipe", 10), 6);
-            slot.AddChild(Art(relic, new Rect2(14, 6, rect.Size.X - 28, rect.Size.Y - (selected ? 24 : 12))));
-            if (selected)
-            {
-                var caption = spec.Label("recipe.1.caption", relic.DisplayName, rect.Size.X - 8);
-                caption.Align = HorizontalAlignment.Center;
-                caption.Position = new Vector2(4, caption.Position.Y - spec.Rect("recipe.1").Position.Y);
-                caption.Size = new Vector2(rect.Size.X - 8, caption.Size.Y);
-                slot.AddChild(caption);
-            }
+            // The selected relic's name is the craft preview's title; a tile is too narrow to name it at a size a phone reads.
+            slot.AddChild(Art(relic, new Rect2(14, 6, rect.Size.X - 28, rect.Size.Y - 12)));
             var id = relic.Id;
             slot.Pressed += () => { _craftId = id; RefreshUi(); };
             _layer.AddChild(slot);

@@ -57,7 +57,7 @@ public partial class BattleController
         return root.MouseFilter != Control.MouseFilterEnum.Ignore && ScreenPointIn(root, point) ? root : null;
     }
 
-    private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && !_mobileClearView && SceneRouter.Instance?.IsTransitioning != true;
+    private bool CardActionAvailable => !_battleEnded && !_battlePaused && !_endlessCheckpointActive && SceneRouter.Instance?.IsTransitioning != true;
 
     private bool DragCardAffordable() => _dragSpell != null && _mana >= GameState.Instance.BuildSpellStats(_dragSpell).ManaCost
         && _spellDeck.GetCooldownRemaining(_dragSpell.Id) <= .05f;
@@ -72,7 +72,7 @@ public partial class BattleController
     {
         onField = false; reason = "Release to cancel";
         if (!CardActionAvailable || !DragCardAffordable() || !GetViewportRect().HasPoint(screen)) return false;
-        if (_mobileHud != null && (screen.Y < _mobileFieldTop || screen.Y > _mobileFieldBottom)) return false;
+        if (screen.Y < _mobileFieldTop || screen.Y > _mobileFieldBottom) return false;
         var point = ScreenToBattle(screen);
         if (CardHitControl(_battleUiRoot, screen) != null || !IsInBattlefield(point)) return false;
         onField = true;
@@ -215,7 +215,7 @@ public partial class BattleController
         _cardDragHint.Text = valid ? "Release · " + _dragSpell.DisplayName : reason;
         if (valid) _cardDragHint.RemoveThemeColorOverride("font_color");
         else _cardDragHint.AddThemeColorOverride("font_color", new Color("ff8a78"));
-        var scale = _mobileHud != null ? 1.4f : 1f;
+        var scale = 1.4f;    // a touch drag: the card rides above the finger, large enough to see past it
         _cardDragGhost.Scale = Vector2.One * scale;
         var size = _cardDragGhost.Size * scale;
         var position = _cardPointerPosition + new Vector2(20, -142) * scale;

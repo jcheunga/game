@@ -62,12 +62,12 @@ public partial class ShopMenu : RoyalScreen
         var title = spec.Label("title", TabNames[_tab], 420);
         _header.AddChild(title);
         _header.AddChild(RoyalKit.Image("icon-squad", spec.Rect("subtitle.icon")));
+        // Units and spells share one loadout, so both pages count it whole.
         var (caption, count) = _tab switch
         {
-            1 => ("EQUIPPED", $"{_state.ActiveDeckSpellIds.Count} / {_state.SpellDeckSizeLimit}"),
             2 => ("UPGRADES", $"{BaseUpgradeCatalog.GetAll().Sum(u => _state.GetBaseUpgradeLevel(u.Id))} / {BaseUpgradeCatalog.GetAll().Sum(u => u.MaxLevel)}"),
             3 => ("OWNED", $"{_state.GetOwnedEquipment().Count} / {GameData.GetAllEquipment().Count()}"),
-            _ => ("SQUAD", $"{_state.ActiveDeckUnitIds.Count} / {_state.DeckSizeLimit}")
+            _ => ("LOADOUT", $"{_state.LoadoutCount} / {_state.LoadoutSizeLimit}")
         };
         if (spec.Has("subtitle.count"))
         {

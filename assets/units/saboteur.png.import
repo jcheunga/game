@@ -3,29 +3,27 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b7hn381r225yv"
-path.bptc="res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.bptc.ctex"
-path.astc="res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.astc.ctex"
+path="res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/units/saboteur.png"
-dest_files=["res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.bptc.ctex", "res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.astc.ctex"]
+dest_files=["res://.godot/imported/saboteur.png-2a2181eb70821e8bf9332e96f54f8697.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=true
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""

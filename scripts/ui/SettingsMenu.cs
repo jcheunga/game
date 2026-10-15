@@ -98,7 +98,7 @@ public partial class SettingsMenu : RoyalScreen
                 });
                 break;
             case 1:
-                yield return new EditRow("people", "Caravan name", () => state.PlayerCallsign, state.SetPlayerCallsign, "Lantern");
+                yield return new EditRow("people", "Nickname", () => state.PlayerCallsign, name => state.TryChooseCallsign(name, out _), "Nickname");
                 yield return new ChoiceRow("sword", "Challenge level", () => state.GetDifficulty().Title, () =>
                 {
                     var all = DifficultyCatalog.GetAll();

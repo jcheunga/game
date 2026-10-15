@@ -44,7 +44,7 @@ public partial class RelicEquipmentInspector : CanvasLayer
     private Button Action(string icon,string title,Action action,bool primary=false)
     {
         var button=RealmUi.Button(icon,title,action,primary);
-        if(MobilePresentation.Enabled)button.CustomMinimumSize=new Vector2(button.CustomMinimumSize.X,56);
+        button.CustomMinimumSize=new Vector2(button.CustomMinimumSize.X,56);
         _actions.AddChild(button);return button;
     }
 
@@ -87,7 +87,6 @@ public partial class RelicEquipmentInspector : CanvasLayer
         var state=GameState.Instance;
         Preview=state.BuildRelicEquipmentPreview(_unit.Id,_removing?null:_relic,_slot);
         _modal.SetHeading($"{_unit.DisplayName} · {_relic.DisplayName}");
-        if(!MobilePresentation.Enabled)_body.AddChild(RealmUi.Label($"Level {state.GetUnitLevel(_unit.Id)} · {(_removing?"Remove":"Equip")} in slot {_slot}",20,true));
         var slots=new HBoxContainer();slots.AddThemeConstantOverride("separation",12);_body.AddChild(slots);
         foreach(var slot in new[]{1,2})
         {
@@ -97,20 +96,17 @@ public partial class RelicEquipmentInspector : CanvasLayer
             button.SetMeta("realm_toggle",true);button.ToggleMode=true;button.ButtonPressed=_slot==slot;
             button.AccessibilityName=$"Preview relic slot {slot}";
             button.Disabled=!unlocked || (_removing && item?.Id!=_relic.Id);
-            if(MobilePresentation.Enabled)button.CustomMinimumSize=new Vector2(0,56);
+            button.CustomMinimumSize=new Vector2(0,56);
             slots.AddChild(button);
         }
         if(!state.IsUnitPromoted(_unit.Id))_body.AddChild(RealmUi.Label("Promote this ally to unlock its second relic slot.",18,true));
         var replacing=Preview.Replaced?.DisplayName??"Empty";
         var replacement=_removing?$"After removal: slot {_slot} is empty.":$"Replaces: {replacing}";
-        _body.AddChild(RealmUi.Label((MobilePresentation.Enabled?$"Lv {state.GetUnitLevel(_unit.Id)} · ":"")+replacement,20));
+        _body.AddChild(RealmUi.Label($"Lv {state.GetUnitLevel(_unit.Id)} · "+replacement,20));
         if(Preview.Limits.Count>0)
         {
-            if(!MobilePresentation.Enabled)_body.AddChild(RealmUi.SectionTitle("Bonus limits"));
             foreach(var limit in Preview.Limits)_body.AddChild(RealmUi.Label(RelicStatText.LimitNotice(limit),20));
-            if(!MobilePresentation.Enabled)_body.AddChild(RealmUi.Label("Both relics and other permanent bonuses share these limits. Conditional effects still use their own rules.",18,true));
         }
-        if(!MobilePresentation.Enabled)_body.AddChild(RealmUi.SectionTitle("Battle stats"));
         BuildComparison();
         if(!Preview.After.DamagesStructures && !_removing && (_relic.StructureDamageScale!=1 || _relic.BaseDamageBonus!=0))
             _body.AddChild(RealmUi.Label("This ally cannot damage the gate. Structure bonuses give it no gate attack.",18,true));

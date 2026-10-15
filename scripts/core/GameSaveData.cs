@@ -55,7 +55,7 @@ public sealed class ExpeditionSlotSaveData
 
 public sealed class GameSaveData
 {
-    public int Version { get; set; } = 47;
+    public int Version { get; set; } = 48;
     public int Gold { get; set; } = 120;
     public int Food { get; set; } = 24;
     public long FoodRechargedAtUnixSeconds { get; set; }
@@ -234,4 +234,9 @@ public sealed class GameSaveData
 
     // v39: Campaign Momentum
     public int CampaignMomentumStacks { get; set; }
+
+    // v48: Player level and nickname
+    public int PlayerXP { get; set; }
+    public int[] ClaimedLevelRewards { get; set; } = [];
+    public bool HasChosenCallsign { get; set; }
 }

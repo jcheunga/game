@@ -176,25 +176,35 @@ public partial class ShopMenu
         for (var p = 1; p <= 5; p++)
             _wagonStage.AddChild(RoyalKit.Image(p <= level ? "level-bar-on-full" : "level-bar-off", spec.Rect($"detail.bar.{p}")));
         var cost = state.GetBaseUpgradeCost(upgrade.Id);
+        // The next rank can wait on the player's level, which the button names instead of a price.
+        var capped = !max && level >= state.WagonRankCap;
+        var needed = PlayerLevelCatalog.LevelForWagonRank(level + 1);
         var rect = spec.Rect("button.upgrade");
-        var button = RoyalButton.Over(rect, max ? "Fully trained" : "Upgrade", () =>
+        var button = RoyalButton.Over(rect, max ? "Fully trained" : capped ? $"Player level {needed}" : "Upgrade", () =>
         {
             if (state.TryUpgradeBase(upgrade.Id, out _)) AudioDirector.Instance?.PlayUpgradeConfirm();
             Refresh();
         }, 6);
-        button.Disabled = max || state.Gold < cost;
+        button.Disabled = max || capped || state.Gold < cost;
         _wagonStage.AddChild(button);
-        var verb = spec.Label("button.upgrade.label", max ? "TRAINED" : "UPGRADE", 120);
+        var verb = spec.Label("button.upgrade.label", max ? "TRAINED" : capped ? $"PLAYER LV {needed}" : "UPGRADE", capped ? 190 : 120);
         verb.Position -= rect.Position;
+        if (capped)
+        {
+            // Centred across the whole plaque, with a padlock where the coin would be.
+            verb.Align = HorizontalAlignment.Center;
+            verb.Position = new Vector2(30, verb.Position.Y); verb.Size = new Vector2(rect.Size.X - 60, verb.Size.Y);
+            button.AddChild(RoyalKit.Image("icon-lock-small", new Rect2(24, rect.Size.Y / 2 - 10, 15, 20)));
+        }
         button.SetCaption(verb, new Rect2(verb.Position, verb.Size));
-        if (!max)
+        if (!max && !capped)
         {
             button.AddChild(RoyalKit.Image("coin-pile", new Rect2(spec.Rect("button.upgrade.icon").Position - rect.Position, spec.Rect("button.upgrade.icon").Size)));
             var price = spec.Label("button.upgrade.cost", cost.ToString("N0"), 60);
             price.Position -= rect.Position;
             button.AddChild(price);
         }
-        button.TooltipText = $"{upgrade.Title} · {(max ? "fully trained" : $"next: {BuildBaseUpgradeEffectText(upgrade, level + 1)}")}";
+        button.TooltipText = $"{upgrade.Title} · {(max ? "fully trained" : capped ? $"reach player level {needed} to raise it to level {level + 1}" : $"next: {BuildBaseUpgradeEffectText(upgrade, level + 1)}")}";
     }
 }
 

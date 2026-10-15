@@ -8,7 +8,7 @@ public partial class UiReviewSmoke
     private async Task ReviewLiveParity()
     {
         _output = ProjectSettings.GlobalizePath("res://artifacts/live-ui-parity/" +
-            (MobilePresentation.Enabled ? "phone" : OS.GetCmdlineUserArgs().Contains("--small-window") ? "small" : "desktop"));
+            (GetWindow().Size.Y < 500 ? "phone" : OS.GetCmdlineUserArgs().Contains("--small-window") ? "small" : "desktop"));
         System.IO.Directory.CreateDirectory(_output);
         var state = GameState.Instance;
         state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);

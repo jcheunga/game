@@ -118,7 +118,7 @@ public partial class AchievementsPanel : RoyalScreen
         description.Position = new Vector2(spec.Number(template + ".desc.1", "x", 0) - origin.X, descTop);
         description.Size = new Vector2(card.Size.X - description.Position.X - 12, trackRect.Position.Y - descTop - 2);
         description.AddThemeConstantOverride("line_spacing", -2);
-        RoyalText.FitLines(description, slot < 3 ? 2 : 3, 13);
+        RoyalText.FitLines(description, slot < 3 ? 2 : 3);
         card.AddChild(description);
 
         var (value, target) = Progress(entry.Id);

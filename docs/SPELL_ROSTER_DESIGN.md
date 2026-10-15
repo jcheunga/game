@@ -2,7 +2,7 @@
 
 Design proposal · 8 October 2026 · 10 existing spells + 20 additions.
 
-The expanded grimoire gives the Lantern Caravan more ways to protect specialist troops, manipulate a formation, answer a particular enemy rule, or combine effects with its recruits and relics. All 30 spells and 12 tactical cards now have playable handlers and share five loadout slots. New art uses placeholders. See [the current stat catalog](catalogs/CURRENT_CONTENT_STATS.md) for implemented values; broader encounter and device playtesting remains necessary.
+The expanded grimoire gives the Lantern Caravan more ways to protect specialist troops, manipulate a formation, answer a particular enemy rule, or combine effects with its recruits and relics. All 30 spells and 12 tactical cards now have playable handlers and share the six-slot battle loadout with troops. New art uses placeholders. See [the current stat catalog](catalogs/CURRENT_CONTENT_STATS.md) for implemented values; broader encounter and device playtesting remains necessary.
 
 ## Collection and battle loadout
 
@@ -12,7 +12,7 @@ The expanded grimoire gives the Lantern Caravan more ways to protect specialist 
 | Tactical items | 0 | 12 | **12** |
 | Combined utility choices | 10 | 32 | **42** |
 
-Keep **five shared utility slots** per battle: spells and tactical items compete for those positions. A large collection gives more build choices without turning each battle into a tray of 42 actions. Spell families are browsing categories, not extra meters, class requirements, or mandatory set bonuses.
+Spells and tactical items share the **six-slot battle loadout** with troops, in any mix that keeps at least one troop, so a battle holds at most five utility cards. A large collection gives more build choices without turning each battle into a tray of 42 actions. Spell families are browsing categories, not extra meters, class requirements, or mandatory set bonuses.
 
 The new mana prices and cooldowns are prototype estimates. Existing prices and cooldowns below are copied from the current game data. The new spells fit within the current base mana cap of 30; mana still comes from combat kills rather than passive regeneration. The design does not add a second casting resource.
 
@@ -141,7 +141,7 @@ Discovery stages reveal an optional spell purchase/contract and its counter exam
 
 ## Example spell-heavy loadouts
 
-Each example occupies all five utility slots; any tactical item replaces one of these spells.
+Each example uses the most utility a loadout allows (five cards beside a single troop); any tactical item replaces one of these spells, and every extra troop costs one.
 
 | Build | Five-spell selection | What it gives up |
 |---|---|---|

@@ -3,29 +3,27 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://nyc7dx2a4y0a"
-path.bptc="res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.bptc.ctex"
-path.astc="res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.astc.ctex"
+path="res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/units/enemy_howler.png"
-dest_files=["res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.bptc.ctex", "res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.astc.ctex"]
+dest_files=["res://.godot/imported/enemy_howler.png-c652a20ee6b72a775ace4e804ab2ef7e.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=true
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=2
 roughness/mode=0
 roughness/src_normal=""

@@ -41,8 +41,9 @@ public partial class UiReviewSmoke
         canvas.FocusSite("leader-1"); await Wait(.1);
         await Capture("02-three-stars-close");
         var squad = state.BuildSaveData();
-        squad.OwnedPlayerUnitIds = squad.ActiveDeckUnitIds = GameData.GetPlayerUnits().Take(state.DeckSizeLimit).Select(unit => unit.Id).ToArray();
-        squad.OwnedPlayerSpellIds = squad.ActiveDeckSpellIds = GameData.GetPlayerSpells().Take(state.SpellDeckSizeLimit).Select(spell => spell.Id).ToArray();
+        // A full loadout: units and spells share its six slots.
+        squad.OwnedPlayerUnitIds = squad.ActiveDeckUnitIds = GameData.GetPlayerUnits().Take(4).Select(unit => unit.Id).ToArray();
+        squad.OwnedPlayerSpellIds = squad.ActiveDeckSpellIds = GameData.GetPlayerSpells().Take(state.LoadoutSizeLimit - 4).Select(spell => spell.Id).ToArray();
         squad.HighestUnlockedStage = state.MaxStage;
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { squad });
         SceneRouter.Instance.GoToLoadout(); await Wait(.3);

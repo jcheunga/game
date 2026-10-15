@@ -21,11 +21,11 @@ public static class HomeMapArt
         var size = _atlas.GetSize() / 3;
         var region = new Rect2(new Vector2(cell % 3, cell / 3) * size, size);
         var margin = new Rect2();
-        if (id == "star")
+        if (id is "star" or "flame")
         {
-            // The food artwork extends 14 pixels into the star cell. Exclude it
-            // while preserving the icon's original size and alignment.
-            var inset = new Vector2(16, 0);
+            // The food artwork extends 14 pixels into the star cell, and the hammer's 18 into the flame's.
+            // Exclude it while preserving the icon's original size and alignment.
+            var inset = new Vector2(id == "star" ? 16 : 22, 0);
             region.Position += inset;
             region.Size -= inset;
             margin = new Rect2(inset, inset);

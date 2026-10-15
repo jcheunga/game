@@ -25,7 +25,7 @@ public partial class SpellShowcase : CanvasLayer
         };
         art.AddChild(image); image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         image.OffsetLeft = image.OffsetTop = 32; image.OffsetRight = image.OffsetBottom = -32;
-        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(MobilePresentation.Enabled ? 300 : 340, 0), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }; body.AddChild(scroll);
+        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(300, 0), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }; body.AddChild(scroll);
         var details = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; details.AddThemeConstantOverride("separation", 12); scroll.AddChild(details);
         var resolved = GameState.Instance.BuildSpellStats(_spell);
         details.AddChild(RealmUi.Label($"Level {resolved.Level} · {ArmoryDetailUi.SpellRole(_spell.EffectType)}", 18, true));

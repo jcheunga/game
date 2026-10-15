@@ -25,13 +25,18 @@ public partial class UiReviewSmoke
         var recruit = GameData.GetPlayerUnits().First(entry => !state.IsUnitOwned(entry.Id) && state.IsUnitAvailableForPurchase(entry.Id));
         await PressHint(recruit.DisplayName); await TapModal(Action("Recruit"));
         Check(state.IsUnitOwned(recruit.Id), "Recruiting an ally remains connected to progression");
-        if (state.ActiveDeckUnitIds.Count >= state.DeckSizeLimit) { state.ToggleDeckUnit(state.ActiveDeckUnitIds.Last(), out _); await PressHint(recruit.DisplayName); }
+        if (state.LoadoutCount >= state.LoadoutSizeLimit) { state.ToggleDeckUnit(state.ActiveDeckUnitIds.Last(), out _); await PressHint(recruit.DisplayName); }
         await TapModal(Action("Equip")); Check(state.IsUnitInActiveDeck(recruit.Id), "The recruited ally can join the equipped warband");
         AuditText("Modal / trained warband"); await Capture("13-trained-warband");
         menu.CloseHomeModal(); SceneRouter.Instance.GoToShop(1); await Wait(.3);
         var spell = GameData.GetPlayerSpells().First(entry => !state.IsSpellOwned(entry.Id) && state.IsSpellAvailableForPurchase(entry.Id));
         await PressHint(spell.DisplayName); await TapModal(Action("Scribe"));
-        if (state.ActiveDeckSpellIds.Count >= state.SpellDeckSizeLimit) { state.ToggleDeckSpell(state.ActiveDeckSpellIds.Last(), out _); await PressHint(spell.DisplayName); }
+        if (state.LoadoutCount >= state.LoadoutSizeLimit)
+        {
+            if (state.ActiveDeckSpellIds.Count > 0) state.ToggleDeckSpell(state.ActiveDeckSpellIds.Last(), out _);
+            else state.ToggleDeckUnit(state.ActiveDeckUnitIds.First(id => id != recruit.Id), out _);
+            await PressHint(spell.DisplayName);
+        }
         await TapModal(Action("Equip"));
         Check(state.IsSpellOwned(spell.Id) && state.IsSpellInActiveDeck(spell.Id), "Scribing and equipping a spell updates the spell loadout");
         var spellLevel = state.GetSpellLevel(spell.Id); await TapModal(Action("Upgrade"));

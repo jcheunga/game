@@ -598,7 +598,7 @@ public partial class MultiplayerMenu : Control
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         _squadStack.AddChild(RealmUi.SectionTitle(GameState.Instance.HasSelectedAsyncChallengeLockedDeck
             ? $"Set squad {previewDeck.Count}/{GameState.Instance.DeckSizeLimit}"
-            : $"Squad {previewDeck.Count}/{GameState.Instance.DeckSizeLimit}"));
+            : $"Squad {previewDeck.Count} · loadout {GameState.Instance.LoadoutCount}/{GameState.Instance.LoadoutSizeLimit}"));
 
         _squadStack.AddChild(new Label
         {
@@ -608,7 +608,7 @@ public partial class MultiplayerMenu : Control
 
         _squadStack.AddChild(RealmUi.SectionTitle(GameState.Instance.HasSelectedAsyncChallengeLockedDeck
             ? "Spells"
-            : $"Spells {GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}/{GameState.Instance.SpellDeckSizeLimit}"));
+            : $"Spells {GameState.Instance.GetSelectedAsyncChallengeDeckSpells().Count}"));
 
         _squadStack.AddChild(new Label
         {

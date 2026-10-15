@@ -23,9 +23,8 @@ public partial class MobilePresentationReview : Node
         System.IO.Directory.CreateDirectory(path);
         GetViewport().GetTexture().GetImage().SavePng($"{path}/{name}.png");
     }
-    private async Task<BattleController> Battle(bool mobile,int stage=1,bool endless=false)
+    private async Task<BattleController> Battle(int stage=1,bool endless=false)
     {
-        MobilePresentation.TestOverride=mobile;
         GameState.Instance.SetSelectedStage(stage);
         if(endless) GameState.Instance.PrepareEndlessBattle(GameData.GetStage(stage).MapId);
         else GameState.Instance.PrepareCampaignBattle();
@@ -39,11 +38,8 @@ public partial class MobilePresentationReview : Node
             var unit=(Unit)Call(battle,"SpawnUnit",team,new UnitStats(GameData.GetUnit(pair.Item1),healthScale:20),new Vector2(pair.Item2,pair.Item3));
             unit._Process(.5); unit._Process(.01); unit.SetProcess(false);
         }
-        if(mobile)
-        {
-            Write(battle,"_mobileFollow",false);
-            var camera=Read<Camera2D>(battle,"_mobileCamera"); camera.Position=new Vector2(395,380); camera.ForceUpdateScroll();
-        }
+        Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
+        var camera=Read<Camera2D>(battle,"_battleCamera"); camera.Position=new Vector2(395,380); camera.ForceUpdateScroll();
         Call(battle,"UpdateHud"); Call(battle,"RefreshMobileHud");
         await Settle(); return battle;
     }
@@ -70,14 +66,11 @@ public partial class MobilePresentationReview : Node
             GetWindow().ContentScaleSize=new Vector2I(1280,720);
             GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
             await Settle();
-            var before=await Battle(false);
-            Check(Read<Camera2D>(before,"_mobileCamera")==null,"Desktop retains original framing");
-            await Capture("phone-before"); before.QueueFree(); await Settle();
-            var battle=await Battle(true);
-            var camera=Read<Camera2D>(battle,"_mobileCamera");
+            var battle=await Battle();
+            var camera=Read<Camera2D>(battle,"_battleCamera");
             var hud=Read<Control>(battle,"_mobileHud");
             Check(camera.Zoom.IsEqualApprox(Vector2.One*(float)Call(battle,"get_BattleFitZoom")),"Mobile combat frames the whole band without changing unit scale");
-            Check(hud.Size.DistanceTo(battle.GetViewportRect().Size/1.55f)<1,"HUD fits logical phone viewport");
+            Check(hud.Size.DistanceTo(battle.GetViewportRect().Size/MobilePresentation.BattleHudScale)<1,"HUD fits the logical viewport");
             var actionCards=hud.FindChildren("*","Control",true,false).OfType<BattleActionCard>().ToArray();
             Check(actionCards.Length>=5,"The battle bar contains real icon-first unit and spell cards");
             foreach(var art in actionCards)
@@ -93,7 +86,7 @@ public partial class MobilePresentationReview : Node
                     "Icon-only cards retain large touch targets and accessible names");
             }
             await Capture("phone-after");
-            await CheckCloserViews(battle);
+            CheckBattleFraming(battle);
             if(OS.GetCmdlineUserArgs().Contains("--capture-motion")) await CaptureCombat(battle);
             var top=Read<PanelContainer>(battle,"_topHudPanel");
             Check(top.GetGlobalRect().End.X<=battle.GetViewportRect().Size.X+1,"Header fits phone width");
@@ -128,13 +121,11 @@ public partial class MobilePresentationReview : Node
             battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen+new Vector2(-100,0)});
             Check(camera.Position.X>previous.X+20,"Dragging pans the close view");
             Check(Read<int>(battle,"_playerDeployments")==count+1,"Dragging never deploys a unit");
-            Call(battle,"ToggleMobileOverview");
-            Check(Read<bool>(battle,"_mobileFollow") && !Read<bool>(battle,"_mobileOverview"),"Follow button restores automatic tracking");
-            Call(battle,"ToggleMobileOverview");
-            Check(battle.GetViewportRect().Size.X/camera.Zoom.X>=GameData.Combat.BattlefieldRight+GameData.Combat.BattlefieldLeft-.5f,
-                "Overview fits the entire extended battlefield");
-            Call(battle,"ToggleMobileOverview");
-            Write(battle,"_mobileFollow",false); camera.Position=new Vector2(440,350); camera.ForceUpdateScroll();
+            Check(!Read<bool>(battle,"_battleCameraFollow"),"A hand pan holds the camera where it was dragged");
+            for(var frame=0;frame<300;frame++) Call(battle,"UpdateBattleCamera",1f/60);
+            Check(Read<bool>(battle,"_battleCameraFollow"),"The camera follows the fighting again a few seconds after a pan");
+            Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
+            camera.Position=new Vector2(440,350); camera.ForceUpdateScroll();
             await Settle(90); Call(battle,"ClearArmedSelection"); await Settle();
             await Capture("phone-after-interaction");
             Call(battle,"TogglePause"); await Settle(); await Capture("phone-pause");
@@ -166,7 +157,7 @@ public partial class MobilePresentationReview : Node
             GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
             foreach(var late in new[]{false,true})
             {
-                var advanced=await Battle(true,GameData.MaxStage,late);
+                var advanced=await Battle(GameData.MaxStage,late);
                 var header=Read<PanelContainer>(advanced,"_topHudPanel");
                 Check(header.GetGlobalRect().End.X<=advanced.GetViewportRect().Size.X+1,late?"Endless HUD fits":"Late campaign HUD fits");
                 await Capture(late?"phone-endless":"phone-stage-100");
@@ -175,46 +166,17 @@ public partial class MobilePresentationReview : Node
             await CheckModelPreviews();
         }
         catch(Exception ex) {GD.PrintErr(ex.ToString()); _failures++;}
-        finally { MobilePresentation.TestOverride=null; }
+
         GD.Print($"MOBILE_PRESENTATION_RESULT: {_failures} failures");
         await LiveUiReview.StopAudio(this); GetTree().Quit(_failures==0?0:1);
     }
 
-    private async Task CheckCloserViews(BattleController battle)
+    private void CheckBattleFraming(BattleController battle)
     {
-        var camera=Read<Camera2D>(battle,"_mobileCamera");
-        var start=camera.Position;
-        var center=new Vector2(640,(Read<float>(battle,"_mobileFieldTop")+Read<float>(battle,"_mobileFieldBottom"))*.5f);
-        var focus=(Vector2)Call(battle,"ScreenToBattle",center);
-        var fit=(float)Call(battle,"get_BattleFitZoom");
-        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit),"Phone combat opens framing the whole band");
-        Call(battle,"CycleMobileZoom");
-        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.25f),"Zoom control steps in to a closer view");
+        var camera=Read<Camera2D>(battle,"_battleCamera");
+        Check(Mathf.IsEqualApprox(camera.Zoom.X,(float)Call(battle,"get_BattleFitZoom")),"Phone combat frames the whole band");
         var band=battle.GetCanvasTransform()*new Vector2(0,(GameData.Combat.BattlefieldTop+GameData.Combat.BattlefieldBottom)*.5f);
-        Check(Mathf.Abs(((Vector2)Call(battle,"ScreenToBattle",center)).X-focus.X)<.01 && band.Y>Read<float>(battle,"_mobileFieldTop") && band.Y<Read<float>(battle,"_mobileFieldBottom"),
-            "Zoom holds the visible focus steady along the field and keeps the band in view");
-        var positions=battle.GetChildren().OfType<Unit>().Select(u=>u.Position).ToArray();
-        var oldBottom=Read<float>(battle,"_mobileFieldBottom");
-        Call(battle,"ToggleMobileClearView"); await Settle();
-        Check(Read<bool>(battle,"_mobileClearView") && Read<float>(battle,"_mobileFieldBottom")>oldBottom+150,"Clear view opens more vertical space for models");
-        var point=battle.GetCanvasTransform()*new Vector2(430,340);
-        var deployments=Read<int>(battle,"_playerDeployments");
-        battle._UnhandledInput(new InputEventScreenTouch {Index=0,Pressed=true,Position=point});
-        battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=point});
-        Check(Read<int>(battle,"_playerDeployments")==deployments,"View-only taps cannot spend courage or deploy hidden selections");
-        Check(positions.SequenceEqual(battle.GetChildren().OfType<Unit>().Select(u=>u.Position)),"Zoom and clear view never rescale or move the simulation");
-        await Capture("phone-clear-closeup");
-        if(OS.GetCmdlineUserArgs().Contains("--capture-motion")) await CaptureCombat(battle,"closeup-frames");
-        Call(battle,"ToggleMobileClearView");
-        Check(!Read<bool>(battle,"_mobileClearView") && Mathf.IsEqualApprox(oldBottom,Read<float>(battle,"_mobileFieldBottom")),"Cards restore the regular deployment layout");
-        Write(battle,"_mobileFollow",true);
-        var close=camera.Position;
-        Call(battle,"ToggleMobileOverview"); Call(battle,"ToggleMobileOverview");
-        Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.25f) && camera.Position.DistanceTo(close)<.1,"Map returns to the chosen zoom and prior close view");
-        Write(battle,"_mobileFollow",false);
-        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,fit*1.5f),"Zoom cycles to the closest view");
-        Call(battle,"CycleMobileZoom"); Check(Mathf.IsEqualApprox(camera.Zoom.X,fit),"Zoom cycles back to the whole-band default");
-        camera.Position=start; camera.ForceUpdateScroll();
+        Check(band.Y>Read<float>(battle,"_mobileFieldTop") && band.Y<Read<float>(battle,"_mobileFieldBottom"),"The band sits between the meters and the card tray");
     }
 
     private async Task CheckModelPreviews()
@@ -233,32 +195,31 @@ public partial class MobilePresentationReview : Node
             source?.Texture.Dispose();
         }
         GameState.Instance.SetSelectedStage(1); GameState.Instance.PrepareCampaignBattle();
-        foreach(var mobile in new[]{true,false})
         {
-            MobilePresentation.TestOverride=mobile;
             await LiveUiReview.Open(this,"MainMenu");
             var loadout=(LoadoutMenu)await LiveUiReview.Open(this,"LoadoutMenu");
             var home=(MapMenu)GetTree().CurrentScene;
-            Check(home.HasHomeModal && loadout.HasMeta("home_modal"),"Preparation uses the production map overlay on desktop and phone");
-            await Settle(10); await Capture(mobile?"phone-loadout":"desktop-loadout-at-phone-size");
+            Check(home.HasHomeModal && loadout.HasMeta("home_modal"),"Preparation uses the production map overlay");
+            await Settle(10); await Capture("phone-loadout");
             var inspectors=loadout.FindChildren("*","Button",true,false).OfType<Button>()
                 .Where(b=>b.Text=="Details" || (b.AccessibilityName??"").StartsWith("View ")).ToArray();
             Check(inspectors.Length==GameState.Instance.GetActiveDeckUnits().Count && !loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
                 "Preparation shows an icon card that opens the model inspector for each squad member");
-            if(mobile)
-                foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
-                {
-                    var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
-                    Check(rect.Position.X>=-1 && rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
-                }
-            if(inspectors.Length==0) { home.CloseHomeModal(); await Settle(); continue; }
+            foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
+            {
+                var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
+                Check(rect.Position.X>=-1 && rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
+            }
+            Check(inspectors.Length>0,"Preparation offers a model inspector");
             inspectors[0].EmitSignal(BaseButton.SignalName.Pressed); await Settle(6);
             var gallery=loadout.GetChildren().OfType<ModelShowcase>().Single();
             var model=gallery.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
             Check(!loadout.GetChildren().OfType<Unit>().Any(),"Inspecting models spawns no combat units");
             Call(gallery,"Play",UnitAnimState.Attack); model.SetProcess(false); model._Process(.25);
-            Check(model.Animation==UnitAnimState.Attack && model.GlobalFrame>=10 && model.GlobalFrame<=19,"Inspector plays the authored attack frames");
-            await Capture(mobile?"phone-model-inspector":"desktop-model-inspector-at-phone-size");
+            var attack=Read<UnitSpriteSheet>(model,"_sheet").Animations[UnitAnimState.Attack];
+            Check(model.Animation==UnitAnimState.Attack && model.GlobalFrame>attack.StartFrame && model.GlobalFrame<attack.StartFrame+attack.FrameCount,
+                "Inspector plays the authored attack frames");
+            await Capture("phone-model-inspector");
             if(DisplayServer.GetName()!="headless") Check(model.ModelRect.Size.Y>150 && model.ModelRect.End.Y<=model.Size.Y,"Inspector gives the model substantial space without cropping it");
             var first=Read<int>(gallery,"_index"); Call(gallery,"Select",1);
             Check(Read<int>(gallery,"_index")!=first,"Inspector browses the active squad");
@@ -269,7 +230,6 @@ public partial class MobilePresentationReview : Node
             gallery.QueueFree(); await Settle();
             home.CloseHomeModal(); await Settle();
         }
-        MobilePresentation.TestOverride=true;
         await LiveUiReview.Open(this,"MainMenu");
         var shop=(ShopMenu)await LiveUiReview.Open(this,"ShopMenu"); await Settle(20);
         var shopModel=shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
@@ -282,9 +242,9 @@ public partial class MobilePresentationReview : Node
     private async Task CaptureCombat(BattleController battle,string folder="combat-frames")
     {
         if(DisplayServer.GetName()=="headless") return;
-        var camera=Read<Camera2D>(battle,"_mobileCamera");
+        var camera=Read<Camera2D>(battle,"_battleCamera");
         var start=camera.Position;
-        camera.Position=new Vector2(395,Read<bool>(battle,"_mobileClearView")?345:380); camera.ForceUpdateScroll();
+        camera.Position=new Vector2(395,380); camera.ForceUpdateScroll();
         var units=battle.GetChildren().OfType<Unit>().ToArray();
         var sword=units.Single(u=>u.DefinitionId=="player_brawler");
         var spear=units.Single(u=>u.DefinitionId=="player_spear");

@@ -345,6 +345,9 @@ public partial class Unit : Node2D
     private float _temporarySpeedScale = 1f;
     private float _temporaryDamageTakenScale = 1f;
     private bool _hasAuraBuff;
+    private UnitStatusFx _statusFx;
+    /// <summary>Under a temporary attack boost (a frenzy, a rally, a war drum).</summary>
+    public bool IsEmpowered => _temporaryCombatBuffTimer > 0.01f && _temporaryAttackDamageScale > 1.001f;
     private Color _bodyColor = Colors.White;
     public Color EnvironmentTint { get; set; } = Colors.White;
     public Color LocalLightTint { get; set; } = Colors.White;
@@ -422,6 +425,7 @@ public partial class Unit : Node2D
     {
         ResetCombatMotion();
         ResetContentState();
+        IsRaised = false;
         EnvironmentTint = Colors.White;
         LocalLightTint = Colors.White;
         GroundShadowsManaged = false;
@@ -431,7 +435,7 @@ public partial class Unit : Node2D
         _activeAbilityTimer = 0f;
         _untargetableTimer = 0f;
         _hitFlashTimer = 0f;
-        _fadeTimer = 0f; _fadeFromFrame = -1; _poseHold = 0f; _walkSpeed = 0f;
+        _fadeTimer = 0f; _fadeFromFrame = -1; _poseHold = 0f; _walkSpeed = 0f; _castRemaining = 0f;
         _attackFlashTimer = 0f;
         _auraFlashTimer = 0f;
         _idleTimer = 0f;
@@ -567,10 +571,30 @@ public partial class Unit : Node2D
 
         _specialTimer = SpecialCooldown;
         _attackFlashTimer = Mathf.Max(_attackFlashTimer, 0.18f);
-        SelectAttackClip(false);
-        BeginSpriteAttack();
+        // a special (a rally, a raising, a jamming hex) is cast, not swung
+        if (!BeginCast(.75f))
+        {
+            SelectAttackClip(false);
+            BeginSpriteAttack();
+        }
         return true;
     }
+
+    private float _castRemaining;
+    /// <summary>True while the unit holds its ability pose.</summary>
+    public bool IsCasting => _castRemaining > 0f;
+    /// <summary>Plays the Cast clip (rising into the ability pose, then holding it) for `seconds`. False when the
+    /// sheet has no Cast clip.</summary>
+    public bool BeginCast(float seconds)
+    {
+        EnsureSpriteLoaded();
+        if (_spriteSheet == null || !_spriteSheet.Animations.ContainsKey(UnitAnimState.Cast)) return false;
+        _castRemaining = Mathf.Max(_castRemaining, seconds);
+        return true;
+    }
+    public void EndCast() => _castRemaining = 0f;
+    /// <summary>Skips the arrival pose (a raised unit has already stood up in front of everyone).</summary>
+    public void SkipDeploy() => _spriteDeployRemaining = 0f;
 
     public void SetActiveAbility(string abilityId, float cooldown)
     {
@@ -793,6 +817,9 @@ public partial class Unit : Node2D
         if (!held) AdvanceSpriteAnimation(deltaF);
         if (!_contactMotionActive) _spriteAttackRemaining = Mathf.Max(0f, _spriteAttackRemaining - deltaF);
         _spriteDeployRemaining = Mathf.Max(0f, _spriteDeployRemaining - deltaF);
+        _castRemaining = Mathf.Max(0f, _castRemaining - deltaF);
+        if (_statusFx == null && !IsDead && UnitStatusFx.Wants(this))
+            AddChild(_statusFx = new UnitStatusFx { Owner = this });
         QueueRedraw();
     }
 
@@ -874,8 +901,11 @@ public partial class Unit : Node2D
         while (_spriteAnimTimer >= duration)
         {
             _spriteAnimTimer -= duration;
-            _spriteAnimFrame = anim.Loop ? (_spriteAnimFrame + 1) % anim.FrameCount
-                : Mathf.Min(_spriteAnimFrame + 1, anim.FrameCount - 1);
+            if (_spriteAnimState == UnitAnimState.Cast && anim.HoldFrom >= 0 && _spriteAnimFrame + 1 >= anim.FrameCount)
+                _spriteAnimFrame = anim.HoldFrom;      // hold the pose: loop its breathing frames
+            else
+                _spriteAnimFrame = anim.Loop ? (_spriteAnimFrame + 1) % anim.FrameCount
+                    : Mathf.Min(_spriteAnimFrame + 1, anim.FrameCount - 1);
         }
     }
 
@@ -937,6 +967,7 @@ public partial class Unit : Node2D
             modulate = modulate.Lerp(new Color(1.25f,1.16f,1.08f),flash);
         }
 
+        if (IsConcealed) modulate.A *= .42f;      // hidden: a shadow of itself
         DrawTextureRectRegion(piece.Texture, UnitSpriteLoader.Place(_spriteSheet, piece, new Rect2(drawPos, drawSize)), srcRect, modulate);
         if (_fadeTimer > 0f && _fadeFromFrame >= 0 && !reduced)
         {
@@ -962,6 +993,8 @@ public partial class Unit : Node2D
             _spriteAnimState = _attackClip;
         else if (_spriteAttackRemaining > 0f)
             _spriteAnimState = _attackClip;
+        else if (_castRemaining > 0f)
+            _spriteAnimState = UnitAnimState.Cast;
         else if (_spriteDeployRemaining > 0f)
             _spriteAnimState = UnitAnimState.Deploy;
         else if (_spriteWalkRemaining > 0f)
@@ -1626,7 +1659,7 @@ public partial class Unit : Node2D
         return baseColor.Lerp(Colors.White, flashStrength * 0.28f);
     }
 
-    private float GetFacing()
+    public float GetFacing()
     {
         return _facing != 0 ? _facing : Team == Team.Player ? 1f : -1f;
     }

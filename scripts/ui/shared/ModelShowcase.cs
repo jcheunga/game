@@ -32,7 +32,7 @@ public partial class ModelShowcase : CanvasLayer
         var backdrop=new ModalShowcaseBackdrop(); art.AddChild(backdrop); backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _preview=new UnitModelPreview { CustomMinimumSize=new Vector2(250,150),MouseFilter=Control.MouseFilterEnum.Ignore };
         art.AddChild(_preview); _preview.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        var report=new ScrollContainer { CustomMinimumSize=new Vector2(MobilePresentation.Enabled?300:320,0),
+        var report=new ScrollContainer { CustomMinimumSize=new Vector2(300,0),
             HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled }; body.AddChild(report);
         _details=new VBoxContainer { SizeFlagsHorizontal=Control.SizeFlags.ExpandFill };
         _details.AddThemeConstantOverride("separation",12); report.AddChild(_details);
@@ -59,7 +59,7 @@ public partial class ModelShowcase : CanvasLayer
     // Phones get touch-sized targets; the modal's own styling stays in place.
     private static void Touch(Button button)
     {
-        if(MobilePresentation.Enabled) button.CustomMinimumSize=new Vector2(Mathf.Max(56,button.CustomMinimumSize.X),Mathf.Max(56,button.CustomMinimumSize.Y));
+        button.CustomMinimumSize=new Vector2(Mathf.Max(56,button.CustomMinimumSize.X),Mathf.Max(56,button.CustomMinimumSize.Y));
     }
 
     private void Select(int direction)

@@ -6,7 +6,7 @@ Keep early recruits useful throughout the campaign. Later discoveries offer a mo
 
 ## Shallow level growth
 
-Every player card can level from 1 to 20 on the same curve. Health adds 1.5% of level 1 base per level gained; ordinary attack and structure damage add 1% of base per level gained. The totals at level 20 are **+28.5% health and +19% damage**. Armor, magical resistance, critical chance, critical damage bonus, movement, range, and attack/deployment timing do not increase with unit level.
+Every player card can level from 1 to 20 on the same curve, up to the cap set by the player's own level ([player level](PLAYER_LEVEL.md)). Health adds 1.5% of level 1 base per level gained; ordinary attack and structure damage add 1% of base per level gained. The totals at level 20 are **+28.5% health and +19% damage**. Armor, magical resistance, critical chance, critical damage bonus, movement, range, and attack/deployment timing do not increase with unit level.
 
 The earlier proposal multiplied level 20 health by 4.316 and attack damage by 3.026 before other upgrades. Those gains are retired for the current design. Defense and critical growth are also retired; they remain visible authored stats influenced by bounded equipment choices.
 

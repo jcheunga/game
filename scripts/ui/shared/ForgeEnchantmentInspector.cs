@@ -42,7 +42,7 @@ public partial class ForgeEnchantmentInspector : CanvasLayer
     private Button Action(string icon,string title,Action run,bool primary=false)
     {
         var button=RealmUi.Button(icon,title,run,primary);button.AccessibilityName=title;
-        if(MobilePresentation.Enabled)button.CustomMinimumSize=new Vector2(button.CustomMinimumSize.X,56);
+        button.CustomMinimumSize=new Vector2(button.CustomMinimumSize.X,56);
         _actions.AddChild(button);return button;
     }
 

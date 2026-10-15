@@ -20,7 +20,6 @@ public partial class UiReviewSmoke
             foreach(var touch in new[]{false,true})
             {
                 var mode=touch?"phone-touch":"desktop-mouse";
-                MobilePresentation.TestOverride=touch;
                 GetWindow().Size=touch?new Vector2I(844,390):new Vector2I(1280,720);
                 GameState.Instance.PrepareCampaignBattle(); await Open("Battle");
                 var battle=(BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
@@ -31,8 +30,8 @@ public partial class UiReviewSmoke
                 if(Read<bool>("_battlePaused")) Call("TogglePause");
                 var deck=Read<BattleDeckState>("_deck"); var spells=Read<BattleSpellState>("_spellDeck");
                 var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
-                var camera=Read<Camera2D>(touch?"_mobileCamera":"_battleCamera");
-                if(touch) { Write("_mobileFollow",false); camera.Position=new Vector2(340,380); camera.ForceUpdateScroll(); }
+                var camera=Read<Camera2D>("_battleCamera");
+                Write("_battleCameraFollow",false); Write("_battleCameraHold",float.PositiveInfinity); camera.Position=new Vector2(340,380); camera.ForceUpdateScroll();
                 void Ready() { Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud"); }
                 Vector2 CardPoint(int i)=>cards[i].CostPlate.GetGlobalTransformWithCanvas()*(cards[i].CostPlate.Size*.5f);
                 Vector2 FieldPoint()=>battle.GetGlobalTransformWithCanvas()*new Vector2(380,360);
@@ -207,7 +206,7 @@ public partial class UiReviewSmoke
                     mode+": a tapped unit deploys at the wagon");
             }
         }
-        finally { MobilePresentation.TestOverride=null; GetTree().Paused=false; }
+        finally { GetTree().Paused=false; }
         GD.Print($"CARD_DRAG_RESULT: {_failures} failures"); QuitAfterAudio(_failures==0?0:1);
     }
 }

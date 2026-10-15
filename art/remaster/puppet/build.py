@@ -563,42 +563,140 @@ class Animator:
         self.reach(dz=0.003 * math.sin(ph + 1.6))
 
     WALKS = {
-        # stride (thigh swing, deg), knee flex, bob, lean (deg, - = forward), per-leg amplitude, head nod, arm swing
-        'march': (24, 50, 0.014, -3, (1.0, 1.0), 1.0, 1.0),
-        'heavy': (18, 38, 0.022, -5, (1.0, 1.0), 1.6, 0.6),      # brutes, crushers, bosses: a lumbering tread
-        'shamble': (16, 30, 0.012, -9, (1.0, 0.55), 3.0, 0.4),  # the risen: one leg drags, head lolls
-        'prowl': (28, 62, 0.010, -12, (1.0, 1.0), 0.6, 0.8),     # ghouls, rogues: low and quick
+        # stride (fraction of leg length), foot lift (fraction of leg), hip bob (fraction of leg), lean (deg, - =
+        # forward), stance narrowing (0 keeps the painted stance, 1 puts the feet under the hips), crouch (fraction of
+        # leg the hips sink), per-leg stride/lift scale (R, L), head nod (deg), arm swing (deg)
+        'march': dict(stride=.55, lift=.17, bob=.04, lean=-4, narrow=.45, crouch=.02, legs=((1, 1), (1, 1)), nod=1.5, arms=4),
+        'heavy': dict(stride=.46, lift=.12, bob=.055, lean=-6, narrow=.4, crouch=.05, legs=((1, 1), (1, 1)), nod=2.5, arms=2.5),
+        'shamble': dict(stride=.4, lift=.1, bob=.03, lean=-10, narrow=.4, crouch=.06, legs=((1, 1), (.75, .35)), nod=4, arms=1.5),
+        'prowl': dict(stride=.62, lift=.2, bob=.035, lean=-14, narrow=.35, crouch=.12, legs=((1, 1), (1, 1)), nod=1, arms=3),
     }
     STYLE_OF = {'brute': 'heavy', 'crusher': 'heavy', 'boss': 'heavy', 'bloater': 'heavy', 'berserker': 'heavy',
                 'walker': 'shamble', 'necromancer': 'march', 'runner': 'prowl', 'rogue': 'prowl',
                 'saboteur': 'prowl'}
+    STANCE = .6        # share of the cycle a foot is planted
+
+    def leg_geometry(self):
+        """Rest positions and lengths for both legs (armature space, X right, Z up), read once."""
+        if getattr(self, '_legs', None) is not None:
+            return self._legs
+        B = self.arm.data.bones
+        legs = {}
+        for s_ in ('R', 'L'):
+            tb, sb = 'thigh.' + s_, 'shin.' + s_
+            if tb not in B or sb not in B:
+                continue
+            hip = B[tb].head_local.copy()
+            knee = B[sb].head_local.copy()
+            ankle = B[sb].tail_local.copy()
+            legs[s_] = dict(hip=hip, ankle=ankle, L1=(knee - hip).length, L2=(ankle - knee).length,
+                            knee_fwd=(knee - (hip + ankle) / 2).x)
+        self._legs = legs
+        return legs
+
+    def leg_to(self, s_, target, hip_shift):
+        """Planar two-bone IK: turn thigh and shin so the ankle reaches `target` (armature space) from the hip
+        moved by `hip_shift`; the knee bends forward (toward the facing), the foot stays level."""
+        g = self.legs_[s_]
+        hip = g['hip'] + hip_shift
+        d = target - hip
+        L1, L2 = g['L1'], g['L2']
+        dist = max(1e-6, min(d.length, (L1 + L2) * .999))
+        dirv = d.normalized()
+        # angle at the hip between the hip-ankle line and the thigh (law of cosines)
+        cos_a = max(-1.0, min(1.0, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist)))
+        a = math.acos(cos_a)
+        base = math.atan2(dirv.x, -dirv.z)          # from straight down, + toward the front
+        thigh_abs = math.degrees(base + a)           # the knee forward of the hip-ankle line
+        knee = hip + Vector((math.sin(math.radians(thigh_abs)), 0, -math.cos(math.radians(thigh_abs)))) * L1
+        sv = (hip + dirv * dist) - knee
+        shin_abs = math.degrees(math.atan2(sv.x, -sv.z))
+        tb, sb = 'thigh.' + s_, 'shin.' + s_
+        d_t = thigh_abs - self.rest[tb]
+        d_s = (shin_abs - thigh_abs) - (self.rest[sb] - self.rest[tb])
+        self.rot(tb, d_t)
+        self.rot(sb, d_s)
+        return d_t + d_s
 
     def walk(self, i, n):
-        """A stride: each leg swings forward and back about straight down (the painted stance blended toward it,
-        so a wide combat stance walks narrower), the knee folding as the leg swings through and the foot kept
-        level; the body dips at each footfall and rises over the planted leg. The unit's class sets the gait."""
-        amp, flex_a, bob, lean, legs, nod, arms = self.WALKS[self.STYLE_OF.get(self.vclass, 'march')]
-        ph = math.tau * i / n
-        s = math.sin(ph)
-        w = 0.75
-        for (s_, off), k_ in zip((('R', 0.0), ('L', 0.5)), legs):
-            u = (i / n + off) % 1.0
-            th = amp * k_ * math.cos(math.tau * u)
-            flex = (flex_a * k_ * math.sin(math.pi * (u - 0.5) / 0.5) if u >= 0.5
-                    else 6.0 * math.sin(math.pi * u / 0.5))
-            sh = th - flex
-            tb, sb = 'thigh.' + s_, 'shin.' + s_
-            if tb in self.rest and sb in self.rest:
-                dt = (th - self.rest[tb]) * w
-                ds = ((sh - th) - (self.rest[sb] - self.rest[tb])) * w
-                self.rot(tb, dt)
-                self.rot(sb, ds)
-                self.rot('foot.' + s_, -(dt + ds) * 0.6)
-        self.place(dz=bob * math.cos(2 * ph) - bob * 0.3)
-        self.rot('spine', lean + 1.5 * math.sin(2 * ph))
-        self.rot('head', nod * math.sin(2 * ph + 0.6))
-        self.wield(2.0 * s * arms, dz=0.005 * math.sin(2 * ph))
-        self.reach(dx=-0.012 * s * arms, dz=0.004 * math.sin(2 * ph))
+        """A real stride, driven by the feet: each foot is planted and slides back under the body (so on the ground
+        it stays still while the unit moves forward), then lifts in an arc and swings forward to plant again; the
+        knees follow by two-bone IK, bending forward. The hips dip as the leading foot lands and rise as the body
+        passes over the planted leg; the feet close in under the hips from the painted fighting stance; the body
+        leans into the walk and the arms swing against the legs. The unit's class sets the gait."""
+        g = self.WALKS[self.STYLE_OF.get(self.vclass, 'march')]
+        self.legs_ = self.leg_geometry()
+        if len(self.legs_) < 2:
+            return
+        leg_len = sum(v['L1'] + v['L2'] for v in self.legs_.values()) / len(self.legs_)
+        lanes = {s_: v['ankle'].x + (v['hip'].x - v['ankle'].x) * g['narrow'] for s_, v in self.legs_.items()}
+        sep = abs(lanes['L'] - lanes['R'])
+        g = dict(g, stride=min(g['stride'], .8 * sep / leg_len))
+        cyc = i / n
+        mid_x = sum(v['hip'].x for v in self.legs_.values()) / 2
+        # hip height: the leg nearly straight as the body passes over the planted foot, and lowered just enough at
+        # double support for both feet to reach the ground (the painted fighting stance is a crouch or a wide
+        # straddle; walking, the body stands over its legs), less the gait's crouch
+        mid_need, ext_need = [], []
+        for s_ in ('R', 'L'):
+            v = self.legs_[s_]
+            nx = v['ankle'].x + (v['hip'].x - v['ankle'].x) * g['narrow']
+            dx = abs(nx - v['hip'].x)
+            half = .5 * g['stride'] * leg_len * max(g['legs'][0][0], g['legs'][1][0])
+            full = v['L1'] + v['L2']
+            rest_vert = v['hip'].z - v['ankle'].z
+            mid_need.append(math.sqrt(max(1e-6, (full * .975) ** 2 - dx * dx)) - rest_vert)
+            ext_need.append(math.sqrt(max(1e-6, (full * .995) ** 2 - (dx + half) ** 2)) - rest_vert)
+        hi, lo = min(mid_need), min(ext_need)
+        k = 0.5 - 0.5 * math.cos(math.tau * 2 * (cyc - .05))          # 0 at double support, 1 passing
+        stand = lo + (hi - lo) * k - g['crouch'] * leg_len
+        bob = 0.0
+        sway = .012 * leg_len * math.sin(math.tau * cyc)
+        hip_shift = Vector((sway, 0, stand + bob))
+        foot_sum = 0.0
+        for s_, off in (('R', 0.0), ('L', 0.5)):
+            v = self.legs_[s_]
+            k_stride, k_lift = g['legs'][0 if s_ == 'R' else 1]
+            S = g['stride'] * leg_len * k_stride
+            u = (cyc + off) % 1.0
+            # the neutral foot: the painted ankle, pulled in toward under the body
+            nx = v['ankle'].x + (v['hip'].x - v['ankle'].x) * g['narrow']
+            if u < self.STANCE:            # planted: moves back at constant speed
+                q = u / self.STANCE
+                fx = S * (.5 - q)
+                lift = 0.0
+            else:                          # swing: lifts and travels forward, fastest in the middle
+                q = (u - self.STANCE) / (1 - self.STANCE)
+                e = q * q * (3 - 2 * q)
+                fx = S * (-.5 + e)
+                lift = g['lift'] * leg_len * k_lift * math.sin(math.pi * q) ** .8
+            target = Vector((nx + fx, 0, v['ankle'].z + lift))
+            dt = self.leg_to(s_, target, hip_shift)
+            if DEBUG:
+                hp_ = v['hip'] + hip_shift
+                print('WALKDBG', i, s_, 'u', round(u, 2), 'stand', round(stand, 3), 'leg', round(v['L1'] + v['L2'], 3),
+                      'dist', round((target - hp_).length, 3), 'restdist', round((v['ankle'] - v['hip']).length, 3),
+                      'dx', round(nx - v['hip'].x, 3), flush=True)
+            # the foot stays level on the ground, heel lifting at toe-off and toe up just before the heel strikes
+            toe = 0.0
+            if u < self.STANCE and u > self.STANCE * .7:
+                toe = -14 * (u - self.STANCE * .7) / (self.STANCE * .3)
+            elif u >= self.STANCE:
+                q = (u - self.STANCE) / (1 - self.STANCE)
+                toe = -14 * (1 - q) + 10 * max(0.0, q - .6) / .4
+            self.rot('foot.' + s_, -dt + toe)
+            foot_sum += fx
+        # legs are children of the hips: move the hips (not the root) so the solved feet stay where they were put.
+        # The hips bone points down, so its local X and Y are world -X and -Z.
+        if 'hips' in self.pb:
+            self.pb['hips'].location = (-hip_shift.x, -hip_shift.z, 0.0)
+        swing = math.sin(math.tau * cyc)
+        self.rot('spine', g['lean'] + 1.2 * math.sin(math.tau * 2 * cyc))
+        self.rot('chest', -.8 * swing)
+        self.rot('head', g['nod'] * math.sin(math.tau * 2 * cyc + .6) - g['lean'] * .4)
+        self.wield(g['arms'] * swing, dz=0.006 * math.sin(math.tau * 2 * cyc))
+        self.reach(dx=-0.016 * swing * g['arms'] / 4, dz=0.004 * math.sin(math.tau * 2 * cyc))
+        self.walk_stride = g['stride'] * leg_len / self.STANCE     # ground covered per cycle, armature units
 
     def attack(self, i, n, c, profile=None):
         if self.two:
@@ -742,6 +840,41 @@ class Animator:
         t = i / max(1, n - 1)
         self.place(sy=0.86 + 0.14 * sm(t), sx=1.06 - 0.06 * sm(t), dz=0.0)
         self.rot('spine', -6 * (1 - t))
+
+    CASTERS = ('staff-cast', 'staff-strike', 'hammer-command', 'flask-toss')
+
+    def cast(self, i, n, hold_from=6):
+        """The ability pose: casters lift the staff high and thrust the free hand out, channelling; fighters raise
+        the weapon overhead in a rallying shout; archers draw and aim high. Rises into the pose, then breathes."""
+        t = min(1.0, i / max(1, hold_from))
+        e = 1 - (1 - t) ** 3
+        breathe = math.sin(math.tau * max(0, i - hold_from) / max(1, n - hold_from)) if i >= hold_from else 0.0
+        caster = self.profile in self.CASTERS
+        lean = (8 if caster else 5) * e + 1.5 * breathe
+        self.rot('spine', lean * .6)
+        self.rot('chest', lean * .4)
+        self.rot('head', (10 if caster else 14) * e)
+        if self.two:
+            self.wield(70 * e + 3 * breathe, dx=-.02 * e, dz=.16 * e + .006 * breathe)
+        elif 'string' in self.pb:
+            self.wield(28 * e, dz=.03 * e)
+        elif self.hand_rig:
+            rest = self.rest_hands()
+            if caster:
+                pose = {'a': 92, 'r': .95, 'wa': 95, 'oa': 8, 'or': 1.0}
+            else:
+                pose = {'a': 105, 'r': .95, 'wa': 100, 'oa': -40, 'or': .7}
+            p = dict(rest)
+            for k_, v_ in pose.items():
+                if k_ in rest:
+                    d = (v_ - rest[k_] + 180) % 360 - 180 if k_ in ('a', 'oa', 'wa') else v_ - rest[k_]
+                    p[k_] = rest[k_] + d * e
+            p['a'] += 2.5 * breathe
+            if not self.off_rig:
+                for k_ in ('oa', 'or'):
+                    p.pop(k_, None)
+            self.hands(p)
+        self.place(dz=.004 * breathe)
 
     def legs_to(self, thigh_abs, shin_abs, w):
         """Blend both legs toward a pose given as absolute angles from straight down (+ = toward the front) in the
@@ -1026,9 +1159,9 @@ def new_contract(old, big):
         c = {k: v for k, v in o.items() if k not in ('start', 'count', 'duration', 'contactFrame', 'impactFrame',
                                                        'impactPoint')}
         if name == 'idle':
-            c.update(count=12, duration=0.09, loop=True)
+            c.update(count=8, duration=0.13, loop=True)
         elif name == 'walk':
-            c.update(count=12, duration=0.06, loop=True)
+            c.update(count=10, duration=0.07, loop=True)
         elif name == 'attack':
             t_contact = o.get('contactFrame', 4) * o['duration']
             c.update(count=16, contactFrame=6, duration=round(t_contact / 6, 4), loop=False)
@@ -1036,17 +1169,20 @@ def new_contract(old, big):
             t_contact = o.get('contactFrame', 3) * o['duration']
             c.update(count=12, contactFrame=5, duration=round(t_contact / 5, 4), loop=False)
         elif name == 'hit':
-            c.update(count=4, duration=0.06, loop=False)
+            c.update(count=3, duration=0.07, loop=False)
         elif name == 'death':
             n = 24 if big else 20
             c.update(count=n, duration=0.055 if big else 0.05, impactFrame=round(0.5 * (n - 1)), loop=False)
         elif name == 'deploy':
-            c.update(count=8, duration=0.05, loop=False)
+            c.update(count=6, duration=0.065, loop=False)
         else:
             c.update(count=o['count'], duration=o['duration'])
         c['start'] = start
         start += c['count']
         out[name] = c
+    # a channel or rally pose for abilities and spells: rises into it over the first half, then holds (the game
+    # loops the held frames, from holdFrom, while the cast lasts)
+    out['cast'] = {'start': start, 'count': 12, 'duration': 0.06, 'loop': False, 'holdFrom': 6}
     return out
 
 
@@ -1232,7 +1368,7 @@ def build(ident, frames=None, out_root=OUT):
     draw_scale = meta['drawScale'] * (old_ratio / new_ratio) if old_ratio else meta['drawScale']
     # render no finer than pack.py keeps (the battle's target density, supersampled): same framing, fewer pixels
     unit = next((u for u in density_units() if u['Id'] == ident), {})
-    want = density.TARGET_DENSITY * density.SUPERSAMPLE * density.frame_canvas_width(unit, draw_scale) * 1.1
+    want = density.puppet_density(unit) * density.SUPERSAMPLE * density.frame_canvas_width(unit, draw_scale) * 1.1
     px_w = int(min(sc.render.resolution_x, max(384, math.ceil(want / 4) * 4)))
     sc.render.resolution_x, sc.render.resolution_y = px_w, int(round(px_w * 1.25))
     big = unit.get('VisualClass') in ('boss', 'siegetower') or meta['animations'].get('death', {}).get('count', 0) >= 16
@@ -1287,6 +1423,8 @@ def build(ident, frames=None, out_root=OUT):
             anim.hit(i, n)
         elif name == 'deploy':
             anim.deploy(i, n)
+        elif name == 'cast':
+            anim.cast(i, n, c.get('holdFrom', 6))
         elif name == 'death':
             anim.death(i, n, c.get('impactFrame', max(1, n // 2)), forward)
         bpy.context.view_layer.update()
@@ -1338,9 +1476,11 @@ def build(ident, frames=None, out_root=OUT):
     new_clips = json.loads(json.dumps(clips))
     if 'death' in new_clips and impact_pt is not None:
         new_clips['death']['impactPoint'] = impact_pt
-    if 'walk' in new_clips and len(stride_x) == 2:
-        # ground covered in one walk cycle (two steps), as a fraction of the frame width: the game plays the cycle
-        # at the speed that keeps the planted foot still on the ground
+    if 'walk' in new_clips and getattr(anim, 'walk_stride', 0):
+        # ground covered in one walk cycle, as a fraction of the frame width: the game plays the cycle at the speed
+        # that keeps the planted foot still on the ground
+        new_clips['walk']['stride'] = round(anim.walk_stride / W, 5)
+    elif 'walk' in new_clips and len(stride_x) == 2:
         new_clips['walk']['stride'] = round(abs(stride_x[0] - stride_x[new_clips['walk']['count'] // 2]) * 2 / W, 5)
     out_meta = {
         'frameWidth': sc.render.resolution_x, 'frameHeight': sc.render.resolution_y,

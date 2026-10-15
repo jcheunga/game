@@ -27,7 +27,7 @@ public partial class RoyalLabel : Control
     public Vector2 ShadowOffset;
     public Color ShadowInk = new(0, 0, 0, .55f);
     public bool ShrinkToFit = true;
-    public int MinimumFontSize = 10;
+    public int MinimumFontSize = ReadingText.PhoneCaps;
     public float Tracking;
 
     public bool Gold

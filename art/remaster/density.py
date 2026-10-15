@@ -24,6 +24,16 @@ MIN_DENSITY = 4.5
 # Masters are rendered this much larger than the packed frame, like the regular 256 -> 192 pack.
 SUPERSAMPLE = 4 / 3
 MAX_ATLAS = 4096  # widely supported mobile texture limit
+# The game ships for phones: a landscape phone shows the 600 px battle across ~2,400-2,550 physical pixels (about
+# 4.3 screen px per battle px at the default zoom), and the puppet art is painted, so it upscales cleanly. Troops
+# pack at 3 atlas px per battle px, bosses too (since Oct 2026 they stand about 2.3x a soldier, not 4x); the siege
+# tower, drawn far larger, at 2. Mipmaps are off for unit atlases (they are never minified on a phone).
+PUPPET_DENSITY = 3.0
+PUPPET_DENSITY_BIG = 2.0
+
+
+def puppet_density(unit):
+    return PUPPET_DENSITY_BIG if unit.get('VisualClass') == 'siegetower' else PUPPET_DENSITY
 
 CLASS_SCALE = {
     'boss': 1.55, 'siegetower': 1.6, 'crusher': 1.25, 'brute': 1.18, 'bloater': 1.22,

@@ -149,7 +149,12 @@ public partial class ProfileMenu : Control
 	{
 		foreach (var child in _generalStack.GetChildren()) child.QueueFree();
 
-		AddStatRow(_generalStack, "Callsign", gs.PlayerCallsign);
+		AddStatRow(_generalStack, "Nickname", gs.PlayerCallsign);
+		AddStatRow(_generalStack, "Level", gs.IsMaxPlayerLevel ? $"{gs.PlayerLevel} · max" : $"{gs.PlayerLevel} · {gs.PlayerXPIntoLevel:N0} / {gs.PlayerXPForNextLevel:N0} XP");
+		AddStatRow(_generalStack, "Training cap", $"Units {gs.UnitLevelCap} · wagon {gs.WagonRankCap}");
+		var rename = RealmUi.Button("people", "Change nickname", () => NicknameDialog.Show(this, false, RefreshUi));
+		rename.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
+		_generalStack.AddChild(rename);
 		AddStatRow(_generalStack, "Prestige level", gs.PrestigeLevel.ToString());
 
 		_generalStack.AddChild(MakeSubheading("Currencies"));

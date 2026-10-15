@@ -10,8 +10,11 @@ public partial class GameState : Node
 	private const int DefaultGold = 120;
 	private const int DefaultFood = 24;
 	private const int DefaultUnlockedStage = 1;
-	private const int MaxDeckSize = 6;
-	private const int MaxSpellDeckSize = 5;
+	// Units and spells share one loadout; any mix fits as long as it keeps at least one unit.
+	private const int MaxLoadoutSize = 6;
+	private const int MinDeckUnits = 1;
+	private const int MaxDeckSize = MaxLoadoutSize;
+	private const int MaxSpellDeckSize = MaxLoadoutSize - MinDeckUnits;
 	private const int DefaultUnitLevel = 1;
 	private const int MaxPlayerUnitLevel = UnitBalance.MaxPlayerLevel;
 	private const int DefaultSpellLevel = 1;
@@ -128,10 +131,12 @@ public partial class GameState : Node
 	public int MaxStage => GameData.MaxStage;
 	public int DeckSizeLimit => MaxDeckSize;
 	public int SpellDeckSizeLimit => MaxSpellDeckSize;
+	public int LoadoutSizeLimit => MaxLoadoutSize;
+	public int LoadoutCount => _activeDeckUnitIds.Count + _activeDeckSpellIds.Count;
 	public int MaxUnitLevel => MaxPlayerUnitLevel;
 	public int MaxSpellLevel => MaxPlayerSpellLevel;
 	public int MaxBaseUpgradeLevel => MaxPersistentBaseUpgradeLevel;
-	public bool HasFullDeck => _activeDeckUnitIds.Count >= MaxDeckSize;
+	public bool HasFullDeck => LoadoutCount >= MaxLoadoutSize;
 	public bool HasAnySpellEquipped => _activeDeckSpellIds.Count > 0;
 	public bool HasSelectedAsyncChallengeLockedDeck => _selectedAsyncChallengeLockedDeckUnitIds.Count >= 3;
 
@@ -327,6 +332,7 @@ public partial class GameState : Node
 	public void SetPlayerCallsign(string callsign)
 	{
 		PlayerCallsign = NormalizePlayerCallsign(callsign);
+		HasChosenCallsign = true;
 		Persist();
 		LanChallengeService.Instance?.RefreshLocalProfile();
 		PlayerProfileSyncService.InvalidateFromState("Player callsign changed. Refresh profile sync when ready.");
@@ -2068,6 +2074,12 @@ public partial class GameState : Node
 				return false;
 			}
 
+			if (currentLevel >= UnitLevelCap)
+			{
+				message = $"Reach player level {PlayerLevelCatalog.LevelForUnitCap(currentLevel + 1)} to train {definition.DisplayName} past level {currentLevel}.";
+				return false;
+			}
+
 			var cost = GetUnitUpgradeCost(definition.Id);
 			if (Gold < cost)
 			{
@@ -2186,6 +2198,12 @@ public partial class GameState : Node
 			if (currentLevel >= definition.MaxLevel)
 			{
 				message = $"{definition.Title} is already max level.";
+				return false;
+			}
+
+			if (currentLevel >= WagonRankCap)
+			{
+				message = $"Reach player level {PlayerLevelCatalog.LevelForWagonRank(currentLevel + 1)} to raise {definition.Title} to level {currentLevel + 1}.";
 				return false;
 			}
 
@@ -4016,7 +4034,7 @@ public partial class GameState : Node
 		var normalizedId = unitId.Trim();
 		if (_activeDeckUnitIds.Contains(normalizedId, StringComparer.OrdinalIgnoreCase))
 		{
-			if (_activeDeckUnitIds.Count <= 1)
+			if (_activeDeckUnitIds.Count <= MinDeckUnits)
 			{
 				message = "Your deck needs at least one unit.";
 				return false;
@@ -4029,9 +4047,9 @@ public partial class GameState : Node
 			return true;
 		}
 
-		if (_activeDeckUnitIds.Count >= MaxDeckSize)
+		if (LoadoutCount >= MaxLoadoutSize)
 		{
-			message = $"Deck is full ({MaxDeckSize} cards). Remove one first.";
+			message = LoadoutFullMessage;
 			return false;
 		}
 
@@ -4077,6 +4095,8 @@ public partial class GameState : Node
 		}
 	}
 
+	private static string LoadoutFullMessage => $"Loadout is full ({MaxLoadoutSize} units and spells). Remove one first.";
+
 	public bool ToggleDeckSpell(string spellId, out string message)
 	{
 		if (string.IsNullOrWhiteSpace(spellId))
@@ -4094,9 +4114,9 @@ public partial class GameState : Node
 			return true;
 		}
 
-		if (_activeDeckSpellIds.Count >= MaxSpellDeckSize)
+		if (LoadoutCount >= MaxLoadoutSize)
 		{
-			message = $"Spell deck is full ({MaxSpellDeckSize} cards). Remove one first.";
+			message = LoadoutFullMessage;
 			return false;
 		}
 
@@ -4215,6 +4235,7 @@ public partial class GameState : Node
 	private void ApplyDefaults()
 	{
 		ResetProgressionRewards();
+		ResetPlayerLevel();
 		Gold = DefaultGold;
 		Food = DefaultFood;
 		FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -4374,6 +4395,7 @@ public partial class GameState : Node
 		// Saves from the 60-stage campaign move onto ten stages per zone before anything reads stage numbers.
 		CampaignRenumbering.Migrate(saved, MaxStage);
 		LoadProgressionRewards(saved);
+		LoadPlayerLevel(saved);
         AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? "";
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
@@ -5062,6 +5084,7 @@ public partial class GameState : Node
 		NormalizeOwnedSpells();
 		NormalizeDeck();
 		NormalizeSpellDeck();
+		NormalizeLoadout();
 		NormalizeStageStars();
 		NormalizeUnitLevels();
 		NormalizeBaseUpgrades();
@@ -5274,7 +5297,12 @@ public partial class GameState : Node
 			LargeTextMode = LargeTextMode,
 
 			// v39
-			CampaignMomentumStacks = _campaignMomentumStacks
+			CampaignMomentumStacks = _campaignMomentumStacks,
+
+			// v48
+			PlayerXP = PlayerXP,
+			ClaimedLevelRewards = _claimedLevelRewards.OrderBy(level => level).ToArray(),
+			HasChosenCallsign = HasChosenCallsign
 		};
 	}
 
@@ -5556,6 +5584,17 @@ public partial class GameState : Node
 		if (_activeDeckSpellIds.Count > MaxSpellDeckSize)
 		{
 			_activeDeckSpellIds.RemoveRange(MaxSpellDeckSize, _activeDeckSpellIds.Count - MaxSpellDeckSize);
+		}
+	}
+
+	/// <summary>Older saves held six units and five spells; trim the longer list until both share the loadout.</summary>
+	private void NormalizeLoadout()
+	{
+		while (LoadoutCount > MaxLoadoutSize)
+		{
+			var spellsFirst = _activeDeckSpellIds.Count >= _activeDeckUnitIds.Count;
+			var trimmed = spellsFirst ? _activeDeckSpellIds : _activeDeckUnitIds;
+			trimmed.RemoveAt(trimmed.Count - 1);
 		}
 	}
 

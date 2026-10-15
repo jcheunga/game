@@ -22,6 +22,10 @@ Since 2026-10-07 magic costs mana (2 per enemy kill) instead of courage, so the 
 a hurt ally and fireball on clusters of three whenever it has the mana. Sweeps from before then are not directly
 comparable.
 
+Since 2026-10-14 units and spells share six loadout slots, so the tactical reference fields its two strongest
+frontline and two strongest ranged troops plus two spells (heal and fireball first). Earlier sweeps fielded six
+troops and five spells and are not directly comparable.
+
 `--seed-offset=N` changes the seed, `--time-limit=` caps each battle (default 210 s, 60–600) and
 `--armaments` (with `--tactical`) adds the war wagon weapon and skill upgrades. Each run needs its own
 `--save-suffix=combat-review-…` so it never touches a personal save.

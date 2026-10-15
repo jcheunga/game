@@ -21,9 +21,15 @@ def main():
         sheet = Image.open(meta_path.with_suffix(".png")).convert("RGBA")
         fw, fh = meta["frameWidth"], meta["frameHeight"]
         start = meta.get("animations", {}).get("idle", {}).get("start", 0)
-        columns = max(1, sheet.width // fw)
-        x, y = start % columns * fw, start // columns * fh
-        frame = sheet.crop((x, y, x + fw, y + fh))
+        if "frames" in meta:
+            # trimmed sheet: the frame's own rectangle, put back where it sits in its full frame
+            _, px, py, pw, ph, ox, oy = meta["frames"][start]
+            frame = Image.new("RGBA", (fw, fh))
+            frame.paste(sheet.crop((px, py, px + pw, py + ph)), (ox, oy))
+        else:
+            columns = max(1, sheet.width // fw)
+            x, y = start % columns * fw, start // columns * fh
+            frame = sheet.crop((x, y, x + fw, y + fh))
         alpha = frame.getchannel("A").point(lambda a: 255 if a > 140 else 0)
         box = alpha.getbbox()
         if not box:

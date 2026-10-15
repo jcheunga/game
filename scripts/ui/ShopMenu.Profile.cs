@@ -48,6 +48,12 @@ public partial class ShopMenu
         chip.Size = new Vector2(Mathf.Max(rect.Size.X, second.Position.X + second.TextWidth(second.FontSize) + 18), rect.Size.Y);
     }
 
+    private bool LoadoutFull => _state.LoadoutCount >= _state.LoadoutSizeLimit;
+
+    private bool CanToggleEquip(Entry entry) => entry.Owned && (entry.Equipped || !LoadoutFull);
+
+    private string EquipLabel(Entry entry) => entry.Equipped ? "Unequip" : entry.Owned && LoadoutFull ? "Loadout full" : "Equip";
+
     private void BuildActions(RoyalSpec spec, Action2 left, Action2 right, bool showLeft)
     {
         var leftKey = spec.First("button.left", "button.back", "button.unequip");
@@ -130,7 +136,7 @@ public partial class ShopMenu
             _body.AddChild(spec.Label("detail.desc", $"Armor {resolved.Armor:0.#} · Physical {resolved.PhysicalResistance:0.#}% · Magic {resolved.MagicalResistance:0.#}% · Crit {resolved.CriticalChance:0.#}% / +{resolved.CriticalDamageBonus:0.#}%", 470));
         }
 
-        var left = new Action2(entry.Equipped ? "Unequip" : "Equip", 0, entry.Owned, () =>
+        var left = new Action2(EquipLabel(entry), 0, CanToggleEquip(entry), () =>
         {
             state.ToggleDeckUnit(unit.Id, out _);
             state.SetSelectedStage(state.SelectedStage);
@@ -154,6 +160,8 @@ public partial class ShopMenu
                 });
             else right = new Action2(state.IsUnitPromoted(unit.Id) ? promo?.PromotedTitle ?? "Promoted" : "Max level", 0, false, null);
         }
+        // Training past the player's level cap waits for the level that lifts it.
+        else if (level >= state.UnitLevelCap) right = new Action2($"Player level {PlayerLevelCatalog.LevelForUnitCap(level + 1)}", 0, false, null);
         else
         {
             var cost = state.GetUnitUpgradeCost(unit.Id);
@@ -181,7 +189,7 @@ public partial class ShopMenu
             _body.AddChild(spec.Label("detail.desc", ArmoryDetailUi.SpellPurpose(spell.EffectType), 470));
         BuildStats(spec, ArmoryDetailUi.SpellStats(resolved).Take(4).ToArray());
 
-        var left = new Action2(entry.Equipped ? "Unequip" : "Equip", 0, entry.Owned, () => { state.ToggleDeckSpell(spell.Id, out _); Refresh(); });
+        var left = new Action2(EquipLabel(entry), 0, CanToggleEquip(entry), () => { state.ToggleDeckSpell(spell.Id, out _); Refresh(); });
         Action2 right;
         if (!entry.Available) right = new Action2($"Stage {spell.UnlockStage}", 0, false, null);
         else if (!entry.Owned)

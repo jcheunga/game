@@ -10,7 +10,9 @@ public enum UnitAnimState
 	Death,
 	Deploy,
 	// Ranged units' close-quarters strike; units without one reuse Attack.
-	Melee
+	Melee,
+	// The ability pose (a channel, a rally, a howl): rises into it, then holds by looping its last frames.
+	Cast
 }
 
 public sealed class UnitSpriteSheet
@@ -53,6 +55,8 @@ public sealed class SpriteAnimRange
 	public Vector2 ImpactPoint { get; set; }
 	// Walk clips: ground covered in one cycle, in frame widths (the game plays the cycle to match its speed).
 	public float Stride { get; set; }
+	// Cast clips: the first frame of the held pose, looped while the cast lasts.
+	public int HoldFrom { get; set; } = -1;
 }
 
 public static class UnitSpriteLoader
@@ -200,6 +204,8 @@ public static class UnitSpriteLoader
 					sheet.Pages[i] = i == 0 && string.IsNullOrEmpty(baseId) ? sheet.Texture
 						: ResourceLoader.Exists(pagePath) ? ResourceLoader.Load<Texture2D>(pagePath) : null;
 				}
+				// a class fallback borrows a unit's pages: its own png is only a stand-in
+				if (!string.IsNullOrEmpty(baseId) && sheet.Pages.Length > 0 && sheet.Pages[0] != null) sheet.Texture = sheet.Pages[0];
 				var list = new List<FramePiece>();
 				foreach (var f in framesEl.EnumerateArray())
 					list.Add(new FramePiece(f[0].GetInt32(), new Rect2(f[1].GetSingle(), f[2].GetSingle(), f[3].GetSingle(), f[4].GetSingle()),
@@ -234,6 +240,8 @@ public static class UnitSpriteLoader
 					};
 					if (prop.Value.TryGetProperty("impactFrame", out var impact) && impact.TryGetInt32(out var impactVal))
 						range.ImpactFrame = Mathf.Clamp(impactVal, 0, frameCount - 1);
+					if (prop.Value.TryGetProperty("holdFrom", out var hold) && hold.TryGetInt32(out var holdVal))
+						range.HoldFrom = Mathf.Clamp(holdVal, 0, frameCount - 1);
 					if (prop.Value.TryGetProperty("stride", out var stride) && stride.TryGetSingle(out var strideVal))
 						range.Stride = Mathf.Max(0f, strideVal);
 					if (prop.Value.TryGetProperty("impactPoint", out var point) && point.GetArrayLength() == 2)

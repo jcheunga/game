@@ -116,6 +116,34 @@ public static class BattleParticles
 		return particles;
 	}
 
+	/// <summary>A body raised by necromancy: grave-light flames licking up around it and, for the dead that come up
+	/// out of the ground, clods of earth thrown aside.</summary>
+	public static void SpawnResurrectRise(Node parent, Vector2 position, bool fromGround)
+	{
+		if (IsReducedMotionEnabled()) return;
+		var soul = new Color(.45f, 1f, .55f);
+		// grave-light pooling under the body, a few tongues of soul-fire licking up it, and wisps let go above
+		SpellVfx.Flash(parent, position, soul, 30f, 1f, ground: true);
+		// (the painted wisp is pale blue-white, so it takes the green; the painted flame is orange and would not)
+		SpellVfx.Burst(parent, position + new Vector2(0, -6), "p_wisp", 10, .85f, SpellVfx.Fade(soul.Lightened(.35f), soul.Darkened(.25f)),
+			8f, 15f, 14f, 38f, 16f, Vector2.Up, gravity: -40f, groundRadius: 13f, explosiveness: .35f);
+		SpellVfx.Burst(parent, position + new Vector2(0, -22), "p_wisp", 3, 1.2f, SpellVfx.Fade(new Color(soul, .7f), soul.Darkened(.2f)),
+			6f, 10f, 10f, 26f, 30f, Vector2.Up, gravity: -25f, delay: .25f);
+		if (!fromGround) return;
+		var dirt = CreateBase(parent, position, 16, "particle_stone");
+		dirt.Lifetime = .6f;
+		dirt.Explosiveness = .9f;
+		dirt.Direction = new Vector2(0f, -1f);
+		dirt.Spread = 70f;
+		dirt.InitialVelocityMin = 50f;
+		dirt.InitialVelocityMax = 120f;
+		dirt.Gravity = new Vector2(0f, 420f);
+		dirt.ScaleAmountMin = 1.6f;
+		dirt.ScaleAmountMax = 3.6f;
+		dirt.Color = new Color(.34f, .27f, .2f);
+		StartAndAutoFree(dirt, .9f);
+	}
+
 	public static CpuParticles2D SpawnDeathBurstExplosion(Node parent, Vector2 position, Color color, float radius)
 	{
 		if (IsReducedMotionEnabled())

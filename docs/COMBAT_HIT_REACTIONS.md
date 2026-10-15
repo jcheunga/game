@@ -47,8 +47,8 @@ Use unique isolated save suffixes, never the player's normal save:
 
 ```sh
 dotnet build --no-restore
-godot --headless --path . --scene res://scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-crowd-UNIQUE --mobile-preview
-godot --headless --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-crowd-UNIQUE --regressions --mobile-preview
+godot --headless --path . --scene res://scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-crowd-UNIQUE
+godot --headless --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-crowd-UNIQUE --regressions
 godot --headless --path . --scene res://scenes/tests/BlenderAssetSmoke.tscn -- --save-suffix=blender-review-crowd-UNIQUE --units-only
 ```
 

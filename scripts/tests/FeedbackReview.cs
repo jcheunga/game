@@ -43,7 +43,8 @@ public partial class FeedbackReview : Node
             var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
             Check(state.ActiveDeckUnitIds.SequenceEqual(new[] { GameData.PlayerBrawlerId }) && state.GetOwnedPlayerUnits().Count == 1, "A new game starts with only a swordsman");
             Check(state.GetOwnedPlayerSpells().Count == 0 && state.CanStartBattle(out _), "One unit and no spells is a valid starting squad");
-            Check(state.DeckSizeLimit == 6 && state.SpellDeckSizeLimit == 5, "Expanded unit and spell capacities");
+            CheckSharedLoadout(state);
+            state.ResetProgress(); state.SetShowHints(false);
             Check(GameData.Stages.All(s => state.GetStageEntryFoodCost(s.StageNumber) == 2 && s.RewardFood == 0), "Bosses and ordinary stages cost the same, and wins do not refill entry costs");
             Check(state.TrySpendStageEntryFood(1, out _) && state.Food == 22, "Battle entry spends food once");
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -111,7 +112,8 @@ public partial class FeedbackReview : Node
             expanded.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(6).ToArray(); expanded.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(5).ToArray();
             state.RestoreCloudSave(expanded); state.SetShowHints(false); state.PrepareCampaignBattle();
             battle = await Open<BattleController>("Battle"); battle.SetPhysicsProcess(false);
-            Check(Walk(battle).OfType<BattleActionCard>().Count() == 11, "Expanded battle displays all six units and five spells");
+            Check(Walk(battle).OfType<BattleActionCard>().Count() == state.LoadoutSizeLimit && state.GetBattleDeckSpells().Count == 3,
+                "A save holding six units and five spells battles with a six-card loadout of three of each");
             Check(Walk(battle).OfType<BattleActionCard>().All(c => c.GetParent().GetParent().GetParent() is ScrollContainer), "Expanded cards share a horizontal scroller");
             await Capture("06-expanded-battle"); battle.QueueFree(); await Wait();
             await CheckAccountClient();
@@ -131,5 +133,29 @@ public partial class FeedbackReview : Node
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
         GD.Print($"FEEDBACK_REVIEW_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);
+    }
+
+    /// <summary>Units and spells share six loadout slots in any mix; older saves holding more are trimmed evenly.</summary>
+    private void CheckSharedLoadout(GameState state)
+    {
+        var units = GameData.PlayerRosterIds.Take(6).ToArray();
+        var spells = GameData.PlayerSpellIds.Take(5).ToArray();
+        var fixture = state.BuildSaveData();
+        fixture.OwnedPlayerUnitIds = units; fixture.OwnedPlayerSpellIds = spells;
+        fixture.ActiveDeckUnitIds = units[..4]; fixture.ActiveDeckSpellIds = spells[..2];
+        Call(state, "ApplySavedData", fixture); Call(state, "ClampState");
+        Check(state.LoadoutSizeLimit == 6 && state.LoadoutCount == 6, "Four units and two spells fill the six-slot loadout");
+        Check(!state.ToggleDeckUnit(units[4], out _) && !state.ToggleDeckSpell(spells[2], out _) && state.LoadoutCount == 6,
+            "A full loadout refuses another unit or spell");
+        Check(state.ToggleDeckSpell(spells[0], out _) && state.ToggleDeckUnit(units[4], out _)
+            && state.ActiveDeckUnitIds.Count == 5 && state.ActiveDeckSpellIds.Count == 1, "Freeing a spell slot makes room for a unit");
+        var unequipped = units[..4].All(unit => state.ToggleDeckUnit(unit, out _));
+        var equipped = new[] { spells[0], spells[2], spells[3], spells[4] }.All(spell => state.ToggleDeckSpell(spell, out _));
+        Check(unequipped && equipped && state.ActiveDeckUnitIds.Count == 1 && state.ActiveDeckSpellIds.Count == 5,
+            "One unit and five spells is a legal loadout");
+        fixture.ActiveDeckUnitIds = units; fixture.ActiveDeckSpellIds = spells;
+        Call(state, "ApplySavedData", fixture); Call(state, "ClampState");
+        Check(state.ActiveDeckUnitIds.Count == 3 && state.ActiveDeckSpellIds.Count == 3,
+            "A save holding six units and five spells loads as three of each");
     }
 }

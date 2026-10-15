@@ -31,6 +31,7 @@ public static class BattleRewardUi
         Currency("shards", before.RelicShards, after.RelicShards);
         Currency("essence", before.Essence, after.Essence);
         Currency("season_xp", before.SeasonPassXP, after.SeasonPassXP);
+        Currency("player_xp", before.PlayerXP, after.PlayerXP);
         foreach (var id in after.OwnedEquipmentIds.Except(before.OwnedEquipmentIds, StringComparer.OrdinalIgnoreCase))
             rewards.Add(new("relic", id, 1));
         foreach (var id in after.OwnedPlayerUnitIds.Except(before.OwnedPlayerUnitIds, StringComparer.OrdinalIgnoreCase))
@@ -63,7 +64,7 @@ public static class BattleRewardUi
         foreach (var reward in rewards.Where(reward => reward.Amount > 0 && (reward.Kind != "mastery" || GameData.PlayerRosterIds.Contains(reward.ItemId))))
         {
             var (texture, name) = Art(reward);
-            var suffix = reward.Kind is "season_xp" or "mastery" ? " XP" : "";
+            var suffix = reward.Kind is "season_xp" or "mastery" or "player_xp" ? " XP" : "";
             var value = reward.Kind == "training" ? $"Lv {reward.Amount}" : $"+{reward.Amount:N0}{suffix}";
             var hint = $"{name}: {value}";
             var card = new PanelContainer { Name = "Reward" + reward.Kind + reward.ItemId,
@@ -95,6 +96,7 @@ public static class BattleRewardUi
     private static string Caption(BattleReward reward, string name) => reward.Kind switch
     {
         "season_xp" => "Season",
+        "player_xp" => $"Level {GameState.Instance?.PlayerLevel ?? 1}",
         "mastery" => "Mastery",
         "training" => "Training",
         _ => name
@@ -108,6 +110,7 @@ public static class BattleRewardUi
         "training" => (UiArtLoader.TryLoadUnitIcon(GameData.GetUnit(reward.ItemId)), GameData.GetUnit(reward.ItemId).DisplayName + " training"),
         "mastery" => (UiArtLoader.TryLoadUnitIcon(GameData.GetUnit(reward.ItemId)), GameData.GetUnit(reward.ItemId).DisplayName + " mastery"),
         "season_xp" => (HomeMapArt.Icon("star"), "Season experience"),
+        "player_xp" => (RoyalKit.Texture("icon-helm"), "Experience"),
         "food" => (HomeMapArt.Icon("food"), "Rations"),
         _ => (UiArtLoader.TryLoadRewardIcon(reward.Kind), char.ToUpperInvariant(reward.Kind[0]) + reward.Kind[1..])
     };

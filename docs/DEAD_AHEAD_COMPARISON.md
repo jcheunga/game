@@ -6,7 +6,7 @@ Reviewed 8 October 2026. Scope: playable units, enemies, equipment, support item
 
 ## Main finding
 
-Crownroad shares Zombie Warfare's core battle loop: protect a vehicle, deploy troops with courage, earn a second combat resource from kills, and break an enemy structure. Its strongest independent direction is **a caravan conducting a fantasy siege**, with a separate spell loadout, mobile artillery, formation proximity bonuses, enemy deployment disruption, and district commanders.
+Crownroad shares Zombie Warfare's core battle loop: protect a vehicle, deploy troops with courage, earn a second combat resource from kills, and break an enemy structure. Its strongest independent direction is **a caravan conducting a fantasy siege**, with mana-cast spells, mobile artillery, formation proximity bonuses, enemy deployment disruption, and district commanders.
 
 The largest gap is **how often a unit or item changes the player's tactical decisions**. Dead Ahead has a broader roster and many interactions between attack patterns, damage resistances, death effects, team powers, and equipment sets. Crownroad has several distinctive mechanics already, but much of its equipment and some later units provide stronger versions of existing behavior. Expanding those interactions would add more value than matching Dead Ahead's roster size.
 
@@ -17,7 +17,7 @@ This is a comparison of the current repository's data and combat code with the l
 | Area | Dead Ahead: Zombie Warfare | Crownroad now | Practical difference |
 |---|---|---|---|
 | Playable troops | 52 human units | 19 playable units | Dead Ahead offers more alternatives within each role; Crownroad has a smaller roster to teach and differentiate. |
-| Deployable support | 8 support items, included in its 60-unit total | 10 spells, with a separate spell loadout | Support competes with troops for deck space in Dead Ahead. Crownroad can equip up to 6 units **plus** 5 spells. |
+| Deployable support | 8 support items, included in its 60-unit total | 10 spells, sharing the troop loadout | In both games support competes with troops for deck space. Crownroad's units and spells share 6 slots in any mix, with at least one unit. |
 | Enemies | Wiki lists 67 zombies, 9 marauders, and 3 bosses, plus holiday variants and removed entries | 19 ordinary enemy definitions and 14 combat boss definitions | Dead Ahead has more ordinary variations and a separate hostile human faction. Crownroad concentrates more named content in commanders. |
 | Equipment | 4 upgrade-item slots; 32 item sets; an additional charm slot unlocked at unit level 6 | 33 named relics; 1 slot initially and a second after promotion | These counts measure different things: a Dead Ahead set has multiple slots and random stat combinations; a Crownroad relic is one fixed definition. |
 | Unit growth | Unit special abilities unlock at level 30 | Maximum unit level 5; 17 units have automatic cooldown abilities at level 4; promotion at level 5 | Crownroad delivers abilities earlier in its much shorter level ladder. Siege Engineer and Necromancer have no entry in the automatic ability catalog. |

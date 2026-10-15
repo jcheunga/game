@@ -26,9 +26,14 @@ public partial class Unit
         var height=_spriteSheet==null?Radius+16:Radius*2*VisualScale*_spriteSheet.DrawScale*_spriteSheet.FrameHeight/_spriteSheet.FrameWidth*_spriteSheet.HealthBarY+6;
         var labels=ContentStatusLabels;var x=-24f;var y=-height-16;
         var font=RoyalFonts.Body(600);
-        for(var i=0;i<labels.Count && i<3;i++)
+        // stun, sleep, root, silence, burning and shields show on the body (UnitStatusFx), so only high contrast
+        // repeats them as chips
+        var all=GameState.Instance?.HighContrast ?? false;
+        for(int i=0,drawn=0;i<labels.Count && drawn<3;i++)
         {
             var label=labels[i];
+            if(!all && label is "STUN" or "SLEEP" or "ROOT" or "SIL" or "BURN" or "SHIELD") continue;
+            drawn++;
             if (!StatusWidths.TryGetValue(label, out var width))
                 StatusWidths[label] = width = font.GetStringSize(label,fontSize:11).X+6;
             var good=label is "SHIELD" or "HIDE";var tint=new Color(good?"8bc7e2":label is "MARK" or "CAST"?"efd082":"eab18d");

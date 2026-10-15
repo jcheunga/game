@@ -104,13 +104,71 @@ public static class BattleGore
         }
     }
 
+    /// <summary>The killing blow: a heavier burst than a hit (two sprays fanning out, a gush of droplets thrown
+    /// along the blow and up, a spatter on the ground in front of the body); bone and wood burst apart; spirits and
+    /// embers flare.</summary>
+    public static void SpawnKill(Node parent, Unit dead, float direction, float groundY, Color fieldTint)
+    {
+        var body = BodyOf(dead);
+        var wound = dead.BodyContactPosition;
+        var color = BloodColor(body) * fieldTint;
+        var scale = Mathf.Clamp(dead.Radius / 14f, .7f, 2.2f);
+        if (Bleeds(body))
+        {
+            if (Reduced)
+            {
+                AddStain(parent, new Vector2(wound.X + direction * 10f, groundY), color, scale * .9f);
+                return;
+            }
+            for (var k = 0; k < 2; k++)
+            {
+                var spray = Tex($"spray_{1 + (int)(GD.Randi() % 4)}");
+                if (spray != null)
+                {
+                    var s = new GoreSpray(spray, wound + new Vector2(0, -4 + 8 * k), direction, color, 22f * scale);
+                    s.Rotation += (k == 0 ? -.35f : .2f) * direction;
+                    parent.AddChild(s);
+                }
+            }
+            var drops = Mathf.RoundToInt(14 * Mathf.Sqrt(scale));
+            for (var i = 0; i < drops; i++)
+                parent.AddChild(new GoreDroplet(wound, direction, color, scale * 1.15f, groundY, fieldTint, body, gush: true));
+            // the spatter thrown onto the road ahead of where the body will land
+            for (var i = 0; i < 3; i++)
+                AddStain(parent, new Vector2(wound.X + direction * (10f + 9f * i) * scale, groundY + (GD.Randf() - .5f) * 6f),
+                    color, scale * (.45f + .2f * GD.Randf()));
+        }
+        else if (body is Body.Bone or Body.Wood)
+        {
+            if (Reduced) return;
+            var count = Mathf.RoundToInt(4 + 2 * scale);
+            for (var i = 0; i < count; i++)
+                parent.AddChild(new GoreChip(Tex(body == Body.Bone ? $"bone_{1 + i % 2}" : $"splinter_{1 + i % 2}"), wound,
+                    direction, scale, groundY, fieldTint));
+            BattleParticles.SpawnImpactSparks(parent, wound, body == Body.Bone ? new Color(.9f, .86f, .7f) : new Color(.6f, .45f, .3f), 12f);
+        }
+        else if (!Reduced)
+        {
+            BattleParticles.SpawnImpactSparks(parent, wound, color.Lightened(.2f), 24f);
+        }
+    }
+
+    /// <summary>A trail of blood smeared along the ground while a body is knocked back.</summary>
+    public static void SpawnTrail(Node parent, UnitDeathVisual corpse, Unit dead, Color fieldTint)
+    {
+        var body = BodyOf(dead);
+        if (!Bleeds(body)) return;
+        parent.AddChild(new GoreTrail(corpse, BloodColor(body) * fieldTint, Mathf.Clamp(dead.Radius / 14f, .7f, 2.2f)));
+    }
+
     /// <summary>A pool that spreads out from under a fallen body over a second or so.</summary>
     public static void SpawnPool(Node parent, Vector2 at, Unit unit, float length, Color fieldTint)
     {
         var body = BodyOf(unit);
         if (!Bleeds(body)) return;
-        var stain = AddStain(parent, at, BloodColor(body) * fieldTint, Mathf.Clamp(length / 40f, .7f, 3f));
-        stain?.Spread(1.1f);
+        var stain = AddStain(parent, at, BloodColor(body) * fieldTint, Mathf.Clamp(length / 30f, .9f, 3.6f));
+        stain?.Spread(1.6f);
+        stain?.Linger(9f);
     }
 
     internal static GoreStain AddStain(Node parent, Vector2 at, Color color, float scale)
@@ -148,6 +206,7 @@ public partial class GoreStain : Node2D
     }
 
     public void Spread(float seconds) { _growFor = seconds; _grow = 0f; }
+    public void Linger(float seconds) => _life = Mathf.Max(_life, seconds);
     public void FadeSoon() => _life = Mathf.Min(_life, _age + .6f);
 
     public override void _Process(double delta)
@@ -216,13 +275,16 @@ public partial class GoreDroplet : Node2D
     private readonly bool _stains;
     private float _age;
 
-    public GoreDroplet(Vector2 at, float dir, Color color, float scale, float groundY, Color tint, BattleGore.Body body)
+    public GoreDroplet(Vector2 at, float dir, Color color, float scale, float groundY, Color tint, BattleGore.Body body,
+        bool gush = false)
     {
         Position = at; ZIndex = 30; ZAsRelative = false;
         _color = color; _tint = tint;
         _ground = groundY + (GD.Randf() - .5f) * 10f;
         _size = (.7f + GD.Randf() * 1.1f) * Mathf.Min(scale, 1.5f);
-        _vel = new Vector2(dir * (30 + GD.Randf() * 90), -(30 + GD.Randf() * 70)) * Mathf.Sqrt(scale);
+        _vel = gush
+            ? new Vector2(dir * (40 + GD.Randf() * 150), -(50 + GD.Randf() * 140)) * Mathf.Sqrt(scale)
+            : new Vector2(dir * (30 + GD.Randf() * 90), -(30 + GD.Randf() * 70)) * Mathf.Sqrt(scale);
         _tex = BattleGore.Tex($"drop_{1 + (int)(GD.Randi() % 3)}");
         _stains = GD.Randf() < .45f;
     }
@@ -304,5 +366,31 @@ public partial class GoreChip : Node2D
         var size = s * (_size / Mathf.Max(s.X, s.Y));
         var fade = _rest < 0 ? 1f : Mathf.Clamp((1.6f - _rest) / .5f, 0, 1);
         DrawTextureRect(_tex, new Rect2(-size / 2, size), false, new Color(_tint * .82f, fade));
+    }
+}
+
+/// <summary>Follows a body while it is knocked back, leaving small smears along the ground behind it.</summary>
+public partial class GoreTrail : Node
+{
+    private readonly UnitDeathVisual _corpse;
+    private readonly Color _color;
+    private readonly float _scale;
+    private Vector2 _last;
+    private bool _started;
+    private float _age;
+
+    public GoreTrail(UnitDeathVisual corpse, Color color, float scale) { _corpse = corpse; _color = color; _scale = scale; }
+
+    public override void _Process(double delta)
+    {
+        _age += (float)delta;
+        if (!IsInstanceValid(_corpse) || _age > .6f) { QueueFree(); return; }
+        var at = _corpse.GlobalPosition;
+        if (!_started) { _last = at; _started = true; return; }
+        if (at.DistanceTo(_last) >= 5f)
+        {
+            BattleGore.AddStain(GetParent(), new Vector2(at.X, at.Y + 1f), _color, _scale * .32f);
+            _last = at;
+        }
     }
 }

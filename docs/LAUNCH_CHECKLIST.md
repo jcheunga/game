@@ -52,7 +52,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
   App Store purchase `.p8` key. Point the four `*_SOURCE` entries in
   `.env.production` at them.
 - [ ] Leave `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` and
-  `CROWNROAD_DEV_SIGN_IN_CODES` unset. The server refuses to start in
+  `CROWNROAD_DEV_SIGN_IN` unset. The server refuses to start in
   production with either set.
 - [ ] Run `./deploy.sh`, then check that `https://<domain>/health` answers.
 

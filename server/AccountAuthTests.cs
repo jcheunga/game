@@ -386,23 +386,36 @@ public static partial class ServerTests
         }
     }
 
-    private static async Task TestAccountDevSignInCodes(HttpClient client)
+    private static async Task TestAccountDevSignIn(HttpClient client)
     {
-        var previous = Environment.GetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES");
+        var previous = Environment.GetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN");
         var console = Console.Out; using var captured = new StringWriter();
         try
         {
-            Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES", "1");
+            Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN", "");
+            using var hidden = await client.PostAsJsonAsync("/auth/dev/sign-in", new { email = "dev@example.com" });
+            Assert(hidden.StatusCode == HttpStatusCode.NotFound, "Developer sign-in does not exist unless the server enables it");
+            Assert(!(await client.GetFromJsonAsync<JsonElement>("/auth/providers")).GetProperty("devSignIn").GetBoolean(), "Providers do not offer developer sign-in by default");
+
+            Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN", "1");
             var providers = await client.GetFromJsonAsync<JsonElement>("/auth/providers");
-            Assert(providers.GetProperty("email").GetBoolean(), "A local server with console codes offers email sign-in without SMTP");
+            Assert(providers.GetProperty("email").GetBoolean() && providers.GetProperty("devSignIn").GetBoolean(),
+                "A development server offers email and developer sign-in without SMTP");
+            await EnsureSession(client, "TEST-DEV");
+            var account = await AccountPost(client, "/auth/dev/sign-in", new { email = "Dev-Player@example.com" }, "TEST-DEV", SessionTokens["TEST-DEV"]);
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-DEV" && account.GetProperty("accountLabel").GetString() == "dev-player@example.com",
+                "Developer sign-in links the guest to the email without a code");
+            using var invalid = await client.PostAsJsonAsync("/auth/dev/sign-in", new { email = "not an email" });
+            Assert(invalid.StatusCode == HttpStatusCode.BadRequest, "Developer sign-in still needs a valid email");
+
             Console.SetOut(captured);
-            var challenge = await AccountPost(client, "/auth/email/start", new { email = "dev-codes@example.com" });
+            var challenge = await AccountPost(client, "/auth/email/start", new { email = "dev-player@example.com" });
             Console.SetOut(console);
-            var line = captured.ToString().Split('\n').Single(l => l.StartsWith("[dev] Sign-in code for dev-codes@example.com: "));
-            var account = await AccountPost(client, "/auth/email/verify", new { challengeId = challenge.GetProperty("challengeId").GetString(),
+            var line = captured.ToString().Split('\n').Single(l => l.StartsWith("[dev] Sign-in code for dev-player@example.com: "));
+            account = await AccountPost(client, "/auth/email/verify", new { challengeId = challenge.GetProperty("challengeId").GetString(),
                 secret = challenge.GetProperty("secret").GetString(), code = line.Trim()[^6..] });
-            Assert(account.GetProperty("accountLabel").GetString() == "dev-codes@example.com", "The printed code signs in like a mailed one");
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-DEV", "A printed code signs in to the same account as developer sign-in");
         }
-        finally { Console.SetOut(console); Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES", previous); }
+        finally { Console.SetOut(console); Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN", previous); }
     }
 }

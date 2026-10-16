@@ -50,10 +50,12 @@ public static class AccountAuth
             email = MailConfigured, google = GoogleConfigured, playGames = PlayGamesConfigured,
             // Public OAuth client ID the Android client asks Play Games to issue a server code for.
             playGamesClientId = PlayGamesConfigured ? Env("PLAY_GAMES_CLIENT_ID") : "", gameCenter = GameCenterConfigured,
+            devSignIn = DevSignIn,
             apple = AppleConfigured
         }));
         auth.MapPost("/email/start", EmailStart);
         auth.MapPost("/email/verify", EmailVerify);
+        auth.MapPost("/dev/sign-in", DeveloperSignIn);
         auth.MapPost("/google/start", GoogleStart);
         auth.MapGet("/google/callback", GoogleCallback);
         auth.MapPost("/google/poll", (HttpRequest request) => Poll(request, "google"));
@@ -71,9 +73,12 @@ public static class AccountAuth
             return Results.Ok(new { status = "ok" });
         });
     }
-    /// <summary>Local servers only: print sign-in codes to the console instead of mailing them. Production refuses to start with it.</summary>
-    internal static bool DevSignInCodes => Env("CROWNROAD_DEV_SIGN_IN_CODES") == "1";
-    private static bool MailConfigured => TestMailSender != null || DevSignInCodes || (Env("SMTP_HOST").Length > 0 && Env("SMTP_FROM").Length > 0);
+    /// <summary>
+    /// Development servers only: sign-in codes print to the console instead of being mailed, and
+    /// /auth/dev/sign-in signs an email in without a code. Production refuses to start with it.
+    /// </summary>
+    internal static bool DevSignIn => Env("CROWNROAD_DEV_SIGN_IN") == "1";
+    private static bool MailConfigured => TestMailSender != null || DevSignIn || (Env("SMTP_HOST").Length > 0 && Env("SMTP_FROM").Length > 0);
     private static bool PlayGamesConfigured => TestPlayGamesExchange != null ||
         (Env("PLAY_GAMES_CLIENT_ID").Length > 0 && Env("PLAY_GAMES_CLIENT_SECRET").Length > 0);
     private static string GameCenterBundleId => Env("GAME_CENTER_BUNDLE_ID") is { Length: > 0 } id ? id : Env("APPLE_IAP_BUNDLE_ID");
@@ -136,14 +141,13 @@ public static class AccountAuth
         if (!MailConfigured) return Error("Email sign-in is not configured on this server.", 503);
         using var document = await JsonDocument.ParseAsync(request.Body);
         var email = Text(document.RootElement, "email").Trim().ToLowerInvariant();
-        if (email.Length > 254 || !MailAddress.TryCreate(email, out var address) || address.Address != email)
-            return Error("Enter a valid email address.");
+        if (!ValidEmail(email)) return Error("Enter a valid email address.");
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var challenge = CreateChallenge(request, "email", email, code);
         try
         {
             if (TestMailSender != null) await TestMailSender(email, code);
-            else if (DevSignInCodes) Console.WriteLine($"[dev] Sign-in code for {email}: {code}");
+            else if (DevSignIn) Console.WriteLine($"[dev] Sign-in code for {email}: {code}");
             else
             {
                 using var smtp = new SmtpClient(Env("SMTP_HOST"), int.TryParse(Env("SMTP_PORT"), out var port) ? port : 587)
@@ -160,6 +164,20 @@ public static class AccountAuth
             return Error("Could not send a code. Try again later.", 503);
         }
         return Results.Ok(new { challengeId = challenge.Id, secret = challenge.Secret, message = "Check your email." });
+    }
+
+    private static bool ValidEmail(string email) => email.Length <= 254 && MailAddress.TryCreate(email, out var address) && address.Address == email;
+
+    /// <summary>Treats the email as verified, so developers sign in without a code. The identity is the same as a real email sign-in.</summary>
+    private static async Task<IResult> DeveloperSignIn(HttpRequest request)
+    {
+        if (!DevSignIn) return Error("Not found.", 404);
+        using var document = await JsonDocument.ParseAsync(request.Body);
+        var email = Text(document.RootElement, "email").Trim().ToLowerInvariant();
+        if (!ValidEmail(email)) return Error("Enter a valid email address.");
+        var guest = Guest(request);
+        using var conn = Database.Open(); using var tx = conn.BeginTransaction();
+        var result = Complete(conn, tx, "email", email, guest); tx.Commit(); return result;
     }
 
     private static async Task<IResult> EmailVerify(HttpRequest request)

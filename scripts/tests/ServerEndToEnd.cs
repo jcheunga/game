@@ -125,7 +125,7 @@ public partial class ServerEndToEnd : Node
         var state = await FreshInstall();
         NetworkStatus.Instance.CheckNow();
         Check(await Until(() => state.PlayerAuthToken.Length > 0) && state.HighestUnlockedStage == 1, "A second install starts as an empty guest");
-        Check(await SignIn(handoff["email"]), "The second install signs in with the same email");
+        Check(await DeveloperSignIn(state, handoff["email"]), "In developer mode the second install signs in to the same email without a code");
         var stage = int.Parse(handoff["stage"]);
         Check(state.PlayerProfileId == handoff["account"] && state.AccountProvider == "email" && state.HighestUnlockedStage == stage,
             $"The second install restores the account's progress (stage {stage})");
@@ -211,6 +211,7 @@ public partial class ServerEndToEnd : Node
         if (!await Until(() => !send.Disabled)) { Check(false, $"The server offers email sign-in: {Status(dialog)}"); return false; }
         Check(Find(dialog, "Continue with Google").Disabled && Find(dialog, "Continue with Apple").Disabled,
             "Providers the server has no credentials for stay disabled");
+        Check(Find(dialog, "Developer sign-in (no code)").Visible == state.DeveloperToolsActive, "Developer sign-in shows only in developer mode");
         Walk(dialog).OfType<LineEdit>().Single(x => x.PlaceholderText == "Email address").Text = email;
         var codesBefore = Codes(email).Count;
         send.EmitSignal(BaseButton.SignalName.Pressed);
@@ -231,6 +232,23 @@ public partial class ServerEndToEnd : Node
         await Until(() => state.AccountProvider == "email" && (state.PlayerProfileId != profileBefore || providerBefore.Length == 0));
         await LiveUiReview.Open(this, "MainMenu");
         return done && state.AccountProvider == "email";
+    }
+
+    /// <summary>Signs in through the dialog's developer button, which a development server accepts without a code.</summary>
+    private async Task<bool> DeveloperSignIn(GameState state, string email)
+    {
+        state.SetDeveloperMode(true);
+        await LiveUiReview.Open(this, "MainMenu");
+        AccountDialog.Show((Control)GetTree().CurrentScene);
+        var dialog = await OpenedDialog();
+        var button = Find(dialog, "Developer sign-in (no code)");
+        if (!await Until(() => button.Visible && !button.Disabled)) { Check(false, $"The development server offers developer sign-in: {Status(dialog)}"); return false; }
+        Walk(dialog).OfType<LineEdit>().Single(x => x.PlaceholderText == "Email address").Text = email;
+        button.EmitSignal(BaseButton.SignalName.Pressed);
+        var done = await Until(() => !IsInstanceValid(dialog) || dialog.IsQueuedForDeletion(), 15);
+        await Until(() => state.AccountProvider == "email");
+        await LiveUiReview.Open(this, "MainMenu");
+        return done && state.AccountProvider == "email" && state.AccountLabel == email;
     }
 
     private async Task<AccountDialog> OpenedDialog()

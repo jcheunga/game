@@ -2,7 +2,7 @@
 # End-to-end test against a real server: starts a throwaway local server, plays a first install
 # (guest, cloud backup, email sign-in, every account feature, sign-out, sign back in), restarts the
 # server, then plays a second install that signs in to the same account and restores it.
-# The server prints sign-in codes to its log (CROWNROAD_DEV_SIGN_IN_CODES), so no email is sent.
+# The server prints sign-in codes to its log (CROWNROAD_DEV_SIGN_IN), so no email is sent.
 set -u
 cd "$(dirname "$0")/../.."
 export PATH="/usr/local/share/dotnet:$PATH"
@@ -14,7 +14,7 @@ server=""
 
 start_server() {
     ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://127.0.0.1:$port" DbPath="$work/e2e.db" \
-    CROWNROAD_DEV_SIGN_IN_CODES=1 CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1 \
+    CROWNROAD_DEV_SIGN_IN=1 CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1 \
         dotnet run --project server --no-build --no-launch-profile >> "$log" 2>&1 &
     server=$!
     for _ in $(seq 1 60); do

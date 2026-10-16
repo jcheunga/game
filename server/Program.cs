@@ -26,8 +26,8 @@ if (appEnvironment.IsProduction())
 {
     if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS")))
         throw new InvalidOperationException("CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS must never be configured in production.");
-    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES")))
-        throw new InvalidOperationException("CROWNROAD_DEV_SIGN_IN_CODES must never be configured in production.");
+    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN")))
+        throw new InvalidOperationException("CROWNROAD_DEV_SIGN_IN must never be configured in production.");
     if (configuredOrigins.Length == 0 || configuredOrigins.Any(origin => origin == "*"))
         throw new InvalidOperationException("AllowedOrigins must contain explicit HTTPS origins in production.");
     if (string.IsNullOrWhiteSpace(redisConfiguration))

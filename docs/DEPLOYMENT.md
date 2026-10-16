@@ -293,12 +293,35 @@ game against it headless, in two installs:
    uploads again.
 
 The account is verified without sending email: the server runs with
-`CROWNROAD_DEV_SIGN_IN_CODES=1`, which prints each sign-in code to its log
+`CROWNROAD_DEV_SIGN_IN=1`, which prints each sign-in code to its log
 instead of mailing it, and the test reads the code from there. The test also
 sets `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1`. The server refuses to start in
-production with either variable set. The same switch lets you sign in on your
-own device against a local development server: read the code from the server
-console.
+production with either variable set.
+
+### Developer sign-in
+
+To sign in while developing without codes or providers, run a local server in
+development mode with the same switch:
+
+```sh
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:8080 CROWNROAD_DEV_SIGN_IN=1 dotnet run --project server --no-launch-profile
+```
+
+Then, in a debug build of the game:
+
+1. Enter `http://127.0.0.1:8080` as the server endpoint under Settings →
+   Account → Payments → Connection details.
+2. Turn on developer mode in Settings → Account → Developer tools.
+3. Open Account and press **Developer sign-in (no code)**. It signs in to the
+   typed email, or `developer@example.com` when the box is empty, as a
+   verified email account: the same account a real code would reach.
+
+The button only appears in debug builds with developer mode on, and only a
+server started with `CROWNROAD_DEV_SIGN_IN=1` accepts it; production refuses to
+start with that variable. Printed codes still work for the normal email flow.
+The game accepts plain HTTP only from this computer (loopback). A phone can't
+reach the Mac's loopback address, so a phone build needs an HTTPS development
+or staging server, not running in production mode, with the switch on.
 
 Google, Apple, Play Games and Game Center are not part of this test. They need
 real credentials and, for the last two, a signed phone build.

@@ -7,9 +7,9 @@ public partial class AccountDialog : AcceptDialog
 {
     private Label _status;
     private LineEdit _nickname, _email, _code;
-    private Button _emailButton, _verifyButton, _appleButton, _googleButton, _platformButton;
+    private Button _emailButton, _verifyButton, _appleButton, _googleButton, _platformButton, _devButton;
     private string _challenge = "", _secret = "";
-    private bool _busy, _closed, _emailAvailable, _appleAvailable, _googleAvailable, _platformAvailable;
+    private bool _busy, _closed, _emailAvailable, _appleAvailable, _googleAvailable, _platformAvailable, _devAvailable;
     private JsonElement _providers;
 
     public static void Show(Control host)
@@ -49,6 +49,9 @@ public partial class AccountDialog : AcceptDialog
         var row = new HBoxContainer(); stack.AddChild(row);
         _code = new LineEdit { PlaceholderText = "6-digit code", MaxLength = 6, Visible = false, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 48) }; row.AddChild(_code);
         _verifyButton = RealmUi.Button("check", "Sign in", () => _ = Verify()); _verifyButton.Hide(); row.AddChild(_verifyButton);
+        // Developer mode in a debug build, against a development server: sign in to the typed email without a code.
+        _devButton = RealmUi.Button("gear", "Developer sign-in (no code)", () => _ = DeveloperSignIn());
+        _devButton.Name = "DeveloperSignIn"; _devButton.Visible = GameState.Instance.DeveloperToolsActive; stack.AddChild(_devButton);
         if (!guest)
         {
             var signout = RealmUi.Button("back", "Sign out", () => _ = SignOut());
@@ -62,6 +65,7 @@ public partial class AccountDialog : AcceptDialog
         _busy = busy; _emailButton.Disabled = busy || !_emailAvailable; _verifyButton.Disabled = busy; _googleButton.Disabled = busy || !_googleAvailable;
         _appleButton.Disabled = busy || !_appleAvailable;
         _platformButton.Disabled = busy || !_platformAvailable;
+        _devButton.Disabled = busy || !_devAvailable;
         if (_nickname != null) _nickname.Editable = !busy;
     }
     private async Task LoadProviders()
@@ -75,6 +79,7 @@ public partial class AccountDialog : AcceptDialog
             _googleAvailable = providers.GetProperty("google").GetBoolean();
             _appleAvailable = providers.TryGetProperty("apple", out var apple) && apple.ValueKind == JsonValueKind.True;
             _platformAvailable = PlatformSignIn.Offered(providers);
+            _devAvailable = providers.TryGetProperty("devSignIn", out var dev) && dev.ValueKind == JsonValueKind.True;
             Busy(false);
             if (_emailButton.Disabled && _appleButton.Disabled && _googleButton.Disabled && _platformButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
         }
@@ -136,6 +141,14 @@ public partial class AccountDialog : AcceptDialog
     {
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
         try { await Finish(await PlatformSignIn.SignIn(_providers, interactive: true)); }
+        catch (Exception e) { if (!_closed) _status.Text = e.Message; }
+        finally { if (!_closed) Busy(false); }
+    }
+    private async Task DeveloperSignIn()
+    {
+        if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
+        var email = _email.Text.Trim().Length > 0 ? _email.Text.Trim() : "developer@example.com";
+        try { await Finish(await AccountSignIn.Request("/auth/dev/sign-in", new { email })); }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }

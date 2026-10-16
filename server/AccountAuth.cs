@@ -71,7 +71,9 @@ public static class AccountAuth
             return Results.Ok(new { status = "ok" });
         });
     }
-    private static bool MailConfigured => TestMailSender != null || (Env("SMTP_HOST").Length > 0 && Env("SMTP_FROM").Length > 0);
+    /// <summary>Local servers only: print sign-in codes to the console instead of mailing them. Production refuses to start with it.</summary>
+    internal static bool DevSignInCodes => Env("CROWNROAD_DEV_SIGN_IN_CODES") == "1";
+    private static bool MailConfigured => TestMailSender != null || DevSignInCodes || (Env("SMTP_HOST").Length > 0 && Env("SMTP_FROM").Length > 0);
     private static bool PlayGamesConfigured => TestPlayGamesExchange != null ||
         (Env("PLAY_GAMES_CLIENT_ID").Length > 0 && Env("PLAY_GAMES_CLIENT_SECRET").Length > 0);
     private static string GameCenterBundleId => Env("GAME_CENTER_BUNDLE_ID") is { Length: > 0 } id ? id : Env("APPLE_IAP_BUNDLE_ID");
@@ -141,6 +143,7 @@ public static class AccountAuth
         try
         {
             if (TestMailSender != null) await TestMailSender(email, code);
+            else if (DevSignInCodes) Console.WriteLine($"[dev] Sign-in code for {email}: {code}");
             else
             {
                 using var smtp = new SmtpClient(Env("SMTP_HOST"), int.TryParse(Env("SMTP_PORT"), out var port) ? port : 587)

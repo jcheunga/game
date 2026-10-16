@@ -100,9 +100,9 @@ public partial class ChallengeLeaderboardService : Node
 
 		if (normalized.EndsWith("/challenge-sync", StringComparison.OrdinalIgnoreCase))
 		{
-			return normalized[..^"/challenge-sync".Length] + "/challenge-leaderboard";
+			return normalized[..^"/challenge-sync".Length] + "/challenge-boards";
 		}
 
-		return normalized.TrimEnd('/') + "/challenge-leaderboard";
+		return normalized.TrimEnd('/') + "/challenge-boards";
 	}
 }

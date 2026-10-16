@@ -138,7 +138,16 @@ the existing protected APIs rather than a separate account service.
   Record the staging/device evidence, deployment version and rollout owner;
   then repeat provider/recovery checks against the production origin.
 
-Local evidence: the **89-test backend suite** covers email guest linking,
+`scripts/tests/server_e2e.sh` plays the game against a real local server across
+two installs and a server restart, and passes **41 checks**. It covers guest
+sessions, email sign-in with a code the server logs instead of mailing,
+cloud backup and restore, achievements, daily and challenge leaderboards, the
+challenge feed, online rooms, test purchases and sign-out. The run found that
+the game requested the challenge leaderboard from a route the server never
+served; that is fixed. See
+[DEPLOYMENT.md](DEPLOYMENT.md#end-to-end-test-against-a-local-server).
+
+Local evidence: the **90-test backend suite** covers email guest linking,
 same-identity recovery, wallet authorization, challenge expiry/attempts/replay,
 Google PKCE/state/poll secrets, Play Games code exchange, Game Center signature,
 chain, bundle, freshness and replay checks, and Sign in with Apple. The Apple

@@ -385,4 +385,24 @@ public static partial class ServerTests
             for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]);
         }
     }
+
+    private static async Task TestAccountDevSignInCodes(HttpClient client)
+    {
+        var previous = Environment.GetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES");
+        var console = Console.Out; using var captured = new StringWriter();
+        try
+        {
+            Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES", "1");
+            var providers = await client.GetFromJsonAsync<JsonElement>("/auth/providers");
+            Assert(providers.GetProperty("email").GetBoolean(), "A local server with console codes offers email sign-in without SMTP");
+            Console.SetOut(captured);
+            var challenge = await AccountPost(client, "/auth/email/start", new { email = "dev-codes@example.com" });
+            Console.SetOut(console);
+            var line = captured.ToString().Split('\n').Single(l => l.StartsWith("[dev] Sign-in code for dev-codes@example.com: "));
+            var account = await AccountPost(client, "/auth/email/verify", new { challengeId = challenge.GetProperty("challengeId").GetString(),
+                secret = challenge.GetProperty("secret").GetString(), code = line.Trim()[^6..] });
+            Assert(account.GetProperty("accountLabel").GetString() == "dev-codes@example.com", "The printed code signs in like a mailed one");
+        }
+        finally { Console.SetOut(console); Environment.SetEnvironmentVariable("CROWNROAD_DEV_SIGN_IN_CODES", previous); }
+    }
 }

@@ -269,6 +269,39 @@ Google button on iOS. Two App Review points are still open:
   of a deleted account. The server keeps no Apple tokens today, so that work
   also needs to store the refresh token, encrypted, at sign-in.
 
+### End-to-end test against a local server
+
+`scripts/tests/server_e2e.sh` starts a throwaway server on `127.0.0.1:8097`
+(change it with `E2E_PORT`), with a fresh SQLite database. It then plays the
+game against it headless, in two installs:
+
+1. **First install.** A guest gets a session and backs up after a win. It then
+   signs in with email through the real Account dialog, after a wrong code is
+   refused, and the account keeps the guest's progress. Then:
+   - Every account feature runs: manual cloud upload, achievements, daily
+     score and leaderboard, challenge results with their leaderboard and feed,
+     an online room (host, list, session, ready, scoreboard, leave), and a test
+     purchase credited to the wallet.
+   - Sign-out revokes the session on the server, and signing back in restores
+     the account from the cloud.
+2. **Server restart**, to show accounts and saves live in the database.
+3. **Second install.** It signs in to the same account and restores its
+   progress, then backs up a new win. A profile ID without a session cannot
+   download the save, and Settings' restore works. With the server gone, a win
+   still saves on the device without delay; when the server returns, the save
+   uploads again.
+
+The account is verified without sending email: the server runs with
+`CROWNROAD_DEV_SIGN_IN_CODES=1`, which prints each sign-in code to its log
+instead of mailing it, and the test reads the code from there. The test also
+sets `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1`. The server refuses to start in
+production with either variable set. The same switch lets you sign in on your
+own device against a local development server: read the code from the server
+console.
+
+Google, Apple, Play Games and Game Center are not part of this test. They need
+real credentials and, for the last two, a signed phone build.
+
 ### What still needs a real device
 
 The server's provider checks run against stand-ins in the test suite, and the

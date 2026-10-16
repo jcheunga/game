@@ -327,6 +327,14 @@ It starts blank by design so local development never accidentally talks to a
 live service. The signed build must be retested against the deployed API and
 the relevant store sandbox.
 
+Android 15+ devices and Google Play require every native library to be 16 KB
+page-aligned. Godot's own libraries are, but the .NET runtime libraries
+(`libmonosgen-2.0.so`, `libSystem.*.Native.so`) are only 16 KB-aligned from
+.NET 9 on, so `Game.csproj` must target `net10.0` or later. On `net8.0` the
+phone warns that the app "is not 16 KB compatible". To check a build, extract
+its `lib/arm64-v8a/*.so` files and confirm each `LOAD` segment's alignment is
+`0x4000` with the NDK's `llvm-readelf -lW`.
+
 ## Remaining public-launch blockers
 
 This deployment protects the operator surface. Every player-owned, competitive,

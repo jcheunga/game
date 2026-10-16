@@ -8,9 +8,9 @@ using Godot;
 public static class LiveUiReview
 {
     public static string[] ActivityScenes => typeof(SceneRouter).GetFields(BindingFlags.Public | BindingFlags.Static)
-        .Where(field => field.IsLiteral && field.FieldType == typeof(string) && field.Name.EndsWith("Scene")
-            && field.Name is not "MainMenuScene" and not "MapScene" and not "BattleScene")
-        .Select(field => (string)field.GetRawConstantValue()).ToArray();
+        .Where(member => member.IsLiteral && member.FieldType == typeof(string) && member.Name.EndsWith("Scene")
+            && member.Name is not "MainMenuScene" and not "MapScene" and not "BattleScene")
+        .Select(member => (string)member.GetRawConstantValue()).ToArray();
 
     public static Node ActiveRoot(SceneTree tree) => tree.CurrentScene is MapMenu { HasHomeModal: true } home
         ? home.GetNode<RealmModal>("HomeModal") : tree.CurrentScene;

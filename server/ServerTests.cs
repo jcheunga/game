@@ -80,6 +80,7 @@ public static partial class ServerTests
                 ("Wallet", () => TestWallet(client)),
                 ("PurchaseDuplicate", () => TestPurchaseDuplicate(client)),
                 ("StoreVerifierFailsClosedWithoutCredentials", TestStoreVerifierFailsClosedWithoutCredentials),
+                ("AppleAppAccountTokenVectors", TestAppleAppAccountTokenVectors),
                 ("PurchaseStarterOneTime", () => TestPurchaseStarterOneTime(client)),
                 ("StripeCheckoutNoKey", () => TestStripeCheckoutNoKey(client)),
                 ("StripeStatusNoKey", () => TestStripeStatusNoKey(client)),
@@ -702,6 +703,27 @@ public static partial class ServerTests
             Environment.SetEnvironmentVariable(pathKey, previousPath);
         }
     }
+
+    // The iOS StoreKit plugin computes the same token in Swift and checks the same file
+    // (native/StoreKit/test/run_tests.sh), so a purchase's token matches the server's.
+    private static Task TestAppleAppAccountTokenVectors()
+    {
+        var path = Path.Combine(SourceDirectory(), "testdata", "apple_app_account_tokens.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var vectors = document.RootElement.GetProperty("vectors");
+        Assert(vectors.GetArrayLength() >= 10, "expected the appAccountToken vectors");
+        foreach (var vector in vectors.EnumerateArray())
+        {
+            var profileId = vector.GetProperty("profileId").GetString() ?? "";
+            var expected = vector.GetProperty("appAccountToken").GetString();
+            var actual = StorePurchaseVerification.ProfileAppAccountToken(profileId);
+            Assert(actual == expected, $"appAccountToken for {JsonSerializer.Serialize(profileId)} is {actual}, expected {expected}");
+        }
+        return Task.CompletedTask;
+    }
+
+    private static string SourceDirectory([System.Runtime.CompilerServices.CallerFilePath] string path = "") =>
+        Path.GetDirectoryName(path) ?? "";
 
     private static async Task TestPurchaseStarterOneTime(HttpClient client)
     {

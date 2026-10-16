@@ -1,6 +1,6 @@
 # Crownroad production launch runbook
 
-Last implementation update: 2026-10-01; baseline repository audit: 2026-09-29.
+Last implementation update: 2026-10-17; baseline repository audit: 2026-09-29.
 This is the release gate for an Android/iOS
 launch with paid consumables and internet rooms. Repository checks do **not**
 prove that a signed store build, physical-device flow, or live deployment works.
@@ -14,7 +14,7 @@ hide it in the release build and store copy; do not mark its gate complete.
 | --- | --- | --- |
 | Build and tests | Game build, 11,992 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
 | Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
-| Payments | Server-side Play/App Store verification and Android billing bridge are present; paid grants fail closed without valid store verification. | Real store configuration and device tests, secure iOS StoreKit 2 bridge, refund/void reconciliation, and production support procedures. |
+| Payments | Server-side Play/App Store verification, the Android billing bridge and the iOS StoreKit 2 plugin (`native/StoreKit`) are present; paid grants fail closed without valid store verification. The plugin's purchases pass on an iOS simulator with Xcode-signed transactions against a local server, including Ask to Buy and interrupted validation; the shop's handling of each outcome passes on desktop. | The iOS build cannot run the game's JSON yet (NativeAOT; see the iOS section), so the shop is empty on iOS. Real store configuration, sandbox/TestFlight and device tests, refund/void reconciliation, and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
 | Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. An original 19-track score (scene themes, a battle track per zone and boss themes), 212 sound-effect cues and 15 ambience soundscapes are implemented, rendered from CC0 recordings by `art/audio` (sources and licences in its README). | Approve visual quality/rights and test the signed build on physical devices. Listen to the score and effects on devices and approve the mix; some screen variants still use shared fallbacks. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
@@ -68,7 +68,7 @@ remaining requirements have evidence.
 | 1 | Activate and verify the implemented email/Google account recovery | Provision SMTP and Google OAuth, deploy to staging, and pass real-device lost-device/account-switch checks for the server wallet and uploaded progress. Decide cloud-upload behavior and cross-provider linking support before launch. |
 | 2 | Implement authenticated deletion and support handling | In-app request, public request page, session revocation, documented financial-record retention and end-to-end deletion evidence. |
 | 3 | Deploy the privacy update to staging | Schema 5 migration and backup restore on PostgreSQL, container build/start, and device tests of updated consent/cloud restore. Follow the migration notes in DEPLOYMENT.md. |
-| 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, implement the iOS bridge if included, and test refund/void reconciliation. |
+| 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, test the iOS StoreKit plugin with sandbox purchases if iOS is included, and test refund/void reconciliation. |
 | 5 | Complete release infrastructure and feature acceptance | Measured load/alerts/restore; multiplayer decision; signed store-delivered device matrix and creative/localization sign-off. |
 
 The owner decisions below remain unconfirmed. The login implementation uses
@@ -255,13 +255,25 @@ requirement until a migration and both signed exports have been verified.
   testers. Test `PENDING` versus `PURCHASED`, validation-before-consume,
   interruptions, re-query on relaunch, duplicate tokens, and the one-time
   starter-kit limit. Do not grant a pending purchase.
-- [ ] iOS: build a **secure StoreKit 2 bridge** that sets the deterministic
+- [x] iOS: build a **secure StoreKit 2 bridge** that sets the deterministic
   `appAccountToken` on the StoreKit purchase, sends the transaction ID and
   verification payload to the backend, observes unfinished transactions on
-  launch, and calls `finish()` only after the durable server grant. The public
-  wrapper that finishes too early is intentionally not shipped. Test
-  sandbox/TestFlight purchases, interrupted validation, retry, and account
-  mismatch.
+  launch, and calls `finish()` only after the durable server grant. Done in
+  `native/StoreKit` (see its README); the public wrapper that finishes too
+  early is intentionally not shipped. Its token matches the server's for the
+  vectors in `server/testdata/apple_app_account_tokens.json`, and
+  `native/StoreKit/test/simulator_e2e.sh` passes on an iOS 27 simulator with
+  Xcode-signed transactions (61 checks): products and prices load, a purchase
+  is validated and only then finished, an unverified purchase is refused, an
+  Ask to Buy approval arrives later, and an interrupted validation is recovered
+  on the next launch. `native/StoreKit/test/shop_desktop.sh` checks the shop's
+  side against a stand-in (35 checks), including cancelled, pending, failed and
+  replayed purchases. Xcode's test store can't check a cancelled or declined
+  purchase faithfully, so those need a device.
+- [ ] iOS: test sandbox/TestFlight purchases on a device against a server with
+  real `APPLE_IAP_*` credentials, which is the first time Apple's server
+  checks a transaction: interrupted validation, retry, account mismatch and
+  every product. See [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#9-app-store-purchases-ios).
 - [ ] Implement a refund/void signal and reconciliation path for **these
   consumables**, not just future subscriptions: App Store Server Notifications
   v2 (including `REFUND`) and Google Play voided-purchase notifications/API,
@@ -361,12 +373,19 @@ requirement until a migration and both signed exports have been verified.
   banking details. Create the ten matching IAP products with localizations,
   pricing, and review metadata. Apple's [first IAP of a type must be submitted
   with a new app version](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/).
-- [ ] Finish the secure StoreKit bridge first. On a Mac with full Xcode,
-  configure team/provisioning in `export_presets.cfg`, use a verified Godot
-  Mono iOS export setup, increment iOS version/build, archive a **release**
-  build, and upload it to App Store Connect. The preset's team/profile fields
-  are currently blank. The icon, IAP capability, Game Center entitlement and
-  GameCenter plugin are configured, and the minimum is iOS 15, the oldest
+- [ ] Make the game's JSON work in the iOS build. The C# export is NativeAOT,
+  which cannot run reflection-based System.Text.Json: on an iOS simulator the
+  game cannot load its data, save, catalog or server responses ("Saving is
+  disabled for this session"), so the shop is empty and purchases cannot be
+  validated. Enabling `JsonSerializerIsReflectionEnabledByDefault` does not fix
+  it (NativeAOT lacks the generic code); the serialized types need source
+  generation. See [DEPLOYMENT.md](DEPLOYMENT.md#what-still-needs-a-real-device).
+- [ ] On a Mac with full Xcode, configure team/provisioning in
+  `export_presets.cfg`, use a verified Godot Mono iOS export setup, increment
+  iOS version/build, archive a **release** build, and upload it to App Store
+  Connect. The preset's team/profile fields are currently blank. The icon, IAP
+  capability, Game Center entitlement and the GameCenter and StoreKit plugins
+  are configured, and the minimum is iOS 15, the oldest
   Xcode 27 builds for. Enable Game Center for the App ID and run the device
   checks in [DEPLOYMENT.md](DEPLOYMENT.md#what-still-needs-a-real-device).
 - [ ] Test the exact TestFlight build and sandbox products on physical iPhone

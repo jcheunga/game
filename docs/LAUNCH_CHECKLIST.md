@@ -106,6 +106,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] In the Godot editor, under Project → Export → iOS, set:
   - Game Center entitlement: on
   - GameCenter plugin: on
+  - StoreKit plugin: on (in-app purchases, section 9)
   - minimum iOS version: 15.0
   - 1024×1024 icon: `res://assets/branding/crownroad-app-icon-1024.png`
 
@@ -132,14 +133,60 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Restart the server. `https://<domain>/auth/providers` should report
   every sign-in method as available.
 
-## 9. Point the game at the live server
+## 9. App Store purchases (iOS)
+
+The StoreKit plugin (`native/StoreKit`) is built and enabled in the iOS preset
+(`plugins/StoreKit`). On a simulator, with Xcode-signed transactions and a
+local server, it loads prices, buys, validates and only then finishes, and
+handles Ask to Buy and interrupted purchases
+(`native/StoreKit/test/simulator_e2e.sh`, 61 checks). The shop's side passes on
+desktop (`native/StoreKit/test/shop_desktop.sh`). First:
+
+- [ ] Make the game's JSON work in the iOS build (NativeAOT cannot run
+  reflection-based System.Text.Json). Until then the game cannot load its data
+  or catalog on iOS, so the shop is empty. See
+  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md#ios--app-store).
+
+Then, with Apple:
+
+- [ ] In App Store Connect, accept the Paid Apps Agreement and fill in the tax
+  and banking details.
+- [ ] Create the ten in-app purchases, as **consumables**, with the product
+  IDs in `data/shop_products.json` (`com.crownroad.gold_pouch` through
+  `com.crownroad.campaign_resupply`), prices, localizations and review
+  screenshots. The first ones go to review with a new app version.
+- [ ] Create an **In-App Purchase** key (Users and Access → Integrations) and
+  download its `.p8` file. It is a different key from the Sign in with Apple
+  key. Set on the server:
+  - `APPLE_IAP_ISSUER_ID` and `APPLE_IAP_KEY_ID`
+  - `APPLE_IAP_BUNDLE_ID=com.crownroad.game`
+  - `APPLE_IAP_PRIVATE_KEY_PATH` (the `.p8` file)
+- [ ] Create a sandbox Apple Account (Users and Access → Sandbox) to buy with.
+- [ ] Rebuild the plugin with `native/StoreKit/build.sh` whenever the project
+  changes Godot version.
+- [ ] On an iPhone with a TestFlight or development build, signed in to the
+  sandbox account:
+  - Each pack arrives once, at its App Store price, and the server's purchase
+    ledger has the transaction. Apple's own server now checks it, which the
+    simulator test cannot.
+  - Cancelling the payment sheet grants nothing.
+  - An Ask to Buy purchase, or a sandbox purchase interrupted by the payment
+    sheet, arrives once it is approved, and a declined one never arrives.
+    Xcode's test store can't check these two: it signs a declined request
+    like a completed purchase.
+  - Closing the app before the server answers: the purchase arrives on the
+    next launch, once, and is not charged twice.
+  - A purchase made while one player was signed in is not credited to a
+    different player on the same Apple Account.
+
+## 10. Point the game at the live server
 
 - [ ] Set the Godot setting `crownroad/network/api_base_url` to
   `https://<domain>`, then export signed builds.
 - [ ] Point the end-to-end test at a staging copy of the live server, to check
   everything except the provider sign-ins in one run.
 
-## 10. Test on real phones
+## 11. Test on real phones
 
 - [ ] **Android:**
   - Play Games signs you in by itself at launch and keeps your guest
@@ -159,7 +206,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
   - Cloud backup and restore work, and so does sign-out.
   - A test purchase works in the store's sandbox.
 
-## 11. Before store review
+## 12. Before store review
 
 - [ ] Use the official Google and Apple sign-in button designs. The game draws
   them in its own style today, and both companies have branding rules.

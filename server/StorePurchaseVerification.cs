@@ -179,9 +179,9 @@ public static class StorePurchaseVerification
             if (payload.TryGetProperty("revocationDate", out var revocationDate) && revocationDate.ValueKind != JsonValueKind.Null)
                 return StorePurchaseVerificationResult.Rejected("Apple reports this transaction as revoked.");
 
-            // Apple only returns this UUID when the iOS client provides a
-            // deterministic app-account token. Do not enable the Apple flow
-            // until its native bridge supplies and the server checks it.
+            // Apple only returns this UUID when the iOS client set it on the
+            // purchase. The StoreKit plugin (native/StoreKit) sets the same
+            // deterministic token for the player's profile on every purchase.
             var expectedAppAccountToken = ProfileAppAccountToken(profileId);
             var appAccountToken = GetString(payload, "appAccountToken");
             if (!string.Equals(appAccountToken, expectedAppAccountToken, StringComparison.OrdinalIgnoreCase))
@@ -311,7 +311,12 @@ public static class StorePurchaseVerification
         return Convert.FromBase64String(padded);
     }
 
-    private static string ProfileAppAccountToken(string profileId)
+    /// <summary>
+    /// The UUID the iOS client sets as a purchase's appAccountToken
+    /// (native/StoreKit/src/AppAccountToken.swift computes the same string).
+    /// server/testdata/apple_app_account_tokens.json pins both to the same values.
+    /// </summary>
+    internal static string ProfileAppAccountToken(string profileId)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(profileId.Trim()));
         var guidBytes = bytes[..16];

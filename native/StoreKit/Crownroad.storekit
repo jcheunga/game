@@ -1,0 +1,166 @@
+{
+  "identifier": "C0A1B2D3",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "6320727963",
+      "localizations": [
+        {
+          "description": "A small purse of gold coins for the road ahead.",
+          "displayName": "Pouch of Gold",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.gold_pouch",
+      "referenceName": "Pouch of Gold",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "6066727710",
+      "localizations": [
+        {
+          "description": "A sturdy chest packed with gold. Best value for regular campaigns.",
+          "displayName": "Chest of Gold",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.gold_chest",
+      "referenceName": "Chest of Gold",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6144063273",
+      "localizations": [
+        {
+          "description": "A heavy war chest brimming with gold. Includes a bonus stash.",
+          "displayName": "War Chest",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.gold_warchest",
+      "referenceName": "War Chest",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "19.99",
+      "familyShareable": false,
+      "internalID": "6219028424",
+      "localizations": [
+        {
+          "description": "The royal treasury itself. Maximum gold with a king's bonus.",
+          "displayName": "King's Treasury",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.gold_treasury",
+      "referenceName": "King's Treasury",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "6498079838",
+      "localizations": [
+        {
+          "description": "Enough provisions for a few stage entries.",
+          "displayName": "Field Rations",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.food_rations",
+      "referenceName": "Field Rations",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "6741672348",
+      "localizations": [
+        {
+          "description": "Enough supplies to push through an entire district.",
+          "displayName": "Caravan Provisions",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.food_provisions",
+      "referenceName": "Caravan Provisions",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "6.99",
+      "familyShareable": false,
+      "internalID": "6609035076",
+      "localizations": [
+        {
+          "description": "A large supply cache for extended campaign runs and exploration.",
+          "displayName": "Siege Stockpile",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.food_stockpile",
+      "referenceName": "Siege Stockpile",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "14.99",
+      "familyShareable": false,
+      "internalID": "6506741248",
+      "localizations": [
+        {
+          "description": "The kingdom's full granary stores. Maximum provisions with a royal bonus.",
+          "displayName": "Royal Granary",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.food_granary",
+      "referenceName": "Royal Granary",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "6059038370",
+      "localizations": [
+        {
+          "description": "A starter bundle with gold, food, and a guaranteed unit unlock. Offered once.",
+          "displayName": "Adventurer's Kit",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.starter_kit",
+      "referenceName": "Adventurer's Kit",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "7.99",
+      "familyShareable": false,
+      "internalID": "6648316350",
+      "localizations": [
+        {
+          "description": "A mid-campaign bundle with gold and food at a combined discount.",
+          "displayName": "Campaign Resupply",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.crownroad.campaign_resupply",
+      "referenceName": "Campaign Resupply",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

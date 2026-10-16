@@ -24,6 +24,9 @@ public partial class CashShopMenu : Control
         BuildModalUi();
         RefreshUi();
         GameState.Instance.FoodChanged += RebuildResourcesRow;
+        // A paid transaction the server has not recorded yet (no session at
+        // launch, a failed validation) is validated again here.
+        NativeIAPService.Instance?.RetryUnfinishedPurchases();
     }
 
     public override void _ExitTree()
@@ -372,7 +375,9 @@ public partial class CashShopMenu : Control
         {
             if (!iapResult.Success)
             {
-                _statusLabel.Text = $"Purchase cancelled: {iapResult.ErrorMessage}";
+                _statusLabel.Text = iapResult.Cancelled ? "Purchase cancelled."
+                    : iapResult.Pending ? iapResult.ErrorMessage
+                    : $"Purchase not completed: {iapResult.ErrorMessage}";
                 RefreshUi(preserveStatus: true);
                 return;
             }
@@ -392,6 +397,12 @@ public partial class CashShopMenu : Control
                 if (result.GrantedUnitUnlock)
                     _statusLabel.Text += "\n+ Unit unlock granted!";
                 AudioDirector.Instance?.PlayRewardClaim();
+            }
+            else if (result.Status == "already_recorded")
+            {
+                // The server credited this transaction before; finish it without a second grant.
+                NativeIAPService.Instance?.ConfirmServerFulfillment(iapResult);
+                _statusLabel.Text = $"{product.DisplayName} was already added to your account.";
             }
             else
             {

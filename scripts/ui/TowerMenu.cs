@@ -76,6 +76,8 @@ public partial class TowerMenu : Control
 		listOuter.AddChild(listInner);
 		listInner.AddChild(RealmUi.SectionTitle("Floors"));
 		var floorScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 420f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+		// A hundred floors would push the floor details far down the page, so the list keeps its own scroll.
+		floorScroll.SetMeta(RealmModal.KeepScroll, true);
 		listInner.AddChild(floorScroll);
 		_floorStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_floorStack.AddThemeConstantOverride("separation", 6);

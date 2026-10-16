@@ -49,6 +49,8 @@ public partial class UiReviewSmoke : Node
             { await ReviewTileMap(includeHome: true); return; }
             if (OS.GetCmdlineUserArgs().Contains("--armory-details"))
             { await ReviewArmoryDetails(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--scroll-reach"))
+            { await ReviewScrollReach(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--player-level"))
             { await ReviewPlayerLevel(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--equipment-preview"))

@@ -313,10 +313,20 @@ public partial class RealmModal : Control
     }
 
     public const string KeepMinimum = "modal_keep_min";
+    /// <summary>A long list inside an activity page that keeps its own scroll (the tower's hundred floors).</summary>
+    public const string KeepScroll = "modal_keep_scroll";
 
     internal static void RelaxMinimums(Control control)
     {
         if (control is BaseButton || control is TextureRect || control is HeraldicEmblem || (control is PanelContainer && control.MouseFilter == Control.MouseFilterEnum.Ignore)) return;
+        // The page scrolls as a whole. A list scrolling inside it showed only part of its rows, and on a phone
+        // the finger had to find a gap between the two scroll areas to move the page.
+        if (control is ScrollContainer { VerticalScrollMode: not ScrollContainer.ScrollMode.Disabled } nested && !nested.HasMeta(KeepScroll)
+            && nested.GetParent() is Node parent && InVerticalScroll(parent))
+        {
+            nested.VerticalScrollMode = ScrollContainer.ScrollMode.Disabled;
+            nested.SetMeta("modal_min_height", 0);
+        }
         // Rows that align across cards or columns keep their reserved size.
         if (!control.HasMeta(KeepMinimum))
         {
@@ -327,5 +337,12 @@ public partial class RealmModal : Control
             label.AutowrapMode = TextServer.AutowrapMode.WordSmart; label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         }
         foreach (var child in control.GetChildren().OfType<Control>()) RelaxMinimums(child);
+    }
+
+    private static bool InVerticalScroll(Node node)
+    {
+        for (; node != null; node = node.GetParent())
+            if (node is ScrollContainer { VerticalScrollMode: not ScrollContainer.ScrollMode.Disabled }) return true;
+        return false;
     }
 }

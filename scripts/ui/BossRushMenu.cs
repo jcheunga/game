@@ -8,13 +8,15 @@ public partial class BossRushMenu : Control
         MedievalUi.Apply(this);
         var root=new VBoxContainer();AddChild(root);root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);root.AddThemeConstantOverride("separation",12);
         var state=GameState.Instance;
-        root.AddChild(RealmUi.Label($"Best: {state.BestBossRushWave}/14 commanders · Runs {state.BossRushRuns}",20));
-        root.AddChild(RealmUi.Label("For a full clear, develop a level-20 melee core, recovery support, earned relics and the wagon's defensive upgrades.",20,true));
-        root.AddChild(RealmUi.Label("Defeat commanders and their escorts. Enemy levels rise from 2 to 20 on the same shallow curve. Between rounds troops regroup, courage resets to 40, starting mana is restored and the wagon repairs fully. No food cost; rewards are banked at the end.",20));
-        var row=new HBoxContainer();row.AddThemeConstantOverride("separation",12);root.AddChild(row);
+        // The briefing and the commander list scroll together, so a phone shows the whole list; the start button stays below.
+        var page=RealmUi.Scroll(root);page.AddThemeConstantOverride("separation",12);
+        page.AddChild(RealmUi.Label($"Best: {state.BestBossRushWave}/14 commanders · Runs {state.BossRushRuns}",20));
+        page.AddChild(RealmUi.Label("For a full clear, develop a level-20 melee core, recovery support, earned relics and the wagon's defensive upgrades.",20,true));
+        page.AddChild(RealmUi.Label("Defeat commanders and their escorts. Enemy levels rise from 2 to 20 on the same shallow curve. Between rounds troops regroup, courage resets to 40, starting mana is restored and the wagon repairs fully. No food cost; rewards are banked at the end.",20));
+        var row=new HBoxContainer();row.AddThemeConstantOverride("separation",12);page.AddChild(row);
         row.AddChild(RealmUi.Button("people","Edit warband",()=>SceneRouter.Instance.GoToShop(0)));
         row.AddChild(RealmUi.Button("flame","Edit utilities",()=>SceneRouter.Instance.GoToShop(1)));
-        var body=RealmUi.Scroll(root);
+        var body=new VBoxContainer();page.AddChild(body);
         for(var i=0;i<BossRushCatalog.Waves.Length;i++)
         {
             var wave=BossRushCatalog.Waves[i];body.AddChild(RealmUi.Label($"{i+1}. {wave.BossName} · Lv {GameData.GetStage(wave.SourceStage).EnemyLevel} · {wave.RewardGold} gold",20));

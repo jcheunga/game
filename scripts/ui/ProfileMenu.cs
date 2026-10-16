@@ -47,6 +47,8 @@ public partial class ProfileMenu : Control
 		_titlePanel.AddChild(titleRow);
 		titleRow.AddChild(new Label { Text = "Player Profile", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
 
+		// Each panel shows all of its rows; the home modal scrolls the whole page (a scroll inside it cut
+		// the lists short and caught the finger on phones).
 		// Left panel — General & Campaign
 		_generalPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(390f, 480f) };
 		AddChild(_generalPanel);
@@ -60,11 +62,9 @@ public partial class ProfileMenu : Control
 		generalInner.AddThemeConstantOverride("separation", 6);
 		generalOuter.AddChild(generalInner);
 		generalInner.AddChild(RealmUi.SectionTitle("Caravan"));
-		var generalScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		generalInner.AddChild(generalScroll);
 		_generalStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_generalStack.AddThemeConstantOverride("separation", 6);
-		generalScroll.AddChild(_generalStack);
+		generalInner.AddChild(_generalStack);
 
 		// Center panel — Combat & Records
 		_combatPanel = new PanelContainer { Position = new Vector2(430f, 122f), Size = new Vector2(390f, 480f) };
@@ -79,11 +79,9 @@ public partial class ProfileMenu : Control
 		combatInner.AddThemeConstantOverride("separation", 6);
 		combatOuter.AddChild(combatInner);
 		combatInner.AddChild(RealmUi.SectionTitle("Battles"));
-		var combatScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		combatInner.AddChild(combatScroll);
 		_combatStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_combatStack.AddThemeConstantOverride("separation", 6);
-		combatScroll.AddChild(_combatStack);
+		combatInner.AddChild(_combatStack);
 
 		// Right panel — Collection & Achievements
 		_collectionPanel = new PanelContainer { Position = new Vector2(836f, 122f), Size = new Vector2(420f, 480f) };
@@ -98,11 +96,9 @@ public partial class ProfileMenu : Control
 		collectionInner.AddThemeConstantOverride("separation", 6);
 		collectionOuter.AddChild(collectionInner);
 		collectionInner.AddChild(RealmUi.SectionTitle("Collection"));
-		var collectionScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		collectionInner.AddChild(collectionScroll);
 		_collectionStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		_collectionStack.AddThemeConstantOverride("separation", 6);
-		collectionScroll.AddChild(_collectionStack);
+		collectionInner.AddChild(_collectionStack);
 
 		// Status label
 		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };

@@ -60,6 +60,10 @@ project/assembly_name="Game"
 
 enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/PlayGamesSignIn/plugin.cfg")
 
+[gui]
+
+common/default_scroll_deadzone=8
+
 [rendering]
 
 textures/vram_compression/import_etc2_astc=true

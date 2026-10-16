@@ -43,6 +43,18 @@ The battle shares the soldier scale and two-screen field everywhere (see
   (magic) cost in the corner. Cards shrink to share the dock's width, so the row never scrolls.
 - Pause, results, and checkpoint choices fit the smaller layout; long
   result/checkpoint reports scroll.
+- Every list scrolls by finger from anywhere on it. Godot passes a wheel turn up
+  through panels and buttons but stops a touch drag at the first control that
+  catches the mouse, so `TouchScroll` (installed by `SceneRouter`) switches
+  controls inside a vertical scroll area from Stop to Pass. Sliders, scroll bars
+  and text fields keep their own drags, as do horizontal-only strips such as the
+  battle card dock; mark any other control with `TouchScroll.KeepDrags`. A drag
+  that starts on a button scrolls and cancels the press; the 8 px
+  `gui/common/default_scroll_deadzone` lets a wobbly tap still press it.
+- Activity pages scroll as one page: `RealmModal.RelaxMinimums` turns a list's own
+  vertical scroll off inside the page scroll, so a panel grows to show all of its
+  rows. A list too long for that (the tower's hundred floors) sets
+  `RealmModal.KeepScroll`; once it reaches its end, the drag carries on into the page.
 - Touch coordinates are transformed through the camera. A unit walks out of the
   war wagon's door when its card is tapped and released, never from a field tap;
   lifting off the card, canceled touches, pause, focus loss, and resizing must
@@ -100,7 +112,22 @@ godot --path . --scene res://scenes/tests/MobilePresentationReview.tscn -- --sav
 godot --headless --path . --scene res://scenes/tests/CombatMotionReview.tscn -- --save-suffix=motion-review-UNIQUE
 godot --headless --path . --scene res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-UNIQUE --regressions
 godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --typography --window=844x390
+godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --scroll-reach --mobile-preview [--late-game] [--only=ProfileMenu,extras]
 ```
+
+`--scroll-reach` visits every home page and tab, the level track, achievements and
+the hub, plus (`extras`) the stage briefing, every spell and relic inspector, the
+enchantments inspector, the account dialog, the battle menu, guide, settings and a
+victory. For each vertical scroll area it scrolls to the end (outer scrolls
+following) and fails `SCROLL_CUT_OFF` if the last row is still below what the
+screen shows, or `SCROLL_SQUASHED` if the area is under 96 px tall. Then, at nine
+points across the area, a wheel turn and a finger drag (touch emulation on) must
+move it or a scroll around it (`SCROLL_WHEEL_BLOCKED`, `SCROLL_DRAG_BLOCKED`), and a
+button under the finger must let go of its press once the list moves. It also
+checks that a wobbly tap still presses a button in a list. `--late-game` seeds a
+save with everything owned, so lists are at their longest. Captures go to
+`artifacts/scroll-reach`.
+
 
 The presentation review uses 844×390 and 667×375 landscape windows and writes previews
 under `artifacts/mobile-review`. The 844×390 window retains the game's existing

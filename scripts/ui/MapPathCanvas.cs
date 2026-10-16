@@ -144,6 +144,7 @@ public partial class MapPathCanvas : Control
     {
         _time += (float)delta; _rewardBursts.RemoveAll(reward => _time - reward.Time > 2.4f);
         UpdateGlide((float)delta);
+        UpdateLandmarkPress();
         QueueRedraw();
     }
     public override void _Draw()

@@ -60,7 +60,9 @@ public partial class UiReviewSmoke
         stack.AddChild(primary);
         Check(primary.GetThemeStylebox("normal") is StyleBoxTexture normal && normal.Texture.ResourcePath.EndsWith("button_primary.svg"),
             "Touch sizing preserves the primary-action brass finish");
-        Check(primary.GetThemeStylebox("hover_pressed") is StyleBoxTexture,"Selected hover state stays textured");
+        Check(primary.GetThemeStylebox("hover")==primary.GetThemeStylebox("normal") && primary.GetThemeStylebox("hover_pressed") is StyleBoxTexture held
+              && held.Texture.ResourcePath.EndsWith("button_primary_pressed.svg"),
+            "Hovering changes nothing and a held press shows the pressed brass surface");
         Check(focus.GetThemeStylebox("focus") is StyleBoxTexture focusStyle && focusStyle.Texture.ResourcePath.EndsWith("focus.svg"),
             "Keyboard focus has a distinct bright outline");
         Check(root.Theme.GetStylebox("grabber","HScrollBar") is StyleBoxTexture horizontalThumb

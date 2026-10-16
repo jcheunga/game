@@ -131,6 +131,8 @@ public partial class BattleController
                 if (parent is ScrollContainer scroll) { _dragCardScroll = scroll; break; }
             _cardDragPortrait.Texture = hit.GetChildren().OfType<BattleActionCard>().Single().Portrait.Texture;
             hit.GrabFocus();
+            // The dock reads the touch itself, so it presses the card in by hand.
+            ButtonFeel.Hold(hit, true);
             GetViewport().SetInputAsHandled(); return true;
         }
 
@@ -159,12 +161,15 @@ public partial class BattleController
         }
         _cardPointerLast = point;
         UpdateCardDragPreview();
-        if (!released) return true;
+        // The card stays pressed while the finger rests on it; dragging a spell out or scrolling the dock lifts it.
+        var onCard = _cardPointerDown && !_cardDragging && !_cardScrolling && ScreenPointIn(_dragCardButton, point);
+        if (!released) { ButtonFeel.Hold(_dragCardButton, onCard); return true; }
 
         var drop = _cardDragging && CanDropCard(point);
-        var tap = !_cardDragging && !_cardScrolling && ScreenPointIn(_dragCardButton, point);
+        var tap = onCard;
         var unit = _dragUnit; var spell = _dragSpell; var world = ScreenToBattle(point);
         var scrolled = _cardScrolling;
+        ButtonFeel.Hold(_dragCardButton, false, acted: tap && unit != null);
         if (drop)
         {
             EndCardGesture(false, false);
@@ -191,6 +196,7 @@ public partial class BattleController
     {
         if (discardRelease) _discardCardRelease = _cardPointerId;
         if (_cardPointerId >= 0) _cardMouseBlockUntil = Time.GetTicksMsec() + 250;
+        if (_dragCardButton != null) ButtonFeel.Hold(_dragCardButton, false);
         // A cancelled aim leaves no magic armed, even a spell tapped before the drag, so no card stays lit.
         if (restoreSelection && _cardDragging)
         {

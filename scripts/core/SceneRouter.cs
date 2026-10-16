@@ -81,6 +81,7 @@ public partial class SceneRouter : Node
         _loadingScreen = new LoadingScreen { Visible = false, Modulate = new Color(1, 1, 1, 0), ProcessMode = ProcessModeEnum.Always };
         _fadeLayer.AddChild(_loadingScreen);
         TouchScroll.Install(GetTree());
+        ButtonFeel.Install(GetTree());
     }
 
     public void GoToMainMenu()

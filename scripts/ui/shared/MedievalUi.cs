@@ -41,6 +41,7 @@ public static class MedievalUi
         row.AddChild(cancel);
         var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
         confirm.AddThemeColorOverride("font_color", new Color("ffd8c4"));
+        ButtonFeel.MatchHoverInk(confirm);
         confirm.Pressed += () => { veil.QueueFree(); center.QueueFree(); onConfirm?.Invoke(); };
         row.AddChild(confirm);
 
@@ -72,19 +73,23 @@ public static class MedievalUi
             theme.SetFontSize("font_size", type, RealmUi.ButtonFontSize);
         theme.SetFontSize("font_size", "TooltipLabel", 18);
         theme.SetColor("font_color", "Button", ink);
-        theme.SetColor("font_hover_color", "Button", goldLight);
+        // No hover highlight anywhere: hovering looks like resting, and a held press sinks (ButtonFeel).
+        theme.SetColor("font_hover_color", "Button", ink);
         theme.SetColor("font_pressed_color", "Button", Colors.White);
+        theme.SetColor("font_hover_pressed_color", "Button", Colors.White);
         theme.SetColor("font_disabled_color", "Button", new Color("9aaba5"));
         theme.SetColor("caret_color", "LineEdit", goldLight);
         theme.SetColor("font_color", "LineEdit", ink);
 
         theme.SetStylebox("panel", "Panel", new ModalSurface(ModalMaterial.Inset, 10));
         theme.SetStylebox("panel", "PanelContainer", new ModalSurface(ModalMaterial.Wood, 14));
-        theme.SetStylebox("normal", "Button", Engraved("button", 18, 10));
-        theme.SetStylebox("hover", "Button", Engraved("button_hover", 18, 10));
-        theme.SetStylebox("pressed", "Button", Engraved("button_pressed", 18, 10));
+        var buttonRest = Engraved("button", 18, 10);
+        var buttonHeld = Engraved("button_pressed", 18, 10);
+        theme.SetStylebox("normal", "Button", buttonRest);
+        theme.SetStylebox("hover", "Button", buttonRest);
+        theme.SetStylebox("pressed", "Button", buttonHeld);
         theme.SetStylebox("disabled", "Button", Engraved("button_disabled", 18, 10));
-        theme.SetStylebox("hover_pressed", "Button", Engraved("button_hover_pressed", 18, 10));
+        theme.SetStylebox("hover_pressed", "Button", buttonHeld);
         theme.SetStylebox("focus", "Button", Engraved("focus", 9, 6));
         theme.SetStylebox("normal", "LineEdit", Engraved("inset", 10, 6));
         theme.SetStylebox("focus", "LineEdit", Engraved("input_focus", 9, 6));
@@ -106,11 +111,16 @@ public static class MedievalUi
         }
         foreach(var type in new[]{"OptionButton","MenuButton"})
         {
-            foreach(var state in new[]{"normal","hover","pressed","hover_pressed","disabled"})
-                theme.SetStylebox(state, type, Engraved(state=="normal"?"button":"button_"+state, 12, 6));
+            var rest = Engraved("button", 12, 6);
+            var held = Engraved("button_pressed", 12, 6);
+            theme.SetStylebox("normal", type, rest);
+            theme.SetStylebox("hover", type, rest);
+            theme.SetStylebox("pressed", type, held);
+            theme.SetStylebox("hover_pressed", type, held);
+            theme.SetStylebox("disabled", type, Engraved("button_disabled", 12, 6));
             theme.SetStylebox("focus", type, Engraved("focus", 9, 6));
             theme.SetColor("font_color", type, ink);
-            theme.SetColor("font_hover_color", type, goldLight);
+            theme.SetColor("font_hover_color", type, ink);
             theme.SetColor("font_pressed_color", type, Colors.White);
             theme.SetColor("font_disabled_color", type, new Color("9aaba5"));
         }
@@ -167,15 +177,9 @@ public static class MedievalUi
     {
         if (button.HasMeta("map_navigation")) { ModalUi.StyleButton(button); return; }
         var primary=button.HasMeta("realm_primary");
-        foreach(var state in new[]{"normal","hover","pressed","hover_pressed","disabled"})
-        {
-            var asset=state=="normal"?"button":"button_"+state;
-            if(primary && state!="disabled") asset=state switch
-            {
-                "normal"=>"button_primary", "hover"=>"button_primary_hover", _=>"button_primary_pressed"
-            };
-            button.AddThemeStyleboxOverride(state,Engraved(asset,horizontal,vertical));
-        }
+        ButtonFeel.Apply(button, Engraved(primary ? "button_primary" : "button", horizontal, vertical),
+            Engraved(primary ? "button_primary_pressed" : "button_pressed", horizontal, vertical));
+        button.AddThemeStyleboxOverride("disabled",Engraved("button_disabled",horizontal,vertical));
         button.AddThemeStyleboxOverride("focus",Engraved("focus",horizontal,vertical));
     }
 

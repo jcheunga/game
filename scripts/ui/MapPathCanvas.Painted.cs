@@ -165,7 +165,7 @@ public partial class MapPathCanvas
         foreach (var tile in _tiles.Where(tile => view.HasPoint(tile.Point) && state.IsAdventureTileRevealed(tile)).OrderBy(tile => tile.Point.Y))
         {
             if (tile.Site != null && !string.IsNullOrEmpty(tile.Site.RequiredVisit) && !state.HasVisitedAdventureSite(tile.Site.RequiredVisit)) continue;
-            if (tile.HasInterest && (!tile.IsResource || !state.IsAdventureTileComplete(tile))) DrawRoyalLandmark(layer, tile);
+            if (tile.HasInterest && (!tile.IsResource || !state.IsAdventureTileComplete(tile))) DrawRoyalLandmark(layer, tile, LandmarkPress(tile));
             // Every frontier tile but a stage (which is won, not bought) shows what it costs to open.
             if (tile.Site?.Kind != AdventureSiteKind.Leader && state.IsAdventureTileFrontier(tile)) priced.Add(tile);
         }
@@ -251,13 +251,22 @@ public partial class MapPathCanvas
         return new Rect2(-new Vector2(size.X * .5f, size.Y * LandmarkFoot), size);
     }
 
-    /// <summary>Draws the painted landmark standing on the tile's point.</summary>
-    private static void DrawRoyalLandmark(CanvasItem target, AdventureTile tile)
+    /// <summary>
+    /// Draws the painted landmark standing on the tile's point. A held press (<see cref="ButtonFeel.Amount"/>) squashes
+    /// it toward its foot and darkens it; letting go springs it a little taller before it settles.
+    /// </summary>
+    private static void DrawRoyalLandmark(CanvasItem target, AdventureTile tile, float press = 0)
     {
         if (Landmark(LandmarkName(tile)) is not { } texture) return;
         var rect = LandmarkRect(tile, texture);
-        target.DrawTextureRect(texture, new Rect2(tile.Point + rect.Position, rect.Size), false);
+        var scale = RoyalLandmarkPressScale(tile, press);
+        var light = ButtonFeel.Lightness(press);
+        target.DrawTextureRect(texture, new Rect2(tile.Point + rect.Position * scale, rect.Size * scale), false, new Color(light, light, light));
     }
+
+    /// <summary>How a press scales a tile's landmark about its foot (1 at rest).</summary>
+    public static float RoyalLandmarkPressScale(AdventureTile tile, float press) =>
+        press == 0 || Landmark(LandmarkName(tile)) is not { } texture ? 1 : 1 - press * ButtonFeel.Shrink(LandmarkRect(tile, texture).Size);
 
     /// <summary>Whether a point (world units from the tile's point) lands on the painted landmark's pixels.</summary>
     public static bool RoyalLandmarkContains(AdventureTile tile, Vector2 delta)

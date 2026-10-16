@@ -165,7 +165,7 @@ public partial class ForgeMenu : RoyalScreen
             if (i < _selectedFuseRelics.Count)
             {
                 var relic = GameData.GetEquipment(_selectedFuseRelics[i]);
-                socket.AddThemeStyleboxOverride("normal", RoyalKit.Slice(Frame(relic), 10));
+                socket.SetStates(RoyalKit.Slice(Frame(relic), 10), 6);
                 socket.AddChild(Art(relic, new Rect2(9, 8, rect.Size.X - 18, rect.Size.Y - 24)));
                 socket.AccessibilityName = relic.DisplayName;
                 socket.TooltipText = $"{relic.DisplayName} · tap to remove";

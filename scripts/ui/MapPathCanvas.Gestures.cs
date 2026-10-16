@@ -40,6 +40,8 @@ public partial class MapPathCanvas
     private bool _dragging;
     private bool _tapButton, _pinched, _caughtGlide;
     private BaseButton _pressLandmark;
+    // The landmark last pressed, painted pressed in until it has sprung back to rest (ButtonFeel).
+    private BaseButton _feltLandmark;
 
     public override void _GuiInput(InputEvent input)
     {
@@ -50,11 +52,13 @@ public partial class MapPathCanvas
 
     /// <summary>
     /// A landmark passes its pointer input to the map, so a drag that starts on it pans, and the map decides whether
-    /// it was a tap. Its own press is left to the keyboard and accessibility.
+    /// it was a tap. Its own press is left to the keyboard and accessibility. The map paints its held press on the
+    /// landmark art, so the button itself does not move.
     /// </summary>
     private void AddLandmark(BaseButton landmark)
     {
         landmark.ButtonMask = 0;
+        landmark.SetMeta(ButtonFeel.Off, true);
         landmark.GuiInput += input => HandleMapInput(input.XformedBy(landmark.GetTransform()), landmark);
         AddChild(landmark);
     }
@@ -103,8 +107,9 @@ public partial class MapPathCanvas
             _caughtGlide = _glideVelocity.Length() > CatchSpeed;
             _dragging = _pinched = false;
             _pressPoint = point; _pressLandmark = landmark; _tapButton = tapButton;
+            if (landmark != null && tapButton) { ButtonFeel.Hold(landmark, true); _feltLandmark = landmark; }
         }
-        else _pinched = _dragging = true;
+        else { _pinched = _dragging = true; LiftLandmark(); }
         _glideVelocity = Vector2.Zero;
         _pointers[id] = point;
         RestartGestureBaseline();
@@ -118,6 +123,7 @@ public partial class MapPathCanvas
             // Within the slop the map holds still, so a tap never nudges it.
             if (point.DistanceTo(_pressPoint) < TapSlop) return;
             _dragging = true; _hoverTile = null;
+            LiftLandmark();
             RestartGestureBaseline();
             return;
         }
@@ -146,6 +152,7 @@ public partial class MapPathCanvas
         var landmark = _pressLandmark;
         // A finger that stayed down after a pinch only flicks after it has moved on its own for a moment.
         if (_pinched && _panSamples.Count > 0 && _panSamples[^1].Time - _panSamples[0].Time < FlingWindowUsec) fling = Vector2.Zero;
+        if (IsInstanceValid(landmark)) ButtonFeel.Hold(landmark, false, acted: tap && !landmark.Disabled);
         ResetGesture();
         _glideVelocity = fling.Length() >= GlideMinSpeed ? fling : Vector2.Zero;
         if (!tap) return;
@@ -197,7 +204,30 @@ public partial class MapPathCanvas
     {
         _pointers.Clear(); _panSamples.Clear();
         _dragging = _pinched = _caughtGlide = false;
+        LiftLandmark();
         _pressLandmark = null;
+    }
+
+    /// <summary>The press turned into a pan or pinch (or ended): the landmark rises without acting.</summary>
+    private void LiftLandmark()
+    {
+        if (IsInstanceValid(_pressLandmark)) ButtonFeel.Hold(_pressLandmark, false);
+    }
+
+    /// <summary>How far the landmark on a tile is pressed in (see <see cref="ButtonFeel.Amount"/>).</summary>
+    private float LandmarkPress(AdventureTile tile)
+    {
+        if (!IsInstanceValid(_feltLandmark)) return 0;
+        var id = _feltLandmark switch { AdventureMapToken site => site.Site?.Id, AdventureDiscoveryToken find => find.Discovery?.Id, _ => null };
+        return id == tile.Id ? ButtonFeel.Amount(_feltLandmark) : 0;
+    }
+
+    /// <summary>Redraws the pressed landmark's own marks (its stars) until it rests, then forgets it.</summary>
+    private void UpdateLandmarkPress()
+    {
+        if (_feltLandmark == null) return;
+        if (!IsInstanceValid(_feltLandmark) || (_feltLandmark != _pressLandmark && ButtonFeel.Amount(_feltLandmark) == 0)) { _feltLandmark = null; return; }
+        _feltLandmark.QueueRedraw();
     }
 
     private void UpdateGlide(float delta)

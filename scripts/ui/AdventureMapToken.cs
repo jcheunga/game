@@ -33,7 +33,8 @@ public partial class AdventureMapToken : RealmButton
         var tile = AdventureTileCatalog.Find(Site.MapId, Site.Id);
         if (Site.Kind == AdventureSiteKind.Leader)
         {
-            var roof = MarkerCenter.Y - MapPathCanvas.RoyalLandmarkRise(tile) + 6;
+            // The stars ride the roof down while the map presses the landmark in.
+            var roof = MarkerCenter.Y - MapPathCanvas.RoyalLandmarkRise(tile) * MapPathCanvas.RoyalLandmarkPressScale(tile, ButtonFeel.Amount(this)) + 6;
             StageStarRating.DrawStars(this, new Rect2(new Vector2(Size.X / 2 - 46, roof - 34), new Vector2(92, 31)), state.GetStageStars(Site.Stage), 5f);
         }
     }

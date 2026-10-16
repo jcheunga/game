@@ -228,7 +228,7 @@ public partial class BattleController
 	{
 		button.SelfModulate = Colors.White;
 		button.AddThemeColorOverride("font_color", route.BannerAccent);
-		button.AddThemeColorOverride("font_hover_color", route.BannerAccent.Lightened(0.08f));
+		button.AddThemeColorOverride("font_hover_color", route.BannerAccent);
 		button.AddThemeColorOverride("font_pressed_color", Colors.White);
 		button.AddThemeColorOverride("font_disabled_color", new Color(1f, 1f, 1f, 0.45f));
 	}

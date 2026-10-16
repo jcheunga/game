@@ -111,10 +111,10 @@ public partial class MultiplayerMenu
         selector.Show();
         selector.Position = rect.Position; selector.Size = rect.Size; selector.CustomMinimumSize = Vector2.Zero;
         selector.TooltipText = name; selector.AccessibilityName = name;
-        foreach (var state in new[] { "normal", "pressed", "disabled", "focus" }) selector.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-        var hover = new StyleBoxFlat { BgColor = new Color(1f, .9f, .66f, .07f), BorderColor = new Color(1f, .86f, .55f, .45f), AntiAliasing = true };
-        hover.SetBorderWidthAll(1); hover.SetCornerRadiusAll(6);
-        selector.AddThemeStyleboxOverride("hover", hover);
+        // The painted plate shows the selector and its captions (added before it); hovering adds nothing and a
+        // held press pushes that painted art in (ButtonFeel).
+        foreach (var state in new[] { "normal", "hover", "pressed", "hover_pressed", "disabled", "focus" }) selector.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+        ButtonFeel.PaintBelow(selector, 6);
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color" })
             selector.AddThemeColorOverride(key, Colors.Transparent);
         selector.AddThemeIconOverride("arrow", new ImageTexture());

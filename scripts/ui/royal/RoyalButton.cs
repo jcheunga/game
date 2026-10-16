@@ -3,8 +3,9 @@ using Godot;
 
 /// <summary>
 /// A control over a button painted on a plate (or drawn from a kit slice). The plate already shows
-/// the resting button, so states are light overlays: a warm sheen on hover, a press shade, a dim veil
-/// when disabled and an optional selected surface for tabs and cards.
+/// the resting button, so states are light overlays: no hover highlight, a dim veil when disabled and an
+/// optional selected surface for tabs and cards. A held press comes from <see cref="ButtonFeel"/>: a kit surface
+/// darkens and the whole button sinks, while painted plate art is pressed in place.
 /// </summary>
 public partial class RoyalButton : Button
 {
@@ -13,7 +14,14 @@ public partial class RoyalButton : Button
     private Color _captionInk;
     private bool _wired;
 
-    public RoyalButton() { }
+    public RoyalButton()
+    {
+        // The button's own text is never drawn (the caption is a RoyalLabel); it stays as a name for tests and
+        // accessibility. It must not give the button a minimum size, or Godot stretches the button past its rect
+        // while the caption stays centred in the rect it was given.
+        ClipText = true;
+        AddThemeFontSizeOverride("font_size", 1);
+    }
 
     /// <summary>Touch reach: on phones small painted buttons still take a full 56 px fingertip.</summary>
     public const float TouchSize = 56;
@@ -48,12 +56,16 @@ public partial class RoyalButton : Button
             return box;
         }
         StyleBox Stack(StyleBox under, StyleBox over) => under == null ? over : new StackedStyle(under, over);
-        var rest = resting ?? new StyleBoxEmpty();
+        // Captions and glyphs are placed by hand, so a surface's content margins must not size the button either.
+        var rest = new MarginlessStyle(resting ?? new StyleBoxEmpty());
+        // A kit surface darkens while held (ButtonFeel sinks it); painted plate art is pressed in by ButtonFeel itself.
+        var held = new MarginlessStyle(selected ?? (resting == null ? new StyleBoxEmpty() : Stack(resting, Overlay(new Color(0, 0, 0, .2f), Colors.Transparent))));
+        ButtonFeel.PaintBelow(this, resting == null && selected == null ? corner : null);
         AddThemeStyleboxOverride("normal", rest);
-        AddThemeStyleboxOverride("hover", Stack(resting, Overlay(new Color(1f, .9f, .66f, .10f), new Color(1f, .86f, .55f, .55f), 1)));
-        AddThemeStyleboxOverride("pressed", Stack(selected ?? resting, selected != null ? new StyleBoxEmpty() : Overlay(new Color(0, 0, 0, .22f), Colors.Transparent)));
-        AddThemeStyleboxOverride("hover_pressed", Stack(selected ?? resting, Overlay(new Color(1f, .9f, .66f, .08f), Colors.Transparent)));
-        AddThemeStyleboxOverride("disabled", Stack(disabled ?? resting, disabled != null ? new StyleBoxEmpty() : Overlay(new Color(.03f, .04f, .05f, .5f), Colors.Transparent)));
+        AddThemeStyleboxOverride("hover", rest);
+        AddThemeStyleboxOverride("pressed", held);
+        AddThemeStyleboxOverride("hover_pressed", held);
+        AddThemeStyleboxOverride("disabled", new MarginlessStyle(Stack(disabled ?? resting, disabled != null ? new StyleBoxEmpty() : Overlay(new Color(.03f, .04f, .05f, .5f), Colors.Transparent))));
         var focus = Overlay(Colors.Transparent, new Color(1f, .87f, .56f, .9f), 2);
         AddThemeStyleboxOverride("focus", focus);
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color" })
@@ -102,17 +114,7 @@ public partial class RoyalButton : Button
     {
         if (_wired) return;
         _wired = true;
-        ButtonDown += () => Shift(1);
-        ButtonUp += () => Shift(0);
         Draw += RefreshInk;
-    }
-
-    private float _shift;
-    private void Shift(float amount)
-    {
-        var delta = amount - _shift; _shift = amount;
-        if (Caption != null) Caption.Position += new Vector2(0, delta);
-        if (Glyph != null) Glyph.Position += new Vector2(0, delta);
     }
 
     private void RefreshInk()
@@ -139,4 +141,14 @@ public partial class StackedStyle : StyleBox
         _under?.Draw(canvasItem, rect);
         _over?.Draw(canvasItem, rect);
     }
+}
+
+/// <summary>Draws another style box but reports no content margins, so it never sets a button's minimum size.</summary>
+public partial class MarginlessStyle : StyleBox
+{
+    private readonly StyleBox _surface;
+    public StyleBox Surface => _surface;
+    public MarginlessStyle() { }
+    public MarginlessStyle(StyleBox surface) => _surface = surface;
+    public override void _Draw(Rid canvasItem, Rect2 rect) => _surface?.Draw(canvasItem, rect);
 }

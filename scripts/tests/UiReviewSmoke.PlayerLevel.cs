@@ -43,6 +43,39 @@ public partial class UiReviewSmoke
         var track = Walk(menu).OfType<PlayerLevelMenu>().SingleOrDefault(x => x.IsVisibleInTree());
         Check(track != null && menu.HomeModalDestination == "levels", "The player card opens the level track");
         AuditText("Level track"); await Capture("04-level-track");
+        // Buttons have no hover highlight. A held press sinks the button and everything drawn on it, and a release
+        // that acts springs it up past rest before it settles; its layout never moves.
+        var back = Walk(menu).OfType<RoyalButton>().First(x => x.IsVisibleInTree() && x.Caption != null && x.Glyph != null);
+        var captionY = back.Caption.Position.Y; var backRect = back.GetRect();
+        ButtonFeel.Hold(back, true);
+        // Frames, not a timer: the capture before stalls a frame long enough to fire a short timer at once.
+        for (var frame = 0; frame < 20; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var held = ButtonFeel.Amount(back);
+        var heldLayout = back.GetRect() == backRect && back.Caption.Position.Y == captionY;
+        ButtonFeel.Hold(back, false, acted: true);
+        var lowest = 0f;
+        for (var frame = 0; frame < 30; frame++)
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            lowest = Mathf.Min(lowest, ButtonFeel.Amount(back));
+        }
+        Check(held > .99f && heldLayout && lowest < -.2f && ButtonFeel.Amount(back) == 0 && back.GetThemeStylebox("hover") == back.GetThemeStylebox("normal"),
+            $"A held button presses in without moving its layout, springs up on release and settles, and hovering changes nothing (held {held:0.00}, spring {lowest:0.00})");
+        // Held presses for the review capture: a kit button (claim all) and a button painted on the plate (back).
+        var holdButton = Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "ClaimAllLevelRewards");
+        var painted = Walk(menu).OfType<RoyalButton>().FirstOrDefault(x => x.IsVisibleInTree() && x.HasMeta(ButtonFeel.Painted) && x.Caption != null);
+        ButtonFeel.Hold(holdButton, true);
+        if (painted != null) ButtonFeel.Hold(painted, true);
+        for (var frame = 0; frame < 20; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await Capture("04b-held-press");
+        ButtonFeel.Hold(holdButton, false);
+        if (painted != null) ButtonFeel.Hold(painted, false);
+        // A real press held down and released off the button, so nothing is claimed.
+        var holdAt = holdButton.GetGlobalRect().GetCenter();
+        Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = holdAt, GlobalPosition = holdAt }); await Wait(.15);
+        Send(new InputEventMouseMotion { Position = new Vector2(4, 4), GlobalPosition = new Vector2(4, 4) });
+        Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = new Vector2(4, 4), GlobalPosition = new Vector2(4, 4) }); await Wait(.15);
+        Check(state.ClaimableLevelRewardCount > 1, "Releasing a held press off the button cancels it");
         RoyalButton Claim() => Walk(menu).OfType<RoyalButton>().FirstOrDefault(x => x.IsVisibleInTree() && !x.Disabled
             && ((x.AccessibilityName ?? "").StartsWith("Claim ") || x.TooltipText.StartsWith("Claim ")) && x.Name != "ClaimAllLevelRewards");
         var gold = state.Gold;

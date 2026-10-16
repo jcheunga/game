@@ -119,6 +119,7 @@ public static class RealmUi
             button.SetMeta("realm_primary", true);
             MedievalUi.StyleButton(button, 18, 10);
             button.AddThemeColorOverride("font_color", new Color("fff4db"));
+            ButtonFeel.MatchHoverInk(button);
         }
         button.Pressed += () => action?.Invoke();
         return button;

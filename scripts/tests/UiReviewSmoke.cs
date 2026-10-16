@@ -53,6 +53,8 @@ public partial class UiReviewSmoke : Node
             { await ReviewScrollReach(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--player-level"))
             { await ReviewPlayerLevel(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--button-press"))
+            { await ReviewButtonPress(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--equipment-preview"))
             { await ReviewEquipmentPreview(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--enchantments"))

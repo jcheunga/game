@@ -12,10 +12,8 @@ public static class ModalUi
         if (tab && material == null) { StyleTab(button); return; }
         var type = material ?? (button.HasMeta("realm_primary") ? ModalMaterial.Gold : ModalMaterial.Steel);
         if (selected && type == ModalMaterial.Gold && !button.HasMeta("realm_primary")) type = ModalMaterial.Portrait;
-        button.AddThemeStyleboxOverride("normal", new ModalSurface(type, 8, selected));
-        button.AddThemeStyleboxOverride("hover", new ModalSurface(type, 8, true));
-        button.AddThemeStyleboxOverride("pressed", new ModalSurface(type, 8, true, true));
-        button.AddThemeStyleboxOverride("hover_pressed", new ModalSurface(type, 8, true));
+        // Only a selected button keeps the warm gold edge; hovering changes nothing and a held press sinks.
+        ButtonFeel.Apply(button, new ModalSurface(type, 8, selected), new ModalSurface(type, 8, selected, true));
         button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Inset, 8));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("dcc693") }; focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4); button.AddThemeStyleboxOverride("focus", focus);
         var ink = type == ModalMaterial.Gold ? new Color("382316") : Cream;
@@ -42,6 +40,7 @@ public static class ModalUi
             surface.ContentMarginLeft = surface.ContentMarginRight = inset;
             return surface;
         }
+        // A tab's pressed state is its selected page, so it lights rather than sinks.
         button.AddThemeStyleboxOverride("normal", Surface(ModalMaterial.Tab));
         button.AddThemeStyleboxOverride("hover", Surface(ModalMaterial.Tab));
         button.AddThemeStyleboxOverride("pressed", Surface(ModalMaterial.Tab, true));

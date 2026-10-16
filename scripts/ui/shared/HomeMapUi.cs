@@ -27,9 +27,7 @@ public static class HomeMapUi
 
     public static void StyleButton(Button button, bool active = false)
     {
-        button.AddThemeStyleboxOverride("normal", Surface(active, 10));
-        button.AddThemeStyleboxOverride("hover", Surface(true, 10));
-        button.AddThemeStyleboxOverride("pressed", Surface(true, 10));
+        ButtonFeel.Apply(button, Surface(active, 10), Surface(active, 10));
         button.AddThemeStyleboxOverride("disabled", Surface(false, 10));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("ffe2a6") };
         focus.SetCornerRadiusAll(12);

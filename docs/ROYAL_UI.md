@@ -28,6 +28,27 @@ their layouts and take the same chrome: `ModalSurface` draws the kit's modal fra
 tiles and parchment, `RealmModal` uses the concept header with its castle skyline and a gold title, and
 `RealmUi` uses the concept fonts.
 
+Buttons have no hover highlight: hovering looks exactly like resting. Every button in the tree presses the same
+way (`ButtonFeel.Install`, from `SceneRouter`). While held, it shrinks a few pixels, drops 2 px (`ButtonFeel.Depth`)
+and darkens, caption, icon and price included. Sliding off or starting a scroll lets it rise. Letting go over it
+runs its action (on release, as Godot buttons act) and springs it up a little past rest before it settles.
+- **Own surface.** A button that draws its own surface (theme, `ModalUi`, `HomeMapUi`, kit `RoyalButton`, battle
+  cards) moves as a whole. Only its drawn transform changes, never its layout or hit area.
+- **Painted art.** A `RoyalButton` over plate art, or any button marked `ButtonFeel.PaintBelow` (hotspots, the
+  challenge selectors), gets `PressedArt`. It copies the screen under the button and redraws it as a soft dent
+  (`assets/shaders/button_press.gdshader`). The dent is feathered to nothing at the rect's edge, so a hotspot larger
+  than its art never shows as a box or a doubled edge.
+- **Own touch handling.** The battle card dock and the map's landmarks read touches themselves and drive the press
+  with `ButtonFeel.Hold`. The map squashes the painted landmark toward its foot, and its stars follow.
+
+`UiReviewSmoke --button-press` holds one of each kind and captures it at rest and held. Keyboard focus keeps its
+outline, which Godot shows only for keyboard navigation (`gui/common/show_focus_state_on_pointer_event`).
+
+A `RoyalButton` is exactly the rect it is placed at. Its caption is a `RoyalLabel` centred in that rect; the
+button's own `Text` is never drawn (it names the button for tests and accessibility), so neither that text nor a
+surface's slice margins may give it a minimum size. If they did, Godot would stretch the surface past the rect and
+the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails any button held at its minimum.
+
 ## Screens
 
 | Screen | Concept | Code |

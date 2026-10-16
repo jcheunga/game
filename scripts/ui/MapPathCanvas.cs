@@ -22,8 +22,7 @@ public partial class MapPathCanvas : Control
     private IReadOnlyList<AdventureTile> _tiles = Array.Empty<AdventureTile>();
     private string _selectedId = "";
     private AdventureTile _hoverTile;
-    private bool _dragging;
-    private float _dragDistance, _time;
+    private float _time;
     public override void _Ready()
     {
         ClipContents = true;
@@ -52,17 +51,16 @@ public partial class MapPathCanvas : Control
                 var boss = tile.Site.Kind == AdventureSiteKind.Leader && GameState.Instance.IsAdventureBoss(tile.Site.Stage);
                 var token = new AdventureMapToken { Site = tile.Site, Size = resource ? new Vector2(116, 124) : boss ? new Vector2(144, 200) : new Vector2(136, 172) };
                 token.Pressed += () => { if (!IsTravelling) SiteSelected?.Invoke(tile.Site); };
-                AddChild(token); _tokens.Add(token);
+                AddLandmark(token); _tokens.Add(token);
             }
             else if (tile.Discovery != null)
             {
                 var token = new AdventureDiscoveryToken { Discovery = tile.Discovery, Size = new Vector2(116, 124) };
                 token.Pressed += () => { if (!IsTravelling) DiscoverySelected?.Invoke(tile.Discovery); };
-                AddChild(token); _discoveries.Add(token);
+                AddLandmark(token); _discoveries.Add(token);
             }
         }
-        // The atlas concept shows most of a zone at once.
-        Zoom = Mathf.Max(.6f, Mathf.Max(Size.X / MapBounds.Size.X, Size.Y / MapBounds.Size.Y));
+        Zoom = Mathf.Clamp(DefaultZoom, MinZoom, MaxZoom);
         RefreshKnowledge(); FocusCurrentTile(); Callable.From(FocusCurrentTile).CallDeferred();
     }
     public void SelectSite(string id) { _selectedId = id; UpdateView(); }
@@ -74,13 +72,12 @@ public partial class MapPathCanvas : Control
     }
     public void FocusCurrentTile() => FocusPoint(GameState.Instance.GetAdventureCaravanTile(ActiveMapId).Point);
     public void FocusOverview() => FocusPoint(MapBounds.GetCenter());
-    public void FocusPoint(Vector2 point) { MapOffset = new Vector2(Size.X * .5f, Size.Y * .44f) - point * Zoom; UpdateView(); }
+    public void FocusPoint(Vector2 point) { _glideVelocity = Vector2.Zero; MapOffset = new Vector2(Size.X * .5f, Size.Y * .44f) - point * Zoom; UpdateView(); }
     public void FocusSite(string id) { if (AdventureTileCatalog.Find(ActiveMapId, id) is { } tile) FocusPoint(tile.Point); }
     public void ChangeZoom(float factor, Vector2? around = null)
     {
         var anchor = around ?? Size / 2; var world = (anchor - MapOffset) / Zoom;
-        var fit = Mathf.Max(Size.X / MapBounds.Size.X, Size.Y / MapBounds.Size.Y);
-        Zoom = Mathf.Clamp(Zoom * factor, Mathf.Max(.3f, fit), 1.25f);
+        Zoom = Mathf.Clamp(Zoom * factor, MinZoom, MaxZoom);
         MapOffset = anchor - world * Zoom; UpdateView();
     }
     private void UpdateView()
@@ -110,35 +107,6 @@ public partial class MapPathCanvas : Control
             token.Disabled = IsTravelling; token.QueueRedraw();
         }
         QueueRedraw();
-    }
-    public override void _GuiInput(InputEvent input)
-    {
-        if (input is InputEventMouseButton mouse)
-        {
-            if (mouse.ButtonIndex == MouseButton.WheelUp && mouse.Pressed) { ChangeZoom(1.12f, mouse.Position); AcceptEvent(); }
-            if (mouse.ButtonIndex == MouseButton.WheelDown && mouse.Pressed) { ChangeZoom(1 / 1.12f, mouse.Position); AcceptEvent(); }
-            if (mouse.ButtonIndex is MouseButton.Left or MouseButton.Middle)
-            {
-                if (mouse.Pressed) { _dragging = true; _dragDistance = 0; }
-                else
-                {
-                    var select = _dragging && _dragDistance < 8 && mouse.ButtonIndex == MouseButton.Left;
-                    _dragging = false;
-                    if (select && AdventureTileCatalog.At(ActiveMapId, (mouse.Position - MapOffset) / Zoom) is { } tile && GameState.Instance.IsAdventureTileRevealed(tile))
-                    {
-                        if (tile.Site != null && GameState.Instance.IsAdventureSiteDiscovered(tile.Id)) SiteSelected?.Invoke(tile.Site);
-                        else if (tile.Discovery != null) DiscoverySelected?.Invoke(tile.Discovery);
-                        else if (GameState.Instance.IsAdventureTileFrontier(tile) && !IsTravelling) GroundSelected?.Invoke(tile);
-                    }
-                }
-                AcceptEvent();
-            }
-        }
-        if (input is InputEventMouseMotion motion && _dragging) { _dragDistance += motion.Relative.Length(); MapOffset += motion.Relative; UpdateView(); AcceptEvent(); }
-        else if (input is InputEventMouseMotion hover)
-            _hoverTile = AdventureTileCatalog.At(ActiveMapId, (hover.Position - MapOffset) / Zoom) is { } tile && GameState.Instance.IsAdventureTileFrontier(tile) ? tile : null;
-        if (input is InputEventScreenDrag drag) { _dragDistance += drag.Relative.Length(); MapOffset += drag.Relative; UpdateView(); AcceptEvent(); }
-        if (input is InputEventMagnifyGesture pinch) { ChangeZoom(pinch.Factor, pinch.Position); AcceptEvent(); }
     }
     public void TravelTo(AdventureMapNode destination, Action arrived)
     {
@@ -175,6 +143,7 @@ public partial class MapPathCanvas : Control
     public override void _Process(double delta)
     {
         _time += (float)delta; _rewardBursts.RemoveAll(reward => _time - reward.Time > 2.4f);
+        UpdateGlide((float)delta);
         QueueRedraw();
     }
     public override void _Draw()

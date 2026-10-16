@@ -76,6 +76,8 @@ public partial class UiReviewSmoke
         Send(new InputEventMouseButton { ButtonIndex = MouseButton.WheelDown, Pressed = true, Position = click, GlobalPosition = click });
         await Wait(.1);
         Check(Math.Abs(canvas.Zoom - originalZoom) < .01f, "Map zoom returns to its original scale");
+        await ReviewMapTouch(menu, canvas, leader);
+        canvas.ChangeZoom(originalZoom / canvas.Zoom); canvas.FocusCurrentTile();
         canvas.ChangeZoom(1.2f); canvas.FocusSite(leader.Id); await Wait(.1);
         var building = canvas.GlobalPosition + leader.Point * canvas.Zoom + canvas.MapOffset - new Vector2(0, 24) * canvas.Zoom;
         Send(new InputEventMouseMotion { Position = building, GlobalPosition = building });
@@ -249,5 +251,87 @@ public partial class UiReviewSmoke
         GD.Print($"TILE_MAP_REVIEW_RESULT: {_failures} failures");
         if (includeHome) GD.Print($"HOME_MAP_REVIEW_RESULT: {_failures} failures");
         QuitAfterAudio(_failures == 0 ? 0 : 1);
+    }
+
+    /// <summary>Touch on the zone map, sent as a phone sends it: each finger's touch events plus the mouse Godot emulates from the first.</summary>
+    private async Task ReviewMapTouch(MapMenu menu, MapPathCanvas canvas, AdventureTile leader)
+    {
+        void Mouse(InputEvent input) { input.Device = (int)InputEvent.DeviceIdEmulation; Send(input); }
+        void Down(int finger, Vector2 at)
+        {
+            if (finger == 0) Mouse(new InputEventMouseButton { ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true, Position = at, GlobalPosition = at });
+            Send(new InputEventScreenTouch { Index = finger, Pressed = true, Position = at });
+        }
+        void Move(int finger, Vector2 from, Vector2 to)
+        {
+            if (finger == 0) Mouse(new InputEventMouseMotion { ButtonMask = MouseButtonMask.Left, Relative = to - from, Position = to, GlobalPosition = to });
+            Send(new InputEventScreenDrag { Index = finger, Relative = to - from, Position = to });
+        }
+        void Up(int finger, Vector2 at)
+        {
+            if (finger == 0) Mouse(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
+            Send(new InputEventScreenTouch { Index = finger, Pressed = false, Position = at });
+        }
+        var glide = typeof(MapPathCanvas).GetField("_glideVelocity", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var origin = canvas.GlobalPosition;
+        Check(Math.Abs(canvas.Zoom - .85f) < .01f, "The zone map opens close enough to read the landmarks around the caravan");
+
+        // One finger: past the tap slop, the ground follows it exactly, once.
+        canvas.FocusOverview(); await Wait(.1);
+        var finger = origin + canvas.Size * .5f; var before = canvas.MapOffset;
+        Down(0, finger); Move(0, finger, finger + new Vector2(-20, 0));
+        Move(0, finger + new Vector2(-20, 0), finger + new Vector2(-140, -40)); Move(0, finger + new Vector2(-140, -40), finger + new Vector2(-260, -80));
+        Up(0, finger + new Vector2(-260, -80));
+        Check((canvas.MapOffset - before).IsEqualApprox(new Vector2(-240, -80)), $"A dragged finger moves the map exactly as far as it travels ({canvas.MapOffset - before})");
+        await Wait(.2);
+        Check((canvas.MapOffset - before).IsEqualApprox(new Vector2(-240, -80)), "A drag that stops before letting go leaves the map where it is");
+        Down(0, finger); Move(0, finger, finger + new Vector2(6, 5)); Up(0, finger + new Vector2(6, 5));
+        Check((canvas.MapOffset - before).IsEqualApprox(new Vector2(-240, -80)), "A tap's small wobble never nudges the map");
+
+        // Two fingers: the map zooms with their spread about their midpoint, and pans with it.
+        canvas.FocusOverview(); await Wait(.1);
+        var zoom = canvas.Zoom; var mid = finger - origin; var ground = (mid - canvas.MapOffset) / zoom;
+        Down(0, finger - new Vector2(80, 0)); Down(1, finger + new Vector2(80, 0));
+        Move(1, finger + new Vector2(80, 0), finger + new Vector2(120, 10)); Move(0, finger - new Vector2(80, 0), finger - new Vector2(120, -10));
+        Move(0, finger - new Vector2(120, -10), finger - new Vector2(100, -40)); Move(1, finger + new Vector2(120, 10), finger + new Vector2(140, 40));
+        var pinchMid = finger + new Vector2(20, 40) - origin;
+        Check(canvas.Zoom > zoom * 1.3f && canvas.Zoom < zoom * 1.6f, $"Spreading two fingers zooms the map in ({zoom:0.00} to {canvas.Zoom:0.00})");
+        Check(((pinchMid - canvas.MapOffset) / canvas.Zoom).DistanceTo(ground) < 2, "The ground between the fingers stays between them as they pinch and move");
+        Up(1, finger + new Vector2(140, 40)); var afterPinch = canvas.MapOffset;
+        Move(0, finger - new Vector2(100, -40), finger - new Vector2(70, -40));
+        Check((canvas.MapOffset - afterPinch).IsEqualApprox(new Vector2(30, 0)), "Lifting one finger hands the pan to the other without a jump");
+        Up(0, finger - new Vector2(70, -40));
+        zoom = canvas.Zoom;
+        Down(0, finger - new Vector2(150, 0)); Down(1, finger + new Vector2(150, 0));
+        for (var step = 1; step <= 4; step++) { Move(0, finger - new Vector2(150 - (step - 1) * 30, 0), finger - new Vector2(150 - step * 30, 0)); Move(1, finger + new Vector2(150 - (step - 1) * 30, 0), finger + new Vector2(150 - step * 30, 0)); }
+        Up(0, finger - new Vector2(30, 0)); Up(1, finger + new Vector2(30, 0));
+        Check(canvas.Zoom < zoom * .5f, $"Pinching two fingers together zooms the map out ({zoom:0.00} to {canvas.Zoom:0.00})");
+        canvas.ChangeZoom(100); var closest = canvas.Zoom; canvas.ChangeZoom(.001f);
+        Check(Math.Abs(closest - 1.4f) < .01f && canvas.Zoom > .25f && canvas.Zoom < .35f, $"Zoom runs from most of the zone ({canvas.Zoom:0.00}) to close on a landmark ({closest:0.00})");
+
+        // A flick glides on and slows to a stop; a touch catches a glide without choosing anything.
+        canvas.ChangeZoom(.85f / canvas.Zoom); canvas.FocusOverview(); await Wait(.1);
+        before = canvas.MapOffset; var at = finger;
+        Down(0, at);
+        for (var step = 0; step < 6; step++) { Move(0, at, at + new Vector2(-24, 0)); at += new Vector2(-24, 0); await Wait(.02); }
+        Up(0, at); var released = canvas.MapOffset; var speed = ((Vector2)glide.GetValue(canvas)).X;
+        Check(speed < -150, $"A flick sets the map gliding on ({speed:0} px/s)");
+        await Wait(.15);
+        Check(canvas.MapOffset.X < released.X - 5, "The map glides on after the finger lifts");
+        Down(0, finger); Up(0, finger); await Wait(.1);
+        Check((Vector2)glide.GetValue(canvas) == Vector2.Zero && menu.HomeModalDestination == "" && !menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible,
+            "A touch on a gliding map stops it without choosing anything");
+
+        // A drag that starts on a landmark pans the map and doesn't open it; a tap on it still does.
+        canvas.FocusSite(leader.Id); await Wait(.1);
+        var fort = origin + leader.Point * canvas.Zoom + canvas.MapOffset - new Vector2(0, 24) * canvas.Zoom; before = canvas.MapOffset;
+        Down(0, fort); Move(0, fort, fort - new Vector2(30, 0)); Move(0, fort - new Vector2(30, 0), fort - new Vector2(120, 0)); Up(0, fort - new Vector2(120, 0));
+        await Wait(.2);
+        Check(canvas.MapOffset != before && menu.HomeModalDestination == "", "Dragging from a landmark pans the map without opening it");
+        canvas.FocusSite(leader.Id); await Wait(.1);
+        Down(0, fort); Up(0, fort);
+        await FinishTravel(); await Wait(.2);
+        Check(menu.HomeModalDestination == SceneRouter.LoadoutScene, "Tapping a landmark opens it");
+        menu.CloseHomeModal(); await Wait(.1);
     }
 }

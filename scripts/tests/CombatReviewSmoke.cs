@@ -561,7 +561,7 @@ public partial class CombatReviewSmoke : Node
             {
                 foreach (var pack in Read<List<CouragePickup>>(battle, "_couragePickups").Where(p => p.Available).ToArray())
                 {
-                    var screen = pack.GetGlobalTransformWithCanvas() * new Vector2(0, -7);
+                    var screen = pack.GetGlobalTransformWithCanvas() * CouragePickup.TapCenter;
                     battle._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen, GlobalPosition = screen });
                     battle._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = screen, GlobalPosition = screen });
                     if (pack.Collected) packsCollected++;

@@ -5,6 +5,7 @@ public partial class BattleController
 {
     private readonly RandomNumberGenerator _courageDropRng = new();
     private readonly List<CouragePickup> _couragePickups = new();
+    private readonly List<CouragePickup> _courageFlights = new();
     private int _courageDropMisses;
     private CouragePickup _pressedCouragePickup;
     private bool _couragePickupPointerDown;
@@ -35,7 +36,9 @@ public partial class BattleController
             return;
         }
         _courageDropMisses = 0; // A missed or expired pack does not award another guaranteed roll.
-        SpawnCouragePickup(defeated.Position);
+        var pack = SpawnCouragePickup(defeated.Position);
+        pack.PopFrom(Chest(defeated) - defeated.Position);
+        AudioDirector.Instance?.PlayAt("courage_drop", defeated.Position);
     }
 
     private CouragePickup SpawnCouragePickup(Vector2 position, float? amount = null)
@@ -47,19 +50,47 @@ public partial class BattleController
         return pickup;
     }
 
+    /// <summary>
+    /// Courage that is earned rather than dropped (supply crates, quartermasters, relics, objectives): it is added at
+    /// once and a loose flame flies from <paramref name="from"/> into the meter. Only enemies leave tappable packs.
+    /// </summary>
+    private float GrantCourage(Vector2 from, float amount)
+    {
+        if (_battleEnded) return 0f;
+        amount = Mathf.Min(amount, Mathf.Max(0f, _maxCourage - _courage));
+        if (amount <= .001f) return 0f;
+        _courage += amount;
+        var ember = new CouragePickup { Name = "CourageEmber" };
+        ember.SetupEmber(from, amount);
+        AddChild(ember);
+        _courageFlights.Add(ember);
+        SpawnCombatNumber(from + new Vector2(0, -26), $"+{Mathf.RoundToInt(amount)}", new Color("ffd18b"), .55f);
+        UpdateHud();
+        return amount;
+    }
+
+    /// <summary>The flame on the courage meter, in battle space: where collected packs fly to.</summary>
+    private Vector2 CourageMeterTarget()
+    {
+        if (_courageBar == null) return PlayerBaseCorePosition;
+        var local = _courageBar is RoyalMeter meter && meter.IconRect.Size != Vector2.Zero ? meter.IconRect.GetCenter() : _courageBar.Size * .5f;
+        return ScreenToBattle(_courageBar.GetGlobalTransformWithCanvas() * local);
+    }
+
     private void TickCouragePickups(float delta)
     {
         if (!CouragePickupActionAvailable) return;
-        var target = _courageBar == null ? PlayerBaseCorePosition :
-            ScreenToBattle(_courageBar.GetGlobalTransformWithCanvas() * (_courageBar.Size * .5f));
-        for (var i = _couragePickups.Count - 1; i >= 0; i--)
-        {
-            var pickup = _couragePickups[i];
-            pickup.Tick(delta, target, IsReducedMotionEnabled());
-            if (!pickup.Finished) continue;
-            _couragePickups.RemoveAt(i);
-            pickup.QueueFree();
-        }
+        var target = CourageMeterTarget();
+        foreach (var list in new[] { _couragePickups, _courageFlights })
+            for (var i = list.Count - 1; i >= 0; i--)
+            {
+                var pickup = list[i];
+                pickup.Tick(delta, target, IsReducedMotionEnabled());
+                if (!pickup.Finished) continue;
+                list.RemoveAt(i);
+                if (pickup.Collected) (_courageBar as RoyalMeter)?.Flare();
+                pickup.QueueFree();
+            }
     }
 
     private CouragePickup CouragePickupAt(Vector2 screen)
@@ -72,8 +103,8 @@ public partial class BattleController
         {
             if (!pickup.Available) continue;
             var transform = pickup.GetGlobalTransformWithCanvas();
-            var center = transform * new Vector2(0, -7);
-            var radius = Mathf.Max(24f, (transform * new Vector2(12, 0) - transform.Origin).Length());
+            var center = transform * CouragePickup.TapCenter;
+            var radius = Mathf.Max(24f, (transform * new Vector2(CouragePickup.TapRadius, 0) - transform.Origin).Length());
             var distance = screen.DistanceSquaredTo(center);
             if (distance <= radius * radius && distance < best)
             { closest = pickup; best = distance; }
@@ -88,8 +119,13 @@ public partial class BattleController
         if (amount <= .001f) return false; // Let the player spend first; its expiry keeps running.
         _courage += amount;
         pickup.Collect();
-        AudioDirector.Instance?.PlayCoin();
-        SpawnCombatNumber(pickup.Position + new Vector2(0, -23), $"+{Mathf.RoundToInt(amount)}", new Color("ffd18b"), .55f);
+        AudioDirector.Instance?.Play("courage_pickup");
+        var gem = pickup.Position + CouragePickup.TapCenter;
+        SpellVfx.Flash(this, gem, new Color("ffc46b"), 20f, .3f);
+        SpellVfx.Shockwave(this, pickup.Position, new Color(1f, .78f, .4f, .7f), 15f, .4f);
+        SpellVfx.Burst(this, gem, "p_ember", 12, .6f, SpellVfx.Fade(new Color("ffe2a1"), new Color("f07a2a")), 3, 6, 45, 110,
+            damping: 90, gravity: -25);
+        SpawnCombatNumber(pickup.Position + new Vector2(0, -30), $"+{Mathf.RoundToInt(amount)}", new Color("ffd18b"), .55f);
         UpdateHud();
         return true;
     }
@@ -175,7 +211,9 @@ public partial class BattleController
         {
             CancelCouragePickupGesture();
             foreach (var pickup in _couragePickups) pickup.QueueFree();
+            foreach (var flight in _courageFlights) flight.QueueFree();
             _couragePickups.Clear();
+            _courageFlights.Clear();
         }
         else if (!CouragePickupActionAvailable) CancelCouragePickupGesture();
     }

@@ -38,7 +38,7 @@ public partial class BattleController
     {
         if(!_contentObjectiveRewards.Add(key)) return;
         var friends=NearbyContentUnits(Team.Player,position,100).ToArray();
-        if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_caravan_token"))) SpawnCouragePickup(position,2);
+        if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_caravan_token"))) GrantCourage(position,2);
         if(friends.Any(u=>ContentEquipment(u).Any(i=>i.Id=="relic_crownroad_charter"))) GainMana(7);
         foreach(var friend in friends)
             if(ContentEquipment(friend).Any(i=>i.Id=="relic_tower_ascendant")) friend.ApplyTemporaryCombatBuff(1.04f,1,2);
@@ -285,7 +285,7 @@ public partial class BattleController
                         break;
                     case "relic_umbral_coin":
                         if(dead.Definition.Armor>=25 && ally.GeneratedCourage+2<=ally.Definition.Cost*.2f && ally.TryEffect(item.Id,15))
-                        { ally.GeneratedCourage+=2;SpawnCouragePickup(dead.Position,2); }
+                        ally.GeneratedCourage+=GrantCourage(ally.Position,2);
                         break;
                     case "relic_hardened_soul":case "relic_tower_ascendant":
                         if(ally.TryEffect(item.Id,12)) ally.ApplyTemporaryCombatBuff(1.04f,1,2);

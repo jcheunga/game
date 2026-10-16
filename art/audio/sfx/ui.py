@@ -110,6 +110,24 @@ def gem(rng, k):
     return space(mix((glass, 0, 0.35), (a, 0.0, 0.6), (b, 0.07, 0.4)), "chamber", 0.15)
 
 
+@cue("courage_drop", 2, level="ui", cooldown=0.12, voices=2, pitch=0.02, label="ember gem chiming onto the road", positional=True,
+     bus="Interface")
+def courage_drop(rng, k):
+    chime = note("hand_chimes", 86 + 3 * k, 0.4, 0.08, release=0.9, rng=rng)
+    glass = s("k_glass_light", 0.35, detune=rng.uniform(4, 7), seconds=0.2, rng=rng)
+    flame = F.fire_whoosh(0.35, rng, 0.35)
+    return space(mix((flame, 0, 0.35), (glass, 0.04, 0.3), (chime, 0.04, 0.5), (F.crackle(0.4, 30, rng), 0.05, 0.2)), "room", 0.08)
+
+
+@cue("courage_pickup", 3, level="ui_bright", cooldown=0.05, voices=3, pitch=0.02, label="warm rising chime and a breath of flame", **UI)
+def courage_pickup(rng, k):
+    root = 81 + (0, 2, 4)[k]
+    rise = seq("glockenspiel", [root, root + 4, root + 7, root + 12], 0.045, 0.35, 0.08, release=0.6, rng=rng, pan_spread=0.5)
+    bell = note("hand_chimes", root + 12, 0.4, 0.15, release=1.0, rng=rng)
+    flame = F.fire_whoosh(0.45, rng, 0.5)
+    return space(mix((flame, 0, 0.45), (rise, 0.02, 0.55), (bell, 0.16, 0.35)), "chamber", 0.12)
+
+
 @cue("upgrade_confirm", 2, level="reward", cooldown=0.15, voices=2, pitch=0.01, label="hammer striking an anvil", **UI)
 def upgrade_confirm(rng, k):
     anvil = s("anvil", 0.85, detune=rng.uniform(-2, 1), seconds=1.0, rng=rng)

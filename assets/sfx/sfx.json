@@ -862,6 +862,33 @@
   "volume_db": 0.0,
   "loop": false
  },
+ "courage_drop": {
+  "files": [
+   "res://assets/sfx/courage_drop_1.ogg",
+   "res://assets/sfx/courage_drop_2.ogg"
+  ],
+  "bus": "Interface",
+  "positional": true,
+  "cooldown": 0.12,
+  "voices": 2,
+  "pitch": 0.02,
+  "volume_db": 0.0,
+  "loop": false
+ },
+ "courage_pickup": {
+  "files": [
+   "res://assets/sfx/courage_pickup_1.ogg",
+   "res://assets/sfx/courage_pickup_2.ogg",
+   "res://assets/sfx/courage_pickup_3.ogg"
+  ],
+  "bus": "Interface",
+  "positional": false,
+  "cooldown": 0.05,
+  "voices": 3,
+  "pitch": 0.02,
+  "volume_db": 0.0,
+  "loop": false
+ },
  "crossbow_release": {
   "files": [
    "res://assets/sfx/crossbow_release_1.ogg",

@@ -291,7 +291,7 @@ These share five loadout slots. Levels 1–3 give flat damage, healing and durab
 | Firepot Mine | tactical | 25 | 35 | 20s | 8s | 32 | A ground trap explodes on the first enemy and leaves a short burning patch. Area denial; enemies can destroy the visible mine before triggering it. |
 | Healing Shrine | tactical | 8 | 35 | 24s | 10s | 14 | A stationary shrine emits a limited number of healing pulses. Sustained recovery; cannot heal the wagon and can be destroyed. |
 | Bolt Turret | tactical | 28 | 42 | 26s | 12s | 12 | A placed bolt-thrower fires a finite number of ordinary shots. Rear defense; does not attack structures and needs a safe position. |
-| Supply Crate | tactical | 18 | 35 | 26s | 9s | 8 | A crate yields small courage packets while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate. |
+| Supply Crate | tactical | 18 | 35 | 26s | 9s | 8 | A crate sends small courage boosts to the meter while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate. |
 | Frost Trap | tactical | 44 | 28 | 20s | 8s | 8 | The first enemy triggers a short freeze and consumes the trap. Stops a dangerous advance; control resistance applies to elites. |
 | Decoy Lantern | tactical | 84 | 28 | 22s | 5s | 0 | A placed lantern lures eligible nearby enemies briefly. Protects supports or gathers a pack; bosses resist and area damage destroys it. |
 | Smoke Pot | tactical | 16 | 28 | 20s | 4s | 0 | A small smoke area breaks enemy target locks and conceals moving allies briefly. Enables retreat or setup; attacks reveal allies and hazards still hurt. |

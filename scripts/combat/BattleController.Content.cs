@@ -52,13 +52,13 @@ public partial class BattleController
             {
                 _contentOutpostProgress+=delta;
                 if(_contentOutpostProgress>3 && _contentObjectiveRewards.Add("outpost_base"))
-                { SpawnCouragePickup(outpost,4);ApplyContentObjectiveEquipment("outpost",outpost); }
+                { GrantCourage(outpost,4);ApplyContentObjectiveEquipment("outpost",outpost); }
             }
             if(HasUnitNear(Team.Player,supply,45) && !HasUnitNear(Team.Enemy,supply,55))
             {
                 _contentSupplyProgress+=delta;
                 if(_contentSupplyProgress>3 && _contentObjectiveRewards.Add("supply_base"))
-                { SpawnCouragePickup(supply,6);ApplyContentObjectiveEquipment("supply",supply); }
+                { GrantCourage(supply,6);ApplyContentObjectiveEquipment("supply",supply); }
             }
         }
         _contentCorpses.RemoveAll(c => c.Expires < _elapsed);
@@ -149,7 +149,7 @@ public partial class BattleController
         if (unit.NonCombatant)
         {
             if (unit.Position.X>Mathf.Lerp(PlayerSpawnX,EnemySpawnX,.78f))
-            { SpawnCouragePickup(unit.Position,8);unit.Despawn(); }
+            { GrantCourage(unit.Position,8);unit.Despawn(); }
             else unit.Advance(delta,BattlefieldLeft,BattlefieldRight,BattlefieldTop+SpawnVerticalPadding,BattlefieldBottom-SpawnVerticalPadding);
             return true;
         }
@@ -613,7 +613,7 @@ public partial class BattleController
                 {
                     var amount=Math.Min(2,quarter.Definition.Cost*.2f-quarter.GeneratedCourage);
                     if(amount>0 && quarter.TryEffect("supply_pack",10))
-                    { quarter.GeneratedCourage+=amount;SpawnCouragePickup(dead.Position,amount); }
+                    quarter.GeneratedCourage+=GrantCourage(quarter.Position,amount);
                 }
             ApplyContentDeathEquipment(dead);
         }

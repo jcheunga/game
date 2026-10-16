@@ -45,7 +45,7 @@ The opening palette teaches Risen, Ghoul, Brute and Blight Spitter. Each zone th
 
 Later stages reuse familiar threats. Other ordinary types are available in the regional endless pools, where expanded types begin appearing from wave six. The main campaign avoids introducing the entire enemy collection at once.
 
-Eligible enemy defeats retain the manual courage pack system: 10% chance, +20 courage, eight-second expiry, fading in the last two seconds, and a guarantee after fifteen eligible misses. Click or tap to collect; there is no countdown ring. Quartermaster, Supply Crate and objective/equipment packs have their own smaller values and limits.
+Eligible enemy defeats retain the manual courage pack system: 10% chance, +20 courage, eight-second expiry, fading in the last two seconds, and a guarantee after fifteen eligible misses. Click or tap to collect; there is no countdown ring. Only enemies drop packs: Quartermaster, Supply Crate, objective and relic courage goes straight to the meter, with its own smaller values and limits.
 
 ## Current documents and rebuilding
 

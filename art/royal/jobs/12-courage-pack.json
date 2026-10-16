@@ -1,0 +1,20 @@
+[
+  {
+    "id": "courage-pack-ember",
+    "out": "art/royal/gen/courage/ember.png",
+    "inputs": [
+      "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+    ],
+    "edit": false,
+    "prompt": "Use case: stylized-concept\nAsset type: a collectible battlefield pickup for a medieval fantasy strategy game (Crownroad: Siege of Ash). Fallen enemies sometimes drop it; the player taps it to gain courage, which the game shows as a golden flame.\nSubject: a single \"courage ember\": a faceted teardrop-shaped amber gemstone, point upward, with a bright living flame burning inside it (warm white-gold heart, orange and amber outer tongues). The gem is cradled in an ornate gilded brass filigree setting: a curling cage of thin gold scrollwork around its lower half, a small royal crown clasp at the base and a tiny ruby at the front. Warm inner light spills through the facets.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail, strong readable silhouette.\nComposition: front view, slightly from above, perfectly upright and centred; the object fills about 86% of a square canvas, nothing cropped. It must read clearly when shown only 60 pixels tall.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground, no shadow plate, no glow haze around the object.\nConstraints: no text, no watermark, no border."
+  },
+  {
+    "id": "courage-pack-crest",
+    "out": "art/royal/gen/courage/crest.png",
+    "inputs": [
+      "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+    ],
+    "edit": false,
+    "prompt": "Use case: stylized-concept\nAsset type: a collectible battlefield pickup for a medieval fantasy strategy game (Crownroad: Siege of Ash). Fallen enemies sometimes drop it; the player taps it to gain courage, which the game shows as a golden flame.\nSubject: a single \"courage crest\": a small heraldic shield-shaped badge of polished gold with a bevelled rim and tiny rivets, its face deep crimson enamel bearing a raised, brightly glowing golden flame emblem; a small royal crown sits on the top edge and a short ribbon of royal blue cloth with gold trim curls beneath it. The flame emblem glows warm gold-white.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, soft glow where magical, crisp detail, strong readable silhouette.\nComposition: front view, perfectly upright and centred; the object fills about 86% of a square canvas, nothing cropped. It must read clearly when shown only 60 pixels tall.\nBackground: genuinely transparent background (alpha). No backdrop, no frame, no card, no ground, no shadow plate, no glow haze around the object.\nConstraints: no text, no watermark, no border."
+  }
+]

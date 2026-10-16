@@ -600,7 +600,7 @@
       "ObjectArmor": 10.0,
       "ObjectMagicalResistance": 5.0,
       "Charges": 3,
-      "Description": "A crate yields small courage packets while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate.",
+      "Description": "A crate sends small courage boosts to the meter while allies hold its immediate area. Trades mana for deployment reserve; enemies can break the crate.",
       "ColorHex": "b3a17a",
       "CardKind": "tactical",
       "Family": "Tactical Gear"

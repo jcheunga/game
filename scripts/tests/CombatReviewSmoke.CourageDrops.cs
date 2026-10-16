@@ -129,6 +129,20 @@ public partial class CombatReviewSmoke
             var sequence = Sequence(false);
             Check(sequence.SequenceEqual(Sequence(true)) && sequence.Any(x => x) && sequence.Any(x => !x),
                 "Seeded pack rolls are reproducible and independent of combat/cosmetic RNG consumption");
+
+            // Only enemies leave packs: courage from crates, quartermasters, relics and objectives goes straight to the meter.
+            var flights = Read<List<CouragePickup>>(battle, "_courageFlights");
+            Write(battle, "_courage", 0f);
+            var granted = (float)Invoke(battle, "GrantCourage", new Vector2(400, 340), 8f);
+            Check(granted == 8f && Read<float>(battle, "_courage") == 8f && packs.Count == 0 && flights.Count == 1 && !flights[0].Available,
+                "A direct courage grant adds to the meter at once and leaves nothing to tap");
+            Write(battle, "_courage", Read<float>(battle, "_maxCourage") - 3f);
+            granted = (float)Invoke(battle, "GrantCourage", new Vector2(400, 340), 8f);
+            Check(granted == 3f && Read<float>(battle, "_courage") == Read<float>(battle, "_maxCourage"), "A direct grant clamps at capacity");
+            Check((float)Invoke(battle, "GrantCourage", new Vector2(400, 340), 8f) == 0f && flights.Count == 2, "A full meter takes no grant and shows no flight");
+            Invoke(battle, "TickCouragePickups", 1f);
+            Check(flights.Count == 0, "Grant flights finish and free themselves");
+            Write(battle, "_courage", 0f);
             await CloseBattle(battle); battle = null;
 
             // Exercise actual viewport input with mouse and touch, at a monitor and a phone size.
@@ -149,7 +163,7 @@ public partial class CombatReviewSmoke
                 camera.Position = new Vector2(700, camera.Position.Y);
                 Invoke(battle, "ClampBattleCamera", camera); camera.ForceUpdateScroll();
                 var world = new Vector2(720, 340);
-                Vector2 Point(CouragePickup pickup) => pickup.GetGlobalTransformWithCanvas() * new Vector2(0, -7);
+                Vector2 Point(CouragePickup pickup) => pickup.GetGlobalTransformWithCanvas() * CouragePickup.TapCenter;
                 CouragePickup Pack() => (CouragePickup)Invoke(battle, "SpawnCouragePickup", world, null);
                 void Send(InputEvent e) => GetViewport().PushInput(e, true);
                 void Down(Vector2 at, int finger = 7)
@@ -234,12 +248,26 @@ public partial class CombatReviewSmoke
                     mode + ": explicit spell drag casts over a pack without collecting it");
                 Invoke(battle, "TickCouragePickups", 10f);
 
-                // Capture actual battle presentation with a normal and a fading pack.
+                // Capture actual battle presentation: a settled pack and a fading one, then one tumbling out of a body
+                // and one streaking to the meter.
                 for (var frame = 0; frame < 40; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                var faded = Pack(); Invoke(battle, "TickCouragePickups", 7f);
-                Invoke(battle, "SpawnCouragePickup", world + new Vector2(38, 0), null);
+                var faded = Pack(); Invoke(battle, "TickCouragePickups", 6.8f);
+                var settled = (CouragePickup)Invoke(battle, "SpawnCouragePickup", world + new Vector2(38, 0), null);
                 Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_brawler")), world - new Vector2(65, 0));
+                // Review frames run uncapped, so wait in real time for the embers to rise, and step the motion by hand.
+                await ToSignal(GetTree().CreateTimer(.8, true, false, true), SceneTreeTimer.SignalName.Timeout);
+                AppLifecycleService.Instance?.Notification((int)Node.NotificationWMWindowFocusIn);
+                if (Read<bool>(battle, "_battlePaused")) Invoke(battle, "TogglePause");
                 await CaptureCouragePacks(mode + "-packs");
+                var popping = (CouragePickup)Invoke(battle, "SpawnCouragePickup", world + new Vector2(-24, 14), null);
+                popping.PopFrom(new Vector2(0, -30));
+                Write(battle, "_courage", 0f);
+                Invoke(battle, "CollectCouragePickup", settled);
+                Invoke(battle, "GrantCourage", world - new Vector2(150, 0), 6f);
+                for (var step = 0; step < 17; step++) Invoke(battle, "TickCouragePickups", .025f);
+                await CaptureCouragePacks(mode + "-motion");
+                for (var step = 0; step < 7; step++) Invoke(battle, "TickCouragePickups", .025f);
+                await CaptureCouragePacks(mode + "-arrival");
                 Write(battle, "_battleEnded", true); Invoke(battle, "UpdateCouragePickupPresentation");
                 Check(packs.Count == 0 && !Read<bool>(battle, "_couragePickupPointerDown"), mode + ": battle end clears packs and input state");
                 await CloseBattle(battle); battle = null;

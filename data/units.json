@@ -1042,7 +1042,7 @@
       "PlaceholderVisual": true,
       "PlaceholderWeapon": "hammer",
       "ColorHex": "bca76b",
-      "Description": "Qualifying nearby allied kills produce small manually collected courage packs on a shared cooldown.",
+      "Description": "Qualifying nearby allied kills send a little courage straight to the meter on a shared cooldown.",
       "Weakness": "Low direct damage; no rewards from summoned or artificial targets.",
       "ContentBehavior": "supply",
       "SpecialCooldown": 12,

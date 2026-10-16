@@ -171,7 +171,7 @@ public partial class BattleController
                 obj.UtilityCharges--;break;
             case "tactic_supply_crate":
                 if(NearbyContentUnits(Team.Player,obj.Position,spell.Radius).Any(a=>!a.IsTacticalObject))
-                { SpawnCouragePickup(obj.Position,spell.Power);obj.UtilityCharges--;TacticPulseVfx(spell.EffectType,obj); }
+                { GrantCourage(obj.Position,spell.Power);obj.UtilityCharges--;TacticPulseVfx(spell.EffectType,obj); }
                 break;
             case "tactic_purifying_censer":
                 TacticPulseVfx(spell.EffectType,obj);

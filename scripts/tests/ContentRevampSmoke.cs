@@ -138,12 +138,12 @@ public partial class ContentRevampSmoke : Node
                 var patientDef=new UnitDefinition {Id="patient_probe",DisplayName="Patient probe",MaxHealth=300,AttackDamage=0,DamageTakenScale=1};
                 var patient=Spawn(Team.Player,patientDef,600);patient.TakeDamage(200,damageType:CombatDamageType.True);
                 var hpBefore=patient.Health;var packs=Read<List<CouragePickup>>(battle,"_couragePickups");var count=packs.Count;
-                var courage=Read<float>(battle,"_courage");
+                Write(battle,"_courage",0f);var courage=0f;
                 Call(battle,"ApplyExpandedUtility",new ResolvedSpellStats(def,1),new Vector2(600,340));
                 var obj=units.Last();
                 for(var step=0;step<(int)Math.Round((def.Duration+.1f)*10);step++) {obj.TickContentState(.1f);Call(battle,"TickTacticalObject",obj,null);}
                 Check(obj.UtilityCharges==0,$"{def.DisplayName} delivers every finite pulse before expiry");
-                if(id=="tactic_supply_crate") Check(packs.Count-count==3 && Read<float>(battle,"_courage")==courage,"Supply Crate makes three manual packs without automatic collection");
+                if(id=="tactic_supply_crate") Check(packs.Count==count && Math.Abs(Read<float>(battle,"_courage")-courage-3*def.Power)<.01f,"Supply Crate sends three courage pulses straight to the meter, leaving no packs");
                 else Check(Math.Abs(patient.Health-hpBefore-70)<.01f,"Healing Shrine delivers five bounded healing pulses");
                 ClearField();
             }

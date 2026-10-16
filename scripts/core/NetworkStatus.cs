@@ -65,6 +65,7 @@ public partial class NetworkStatus : Node
 			IsOnline = true;
 			IsServerReachable = resp.IsSuccessStatusCode;
 			LastError = IsServerReachable ? "" : $"HTTP {(int)resp.StatusCode}";
+			if (IsServerReachable) _ = AccountSignIn.OnServerReachable();
 		}
 		catch (Exception ex)
 		{

@@ -1,4 +1,8 @@
+using System.Buffers.Binary;
 using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 
 namespace CrownroadServer.Tests;
@@ -129,5 +133,110 @@ public static partial class ServerTests
             Assert(unsupported.StatusCode == HttpStatusCode.ServiceUnavailable, "Only secure or loopback HTTP callbacks are accepted");
         }
         finally { for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]); }
+    }
+
+    private static async Task TestAccountPlayGames(HttpClient client)
+    {
+        var keys = new[] { "PLAY_GAMES_CLIENT_ID", "PLAY_GAMES_CLIENT_SECRET" };
+        var previous = keys.Select(Environment.GetEnvironmentVariable).ToArray();
+        try
+        {
+            foreach (var key in keys) Environment.SetEnvironmentVariable(key, "");
+            using var unavailable = await client.PostAsJsonAsync("/auth/playgames", new { authCode = "good-code" });
+            Assert(unavailable.StatusCode == HttpStatusCode.ServiceUnavailable, "Unconfigured Play Games sign-in is explicit");
+            Environment.SetEnvironmentVariable(keys[0], "play-server.apps.googleusercontent.com");
+            Environment.SetEnvironmentVariable(keys[1], "test-secret");
+            AccountAuth.TestPlayGamesExchange = code => code == "good-code" ? Task.FromResult("g-test-player") : throw new HttpRequestException("rejected");
+            var providers = await client.GetFromJsonAsync<JsonElement>("/auth/providers");
+            Assert(providers.GetProperty("playGames").GetBoolean() && providers.GetProperty("playGamesClientId").GetString() == "play-server.apps.googleusercontent.com",
+                "Providers hand Android the server client ID Play Games issues codes for");
+            await EnsureSession(client, "TEST-PG");
+            var account = await AccountPost(client, "/auth/playgames", new { authCode = "good-code" }, "TEST-PG", SessionTokens["TEST-PG"]);
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-PG" && account.GetProperty("isNewAccount").GetBoolean(),
+                "A verified Play Games player links the authenticated guest's progress");
+            Assert(account.GetProperty("accountLabel").GetString() == "Google Play Games", "Play Games accounts are labelled by service");
+            account = await AccountPost(client, "/auth/playgames", new { authCode = "good-code" });
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-PG" && !account.GetProperty("isNewAccount").GetBoolean(),
+                "A reinstall signed in to the same Play Games player recovers the same profile");
+            using var rejected = await client.PostAsJsonAsync("/auth/playgames", new { authCode = "forged-code" });
+            Assert(rejected.StatusCode == HttpStatusCode.BadGateway, "A code Google refuses issues no session");
+            using var empty = await client.PostAsJsonAsync("/auth/playgames", new { authCode = "" });
+            Assert(empty.StatusCode == HttpStatusCode.BadRequest, "A missing Play Games code is rejected before contacting Google");
+        }
+        finally
+        {
+            AccountAuth.TestPlayGamesExchange = null;
+            for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]);
+        }
+    }
+
+    private static async Task TestAccountGameCenter(HttpClient client)
+    {
+        var keys = new[] { "GAME_CENTER_BUNDLE_ID", "APPLE_IAP_BUNDLE_ID" };
+        var previous = keys.Select(Environment.GetEnvironmentVariable).ToArray();
+        static X509Certificate2 Root(RSA key)
+        {
+            var request = new CertificateRequest("CN=Test Game Center Root", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+            return request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(1));
+        }
+        using var rootKey = RSA.Create(2048); using var root = Root(rootKey);
+        using var otherKey = RSA.Create(2048); using var otherRoot = Root(otherKey);
+        using var leafKey = RSA.Create(2048);
+        using var leaf = new CertificateRequest("CN=Test Game Center", leafKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
+            .Create(root, DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddMonths(1), RandomNumberGenerator.GetBytes(8));
+        var fetched = new List<Uri>();
+        Dictionary<string, object> Signed(string playerId, long timestamp, string bundle = "com.crownroad.game")
+        {
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var payload = Encoding.UTF8.GetBytes(playerId).Concat(Encoding.UTF8.GetBytes(bundle)).Concat(new byte[8]).Concat(salt).ToArray();
+            BinaryPrimitives.WriteUInt64BigEndian(payload.AsSpan(payload.Length - salt.Length - 8), (ulong)timestamp);
+            return new()
+            {
+                ["playerId"] = playerId, ["publicKeyUrl"] = "https://static.gc.apple.com/public-key/gc-prod-9.cer", ["timestamp"] = timestamp,
+                ["signature"] = Convert.ToBase64String(leafKey.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)),
+                ["salt"] = Convert.ToBase64String(salt)
+            };
+        }
+        async Task<HttpStatusCode> Status(object body) { using var response = await client.PostAsJsonAsync("/auth/gamecenter", body); return response.StatusCode; }
+        try
+        {
+            foreach (var key in keys) Environment.SetEnvironmentVariable(key, "");
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            Assert(await Status(Signed("G:1001", now)) == HttpStatusCode.ServiceUnavailable, "Unconfigured Game Center sign-in is explicit");
+            Environment.SetEnvironmentVariable(keys[0], "com.crownroad.game");
+            AccountAuth.TestGameCenterRoot = root;
+            AccountAuth.TestGameCenterCertificate = url => { fetched.Add(url); return Task.FromResult(leaf.RawData); };
+            var providers = await client.GetFromJsonAsync<JsonElement>("/auth/providers");
+            Assert(providers.GetProperty("gameCenter").GetBoolean(), "Game Center is offered once the app's bundle ID is configured");
+            await EnsureSession(client, "TEST-GC");
+            var body = Signed("G:1001", now);
+            var account = await AccountPost(client, "/auth/gamecenter", body, "TEST-GC", SessionTokens["TEST-GC"]);
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-GC" && account.GetProperty("isNewAccount").GetBoolean(),
+                "A verified Game Center player links the authenticated guest's progress");
+            Assert(account.GetProperty("accountLabel").GetString() == "Game Center", "Game Center accounts are labelled by service");
+            Assert(await Status(body) == HttpStatusCode.BadRequest, "Each Game Center signature signs in only once");
+            account = await AccountPost(client, "/auth/gamecenter", Signed("G:1001", now));
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-GC" && !account.GetProperty("isNewAccount").GetBoolean(),
+                "Another device signed in to the same Game Center player recovers the same profile");
+            var forged = Signed("G:1001", now); forged["playerId"] = "G:2002";
+            Assert(await Status(forged) == HttpStatusCode.Unauthorized, "A signature cannot be reused for another player");
+            Assert(await Status(Signed("G:1001", now, "com.other.game")) == HttpStatusCode.Unauthorized, "A signature for another app is rejected");
+            Assert(await Status(Signed("G:1001", now - 20 * 60_000)) == HttpStatusCode.BadRequest, "Stale Game Center signatures are rejected");
+            fetched.Clear();
+            foreach (var url in new[] { "https://static.gc.apple.com.evil.example/key.cer", "http://static.gc.apple.com/key.cer" })
+            {
+                var redirected = Signed("G:1001", now); redirected["publicKeyUrl"] = url;
+                Assert(await Status(redirected) == HttpStatusCode.BadRequest, "Only HTTPS apple.com key URLs are fetched");
+            }
+            Assert(fetched.Count == 0, "Rejected key URLs are never downloaded");
+            AccountAuth.TestGameCenterRoot = otherRoot;
+            Assert(await Status(Signed("G:1001", now)) == HttpStatusCode.Unauthorized, "A key that does not chain to a trusted root is rejected");
+        }
+        finally
+        {
+            AccountAuth.TestGameCenterRoot = null; AccountAuth.TestGameCenterCertificate = null;
+            for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]);
+        }
     }
 }

@@ -7,9 +7,10 @@ public partial class AccountDialog : AcceptDialog
 {
     private Label _status;
     private LineEdit _nickname, _email, _code;
-    private Button _emailButton, _verifyButton, _googleButton;
+    private Button _emailButton, _verifyButton, _googleButton, _platformButton;
     private string _challenge = "", _secret = "";
-    private bool _busy, _closed, _emailAvailable, _googleAvailable;
+    private bool _busy, _closed, _emailAvailable, _googleAvailable, _platformAvailable;
+    private JsonElement _providers;
 
     public static void Show(Control host)
     {
@@ -18,16 +19,17 @@ public partial class AccountDialog : AcceptDialog
     }
     public override void _Ready()
     {
-        GetOkButton().Text = "Close";
+        var guest = GameState.Instance.AccountProvider.Length == 0;
+        GetOkButton().Text = guest ? "Play as guest" : "Close";
         Confirmed += Close; Canceled += Close;
         var scroll = new ScrollContainer { OffsetLeft = 18, OffsetTop = 12, OffsetRight = -18, OffsetBottom = -52, AnchorRight = 1, AnchorBottom = 1,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         AddChild(scroll);
         var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         stack.AddThemeConstantOverride("separation", 12); scroll.AddChild(stack);
-        _status = RealmUi.Label(GameState.Instance.AccountProvider.Length > 0 ? $"Signed in · {GameState.Instance.AccountLabel}" : "Save your journey across devices.", 18, true);
+        _status = RealmUi.Label(guest ? "Playing as a guest. Sign in to keep your journey on any device." : $"Signed in · {GameState.Instance.AccountLabel}", 18, true);
         stack.AddChild(_status);
-        if (GameState.Instance.AccountProvider.Length == 0)
+        if (guest)
         {
             // A new account keeps this nickname; signing in to an existing account brings back its own.
             stack.AddChild(RealmUi.Label("Nickname for a new account", 16, true));
@@ -35,14 +37,17 @@ public partial class AccountDialog : AcceptDialog
                 MaxLength = GameState.MaxCallsignLength, CustomMinimumSize = new Vector2(0, 48), TooltipText = "Nickname for a new account" };
             stack.AddChild(_nickname);
         }
+        // The phone's own game account comes first: it needs no typing and no browser.
+        _platformButton = RealmUi.Button("people", $"Continue with {PlatformSignIn.ProviderName(PlatformSignIn.Provider)}", () => _ = Platform());
+        _platformButton.Name = "PlatformSignIn"; _platformButton.Visible = PlatformSignIn.Provider.Length > 0; stack.AddChild(_platformButton);
+        _googleButton = RealmUi.Button("people", "Continue with Google", () => _ = Google()); stack.AddChild(_googleButton);
         _email = new LineEdit { PlaceholderText = "Email address", CustomMinimumSize = new Vector2(0, 48), MaxLength = 254 };
         stack.AddChild(_email);
         _emailButton = RealmUi.Button("arrow", "Send sign-in code", () => _ = SendCode()); stack.AddChild(_emailButton);
         var row = new HBoxContainer(); stack.AddChild(row);
         _code = new LineEdit { PlaceholderText = "6-digit code", MaxLength = 6, Visible = false, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 48) }; row.AddChild(_code);
         _verifyButton = RealmUi.Button("check", "Sign in", () => _ = Verify()); _verifyButton.Hide(); row.AddChild(_verifyButton);
-        _googleButton = RealmUi.Button("people", "Continue with Google", () => _ = Google()); stack.AddChild(_googleButton);
-        if (GameState.Instance.AccountProvider.Length > 0)
+        if (!guest)
         {
             var signout = RealmUi.Button("back", "Sign out", () => _ = SignOut());
             stack.AddChild(signout);
@@ -53,6 +58,7 @@ public partial class AccountDialog : AcceptDialog
     private void Busy(bool busy)
     {
         _busy = busy; _emailButton.Disabled = busy || !_emailAvailable; _verifyButton.Disabled = busy; _googleButton.Disabled = busy || !_googleAvailable;
+        _platformButton.Disabled = busy || !_platformAvailable;
         if (_nickname != null) _nickname.Editable = !busy;
     }
     private async Task LoadProviders()
@@ -61,10 +67,12 @@ public partial class AccountDialog : AcceptDialog
         try
         {
             var providers = await AccountSignIn.Request("/auth/providers"); if (_closed) return;
+            _providers = providers;
             _emailAvailable = providers.GetProperty("email").GetBoolean();
             _googleAvailable = providers.GetProperty("google").GetBoolean();
+            _platformAvailable = PlatformSignIn.Offered(providers);
             Busy(false);
-            if (_emailButton.Disabled && _googleButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
+            if (_emailButton.Disabled && _googleButton.Disabled && _platformButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
         }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
@@ -119,6 +127,13 @@ public partial class AccountDialog : AcceptDialog
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
+    private async Task Platform()
+    {
+        if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
+        try { await Finish(await PlatformSignIn.SignIn(_providers, interactive: true)); }
+        catch (Exception e) { if (!_closed) _status.Text = e.Message; }
+        finally { if (!_closed) Busy(false); }
+    }
     private async Task SignOut()
     {
         if (_busy) return; Busy(true);
@@ -126,6 +141,7 @@ public partial class AccountDialog : AcceptDialog
         {
             try { await AccountSignIn.Request("/auth/signout", new { }); } catch { /* Local sign-out remains available offline. */ }
             GameState.Instance.StartAccountSave();
+            GameState.Instance.PauseAutoSignIn();
             if (!_closed) { Close(); SceneRouter.Instance.ReloadHome(); }
         }
         catch (Exception e) { if (!_closed) { _status.Text = e.Message; Busy(false); } }

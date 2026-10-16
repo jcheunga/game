@@ -9,7 +9,7 @@ public static class CloudSavePrivacy
 {
     private static readonly HashSet<string> DeviceOnlyFields = new(StringComparer.OrdinalIgnoreCase)
     {
-        "PlayerAuthToken", "SessionToken", "AuthToken", "AccountProvider", "AccountLabel",
+        "PlayerAuthToken", "SessionToken", "AuthToken", "AccountProvider", "AccountLabel", "SkipAutoSignIn",
         "LastPlayerProfileSyncAtUnixSeconds", "ChallengeSyncProviderId",
         "ChallengeSyncEndpoint", "ChallengeSyncAutoFlush", "PurchaseValidationEndpoint",
         "AnalyticsConsent", "HasShownConsentPrompt", "AnalyticsConsentVersion", "CrashReportingConsent"

@@ -11,7 +11,7 @@ public partial class FeedbackReview : Node
     private int _failures;
     private static T Read<T>(object obj, string name) => (T)obj.GetType().GetField(name, Hidden).GetValue(obj);
     private static void Write(object obj, string name, object value) => obj.GetType().GetField(name, Hidden).SetValue(obj, value);
-    private static object Call(object obj, string name, params object[] args) => obj.GetType().GetMethod(name, Hidden).Invoke(obj,args);
+    private static object Call(object obj, string name, params object[] args) => obj.GetType().GetMethod(name, Hidden | BindingFlags.Public).Invoke(obj,args);
     private void Check(bool ok, string description) { GD.Print($"FEEDBACK_CHECK: {(ok ? "PASS" : "FAIL")} {description}"); if (!ok) _failures++; }
     private async Task Wait(double seconds = .15) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
     public override void _Ready() => Callable.From(Run).CallDeferred();
@@ -64,6 +64,9 @@ public partial class FeedbackReview : Node
             AccountDialog.Show(menu); await Wait(.5);
             var account = Walk(menu).OfType<AccountDialog>().Single();
             Check(Walk(account).OfType<ScrollContainer>().Any() && Walk(account).OfType<Button>().Any(b => b.Text == "Continue with Google"), "Account offers email and Google in a scrollable dialog");
+            Check(account.GetOkButton().Text == "Play as guest", "A guest can keep playing without an account");
+            Check(Walk(account).OfType<Button>().Single(b => b.Name == "PlatformSignIn").Visible == (PlatformSignIn.Provider.Length > 0),
+                "Play Games and Game Center appear only where the phone has them");
             await Capture("01b-account"); account.EmitSignal(AcceptDialog.SignalName.Confirmed); await Wait();
             menu.QueueFree(); await Wait();
             var map = await Open<MapMenu>("MapMenu"); await Capture("02-map");

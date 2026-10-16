@@ -53,6 +53,10 @@ public partial class FeedbackReview
         try
         {
             state.SetPurchaseValidationEndpoint($"http://127.0.0.1:{number}");
+            state.ApplyPlayerProfileSession(before.PlayerProfileId, before.PlayerCallsign, "", 0);
+            await AccountSignIn.EnsureGuestSession();
+            Check(state.PlayerAuthToken == guestToken && state.PlayerProfileId == before.PlayerProfileId && state.AccountProvider.Length == 0,
+                "A guest gets a server session once the server answers, so cloud backup works without signing in");
             await AccountSignIn.Request("/auth/email/start", new { email = "fixture@example.com" });
             Check(guestLinked && state.PlayerProfileId == before.PlayerProfileId && state.Food == before.Food,
                 "First sign-in registers an offline guest without changing its journey");
@@ -63,6 +67,9 @@ public partial class FeedbackReview
                 "Account download uses the verified account session before changing local identity");
             Check(state.Food == before.Food && state.Gold == before.Gold && state.ActiveDeckUnitIds.SequenceEqual(before.ActiveDeckUnitIds),
                 "New accounts retain local guest progress even when no cloud save exists");
+            state.PauseAutoSignIn();
+            Check(state.SkipAutoSignIn && !CloudSavePrivacy.Sanitize(JsonSerializer.Serialize(state.BuildSaveData())).Contains(nameof(GameSaveData.SkipAutoSignIn)),
+                "Signing out keeps the phone's game account from signing straight back in, on this device only");
             failDownload = true;
             using var another = JsonDocument.Parse(JsonSerializer.Serialize(new { playerProfileId = "ACC-another", sessionToken = accountToken, provider = "google", isNewAccount = false }));
             try { await AccountSignIn.Apply(another.RootElement); Check(false, "Failed account download is rejected"); }

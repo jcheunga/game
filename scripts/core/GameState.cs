@@ -4214,7 +4214,7 @@ public partial class GameState : Node
 		{
 			PlayerProfileId = deviceState.PlayerProfileId;
 			PlayerAuthToken = deviceState.PlayerAuthToken;
-            AccountProvider = deviceState.AccountProvider; AccountLabel = deviceState.AccountLabel;
+            AccountProvider = deviceState.AccountProvider; AccountLabel = deviceState.AccountLabel; SkipAutoSignIn = deviceState.SkipAutoSignIn;
 			LastPlayerProfileSyncAtUnixSeconds = deviceState.LastPlayerProfileSyncAtUnixSeconds;
 			ChallengeSyncProviderId = deviceState.ChallengeSyncProviderId;
 			ChallengeSyncEndpoint = deviceState.ChallengeSyncEndpoint;
@@ -4252,7 +4252,7 @@ public partial class GameState : Node
 		PlayerCallsign = DefaultPlayerCallsign;
 		PlayerProfileId = GeneratePlayerProfileId();
 		PlayerAuthToken = DefaultPlayerAuthToken;
-        AccountProvider = ""; AccountLabel = "";
+        AccountProvider = ""; AccountLabel = ""; SkipAutoSignIn = false;
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		LastChallengeSyncAtUnixSeconds = 0L;
 		LastDailyDate = "";
@@ -4400,7 +4400,7 @@ public partial class GameState : Node
 		CampaignRenumbering.Migrate(saved, MaxStage);
 		LoadProgressionRewards(saved);
 		LoadPlayerLevel(saved);
-        AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? "";
+        AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? ""; SkipAutoSignIn = saved.SkipAutoSignIn;
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
@@ -5155,7 +5155,7 @@ public partial class GameState : Node
 			PlayerCallsign = PlayerCallsign,
 			PlayerProfileId = PlayerProfileId,
 			PlayerAuthToken = PlayerAuthToken,
-            AccountProvider = AccountProvider, AccountLabel = AccountLabel,
+            AccountProvider = AccountProvider, AccountLabel = AccountLabel, SkipAutoSignIn = SkipAutoSignIn,
 			LastPlayerProfileSyncAtUnixSeconds = LastPlayerProfileSyncAtUnixSeconds,
 			ChallengeSyncProviderId = ChallengeSyncProviderId,
 			ChallengeSyncEndpoint = ChallengeSyncEndpoint,

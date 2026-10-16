@@ -1,0 +1,26 @@
+// Godot Android plugin (v2) that signs in to Google Play Games and hands the game a one-time
+// server auth code. ./build.sh builds both AARs into addons/PlayGamesSignIn/bin.
+plugins {
+    id 'com.android.library' version '8.6.1'
+}
+
+// Keep in step with the Godot editor version and addons/PlayGamesSignIn/export_plugin.gd.
+ext.godotVersion = '4.6.1.stable'
+ext.playGamesVersion = '21.0.0'
+
+android {
+    namespace 'com.crownroad.playgames'
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    compileOnly "org.godotengine:godot:$godotVersion"
+    implementation "com.google.android.gms:play-services-games-v2:$playGamesVersion"
+}

@@ -6,8 +6,11 @@ public partial class GameState
 {
     public string AccountProvider { get; private set; } = "";
     public string AccountLabel { get; private set; } = "";
+    public bool SkipAutoSignIn { get; private set; }
     public void SetSignedInAccount(string provider, string label)
-    { AccountProvider = provider; AccountLabel = label; Persist(); }
+    { AccountProvider = provider; AccountLabel = label; SkipAutoSignIn = false; Persist(); }
+    /// <summary>After an explicit sign-out the player stays a guest until they choose an account again.</summary>
+    public void PauseAutoSignIn() { SkipAutoSignIn = true; Persist(); }
 
     public void StartAccountSave()
     {

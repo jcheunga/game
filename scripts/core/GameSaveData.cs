@@ -75,6 +75,8 @@ public sealed class GameSaveData
     public string PlayerProfileId { get; set; } = "";
     public string AccountProvider { get; set; } = "";
     public string AccountLabel { get; set; } = "";
+    /// <summary>Set by signing out, so the phone's game account does not sign straight back in at the next launch.</summary>
+    public bool SkipAutoSignIn { get; set; }
     public string PlayerAuthToken { get; set; } = "";
     public long LastPlayerProfileSyncAtUnixSeconds { get; set; }
     public string ChallengeSyncProviderId { get; set; } = ChallengeSyncProviderCatalog.LocalJournalId;

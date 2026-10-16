@@ -159,12 +159,30 @@ window closes. A new deployment has no data migration step.
 ## Account sign-in
 
 Players sign in from **Account** in the home map's More panel or in Settings.
-Email uses a six-digit one-time code (ten-minute lifetime, five attempts).
-Google uses browser authorization with PKCE, a random state and a separate
-device poll secret. The client registers an offline guest first; the server
-links that guest only with a valid session, and new identities keep local guest
-progress. Email and Google identities stay separate unless linked from the
-signed-in account. Sign-out revokes the current server session when online.
+Every option is optional: **Play as guest** keeps the journey on the device.
+
+- **Guest.** Each install has its own profile. As soon as the server answers,
+  the game registers that guest and gets a session, so automatic cloud backup
+  after won battles works without signing in.
+- **Google Play Games** (Android) and **Game Center** (iOS) appear first when
+  the build has the platform plugin and the server is configured. The device
+  proves the player to the server (a Play Games server auth code, or a GameKit
+  identity signature) and the server verifies it itself.
+- **Google** uses browser authorization with PKCE, a random state and a
+  separate device poll secret.
+- **Email** uses a six-digit one-time code (ten-minute lifetime, five attempts).
+
+The server links the guest to the first identity only with a valid guest
+session, and new identities keep local guest progress. Each identity is
+separate unless linked from the signed-in account. Sign-out revokes the current
+server session when online.
+
+Play Games also signs players in by itself at launch. When that happens the
+game links a guest automatically, but only when no progress is at risk: the
+Play Games account is this guest, is new and takes this progress along, or
+replaces an install that has not started the campaign. Otherwise the player
+chooses in Account. After an explicit sign-out the device stays a guest until
+the player picks an account again.
 
 To enable live sign-in:
 
@@ -176,8 +194,33 @@ To enable live sign-in:
    `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI` on the server, and register
    that exact HTTPS callback URI, ending in `/auth/google/callback`, with
    Google. Local callbacks may use loopback HTTP.
-4. Restart the server. `/auth/providers` reports which sign-in methods are
+4. **Google Play Games.** In Play Console, set up Play Games Services for the
+   app and add a *Game server* credential, which is an OAuth **Web
+   application** client. Set `PLAY_GAMES_CLIENT_ID` and
+   `PLAY_GAMES_CLIENT_SECRET` on the server to that client. The server hands the
+   client ID to the game, so it is not built into the app. In Godot, set
+   `crownroad/play_games/project_id` to the numeric Play Games project ID; the
+   Android export adds it to the manifest. Build the plugin once per machine
+   with `native/PlayGamesSignIn/build.sh` (JDK 17 and the Android SDK; it
+   copies the AARs into `addons/PlayGamesSignIn/bin`, which is not committed).
+   Without the AARs the export prints a warning and leaves Play Games out.
+5. **Game Center.** Enable Game Center for the App ID and set
+   `GAME_CENTER_BUNDLE_ID` (it falls back to `APPLE_IAP_BUNDLE_ID`). The iOS
+   build needs a Godot plugin that exposes a `GameCenter` singleton with
+   `authenticate`, `is_authenticated`, `request_identity_verification_signature`
+   and the pending-event queue, such as Godot's official iOS GameCenter plugin.
+   No iOS plugin is included yet, the same as the StoreKit bridge. The server
+   only fetches signing certificates from HTTPS `*.apple.com` URLs, requires a
+   trusted chain, accepts a signature once within a 15-minute window and checks
+   it against the configured bundle ID.
+6. Restart the server. `/auth/providers` reports which sign-in methods are
    configured; the game disables buttons for unavailable providers.
+
+The Play Games button appears only on Android builds with the plugin and a
+project ID, and the Game Center button only on iOS builds with the plugin.
+Apple requires apps that offer a third-party login, such as Google, to also
+offer a privacy-focused option like Sign in with Apple. Settle that before an
+iOS release that shows **Continue with Google**.
 
 Provider credentials are not included. Live email delivery and Google's consent
 flow need the configured services and a manual device check. The server
@@ -188,8 +231,9 @@ identity from its userinfo endpoint, following
 Before switching accounts, the game downloads the selected account's cloud
 save when available and writes current local progress to
 `user://account-backups/`. A failed download leaves the current account intact.
-Account labels and session secrets are excluded from cloud saves. Cloud upload
-is manual, from Settings. Backup files include the device session, so treat
+Account labels, session secrets and the sign-out choice are excluded from cloud
+saves. Progress uploads after each won battle once the device has a session,
+and manually from Settings. Backup files include the device session, so treat
 them like private saves.
 
 ## Game release configuration

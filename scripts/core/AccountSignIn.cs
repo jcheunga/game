@@ -25,19 +25,47 @@ public static class AccountSignIn
     public static async Task<JsonElement> Request(string path, object body = null)
     {
         var state = GameState.Instance;
-        if (state.AccountProvider.Length == 0 && path is "/auth/email/start" or "/auth/google/start")
+        if (state.AccountProvider.Length == 0 && path is "/auth/email/start" or "/auth/google/start" or "/auth/playgames" or "/auth/gamecenter")
         {
             // Establish an authenticated guest before linking an identity, including an offline-only journey.
-            try
-            {
-                var guest = await SendRequest("/player-profile", new { profile = new { playerProfileId = state.PlayerProfileId, playerCallsign = state.PlayerCallsign } });
-                if (Text(guest,"playerProfileId") != state.PlayerProfileId || Text(guest,"sessionToken").Length == 0)
-                    throw new InvalidOperationException("Could not prepare your account. Try again.");
-                state.ApplyPlayerProfileSession(state.PlayerProfileId, Text(guest,"playerCallsign",state.PlayerCallsign), Text(guest,"sessionToken"), DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            }
+            try { await RegisterGuest(); }
             catch (RequestFailure e) when (e.StatusCode == 401) { /* Existing identities can recover a guest whose device session expired. */ }
         }
         return await SendRequest(path, body);
+    }
+
+    /// <summary>Called whenever the server answers: registers the guest, then tries the phone's own game account.</summary>
+    public static async Task OnServerReachable()
+    {
+        await EnsureGuestSession();
+        await PlatformSignIn.TryAutoSignIn();
+    }
+
+    private static bool _registeringGuest;
+    /// <summary>
+    /// Gives a guest who never signed in a server session once the server is reachable, so their
+    /// progress backs up to the cloud too. Failures stay quiet: the game keeps saving on the device.
+    /// </summary>
+    public static async Task EnsureGuestSession()
+    {
+        var state = GameState.Instance;
+        if (_registeringGuest || state == null || Origin.Length == 0 || state.PlayerAuthToken.Length > 0) return;
+        _registeringGuest = true;
+        try { await RegisterGuest(); }
+        catch (Exception e) { Godot.GD.Print($"Guest session not registered: {e.Message}"); }
+        finally { _registeringGuest = false; }
+    }
+
+    private static async Task RegisterGuest()
+    {
+        var state = GameState.Instance;
+        var profile = state.PlayerProfileId;
+        var guest = await SendRequest("/player-profile", new { profile = new { playerProfileId = profile, playerCallsign = state.PlayerCallsign } });
+        if (Text(guest,"playerProfileId") != profile || Text(guest,"sessionToken").Length == 0)
+            throw new InvalidOperationException("Could not prepare your account. Try again.");
+        // A sign-in that finished while this request was in flight owns the device identity now.
+        if (state.PlayerProfileId != profile) return;
+        state.ApplyPlayerProfileSession(profile, Text(guest,"playerCallsign",state.PlayerCallsign), Text(guest,"sessionToken"), DateTimeOffset.UtcNow.ToUnixTimeSeconds());
     }
     private static async Task<JsonElement> SendRequest(string path, object body, string profile = "", string token = "")
     {

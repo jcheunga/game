@@ -137,9 +137,12 @@ the existing protected APIs rather than a separate account service.
   Record the staging/device evidence, deployment version and rollout owner;
   then repeat provider/recovery checks against the production origin.
 
-Local evidence: the **86-test backend suite** covers email guest linking,
+Local evidence: the **88-test backend suite** covers email guest linking,
 same-identity recovery, wallet authorization, challenge expiry/attempts/replay,
-Google PKCE/state/poll secrets, unavailable providers and session revocation.
+Google PKCE/state/poll secrets, Play Games code exchange, Game Center signature,
+chain, bundle, freshness and replay checks, unavailable providers and session
+revocation. Play Games and Game Center verification run against test stand-ins
+for Google and Apple.
 Google success is simulated after provider verification, and email delivery
 is captured by a test sender; these do not prove live provider operation.
 `FeedbackReview.tscn` passes **42 checks on desktop and 42 on phone**, including

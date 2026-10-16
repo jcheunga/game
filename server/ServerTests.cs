@@ -47,6 +47,8 @@ public static partial class ServerTests
                 ("AccountCodeSecurity", () => TestAccountCodeSecurity(client)),
                 ("AccountProviderAvailability", () => TestAccountProviderAvailability(client)),
                 ("AccountGoogleChallenge", () => TestAccountGoogleChallenge(client)),
+                ("AccountPlayGames", () => TestAccountPlayGames(client)),
+                ("AccountGameCenter", () => TestAccountGameCenter(client)),
                 ("ChallengeSync", () => TestChallengeSync(client)),
                 ("ChallengeSync_GameContract", () => TestChallengeSyncGameContract(client)),
                 ("ChallengeLeaderboard", () => TestChallengeLeaderboard(client)),

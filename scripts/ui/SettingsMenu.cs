@@ -119,7 +119,7 @@ public partial class SettingsMenu : RoyalScreen
                     state.SetFontSizeOffset(state.FontSizeOffset >= 6 ? -2 : state.FontSizeOffset + 2), "Change reading text in descriptions and detail panels");
                 break;
             case 2:
-                yield return new InfoRow("people", "Account", () => string.IsNullOrEmpty(state.AccountProvider) ? "Playing locally" : $"Connected · {state.AccountProvider}");
+                yield return new InfoRow("people", "Account", () => string.IsNullOrEmpty(state.AccountProvider) ? "Playing as a guest" : $"Connected · {PlatformSignIn.ProviderName(state.AccountProvider)}");
                 yield return new ActionRow("people", "Player profile", "Refresh", () => { PlayerProfileSyncService.RefreshProfile(out var message); _status = message; });
                 if (!RealmModal.Embedded(this)) yield return new InfoRow("clock", "App state", () => AppLifecycleService.Instance?.BuildStatusSummary() ?? "");
                 var release = state.IsReleaseBackendConfigured;

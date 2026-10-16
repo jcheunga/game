@@ -89,6 +89,11 @@ public partial class ServerEndToEnd : Node
 
         await AccountFeatures(state);
 
+        // A late-game save makes the full trip: upload, sign-out, sign back in, download.
+        SaveRoundTripReview.FillLateGame(state);
+        Check(CloudSaveService.Upload(out var lateUpload), $"A late-game save uploads ({lateUpload})");
+        var uploaded = CloudJson(state);
+
         // Sign out
         await LiveUiReview.Open(this, "MainMenu");
         AccountDialog.Show((Control)GetTree().CurrentScene);
@@ -102,9 +107,16 @@ public partial class ServerEndToEnd : Node
         NetworkStatus.Instance.CheckNow();
         Check(await Until(() => state.PlayerAuthToken.Length > 0), "The new guest gets its own session");
         Check(await SignIn(email), "Signing back in finishes");
-        Check(state.PlayerProfileId == account && state.HighestUnlockedStage == 2 && !state.SkipAutoSignIn,
+        Check(state.PlayerProfileId == account && state.HighestUnlockedStage > 2 && !state.SkipAutoSignIn,
             "Signing back in restores the account's progress from the cloud");
-        File.WriteAllText(_handoff, JsonSerializer.Serialize(new Dictionary<string, string> { ["email"] = email, ["account"] = account }));
+        var restored = CloudJson(state);
+        var differences = uploaded.Keys.Where(k => k is not "FoodRechargedAtUnixSeconds" && !(restored.TryGetValue(k, out var v) && Holds(v, uploaded[k]))).ToList();
+        foreach (var key in differences) GD.Print($"E2E_DIFF: {key}: uploaded {Clip(uploaded[key])} restored {Clip(restored.GetValueOrDefault(key, "<missing>"))}");
+        foreach (var key in uploaded.Keys.Where(k => k is not "FoodRechargedAtUnixSeconds" && restored.TryGetValue(k, out var v) && v != uploaded[k] && !differences.Contains(k)))
+            GD.Print($"E2E_ADDED: {key} gained entries at load (defaults and implied map tiles)");
+        Check(differences.Count == 0, $"Every saved value comes back from the cloud unchanged ({uploaded.Count} values; lost or changed: {string.Join(", ", differences)})");
+        File.WriteAllText(_handoff, JsonSerializer.Serialize(new Dictionary<string, string>
+            { ["email"] = email, ["account"] = account, ["stage"] = state.HighestUnlockedStage.ToString() }));
     }
 
     private async Task SecondInstall()
@@ -114,17 +126,18 @@ public partial class ServerEndToEnd : Node
         NetworkStatus.Instance.CheckNow();
         Check(await Until(() => state.PlayerAuthToken.Length > 0) && state.HighestUnlockedStage == 1, "A second install starts as an empty guest");
         Check(await SignIn(handoff["email"]), "The second install signs in with the same email");
-        Check(state.PlayerProfileId == handoff["account"] && state.AccountProvider == "email" && state.HighestUnlockedStage == 2,
-            "The second install restores the account's progress");
+        var stage = int.Parse(handoff["stage"]);
+        Check(state.PlayerProfileId == handoff["account"] && state.AccountProvider == "email" && state.HighestUnlockedStage == stage,
+            $"The second install restores the account's progress (stage {stage})");
 
         var before = CloudSaveService.GetInfo().UploadedAtUnixSeconds;
         await Wait(1.1);
-        WinStage(state, 2);
+        WinStage(state, stage);
         var after = CloudSaveService.GetInfo();
         Check(after.Status == "ok" && after.UploadedAtUnixSeconds > before, "Progress on the second install backs up to the account");
         var account = handoff["account"];
         Check((await Get($"/cloud-save/download?profileId={account}", account, "")).Status == 401, "A profile ID alone cannot download an account's save");
-        Check(CloudSaveService.Download(out var restored) && state.PlayerProfileId == account && state.HighestUnlockedStage == 3,
+        Check(CloudSaveService.Download(out var restored) && state.PlayerProfileId == account && state.HighestUnlockedStage == stage + 1,
             $"Settings' cloud restore downloads the latest account save ({restored})");
 
         // The server going away mid-play
@@ -132,8 +145,8 @@ public partial class ServerEndToEnd : Node
         NetworkStatus.Instance.CheckNow();
         Check(!NetworkStatus.Instance.IsServerReachable, "A missing server is reported as unreachable");
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        WinStage(state, 3);
-        Check(clock.Elapsed.TotalSeconds < 3 && state.HighestUnlockedStage == 4 && SaveSystem.Instance.LastSaveSucceeded,
+        WinStage(state, stage + 1);
+        Check(clock.Elapsed.TotalSeconds < 3 && state.HighestUnlockedStage == stage + 2 && SaveSystem.Instance.LastSaveSucceeded,
             $"Without the server a win still saves on the device, in {clock.Elapsed.TotalMilliseconds:0} ms");
         state.SetPurchaseValidationEndpoint(_server);
         NetworkStatus.Instance.CheckNow();
@@ -240,6 +253,30 @@ public partial class ServerEndToEnd : Node
         }
         catch (IOException) { return []; }
     }
+
+    /// <summary>The save as the cloud holds it (device-only fields removed), by top-level value.</summary>
+    private static Dictionary<string, string> CloudJson(GameState state)
+    {
+        using var json = JsonDocument.Parse(CloudSavePrivacy.Sanitize(JsonSerializer.Serialize(state.BuildSaveData())));
+        return json.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetRawText());
+    }
+
+    /// <summary>Whether the restored JSON holds everything uploaded: same values, with object keys and array items only ever added.</summary>
+    private static bool Holds(string restored, string uploaded)
+    {
+        using var a = JsonDocument.Parse(restored); using var b = JsonDocument.Parse(uploaded);
+        return Holds(a.RootElement, b.RootElement);
+    }
+
+    private static bool Holds(JsonElement restored, JsonElement uploaded) => (restored.ValueKind, uploaded.ValueKind) switch
+    {
+        (JsonValueKind.Object, JsonValueKind.Object) => uploaded.EnumerateObject().All(p => restored.TryGetProperty(p.Name, out var v) && Holds(v, p.Value)),
+        (JsonValueKind.Array, JsonValueKind.Array) => uploaded.EnumerateArray().Select(e => e.GetRawText()).ToHashSet()
+            .IsSubsetOf(restored.EnumerateArray().Select(e => e.GetRawText())),
+        _ => restored.GetRawText() == uploaded.GetRawText()
+    };
+
+    private static string Clip(string text) => text.Length > 200 ? text[..200] + "…" : text;
 
     private static void WinStage(GameState state, int stage)
     {

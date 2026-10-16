@@ -4949,6 +4949,7 @@ public partial class GameState : Node
 
 			LastRaidWeek = saved.LastRaidWeek?.Trim() ?? "";
 			RaidDamageContributed = Math.Max(0, saved.RaidDamageContributed);
+			_raidContributionCount = Math.Max(0, saved.RaidContributionCount);
 			_claimedRaidRewardIds.Clear();
 			if (saved.ClaimedRaidRewardIds != null)
 			{
@@ -5266,6 +5267,7 @@ public partial class GameState : Node
 			RelicEnchantments = new Dictionary<string, string>(_relicEnchantments),
 			LastRaidWeek = LastRaidWeek ?? "",
 			RaidDamageContributed = RaidDamageContributed,
+			RaidContributionCount = _raidContributionCount,
 			ClaimedRaidRewardIds = _claimedRaidRewardIds.ToArray(),
 
 			// v35

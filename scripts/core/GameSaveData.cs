@@ -183,6 +183,8 @@ public sealed class GameSaveData
     // v34: Weekly Raid
     public string LastRaidWeek { get; set; } = "";
     public int RaidDamageContributed { get; set; }
+    /// <summary>Contributions this raid week, toward the three-contribution achievement.</summary>
+    public int RaidContributionCount { get; set; }
     public string[] ClaimedRaidRewardIds { get; set; } = [];
 
     // v35: Bounty Board

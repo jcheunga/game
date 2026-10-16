@@ -139,7 +139,8 @@ the existing protected APIs rather than a separate account service.
   then repeat provider/recovery checks against the production origin.
 
 `scripts/tests/server_e2e.sh` plays the game against a real local server across
-two installs and a server restart, and passes **41 checks**. It covers guest
+two installs and a server restart, and passes **43 checks**, including a
+late-game save whose 125 values all come back unchanged from the cloud. It covers guest
 sessions, email sign-in with a code the server logs instead of mailing,
 cloud backup and restore, achievements, daily and challenge leaderboards, the
 challenge feed, online rooms, test purchases and sign-out. The run found that

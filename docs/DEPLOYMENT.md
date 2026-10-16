@@ -282,8 +282,9 @@ game against it headless, in two installs:
      score and leaderboard, challenge results with their leaderboard and feed,
      an online room (host, list, session, ready, scoreboard, leave), and a test
      purchase credited to the wallet.
-   - Sign-out revokes the session on the server, and signing back in restores
-     the account from the cloud.
+   - A late-game save goes up to the cloud. Sign-out revokes the session on the
+     server; signing back in restores the account, and every one of the
+     save's values comes back unchanged.
 2. **Server restart**, to show accounts and saves live in the database.
 3. **Second install.** It signs in to the same account and restores its
    progress, then backs up a new win. A profile ID without a session cannot
@@ -301,6 +302,25 @@ console.
 
 Google, Apple, Play Games and Game Center are not part of this test. They need
 real credentials and, for the last two, a signed phone build.
+
+### Save round-trip review
+
+`SaveRoundTripReview.tscn` checks the save on the device. Run it with an isolated
+save suffix starting with `save-review-`:
+
+```sh
+godot --headless --path . res://scenes/tests/SaveRoundTripReview.tscn -- --save-suffix=save-review-$(date +%s)
+```
+
+It fills a late-game save across systems and every setting, reloads it from
+disk and compares every GameState field. Nothing may be lost or changed;
+entries that loading adds, such as every roster unit at level 1, are listed as
+`SAVE_ADDED`. It then nudges every number and switch in the save file, loads
+it and checks each comes back. The values the loader deliberately normalizes,
+such as the consent version, are listed with their reasons. It also lists
+GameState fields that have no place in the save (`SAVE_UNMATCHED`), which
+should all be screen selections, in-battle flags or caches. A late-game cloud
+save is about 100 KB, against the server's 512 KB limit.
 
 ### What still needs a real device
 

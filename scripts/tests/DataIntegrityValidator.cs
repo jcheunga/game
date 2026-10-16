@@ -391,6 +391,8 @@ public static class DataIntegrityValidator
             Check(stageNumbers.Contains(i), $"Missing stage number: {i}");
         }
 
+        ValidateWaveVersions(Path.Combine(dataDir, "waves"), stages, enemyUnitIds);
+
         // ── Shop products validation ──
         Console.WriteLine("--- Shop Products ---");
         if (shopProducts != null)
@@ -561,6 +563,71 @@ public static class DataIntegrityValidator
             _failed++;
             Errors.Add(message);
             Console.Error.WriteLine($"  FAIL  {message}");
+        }
+    }
+
+    /// <summary>
+    /// The alternate wave versions in data/waves/: each lists zones and stages of the real campaign, and its waves
+    /// name enemies only, in time order, so switching versions in developer tools can never break a battle.
+    /// </summary>
+    private static void ValidateWaveVersions(string folder, JsonElement[] stages, HashSet<string> enemyUnitIds)
+    {
+        Console.WriteLine("--- Wave versions ---");
+        if (!Directory.Exists(folder)) return;
+        var stageMaps = stages.ToDictionary(stage => GetInt(stage, "StageNumber"), stage => GetStr(stage, "MapId"));
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "standard" };
+        foreach (var path in Directory.GetFiles(folder, "*.json").OrderBy(path => path))
+        {
+            var file = Path.GetFileName(path);
+            JsonDocument doc;
+            try { doc = JsonDocument.Parse(File.ReadAllText(path)); }
+            catch (JsonException ex) { Check(false, $"Wave version {file} is not valid JSON: {ex.Message}"); continue; }
+            using (doc)
+            {
+                var root = doc.RootElement;
+                var id = GetStr(root, "Id");
+                Check(!string.IsNullOrWhiteSpace(id) && ids.Add(id), $"Wave version {file} needs a unique Id other than 'standard'");
+                Check(!string.IsNullOrWhiteSpace(GetStr(root, "Name")), $"Wave version {file} needs a Name");
+                if (!root.TryGetProperty("Zones", out var zones) || zones.ValueKind != JsonValueKind.Array)
+                {
+                    Check(false, $"Wave version {file} needs a Zones array");
+                    continue;
+                }
+                var seen = new HashSet<int>();
+                foreach (var zone in zones.EnumerateArray())
+                {
+                    var mapId = GetStr(zone, "MapId");
+                    if (!zone.TryGetProperty("Stages", out var zoneStages) || zoneStages.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var stage in zoneStages.EnumerateArray())
+                    {
+                        var num = GetInt(stage, "StageNumber");
+                        var where = $"Wave version {file} stage {num}";
+                        Check(stageMaps.TryGetValue(num, out var stageMap), $"{where} is not a campaign stage");
+                        Check(stageMap == null || stageMap.Equals(mapId, StringComparison.OrdinalIgnoreCase), $"{where} is listed under {mapId} but belongs to {stageMap}");
+                        Check(seen.Add(num), $"{where} is listed twice");
+                        if (!stage.TryGetProperty("Waves", out var waves) || waves.ValueKind != JsonValueKind.Array) continue;
+                        Check(waves.GetArrayLength() > 0, $"{where} lists no waves; leave the stage out to keep its standard waves");
+                        var previous = -1f;
+                        foreach (var wave in waves.EnumerateArray())
+                        {
+                            var trigger = GetFloat(wave, "TriggerTime");
+                            Check(trigger >= 0 && trigger + 0.001f >= previous, $"{where} has waves out of time order");
+                            previous = trigger;
+                            Check(GetFloat(wave, "SpawnInterval") > 0, $"{where} has a wave with non-positive SpawnInterval");
+                            Check(GetStr(wave, "Area") is "Approach" or "Crossroads" or "Gate", $"{where} wave needs a named encounter area");
+                            var entries = wave.TryGetProperty("Entries", out var list) && list.ValueKind == JsonValueKind.Array ? list.EnumerateArray().ToArray() : Array.Empty<JsonElement>();
+                            Check(entries.Length > 0, $"{where} has a wave with no entries");
+                            foreach (var entry in entries)
+                            {
+                                var unitId = GetStr(entry, "UnitId");
+                                Check(enemyUnitIds.Contains(unitId) && unitId.StartsWith("enemy_", StringComparison.OrdinalIgnoreCase),
+                                    $"{where} names '{unitId}', which is not an enemy unit");
+                                Check(GetInt(entry, "Count") > 0, $"{where} entry '{unitId}' has non-positive Count");
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

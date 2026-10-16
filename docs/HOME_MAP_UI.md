@@ -33,15 +33,15 @@ discoveries also disappear after collection; rival markers remain available on t
 
 Only King's Road is available in a new campaign's zone navigation. Defeating a zone's boss reveals the next zone, which replaces the current map. Earlier areas remain reachable. Existing saves retain their played zones and preceding areas, based on victories, visited landmarks or recorded exploration. The highest unlocked stage number does not open a zone by itself. This gate controls home/map navigation; encounter rules and other game modes retain their existing behavior.
 
-In editor and debug builds, Settings has a Developer tab. Developer mode starts
-off. Enabling it offers +1,000/+10,000 gold and +10/+100 food in Settings,
+In editor and debug builds, Settings → Account opens Developer tools. Developer mode
+starts off. Enabling it offers supplies, wave versions, player levels, campaign
+fast-forwards, warband unlocks and battle speed (see [Developer tools](DEVELOPER_TOOLS.md)),
 with +1,000 gold and +100 food shortcuts below the map balances. Switching it
-off hides the map shortcuts and disables grants. The mode and balances persist
-with the local save. Food grants may exceed the passive recharge cap. Grants
-bypass billing, purchase counts, achievements and map progression. Release
-builds hide the tab and reject developer grants. The console also supports
-`dev on`, `dev off`, `gold <amount>` and `food <amount>` through the same grant
-path.
+off hides the map shortcuts, disables every tool and restores the standard waves
+and normal speed. Supply grants bypass billing, purchase counts and achievements.
+Release builds hide the tools and reject developer grants. The console also
+supports `dev on`, `dev off`, `gold <amount>` and `food <amount>` through the
+same grant path.
 
 Developer controls are covered by native-click checks in the home review and
 the focused `--developer` review. Checks cover each amount, immediate balances,

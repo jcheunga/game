@@ -860,6 +860,8 @@ public partial class GameState : Node
 			nextStageHint;
 		Persist();
 		CheckAchievements();
+		// Developer fast-forwards win many stages at once; they are not played battles to back up or report.
+		if (_developerFastForward) return extraRewardSummary;
 		TryAutoCloudBackup();
 		AnalyticsService.TrackStageEnd(stage, true, bestStars, 0f, 1f);
 		return extraRewardSummary;
@@ -4261,6 +4263,7 @@ public partial class GameState : Node
 		DifficultyId = DefaultDifficultyId;
 		ShowDevUi = DefaultShowDevUi;
 		DeveloperModeEnabled = false;
+		ResetDeveloperOptions();
 		ShowFpsCounter = DefaultShowFpsCounter;
 		AudioMuted = DefaultAudioMuted;
 		EffectsVolumePercent = DefaultEffectsVolumePercent;
@@ -4459,6 +4462,7 @@ public partial class GameState : Node
 			? Mathf.Clamp(saved.CampaignMomentumStacks, 0, MaxCampaignMomentumStacks)
 			: 0;
 		DeveloperModeEnabled = saved.DeveloperModeEnabled && DeveloperModeAvailable;
+		LoadDeveloperOptions(saved);
 		if (saved.Version >= 2)
 		{
 			ShowDevUi = saved.ShowDevUi;
@@ -5158,6 +5162,8 @@ public partial class GameState : Node
 			ChallengeSyncAutoFlush = ChallengeSyncAutoFlush,
 			ShowDevUi = ShowDevUi,
 			DeveloperModeEnabled = DeveloperModeEnabled,
+			DeveloperWaveVersionId = DeveloperWaveVersionId,
+			DeveloperBattleSpeed = DeveloperBattleSpeed,
 			ShowFpsCounter = ShowFpsCounter,
 			AudioMuted = AudioMuted,
 			EffectsVolumePercent = EffectsVolumePercent,

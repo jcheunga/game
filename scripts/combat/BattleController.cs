@@ -570,6 +570,7 @@ public partial class BattleController : Node2D
 		AudioDirector.Instance?.PlayBattleStart();
 		if (AppLifecycleService.Instance != null)
 			AppLifecycleService.Instance.StateChanged += OnBattleApplicationStateChanged;
+		ApplyDeveloperBattleSpeed();
 	}
 
 	public override void _ExitTree()
@@ -6187,6 +6188,8 @@ public partial class BattleController : Node2D
 		// Rations recharged during play are not battle loot.
 		_battleRewardStart.Food = GameState.Instance.Food;
 		_battleEnded = true;
+		// A developer speed-up stops at the result, so it reads at normal pace.
+		if (DeveloperBattleToolsAvailable) ResetBattleSpeed();
 		AwardPlayerXP(playerWon);
 		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);

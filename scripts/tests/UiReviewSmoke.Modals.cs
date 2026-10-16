@@ -109,11 +109,24 @@ public partial class UiReviewSmoke
     private async Task TapModal(Button button)
     {
         for (var parent = button.GetParent(); parent != null; parent = parent.GetParent())
-            if (parent is ScrollContainer scroll) scroll.EnsureControlVisible(button);
+            if (parent is ScrollContainer scroll) RevealInScroll(scroll, button);
         await Wait(.05);
         var center = button.GetGlobalRect().GetCenter();
         Send(new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left, Position = center, GlobalPosition = center });
         Send(new InputEventMouseButton { Pressed = false, ButtonIndex = MouseButton.Left, Position = center, GlobalPosition = center });
         await Wait(.3);
+    }
+
+    /// <summary>
+    /// Scrolls a control fully into view. ScrollContainer.EnsureControlVisible mixes canvas and local units, so on
+    /// the scaled modal canvas it stops short and taps land under the frame.
+    /// </summary>
+    private static void RevealInScroll(ScrollContainer scroll, Control control)
+    {
+        var scale = scroll.GetGlobalTransform().Scale.Y;
+        var view = scroll.GetGlobalRect();
+        var rect = control.GetGlobalRect();
+        if (rect.Position.Y < view.Position.Y) scroll.ScrollVertical -= Mathf.CeilToInt((view.Position.Y - rect.Position.Y) / scale);
+        else if (rect.End.Y > view.End.Y) scroll.ScrollVertical += Mathf.CeilToInt((rect.End.Y - view.End.Y) / scale);
     }
 }

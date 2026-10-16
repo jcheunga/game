@@ -82,6 +82,8 @@ public sealed class GameSaveData
     public bool ChallengeSyncAutoFlush { get; set; }
     public bool ShowDevUi { get; set; } = true;
     public bool DeveloperModeEnabled { get; set; }
+    public string DeveloperWaveVersionId { get; set; } = WaveVersions.StandardId;
+    public float DeveloperBattleSpeed { get; set; } = 1f;
     public bool ShowFpsCounter { get; set; } = true;
     public bool AudioMuted { get; set; }
     public int EffectsVolumePercent { get; set; } = 85;

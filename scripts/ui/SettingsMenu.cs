@@ -340,7 +340,7 @@ public partial class SettingsMenu : RoyalScreen
     {
         var layer = new CanvasLayer { Layer = 40 };
         AddChild(layer);
-        var modal = RealmModal.OpenInspector(layer, "Developer tools", "settings", 900, 560);
+        var modal = RealmModal.OpenInspector(layer, "Developer tools", "settings", 940, 620);
         var page = RealmUi.Scroll(modal.Content);
         ((ScrollContainer)page.GetParent()).SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         BuildDeveloperPage(page);

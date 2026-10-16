@@ -169,6 +169,7 @@ public partial class BattleController
             body.AddChild(RealmUi.SectionTitle("Encounter tip"));body.AddChild(RealmUi.Label(CombatGuideCatalog.StageTip(_stage),22));RealmModal.Polish(body);
         });
         ActionButton("back", "Quit battle", RetreatToMap);
+        BuildDeveloperBattleTools(stack);
         _restartMessage = RealmUi.Label("", 18, true); _restartMessage.Visible = false; stack.AddChild(_restartMessage);
     }
 

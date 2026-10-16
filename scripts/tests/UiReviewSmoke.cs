@@ -65,6 +65,7 @@ public partial class UiReviewSmoke : Node
                 GameState.Instance.SetAnalyticsConsent(false); GameState.Instance.SetShowHints(false);
                 await Open("MainMenu");
                 await ReviewDeveloperMode((MapMenu)GetTree().CurrentScene);
+                await ReviewDeveloperBattle();
                 System.IO.File.WriteAllText(_output + "/developer-text-audit.json", System.Text.Json.JsonSerializer.Serialize(_textAudit, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 GD.Print($"DEVELOPER_REVIEW_RESULT: {_failures} failures");
                 QuitAfterAudio(_failures == 0 ? 0 : 1); return;

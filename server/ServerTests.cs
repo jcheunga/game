@@ -670,12 +670,22 @@ public static partial class ServerTests
             receiptToken = "receipt-dup-001",
             transactionId = "txn-dup-001"
         };
-        await Post(client, "/purchase/validate", body, "TEST-PUR-DUP");
+        var first = await Post(client, "/purchase/validate", body, "TEST-PUR-DUP");
+        var purchaseId = first.RootElement.GetProperty("purchaseId").GetString();
 
         // Idempotent retry must not grant twice, but should tell a recovering
-        // client that it may safely finish its store transaction.
+        // client that it may safely finish its store transaction, and hand back
+        // the recorded grant so a client that never saw the first response can
+        // apply it once (keyed by purchaseId).
         var duplicate = await Post(client, "/purchase/validate", body, "TEST-PUR-DUP");
-        Assert(duplicate.RootElement.GetProperty("status").GetString() == "already_recorded", "expected already_recorded retry status");
+        var root = duplicate.RootElement;
+        Assert(root.GetProperty("status").GetString() == "already_recorded", "expected already_recorded retry status");
+        Assert(!string.IsNullOrEmpty(purchaseId) && root.GetProperty("purchaseId").GetString() == purchaseId, "expected the retry to return the original purchaseId");
+        Assert(root.GetProperty("productId").GetString() == "gold_chest", "expected the retry to return the recorded product");
+        Assert(root.GetProperty("goldCredited").GetInt32() == 2200 && root.GetProperty("foodCredited").GetInt32() == 0
+            && !root.GetProperty("grantedUnitUnlock").GetBoolean(), "expected the retry to return the recorded grant");
+        var wallet = await Get(client, "/wallet?profileId=TEST-PUR-DUP");
+        Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 2200, "expected the retry not to credit the wallet again");
     }
 
     private static async Task TestStoreVerifierFailsClosedWithoutCredentials()

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Godot;
 
 public partial class GameState : Node
@@ -160,6 +161,9 @@ public partial class GameState : Node
 	private readonly HashSet<string> _seenHintIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _unlockedAchievementIds = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<string> _purchasedProductIds = new(StringComparer.OrdinalIgnoreCase);
+	// Server purchase IDs whose grant is in this save. A grant is applied only the first
+	// time its purchase ID is seen, so a re-delivered store purchase never pays out twice.
+	private readonly HashSet<string> _appliedPurchaseIds = new(StringComparer.Ordinal);
 	private int _totalPurchaseCount;
 	private string _purchaseValidationEndpoint = "";
 	private int _campaignMomentumStacks;
@@ -4313,6 +4317,7 @@ public partial class GameState : Node
 		_unitEquipmentSlots.Clear();
 		_unlockedAchievementIds.Clear();
 		_purchasedProductIds.Clear();
+		_appliedPurchaseIds.Clear();
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
 		BestEndlessWave = 0;
@@ -4796,6 +4801,7 @@ public partial class GameState : Node
 		}
 
 		_purchasedProductIds.Clear();
+		_appliedPurchaseIds.Clear();
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
 		if (saved.Version >= 31)
@@ -4808,6 +4814,14 @@ public partial class GameState : Node
 					{
 						_purchasedProductIds.Add(id.Trim());
 					}
+				}
+			}
+
+			foreach (var id in saved.AppliedPurchaseIds ?? [])
+			{
+				if (!string.IsNullOrWhiteSpace(id))
+				{
+					_appliedPurchaseIds.Add(id.Trim());
 				}
 			}
 
@@ -5230,6 +5244,7 @@ public partial class GameState : Node
 			DailyStreak = _dailyStreak,
 			UnlockedAchievementIds = _unlockedAchievementIds.ToArray(),
 			PurchasedProductIds = _purchasedProductIds.ToArray(),
+			AppliedPurchaseIds = _appliedPurchaseIds.ToArray(),
 			TotalPurchaseCount = _totalPurchaseCount,
 			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? "",
 
@@ -6415,9 +6430,31 @@ public partial class GameState : Node
 		_purchaseValidationEndpoint = ReleaseBackendConfiguration.ApiBaseUrl;
 	}
 
+	public bool HasAppliedPurchase(string purchaseId)
+	{
+		return !string.IsNullOrWhiteSpace(purchaseId) && _appliedPurchaseIds.Contains(purchaseId.Trim());
+	}
+
+	/// <summary>True when the save on disk holds this purchase's grant, so the store purchase may be finished.</summary>
+	public bool IsPurchaseGrantSaved(string purchaseId)
+	{
+		return HasAppliedPurchase(purchaseId) && !GameData.LoadFailed && SaveSystem.Instance is { LastSaveSucceeded: true };
+	}
+
+	/// <summary>
+	/// Applies a grant the server has recorded, at most once per server purchase ID. Both
+	/// "ok" and "already_recorded" carry the grant: "already_recorded" means the server
+	/// committed it earlier but this device may never have seen the response. The purchase
+	/// ID and the reward are written in the same save, so they can only be lost together.
+	/// </summary>
 	public bool TryApplyPurchaseReward(PurchaseValidationResult result)
 	{
-		if (result == null || result.Status != "ok")
+		if (result == null || result.Status is not ("ok" or "already_recorded") || string.IsNullOrWhiteSpace(result.PurchaseId))
+		{
+			return false;
+		}
+
+		if (!_appliedPurchaseIds.Add(result.PurchaseId.Trim()))
 		{
 			return false;
 		}
@@ -6466,7 +6503,12 @@ public partial class GameState : Node
 		_ownedPlayerUnitIds.Add(candidates[index]);
 	}
 
-	public PurchaseValidationResult ValidatePurchaseWithServer(string productId, string platform, string receiptToken, string transactionId)
+	/// <summary>
+	/// Asks the server to verify a store purchase. The request runs off the main thread (the
+	/// server may spend up to 30 s asking the store), and the awaiting caller resumes on the
+	/// main thread through Godot's synchronization context. Never throws.
+	/// </summary>
+	public async Task<PurchaseValidationResult> ValidatePurchaseWithServerAsync(string productId, string platform, string receiptToken, string transactionId)
 	{
 		if (string.IsNullOrWhiteSpace(_purchaseValidationEndpoint))
 		{
@@ -6490,14 +6532,19 @@ public partial class GameState : Node
 				RequestedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 			};
 
-			return provider.ValidatePurchase(request);
+			return await provider.ValidatePurchaseAsync(request);
 		}
 		catch (Exception e)
 		{
 			return new PurchaseValidationResult
 			{
 				Status = "error",
-				Message = $"Validation failed: {e.Message}"
+				Message = e switch
+				{
+					TaskCanceledException => "The server took too long to answer.",
+					System.Net.Http.HttpRequestException => "Could not reach the server.",
+					_ => e.Message
+				}
 			};
 		}
 	}

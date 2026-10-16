@@ -1430,16 +1430,28 @@ public static class Endpoints
         {
             using var dupCheck = conn.CreateCommand();
             dupCheck.Transaction = tx;
-            dupCheck.CommandText = "SELECT profile_id, product_id FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1";
+            dupCheck.CommandText = """
+                SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at
+                FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1
+            """;
             dupCheck.Parameters.AddWithValue("@tid", transactionId);
             string? recordedProfileId = null;
             string? recordedProductId = null;
+            var recordedPurchaseId = "";
+            int recordedGold = 0, recordedFood = 0;
+            var recordedUnitUnlock = false;
+            long recordedAt = 0;
             using (var duplicate = dupCheck.ExecuteReader())
             {
                 if (duplicate.Read())
                 {
                     recordedProfileId = duplicate.GetString(0);
                     recordedProductId = duplicate.GetString(1);
+                    recordedPurchaseId = duplicate.GetString(2);
+                    recordedGold = Database.ToInt32(duplicate.GetValue(3));
+                    recordedFood = Database.ToInt32(duplicate.GetValue(4));
+                    recordedUnitUnlock = Database.ToInt32(duplicate.GetValue(5)) != 0;
+                    recordedAt = Database.ToInt64(duplicate.GetValue(6));
                 }
             }
 
@@ -1449,11 +1461,20 @@ public static class Endpoints
                 if (string.Equals(recordedProfileId, profileId, StringComparison.Ordinal) &&
                     string.Equals(recordedProductId, productId, StringComparison.Ordinal))
                 {
+                    // The grant was committed, but the client may never have seen the
+                    // response (timeout, dropped connection, app killed). Return the
+                    // recorded grant so the client can apply it once, keyed by purchaseId.
                     return Results.Ok(new
                     {
                         status = "already_recorded",
                         message = "This transaction was already credited to this player.",
-                        transactionId
+                        transactionId,
+                        purchaseId = recordedPurchaseId,
+                        productId = recordedProductId,
+                        goldCredited = recordedGold,
+                        foodCredited = recordedFood,
+                        grantedUnitUnlock = recordedUnitUnlock,
+                        validatedAtUnixSeconds = recordedAt
                     });
                 }
 

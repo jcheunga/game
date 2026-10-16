@@ -88,6 +88,7 @@ public partial class ServerEndToEnd : Node
         var account = state.PlayerProfileId; var accountToken = state.PlayerAuthToken;
 
         await AccountFeatures(state);
+        await PurchaseRecovery(state);
 
         // A late-game save makes the full trip: upload, sign-out, sign back in, download.
         SaveRoundTripReview.FillLateGame(state);
@@ -193,7 +194,7 @@ public partial class ServerEndToEnd : Node
         Check(OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scores), $"The room scoreboard loads ({scores})");
         Check(OnlineRoomActionService.LeaveRoom(out var left), $"The host can leave room {room} ({left})");
 
-        var purchase = state.ValidatePurchaseWithServer("gold_pouch", "stripe", $"receipt-{Guid.NewGuid():N}", $"txn-{Guid.NewGuid():N}");
+        var purchase = await state.ValidatePurchaseWithServerAsync("gold_pouch", "stripe", $"receipt-{Guid.NewGuid():N}", $"txn-{Guid.NewGuid():N}");
         var wallet = await Get($"/wallet?profileId={profile}", profile, token);
         Check(purchase.Status == "ok" && purchase.GoldCredited > 0 && wallet.Status == 200 && wallet.Body.GetProperty("goldBalance").GetInt32() >= purchase.GoldCredited,
             $"A test purchase validates and credits the account's wallet ({purchase.Status}: {purchase.Message})");

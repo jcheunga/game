@@ -74,6 +74,8 @@ public partial class SaveRoundTripReview : Node
         foreach (var currency in new[] { "essence", "shards", "sigils" }) state.TryAddDeveloperCurrency(currency, 77);
         foreach (var achievement in AchievementCatalog.GetAll().Take(5)) state.TryUnlockAchievement(achievement.Id);
         state.ContributeRaidDamage(120); state.ContributeRaidDamage(80);
+        // A server-recorded purchase grant, so the applied purchase IDs (exactly-once grants) are covered.
+        state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = $"PUR-roundtrip-{Guid.NewGuid():N}", ProductId = "gold_pouch", GoldCredited = 500 });
         state.SetPlayerCallsign("Roundtrip");
         state.SetDifficulty("hard");
         state.SetShowDevUi(false); state.SetShowFpsCounter(false); state.SetAudioMuted(true);

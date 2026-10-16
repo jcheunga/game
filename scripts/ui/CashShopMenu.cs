@@ -19,6 +19,8 @@ public partial class CashShopMenu : Control
     private int _selectedCategory;
     private string _pendingConfirmProductId = "";
     private Button _pendingConfirmButton;
+    // A native purchase is open in the store sheet or waiting on server verification.
+    private bool _nativePurchaseBusy;
     public override void _Ready()
     {
         BuildModalUi();
@@ -278,6 +280,12 @@ public partial class CashShopMenu : Control
 
     private void OnPurchasePressed(string productId, Button button)
     {
+        if (_nativePurchaseBusy)
+        {
+            _noticeLabel.Text = "Finishing your last purchase. Try again in a moment.";
+            return;
+        }
+
         if (_pendingConfirmProductId == productId)
         {
             SelectCategory(3);
@@ -367,44 +375,75 @@ public partial class CashShopMenu : Control
 
     private void ExecuteNativeIAPPurchase(ShopProduct product, string platform)
     {
+        _nativePurchaseBusy = true;
         _statusLabel.Text = $"Starting purchase: {product.DisplayName}...";
-        NativeIAPService.Instance.PurchaseProduct(product.Id, (iapResult) =>
-        {
-            if (!iapResult.Success)
-            {
-                _statusLabel.Text = $"Purchase cancelled: {iapResult.ErrorMessage}";
-                RefreshUi(preserveStatus: true);
-                return;
-            }
-
-            // Validate with server
-            _statusLabel.Text = $"Validating receipt for {product.DisplayName}...";
-            var result = GameState.Instance.ValidatePurchaseWithServer(iapResult.ProductId, platform, iapResult.ReceiptToken, iapResult.TransactionId);
-            if (result.Status == "ok")
-            {
-                GameState.Instance.TryApplyPurchaseReward(result);
-                NativeIAPService.Instance?.ConfirmServerFulfillment(iapResult);
-                _statusLabel.Text = $"Purchased {product.DisplayName}!\n";
-                if (result.GoldCredited > 0)
-                    _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
-                if (result.FoodCredited > 0)
-                    _statusLabel.Text += $"+{result.FoodCredited} Food  ";
-                if (result.GrantedUnitUnlock)
-                    _statusLabel.Text += "\n+ Unit unlock granted!";
-                AudioDirector.Instance?.PlayRewardClaim();
-            }
-            else
-            {
-                _statusLabel.Text = $"Validation failed: {result.Message}";
-            }
-
-            RefreshUi(preserveStatus: true);
-        });
+        NativeIAPService.Instance.PurchaseProduct(product.Id, iapResult => OnNativePurchaseReturned(product, platform, iapResult));
     }
+
+    private async void OnNativePurchaseReturned(ShopProduct product, string platform, IAPPurchaseResult iapResult)
+    {
+        if (!iapResult.Success)
+        {
+            _nativePurchaseBusy = false;
+            if (!IsOpen()) return;
+            _statusLabel.Text = $"Purchase cancelled: {iapResult.ErrorMessage}";
+            RefreshUi(preserveStatus: true);
+            return;
+        }
+
+        if (IsOpen())
+        {
+            _statusLabel.Text = $"Validating receipt for {product.DisplayName}...";
+            _noticeLabel.Text = "Validating your purchase…";
+        }
+
+        // Verification runs off the main thread, so the shop keeps drawing and responding. The
+        // service applies the grant and finishes the store purchase even if the shop closes.
+        PurchaseFulfillment fulfillment;
+        try
+        {
+            fulfillment = await NativeIAPService.Instance.FulfillPurchaseAsync(iapResult, platform);
+        }
+        finally
+        {
+            _nativePurchaseBusy = false;
+        }
+
+        if (!IsOpen()) return;
+        var result = fulfillment.Result;
+        if (fulfillment.Granted)
+        {
+            _statusLabel.Text = $"Purchased {product.DisplayName}!\n";
+            if (result.GoldCredited > 0)
+                _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
+            if (result.FoodCredited > 0)
+                _statusLabel.Text += $"+{result.FoodCredited} Food  ";
+            if (result.GrantedUnitUnlock)
+                _statusLabel.Text += "\n+ Unit unlock granted!";
+            AudioDirector.Instance?.PlayRewardClaim();
+        }
+        else if (fulfillment.Finished)
+        {
+            _statusLabel.Text = $"{product.DisplayName} was already credited to your account.";
+        }
+        else if (NativeIAPService.Instance?.Platform == IAPPlatform.Google && result.Status != "in_progress")
+        {
+            _statusLabel.Text = $"Not verified yet: {result.Message}\nGoogle Play keeps the payment open, and the game checks it again the next time it starts.";
+        }
+        else
+        {
+            _statusLabel.Text = $"Validation failed: {result.Message}";
+        }
+
+        RefreshUi(preserveStatus: true);
+        _noticeLabel.Text = "Your purchase status is shown above.";
+    }
+
+    private bool IsOpen() => IsInstanceValid(this) && IsInsideTree() && !IsQueuedForDeletion();
 
     private void RefreshStatus()
     {
-        if (!string.IsNullOrWhiteSpace(_statusLabel.Text) && _statusLabel.Text.Contains("Purchased"))
+        if (_nativePurchaseBusy || (!string.IsNullOrWhiteSpace(_statusLabel.Text) && _statusLabel.Text.Contains("Purchased")))
         {
             return;
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Godot;
 
 public enum IAPPlatform
@@ -29,6 +30,15 @@ public sealed class IAPPurchaseResult
 	public string ErrorMessage { get; set; } = "";
 }
 
+public sealed class PurchaseFulfillment
+{
+	public PurchaseValidationResult Result { get; init; } = new();
+	/// <summary>This call added the server's grant to the save.</summary>
+	public bool Granted { get; init; }
+	/// <summary>The save on disk holds the grant (from this call or an earlier one), so the store purchase was finished.</summary>
+	public bool Finished { get; init; }
+}
+
 public partial class NativeIAPService : Node
 {
 	public static NativeIAPService Instance { get; private set; }
@@ -40,6 +50,7 @@ public partial class NativeIAPService : Node
 	private readonly Dictionary<string, IAPProductInfo> _productCache = new(StringComparer.OrdinalIgnoreCase);
 	private readonly object _callbackLock = new();
 	private Action<IAPPurchaseResult> _pendingPurchaseCallback;
+	private readonly HashSet<string> _fulfillingReceipts = new(StringComparer.Ordinal);
 	private Node _googleBridge;
 	private GodotObject _appleStore;
 
@@ -176,11 +187,15 @@ public partial class NativeIAPService : Node
 			ReceiptToken = purchaseToken
 		};
 
+		// A restored purchase never answers the shop's purchase in flight.
 		Action<IAPPurchaseResult> callback = null;
-		lock (_callbackLock)
+		if (!restored)
 		{
-			callback = _pendingPurchaseCallback;
-			_pendingPurchaseCallback = null;
+			lock (_callbackLock)
+			{
+				callback = _pendingPurchaseCallback;
+				_pendingPurchaseCallback = null;
+			}
 		}
 
 		if (callback != null)
@@ -189,10 +204,9 @@ public partial class NativeIAPService : Node
 			return;
 		}
 
-		if (restored)
-		{
-			ReconcileRecoveredGooglePurchase(purchase);
-		}
+		// A restored purchase, or one that finished outside the shop (a pending payment that
+		// cleared later). Fulfillment is exactly-once, so recovering it here is always safe.
+		ReconcileRecoveredGooglePurchase(purchase);
 	}
 
 	private void OnGooglePurchaseFailed(string message)
@@ -217,7 +231,7 @@ public partial class NativeIAPService : Node
 		}
 	}
 
-	private void ReconcileRecoveredGooglePurchase(IAPPurchaseResult purchase)
+	private async void ReconcileRecoveredGooglePurchase(IAPPurchaseResult purchase)
 	{
 		if (GameState.Instance == null ||
 			string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ||
@@ -228,21 +242,62 @@ public partial class NativeIAPService : Node
 			return;
 		}
 
-		var result = GameState.Instance.ValidatePurchaseWithServer(
-			purchase.ProductId,
-			"google",
-			purchase.ReceiptToken,
-			purchase.TransactionId);
-		if (result.Status == "ok")
+		try
 		{
-			GameState.Instance.TryApplyPurchaseReward(result);
-			ConfirmServerFulfillment(purchase);
+			var fulfillment = await FulfillPurchaseAsync(purchase, "google");
+			if (fulfillment.Granted)
+			{
+				GD.Print($"NativeIAPService: Credited interrupted purchase {fulfillment.Result.PurchaseId} ({purchase.ProductId}).");
+			}
+			else if (!fulfillment.Finished)
+			{
+				GD.PrintErr($"NativeIAPService: Interrupted purchase of {purchase.ProductId} is still unverified: {fulfillment.Result.Message}");
+			}
 		}
-		else if (result.Status == "already_recorded")
+		catch (Exception e)
 		{
-			// The backend grant survived but the app was interrupted before the
-			// local Play consumption call. Do not grant a second time.
-			ConfirmServerFulfillment(purchase);
+			GD.PrintErr($"NativeIAPService: Recovering a purchase failed: {e.Message}");
+		}
+	}
+
+	/// <summary>
+	/// Verifies a store purchase with the server off the main thread, applies the server's
+	/// grant to the save at most once (keyed by the server's purchase ID), and finishes the
+	/// store purchase only once that grant is on disk. The shop and relaunch recovery both
+	/// come through here, so a purchase interrupted between the server's commit and its
+	/// response (timeout, dropped connection, app killed) is still granted exactly once: the
+	/// store re-delivers the unfinished purchase, the server answers "already_recorded" with
+	/// the same purchase ID and grant, and the save applies it only if it has not seen that ID.
+	/// </summary>
+	public async Task<PurchaseFulfillment> FulfillPurchaseAsync(IAPPurchaseResult purchase, string platform)
+	{
+		var state = GameState.Instance;
+		if (state == null || purchase == null || string.IsNullOrWhiteSpace(purchase.ReceiptToken))
+		{
+			return new PurchaseFulfillment { Result = new PurchaseValidationResult { Status = "error", Message = "The store returned an incomplete purchase." } };
+		}
+
+		if (!_fulfillingReceipts.Add(purchase.ReceiptToken))
+		{
+			return new PurchaseFulfillment { Result = new PurchaseValidationResult { Status = "in_progress", Message = "This purchase is already being verified." } };
+		}
+
+		try
+		{
+			var result = await state.ValidatePurchaseWithServerAsync(purchase.ProductId, platform, purchase.ReceiptToken, purchase.TransactionId);
+			// Back on the main thread: the save is only touched here.
+			var granted = state.TryApplyPurchaseReward(result);
+			var finished = state.IsPurchaseGrantSaved(result.PurchaseId);
+			if (finished)
+			{
+				ConfirmServerFulfillment(purchase);
+			}
+
+			return new PurchaseFulfillment { Result = result, Granted = granted, Finished = finished };
+		}
+		finally
+		{
+			_fulfillingReceipts.Remove(purchase.ReceiptToken);
 		}
 	}
 

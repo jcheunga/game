@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 public sealed class PurchaseValidationRequest
 {
@@ -61,6 +62,15 @@ public sealed class HttpApiPurchaseValidationProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
+	// Purchase validation waits on the store: the server makes up to two sequential store
+	// calls with a 15 s timeout each (Google: token + purchase lookup; Apple: production,
+	// then sandbox). Give up only well after that, or a slow but successful grant would be
+	// reported as a failure.
+	private static readonly HttpClient ValidationClient = new()
+	{
+		Timeout = TimeSpan.FromSeconds(45)
+	};
+
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
 		WriteIndented = false,
@@ -75,7 +85,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		_baseUrl = baseUrl?.TrimEnd('/') ?? "";
 	}
 
-	public PurchaseValidationResult ValidatePurchase(PurchaseValidationRequest request)
+	public async Task<PurchaseValidationResult> ValidatePurchaseAsync(PurchaseValidationRequest request)
 	{
 		if (string.IsNullOrWhiteSpace(_baseUrl))
 		{
@@ -96,11 +106,17 @@ public sealed class HttpApiPurchaseValidationProvider
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(message);
-		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-		if (!response.IsSuccessStatusCode)
+		// The whole exchange runs on the thread pool so no part of it can stall the caller's frame.
+		var (succeeded, statusCode, responseBody) = await Task.Run(async () =>
 		{
-			throw new InvalidOperationException($"HTTP {(int)response.StatusCode}: {responseBody}");
+			using var response = await ValidationClient.SendAsync(message).ConfigureAwait(false);
+			var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+			return (response.IsSuccessStatusCode, (int)response.StatusCode, body);
+		});
+
+		if (!succeeded)
+		{
+			throw new InvalidOperationException(ReadErrorMessage(responseBody) ?? $"HTTP {statusCode}: {responseBody}");
 		}
 
 		using var document = JsonDocument.Parse(responseBody);
@@ -116,6 +132,20 @@ public sealed class HttpApiPurchaseValidationProvider
 			GrantedUnitUnlock = GetBool(root, "grantedUnitUnlock", false),
 			ValidatedAtUnixSeconds = GetLong(root, "validatedAtUnixSeconds", request.RequestedAtUnixSeconds)
 		};
+	}
+
+	private static string ReadErrorMessage(string responseBody)
+	{
+		try
+		{
+			using var document = JsonDocument.Parse(responseBody);
+			var message = GetString(document.RootElement, "message", "");
+			return string.IsNullOrWhiteSpace(message) ? null : message;
+		}
+		catch (Exception e) when (e is JsonException or InvalidOperationException)
+		{
+			return null;
+		}
 	}
 
 	public List<PurchaseHistoryEntry> GetPurchaseHistory(string profileId)

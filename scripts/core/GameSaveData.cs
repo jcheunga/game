@@ -137,6 +137,8 @@ public sealed class GameSaveData
     public float BestBossRushTimeSeconds { get; set; }
     public int BossRushRuns { get; set; }
     public string[] PurchasedProductIds { get; set; } = [];
+    // Server purchase IDs whose grant this save already holds (exactly-once store grants).
+    public string[] AppliedPurchaseIds { get; set; } = [];
     public int TotalPurchaseCount { get; set; }
     public string PurchaseValidationEndpoint { get; set; } = "";
 

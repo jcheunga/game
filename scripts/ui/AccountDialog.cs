@@ -7,9 +7,9 @@ public partial class AccountDialog : AcceptDialog
 {
     private Label _status;
     private LineEdit _nickname, _email, _code;
-    private Button _emailButton, _verifyButton, _googleButton, _platformButton;
+    private Button _emailButton, _verifyButton, _appleButton, _googleButton, _platformButton;
     private string _challenge = "", _secret = "";
-    private bool _busy, _closed, _emailAvailable, _googleAvailable, _platformAvailable;
+    private bool _busy, _closed, _emailAvailable, _appleAvailable, _googleAvailable, _platformAvailable;
     private JsonElement _providers;
 
     public static void Show(Control host)
@@ -40,7 +40,9 @@ public partial class AccountDialog : AcceptDialog
         // The phone's own game account comes first: it needs no typing and no browser.
         _platformButton = RealmUi.Button("people", $"Continue with {PlatformSignIn.ProviderName(PlatformSignIn.Provider)}", () => _ = Platform());
         _platformButton.Name = "PlatformSignIn"; _platformButton.Visible = PlatformSignIn.Provider.Length > 0; stack.AddChild(_platformButton);
-        _googleButton = RealmUi.Button("people", "Continue with Google", () => _ = Google()); stack.AddChild(_googleButton);
+        // Apple asks that Sign in with Apple sits beside any other third-party sign-in, at least as prominently.
+        _appleButton = RealmUi.Button("people", "Continue with Apple", () => _ = Browser("apple")); _appleButton.Name = "AppleSignIn"; stack.AddChild(_appleButton);
+        _googleButton = RealmUi.Button("people", "Continue with Google", () => _ = Browser("google")); stack.AddChild(_googleButton);
         _email = new LineEdit { PlaceholderText = "Email address", CustomMinimumSize = new Vector2(0, 48), MaxLength = 254 };
         stack.AddChild(_email);
         _emailButton = RealmUi.Button("arrow", "Send sign-in code", () => _ = SendCode()); stack.AddChild(_emailButton);
@@ -58,6 +60,7 @@ public partial class AccountDialog : AcceptDialog
     private void Busy(bool busy)
     {
         _busy = busy; _emailButton.Disabled = busy || !_emailAvailable; _verifyButton.Disabled = busy; _googleButton.Disabled = busy || !_googleAvailable;
+        _appleButton.Disabled = busy || !_appleAvailable;
         _platformButton.Disabled = busy || !_platformAvailable;
         if (_nickname != null) _nickname.Editable = !busy;
     }
@@ -70,9 +73,10 @@ public partial class AccountDialog : AcceptDialog
             _providers = providers;
             _emailAvailable = providers.GetProperty("email").GetBoolean();
             _googleAvailable = providers.GetProperty("google").GetBoolean();
+            _appleAvailable = providers.TryGetProperty("apple", out var apple) && apple.ValueKind == JsonValueKind.True;
             _platformAvailable = PlatformSignIn.Offered(providers);
             Busy(false);
-            if (_emailButton.Disabled && _googleButton.Disabled && _platformButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
+            if (_emailButton.Disabled && _appleButton.Disabled && _googleButton.Disabled && _platformButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
         }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
@@ -106,19 +110,20 @@ public partial class AccountDialog : AcceptDialog
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
-    private async Task Google()
+    /// <summary>Apple and Google sign in through the browser while the game polls with its own secret.</summary>
+    private async Task Browser(string provider)
     {
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Finish sign-in in your browser.";
         try
         {
-            var response = await AccountSignIn.Request("/auth/google/start", new { }); if (_closed) return;
+            var response = await AccountSignIn.Request($"/auth/{provider}/start", new { }); if (_closed) return;
             var challenge = AccountSignIn.Text(response, "challengeId"); var secret = AccountSignIn.Text(response, "secret");
             OS.ShellOpen(AccountSignIn.Text(response, "url"));
             var deadline = DateTime.UtcNow.AddMinutes(10);
             while (!_closed && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(2000); if (_closed) return;
-                var session = await AccountSignIn.Request("/auth/google/poll", new { challengeId = challenge, secret });
+                var session = await AccountSignIn.Request($"/auth/{provider}/poll", new { challengeId = challenge, secret });
                 if (AccountSignIn.Text(session, "status") == "pending") continue;
                 await Finish(session); return;
             }

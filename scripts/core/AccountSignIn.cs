@@ -25,7 +25,7 @@ public static class AccountSignIn
     public static async Task<JsonElement> Request(string path, object body = null)
     {
         var state = GameState.Instance;
-        if (state.AccountProvider.Length == 0 && path is "/auth/email/start" or "/auth/google/start" or "/auth/playgames" or "/auth/gamecenter")
+        if (state.AccountProvider.Length == 0 && path is "/auth/email/start" or "/auth/apple/start" or "/auth/google/start" or "/auth/playgames" or "/auth/gamecenter")
         {
             // Establish an authenticated guest before linking an identity, including an offline-only journey.
             try { await RegisterGuest(); }

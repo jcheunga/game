@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Net;
@@ -23,6 +24,12 @@ public static class AccountAuth
     /// <summary>Test stand-ins for Apple's certificate download and the root it chains to.</summary>
     internal static Func<Uri, Task<byte[]>>? TestGameCenterCertificate;
     internal static X509Certificate2? TestGameCenterRoot;
+    /// <summary>Test stand-ins for Apple's token endpoint (form fields → token JSON) and its ID-token keys (JWKS JSON).</summary>
+    internal static Func<IReadOnlyDictionary<string, string>, Task<string>>? TestAppleToken;
+    internal static Func<Task<string>>? TestAppleKeys;
+    private sealed record AppleKeySet(DateTime Expires, JsonElement Keys);
+    private static AppleKeySet? _appleKeys;
+    private const string AppleIssuer = "https://appleid.apple.com";
     private static long Now => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     private static string Env(string name) => Environment.GetEnvironmentVariable(name)?.Trim() ?? "";
     private static string RandomToken() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
@@ -42,13 +49,17 @@ public static class AccountAuth
         {
             email = MailConfigured, google = GoogleConfigured, playGames = PlayGamesConfigured,
             // Public OAuth client ID the Android client asks Play Games to issue a server code for.
-            playGamesClientId = PlayGamesConfigured ? Env("PLAY_GAMES_CLIENT_ID") : "", gameCenter = GameCenterConfigured
+            playGamesClientId = PlayGamesConfigured ? Env("PLAY_GAMES_CLIENT_ID") : "", gameCenter = GameCenterConfigured,
+            apple = AppleConfigured
         }));
         auth.MapPost("/email/start", EmailStart);
         auth.MapPost("/email/verify", EmailVerify);
         auth.MapPost("/google/start", GoogleStart);
         auth.MapGet("/google/callback", GoogleCallback);
-        auth.MapPost("/google/poll", GooglePoll);
+        auth.MapPost("/google/poll", (HttpRequest request) => Poll(request, "google"));
+        auth.MapPost("/apple/start", AppleStart);
+        auth.MapPost("/apple/callback", AppleCallback);
+        auth.MapPost("/apple/poll", (HttpRequest request) => Poll(request, "apple"));
         auth.MapPost("/playgames", PlayGames);
         auth.MapPost("/gamecenter", GameCenter);
         auth.MapPost("/signout", (HttpRequest request) =>
@@ -65,8 +76,15 @@ public static class AccountAuth
         (Env("PLAY_GAMES_CLIENT_ID").Length > 0 && Env("PLAY_GAMES_CLIENT_SECRET").Length > 0);
     private static string GameCenterBundleId => Env("GAME_CENTER_BUNDLE_ID") is { Length: > 0 } id ? id : Env("APPLE_IAP_BUNDLE_ID");
     private static bool GameCenterConfigured => GameCenterBundleId.Length > 0;
-    private static bool GoogleConfigured => Env("GOOGLE_CLIENT_ID").Length > 0 && Env("GOOGLE_CLIENT_SECRET").Length > 0 &&
-        Uri.TryCreate(Env("GOOGLE_REDIRECT_URI"), UriKind.Absolute, out var uri) && (uri.Scheme == "https" || (uri.Scheme == "http" && uri.IsLoopback));
+    private static bool GoogleConfigured => Env("GOOGLE_CLIENT_ID").Length > 0 && Env("GOOGLE_CLIENT_SECRET").Length > 0 && SecureCallback(Env("GOOGLE_REDIRECT_URI"));
+    private static bool AppleConfigured => Env("APPLE_SIGN_IN_CLIENT_ID").Length > 0 && Env("APPLE_SIGN_IN_TEAM_ID").Length > 0 &&
+        Env("APPLE_SIGN_IN_KEY_ID").Length > 0 && (Env("APPLE_SIGN_IN_PRIVATE_KEY").Length > 0 || File.Exists(Env("APPLE_SIGN_IN_PRIVATE_KEY_PATH"))) &&
+        SecureCallback(Env("APPLE_SIGN_IN_REDIRECT_URI"));
+    private static bool SecureCallback(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) && (uri.Scheme == "https" || (uri.Scheme == "http" && uri.IsLoopback));
+    private static string Query(Dictionary<string, string> values) =>
+        string.Join("&", values.Select(kv => Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value)));
+    private static IResult SignedInPage() => Results.Content("<!doctype html><meta name='viewport' content='width=device-width'><title>Crownroad</title><body style='background:#142127;color:#e9d6ae;font:20px system-ui;text-align:center;padding:15vh 24px'><h1>Signed in</h1><p>Return to Crownroad to continue.</p></body>", "text/html");
 
     public static void Initialize(DbConnection connection)
     {
@@ -168,11 +186,11 @@ public static class AccountAuth
         if (!GoogleConfigured) return Task.FromResult(Error("Google sign-in is not configured on this server.", 503));
         var challenge = CreateChallenge(request, "google");
         var pkce = Convert.ToBase64String(SHA256.HashData(Encoding.ASCII.GetBytes(challenge.Verifier))).TrimEnd('=').Replace('+','-').Replace('/','_');
-        var url = "https://accounts.google.com/o/oauth2/v2/auth?" + string.Join("&", new Dictionary<string,string> {
+        var url = "https://accounts.google.com/o/oauth2/v2/auth?" + Query(new() {
             ["client_id"] = Env("GOOGLE_CLIENT_ID"), ["redirect_uri"] = Env("GOOGLE_REDIRECT_URI"), ["response_type"] = "code",
             ["scope"] = "openid email", ["state"] = challenge.State, ["code_challenge"] = pkce, ["code_challenge_method"] = "S256",
             ["prompt"] = "select_account"
-        }.Select(kv => Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value)));
+        });
         return Task.FromResult(Results.Ok(new { challengeId = challenge.Id, secret = challenge.Secret, url }));
     }
 
@@ -208,7 +226,7 @@ public static class AccountAuth
             cmd.CommandText = "UPDATE account_challenges SET status='ready', subject=@subject, verifier='' WHERE id=@id AND expires_at>@now";
             cmd.Parameters.AddWithValue("@subject", subject); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@now", Now); cmd.ExecuteNonQuery();
             request.HttpContext.Response.Headers.CacheControl = "no-store";
-            return Results.Content("<!doctype html><meta name='viewport' content='width=device-width'><title>Crownroad</title><body style='background:#142127;color:#e9d6ae;font:20px system-ui;text-align:center;padding:15vh 24px'><h1>Signed in</h1><p>Return to Crownroad to continue.</p></body>", "text/html");
+            return SignedInPage();
         }
         catch
         {
@@ -218,7 +236,8 @@ public static class AccountAuth
         }
     }
 
-    private static async Task<IResult> GooglePoll(HttpRequest request)
+    /// <summary>The device collects a browser sign-in with its own secret, which never passes through the browser.</summary>
+    private static async Task<IResult> Poll(HttpRequest request, string provider)
     {
         using var document = await JsonDocument.ParseAsync(request.Body); var body = document.RootElement;
         var id = Text(body, "challengeId"); var secret = Text(body, "secret");
@@ -226,19 +245,139 @@ public static class AccountAuth
         using var conn = Database.Open(); using var tx = conn.BeginTransaction(); using var cmd = conn.CreateCommand(); cmd.Transaction = tx;
         cmd.CommandText = """
             UPDATE account_challenges SET status='consumed'
-            WHERE id=@id AND secret_hash=@secret AND provider='google' AND status='ready' AND expires_at>@now
+            WHERE id=@id AND secret_hash=@secret AND provider=@provider AND status='ready' AND expires_at>@now
             RETURNING subject, guest_profile
             """;
         cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@secret", Hash(secret)); cmd.Parameters.AddWithValue("@now", Now);
+        cmd.Parameters.AddWithValue("@provider", provider);
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
         {
             var subject = reader.GetString(0); var guest = reader.GetString(1); reader.Close();
-            Consume(conn, tx, id); var result = Complete(conn, tx, "google", subject, guest); tx.Commit(); return result;
+            Consume(conn, tx, id); var result = Complete(conn, tx, provider, subject, guest); tx.Commit(); return result;
         }
-        reader.Close(); cmd.CommandText = "SELECT status FROM account_challenges WHERE id=@id AND secret_hash=@secret AND expires_at>@now";
+        reader.Close(); cmd.CommandText = "SELECT status FROM account_challenges WHERE id=@id AND secret_hash=@secret AND provider=@provider AND expires_at>@now";
         var status = cmd.ExecuteScalar()?.ToString();
         return status is "pending" or "verifying" ? Results.Ok(new { status = "pending" }) : Error("Sign-in failed or expired. Try again.");
+    }
+
+    /// <summary>
+    /// Sign in with Apple in the browser. Apple has no PKCE, so the nonce it signs into the ID token
+    /// (a hash of the private server verifier) ties that token to this challenge instead.
+    /// No scopes are requested: the game needs only Apple's stable user ID, not a name or email.
+    /// </summary>
+    private static Task<IResult> AppleStart(HttpRequest request)
+    {
+        if (!AppleConfigured) return Task.FromResult(Error("Sign in with Apple is not configured on this server.", 503));
+        var challenge = CreateChallenge(request, "apple");
+        var url = "https://appleid.apple.com/auth/authorize?" + Query(new() {
+            ["client_id"] = Env("APPLE_SIGN_IN_CLIENT_ID"), ["redirect_uri"] = Env("APPLE_SIGN_IN_REDIRECT_URI"), ["response_type"] = "code",
+            ["response_mode"] = "form_post", ["state"] = challenge.State, ["nonce"] = Hash(challenge.Verifier)
+        });
+        return Task.FromResult(Results.Ok(new { challengeId = challenge.Id, secret = challenge.Secret, url }));
+    }
+
+    /// <summary>Apple posts the authorization (or the player's cancellation) here from the browser.</summary>
+    private static async Task<IResult> AppleCallback(HttpRequest request)
+    {
+        if (!AppleConfigured) return Error("Sign in with Apple unavailable.", 503);
+        IFormCollection form;
+        try { form = request.HasFormContentType ? await request.ReadFormAsync() : FormCollection.Empty; }
+        catch (Exception e) when (e is InvalidDataException or IOException) { form = FormCollection.Empty; }
+        var state = form["state"].ToString(); var code = form["code"].ToString();
+        if (state.Length != 64) return Error("Sign-in was cancelled or expired.");
+        string id, verifier;
+        using (var conn = Database.Open())
+        using (var cmd = conn.CreateCommand())
+        {
+            // A cancelled sign-in fails the challenge at once, so the game stops waiting for it.
+            cmd.CommandText = code.Length is > 0 and <= 4096
+                ? "UPDATE account_challenges SET status='verifying' WHERE state=@state AND provider='apple' AND status='pending' AND expires_at>@now RETURNING id, verifier"
+                : "UPDATE account_challenges SET status='failed', verifier='' WHERE state=@state AND provider='apple' AND status='pending' AND expires_at>@now RETURNING id, verifier";
+            cmd.Parameters.AddWithValue("@state", state); cmd.Parameters.AddWithValue("@now", Now);
+            using var reader = cmd.ExecuteReader(); if (!reader.Read()) return Error("Sign-in expired.");
+            id = reader.GetString(0); verifier = reader.GetString(1);
+        }
+        if (code.Length is 0 or > 4096) return Error("Sign-in was cancelled. Return to the game to choose another way.");
+        try
+        {
+            var fields = new Dictionary<string, string> {
+                ["client_id"] = Env("APPLE_SIGN_IN_CLIENT_ID"), ["client_secret"] = AppleClientSecret(), ["code"] = code,
+                ["grant_type"] = "authorization_code", ["redirect_uri"] = Env("APPLE_SIGN_IN_REDIRECT_URI")
+            };
+            string tokens;
+            if (TestAppleToken != null) tokens = await TestAppleToken(fields);
+            else
+            {
+                using var response = await Apple.PostAsync("https://appleid.apple.com/auth/token", new FormUrlEncodedContent(fields));
+                response.EnsureSuccessStatusCode(); tokens = await response.Content.ReadAsStringAsync();
+            }
+            using var json = JsonDocument.Parse(tokens);
+            var subject = await VerifyAppleIdToken(Text(json.RootElement, "id_token"), Hash(verifier));
+            using var conn = Database.Open(); using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE account_challenges SET status='ready', subject=@subject, verifier='' WHERE id=@id AND expires_at>@now";
+            cmd.Parameters.AddWithValue("@subject", subject); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@now", Now); cmd.ExecuteNonQuery();
+            return SignedInPage();
+        }
+        catch
+        {
+            using var conn = Database.Open(); using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE account_challenges SET status='failed', verifier='' WHERE id=@id"; cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery();
+            return Error("Sign in with Apple failed. Return to the game and try again.", 502);
+        }
+    }
+
+    /// <summary>Apple's client secret: a short-lived ES256 JWT signed with the team's Sign in with Apple key (.p8).</summary>
+    private static string AppleClientSecret()
+    {
+        var key = Env("APPLE_SIGN_IN_PRIVATE_KEY") is { Length: > 0 } inline ? inline.Replace("\\n", "\n") : File.ReadAllText(Env("APPLE_SIGN_IN_PRIVATE_KEY_PATH"));
+        var header = Base64Url.EncodeToString(JsonSerializer.SerializeToUtf8Bytes(new { alg = "ES256", kid = Env("APPLE_SIGN_IN_KEY_ID") }));
+        var payload = Base64Url.EncodeToString(JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            iss = Env("APPLE_SIGN_IN_TEAM_ID"), iat = Now, exp = Now + 300, aud = AppleIssuer, sub = Env("APPLE_SIGN_IN_CLIENT_ID")
+        }));
+        using var ecdsa = ECDsa.Create(); ecdsa.ImportFromPem(key);
+        var signature = ecdsa.SignData(Encoding.ASCII.GetBytes(header + "." + payload), HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        return header + "." + payload + "." + Base64Url.EncodeToString(signature);
+    }
+
+    /// <summary>Checks Apple's RS256 signature against its published keys, then the issuer, audience, expiry and nonce.</summary>
+    private static async Task<string> VerifyAppleIdToken(string token, string nonce)
+    {
+        var parts = token.Split('.');
+        if (parts.Length != 3) throw new CryptographicException("Malformed Apple ID token.");
+        using var header = JsonDocument.Parse(Base64Url.DecodeFromChars(parts[0]));
+        if (Text(header.RootElement, "alg") != "RS256") throw new CryptographicException("Unexpected Apple ID token algorithm.");
+        var kid = Text(header.RootElement, "kid");
+        var jwk = await AppleKey(kid, refresh: false) ?? await AppleKey(kid, refresh: true) ?? throw new CryptographicException("Unknown Apple signing key.");
+        using var rsa = RSA.Create(new RSAParameters {
+            Modulus = Base64Url.DecodeFromChars(Text(jwk, "n")), Exponent = Base64Url.DecodeFromChars(Text(jwk, "e"))
+        });
+        if (!rsa.VerifyData(Encoding.ASCII.GetBytes(parts[0] + "." + parts[1]), Base64Url.DecodeFromChars(parts[2]), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1))
+            throw new CryptographicException("Apple ID token signature mismatch.");
+        using var claims = JsonDocument.Parse(Base64Url.DecodeFromChars(parts[1])); var body = claims.RootElement;
+        var expires = body.TryGetProperty("exp", out var exp) && exp.TryGetInt64(out var seconds) ? seconds : 0;
+        var subject = Text(body, "sub");
+        if (Text(body, "iss") != AppleIssuer || Text(body, "aud") != Env("APPLE_SIGN_IN_CLIENT_ID") || expires < Now - 60 ||
+            !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(Text(body, "nonce")), Encoding.UTF8.GetBytes(nonce)) ||
+            subject.Length is 0 or > 256)
+            throw new CryptographicException("Apple ID token does not match this sign-in.");
+        return subject;
+    }
+
+    private static async Task<JsonElement?> AppleKey(string kid, bool refresh)
+    {
+        var cached = _appleKeys;
+        if (refresh || cached == null || cached.Expires < DateTime.UtcNow || TestAppleKeys != null)
+        {
+            using var json = JsonDocument.Parse(TestAppleKeys != null ? await TestAppleKeys() : await Apple.GetStringAsync("https://appleid.apple.com/auth/keys"));
+            cached = new AppleKeySet(DateTime.UtcNow.AddHours(6), json.RootElement.Clone());
+            if (TestAppleKeys == null) _appleKeys = cached;
+        }
+        if (cached.Keys.ValueKind != JsonValueKind.Object || !cached.Keys.TryGetProperty("keys", out var keys) || keys.ValueKind != JsonValueKind.Array) return null;
+        foreach (var key in keys.EnumerateArray())
+            if (Text(key, "kid") == kid && Text(key, "kty") == "RSA") return key.Clone();
+        return null;
     }
 
     private static async Task<IResult> PlayGames(HttpRequest request)
@@ -365,7 +504,7 @@ public static class AccountAuth
         cmd.CommandText = "SELECT callsign FROM players WHERE profile_id=@profile"; var callsign = cmd.ExecuteScalar()?.ToString() ?? "Caravan";
         var token = SessionAuth.Issue(conn, tx, profile, Now);
         return Results.Ok(new { status = "ok", playerProfileId = profile, playerCallsign = callsign, sessionToken = token,
-            provider, accountLabel = provider switch { "email" => subject, "playgames" => "Google Play Games", "gamecenter" => "Game Center", _ => "Google account" },
+            provider, accountLabel = provider switch { "email" => subject, "playgames" => "Google Play Games", "gamecenter" => "Game Center", "apple" => "Apple account", _ => "Google account" },
             isNewAccount, syncedAtUnixSeconds = Now });
     }
 }

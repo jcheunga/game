@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Buffers.Text;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -236,6 +237,151 @@ public static partial class ServerTests
         finally
         {
             AccountAuth.TestGameCenterRoot = null; AccountAuth.TestGameCenterCertificate = null;
+            for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]);
+        }
+    }
+
+    private static async Task TestAccountApple(HttpClient client)
+    {
+        var keys = new[] { "APPLE_SIGN_IN_CLIENT_ID", "APPLE_SIGN_IN_TEAM_ID", "APPLE_SIGN_IN_KEY_ID", "APPLE_SIGN_IN_PRIVATE_KEY",
+            "APPLE_SIGN_IN_PRIVATE_KEY_PATH", "APPLE_SIGN_IN_REDIRECT_URI" };
+        var previous = keys.Select(Environment.GetEnvironmentVariable).ToArray();
+        using var appleKey = RSA.Create(2048); using var otherKey = RSA.Create(2048);
+        using var clientKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        const string clientId = "com.crownroad.signin", redirect = "http://localhost/auth/apple/callback";
+        static string Segment(object value) => Base64Url.EncodeToString(JsonSerializer.SerializeToUtf8Bytes(value));
+        string IdToken(string nonce, string subject = "001234.apple.0001", string audience = clientId, string issuer = "https://appleid.apple.com",
+            long expiresIn = 600, string kid = "test-apple-key", string alg = "RS256", RSA? signer = null)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var input = Segment(new { alg, kid }) + "." + Segment(new { iss = issuer, aud = audience, sub = subject, nonce, iat = now, exp = now + expiresIn });
+            var signature = (signer ?? appleKey).SignData(Encoding.ASCII.GetBytes(input), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return input + "." + Base64Url.EncodeToString(signature);
+        }
+        IReadOnlyDictionary<string, string>? exchanged = null;
+        Func<string, string> issue = nonce => IdToken(nonce);
+        async Task<HttpResponseMessage> Callback(string state, string code = "good-code", string error = "")
+        {
+            var form = new Dictionary<string, string> { ["state"] = state };
+            if (code.Length > 0) form["code"] = code;
+            if (error.Length > 0) form["error"] = error;
+            return await client.PostAsync("/auth/apple/callback", new FormUrlEncodedContent(form));
+        }
+        async Task<(string Id, string Secret, string State, string Nonce)> Start()
+        {
+            var challenge = await AccountPost(client, "/auth/apple/start", new { });
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(challenge.GetProperty("url").GetString()!).Query);
+            return (challenge.GetProperty("challengeId").GetString()!, challenge.GetProperty("secret").GetString()!, query["state"].ToString(), query["nonce"].ToString());
+        }
+        async Task<HttpStatusCode> Poll(string id, string secret) { using var response = await client.PostAsJsonAsync("/auth/apple/poll", new { challengeId = id, secret }); return response.StatusCode; }
+        try
+        {
+            foreach (var key in keys) Environment.SetEnvironmentVariable(key, "");
+            using var unavailable = await client.PostAsJsonAsync("/auth/apple/start", new { });
+            Assert(unavailable.StatusCode == HttpStatusCode.ServiceUnavailable, "Unconfigured Sign in with Apple is explicit");
+            Assert(!(await client.GetFromJsonAsync<JsonElement>("/auth/providers")).GetProperty("apple").GetBoolean(), "Apple is not offered until configured");
+            Environment.SetEnvironmentVariable(keys[0], clientId); Environment.SetEnvironmentVariable(keys[1], "TEAM123456");
+            Environment.SetEnvironmentVariable(keys[2], "KEY1234567"); Environment.SetEnvironmentVariable(keys[5], redirect);
+            // .env files hold the .p8 key on one line with escaped newlines.
+            Environment.SetEnvironmentVariable(keys[3], clientKey.ExportPkcs8PrivateKeyPem().Replace("\n", "\\n"));
+            AccountAuth.TestAppleKeys = () => Task.FromResult(JsonSerializer.Serialize(new { keys = new[] {
+                new { kty = "RSA", kid = "test-apple-key", use = "sig", alg = "RS256",
+                      n = Base64Url.EncodeToString(appleKey.ExportParameters(false).Modulus), e = Base64Url.EncodeToString(appleKey.ExportParameters(false).Exponent) } } }));
+            var expectedNonce = ""; // the nonce of the challenge Apple is answering
+            AccountAuth.TestAppleToken = form =>
+            {
+                exchanged = form;
+                if (form["code"] != "good-code") throw new HttpRequestException("invalid_grant");
+                return Task.FromResult(JsonSerializer.Serialize(new { access_token = "a", token_type = "Bearer", id_token = issue(expectedNonce) }));
+            };
+            Assert((await client.GetFromJsonAsync<JsonElement>("/auth/providers")).GetProperty("apple").GetBoolean(), "Apple is offered once its Services ID, key and callback are set");
+
+            await EnsureSession(client, "TEST-AP");
+            var challengeJson = await AccountPost(client, "/auth/apple/start", new { }, "TEST-AP", SessionTokens["TEST-AP"]);
+            var uri = new Uri(challengeJson.GetProperty("url").GetString()!);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            Assert(uri.Host == "appleid.apple.com" && uri.AbsolutePath == "/auth/authorize" && query["response_mode"] == "form_post" &&
+                query["response_type"] == "code" && query["client_id"] == clientId && query["redirect_uri"] == redirect,
+                "Apple starts on its HTTPS authorization endpoint and posts the answer back");
+            Assert(!query.ContainsKey("scope"), "Sign in with Apple asks for no name or email");
+            var challenge = (Id: challengeJson.GetProperty("challengeId").GetString()!, Secret: challengeJson.GetProperty("secret").GetString()!,
+                State: query["state"].ToString(), Nonce: query["nonce"].ToString());
+            Assert(challenge.State.Length == 64 && challenge.State != challenge.Secret && challenge.Nonce.Length == 64 && challenge.Nonce != challenge.State,
+                "Browser state, nonce and device poll secret are independent");
+            Assert(await Poll(challenge.Id, challenge.Secret) == HttpStatusCode.OK, "A pending Apple sign-in keeps the device waiting");
+            using (var forged = await Callback(new string('a', 64)))
+                Assert(forged.StatusCode == HttpStatusCode.BadRequest && exchanged == null, "Unknown callback state is rejected before contacting Apple");
+            expectedNonce = challenge.Nonce;
+            using (var signedIn = await Callback(challenge.State))
+                Assert(signedIn.StatusCode == HttpStatusCode.OK && (await signedIn.Content.ReadAsStringAsync()).Contains("Signed in"), "A verified Apple callback shows the return page");
+
+            var secret = exchanged!["client_secret"].Split('.');
+            using (var header = JsonDocument.Parse(Base64Url.DecodeFromChars(secret[0])))
+            using (var claims = JsonDocument.Parse(Base64Url.DecodeFromChars(secret[1])))
+            {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var c = claims.RootElement;
+                Assert(header.RootElement.GetProperty("alg").GetString() == "ES256" && header.RootElement.GetProperty("kid").GetString() == "KEY1234567",
+                    "The client secret names the Sign in with Apple key");
+                Assert(c.GetProperty("iss").GetString() == "TEAM123456" && c.GetProperty("sub").GetString() == clientId &&
+                    c.GetProperty("aud").GetString() == "https://appleid.apple.com" && c.GetProperty("exp").GetInt64() > now &&
+                    c.GetProperty("exp").GetInt64() - c.GetProperty("iat").GetInt64() <= 15777000, "The client secret carries Apple's required claims");
+            }
+            Assert(clientKey.VerifyData(Encoding.ASCII.GetBytes(secret[0] + "." + secret[1]), Base64Url.DecodeFromChars(secret[2]), HashAlgorithmName.SHA256),
+                "The client secret is signed with the team's .p8 key");
+            Assert(exchanged["redirect_uri"] == redirect && exchanged["grant_type"] == "authorization_code", "The code is exchanged for the registered callback");
+
+            Assert(await Poll(challenge.Id, challenge.State) == HttpStatusCode.BadRequest, "A browser callback state cannot retrieve the device session");
+            using (var wrongProvider = await client.PostAsJsonAsync("/auth/google/poll", new { challengeId = challenge.Id, secret = challenge.Secret }))
+                Assert(wrongProvider.StatusCode == HttpStatusCode.BadRequest, "An Apple sign-in is collected only from the Apple poll");
+            var account = await AccountPost(client, "/auth/apple/poll", new { challengeId = challenge.Id, secret = challenge.Secret });
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-AP" && account.GetProperty("isNewAccount").GetBoolean(),
+                "A verified Apple account links the authenticated guest's progress");
+            Assert(account.GetProperty("provider").GetString() == "apple" && account.GetProperty("accountLabel").GetString() == "Apple account",
+                "Apple accounts are labelled by service");
+            Assert(await Poll(challenge.Id, challenge.Secret) == HttpStatusCode.BadRequest, "Apple sessions are retrieved only once");
+
+            challenge = await Start();
+            expectedNonce = challenge.Nonce;
+            using (var again = await Callback(challenge.State)) Assert(again.IsSuccessStatusCode, "A second device completes Apple sign-in");
+            account = await AccountPost(client, "/auth/apple/poll", new { challengeId = challenge.Id, secret = challenge.Secret });
+            Assert(account.GetProperty("playerProfileId").GetString() == "TEST-AP" && !account.GetProperty("isNewAccount").GetBoolean(),
+                "Another device signed in to the same Apple account recovers the same profile");
+
+            var rejected = new (string Name, Func<string, string> Token)[]
+            {
+                ("An ID token minted for another sign-in is rejected", _ => IdToken(new string('0', 64))),
+                ("An ID token for another app is rejected", nonce => IdToken(nonce, audience: "com.other.app")),
+                ("An ID token from another issuer is rejected", nonce => IdToken(nonce, issuer: "https://evil.example")),
+                ("An expired ID token is rejected", nonce => IdToken(nonce, expiresIn: -600)),
+                ("An ID token not signed by Apple is rejected", nonce => IdToken(nonce, signer: otherKey)),
+                ("An ID token signed with an unknown key is rejected", nonce => IdToken(nonce, kid: "unknown")),
+                ("An unsigned ID token is rejected", nonce => IdToken(nonce, alg: "none")),
+            };
+            foreach (var (name, token) in rejected)
+            {
+                challenge = await Start(); expectedNonce = challenge.Nonce; issue = token;
+                using var response = await Callback(challenge.State);
+                Assert(response.StatusCode == HttpStatusCode.BadGateway && await Poll(challenge.Id, challenge.Secret) == HttpStatusCode.BadRequest, name);
+            }
+            issue = nonce => IdToken(nonce);
+            challenge = await Start();
+            using (var refused = await Callback(challenge.State, code: "forged-code"))
+                Assert(refused.StatusCode == HttpStatusCode.BadGateway && await Poll(challenge.Id, challenge.Secret) == HttpStatusCode.BadRequest,
+                    "A code Apple refuses issues no session");
+            challenge = await Start(); exchanged = null;
+            using (var cancelled = await Callback(challenge.State, code: "", error: "user_cancelled_authorize"))
+                Assert(cancelled.StatusCode == HttpStatusCode.BadRequest && exchanged == null && await Poll(challenge.Id, challenge.Secret) == HttpStatusCode.BadRequest,
+                    "A cancelled Apple sign-in stops the device waiting without contacting Apple");
+            using (var replayed = await Callback(challenge.State)) Assert(replayed.StatusCode == HttpStatusCode.BadRequest, "A finished Apple challenge cannot be reused");
+            using (var malformed = await client.PostAsync("/auth/apple/callback", new StringContent("{}", Encoding.UTF8, "application/json")))
+                Assert(malformed.StatusCode == HttpStatusCode.BadRequest, "A callback that is not a form fails cleanly");
+            Environment.SetEnvironmentVariable(keys[5], "ftp://localhost/auth/apple/callback");
+            using var unsupported = await client.PostAsJsonAsync("/auth/apple/start", new { });
+            Assert(unsupported.StatusCode == HttpStatusCode.ServiceUnavailable, "Only secure or loopback HTTP Apple callbacks are accepted");
+        }
+        finally
+        {
+            AccountAuth.TestAppleToken = null; AccountAuth.TestAppleKeys = null;
             for (var i = 0; i < keys.Length; i++) Environment.SetEnvironmentVariable(keys[i], previous[i]);
         }
     }

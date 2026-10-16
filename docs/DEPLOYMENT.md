@@ -168,8 +168,19 @@ Every option is optional: **Play as guest** keeps the journey on the device.
   the build has the platform plugin and the server is configured. The device
   proves the player to the server (a Play Games server auth code, or a GameKit
   identity signature) and the server verifies it itself.
-- **Google** uses browser authorization with PKCE, a random state and a
-  separate device poll secret.
+- **Apple** (Sign in with Apple) and **Google** sign in through the browser.
+  The game opens the provider's page and polls the server with a device
+  secret that never passes through the browser; the browser carries only a
+  random state. Google adds PKCE. Apple has no PKCE, so the server puts a nonce
+  derived from a private verifier into the request and checks that Apple
+  signed the same nonce into the ID token. Apple posts its answer back to the
+  server (`response_mode=form_post`). The server exchanges the code using a
+  five-minute client secret, an ES256 JWT signed with the team's `.p8` key. It
+  then verifies the ID token against
+  [Apple's published keys](https://appleid.apple.com/auth/keys) and checks its
+  issuer, audience, expiry and nonce. The game asks Apple for no name or
+  email, so the account is Apple's stable user ID. A cancelled Apple sign-in
+  fails the challenge at once, so the game stops waiting.
 - **Email** uses a six-digit one-time code (ten-minute lifetime, five attempts).
 
 The server links the guest to the first identity only with a valid guest
@@ -206,27 +217,92 @@ To enable live sign-in:
    Without the AARs the export prints a warning and leaves Play Games out.
 5. **Game Center.** Enable Game Center for the App ID and set
    `GAME_CENTER_BUNDLE_ID` (it falls back to `APPLE_IAP_BUNDLE_ID`). The iOS
-   build needs a Godot plugin that exposes a `GameCenter` singleton with
-   `authenticate`, `is_authenticated`, `request_identity_verification_signature`
-   and the pending-event queue, such as Godot's official iOS GameCenter plugin.
-   No iOS plugin is included yet, the same as the StoreKit bridge. The server
-   only fetches signing certificates from HTTPS `*.apple.com` URLs, requires a
-   trusted chain, accepts a signature once within a 15-minute window and checks
-   it against the configured bundle ID.
-6. Restart the server. `/auth/providers` reports which sign-in methods are
+   build includes Godot's official GameCenter plugin in
+   `ios/plugins/gamecenter`, built from `native/GameCenter` (see its README).
+   The iOS export preset enables it (`plugins/GameCenter`) together with the
+   Game Center entitlement (`entitlements/game_center`). The plugin signs with
+   `fetchItemsForIdentityVerificationSignature` and reports the
+   `teamPlayerID`, which is the ID Apple signs. Rebuild it with
+   `native/GameCenter/build.sh` whenever the project changes Godot version:
+   it is compiled against that exact engine's headers. The server only fetches
+   signing certificates from HTTPS `*.apple.com` URLs, requires a trusted
+   chain, accepts a signature once within a 15-minute window and checks it
+   against the configured bundle ID.
+6. **Sign in with Apple.** In the Apple Developer account, under
+   Certificates, Identifiers & Profiles:
+   1. Turn on *Sign in with Apple* for the app's App ID (`com.crownroad.game`).
+   2. Create a **Services ID**, for example `com.crownroad.game.signin`, and
+      turn on Sign in with Apple for it. Choose the App ID as its primary App
+      ID, add the API domain under *Domains and Subdomains*, and register the
+      exact return URL `https://<API domain>/auth/apple/callback`. Apple
+      accepts only HTTPS return URLs on a real domain, so Apple's side cannot
+      be tested against `localhost`. Use staging or a tunnel.
+   3. Create a **key** with Sign in with Apple enabled for that App ID and
+      download its `.p8` file. Apple lets you download it only once. This key
+      is separate from the In-App Purchase key in `APPLE_IAP_PRIVATE_KEY_PATH`.
+
+   On the server, set `APPLE_SIGN_IN_CLIENT_ID` to the Services ID, along with
+   `APPLE_SIGN_IN_TEAM_ID`, `APPLE_SIGN_IN_KEY_ID` (the key's 10-character
+   ID) and `APPLE_SIGN_IN_REDIRECT_URI` (the return URL above). Supply the key
+   as `APPLE_SIGN_IN_PRIVATE_KEY_PATH` (a mounted file) or as
+   `APPLE_SIGN_IN_PRIVATE_KEY`, the PEM text on one line with newlines
+   written as `\n`. With Docker Compose, put the one-line form in
+   `.env.production`. A Compose secret for this key would have to exist on
+   every deployment, Android-only ones included, so none is defined.
+7. Restart the server. `/auth/providers` reports which sign-in methods are
    configured; the game disables buttons for unavailable providers.
 
 The Play Games button appears only on Android builds with the plugin and a
 project ID, and the Game Center button only on iOS builds with the plugin.
-Apple requires apps that offer a third-party login, such as Google, to also
-offer a privacy-focused option like Sign in with Apple. Settle that before an
-iOS release that shows **Continue with Google**.
+**Continue with Apple** sits directly above **Continue with Google** on every
+platform. App Store guideline 4.8 requires an equivalent privacy-focused login
+wherever a third-party login such as Google is offered, so configure Apple
+before any iOS release that shows Google. If Apple is not configured, hide the
+Google button on iOS. Two App Review points are still open:
 
-Provider credentials are not included. Live email delivery and Google's consent
-flow need the configured services and a manual device check. The server
-exchanges the authorization code directly with Google and reads the verified
-identity from its userinfo endpoint, following
-[Google's OpenID Connect flow](https://developers.google.com/identity/openid-connect/openid-connect).
+- Apple's [button guidelines](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)
+  call for the Apple logo and an approved style. The button uses the game's
+  own style and a generic icon, like the Google button.
+- When account deletion is built (see
+  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md)), Apple requires the app to
+  [revoke the Apple tokens](https://developer.apple.com/documentation/signinwithapplerestapi/revoke-tokens)
+  of a deleted account. The server keeps no Apple tokens today, so that work
+  also needs to store the refresh token, encrypted, at sign-in.
+
+### What still needs a real device
+
+The server's provider checks run against stand-ins in the test suite, and the
+iOS export has been checked only as far as building. An unsigned Debug and
+Release device build of an iOS export, made with Xcode 27 from Godot 4.6.1's
+official template, links the GameCenter plugin and GameKit and carries the
+Game Center entitlement. Nothing has run on an iPhone yet: this Mac has no iOS
+simulator runtime, and Game Center needs a signed build. Before an iOS
+release, check on a device:
+
+- **Game Center.** The App ID and App Store Connect record need Game Center
+  enabled, and the build must be signed with a matching provisioning profile.
+  Check the sign-in sheet, cancelling it (afterwards iOS expects the player to
+  sign in from Settings), an already signed-in player, and a real identity
+  signature verified by the server against Apple's live certificate.
+  Reinstall on the same Apple Account and check that the profile comes back.
+- **Sign in with Apple.** The Services ID, domain, return URL and key must be
+  live. Check that Safari opens Apple's page, that a cancel stops the game
+  waiting, and that a second device recovers the same profile. Check iPhone,
+  Android and desktop builds, since the button shows everywhere.
+- **The export itself.** The C# iOS export is still experimental in Godot
+  4.6, and the game's full export (NativeAOT, signing, App Store upload) has
+  not been run. Xcode 27 builds only for iOS 15 and later, so the preset's
+  minimum iOS version is now 15.0. The 4.6 editor also renamed the main icon
+  option to `icons/icon_1024x1024`, which is now set; the export fails while
+  it is blank.
+
+Provider credentials are not included. Live email delivery and the Google and
+Apple consent pages need the configured services and a manual device check.
+The server exchanges authorization codes directly with each provider. It reads
+Google's verified identity from its userinfo endpoint, following
+[Google's OpenID Connect flow](https://developers.google.com/identity/openid-connect/openid-connect),
+and verifies Apple's ID token following
+[Apple's token validation guide](https://developer.apple.com/documentation/signinwithapple/verifying-a-user).
 
 Before switching accounts, the game downloads the selected account's cloud
 save when available and writes current local progress to

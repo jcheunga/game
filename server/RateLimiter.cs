@@ -49,7 +49,7 @@ public sealed class RateLimiter
         // yet, so it remains deliberately limited by source IP.
         if (path.StartsWithSegments("/auth"))
         {
-            var poll = path.StartsWithSegments("/auth/google/poll");
+            var poll = path.StartsWithSegments("/auth/google/poll") || path.StartsWithSegments("/auth/apple/poll");
             return new RateLimitPolicy($"crownroad:rate:v1:auth:{(poll ? "poll" : "attempt")}:{Hash(ip)}", poll ? 40 : 10);
         }
 

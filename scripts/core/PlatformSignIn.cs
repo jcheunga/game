@@ -5,8 +5,9 @@ using Godot;
 
 /// <summary>
 /// The phone's own game account: Google Play Games on Android (the PlayGamesSignIn plugin built
-/// from native/PlayGamesSignIn) and Game Center on iOS (a "GameCenter" plugin such as Godot's
-/// official iOS plugin). Each hands the server a proof of the player that it verifies itself.
+/// from native/PlayGamesSignIn) and Game Center on iOS (Godot's official GameCenter plugin, built
+/// from native/GameCenter into ios/plugins). Each hands the server a proof of the player that it
+/// verifies itself.
 /// </summary>
 public static class PlatformSignIn
 {
@@ -22,7 +23,7 @@ public static class PlatformSignIn
 
     public static string ProviderName(string provider) => provider switch
     {
-        PlayGames => "Google Play Games", GameCenter => "Game Center", "google" => "Google", "email" => "Email", _ => provider
+        PlayGames => "Google Play Games", GameCenter => "Game Center", "apple" => "Apple", "google" => "Google", "email" => "Email", _ => provider
     };
 
     /// <summary>Whether the server can verify this device's game account.</summary>
@@ -92,11 +93,14 @@ public static class PlatformSignIn
         if (!center.Call("is_authenticated").AsBool())
         {
             if (!interactive) throw new InvalidOperationException("Not signed in to Game Center.");
-            center.Call("authenticate");
-            if (Value(await NextEvent(center, "authentication"), "result") != "ok")
-                throw new InvalidOperationException("Game Center sign-in was cancelled.");
+            // iOS shows its sign-in sheet once per launch; after a cancel, players sign in from Settings.
+            if (center.Call("authenticate").AsInt32() != (int)Error.Ok ||
+                Value(await NextEvent(center, "authentication"), "result") != "ok")
+                throw new InvalidOperationException("Sign in to Game Center in the Settings app, then try again.");
         }
-        center.Call("request_identity_verification_signature");
+        // A request the plugin refuses at once (for example a player signed out meanwhile) queues no event.
+        if (center.Call("request_identity_verification_signature").AsInt32() != (int)Error.Ok)
+            throw new InvalidOperationException("Game Center could not confirm this player.");
         var proof = await NextEvent(center, "identity_verification_signature");
         if (Value(proof, "result") != "ok") throw new InvalidOperationException("Game Center could not confirm this player.");
         return new
@@ -106,7 +110,11 @@ public static class PlatformSignIn
         };
     }
 
-    /// <summary>The GameCenter plugin reports results as queued events rather than signals.</summary>
+    /// <summary>
+    /// The GameCenter plugin reports results as queued events rather than signals: dictionaries with
+    /// "type" and "result", plus "player_id" (the teamPlayerID Apple signs), "public_key_url",
+    /// base64 "signature" and "salt", and an integer "timestamp" for identity signatures.
+    /// </summary>
     private static async Task<Godot.Collections.Dictionary> NextEvent(GodotObject center, string type)
     {
         var tree = (SceneTree)Engine.GetMainLoop();
@@ -125,7 +133,7 @@ public static class PlatformSignIn
 
     private static string Value(Godot.Collections.Dictionary data, string key) => data.TryGetValue(key, out var value) ? value.AsString() : "";
 
-    // Plugin builds differ: some pass the signature and salt as bytes, others already as base64.
+    // The bundled plugin sends base64 text; raw bytes are accepted too in case another build sends them.
     private static string Base64(Godot.Collections.Dictionary data, string key) =>
         !data.TryGetValue(key, out var value) ? "" : value.VariantType == Variant.Type.PackedByteArray ? Convert.ToBase64String(value.AsByteArray()) : value.AsString();
 }

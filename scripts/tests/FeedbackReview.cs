@@ -64,6 +64,9 @@ public partial class FeedbackReview : Node
             AccountDialog.Show(menu); await Wait(.5);
             var account = Walk(menu).OfType<AccountDialog>().Single();
             Check(Walk(account).OfType<ScrollContainer>().Any() && Walk(account).OfType<Button>().Any(b => b.Text == "Continue with Google"), "Account offers email and Google in a scrollable dialog");
+            var buttons = Walk(account).OfType<Button>().ToList();
+            Check(buttons.Any(b => b.Text == "Continue with Apple") && buttons.FindIndex(b => b.Text == "Continue with Apple") < buttons.FindIndex(b => b.Text == "Continue with Google"),
+                "Sign in with Apple is offered wherever Google is, and just as prominently");
             Check(account.GetOkButton().Text == "Play as guest", "A guest can keep playing without an account");
             Check(Walk(account).OfType<Button>().Single(b => b.Name == "PlatformSignIn").Visible == (PlatformSignIn.Provider.Length > 0),
                 "Play Games and Game Center appear only where the phone has them");

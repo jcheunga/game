@@ -116,8 +116,9 @@ the existing protected APIs rather than a separate account service.
   methods and that sign-in, wallet and cloud-save requests use that origin.
   Development can use the endpoint in Settings; do not rely on a player's
   saved endpoint for production configuration.
-- [ ] Test email delivery/verification and the complete Google browser
-  callback/poll flow on signed Android/iOS builds included in launch scope.
+- [ ] Test email delivery/verification and the complete Google and Apple
+  browser callback/poll flows on signed Android/iOS builds included in launch
+  scope.
   Cover background/resume, cancellation, expired/wrong/reused codes, failed
   delivery/network, unavailable providers, rate limits and revoked sessions.
 - [ ] Test guest-to-account linking, reinstall/lost-device recovery and
@@ -137,12 +138,14 @@ the existing protected APIs rather than a separate account service.
   Record the staging/device evidence, deployment version and rollout owner;
   then repeat provider/recovery checks against the production origin.
 
-Local evidence: the **88-test backend suite** covers email guest linking,
+Local evidence: the **89-test backend suite** covers email guest linking,
 same-identity recovery, wallet authorization, challenge expiry/attempts/replay,
 Google PKCE/state/poll secrets, Play Games code exchange, Game Center signature,
-chain, bundle, freshness and replay checks, unavailable providers and session
-revocation. Play Games and Game Center verification run against test stand-ins
-for Google and Apple.
+chain, bundle, freshness and replay checks, and Sign in with Apple. The Apple
+checks cover the form-post callback, the ES256 client secret, and the ID
+token's signature, key ID, issuer, audience, expiry and nonce. They also cover
+cancellation, unavailable providers and session revocation. Play Games, Game
+Center and Apple verification run against test stand-ins for Google and Apple.
 Google success is simulated after provider verification, and email delivery
 is captured by a test sender; these do not prove live provider operation.
 `FeedbackReview.tscn` passes **42 checks on desktop and 42 on phone**, including
@@ -352,7 +355,10 @@ requirement until a migration and both signed exports have been verified.
   configure team/provisioning in `export_presets.cfg`, use a verified Godot
   Mono iOS export setup, increment iOS version/build, archive a **release**
   build, and upload it to App Store Connect. The preset's team/profile fields
-  are currently blank; the icon and IAP capability are configured.
+  are currently blank. The icon, IAP capability, Game Center entitlement and
+  GameCenter plugin are configured, and the minimum is iOS 15, the oldest
+  Xcode 27 builds for. Enable Game Center for the App ID and run the device
+  checks in [DEPLOYMENT.md](DEPLOYMENT.md#what-still-needs-a-real-device).
 - [ ] Test the exact TestFlight build and sandbox products on physical iPhone
   and any supported iPad size. Complete App Privacy, age rating, export-
   compliance questions, support/privacy URLs, countries/pricing, reviewer

@@ -49,6 +49,7 @@ public static partial class ServerTests
                 ("AccountGoogleChallenge", () => TestAccountGoogleChallenge(client)),
                 ("AccountPlayGames", () => TestAccountPlayGames(client)),
                 ("AccountGameCenter", () => TestAccountGameCenter(client)),
+                ("AccountApple", () => TestAccountApple(client)),
                 ("ChallengeSync", () => TestChallengeSync(client)),
                 ("ChallengeSync_GameContract", () => TestChallengeSyncGameContract(client)),
                 ("ChallengeLeaderboard", () => TestChallengeLeaderboard(client)),

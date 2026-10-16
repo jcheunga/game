@@ -92,16 +92,24 @@ public partial class ExplorationReview : Node
                 var entry=stages.Sum(t=>GameState.Instance.GetStageEntryFoodCost(t.Site.Stage));
                 GD.Print($"EXPLORATION_ECONOMY: {zone} road tiles {roadTiles} ({roadTiles*GameState.AdventureTileFoodCost} food), food detours {detour} tiles, {foodSources.Length} food sources ({foodSources.Count(BesideStage)} beside a stage, gathered free) pay {foodGained} for {foodSources.Count(t=>!free.Contains(t.Id))*GameState.AdventureTileFoodCost} to open, battles {entry}, first wins pay {stages.Length*GameState.CampaignFirstClearFood}; net {foodGained+stages.Length*GameState.CampaignFirstClearFood-(roadTiles+detour+foodSources.Count(t=>!free.Contains(t.Id)))*GameState.AdventureTileFoodCost-entry}");
                 GD.Print($"EXPLORATION_STAGE_RINGS: {zone} resources beside a stage: {string.Join(", ",tiles.Where(t=>t.IsResource && BesideStage(t)).Select(t=>t.Discovery?.Kind.ToString() ?? t.Site.Kind.ToString()))}");
+                Check(AdventureTileCatalog.Neighbors(stages[0]).All(t=>!t.HasInterest),zone+" rings its first stage with plain ground");
                 var finds=AdventureDiscoveryCatalog.ForMap(zone);
                 Check(finds.Count==28 && finds.Select(f=>f.Kind).Distinct().Count()==Enum.GetValues<AdventureDiscoveryKind>().Length
                     && finds[0].Kind==AdventureDiscoveryKind.Food && Steps(stages[0],AdventureTileCatalog.Find(zone,finds[0].Id))<=4,zone+" offers every kind of find, with provisions close to the start");
             }
             var city=AdventureTileCatalog.ForMap("city"); var start=AdventureTileCatalog.Starting("city"); var boss=AdventureTileCatalog.Stage("city",9);
-            Check(city.Count(state.IsAdventureTileOpened)==1 && city.Count(state.IsAdventureTileRevealed)==1+AdventureTileCatalog.Neighbors(start).Count && !state.IsAdventureTileRevealed(boss),
-                "A fresh zone has only its first stage charted, with its neighbours on the frontier");
-            var frontier=AdventureTileCatalog.Neighbors(start).First(t=>!t.HasInterest);
-            var beyond=AdventureTileCatalog.Neighbors(frontier).First(t=>!state.IsAdventureTileRevealed(t));
+            // The first stage is already discovered, so the plain ground around it starts charted and never costs food.
+            var startingGround=AdventureTileCatalog.Neighbors(start).Where(t=>!t.HasInterest).Append(start).ToArray();
             var food=state.Food;
+            Check(city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).ToHashSet().SetEquals(startingGround.Select(t=>t.Id))
+                && city.Where(state.IsAdventureTileRevealed).Select(t=>t.Id).ToHashSet().SetEquals(startingGround.Concat(startingGround.SelectMany(AdventureTileCatalog.Neighbors)).Select(t=>t.Id))
+                && !state.IsAdventureTileRevealed(boss) && !state.TryOpenAdventureTile(startingGround[0],out _) && state.Food==food,
+                "A fresh zone has its first stage and the plain ground around it charted, with only the land beyond on the frontier");
+            // A plain frontier tile and a hidden tile beyond it that still has hidden land of its own past the frontier tile's reach.
+            bool Touches(AdventureTile a,AdventureTile b) => AdventureTileCatalog.Neighbors(a).Any(t=>t.Id==b.Id);
+            var (frontier,beyond)=city.Where(t=>state.IsAdventureTileFrontier(t) && !t.HasInterest).OrderBy(t=>t.Point.DistanceTo(start.Point))
+                .SelectMany(f=>AdventureTileCatalog.Neighbors(f).Where(b=>!state.IsAdventureTileRevealed(b)).Select(b=>(f,b)))
+                .First(pair=>AdventureTileCatalog.Neighbors(pair.b).Any(t=>t.Id!=pair.f.Id && !state.IsAdventureTileRevealed(t) && !Touches(pair.f,t)));
             Check(!state.TryOpenAdventureTile(beyond,out _) && state.Food==food && !state.IsAdventureTileOpened(beyond),"Tiles beyond the frontier cannot be opened and cost nothing");
             Check(state.TryOpenAdventureTile(frontier,out _) && state.Food==food-GameState.AdventureTileFoodCost && state.IsAdventureTileOpened(frontier)
                 && AdventureTileCatalog.Neighbors(frontier).All(state.IsAdventureTileRevealed) && !AdventureTileCatalog.Neighbors(beyond).Where(t=>t.Id!=frontier.Id).All(state.IsAdventureTileRevealed),
@@ -136,7 +144,7 @@ public partial class ExplorationReview : Node
                 && AdventureTileCatalog.Neighbors(survey).Where(t=>t.HasInterest && t.Id!=AdventureTileCatalog.Neighbors(survey).First().Id).All(t=>!state.IsAdventureTileOpened(t)),
                 "A surveyor's chart charts the plain ground around it for free");
             var charted=state.BuildSaveData(); state.ReloadFromDisk();
-            Check(city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).ToHashSet().SetEquals(charted.AdventureOpenTiles.Append(start.Id)) && state.HasVisitedAdventureSite(cache.Id),
+            Check(city.Where(state.IsAdventureTileOpened).Select(t=>t.Id).ToHashSet().SetEquals(charted.AdventureOpenTiles.Concat(startingGround.Select(t=>t.Id))) && state.HasVisitedAdventureSite(cache.Id),
                 "A reload keeps every charted tile and gathered cache");
             // Provisions beside a stage open the frontier around them without food, one ring deep; elsewhere they open like any tile.
             var cityFood=city.Where(t=>t.Discovery?.Kind==AdventureDiscoveryKind.Food || t.Site?.Kind==AdventureSiteKind.Food).ToArray();
@@ -169,12 +177,14 @@ public partial class ExplorationReview : Node
             // The rendered atlas: storm cloud over hidden land, mist over the frontier, a click opens a frontier tile.
             Reset();
             var menu=await Map(); var canvas=Read<MapPathCanvas>(menu,"_mapCanvas");
-            Check(Read<AdventureMapNode>(menu,"_selected").Id==start.Id && canvas.GetChildren().OfType<AdventureMapToken>().Count(t=>t.Visible)==1,"A fresh map selects the first stage and shows only its marker");
+            var shown=canvas.GetChildren().OfType<AdventureMapToken>().Where(t=>t.Visible).Select(t=>t.Site.Id).ToArray();
+            Check(Read<AdventureMapNode>(menu,"_selected").Id==start.Id && shown.Contains(start.Id) && shown.All(id=>id==start.Id || state.IsAdventureTileFrontier(AdventureTileCatalog.Find("city",id))),
+                "A fresh map selects the first stage and shows only its marker and the sites on its frontier");
             await Wait(.2);
             var fog=Read<MapFogLayer>(canvas,"_fogLayer");
             Check(fog.Visible && fog.Mask!=null && fog.MaskRect.HasArea(),"The cloud bank covers the hidden land around the first stage");
             await Capture("01-fresh-veil");
-            var target=AdventureTileCatalog.Neighbors(start).First(t=>!t.HasInterest); food=state.Food;
+            var target=city.Where(t=>state.IsAdventureTileFrontier(t) && !t.HasInterest).OrderBy(t=>t.Point.DistanceTo(start.Point)).First(); food=state.Food;
             canvas.FocusSite(start.Id); await Wait(.1);
             var click=canvas.GlobalPosition+target.Point*canvas.Zoom+canvas.MapOffset;
             menu.GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Pressed=true,Position=click,GlobalPosition=click});

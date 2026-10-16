@@ -29,9 +29,12 @@ public partial class UiReviewSmoke
             Check(tiles.Count(tile => tile.Site?.Kind == AdventureSiteKind.Leader) == GameData.GetStagesForMap(map).Count && tiles.Count(tile => tile.Discovery != null) == AdventureDiscoveryCatalog.ForMap(map).Count, map + " preserves every stage and discovery");
             Check(tiles.All(tile => tile.Site?.Kind != AdventureSiteKind.Watchtower), map + " has no scout tower destinations");
             var start = AdventureTileCatalog.Starting(map);
+            // The first stage is already discovered, so the ground around it is charted and shows no food prices.
+            var startingGround = AdventureTileCatalog.Neighbors(start).Append(start).ToArray();
             Check(start.Site.Stage == GameData.GetStagesForMap(map).Min(stage => stage.StageNumber)
-                && state.GetAdventureCaravanTile(map).Id == start.Id && tiles.Count(state.IsAdventureTileOpened) == 1
-                && tiles.Count(state.IsAdventureTileRevealed) == 1 + AdventureTileCatalog.Neighbors(start).Count, map + " begins on its first stage, with only its neighbours on the frontier");
+                && state.GetAdventureCaravanTile(map).Id == start.Id && tiles.Where(state.IsAdventureTileOpened).Select(tile => tile.Id).ToHashSet().SetEquals(startingGround.Select(tile => tile.Id))
+                && tiles.Count(state.IsAdventureTileRevealed) == startingGround.SelectMany(AdventureTileCatalog.Neighbors).Concat(startingGround).Select(tile => tile.Id).Distinct().Count(),
+                map + " begins on its first stage with the land around it charted, and only the land beyond on the frontier");
             var reached = new[] { start.Id }.ToHashSet(); var queue = new System.Collections.Generic.Queue<AdventureTile>(new[] { start });
             while (queue.Count > 0)
                 foreach (var near in AdventureTileCatalog.Neighbors(queue.Dequeue()))
@@ -51,12 +54,13 @@ public partial class UiReviewSmoke
         var tilesCity = AdventureTileCatalog.ForMap("city");
         var leader = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && tile.Site.Stage == 1);
         var supply = tilesCity.Single(tile => tile.Id == "supply-1");
-        Check(state.IsAdventureTileOpened(leader) && !state.IsAdventureTileOpened(supply) && tilesCity.Count(state.IsAdventureTileOpened) == 1,
-            "A fresh map charts only the first stage, with its supplies still unopened");
+        var startingCount = AdventureTileCatalog.Neighbors(leader).Count + 1;
+        Check(state.IsAdventureTileOpened(leader) && !state.IsAdventureTileOpened(supply) && tilesCity.Count(state.IsAdventureTileOpened) == startingCount,
+            "A fresh map charts only the first stage and the land around it, with its supplies still unopened");
         Check(!state.IsAdventureTileRevealed(tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && state.IsAdventureBoss(tile.Site.Stage))), "Distant stages remain under the tile veil");
         state.ReloadFromDisk();
-        Check(tilesCity.Count(state.IsAdventureTileOpened) == 1 && state.GetAdventureCaravanTile("city").Id == leader.Id,
-            "Reloading an untouched campaign keeps only its first stage visible");
+        Check(tilesCity.Count(state.IsAdventureTileOpened) == startingCount && state.GetAdventureCaravanTile("city").Id == leader.Id,
+            "Reloading an untouched campaign keeps only its first stage and the land around it charted");
         Check(!menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Fresh map keeps details closed");
         Check(!Walk(menu).OfType<Button>().Any(button => button.Text == "Map guide" || button.AccessibilityName == "Map guide"), "The map guide no longer occupies the home map");
         await Capture("01-fresh-map"); AuditText("Tile map / fresh");
@@ -104,8 +108,8 @@ public partial class UiReviewSmoke
         state.PrepareCampaignBattle(); state.ApplyVictory(1, 0, 0, 3);
         var second = tilesCity.Single(tile => tile.Site?.Kind == AdventureSiteKind.Leader && tile.Site.Stage == 2);
         Check(AdventureTileCatalog.Neighbors(leader).All(state.IsAdventureTileComplete) && !state.IsAdventureTileRevealed(second)
-            && tilesCity.Count(state.IsAdventureTileRevealed) > openedBeforeVisit && state.GetStageStars(1) == 3,
-            "The first victory keeps its stars and opens every tile around the stage; the next stage still lies beyond the charted land");
+            && tilesCity.Count(state.IsAdventureTileRevealed) == openedBeforeVisit && state.GetStageStars(1) == 3,
+            "The first victory keeps its stars; the land around the stage was already charted and the next stage still lies beyond it");
         // Chart a road out to the stage's cache and the first find, as a player would.
         foreach (var target in new[] { supply, AdventureTileCatalog.Find("city", AdventureDiscoveryCatalog.ForMap("city")[0].Id) })
             foreach (var step in GameState.AdventureTilePath(leader, target).Skip(1).SkipLast(1)) state.TryOpenAdventureTile(step, out _);

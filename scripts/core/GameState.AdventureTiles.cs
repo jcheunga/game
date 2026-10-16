@@ -18,9 +18,14 @@ public partial class GameState
     private int _revealedRevision = -1;
     public AdventureTile GetAdventureCaravanTile(string mapId) => AdventureTileCatalog.Find(mapId, _adventureCaravanTiles.GetValueOrDefault(RouteCatalog.Normalize(mapId), ""))
         ?? AdventureTileCatalog.Starting(mapId);
-    /// <summary>Charted ground. Each zone's first stage starts opened.</summary>
-    public bool IsAdventureTileOpened(AdventureTile tile) => tile != null &&
-        (_openedAdventureTiles.Contains(tile.Id) || AdventureTileCatalog.Starting(tile.MapId).Id == tile.Id);
+    /// <summary>Charted ground. Each zone's first stage starts opened, with the plain ground around it.</summary>
+    public bool IsAdventureTileOpened(AdventureTile tile) => tile != null && (_openedAdventureTiles.Contains(tile.Id) || IsAdventureStartingGround(tile));
+    /// <summary>The first stage and the plain ground around it: already discovered, so it never costs food.</summary>
+    private static bool IsAdventureStartingGround(AdventureTile tile)
+    {
+        var start = AdventureTileCatalog.Starting(tile.MapId);
+        return tile.Id == start.Id || !tile.HasInterest && AdventureTileCatalog.Neighbors(start).Any(near => near.Id == tile.Id);
+    }
     /// <summary>Opened, or on the frontier beside opened ground: visible and selectable.</summary>
     public bool IsAdventureTileRevealed(AdventureTile tile) => tile != null && RevealedAdventureTiles(tile.MapId).Contains(tile.Id);
     public bool IsAdventureTileFrontier(AdventureTile tile) => IsAdventureTileRevealed(tile) && !IsAdventureTileOpened(tile);
@@ -162,7 +167,7 @@ public partial class GameState
                 _openedAdventureTiles.Add(tile.Id); _reachedAdventureTiles.Add(tile.Id);
             }
             if (saved.Version >= 47 && AdventureTileCatalog.Find(map, saved.AdventureCaravanTiles?.GetValueOrDefault(map)) is { } caravan
-                && (_openedAdventureTiles.Contains(caravan.Id) || caravan.Id == AdventureTileCatalog.Starting(map).Id))
+                && (_openedAdventureTiles.Contains(caravan.Id) || IsAdventureStartingGround(caravan)))
                 _adventureCaravanTiles[map] = caravan.Id;
         }
         AdventureKnowledgeRevision++;

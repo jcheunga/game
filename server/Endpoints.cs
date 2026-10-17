@@ -1426,60 +1426,11 @@ public static class Endpoints
         using var tx = conn.BeginTransaction();
 
         // Duplicate receipt check
-        if (!string.IsNullOrWhiteSpace(transactionId))
+        if (!string.IsNullOrWhiteSpace(transactionId) &&
+            FindRecordedPurchase(conn, tx, transactionId) is { } recorded)
         {
-            using var dupCheck = conn.CreateCommand();
-            dupCheck.Transaction = tx;
-            dupCheck.CommandText = """
-                SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at
-                FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1
-            """;
-            dupCheck.Parameters.AddWithValue("@tid", transactionId);
-            string? recordedProfileId = null;
-            string? recordedProductId = null;
-            var recordedPurchaseId = "";
-            int recordedGold = 0, recordedFood = 0;
-            var recordedUnitUnlock = false;
-            long recordedAt = 0;
-            using (var duplicate = dupCheck.ExecuteReader())
-            {
-                if (duplicate.Read())
-                {
-                    recordedProfileId = duplicate.GetString(0);
-                    recordedProductId = duplicate.GetString(1);
-                    recordedPurchaseId = duplicate.GetString(2);
-                    recordedGold = Database.ToInt32(duplicate.GetValue(3));
-                    recordedFood = Database.ToInt32(duplicate.GetValue(4));
-                    recordedUnitUnlock = Database.ToInt32(duplicate.GetValue(5)) != 0;
-                    recordedAt = Database.ToInt64(duplicate.GetValue(6));
-                }
-            }
-
-            if (recordedProfileId != null)
-            {
-                tx.Rollback();
-                if (string.Equals(recordedProfileId, profileId, StringComparison.Ordinal) &&
-                    string.Equals(recordedProductId, productId, StringComparison.Ordinal))
-                {
-                    // The grant was committed, but the client may never have seen the
-                    // response (timeout, dropped connection, app killed). Return the
-                    // recorded grant so the client can apply it once, keyed by purchaseId.
-                    return Results.Ok(new
-                    {
-                        status = "already_recorded",
-                        message = "This transaction was already credited to this player.",
-                        transactionId,
-                        purchaseId = recordedPurchaseId,
-                        productId = recordedProductId,
-                        goldCredited = recordedGold,
-                        foodCredited = recordedFood,
-                        grantedUnitUnlock = recordedUnitUnlock,
-                        validatedAtUnixSeconds = recordedAt
-                    });
-                }
-
-                return Results.Conflict(new { status = "transaction_assigned", message = "This transaction belongs to a different player." });
-            }
+            tx.Rollback();
+            return RecordedPurchaseResult(recorded, profileId, productId, transactionId);
         }
 
         // Velocity check: max 10 purchases per profile per hour
@@ -1512,7 +1463,8 @@ public static class Endpoints
 
         var purchaseId = NewId("PUR");
 
-        // Record the purchase
+        // Record the purchase. The unique transaction index makes a concurrent
+        // validation of the same transaction wait here for the other to finish.
         using var ins = conn.CreateCommand();
         ins.Transaction = tx;
         ins.CommandText = """
@@ -1520,6 +1472,7 @@ public static class Endpoints
                 gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
             VALUES (@purchaseId, @pid, @productId, @platform, @receipt, @tid,
                 @gold, @food, @unitUnlock, 'validated', @now)
+            ON CONFLICT (transaction_id) WHERE transaction_id <> '' DO NOTHING
         """;
         ins.Parameters.AddWithValue("@purchaseId", purchaseId);
         ins.Parameters.AddWithValue("@pid", profileId);
@@ -1533,7 +1486,16 @@ public static class Endpoints
         ins.Parameters.AddWithValue("@food", reward.Food);
         ins.Parameters.AddWithValue("@unitUnlock", reward.UnitUnlock ? 1 : 0);
         ins.Parameters.AddWithValue("@now", now);
-        ins.ExecuteNonQuery();
+        if (ins.ExecuteNonQuery() == 0)
+        {
+            // Another validation of this transaction committed between our check
+            // and insert. Answer exactly as a retry would, from outside this
+            // transaction so its committed row is visible.
+            tx.Rollback();
+            var winner = FindRecordedPurchase(conn, null, transactionId)
+                ?? throw new InvalidOperationException("A purchase conflicted on its transaction ID, but no recorded purchase was found.");
+            return RecordedPurchaseResult(winner, profileId, productId, transactionId);
+        }
 
         UpsertPlayer(conn, tx, profileId, "", now);
         CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);
@@ -1549,6 +1511,56 @@ public static class Endpoints
             foodCredited = reward.Food,
             grantedUnitUnlock = reward.UnitUnlock,
             validatedAtUnixSeconds = now
+        });
+    }
+
+    private sealed record RecordedPurchase(
+        string ProfileId, string ProductId, string PurchaseId, int Gold, int Food, bool UnitUnlock, long RecordedAt);
+
+    private static RecordedPurchase? FindRecordedPurchase(DbConnection conn, DbTransaction? tx, string transactionId)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at
+            FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1
+        """;
+        cmd.Parameters.AddWithValue("@tid", transactionId);
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read()) return null;
+        return new RecordedPurchase(
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            Database.ToInt32(reader.GetValue(3)),
+            Database.ToInt32(reader.GetValue(4)),
+            Database.ToInt32(reader.GetValue(5)) != 0,
+            Database.ToInt64(reader.GetValue(6)));
+    }
+
+    private static IResult RecordedPurchaseResult(RecordedPurchase recorded, string profileId, string productId, string transactionId)
+    {
+        if (!string.Equals(recorded.ProfileId, profileId, StringComparison.Ordinal) ||
+            !string.Equals(recorded.ProductId, productId, StringComparison.Ordinal))
+        {
+            return Results.Conflict(new { status = "transaction_assigned", message = "This transaction belongs to a different player." });
+        }
+
+        // The grant was committed, but the client may never have seen the
+        // response (timeout, dropped connection, app killed, or another device
+        // validated it first). Return the recorded grant so the client can apply
+        // it once, keyed by purchaseId.
+        return Results.Ok(new
+        {
+            status = "already_recorded",
+            message = "This transaction was already credited to this player.",
+            transactionId,
+            purchaseId = recorded.PurchaseId,
+            productId = recorded.ProductId,
+            goldCredited = recorded.Gold,
+            foodCredited = recorded.Food,
+            grantedUnitUnlock = recorded.UnitUnlock,
+            validatedAtUnixSeconds = recorded.RecordedAt
         });
     }
 
@@ -2104,6 +2116,7 @@ public static class Endpoints
                 gold_credited, food_credited, granted_unit_unlock, status, purchased_at)
             VALUES (@purchaseId, @pid, @productId, 'stripe', @receipt, @tid,
                 @gold, @food, @unitUnlock, 'validated', @now)
+            ON CONFLICT (transaction_id) WHERE transaction_id <> '' DO NOTHING
         """;
         ins.Parameters.AddWithValue("@purchaseId", purchaseId);
         ins.Parameters.AddWithValue("@pid", profileId);
@@ -2114,7 +2127,12 @@ public static class Endpoints
         ins.Parameters.AddWithValue("@food", reward.Food);
         ins.Parameters.AddWithValue("@unitUnlock", reward.UnitUnlock ? 1 : 0);
         ins.Parameters.AddWithValue("@now", now);
-        ins.ExecuteNonQuery();
+        if (ins.ExecuteNonQuery() == 0)
+        {
+            // A concurrent delivery of the same event committed it first.
+            tx.Rollback();
+            return Results.Ok(new { status = "duplicate", message = "Already processed." });
+        }
 
         UpsertPlayer(conn, tx, profileId, "", now);
         CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);

@@ -578,6 +578,32 @@ public static class Database
             ScrubCloudSaveDeviceState(conn);
             SetSchemaVersion(conn, 5);
         }
+
+        if (version < 6)
+        {
+            // One store transaction is one purchase. Without a unique index, two
+            // concurrent validations on PostgreSQL could both pass the duplicate
+            // check and credit the transaction twice under different purchase IDs.
+            // Rows already recorded that way keep their audit trail under a
+            // suffixed transaction ID, so the index can build; the first row stays
+            // the transaction's purchase.
+            using (var dedupe = conn.CreateCommand())
+            {
+                dedupe.CommandText = """
+                    UPDATE purchases
+                    SET transaction_id = transaction_id || '#duplicate-' || CAST(id AS TEXT), status = 'duplicate'
+                    WHERE transaction_id <> ''
+                      AND id > (SELECT MIN(kept.id) FROM purchases kept WHERE kept.transaction_id = purchases.transaction_id)
+                """;
+                var renamed = dedupe.ExecuteNonQuery();
+                if (renamed > 0)
+                    Console.Error.WriteLine($"Schema 6: {renamed} purchase row(s) repeated an earlier store transaction and were marked 'duplicate'. Their players were credited more than once; review them.");
+            }
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_transaction_unique ON purchases(transaction_id) WHERE transaction_id <> ''";
+            cmd.ExecuteNonQuery();
+            SetSchemaVersion(conn, 6);
+        }
     }
 
     private static void ScrubCloudSaveDeviceState(DbConnection conn)

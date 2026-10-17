@@ -95,6 +95,7 @@ public static partial class ServerTests
                 ("CloudSaveRejectsInvalidJson", () => TestCloudSaveRejectsInvalidJson(client)),
                 ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
                 ("PurchaseTransactionMigration", TestPurchaseTransactionMigration),
+                ("CallsignSurvivesPurchaseAndCloudSave", () => TestCallsignSurvivesPurchaseAndCloudSave(client)),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
@@ -1061,6 +1062,41 @@ public static partial class ServerTests
         Assert(rejected, "the unique index must reject a second purchase of one transaction");
         Execute("INSERT INTO purchases (purchase_id, profile_id, product_id, transaction_id) VALUES ('PUR-LEGACY-7', 'LEGACY-A', 'gold_pouch', '')");
         return Task.CompletedTask;
+    }
+
+    private static async Task TestCallsignSurvivesPurchaseAndCloudSave(HttpClient client)
+    {
+        const string profile = "TEST-CALLSIGN-KEEP";
+        var synced = await Post(client, "/player-profile", new { profile = new { playerProfileId = profile, playerCallsign = "Ironwake" } }, profile);
+        SessionTokens[profile] = synced.RootElement.GetProperty("sessionToken").GetString() ?? "";
+        Assert(ReadCallsign(profile) == "Ironwake", "expected the profile sync to store the callsign");
+
+        await Post(client, "/purchase/validate", new
+        {
+            profileId = profile,
+            productId = "gold_pouch",
+            platform = "stripe",
+            receiptToken = "receipt-callsign-keep",
+            transactionId = "txn-callsign-keep"
+        }, profile);
+        Assert(ReadCallsign(profile) == "Ironwake", $"expected a purchase to keep the callsign, got '{ReadCallsign(profile)}'");
+
+        await Post(client, "/cloud-save/upload", new { profileId = profile, saveData = "{\"Version\":31,\"Gold\":500}", saveVersion = 31 }, profile);
+        Assert(ReadCallsign(profile) == "Ironwake", $"expected a cloud-save upload to keep the callsign, got '{ReadCallsign(profile)}'");
+
+        // A later profile sync can still rename the player.
+        var renamed = await Post(client, "/player-profile", new { profile = new { playerProfileId = profile, playerCallsign = "Emberline" } }, profile);
+        SessionTokens[profile] = renamed.RootElement.GetProperty("sessionToken").GetString() ?? "";
+        Assert(ReadCallsign(profile) == "Emberline", "expected a profile sync to rename the player");
+    }
+
+    private static string? ReadCallsign(string profileId)
+    {
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT callsign FROM players WHERE profile_id = @pid";
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        return cmd.ExecuteScalar() as string;
     }
 
     private static async Task TestStripeCheckoutNoKey(HttpClient client)

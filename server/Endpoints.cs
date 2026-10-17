@@ -1203,6 +1203,22 @@ public static class Endpoints
         cmd.ExecuteNonQuery();
     }
 
+    // For endpoints that only need the player row to exist. They know no
+    // callsign, so an existing player's name and sync time are left alone.
+    private static void EnsurePlayer(DbConnection conn, DbTransaction tx, string profileId, long now)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO players (profile_id, callsign, synced_at, created_at)
+            VALUES (@pid, '', @now, @now)
+            ON CONFLICT(profile_id) DO NOTHING
+        """;
+        cmd.Parameters.AddWithValue("@pid", profileId);
+        cmd.Parameters.AddWithValue("@now", now);
+        cmd.ExecuteNonQuery();
+    }
+
     private static bool RequireAuthenticatedProfile(HttpRequest request, string profileId, out IResult? error)
     {
         if (SessionAuth.TryAuthorize(request, profileId, out _))
@@ -1497,7 +1513,7 @@ public static class Endpoints
             return RecordedPurchaseResult(winner, profileId, productId, transactionId);
         }
 
-        UpsertPlayer(conn, tx, profileId, "", now);
+        EnsurePlayer(conn, tx, profileId, now);
         CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);
         tx.Commit();
 
@@ -1801,7 +1817,7 @@ public static class Endpoints
         using var conn = Database.Open();
         using var tx = conn.BeginTransaction();
 
-        UpsertPlayer(conn, tx, profileId, "", now);
+        EnsurePlayer(conn, tx, profileId, now);
 
         using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
@@ -2134,7 +2150,7 @@ public static class Endpoints
             return Results.Ok(new { status = "duplicate", message = "Already processed." });
         }
 
-        UpsertPlayer(conn, tx, profileId, "", now);
+        EnsurePlayer(conn, tx, profileId, now);
         CreditWallet(conn, tx, profileId, purchaseId, reward.Gold, reward.Food, reward.UnitUnlock, now);
         tx.Commit();
 

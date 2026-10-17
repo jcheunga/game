@@ -72,7 +72,7 @@ credential files at startup. An Android-only launch therefore needs a code
 change to make the Apple secret mount optional, or real Apple credentials
 provisioned even while iOS purchases remain disabled. The iOS purchase plugin
 is in `native/StoreKit`; test it with sandbox purchases on a device before you
-offer iOS purchases (see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#9-app-store-purchases-ios)).
+offer iOS purchases (see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#10-app-store-purchases-ios)).
 
 ## Release command
 

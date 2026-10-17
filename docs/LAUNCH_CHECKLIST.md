@@ -1,16 +1,27 @@
-# Launch checklist: server, sign-in and saves
+# Launch checklist: server, sign-in, saves and purchases
 
-What is still needed to take accounts, cloud saves and sign-in live. Do the
-steps in order; each depends on the ones before, mostly through the domain and
-the live server. `<domain>` stands for the API hostname, for example
-`api.crownroad.game`. Full setup notes are in
+What is still needed to take accounts, cloud saves, sign-in and in-app
+purchases live. Do the steps in order; each depends on the ones before, mostly
+through the domain and the live server. `<domain>` stands for the API
+hostname, for example `api.crownroad.game`. Full setup notes are in
 [DEPLOYMENT.md](DEPLOYMENT.md#account-sign-in).
 
-Already done and tested locally (2026-10-16): guest play, the guest's cloud
-session, cloud backup and restore, email sign-in, account features and
-sign-out, with `scripts/tests/server_e2e.sh` against a real local server
-(43 checks), and `SaveRoundTripReview.tscn` for the save on the device. What
-follows needs real accounts, a domain, a deployed server and phones.
+Already done and tested locally (2026-10-17):
+
+- Guest play, the guest's cloud session, cloud backup and restore, email
+  sign-in, account features and sign-out, with `scripts/tests/server_e2e.sh`
+  against a real local server (53 checks), and `SaveRoundTripReview.tscn` for
+  the save on the device.
+- Purchases are checked with the server off the main thread, so the shop keeps
+  running. A purchase cut off before the server answers (timeout, lost
+  connection, app closed) is granted exactly once when the store hands it back
+  (part of `server_e2e.sh`). Two checks of the same purchase arriving at the
+  same moment, for example from two devices, credit it once, on SQLite and on
+  a real PostgreSQL (server tests).
+- The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
+  Store flow on desktop (35 checks). See section 10.
+
+What follows needs real accounts, a domain, a deployed server and phones.
 
 ## 1. Decisions
 
@@ -19,6 +30,18 @@ follows needs real accounts, a domain, a deployed server and phones.
 - [ ] **Launch platforms: Android, iOS or both.** The production Compose file
   needs both the Google Play and the App Store purchase key files to start.
   An Android-only launch needs a small code change first.
+- [ ] **The Adventurer's Kit (`starter_kit`): consumable or not.** It is sold
+  once per player, but the game treats it as a consumable on both stores, so
+  a player can pay for it twice (for example after restoring an old save). The server
+  then refuses the second grant. Google refunds the payment after 3 days;
+  Apple keeps it. Selling it as a non-consumable stops the second payment, but
+  the game must then restore it and acknowledge it on Google instead of
+  consuming it.
+- [ ] **Refunds.** Nothing takes currency back when Google or Apple refunds a
+  purchase. Either build it before launch (Google voided-purchase
+  notifications, App Store Server Notifications v2 `REFUND`) or decide to
+  accept the loss and check the store reports by hand. See
+  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md#2-store-commerce-and-ledger-safety).
 
 ## 2. Accounts
 
@@ -54,6 +77,9 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Leave `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` and
   `CROWNROAD_DEV_SIGN_IN` unset. The server refuses to start in
   production with either set.
+- [ ] Leave `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` empty. Stripe
+  checkout is only for a desktop or web release; phones must use the store's
+  own billing.
 - [ ] Run `./deploy.sh`, then check that `https://<domain>/health` answers.
 
 ## 4. Email sign-in
@@ -106,7 +132,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] In the Godot editor, under Project → Export → iOS, set:
   - Game Center entitlement: on
   - GameCenter plugin: on
-  - StoreKit plugin: on (in-app purchases, section 9)
+  - StoreKit plugin: on (in-app purchases, section 10)
   - minimum iOS version: 15.0
   - 1024×1024 icon: `res://assets/branding/crownroad-app-icon-1024.png`
 
@@ -133,7 +159,42 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Restart the server. `https://<domain>/auth/providers` should report
   every sign-in method as available.
 
-## 9. App Store purchases (iOS)
+## 9. Google Play purchases (Android)
+
+The Play Billing plugin and its bridge are in the Android build, and the
+server checks every purchase with Google before it credits it. The game
+consumes a purchase only after the server's grant is saved, so Play hands an
+unfinished one back on the next launch. Nothing has been bought through Google
+Play yet.
+
+- [ ] In Play Console, set up a payments profile so the app can sell.
+- [ ] Add testers under License testing, and upload a signed build to the
+  internal testing track. Play only offers in-app products once a build with
+  the billing library is uploaded, and purchases only work in a build Play
+  knows, installed by a tester.
+- [ ] Create the ten one-time products with the Google product IDs in
+  `data/shop_products.json` (`gold_pouch` through `campaign_resupply`), with
+  prices and titles, and activate them.
+- [ ] In Google Cloud, turn on the **Google Play Android Developer API**,
+  create a service account and download a JSON key for it. Save it as
+  `server/secrets/google-play-service-account.json` (section 3). Keep
+  `GOOGLE_PLAY_PACKAGE_NAME=com.crownroad.game`.
+- [ ] In Play Console → Users and permissions, invite the service account's
+  email with access to the app and the **View financial data** and **Manage
+  orders and subscriptions** permissions. It can take hours before Google
+  accepts its requests.
+- [ ] On an Android phone signed in with a license tester's account:
+  - Each pack arrives once, at its Play price, and the server's purchase
+    ledger has the order.
+  - Cancelling grants nothing.
+  - With the test card that approves after a few minutes, nothing arrives
+    while it waits, and the pack arrives once it clears, even with the shop
+    closed. The card that declines never grants anything.
+  - Closing the app before the server answers: the pack arrives on the next
+    launch, once.
+  - The Adventurer's Kit can be bought once per player.
+
+## 10. App Store purchases (iOS)
 
 The StoreKit plugin (`native/StoreKit`) is built and enabled in the iOS preset
 (`plugins/StoreKit`). On a simulator, with Xcode-signed transactions and a
@@ -154,7 +215,8 @@ Then, with Apple:
 - [ ] Create the ten in-app purchases, as **consumables**, with the product
   IDs in `data/shop_products.json` (`com.crownroad.gold_pouch` through
   `com.crownroad.campaign_resupply`), prices, localizations and review
-  screenshots. The first ones go to review with a new app version.
+  screenshots. The Adventurer's Kit's type follows the decision in section 1.
+  The first ones go to review with a new app version.
 - [ ] Create an **In-App Purchase** key (Users and Access → Integrations) and
   download its `.p8` file. It is a different key from the Sign in with Apple
   key. Set on the server:
@@ -179,14 +241,14 @@ Then, with Apple:
   - A purchase made while one player was signed in is not credited to a
     different player on the same Apple Account.
 
-## 10. Point the game at the live server
+## 11. Point the game at the live server
 
 - [ ] Set the Godot setting `crownroad/network/api_base_url` to
   `https://<domain>`, then export signed builds.
 - [ ] Point the end-to-end test at a staging copy of the live server, to check
   everything except the provider sign-ins in one run.
 
-## 11. Test on real phones
+## 12. Test on real phones
 
 - [ ] **Android:**
   - Play Games signs you in by itself at launch and keeps your guest
@@ -204,14 +266,14 @@ Then, with Apple:
   - Google and email sign-in work.
   - A second device recovers the same account.
   - Cloud backup and restore work, and so does sign-out.
-  - A test purchase works in the store's sandbox.
+  - The purchase checks in sections 9 and 10.
 
-## 12. Before store review
+## 13. Before store review
 
 - [ ] Use the official Google and Apple sign-in button designs. The game draws
   them in its own style today, and both companies have branding rules.
 - [ ] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
 - [ ] Fill in Play's Data safety form and Apple's privacy labels to cover
-  email addresses and player IDs, and make sure the privacy policy covers
-  them.
+  email addresses, player IDs and purchase history, and make sure the
+  privacy policy covers them.

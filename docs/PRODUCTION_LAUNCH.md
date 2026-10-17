@@ -273,7 +273,7 @@ requirement until a migration and both signed exports have been verified.
 - [ ] iOS: test sandbox/TestFlight purchases on a device against a server with
   real `APPLE_IAP_*` credentials, which is the first time Apple's server
   checks a transaction: interrupted validation, retry, account mismatch and
-  every product. See [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#9-app-store-purchases-ios).
+  every product. See [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#10-app-store-purchases-ios).
 - [ ] Implement a refund/void signal and reconciliation path for **these
   consumables**, not just future subscriptions: App Store Server Notifications
   v2 (including `REFUND`) and Google Play voided-purchase notifications/API,

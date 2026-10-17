@@ -18,7 +18,7 @@ public sealed class IAPProductInfo
 	public string Title { get; set; } = "";
 	public string FormattedPrice { get; set; } = "";
 	public string CurrencyCode { get; set; } = "USD";
-	public int PriceMicros { get; set; }
+	public long PriceMicros { get; set; }
 }
 
 public sealed class IAPPurchaseResult
@@ -28,6 +28,10 @@ public sealed class IAPPurchaseResult
 	public string TransactionId { get; set; } = "";
 	public string ReceiptToken { get; set; } = "";
 	public string ErrorMessage { get; set; } = "";
+	/// <summary>Why a purchase did not complete, when the store says: "cancelled" or "pending" (waiting for approval, such as Ask to Buy).</summary>
+	public string FailureReason { get; set; } = "";
+	public bool Cancelled => FailureReason == "cancelled";
+	public bool Pending => FailureReason == "pending";
 }
 
 public sealed class PurchaseFulfillment
@@ -145,13 +149,13 @@ public partial class NativeIAPService : Node
 			var sku = dict.GetValueOrDefault("product_id", Variant.CreateFrom("")).AsString();
 			var title = dict.GetValueOrDefault("title", Variant.CreateFrom("")).AsString();
 			var price = "";
-			var priceMicros = 0;
+			var priceMicros = 0L;
 			if (dict.TryGetValue("one_time_purchase_offer_details_list", out var offersVariant) &&
 				offersVariant.Obj is Godot.Collections.Array offers && offers.Count > 0 &&
 				offers[0].Obj is Godot.Collections.Dictionary offer)
 			{
 				price = offer.GetValueOrDefault("formatted_price", Variant.CreateFrom("")).AsString();
-				priceMicros = (int)offer.GetValueOrDefault("price_amount_micros", Variant.CreateFrom(0)).AsInt64();
+				priceMicros = offer.GetValueOrDefault("price_amount_micros", Variant.CreateFrom(0)).AsInt64();
 			}
 
 			var catalogProduct = FindProductByGoogleId(sku);
@@ -206,7 +210,7 @@ public partial class NativeIAPService : Node
 
 		// A restored purchase, or one that finished outside the shop (a pending payment that
 		// cleared later). Fulfillment is exactly-once, so recovering it here is always safe.
-		ReconcileRecoveredGooglePurchase(purchase);
+		ReconcileRecoveredPurchase(purchase, "google");
 	}
 
 	private void OnGooglePurchaseFailed(string message)
@@ -231,27 +235,33 @@ public partial class NativeIAPService : Node
 		}
 	}
 
-	private async void ReconcileRecoveredGooglePurchase(IAPPurchaseResult purchase)
+	/// <summary>
+	/// Validates a transaction the store returned outside a purchase the player just made: one left
+	/// unfinished by an interruption, a pending payment or Ask to Buy approval, or a purchase made
+	/// elsewhere. It is finished (consumed on Google Play) only once the server's grant is saved.
+	/// </summary>
+	private async void ReconcileRecoveredPurchase(IAPPurchaseResult purchase, string platform)
 	{
 		if (GameState.Instance == null ||
 			string.IsNullOrWhiteSpace(GameState.Instance.PurchaseValidationEndpoint) ||
 			string.IsNullOrWhiteSpace(GameState.Instance.PlayerAuthToken))
 		{
-			// Leave the transaction untouched. It will be returned by Play again
-			// once the player can authenticate to the commerce backend.
+			// Leave the transaction untouched. The store returns it again (Play on
+			// the next query, StoreKit on the next unfinished check) once the
+			// player can authenticate to the commerce backend.
 			return;
 		}
 
 		try
 		{
-			var fulfillment = await FulfillPurchaseAsync(purchase, "google");
+			var fulfillment = await FulfillPurchaseAsync(purchase, platform);
 			if (fulfillment.Granted)
 			{
-				GD.Print($"NativeIAPService: Credited interrupted purchase {fulfillment.Result.PurchaseId} ({purchase.ProductId}).");
+				GD.Print($"NativeIAPService: Credited interrupted {platform} purchase {fulfillment.Result.PurchaseId} ({purchase.ProductId}).");
 			}
 			else if (!fulfillment.Finished)
 			{
-				GD.PrintErr($"NativeIAPService: Interrupted purchase of {purchase.ProductId} is still unverified: {fulfillment.Result.Message}");
+				GD.PrintErr($"NativeIAPService: {platform} transaction {purchase.TransactionId} for {purchase.ProductId} was not recorded ({fulfillment.Result.Status}): {fulfillment.Result.Message}");
 			}
 		}
 		catch (Exception e)
@@ -312,13 +322,43 @@ public partial class NativeIAPService : Node
 
 		_appleStore = Engine.GetSingleton("StoreKit");
 
-		_appleStore.Connect("products_received", Callable.From<Godot.Collections.Array>(OnAppleProductsReceived));
+		_appleStore.Connect("products_received", Callable.From<Godot.Collections.Array, Godot.Collections.Array>(OnAppleProductsReceived));
+		_appleStore.Connect("products_failed", Callable.From<string>(OnAppleProductsFailed));
 		_appleStore.Connect("purchase_completed", Callable.From<Godot.Collections.Dictionary>(OnApplePurchaseCompleted));
-		_appleStore.Connect("purchase_failed", Callable.From<string, string>(OnApplePurchaseFailed));
+		_appleStore.Connect("purchase_failed", Callable.From<string, string, string>(OnApplePurchaseFailed));
+		_appleStore.Connect("transaction_finished", Callable.From<string>(OnAppleTransactionFinished));
 
 		IsAvailable = true;
 		IsInitialized = true;
+		ConfigureAppleProfile();
 		QueryAppleProducts();
+		// Starts listening for Ask to Buy approvals and purchases made outside
+		// the game, and returns any transaction an interruption left unfinished.
+		_appleStore.Call("check_unfinished");
+	}
+
+	/// <summary>
+	/// Ties StoreKit purchases to the current player. The plugin sets the
+	/// appAccountToken the server derives from the same profile ID on every
+	/// purchase, and the server rejects a transaction whose token differs.
+	/// </summary>
+	private bool ConfigureAppleProfile()
+	{
+		var profileId = GameState.Instance?.PlayerProfileId?.Trim() ?? "";
+		return _appleStore != null && _appleStore.Call("configure", profileId).AsBool();
+	}
+
+	/// <summary>
+	/// Asks the store again for transactions that were paid for but not yet
+	/// recorded by the server, for example because the player had no session at
+	/// launch. Each one goes through the same validate-then-finish path.
+	/// </summary>
+	public void RetryUnfinishedPurchases()
+	{
+		if (Platform == IAPPlatform.Apple && _appleStore != null && ConfigureAppleProfile())
+		{
+			_appleStore.Call("check_unfinished");
+		}
 	}
 
 	private void QueryAppleProducts()
@@ -338,15 +378,12 @@ public partial class NativeIAPService : Node
 		}
 	}
 
-	private void OnAppleProductsReceived(Godot.Collections.Array products)
+	private void OnAppleProductsReceived(Godot.Collections.Array products, Godot.Collections.Array invalidProductIds)
 	{
 		foreach (var item in products)
 		{
 			if (item.Obj is not Godot.Collections.Dictionary dict) continue;
 			var appleId = dict.GetValueOrDefault("product_id", Variant.CreateFrom("")).AsString();
-			var title = dict.GetValueOrDefault("localized_title", Variant.CreateFrom("")).AsString();
-			var price = dict.GetValueOrDefault("localized_price", Variant.CreateFrom("")).AsString();
-
 			var catalogProduct = FindProductByAppleId(appleId);
 			if (catalogProduct == null) continue;
 
@@ -354,48 +391,98 @@ public partial class NativeIAPService : Node
 			{
 				ProductId = catalogProduct.Id,
 				NativeProductId = appleId,
-				Title = title,
-				FormattedPrice = price
+				Title = dict.GetValueOrDefault("localized_title", Variant.CreateFrom("")).AsString(),
+				FormattedPrice = dict.GetValueOrDefault("localized_price", Variant.CreateFrom("")).AsString(),
+				CurrencyCode = dict.GetValueOrDefault("currency_code", Variant.CreateFrom("USD")).AsString(),
+				PriceMicros = dict.GetValueOrDefault("price_micros", Variant.CreateFrom(0L)).AsInt64()
 			};
 		}
 
 		GD.Print($"NativeIAPService: Cached {_productCache.Count} Apple product prices.");
+		if (invalidProductIds.Count > 0)
+		{
+			GD.PrintErr($"NativeIAPService: The App Store does not know {string.Join(", ", invalidProductIds)}.");
+		}
+	}
+
+	private void OnAppleProductsFailed(string message)
+	{
+		GD.PrintErr($"NativeIAPService: Unable to load App Store products: {message}");
 	}
 
 	private void OnApplePurchaseCompleted(Godot.Collections.Dictionary dict)
 	{
 		var appleId = dict.GetValueOrDefault("product_id", Variant.CreateFrom("")).AsString();
-		var transactionId = dict.GetValueOrDefault("transaction_id", Variant.CreateFrom("")).AsString();
-		var receipt = dict.GetValueOrDefault("receipt", Variant.CreateFrom("")).AsString();
-
+		var restored = dict.GetValueOrDefault("restored", Variant.CreateFrom(false)).AsBool();
 		var catalogProduct = FindProductByAppleId(appleId);
-
-		lock (_callbackLock)
+		var purchase = new IAPPurchaseResult
 		{
-			_pendingPurchaseCallback?.Invoke(new IAPPurchaseResult
-			{
-				Success = true,
-				ProductId = catalogProduct?.Id ?? appleId,
-				TransactionId = transactionId,
-				ReceiptToken = receipt
-			});
-			_pendingPurchaseCallback = null;
+			Success = true,
+			ProductId = catalogProduct?.Id ?? appleId,
+			TransactionId = dict.GetValueOrDefault("transaction_id", Variant.CreateFrom("")).AsString(),
+			// The signed transaction (JWS). The server looks the transaction up
+			// with Apple by its ID rather than trusting this copy.
+			ReceiptToken = dict.GetValueOrDefault("receipt", Variant.CreateFrom("")).AsString()
+		};
+		GD.Print($"NativeIAPService: App Store transaction {purchase.TransactionId} for {appleId} " +
+			$"({dict.GetValueOrDefault("environment", Variant.CreateFrom("")).AsString()}{(restored ? ", restored" : "")}).");
+
+		if (catalogProduct == null || string.IsNullOrWhiteSpace(purchase.TransactionId))
+		{
+			// Left unfinished: an unknown product is never granted or finished.
+			GD.PrintErr($"NativeIAPService: App Store returned an incomplete or unknown purchase ({appleId}).");
+			return;
 		}
+
+		Action<IAPPurchaseResult> callback = null;
+		if (!restored)
+		{
+			lock (_callbackLock)
+			{
+				callback = _pendingPurchaseCallback;
+				_pendingPurchaseCallback = null;
+			}
+		}
+
+		if (callback != null)
+		{
+			callback.Invoke(purchase);
+			return;
+		}
+
+		ReconcileRecoveredPurchase(purchase, "apple");
 	}
 
-	private void OnApplePurchaseFailed(string productId, string error)
+	private void OnApplePurchaseFailed(string appleId, string reason, string message)
 	{
-		GD.PrintErr($"NativeIAPService: Apple purchase failed for {productId}: {error}");
+		if (reason == "cancelled")
+		{
+			GD.Print($"NativeIAPService: Apple purchase of {appleId} was cancelled.");
+		}
+		else
+		{
+			GD.PrintErr($"NativeIAPService: Apple purchase of {appleId} did not complete ({reason}): {message}");
+		}
+
+		Action<IAPPurchaseResult> callback;
 		lock (_callbackLock)
 		{
-			_pendingPurchaseCallback?.Invoke(new IAPPurchaseResult
-			{
-				Success = false,
-				ProductId = productId,
-				ErrorMessage = error
-			});
+			callback = _pendingPurchaseCallback;
 			_pendingPurchaseCallback = null;
 		}
+
+		callback?.Invoke(new IAPPurchaseResult
+		{
+			Success = false,
+			ProductId = FindProductByAppleId(appleId)?.Id ?? appleId,
+			FailureReason = reason,
+			ErrorMessage = message
+		});
+	}
+
+	private void OnAppleTransactionFinished(string transactionId)
+	{
+		GD.Print($"NativeIAPService: Finished App Store transaction {transactionId}.");
 	}
 
 	public void PurchaseProduct(string productId, Action<IAPPurchaseResult> callback)
@@ -435,6 +522,9 @@ public partial class NativeIAPService : Node
 				break;
 
 			case IAPPlatform.Apple:
+				// Re-read the profile in case the player signed in to another
+				// account since launch. The plugin reports not_configured without one.
+				ConfigureAppleProfile();
 				_appleStore?.Call("purchase", product.AppleProductId);
 				break;
 
@@ -459,8 +549,9 @@ public partial class NativeIAPService : Node
 	}
 
 	/// <summary>
-	/// Google consumables must not be consumed until the secure backend has accepted
-	/// and recorded the store transaction. Calling this before server fulfillment
+	/// Consumes a Google purchase or finishes an App Store transaction. Call it only
+	/// after the secure backend has accepted and recorded the store transaction
+	/// (status "ok" or "already_recorded"). Calling this before server fulfillment
 	/// would make a payment unrecoverable if validation fails or the app closes.
 	/// </summary>
 	public void ConfirmServerFulfillment(IAPPurchaseResult purchase)
@@ -473,6 +564,10 @@ public partial class NativeIAPService : Node
 		if (Platform == IAPPlatform.Google)
 		{
 			_googleBridge?.Call("confirm_consumed", purchase.ReceiptToken);
+		}
+		else if (Platform == IAPPlatform.Apple && !string.IsNullOrWhiteSpace(purchase.TransactionId))
+		{
+			_appleStore?.Call("finish_transaction", purchase.TransactionId);
 		}
 	}
 

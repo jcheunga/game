@@ -1,0 +1,17 @@
+[config]
+name="StoreKit"
+binary="storekit.xcframework"
+
+initialization="register_storekit_types"
+deinitialization="unregister_storekit_types"
+
+[dependencies]
+linked=[]
+embedded=[]
+system=["StoreKit.framework"]
+
+capabilities=[]
+
+files=[]
+
+[plist]

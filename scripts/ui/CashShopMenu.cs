@@ -26,6 +26,9 @@ public partial class CashShopMenu : Control
         BuildModalUi();
         RefreshUi();
         GameState.Instance.FoodChanged += RebuildResourcesRow;
+        // A paid transaction the server has not recorded yet (no session at
+        // launch, a failed validation) is validated again here.
+        NativeIAPService.Instance?.RetryUnfinishedPurchases();
     }
 
     public override void _ExitTree()
@@ -386,7 +389,9 @@ public partial class CashShopMenu : Control
         {
             _nativePurchaseBusy = false;
             if (!IsOpen()) return;
-            _statusLabel.Text = $"Purchase cancelled: {iapResult.ErrorMessage}";
+            _statusLabel.Text = iapResult.Cancelled ? "Purchase cancelled."
+                : iapResult.Pending ? iapResult.ErrorMessage
+                : $"Purchase not completed: {iapResult.ErrorMessage}";
             RefreshUi(preserveStatus: true);
             return;
         }
@@ -424,7 +429,7 @@ public partial class CashShopMenu : Control
         }
         else if (fulfillment.Finished)
         {
-            _statusLabel.Text = $"{product.DisplayName} was already credited to your account.";
+            _statusLabel.Text = $"{product.DisplayName} was already added to your account.";
         }
         else if (NativeIAPService.Instance?.Platform == IAPPlatform.Google && result.Status != "in_progress")
         {

@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="server/**" />
+    <!-- Native plugin builds clone the Godot source, C# test files included, into native/*/build. -->
+    <Compile Remove="native/**" />
     <Compile Remove="scripts/tests/**" Condition="'$(Configuration)' == 'ExportRelease' Or '$(Configuration)' == 'Release'" />
   </ItemGroup>
 </Project>

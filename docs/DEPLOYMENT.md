@@ -70,8 +70,9 @@ If iOS is not ready, do not fabricate an Apple key to make the deployment
 start. The checked-in production Compose file currently requires both store
 credential files at startup. An Android-only launch therefore needs a code
 change to make the Apple secret mount optional, or real Apple credentials
-provisioned even while iOS purchases remain disabled. Finish the StoreKit
-bridge before you offer iOS purchases.
+provisioned even while iOS purchases remain disabled. The iOS purchase plugin
+is in `native/StoreKit`; test it with sandbox purchases on a device before you
+offer iOS purchases (see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#9-app-store-purchases-ios)).
 
 ## Release command
 
@@ -347,13 +348,27 @@ save is about 100 KB, against the server's 512 KB limit.
 
 ### What still needs a real device
 
-The server's provider checks run against stand-ins in the test suite, and the
-iOS export has been checked only as far as building. An unsigned Debug and
-Release device build of an iOS export, made with Xcode 27 from Godot 4.6.1's
-official template, links the GameCenter plugin and GameKit and carries the
-Game Center entitlement. Nothing has run on an iPhone yet: this Mac has no iOS
-simulator runtime, and Game Center needs a signed build. Before an iOS
-release, check on a device:
+The server's provider checks run against stand-ins in the test suite. An
+unsigned Debug and Release device build of an iOS export, made with Xcode 27
+from Godot 4.6.1's official template, links the GameCenter plugin and GameKit
+and carries the Game Center entitlement. Since 2026-10-17 this Mac has an iOS
+27 simulator runtime, and the StoreKit plugin's purchases pass there
+(`native/StoreKit/test/simulator_e2e.sh`, see `native/StoreKit/README.md`).
+That run found two things about the iOS build itself:
+
+- **The game cannot read its JSON on iOS.** The C# export is NativeAOT, which
+  turns off System.Text.Json's reflection, and every game data file, the save
+  and the server calls use it. On the simulator the game logs "Failed to load
+  game data from JSON. Saving is disabled for this session", and the shop's
+  catalog is empty. Turning reflection back on
+  (`JsonSerializerIsReflectionEnabledByDefault`) is not enough: NativeAOT then
+  lacks the generic code it needs. The serialized types need System.Text.Json
+  source generation before iOS can ship.
+- **Godot 4.6.1's simulator engine is x86_64 only**, and iOS 27 simulators run
+  arm64 apps only, so the official template cannot run in this Mac's simulator.
+  The StoreKit test compiles the engine for the arm64 simulator from source.
+
+Before an iOS release, check on a device:
 
 - **Game Center.** The App ID and App Store Connect record need Game Center
   enabled, and the build must be signed with a matching provisioning profile.

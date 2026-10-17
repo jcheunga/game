@@ -18,6 +18,8 @@ Already done and tested locally (2026-10-17):
   (part of `server_e2e.sh`). Two checks of the same purchase arriving at the
   same moment, for example from two devices, credit it once, on SQLite and on
   a real PostgreSQL (server tests).
+- A purchase, a cloud-save upload or a Stripe payment no longer blanks the
+  player's callsign in guild, arena and friends lists (server tests).
 - The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
   Store flow on desktop (35 checks). See section 10.
 

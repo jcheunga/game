@@ -79,6 +79,8 @@ public static partial class ServerTests
                 ("PurchaseProducts", () => TestPurchaseProducts(client)),
                 ("Wallet", () => TestWallet(client)),
                 ("PurchaseDuplicate", () => TestPurchaseDuplicate(client)),
+                ("PurchaseConcurrentDuplicate", () => TestPurchaseConcurrentDuplicate(client)),
+                ("PurchaseConcurrentOtherProfile", () => TestPurchaseConcurrentOtherProfile(client)),
                 ("StoreVerifierFailsClosedWithoutCredentials", TestStoreVerifierFailsClosedWithoutCredentials),
                 ("AppleAppAccountTokenVectors", TestAppleAppAccountTokenVectors),
                 ("PurchaseStarterOneTime", () => TestPurchaseStarterOneTime(client)),
@@ -92,6 +94,7 @@ public static partial class ServerTests
                 ("CloudSavePrivacy", () => TestCloudSavePrivacy(client)),
                 ("CloudSaveRejectsInvalidJson", () => TestCloudSaveRejectsInvalidJson(client)),
                 ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
+                ("PurchaseTransactionMigration", TestPurchaseTransactionMigration),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
@@ -689,6 +692,76 @@ public static partial class ServerTests
         Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 2200, "expected the retry not to credit the wallet again");
     }
 
+    private static async Task TestPurchaseConcurrentDuplicate(HttpClient client)
+    {
+        // Two devices on one account can reconcile the same unfinished store
+        // purchase at the same moment. The client applies each purchaseId once,
+        // so every answer must name the one recorded purchase. Several rounds,
+        // because a lost race is a matter of timing.
+        for (var round = 0; round < 6; round++)
+        {
+            var profileId = $"TEST-PUR-RACE-{round}";
+            var transactionId = $"txn-race-{round}";
+            await EnsureSession(client, profileId);
+            var body = new { profileId, productId = "gold_pouch", platform = "google", receiptToken = $"receipt-race-{round}", transactionId };
+            var responses = await PostConcurrently(client, "/purchase/validate", Enumerable.Repeat(((object)body, profileId), 8));
+
+            Assert(responses.All(r => r.Status == HttpStatusCode.OK), $"expected every concurrent validation to succeed, got {string.Join(",", responses.Select(r => (int)r.Status))}");
+            var statuses = responses.Select(r => r.Body.RootElement.GetProperty("status").GetString()).ToList();
+            Assert(statuses.Count(s => s == "ok") == 1 && statuses.Count(s => s == "already_recorded") == responses.Length - 1,
+                $"expected one ok and the rest already_recorded, got {string.Join(",", statuses)}");
+            var purchaseIds = responses.Select(r => r.Body.RootElement.GetProperty("purchaseId").GetString()).Distinct().ToList();
+            Assert(purchaseIds.Count == 1 && !string.IsNullOrEmpty(purchaseIds[0]), $"expected one purchaseId in every answer, got {string.Join(",", purchaseIds)}");
+            Assert(responses.All(r => r.Body.RootElement.GetProperty("goldCredited").GetInt32() == 500), "expected every answer to carry the recorded grant");
+
+            Assert(CountPurchaseRows(transactionId) == 1, $"expected one purchase row for {transactionId}");
+            var wallet = await Get(client, $"/wallet?profileId={profileId}");
+            Assert(wallet.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected the wallet to be credited once");
+        }
+    }
+
+    private static async Task TestPurchaseConcurrentOtherProfile(HttpClient client)
+    {
+        // A transaction raced by two players is credited to exactly one of them.
+        for (var round = 0; round < 3; round++)
+        {
+            var transactionId = $"txn-race-shared-{round}";
+            var profiles = new[] { $"TEST-PUR-SHARE-A{round}", $"TEST-PUR-SHARE-B{round}" };
+            foreach (var profileId in profiles) await EnsureSession(client, profileId);
+            var requests = Enumerable.Range(0, 8).Select(i =>
+            {
+                var profileId = profiles[i % 2];
+                return ((object)new { profileId, productId = "gold_pouch", platform = "google", receiptToken = $"receipt-shared-{round}", transactionId }, profileId);
+            });
+            var responses = await PostConcurrently(client, "/purchase/validate", requests);
+
+            var winners = responses.Where(r => r.Status == HttpStatusCode.OK).Select(r => r.ProfileId).Distinct().ToList();
+            Assert(winners.Count == 1, $"expected one player to own the transaction, got {winners.Count}");
+            var loser = profiles.Single(p => p != winners[0]);
+            Assert(responses.Where(r => r.ProfileId == loser).All(r => r.Status == HttpStatusCode.Conflict
+                && r.Body.RootElement.GetProperty("status").GetString() == "transaction_assigned"),
+                "expected the other player to get transaction_assigned");
+            var purchaseIds = responses.Where(r => r.Status == HttpStatusCode.OK)
+                .Select(r => r.Body.RootElement.GetProperty("purchaseId").GetString()).Distinct().ToList();
+            Assert(purchaseIds.Count == 1, $"expected one purchaseId for the owner, got {string.Join(",", purchaseIds)}");
+
+            Assert(CountPurchaseRows(transactionId) == 1, $"expected one purchase row for {transactionId}");
+            var ownerWallet = await Get(client, $"/wallet?profileId={winners[0]}");
+            Assert(ownerWallet.RootElement.GetProperty("goldBalance").GetInt32() == 500, "expected the owner to be credited once");
+            var loserWallet = await Get(client, $"/wallet?profileId={loser}");
+            Assert(loserWallet.RootElement.GetProperty("goldBalance").GetInt32() == 0, "expected the other player not to be credited");
+        }
+    }
+
+    private static long CountPurchaseRows(string transactionId)
+    {
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM purchases WHERE transaction_id = @tid";
+        cmd.Parameters.AddWithValue("@tid", transactionId);
+        return Database.ToInt64(cmd.ExecuteScalar());
+    }
+
     private static async Task TestStoreVerifierFailsClosedWithoutCredentials()
     {
         const string packageKey = "GOOGLE_PLAY_PACKAGE_NAME";
@@ -943,6 +1016,53 @@ public static partial class ServerTests
         return Task.CompletedTask;
     }
 
+    private static Task TestPurchaseTransactionMigration()
+    {
+        using var conn = Database.Open();
+        void Execute(string sql)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.ExecuteNonQuery();
+        }
+        object? Scalar(string sql)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            return cmd.ExecuteScalar();
+        }
+
+        // A database from before the unique index, holding a transaction that
+        // was recorded three times and two purchases with no transaction ID.
+        Execute("DROP INDEX idx_purchases_transaction_unique");
+        Execute("""
+            INSERT INTO purchases (purchase_id, profile_id, product_id, transaction_id) VALUES
+                ('PUR-LEGACY-1', 'LEGACY-A', 'gold_pouch', 'txn-legacy-dup'),
+                ('PUR-LEGACY-2', 'LEGACY-A', 'gold_pouch', 'txn-legacy-dup'),
+                ('PUR-LEGACY-3', 'LEGACY-B', 'gold_pouch', 'txn-legacy-dup'),
+                ('PUR-LEGACY-4', 'LEGACY-A', 'gold_pouch', ''),
+                ('PUR-LEGACY-5', 'LEGACY-A', 'gold_pouch', '')
+        """);
+        Execute("DELETE FROM schema_version WHERE version >= 6");
+        Database.Initialize();
+        Database.Initialize(); // The upgrade must be safe to repeat.
+
+        Assert((string?)Scalar("SELECT purchase_id FROM purchases WHERE transaction_id = 'txn-legacy-dup'") == "PUR-LEGACY-1",
+            "the first purchase must keep the transaction");
+        Assert(Database.ToInt64(Scalar("SELECT COUNT(*) FROM purchases WHERE purchase_id IN ('PUR-LEGACY-2', 'PUR-LEGACY-3') AND status = 'duplicate' AND transaction_id LIKE 'txn-legacy-dup#duplicate-%'")) == 2,
+            "later copies must be kept and marked duplicate");
+        Assert(Database.ToInt64(Scalar("SELECT COUNT(*) FROM purchases WHERE purchase_id IN ('PUR-LEGACY-4', 'PUR-LEGACY-5') AND transaction_id = '' AND status = 'validated'")) == 2,
+            "purchases without a transaction ID must be left alone");
+        Assert(Database.ToInt64(Scalar("SELECT MAX(version) FROM schema_version")) >= 6, "expected schema version 6");
+
+        var rejected = false;
+        try { Execute("INSERT INTO purchases (purchase_id, profile_id, product_id, transaction_id) VALUES ('PUR-LEGACY-6', 'LEGACY-A', 'gold_pouch', 'txn-legacy-dup')"); }
+        catch (System.Data.Common.DbException) { rejected = true; }
+        Assert(rejected, "the unique index must reject a second purchase of one transaction");
+        Execute("INSERT INTO purchases (purchase_id, profile_id, product_id, transaction_id) VALUES ('PUR-LEGACY-7', 'LEGACY-A', 'gold_pouch', '')");
+        return Task.CompletedTask;
+    }
+
     private static async Task TestStripeCheckoutNoKey(HttpClient client)
     {
         var body = new
@@ -1011,7 +1131,7 @@ public static partial class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 5, $"expected schema version >= 5, got {version}");
+        Assert(version >= 6, $"expected schema version >= 6, got {version}");
         await Task.CompletedTask;
     }
 
@@ -1393,6 +1513,24 @@ public static partial class ServerTests
         var resp = await client.SendAsync(msg);
         Assert(resp.StatusCode == expected, $"expected {(int)expected} at {url}, got {(int)resp.StatusCode}");
         return resp.StatusCode;
+    }
+
+    // Sessions must already exist: every request is built first and released at once.
+    private static async Task<(string ProfileId, HttpStatusCode Status, JsonDocument Body)[]> PostConcurrently(
+        HttpClient client, string url, IEnumerable<(object Body, string ProfileId)> requests)
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sends = requests.Select(request => Task.Run(async () =>
+        {
+            using var msg = new HttpRequestMessage(HttpMethod.Post, url);
+            ApplySession(msg, request.ProfileId);
+            msg.Content = new StringContent(JsonSerializer.Serialize(request.Body, JsonOpts), Encoding.UTF8, "application/json");
+            await gate.Task;
+            using var resp = await client.SendAsync(msg);
+            return (request.ProfileId, resp.StatusCode, JsonDocument.Parse(await resp.Content.ReadAsStringAsync()));
+        })).ToArray();
+        gate.SetResult();
+        return await Task.WhenAll(sends);
     }
 
     private static async Task<HttpStatusCode> GetExpect(HttpClient client, string url, HttpStatusCode expected)

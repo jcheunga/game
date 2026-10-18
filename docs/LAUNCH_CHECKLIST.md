@@ -334,6 +334,10 @@ Then, with Apple:
 - [ ] Set how long the PostgreSQL provider keeps backups, and give that period
   in the privacy policy's "Deleting your account" section, which now says only
   that backup copies go "as those backups expire".
-- [ ] Fill in Play's Data safety form and Apple's privacy labels to cover
-  email addresses, player IDs and purchase history, and make sure the
-  privacy policy covers them.
+- [ ] Fill in Play's Data safety form and Apple's App Privacy labels from the
+  draft answers in [STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md), after
+  working through its review list. The privacy policy (`site/src/privacy.html`)
+  was rewritten from the same audit on 2026-10-18 and covers email addresses,
+  linked sign-in IDs, player IDs, purchase history, account deletion and
+  refunds. Have both reviewed, then set the policy's `effective_date` in
+  `site/site.json`.

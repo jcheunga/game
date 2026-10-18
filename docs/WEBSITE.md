@@ -88,15 +88,20 @@ configuration. Update the page in the same change if any of these move:
 | Statement | Where it is enforced |
 | --- | --- |
 | Analytics deleted after 30 days, live race updates after 24 hours, player reports and crash reports after 90 days | `server/StaleDataCleanup.cs` |
-| Sessions expire after 30 days; only a hash of the token is stored | `server/SessionAuth.cs` |
-| Store receipts kept only as a one-way fingerprint | `server/Endpoints.cs`, `server/StorePurchaseVerification.cs` |
+| Sessions stop working after 30 days; only a hash of the token is stored; expired and revoked session rows are kept until a deletion request | `server/SessionAuth.cs`, `server/StaleDataCleanup.cs` (no session cleanup) |
+| Sign-in keeps the email address (email sign-in) or the provider's account ID only; Google's email is checked and dropped; Apple is asked for no name or email; unfinished sign-ins expire after 10 minutes; Game Center signature hashes after 20 | `server/AccountAuth.cs` |
+| Play Games signs in automatically on Android unless progress is at risk; signing out stops it | `TryAutoSignIn` in `scripts/core/PlatformSignIn.cs` |
+| Guests register their player ID and nickname whenever the server is reachable | `OnServerReachable` in `scripts/core/AccountSignIn.cs` |
+| Challenge and daily leaderboards show player IDs; room scoreboards show player IDs and nicknames | `ChallengeLeaderboard`, `DailyLeaderboard`, `RoomScoreboard`, `RoomDirectory` in `server/Endpoints.cs` |
+| Google and Apple purchase tokens kept only as a one-way fingerprint (Stripe's payment ID is stored as is); purchases limited to 10 an hour | `server/Endpoints.cs`, `server/StorePurchaseVerification.cs` |
 | Hashed IPs for rate limiting expire after about a minute | `server/RateLimitStore.cs` |
-| API access logs rotate (5 × 20 MB) | `caddy` logging options in `server/docker-compose.production.yml` |
+| API access logs and the server's request logs (with player IDs) rotate (5 × 20 MB per container) | `caddy` and `crownroad-server` logging options in `server/docker-compose.production.yml` |
 | No website access logs | No `log` directive in the website block of `server/Caddyfile` |
 | Analytics off until the player opts in | `scripts/core/AnalyticsService.cs`, and the Privacy section of the Account tab in `scripts/ui/SettingsMenu.cs` (there is no first-run prompt) |
 | Crash reports off until a separate opt-in; withdrawing analytics discards queued events | `scripts/core/CrashReporter.cs`, `AnalyticsService.cs`, and the Account tab in `scripts/ui/SettingsMenu.cs` |
 | Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
-| No third-party analytics or ad SDKs | `Game.csproj`, `addons/` |
+| No third-party analytics or ad SDKs | `Game.csproj`, `addons/`, `android/plugins/`, `ios/plugins/` |
+| The player ID is shown under Records & replay on the multiplayer screen | `scripts/ui/MultiplayerMenu.cs` |
 
 Adding an SDK, a new data type, a new processor, or a website analytics tool
 means updating the policy and its effective date before release.
@@ -108,21 +113,27 @@ local checks are documented in [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md).
 Before deploying this policy, complete the migration/backup steps in
 [DEPLOYMENT.md](DEPLOYMENT.md); old database backups may still contain raw
 session credentials. Publisher details, legal review and actual store privacy
-declarations remain release gates.
+declarations remain release gates. Draft store declarations, built from the
+same audit as the policy, are in
+[STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md); update both together.
 
 ## Handling deletion requests
 
 There is no self-service deletion yet. When a request arrives at the support
 inbox:
 
-1. Confirm the requester controls the profile. For example, ask for their
-   callsign and a recent result shown on their device, and compare it with the
-   server data for the player ID they gave.
+1. Confirm the requester controls the profile. A player who signs in with
+   email can write from that address (look it up in `account_identities`).
+   Otherwise ask for their nickname and a recent result shown on their device,
+   and compare it with the server data for the player ID they gave.
 2. Delete that `profile_id`'s rows from the player tables in PostgreSQL
-   (`players`, `auth_sessions`, `cloud_saves`, `challenge_results`,
-   `achievements`, `daily_completions`, `analytics_events`, `crash_reports`,
+   (`players`, `account_identities`, `auth_sessions`, `cloud_saves`,
+   `challenge_results`, `achievements`, `daily_completions`,
+   `analytics_events`, `crash_reports`,
    `room_seats`, `room_telemetry`, `room_reports`, `arena_*`,
-   `guild_members`, `friendships`, `friend_gifts`, `raid_contributions`).
+   `guild_members`, `friendships`, `friend_gifts`, `raid_contributions`),
+   any `account_challenges` rows whose `guest_profile` is the player, and the
+   host details of `rooms` they hosted.
    Keep `purchases`, `player_wallets` and `wallet_ledger` rows only as long as
    tax and accounting law requires.
 3. Reply within 30 days to confirm, as the support page promises.

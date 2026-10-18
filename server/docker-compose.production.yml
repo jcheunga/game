@@ -63,6 +63,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    # Request logs include player IDs. Rotate them like Caddy's (see the
+    # privacy policy).
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   caddy:
     image: caddy:2-alpine

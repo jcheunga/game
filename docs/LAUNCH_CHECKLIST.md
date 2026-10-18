@@ -283,6 +283,9 @@ Then, with Apple:
   them in its own style today, and both companies have branding rules.
 - [ ] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
-- [ ] Fill in Play's Data safety form and Apple's privacy labels to cover
-  email addresses, player IDs and purchase history, and make sure the
-  privacy policy covers them.
+- [ ] Fill in Play's Data safety form and Apple's App Privacy labels from the
+  draft answers in [STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md), after
+  working through its review list. The privacy policy (`site/src/privacy.html`)
+  was rewritten from the same audit on 2026-10-18 and covers email addresses,
+  linked sign-in IDs, player IDs and purchase history. Have both reviewed,
+  then set the policy's `effective_date` in `site/site.json`.

@@ -17,7 +17,7 @@
       <span class="eyebrow">Legal</span>
       <h1>Privacy Policy</h1>
       <p class="updated">Effective {{effective_date_long}}</p>
-      <p class="summary">Crownroad doesn't ask for your name, email address or phone number. It has no ads and no third-party analytics or advertising tools. The game identifies you by a random player ID created on your device. Gameplay analytics and crash reports are optional, with separate choices in Settings.</p>
+      <p class="summary">Crownroad identifies you by a random player ID created on your device. You can play as a guest, or sign in with email, Google, Apple, Google Play Games or Game Center to keep your progress across devices. If you sign in with email, we store your email address. Purchases go through Google Play or the App Store, and we keep a record of what you bought. Crownroad has no ads and no third-party analytics or advertising tools. Gameplay analytics and crash reports are optional, with separate choices in Settings.</p>
     </header>
 
     <h2>Who we are</h2>
@@ -32,18 +32,33 @@
         </thead>
         <tbody>
           <tr>
-            <td>Player ID and session</td>
-            <td>A random ID (it looks like <code>CVY-</code> followed by letters and numbers) that the game creates the first time it runs, plus a sign-in session our server issues to that ID. We use them to run online features and keep your progress and purchases attached to you. We store only a one-way hash of the session token.</td>
-            <td>The player ID is kept until you ask us to delete your data. Sessions expire after 30 days.</td>
+            <td>Player ID and sessions</td>
+            <td>A random ID that the game creates the first time it runs. It looks like <code>CVY-</code> followed by letters and numbers, or <code>ACC-</code> for an account first created at sign-in. When the game can reach our server, it registers this ID with your nickname and our server issues a sign-in session, even if you play as a guest. The game sends your player ID with every request to our server. For each session we store a one-way hash of its token (never the token itself), and when it was created, last used, expires or was ended. We use them to run online features and keep your progress and purchases attached to you.</td>
+            <td>The player ID is kept until you ask us to delete your data. A session stops working after 30 days, or earlier when you sign out or the game replaces it. Its record stays with your player ID until you ask us to delete your data.</td>
           </tr>
           <tr>
-            <td>Callsign</td>
-            <td>The name you choose in Settings (the default is "Lantern"). Other players can see it in online rooms, on shared scoreboards and in LAN races.</td>
-            <td>Until you change it or ask us to delete your data.</td>
+            <td>Sign-in accounts <em>(optional)</em></td>
+            <td>
+              If you sign in, we link that account to your player ID so you can get your progress back on another device.
+              <ul>
+                <li><strong>Email:</strong> your email address. We email you a six-digit code and keep only a one-way hash of it.</li>
+                <li><strong>Google:</strong> Google tells us your Google account ID, your email address and whether it is verified. We check that it is verified, then keep only the account ID.</li>
+                <li><strong>Sign in with Apple:</strong> we don't ask Apple for your name or email address. We keep only the account ID Apple gives this game.</li>
+                <li><strong>Google Play Games:</strong> your Play Games player ID. On Android, if your phone is signed in to Play Games, the game signs you in with it automatically when it connects to our server, unless that could replace progress on your device. Signing out in Account stops this.</li>
+                <li><strong>Game Center:</strong> your Game Center player ID. We also keep a one-way hash of each Game Center sign-in signature so it can't be used twice.</li>
+              </ul>
+              Your device also keeps which method you signed in with and, for email, your address, so Account can show it. These stay on the device and aren't part of cloud saves.
+            </td>
+            <td>Linked accounts are kept until you ask us to delete your data. An unfinished sign-in, which holds the email address or account ID and a hash of the code, expires after 10 minutes and is cleared out as new sign-ins start. Game Center signature hashes expire after 20 minutes.</td>
+          </tr>
+          <tr>
+            <td>Nickname</td>
+            <td>The name you choose in Settings, also called your callsign. It starts as "Lantern", or "Caravan" for an account first created at sign-in. Other players can see it in online room lists, room scoreboards and LAN races.</td>
+            <td>Until you change it or ask us to delete your data. Online rooms you joined keep the nickname you used at the time.</td>
           </tr>
           <tr>
             <td>Game results</td>
-            <td>Challenge results, scores, achievements, daily completions, and which online rooms you joined and how you placed. Used for leaderboards, challenges and fair play.</td>
+            <td>Challenge results (score, stars, time, wagon health and defeats), achievements and when you unlocked them, daily challenge scores and completion times, and the online rooms you hosted or joined with your result and place. Used for leaderboards, challenges and fair play. Challenge and daily leaderboards show your player ID with your score, and room scoreboards show your nickname and player ID. Anyone using the game can see them.</td>
             <td>Until you ask us to delete your data.</td>
           </tr>
           <tr>
@@ -53,22 +68,22 @@
           </tr>
           <tr>
             <td>Cloud save</td>
-            <td>Your progress, gameplay settings, callsign and player ID are uploaded after you win a stage when the online service is configured, or when you choose Upload in Settings. Cloud saves exclude your sign-in session token, server connection settings and analytics/crash-reporting choices. Restoring progress keeps the current device's sign-in and privacy choices.</td>
-            <td>Replaced by each new save. Kept until you ask us to delete your data.</td>
+            <td>Your progress, gameplay settings, nickname, player ID and the IDs of purchases already delivered. It uploads after each stage you win once the game is connected to our server, and when you choose Upload in Settings. Cloud saves exclude your sign-in session, which sign-in method and email address you use, server connection settings and your analytics and crash-report choices. Restoring progress keeps the current device's sign-in and privacy choices. When you sign in to an account that has a cloud save, the game downloads it and keeps a copy of your previous progress on your device.</td>
+            <td>One save per player ID, replaced by each upload. Kept until you ask us to delete your data.</td>
           </tr>
           <tr>
             <td>Purchases</td>
-            <td>The item you bought, the store and platform, the store's order or transaction ID, a one-way fingerprint of the store receipt, the time, and your in-game currency balance and history. Used to deliver what you paid for, handle refunds and prevent fraud. We never receive your card or bank details.</td>
-            <td>As long as the law requires us to keep purchase and tax records. We keep only the minimum needed after a deletion request.</td>
+            <td>When you buy something through Google Play or the App Store, the game sends the store's purchase details to our server, which checks them with Google or Apple. We record the item, the store, the store's order or transaction ID, a one-way fingerprint of the store's purchase token, the time, what the purchase credited (gold, food or a unit unlock) and your balance of purchased currency. We use them to deliver what you paid for, stop one purchase being credited twice or claimed by another player, limit purchases to 10 an hour, and answer questions about your purchases. Purchases on desktop through Stripe record Stripe's checkout session and payment IDs instead of a store fingerprint. We never receive your card or bank details.</td>
+            <td>As long as tax and accounting law requires us to keep purchase records. After a deletion request we keep only these records.</td>
           </tr>
           <tr>
             <td>Gameplay analytics <em>(only if you opt in)</em></td>
-            <td>Events such as starting a session and finishing a stage, with your player ID, game version and platform. Used to understand difficulty and improve balance. Off until you agree, and you can switch it off at any time in Settings.</td>
+            <td>Events such as starting a session (with your highest stage and gold), and starting and finishing a stage (with the stage, difficulty, squad, result, stars, time and wagon health), sent with your player ID, game version and platform. Used to understand difficulty and improve balance. Off until you turn on "Share analytics" in Settings, and you can switch it off at any time.</td>
             <td>Deleted after 30 days.</td>
           </tr>
           <tr>
             <td>Crash reports <em>(only if you opt in)</em></td>
-            <td>If you enable crash reports in Settings and the game encounters an error or diagnostic warning, it sends the error message and technical trace, the game version, the platform, the screen you were on and your player ID, so we can fix bugs. Off by default, independently of gameplay analytics, and you can switch it off at any time.</td>
+            <td>If you turn on "Send crash reports" in Settings and the game hits an unexpected error, it sends the error type and message, the technical trace, the game version, the platform, the screen you were on and your player ID, so we can fix bugs. Off by default, separately from gameplay analytics, and you can switch it off at any time.</td>
             <td>Deleted after 90 days.</td>
           </tr>
           <tr>
@@ -77,19 +92,19 @@
             <td>Deleted after 90 days.</td>
           </tr>
           <tr>
-            <td>Connection data</td>
-            <td>Your IP address is used to connect you to our servers. To limit abuse we briefly keep a one-way hash of it. Our server's access logs for the game's online service record IP address, the address requested, time and app or browser details.</td>
-            <td>The hash expires after about a minute. Access logs rotate automatically and are overwritten as they fill.</td>
+            <td>Connection data and server logs</td>
+            <td>Your IP address is used to connect you to our servers. To limit abuse, we briefly keep a one-way hash of your IP address or session token. Our web server's access logs for the game's online service record your IP address, the address requested (which can include your player ID), your player ID, the time, and app or browser details. The game server's own logs record your player ID, the address requested, the result and how long it took.</td>
+            <td>The hashes expire after about a minute. Logs rotate automatically and are overwritten as they fill.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <h3>On your device</h3>
-    <p>The game stores your save file (with a backup copy), a queue of results waiting to upload, and any screenshots you take, in the game's own storage on your device. Deleting the game deletes them.</p>
+    <p>The game stores your save file (with a backup copy), a queue of results waiting to upload, a copy of your progress each time you sign in to a different account or sign out, and any screenshots you take, in the game's own storage on your device. The save file includes your sign-in session and which sign-in method you use, with your email address if you signed in with email. Deleting the game deletes them.</p>
 
     <h3>LAN races</h3>
-    <p>LAN races connect devices on the same local network directly. The host's local IP address is shown on screen so others can join. Your callsign, chosen squads, ready state, live race updates and final result are shared with the other devices in the room. This traffic doesn't pass through our servers.</p>
+    <p>LAN races connect devices on the same local network directly. The host's local IP address is shown on screen so others can join. Your nickname, chosen squads, ready state, live race updates and final result are shared with the other devices in the room. This traffic doesn't pass through our servers.</p>
 
     <h3>This website</h3>
     <p>This website doesn't use cookies, analytics or tracking, and we don't keep visitor logs for it. Its fonts are served by Google Fonts, so your browser connects to Google, which receives your IP address and browser details when the page loads. See <a href="https://policies.google.com/privacy" rel="noopener">Google's privacy policy</a>.</p>
@@ -97,8 +112,10 @@
     <h2>Who we share it with</h2>
     <p>We don't sell your personal data or share it for advertising. We share it only as follows:</p>
     <ul>
-      <li><strong>Other players</strong> see your callsign, scores and race results in online and LAN features.</li>
-      <li><strong>Apple and Google</strong> confirm purchases made through their stores. The store connects the purchase to you through a one-way fingerprint of your player ID, never the ID itself.</li>
+      <li><strong>Other players</strong> see your nickname, player ID, scores and race results in online and LAN features.</li>
+      <li><strong>Google</strong> confirms who you are when you sign in with Google or Google Play Games, and confirms purchases made through Google Play: our server sends Google the purchase token to check it. Google Play links each purchase to a one-way fingerprint of your player ID, never the ID itself. Google also serves this website's fonts. See <a href="https://policies.google.com/privacy" rel="noopener">Google's privacy policy</a>.</li>
+      <li><strong>Apple</strong> confirms who you are when you use Sign in with Apple or Game Center, and confirms purchases made through the App Store: our server sends Apple the transaction ID to check it. The App Store links each purchase to a one-way fingerprint of your player ID, never the ID itself. See <a href="https://www.apple.com/legal/privacy/" rel="noopener">Apple's privacy policy</a>.</li>
+      <li><strong>Our email delivery provider</strong> sends sign-in codes for us. It receives your email address and the code, and may only use them to deliver the email.</li>
       <li><strong>Stripe</strong> processes purchases made outside the mobile stores, such as on desktop, and receives your player ID so the purchase reaches the right profile. You enter payment details on Stripe's own page. See <a href="https://stripe.com/privacy" rel="noopener">Stripe's privacy policy</a>.</li>
       <li><strong>Hosting and database providers</strong> run the servers and database that store the data above for us, under contracts that only allow them to process it on our instructions.</li>
       <li><strong>Authorities</strong>, when the law requires it, or to protect players, the game or the public from fraud or harm.</li>
@@ -108,27 +125,28 @@
     <h2>Legal bases</h2>
     <p>Where laws such as the GDPR apply, we rely on:</p>
     <ul>
-      <li><strong>contract</strong>, to provide the game, online features and purchases you ask for;</li>
+      <li><strong>contract</strong>, to provide the game, online features, sign-in and purchases you ask for;</li>
       <li><strong>consent</strong>, for optional gameplay analytics and crash reports, which you can turn off separately in Settings at any time;</li>
-      <li><strong>legitimate interests</strong>, for security, fair play and abuse prevention;</li>
+      <li><strong>legitimate interests</strong>, for security, fair play, abuse prevention, and signing you in with Google Play Games automatically so your progress is kept safe;</li>
       <li><strong>legal obligation</strong>, for keeping purchase and tax records.</li>
     </ul>
 
     <h2 id="your-rights">Your choices and rights</h2>
     <ul>
       <li><strong>Analytics and crash reports:</strong> switch either option on or off in Settings. Turning analytics off also clears events waiting to be sent. These choices stay on your device when you restore a cloud save.</li>
-      <li><strong>Callsign:</strong> change it in Settings at any time.</li>
+      <li><strong>Nickname:</strong> change it in Settings at any time.</li>
+      <li><strong>Sign-in:</strong> you can play as a guest without signing in. Signing out in Account ends the session, starts a new guest with a new player ID on that device, and stops automatic Google Play Games sign-in there. The account stays linked to your progress, so signing in again brings it back.</li>
       <li><strong>Access, correction, copy, deletion and objection:</strong> depending on where you live, you can ask to see the data we hold about you, correct it, get a copy, delete it, or object to how we use it.</li>
     </ul>
-    <p>To make a request, email <a href="mailto:{{support_email}}">{{support_email}}</a> with your player ID. You'll find it in the game's Settings screen, shown as "Profile: CVY-…". Because the game has no password, we may ask for details only someone with your device would know before we act, so nobody else can delete or read your data. We reply within 30 days.</p>
-    <p><strong>Resetting your campaign</strong> in Settings starts a new player ID on your device but doesn't delete data linked to the old one. To remove that, send us the old ID before you reset, or email us. See <a href="/support#delete-data">how to delete your data</a>.</p>
+    <p>To make a request, email <a href="mailto:{{support_email}}">{{support_email}}</a>. If you sign in with email, write from that address. Otherwise include your player ID: it's the code after "Profile:" under Records &amp; replay on the multiplayer screen. Because guests have no password, we may ask for details only someone with your device would know before we act, so nobody else can delete or read your data. We reply within 30 days.</p>
+    <p><strong>Resetting your campaign</strong> in Settings starts a new player ID on your device and signs you out there, but doesn't delete data linked to the old ID, including any sign-in accounts linked to it. To remove that, send us the old ID before you reset, or email us. See <a href="/support#delete-data">how to delete your data</a>.</p>
     <p>If you are unhappy with how we handle your data, you can complain to your local data protection authority. We'd appreciate the chance to fix it first.</p>
 
     <h2>Children</h2>
     <p>Crownroad isn't directed at children under 13, or the minimum age for consenting to online services in your country if that is higher. We don't knowingly collect personal data from children under that age. If you believe a child has used our online features, contact us and we will delete their data.</p>
 
     <h2>Security</h2>
-    <p>Data moves between the game and our servers over encrypted HTTPS connections. Session tokens and store receipts are stored only as one-way hashes, and access to our servers and database is restricted. No system is perfectly secure. If you find a vulnerability, please report it as described on the <a href="/support#security">support page</a>.</p>
+    <p>Data moves between the game and our servers over encrypted HTTPS connections. Session tokens, sign-in codes and Google and Apple purchase tokens are stored only as one-way hashes, and access to our servers and database is restricted. No system is perfectly secure. If you find a vulnerability, please report it as described on the <a href="/support#security">support page</a>.</p>
 
     <h2>Changes to this policy</h2>
     <p>We'll update this policy when the game or our practices change and revise the effective date above. For significant changes we'll tell you in the game or on this website before they take effect.</p>

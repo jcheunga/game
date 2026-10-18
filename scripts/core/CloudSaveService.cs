@@ -77,7 +77,7 @@ public static class CloudSaveService
 			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-			using var response = Client.Send(msg);
+			using var response = Client.SendAndWait(msg);
 			var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
 			if (!response.IsSuccessStatusCode)
@@ -128,7 +128,7 @@ public static class CloudSaveService
 				$"{endpoint.TrimEnd('/')}/cloud-save/download?profileId={Uri.EscapeDataString(profileId)}");
 			PlayerSessionHttp.Apply(msg, profileId);
 
-			using var response = Client.Send(msg);
+			using var response = Client.SendAndWait(msg);
 			var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
 			if (!response.IsSuccessStatusCode)
@@ -205,7 +205,7 @@ public static class CloudSaveService
 				$"{endpoint.TrimEnd('/')}/cloud-save/info?profileId={Uri.EscapeDataString(profileId)}");
 			PlayerSessionHttp.Apply(msg, profileId);
 
-			using var response = Client.Send(msg);
+			using var response = Client.SendAndWait(msg);
 			var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
 			if (!response.IsSuccessStatusCode)

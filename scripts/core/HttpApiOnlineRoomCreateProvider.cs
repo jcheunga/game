@@ -44,7 +44,7 @@ public sealed class HttpApiOnlineRoomCreateProvider : IOnlineRoomCreateProvider
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

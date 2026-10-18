@@ -45,7 +45,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		request.Headers.TryAddWithoutValidation("X-Convoy-Client", batch.ClientLabel);
 		request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(request);
+		using var response = Client.SendAndWait(request);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

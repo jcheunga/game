@@ -168,7 +168,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		using var message = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/purchase/history?profileId={Uri.EscapeDataString(profileId)}");
 		PlayerSessionHttp.Apply(message, profileId);
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
@@ -215,7 +215,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		PlayerSessionHttp.Apply(message, profileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
@@ -248,7 +248,7 @@ public sealed class HttpApiPurchaseValidationProvider
 		using var message = new HttpRequestMessage(HttpMethod.Get,
 			$"{_baseUrl}/purchase/stripe-status?sessionId={Uri.EscapeDataString(sessionId)}");
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

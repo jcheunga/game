@@ -47,7 +47,7 @@ public sealed class HttpApiDailyLeaderboardProvider
 		PlayerSessionHttp.Apply(request, profileId);
 		request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(request);
+		using var response = Client.SendAndWait(request);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

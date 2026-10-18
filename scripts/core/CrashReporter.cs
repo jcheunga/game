@@ -71,7 +71,7 @@ public partial class CrashReporter : Node
 				$"{endpoint.TrimEnd('/')}/crash-report");
 			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
-			using var response = Client.Send(msg);
+			using var response = Client.SendAndWait(msg);
 		}
 		catch
 		{

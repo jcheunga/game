@@ -112,7 +112,7 @@ public static class AnalyticsService
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/analytics/ingest");
 			PlayerSessionHttp.Apply(msg, profileId);
 			msg.Content = new StringContent(json, Encoding.UTF8, "application/json");
-			using var response = Client.Send(msg);
+			using var response = Client.SendAndWait(msg);
 		}
 		catch
 		{

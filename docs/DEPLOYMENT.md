@@ -531,8 +531,11 @@ iOS build itself:
   "Operation is not supported on this platform", so the health check never
   saw the server, a guest got no session, and cloud backup, profile sync (which
   the shop needs before a purchase without a session) and most online features
-  failed. They now wait on `SendAsync`. The simulator test covers iOS; check
-  the server calls on an Android phone.
+  failed. They now wait on `SendAsync`. The simulator test covers iOS, and
+  an Android emulator confirmed the fix on 2026-10-18 (see
+  [Android on an emulator](#android-on-an-emulator)): a guest gets a session,
+  and cloud backup, Cloud status, restore, profile sync and account deletion
+  all reach the server.
 - **Godot 4.6.1's simulator engine is x86_64 only**, and iOS 27 simulators run
   arm64 apps only, so the official template cannot run in this Mac's simulator.
   The StoreKit test compiles the engine for the arm64 simulator from source.
@@ -555,6 +558,55 @@ Before an iOS release, check on a device:
   minimum iOS version is now 15.0. The 4.6 editor also renamed the main icon
   option to `icons/icon_1024x1024`, which is now set; the export fails while
   it is blank.
+
+### Android on an emulator
+
+`scripts/tests/android_e2e.sh` runs the game's server calls on an Android
+emulator, or a phone with USB debugging, against a throwaway local server. It
+exports a debug APK whose main scene is `scenes/tests/AndroidServerReview.tscn`,
+installs it, starts the server as `server_e2e.sh` does and forwards the port
+with `adb reverse`. The game then reaches the server at `http://127.0.0.1`,
+since plain HTTP is accepted only on loopback. Official Android templates
+refuse a scene path on the command line, and the exported launcher ignores the
+intent's `command_line_params`, so the driver's arguments are written into the
+build (`command_line/extra_args`). The script launches the game twice and reads
+the results from logcat:
+
+```sh
+scripts/tests/android_e2e.sh
+```
+
+On 2026-10-18 all 26 checks passed on an API 36 Google APIs arm64 emulator. The
+first launch starts from cleared app data. The data, waves, shop catalog and
+save load, and the save is written under `/data/data/com.crownroad.game/files`.
+HTTPS works with blocking and async calls on the system's certificates, and an
+expired certificate is refused. NetworkStatus reaches the server, the guest
+gets a session the server accepts, and the store's profile sync works. Settings
+→ Account → Cloud save uploads, Cloud status shows the backup, and Restore cloud
+save brings it back over later progress. The second launch keeps the data:
+the server answers at boot without help, the session and the backup survive the
+restart, a restore works, and deleting the account ends its session on the
+server.
+
+What the emulator showed about the Android build:
+
+- **Play Billing is unavailable outside Google Play.** The Google APIs image
+  has no Play Store, so the billing plugin reports "Billing service unavailable
+  on device". The shop then says "Native billing is unavailable. This purchase
+  has not been charged." and grants nothing. Purchases need a build installed
+  from a Play testing track (section 9 of the
+  [launch checklist](LAUNCH_CHECKLIST.md)).
+- **The emulator's Vulkan freezes the game.** With `-gpu host`, Godot's Vulkan
+  renderer (gfxstream on MoltenVK) gets a few frames, logs `QueuePresentKHR
+  failed with error: 5`, then waits forever for a swapchain image, so the
+  main loop stops. On an emulator the script therefore builds with
+  `--rendering-method gl_compatibility --rendering-driver opengl3`. Phones use
+  their own Vulkan drivers; check rendering on a real phone.
+- **ASTC map tiles fail to decompress under OpenGL ES** where the GPU has no
+  ASTC: `_decompress_astc` reports `dst_ofs % 8 != 0` for four painted map
+  tiles. Vulkan phones read ASTC directly. This affects only phones that fall
+  back to OpenGL without ASTC. The map tiles on the build-size branch use ETC2,
+  which every OpenGL ES 3 phone reads.
 
 Provider credentials are not included. Live email delivery and the Google and
 Apple consent pages need the configured services and a manual device check.

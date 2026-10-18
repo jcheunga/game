@@ -33,8 +33,10 @@ Already done and tested locally (2026-10-17):
 - The iOS build (NativeAOT) reads its data, catalog, save and server answers
   through System.Text.Json source generation, which writes the same files and
   requests as before (`NativeJsonReview.tscn`, 2026-10-18). The game's
-  blocking server calls, which failed on iOS and Android, now work on both;
-  Android still needs a check on a phone (section 12).
+  blocking server calls, which failed on iOS and Android, now work on both:
+  on an Android emulator a guest gets a session, and cloud backup, Cloud
+  status, restore, profile sync and account deletion reach the server
+  (`scripts/tests/android_e2e.sh`, 26 checks, 2026-10-18).
 - The Android build template matches Godot 4.6.1: a headless debug export
   (2026-10-18) runs the Gradle build and bundles the Play Billing library.
 - An Android-only deployment needs no App Store key: Compose accepts it
@@ -304,10 +306,15 @@ handling of every outcome passes on desktop
 ## 12. Test on real phones
 
 - [ ] **Android:**
-  - A guest reaches the server: in Settings → Account, Cloud save uploads
-    without signing in and Cloud status shows the backup. (The game's blocking
-    server calls failed on Android until 2026-10-18; the fix has not run on an
-    Android phone yet.)
+  - A guest reaches the live server over HTTPS: in Settings → Account, Cloud
+    save uploads without signing in and Cloud status shows the backup. (The
+    game's blocking server calls failed on Android until 2026-10-18. An
+    emulator now passes this against a local server, along with restore,
+    profile sync and account deletion: `scripts/tests/android_e2e.sh`. Run
+    the script on a phone too; it builds with the phone's own Vulkan
+    renderer, which the emulator could not run.)
+  - The game draws normally: the emulator's Vulkan froze the game, so its
+    run used OpenGL instead.
   - Play Games signs you in by itself at launch and keeps your guest
     progress.
   - The Play Games button works.

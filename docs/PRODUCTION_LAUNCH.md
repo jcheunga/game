@@ -372,10 +372,11 @@ requirement until a migration and both signed exports have been verified.
   devices, and complete the payment/interruption matrix below. Check first
   that a guest reaches the server (Settings → Account: Cloud save uploads
   without signing in): until 2026-10-18 the game's blocking server calls
-  failed on Android, and the fix has only run on desktop and an iOS
-  simulator. Move through any required closed-testing and production-access
-  steps shown in the Console; do not assume internal-test success grants
-  production access.
+  failed on Android. The fix passes on an Android emulator against a local
+  server (`scripts/tests/android_e2e.sh`), but not yet on a phone against the
+  live HTTPS server. Move through any required closed-testing and
+  production-access steps shown in the Console; do not assume internal-test
+  success grants production access.
 - [ ] Complete app content/policy declarations, age/content rating, ads and
   data-safety forms, account-deletion link, support/privacy links, countries,
   pricing, and store listing. Use the original

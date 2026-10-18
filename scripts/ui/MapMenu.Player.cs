@@ -49,13 +49,31 @@ public partial class MapMenu
 
     public void OpenLevelTrack() => OpenHomeDestination("levels");
 
-    /// <summary>Asks a new caravan for its nickname once the home map is up.</summary>
-    private void PromptForNicknameIfNeeded()
+    /// <summary>
+    /// Once the home map is up: explains an account deleted elsewhere, then asks a new caravan for its nickname.
+    /// </summary>
+    private void ShowArrivalPrompts()
     {
-        if (!GameState.Instance.ShouldPromptForNickname) return;
+        var state = GameState.Instance;
+        if (!state.AccountDeletedNoticePending && !state.ShouldPromptForNickname) return;
+        void AskNickname() { if (IsInsideTree() && GameState.Instance.ShouldPromptForNickname) NicknameDialog.Show(this, true, RefreshUi); }
         Callable.From(() =>
         {
-            if (IsInsideTree() && GameState.Instance.ShouldPromptForNickname) NicknameDialog.Show(this, true, RefreshUi);
+            if (!IsInsideTree()) return;
+            if (GameState.Instance.AccountDeletedNoticePending) ShowAccountDeletedNotice(AskNickname);
+            else AskNickname();
         }).CallDeferred();
+    }
+
+    /// <summary>
+    /// The device reset itself because its account was deleted on another device or by support. Deleting it in
+    /// Settings needs no notice: the player just confirmed it.
+    /// </summary>
+    private void ShowAccountDeletedNotice(System.Action acknowledged)
+    {
+        var notice = MedievalUi.ShowNotice(this, "Account deleted",
+            "Your account was deleted on another device or by support. You're playing as a new guest.",
+            () => { GameState.Instance.AcknowledgeAccountDeletedNotice(); acknowledged(); });
+        notice.Name = "AccountDeletedNotice";
     }
 }

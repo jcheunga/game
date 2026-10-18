@@ -77,6 +77,8 @@ public sealed class GameSaveData
     public string AccountLabel { get; set; } = "";
     /// <summary>Set by signing out, so the phone's game account does not sign straight back in at the next launch.</summary>
     public bool SkipAutoSignIn { get; set; }
+    /// <summary>The account was deleted on another device or by support and home has not explained it yet.</summary>
+    public bool AccountDeletedNoticePending { get; set; }
     public string PlayerAuthToken { get; set; } = "";
     public long LastPlayerProfileSyncAtUnixSeconds { get; set; }
     public string ChallengeSyncProviderId { get; set; } = ChallengeSyncProviderCatalog.LocalJournalId;

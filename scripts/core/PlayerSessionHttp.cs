@@ -66,7 +66,7 @@ public static class PlayerSessionHttp
         var state = GameState.Instance;
         // A deletion, sign-out or sign-in on this device may have moved it to another profile meanwhile.
         if (state == null || state.PlayerProfileId != profileId) return;
-        state.ForgetDeletedAccount();
+        state.ForgetDeletedAccount(deletedElsewhere: true);
         PlayerProfileSyncService.InvalidateFromState("Account deleted.");
         SceneRouter.Instance?.ReloadHome();
     }

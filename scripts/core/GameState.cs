@@ -4219,6 +4219,7 @@ public partial class GameState : Node
 			PlayerProfileId = deviceState.PlayerProfileId;
 			PlayerAuthToken = deviceState.PlayerAuthToken;
             AccountProvider = deviceState.AccountProvider; AccountLabel = deviceState.AccountLabel; SkipAutoSignIn = deviceState.SkipAutoSignIn;
+            AccountDeletedNoticePending = deviceState.AccountDeletedNoticePending;
 			LastPlayerProfileSyncAtUnixSeconds = deviceState.LastPlayerProfileSyncAtUnixSeconds;
 			ChallengeSyncProviderId = deviceState.ChallengeSyncProviderId;
 			ChallengeSyncEndpoint = deviceState.ChallengeSyncEndpoint;
@@ -4256,7 +4257,7 @@ public partial class GameState : Node
 		PlayerCallsign = DefaultPlayerCallsign;
 		PlayerProfileId = GeneratePlayerProfileId();
 		PlayerAuthToken = DefaultPlayerAuthToken;
-        AccountProvider = ""; AccountLabel = ""; SkipAutoSignIn = false;
+        AccountProvider = ""; AccountLabel = ""; SkipAutoSignIn = false; AccountDeletedNoticePending = false;
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		LastChallengeSyncAtUnixSeconds = 0L;
 		LastDailyDate = "";
@@ -4406,6 +4407,7 @@ public partial class GameState : Node
 		LoadProgressionRewards(saved);
 		LoadPlayerLevel(saved);
         AccountProvider = saved.AccountProvider ?? ""; AccountLabel = saved.AccountLabel ?? ""; SkipAutoSignIn = saved.SkipAutoSignIn;
+        AccountDeletedNoticePending = saved.AccountDeletedNoticePending;
 		Gold = saved.Version >= 8 ? saved.Gold : saved.Scrap;
 		Food = saved.Version >= 8 ? saved.Food : saved.Fuel;
 		FoodRechargedAtUnixSeconds = saved.FoodRechargedAtUnixSeconds;
@@ -5171,6 +5173,7 @@ public partial class GameState : Node
 			PlayerProfileId = PlayerProfileId,
 			PlayerAuthToken = PlayerAuthToken,
             AccountProvider = AccountProvider, AccountLabel = AccountLabel, SkipAutoSignIn = SkipAutoSignIn,
+            AccountDeletedNoticePending = AccountDeletedNoticePending,
 			LastPlayerProfileSyncAtUnixSeconds = LastPlayerProfileSyncAtUnixSeconds,
 			ChallengeSyncProviderId = ChallengeSyncProviderId,
 			ChallengeSyncEndpoint = ChallengeSyncEndpoint,

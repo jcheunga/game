@@ -192,6 +192,8 @@ public partial class ServerEndToEnd : Node
         Check(state.HighestUnlockedStage == 1 && state.SkipAutoSignIn && state.PlayerAuthToken.Length == 0,
             "The device starts again as a new guest that does not sign in by itself");
         Check(LocalBackups(account) == 0, "The device removes its local backups of the deleted account");
+        Check(await Until(() => GetTree().CurrentScene is MainMenu { HasHomeModal: false }) && await Quiet(() => DeletedNotice() == null) &&
+            !state.AccountDeletedNoticePending, "Deleting in Settings returns home without the deleted-elsewhere notice");
         var ended = await Get($"/cloud-save/info?profileId={account}", account, token);
         Check(ended.Status == 410 && Error(ended.Body) == "account_deleted", "Deletion ends the account's session, which is told the account is gone");
         Check((await Get($"/cloud-save/info?profileId={account}", account, "")).Status == 401, "A request without a session is refused as before");
@@ -218,6 +220,7 @@ public partial class ServerEndToEnd : Node
         Check(state.AccountProvider.Length == 0 && state.SkipAutoSignIn && state.HighestUnlockedStage == 1,
             "It starts again as a new guest that does not sign in by itself");
         Check(await Until(() => GetTree().CurrentScene is MainMenu), "It returns home");
+        await DeletedNoticeOnce();
 
         // The calls the game makes routinely notice too, all refused at once, and the device resets once.
         await LiveUiReview.Open(this, "SettingsMenu");
@@ -232,6 +235,7 @@ public partial class ServerEndToEnd : Node
         await Wait(1.5);
         Check(state.PlayerProfileId == guest && state.AccountProvider.Length == 0 && state.SkipAutoSignIn,
             "However many calls were refused, the device resets once");
+        Check(await Until(() => DeletedNotice() != null) && await AcknowledgeDeletedNotice(), "Home explains that reset too, and OK closes it");
 
         // A battle in progress plays out first: the device resets once the player leaves it.
         state.ApplyPlayerProfileSession(account, state.PlayerCallsign, token, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
@@ -243,12 +247,55 @@ public partial class ServerEndToEnd : Node
         Check(state.PlayerProfileId == account && GetTree().CurrentScene is BattleController, "The battle in progress is not interrupted");
         await LiveUiReview.Open(this, "MainMenu");
         Check(await Until(() => state.PlayerProfileId != account && GetTree().CurrentScene is MainMenu), "Leaving the battle resets the device");
+        Check(await Until(() => DeletedNotice() != null) && await AcknowledgeDeletedNotice(), "Home explains the reset after the battle, and OK closes it");
         guest = state.PlayerProfileId;
 
         var profile = await Post("/player-profile", account, token);
         Check(profile.Status == 410 && Error(profile.Body) == "account_deleted", "The server still refuses the old session instead of registering the profile again");
         NetworkStatus.Instance.CheckNow();
         Check(await Until(() => state.PlayerAuthToken.Length > 0) && state.PlayerProfileId == guest, "The new guest gets its own session");
+    }
+
+    /// <summary>
+    /// After resetting itself, the device says why on the home map: one notice with one button, saved so it would
+    /// still come after a restart. OK closes it for good.
+    /// </summary>
+    private async Task DeletedNoticeOnce()
+    {
+        var state = GameState.Instance;
+        Check(await Until(() => DeletedNotice() != null), "Home explains that the account was deleted elsewhere");
+        var notice = DeletedNotice();
+        if (notice == null) return;
+        var labels = Walk(notice).OfType<Label>().Select(l => l.Text).ToList();
+        Check(labels.Contains("Account deleted") && labels.Any(t => t.Contains("new guest")) &&
+            Walk(notice).OfType<Button>().Select(b => b.Text).SequenceEqual(["OK"]),
+            $"The notice reads \"Account deleted\" with a single OK button ({string.Join(" / ", labels)})");
+        Check(state.AccountDeletedNoticePending && SaveSystem.Instance.TryLoad(out var pending) && pending.AccountDeletedNoticePending &&
+            !CloudSavePrivacy.Sanitize(JsonSerializer.Serialize(state.BuildSaveData())).Contains(nameof(GameSaveData.AccountDeletedNoticePending)),
+            "Until it is read, the notice is saved on the device, so it would still show after a restart, and never in the cloud save");
+        Check(await AcknowledgeDeletedNotice() && SaveSystem.Instance.TryLoad(out var read) && !read.AccountDeletedNoticePending,
+            "OK closes the notice and the device remembers it was read");
+        await LiveUiReview.Open(this, "MainMenu");
+        Check(await Quiet(() => DeletedNotice() == null), "Opening home again does not show it again");
+    }
+
+    private async Task<bool> AcknowledgeDeletedNotice()
+    {
+        var notice = DeletedNotice();
+        if (notice == null) return false;
+        Press(notice, "OK");
+        return await Until(() => DeletedNotice() == null) && !GameState.Instance.AccountDeletedNoticePending;
+    }
+
+    private Control DeletedNotice() => GetTree().CurrentScene is MainMenu home
+        ? Walk(home).OfType<Control>().FirstOrDefault(c => c.Name == "AccountDeletedNotice" && !c.IsQueuedForDeletion()) : null;
+
+    /// <summary>Whether a condition holds throughout the next moment, for things that must not appear.</summary>
+    private async Task<bool> Quiet(Func<bool> condition, double seconds = 1)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(seconds);
+        while (DateTime.UtcNow < deadline) { if (!condition()) return false; await Wait(.1); }
+        return condition();
     }
 
     private static string Error(JsonElement body) =>

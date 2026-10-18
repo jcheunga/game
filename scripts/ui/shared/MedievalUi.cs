@@ -27,6 +27,33 @@ public static class MedievalUi
 
     public static void ShowConfirmation(Control host, string title, string body, string confirmText, Action onConfirm, string cancelText = "Keep playing")
     {
+        var row = OpenMessage(host, title, body, out var close, out _);
+        var cancel = new RealmButton { Text = cancelText, CustomMinimumSize = new Vector2(160f, 44f) };
+        cancel.Pressed += close;
+        row.AddChild(cancel);
+        var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
+        confirm.AddThemeColorOverride("font_color", new Color("ffd8c4"));
+        ButtonFeel.MatchHoverInk(confirm);
+        confirm.Pressed += () => { close(); onConfirm?.Invoke(); };
+        row.AddChild(confirm);
+    }
+
+    /// <summary>
+    /// Tells the player something they only acknowledge, in the confirmation's style with a single button.
+    /// Returns the dialog so the caller can name it.
+    /// </summary>
+    public static Control ShowNotice(Control host, string title, string body, Action acknowledged = null, string buttonText = "OK")
+    {
+        var row = OpenMessage(host, title, body, out var close, out var dialog);
+        var ok = new RealmButton { Text = buttonText, CustomMinimumSize = new Vector2(160f, 44f) };
+        ok.Pressed += () => { close(); acknowledged?.Invoke(); };
+        row.AddChild(ok);
+        return dialog;
+    }
+
+    /// <summary>A heading and a message above an empty button row; <paramref name="close"/> removes the dialog.</summary>
+    private static HBoxContainer OpenMessage(Control host, string title, string body, out Action close, out Control dialog)
+    {
         var stack = CreateModal(host, new Vector2(460f, 0f), 14, out var veil, out var center, out var panel);
         var heading = RealmUi.Heading(title, 24);
         heading.HorizontalAlignment = HorizontalAlignment.Center;
@@ -36,14 +63,8 @@ public static class MedievalUi
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 10);
         stack.AddChild(row);
-        var cancel = new RealmButton { Text = cancelText, CustomMinimumSize = new Vector2(160f, 44f) };
-        cancel.Pressed += () => { veil.QueueFree(); center.QueueFree(); };
-        row.AddChild(cancel);
-        var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };
-        confirm.AddThemeColorOverride("font_color", new Color("ffd8c4"));
-        ButtonFeel.MatchHoverInk(confirm);
-        confirm.Pressed += () => { veil.QueueFree(); center.QueueFree(); onConfirm?.Invoke(); };
-        row.AddChild(confirm);
+        close = () => { veil.QueueFree(); center.QueueFree(); };
+        dialog = center;
 
         panel.Modulate = new Color(1f, 1f, 1f, 0f);
         panel.Scale = new Vector2(0.96f, 0.96f);
@@ -51,6 +72,7 @@ public static class MedievalUi
         var tween = host.CreateTween().SetParallel();
         tween.TweenProperty(panel, "modulate:a", 1f, 0.16f);
         tween.TweenProperty(panel, "scale", Vector2.One, 0.18f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        return row;
     }
 
     private static Theme BuildTheme()

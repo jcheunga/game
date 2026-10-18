@@ -40,7 +40,7 @@ public partial class MapMenu : Control
         BuildUi();
         _mapCanvas.ShowMap(_activeMapId, _selected.Id);
         RefreshUi();
-        PromptForNicknameIfNeeded();
+        ShowArrivalPrompts();
     }
     public string ActiveMapId => _activeMapId;
 

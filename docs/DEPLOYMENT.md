@@ -458,7 +458,9 @@ achievement sync, purchase verification, guest registration and sign-out
 recognise the answer too (`PlayerSessionHttp.NoticeAccountDeleted`). The device
 then deletes its local backups of that account, starts a new guest with
 automatic sign-in off and returns home. It does this once, after any battle in
-progress ends. A store purchase refused this way stays unfinished, and the new
+progress ends. Home then shows an "Account deleted" notice with one OK button.
+The save keeps it pending until OK is pressed, so it still shows if the game
+closes first. Deleting the account in Settings shows no notice. A store purchase refused this way stays unfinished, and the new
 guest gets the credit when the purchase is verified again. After the 31 days the
 hashes are purged, and an old session gets 401 like any expired one. A device
 away that long is treated as before: its profile ID can register again as a new

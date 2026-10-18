@@ -27,6 +27,10 @@ public static class AccountAuth
     /// <summary>Test stand-ins for Apple's token endpoint (form fields → token JSON) and its ID-token keys (JWKS JSON).</summary>
     internal static Func<IReadOnlyDictionary<string, string>, Task<string>>? TestAppleToken;
     internal static Func<Task<string>>? TestAppleKeys;
+    /// <summary>Test stand-in for Apple's token revocation endpoint: form fields → HTTP status and body.</summary>
+    internal static Func<IReadOnlyDictionary<string, string>, Task<(int Status, string Body)>>? TestAppleRevoke;
+    /// <summary>Authenticated with each sealed Apple refresh token, so no other sealed value reads as one.</summary>
+    internal const string AppleRefreshTokenPurpose = "crownroad:apple-refresh-token";
     private sealed record AppleKeySet(DateTime Expires, JsonElement Keys);
     private static AppleKeySet? _appleKeys;
     private const string AppleIssuer = "https://appleid.apple.com";
@@ -84,7 +88,8 @@ public static class AccountAuth
     private static string GameCenterBundleId => Env("GAME_CENTER_BUNDLE_ID") is { Length: > 0 } id ? id : Env("APPLE_IAP_BUNDLE_ID");
     private static bool GameCenterConfigured => GameCenterBundleId.Length > 0;
     private static bool GoogleConfigured => Env("GOOGLE_CLIENT_ID").Length > 0 && Env("GOOGLE_CLIENT_SECRET").Length > 0 && SecureCallback(Env("GOOGLE_REDIRECT_URI"));
-    private static bool AppleConfigured => Env("APPLE_SIGN_IN_CLIENT_ID").Length > 0 && Env("APPLE_SIGN_IN_TEAM_ID").Length > 0 &&
+    // Without the credential key the refresh token could not be kept, and a deleted account's Apple sign-in could not be revoked.
+    private static bool AppleConfigured => CredentialProtection.Configured && Env("APPLE_SIGN_IN_CLIENT_ID").Length > 0 && Env("APPLE_SIGN_IN_TEAM_ID").Length > 0 &&
         Env("APPLE_SIGN_IN_KEY_ID").Length > 0 && (Env("APPLE_SIGN_IN_PRIVATE_KEY").Length > 0 || File.Exists(Env("APPLE_SIGN_IN_PRIVATE_KEY_PATH"))) &&
         SecureCallback(Env("APPLE_SIGN_IN_REDIRECT_URI"));
     private static bool SecureCallback(string value) =>
@@ -98,14 +103,14 @@ public static class AccountAuth
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE IF NOT EXISTS account_identities (
-                provider TEXT NOT NULL, subject TEXT NOT NULL, profile_id TEXT NOT NULL,
+                provider TEXT NOT NULL, subject TEXT NOT NULL, profile_id TEXT NOT NULL, credential TEXT NOT NULL DEFAULT '',
                 PRIMARY KEY(provider, subject), FOREIGN KEY(profile_id) REFERENCES players(profile_id)
             );
             CREATE TABLE IF NOT EXISTS account_challenges (
                 id TEXT PRIMARY KEY, secret_hash TEXT NOT NULL, provider TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '',
                 guest_profile TEXT NOT NULL DEFAULT '', code_hash TEXT NOT NULL DEFAULT '', state TEXT NOT NULL UNIQUE,
                 verifier TEXT NOT NULL DEFAULT '', expires_at BIGINT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
-                status TEXT NOT NULL DEFAULT 'pending'
+                status TEXT NOT NULL DEFAULT 'pending', credential TEXT NOT NULL DEFAULT ''
             );
             CREATE INDEX IF NOT EXISTS idx_account_challenges_expiry ON account_challenges(expires_at);
             """;
@@ -267,15 +272,15 @@ public static class AccountAuth
         cmd.CommandText = """
             UPDATE account_challenges SET status='consumed'
             WHERE id=@id AND secret_hash=@secret AND provider=@provider AND status='ready' AND expires_at>@now
-            RETURNING subject, guest_profile
+            RETURNING subject, guest_profile, credential
             """;
         cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@secret", Hash(secret)); cmd.Parameters.AddWithValue("@now", Now);
         cmd.Parameters.AddWithValue("@provider", provider);
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
         {
-            var subject = reader.GetString(0); var guest = reader.GetString(1); reader.Close();
-            Consume(conn, tx, id); var result = Complete(conn, tx, provider, subject, guest); tx.Commit(); return result;
+            var subject = reader.GetString(0); var guest = reader.GetString(1); var credential = reader.GetString(2); reader.Close();
+            Consume(conn, tx, id); var result = Complete(conn, tx, provider, subject, guest, credential); tx.Commit(); return result;
         }
         reader.Close(); cmd.CommandText = "SELECT status FROM account_challenges WHERE id=@id AND secret_hash=@secret AND provider=@provider AND expires_at>@now";
         var status = cmd.ExecuteScalar()?.ToString();
@@ -335,9 +340,13 @@ public static class AccountAuth
             }
             using var json = JsonDocument.Parse(tokens);
             var subject = await VerifyAppleIdToken(Text(json.RootElement, "id_token"), Hash(verifier));
+            // Kept, sealed, so deleting the account can revoke this sign-in with Apple.
+            var refresh = Text(json.RootElement, "refresh_token");
+            var credential = refresh.Length is > 0 and <= 4096 ? CredentialProtection.Protect(refresh, AppleRefreshTokenPurpose) : "";
             using var conn = Database.Open(); using var cmd = conn.CreateCommand();
-            cmd.CommandText = "UPDATE account_challenges SET status='ready', subject=@subject, verifier='' WHERE id=@id AND expires_at>@now";
-            cmd.Parameters.AddWithValue("@subject", subject); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@now", Now); cmd.ExecuteNonQuery();
+            cmd.CommandText = "UPDATE account_challenges SET status='ready', subject=@subject, verifier='', credential=@credential WHERE id=@id AND expires_at>@now";
+            cmd.Parameters.AddWithValue("@subject", subject); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@now", Now);
+            cmd.Parameters.AddWithValue("@credential", credential); cmd.ExecuteNonQuery();
             return SignedInPage();
         }
         catch
@@ -360,6 +369,44 @@ public static class AccountAuth
         using var ecdsa = ECDsa.Create(); ecdsa.ImportFromPem(key);
         var signature = ecdsa.SignData(Encoding.ASCII.GetBytes(header + "." + payload), HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         return header + "." + payload + "." + Base64Url.EncodeToString(signature);
+    }
+
+    public enum RevokeOutcome { Revoked, AlreadyInvalid, RetryLater }
+
+    /// <summary>
+    /// Asks Apple to revoke a Sign in with Apple refresh token, which ends the player's authorization for the app.
+    /// Apple answers invalid_grant for a token that is already revoked or expired, so there is nothing left to revoke.
+    /// Any other failure (network, Apple unavailable, configuration) is worth retrying.
+    /// </summary>
+    internal static async Task<RevokeOutcome> RevokeAppleToken(string refreshToken)
+    {
+        try
+        {
+            var fields = new Dictionary<string, string> {
+                ["client_id"] = Env("APPLE_SIGN_IN_CLIENT_ID"), ["client_secret"] = AppleClientSecret(), ["token"] = refreshToken,
+                ["token_type_hint"] = "refresh_token"
+            };
+            int status; string body;
+            if (TestAppleRevoke != null) (status, body) = await TestAppleRevoke(fields);
+            else
+            {
+                using var response = await Apple.PostAsync("https://appleid.apple.com/auth/revoke", new FormUrlEncodedContent(fields));
+                status = (int)response.StatusCode; body = await response.Content.ReadAsStringAsync();
+            }
+            if (status == 200) return RevokeOutcome.Revoked;
+            if (status == 400)
+            {
+                try { using var error = JsonDocument.Parse(body); if (Text(error.RootElement, "error") == "invalid_grant") return RevokeOutcome.AlreadyInvalid; }
+                catch (JsonException) { }
+            }
+            Console.Error.WriteLine($"Apple token revocation answered HTTP {status}; it will be retried.");
+            return RevokeOutcome.RetryLater;
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or CryptographicException or ArgumentException)
+        {
+            Console.Error.WriteLine($"Apple token revocation failed ({e.GetType().Name}); it will be retried.");
+            return RevokeOutcome.RetryLater;
+        }
     }
 
     /// <summary>Checks Apple's RS256 signature against its published keys, then the issuer, audience, expiry and nonce.</summary>
@@ -504,7 +551,7 @@ public static class AccountAuth
         cmd.CommandText = "DELETE FROM account_challenges WHERE id=@id"; cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery();
     }
 
-    private static IResult Complete(DbConnection conn, DbTransaction tx, string provider, string subject, string guest)
+    private static IResult Complete(DbConnection conn, DbTransaction tx, string provider, string subject, string guest, string credential = "")
     {
         using var cmd = conn.CreateCommand(); cmd.Transaction = tx;
         cmd.CommandText = "SELECT profile_id FROM account_identities WHERE provider=@provider AND subject=@subject";
@@ -520,6 +567,12 @@ public static class AccountAuth
             cmd.CommandText = "INSERT INTO account_identities(provider,subject,profile_id) VALUES(@provider,@subject,@profile) ON CONFLICT(provider,subject) DO NOTHING";
             isNewAccount = cmd.ExecuteNonQuery() > 0;
             cmd.CommandText = "SELECT profile_id FROM account_identities WHERE provider=@provider AND subject=@subject"; profile = cmd.ExecuteScalar()!.ToString()!;
+        }
+        if (credential.Length > 0)
+        {
+            // The newest sign-in's token: revoking it ends the app's authorization with the provider.
+            cmd.CommandText = "UPDATE account_identities SET credential=@credential WHERE provider=@provider AND subject=@subject";
+            cmd.Parameters.AddWithValue("@credential", credential); cmd.ExecuteNonQuery();
         }
         cmd.Parameters.Clear(); cmd.Parameters.AddWithValue("@profile", profile);
         cmd.CommandText = "SELECT callsign FROM players WHERE profile_id=@profile"; var callsign = cmd.ExecuteScalar()?.ToString() ?? "Caravan";

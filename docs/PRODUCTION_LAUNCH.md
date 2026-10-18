@@ -307,10 +307,10 @@ requirement until a migration and both signed exports have been verified.
 - [ ] Provision DNS, ports 80/443, HTTPS, managed-PostgreSQL role/connection
   limits, private Redis secret, operator key, and real store credentials in
   owner-readable secret files. `server/deploy.sh` validates the Compose/Caddy
-  config, runs server/data checks, and starts the stack. The current Compose
-  file mounts **both** Apple and Google credential files: an Android-only
-  deployment still needs those mounts made optional in code or real credentials
-  provisioned; do not insert a fake Apple key merely to make Compose start.
+  config, runs server/data checks, and starts the stack. For an Android-only
+  deployment, leave `APPLE_IAP_PRIVATE_KEY_SOURCE` unset: Compose mounts an
+  empty file and App Store purchases are refused as not configured. Do not
+  insert a fake Apple key.
   Never set `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` in production.
 - [ ] Configure provider backups/PITR or encrypted off-host dumps and perform
   a timed restore drill into a separate database. Define retention, migration,

@@ -1,7 +1,9 @@
 # Battle base presentation
 
 The caravan, all seven skins and the gatehouse are rendered in Blender from the
-remaster siege recipes in `art/remaster/siege/`. The flat sprites in
+remaster siege recipes in `art/remaster/siege/`. Every campaign stage now has its own painted enemy stronghold
+(`assets/structures/bases`, see docs/ROYAL_UI.md "Enemy strongholds"); the gatehouse and its outworks only draw
+where a stage has none. The flat sprites in
 `assets/structures/` remain as fallbacks and still supply the `mount_*` weapons.
 
 `art/remaster/build_battle_structures.py` uses one orthographic camera at a

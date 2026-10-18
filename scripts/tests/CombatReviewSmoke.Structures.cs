@@ -14,7 +14,7 @@ public partial class CombatReviewSmoke
         GetViewport().GetTexture().GetImage().SavePng($"{folder}/{name}.png");
     }
 
-    // The caravan's troop door, the centred stronghold and its outworks.
+    // The caravan's troop door, and the Blender stronghold and its outworks where a stage has no painted one.
     private async Task CheckBattleStructures()
     {
         var battle = await OpenBattle(1);
@@ -48,19 +48,25 @@ public partial class CombatReviewSmoke
         Check((int)Invoke(battle, "get_WagonDoorFrame") < 0 && unit.Position.X > foot.X, "The door shuts behind the troops as they march");
         await CaptureStructures("wagon-door-march");
 
-        var castle = battle.GetNode<Node2D>("Castle");
-        var art = BattleStructureArt.Load("gatehouse");
-        var rect = art.At(castle.Position);
-        Check(rect.Position.Y < combat.BattlefieldTop && rect.End.Y > combat.BattlefieldBottom - 10 &&
-            Mathf.Abs(rect.Position.Y + art.Centre.Y * rect.Size.Y - center) < 1,
-            "The stronghold straddles the band, its mass on the centre line");
         var outworks = Read<List<(BattleStructureArt Art, Vector2 Ground)>>(battle, "_outworks");
-        Check(outworks.Count == 5, "Five outworks flank the stronghold");
-        Check(outworks.All(o => o.Ground.X > combat.EnemySpawnX + 40 || o.Ground.Y < combat.BattlefieldTop + combat.SpawnVerticalPadding ||
-            o.Ground.Y > combat.BattlefieldBottom - combat.SpawnVerticalPadding),
-            "Outworks stand behind the gate or beyond the band's edges, clear of the approach");
-        Check(!Read<List<Unit>>(battle, "_units").Any(u => u.Name.ToString().StartsWith("Outwork")),
-            "Outworks are scenery: never units, never targets");
+        if (Invoke(battle, "get_PaintedBase") != null)
+            // Painted strongholds carry their own walls; --bases checks them stage by stage.
+            Check(outworks.Count == 0, "A painted stronghold stands without the Blender outworks");
+        else
+        {
+            var castle = battle.GetNode<Node2D>("Castle");
+            var art = BattleStructureArt.Load("gatehouse");
+            var rect = art.At(castle.Position);
+            Check(rect.Position.Y < combat.BattlefieldTop && rect.End.Y > combat.BattlefieldBottom - 10 &&
+                Mathf.Abs(rect.Position.Y + art.Centre.Y * rect.Size.Y - center) < 1,
+                "The stronghold straddles the band, its mass on the centre line");
+            Check(outworks.Count == 5, "Five outworks flank the stronghold");
+            Check(outworks.All(o => o.Ground.X > combat.EnemySpawnX + 40 || o.Ground.Y < combat.BattlefieldTop + combat.SpawnVerticalPadding ||
+                o.Ground.Y > combat.BattlefieldBottom - combat.SpawnVerticalPadding),
+                "Outworks stand behind the gate or beyond the band's edges, clear of the approach");
+            Check(!Read<List<Unit>>(battle, "_units").Any(u => u.Name.ToString().StartsWith("Outwork")),
+                "Outworks are scenery: never units, never targets");
+        }
         Frame(combat.BattlefieldRight + combat.BattlefieldLeft);
         await CaptureStructures("stronghold-outworks");
         await CloseBattle(battle);

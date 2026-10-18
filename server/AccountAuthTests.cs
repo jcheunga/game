@@ -244,7 +244,7 @@ public static partial class ServerTests
     private static async Task TestAccountApple(HttpClient client)
     {
         var keys = new[] { "APPLE_SIGN_IN_CLIENT_ID", "APPLE_SIGN_IN_TEAM_ID", "APPLE_SIGN_IN_KEY_ID", "APPLE_SIGN_IN_PRIVATE_KEY",
-            "APPLE_SIGN_IN_PRIVATE_KEY_PATH", "APPLE_SIGN_IN_REDIRECT_URI" };
+            "APPLE_SIGN_IN_PRIVATE_KEY_PATH", "APPLE_SIGN_IN_REDIRECT_URI", "ACCOUNT_TOKEN_KEY", "ACCOUNT_TOKEN_KEY_PATH" };
         var previous = keys.Select(Environment.GetEnvironmentVariable).ToArray();
         using var appleKey = RSA.Create(2048); using var otherKey = RSA.Create(2048);
         using var clientKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -294,6 +294,9 @@ public static partial class ServerTests
                 if (form["code"] != "good-code") throw new HttpRequestException("invalid_grant");
                 return Task.FromResult(JsonSerializer.Serialize(new { access_token = "a", token_type = "Bearer", id_token = issue(expectedNonce) }));
             };
+            Assert(!(await client.GetFromJsonAsync<JsonElement>("/auth/providers")).GetProperty("apple").GetBoolean(),
+                "Apple is not offered without the key that keeps its refresh tokens");
+            Environment.SetEnvironmentVariable(keys[6], Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
             Assert((await client.GetFromJsonAsync<JsonElement>("/auth/providers")).GetProperty("apple").GetBoolean(), "Apple is offered once its Services ID, key and callback are set");
 
             await EnsureSession(client, "TEST-AP");

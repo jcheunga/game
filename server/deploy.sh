@@ -41,6 +41,11 @@ python3 ../scripts/tools/build_site.py --strict --domain "$SITE_DOMAIN"
 echo "Validating deployment configuration..."
 "${COMPOSE[@]}" config -q
 
+APPLE_KEY_SOURCE="$(sed -n 's/^APPLE_IAP_PRIVATE_KEY_SOURCE=//p' "$ENV_FILE" | tail -n 1 | tr -d '[:space:]"'"'")"
+if [[ -z "$APPLE_KEY_SOURCE" ]]; then
+    echo "Note: APPLE_IAP_PRIVATE_KEY_SOURCE is not set, so App Store purchases are refused (Android-only launch)."
+fi
+
 echo "Validating HTTPS proxy configuration..."
 docker run --rm --env-file "$ENV_FILE" \
     -v "$SCRIPT_DIR/Caddyfile:/etc/caddy/Caddyfile:ro" \

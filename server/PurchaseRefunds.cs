@@ -130,6 +130,11 @@ public static class PurchaseRefunds
             }
         }
 
+        // A deleted account's purchase is kept under a pseudonym with no player, wallet or device behind
+        // it (AccountDeletion), so the refund is recorded on the purchase and there is nothing to take back.
+        if (AccountDeletion.IsDeletedProfile(purchase.ProfileId))
+            return new Outcome(Finish(action == Action.Refund ? "refunded" : "reinstated", purchase), eventId, purchase.PurchaseId, "", purchase.ProfileId);
+
         var sign = action == Action.Refund ? -1 : 1;
         var kind = action == Action.Refund ? "refund" : "refund_reversed";
         var reverses = action == Action.Reinstate ? LatestRefundAdjustment(conn, tx, purchase.PurchaseId) : "";

@@ -743,7 +743,7 @@ public static partial class ServerTests
             cmd.ExecuteNonQuery();
         }
 
-        // A schema-6 ledger: unique per purchase and currency, with no adjustment column.
+        // A ledger from before schema 8: unique per purchase and currency, with no adjustment column.
         Execute("DROP TABLE wallet_ledger");
         Execute("""
             CREATE TABLE wallet_ledger (
@@ -760,7 +760,7 @@ public static partial class ServerTests
         """);
         Execute("INSERT INTO players (profile_id) VALUES ('LEGACY-LEDGER') ON CONFLICT (profile_id) DO NOTHING");
         Execute("INSERT INTO wallet_ledger (entry_id, profile_id, currency_type, amount, reason, purchase_id, created_at) VALUES ('WLT-LEGACY-1', 'LEGACY-LEDGER', 'gold', 500, 'purchase', 'PUR-LEGACY-LEDGER', 1)");
-        Execute("DELETE FROM schema_version WHERE version >= 7");
+        Execute("DELETE FROM schema_version WHERE version >= 8");
         Database.Initialize();
         Database.Initialize(); // The upgrade must be safe to repeat.
 

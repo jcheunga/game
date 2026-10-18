@@ -1,0 +1,29 @@
+{
+ "stage": 49,
+ "zone": "thornwall",
+ "title": "Gatehouse Scree",
+ "rect": [
+  963.92,
+  155.73,
+  289.12,
+  161.53
+ ],
+ "foot": 308.07,
+ "gate": 1128.0,
+ "lights": [],
+ "smoke": [
+  [
+   1178.53,
+   174.04
+  ],
+  [
+   1211.7,
+   187.56
+  ],
+  [
+   1089.21,
+   189.6
+  ]
+ ],
+ "generator": "art/royal/bases.py"
+}

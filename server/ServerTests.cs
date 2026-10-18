@@ -82,6 +82,7 @@ public static partial class ServerTests
                 ("PurchaseConcurrentDuplicate", () => TestPurchaseConcurrentDuplicate(client)),
                 ("PurchaseConcurrentOtherProfile", () => TestPurchaseConcurrentOtherProfile(client)),
                 ("StoreVerifierFailsClosedWithoutCredentials", TestStoreVerifierFailsClosedWithoutCredentials),
+                ("AppleVerifierTreatsEmptyKeyAsUnconfigured", TestAppleVerifierTreatsEmptyKeyAsUnconfigured),
                 ("AppleAppAccountTokenVectors", TestAppleAppAccountTokenVectors),
                 ("PurchaseStarterOneTime", () => TestPurchaseStarterOneTime(client)),
                 ("StripeCheckoutNoKey", () => TestStripeCheckoutNoKey(client)),
@@ -96,6 +97,11 @@ public static partial class ServerTests
                 ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
                 ("PurchaseTransactionMigration", TestPurchaseTransactionMigration),
                 ("CallsignSurvivesPurchaseAndCloudSave", () => TestCallsignSurvivesPurchaseAndCloudSave(client)),
+                ("CredentialProtection", TestCredentialProtection),
+                ("AccountDeletion", () => TestAccountDeletion(client)),
+                ("AccountDeletionRevokesApple", () => TestAccountDeletionRevokesApple(client)),
+                ("AccountDeletionCoversSchema", TestAccountDeletionCoversSchema),
+                ("AccountDeletionMigration", TestAccountDeletionMigration),
                 ("AppleRefundNotification", () => TestAppleRefundNotification(client)),
                 ("AppleNotificationForgeries", () => TestAppleNotificationForgeries(client)),
                 ("AppleNotificationUnknownAndIgnored", () => TestAppleNotificationUnknownAndIgnored(client)),
@@ -203,6 +209,7 @@ public static partial class ServerTests
                     {
                         AccountAuth.Map(endpoints);
                         endpoints.MapPost("/player-profile", Endpoints.PlayerProfile);
+                        endpoints.MapPost("/account/delete", Endpoints.AccountDelete);
                         endpoints.MapPost("/challenge-sync", Endpoints.ChallengeSync);
                         endpoints.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);
                         endpoints.MapGet("/challenge-feed", Endpoints.ChallengeFeed);
@@ -248,6 +255,15 @@ public static partial class ServerTests
                     endpoints.MapPost("/cloud-save/upload", Endpoints.CloudSaveUpload);
                     endpoints.MapGet("/cloud-save/download", Endpoints.CloudSaveDownload);
                     endpoints.MapGet("/cloud-save/info", Endpoints.CloudSaveInfo);
+                    endpoints.MapPost("/arena/snapshot", Endpoints.ArenaUploadSnapshot);
+                    endpoints.MapPost("/arena/result", Endpoints.ArenaReportResult);
+                    endpoints.MapPost("/guild/create", Endpoints.GuildCreate);
+                    endpoints.MapPost("/guild/join", Endpoints.GuildJoin);
+                    endpoints.MapPost("/guild/contribute", Endpoints.GuildContribute);
+                    endpoints.MapPost("/friends/add", Endpoints.FriendAdd);
+                    endpoints.MapGet("/friends/list", Endpoints.FriendList);
+                    endpoints.MapPost("/friends/gift", Endpoints.FriendGift);
+                    endpoints.MapPost("/raid/contribute", Endpoints.RaidContribute);
                     });
                 });
             });
@@ -805,6 +821,32 @@ public static partial class ServerTests
         }
     }
 
+    // An Android-only deployment leaves APPLE_IAP_PRIVATE_KEY_SOURCE unset, and Compose mounts
+    // server/empty-secret instead. App Store purchases must then be refused as unconfigured.
+    private static async Task TestAppleVerifierTreatsEmptyKeyAsUnconfigured()
+    {
+        string[] keys = ["APPLE_IAP_ISSUER_ID", "APPLE_IAP_KEY_ID", "APPLE_IAP_BUNDLE_ID", "APPLE_IAP_PRIVATE_KEY", "APPLE_IAP_PRIVATE_KEY_PATH"];
+        var previous = keys.ToDictionary(key => key, Environment.GetEnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable("APPLE_IAP_ISSUER_ID", "00000000-0000-0000-0000-000000000000");
+            Environment.SetEnvironmentVariable("APPLE_IAP_KEY_ID", "TESTKEY000");
+            Environment.SetEnvironmentVariable("APPLE_IAP_BUNDLE_ID", "com.crownroad.game");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", null);
+            var emptySecret = Path.Combine(SourceDirectory(), "empty-secret");
+            Assert(File.Exists(emptySecret) && new FileInfo(emptySecret).Length == 0, "expected server/empty-secret to be an empty file");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY_PATH", emptySecret);
+            var result = await StorePurchaseVerification.VerifyAsync(
+                "apple", "gold_pouch", "synthetic-jws", "2000000000000001", "TEST-PUR-VERIFY");
+            Assert(!result.Verified && result.IsConfigurationError && result.Message.Contains("not configured"),
+                $"expected an empty App Store key to be unconfigured ({result.Message})");
+        }
+        finally
+        {
+            foreach (var (key, value) in previous) Environment.SetEnvironmentVariable(key, value);
+        }
+    }
+
     // The iOS StoreKit plugin computes the same token in Swift and checks the same file
     // (native/StoreKit/test/run_tests.sh), so a purchase's token matches the server's.
     private static Task TestAppleAppAccountTokenVectors()
@@ -1184,7 +1226,7 @@ public static partial class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 6, $"expected schema version >= 6, got {version}");
+        Assert(version >= 8, $"expected schema version >= 8, got {version}");
         await Task.CompletedTask;
     }
 

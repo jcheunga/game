@@ -20,8 +20,20 @@ Already done and tested locally (2026-10-17):
   a real PostgreSQL (server tests).
 - A purchase, a cloud-save upload or a Stripe payment no longer blanks the
   player's callsign in guild, arena and friends lists (server tests).
+- Account deletion from Settings → Account → Delete account (2026-10-18). The
+  server erases everything keyed by the player and ends every session; a
+  repeated request answers the same. Purchase records stay, moved to a random
+  `DELETED-` code with no player behind it. Sign in with Apple refresh tokens
+  are now kept encrypted and revoked with Apple on deletion, retried if Apple
+  is down. Covered by server tests (SQLite and PostgreSQL, Apple stubbed) and
+  by `server_e2e.sh`, which deletes the second install's account.
 - The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
   Store flow on desktop (35 checks). See section 10.
+- The Android build template matches Godot 4.6.1: a headless debug export
+  (2026-10-18) runs the Gradle build and bundles the Play Billing library.
+- An Android-only deployment needs no App Store key: Compose accepts it
+  missing, and the server then refuses App Store purchases as not configured
+  (Compose config check, server tests).
 - Refunds (2026-10-18). App Store Server Notifications are checked up to
   Apple's root certificate, and Google Play's voided purchases are polled
   every hour. Either way, the server takes back what a refunded pack granted,
@@ -30,7 +42,9 @@ Already done and tested locally (2026-10-17):
   rest. Covered by server tests on SQLite and PostgreSQL (valid, forged,
   repeated and unknown notifications; refunds larger than the balance;
   simultaneous signals), `SaveRoundTripReview` and `server_e2e.sh`. Setup is in
-  sections 9 and 10, and in [DEPLOYMENT.md](DEPLOYMENT.md#refunds).
+  sections 9 and 10, and in [DEPLOYMENT.md](DEPLOYMENT.md#refunds). A refund
+  that arrives after the account was deleted marks the kept purchase refunded
+  and takes nothing back.
 - Answers to Apple's refund requests (`CONSUMPTION_REQUEST`), off until
   consent is settled (section 1). When switched on, the server tells Apple
   that a recorded purchase was delivered, once per request, within Apple's
@@ -44,9 +58,10 @@ What follows needs real accounts, a domain, a deployed server and phones.
 
 - [ ] **A domain you own.** Apple only accepts HTTPS return URLs on a real
   domain, and the server needs one for its certificate.
-- [ ] **Launch platforms: Android, iOS or both.** The production Compose file
-  needs both the Google Play and the App Store purchase key files to start.
-  An Android-only launch needs a small code change first.
+- [ ] **Launch platforms: Android, iOS or both.** For Android only, leave
+  `APPLE_IAP_PRIVATE_KEY_SOURCE` unset in `.env.production` (section 3). The
+  server then starts without the App Store key and refuses App Store
+  purchases as not configured. Never use a placeholder key.
 - [ ] **The Adventurer's Kit (`starter_kit`): consumable or not.** It is sold
   once per player, but the game treats it as a consumable on both stores, so
   a player can pay for it twice (for example after restoring an old save). The server
@@ -96,9 +111,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Fill in `site/site.json` with the same website domain and the publisher
   details (see [WEBSITE.md](WEBSITE.md)).
 - [ ] Create `server/secrets/` with owner-only permissions, holding
-  `redis-password`, `admin-api-key`, `google-play-service-account.json` and the
-  App Store purchase `.p8` key. Point the four `*_SOURCE` entries in
-  `.env.production` at them.
+  `redis-password`, `admin-api-key`, `google-play-service-account.json` and,
+  for iOS, the App Store purchase `.p8` key. Point the `*_SOURCE` entries in
+  `.env.production` at them (leave `APPLE_IAP_PRIVATE_KEY_SOURCE` out for an
+  Android-only launch; `deploy.sh` then says App Store purchases are off).
 - [ ] Leave `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` and
   `CROWNROAD_DEV_SIGN_IN` unset. The server refuses to start in
   production with either set.
@@ -144,9 +160,6 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Add yourself as a tester until the Play Games setup is published.
 - [ ] On each machine that exports Android, run
   `native/PlayGamesSignIn/build.sh` once (needs JDK 17).
-- [ ] Fix the Android build template mismatch: the installed template is for
-  Godot 4.7.2 but the project uses 4.6.1. Reinstall the 4.6.1 template
-  (Project → Install Android Build Template), or move the project to 4.7.
 
 ## 7. Game Center (iOS)
 
@@ -181,6 +194,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
   - `APPLE_SIGN_IN_KEY_ID` (the key's 10-character ID)
   - `APPLE_SIGN_IN_REDIRECT_URI` (the return URL above)
   - `APPLE_SIGN_IN_PRIVATE_KEY_PATH` (the `.p8` file)
+  - `ACCOUNT_TOKEN_KEY`, from `openssl rand -base64 32`. It encrypts the Apple
+    refresh tokens that account deletion revokes. Sign in with Apple stays off
+    without it, and production refuses to start. Keep it safe and never
+    change it: stored tokens cannot be read with another key.
 - [ ] Restart the server. `https://<domain>/auth/providers` should report
   every sign-in method as available.
 
@@ -193,6 +210,9 @@ unfinished one back on the next launch. Nothing has been bought through Google
 Play yet.
 
 - [ ] In Play Console, set up a payments profile so the app can sell.
+- [ ] Check the release bundle against Play's size limits. A debug export
+  (2026-10-18) is 745 MB, almost all of it textures in the install-time asset
+  pack.
 - [ ] Add testers under License testing, and upload a signed build to the
   internal testing track. Play only offers in-app products once a build with
   the billing library is uploaded, and purchases only work in a build Play
@@ -323,8 +343,20 @@ Then, with Apple:
 
 - [ ] Use the official Google and Apple sign-in button designs. The game draws
   them in its own style today, and both companies have branding rules.
-- [ ] Build account deletion. Apple requires it, and it must revoke the
+- [x] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
-- [ ] Fill in Play's Data safety form and Apple's privacy labels to cover
-  email addresses, player IDs and purchase history, and make sure the
-  privacy policy covers them.
+  Done: see "Already done" at the top.
+- [ ] Once Sign in with Apple works on the live server, sign in with Apple on
+  a test account, delete it in Settings, and check that Crownroad no longer
+  appears under Sign in with Apple in the iPhone's Apple ID settings. Only
+  Apple's real endpoint proves the revocation.
+- [ ] Set how long the PostgreSQL provider keeps backups, and give that period
+  in the privacy policy's "Deleting your account" section, which now says only
+  that backup copies go "as those backups expire".
+- [ ] Fill in Play's Data safety form and Apple's App Privacy labels from the
+  draft answers in [STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md), after
+  working through its review list. The privacy policy (`site/src/privacy.html`)
+  was rewritten from the same audit on 2026-10-18 and covers email addresses,
+  linked sign-in IDs, player IDs, purchase history, account deletion and
+  refunds. Have both reviewed, then set the policy's `effective_date` in
+  `site/site.json`.

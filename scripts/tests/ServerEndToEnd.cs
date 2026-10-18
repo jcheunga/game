@@ -10,7 +10,7 @@ using Godot;
 /// <summary>
 /// Plays the game against a real local server (scripts/tests/server_e2e.sh starts one): guest
 /// session, cloud backup, email sign-in through the Account dialog, every account-backed feature,
-/// sign-out, and a second install restoring the account. The server prints sign-in codes to its
+/// sign-out, a second install restoring the account, then deleting it from Settings. The server prints sign-in codes to its
 /// log instead of mailing them, so the account is verified without email delivery.
 /// </summary>
 public partial class ServerEndToEnd : Node
@@ -154,7 +154,48 @@ public partial class ServerEndToEnd : Node
         NetworkStatus.Instance.CheckNow();
         var uploaded = CloudSaveService.Upload(out var uploadMessage);
         Check(NetworkStatus.Instance.IsServerReachable && uploaded, $"When the server returns, the save uploads again ({uploadMessage})");
+
+        await DeleteAccountInSettings(state, handoff["email"]);
     }
+
+    /// <summary>Settings → Account → Delete account, through its confirmation; then the server and the device have forgotten the account.</summary>
+    private async Task DeleteAccountInSettings(GameState state, string email)
+    {
+        var account = state.PlayerProfileId; var token = state.PlayerAuthToken;
+        Check(LocalBackups(account) > 0, "The device holds a local backup of the account from its earlier sign-out");
+        await LiveUiReview.Open(this, "SettingsMenu");
+        var settings = Walk(GetTree().Root).OfType<SettingsMenu>().Single(s => !s.IsQueuedForDeletion());
+        Named(settings, "Account").EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(.3);
+        Named(settings, "Delete account").EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(.3);
+        Check(Walk(settings).OfType<Label>().Any(l => l.Text == "Delete your account?"), "Delete account asks for confirmation first");
+        Press(settings, "Keep account");
+        await Wait(.5);
+        Check(state.PlayerProfileId == account && state.AccountProvider == "email" && (await Get($"/cloud-save/info?profileId={account}", account, token)).Status == 200,
+            "Keeping the account changes nothing");
+
+        Named(settings, "Delete account").EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(.3);
+        Press(settings, "Delete account");
+        Check(await Until(() => state.PlayerProfileId != account && state.AccountProvider.Length == 0, 15), "Confirming deletes the account from Settings");
+        Check(state.HighestUnlockedStage == 1 && state.SkipAutoSignIn && state.PlayerAuthToken.Length == 0,
+            "The device starts again as a new guest that does not sign in by itself");
+        Check(LocalBackups(account) == 0, "The device removes its local backups of the deleted account");
+        Check((await Get($"/cloud-save/info?profileId={account}", account, token)).Status == 401, "Deletion revokes the account's session on the server");
+        var again = await Post("/account/delete", account, token);
+        Check(again.Status == 200 && again.Body.GetProperty("alreadyDeleted").GetBoolean(), "Deleting again with the old session is harmless");
+
+        NetworkStatus.Instance.CheckNow();
+        Check(await DeveloperSignIn(state, email) && state.PlayerProfileId != account && state.HighestUnlockedStage == 1,
+            "Signing in with the same email afterwards finds a new, empty account");
+    }
+
+    private static int LocalBackups(string profile) =>
+        DirAccess.GetFilesAt("user://account-backups").Count(f => f.StartsWith(profile + "-", StringComparison.Ordinal));
+
+    private static BaseButton Named(Node root, string name) =>
+        Walk(root).OfType<BaseButton>().Single(b => !b.IsQueuedForDeletion() && b.IsVisibleInTree() && b.AccessibilityName == name);
 
     /// <summary>Everything else the game sends to the server, as the signed-in account.</summary>
     private async Task AccountFeatures(GameState state)
@@ -305,9 +346,13 @@ public partial class ServerEndToEnd : Node
         state.ApplyVictory(stage, 40, 2, 3);
     }
 
-    private async Task<(int Status, JsonElement Body)> Get(string path, string profile, string token)
+    private Task<(int Status, JsonElement Body)> Get(string path, string profile, string token) => Send(HttpMethod.Get, path, profile, token);
+    private Task<(int Status, JsonElement Body)> Post(string path, string profile, string token) => Send(HttpMethod.Post, path, profile, token);
+
+    private async Task<(int Status, JsonElement Body)> Send(HttpMethod method, string path, string profile, string token)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, _server + path);
+        using var request = new HttpRequestMessage(method, _server + path);
+        if (method == HttpMethod.Post) request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
         request.Headers.Add("X-Convoy-Profile", profile);
         if (token.Length > 0) request.Headers.Authorization = new("Bearer", token);
         using var response = await Http.SendAsync(request);

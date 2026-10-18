@@ -10,12 +10,12 @@ public partial class CombatReviewSmoke
         var battle = await OpenBattle(20);
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats(GameData.EnemyBossTidemasterId, out var stats);
-        var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(900, 220));
+        var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(560, 220));
         var units = Read<List<Unit>>(battle, "_units");
         int Escorts() => units.Count(unit => !unit.IsDead && unit.DefinitionId == boss.SpecialSpawnUnitId);
         // Reinforcement types are authored data; the cap includes existing bodies of that type.
         director.TryBuildEnemyStats(boss.SpecialSpawnUnitId, out var engineStats);
-        Invoke(battle, "SpawnUnit", Team.Enemy, engineStats, new Vector2(880, 260));
+        Invoke(battle, "SpawnUnit", Team.Enemy, engineStats, new Vector2(540, 260));
         for (var call = 0; call < 5; call++)
         {
             boss.TickSpecialTimer(100);
@@ -36,7 +36,7 @@ public partial class CombatReviewSmoke
         battle = await OpenBattle(30);
         director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats(GameData.EnemyBossForgeId, out var forgeStats);
-        var forge = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, forgeStats, new Vector2(900, 220));
+        var forge = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, forgeStats, new Vector2(560, 220));
         units = Read<List<Unit>>(battle, "_units");
         for (var i = 0; i < 5; i++)
         {

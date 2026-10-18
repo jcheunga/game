@@ -30,11 +30,11 @@ public partial class CombatReviewSmoke
                 $"Stage {stage}: the stronghold stands on the far half of the road ({art.Foot:0})");
             if (OS.GetCmdlineUserArgs().Contains("--screenshots") && DisplayServer.GetName() != "headless")
             {
-                foreach (var (id, x, y) in new[] { ("player_brawler", 1084f, 334f), ("player_defender", 1100f, 350f),
-                    ("player_spear", 1058f, 344f), ("enemy_walker", 1122f, 336f), ("enemy_brute", 1134f, 352f) })
+                foreach (var (id, x, y) in new[] { ("player_brawler", -68f, 334f), ("player_defender", -52f, 350f),
+                    ("player_spear", -94f, 344f), ("enemy_walker", -30f, 336f), ("enemy_brute", -18f, 352f) })
                 {
                     var unit = (Unit)Invoke(battle, "SpawnUnit", id.StartsWith("player") ? Team.Player : Team.Enemy,
-                        new UnitStats(GameData.GetUnit(id), healthScale: 20), new Vector2(x, y));
+                        new UnitStats(GameData.GetUnit(id), healthScale: 20), new Vector2(combat.EnemyBaseX + x, y));
                     unit._Process(.5); unit._Process(.01); unit.SetProcess(false);
                 }
                 Write(battle, "_enemyBaseHealth", Read<float>(battle, "_enemyBaseMaxHealth") * .6f);

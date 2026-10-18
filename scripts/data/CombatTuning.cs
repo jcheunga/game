@@ -3,13 +3,13 @@ using System;
 public sealed class CombatTuning
 {
 	public float PlayerBaseX { get; set; } = 48f;
-	public float EnemyBaseX { get; set; } = 1152f;
+	public float EnemyBaseX { get; set; } = 672f;
 	public float PlayerSpawnX { get; set; } = 70f;
-	public float EnemySpawnX { get; set; } = 1130f;
+	public float EnemySpawnX { get; set; } = 650f;
 
 	public float BattlefieldLeft { get; set; } = 42f;
-	public float BattlefieldRight { get; set; } = 1158f;
-	// About two screens from wagon to stronghold at Dead Ahead-like proportions.
+	public float BattlefieldRight { get; set; } = 678f;
+	// A little more than one screen (1.2 views) from wagon to stronghold, as in Dead Ahead.
 	// A shallow band: a unit marching out of the wagon's centre line can reach an enemy on either
 	// edge, but a unit pulled to one edge cannot see the other. Every unit's AggroRangeY sits in
 	// [LaneHalfHeight, 2 * LaneHalfHeight); the data validator enforces it.

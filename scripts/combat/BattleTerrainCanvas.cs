@@ -97,6 +97,9 @@ public partial class BattleTerrainCanvas : Node2D
         var rect = new Rect2(layer.Rect.Position + offset, layer.Rect.Size);
         if (!layer.Tile)
         {
+            // The panorama is centred on the field, whatever length the field is (the layouts were made for one
+            // centred on x 600).
+            rect.Position += new Vector2(WorldCentreX - layer.Rect.GetCenter().X, 0);
             // A single painting (the far panorama) grows from its foot to cover a view wider than itself.
             var grow = Mathf.Max(1f, halfWidth * 2 / rect.Size.X);
             var size = rect.Size * grow;

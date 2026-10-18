@@ -71,7 +71,7 @@
         "magic": 0.0,
         "crit": 0.0,
         "crit_damage": 50.0,
-        "speed": 36.0,
+        "speed": 19.7,
         "range": 24.0,
         "interval": 1.2,
         "structure": 4.0,
@@ -437,7 +437,7 @@
       "base": {
         "hp": 24.0,
         "damage": 4.5,
-        "speed": 34.0,
+        "speed": 18.6,
         "range": 28.0,
         "interval": 1.15,
         "armor": 2.0,
@@ -814,7 +814,7 @@
       "base": {
         "hp": 54.0,
         "damage": 8.0,
-        "speed": 34.0,
+        "speed": 18.6,
         "range": 46.0,
         "interval": 1.1,
         "armor": 8.0,
@@ -1214,7 +1214,7 @@
       "base": {
         "hp": 44.0,
         "damage": 8.0,
-        "speed": 33.8,
+        "speed": 18.5,
         "range": 73.0,
         "interval": 1.0,
         "armor": 2.0,
@@ -1615,7 +1615,7 @@
       "base": {
         "hp": 64.0,
         "damage": 10.0,
-        "speed": 35.0,
+        "speed": 19.2,
         "range": 32.0,
         "interval": 0.9,
         "armor": 10.0,
@@ -2014,7 +2014,7 @@
       "base": {
         "hp": 48.0,
         "damage": 4.0,
-        "speed": 32.0,
+        "speed": 17.5,
         "range": 60.0,
         "interval": 1.5,
         "armor": 4.0,
@@ -2401,7 +2401,7 @@
         "magic": 0.0,
         "crit": 8.0,
         "crit_damage": 50.0,
-        "speed": 37.0,
+        "speed": 20.2,
         "range": 30.0,
         "interval": 1.1,
         "structure": 9.0,
@@ -2767,7 +2767,7 @@
       "base": {
         "hp": 68.0,
         "damage": 12.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 30.0,
         "interval": 1.3,
         "armor": 14.0,
@@ -3144,7 +3144,7 @@
       "base": {
         "hp": 52.0,
         "damage": 6.0,
-        "speed": 35.0,
+        "speed": 19.2,
         "range": 60.0,
         "interval": 1.2,
         "armor": 6.0,
@@ -3557,7 +3557,7 @@
         "magic": 0.0,
         "crit": 6.0,
         "crit_damage": 50.0,
-        "speed": 31.0,
+        "speed": 17.0,
         "range": 52.0,
         "interval": 1.2,
         "structure": 8.0,
@@ -3933,7 +3933,7 @@
         "magic": 5.0,
         "crit": 8.0,
         "crit_damage": 50.0,
-        "speed": 31.0,
+        "speed": 17.0,
         "range": 32.0,
         "interval": 1.1,
         "structure": 10.0,
@@ -4299,7 +4299,7 @@
       "base": {
         "hp": 44.0,
         "damage": 13.0,
-        "speed": 31.5,
+        "speed": 17.2,
         "range": 94.0,
         "interval": 1.5,
         "armor": 4.0,
@@ -4700,7 +4700,7 @@
       "base": {
         "hp": 76.0,
         "damage": 8.0,
-        "speed": 29.0,
+        "speed": 15.9,
         "range": 28.0,
         "interval": 1.15,
         "armor": 34.0,
@@ -5100,7 +5100,7 @@
       "base": {
         "hp": 54.0,
         "damage": 7.0,
-        "speed": 33.0,
+        "speed": 18.1,
         "range": 64.0,
         "interval": 1.2,
         "armor": 8.0,
@@ -5505,7 +5505,7 @@
       "base": {
         "hp": 72.0,
         "damage": 10.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 34.0,
         "interval": 1.25,
         "armor": 22.0,
@@ -5882,7 +5882,7 @@
       "base": {
         "hp": 62.0,
         "damage": 9.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 58.0,
         "interval": 1.4,
         "armor": 12.0,
@@ -6259,7 +6259,7 @@
       "base": {
         "hp": 66.0,
         "damage": 12.0,
-        "speed": 31.0,
+        "speed": 17.0,
         "range": 42.0,
         "interval": 1.4,
         "armor": 16.0,
@@ -6665,7 +6665,7 @@
       "base": {
         "hp": 52.0,
         "damage": 9.0,
-        "speed": 68.0,
+        "speed": 37.2,
         "range": 24.0,
         "interval": 0.9,
         "armor": 10.0,
@@ -7065,7 +7065,7 @@
       "base": {
         "hp": 68.0,
         "damage": 9.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 32.0,
         "interval": 1.2,
         "armor": 16.0,
@@ -7452,7 +7452,7 @@
         "magic": 0.0,
         "crit": 6.0,
         "crit_damage": 60.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 40.0,
         "interval": 1.7,
         "structure": 12.0,
@@ -7818,7 +7818,7 @@
       "base": {
         "hp": 48.0,
         "damage": 5.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 64.0,
         "interval": 1.3,
         "armor": 4.0,
@@ -8195,7 +8195,7 @@
       "base": {
         "hp": 58.0,
         "damage": 11.0,
-        "speed": 43.0,
+        "speed": 23.5,
         "range": 30.0,
         "interval": 0.9,
         "armor": 4.0,
@@ -8596,7 +8596,7 @@
       "base": {
         "hp": 32.0,
         "damage": 4.0,
-        "speed": 26.0,
+        "speed": 14.2,
         "range": 28.0,
         "interval": 1.4,
         "armor": 4.0,
@@ -8973,7 +8973,7 @@
       "base": {
         "hp": 48.0,
         "damage": 8.0,
-        "speed": 68.0,
+        "speed": 37.2,
         "range": 28.0,
         "interval": 0.9,
         "armor": 8.0,
@@ -9350,7 +9350,7 @@
       "base": {
         "hp": 42.0,
         "damage": 17.0,
-        "speed": 31.0,
+        "speed": 17.0,
         "range": 128.0,
         "interval": 2.2,
         "armor": 2.0,
@@ -9737,7 +9737,7 @@
         "magic": 5.0,
         "crit": 6.0,
         "crit_damage": 55.0,
-        "speed": 29.0,
+        "speed": 15.9,
         "range": 30.0,
         "interval": 1.4,
         "structure": 12.0,
@@ -10103,7 +10103,7 @@
       "base": {
         "hp": 40.0,
         "damage": 12.0,
-        "speed": 54.0,
+        "speed": 29.5,
         "range": 26.0,
         "interval": 0.9,
         "armor": 4.0,
@@ -10504,7 +10504,7 @@
       "base": {
         "hp": 54.0,
         "damage": 11.0,
-        "speed": 42.0,
+        "speed": 23.0,
         "range": 30.0,
         "interval": 1.0,
         "armor": 8.0,
@@ -10881,7 +10881,7 @@
       "base": {
         "hp": 44.0,
         "damage": 13.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 104.0,
         "interval": 1.5,
         "armor": 2.0,
@@ -11293,7 +11293,7 @@
         "magic": 5.0,
         "crit": 8.0,
         "crit_damage": 55.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 42.0,
         "interval": 1.5,
         "structure": 12.0,
@@ -11659,7 +11659,7 @@
       "base": {
         "hp": 64.0,
         "damage": 7.0,
-        "speed": 29.0,
+        "speed": 15.9,
         "range": 28.0,
         "interval": 1.1,
         "armor": 16.0,
@@ -12062,7 +12062,7 @@
       "base": {
         "hp": 54.0,
         "damage": 18.0,
-        "speed": 22.0,
+        "speed": 12.0,
         "range": 116.0,
         "interval": 2.1,
         "armor": 8.0,

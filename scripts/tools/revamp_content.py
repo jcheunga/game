@@ -73,11 +73,11 @@ for p in roster['core_units']:
 
 # Existing ownership IDs stay usable, but retired concepts are not offered to new saves.
 legacy_budgets={
- 'player_hound':(28,5,0,0,12,.9,75,'hound_howl'),
- 'player_grenadier':(54,10,6,8,26,1.6,29,'volatile_flask'),
- 'player_necromancer':(48,9,4,12,30,1.5,29,'corpse_raise_ally'),
- 'player_lantern_guard':(80,11,22,5,28,1.2,30,'sweep'),
- 'player_stormcaller':(44,10,2,18,28,1.5,30,'chain_attack'),
+ 'player_hound':(28,5,0,0,12,.9,41,'hound_howl'),
+ 'player_grenadier':(54,10,6,8,26,1.6,15.9,'volatile_flask'),
+ 'player_necromancer':(48,9,4,12,30,1.5,15.9,'corpse_raise_ally'),
+ 'player_lantern_guard':(80,11,22,5,28,1.2,16.4,'sweep'),
+ 'player_stormcaller':(44,10,2,18,28,1.5,16.4,'chain_attack'),
 }
 core_ids={u['Id'] for u in units}
 for uid,(hp,dmg,armor,magic,cost,interval,speed,behavior) in legacy_budgets.items():

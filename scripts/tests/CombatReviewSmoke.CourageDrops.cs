@@ -160,9 +160,9 @@ public partial class CombatReviewSmoke
                 packs = Read<List<CouragePickup>>(battle, "_couragePickups");
                 var camera = Read<Camera2D>(battle, "_battleCamera");
                 Invoke(battle, "SetBattleCameraFollow", false);
-                camera.Position = new Vector2(700, camera.Position.Y);
+                camera.Position = new Vector2(420, camera.Position.Y);
                 Invoke(battle, "ClampBattleCamera", camera); camera.ForceUpdateScroll();
-                var world = new Vector2(720, 340);
+                var world = new Vector2(440, 340);
                 Vector2 Point(CouragePickup pickup) => pickup.GetGlobalTransformWithCanvas() * CouragePickup.TapCenter;
                 CouragePickup Pack() => (CouragePickup)Invoke(battle, "SpawnCouragePickup", world, null);
                 void Send(InputEvent e) => GetViewport().PushInput(e, true);

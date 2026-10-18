@@ -32,12 +32,17 @@ GUIDES = GEN / "guides"
 
 ZONES = ["city", "harbor", "foundry", "quarantine", "thornwall", "basilica", "mire", "steppe", "gloamwood", "citadel"]
 
-# The battle camera at the enemy end: centre x 900 (view 600..1200), layers scrolled for that position.
-WORLD_CENTRE_X = 600.0
-CAMERA_X = 900.0
-# The painted region around the stronghold, in world units: the gate faces the road near x 1130, its keep runs
-# off the field's right edge (1200, seen only while a drag stretches the view) and walls trail back along the road.
-REGION = (936.0, 120.0, 1256.0, 440.0)
+# The field (data/combat_config.json): plates are laid out against its EnemyBaseX and record it, so the runtime can
+# follow a later change to the field's length without a recut.
+COMBAT = json.loads((ROOT / "data/combat_config.json").read_text())["Combat"]
+ENEMY_BASE_X = COMBAT["EnemyBaseX"]
+# The battle camera at the enemy end (its view ends at the field's right edge), layers scrolled for that position.
+WORLD_CENTRE_X = (COMBAT["BattlefieldLeft"] + COMBAT["BattlefieldRight"]) * .5
+CAMERA_X = COMBAT["BattlefieldLeft"] + COMBAT["BattlefieldRight"] - COMBAT["ViewWidth"] * .5
+# The painted region around the stronghold, in world units: the gate faces the road just short of EnemyBaseX, its
+# keep runs off the field's right edge and walls trail back along the road. (The first 100 guides were composed
+# for the two-screen field: EnemyBaseX 1152, camera x 900.)
+REGION = (ENEMY_BASE_X - 216.0, 120.0, ENEMY_BASE_X + 104.0, 440.0)
 GUIDE_PX = 1024
 
 
@@ -204,7 +209,7 @@ def run(stages, workers=2):
 OUT = ROOT / "assets/structures/bases"
 # Melee troops stop near here to strike the stronghold (EnemyBaseX less BaseCoreRadius and their reach) and its troops
 # spawn here; each plate shifts so its gate centre stands here, which also brings the whole facade into the end view.
-GATE_X = 1128.0
+GATE_X = ENEMY_BASE_X - 24.0
 # Gate centre, in painting pixels, measured by eye on each painting (bases.py sheet draws the guides).
 GATES = {
     1: 905, 2: 832, 3: 799, 4: 808, 5: 858, 6: 775, 7: 804, 8: 840, 9: 836, 10: 972, 11: 757, 12: 750, 13: 795,
@@ -364,8 +369,8 @@ def cut(stages):
         foot = to_world(0, int(np.nonzero(solid.any(axis=1))[0].max()))[1]
         title = BASES.get(stage, ("", ""))[0]
         # The gate's centre, where troops strike and the health meter hangs (unmeasured plates keep their place).
-        gate_x = GATE_X if stage in GATES else round(float(REGION[0] + (REGION[2] - REGION[0]) * .6), 2)
-        meta = {"stage": stage, "zone": stage_zone(stage), "title": title, "rect": world_rect, "foot": foot, "gate": gate_x,
+        gate_x = round(float(GATE_X if stage in GATES else REGION[0] + (REGION[2] - REGION[0]) * .6), 2)
+        meta = {"stage": stage, "zone": stage_zone(stage), "title": title, "rect": world_rect, "foot": foot, "gate": gate_x, "enemyBaseX": ENEMY_BASE_X,
                 "lights": lights, "smoke": smoke, "generator": "art/royal/bases.py"}
         (OUT / f"stage_{stage:03d}.json").write_text(json.dumps(meta, indent=1) + "\n")
         print(f"stage {stage}: plate {x1 - x0}x{y1 - y0}, rect {world_rect}, {len(lights)} lights, shift {shift:+.1f}")

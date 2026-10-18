@@ -91,17 +91,19 @@ from outposts (stages 1–3 of a zone) to the boss stage's grand fortress. The R
 heraldry, bone trophies, green witch-fire) are accents only.
 
 They are painted *into* the scene so they share its light and brushwork. `bases.py guide` composes each zone's
-backdrop layers over the world rect around the enemy end (x 936–1256, y 120–440) as the battle camera at the
-end of the field draws them. Codex paints the stronghold into that guide (standing along the far edge of the
+backdrop layers over the world rect around the enemy end (`EnemyBaseX` −216 to +104, y 120–440) as the battle
+camera at the end of the field draws them (the first 100 were painted for the two-screen field, x 936–1256). Codex paints the stronghold into that guide (standing along the far edge of the
 road, its gate at road level), then a second edit keys it onto flat magenta; the key stays pixel-aligned with
 the painting. `bases.py cut` takes the alpha from the key and the colour from the painting, bakes a soft contact
 shadow onto the ground below it, finds the witch-fire lanterns and the tallest roofs, shifts the plate so its
-gate (measured by eye into `GATES` with `bases.py sheet`) stands where troops strike it, and writes
-`assets/structures/bases/stage_NNN.{png,json}`. Key edits that come back rescaled are registered onto the
+gate (measured by eye into `GATES` with `bases.py gates`) stands where troops strike it, and writes
+`assets/structures/bases/stage_NNN.{png,json}`, recording the `EnemyBaseX` it was laid out against. Key edits that come back rescaled are registered onto the
 painting (SIFT + RANSAC) before cutting. Plates import as lossy WebP (q0.85) with mipmaps (~27 MB imported
 for all 100); keep those `.import` settings when adding plates.
 
-At runtime `EnemyBaseArt` loads the stage's plate (endless runs and boss rushes borrow the zone's final one).
+At runtime `EnemyBaseArt` loads the stage's plate (endless runs and boss rushes borrow the zone's final one) and
+shifts it with any later change to `EnemyBaseX` (plates without the field default to 1152), so the field's length
+can change without a recut.
 It is drawn untinted behind the band, so every troop on the road passes in front of it, with an additive flicker
 over each lantern, damage smoke from its roofs, and its health meter at world row 270. Stages without a plate
 fall back to the Blender gatehouse and its outworks. Review with `bases.py preview`, then

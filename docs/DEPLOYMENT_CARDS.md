@@ -55,9 +55,9 @@ it. The camera does not pan or follow units while a card is held.
 ## Battlefield proportions
 
 The battle uses lane-game proportions like Dead Ahead: the wagon and stronghold
-are about two soldiers tall, and the field runs about two screens from base to
-base (`data/combat_config.json`: a world about 1,200 units wide with the field
-from x 42 to 1158, `ViewWidth` 600 units across the screen, `StructureScale`
+are about two soldiers tall, and the field runs a little more than one screen
+from base to base (`data/combat_config.json`: a world 720 units wide with the field
+from x 42 to 678, `ViewWidth` 600 units across the screen, `StructureScale`
 0.58 for the wagon and stronghold art). The camera keeps that scale (about 2.1×
 in a 1280-pixel-wide window), runs the band low across the screen under the
 scenery and above the card tray, and follows the fighting. Behind the band, each

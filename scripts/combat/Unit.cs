@@ -201,7 +201,7 @@ public sealed class UnitStats
             return "brute";
         }
 
-        if (definition.Speed >= 100f)
+        if (definition.Speed >= 55f)
         {
             return "runner";
         }
@@ -896,7 +896,8 @@ public partial class Unit : Node2D
             // Play the walk cycle at the speed the unit actually covers ground, so the planted foot stays put:
             // one cycle covers `stride` frame widths.
             var cycleWorld = anim.Stride * Radius * 2f * VisualScale * _spriteSheet.DrawScale;
-            duration = Mathf.Clamp(cycleWorld / _walkSpeed / anim.FrameCount, .025f, .16f);
+            // Up to .3 s a frame: the slowest engines cover ground slowly since speeds were scaled for the short field.
+            duration = Mathf.Clamp(cycleWorld / _walkSpeed / anim.FrameCount, .025f, .3f);
         }
         while (_spriteAnimTimer >= duration)
         {

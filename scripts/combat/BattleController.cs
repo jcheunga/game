@@ -492,7 +492,8 @@ public partial class BattleController : Node2D
 			var opponent = GameState.Instance.SelectedArenaOpponent;
 			if (opponent != null)
 			{
-				var xBase = 1100f;
+				// Opponents line up just ahead of the stronghold's gate.
+				var xBase = EnemySpawnX - 120f;
 				for (var i = 0; i < opponent.DeckUnitIds.Length; i++)
 				{
 					try
@@ -501,7 +502,7 @@ public partial class BattleController : Node2D
 						if (unitDef == null) continue;
 						var level = opponent.UnitLevels.TryGetValue(unitDef.Id, out var lvl) ? lvl : 1;
 						var stats = GameState.Instance.BuildPlayerUnitStatsAtLevel(unitDef, level);
-						var pos = new Vector2(xBase + i * 60f, 360f + (i - 1) * 40f);
+						var pos = new Vector2(Mathf.Min(xBase + i * 30f, EnemySpawnX), 360f + (i - 1) * 40f);
 						SpawnEnemyUnit(stats, pos);
 					}
 					catch { }

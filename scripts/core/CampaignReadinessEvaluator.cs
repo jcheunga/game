@@ -61,7 +61,7 @@ public static class CampaignReadinessEvaluator
         var rangedCount = resolvedUnits.Count(unit => unit.UsesProjectile || unit.AttackRange >= 120f);
         var repairCount = resolvedUnits.Count(unit => unit.BusRepairAmount > 0.05f);
         var splashCount = resolvedUnits.Count(unit => unit.AttackSplashRadius > 0.05f);
-        var fastCount = resolvedUnits.Count(unit => unit.Speed >= 95f);
+        var fastCount = resolvedUnits.Count(unit => unit.Speed >= 52f);
         var auraCount = resolvedUnits.Count(unit => unit.AuraRadius > 0.05f);
         var spellIds = new HashSet<string>(resolvedSpells.Select(spell => spell.Id), StringComparer.OrdinalIgnoreCase);
         var synergyCount = SquadSynergyCatalog.ResolveActive(resolvedUnits).Count;

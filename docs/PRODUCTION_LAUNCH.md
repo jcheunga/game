@@ -14,7 +14,7 @@ hide it in the release build and store copy; do not mark its gate complete.
 | --- | --- | --- |
 | Build and tests | Game build, 11,992 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
 | Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
-| Payments | Server-side Play/App Store verification, the Android billing bridge and the iOS StoreKit 2 plugin (`native/StoreKit`) are present; paid grants fail closed without valid store verification. The plugin's purchases pass on an iOS simulator with Xcode-signed transactions against a local server, including Ask to Buy and interrupted validation; the shop's handling of each outcome passes on desktop. | The iOS build cannot run the game's JSON yet (NativeAOT; see the iOS section), so the shop is empty on iOS. Real store configuration, sandbox/TestFlight and device tests, refund/void reconciliation, and production support procedures. |
+| Payments | Server-side Play/App Store verification, the Android billing bridge and the iOS StoreKit 2 plugin (`native/StoreKit`) are present; paid grants fail closed without valid store verification. The plugin's purchases pass on an iOS simulator with Xcode-signed transactions against a local server, including Ask to Buy and interrupted validation; the shop's handling of each outcome passes on desktop. | The iOS build cannot run the game's JSON yet (NativeAOT; see the iOS section), so the shop is empty on iOS. Real store configuration, sandbox/TestFlight and device tests, configuring and checking the refund signals (built: App Store notifications and Play voided purchases), and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
 | Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. An original 19-track score (scene themes, a battle track per zone and boss themes), 212 sound-effect cues and 15 ambience soundscapes are implemented, rendered from CC0 recordings by `art/audio` (sources and licences in its README). | Approve visual quality/rights and test the signed build on physical devices. Listen to the score and effects on devices and approve the mix; some screen variants still use shared fallbacks. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
@@ -68,7 +68,7 @@ remaining requirements have evidence.
 | 1 | Activate and verify the implemented email/Google account recovery | Provision SMTP and Google OAuth, deploy to staging, and pass real-device lost-device/account-switch checks for the server wallet and uploaded progress. Decide cloud-upload behavior and cross-provider linking support before launch. |
 | 2 | Implement authenticated deletion and support handling | In-app request, public request page, session revocation, documented financial-record retention and end-to-end deletion evidence. |
 | 3 | Deploy the privacy update to staging | Schema 5 migration and backup restore on PostgreSQL, container build/start, and device tests of updated consent/cloud restore. Follow the migration notes in DEPLOYMENT.md. |
-| 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, test the iOS StoreKit plugin with sandbox purchases if iOS is included, and test refund/void reconciliation. |
+| 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, test the iOS StoreKit plugin with sandbox purchases if iOS is included, and configure and test the refund signals with real store refunds. |
 | 5 | Complete release infrastructure and feature acceptance | Measured load/alerts/restore; multiplayer decision; signed store-delivered device matrix and creative/localization sign-off. |
 
 The owner decisions below remain unconfirmed. The login implementation uses
@@ -274,12 +274,24 @@ requirement until a migration and both signed exports have been verified.
   real `APPLE_IAP_*` credentials, which is the first time Apple's server
   checks a transaction: interrupted validation, retry, account mismatch and
   every product. See [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#10-app-store-purchases-ios).
-- [ ] Implement a refund/void signal and reconciliation path for **these
-  consumables**, not just future subscriptions: App Store Server Notifications
-  v2 (including `REFUND`) and Google Play voided-purchase notifications/API,
-  or a documented, tested alternative with an owner and response time. Make
-  ledger adjustments idempotent and auditable; decide how already-spent
-  currency is handled. Reconcile store reports against grants regularly.
+- [x] Implement a refund/void signal and reconciliation path for **these
+  consumables**. Done 2026-10-18 (see [DEPLOYMENT.md](DEPLOYMENT.md#refunds)):
+  - App Store Server Notifications v2 are verified up to the pinned Apple
+    Root CA - G3. `REFUND` takes the currency back and `REFUND_REVERSED` gives
+    it back.
+  - Google Play's Voided Purchases API is polled hourly with the existing
+    service account, with no Pub/Sub.
+  - Each signal is recorded once in `store_events`. The refund writes
+    reversing `wallet_ledger` entries and a `wallet_adjustments` row, which
+    the device applies once by ID.
+  - Currency already spent stops at zero, and the shortfall is recorded on
+    both sides. A refunded Adventurer's Kit keeps its unit.
+  - Operators can list refunds and record Stripe or support refunds at
+    `/admin/refunds`.
+- [ ] Configure the refund signals in App Store Connect and check them, and
+  check Play refunds with a license tester (LAUNCH_CHECKLIST.md sections 9 and
+  10). Reconcile the stores' financial reports against the ledger regularly:
+  the ledger is complete only for refunds the stores report.
 - [ ] Keep Stripe **off mobile** for this release. If desktop/web checkout is
   in scope, separately configure its keys, signed webhook, return URL, policy
   review, and end-to-end tests; otherwise leave it disabled.

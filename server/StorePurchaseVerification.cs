@@ -16,7 +16,8 @@ public sealed record StorePurchaseVerificationResult(
     bool IsConfigurationError,
     string Message,
     string CanonicalTransactionId,
-    string ReceiptFingerprint)
+    string ReceiptFingerprint,
+    bool Revoked = false)
 {
     public static StorePurchaseVerificationResult Rejected(string message) =>
         new(false, false, message, "", "");
@@ -62,22 +63,16 @@ public static class StorePurchaseVerification
         if (!ProductStoreIds.TryGetValue(internalProductId, out var product))
             return StorePurchaseVerificationResult.Rejected("Unknown product.");
 
-        var packageName = Environment.GetEnvironmentVariable("GOOGLE_PLAY_PACKAGE_NAME")?.Trim() ?? "";
-        var serviceAccountJson = ReadSecret("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH");
-        if (string.IsNullOrWhiteSpace(packageName) || string.IsNullOrWhiteSpace(serviceAccountJson))
+        if (GooglePlayConfiguration() is not { } configuration)
             return StorePurchaseVerificationResult.Unavailable("Google Play purchase verification is not configured.");
+        var (packageName, serviceAccountJson) = configuration;
 
         try
         {
-            using var serviceAccount = JsonDocument.Parse(serviceAccountJson);
-            var root = serviceAccount.RootElement;
-            var clientEmail = GetString(root, "client_email");
-            var privateKey = GetString(root, "private_key");
-            var tokenUri = GetString(root, "token_uri");
-            if (string.IsNullOrWhiteSpace(clientEmail) || string.IsNullOrWhiteSpace(privateKey) || string.IsNullOrWhiteSpace(tokenUri))
+            if (!HasGoogleServiceAccountFields(serviceAccountJson))
                 return StorePurchaseVerificationResult.Unavailable("Google Play service-account credentials are incomplete.");
 
-            var accessToken = await GetGoogleAccessTokenAsync(clientEmail, privateKey, tokenUri);
+            var accessToken = await GoogleAccessTokenAsync(serviceAccountJson);
             if (string.IsNullOrWhiteSpace(accessToken))
                 return StorePurchaseVerificationResult.Unavailable("Unable to authorize with Google Play.");
 
@@ -176,8 +171,6 @@ public static class StorePurchaseVerification
                 !string.Equals(GetString(payload, "productId"), product.Apple, StringComparison.Ordinal) ||
                 !string.Equals(GetString(payload, "transactionId"), submittedTransactionId.Trim(), StringComparison.Ordinal))
                 return StorePurchaseVerificationResult.Rejected("App Store transaction details do not match this purchase.");
-            if (payload.TryGetProperty("revocationDate", out var revocationDate) && revocationDate.ValueKind != JsonValueKind.Null)
-                return StorePurchaseVerificationResult.Rejected("Apple reports this transaction as revoked.");
 
             // Apple only returns this UUID when the iOS client set it on the
             // purchase. The StoreKit plugin (native/StoreKit) sets the same
@@ -186,6 +179,13 @@ public static class StorePurchaseVerification
             var appAccountToken = GetString(payload, "appAccountToken");
             if (!string.Equals(appAccountToken, expectedAppAccountToken, StringComparison.OrdinalIgnoreCase))
                 return StorePurchaseVerificationResult.Rejected("This App Store transaction belongs to a different player.");
+
+            // A refunded transaction is never granted. It is reported apart from
+            // a rejection so the server can record the refund and the device can
+            // finish the transaction instead of retrying it on every launch.
+            if (payload.TryGetProperty("revocationDate", out var revocationDate) && revocationDate.ValueKind != JsonValueKind.Null)
+                return new StorePurchaseVerificationResult(
+                    false, false, "Apple refunded this transaction.", submittedTransactionId.Trim(), ReceiptFingerprint(receiptToken), Revoked: true);
 
             return new StorePurchaseVerificationResult(
                 true,
@@ -212,8 +212,33 @@ public static class StorePurchaseVerification
         }
     }
 
-    private static async Task<string> GetGoogleAccessTokenAsync(string clientEmail, string privateKey, string tokenUri)
+    /// <summary>The Play package name and service-account JSON, or null when Google Play is not configured.</summary>
+    internal static (string PackageName, string ServiceAccountJson)? GooglePlayConfiguration()
     {
+        var packageName = Environment.GetEnvironmentVariable("GOOGLE_PLAY_PACKAGE_NAME")?.Trim() ?? "";
+        var serviceAccountJson = ReadSecret("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH");
+        return string.IsNullOrWhiteSpace(packageName) || string.IsNullOrWhiteSpace(serviceAccountJson)
+            ? null
+            : (packageName, serviceAccountJson);
+    }
+
+    private static bool HasGoogleServiceAccountFields(string serviceAccountJson)
+    {
+        using var serviceAccount = JsonDocument.Parse(serviceAccountJson);
+        var root = serviceAccount.RootElement;
+        return !string.IsNullOrWhiteSpace(GetString(root, "client_email")) &&
+            !string.IsNullOrWhiteSpace(GetString(root, "private_key")) &&
+            !string.IsNullOrWhiteSpace(GetString(root, "token_uri"));
+    }
+
+    /// <summary>An Android Publisher API access token for the service account, or "" when Google refuses.</summary>
+    internal static async Task<string> GoogleAccessTokenAsync(string serviceAccountJson)
+    {
+        using var serviceAccount = JsonDocument.Parse(serviceAccountJson);
+        var root = serviceAccount.RootElement;
+        var clientEmail = GetString(root, "client_email");
+        var privateKey = GetString(root, "private_key");
+        var tokenUri = GetString(root, "token_uri");
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var assertion = CreateRsaJwt(
             new Dictionary<string, object> { ["alg"] = "RS256", ["typ"] = "JWT" },
@@ -254,6 +279,32 @@ public static class StorePurchaseVerification
         ecdsa.ImportFromPem(privateKey);
         var signature = ecdsa.SignData(signingInput, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         return $"{header}.{payload}.{Base64Url(signature)}";
+    }
+
+    /// <summary>
+    /// Asks Apple to send a TEST App Store Server Notification to the URL set in App Store
+    /// Connect, to check the setup. Returns Apple's testNotificationToken.
+    /// </summary>
+    internal static async Task<string> RequestAppleTestNotificationAsync(bool sandbox)
+    {
+        var issuerId = Environment.GetEnvironmentVariable("APPLE_IAP_ISSUER_ID")?.Trim() ?? "";
+        var keyId = Environment.GetEnvironmentVariable("APPLE_IAP_KEY_ID")?.Trim() ?? "";
+        var bundleId = Environment.GetEnvironmentVariable("APPLE_IAP_BUNDLE_ID")?.Trim() ?? "";
+        var privateKey = ReadSecret("APPLE_IAP_PRIVATE_KEY", "APPLE_IAP_PRIVATE_KEY_PATH");
+        if (string.IsNullOrWhiteSpace(issuerId) || string.IsNullOrWhiteSpace(keyId) ||
+            string.IsNullOrWhiteSpace(bundleId) || string.IsNullOrWhiteSpace(privateKey))
+            throw new InvalidOperationException("App Store credentials are not configured.");
+
+        var baseUrl = sandbox ? "https://api.storekit-sandbox.apple.com" : "https://api.storekit.apple.com";
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/inApps/v1/notifications/test");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+            "Bearer", CreateAppleServerToken(issuerId, keyId, bundleId, privateKey));
+        using var response = await Client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Apple answered {(int)response.StatusCode} to the test notification request.");
+        using var json = JsonDocument.Parse(body);
+        return GetString(json.RootElement, "testNotificationToken");
     }
 
     private static async Task<string?> GetAppleTransactionAsync(string baseUrl, string authorization, string transactionId)
@@ -300,7 +351,7 @@ public static class StorePurchaseVerification
         element.TryGetProperty(name, out var value) && value.TryGetInt32(out var parsed) ? parsed : fallback;
 
     private static string Escape(string value) => Uri.EscapeDataString(value);
-    private static string ReceiptFingerprint(string value) => Sha256(value.Trim());
+    internal static string ReceiptFingerprint(string value) => Sha256(value.Trim());
     private static string Sha256(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
@@ -325,6 +376,12 @@ public static class StorePurchaseVerification
         guidBytes[8] = (byte)((guidBytes[8] & 0x3f) | 0x80);
         return new Guid(guidBytes).ToString();
     }
+
+    /// <summary>The store's product ID for one of the game's products, or "" when there is none.</summary>
+    internal static string StoreProductId(string platform, string internalProductId) =>
+        ProductStoreIds.TryGetValue(internalProductId, out var ids)
+            ? platform switch { "google" => ids.Google, "apple" => ids.Apple, _ => "" }
+            : "";
 
     private sealed record StoreIds(string Google, string Apple);
 

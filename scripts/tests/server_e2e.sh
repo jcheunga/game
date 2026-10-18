@@ -11,10 +11,12 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/crownroad-e2e.XXXXXX")
 log="$work/server.log"
 results="$work/results.txt"
 server=""
+# Operator refunds (/admin/refunds) stand in for the stores' refund signals.
+admin_key="e2e-admin-$(date +%s)"
 
 start_server() {
     ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://127.0.0.1:$port" DbPath="$work/e2e.db" \
-    CROWNROAD_DEV_SIGN_IN=1 CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1 \
+    CROWNROAD_DEV_SIGN_IN=1 CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1 ADMIN_API_KEY="$admin_key" \
         dotnet run --project server --no-build --no-launch-profile >> "$log" 2>&1 &
     server=$!
     for _ in $(seq 1 60); do
@@ -29,7 +31,7 @@ trap stop_server EXIT
 
 play() {
     godot --headless --path . res://scenes/tests/ServerEndToEnd.tscn -- --save-suffix="server-e2e-$1" --role="$1" \
-        --server="http://127.0.0.1:$port" --server-log="$log" --handoff="$work/handoff.json" 2>&1 | grep -E "^E2E_" | tee -a "$results"
+        --server="http://127.0.0.1:$port" --server-log="$log" --handoff="$work/handoff.json" --admin-key="$admin_key" 2>&1 | grep -E "^E2E_" | tee -a "$results"
 }
 
 dotnet build server/Server.csproj -v q -nologo > /dev/null || exit 1

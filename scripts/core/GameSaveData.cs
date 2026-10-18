@@ -53,6 +53,21 @@ public sealed class ExpeditionSlotSaveData
     public long StartedAtUnixSeconds { get; set; }
 }
 
+/// <summary>A server wallet adjustment (a store refund or its reversal) as this save applied it.</summary>
+public sealed class AppliedWalletAdjustment
+{
+    public string AdjustmentId { get; set; } = "";
+    public string PurchaseId { get; set; } = "";
+    public string Kind { get; set; } = "";
+    /// <summary>Gold added to the save: negative for a refund, never taking the balance below zero.</summary>
+    public int GoldApplied { get; set; }
+    public int FoodApplied { get; set; }
+    /// <summary>Refunded currency the player had already spent, which could not be taken back.</summary>
+    public int GoldUnrecovered { get; set; }
+    public int FoodUnrecovered { get; set; }
+    public long AppliedAtUnixSeconds { get; set; }
+}
+
 public sealed class GameSaveData
 {
     public int Version { get; set; } = 48;
@@ -139,6 +154,8 @@ public sealed class GameSaveData
     public string[] PurchasedProductIds { get; set; } = [];
     // Server purchase IDs whose grant this save already holds (exactly-once store grants).
     public string[] AppliedPurchaseIds { get; set; } = [];
+    // Store refunds and their reversals this save holds, once each by server adjustment ID.
+    public List<AppliedWalletAdjustment> AppliedWalletAdjustments { get; set; } = [];
     public int TotalPurchaseCount { get; set; }
     public string PurchaseValidationEndpoint { get; set; } = "";
 

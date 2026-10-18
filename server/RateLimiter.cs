@@ -53,6 +53,13 @@ public sealed class RateLimiter
             return new RateLimitPolicy($"crownroad:rate:v1:auth:{(poll ? "poll" : "attempt")}:{Hash(ip)}", poll ? 40 : 10);
         }
 
+        // App Store notifications arrive from Apple's own servers, in bursts
+        // after an outage, and are answered only once their signature checks.
+        if (path.StartsWithSegments("/store/apple/notifications"))
+        {
+            return new RateLimitPolicy($"crownroad:rate:v1:store-notifications:{Hash(ip)}", 600);
+        }
+
         if (path.StartsWithSegments("/player-profile"))
         {
             return new RateLimitPolicy($"crownroad:rate:v1:registration:{Hash(ip)}", 20);

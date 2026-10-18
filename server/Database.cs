@@ -604,6 +604,133 @@ public static class Database
             cmd.ExecuteNonQuery();
             SetSchemaVersion(conn, 6);
         }
+
+        if (version < 7)
+        {
+            // Store refunds (server/PurchaseRefunds.cs). A refund marks its
+            // purchase, writes reversing ledger entries under the adjustment that
+            // made them, and leaves the adjustment for the player's device to
+            // apply once by ID. store_events is the audit trail of every store
+            // signal received, and its unique key makes a repeated one a no-op.
+            AllowLedgerAdjustments(conn);
+            TryAddColumn(conn, "purchases", "refunded_at", "INTEGER NOT NULL DEFAULT 0");
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = NormalizeSchemaSql("""
+                CREATE TABLE IF NOT EXISTS store_events (
+                    event_id TEXT PRIMARY KEY,
+                    source TEXT NOT NULL,
+                    event_key TEXT NOT NULL UNIQUE,
+                    event_type TEXT NOT NULL DEFAULT '',
+                    environment TEXT NOT NULL DEFAULT '',
+                    transaction_id TEXT NOT NULL DEFAULT '',
+                    purchase_id TEXT NOT NULL DEFAULT '',
+                    outcome TEXT NOT NULL DEFAULT '',
+                    detail TEXT NOT NULL DEFAULT '',
+                    received_at INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_store_events_purchase ON store_events(purchase_id);
+                CREATE INDEX IF NOT EXISTS idx_store_events_received ON store_events(received_at);
+
+                CREATE TABLE IF NOT EXISTS wallet_adjustments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    adjustment_id TEXT NOT NULL UNIQUE,
+                    profile_id TEXT NOT NULL,
+                    purchase_id TEXT NOT NULL,
+                    product_id TEXT NOT NULL DEFAULT '',
+                    kind TEXT NOT NULL,
+                    gold_delta INTEGER NOT NULL DEFAULT 0,
+                    food_delta INTEGER NOT NULL DEFAULT 0,
+                    unit_unlock_kept INTEGER NOT NULL DEFAULT 0,
+                    reverses_adjustment_id TEXT NOT NULL DEFAULT '',
+                    event_id TEXT NOT NULL DEFAULT '',
+                    reason TEXT NOT NULL DEFAULT '',
+                    created_at INTEGER NOT NULL DEFAULT 0,
+                    acknowledged_at INTEGER NOT NULL DEFAULT 0,
+                    gold_applied INTEGER NOT NULL DEFAULT 0,
+                    food_applied INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_wallet_adjustments_profile ON wallet_adjustments(profile_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_wallet_adjustments_purchase ON wallet_adjustments(purchase_id);
+
+                CREATE TABLE IF NOT EXISTS store_sync_state (
+                    name TEXT PRIMARY KEY,
+                    cursor_millis BIGINT NOT NULL DEFAULT 0,
+                    claimed_until INTEGER NOT NULL DEFAULT 0,
+                    updated_at INTEGER NOT NULL DEFAULT 0
+                );
+            """);
+            cmd.ExecuteNonQuery();
+            SetSchemaVersion(conn, 7);
+        }
+    }
+
+    /// <summary>
+    /// Schema 3 made ledger entries unique per (purchase, currency), which
+    /// leaves no room for a refund's reversing entries. Entries are now unique
+    /// per (purchase, currency, adjustment); a purchase's own credit has no
+    /// adjustment ID. Safe to repeat.
+    /// </summary>
+    private static void AllowLedgerAdjustments(DbConnection conn)
+    {
+        void Execute(string sql)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.ExecuteNonQuery();
+        }
+
+        if (IsPostgres)
+        {
+            TryAddColumn(conn, "wallet_ledger", "adjustment_id", "TEXT NOT NULL DEFAULT ''");
+            Execute("""
+                DO $$
+                DECLARE constraint_name text;
+                BEGIN
+                    FOR constraint_name IN
+                        SELECT conname FROM pg_constraint WHERE conrelid = 'wallet_ledger'::regclass AND contype = 'u'
+                    LOOP
+                        EXECUTE format('ALTER TABLE wallet_ledger DROP CONSTRAINT %I', constraint_name);
+                    END LOOP;
+                END $$
+            """);
+        }
+        else
+        {
+            // SQLite cannot drop a table constraint, so the table is rebuilt.
+            using var read = conn.CreateCommand();
+            read.CommandText = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'wallet_ledger'";
+            var definition = (read.ExecuteScalar() as string ?? "").Replace(" ", "", StringComparison.Ordinal);
+            if (definition.Contains("UNIQUE(purchase_id,currency_type)", StringComparison.OrdinalIgnoreCase))
+            {
+                using var tx = conn.BeginTransaction();
+                using var rebuild = conn.CreateCommand();
+                rebuild.Transaction = tx;
+                rebuild.CommandText = """
+                    CREATE TABLE wallet_ledger_v7 (
+                        entry_id TEXT PRIMARY KEY,
+                        profile_id TEXT NOT NULL,
+                        currency_type TEXT NOT NULL,
+                        amount INTEGER NOT NULL DEFAULT 0,
+                        reason TEXT NOT NULL,
+                        purchase_id TEXT NOT NULL DEFAULT '',
+                        adjustment_id TEXT NOT NULL DEFAULT '',
+                        created_at INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY(profile_id) REFERENCES players(profile_id)
+                    );
+                    INSERT INTO wallet_ledger_v7 (entry_id, profile_id, currency_type, amount, reason, purchase_id, created_at)
+                        SELECT entry_id, profile_id, currency_type, amount, reason, purchase_id, created_at FROM wallet_ledger;
+                    DROP TABLE wallet_ledger;
+                    ALTER TABLE wallet_ledger_v7 RENAME TO wallet_ledger;
+                    CREATE INDEX IF NOT EXISTS idx_wallet_ledger_profile ON wallet_ledger(profile_id, created_at DESC);
+                """;
+                rebuild.ExecuteNonQuery();
+                tx.Commit();
+            }
+        }
+
+        Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_ledger_entry ON wallet_ledger(purchase_id, currency_type, adjustment_id)");
     }
 
     private static void ScrubCloudSaveDeviceState(DbConnection conn)

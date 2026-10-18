@@ -149,6 +149,120 @@ ledger and active authentication sessions unchanged.
 - Rotate the admin key and store credentials through the secret files, then
   rerun `./deploy.sh`. Treat a leaked key as an incident and rotate it promptly.
 
+## Refunds
+
+When Google or Apple refunds a pack, the server takes back what it granted.
+
+- **App Store:** Apple pushes App Store Server Notifications v2 to
+  `POST /store/apple/notifications`. The server believes a notification only
+  after checking its signature: the `x5c` chain must lead to Apple Root CA - G3
+  (pinned in `server/AppStoreNotifications.cs`, never taken from the payload),
+  both certificates must carry Apple's App Store markers, and the leaf must
+  have made the ES256 signature. The transaction inside is checked the same
+  way, and both must name `APPLE_IAP_BUNDLE_ID`. `REFUND` takes the
+  purchase's currency back. `REFUND_REVERSED` gives it back. `REVOKE` is about
+  Family Sharing, which consumables don't use, so it is recorded and ignored,
+  like every other type. Like Apple's own library with online checks off, the
+  server does not ask Apple's OCSP responder whether a certificate was revoked.
+- **Google Play:** the server polls the Voided Purchases API
+  (`purchases.voidedpurchases.list`) every hour with the purchase-verification
+  service account. Polling needs no Pub/Sub topic or public endpoint, and it
+  reports refunds, chargebacks and Google's own revocations. Purchases are
+  matched by order ID, or by purchase token if Google omits the order ID. Each
+  poll looks back two days past the last one, because Google can list a void
+  late. Replicas share one claim, so one replica polls per interval.
+- **Purchase checks:** a refunded purchase is never granted again. If the store
+  hands it back, `/purchase/validate` answers `refunded`, and the game finishes
+  the store transaction without a grant. If Apple reports a transaction as
+  refunded before its notification arrives, the refund is recorded then.
+
+Every signal is stored once in `store_events`, the audit trail, under a
+unique key: Apple's notification UUID, or Google's order ID and void time. A
+repeated notification, or a void listed by the next poll, changes nothing. A
+refund marks the purchase `refunded` and writes reversing `wallet_ledger`
+entries (reason `refund`) under a new `wallet_adjustments` row. If several
+signals for one purchase arrive at once, one wins. Refunds of transactions the
+server never credited are acknowledged and recorded as `unknown_transaction`.
+
+The save on the device is what the player sees, so the server never edits it.
+The game fetches `GET /wallet/adjustments` when the server answers (at most
+every ten minutes, or at once after the account changes) and whenever the
+shop opens. It applies each adjustment once, keyed by its ID (saved as
+`AppliedWalletAdjustments`, like `AppliedPurchaseIds`), and the shop says what
+was taken back. Once the save is on disk, the game reports what it took with
+`POST /wallet/adjustments/ack`. The server keeps listing every adjustment, so
+a cloud save restored from before a refund gets it applied again.
+
+Decisions:
+
+- **Currency already spent is not taken below zero.** The device takes what
+  the balance holds and records the rest as unrecovered, in the save and on
+  the server (`goldUnrecovered` and `foodUnrecovered` in `/admin/refunds`).
+  Gold and food are also earned in play, and every price and the HUD assume a
+  balance of zero or more. A negative balance would lock a player out of
+  spending what they earn later, without saying why. The ledger still reverses
+  the full grant, so the unrecovered amount stays visible for abuse review.
+- **The Adventurer's Kit's unit stays unlocked.** The kit's gold and food are
+  taken back, but its unit may be leveled, equipped and in the loadout by
+  then. A refunded kit still counts as bought, so it cannot be bought again
+  for a second unit.
+- **A reversed refund gives back only what was taken**, not what the player had
+  already spent.
+- A refund applies only to a save that received the grant. A save whose grant
+  never arrived (its response was lost) gives nothing back.
+
+To set up:
+
+1. **App Store Connect** → the app → App Information → App Store Server
+   Notifications: choose **Version 2**. Set both the Production and Sandbox
+   server URLs to `https://<domain>/store/apple/notifications`. Then ask
+   Apple for a test notification, which the server requests with the
+   purchase key (add `?environment=sandbox` for the sandbox URL):
+
+   ```sh
+   curl -fsS -X POST -H "X-Admin-Api-Key: $(cat secrets/admin-api-key)" https://<domain>/admin/refunds/apple-test
+   ```
+
+   Within a minute it should appear in `GET /admin/refunds` as a `TEST`
+   event, outcome `ignored`.
+2. On the server, `APPLE_IAP_BUNDLE_ID` must be set; without it notifications
+   are answered 503 and Apple retries them for days. Optionally set
+   `APPLE_IAP_APP_APPLE_ID` to the app's numeric Apple ID (App Information →
+   Apple ID). Production notifications for another app ID are then refused.
+3. **Play Console:** no Real-time developer notifications are needed. The
+   service account that verifies purchases needs **View financial data** for
+   the Voided Purchases API (the same invitation as in
+   [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#9-google-play-purchases-android)).
+   Optionally change the interval with `GOOGLE_PLAY_VOIDED_POLL_MINUTES`
+   (5 to 1440, default 60). After deploying, run one poll by hand and check it
+   answers `ok`:
+
+   ```sh
+   curl -fsS -X POST -H "X-Admin-Api-Key: $(cat secrets/admin-api-key)" https://<domain>/admin/refunds/poll-google
+   ```
+
+Operators can see the latest store events, with the adjustment each made and
+what the device took back, at `GET /admin/refunds`. They can also record a
+refund the stores don't report, such as a Stripe refund or a support
+correction, with `POST /admin/refunds` and
+`{"purchaseId": "PUR-…", "action": "refund" | "reinstate", "note": "…"}`
+(`transactionId` instead of `purchaseId` also works). Both need the admin
+key.
+
+Schema 7 brings these tables. It also makes ledger entries unique per
+purchase, currency and adjustment, instead of per purchase and currency. On
+PostgreSQL this drops the old unique constraint; SQLite rebuilds the table. It
+is safe to repeat. Rehearse it on a restored copy of the database like any
+migration.
+
+Not built yet:
+
+- Answering Apple's `CONSUMPTION_REQUEST` with consumption information, which
+  helps Apple decide refund requests. It is recorded and ignored.
+- Stripe refund webhooks. Record those refunds through `/admin/refunds`.
+- Partial (quantity) refunds. Every pack is sold one at a time, so a void
+  always refunds the whole purchase.
+
 ## Migrating an existing SQLite deployment
 
 Do not mount an existing `crownroad.db` file into the PostgreSQL stack. Take a
@@ -283,6 +397,12 @@ game against it headless, in two installs:
      score and leaderboard, challenge results with their leaderboard and feed,
      an online room (host, list, session, ready, scoreboard, leave), and a test
      purchase credited to the wallet.
+   - Purchases interrupted before the server answers are granted once. Then
+     a refund (an operator refund, which takes the same path as the stores'
+     signals) reaches the device. Opening the shop takes it back once and says
+     why, and the server learns what was taken. A reload or Play handing the
+     purchase back applies nothing more. A refund of gold already spent stops
+     at zero, and both sides record the rest.
    - A late-game save goes up to the cloud. Sign-out revokes the session on the
      server; signing back in restores the account, and every one of the
      save's values comes back unchanged.
@@ -297,7 +417,8 @@ The account is verified without sending email: the server runs with
 `CROWNROAD_DEV_SIGN_IN=1`, which prints each sign-in code to its log
 instead of mailing it, and the test reads the code from there. The test also
 sets `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS=1`. The server refuses to start in
-production with either variable set.
+production with either variable set. It also gives the server a throwaway
+`ADMIN_API_KEY` for the refunds.
 
 ### Developer sign-in
 
@@ -343,8 +464,12 @@ entries that loading adds, such as every roster unit at level 1, are listed as
 it and checks each comes back. The values the loader deliberately normalizes,
 such as the consent version, are listed with their reasons. It also lists
 GameState fields that have no place in the save (`SAVE_UNMATCHED`), which
-should all be screen selections, in-battle flags or caches. A late-game cloud
-save is about 100 KB, against the server's 512 KB limit.
+should all be screen selections, in-battle flags or caches. Then it checks
+store refunds. A refund is applied once, however often the server reports it
+and across reloads. A refund larger than the balance stops at zero and keeps
+the rest on record. A reversed refund gives back only what was taken. A refund
+of a purchase the save never received takes nothing. A late-game cloud save is
+about 100 KB, against the server's 512 KB limit.
 
 ### What still needs a real device
 

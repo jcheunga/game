@@ -50,7 +50,7 @@ public partial class BattleController
             if (!CanBaseTarget(team, origin, weapon, target)) continue;
             var score = -origin.DistanceTo(target.Position);
             if (weapon.Kind == BaseWeaponKind.Ballista && IsArmoredBaseTarget(target)) score += 500;
-            if (weapon.Kind == BaseWeaponKind.Arrows && (target.Speed >= 75 || target.VisualClass == "saboteur")) score += 350;
+            if (weapon.Kind == BaseWeaponKind.Arrows && (target.Speed >= 41 || target.VisualClass == "saboteur")) score += 350;
             if (weapon.SplashRadius > 0)
                 score += 180 * _units.Count(other => IsInstanceValid(other) && !other.IsDead && !other.IsUntargetable &&
                     other.Team != team && other.Position.DistanceTo(target.Position) <= weapon.SplashRadius);

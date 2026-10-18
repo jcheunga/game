@@ -105,7 +105,7 @@
       "base": {
         "hp": 62.0,
         "damage": 9.0,
-        "speed": 32.1,
+        "speed": 17.6,
         "range": 30.0,
         "interval": 1.0,
         "armor": 8.0,
@@ -475,7 +475,7 @@
       "base": {
         "hp": 40.0,
         "damage": 8.0,
-        "speed": 61.8,
+        "speed": 33.8,
         "range": 24.0,
         "interval": 0.7,
         "armor": 2.0,
@@ -846,7 +846,7 @@
       "base": {
         "hp": 88.0,
         "damage": 13.0,
-        "speed": 24.5,
+        "speed": 13.4,
         "range": 30.0,
         "interval": 1.15,
         "armor": 10.0,
@@ -1219,7 +1219,7 @@
       "base": {
         "hp": 112.0,
         "damage": 17.0,
-        "speed": 22.2,
+        "speed": 12.1,
         "range": 34.0,
         "interval": 1.1,
         "armor": 22.0,
@@ -1590,7 +1590,7 @@
       "base": {
         "hp": 46.0,
         "damage": 11.0,
-        "speed": 28.0,
+        "speed": 15.3,
         "range": 85.0,
         "interval": 1.3,
         "armor": 4.0,
@@ -1962,7 +1962,7 @@
       "base": {
         "hp": 78.0,
         "damage": 10.0,
-        "speed": 30.3,
+        "speed": 16.6,
         "range": 28.0,
         "interval": 0.95,
         "armor": 14.0,
@@ -2334,7 +2334,7 @@
       "base": {
         "hp": 52.0,
         "damage": 12.0,
-        "speed": 67.6,
+        "speed": 37.0,
         "range": 24.0,
         "interval": 0.74,
         "armor": 6.0,
@@ -2705,7 +2705,7 @@
       "base": {
         "hp": 84.0,
         "damage": 13.0,
-        "speed": 42.0,
+        "speed": 23.0,
         "range": 30.0,
         "interval": 1.02,
         "armor": 18.0,
@@ -3079,7 +3079,7 @@
       "base": {
         "hp": 70.0,
         "damage": 9.0,
-        "speed": 37.3,
+        "speed": 20.4,
         "range": 30.0,
         "interval": 0.96,
         "armor": 10.0,
@@ -3455,7 +3455,7 @@
       "base": {
         "hp": 152.0,
         "damage": 23.0,
-        "speed": 17.5,
+        "speed": 9.6,
         "range": 36.0,
         "interval": 1.2,
         "armor": 40.0,
@@ -3827,7 +3827,7 @@
       "base": {
         "hp": 120.0,
         "damage": 11.0,
-        "speed": 18.7,
+        "speed": 10.2,
         "range": 30.0,
         "interval": 1.1,
         "armor": 45.0,
@@ -4202,7 +4202,7 @@
       "base": {
         "hp": 90.0,
         "damage": 14.0,
-        "speed": 21.0,
+        "speed": 11.5,
         "range": 90.0,
         "interval": 1.4,
         "armor": 8.0,
@@ -4581,7 +4581,7 @@
       "base": {
         "hp": 200.0,
         "damage": 0.0,
-        "speed": 10.5,
+        "speed": 5.7,
         "range": 0.0,
         "interval": 0,
         "armor": 50.0,
@@ -4956,7 +4956,7 @@
       "base": {
         "hp": 88.0,
         "damage": 14.0,
-        "speed": 33.8,
+        "speed": 18.5,
         "range": 30.0,
         "interval": 0.95,
         "armor": 28.0,
@@ -5329,7 +5329,7 @@
       "base": {
         "hp": 56.0,
         "damage": 13.0,
-        "speed": 40.8,
+        "speed": 22.3,
         "range": 26.0,
         "interval": 0.8,
         "armor": 10.0,
@@ -5703,7 +5703,7 @@
       "base": {
         "hp": 92.0,
         "damage": 16.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 110.0,
         "interval": 2.05,
         "armor": 24.0,
@@ -6080,7 +6080,7 @@
       "base": {
         "hp": 170.0,
         "damage": 22.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 42.0,
         "interval": 1.22,
         "armor": 40.0,
@@ -6456,7 +6456,7 @@
       "base": {
         "hp": 96.0,
         "damage": 14.0,
-        "speed": 33.8,
+        "speed": 18.5,
         "range": 34.0,
         "interval": 0.98,
         "armor": 30.0,
@@ -6831,7 +6831,7 @@
       "base": {
         "hp": 180.0,
         "damage": 20.0,
-        "speed": 10.5,
+        "speed": 5.7,
         "range": 105.0,
         "interval": 2.2,
         "armor": 35.0,
@@ -7208,7 +7208,7 @@
       "base": {
         "hp": 320.0,
         "damage": 31.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 44.0,
         "interval": 1.4,
         "armor": 35.0,
@@ -7589,7 +7589,7 @@
       "base": {
         "hp": 280.0,
         "damage": 26.0,
-        "speed": 18.7,
+        "speed": 10.2,
         "range": 85.0,
         "interval": 1.5,
         "armor": 20.0,
@@ -7972,7 +7972,7 @@
       "base": {
         "hp": 380.0,
         "damage": 28.0,
-        "speed": 12.8,
+        "speed": 7.0,
         "range": 40.0,
         "interval": 1.5,
         "armor": 65.0,
@@ -8352,7 +8352,7 @@
       "base": {
         "hp": 340.0,
         "damage": 30.0,
-        "speed": 15.2,
+        "speed": 8.3,
         "range": 44.0,
         "interval": 1.4,
         "armor": 30.0,
@@ -8731,7 +8731,7 @@
       "base": {
         "hp": 310.0,
         "damage": 29.0,
-        "speed": 21.0,
+        "speed": 11.5,
         "range": 38.0,
         "interval": 1.3,
         "armor": 35.0,
@@ -9111,7 +9111,7 @@
       "base": {
         "hp": 360.0,
         "damage": 32.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 44.0,
         "interval": 1.4,
         "armor": 40.0,
@@ -9493,7 +9493,7 @@
       "base": {
         "hp": 480.0,
         "damage": 34.0,
-        "speed": 10.5,
+        "speed": 5.7,
         "range": 42.0,
         "interval": 1.6,
         "armor": 50.0,
@@ -9875,7 +9875,7 @@
       "base": {
         "hp": 350.0,
         "damage": 36.0,
-        "speed": 22.2,
+        "speed": 12.1,
         "range": 40.0,
         "interval": 1.2,
         "armor": 35.0,
@@ -10255,7 +10255,7 @@
       "base": {
         "hp": 330.0,
         "damage": 28.0,
-        "speed": 16.3,
+        "speed": 8.9,
         "range": 90.0,
         "interval": 1.5,
         "armor": 20.0,
@@ -10638,7 +10638,7 @@
       "base": {
         "hp": 460.0,
         "damage": 40.0,
-        "speed": 15.2,
+        "speed": 8.3,
         "range": 46.0,
         "interval": 1.3,
         "armor": 55.0,
@@ -11018,7 +11018,7 @@
       "base": {
         "hp": 430.0,
         "damage": 34.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 90.0,
         "interval": 1.8,
         "armor": 45.0,
@@ -11400,7 +11400,7 @@
       "base": {
         "hp": 560.0,
         "damage": 44.0,
-        "speed": 17.5,
+        "speed": 9.6,
         "range": 46.0,
         "interval": 1.25,
         "armor": 65.0,
@@ -11783,7 +11783,7 @@
       "base": {
         "hp": 480.0,
         "damage": 36.0,
-        "speed": 15.2,
+        "speed": 8.3,
         "range": 95.0,
         "interval": 1.38,
         "armor": 45.0,
@@ -12168,7 +12168,7 @@
       "base": {
         "hp": 520.0,
         "damage": 34.0,
-        "speed": 16.3,
+        "speed": 8.9,
         "range": 50.0,
         "interval": 1.28,
         "armor": 50.0,
@@ -12548,7 +12548,7 @@
       "base": {
         "hp": 18.0,
         "damage": 4.0,
-        "speed": 86.0,
+        "speed": 47.1,
         "range": 18.0,
         "interval": 0.6,
         "armor": 0.0,
@@ -12903,7 +12903,7 @@
       "base": {
         "hp": 100.0,
         "damage": 9.0,
-        "speed": 24.0,
+        "speed": 13.1,
         "range": 30.0,
         "interval": 1.15,
         "armor": 55.0,
@@ -13258,7 +13258,7 @@
       "base": {
         "hp": 58.0,
         "damage": 6.0,
-        "speed": 23.0,
+        "speed": 12.6,
         "range": 60.0,
         "interval": 1.6,
         "armor": 8.0,
@@ -13613,7 +13613,7 @@
       "base": {
         "hp": 56.0,
         "damage": 12.0,
-        "speed": 40.0,
+        "speed": 21.9,
         "range": 95.0,
         "interval": 1.7,
         "armor": 12.0,
@@ -13968,7 +13968,7 @@
       "base": {
         "hp": 78.0,
         "damage": 12.0,
-        "speed": 29.0,
+        "speed": 15.9,
         "range": 92.0,
         "interval": 1.6,
         "armor": 18.0,
@@ -14323,7 +14323,7 @@
       "base": {
         "hp": 48.0,
         "damage": 13.0,
-        "speed": 48.0,
+        "speed": 26.3,
         "range": 30.0,
         "interval": 0.95,
         "armor": 0.0,
@@ -14678,7 +14678,7 @@
       "base": {
         "hp": 130.0,
         "damage": 10.0,
-        "speed": 20.0,
+        "speed": 10.9,
         "range": 32.0,
         "interval": 1.25,
         "armor": 35.0,
@@ -15033,7 +15033,7 @@
       "base": {
         "hp": 66.0,
         "damage": 16.0,
-        "speed": 58.0,
+        "speed": 31.7,
         "range": 28.0,
         "interval": 0.82,
         "armor": 12.0,
@@ -15388,7 +15388,7 @@
       "base": {
         "hp": 52.0,
         "damage": 12.0,
-        "speed": 76.0,
+        "speed": 41.6,
         "range": 24.0,
         "interval": 0.8,
         "armor": 5.0,
@@ -15743,7 +15743,7 @@
       "base": {
         "hp": 58.0,
         "damage": 10.0,
-        "speed": 26.0,
+        "speed": 14.2,
         "range": 95.0,
         "interval": 1.55,
         "armor": 6.0,
@@ -16098,7 +16098,7 @@
       "base": {
         "hp": 142.0,
         "damage": 20.0,
-        "speed": 19.0,
+        "speed": 10.4,
         "range": 34.0,
         "interval": 1.45,
         "armor": 50.0,
@@ -16453,7 +16453,7 @@
       "base": {
         "hp": 68.0,
         "damage": 10.0,
-        "speed": 34.0,
+        "speed": 18.6,
         "range": 88.0,
         "interval": 1.8,
         "armor": 10.0,
@@ -16808,7 +16808,7 @@
       "base": {
         "hp": 26.0,
         "damage": 4.0,
-        "speed": 48.0,
+        "speed": 26.3,
         "range": 22.0,
         "interval": 1.2,
         "armor": 0.0,
@@ -17163,7 +17163,7 @@
       "base": {
         "hp": 72.0,
         "damage": 8.0,
-        "speed": 24.0,
+        "speed": 13.1,
         "range": 96.0,
         "interval": 1.55,
         "armor": 6.0,
@@ -17518,7 +17518,7 @@
       "base": {
         "hp": 80.0,
         "damage": 6.0,
-        "speed": 27.0,
+        "speed": 14.8,
         "range": 58.0,
         "interval": 1.4,
         "armor": 12.0,
@@ -17873,7 +17873,7 @@
       "base": {
         "hp": 92.0,
         "damage": 15.0,
-        "speed": 35.0,
+        "speed": 19.2,
         "range": 36.0,
         "interval": 1.25,
         "armor": 22.0,
@@ -18228,7 +18228,7 @@
       "base": {
         "hp": 64.0,
         "damage": 17.0,
-        "speed": 62.0,
+        "speed": 33.9,
         "range": 26.0,
         "interval": 0.86,
         "armor": 8.0,
@@ -18583,7 +18583,7 @@
       "base": {
         "hp": 136.0,
         "damage": 19.0,
-        "speed": 22.0,
+        "speed": 12.0,
         "range": 36.0,
         "interval": 1.35,
         "armor": 36.0,
@@ -18938,7 +18938,7 @@
       "base": {
         "hp": 66.0,
         "damage": 10.0,
-        "speed": 25.0,
+        "speed": 13.7,
         "range": 92.0,
         "interval": 1.6,
         "armor": 4.0,
@@ -19293,7 +19293,7 @@
       "base": {
         "hp": 150.0,
         "damage": 24.0,
-        "speed": 17.0,
+        "speed": 9.3,
         "range": 116.0,
         "interval": 2.4,
         "armor": 26.0,
@@ -19648,7 +19648,7 @@
       "base": {
         "hp": 106.0,
         "damage": 12.0,
-        "speed": 26.0,
+        "speed": 14.2,
         "range": 42.0,
         "interval": 1.3,
         "armor": 24.0,
@@ -20003,7 +20003,7 @@
       "base": {
         "hp": 54.0,
         "damage": 14.0,
-        "speed": 27.0,
+        "speed": 14.8,
         "range": 116.0,
         "interval": 1.65,
         "armor": 8.0,
@@ -20358,7 +20358,7 @@
       "base": {
         "hp": 82.0,
         "damage": 8.0,
-        "speed": 22.0,
+        "speed": 12.0,
         "range": 86.0,
         "interval": 1.7,
         "armor": 8.0,
@@ -21068,7 +21068,7 @@
       "base": {
         "hp": 110.0,
         "damage": 22.0,
-        "speed": 20.0,
+        "speed": 10.9,
         "range": 32.0,
         "interval": 1.5,
         "armor": 18.0,
@@ -21423,7 +21423,7 @@
       "base": {
         "hp": 48.0,
         "damage": 5.0,
-        "speed": 19.0,
+        "speed": 10.4,
         "range": 24.0,
         "interval": 1.8,
         "armor": 2.0,
@@ -21778,7 +21778,7 @@
       "base": {
         "hp": 190.0,
         "damage": 25.0,
-        "speed": 14.0,
+        "speed": 7.7,
         "range": 40.0,
         "interval": 1.55,
         "armor": 36.0,
@@ -22133,7 +22133,7 @@
       "base": {
         "hp": 60.0,
         "damage": 12.0,
-        "speed": 72.0,
+        "speed": 39.4,
         "range": 24.0,
         "interval": 0.75,
         "armor": 4.0,
@@ -22488,7 +22488,7 @@
       "base": {
         "hp": 100.0,
         "damage": 20.0,
-        "speed": 70.0,
+        "speed": 38.3,
         "range": 40.0,
         "interval": 1.2,
         "armor": 26.0,
@@ -22843,7 +22843,7 @@
       "base": {
         "hp": 72.0,
         "damage": 13.0,
-        "speed": 49.0,
+        "speed": 26.8,
         "range": 90.0,
         "interval": 1.3,
         "armor": 14.0,
@@ -23198,7 +23198,7 @@
       "base": {
         "hp": 96.0,
         "damage": 10.0,
-        "speed": 28.0,
+        "speed": 15.3,
         "range": 30.0,
         "interval": 1.3,
         "armor": 20.0,
@@ -23553,7 +23553,7 @@
       "base": {
         "hp": 86.0,
         "damage": 8.0,
-        "speed": 32.0,
+        "speed": 17.5,
         "range": 28.0,
         "interval": 1.35,
         "armor": 16.0,
@@ -23908,7 +23908,7 @@
       "base": {
         "hp": 52.0,
         "damage": 19.0,
-        "speed": 60.0,
+        "speed": 32.8,
         "range": 26.0,
         "interval": 0.85,
         "armor": 0.0,
@@ -24263,7 +24263,7 @@
       "base": {
         "hp": 48.0,
         "damage": 12.0,
-        "speed": 35.0,
+        "speed": 19.2,
         "range": 100.0,
         "interval": 1.4,
         "armor": 0.0,
@@ -24618,7 +24618,7 @@
       "base": {
         "hp": 176.0,
         "damage": 22.0,
-        "speed": 18.0,
+        "speed": 9.8,
         "range": 42.0,
         "interval": 1.45,
         "armor": 60.0,
@@ -24973,7 +24973,7 @@
       "base": {
         "hp": 70.0,
         "damage": 9.0,
-        "speed": 25.0,
+        "speed": 13.7,
         "range": 110.0,
         "interval": 1.8,
         "armor": 2.0,
@@ -25328,7 +25328,7 @@
       "base": {
         "hp": 184.0,
         "damage": 24.0,
-        "speed": 17.0,
+        "speed": 9.3,
         "range": 38.0,
         "interval": 1.7,
         "armor": 50.0,
@@ -25683,7 +25683,7 @@
       "base": {
         "hp": 126.0,
         "damage": 28.0,
-        "speed": 30.0,
+        "speed": 16.4,
         "range": 34.0,
         "interval": 1.65,
         "armor": 32.0,
@@ -26038,7 +26038,7 @@
       "base": {
         "hp": 96.0,
         "damage": 14.0,
-        "speed": 25.0,
+        "speed": 13.7,
         "range": 112.0,
         "interval": 1.75,
         "armor": 12.0,
@@ -26393,7 +26393,7 @@
       "base": {
         "hp": 116.0,
         "damage": 8.0,
-        "speed": 20.0,
+        "speed": 10.9,
         "range": 84.0,
         "interval": 1.75,
         "armor": 20.0,
@@ -26748,7 +26748,7 @@
       "base": {
         "hp": 80.0,
         "damage": 0.0,
-        "speed": 24.0,
+        "speed": 13.1,
         "range": 0.0,
         "interval": 0.0,
         "armor": 3.0,

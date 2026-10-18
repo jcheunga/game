@@ -1,12 +1,12 @@
 {
   "Combat": {
     "PlayerBaseX": 48.0,
-    "EnemyBaseX": 1152.0,
+    "EnemyBaseX": 672.0,
     "PlayerSpawnX": 70.0,
-    "EnemySpawnX": 1130.0,
+    "EnemySpawnX": 650.0,
 
     "BattlefieldLeft": 42.0,
-    "BattlefieldRight": 1158.0,
+    "BattlefieldRight": 678.0,
     "BattlefieldTop": 313.0,
     "BattlefieldBottom": 367.0,
     "SpawnVerticalPadding": 12.0,

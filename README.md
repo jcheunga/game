@@ -114,7 +114,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 ## Prototype controls
 
-- Battlefield: one shallow band about two screens long (world 1200 wide, 600 visible). The camera
+- Battlefield: one shallow band a little more than one screen long (world 720 wide, 600 visible). The camera
   follows the fighting; scroll the mouse wheel or trackpad, middle-drag, or use Left/Right arrows to pan,
   then the sword button or **F** to follow again. **Home / End** jump to either base. On mobile, drag to
   explore and use the map button to see the whole battlefield.

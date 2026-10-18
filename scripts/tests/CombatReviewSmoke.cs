@@ -111,7 +111,7 @@ public partial class CombatReviewSmoke : Node
         foreach (var id in new[] { "enemy_boss", "enemy_boss_ward", "enemy_lich" })
         {
             director.TryBuildEnemyStats(id, out var stats);
-            var unit = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(900, 340));
+            var unit = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, stats, new Vector2(560, 340));
             unit.TickSpecialTimer(100);
             try { Invoke(battle, "SimulateUnits", 1f / 60f); Check(true, $"{id} can summon during simulation"); }
             catch (TargetInvocationException ex) { Check(false, $"{id}: {ex.InnerException?.Message}"); }
@@ -143,7 +143,7 @@ public partial class CombatReviewSmoke : Node
         battle = await OpenBattle(10);
         director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats("enemy_boss", out var bossStats);
-        boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(900, 340));
+        boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(560, 340));
         Invoke(battle, "CheckBattleEnd");
         Check(!Read<bool>(battle, "_battleEnded"), "The battle continues while the gate stands");
         Write(battle, "_enemyBaseHealth", 0f);
@@ -162,7 +162,7 @@ public partial class CombatReviewSmoke : Node
         Check(Read<float>(battle, "_enemyBaseHealth") == 0f, "Boss repairs cannot resurrect a breached gate");
         director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         director.TryBuildEnemyStats(GameData.EnemyBossReliquaryId, out var tyrantStats);
-        var tyrant = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, tyrantStats, new Vector2(900, 300));
+        var tyrant = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, tyrantStats, new Vector2(560, 300));
         tyrant.TakeDamage(tyrant.MaxHealth * 0.6f / tyrant.DamageTakenScale);
         Invoke(battle, "ApplyCampaignBossPhase", tyrant);
         tyrant.TickSpecialTimer(100);
@@ -216,7 +216,7 @@ public partial class CombatReviewSmoke : Node
         await CloseBattle(battle);
 
         battle = await OpenBattle(35);
-        var jammer = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_jammer")), new Vector2(900, 340));
+        var jammer = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_jammer")), new Vector2(560, 340));
         jammer.TickSpecialTimer(100);
         Check((bool)Invoke(battle, "TriggerEnemySignalJam", jammer), "A ready hexer can disrupt courage");
         jammer.TickSpecialTimer(100);
@@ -250,9 +250,9 @@ public partial class CombatReviewSmoke : Node
         Check(Read<int>(battle, "_caravanCasts") == 0 && Mathf.IsEqualApprox(Read<float>(battle, "_mana"), spell.ManaCost - 1f), "It cannot be cast below its cost");
 
         Unit Spawn(string id, Vector2 at) => (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit(id)), at);
-        var foes = Enumerable.Range(0, 7).Select(i => Spawn(i % 3 == 0 ? GameData.EnemyBruteId : "enemy_walker", new Vector2(220 + i * 125, 325 + i % 3 * 12))).ToList();
+        var foes = Enumerable.Range(0, 7).Select(i => Spawn(i % 3 == 0 ? GameData.EnemyBruteId : "enemy_walker", new Vector2(140 + i * 75, 325 + i % 3 * 12))).ToList();
         Read<BattleSpawnDirector>(battle, "_spawnDirector").TryBuildEnemyStats("enemy_boss", out var bossStats);
-        var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(1050, 340));
+        var boss = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, bossStats, new Vector2(620, 340));
         var ally = (Unit)Invoke(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit("player_brawler")), new Vector2(300, 340));
         var bossHealth = boss.Health; var allyHealth = ally.Health;
         var health = foes.ToDictionary(f => f, f => f.Health);
@@ -420,7 +420,7 @@ public partial class CombatReviewSmoke : Node
         var tuning = GameData.Combat;
         Check(Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaStart) && Mathf.IsEqualApprox(Read<float>(battle, "_maxMana"), tuning.ManaMax),
             "Battles open with the starting mana and the configured cap");
-        Unit Spawn(Team team, string id) => (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)), new Vector2(team == Team.Enemy ? 700 : 300, 340));
+        Unit Spawn(Team team, string id) => (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)), new Vector2(team == Team.Enemy ? 500 : 300, 340));
         Spawn(Team.Enemy, "enemy_walker").TakeDamage(1e6f);
         Invoke(battle, "CleanupDeadUnits");
         var afterKill = tuning.ManaStart + tuning.ManaPerEnemyKill;
@@ -438,13 +438,13 @@ public partial class CombatReviewSmoke : Node
         spells.Initialize(new[] { fireball });
         var cost = GameState.Instance.BuildSpellStats(fireball).ManaCost;
         Write(battle, "_courage", 50f);
-        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(700, 340));
+        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(500, 340));
         Check(Read<int>(battle, "_spellsCast") == 1 && Mathf.IsEqualApprox(Read<float>(battle, "_mana"), tuning.ManaMax - cost)
             && Read<float>(battle, "_courage") == 50f, "Casting spends the spell's mana cost and leaves courage alone");
         spells.ReduceCooldowns(1000);
         Write(battle, "_mana", cost - 1f);
         Write(battle, "_courage", Read<float>(battle, "_maxCourage"));
-        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(700, 340));
+        Invoke(battle, "TryCastSpellAt", fireball, new Vector2(500, 340));
         Check(Read<int>(battle, "_spellsCast") == 1, "Magic cannot be cast without enough mana, however much courage is banked");
         await CloseBattle(battle);
     }

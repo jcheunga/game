@@ -29,7 +29,8 @@ public partial class CombatReviewSmoke
         Check(tuning.EnemyBaseX == width - tuning.PlayerBaseX && tuning.EnemySpawnX == width - tuning.PlayerSpawnX,
             "The field keeps matching margins at both bases");
         Check(Mathf.IsEqualApprox(zoom, viewport.X / tuning.ViewWidth) && Mathf.IsEqualApprox(zoom, (float)Invoke(battle, "get_BattleFitZoom"))
-            && width >= tuning.ViewWidth * 2 - 1, "Soldiers are drawn at the set scale and the field runs at least two screens");
+            && width > tuning.ViewWidth && width <= tuning.ViewWidth * 1.5f,
+            "Soldiers are drawn at the set scale and the field runs a little more than one screen");
         var hud = Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect();
         var bandTop = Screen(new Vector2(0, tuning.BattlefieldTop + tuning.SpawnVerticalPadding - 52));
         var bandBottom = Screen(new Vector2(0, tuning.BattlefieldBottom - tuning.SpawnVerticalPadding + 14));
@@ -53,14 +54,15 @@ public partial class CombatReviewSmoke
         Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "Horizontal wheel reaches and clamps at the far edge");
         Check(Read<int>(battle, "_playerDeployments") == deployments, "Scrolling never deploys");
         Check(Read<PanelContainer>(battle, "_topHudPanel").GetGlobalRect() == hud, "HUD stays fixed while the battlefield scrolls");
-        Invoke(battle, "SetBattleCameraX", half + 100);
+        // The camera travels only (width - view) across the short field, so these pans stay small.
+        Invoke(battle, "SetBattleCameraX", half + 10);
         battle._UnhandledInput(new InputEventPanGesture { Delta = new Vector2(2, .1f) });
-        Check(Mathf.IsEqualApprox(camera.Position.X, half + 100 + 96 / zoom), "Trackpad horizontal gestures pan the map");
+        Check(Mathf.IsEqualApprox(camera.Position.X, half + 10 + 96 / zoom), "Trackpad horizontal gestures pan the map");
         var beforeDrag = camera.Position.X;
         battle._UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.Middle, Pressed = true, Position = new Vector2(600, 330) });
-        battle._Input(new InputEventMouseMotion { Position = new Vector2(400, 330) });
+        battle._Input(new InputEventMouseMotion { Position = new Vector2(500, 330) });
         battle._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Middle, Pressed = false });
-        Check(Mathf.IsEqualApprox(camera.Position.X, beforeDrag + 200 / zoom) && !Read<bool>(battle, "_battleCameraDragging"),
+        Check(Mathf.IsEqualApprox(camera.Position.X, beforeDrag + 100 / zoom) && !Read<bool>(battle, "_battleCameraDragging"),
             "Middle-drag moves the ground with the pointer and releases cleanly");
         battle._UnhandledInput(new InputEventKey { Keycode = Key.End, Pressed = true });
         Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "End jumps to the enemy base");

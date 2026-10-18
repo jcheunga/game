@@ -13,6 +13,8 @@ public sealed record EnemyBaseArt(Texture2D Texture, Rect2 Rect, string Zone, (V
     /// <summary>World x of the gate's centre, where troops strike it and its health meter hangs.</summary>
     public float GateX { get; init; }
     private const string Folder = "res://assets/structures/bases/";
+    // The two-screen field's EnemyBaseX, which plates cut before they recorded their own were laid out against.
+    private const float FirstEnemyBaseX = 1152f;
     private static readonly Dictionary<int, EnemyBaseArt> Cache = new();
 
     /// <summary>The stronghold for a stage, or, when that stage has none painted for the zone on screen (endless runs,
@@ -32,13 +34,19 @@ public sealed record EnemyBaseArt(Texture2D Texture, Rect2 Rect, string Zone, (V
         if (!ResourceLoader.Exists(path + ".png") || !Godot.FileAccess.FileExists(path + ".json")) return Cache[stageNumber] = null;
         using var data = JsonDocument.Parse(Godot.FileAccess.GetFileAsString(path + ".json"));
         var root = data.RootElement;
+        // Plates are laid out against the EnemyBaseX they were cut for; they move with the field's end.
+        var shift = new Vector2(GameData.Combat.EnemyBaseX -
+            (root.TryGetProperty("enemyBaseX", out var authored) ? authored.GetSingle() : FirstEnemyBaseX), 0);
         var rect = root.GetProperty("rect");
         var lights = root.GetProperty("lights").EnumerateArray()
-            .Select(l => (new Vector2(l[0].GetSingle(), l[1].GetSingle()), Color.FromHtml(l[2].GetString()))).ToArray();
-        var smoke = root.GetProperty("smoke").EnumerateArray().Select(s => new Vector2(s[0].GetSingle(), s[1].GetSingle())).ToArray();
+            .Select(l => (new Vector2(l[0].GetSingle(), l[1].GetSingle()) + shift, Color.FromHtml(l[2].GetString()))).ToArray();
+        var smoke = root.GetProperty("smoke").EnumerateArray().Select(s => new Vector2(s[0].GetSingle(), s[1].GetSingle()) + shift).ToArray();
         return Cache[stageNumber] = new EnemyBaseArt(ResourceLoader.Load<Texture2D>(path + ".png"),
-            new Rect2(rect[0].GetSingle(), rect[1].GetSingle(), rect[2].GetSingle(), rect[3].GetSingle()),
-            root.GetProperty("zone").GetString(), lights, smoke) { Foot = root.GetProperty("foot").GetSingle(), GateX = root.GetProperty("gate").GetSingle() };
+            new Rect2(new Vector2(rect[0].GetSingle(), rect[1].GetSingle()) + shift, rect[2].GetSingle(), rect[3].GetSingle()),
+            root.GetProperty("zone").GetString(), lights, smoke)
+        {
+            Foot = root.GetProperty("foot").GetSingle(), GateX = root.GetProperty("gate").GetSingle() + shift.X
+        };
     }
 
     public static void ClearCache() => Cache.Clear();

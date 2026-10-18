@@ -91,11 +91,6 @@ public static class GameData
     private const string CombatPath = "res://data/combat_config.json";
     private const string EquipmentPath = "res://data/equipment.json";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     private static bool _loaded;
     private static string _loadError = "";
     private static StageDefinition[] _stages = Array.Empty<StageDefinition>();
@@ -104,27 +99,27 @@ public static class GameData
     private static Dictionary<string, EquipmentDefinition> _equipment = new();
     private static CombatTuning _combat = new();
 
-    private sealed class UnitCollection
+    internal sealed class UnitCollection
     {
         public List<UnitDefinition> Units { get; set; } = new();
     }
 
-    private sealed class StageCollection
+    internal sealed class StageCollection
     {
         public List<StageDefinition> Stages { get; set; } = new();
     }
 
-    private sealed class SpellCollection
+    internal sealed class SpellCollection
     {
         public List<SpellDefinition> Spells { get; set; } = new();
     }
 
-    private sealed class EquipmentCollection
+    internal sealed class EquipmentCollection
     {
         public List<EquipmentDefinition> Equipment { get; set; } = new();
     }
 
-    private sealed class CombatCollection
+    internal sealed class CombatCollection
     {
         public CombatTuning Combat { get; set; } = new();
     }
@@ -319,11 +314,11 @@ public static class GameData
             var combatText = ReadTextFile(CombatPath);
             var equipmentText = ReadTextFile(EquipmentPath);
 
-            var unitsDoc = JsonSerializer.Deserialize<UnitCollection>(unitsText, JsonOptions);
-            var spellsDoc = JsonSerializer.Deserialize<SpellCollection>(spellsText, JsonOptions);
-            var stagesDoc = JsonSerializer.Deserialize<StageCollection>(stagesText, JsonOptions);
-            var combatDoc = JsonSerializer.Deserialize<CombatCollection>(combatText, JsonOptions);
-            var equipmentDoc = JsonSerializer.Deserialize<EquipmentCollection>(equipmentText, JsonOptions);
+            var unitsDoc = JsonSerializer.Deserialize(unitsText, DataJson.Default.UnitCollection);
+            var spellsDoc = JsonSerializer.Deserialize(spellsText, DataJson.Default.SpellCollection);
+            var stagesDoc = JsonSerializer.Deserialize(stagesText, DataJson.Default.StageCollection);
+            var combatDoc = JsonSerializer.Deserialize(combatText, DataJson.Default.CombatCollection);
+            var equipmentDoc = JsonSerializer.Deserialize(equipmentText, DataJson.Default.EquipmentCollection);
 
             if (unitsDoc == null || unitsDoc.Units.Count == 0)
             {

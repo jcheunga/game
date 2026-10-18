@@ -14,7 +14,6 @@ public static class WaveVersions
     public const string StandardId = "standard";
     private const string Folder = "res://data/waves";
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static WaveVersion[] _all;
     private static StageWaveDefinition[][] _standardWaves;
 
@@ -63,7 +62,7 @@ public static class WaveVersions
             var path = $"{Folder}/{file}";
             try
             {
-                var version = JsonSerializer.Deserialize<WaveVersion>(FileAccess.GetFileAsString(path), JsonOptions);
+                var version = JsonSerializer.Deserialize(FileAccess.GetFileAsString(path), DataJson.Default.WaveVersion);
                 if (version == null || string.IsNullOrWhiteSpace(version.Id) || versions.Any(known => known.Id.Equals(version.Id, StringComparison.OrdinalIgnoreCase)))
                 {
                     GD.PushWarning($"Wave version {path} needs a unique Id; skipped.");

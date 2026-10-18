@@ -8,11 +8,6 @@ public partial class SaveSystem : Node
     private const string SaveFileArgPrefix = "--save-file=";
     private const string SaveSuffixArgPrefix = "--save-suffix=";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true
-    };
-
     public static SaveSystem Instance { get; private set; }
     public string ActiveSaveFilePath => ResolveSaveFilePath();
     /// <summary>True when a --save-file or --save-suffix argument points away from the player's own save (test and review runs).</summary>
@@ -90,7 +85,7 @@ public partial class SaveSystem : Node
 
         try
         {
-            var parsed = JsonSerializer.Deserialize<GameSaveData>(json, JsonOptions);
+            var parsed = JsonSerializer.Deserialize(json, SaveJson.Default.GameSaveData);
             if (parsed == null)
             {
                 return false;
@@ -112,7 +107,7 @@ public partial class SaveSystem : Node
         LastSaveError = "";
         try
         {
-            var json = JsonSerializer.Serialize(saveData, JsonOptions);
+            var json = JsonSerializer.Serialize(saveData, SaveJson.Default.GameSaveData);
             var saveFilePath = ResolveSaveFilePath();
             var tempPath = saveFilePath + ".tmp";
             var backupPath = saveFilePath + ".bak";

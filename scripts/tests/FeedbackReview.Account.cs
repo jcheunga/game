@@ -57,7 +57,7 @@ public partial class FeedbackReview
             await AccountSignIn.EnsureGuestSession();
             Check(state.PlayerAuthToken == guestToken && state.PlayerProfileId == before.PlayerProfileId && state.AccountProvider.Length == 0,
                 "A guest gets a server session once the server answers, so cloud backup works without signing in");
-            await AccountSignIn.Request("/auth/email/start", new { email = "fixture@example.com" });
+            await AccountSignIn.Request("/auth/email/start", new AccountSignIn.EmailStartRequest { Email = "fixture@example.com" }, ServerJson.Default.EmailStartRequest);
             Check(guestLinked && state.PlayerProfileId == before.PlayerProfileId && state.Food == before.Food,
                 "First sign-in registers an offline guest without changing its journey");
             using var session = JsonDocument.Parse(JsonSerializer.Serialize(new { playerProfileId = profile, playerCallsign = "Caravan", sessionToken = accountToken,

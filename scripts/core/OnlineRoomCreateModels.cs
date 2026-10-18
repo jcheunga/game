@@ -39,3 +39,8 @@ public interface IOnlineRoomCreateProvider
 	string BuildLocationSummary();
 	OnlineRoomCreateResult CreateRoom(OnlineRoomCreateRequest request);
 }
+
+public sealed class OnlineRoomCreateApiRequest
+{
+	public OnlineRoomCreateRequest Room { get; set; } = new();
+}

@@ -10,13 +10,6 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiChallengeSyncProvider(string endpointUrl)
@@ -45,14 +38,14 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		{
 			Batch = batch
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.ChallengeSyncApiRequest);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(request, batch.PlayerProfileId);
 		request.Headers.TryAddWithoutValidation("X-Convoy-Client", batch.ClientLabel);
 		request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(request);
+		using var response = Client.SendAndWait(request);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
@@ -61,7 +54,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 
 		var parsed = string.IsNullOrWhiteSpace(responseBody)
 			? null
-			: JsonSerializer.Deserialize<ChallengeSyncApiResponse>(responseBody, JsonOptions);
+			: JsonSerializer.Deserialize(responseBody, ServerJson.Default.ChallengeSyncApiResponse);
 		var acceptedIds = parsed?.AcceptedSubmissionIds ?? [];
 		var rejectedIds = parsed?.RejectedSubmissionIds ?? [];
 

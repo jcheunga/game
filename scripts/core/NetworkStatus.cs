@@ -61,7 +61,7 @@ public partial class NetworkStatus : Node
 			using var msg = new System.Net.Http.HttpRequestMessage(
 				System.Net.Http.HttpMethod.Get,
 				$"{endpoint.TrimEnd('/')}/health");
-			using var resp = Client.Send(msg);
+			using var resp = Client.SendAndWait(msg);
 			IsOnline = true;
 			IsServerReachable = resp.IsSuccessStatusCode;
 			LastError = IsServerReachable ? "" : $"HTTP {(int)resp.StatusCode}";

@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomSeatLeaseProvider : IOnlineRoomSeatLeasePro
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomSeatLeaseProvider(string endpointUrl)
@@ -45,14 +38,14 @@ public sealed class HttpApiOnlineRoomSeatLeaseProvider : IOnlineRoomSeatLeasePro
 		{
 			Lease = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomSeatLeaseApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Headers.TryAddWithoutValidation("X-Join-Ticket", request.TicketId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
@@ -61,7 +54,7 @@ public sealed class HttpApiOnlineRoomSeatLeaseProvider : IOnlineRoomSeatLeasePro
 
 		var parsed = string.IsNullOrWhiteSpace(responseBody)
 			? null
-			: JsonSerializer.Deserialize<OnlineRoomSeatLeaseApiResponse>(responseBody, JsonOptions);
+			: JsonSerializer.Deserialize(responseBody, ServerJson.Default.OnlineRoomSeatLeaseApiResponse);
 		return new OnlineRoomSeatLeaseResult
 		{
 			ProviderId = Id,

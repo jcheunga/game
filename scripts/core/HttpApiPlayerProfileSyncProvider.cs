@@ -10,13 +10,6 @@ public sealed class HttpApiPlayerProfileSyncProvider : IPlayerProfileSyncProvide
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiPlayerProfileSyncProvider(string endpointUrl)
@@ -41,17 +34,17 @@ public sealed class HttpApiPlayerProfileSyncProvider : IPlayerProfileSyncProvide
 			throw new InvalidOperationException("HTTP player-profile endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new PlayerProfileSyncApiRequest
 		{
-			profile = request
+			Profile = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.PlayerProfileSyncApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
 		message.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

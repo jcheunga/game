@@ -84,9 +84,12 @@ native/StoreKit/test/simulator_e2e.sh
 
 runs the plugin on a simulator against a throwaway local server, without
 Xcode's window: it exports a debug iOS project, builds it for the simulator,
-and launches `scenes/tests/StoreKitPluginReview.tscn` once per phase. The
-driver calls the `StoreKit` singleton and validates each transaction with the
-server the way `NativeIAPService` does:
+and launches the game once per phase. Most phases run
+`scenes/tests/StoreKitPluginReview.tscn`, which calls the `StoreKit` singleton
+and validates each transaction with the server the way `NativeIAPService` does.
+The shop phase runs `scenes/tests/StoreKitShopReview.tscn`, which plays the
+game itself. Every phase fails if the game logs that it could not read its data,
+catalog or save:
 
 | Phase | Checks |
 |---|---|
@@ -95,6 +98,7 @@ server the way `NativeIAPService` does:
 | unverified | a purchase whose signature fails verification returns no transaction to grant |
 | ask-to-buy | the purchase reports pending without a transaction; once approved it arrives through `Transaction.updates`, is recorded and finished |
 | interrupt, recover | with the server unreachable the transaction stays unfinished, and the plugin does not finish it; on the next launch it comes back, is recorded once (a second validation says `already_recorded`) and is finished |
+| shop | the game's data, wave versions, shop catalog and save load under NativeAOT; the player gets a server session and a cloud backup that lists and restores; the shop shows App Store prices, and buying a pack through the shop and `NativeIAPService` grants its gold once, records it on the server, saves it with its purchase ID and finishes the transaction |
 
 `test/StoreKitTestSession.swift` is loaded into the game for these runs. It
 opens an `SKTestSession` from `Crownroad.storekit`, which is what an Xcode run
@@ -107,11 +111,11 @@ signs a declined Ask to Buy request exactly like a completed purchase. Check
 both on a device with a sandbox account, or in an Xcode run by cancelling the
 payment sheet by hand.
 
-The shop does not run on the simulator yet. The iOS build is NativeAOT, which
-cannot run the game's reflection-based System.Text.Json, so on iOS the game
-cannot read `shop_products.json`, its data or its server responses (see
-`docs/DEPLOYMENT.md`). The shop's handling of each StoreKit outcome is checked
-on desktop instead, against a stand-in for the plugin and a real local server:
+The iOS build is NativeAOT, which cannot run reflection-based
+System.Text.Json, so the game serializes through source-generated contexts
+(`scripts/core/GameJson.cs`, see `docs/DEPLOYMENT.md`). The shop phase buys only
+a completed purchase; the shop's handling of every StoreKit outcome is checked
+on desktop, against a stand-in for the plugin and a real local server:
 
 ```bash
 native/StoreKit/test/shop_desktop.sh
@@ -139,10 +143,10 @@ exports and builds the same project, with `Crownroad.storekit` selected in its
 scheme by `use_storekit_config.sh` (Product → Scheme → Edit Scheme → Run →
 Options → StoreKit Configuration). Open it in Xcode and run it on a simulator.
 Debug → StoreKit → Manage Transactions shows each transaction and whether it
-was finished. Once the game's JSON works on iOS, point the game at a
-development server (Settings → Account → Payments → Connection details;
-`http://127.0.0.1:<port>` reaches the Mac) and buy from the shop, cancelling
-the payment sheet once to check that path.
+was finished. To buy by hand, point the game at a development server
+(Settings → Account → Payments → Connection details; `http://127.0.0.1:<port>`
+reaches the Mac) and buy from the shop, cancelling the payment sheet once to
+check that path.
 
 Transactions signed by Xcode are not real verification. That needs sandbox
 purchases from a TestFlight or development build signed for

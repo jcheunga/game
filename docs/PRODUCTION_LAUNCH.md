@@ -352,8 +352,9 @@ requirement until a migration and both signed exports have been verified.
   SDK/platform/build tools, Java, and billing plug-in. Increment the Android
   `version/code` for each uploaded build. Export a **release-signed AAB** and
   inspect its package ID, target API, billing dependency, permissions, native
-  architectures, size, and excluded internal files. A local debug AAB is only
-  a build-pipeline check, never the store artifact.
+  architectures, size ([BUILD_SIZE.md](BUILD_SIZE.md)), and excluded internal
+  files. A local debug AAB is only a build-pipeline check, never the store
+  artifact.
 - [ ] Upload to Play internal testing, install **from Play** on physical
   devices, and complete the payment/interruption matrix below. Move through
   any required closed-testing and production-access steps shown in the

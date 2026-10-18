@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dslaspd3vekub"
-path.bptc="res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.bptc.ctex"
-path.astc="res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.astc.ctex"
+path.s3tc="res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.s3tc.ctex"
+path.etc2="res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -13,12 +13,12 @@ metadata={
 [deps]
 
 source_file="res://assets/world/royal/maps/citadel-3.jpg"
-dest_files=["res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.bptc.ctex", "res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.astc.ctex"]
+dest_files=["res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.s3tc.ctex", "res://.godot/imported/citadel-3.jpg-464473379d226edf1537317878c3f171.etc2.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=true
+compress/high_quality=false
 compress/lossy_quality=0.9
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

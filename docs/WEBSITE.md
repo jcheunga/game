@@ -102,7 +102,7 @@ configuration. Update the page in the same change if any of these move:
 | Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
 | No third-party analytics or ad SDKs | `Game.csproj`, `addons/`, `android/plugins/`, `ios/plugins/` |
 | The player ID is shown under Records & replay on the multiplayer screen | `scripts/ui/MultiplayerMenu.cs` |
-| Nothing about a refund request is sent to Apple unless `APPLE_IAP_SEND_CONSUMPTION_INFO=1`; then only consent, delivery and no free sample. The page must mention it before the switch goes on | `server/AppStoreConsumption.cs` |
+| When a player asks Apple for a refund, Apple is told only that the purchase was delivered, that the player agreed and that there was no free sample; never for a deleted account; nothing until `APPLE_IAP_SEND_CONSUMPTION_INFO=1`. `/terms` section 3 says the same | `server/AppStoreConsumption.cs` |
 
 Adding an SDK, a new data type, a new processor, or a website analytics tool
 means updating the policy and its effective date before release.

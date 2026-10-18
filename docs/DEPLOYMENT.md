@@ -232,7 +232,8 @@ To set up:
    `APPLE_IAP_APP_APPLE_ID` to the app's numeric Apple ID (App Information →
    Apple ID). Production notifications for another app ID are then refused.
    To answer refund requests, also set `APPLE_IAP_SEND_CONSUMPTION_INFO=1`
-   once consent is settled (see "Refund requests" below). This needs the
+   once the terms and privacy policy that cover it are live (see "Refund
+   requests" below). This needs the
    In-App Purchase key (`APPLE_IAP_ISSUER_ID`, `APPLE_IAP_KEY_ID`,
    `APPLE_IAP_PRIVATE_KEY_PATH`).
 3. **Play Console:** no Real-time developer notifications are needed. The
@@ -263,8 +264,8 @@ migration.
 
 Not built yet:
 
-- Per-player consent for answering Apple's refund requests (see below). The
-  switch covers all players.
+- A per-player opt-in for answering Apple's refund requests (see below).
+  Players agree through the terms, and deleting the account withdraws it.
 - Stripe refund webhooks. Record those refunds through `/admin/refunds`.
 - Partial (quantity) refunds. Every pack is sold one at a time, so a void
   always refunds the whole purchase.
@@ -277,8 +278,8 @@ when it decides
 ([Send Consumption Information](https://developer.apple.com/documentation/appstoreserverapi/send-consumption-information)).
 The server can answer with `PUT /inApps/v2/transactions/consumption/{transactionId}`.
 It does so only when `APPLE_IAP_SEND_CONSUMPTION_INFO=1`. The setting is
-**off by default**, because Apple requires the player's consent first (see
-below).
+**off by default**, because Apple requires the player's consent first. Players
+give it through the terms and privacy policy (see "Consent" below).
 
 The answer holds only what the server knows, and nothing about the player:
 
@@ -300,7 +301,8 @@ The server answers when the notification arrives, after recording it in
 - it never recorded the transaction (`unknown_transaction`), or the
   notification names another product (`product_mismatch`);
 - the purchase is already refunded (`consumption_skipped`,
-  `reason=purchase_refunded`);
+  `reason=purchase_refunded`), or its account was deleted
+  (`reason=account_deleted`);
 - the request is more than 12 hours old (`reason=window_closed`), or the App
   Store credentials are missing (`reason=not_configured`).
 
@@ -313,27 +315,21 @@ this answer anyway. Nothing is retried. `GET /admin/refunds` shows each
 request's outcome, detail, and Apple's `consumptionRequestReason`. Answering
 never changes the purchase. Only a later `REFUND` notification does.
 
-**Consent (decide before turning it on).** Apple makes the developer alone
-responsible for the player's consent. Its guidance says consent must be
-freely given, specific, informed and unambiguous. An opt-in is stronger than
-an opt-out, players must be able to withdraw, and the App Tracking
-Transparency prompt doesn't count. There are two ways to meet it:
+**Consent (decided 2026-10-18: the terms and privacy policy).** Apple makes
+the developer alone responsible for the player's consent. Players agree in
+the terms (section 3 of `/terms`), and the privacy policy says what is sent
+(`/privacy#refund-requests`, with the legal basis and how to withdraw).
+Deleting the account withdraws it: a deleted account's purchase is kept under
+a `DELETED-` code, and the server skips it (`reason=account_deleted`).
 
-- **Privacy policy and terms.** The switch covers every player at once, which
-  fits consent given there. Add a line like this to `/privacy`, under Apple:
-
-  > If you ask Apple to refund an App Store purchase, we tell Apple whether
-  > we delivered it, to help Apple decide. We don't send your player ID or
-  > play history. To ask Apple about this data, visit privacy.apple.com.
-
-  This is the weaker form. It isn't an opt-in, and the only way to honour one
-  player's withdrawal is to turn the switch off for everyone.
-- **An opt-in in Settings**, like analytics. It is stronger and lets a player
-  withdraw. It needs a consent flag for each player, sent to the server and
-  checked before answering. This isn't built.
-
-Whatever you choose, update the App Store privacy answers if they change,
-and the "Keeping the privacy policy true" table in [WEBSITE.md](WEBSITE.md).
+Turn the switch on once those pages are live, after launch. This isn't an
+opt-in, which Apple's guidance calls the stronger form. Apart from deleting
+their account, a player can't withdraw alone; turning the switch off stops
+answers for everyone. An opt-in in Settings, like analytics, would need a
+consent flag for each player, sent to the server and checked before
+answering. If the wording or the data sent changes, update the App Store
+privacy answers ([STORE_PRIVACY_ANSWERS.md](STORE_PRIVACY_ANSWERS.md)) and the
+"Keeping the privacy policy true" table in [WEBSITE.md](WEBSITE.md).
 
 ## Migrating an existing SQLite deployment
 

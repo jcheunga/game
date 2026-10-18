@@ -13,6 +13,8 @@ namespace CrownroadServer;
 ///
 /// Apple requires the player's consent before anything is sent, so nothing is
 /// sent unless APPLE_IAP_SEND_CONSUMPTION_INFO=1 (docs/DEPLOYMENT.md, "Refunds").
+/// Players agree through the terms and privacy policy; deleting the account
+/// withdraws it, so a deleted account's kept purchase is never described.
 /// The answer holds only what the server knows. A recorded purchase was
 /// delivered: the server credited it and the device applies it once. The shop
 /// gives no free samples or trials. How much of a pack was spent is in the
@@ -63,6 +65,7 @@ public static class AppStoreConsumption
 
         if (recorded.Status != "inspected") return Note(recorded.Status, $"consumption=skipped reason={recorded.Status}");
         if (!Enabled) return Skip("switched_off");
+        if (AccountDeletion.IsDeletedProfile(recorded.ProfileId)) return Skip("account_deleted");
         var purchaseStatus = PurchaseRefunds.PurchaseStatus(recorded.PurchaseId);
         if (purchaseStatus != "validated") return Skip($"purchase_{purchaseStatus}");
         if (now - requestedAt > Window) return Skip("window_closed");

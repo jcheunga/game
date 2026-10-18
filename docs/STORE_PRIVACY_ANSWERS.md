@@ -198,7 +198,11 @@ required-reason APIs Godot's iOS template declares.
     voided-purchases list mark purchases refunded, and the device takes the
     currency back once (`server/PurchaseRefunds.cs`). The new refund records
     are declared above under purchase history. Polling Google sends Google
-    nothing new about the player.
+    nothing new about the player. Answers to Apple's refund requests
+    (`server/AppStoreConsumption.cs`, on once `APPLE_IAP_SEND_CONSUMPTION_INFO=1`)
+    tell Apple only that a purchase was delivered, with no free sample, and
+    that the player agreed through the terms. The reason Apple passes on is
+    kept in the refund record. No new data type.
 11. **Finding the player ID.** The game shows the player ID only under
     "Records & replay" on the multiplayer screen, which the policy and the
     support page now point to. The old text pointed to Settings, which no

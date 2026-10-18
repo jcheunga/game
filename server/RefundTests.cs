@@ -550,6 +550,15 @@ public static partial class ServerTests
             Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", key);
             Assert(calls.Count == 4, "expected no call without usable credentials");
 
+            // A deleted account withdrew its consent: its kept purchase is not described.
+            const string deletedProfile = "TEST-CONSUMPTION-DELETED";
+            const string deletedTransactionId = "2000000900020003";
+            var deletedPurchaseId = await BuyForRefund(client, deletedProfile, "gold_chest", "apple", deletedTransactionId);
+            var (deleteStatus, _) = await DeleteAccount(client, deletedProfile, SessionTokens[deletedProfile]);
+            Assert(deleteStatus == HttpStatusCode.OK && PurchaseStatus(deletedPurchaseId) == "validated", "expected the account deleted and its purchase kept");
+            await Expect("a deleted account's purchase", chain.Sign(AppleConsumable(deletedTransactionId)), "consumption_skipped", "consumption=skipped reason=account_deleted");
+            Assert(calls.Count == 4, "expected nothing sent about a deleted account's purchase");
+
             // A purchase already refunded (by support, say) is not described as delivered.
             Assert((await AdminRefund(client, new { purchaseId })).Body.GetProperty("status").GetString() == "refunded", "expected the operator refund");
             await Expect("a refunded purchase", signedTransaction, "consumption_skipped", "consumption=skipped reason=purchase_refunded");

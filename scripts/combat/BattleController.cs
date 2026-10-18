@@ -588,6 +588,8 @@ public partial class BattleController : Node2D
 		UnitSpriteLoader.ClearCache();
 		BattlefieldTextureLoader.ClearCache();
 		BattleStructureArt.ClearCache();
+		EnemyBaseArt.ClearCache();
+		ClearLanternGlow();
 		BattleLighting.ClearCache();
 		ProjectilePool.Clear();
 		if (IsLanRaceMode && LanChallengeService.Instance != null)
@@ -1169,6 +1171,11 @@ public partial class BattleController : Node2D
 	private void DrawEnemyBarricade(CanvasItem canvas, TerrainPalette palette, RouteDefinition route)
 	{
 		var healthRatio = Mathf.Clamp(_enemyBaseHealth / Mathf.Max(1f, _enemyBaseMaxHealth), 0f, 1f);
+		if (PaintedBase is { } painted)
+		{
+			DrawPaintedBase(canvas, painted, healthRatio, palette);
+			return;
+		}
 
 		var art = CastleArt;
 		var gatehouseTexture = art?.Texture ?? BattlefieldTextureLoader.TryLoadStructure("gatehouse");

@@ -77,6 +77,7 @@ public partial class CombatReviewSmoke : Node
             else if (args.Contains("--camera")) await CheckBattleCamera();
             else if (args.Contains("--lanes")) await CheckBattleLanes();
             else if (args.Contains("--structures")) await CheckBattleStructures();
+            else if (args.Contains("--bases")) await CheckEnemyBases();
             else if (args.Contains("--base-weapons")) await CheckBaseWeapons();
             else if (args.Contains("--economy-export")) ExportProgressionEconomy();
             else if (args.Contains("--regressions")) await Regressions();

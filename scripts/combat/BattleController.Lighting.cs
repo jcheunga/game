@@ -7,10 +7,25 @@ public partial class BattleController
     private BattleStructureArt WagonArt => BattleStructureArt.Load(GameState.Instance.SelectedWagonSkinId == WagonSkinCatalog.DefaultSkinId
         ? "war_wagon" : "war_wagon_" + GameState.Instance.SelectedWagonSkinId) ?? BattleStructureArt.Load("war_wagon");
     private BattleStructureArt CastleArt => BattleStructureArt.Load("gatehouse");
+    // The stage's painted stronghold; stages without one fall back to the Blender gatehouse and its outworks.
+    private EnemyBaseArt _paintedBase;
+    private bool _paintedBaseResolved;
+    private EnemyBaseArt PaintedBase
+    {
+        get
+        {
+            if (_paintedBaseResolved) return _paintedBase;
+            _paintedBaseResolved = true;
+            return _paintedBase = EnemyBaseArt.Resolve(_stageData?.StageNumber ?? 0, _activeRouteId);
+        }
+    }
     // The stronghold straddles the band: its visual mass sits on the centre line, where troops
     // strike it, instead of standing on that line with its whole body above the field.
     private Vector2 CastleGround => CastleArt is { } art
         ? EnemyBaseCorePosition + new Vector2(0, (art.Anchor.Y - art.Centre.Y) * art.Size.Y) : EnemyBaseCorePosition;
+    // A painted stronghold stands behind the road, like the scenery it was painted into: it sorts above the band's
+    // top line, so every troop on the road passes in front of it.
+    private Vector2 CastleSortPosition => PaintedBase != null ? new Vector2(EnemyBaseX, BattlefieldTop - 1) : CastleGround;
 
     private void InitializeBattlePresentation()
     {
@@ -20,17 +35,19 @@ public partial class BattleController
         AddChild(new BattleBaseCanvas { Name = "Caravan", Position = WagonSortPosition,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             Paint = canvas => { DrawPlayerBus(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)); DrawWagonArmaments(canvas); } });
-        AddChild(new BattleBaseCanvas { Name = "Castle", Position = CastleGround,
+        AddChild(new BattleBaseCanvas { Name = "Castle", Position = CastleSortPosition,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             Paint = canvas => DrawEnemyBarricade(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)) });
-        BuildOutworks();
+        if (PaintedBase != null) BuildPaintedBaseGlow();
+        else BuildOutworks();
     }
 
     private void DrawBattleGroundShadows(CanvasItem canvas)
     {
         var light = FieldLighting;
         DrawStructureGround(canvas, WagonArt, WagonGround, false);
-        DrawStructureGround(canvas, CastleArt, CastleGround, true);
+        // A painted stronghold carries its own contact shadow.
+        if (PaintedBase == null) DrawStructureGround(canvas, CastleArt, CastleGround, true);
         DrawOutworkGround(canvas);
         foreach (var unit in _units)
             if (IsInstanceValid(unit) && unit.IsInsideTree() && unit.Visible && !unit.IsDead)

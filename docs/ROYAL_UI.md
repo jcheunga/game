@@ -83,6 +83,38 @@ blurred foreground drawn in front of the troops (1.35). Row layers repeat seamle
 sits at the concept's screen rows (411–516), which `BattleController.Camera` holds with `BandRowFraction` .81.
 The same script composes a still of each battlefield for mission and route cards (`assets/ui/royal/missions`).
 
+## Enemy strongholds
+
+Every stage has its own painted stronghold (`art/royal/bases.py`, briefs in `art/royal/bases_briefs.py`). Each
+zone's ten share an architecture (`ZONE_LOOK`); each stage's form comes from its name and theme, and they grow
+from outposts (stages 1–3 of a zone) to the boss stage's grand fortress. The Rotbound Host's marks (skull
+heraldry, bone trophies, green witch-fire) are accents only.
+
+They are painted *into* the scene so they share its light and brushwork. `bases.py guide` composes each zone's
+backdrop layers over the world rect around the enemy end (x 936–1256, y 120–440) as the battle camera at the
+end of the field draws them. Codex paints the stronghold into that guide (standing along the far edge of the
+road, its gate at road level), then a second edit keys it onto flat magenta; the key stays pixel-aligned with
+the painting. `bases.py cut` takes the alpha from the key and the colour from the painting, bakes a soft contact
+shadow onto the ground below it, finds the witch-fire lanterns and the tallest roofs, shifts the plate so its
+gate (measured by eye into `GATES` with `bases.py sheet`) stands where troops strike it, and writes
+`assets/structures/bases/stage_NNN.{png,json}`. Key edits that come back rescaled are registered onto the
+painting (SIFT + RANSAC) before cutting. Plates import as lossy WebP (q0.85) with mipmaps (~27 MB imported
+for all 100); keep those `.import` settings when adding plates.
+
+At runtime `EnemyBaseArt` loads the stage's plate (endless runs and boss rushes borrow the zone's final one).
+It is drawn untinted behind the band, so every troop on the road passes in front of it, with an additive flicker
+over each lantern, damage smoke from its roofs, and its health meter at world row 270. Stages without a plate
+fall back to the Blender gatehouse and its outworks. Review with `bases.py preview`, then
+`CombatReviewSmoke --bases [--stages=…] --screenshots` (`artifacts/enemy-bases`).
+
+```sh
+python3 art/royal/bases.py guide                                  # zone guides
+python3 art/royal/bases.py run [stage ...]                        # Codex paint + key; resumes, waits out limits
+python3 art/royal/bases.py sheet <stage ...>                      # read gate centres into GATES
+art/remaster/puppet/run.sh art/royal/bases.py cut [stage ...]     # plates + JSON (needs numpy/opencv)
+godot --headless --path . --import
+```
+
 ## Map
 
 `MapGuideRenderer` (`UiReviewSmoke --map-guides`) draws each zone's own geography (coast, river, bridges, roads and

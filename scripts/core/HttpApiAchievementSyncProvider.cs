@@ -10,13 +10,6 @@ public sealed class HttpApiAchievementSyncProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiAchievementSyncProvider(string endpointUrl)
@@ -41,12 +34,12 @@ public sealed class HttpApiAchievementSyncProvider
 			throw new InvalidOperationException("HTTP achievements endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new AchievementSyncApiRequest
 		{
-			profileId,
-			achievementIds
+			ProfileId = profileId,
+			AchievementIds = achievementIds
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.AchievementSyncApiRequest);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(request, profileId);
@@ -97,6 +90,12 @@ public sealed class HttpApiAchievementSyncProvider
 			? parsed
 			: fallback;
 	}
+}
+
+public sealed class AchievementSyncApiRequest
+{
+	public string ProfileId { get; set; } = "";
+	public string[] AchievementIds { get; set; } = [];
 }
 
 public class AchievementSyncResult

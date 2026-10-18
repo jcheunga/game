@@ -8,11 +8,6 @@ using Godot;
 public static class AnalyticsService
 {
 	private static readonly System.Net.Http.HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(10) };
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-	};
 
 	private static readonly List<AnalyticsEvent> Queue = new();
 	private const int FlushThreshold = 10;
@@ -105,14 +100,14 @@ public static class AnalyticsService
 
 		try
 		{
-			var requestBody = new
+			var requestBody = new AnalyticsBatch
 			{
-				profileId,
-				clientVersion = 31,
-				platform,
-				events = batch
+				ProfileId = profileId,
+				ClientVersion = 31,
+				Platform = platform,
+				Events = batch
 			};
-			var json = JsonSerializer.Serialize(requestBody, JsonOptions);
+			var json = JsonSerializer.Serialize(requestBody, ServerJson.Default.AnalyticsBatch);
 
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/analytics/ingest");
 			PlayerSessionHttp.Apply(msg, profileId);
@@ -130,7 +125,15 @@ public static class AnalyticsService
 		lock (Queue) Queue.Clear();
 	}
 
-	private sealed class AnalyticsEvent
+	internal sealed class AnalyticsBatch
+	{
+		public string ProfileId { get; set; } = "";
+		public int ClientVersion { get; set; }
+		public string Platform { get; set; } = "";
+		public List<AnalyticsEvent> Events { get; set; } = new();
+	}
+
+	internal sealed class AnalyticsEvent
 	{
 		public string Type { get; set; } = "";
 		public string Data { get; set; } = "";

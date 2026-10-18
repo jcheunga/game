@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomReportProvider : IOnlineRoomReportProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomReportProvider(string endpointUrl)
@@ -45,7 +38,7 @@ public sealed class HttpApiOnlineRoomReportProvider : IOnlineRoomReportProvider
 		{
 			Report = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomReportApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
@@ -61,7 +54,7 @@ public sealed class HttpApiOnlineRoomReportProvider : IOnlineRoomReportProvider
 
 		var parsed = string.IsNullOrWhiteSpace(responseBody)
 			? null
-			: JsonSerializer.Deserialize<OnlineRoomReportApiResponse>(responseBody, JsonOptions);
+			: JsonSerializer.Deserialize(responseBody, ServerJson.Default.OnlineRoomReportApiResponse);
 		return new OnlineRoomReportResult
 		{
 			ProviderId = Id,

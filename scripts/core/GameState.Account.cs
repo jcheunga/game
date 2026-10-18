@@ -20,7 +20,7 @@ public partial class GameState
         using (var backup = Godot.FileAccess.Open($"{folder}/{PlayerProfileId}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}.json", Godot.FileAccess.ModeFlags.Write))
         {
             if (backup == null) throw new InvalidOperationException("Could not back up current progress. Sign-in was stopped.");
-            backup.StoreString(JsonSerializer.Serialize(previous));
+            backup.StoreString(JsonSerializer.Serialize(previous, CompactJson.Default.GameSaveData));
         }
         ApplyDefaults();
         AudioMuted = previous.AudioMuted; EffectsVolumePercent = previous.EffectsVolumePercent;

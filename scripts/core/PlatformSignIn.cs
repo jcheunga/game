@@ -36,8 +36,9 @@ public static class PlatformSignIn
 
     /// <summary>Proves the player to the server; interactive sign-in may show the platform's own sheet.</summary>
     public static async Task<JsonElement> SignIn(JsonElement providers, bool interactive) => Provider == PlayGames
-        ? await AccountSignIn.Request("/auth/playgames", new { authCode = await PlayGamesCode(AccountSignIn.Text(providers, "playGamesClientId"), interactive) })
-        : await AccountSignIn.Request("/auth/gamecenter", await GameCenterProof(interactive));
+        ? await AccountSignIn.Request("/auth/playgames", new AccountSignIn.PlayGamesRequest
+            { AuthCode = await PlayGamesCode(AccountSignIn.Text(providers, "playGamesClientId"), interactive) }, ServerJson.Default.PlayGamesRequest)
+        : await AccountSignIn.Request("/auth/gamecenter", await GameCenterProof(interactive), ServerJson.Default.GameCenterRequest);
 
     /// <summary>
     /// Play Games signs players in by itself when the game starts. A guest is linked to it then,
@@ -87,7 +88,7 @@ public static class PlatformSignIn
         finally { plugin.Disconnect("server_access_granted", granted); plugin.Disconnect("sign_in_failed", failed); }
     }
 
-    private static async Task<object> GameCenterProof(bool interactive)
+    private static async Task<AccountSignIn.GameCenterRequest> GameCenterProof(bool interactive)
     {
         var center = Engine.GetSingleton(GameCenterSingleton);
         if (!center.Call("is_authenticated").AsBool())
@@ -103,10 +104,10 @@ public static class PlatformSignIn
             throw new InvalidOperationException("Game Center could not confirm this player.");
         var proof = await NextEvent(center, "identity_verification_signature");
         if (Value(proof, "result") != "ok") throw new InvalidOperationException("Game Center could not confirm this player.");
-        return new
+        return new AccountSignIn.GameCenterRequest
         {
-            playerId = Value(proof, "player_id"), publicKeyUrl = Value(proof, "public_key_url"),
-            signature = Base64(proof, "signature"), salt = Base64(proof, "salt"), timestamp = proof["timestamp"].AsInt64()
+            PlayerId = Value(proof, "player_id"), PublicKeyUrl = Value(proof, "public_key_url"),
+            Signature = Base64(proof, "signature"), Salt = Base64(proof, "salt"), Timestamp = proof["timestamp"].AsInt64()
         };
     }
 

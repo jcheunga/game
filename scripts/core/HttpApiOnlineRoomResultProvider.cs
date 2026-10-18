@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomResultProvider : IOnlineRoomResultProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomResultProvider(string endpointUrl)
@@ -41,11 +34,11 @@ public sealed class HttpApiOnlineRoomResultProvider : IOnlineRoomResultProvider
 			throw new InvalidOperationException("HTTP room-result endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new OnlineRoomResultApiRequest
 		{
-			result = request
+			Result = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomResultApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);

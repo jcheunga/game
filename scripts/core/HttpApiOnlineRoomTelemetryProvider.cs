@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomTelemetryProvider : IOnlineRoomTelemetryPro
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomTelemetryProvider(string endpointUrl)
@@ -41,11 +34,11 @@ public sealed class HttpApiOnlineRoomTelemetryProvider : IOnlineRoomTelemetryPro
 			throw new InvalidOperationException("HTTP room-telemetry endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new OnlineRoomTelemetryApiRequest
 		{
-			telemetry = request
+			Telemetry = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomTelemetryApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);

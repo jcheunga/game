@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomJoinProvider : IOnlineRoomJoinProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomJoinProvider(string endpointUrl)
@@ -45,7 +38,7 @@ public sealed class HttpApiOnlineRoomJoinProvider : IOnlineRoomJoinProvider
 		{
 			Join = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomJoinApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
@@ -61,7 +54,7 @@ public sealed class HttpApiOnlineRoomJoinProvider : IOnlineRoomJoinProvider
 
 		var parsed = string.IsNullOrWhiteSpace(responseBody)
 			? null
-			: JsonSerializer.Deserialize<OnlineRoomJoinApiResponse>(responseBody, JsonOptions);
+			: JsonSerializer.Deserialize(responseBody, ServerJson.Default.OnlineRoomJoinApiResponse);
 		return new OnlineRoomJoinTicket
 		{
 			ProviderId = Id,

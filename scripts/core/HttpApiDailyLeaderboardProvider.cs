@@ -11,13 +11,6 @@ public sealed class HttpApiDailyLeaderboardProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _baseUrl;
 
 	public HttpApiDailyLeaderboardProvider(string baseUrl)
@@ -42,13 +35,13 @@ public sealed class HttpApiDailyLeaderboardProvider
 			throw new InvalidOperationException("HTTP daily endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new DailyCompleteApiRequest
 		{
-			profileId,
-			date,
-			score
+			ProfileId = profileId,
+			Date = date,
+			Score = score
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.DailyCompleteApiRequest);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/daily/complete");
 		PlayerSessionHttp.Apply(request, profileId);
@@ -157,6 +150,13 @@ public sealed class HttpApiDailyLeaderboardProvider
 			? value.GetBoolean()
 			: fallback;
 	}
+}
+
+public sealed class DailyCompleteApiRequest
+{
+	public string ProfileId { get; set; } = "";
+	public string Date { get; set; } = "";
+	public int Score { get; set; }
 }
 
 public class DailyCompleteResult

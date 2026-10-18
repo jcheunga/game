@@ -15,6 +15,15 @@ public sealed class PurchaseValidationRequest
 	public long RequestedAtUnixSeconds { get; set; }
 }
 
+public sealed class PurchaseValidationApiRequest
+{
+	public string ProfileId { get; set; } = "";
+	public string ProductId { get; set; } = "";
+	public string Platform { get; set; } = "";
+	public string ReceiptToken { get; set; } = "";
+	public string TransactionId { get; set; } = "";
+}
+
 public sealed class PurchaseValidationResult
 {
 	public string Status { get; set; } = "";
@@ -35,6 +44,14 @@ public sealed class PurchaseHistoryEntry
 	public int GoldCredited { get; set; }
 	public int FoodCredited { get; set; }
 	public long PurchasedAtUnixSeconds { get; set; }
+}
+
+public sealed class StripeCheckoutApiRequest
+{
+	public string ProfileId { get; set; } = "";
+	public string ProductId { get; set; } = "";
+	public string SuccessUrl { get; set; } = "";
+	public string CancelUrl { get; set; } = "";
 }
 
 public sealed class StripeCheckoutResult
@@ -71,13 +88,6 @@ public sealed class HttpApiPurchaseValidationProvider
 		Timeout = TimeSpan.FromSeconds(45)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _baseUrl;
 
 	public HttpApiPurchaseValidationProvider(string baseUrl)
@@ -92,15 +102,15 @@ public sealed class HttpApiPurchaseValidationProvider
 			throw new InvalidOperationException("Purchase validation endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new PurchaseValidationApiRequest
 		{
-			profileId = request.PlayerProfileId,
-			productId = request.ProductId,
-			platform = request.Platform,
-			receiptToken = request.ReceiptToken,
-			transactionId = request.TransactionId
+			ProfileId = request.PlayerProfileId,
+			ProductId = request.ProductId,
+			Platform = request.Platform,
+			ReceiptToken = request.ReceiptToken,
+			TransactionId = request.TransactionId
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.PurchaseValidationApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/purchase/validate");
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);
@@ -194,14 +204,12 @@ public sealed class HttpApiPurchaseValidationProvider
 			return new StripeCheckoutResult { Status = "error", Message = "Endpoint not configured." };
 		}
 
-		var requestBody = new
+		var requestBody = new StripeCheckoutApiRequest
 		{
-			profileId,
-			productId,
-			successUrl = "",
-			cancelUrl = ""
+			ProfileId = profileId,
+			ProductId = productId
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.StripeCheckoutApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/purchase/stripe-checkout");
 		PlayerSessionHttp.Apply(message, profileId);

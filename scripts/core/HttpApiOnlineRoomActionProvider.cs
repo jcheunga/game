@@ -10,13 +10,6 @@ public sealed class HttpApiOnlineRoomActionProvider : IOnlineRoomActionProvider
 		Timeout = TimeSpan.FromSeconds(15)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
 	private readonly string _endpointUrl;
 
 	public HttpApiOnlineRoomActionProvider(string endpointUrl)
@@ -41,11 +34,11 @@ public sealed class HttpApiOnlineRoomActionProvider : IOnlineRoomActionProvider
 			throw new InvalidOperationException("HTTP room-action endpoint is not configured.");
 		}
 
-		var requestBody = new
+		var requestBody = new OnlineRoomActionApiRequest
 		{
-			action = request
+			Action = request
 		};
-		var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+		var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.OnlineRoomActionApiRequest);
 
 		using var message = new HttpRequestMessage(HttpMethod.Post, _endpointUrl);
 		PlayerSessionHttp.Apply(message, request.PlayerProfileId);

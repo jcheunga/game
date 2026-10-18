@@ -12,12 +12,6 @@ public partial class CrashReporter : Node
 		Timeout = TimeSpan.FromSeconds(10)
 	};
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-	};
-
 	public override void _EnterTree()
 	{
 		Instance = this;
@@ -60,17 +54,17 @@ public partial class CrashReporter : Node
 
 		try
 		{
-			var body = new
+			var body = new CrashReport
 			{
-				profileId,
-				errorType,
-				errorMessage,
-				stackTrace,
-				clientVersion = 31,
-				platform,
-				scene
+				ProfileId = profileId,
+				ErrorType = errorType,
+				ErrorMessage = errorMessage,
+				StackTrace = stackTrace,
+				ClientVersion = 31,
+				Platform = platform,
+				Scene = scene
 			};
-			var json = JsonSerializer.Serialize(body, JsonOptions);
+			var json = JsonSerializer.Serialize(body, ServerJson.Default.CrashReport);
 
 			using var msg = new System.Net.Http.HttpRequestMessage(
 				System.Net.Http.HttpMethod.Post,
@@ -88,5 +82,16 @@ public partial class CrashReporter : Node
 	public static void ReportWarning(string context, string message)
 	{
 		ReportError("warning", $"[{context}] {message}", "");
+	}
+
+	internal sealed class CrashReport
+	{
+		public string ProfileId { get; set; } = "";
+		public string ErrorType { get; set; } = "";
+		public string ErrorMessage { get; set; } = "";
+		public string StackTrace { get; set; } = "";
+		public int ClientVersion { get; set; }
+		public string Platform { get; set; } = "";
+		public string Scene { get; set; } = "";
 	}
 }

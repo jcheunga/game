@@ -7,11 +7,6 @@ using Godot;
 
 public sealed class LocalJournalChallengeLeaderboardProvider : IChallengeLeaderboardProvider
 {
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false
-	};
-
 	public string Id => ChallengeSyncProviderCatalog.LocalJournalId;
 	public string DisplayName => "Local Journal Stub";
 
@@ -50,7 +45,7 @@ public sealed class LocalJournalChallengeLeaderboardProvider : IChallengeLeaderb
 			ChallengeSyncBatchEnvelope batch;
 			try
 			{
-				batch = JsonSerializer.Deserialize<ChallengeSyncBatchEnvelope>(line, JsonOptions);
+				batch = JsonSerializer.Deserialize(line, CompactJson.Default.ChallengeSyncBatchEnvelope);
 			}
 			catch
 			{

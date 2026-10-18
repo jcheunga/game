@@ -14,9 +14,10 @@ using Godot;
 /// local server: native/StoreKit/test/simulator_e2e.sh launches the game once per phase with
 /// Crownroad.storekit loaded, and with Ask to Buy or a simulated failure where a phase needs it.
 /// The driver validates each transaction with the server the way NativeIAPService does and calls
-/// finish_transaction only after the server recorded it. It avoids reflection-based
-/// System.Text.Json, which the iOS NativeAOT build cannot run, so it works before the game's own
-/// JSON does. Player, session and expected balances carry over in user://storekit-plugin-review.txt.
+/// finish_transaction only after the server recorded it. It talks to the server with JsonDocument
+/// and Utf8JsonWriter rather than the game's providers, so it checks the plugin on its own (the
+/// shop phase, StoreKitShopReview, buys through the game). Player, session and expected balances
+/// carry over in user://storekit-plugin-review.txt.
 /// </summary>
 public partial class StoreKitPluginReview : Node
 {
@@ -27,7 +28,7 @@ public partial class StoreKitPluginReview : Node
     private readonly List<Godot.Collections.Dictionary> _completed = new();
     private readonly List<string> _finished = new();
     private readonly List<string> _failed = new();
-    private Godot.Collections.Array _products, _invalid;
+    private readonly List<(Godot.Collections.Array Products, Godot.Collections.Array Invalid)> _productAnswers = new();
     private GodotObject _store;
     private int _failures;
     private string _server = "";
@@ -60,7 +61,7 @@ public partial class StoreKitPluginReview : Node
             foreach (var signal in new[] { "products_received", "products_failed", "purchase_completed", "purchase_failed", "transaction_finished" })
                 foreach (var connection in _store.GetSignalConnectionList(signal))
                     _store.Disconnect(signal, connection["callable"].AsCallable());
-            _store.Connect("products_received", Callable.From<Godot.Collections.Array, Godot.Collections.Array>((p, i) => (_products, _invalid) = (p, i)));
+            _store.Connect("products_received", Callable.From<Godot.Collections.Array, Godot.Collections.Array>((p, i) => _productAnswers.Add((p, i))));
             _store.Connect("purchase_completed", Callable.From<Godot.Collections.Dictionary>(t =>
             {
                 GD.Print($"STOREKIT_EVENT: transaction {t["transaction_id"]} {t["product_id"]}{(t["restored"].AsBool() ? " restored" : "")} {SignedPayload(t["receipt"].AsString())}");
@@ -107,10 +108,14 @@ public partial class StoreKitPluginReview : Node
         Check(_store.Call("configure", profile).AsBool(), "The player's profile configures the plugin");
 
         var catalog = Catalog();
+        // The game's shop asks for its products at launch too, so this request's answer is the one naming the unknown ID.
         _store.Call("request_products", new Godot.Collections.Array(catalog.Keys.Append("com.crownroad.not_a_product").Select(id => Variant.CreateFrom(id))));
-        Check(await Until(() => _products != null, 10) && _products.Count == 10, $"The ten products load from the StoreKit configuration ({_products?.Count})");
-        Check(_invalid?.Count == 1 && _invalid[0].AsString() == "com.crownroad.not_a_product", "An unknown product ID is reported as invalid");
-        foreach (var item in _products ?? new())
+        Godot.Collections.Array products = null, invalid = null;
+        await Until(() => _productAnswers.Any(answer => answer.Invalid.Count > 0), 10);
+        if (_productAnswers.Any(answer => answer.Invalid.Count > 0)) (products, invalid) = _productAnswers.First(answer => answer.Invalid.Count > 0);
+        Check(products?.Count == 10, $"The ten products load from the StoreKit configuration ({products?.Count})");
+        Check(invalid?.Count == 1 && invalid[0].AsString() == "com.crownroad.not_a_product", "An unknown product ID is reported as invalid");
+        foreach (var item in products ?? new())
         {
             var product = item.AsGodotDictionary();
             var productId = product["product_id"].AsString();

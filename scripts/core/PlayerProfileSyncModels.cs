@@ -29,3 +29,8 @@ public interface IPlayerProfileSyncProvider
 	string BuildLocationSummary();
 	PlayerProfileSyncSnapshot SyncProfile(PlayerProfileSyncRequest request);
 }
+
+public sealed class PlayerProfileSyncApiRequest
+{
+	public PlayerProfileSyncRequest Profile { get; set; } = new();
+}

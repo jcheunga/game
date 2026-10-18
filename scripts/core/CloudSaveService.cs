@@ -15,23 +15,18 @@ public sealed class CloudSaveSnapshot
 	public long SizeBytes { get; set; }
 }
 
+public sealed class CloudSaveUploadRequest
+{
+	public string ProfileId { get; set; } = "";
+	public string SaveData { get; set; } = "";
+	public int SaveVersion { get; set; }
+}
+
 public static class CloudSaveService
 {
 	private static readonly System.Net.Http.HttpClient Client = new()
 	{
 		Timeout = TimeSpan.FromSeconds(15)
-	};
-
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		PropertyNameCaseInsensitive = true
-	};
-
-	private static readonly JsonSerializerOptions SaveJsonOptions = new()
-	{
-		WriteIndented = true
 	};
 
 	private static string _lastStatus = "";
@@ -70,13 +65,13 @@ public static class CloudSaveService
 			}
 
 			using var saveDocument = JsonDocument.Parse(saveData);
-			var requestBody = new
+			var requestBody = new CloudSaveUploadRequest
 			{
-				profileId,
-				saveData,
-				saveVersion = GetInt(saveDocument.RootElement, "Version", 0)
+				ProfileId = profileId,
+				SaveData = saveData,
+				SaveVersion = GetInt(saveDocument.RootElement, "Version", 0)
 			};
-			var requestJson = JsonSerializer.Serialize(requestBody, JsonOptions);
+			var requestJson = JsonSerializer.Serialize(requestBody, ServerJson.Default.CloudSaveUploadRequest);
 
 			using var msg = new HttpRequestMessage(HttpMethod.Post, $"{endpoint.TrimEnd('/')}/cloud-save/upload");
 			PlayerSessionHttp.Apply(msg, profileId);
@@ -162,7 +157,7 @@ public static class CloudSaveService
 				return false;
 			}
 
-			var parsed = JsonSerializer.Deserialize<GameSaveData>(CloudSavePrivacy.Sanitize(saveData), SaveJsonOptions);
+			var parsed = JsonSerializer.Deserialize(CloudSavePrivacy.Sanitize(saveData), SaveJson.Default.GameSaveData);
 			if (parsed == null)
 			{
 				message = "Failed to parse cloud save data.";

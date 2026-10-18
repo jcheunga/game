@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 public static class AccountSignIn
@@ -22,7 +23,10 @@ public static class AccountSignIn
         public int StatusCode { get; }
         public RequestFailure(string message, int statusCode) : base(message) { StatusCode = statusCode; }
     }
-    public static async Task<JsonElement> Request(string path, object body = null)
+    public static Task<JsonElement> Request(string path) => Request(path, json: null);
+    /// <summary>Posts a body, serialized with its ServerJson type info (for example ServerJson.Default.EmailStartRequest).</summary>
+    public static Task<JsonElement> Request<T>(string path, T body, JsonTypeInfo<T> bodyType) => Request(path, JsonSerializer.Serialize(body, bodyType));
+    private static async Task<JsonElement> Request(string path, string json)
     {
         var state = GameState.Instance;
         if (state.AccountProvider.Length == 0 && path is "/auth/email/start" or "/auth/dev/sign-in" or "/auth/apple/start" or "/auth/google/start" or "/auth/playgames" or "/auth/gamecenter")
@@ -31,7 +35,7 @@ public static class AccountSignIn
             try { await RegisterGuest(); }
             catch (RequestFailure e) when (e.StatusCode == 401) { /* Existing identities can recover a guest whose device session expired. */ }
         }
-        return await SendRequest(path, body);
+        return await SendRequest(path, json);
     }
 
     /// <summary>Called whenever the server answers: registers the guest, then tries the phone's own game account.</summary>
@@ -60,24 +64,26 @@ public static class AccountSignIn
     {
         var state = GameState.Instance;
         var profile = state.PlayerProfileId;
-        var guest = await SendRequest("/player-profile", new { profile = new { playerProfileId = profile, playerCallsign = state.PlayerCallsign } });
+        var body = new GuestProfileRequest { Profile = new GuestProfile { PlayerProfileId = profile, PlayerCallsign = state.PlayerCallsign } };
+        var guest = await SendRequest("/player-profile", JsonSerializer.Serialize(body, ServerJson.Default.GuestProfileRequest));
         if (Text(guest,"playerProfileId") != profile || Text(guest,"sessionToken").Length == 0)
             throw new InvalidOperationException("Could not prepare your account. Try again.");
         // A sign-in that finished while this request was in flight owns the device identity now.
         if (state.PlayerProfileId != profile) return;
         state.ApplyPlayerProfileSession(profile, Text(guest,"playerCallsign",state.PlayerCallsign), Text(guest,"sessionToken"), DateTimeOffset.UtcNow.ToUnixTimeSeconds());
     }
-    private static async Task<JsonElement> SendRequest(string path, object body, string profile = "", string token = "")
+    /// <summary>Sends json as a POST, or a GET when it is null.</summary>
+    private static async Task<JsonElement> SendRequest(string path, string json, string profile = "", string token = "")
     {
         if (Origin.Length == 0) throw new InvalidOperationException("Set the game server in Settings to sign in.");
-        using var request = new HttpRequestMessage(body == null ? HttpMethod.Get : HttpMethod.Post, Origin + path);
+        using var request = new HttpRequestMessage(json == null ? HttpMethod.Get : HttpMethod.Post, Origin + path);
         if (profile.Length == 0) PlayerSessionHttp.Apply(request, GameState.Instance.PlayerProfileId);
         else
         {
             request.Headers.Add("X-Convoy-Profile", profile);
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
-        if (body != null) request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        if (json != null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         try
         {
             using var response = await Client.SendAsync(request);
@@ -103,8 +109,7 @@ public static class AccountSignIn
             // Download before changing local identity so a failed request leaves current progress intact.
             var cloud = await SendRequest("/cloud-save/download?profileId=" + Uri.EscapeDataString(profile), null, profile, Text(session, "sessionToken"));
             if (Text(cloud, "status") != "empty" && Text(cloud, "saveData").Length > 0)
-                accountSave = JsonSerializer.Deserialize<GameSaveData>(CloudSavePrivacy.Sanitize(Text(cloud, "saveData")),
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                accountSave = JsonSerializer.Deserialize(CloudSavePrivacy.Sanitize(Text(cloud, "saveData")), DataJson.Default.GameSaveData);
             else if (state.AccountProvider.Length == 0 && session.TryGetProperty("isNewAccount", out var created) && created.ValueKind == JsonValueKind.True)
                 accountSave = state.BuildSaveData();
         }
@@ -113,5 +118,60 @@ public static class AccountSignIn
         state.SetSignedInAccount(Text(session, "provider"), Text(session, "accountLabel"));
         PlayerProfileSyncService.InvalidateFromState("Account signed in.");
         if (accountSave != null) state.RestoreCloudSave(accountSave);
+    }
+
+    // Bodies of the account requests (camelCase on the wire, see ServerJson).
+    public sealed class EmptyRequest
+    {
+    }
+
+    public sealed class GuestProfileRequest
+    {
+        public GuestProfile Profile { get; set; } = new();
+    }
+
+    public sealed class GuestProfile
+    {
+        public string PlayerProfileId { get; set; } = "";
+        public string PlayerCallsign { get; set; } = "";
+    }
+
+    public sealed class EmailStartRequest
+    {
+        public string Email { get; set; } = "";
+    }
+
+    public sealed class EmailVerifyRequest
+    {
+        public string ChallengeId { get; set; } = "";
+        public string Secret { get; set; } = "";
+        public string Code { get; set; } = "";
+    }
+
+    /// <summary>Asks whether a browser sign-in (Apple or Google) has finished.</summary>
+    public sealed class PollRequest
+    {
+        public string ChallengeId { get; set; } = "";
+        public string Secret { get; set; } = "";
+    }
+
+    public sealed class DevSignInRequest
+    {
+        public string Email { get; set; } = "";
+    }
+
+    public sealed class PlayGamesRequest
+    {
+        public string AuthCode { get; set; } = "";
+    }
+
+    /// <summary>Game Center's identity signature, which the server checks with Apple's public key.</summary>
+    public sealed class GameCenterRequest
+    {
+        public string PlayerId { get; set; } = "";
+        public string PublicKeyUrl { get; set; } = "";
+        public string Signature { get; set; } = "";
+        public string Salt { get; set; } = "";
+        public long Timestamp { get; set; }
     }
 }

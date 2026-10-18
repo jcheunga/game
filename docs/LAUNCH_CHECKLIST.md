@@ -22,6 +22,11 @@ Already done and tested locally (2026-10-17):
   player's callsign in guild, arena and friends lists (server tests).
 - The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
   Store flow on desktop (35 checks). See section 10.
+- The Android build template matches Godot 4.6.1: a headless debug export
+  (2026-10-18) runs the Gradle build and bundles the Play Billing library.
+- An Android-only deployment needs no App Store key: Compose accepts it
+  missing, and the server then refuses App Store purchases as not configured
+  (Compose config check, server tests).
 
 What follows needs real accounts, a domain, a deployed server and phones.
 
@@ -29,9 +34,10 @@ What follows needs real accounts, a domain, a deployed server and phones.
 
 - [ ] **A domain you own.** Apple only accepts HTTPS return URLs on a real
   domain, and the server needs one for its certificate.
-- [ ] **Launch platforms: Android, iOS or both.** The production Compose file
-  needs both the Google Play and the App Store purchase key files to start.
-  An Android-only launch needs a small code change first.
+- [ ] **Launch platforms: Android, iOS or both.** For Android only, leave
+  `APPLE_IAP_PRIVATE_KEY_SOURCE` unset in `.env.production` (section 3). The
+  server then starts without the App Store key and refuses App Store
+  purchases as not configured. Never use a placeholder key.
 - [ ] **The Adventurer's Kit (`starter_kit`): consumable or not.** It is sold
   once per player, but the game treats it as a consumable on both stores, so
   a player can pay for it twice (for example after restoring an old save). The server
@@ -73,9 +79,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Fill in `site/site.json` with the same website domain and the publisher
   details (see [WEBSITE.md](WEBSITE.md)).
 - [ ] Create `server/secrets/` with owner-only permissions, holding
-  `redis-password`, `admin-api-key`, `google-play-service-account.json` and the
-  App Store purchase `.p8` key. Point the four `*_SOURCE` entries in
-  `.env.production` at them.
+  `redis-password`, `admin-api-key`, `google-play-service-account.json` and,
+  for iOS, the App Store purchase `.p8` key. Point the `*_SOURCE` entries in
+  `.env.production` at them (leave `APPLE_IAP_PRIVATE_KEY_SOURCE` out for an
+  Android-only launch; `deploy.sh` then says App Store purchases are off).
 - [ ] Leave `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS` and
   `CROWNROAD_DEV_SIGN_IN` unset. The server refuses to start in
   production with either set.
@@ -121,9 +128,6 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Add yourself as a tester until the Play Games setup is published.
 - [ ] On each machine that exports Android, run
   `native/PlayGamesSignIn/build.sh` once (needs JDK 17).
-- [ ] Fix the Android build template mismatch: the installed template is for
-  Godot 4.7.2 but the project uses 4.6.1. Reinstall the 4.6.1 template
-  (Project → Install Android Build Template), or move the project to 4.7.
 
 ## 7. Game Center (iOS)
 
@@ -170,6 +174,9 @@ unfinished one back on the next launch. Nothing has been bought through Google
 Play yet.
 
 - [ ] In Play Console, set up a payments profile so the app can sell.
+- [ ] Check the release bundle against Play's size limits. A debug export
+  (2026-10-18) is 745 MB, almost all of it textures in the install-time asset
+  pack.
 - [ ] Add testers under License testing, and upload a signed build to the
   internal testing track. Play only offers in-app products once a build with
   the billing library is uploaded, and purchases only work in a build Play

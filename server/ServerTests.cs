@@ -82,6 +82,7 @@ public static partial class ServerTests
                 ("PurchaseConcurrentDuplicate", () => TestPurchaseConcurrentDuplicate(client)),
                 ("PurchaseConcurrentOtherProfile", () => TestPurchaseConcurrentOtherProfile(client)),
                 ("StoreVerifierFailsClosedWithoutCredentials", TestStoreVerifierFailsClosedWithoutCredentials),
+                ("AppleVerifierTreatsEmptyKeyAsUnconfigured", TestAppleVerifierTreatsEmptyKeyAsUnconfigured),
                 ("AppleAppAccountTokenVectors", TestAppleAppAccountTokenVectors),
                 ("PurchaseStarterOneTime", () => TestPurchaseStarterOneTime(client)),
                 ("StripeCheckoutNoKey", () => TestStripeCheckoutNoKey(client)),
@@ -785,6 +786,32 @@ public static partial class ServerTests
             Environment.SetEnvironmentVariable(packageKey, previousPackage);
             Environment.SetEnvironmentVariable(jsonKey, previousJson);
             Environment.SetEnvironmentVariable(pathKey, previousPath);
+        }
+    }
+
+    // An Android-only deployment leaves APPLE_IAP_PRIVATE_KEY_SOURCE unset, and Compose mounts
+    // server/empty-secret instead. App Store purchases must then be refused as unconfigured.
+    private static async Task TestAppleVerifierTreatsEmptyKeyAsUnconfigured()
+    {
+        string[] keys = ["APPLE_IAP_ISSUER_ID", "APPLE_IAP_KEY_ID", "APPLE_IAP_BUNDLE_ID", "APPLE_IAP_PRIVATE_KEY", "APPLE_IAP_PRIVATE_KEY_PATH"];
+        var previous = keys.ToDictionary(key => key, Environment.GetEnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable("APPLE_IAP_ISSUER_ID", "00000000-0000-0000-0000-000000000000");
+            Environment.SetEnvironmentVariable("APPLE_IAP_KEY_ID", "TESTKEY000");
+            Environment.SetEnvironmentVariable("APPLE_IAP_BUNDLE_ID", "com.crownroad.game");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", null);
+            var emptySecret = Path.Combine(SourceDirectory(), "empty-secret");
+            Assert(File.Exists(emptySecret) && new FileInfo(emptySecret).Length == 0, "expected server/empty-secret to be an empty file");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY_PATH", emptySecret);
+            var result = await StorePurchaseVerification.VerifyAsync(
+                "apple", "gold_pouch", "synthetic-jws", "2000000000000001", "TEST-PUR-VERIFY");
+            Assert(!result.Verified && result.IsConfigurationError && result.Message.Contains("not configured"),
+                $"expected an empty App Store key to be unconfigured ({result.Message})");
+        }
+        finally
+        {
+            foreach (var (key, value) in previous) Environment.SetEnvironmentVariable(key, value);
         }
     }
 

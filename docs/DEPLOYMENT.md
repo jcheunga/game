@@ -51,10 +51,10 @@ rehearse a restore before releasing paid currency.
    `.env.production`. It must use verified TLS, such as
    `sslmode=verify-full`; do not use `Ssl Mode=Disable` for a public provider.
    Treat the populated environment file as a secret and do not commit it.
-6. Create `secrets/` (the repository path is `server/secrets/`) with owner-only permissions and add four files:
-   `redis-password`, `admin-api-key`, `google-play-service-account.json`, and
-   the App Store private-key `.p8` file. Point the four `*_SOURCE` entries in
-   `.env.production` at those paths. Generate a unique, high-entropy admin key.
+6. Create `secrets/` (the repository path is `server/secrets/`) with owner-only permissions and add the files
+   `redis-password`, `admin-api-key`, `google-play-service-account.json`, and,
+   for iOS, the App Store private-key `.p8` file. Point the matching `*_SOURCE`
+   entries in `.env.production` at those paths. Generate a unique, high-entropy admin key.
    Never commit this directory or the populated environment file.
 7. Fill the Google Play and App Store identifiers. Do not set
    `CROWNROAD_ALLOW_TEST_PURCHASE_CLAIMS`; the server rejects it in production.
@@ -66,11 +66,11 @@ rehearse a restore before releasing paid currency.
    pooler, connection limit, memory, CPU, and monitoring capacity support the
    new total.
 
-If iOS is not ready, do not fabricate an Apple key to make the deployment
-start. The checked-in production Compose file currently requires both store
-credential files at startup. An Android-only launch therefore needs a code
-change to make the Apple secret mount optional, or real Apple credentials
-provisioned even while iOS purchases remain disabled. The iOS purchase plugin
+If iOS is not ready, launch Android-only: leave `APPLE_IAP_PRIVATE_KEY_SOURCE`
+unset or blank. Compose then mounts the empty `server/empty-secret` file
+instead, the server refuses App Store purchases as not configured, and
+`deploy.sh` prints a note saying so. Do not fabricate an Apple key. The Google
+Play key stays required. The iOS purchase plugin
 is in `native/StoreKit`; test it with sandbox purchases on a device before you
 offer iOS purchases (see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md#10-app-store-purchases-ios)).
 

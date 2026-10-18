@@ -104,5 +104,7 @@ secrets:
     file: ${ADMIN_API_KEY_SOURCE:?set ADMIN_API_KEY_SOURCE in .env.production}
   google_play_service_account:
     file: ${GOOGLE_PLAY_SERVICE_ACCOUNT_SOURCE:?set GOOGLE_PLAY_SERVICE_ACCOUNT_SOURCE in .env.production}
+  # Optional for an Android-only launch: without a key the mount is an empty
+  # file, and App Store purchases fail closed as "not configured".
   apple_iap_private_key:
-    file: ${APPLE_IAP_PRIVATE_KEY_SOURCE:?set APPLE_IAP_PRIVATE_KEY_SOURCE in .env.production}
+    file: ${APPLE_IAP_PRIVATE_KEY_SOURCE:-./empty-secret}

@@ -24,6 +24,9 @@ public static class Endpoints
 
         if (string.IsNullOrWhiteSpace(profileId))
             return Results.BadRequest(new { error = "missing playerProfileId" });
+        // Deleted accounts' purchase records sit under these pseudonyms; no one may register one.
+        if (AccountDeletion.IsDeletedProfile(profileId))
+            return Results.BadRequest(new { error = "invalid playerProfileId" });
 
         using var conn = Database.Open();
         var knownProfile = SessionAuth.PlayerExists(conn, profileId);
@@ -60,6 +63,38 @@ public static class Endpoints
             canJoinRooms = true,
             relayEnabled = true,
             syncedAtUnixSeconds = now
+        });
+    }
+
+    // ── Account deletion ─────────────────────────────────────
+
+    /// <summary>
+    /// Deletes the signed-in player's account (AccountDeletion lists what is erased and what is kept), and
+    /// with it every session the account had. A retry that presents one of those sessions gets the same
+    /// answer, so a response lost in transit is safe to repeat.
+    /// </summary>
+    public static async Task<IResult> AccountDelete(HttpRequest request)
+    {
+        request.HttpContext.Response.Headers.CacheControl = "no-store";
+        var profileId = request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "";
+        if (string.IsNullOrWhiteSpace(profileId))
+            return Results.BadRequest(new { error = "missing profile ID" });
+        if (!SessionAuth.TryAuthorize(request, profileId, out _))
+        {
+            return AccountDeletion.WasDeletedSession(request)
+                ? Results.Ok(new { status = "deleted", message = "This account was already deleted.", alreadyDeleted = true })
+                : SessionAuth.Unauthorized();
+        }
+
+        var revocations = AccountDeletion.Erase(profileId);
+        var revoked = await AccountDeletion.RevokeQueuedAsync(revocations);
+        return Results.Ok(new
+        {
+            status = "deleted",
+            message = "Account deleted.",
+            alreadyDeleted = false,
+            // Apple could not take the revocation now; the server keeps retrying it.
+            signInRevocationPending = !revoked
         });
     }
 

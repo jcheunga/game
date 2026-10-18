@@ -10,7 +10,7 @@ Already done and tested locally (2026-10-17):
 
 - Guest play, the guest's cloud session, cloud backup and restore, email
   sign-in, account features and sign-out, with `scripts/tests/server_e2e.sh`
-  against a real local server (53 checks), and `SaveRoundTripReview.tscn` for
+  against a real local server (62 checks), and `SaveRoundTripReview.tscn` for
   the save on the device.
 - Purchases are checked with the server off the main thread, so the shop keeps
   running. A purchase cut off before the server answers (timeout, lost
@@ -20,6 +20,13 @@ Already done and tested locally (2026-10-17):
   a real PostgreSQL (server tests).
 - A purchase, a cloud-save upload or a Stripe payment no longer blanks the
   player's callsign in guild, arena and friends lists (server tests).
+- Account deletion from Settings → Account → Delete account (2026-10-18). The
+  server erases everything keyed by the player and ends every session; a
+  repeated request answers the same. Purchase records stay, moved to a random
+  `DELETED-` code with no player behind it. Sign in with Apple refresh tokens
+  are now kept encrypted and revoked with Apple on deletion, retried if Apple
+  is down. Covered by server tests (SQLite and PostgreSQL, Apple stubbed) and
+  by `server_e2e.sh`, which deletes the second install's account.
 - The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
   Store flow on desktop (35 checks). See section 10.
 - The Android build template matches Godot 4.6.1: a headless debug export
@@ -162,6 +169,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
   - `APPLE_SIGN_IN_KEY_ID` (the key's 10-character ID)
   - `APPLE_SIGN_IN_REDIRECT_URI` (the return URL above)
   - `APPLE_SIGN_IN_PRIVATE_KEY_PATH` (the `.p8` file)
+  - `ACCOUNT_TOKEN_KEY`, from `openssl rand -base64 32`. It encrypts the Apple
+    refresh tokens that account deletion revokes. Sign in with Apple stays off
+    without it, and production refuses to start. Keep it safe and never
+    change it: stored tokens cannot be read with another key.
 - [ ] Restart the server. `https://<domain>/auth/providers` should report
   every sign-in method as available.
 
@@ -281,8 +292,16 @@ Then, with Apple:
 
 - [ ] Use the official Google and Apple sign-in button designs. The game draws
   them in its own style today, and both companies have branding rules.
-- [ ] Build account deletion. Apple requires it, and it must revoke the
+- [x] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
+  Done: see "Already done" at the top.
+- [ ] Once Sign in with Apple works on the live server, sign in with Apple on
+  a test account, delete it in Settings, and check that Crownroad no longer
+  appears under Sign in with Apple in the iPhone's Apple ID settings. Only
+  Apple's real endpoint proves the revocation.
+- [ ] Set how long the PostgreSQL provider keeps backups, and give that period
+  in the privacy policy's "Deleting your account" section, which now says only
+  that backup copies go "as those backups expire".
 - [ ] Fill in Play's Data safety form and Apple's privacy labels to cover
   email addresses, player IDs and purchase history, and make sure the
   privacy policy covers them.

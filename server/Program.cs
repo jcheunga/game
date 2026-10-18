@@ -34,6 +34,9 @@ if (appEnvironment.IsProduction())
         throw new InvalidOperationException("Redis:Configuration must be configured in production for shared rate limits.");
     if (string.IsNullOrWhiteSpace(redisPasswordFile) || !File.Exists(redisPasswordFile))
         throw new InvalidOperationException("REDIS_PASSWORD_FILE must point to a readable Redis secret in production.");
+    // Sign in with Apple stays off without the key, and deleted accounts' Apple sign-ins could not be revoked.
+    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("APPLE_SIGN_IN_CLIENT_ID")) && !CredentialProtection.Configured)
+        throw new InvalidOperationException("Sign in with Apple needs ACCOUNT_TOKEN_KEY (or ACCOUNT_TOKEN_KEY_PATH): 32 random bytes in base64, from openssl rand -base64 32.");
 }
 
 builder.Services.AddLogging();
@@ -119,6 +122,7 @@ app.Map("/ws/relay/{roomId}", async (HttpContext context, string roomId) =>
 
 AccountAuth.Map(app);
 app.MapPost("/player-profile", Endpoints.PlayerProfile);
+app.MapPost("/account/delete", Endpoints.AccountDelete);
 app.MapPost("/challenge-sync", Endpoints.ChallengeSync);
 app.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);
 app.MapGet("/challenge-feed", Endpoints.ChallengeFeed);

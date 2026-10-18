@@ -25,7 +25,7 @@ public static class MedievalUi
         }
     }
 
-    public static void ShowConfirmation(Control host, string title, string body, string confirmText, Action onConfirm)
+    public static void ShowConfirmation(Control host, string title, string body, string confirmText, Action onConfirm, string cancelText = "Keep playing")
     {
         var stack = CreateModal(host, new Vector2(460f, 0f), 14, out var veil, out var center, out var panel);
         var heading = RealmUi.Heading(title, 24);
@@ -36,7 +36,7 @@ public static class MedievalUi
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 10);
         stack.AddChild(row);
-        var cancel = new RealmButton { Text = "Keep playing", CustomMinimumSize = new Vector2(160f, 44f) };
+        var cancel = new RealmButton { Text = cancelText, CustomMinimumSize = new Vector2(160f, 44f) };
         cancel.Pressed += () => { veil.QueueFree(); center.QueueFree(); };
         row.AddChild(cancel);
         var confirm = new RealmButton { Text = confirmText, CustomMinimumSize = new Vector2(160f, 44f) };

@@ -34,17 +34,17 @@
           <tr>
             <td>Player ID and session</td>
             <td>A random ID (it looks like <code>CVY-</code> followed by letters and numbers) that the game creates the first time it runs, plus a sign-in session our server issues to that ID. We use them to run online features and keep your progress and purchases attached to you. We store only a one-way hash of the session token.</td>
-            <td>The player ID is kept until you ask us to delete your data. Sessions expire after 30 days.</td>
+            <td>Until you delete your account. Sessions expire after 30 days, and deleting your account ends them at once.</td>
           </tr>
           <tr>
             <td>Callsign</td>
             <td>The name you choose in Settings (the default is "Lantern"). Other players can see it in online rooms, on shared scoreboards and in LAN races.</td>
-            <td>Until you change it or ask us to delete your data.</td>
+            <td>Until you change it or delete your account.</td>
           </tr>
           <tr>
             <td>Game results</td>
             <td>Challenge results, scores, achievements, daily completions, and which online rooms you joined and how you placed. Used for leaderboards, challenges and fair play.</td>
-            <td>Until you ask us to delete your data.</td>
+            <td>Until you delete your account.</td>
           </tr>
           <tr>
             <td>Live race updates</td>
@@ -54,27 +54,27 @@
           <tr>
             <td>Cloud save</td>
             <td>Your progress, gameplay settings, callsign and player ID are uploaded after you win a stage when the online service is configured, or when you choose Upload in Settings. Cloud saves exclude your sign-in session token, server connection settings and analytics/crash-reporting choices. Restoring progress keeps the current device's sign-in and privacy choices.</td>
-            <td>Replaced by each new save. Kept until you ask us to delete your data.</td>
+            <td>Replaced by each new save. Deleted with your account.</td>
           </tr>
           <tr>
             <td>Purchases</td>
             <td>The item you bought, the store and platform, the store's order or transaction ID, a one-way fingerprint of the store receipt, the time, and your in-game currency balance and history. Used to deliver what you paid for, handle refunds and prevent fraud. We never receive your card or bank details.</td>
-            <td>As long as the law requires us to keep purchase and tax records. We keep only the minimum needed after a deletion request.</td>
+            <td>As long as the law requires us to keep purchase and tax records. If you delete your account, we delete your currency balance and history and keep only the purchase record, under a random code that isn't linked to you.</td>
           </tr>
           <tr>
             <td>Gameplay analytics <em>(only if you opt in)</em></td>
             <td>Events such as starting a session and finishing a stage, with your player ID, game version and platform. Used to understand difficulty and improve balance. Off until you agree, and you can switch it off at any time in Settings.</td>
-            <td>Deleted after 30 days.</td>
+            <td>Deleted after 30 days, or sooner if you delete your account.</td>
           </tr>
           <tr>
             <td>Crash reports <em>(only if you opt in)</em></td>
             <td>If you enable crash reports in Settings and the game encounters an error or diagnostic warning, it sends the error message and technical trace, the game version, the platform, the screen you were on and your player ID, so we can fix bugs. Off by default, independently of gameplay analytics, and you can switch it off at any time.</td>
-            <td>Deleted after 90 days.</td>
+            <td>Deleted after 90 days, or sooner if you delete your account.</td>
           </tr>
           <tr>
             <td>Player reports</td>
             <td>If you report another player in an online room, we record both player IDs, the reason you chose and a note about the race.</td>
-            <td>Deleted after 90 days.</td>
+            <td>Deleted after 90 days. Reports you made and reports about you are deleted with your account.</td>
           </tr>
           <tr>
             <td>Connection data</td>
@@ -118,10 +118,22 @@
     <ul>
       <li><strong>Analytics and crash reports:</strong> switch either option on or off in Settings. Turning analytics off also clears events waiting to be sent. These choices stay on your device when you restore a cloud save.</li>
       <li><strong>Callsign:</strong> change it in Settings at any time.</li>
+      <li><strong>Delete your account:</strong> in the game, choose Settings, then Account, then Delete account. See <a href="#delete-account">what deleting removes and keeps</a>.</li>
       <li><strong>Access, correction, copy, deletion and objection:</strong> depending on where you live, you can ask to see the data we hold about you, correct it, get a copy, delete it, or object to how we use it.</li>
     </ul>
     <p>To make a request, email <a href="mailto:{{support_email}}">{{support_email}}</a> with your player ID. You'll find it in the game's Settings screen, shown as "Profile: CVY-…". Because the game has no password, we may ask for details only someone with your device would know before we act, so nobody else can delete or read your data. We reply within 30 days.</p>
-    <p><strong>Resetting your campaign</strong> in Settings starts a new player ID on your device but doesn't delete data linked to the old one. To remove that, send us the old ID before you reset, or email us. See <a href="/support#delete-data">how to delete your data</a>.</p>
+    <p><strong>Resetting your campaign</strong> in Settings starts a new player ID on your device but doesn't delete data linked to the old one. To remove that, delete your account before you reset, or email us the old ID.</p>
+
+    <h3 id="delete-account">Deleting your account</h3>
+    <p>Delete account in the game's Settings works for guests and signed-in players alike, and takes effect at once. It asks you to confirm first and can't be undone.</p>
+    <ul>
+      <li><strong>Deleted:</strong> your player ID, callsign, sessions, linked sign-ins (your email address, Apple, Google, Game Center and Google Play Games), cloud save, game results and leaderboard entries, achievements, daily completions, arena and raid records, friends and gifts, guild membership, online rooms you hosted and your seats in other rooms, player reports you made or that name you, your in-game currency balance and history, gameplay analytics and crash reports.</li>
+      <li><strong>Sign in with Apple:</strong> we also ask Apple to revoke Crownroad's access to your Apple account. If Apple can't be reached, our server keeps trying for about three weeks.</li>
+      <li><strong>Kept:</strong> the record of each purchase (the item, store and platform, the store's transaction ID, the receipt fingerprint, the time and the currency it delivered). Tax law requires it, and it lets us handle refunds and stops a purchase being delivered twice. We move it to a random code that isn't linked to you or to any player.</li>
+      <li><strong>Shared things:</strong> a guild you led passes to its top contributor, and an empty one is removed. Other players' arena records keep their own result without your player ID.</li>
+      <li><strong>Elsewhere:</strong> your device starts again as a new guest, and deleting the game removes what is left on it. Copies in our encrypted database backups are removed as those backups expire. Apple, Google and Stripe keep their own records of payments made through them.</li>
+    </ul>
+    <p>If you can't open the game, email <a href="mailto:{{support_email}}">{{support_email}}</a> with your player ID and we'll delete your account within 30 days. See <a href="/support#delete-data">how to delete your data</a>.</p>
     <p>If you are unhappy with how we handle your data, you can complain to your local data protection authority. We'd appreciate the chance to fix it first.</p>
 
     <h2>Children</h2>

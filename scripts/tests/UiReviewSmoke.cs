@@ -61,6 +61,12 @@ public partial class UiReviewSmoke : Node
             { await ReviewEnchantments(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--expansion"))
             { await ReviewExpansion(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--account-deletion"))
+            {
+                await ReviewAccountDeletion();
+                GD.Print($"ACCOUNT_DELETION_REVIEW_RESULT: {_failures} failures");
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--developer"))
             {
                 _output = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--small-window") ? "res://artifacts/home-map/small" : "res://artifacts/home-map/desktop");

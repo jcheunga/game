@@ -35,6 +35,12 @@ public class StaleDataCleanup : BackgroundService
                     _logger.LogInformation("StaleDataCleanup: removed {Count} stale rows", cleaned);
                 }
 
+                // Deleted accounts' Apple sign-ins that Apple could not revoke at the time.
+                if (!await AccountDeletion.RevokeQueuedAsync())
+                {
+                    _logger.LogWarning("StaleDataCleanup: some Apple token revocations are still waiting");
+                }
+
                 if (Database.SupportsLocalBackups && DateTime.UtcNow - _lastBackupTime > BackupInterval)
                 {
                     var backupPath = Database.Backup();
@@ -115,6 +121,8 @@ public class StaleDataCleanup : BackgroundService
             cmd.Parameters.AddWithValue("@cutoff", now - StaleCrashReportRetentionSeconds);
             totalRemoved += cmd.ExecuteNonQuery();
         }
+
+        totalRemoved += AccountDeletion.PurgeDeletedSessions(conn);
 
         return totalRemoved;
     }

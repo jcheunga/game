@@ -31,6 +31,12 @@ Already done and tested locally (2026-10-17):
   repeated and unknown notifications; refunds larger than the balance;
   simultaneous signals), `SaveRoundTripReview` and `server_e2e.sh`. Setup is in
   sections 9 and 10, and in [DEPLOYMENT.md](DEPLOYMENT.md#refunds).
+- Answers to Apple's refund requests (`CONSUMPTION_REQUEST`), off until
+  consent is settled (section 1). When switched on, the server tells Apple
+  that a recorded purchase was delivered, once per request, within Apple's
+  12 hours. Covered by server tests on SQLite and PostgreSQL (the request
+  body, the switch, repeated and simultaneous deliveries, unknown purchases,
+  and Apple refusing or unreachable).
 
 What follows needs real accounts, a domain, a deployed server and phones.
 
@@ -54,6 +60,13 @@ What follows needs real accounts, a domain, a deployed server and phones.
     recorded for review.
   - A refunded Adventurer's Kit keeps its unit. The kit still counts as
     bought, so it cannot be bought again.
+- [ ] **Answering Apple's refund requests: how players consent.** When a
+  player asks Apple for a refund, the server can tell Apple the purchase was
+  delivered, which helps Apple turn down abuse. Apple requires the player's
+  consent first. Either add a line to the privacy policy and terms, then
+  switch it on for everyone, or build an opt-in in Settings (not built). Until
+  you decide, it stays off. See
+  [DEPLOYMENT.md](DEPLOYMENT.md#refund-requests-app-store).
 
 ## 2. Accounts
 
@@ -252,6 +265,8 @@ Then, with Apple:
   `GET /admin/refunds` as a `TEST` event. Optionally set
   `APPLE_IAP_APP_APPLE_ID` to the app's numeric Apple ID. See
   [DEPLOYMENT.md](DEPLOYMENT.md#refunds).
+- [ ] If players consent (section 1), set `APPLE_IAP_SEND_CONSUMPTION_INFO=1`
+  so the server answers refund requests. Leave it unset otherwise.
 - [ ] Create a sandbox Apple Account (Users and Access → Sandbox) to buy with.
 - [ ] Rebuild the plugin with `native/StoreKit/build.sh` whenever the project
   changes Godot version.
@@ -272,6 +287,10 @@ Then, with Apple:
   - A refunded sandbox purchase (see Apple's sandbox testing guide) arrives
     as a `REFUND` notification. The next time the shop opens, its currency is
     taken back, once.
+  - With `APPLE_IAP_SEND_CONSUMPTION_INFO=1`, asking for that refund first
+    shows a `CONSUMPTION_REQUEST` in `GET /admin/refunds` with outcome
+    `consumption_sent`, meaning Apple accepted the answer. The server tests
+    can't check that.
 
 ## 11. Point the game at the live server
 

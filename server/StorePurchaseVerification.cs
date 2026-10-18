@@ -262,6 +262,26 @@ public static class StorePurchaseVerification
         return GetString(payload.RootElement, "access_token");
     }
 
+    /// <summary>
+    /// A bearer token for the App Store Server API, or null when the App Store credentials
+    /// are not configured. Throws CryptographicException or ArgumentException when the private
+    /// key can't be read.
+    /// </summary>
+    internal static string? AppleServerToken()
+    {
+        var issuerId = Environment.GetEnvironmentVariable("APPLE_IAP_ISSUER_ID")?.Trim() ?? "";
+        var keyId = Environment.GetEnvironmentVariable("APPLE_IAP_KEY_ID")?.Trim() ?? "";
+        var bundleId = Environment.GetEnvironmentVariable("APPLE_IAP_BUNDLE_ID")?.Trim() ?? "";
+        var privateKey = ReadSecret("APPLE_IAP_PRIVATE_KEY", "APPLE_IAP_PRIVATE_KEY_PATH");
+        if (string.IsNullOrWhiteSpace(issuerId) || string.IsNullOrWhiteSpace(keyId) ||
+            string.IsNullOrWhiteSpace(bundleId) || string.IsNullOrWhiteSpace(privateKey))
+            return null;
+        return CreateAppleServerToken(issuerId, keyId, bundleId, privateKey);
+    }
+
+    internal static string AppleApiBaseUrl(bool sandbox) =>
+        sandbox ? "https://api.storekit-sandbox.apple.com" : "https://api.storekit.apple.com";
+
     private static string CreateAppleServerToken(string issuerId, string keyId, string bundleId, string privateKey)
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -287,18 +307,9 @@ public static class StorePurchaseVerification
     /// </summary>
     internal static async Task<string> RequestAppleTestNotificationAsync(bool sandbox)
     {
-        var issuerId = Environment.GetEnvironmentVariable("APPLE_IAP_ISSUER_ID")?.Trim() ?? "";
-        var keyId = Environment.GetEnvironmentVariable("APPLE_IAP_KEY_ID")?.Trim() ?? "";
-        var bundleId = Environment.GetEnvironmentVariable("APPLE_IAP_BUNDLE_ID")?.Trim() ?? "";
-        var privateKey = ReadSecret("APPLE_IAP_PRIVATE_KEY", "APPLE_IAP_PRIVATE_KEY_PATH");
-        if (string.IsNullOrWhiteSpace(issuerId) || string.IsNullOrWhiteSpace(keyId) ||
-            string.IsNullOrWhiteSpace(bundleId) || string.IsNullOrWhiteSpace(privateKey))
-            throw new InvalidOperationException("App Store credentials are not configured.");
-
-        var baseUrl = sandbox ? "https://api.storekit-sandbox.apple.com" : "https://api.storekit.apple.com";
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/inApps/v1/notifications/test");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-            "Bearer", CreateAppleServerToken(issuerId, keyId, bundleId, privateKey));
+        var authorization = AppleServerToken() ?? throw new InvalidOperationException("App Store credentials are not configured.");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{AppleApiBaseUrl(sandbox)}/inApps/v1/notifications/test");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authorization);
         using var response = await Client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)

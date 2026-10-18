@@ -1,4 +1,5 @@
 using System.Buffers.Text;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -288,7 +289,7 @@ public static partial class ServerTests
             const string profile = "TEST-REFUND-IGNORED";
             const string transactionId = "2000000900000003";
             var purchaseId = await BuyForRefund(client, profile, "food_rations", "apple", transactionId);
-            foreach (var type in new[] { "REVOKE", "CONSUMPTION_REQUEST", "TEST" })
+            foreach (var type in new[] { "REVOKE", "TEST" })
             {
                 var (typeStatus, typeBody) = await PostAppleNotification(client, chain.Sign(AppleNotification(type, chain.Sign(AppleTransaction(transactionId, "com.crownroad.food_rations")))));
                 Assert(typeStatus == HttpStatusCode.OK && typeBody.GetProperty("status").GetString() == "ignored", $"expected {type} to be acknowledged and ignored, got {typeBody}");
@@ -332,6 +333,231 @@ public static partial class ServerTests
                     "expected one adjustment and one reversal");
             }
         });
+    }
+
+    // ── App Store consumption requests ──────────────────────
+
+    private sealed record AppleApiCall(HttpMethod Method, Uri Uri, string Body, string Authorization);
+
+    /// <summary>An unrefunded consumable, as Apple describes it in a CONSUMPTION_REQUEST.</summary>
+    private static object AppleConsumable(string transactionId, string productId = "com.crownroad.gold_chest", string environment = "Sandbox")
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return new
+        {
+            transactionId, originalTransactionId = transactionId, bundleId = AppleBundle, productId,
+            purchaseDate = now - 3_600_000, signedDate = now, quantity = 1, type = "Consumable",
+            inAppOwnershipType = "PURCHASED", environment
+        };
+    }
+
+    private static object AppleConsumptionRequest(string signedTransactionInfo, string environment = "Sandbox", string? uuid = null, DateTimeOffset? signedAt = null) => new
+    {
+        notificationType = "CONSUMPTION_REQUEST", notificationUUID = uuid ?? Guid.NewGuid().ToString(), version = "2.0",
+        signedDate = (signedAt ?? DateTimeOffset.UtcNow).ToUnixTimeMilliseconds(),
+        data = new
+        {
+            appAppleId = 6700000000L, bundleId = AppleBundle, bundleVersion = "1", environment, signedTransactionInfo,
+            consumptionRequestReason = "UNINTENDED_PURCHASE"
+        }
+    };
+
+    private static (string Outcome, string Detail, string PurchaseId) AppleEvent(string notificationUuid)
+    {
+        using var conn = Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT outcome, detail, purchase_id FROM store_events WHERE event_key = @key";
+        cmd.Parameters.AddWithValue("@key", $"apple:{notificationUuid}");
+        using var reader = cmd.ExecuteReader();
+        return reader.Read() ? (reader.GetString(0), reader.GetString(1), reader.GetString(2)) : ("", "", "");
+    }
+
+    /// <summary>
+    /// Runs a test with App Store API credentials (a throwaway key) and Apple's API answered
+    /// by <paramref name="apple"/>; every call is logged in the queue the test gets.
+    /// </summary>
+    private static async Task WithAppleApi(
+        ECDsa apiKey, Func<HttpRequestMessage, Task<HttpResponseMessage>> apple, Func<ConcurrentQueue<AppleApiCall>, Task> test)
+    {
+        var names = new[] { "APPLE_IAP_ISSUER_ID", "APPLE_IAP_KEY_ID", "APPLE_IAP_PRIVATE_KEY", AppStoreConsumption.SwitchVariable };
+        var previous = names.ToDictionary(name => name, Environment.GetEnvironmentVariable);
+        Environment.SetEnvironmentVariable("APPLE_IAP_ISSUER_ID", "test-issuer");
+        Environment.SetEnvironmentVariable("APPLE_IAP_KEY_ID", "TESTKEY123");
+        Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", apiKey.ExportPkcs8PrivateKeyPem());
+        Environment.SetEnvironmentVariable(AppStoreConsumption.SwitchVariable, null);
+        var calls = new ConcurrentQueue<AppleApiCall>();
+        AppStoreConsumption.TestSend = async request =>
+        {
+            calls.Enqueue(new AppleApiCall(request.Method, request.RequestUri!, await request.Content!.ReadAsStringAsync(),
+                request.Headers.Authorization?.ToString() ?? ""));
+            return await apple(request);
+        };
+        try { await test(calls); }
+        finally
+        {
+            AppStoreConsumption.TestSend = null;
+            foreach (var (name, value) in previous) Environment.SetEnvironmentVariable(name, value);
+        }
+    }
+
+    private static Task<HttpResponseMessage> AppleAnswers(HttpStatusCode status, string body = "") =>
+        Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
+
+    private static async Task TestAppleConsumptionRequest(HttpClient client)
+    {
+        using var chain = AppleTestChain.Create();
+        using var apiKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        await WithAppleNotifications(chain, () => WithAppleApi(apiKey, _ => AppleAnswers(HttpStatusCode.Accepted), async calls =>
+        {
+            const string profile = "TEST-CONSUMPTION";
+            const string transactionId = "2000000900020001";
+            var purchaseId = await BuyForRefund(client, profile, "gold_chest", "apple", transactionId);
+            var signedTransaction = chain.Sign(AppleConsumable(transactionId));
+
+            // Off by default: recorded, nothing sent.
+            var offUuid = Guid.NewGuid().ToString();
+            var (offStatus, off) = await PostAppleNotification(client, chain.Sign(AppleConsumptionRequest(signedTransaction, uuid: offUuid)));
+            Assert(offStatus == HttpStatusCode.OK && off.GetProperty("status").GetString() == "consumption_skipped", $"expected the request to be skipped while switched off, got {(int)offStatus} {off}");
+            Assert(calls.IsEmpty, "expected nothing sent to Apple without the switch");
+            var offEvent = AppleEvent(offUuid);
+            Assert(offEvent.Outcome == "consumption_skipped" && offEvent.PurchaseId == purchaseId &&
+                offEvent.Detail.Contains("consumptionRequestReason=UNINTENDED_PURCHASE") && offEvent.Detail.Contains("consumption=skipped reason=switched_off"),
+                $"expected the skip and its reason in the audit trail, got {offEvent}");
+
+            // Switched on: Apple gets the purchase's delivery, consent and nothing else.
+            Environment.SetEnvironmentVariable(AppStoreConsumption.SwitchVariable, "1");
+            var uuid = Guid.NewGuid().ToString();
+            var notification = chain.Sign(AppleConsumptionRequest(signedTransaction, uuid: uuid));
+            var (status, body) = await PostAppleNotification(client, notification);
+            Assert(status == HttpStatusCode.OK && body.GetProperty("status").GetString() == "consumption_sent", $"expected the consumption information to be sent, got {(int)status} {body}");
+            Assert(calls.Count == 1, $"expected one call to Apple, got {calls.Count}");
+            var call = calls.Single();
+            Assert(call.Method == HttpMethod.Put && call.Uri.ToString() == $"https://api.storekit-sandbox.apple.com/inApps/v2/transactions/consumption/{transactionId}",
+                $"expected PUT to the sandbox consumption endpoint, got {call.Method} {call.Uri}");
+            using (var sent = JsonDocument.Parse(call.Body))
+            {
+                var fields = sent.RootElement.EnumerateObject().Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+                Assert(fields.SequenceEqual(["customerConsented", "deliveryStatus", "sampleContentProvided"]),
+                    $"expected only the three fields the server knows, got {call.Body}");
+                Assert(sent.RootElement.GetProperty("customerConsented").GetBoolean() &&
+                    sent.RootElement.GetProperty("deliveryStatus").GetString() == "DELIVERED" &&
+                    !sent.RootElement.GetProperty("sampleContentProvided").GetBoolean(),
+                    $"expected consent, DELIVERED and no sample, got {call.Body}");
+            }
+
+            // The App Store Server API token: ES256 over the configured key, for this app.
+            Assert(call.Authorization.StartsWith("Bearer ", StringComparison.Ordinal), "expected a bearer token");
+            var token = call.Authorization["Bearer ".Length..].Split('.');
+            using (var header = JsonDocument.Parse(Base64Url.DecodeFromChars(token[0])))
+            using (var claims = JsonDocument.Parse(Base64Url.DecodeFromChars(token[1])))
+            {
+                Assert(header.RootElement.GetProperty("alg").GetString() == "ES256" && header.RootElement.GetProperty("kid").GetString() == "TESTKEY123",
+                    $"expected an ES256 token naming the key, got {header.RootElement}");
+                Assert(claims.RootElement.GetProperty("iss").GetString() == "test-issuer" && claims.RootElement.GetProperty("aud").GetString() == "appstoreconnect-v1" &&
+                    claims.RootElement.GetProperty("bid").GetString() == AppleBundle, $"expected the issuer, audience and bundle, got {claims.RootElement}");
+            }
+            Assert(apiKey.VerifyData(Encoding.ASCII.GetBytes($"{token[0]}.{token[1]}"), Base64Url.DecodeFromChars(token[2]), HashAlgorithmName.SHA256,
+                DSASignatureFormat.IeeeP1363FixedFieldConcatenation), "expected the token to be signed with the configured key");
+
+            var sentEvent = AppleEvent(uuid);
+            Assert(sentEvent.Outcome == "consumption_sent" && sentEvent.Detail.Contains("consumption=sent apple=202"), $"expected the answer in the audit trail, got {sentEvent}");
+            Assert(PurchaseStatus(purchaseId) == "validated" && CountAdjustments(purchaseId) == 0 && LedgerSum(profile, "gold") == 2200,
+                "expected a refund request to leave the purchase alone until Apple decides");
+
+            // Apple delivers the same notification again: answered once.
+            var (repeatStatus, repeat) = await PostAppleNotification(client, notification);
+            Assert(repeatStatus == HttpStatusCode.OK && repeat.GetProperty("status").GetString() == "duplicate_event" && calls.Count == 1,
+                $"expected a repeated notification not to answer Apple twice, got {repeat}");
+
+            // A production request goes to the production API.
+            var (productionStatus, production) = await PostAppleNotification(client,
+                chain.Sign(AppleConsumptionRequest(chain.Sign(AppleConsumable(transactionId, environment: "Production")), environment: "Production")));
+            Assert(productionStatus == HttpStatusCode.OK && production.GetProperty("status").GetString() == "consumption_sent" && calls.Count == 2 &&
+                calls.Last().Uri.ToString() == $"https://api.storekit.apple.com/inApps/v2/transactions/consumption/{transactionId}",
+                $"expected the production endpoint for a production request, got {production} {calls.Last().Uri}");
+
+            // Simultaneous deliveries of one notification (several replicas): one answer.
+            for (var round = 0; round < 3; round++)
+            {
+                calls.Clear();
+                var racing = chain.Sign(AppleConsumptionRequest(signedTransaction));
+                var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var sends = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+                {
+                    await gate.Task;
+                    return (await PostAppleNotification(client, racing)).Body.GetProperty("status").GetString();
+                })).ToArray();
+                gate.SetResult();
+                var statuses = await Task.WhenAll(sends);
+                Assert(statuses.Count(s => s == "consumption_sent") == 1 && statuses.All(s => s is "consumption_sent" or "duplicate_event") && calls.Count == 1,
+                    $"expected one answer to Apple, got {string.Join(",", statuses)} and {calls.Count} calls");
+            }
+        }));
+    }
+
+    private static async Task TestAppleConsumptionRequestSkipsAndFailures(HttpClient client)
+    {
+        using var chain = AppleTestChain.Create();
+        using var apiKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        Func<HttpRequestMessage, Task<HttpResponseMessage>> apple = _ => AppleAnswers(HttpStatusCode.Accepted);
+        await WithAppleNotifications(chain, () => WithAppleApi(apiKey, request => apple(request), async calls =>
+        {
+            Environment.SetEnvironmentVariable(AppStoreConsumption.SwitchVariable, "1");
+            const string profile = "TEST-CONSUMPTION-SKIPS";
+            const string transactionId = "2000000900020002";
+            var purchaseId = await BuyForRefund(client, profile, "gold_chest", "apple", transactionId);
+
+            async Task Expect(string name, string signedTransactionInfo, string expectedStatus, string expectedDetail, DateTimeOffset? signedAt = null)
+            {
+                var uuid = Guid.NewGuid().ToString();
+                var (status, body) = await PostAppleNotification(client, chain.Sign(AppleConsumptionRequest(signedTransactionInfo, uuid: uuid, signedAt: signedAt)));
+                Assert(status == HttpStatusCode.OK && body.GetProperty("status").GetString() == expectedStatus,
+                    $"expected {name} to be answered 200 {expectedStatus}, got {(int)status} {body}");
+                var recorded = AppleEvent(uuid);
+                Assert(recorded.Outcome == expectedStatus && recorded.Detail.Contains(expectedDetail),
+                    $"expected {name} in the audit trail with '{expectedDetail}', got {recorded}");
+            }
+
+            // Nothing is sent about a transaction the server never recorded, or for another product.
+            await Expect("an unknown transaction", chain.Sign(AppleConsumable("2000000900029999")),
+                "unknown_transaction", "consumption=skipped reason=unknown_transaction");
+            await Expect("another product", chain.Sign(AppleConsumable(transactionId, "com.crownroad.gold_treasury")),
+                "product_mismatch", "consumption=skipped reason=product_mismatch");
+            // Apple's 12 hours are over (the notification was delivered late).
+            var signedTransaction = chain.Sign(AppleConsumable(transactionId));
+            await Expect("a request older than 12 hours", signedTransaction,
+                "consumption_skipped", "consumption=skipped reason=window_closed", DateTimeOffset.UtcNow.AddHours(-13));
+            Assert(calls.IsEmpty, $"expected no calls to Apple for skipped requests, got {calls.Count}");
+
+            // Apple refuses or cannot be reached: recorded, and the notification still answered 200.
+            apple = _ => AppleAnswers(HttpStatusCode.InternalServerError);
+            await Expect("Apple answering 500", signedTransaction, "consumption_failed", "consumption=failed apple=500");
+            apple = _ => AppleAnswers(HttpStatusCode.BadRequest, """{"errorCode":4000023,"errorMessage":"Invalid request."}""");
+            await Expect("Apple refusing the body", signedTransaction, "consumption_failed", "consumption=failed apple=400 errorCode=4000023");
+            apple = _ => throw new HttpRequestException("Apple is down");
+            await Expect("Apple unreachable", signedTransaction, "consumption_failed", "consumption=failed error=unreachable");
+            apple = _ => throw new TaskCanceledException("timed out");
+            await Expect("Apple timing out", signedTransaction, "consumption_failed", "consumption=failed error=timeout");
+            Assert(calls.Count == 4, $"expected one call per failed attempt, got {calls.Count}");
+            apple = _ => AppleAnswers(HttpStatusCode.Accepted);
+
+            // Without App Store credentials nothing is attempted; a broken key is a failure.
+            var key = Environment.GetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", null);
+            await Expect("missing credentials", signedTransaction, "consumption_skipped", "consumption=skipped reason=not_configured");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", "not a key");
+            await Expect("an unreadable key", signedTransaction, "consumption_failed", "consumption=failed error=invalid_key");
+            Environment.SetEnvironmentVariable("APPLE_IAP_PRIVATE_KEY", key);
+            Assert(calls.Count == 4, "expected no call without usable credentials");
+
+            // A purchase already refunded (by support, say) is not described as delivered.
+            Assert((await AdminRefund(client, new { purchaseId })).Body.GetProperty("status").GetString() == "refunded", "expected the operator refund");
+            await Expect("a refunded purchase", signedTransaction, "consumption_skipped", "consumption=skipped reason=purchase_refunded");
+            Assert(calls.Count == 4, "expected nothing sent about a refunded purchase");
+
+            // Failures never touched the purchase beyond the operator's refund.
+            Assert(CountAdjustments(purchaseId) == 1 && PurchaseStatus(purchaseId) == "refunded", "expected only the operator refund to change the purchase");
+        }));
     }
 
     // ── Device adjustments ──────────────────────────────────

@@ -100,6 +100,8 @@ public static partial class ServerTests
                 ("AppleNotificationForgeries", () => TestAppleNotificationForgeries(client)),
                 ("AppleNotificationUnknownAndIgnored", () => TestAppleNotificationUnknownAndIgnored(client)),
                 ("RefundConcurrentSignals", () => TestRefundConcurrentSignals(client)),
+                ("AppleConsumptionRequest", () => TestAppleConsumptionRequest(client)),
+                ("AppleConsumptionRequestSkipsAndFailures", () => TestAppleConsumptionRequestSkipsAndFailures(client)),
                 ("RefundLargerThanBalance", () => TestRefundLargerThanBalance(client)),
                 ("AdminRefund", () => TestAdminRefund(client)),
                 ("GoogleVoidedPurchases", () => TestGoogleVoidedPurchases(client)),

@@ -20,7 +20,8 @@ namespace CrownroadServer;
 /// </summary>
 public static class PurchaseRefunds
 {
-    public enum Action { Refund, Reinstate, Ignore }
+    /// <summary>Inspect records the signal and finds its purchase without changing it.</summary>
+    public enum Action { Refund, Reinstate, Inspect, Ignore }
 
     /// <summary>One store event about a transaction.</summary>
     /// <param name="Source">apple, google, admin or store_verification.</param>
@@ -44,7 +45,8 @@ public static class PurchaseRefunds
 
     /// <summary>
     /// Status is refunded, reinstated, duplicate_event, already_refunded,
-    /// not_refunded, not_refundable, product_mismatch, unknown_transaction or ignored.
+    /// not_refunded, not_refundable, product_mismatch, unknown_transaction,
+    /// inspected or ignored.
     /// </summary>
     public sealed record Outcome(string Status, string EventId, string PurchaseId, string AdjustmentId, string ProfileId);
 
@@ -100,6 +102,8 @@ public static class PurchaseRefunds
         if (signal.StoreProductId.Length > 0 &&
             !string.Equals(StorePurchaseVerification.StoreProductId(purchase.Platform, purchase.ProductId), signal.StoreProductId, StringComparison.Ordinal))
             return new Outcome(Finish("product_mismatch", purchase), eventId, purchase.PurchaseId, "", purchase.ProfileId);
+        if (action == Action.Inspect)
+            return new Outcome(Finish("inspected", purchase), eventId, purchase.PurchaseId, "", purchase.ProfileId);
 
         // The status guard makes concurrent signals for one purchase take turns:
         // the second waits on the row, then finds the status already changed.
@@ -186,6 +190,32 @@ public static class PurchaseRefunds
         }
 
         return new Outcome(Finish(action == Action.Refund ? "refunded" : "reinstated", purchase), eventId, purchase.PurchaseId, adjustmentId, purchase.ProfileId);
+    }
+
+    /// <summary>
+    /// Sets a recorded event's outcome and adds to its detail, for work done after
+    /// the event was recorded (such as answering Apple outside the transaction).
+    /// </summary>
+    public static void UpdateEvent(string eventId, string outcome, string detail)
+    {
+        using var conn = Database.Open();
+        using var read = Command(conn, null, "SELECT detail FROM store_events WHERE event_id = @id");
+        read.Parameters.AddWithValue("@id", eventId);
+        var existing = read.ExecuteScalar() as string ?? "";
+        using var update = Command(conn, null, "UPDATE store_events SET outcome = @outcome, detail = @detail WHERE event_id = @id");
+        update.Parameters.AddWithValue("@outcome", outcome);
+        update.Parameters.AddWithValue("@detail", Clip(existing.Length > 0 ? $"{existing} {detail}" : detail, 500));
+        update.Parameters.AddWithValue("@id", eventId);
+        update.ExecuteNonQuery();
+    }
+
+    /// <summary>A purchase's status (validated, refunded, ...), or "" when there is no such purchase.</summary>
+    public static string PurchaseStatus(string purchaseId)
+    {
+        using var conn = Database.Open();
+        using var cmd = Command(conn, null, "SELECT status FROM purchases WHERE purchase_id = @pid");
+        cmd.Parameters.AddWithValue("@pid", purchaseId);
+        return cmd.ExecuteScalar() as string ?? "";
     }
 
     private static Outcome Duplicate(DbConnection conn, string eventKey)

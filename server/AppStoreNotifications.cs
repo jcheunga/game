@@ -15,8 +15,10 @@ namespace CrownroadServer;
 /// payload, checked the same way.
 ///
 /// REFUND takes a consumable's currency back; REFUND_REVERSED gives it back.
-/// REVOKE only concerns Family Sharing, which consumables don't use, so it is
-/// recorded and ignored like every other type.
+/// CONSUMPTION_REQUEST (a player asked Apple for a refund) is answered by
+/// AppStoreConsumption when that is switched on. REVOKE only concerns Family
+/// Sharing, which consumables don't use, so it is recorded and ignored like
+/// every other type.
 /// </summary>
 public static class AppStoreNotifications
 {
@@ -84,20 +86,22 @@ public static class AppStoreNotifications
         var subtype = Text(notification, "subtype");
         var uuid = Text(notification, "notificationUUID");
         if (uuid.Length == 0) return Rejected("The notification has no UUID.");
-        var environment = notification.ValueKind == JsonValueKind.Object && notification.TryGetProperty("data", out var payloadData)
-            ? Text(payloadData, "environment")
-            : "";
+        var payloadData = notification.ValueKind == JsonValueKind.Object && notification.TryGetProperty("data", out var dataElement) ? dataElement : default;
+        var environment = Text(payloadData, "environment");
         var transactionId = transaction.ValueKind == JsonValueKind.Object ? Text(transaction, "transactionId") : "";
 
         var action = type switch
         {
             "REFUND" when transactionId.Length > 0 => PurchaseRefunds.Action.Refund,
             "REFUND_REVERSED" when transactionId.Length > 0 => PurchaseRefunds.Action.Reinstate,
+            "CONSUMPTION_REQUEST" when transactionId.Length > 0 => PurchaseRefunds.Action.Inspect,
             _ => PurchaseRefunds.Action.Ignore
         };
+        var requestReason = Text(payloadData, "consumptionRequestReason");
         var detail = string.Join(' ', new[]
         {
             subtype.Length > 0 ? $"subtype={subtype}" : "",
+            requestReason.Length > 0 ? $"consumptionRequestReason={requestReason}" : "",
             transaction.ValueKind == JsonValueKind.Object && transaction.TryGetProperty("revocationReason", out var reason) ? $"revocationReason={reason}" : "",
             transaction.ValueKind == JsonValueKind.Object ? $"type={Text(transaction, "type")}" : ""
         }.Where(part => part.Length > 0));
@@ -110,9 +114,20 @@ public static class AppStoreNotifications
             Environment: environment,
             Detail: detail), action);
 
+        // A repeated delivery was answered (or skipped) the first time.
+        if (action == PurchaseRefunds.Action.Inspect && outcome.Status != "duplicate_event")
+        {
+            var now = DateTimeOffset.UtcNow;
+            var signedAt = notification.TryGetProperty("signedDate", out var signedDate) && signedDate.TryGetInt64(out var millis)
+                ? DateTimeOffset.FromUnixTimeMilliseconds(millis)
+                : now;
+            outcome = outcome with { Status = await AppStoreConsumption.RespondAsync(outcome, transactionId, environment, signedAt, now) };
+        }
+
         // Anything that passed the signature check is answered 200, including
-        // types the game ignores and transactions it never recorded, so Apple
-        // stops retrying. Only an unexpected failure (500) asks for a retry.
+        // types the game ignores, transactions it never recorded and consumption
+        // answers Apple refused, so Apple stops retrying. Only an unexpected
+        // failure (500) asks for a retry.
         return Results.Ok(new { status = outcome.Status });
     }
 

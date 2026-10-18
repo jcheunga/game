@@ -97,6 +97,7 @@ configuration. Update the page in the same change if any of these move:
 | Crash reports off until a separate opt-in; withdrawing analytics discards queued events | `scripts/core/CrashReporter.cs`, `AnalyticsService.cs`, and the Account tab in `scripts/ui/SettingsMenu.cs` |
 | Cloud saves exclude session credentials, server settings and consent choices; restores preserve the current device's identity and choices | Shared `scripts/core/CloudSavePrivacy.cs`, `CloudSaveService.cs`, `GameState.cs`, `server/Endpoints.cs`; schema migration 5 in `server/Database.cs` scrubs existing rows |
 | No third-party analytics or ad SDKs | `Game.csproj`, `addons/` |
+| Nothing about a refund request is sent to Apple unless `APPLE_IAP_SEND_CONSUMPTION_INFO=1`; then only consent, delivery and no free sample. The page must mention it before the switch goes on | `server/AppStoreConsumption.cs` |
 
 Adding an SDK, a new data type, a new processor, or a website analytics tool
 means updating the policy and its effective date before release.

@@ -160,10 +160,12 @@ When Google or Apple refunds a pack, the server takes back what it granted.
   both certificates must carry Apple's App Store markers, and the leaf must
   have made the ES256 signature. The transaction inside is checked the same
   way, and both must name `APPLE_IAP_BUNDLE_ID`. `REFUND` takes the
-  purchase's currency back. `REFUND_REVERSED` gives it back. `REVOKE` is about
-  Family Sharing, which consumables don't use, so it is recorded and ignored,
-  like every other type. Like Apple's own library with online checks off, the
-  server does not ask Apple's OCSP responder whether a certificate was revoked.
+  purchase's currency back. `REFUND_REVERSED` gives it back.
+  `CONSUMPTION_REQUEST` can be answered (see "Refund requests" below).
+  `REVOKE` is about Family Sharing, which consumables don't use, so it is
+  recorded and ignored, like every other type. Like Apple's own library with
+  online checks off, the server does not ask Apple's OCSP responder whether a
+  certificate was revoked.
 - **Google Play:** the server polls the Voided Purchases API
   (`purchases.voidedpurchases.list`) every hour with the purchase-verification
   service account. Polling needs no Pub/Sub topic or public endpoint, and it
@@ -229,6 +231,10 @@ To set up:
    are answered 503 and Apple retries them for days. Optionally set
    `APPLE_IAP_APP_APPLE_ID` to the app's numeric Apple ID (App Information →
    Apple ID). Production notifications for another app ID are then refused.
+   To answer refund requests, also set `APPLE_IAP_SEND_CONSUMPTION_INFO=1`
+   once consent is settled (see "Refund requests" below). This needs the
+   In-App Purchase key (`APPLE_IAP_ISSUER_ID`, `APPLE_IAP_KEY_ID`,
+   `APPLE_IAP_PRIVATE_KEY_PATH`).
 3. **Play Console:** no Real-time developer notifications are needed. The
    service account that verifies purchases needs **View financial data** for
    the Voided Purchases API (the same invitation as in
@@ -257,11 +263,77 @@ migration.
 
 Not built yet:
 
-- Answering Apple's `CONSUMPTION_REQUEST` with consumption information, which
-  helps Apple decide refund requests. It is recorded and ignored.
+- Per-player consent for answering Apple's refund requests (see below). The
+  switch covers all players.
 - Stripe refund webhooks. Record those refunds through `/admin/refunds`.
 - Partial (quantity) refunds. Every pack is sold one at a time, so a void
   always refunds the whole purchase.
+
+### Refund requests (App Store)
+
+When a player asks Apple for a refund, Apple sends `CONSUMPTION_REQUEST`.
+For 12 hours it accepts the app's facts about that purchase, which it weighs
+when it decides
+([Send Consumption Information](https://developer.apple.com/documentation/appstoreserverapi/send-consumption-information)).
+The server can answer with `PUT /inApps/v2/transactions/consumption/{transactionId}`.
+It does so only when `APPLE_IAP_SEND_CONSUMPTION_INFO=1`. The setting is
+**off by default**, because Apple requires the player's consent first (see
+below).
+
+The answer holds only what the server knows, and nothing about the player:
+
+| Field | Value | Why |
+| --- | --- | --- |
+| `customerConsented` | `true` | Only sent when the setting is on, which means players have agreed. |
+| `deliveryStatus` | `DELIVERED` | The server recorded the purchase, so it credited it, and the device applies it once. |
+| `sampleContentProvided` | `false` | The shop gives no free samples or trials. |
+| `consumptionPercentage` | not sent | How much of a pack was spent is in the player's save, not on the server. |
+| `refundPreference` | not sent | The game has no rule for which refunds to oppose. |
+
+Apple's older version of this call (v1: account age, lifetime spend and
+refund amounts, play time, the app account token) is now only for the
+Advanced Commerce API, so the server doesn't use it.
+
+The server answers when the notification arrives, after recording it in
+`store_events`. It sends nothing when:
+
+- it never recorded the transaction (`unknown_transaction`), or the
+  notification names another product (`product_mismatch`);
+- the purchase is already refunded (`consumption_skipped`,
+  `reason=purchase_refunded`);
+- the request is more than 12 hours old (`reason=window_closed`), or the App
+  Store credentials are missing (`reason=not_configured`).
+
+A repeated delivery of the same notification is a `duplicate_event`, and the
+server doesn't answer Apple a second time. If Apple refuses the answer or
+can't be reached, the event is `consumption_failed`, with Apple's status and
+`errorCode`, or `error=timeout` / `unreachable`, in its detail. The
+notification is still answered 200, because Apple decides the refund without
+this answer anyway. Nothing is retried. `GET /admin/refunds` shows each
+request's outcome, detail, and Apple's `consumptionRequestReason`. Answering
+never changes the purchase. Only a later `REFUND` notification does.
+
+**Consent (decide before turning it on).** Apple makes the developer alone
+responsible for the player's consent. Its guidance says consent must be
+freely given, specific, informed and unambiguous. An opt-in is stronger than
+an opt-out, players must be able to withdraw, and the App Tracking
+Transparency prompt doesn't count. There are two ways to meet it:
+
+- **Privacy policy and terms.** The switch covers every player at once, which
+  fits consent given there. Add a line like this to `/privacy`, under Apple:
+
+  > If you ask Apple to refund an App Store purchase, we tell Apple whether
+  > we delivered it, to help Apple decide. We don't send your player ID or
+  > play history. To ask Apple about this data, visit privacy.apple.com.
+
+  This is the weaker form. It isn't an opt-in, and the only way to honour one
+  player's withdrawal is to turn the switch off for everyone.
+- **An opt-in in Settings**, like analytics. It is stronger and lets a player
+  withdraw. It needs a consent flag for each player, sent to the server and
+  checked before answering. This isn't built.
+
+Whatever you choose, update the App Store privacy answers if they change,
+and the "Keeping the privacy policy true" table in [WEBSITE.md](WEBSITE.md).
 
 ## Migrating an existing SQLite deployment
 

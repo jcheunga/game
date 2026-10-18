@@ -297,10 +297,18 @@ public partial class NativeIAPService : Node
 			var result = await state.ValidatePurchaseWithServerAsync(purchase.ProductId, platform, purchase.ReceiptToken, purchase.TransactionId);
 			// Back on the main thread: the save is only touched here.
 			var granted = state.TryApplyPurchaseReward(result);
-			var finished = state.IsPurchaseGrantSaved(result.PurchaseId);
+			// A refunded purchase grants nothing and is finished so the store stops handing it
+			// back. If this save holds its earlier grant, the refund's adjustment takes it back.
+			var refunded = result.Status == "refunded";
+			var finished = refunded || state.IsPurchaseGrantSaved(result.PurchaseId);
 			if (finished)
 			{
 				ConfirmServerFulfillment(purchase);
+			}
+
+			if (refunded && state.HasAppliedPurchase(result.PurchaseId))
+			{
+				await WalletAdjustmentSync.SyncAsync(force: true);
 			}
 
 			return new PurchaseFulfillment { Result = result, Granted = granted, Finished = finished };

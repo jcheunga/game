@@ -88,6 +88,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddHostedService<CrownroadServer.StaleDataCleanup>();
+builder.Services.AddHostedService<CrownroadServer.GooglePlayVoidedPurchases>();
 var app = builder.Build();
 
 var databaseConnectionString = app.Configuration.GetConnectionString("Crownroad")
@@ -148,6 +149,13 @@ app.MapPost("/purchase/validate", Endpoints.PurchaseValidate);
 app.MapGet("/purchase/history", Endpoints.PurchaseHistory);
 app.MapGet("/purchase/products", Endpoints.PurchaseProducts);
 app.MapGet("/wallet", Endpoints.Wallet);
+app.MapGet("/wallet/adjustments", PurchaseRefunds.List);
+app.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
+app.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
+app.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
+app.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
+app.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);
+app.MapPost("/admin/refunds/apple-test", AppStoreNotifications.AdminRequestTest);
 app.MapPost("/analytics/ingest", Endpoints.AnalyticsIngest);
 app.MapPost("/crash-report", Endpoints.CrashReport);
 app.MapGet("/analytics/summary", Endpoints.AnalyticsSummary);

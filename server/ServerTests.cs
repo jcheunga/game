@@ -102,6 +102,14 @@ public static partial class ServerTests
                 ("AccountDeletionRevokesApple", () => TestAccountDeletionRevokesApple(client)),
                 ("AccountDeletionCoversSchema", TestAccountDeletionCoversSchema),
                 ("AccountDeletionMigration", TestAccountDeletionMigration),
+                ("AppleRefundNotification", () => TestAppleRefundNotification(client)),
+                ("AppleNotificationForgeries", () => TestAppleNotificationForgeries(client)),
+                ("AppleNotificationUnknownAndIgnored", () => TestAppleNotificationUnknownAndIgnored(client)),
+                ("RefundConcurrentSignals", () => TestRefundConcurrentSignals(client)),
+                ("RefundLargerThanBalance", () => TestRefundLargerThanBalance(client)),
+                ("AdminRefund", () => TestAdminRefund(client)),
+                ("GoogleVoidedPurchases", () => TestGoogleVoidedPurchases(client)),
+                ("RefundLedgerMigration", TestRefundLedgerMigration),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
@@ -223,6 +231,13 @@ public static partial class ServerTests
                     endpoints.MapGet("/purchase/history", Endpoints.PurchaseHistory);
                     endpoints.MapGet("/purchase/products", Endpoints.PurchaseProducts);
                     endpoints.MapGet("/wallet", Endpoints.Wallet);
+                    endpoints.MapGet("/wallet/adjustments", PurchaseRefunds.List);
+                    endpoints.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
+                    endpoints.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
+                    endpoints.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
+                    endpoints.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
+                    endpoints.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);
+                    endpoints.MapPost("/admin/refunds/apple-test", AppStoreNotifications.AdminRequestTest);
                     endpoints.MapPost("/purchase/stripe-checkout", Endpoints.StripeCreateCheckout);
                     endpoints.MapPost("/purchase/stripe-webhook", Endpoints.StripeWebhook);
                     endpoints.MapGet("/purchase/stripe-status", Endpoints.StripeCheckoutStatus);
@@ -1209,7 +1224,7 @@ public static partial class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 7, $"expected schema version >= 7, got {version}");
+        Assert(version >= 8, $"expected schema version >= 8, got {version}");
         await Task.CompletedTask;
     }
 

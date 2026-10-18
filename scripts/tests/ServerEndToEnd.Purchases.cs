@@ -94,6 +94,97 @@ public partial class ServerEndToEnd
             $"The device gained exactly what the server credited ({state.Gold - goldBefore} gold for 3 purchases)");
     }
 
+    /// <summary>
+    /// A store refund reaches the device. The server records it (an operator refund through
+    /// /admin/refunds, which takes the same path as App Store notifications and Google Play voids);
+    /// opening the shop applies it once and says why; the server learns what was taken back; and
+    /// neither a reload nor Play handing the purchase back applies or grants it again. A refund of
+    /// gold already spent stops at zero and the rest is recorded on both sides.
+    /// </summary>
+    private async Task RefundRecovery(GameState state)
+    {
+        var profile = state.PlayerProfileId; var token = state.PlayerAuthToken;
+        var iap = NativeIAPService.Instance;
+        var bought = StorePurchase(ShopProductCatalog.GetById("gold_chest"));
+        var fulfilled = await iap.FulfillPurchaseAsync(bought, "google");
+        var purchaseId = fulfilled.Result.PurchaseId; var credited = fulfilled.Result.GoldCredited;
+        Check(fulfilled.Granted && credited > 0, "A pack is bought before it is refunded");
+        var gold = state.Gold;
+
+        var refund = await Admin(HttpMethod.Post, "/admin/refunds", new { purchaseId, note = "e2e refund" });
+        var adjustmentId = refund.Status == 200 ? refund.Body.GetProperty("adjustmentId").GetString() ?? "" : "";
+        Check(refund.Status == 200 && refund.Body.GetProperty("status").GetString() == "refunded" && adjustmentId.Length > 0,
+            $"The server records the refund ({refund.Status})");
+
+        var home = (MapMenu)await LiveUiReview.Open(this, "MainMenu");
+        home.OpenHomeDestination(SceneRouter.CashShopScene);
+        await Wait(.4);
+        var shop = Walk(home).OfType<CashShopMenu>().Single();
+        var notice = (Label)typeof(CashShopMenu).GetField("_noticeLabel", Private)!.GetValue(shop)!;
+        Check(await Until(() => state.HasAppliedWalletAdjustment(adjustmentId)) && state.Gold == gold - credited && state.IsWalletAdjustmentSaved(adjustmentId),
+            $"Opening the shop takes the refunded gold back once ({gold} → {state.Gold})");
+        Check(await Until(() => notice.Text.Contains("refunded")), $"The shop says why ({Clip(notice.Text)})");
+        Check(await UntilAsync(async () => (await Adjustment(profile, token, adjustmentId)) is { } listed && listed.GetProperty("acknowledged").GetBoolean()),
+            "The device tells the server what it took back");
+
+        gold = state.Gold;
+        state.ReloadFromDisk();
+        await WalletAdjustmentSync.SyncAsync(force: true);
+        await Wait(.5);
+        Check(state.Gold == gold && state.HasAppliedWalletAdjustment(adjustmentId), "After a reload the refund is not applied again");
+        var replay = await iap.FulfillPurchaseAsync(bought, "google");
+        Check(replay.Result.Status == "refunded" && !replay.Granted && replay.Finished && state.Gold == gold,
+            $"Play handing the refunded purchase back grants nothing and finishes it ({replay.Result.Status})");
+
+        // The player spends most of a resupply before it is refunded.
+        var resupply = await iap.FulfillPurchaseAsync(StorePurchase(ShopProductCatalog.GetById("campaign_resupply")), "google");
+        var data = state.BuildSaveData();
+        data.Gold = 100;
+        SaveSystem.Instance.Save(data);
+        state.ReloadFromDisk();
+        var spent = await Admin(HttpMethod.Post, "/admin/refunds", new { purchaseId = resupply.Result.PurchaseId, note = "e2e chargeback" });
+        var spentId = spent.Status == 200 ? spent.Body.GetProperty("adjustmentId").GetString() ?? "" : "";
+        var owed = resupply.Result.GoldCredited;
+        await WalletAdjustmentSync.SyncAsync(force: true);
+        Check(await Until(() => state.HasAppliedWalletAdjustment(spentId)) && state.Gold == 0 &&
+            state.GetAppliedWalletAdjustment(spentId) is { GoldApplied: -100 } applied && applied.GoldUnrecovered == owed - 100,
+            $"A refund of spent gold stops at zero and the device records the rest (gold {state.Gold})");
+        Check(await UntilAsync(async () =>
+            {
+                var audit = await Admin(HttpMethod.Get, "/admin/refunds");
+                return audit.Status == 200 && audit.Body.GetProperty("events").EnumerateArray()
+                    .Any(e => e.GetProperty("adjustmentId").GetString() == spentId && e.GetProperty("goldUnrecovered").GetInt32() == owed - 100);
+            }), "The server's refund audit shows the unrecovered gold");
+    }
+
+    private async Task<JsonElement?> Adjustment(string profile, string token, string adjustmentId)
+    {
+        var list = await Get($"/wallet/adjustments?profileId={profile}", profile, token);
+        if (list.Status != 200) return null;
+        foreach (var item in list.Body.GetProperty("adjustments").EnumerateArray())
+            if (item.GetProperty("adjustmentId").GetString() == adjustmentId) return item;
+        return null;
+    }
+
+    private async Task<bool> UntilAsync(Func<Task<bool>> condition, double seconds = 10)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(seconds);
+        while (!await condition()) { if (DateTime.UtcNow > deadline) return false; await Wait(.2); }
+        return true;
+    }
+
+    /// <summary>An operator request with the admin key server_e2e.sh gives the server.</summary>
+    private async Task<(int Status, JsonElement Body)> Admin(HttpMethod method, string path, object body = null)
+    {
+        using var request = new HttpRequestMessage(method, _server + path);
+        if (body != null) request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        request.Headers.Add("X-Admin-Api-Key", Arg("admin-key"));
+        using var response = await Http.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+        try { using var json = JsonDocument.Parse(text); return ((int)response.StatusCode, json.RootElement.Clone()); }
+        catch (JsonException) { return ((int)response.StatusCode, default); }
+    }
+
     private static IAPPurchaseResult StorePurchase(ShopProduct product) => new()
         { Success = true, ProductId = product.Id, TransactionId = $"GPA.e2e-{Guid.NewGuid():N}", ReceiptToken = $"play-token-{Guid.NewGuid():N}" };
 

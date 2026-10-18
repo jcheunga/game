@@ -116,8 +116,10 @@ public static class AccountDeletion
                 Run("DELETE FROM guilds WHERE guild_id = @gid", ("@gid", guildId));
         }
 
-        Run("UPDATE purchases SET profile_id = @pseudonym WHERE profile_id = @pid",
-            ("@pseudonym", DeletedProfilePrefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16)).ToUpperInvariant()));
+        // Refund records stay with the purchases they adjust, under the same pseudonym.
+        var pseudonym = DeletedProfilePrefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16)).ToUpperInvariant();
+        Run("UPDATE purchases SET profile_id = @pseudonym WHERE profile_id = @pid", ("@pseudonym", pseudonym));
+        Run("UPDATE wallet_adjustments SET profile_id = @pseudonym WHERE profile_id = @pid", ("@pseudonym", pseudonym));
         Run("DELETE FROM players WHERE profile_id = @pid");
         tx.Commit();
         return revocations;

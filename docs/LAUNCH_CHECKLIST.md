@@ -34,6 +34,17 @@ Already done and tested locally (2026-10-17):
 - An Android-only deployment needs no App Store key: Compose accepts it
   missing, and the server then refuses App Store purchases as not configured
   (Compose config check, server tests).
+- Refunds (2026-10-18). App Store Server Notifications are checked up to
+  Apple's root certificate, and Google Play's voided purchases are polled
+  every hour. Either way, the server takes back what a refunded pack granted,
+  once, with an audit trail. The game applies each refund once, across
+  reloads; if the currency was already spent, it stops at zero and records the
+  rest. Covered by server tests on SQLite and PostgreSQL (valid, forged,
+  repeated and unknown notifications; refunds larger than the balance;
+  simultaneous signals), `SaveRoundTripReview` and `server_e2e.sh`. Setup is in
+  sections 9 and 10, and in [DEPLOYMENT.md](DEPLOYMENT.md#refunds). A refund
+  that arrives after the account was deleted marks the kept purchase refunded
+  and takes nothing back.
 
 What follows needs real accounts, a domain, a deployed server and phones.
 
@@ -52,11 +63,12 @@ What follows needs real accounts, a domain, a deployed server and phones.
   Apple keeps it. Selling it as a non-consumable stops the second payment, but
   the game must then restore it and acknowledge it on Google instead of
   consuming it.
-- [ ] **Refunds.** Nothing takes currency back when Google or Apple refunds a
-  purchase. Either build it before launch (Google voided-purchase
-  notifications, App Store Server Notifications v2 `REFUND`) or decide to
-  accept the loss and check the store reports by hand. See
-  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md#2-store-commerce-and-ledger-safety).
+- [ ] **Refund policy.** Refunds are now taken back automatically (see
+  [DEPLOYMENT.md](DEPLOYMENT.md#refunds)). Confirm two choices:
+  - Currency the player already spent is not taken below zero. The rest is
+    recorded for review.
+  - A refunded Adventurer's Kit keeps its unit. The kit still counts as
+    bought, so it cannot be bought again.
 
 ## 2. Accounts
 
@@ -202,7 +214,12 @@ Play yet.
 - [ ] In Play Console → Users and permissions, invite the service account's
   email with access to the app and the **View financial data** and **Manage
   orders and subscriptions** permissions. It can take hours before Google
-  accepts its requests.
+  accepts its requests. **View financial data** also lets the server read
+  refunds (the Voided Purchases API). Play refunds need no Real-time developer
+  notifications or Pub/Sub.
+- [ ] After deploying, poll for refunds once by hand. Check that it answers
+  `ok` (see [DEPLOYMENT.md](DEPLOYMENT.md#refunds)):
+  `curl -fsS -X POST -H "X-Admin-Api-Key: …" https://<domain>/admin/refunds/poll-google`
 - [ ] On an Android phone signed in with a license tester's account:
   - Each pack arrives once, at its Play price, and the server's purchase
     ledger has the order.
@@ -213,6 +230,9 @@ Play yet.
   - Closing the app before the server answers: the pack arrives on the next
     launch, once.
   - The Adventurer's Kit can be bought once per player.
+  - Refund a tester's pack in Play Console (Order management → Refund). Within
+    an hour (the poll interval), opening the shop takes it back and says so,
+    and `GET /admin/refunds` lists it.
 
 ## 10. App Store purchases (iOS)
 
@@ -243,6 +263,15 @@ Then, with Apple:
   - `APPLE_IAP_ISSUER_ID` and `APPLE_IAP_KEY_ID`
   - `APPLE_IAP_BUNDLE_ID=com.crownroad.game`
   - `APPLE_IAP_PRIVATE_KEY_PATH` (the `.p8` file)
+- [ ] Turn on refunds. In App Store Connect → the app → App Information →
+  App Store Server Notifications, choose **Version 2**. Set both the
+  Production and Sandbox server URLs to
+  `https://<domain>/store/apple/notifications`. Ask Apple for a test
+  notification with `POST /admin/refunds/apple-test?environment=sandbox` (and
+  without `?environment=sandbox` for production). Check that each appears in
+  `GET /admin/refunds` as a `TEST` event. Optionally set
+  `APPLE_IAP_APP_APPLE_ID` to the app's numeric Apple ID. See
+  [DEPLOYMENT.md](DEPLOYMENT.md#refunds).
 - [ ] Create a sandbox Apple Account (Users and Access → Sandbox) to buy with.
 - [ ] Rebuild the plugin with `native/StoreKit/build.sh` whenever the project
   changes Godot version.
@@ -260,6 +289,9 @@ Then, with Apple:
     next launch, once, and is not charged twice.
   - A purchase made while one player was signed in is not credited to a
     different player on the same Apple Account.
+  - A refunded sandbox purchase (see Apple's sandbox testing guide) arrives
+    as a `REFUND` notification. The next time the shop opens, its currency is
+    taken back, once.
 
 ## 11. Point the game at the live server
 

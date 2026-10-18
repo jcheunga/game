@@ -1458,6 +1458,8 @@ public static class Endpoints
         var verification = AllowsDevelopmentPurchaseClaims()
             ? StorePurchaseVerification.Development(receiptToken, transactionId)
             : await StorePurchaseVerification.VerifyAsync(platform, productId, receiptToken, transactionId, profileId);
+        if (verification.Revoked)
+            return RefundedAtVerification(verification, platform, profileId, productId);
         if (!verification.Verified)
         {
             return Results.Json(new
@@ -1566,14 +1568,14 @@ public static class Endpoints
     }
 
     private sealed record RecordedPurchase(
-        string ProfileId, string ProductId, string PurchaseId, int Gold, int Food, bool UnitUnlock, long RecordedAt);
+        string ProfileId, string ProductId, string PurchaseId, int Gold, int Food, bool UnitUnlock, long RecordedAt, string Status);
 
     private static RecordedPurchase? FindRecordedPurchase(DbConnection conn, DbTransaction? tx, string transactionId)
     {
         using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
         cmd.CommandText = """
-            SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at
+            SELECT profile_id, product_id, purchase_id, gold_credited, food_credited, granted_unit_unlock, purchased_at, status
             FROM purchases WHERE transaction_id = @tid AND transaction_id != '' LIMIT 1
         """;
         cmd.Parameters.AddWithValue("@tid", transactionId);
@@ -1586,8 +1588,41 @@ public static class Endpoints
             Database.ToInt32(reader.GetValue(3)),
             Database.ToInt32(reader.GetValue(4)),
             Database.ToInt32(reader.GetValue(5)) != 0,
-            Database.ToInt64(reader.GetValue(6)));
+            Database.ToInt64(reader.GetValue(6)),
+            reader.GetString(7));
     }
+
+    /// <summary>
+    /// The store says this transaction was refunded. Nothing is granted. If the
+    /// server had credited it and no refund signal has arrived yet, the refund
+    /// is recorded now. The device may finish the store transaction.
+    /// </summary>
+    private static IResult RefundedAtVerification(StorePurchaseVerificationResult verification, string platform, string profileId, string productId)
+    {
+        RecordedPurchase? recorded;
+        using (var conn = Database.Open()) recorded = FindRecordedPurchase(conn, null, verification.CanonicalTransactionId);
+        if (recorded != null &&
+            (!string.Equals(recorded.ProfileId, profileId, StringComparison.Ordinal) ||
+             !string.Equals(recorded.ProductId, productId, StringComparison.Ordinal)))
+        {
+            return Results.Conflict(new { status = "transaction_assigned", message = "This transaction belongs to a different player." });
+        }
+        if (recorded is { Status: "validated" })
+        {
+            PurchaseRefunds.Record(new PurchaseRefunds.StoreSignal(
+                "store_verification", $"{platform}-verification:{verification.CanonicalTransactionId}", "REVOKED_AT_VERIFICATION",
+                Platform: platform, TransactionId: verification.CanonicalTransactionId), PurchaseRefunds.Action.Refund);
+        }
+        return RefundedResult(recorded?.PurchaseId ?? "", productId);
+    }
+
+    private static IResult RefundedResult(string purchaseId, string productId) => Results.Ok(new
+    {
+        status = "refunded",
+        message = "The store refunded this purchase, so it grants nothing.",
+        purchaseId,
+        productId
+    });
 
     private static IResult RecordedPurchaseResult(RecordedPurchase recorded, string profileId, string productId, string transactionId)
     {
@@ -1596,6 +1631,11 @@ public static class Endpoints
         {
             return Results.Conflict(new { status = "transaction_assigned", message = "This transaction belongs to a different player." });
         }
+
+        // A refunded purchase is never handed back as a grant: a device that
+        // never applied it must not apply it after its refund.
+        if (recorded.Status == "refunded")
+            return RefundedResult(recorded.PurchaseId, recorded.ProductId);
 
         // The grant was committed, but the client may never have seen the
         // response (timeout, dropped connection, app killed, or another device
@@ -1628,7 +1668,7 @@ public static class Endpoints
         using var conn = Database.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT purchase_id, product_id, platform, gold_credited, food_credited, purchased_at
+            SELECT purchase_id, product_id, platform, gold_credited, food_credited, purchased_at, status
             FROM purchases WHERE profile_id = @pid ORDER BY purchased_at DESC LIMIT 50
         """;
         cmd.Parameters.AddWithValue("@pid", profileId);
@@ -1644,7 +1684,8 @@ public static class Endpoints
                 platform = reader.GetString(2),
                 goldCredited = reader.GetInt32(3),
                 foodCredited = reader.GetInt32(4),
-                purchasedAtUnixSeconds = reader.GetInt64(5)
+                purchasedAtUnixSeconds = reader.GetInt64(5),
+                status = reader.GetString(6)
             });
         }
 

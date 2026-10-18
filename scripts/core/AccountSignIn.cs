@@ -34,11 +34,12 @@ public static class AccountSignIn
         return await SendRequest(path, body);
     }
 
-    /// <summary>Called whenever the server answers: registers the guest, then tries the phone's own game account.</summary>
+    /// <summary>Called whenever the server answers: registers the guest, tries the phone's own game account, then brings any store refunds to the save.</summary>
     public static async Task OnServerReachable()
     {
         await EnsureGuestSession();
         await PlatformSignIn.TryAutoSignIn();
+        await WalletAdjustmentSync.SyncAsync();
     }
 
     private static bool _registeringGuest;

@@ -52,6 +52,7 @@ public partial class SaveRoundTripReview : Node
             FillLateGame(state);
             ReloadKeepsEveryField(state);
             LoaderKeepsEveryValue(state);
+            RefundsApplyOnce(state);
             ListUnsavedFields();
             var size = System.Text.Encoding.UTF8.GetByteCount(CloudSavePrivacy.Sanitize(JsonSerializer.Serialize(state.BuildSaveData())));
             Check(size < 512 * 1024 / 4, $"A late-game cloud save is {size / 1024.0:0.0} KB, well inside the server's 512 KB limit");
@@ -74,8 +75,12 @@ public partial class SaveRoundTripReview : Node
         foreach (var currency in new[] { "essence", "shards", "sigils" }) state.TryAddDeveloperCurrency(currency, 77);
         foreach (var achievement in AchievementCatalog.GetAll().Take(5)) state.TryUnlockAchievement(achievement.Id);
         state.ContributeRaidDamage(120); state.ContributeRaidDamage(80);
-        // A server-recorded purchase grant, so the applied purchase IDs (exactly-once grants) are covered.
+        // A server-recorded purchase grant, so the applied purchase IDs (exactly-once grants) are covered,
+        // and a store refund of an earlier one, so the applied wallet adjustments are too.
         state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = $"PUR-roundtrip-{Guid.NewGuid():N}", ProductId = "gold_pouch", GoldCredited = 500 });
+        var refunded = $"PUR-roundtrip-refunded-{Guid.NewGuid():N}";
+        state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = refunded, ProductId = "food_rations", FoodCredited = 20 });
+        state.TryApplyWalletAdjustment(new WalletAdjustment { AdjustmentId = $"ADJ-roundtrip-{Guid.NewGuid():N}", PurchaseId = refunded, ProductId = "food_rations", Kind = "refund", FoodDelta = -20 });
         state.SetPlayerCallsign("Roundtrip");
         state.SetDifficulty("hard");
         state.SetShowDevUi(false); state.SetShowFpsCounter(false); state.SetAudioMuted(true);
@@ -118,6 +123,67 @@ public partial class SaveRoundTripReview : Node
     }
 
     private static string Value(Dictionary<string, string> entries, string key) => entries.TryGetValue(key, out var value) ? value : "<missing>";
+
+    /// <summary>
+    /// A store refund the server reports is applied once per adjustment ID, however often the device
+    /// hears about it and across reloads; it stops at zero when the currency was spent, records the
+    /// rest, and a reversal gives back only what was taken.
+    /// </summary>
+    private void RefundsApplyOnce(GameState state)
+    {
+        WalletAdjustment Refund(string purchaseId, string product, int gold, int food) => new()
+            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = purchaseId, ProductId = product, Kind = "refund", GoldDelta = -gold, FoodDelta = -food };
+        string Buy(string product, int gold, int food)
+        {
+            var id = $"PUR-review-{Guid.NewGuid():N}";
+            state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = id, ProductId = product, GoldCredited = gold, FoodCredited = food });
+            return id;
+        }
+        void SetBalances(int gold, int food)
+        {
+            var data = state.BuildSaveData();
+            data.Gold = gold; data.Food = food;
+            SaveSystem.Instance.Save(data);
+            state.ReloadFromDisk();
+        }
+
+        var chest = Buy("gold_chest", 2200, 0);
+        var refund = Refund(chest, "gold_chest", 2200, 0);
+        var gold = state.Gold;
+        var applied = state.TryApplyWalletAdjustment(refund);
+        Check(applied is { GoldApplied: -2200, GoldUnrecovered: 0 } && state.Gold == gold - 2200 && SaveSystem.Instance.LastSaveSucceeded,
+            $"A refund takes back its purchase's gold and saves ({gold} → {state.Gold})");
+        Check(state.ConsumeWalletAdjustmentNotice().Contains("refunded"), "The player is told why the gold went");
+        Check(state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 2200, "Hearing about the same refund again changes nothing");
+        state.ReloadFromDisk();
+        Check(state.HasAppliedWalletAdjustment(refund.AdjustmentId) && state.TryApplyWalletAdjustment(refund) == null && state.Gold == gold - 2200,
+            "After a reload the same refund still changes nothing");
+
+        // The player spent most of a resupply before it was refunded.
+        var resupply = Buy("campaign_resupply", 3000, 80);
+        SetBalances(300, 5);
+        var spent = state.TryApplyWalletAdjustment(Refund(resupply, "campaign_resupply", 3000, 80));
+        Check(spent is { GoldApplied: -300, FoodApplied: -5, GoldUnrecovered: 2700, FoodUnrecovered: 75 } && state.Gold == 0 && state.Food == 0,
+            $"A refund larger than the balance stops at zero and records the rest (gold {state.Gold}, food {state.Food})");
+        var spentId = spent?.AdjustmentId ?? "";
+        state.ReloadFromDisk();
+        Check(state.Gold == 0 && state.GetAppliedWalletAdjustment(spentId) is { GoldUnrecovered: 2700, FoodUnrecovered: 75 },
+            "The balance and the unrecovered rest survive a reload");
+
+        // The store reverses that refund: only what was taken comes back.
+        var reversal = state.TryApplyWalletAdjustment(new WalletAdjustment
+            { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = resupply, ProductId = "campaign_resupply", Kind = "refund_reversed", GoldDelta = 3000, FoodDelta = 80, ReversesAdjustmentId = spentId });
+        Check(reversal is { GoldApplied: 300, FoodApplied: 5 } && state.Gold == 300 && state.Food == 5, "A reversed refund gives back exactly what it took");
+
+        // A refund of a purchase this save never received, and a kind this build does not know.
+        gold = state.Gold;
+        var stranger = Refund($"PUR-review-elsewhere-{Guid.NewGuid():N}", "gold_pouch", 500, 0);
+        Check(state.TryApplyWalletAdjustment(stranger) is { GoldApplied: 0, GoldUnrecovered: 0 } && state.Gold == gold,
+            "A refund of a purchase this save never received takes nothing");
+        var future = new WalletAdjustment { AdjustmentId = $"ADJ-review-{Guid.NewGuid():N}", PurchaseId = chest, Kind = "goodwill_grant", GoldDelta = 100 };
+        Check(state.TryApplyWalletAdjustment(future) == null && !state.HasAppliedWalletAdjustment(future.AdjustmentId) && state.Gold == gold,
+            "An adjustment this build does not understand is left for a newer one");
+    }
 
     /// <summary>Nudges each scalar save value, loads it and saves again; values that do not come back are dropped or clamped.</summary>
     private void LoaderKeepsEveryValue(GameState state)

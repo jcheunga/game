@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 public partial class CashShopMenu : Control
@@ -29,6 +30,20 @@ public partial class CashShopMenu : Control
         // A paid transaction the server has not recorded yet (no session at
         // launch, a failed validation) is validated again here.
         NativeIAPService.Instance?.RetryUnfinishedPurchases();
+        ShowRefundsAsync();
+    }
+
+    /// <summary>Applies any store refunds before the player shops, and says what they took back.</summary>
+    private async void ShowRefundsAsync()
+    {
+        await WalletAdjustmentSync.SyncAsync(force: true);
+        if (!IsOpen()) return;
+        var notice = GameState.Instance.ConsumeWalletAdjustmentNotice();
+        if (notice.Length == 0) return;
+        // Leave a Buy the player has started alone; only the balances and the ledger change.
+        RebuildResourcesRow();
+        RefreshStatus();
+        _noticeLabel.Text = notice;
     }
 
     public override void _ExitTree()
@@ -427,6 +442,10 @@ public partial class CashShopMenu : Control
                 _statusLabel.Text += "\n+ Unit unlock granted!";
             AudioDirector.Instance?.PlayRewardClaim();
         }
+        else if (result.Status == "refunded")
+        {
+            _statusLabel.Text = $"The store refunded this {product.DisplayName}, so it adds nothing.";
+        }
         else if (fulfillment.Finished)
         {
             _statusLabel.Text = $"{product.DisplayName} was already added to your account.";
@@ -458,6 +477,9 @@ public partial class CashShopMenu : Control
             $"Purchases: {GameState.Instance.TotalPurchaseCount}",
             $"Gold: {GameState.Instance.Gold}",
             $"Food: {GameState.Instance.Food}"};
+        var refunds = GameState.Instance.GetAppliedWalletAdjustments().Count(a => a.Kind == "refund" && (a.GoldApplied != 0 || a.FoodApplied != 0 || a.GoldUnrecovered != 0 || a.FoodUnrecovered != 0));
+        if (refunds > 0)
+            lines.Add($"Refunded purchases taken back: {refunds}");
         var endpoint = GameState.Instance.PurchaseValidationEndpoint;
         lines.Add(string.IsNullOrWhiteSpace(endpoint) ? "Mode: Store disabled" : "Mode: Online");
         var nativeIap = NativeIAPService.Instance;

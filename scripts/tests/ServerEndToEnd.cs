@@ -89,6 +89,7 @@ public partial class ServerEndToEnd : Node
 
         await AccountFeatures(state);
         await PurchaseRecovery(state);
+        await RefundRecovery(state);
 
         // A late-game save makes the full trip: upload, sign-out, sign back in, download.
         SaveRoundTripReview.FillLateGame(state);

@@ -4318,6 +4318,7 @@ public partial class GameState : Node
 		_unlockedAchievementIds.Clear();
 		_purchasedProductIds.Clear();
 		_appliedPurchaseIds.Clear();
+		ClearWalletAdjustments();
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
 		BestEndlessWave = 0;
@@ -4802,6 +4803,7 @@ public partial class GameState : Node
 
 		_purchasedProductIds.Clear();
 		_appliedPurchaseIds.Clear();
+		LoadWalletAdjustments(saved);
 		_totalPurchaseCount = 0;
 		_purchaseValidationEndpoint = "";
 		if (saved.Version >= 31)
@@ -5245,6 +5247,7 @@ public partial class GameState : Node
 			UnlockedAchievementIds = _unlockedAchievementIds.ToArray(),
 			PurchasedProductIds = _purchasedProductIds.ToArray(),
 			AppliedPurchaseIds = _appliedPurchaseIds.ToArray(),
+			AppliedWalletAdjustments = SaveWalletAdjustments(),
 			TotalPurchaseCount = _totalPurchaseCount,
 			PurchaseValidationEndpoint = _purchaseValidationEndpoint ?? "",
 

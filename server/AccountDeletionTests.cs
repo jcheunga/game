@@ -20,7 +20,7 @@ public static partial class ServerTests
         ("room_reports", "target_profile_id"), ("guilds", "leader_profile_id"), ("guild_members", "profile_id"),
         ("friendships", "profile_id"), ("friendships", "friend_id"), ("friend_gifts", "sender_id"),
         ("friend_gifts", "receiver_id"), ("player_wallets", "profile_id"), ("wallet_ledger", "profile_id"),
-        ("purchases", "profile_id"),
+        ("purchases", "profile_id"), ("wallet_adjustments", "profile_id"),
     ];
 
     private static object? DbScalar(string sql, params (string Name, object Value)[] values)
@@ -83,6 +83,10 @@ public static partial class ServerTests
             await Post(client, "/daily/complete", new { profileId = profile, date = "2026-10-18", score = 900 }, profile);
             await Post(client, "/purchase/validate", new { profileId = profile, productId = "gold_pouch", platform = "stripe",
                 receiptToken = "receipt-del", transactionId = "txn-del-1" }, profile);
+            await Post(client, "/purchase/validate", new { profileId = profile, productId = "gold_pouch", platform = "stripe",
+                receiptToken = "receipt-del-2", transactionId = "txn-del-2" }, profile);
+            Assert((await AdminRefund(client, new { transactionId = "txn-del-2" })).Body.GetProperty("status").GetString() == "refunded",
+                "The test refunds a purchase before deleting");
             await Post(client, "/analytics/ingest", new { profileId = profile, events = new[] { new { type = "stage_won", data = "1" } } }, profile);
             await Post(client, "/crash-report", new { profileId = profile, errorType = "Test", errorMessage = "boom" }, profile);
             using (var hosted = await Post(client, "/challenge-room-create", new { room = new { playerCallsign = "Doomed", boardCode = "CH-01-DAILY-1001" } }, profile))
@@ -134,6 +138,15 @@ public static partial class ServerTests
             Assert(DbCount("SELECT COUNT(*) FROM players WHERE profile_id = @p", ("@p", pseudonym)) == 0 &&
                 DbCount("SELECT COUNT(*) FROM player_wallets WHERE profile_id = @p", ("@p", pseudonym)) == 0,
                 "No player or wallet exists behind the pseudonym");
+            Assert((string?)DbScalar("SELECT a.profile_id FROM wallet_adjustments a JOIN purchases p ON p.purchase_id = a.purchase_id " +
+                "WHERE p.transaction_id = 'txn-del-2'") == pseudonym, "A refund's record stays with its purchase under the pseudonym");
+            var lateRefund = await AdminRefund(client, new { transactionId = "txn-del-1" });
+            Assert(lateRefund.Status == HttpStatusCode.OK && lateRefund.Body.GetProperty("status").GetString() == "refunded" &&
+                (string?)DbScalar("SELECT status FROM purchases WHERE transaction_id = 'txn-del-1'") == "refunded",
+                $"A refund after deletion marks the kept purchase refunded ({lateRefund.Body})");
+            Assert(DbCount("SELECT COUNT(*) FROM wallet_ledger WHERE profile_id = @p", ("@p", pseudonym)) == 0 &&
+                DbCount("SELECT COUNT(*) FROM wallet_adjustments a JOIN purchases p ON p.purchase_id = a.purchase_id WHERE p.transaction_id = 'txn-del-1'") == 0,
+                "A refund after deletion takes nothing back: no wallet or device is left");
             Assert((string?)DbScalar("SELECT leader_profile_id FROM guilds WHERE guild_id = @g", ("@g", sharedGuild)) == member,
                 "A guild the player led passes to its remaining member");
             Assert(DbCount("SELECT COUNT(*) FROM guilds WHERE guild_id = @g", ("@g", soloGuild)) == 0, "A guild left empty is removed");

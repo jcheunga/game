@@ -250,6 +250,15 @@ To enable live sign-in:
    written as `\n`. With Docker Compose, put the one-line form in
    `.env.production`. A Compose secret for this key would have to exist on
    every deployment, Android-only ones included, so none is defined.
+
+   Also set `ACCOUNT_TOKEN_KEY` to 32 random bytes in base64
+   (`openssl rand -base64 32`), inline or as a file through
+   `ACCOUNT_TOKEN_KEY_PATH`. The server keeps each player's Apple refresh
+   token encrypted with it (AES-256-GCM), because deleting an account must
+   revoke Sign in with Apple and only a refresh token can. Without the key
+   Sign in with Apple stays off, and production refuses to start with
+   `APPLE_SIGN_IN_CLIENT_ID` set. Never change the key: tokens stored under
+   the old one can no longer be revoked.
 7. Restart the server. `/auth/providers` reports which sign-in methods are
    configured; the game disables buttons for unavailable providers.
 
@@ -402,6 +411,46 @@ Account labels, session secrets and the sign-out choice are excluded from cloud
 saves. Progress uploads after each won battle once the device has a session,
 and manually from Settings. Backup files include the device session, so treat
 them like private saves.
+
+### Account deletion
+
+Settings → Account → Delete account asks for confirmation, then calls
+`POST /account/delete` with the device's session (`server/AccountDeletion.cs`).
+In one transaction the server deletes every row keyed by the profile: the
+player, linked sign-ins (email, Google, Apple, Game Center, Play Games),
+pending sign-in codes, sessions, cloud save, challenge results, achievements,
+daily completions, arena snapshot and results, raid contributions, analytics,
+crash reports, friendships and gifts in both directions, player reports made by
+or about the player, room seats and telemetry, rooms the player hosted (their
+titles carry the callsign), guild membership, wallet and wallet ledger. A guild
+the player led passes to its top contributor; an empty one is deleted. Other
+players' arena results keep their row with the opponent ID blanked. The
+server test `AccountDeletionCoversSchema` fails when a new column looks like it
+holds a profile ID and the deletion does not clear it.
+
+Kept on purpose: `purchases` rows, for tax records, refunds and fraud checks,
+and because the unique transaction ID stops a store purchase being credited
+again to a new account. Their `profile_id` becomes `DELETED-` plus 32 random
+hex characters, one code per deleted account, with no player, wallet or
+session behind it, and `/player-profile` refuses IDs with that prefix. Refund
+handling must not try to debit a wallet for such a profile. The wallet ledger
+is deleted rather than kept: it repeats what each purchase row records, for a
+currency that no longer exists.
+
+The device deletes its local account backups for that profile, starts a new
+guest and turns off automatic sign-in. The deleted account's session hashes go
+into `deleted_sessions` for 31 days, so a repeated request (for example after
+a lost response) gets `alreadyDeleted: true` instead of 401. Sign in with Apple
+is revoked at `https://appleid.apple.com/auth/revoke` with the refresh token
+kept from sign-in. If Apple cannot take it, the sealed token waits in
+`pending_token_revocations`, and the cleanup service retries it, backing off
+from 15 minutes to a day, for 30 attempts. `invalid_grant` (already revoked)
+ends the retries.
+
+Another device still signed in to the deleted account is not told yet. Its old
+session gets 401 everywhere, but it keeps its local progress, and if it
+registers its profile ID again through `/player-profile` that ID comes back as
+a new guest, which can upload that device's progress.
 
 ## Game release configuration
 

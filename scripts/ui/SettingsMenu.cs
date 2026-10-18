@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 
 /// <summary>
@@ -13,6 +14,7 @@ public partial class SettingsMenu : RoyalScreen
     private Control _layer;
     private string _status = "";
     private float _rowsScroll;
+    private bool _deletingAccount;
 
     public SettingsMenu() { PlateName = "settings"; }
 
@@ -156,6 +158,7 @@ public partial class SettingsMenu : RoyalScreen
                 yield return new ActionRow("close", "Reset campaign", "Reset", () => MedievalUi.ShowConfirmation(this, "Abandon this campaign?",
                     "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
                     () => { GameState.Instance.ResetProgress(); SceneRouter.Instance.ReloadHome(); }));
+                yield return new ActionRow("close", "Delete account", _deletingAccount ? "Deleting" : "Delete", ConfirmDeleteAccount, !_deletingAccount);
                 break;
         }
     }
@@ -334,6 +337,38 @@ public partial class SettingsMenu : RoyalScreen
         GameState.Instance.RestorePlayerPreferences();
         _status = "";
         Rebuild();
+    }
+
+    private void ConfirmDeleteAccount()
+    {
+        var provider = GameState.Instance.AccountProvider;
+        var signIn = provider.Length == 0 ? " and" : $", unlinks your {(provider == "email" ? "email" : PlatformSignIn.ProviderName(provider))} sign-in and";
+        MedievalUi.ShowConfirmation(this, "Delete your account?",
+            $"This erases your progress, cloud save, scores, guilds and friends from our servers{signIn} starts this device again as a new guest. " +
+            "Purchase records the law requires are kept without your name. This cannot be undone.",
+            "Delete account", () => _ = DeleteAccount(), "Keep account");
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (_deletingAccount) return;
+        _deletingAccount = true;
+        // The progress and any failure show in the first row, so the list returns to the top.
+        _status = "Deleting your account…";
+        _rowsScroll = 0;
+        Rebuild();
+        try { await AccountSignIn.DeleteAccount(); }
+        catch (Exception e)
+        {
+            _deletingAccount = false;
+            _status = e.Message;
+            _rowsScroll = 0;
+            if (IsInsideTree()) Rebuild();
+            return;
+        }
+        _deletingAccount = false;
+        _status = "";
+        SceneRouter.Instance.ReloadHome();
     }
 
     private void OpenDeveloperTools()

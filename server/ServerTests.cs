@@ -96,6 +96,11 @@ public static partial class ServerTests
                 ("CloudSavePrivacyMigration", TestCloudSavePrivacyMigration),
                 ("PurchaseTransactionMigration", TestPurchaseTransactionMigration),
                 ("CallsignSurvivesPurchaseAndCloudSave", () => TestCallsignSurvivesPurchaseAndCloudSave(client)),
+                ("CredentialProtection", TestCredentialProtection),
+                ("AccountDeletion", () => TestAccountDeletion(client)),
+                ("AccountDeletionRevokesApple", () => TestAccountDeletionRevokesApple(client)),
+                ("AccountDeletionCoversSchema", TestAccountDeletionCoversSchema),
+                ("AccountDeletionMigration", TestAccountDeletionMigration),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
@@ -193,6 +198,7 @@ public static partial class ServerTests
                     {
                         AccountAuth.Map(endpoints);
                         endpoints.MapPost("/player-profile", Endpoints.PlayerProfile);
+                        endpoints.MapPost("/account/delete", Endpoints.AccountDelete);
                         endpoints.MapPost("/challenge-sync", Endpoints.ChallengeSync);
                         endpoints.MapGet("/challenge-boards", Endpoints.ChallengeLeaderboard);
                         endpoints.MapGet("/challenge-feed", Endpoints.ChallengeFeed);
@@ -231,6 +237,15 @@ public static partial class ServerTests
                     endpoints.MapPost("/cloud-save/upload", Endpoints.CloudSaveUpload);
                     endpoints.MapGet("/cloud-save/download", Endpoints.CloudSaveDownload);
                     endpoints.MapGet("/cloud-save/info", Endpoints.CloudSaveInfo);
+                    endpoints.MapPost("/arena/snapshot", Endpoints.ArenaUploadSnapshot);
+                    endpoints.MapPost("/arena/result", Endpoints.ArenaReportResult);
+                    endpoints.MapPost("/guild/create", Endpoints.GuildCreate);
+                    endpoints.MapPost("/guild/join", Endpoints.GuildJoin);
+                    endpoints.MapPost("/guild/contribute", Endpoints.GuildContribute);
+                    endpoints.MapPost("/friends/add", Endpoints.FriendAdd);
+                    endpoints.MapGet("/friends/list", Endpoints.FriendList);
+                    endpoints.MapPost("/friends/gift", Endpoints.FriendGift);
+                    endpoints.MapPost("/raid/contribute", Endpoints.RaidContribute);
                     });
                 });
             });
@@ -1167,7 +1182,7 @@ public static partial class ServerTests
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM schema_version";
         var version = Database.ToInt64(cmd.ExecuteScalar());
-        Assert(version >= 6, $"expected schema version >= 6, got {version}");
+        Assert(version >= 7, $"expected schema version >= 7, got {version}");
         await Task.CompletedTask;
     }
 

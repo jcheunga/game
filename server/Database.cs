@@ -604,6 +604,35 @@ public static class Database
             cmd.ExecuteNonQuery();
             SetSchemaVersion(conn, 6);
         }
+
+        if (version < 7)
+        {
+            // Account deletion. Sign in with Apple refresh tokens are kept sealed so a
+            // deletion can revoke them. Hashes of a deleted account's sessions let a
+            // retried deletion answer as the first did, and revocations Apple could
+            // not take at the time wait in a queue.
+            AccountAuth.Initialize(conn);
+            TryAddColumn(conn, "account_identities", "credential", "TEXT NOT NULL DEFAULT ''");
+            TryAddColumn(conn, "account_challenges", "credential", "TEXT NOT NULL DEFAULT ''");
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                CREATE TABLE IF NOT EXISTS deleted_sessions (
+                    token_hash TEXT PRIMARY KEY,
+                    deleted_at INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE TABLE IF NOT EXISTS pending_token_revocations (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT NOT NULL,
+                    credential TEXT NOT NULL,
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    next_attempt_at INTEGER NOT NULL DEFAULT 0,
+                    created_at INTEGER NOT NULL DEFAULT 0
+                );
+            """;
+            cmd.ExecuteNonQuery();
+            SetSchemaVersion(conn, 7);
+        }
     }
 
     private static void ScrubCloudSaveDeviceState(DbConnection conn)

@@ -1,7 +1,7 @@
 #!/bin/sh
 # End-to-end test against a real server: starts a throwaway local server, plays a first install
 # (guest, cloud backup, email sign-in, every account feature, sign-out, sign back in), restarts the
-# server, then plays a second install that signs in to the same account and restores it.
+# server, then plays a second install that signs in to the same account, restores it and deletes it.
 # The server prints sign-in codes to its log (CROWNROAD_DEV_SIGN_IN), so no email is sent.
 set -u
 cd "$(dirname "$0")/../.."

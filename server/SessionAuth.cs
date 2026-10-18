@@ -130,6 +130,10 @@ public static class SessionAuth
         message = "A valid player session is required for this request."
     }, statusCode: StatusCodes.Status401Unauthorized);
 
+    /// <summary>The stored hash of the request's bearer token, or "" when it carries none.</summary>
+    public static string RequestTokenHash(HttpRequest request) =>
+        ReadBearerToken(request) is { Length: > 0 } token ? Hash(token) : "";
+
     private static string ReadBearerToken(HttpRequest request)
     {
         var value = request.Headers.Authorization.FirstOrDefault() ?? "";

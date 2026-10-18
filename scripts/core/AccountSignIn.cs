@@ -89,6 +89,32 @@ public static class AccountSignIn
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or JsonException)
         { throw new InvalidOperationException("The game server is unavailable. Try again.", e); }
     }
+    /// <summary>
+    /// Deletes the player's account on the server, then on the device, which carries on as a new guest.
+    /// A guest that never reached the server has nothing stored there, so only the device is reset.
+    /// </summary>
+    public static async Task DeleteAccount()
+    {
+        var state = GameState.Instance;
+        var signedIn = state.AccountProvider.Length > 0;
+        if (state.PlayerAuthToken.Length > 0 || signedIn)
+        {
+            if (Origin.Length == 0) throw new InvalidOperationException("Connect to the game server to delete your account.");
+            try
+            {
+                var result = await SendRequest("/account/delete", new { });
+                if (Text(result, "status") != "deleted") throw new InvalidOperationException("Your account was not deleted. Try again.");
+            }
+            catch (RequestFailure e) when (e.StatusCode == 401)
+            {
+                // The server cannot tell this device owns the account; nothing was deleted.
+                throw new InvalidOperationException(signedIn ? "Session expired. Sign in again to delete." : "Session expired. Email support to delete.");
+            }
+        }
+        state.ForgetDeletedAccount();
+        PlayerProfileSyncService.InvalidateFromState("Account deleted.");
+    }
+
     public static string Text(JsonElement json, string name, string fallback = "") => json.ValueKind == JsonValueKind.Object && json.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? fallback : fallback;
 
     public static async Task Apply(JsonElement session)

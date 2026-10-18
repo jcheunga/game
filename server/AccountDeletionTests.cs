@@ -54,6 +54,89 @@ public static partial class ServerTests
         return response.StatusCode;
     }
 
+    private static async Task<(HttpStatusCode Status, string Error)> SendAs(HttpClient client, HttpMethod method, string url, string profile, string token, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, url);
+        if (body != null) request.Content = JsonContent.Create(body);
+        if (profile.Length > 0) request.Headers.Add("X-Convoy-Profile", profile);
+        if (token.Length > 0) request.Headers.Authorization = new("Bearer", token);
+        using var response = await client.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(text.Length > 0 ? text : "{}");
+        var error = json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("error", out var value) ? value.GetString() ?? "" : "";
+        return (response.StatusCode, error);
+    }
+
+    /// <summary>
+    /// A second device still signed in to a deleted account is told the account is gone (410
+    /// "account_deleted") by the calls the game makes routinely, and its profile is not registered again.
+    /// Requests without a session, or with a token that never was one, are answered as before.
+    /// </summary>
+    private static async Task TestAccountDeletionTellsOtherDevices(HttpClient client)
+    {
+        const string profile = "TEST-DEL-OTHER", email = "other-device@example.com";
+        var code = "";
+        AccountAuth.TestMailSender = (_, value) => { code = value; return Task.CompletedTask; };
+        try
+        {
+            async Task<string> EmailSignIn(string guest = "", string token = "")
+            {
+                var challenge = await AccountPost(client, "/auth/email/start", new { email }, guest, token);
+                var session = await AccountPost(client, "/auth/email/verify", new { challengeId = challenge.GetProperty("challengeId").GetString(),
+                    secret = challenge.GetProperty("secret").GetString(), code });
+                Assert(session.GetProperty("playerProfileId").GetString() == profile, "Both devices sign in to the same account");
+                return session.GetProperty("sessionToken").GetString()!;
+            }
+            await EnsureSession(client, profile);
+            var device = await EmailSignIn(profile, SessionTokens[profile]);
+            var otherDevice = await EmailSignIn();
+            var save = new { profileId = profile, saveData = "{\"PlayerCallsign\":\"Survivor\"}", saveVersion = 3 };
+            Assert((await SendAs(client, HttpMethod.Post, "/cloud-save/upload", profile, otherDevice, save)).Status == HttpStatusCode.OK,
+                "The other device backs up before the deletion");
+            Assert((await DeleteAccount(client, profile, device)).Status == HttpStatusCode.OK, "One device deletes the account");
+
+            var profileSync = new { profile = new { playerProfileId = profile, playerCallsign = "Survivor" } };
+            var routine = new (string Name, HttpMethod Method, string Url, object? Body)[]
+            {
+                ("player profile", HttpMethod.Post, "/player-profile", profileSync),
+                ("cloud save upload", HttpMethod.Post, "/cloud-save/upload", save),
+                ("cloud save info", HttpMethod.Get, $"/cloud-save/info?profileId={profile}", null),
+                ("cloud save download", HttpMethod.Get, $"/cloud-save/download?profileId={profile}", null),
+                ("wallet", HttpMethod.Get, $"/wallet?profileId={profile}", null),
+                ("challenge sync", HttpMethod.Post, "/challenge-sync", new { submissions = new[] { new { submissionId = "SUB-DEL-OTHER", code = "CH-01-DAILY-1001", score = 5 } } }),
+                ("achievement sync", HttpMethod.Post, "/achievements/sync", new { profileId = profile, achievementIds = new[] { "first_victory" } }),
+                ("purchase validation", HttpMethod.Post, "/purchase/validate", new { profileId = profile, productId = "gold_pouch", platform = "stripe",
+                    receiptToken = "receipt-del-other", transactionId = "txn-del-other" }),
+                ("sign-out", HttpMethod.Post, "/auth/signout", new { }),
+            };
+            foreach (var (name, method, url, body) in routine)
+            {
+                var (status, error) = await SendAs(client, method, url, profile, otherDevice, body);
+                Assert(status == HttpStatusCode.Gone && error == "account_deleted", $"The other device's {name} hears the account was deleted (HTTP {(int)status} {error})");
+            }
+            Assert(DbCount("SELECT COUNT(*) FROM players WHERE profile_id = @pid", ("@pid", profile)) == 0 &&
+                DbCount("SELECT COUNT(*) FROM auth_sessions WHERE profile_id = @pid", ("@pid", profile)) == 0 &&
+                DbCount("SELECT COUNT(*) FROM cloud_saves WHERE profile_id = @pid", ("@pid", profile)) == 0 &&
+                DbCount("SELECT COUNT(*) FROM purchases WHERE transaction_id = 'txn-del-other'") == 0,
+                "The other device's calls bring no player, session, save or purchase back");
+
+            // Everything without a session of the deleted account is answered as before.
+            Assert((await SendAs(client, HttpMethod.Get, $"/cloud-save/info?profileId={profile}", profile, "")).Status == HttpStatusCode.Unauthorized &&
+                (await SendAs(client, HttpMethod.Get, $"/cloud-save/info?profileId={profile}", profile, "never-a-session")) is (HttpStatusCode.Unauthorized, "unauthorized"),
+                "A request with no session, or a token that never was one, is still refused as unauthorized");
+            Assert((await SendAs(client, HttpMethod.Post, "/player-profile", "TEST-DEL-NEWCOMER", "never-a-session",
+                    new { profile = new { playerProfileId = "TEST-DEL-NEWCOMER", playerCallsign = "Newcomer" } })).Status == HttpStatusCode.OK,
+                "A new profile still registers whatever stale token it carries");
+            Assert(await SessionStatus(client, profile, "never-a-session") == HttpStatusCode.Unauthorized, "A made-up token is not mistaken for a deleted session");
+
+            // Once the deleted sessions are forgotten (after any session would have expired), the old answers return.
+            DbScalar("UPDATE deleted_sessions SET deleted_at = 0");
+            using (var conn = Database.Open()) AccountDeletion.PurgeDeletedSessions(conn);
+            Assert(await SessionStatus(client, profile, otherDevice) == HttpStatusCode.Unauthorized, "A purged deleted session is refused like any expired one");
+        }
+        finally { AccountAuth.TestMailSender = null; }
+    }
+
     private static async Task TestAccountDeletion(HttpClient client)
     {
         const string profile = "TEST-DEL", friend = "TEST-DEL-FRIEND", member = "TEST-DEL-MEMBER";
@@ -146,7 +229,7 @@ public static partial class ServerTests
                 Assert(friends.RootElement.GetProperty("friends").GetArrayLength() == 0, "The deleted player leaves friends' lists");
 
             foreach (var (name, token) in new[] { ("guest", guestToken), ("this device's", device), ("other device's", otherDevice) })
-                Assert(await SessionStatus(client, profile, token) == HttpStatusCode.Unauthorized, $"Deletion revokes the {name} session");
+                Assert(await SessionStatus(client, profile, token) == HttpStatusCode.Gone, $"Deletion ends the {name} session, which is told the account is gone");
 
             (status, body) = await DeleteAccount(client, profile, device);
             Assert(status == HttpStatusCode.OK && body.GetProperty("alreadyDeleted").GetBoolean(), "Repeating the deletion answers deleted again");

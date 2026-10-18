@@ -447,10 +447,22 @@ kept from sign-in. If Apple cannot take it, the sealed token waits in
 from 15 minutes to a day, for 30 attempts. `invalid_grant` (already revoked)
 ends the retries.
 
-Another device still signed in to the deleted account is not told yet. Its old
-session gets 401 everywhere, but it keeps its local progress, and if it
-registers its profile ID again through `/player-profile` that ID comes back as
-a new guest, which can upload that device's progress.
+Another device still signed in to the deleted account finds out by itself. A
+request carrying one of the account's old sessions gets HTTP 410 with
+`error: "account_deleted"`: the endpoints that need a session answer through
+`SessionAuth.Refused`, and `/player-profile` refuses instead of registering the
+deleted profile ID again as a new guest. A request with no session, or with a
+token that never was one, still gets 401. The game checks its session once a
+launch when the server answers, and profile sync, cloud save, challenge sync,
+achievement sync, purchase verification, guest registration and sign-out
+recognise the answer too (`PlayerSessionHttp.NoticeAccountDeleted`). The device
+then deletes its local backups of that account, starts a new guest with
+automatic sign-in off and returns home. It does this once, after any battle in
+progress ends. A store purchase refused this way stays unfinished, and the new
+guest gets the credit when the purchase is verified again. After the 31 days the
+hashes are purged, and an old session gets 401 like any expired one. A device
+away that long is treated as before: its profile ID can register again as a new
+guest.
 
 ## Game release configuration
 

@@ -70,7 +70,7 @@ public static class AccountAuth
         auth.MapPost("/gamecenter", GameCenter);
         auth.MapPost("/signout", (HttpRequest request) =>
         {
-            if (!SessionAuth.TryAuthorize(request, request.Headers["X-Convoy-Profile"].ToString(), out var session)) return SessionAuth.Unauthorized();
+            if (!SessionAuth.TryAuthorize(request, request.Headers["X-Convoy-Profile"].ToString(), out var session)) return SessionAuth.Refused(request);
             using var conn = Database.Open(); using var cmd = conn.CreateCommand();
             cmd.CommandText = "UPDATE auth_sessions SET revoked_at=@now WHERE session_id=@id";
             cmd.Parameters.AddWithValue("@now", Now); cmd.Parameters.AddWithValue("@id", session!.SessionId); cmd.ExecuteNonQuery();

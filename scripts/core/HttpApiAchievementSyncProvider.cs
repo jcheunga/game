@@ -56,6 +56,7 @@ public sealed class HttpApiAchievementSyncProvider
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
+			PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, profileId);
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
 		}
 

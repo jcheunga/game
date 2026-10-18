@@ -157,7 +157,10 @@ public partial class AccountDialog : AcceptDialog
         if (_busy) return; Busy(true);
         try
         {
-            try { await AccountSignIn.Request("/auth/signout", new { }); } catch { /* Local sign-out remains available offline. */ }
+            try { await AccountSignIn.Request("/auth/signout", new { }); }
+            // An account deleted meanwhile is forgotten by the device, not kept as a backup.
+            catch (AccountSignIn.AccountDeletedException) { if (!_closed) Close(); return; }
+            catch { /* Local sign-out remains available offline. */ }
             GameState.Instance.StartAccountSave();
             GameState.Instance.PauseAutoSignIn();
             if (!_closed) { Close(); SceneRouter.Instance.ReloadHome(); }

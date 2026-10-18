@@ -116,6 +116,8 @@ public sealed class HttpApiPurchaseValidationProvider
 
 		if (!succeeded)
 		{
+			// The store purchase stays unfinished, so the new guest is credited when it is verified again.
+			PlayerSessionHttp.NoticeAccountDeleted(statusCode, responseBody, request.PlayerProfileId);
 			throw new InvalidOperationException(ReadErrorMessage(responseBody) ?? $"HTTP {statusCode}: {responseBody}");
 		}
 

@@ -51,7 +51,11 @@ public partial class UiReviewSmoke
 
         await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Rations"));
         var refill = Walk(store).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "10 food · 100 gold");
-        Check(pages.GetGlobalRect().Encloses(refill.GetGlobalRect()), "The gold-funded ration refill is visible beside its recharge information");
+        // Four packs fill the page, so the refill and its recharge share the footer beneath them.
+        var recharge = refill.GetParent().GetChildren().OfType<Label>().Single();
+        Check(modal.Content.GetGlobalRect().Encloses(refill.GetGlobalRect()) && !pages.GetGlobalRect().Intersects(refill.GetGlobalRect())
+            && recharge.IsVisibleInTree() && recharge.Text.Contains("every 5 minutes") && modal.Content.GetGlobalRect().Encloses(recharge.GetGlobalRect()),
+            "The gold-funded ration refill is visible beside its recharge information");
         await TapModal(refill);
         Check(state.Gold == 400 && state.Food == 20 && notice.Text == "+10 food", "Refilling spends 100 gold once, grants 10 food and keeps the result visible");
         Check(Walk(store).OfType<Button>().Where(button => button.IsVisibleInTree() && button.HasMeta("store_product_id"))

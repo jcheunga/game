@@ -49,8 +49,11 @@ public partial class UiReviewSmoke
         AuditText("Modal / claimed achievements"); await Capture("15-achievement-claimed"); menu.CloseHomeModal();
         state.DiscoverCodexEntry("player_brawler"); state.DiscoverCodexEntry("enemy_walker"); state.DiscoverCodexEntry("enemy_runner");
         SceneRouter.Instance.GoToCodex(); await Wait(.3); await PressHint("Units"); await PressHint("Swordsman");
-        Check(Walk(menu).OfType<Control>().Any(text => text.IsVisibleInTree() && (text is Label { Text: var lore } && lore.Contains("steadfast blade")
-            || text is RoyalLabel { Text: var blurb } && blurb.Contains("steadfast blade"))), "Selecting a discovered codex portrait shows its lore");
+        // The page leads with the lore's first sentence and keeps the rest below the stats.
+        bool Shows(string words) => Walk(menu).OfType<Control>().Any(text => text.IsVisibleInTree() && (text is Label { Text: var lore } && lore.Contains(words)
+            || text is RoyalLabel { Text: var blurb } && blurb.Contains(words)));
+        var swordsmanLore = CodexCatalog.GetById("player_brawler").LoreText.Split(". ", 2);
+        Check(swordsmanLore.All(Shows), "Selecting a discovered codex portrait shows its lore");
         Check(Walk(menu).OfType<Button>().Any(control => control.IsVisibleInTree() && control.AccessibilityName == "Undiscovered codex entry" && control.Disabled), "Undiscovered book entries stay locked");
         AuditText("Modal / discovered codex"); await Capture("16-codex-discovered");
         Send(new InputEventKey { Pressed = true, Keycode = Key.Escape }); await Wait(.2);

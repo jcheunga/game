@@ -17,6 +17,9 @@ public partial class CashShopMenu : Control
     private HBoxContainer _categoryTabs = null !;
     private Label _noticeLabel = null !;
     private Button _cancelConfirmButton = null !;
+    private HBoxContainer _refillRow = null !;
+    private const string PurchaseHint = "Tap Buy twice to confirm.";
+    private const int RationsPage = 1;
     private int _selectedCategory;
     private string _pendingConfirmProductId = "";
     private Button _pendingConfirmButton;
@@ -57,16 +60,23 @@ public partial class CashShopMenu : Control
         {
             Name = "StorehouseLayout"
         };
-        root.AddThemeConstantOverride("separation", 10);
+        root.AddThemeConstantOverride("separation", 8);
         AddChild(root);
         root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        // Balances share the armory's centred strip so both stores read the same way.
-        var balances = new PanelContainer { Name = "StorehouseBalances" };
+        // On the phone-sized canvas every row counts: the balances sit at the end of the tab row
+        // instead of taking a strip of their own, leaving the height to the pack cards.
+        var bar = new HBoxContainer { Name = "StorehouseBar" };
+        bar.AddThemeConstantOverride("separation", 10);
+        root.AddChild(bar);
+        _categoryTabs = RealmUi.Tabs(bar, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
+        // The four tabs and the balances always fit, so the row needs no room for a scrollbar.
+        ((Control)_categoryTabs.GetParent()).CustomMinimumSize = new Vector2(0, 48);
+        var balances = new PanelContainer { Name = "StorehouseBalances", SizeFlagsVertical = SizeFlags.ShrinkCenter };
         balances.SetMeta("modal_unframed", true);
         balances.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
-        root.AddChild(balances);
+        bar.AddChild(balances);
         _resourcesRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        _resourcesRow.AddThemeConstantOverride("separation", 32);
+        _resourcesRow.AddThemeConstantOverride("separation", 20);
         balances.AddChild(_resourcesRow);
         BuildCatalog(root);
         RealmModal.Polish(root);
@@ -74,7 +84,6 @@ public partial class CashShopMenu : Control
 
     private void BuildCatalog(VBoxContainer body)
     {
-        _categoryTabs = RealmUi.Tabs(body, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
         // The pages take the remaining space; purchase actions stay inside each card.
         var pages = new Control
         {
@@ -90,13 +99,36 @@ public partial class CashShopMenu : Control
         statusStack.AddChild(RealmUi.Heading("The merchant's ledger"));
         _statusLabel = RealmUi.Label("");
         statusStack.AddChild(_statusLabel);
+        // One fixed height whatever the footer holds, so the cards above never change size.
         var notice = new HBoxContainer
         {
-            CustomMinimumSize = new Vector2(0, 40)
+            CustomMinimumSize = new Vector2(0, 42)
         };
         notice.AddThemeConstantOverride("separation", 12);
-        body.AddChild(notice);
-        _noticeLabel = RealmUi.Label("Choose a pack. Tap Buy twice to confirm.", 18, true);
+        // Ends where the cards end, clear of the frame's rim.
+        var footer = new MarginContainer();
+        footer.AddThemeConstantOverride("margin_right", 8);
+        body.AddChild(footer);
+        footer.AddChild(notice);
+        // The gold-funded refill and its recharge share the footer on the Rations page, where four
+        // packs already fill the page. They make way while a pack waits for its confirmation.
+        _refillRow = new HBoxContainer { Name = "RationRefill" };
+        _refillRow.AddThemeConstantOverride("separation", 12);
+        notice.AddChild(_refillRow);
+        var refill = RealmUi.Button("food", "10 food · 100 gold", () =>
+        {
+            AudioDirector.Purchased(GameState.Instance.TryBuyFoodRefill(out var message));
+            RefreshUi();
+            _noticeLabel.Text = message;
+        }, true);
+        refill.CustomMinimumSize = new Vector2(refill.CustomMinimumSize.X, 40);
+        _refillRow.AddChild(refill);
+        var recharge = RealmUi.Label("+2 food every 5 minutes · Up to 24", 14, true);
+        recharge.AutowrapMode = TextServer.AutowrapMode.Off;
+        recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
+        recharge.VerticalAlignment = VerticalAlignment.Center;
+        _refillRow.AddChild(recharge);
+        _noticeLabel = RealmUi.Label(PurchaseHint, 18, true);
         _noticeLabel.Name = "PurchaseNotice";
         _noticeLabel.VerticalAlignment = VerticalAlignment.Center;
         notice.AddChild(_noticeLabel);
@@ -143,6 +175,14 @@ public partial class CashShopMenu : Control
         for (var i = 0; i < pages.Length; i++)
             pages[i].Visible = i == index;
         _categoryTabs.GetChild<Button>(index).ButtonPressed = true;
+        ShowRefill();
+    }
+
+    private void ShowRefill()
+    {
+        _refillRow.Visible = _selectedCategory == RationsPage && _pendingConfirmProductId.Length == 0;
+        // Beside the refill, the notice keeps to the far end so a result doesn't run on from the recharge.
+        _noticeLabel.HorizontalAlignment = _refillRow.Visible ? HorizontalAlignment.Right : HorizontalAlignment.Left;
     }
 
     private void RefreshUi(bool preserveStatus = false)
@@ -161,7 +201,6 @@ public partial class CashShopMenu : Control
     private void RebuildResourcesRow()
     {
         RealmUi.Clear(_resourcesRow);
-        // Same slim balance strip as the armory.
         foreach (var balance in new[] {
             HomeResourceUi.Amount("gold", GameState.Instance.Gold.ToString("N0"), $"Gold: {GameState.Instance.Gold:N0}", 28),
             HomeResourceUi.Amount("food", $"{GameState.Instance.Food}/{GameState.FoodRechargeCap}", GameState.Instance.FoodRechargeText, 28) })
@@ -173,25 +212,7 @@ public partial class CashShopMenu : Control
     }
 
     private void RebuildGoldPacks() => RebuildCategory(_goldStack, "gold");
-    private void RebuildFoodPacks()
-    {
-        RebuildCategory(_foodStack, "food");
-        var refillRow = new HBoxContainer();
-        refillRow.AddThemeConstantOverride("separation", 16);
-        var refill = RealmUi.Button("food", "10 food · 100 gold", () =>
-        {
-            AudioDirector.Purchased(GameState.Instance.TryBuyFoodRefill(out var message));
-            RefreshUi();
-            _noticeLabel.Text = message;
-        }, true);
-        refillRow.AddChild(refill);
-        var recharge = RealmUi.Label("+2 food every 5 minutes · Up to 24", 18, true);
-        recharge.VerticalAlignment = VerticalAlignment.Center;
-        refillRow.AddChild(recharge);
-        _foodStack.AddChild(refillRow);
-        _foodStack.MoveChild(refillRow, 0);
-        RealmModal.Polish(refillRow);
-    }
+    private void RebuildFoodPacks() => RebuildCategory(_foodStack, "food");
 
     private void RebuildMixedPacks() => RebuildCategory(_mixedStack, "mixed");
     private void RebuildCategory(VBoxContainer stack, string category)
@@ -202,14 +223,20 @@ public partial class CashShopMenu : Control
         {
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        row.AddThemeConstantOverride("separation", 12);
+        row.AddThemeConstantOverride("separation", 8);
         stack.AddChild(row);
-        foreach (var product in ShopProductCatalog.GetByCategory(category))
-            AddProductCard(row, product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id));
+        var products = ShopProductCatalog.GetByCategory(category);
+        foreach (var product in products)
+            AddProductCard(row, product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id), wide: products.Count <= 2);
         RealmModal.Polish(row);
     }
 
-    private void AddProductCard(Control host, ShopProduct product, bool forceDisabled)
+    /// <summary>
+    /// A pack card: name, supplies, bonus and the purchase button pinned to the bottom. Four packs share a row on
+    /// the phone-sized canvas, so their names take the card's full width (two lines at most) and the whole card
+    /// fits without scrolling. Bundles, two to a row, also carry their emblem and the Details of their terms.
+    /// </summary>
+    private void AddProductCard(Control host, ShopProduct product, bool forceDisabled, bool wide)
     {
         var panel = new PanelContainer
         {
@@ -220,33 +247,43 @@ public partial class CashShopMenu : Control
         card.AddThemeConstantOverride("separation", 6);
         panel.AddChild(card);
         var top = new HBoxContainer();
+        top.AddThemeConstantOverride("separation", 10);
         card.AddChild(top);
-        top.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(40, 40) });
-        top.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        var details = new RealmButton
-        {
-            Text = "Details",
-            CustomMinimumSize = new Vector2(82, 40),
-            AccessibilityName = product.DisplayName + " details",
-            TooltipText = product.DisplayName + " details"
-        };
-        details.Pressed += () => RealmUi.Details(this, product.DisplayName, $"{product.FormattedReward}\n\n{product.Description}\n\nPrice: {LocalizedPrice(product)}" + (product.OneTimePurchase ? "\nAvailable once per account." : ""));
-        top.AddChild(details);
-        var title = RealmUi.Heading(product.DisplayName, 18);
-        title.CustomMinimumSize = new Vector2(0, 56);
+        var title = RealmUi.Heading(product.DisplayName, 16);
+        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         title.VerticalAlignment = VerticalAlignment.Center;
-        card.AddChild(title);
+        if (wide)
+        {
+            top.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(40, 40) });
+            top.AddChild(title);
+            var details = new RealmButton
+            {
+                Text = "Details",
+                CustomMinimumSize = new Vector2(82, 40),
+                AccessibilityName = product.DisplayName + " details",
+                TooltipText = product.DisplayName + " details"
+            };
+            details.Pressed += () => RealmUi.Details(this, product.DisplayName, $"{product.FormattedReward}\n\n{product.Description}\n\nPrice: {LocalizedPrice(product)}" + (product.OneTimePurchase ? "\nAvailable once per account." : ""));
+            top.AddChild(details);
+        }
+        else
+        {
+            // Two lines for every name, so the supplies line up across the row.
+            title.CustomMinimumSize = new Vector2(0, 2 * RealmUi.HeadingFont.GetHeight(title.GetThemeFontSize("font_size")) + 3);
+            top.AddChild(title);
+        }
         card.AddChild(BuildProductRewardRow(product));
         var extra = product.GrantsUnitUnlock ? "+ Unit unlock" : product.BonusAmount > 0 ? $"Includes {product.BonusAmount:N0} bonus" : "";
-        var bonus = RealmUi.Label(extra, 18, true);
+        var bonus = RealmUi.Label(extra, 14, true);
         bonus.CustomMinimumSize = new Vector2(0, 24);
         card.AddChild(bonus);
-        card.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
         var localizedPrice = LocalizedPrice(product);
         var purchaseButton = new RealmButton
         {
             Text = forceDisabled ? "Purchased" : $"Buy — {localizedPrice}",
             CustomMinimumSize = new Vector2(0, 48),
+            // Takes the card's spare height but stays at the bottom, so the buttons line up across the row.
+            SizeFlagsVertical = SizeFlags.ShrinkEnd | SizeFlags.Expand,
             Disabled = forceDisabled
         };
         purchaseButton.SetMeta("realm_primary", true);
@@ -292,8 +329,9 @@ public partial class CashShopMenu : Control
         _pendingConfirmProductId = "";
         _pendingConfirmButton = null;
         _cancelConfirmButton.Hide();
+        ShowRefill();
         if (resetNotice)
-            _noticeLabel.Text = "Choose a pack. Tap Buy twice to confirm.";
+            _noticeLabel.Text = PurchaseHint;
     }
 
     private void OnPurchasePressed(string productId, Button button)
@@ -322,6 +360,7 @@ public partial class CashShopMenu : Control
         button.Text = $"Confirm — {LocalizedPrice(selected)}";
         _noticeLabel.Text = $"{selected.DisplayName} · {LocalizedPrice(selected)}. Tap Confirm to purchase.";
         _cancelConfirmButton.Show();
+        ShowRefill();
     }
 
     private void ExecutePurchase(string productId)

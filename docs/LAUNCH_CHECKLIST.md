@@ -218,9 +218,17 @@ unfinished one back on the next launch. Nothing has been bought through Google
 Play yet.
 
 - [ ] In Play Console, set up a payments profile so the app can sell.
-- [ ] Check the release bundle against Play's size limits. A debug export
-  (2026-10-18) is 745 MB, almost all of it textures in the install-time asset
-  pack.
+- [x] Check the release bundle against Play's size limits (2026-10-18, see
+  [BUILD_SIZE.md](BUILD_SIZE.md)). A release export is now 377 MB (it was
+  712 MB): the base module is 30 MB of its 500 MB limit and the install-time
+  asset pack 346 MB of 1.5 GB. Play's estimated download, from bundletool, is
+  375 MB. The cuts were cheaper texture compression on the painted maps and
+  pictures, which looks the same on a phone, and leaving out art the game
+  never loads. It is still over 200 MB, so Play asks before downloading it
+  over mobile data. The iOS preset needs the same exclude filter, added in
+  the editor.
+- [ ] After the first upload, check Play Console → App size against those
+  figures.
 - [ ] Add testers under License testing, and upload a signed build to the
   internal testing track. Play only offers in-app products once a build with
   the billing library is uploaded, and purchases only work in a build Play

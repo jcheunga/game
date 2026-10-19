@@ -45,7 +45,8 @@ CONCEPT = "output/crownroad-ui-ideas-2026-10-06/06-cartographers-atlas-home.png"
 TARGET_SIZE = (1920, 1080)
 TILES = 2
 # The zone paintings import as GPU-compressed textures with mipmaps, so a zoomed-out atlas stays smooth and a
-# large map fits in a phone's memory.
+# large map fits in a phone's memory. Normal quality (ETC2 on phones) is half the size of high-quality ASTC and
+# looks the same on a phone (docs/BUILD_SIZE.md); scripts/tools/mobile_textures.py keeps the tiles on it.
 IMPORT = """[remap]
 
 importer="texture"
@@ -58,7 +59,7 @@ source_file="res://assets/world/royal/maps/{name}.jpg"
 [params]
 
 compress/mode=2
-compress/high_quality=true
+compress/high_quality=false
 compress/lossy_quality=0.9
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

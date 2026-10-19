@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://otib38m71gc8"
-path.bptc="res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.bptc.ctex"
-path.astc="res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.astc.ctex"
+path.s3tc="res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.s3tc.ctex"
+path.etc2="res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -13,12 +13,12 @@ metadata={
 [deps]
 
 source_file="res://assets/world/royal/maps/foundry-2.jpg"
-dest_files=["res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.bptc.ctex", "res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.astc.ctex"]
+dest_files=["res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.s3tc.ctex", "res://.godot/imported/foundry-2.jpg-ad2aab46407f00b4515795551cbac177.etc2.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=true
+compress/high_quality=false
 compress/lossy_quality=0.9
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

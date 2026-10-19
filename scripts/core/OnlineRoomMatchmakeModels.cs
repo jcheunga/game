@@ -26,3 +26,8 @@ public interface IOnlineRoomMatchmakeProvider
 	string BuildLocationSummary();
 	OnlineRoomMatchmakeResult Matchmake(AsyncChallengeDefinition challenge, OnlineRoomMatchmakeRequest request);
 }
+
+public sealed class OnlineRoomMatchmakeApiRequest
+{
+	public OnlineRoomMatchmakeRequest Matchmake { get; set; } = new();
+}

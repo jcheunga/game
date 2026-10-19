@@ -68,11 +68,7 @@ public static class ShopProductCatalog
 			using var file = FileAccess.Open("res://data/shop_products.json", FileAccess.ModeFlags.Read);
 			if (file == null) return;
 			var json = file.GetAsText();
-			var options = new JsonSerializerOptions
-			{
-				PropertyNameCaseInsensitive = true
-			};
-			var items = JsonSerializer.Deserialize<List<ShopProduct>>(json, options);
+			var items = JsonSerializer.Deserialize(json, DataJson.Default.ListShopProduct);
 			if (items != null)
 			{
 				Products.AddRange(items.OrderBy(p => p.SortOrder));

@@ -7,11 +7,6 @@ public sealed class LocalJournalChallengeSyncProvider : IChallengeSyncProvider
 {
 	public const string BatchJournalPath = "user://challenge_sync_batches.jsonl";
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = false
-	};
-
 	public string Id => ChallengeSyncProviderCatalog.LocalJournalId;
 	public string DisplayName => "Local Journal Stub";
 
@@ -32,7 +27,7 @@ public sealed class LocalJournalChallengeSyncProvider : IChallengeSyncProvider
 
 		using (var stream = new StreamWriter(globalPath, append: true))
 		{
-			stream.WriteLine(JsonSerializer.Serialize(batch, JsonOptions));
+			stream.WriteLine(JsonSerializer.Serialize(batch, CompactJson.Default.ChallengeSyncBatchEnvelope));
 		}
 
 		return new ChallengeSyncBatchResult

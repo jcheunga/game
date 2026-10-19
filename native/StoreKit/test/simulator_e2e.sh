@@ -14,10 +14,11 @@
 #    so the driver scene can be launched. Device builds keep the official library.
 # 3. Selects Crownroad.storekit in the scheme (use_storekit_config.sh) and builds for the simulator.
 # 4. Starts a server with test purchase claims and a fresh database, and launches the game once per
-#    phase of scenes/tests/StoreKitPluginReview.tscn, which drives the plugin's engine singleton and
-#    validates with the server the way NativeIAPService does. It does not go through the shop: the
-#    iOS NativeAOT build cannot run the game's reflection-based System.Text.Json, so on iOS the game
-#    cannot read its catalog or data yet (StoreKitPurchaseReview.tscn covers the shop on desktop).
+#    phase. Most phases run scenes/tests/StoreKitPluginReview.tscn, which drives the plugin's engine
+#    singleton and validates with the server the way NativeIAPService does. The shop phase runs
+#    scenes/tests/StoreKitShopReview.tscn: the game's data, catalog, save and cloud backup load
+#    under NativeAOT, and a pack is bought from the real shop through NativeIAPService. Every phase
+#    fails if the game logs that it could not read its data or shop catalog.
 #    StoreKitTestSession.swift, loaded into the game, opens an SKTestSession from Crownroad.storekit,
 #    the way an Xcode run with that configuration does, and sets up Ask to Buy or a simulated
 #    failure where a phase needs it.
@@ -133,6 +134,8 @@ results="$work/results.txt"
 # phase <name> [reset] [ask-to-buy] [fail]: one launch of the driver.
 phase() {
 	local name="$1" reset="${2:-0}" ask="${3:-0}" fail="${4:-}" log="$work/phase-$1.log" errors="$work/phase-$1.err.log"
+	local scene=res://scenes/tests/StoreKitPluginReview.tscn
+	[ "$name" = shop ] && scene=res://scenes/tests/StoreKitShopReview.tscn
 	: > "$errors"
 	xcrun simctl spawn booted log stream --level info --style compact --predicate 'subsystem == "com.crownroad.game"' > "$log" 2>&1 &
 	sleep 1
@@ -142,7 +145,7 @@ phase() {
 	SIMCTL_CHILD_CR_STOREKIT_CONFIG="$here/../Crownroad.storekit" \
 	SIMCTL_CHILD_CR_STOREKIT_RESET="$reset" SIMCTL_CHILD_CR_STOREKIT_ASK_TO_BUY="$ask" SIMCTL_CHILD_CR_STOREKIT_FAIL="$fail" \
 		xcrun simctl launch --terminate-running-process --stderr="$errors" booted "$bundle" \
-		res://scenes/tests/StoreKitPluginReview.tscn -- --save-suffix="$suffix" \
+		"$scene" -- --save-suffix="$suffix" \
 		--server="http://127.0.0.1:$port" --phase="$name" > /dev/null
 	local answered=0
 	for _ in $(seq 1 360); do
@@ -160,19 +163,23 @@ phase() {
 	# Killing xcrun leaves the simulator's log process running, so it is stopped by name.
 	pkill -f 'log stream --level info --style compact --predicate subsystem == "com.crownroad.game"' || true
 	echo "== $name" | tee -a "$results"
-	grep -aohE "(STOREKIT_(CHECK|RESULT):.*|SCRIPT ERROR.*|\[StoreKitTest\] Session.*)" "$log" "$errors" | tee -a "$results" || true
-	grep -aq "STOREKIT_RESULT: $name 0 failures" "$log" || { failures=$((failures + 1)); echo "Phase $name failed; see $log"; }
+	grep -aohE "(STOREKIT_(CHECK|RESULT):.*|SCRIPT ERROR.*|\[StoreKitTest\] Session.*|($load_errors).*)" "$log" "$errors" | tee -a "$results" || true
+	if ! grep -aq "STOREKIT_RESULT: $name 0 failures" "$log" || grep -aqE "$load_errors" "$log" "$errors"; then
+		failures=$((failures + 1)); echo "Phase $name failed; see $log"
+	fi
 }
+# What the game logs when it cannot read its JSON (as the NativeAOT build did with reflection-based System.Text.Json).
+load_errors="Failed to load game data|ShopProductCatalog: failed|Failed to parse save file|JsonTypeInfo metadata"
 
-# STOREKIT_E2E_PHASES picks phases, for example "buy interrupt recover". Buy and ask-to-buy start
-# from no transactions, which also clears the unfinished one the unverified phase leaves behind.
+# STOREKIT_E2E_PHASES picks phases, for example "buy interrupt recover". Buy, ask-to-buy and shop
+# start from no transactions, which also clears the unfinished one the unverified phase leaves behind.
 # Cancelling and declining are not phases: Xcode's test store reports a simulated cancellation as an
 # unknown error and still records the purchase, and signs a declined Ask to Buy request like a
 # completed purchase. The shop's handling of both is checked by shop_desktop.sh; StoreKit's needs a
 # device or an Xcode run where the payment sheet is cancelled by hand.
-for name in ${STOREKIT_E2E_PHASES:-buy clean unverified ask-to-buy interrupt recover clean}; do
+for name in ${STOREKIT_E2E_PHASES:-buy clean unverified ask-to-buy interrupt recover clean shop}; do
 	case "$name" in
-		buy) phase buy 1 ;;
+		buy | shop) phase "$name" 1 ;;
 		unverified) phase unverified 0 0 unverified ;;
 		ask-to-buy) phase ask-to-buy 1 1 ;;
 		*) phase "$name" ;;

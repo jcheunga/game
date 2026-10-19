@@ -31,3 +31,8 @@ public interface IOnlineRoomTelemetryProvider
 	string BuildLocationSummary();
 	OnlineRoomTelemetrySubmission SubmitTelemetry(OnlineRoomJoinTicket ticket, OnlineRoomTelemetryRequest request);
 }
+
+public sealed class OnlineRoomTelemetryApiRequest
+{
+	public OnlineRoomTelemetryRequest Telemetry { get; set; } = new();
+}

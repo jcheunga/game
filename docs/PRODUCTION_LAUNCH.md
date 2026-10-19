@@ -14,7 +14,7 @@ hide it in the release build and store copy; do not mark its gate complete.
 | --- | --- | --- |
 | Build and tests | Game build, 11,992 data checks and 86 server tests pass locally; Godot desktop/phone checks cover the account UI and safe account switching. The privacy smoke test also exercises consent and cloud restore. See the evidence below. | Signed mobile exports and testing of those exact builds on devices; CI currently verifies server/data, not mobile exports. |
 | Backend | .NET API, server-issued anonymous and email/Google account sessions, purchase ledger/wallet, managed PostgreSQL `DATABASE_URL`, Redis rate limits, and two API replicas in production Compose. Login is connected to the existing session, wallet and cloud-save APIs. | Deploy and operate the stack, configure email/Google providers, prove live account recovery and restore/alerts/load capacity. The Compose host and its local Redis remain single points of failure. |
-| Payments | Server-side Play/App Store verification, the Android billing bridge and the iOS StoreKit 2 plugin (`native/StoreKit`) are present; paid grants fail closed without valid store verification. The plugin's purchases pass on an iOS simulator with Xcode-signed transactions against a local server, including Ask to Buy and interrupted validation; the shop's handling of each outcome passes on desktop. | The iOS build cannot run the game's JSON yet (NativeAOT; see the iOS section), so the shop is empty on iOS. Real store configuration, sandbox/TestFlight and device tests, configuring and checking the refund signals (built: App Store notifications and Play voided purchases), and production support procedures. |
+| Payments | Server-side Play/App Store verification, the Android billing bridge and the iOS StoreKit 2 plugin (`native/StoreKit`) are present; paid grants fail closed without valid store verification. The plugin's purchases pass on an iOS simulator with Xcode-signed transactions against a local server, including Ask to Buy and interrupted validation, and so does a purchase from the game's own shop through NativeIAPService; the shop's handling of each outcome passes on desktop. | Real store configuration, sandbox/TestFlight and device tests, configuring and checking the refund signals (built: App Store notifications and Play voided purchases), and production support procedures. |
 | Multiplayer | Authenticated room relay exists server-side. | Battle client transport and physical-device reconnect/latency tests, or remove internet rooms from the public build. |
 | Art and audio | Each of the ten zones battles in front of its own layered parallax backdrop, with 60 painted stage plates as a fallback. The adventure map is drawn at runtime from painted terrain materials and scenery atlases. Existing sprites, structures, icons and branding remain present. An original 19-track score (scene themes, a battle track per zone and boss themes), 212 sound-effect cues and 15 ambience soundscapes are implemented, rendered from CC0 recordings by `art/audio` (sources and licences in its README). | Approve visual quality/rights and test the signed build on physical devices. Listen to the score and effects on devices and approve the mix; some screen variants still use shared fallbacks. Stage-plate prompts and hashes are in `assets/world/manifest.json`; backdrop and map-atlas sources are described in [world artwork notes](../assets/world/README.md). |
 | Store presence | Android preset targets API 36 and AAB; iOS preset has IAP capability and icon. | Console accounts, agreements, signing, listings, privacy disclosures, screenshots, ratings, testing tracks, and review approval. |
@@ -263,12 +263,14 @@ requirement until a migration and both signed exports have been verified.
   early is intentionally not shipped. Its token matches the server's for the
   vectors in `server/testdata/apple_app_account_tokens.json`, and
   `native/StoreKit/test/simulator_e2e.sh` passes on an iOS 27 simulator with
-  Xcode-signed transactions (61 checks): products and prices load, a purchase
+  Xcode-signed transactions (82 checks): products and prices load, a purchase
   is validated and only then finished, an unverified purchase is refused, an
-  Ask to Buy approval arrives later, and an interrupted validation is recovered
-  on the next launch. `native/StoreKit/test/shop_desktop.sh` checks the shop's
-  side against a stand-in (35 checks), including cancelled, pending, failed and
-  replayed purchases. Xcode's test store can't check a cancelled or declined
+  Ask to Buy approval arrives later, an interrupted validation is recovered
+  on the next launch, and a pack bought from the game's own shop through
+  `NativeIAPService` is granted once and finished.
+  `native/StoreKit/test/shop_desktop.sh` checks the shop's side against a
+  stand-in (35 checks), including cancelled, pending, failed and replayed
+  purchases. Xcode's test store can't check a cancelled or declined
   purchase faithfully, so those need a device.
 - [ ] iOS: test sandbox/TestFlight purchases on a device against a server with
   real `APPLE_IAP_*` credentials, which is the first time Apple's server
@@ -367,9 +369,14 @@ requirement until a migration and both signed exports have been verified.
   architectures, size, and excluded internal files. A local debug AAB is only
   a build-pipeline check, never the store artifact.
 - [ ] Upload to Play internal testing, install **from Play** on physical
-  devices, and complete the payment/interruption matrix below. Move through
-  any required closed-testing and production-access steps shown in the
-  Console; do not assume internal-test success grants production access.
+  devices, and complete the payment/interruption matrix below. Check first
+  that a guest reaches the server (Settings → Account: Cloud save uploads
+  without signing in): until 2026-10-18 the game's blocking server calls
+  failed on Android. The fix passes on an Android emulator against a local
+  server (`scripts/tests/android_e2e.sh`), but not yet on a phone against the
+  live HTTPS server. Move through any required closed-testing and
+  production-access steps shown in the Console; do not assume internal-test
+  success grants production access.
 - [ ] Complete app content/policy declarations, age/content rating, ads and
   data-safety forms, account-deletion link, support/privacy links, countries,
   pricing, and store listing. Use the original
@@ -385,13 +392,15 @@ requirement until a migration and both signed exports have been verified.
   banking details. Create the ten matching IAP products with localizations,
   pricing, and review metadata. Apple's [first IAP of a type must be submitted
   with a new app version](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/).
-- [ ] Make the game's JSON work in the iOS build. The C# export is NativeAOT,
-  which cannot run reflection-based System.Text.Json: on an iOS simulator the
-  game cannot load its data, save, catalog or server responses ("Saving is
-  disabled for this session"), so the shop is empty and purchases cannot be
-  validated. Enabling `JsonSerializerIsReflectionEnabledByDefault` does not fix
-  it (NativeAOT lacks the generic code); the serialized types need source
-  generation. See [DEPLOYMENT.md](DEPLOYMENT.md#what-still-needs-a-real-device).
+- [x] Make the game's JSON work in the iOS build (2026-10-18). The C# export
+  is NativeAOT, which cannot run reflection-based System.Text.Json, so the game
+  could not load its data, save, catalog or server responses there. Every
+  serialized type now uses source generation, with unchanged files and
+  requests (see [DEPLOYMENT.md](DEPLOYMENT.md#json-in-the-ios-build)). Blocking
+  server calls, which `HttpClient.Send` cannot make on iOS or Android, now wait
+  on `SendAsync`. On a simulator the game loads its data and catalog, gets a
+  server session and cloud backup, and buys from the shop
+  (`native/StoreKit/test/simulator_e2e.sh`, shop phase).
 - [ ] On a Mac with full Xcode, configure team/provisioning in
   `export_presets.cfg`, use a verified Godot Mono iOS export setup, increment
   iOS version/build, archive a **release** build, and upload it to App Store

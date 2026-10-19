@@ -27,8 +27,16 @@ Already done and tested locally (2026-10-17):
   are now kept encrypted and revoked with Apple on deletion, retried if Apple
   is down. Covered by server tests (SQLite and PostgreSQL, Apple stubbed) and
   by `server_e2e.sh`, which deletes the second install's account.
-- The iOS StoreKit 2 plugin on a simulator (61 checks), and the shop's App
-  Store flow on desktop (35 checks). See section 10.
+- The iOS StoreKit 2 plugin, and a purchase from the game's own shop, on a
+  simulator (82 checks), and the shop's App Store flow on desktop (35 checks).
+  See section 10.
+- The iOS build (NativeAOT) reads its data, catalog, save and server answers
+  through System.Text.Json source generation, which writes the same files and
+  requests as before (`NativeJsonReview.tscn`, 2026-10-18). The game's
+  blocking server calls, which failed on iOS and Android, now work on both:
+  on an Android emulator a guest gets a session, and cloud backup, Cloud
+  status, restore, profile sync and account deletion reach the server
+  (`scripts/tests/android_e2e.sh`, 26 checks, 2026-10-18).
 - The Android build template matches Godot 4.6.1: a headless debug export
   (2026-10-18) runs the Gradle build and bundles the Play Billing library.
 - An Android-only deployment needs no App Store key: Compose accepts it
@@ -252,16 +260,11 @@ Play yet.
 The StoreKit plugin (`native/StoreKit`) is built and enabled in the iOS preset
 (`plugins/StoreKit`). On a simulator, with Xcode-signed transactions and a
 local server, it loads prices, buys, validates and only then finishes, and
-handles Ask to Buy and interrupted purchases
-(`native/StoreKit/test/simulator_e2e.sh`, 61 checks). The shop's side passes on
-desktop (`native/StoreKit/test/shop_desktop.sh`). First:
-
-- [ ] Make the game's JSON work in the iOS build (NativeAOT cannot run
-  reflection-based System.Text.Json). Until then the game cannot load its data
-  or catalog on iOS, so the shop is empty. See
-  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md#ios--app-store).
-
-Then, with Apple:
+handles Ask to Buy and interrupted purchases. The game itself runs there too:
+it loads its data and catalog, and a pack bought from the shop is granted once
+and finished (`native/StoreKit/test/simulator_e2e.sh`, 82 checks). The shop's
+handling of every outcome passes on desktop
+(`native/StoreKit/test/shop_desktop.sh`). With Apple:
 
 - [ ] In App Store Connect, accept the Paid Apps Agreement and fill in the tax
   and banking details.
@@ -325,6 +328,15 @@ Then, with Apple:
 ## 12. Test on real phones
 
 - [ ] **Android:**
+  - A guest reaches the live server over HTTPS: in Settings → Account, Cloud
+    save uploads without signing in and Cloud status shows the backup. (The
+    game's blocking server calls failed on Android until 2026-10-18. An
+    emulator now passes this against a local server, along with restore,
+    profile sync and account deletion: `scripts/tests/android_e2e.sh`. Run
+    the script on a phone too; it builds with the phone's own Vulkan
+    renderer, which the emulator could not run.)
+  - The game draws normally: the emulator's Vulkan froze the game, so its
+    run used OpenGL instead.
   - Play Games signs you in by itself at launch and keeps your guest
     progress.
   - The Play Games button works.

@@ -101,7 +101,7 @@ public partial class AccountDialog : AcceptDialog
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Sending…";
         try
         {
-            var response = await AccountSignIn.Request("/auth/email/start", new { email = _email.Text }); if (_closed) return;
+            var response = await AccountSignIn.Request("/auth/email/start", new AccountSignIn.EmailStartRequest { Email = _email.Text }, ServerJson.Default.EmailStartRequest); if (_closed) return;
             _challenge = AccountSignIn.Text(response, "challengeId"); _secret = AccountSignIn.Text(response, "secret");
             _code.Show(); _verifyButton.Show(); _code.GrabFocus(); _status.Text = "Check your email. Code expires in 10 minutes.";
         }
@@ -111,7 +111,8 @@ public partial class AccountDialog : AcceptDialog
     private async Task Verify()
     {
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
-        try { await Finish(await AccountSignIn.Request("/auth/email/verify", new { challengeId = _challenge, secret = _secret, code = _code.Text.Trim() })); }
+        try { await Finish(await AccountSignIn.Request("/auth/email/verify",
+            new AccountSignIn.EmailVerifyRequest { ChallengeId = _challenge, Secret = _secret, Code = _code.Text.Trim() }, ServerJson.Default.EmailVerifyRequest)); }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
@@ -121,14 +122,15 @@ public partial class AccountDialog : AcceptDialog
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Finish sign-in in your browser.";
         try
         {
-            var response = await AccountSignIn.Request($"/auth/{provider}/start", new { }); if (_closed) return;
+            var response = await AccountSignIn.Request($"/auth/{provider}/start", new AccountSignIn.EmptyRequest(), ServerJson.Default.EmptyRequest); if (_closed) return;
             var challenge = AccountSignIn.Text(response, "challengeId"); var secret = AccountSignIn.Text(response, "secret");
             OS.ShellOpen(AccountSignIn.Text(response, "url"));
             var deadline = DateTime.UtcNow.AddMinutes(10);
             while (!_closed && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(2000); if (_closed) return;
-                var session = await AccountSignIn.Request($"/auth/{provider}/poll", new { challengeId = challenge, secret });
+                var session = await AccountSignIn.Request($"/auth/{provider}/poll",
+                    new AccountSignIn.PollRequest { ChallengeId = challenge, Secret = secret }, ServerJson.Default.PollRequest);
                 if (AccountSignIn.Text(session, "status") == "pending") continue;
                 await Finish(session); return;
             }
@@ -148,7 +150,7 @@ public partial class AccountDialog : AcceptDialog
     {
         if (_busy || !ApplyNickname()) return; Busy(true); _status.Text = "Signing in…";
         var email = _email.Text.Trim().Length > 0 ? _email.Text.Trim() : "developer@example.com";
-        try { await Finish(await AccountSignIn.Request("/auth/dev/sign-in", new { email })); }
+        try { await Finish(await AccountSignIn.Request("/auth/dev/sign-in", new AccountSignIn.DevSignInRequest { Email = email }, ServerJson.Default.DevSignInRequest)); }
         catch (Exception e) { if (!_closed) _status.Text = e.Message; }
         finally { if (!_closed) Busy(false); }
     }
@@ -157,7 +159,7 @@ public partial class AccountDialog : AcceptDialog
         if (_busy) return; Busy(true);
         try
         {
-            try { await AccountSignIn.Request("/auth/signout", new { }); } catch { /* Local sign-out remains available offline. */ }
+            try { await AccountSignIn.Request("/auth/signout", new AccountSignIn.EmptyRequest(), ServerJson.Default.EmptyRequest); } catch { /* Local sign-out remains available offline. */ }
             GameState.Instance.StartAccountSave();
             GameState.Instance.PauseAutoSignIn();
             if (!_closed) { Close(); SceneRouter.Instance.ReloadHome(); }

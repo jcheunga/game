@@ -548,24 +548,62 @@ the rest on record. A reversed refund gives back only what was taken. A refund
 of a purchase the save never received takes nothing. A late-game cloud save is
 about 100 KB, against the server's 512 KB limit.
 
+### JSON in the iOS build
+
+The C# iOS export is NativeAOT, which cannot run reflection-based
+System.Text.Json. Every type the game serializes is therefore listed in a
+source-generated context in `scripts/core/GameJson.cs`: `DataJson` for the
+files in `res://data` (and an account's cloud save at sign-in), `SaveJson` for
+the save file, `CompactJson` for the account backup and the challenge journal,
+and `ServerJson` for server requests and answers. Each has the options its
+callers used before, so the files and requests are unchanged. Serialize with a
+context's type info, for example
+`JsonSerializer.Serialize(save, SaveJson.Default.GameSaveData)`; a type that is
+not listed then fails to compile instead of failing on an iPhone. Request
+bodies are named classes, since source generation cannot serialize anonymous
+types. `NativeJsonReview.tscn` checks on desktop that each context writes and
+reads exactly what reflection did:
+
+```sh
+godot --headless --path . res://scenes/tests/NativeJsonReview.tscn -- --save-suffix=json-review-$(date +%s)
+```
+
+It fills every type each context reaches with sample values and compares both
+ways, reads property names in another case where a context accepts any case,
+reads every data file both ways, and writes a late-game save and account backup
+both ways. Blocking server calls use `SendAndWait`
+(`scripts/core/BlockingHttp.cs`) rather than `HttpClient.Send`, which neither
+iOS nor Android supports.
+
 ### What still needs a real device
 
 The server's provider checks run against stand-ins in the test suite. An
 unsigned Debug and Release device build of an iOS export, made with Xcode 27
 from Godot 4.6.1's official template, links the GameCenter plugin and GameKit
 and carries the Game Center entitlement. Since 2026-10-17 this Mac has an iOS
-27 simulator runtime, and the StoreKit plugin's purchases pass there
-(`native/StoreKit/test/simulator_e2e.sh`, see `native/StoreKit/README.md`).
-That run found two things about the iOS build itself:
+27 simulator runtime. The StoreKit plugin's purchases pass there, and so does
+the game itself: its data, catalog, save, server session and cloud backup, and
+a pack bought from the shop (`native/StoreKit/test/simulator_e2e.sh`, see
+`native/StoreKit/README.md`). The simulator runs found three things about the
+iOS build itself:
 
-- **The game cannot read its JSON on iOS.** The C# export is NativeAOT, which
-  turns off System.Text.Json's reflection, and every game data file, the save
-  and the server calls use it. On the simulator the game logs "Failed to load
-  game data from JSON. Saving is disabled for this session", and the shop's
-  catalog is empty. Turning reflection back on
-  (`JsonSerializerIsReflectionEnabledByDefault`) is not enough: NativeAOT then
-  lacks the generic code it needs. The serialized types need System.Text.Json
-  source generation before iOS can ship.
+- **The game could not read its JSON on iOS** (fixed 2026-10-18). NativeAOT
+  turns off System.Text.Json's reflection, so the game logged "Failed to load
+  game data from JSON. Saving is disabled for this session" and the shop's
+  catalog was empty. Turning reflection back on
+  (`JsonSerializerIsReflectionEnabledByDefault`) was not enough: NativeAOT then
+  lacks the generic code it needs. The game now uses source generation (see
+  [JSON in the iOS build](#json-in-the-ios-build)).
+- **Blocking server calls failed on iOS, and on Android too** (fixed
+  2026-10-18). On both phone runtimes `HttpClientHandler.Send` only throws
+  "Operation is not supported on this platform", so the health check never
+  saw the server, a guest got no session, and cloud backup, profile sync (which
+  the shop needs before a purchase without a session) and most online features
+  failed. They now wait on `SendAsync`. The simulator test covers iOS, and
+  an Android emulator confirmed the fix on 2026-10-18 (see
+  [Android on an emulator](#android-on-an-emulator)): a guest gets a session,
+  and cloud backup, Cloud status, restore, profile sync and account deletion
+  all reach the server.
 - **Godot 4.6.1's simulator engine is x86_64 only**, and iOS 27 simulators run
   arm64 apps only, so the official template cannot run in this Mac's simulator.
   The StoreKit test compiles the engine for the arm64 simulator from source.
@@ -588,6 +626,55 @@ Before an iOS release, check on a device:
   minimum iOS version is now 15.0. The 4.6 editor also renamed the main icon
   option to `icons/icon_1024x1024`, which is now set; the export fails while
   it is blank.
+
+### Android on an emulator
+
+`scripts/tests/android_e2e.sh` runs the game's server calls on an Android
+emulator, or a phone with USB debugging, against a throwaway local server. It
+exports a debug APK whose main scene is `scenes/tests/AndroidServerReview.tscn`,
+installs it, starts the server as `server_e2e.sh` does and forwards the port
+with `adb reverse`. The game then reaches the server at `http://127.0.0.1`,
+since plain HTTP is accepted only on loopback. Official Android templates
+refuse a scene path on the command line, and the exported launcher ignores the
+intent's `command_line_params`, so the driver's arguments are written into the
+build (`command_line/extra_args`). The script launches the game twice and reads
+the results from logcat:
+
+```sh
+scripts/tests/android_e2e.sh
+```
+
+On 2026-10-18 all 26 checks passed on an API 36 Google APIs arm64 emulator. The
+first launch starts from cleared app data. The data, waves, shop catalog and
+save load, and the save is written under `/data/data/com.crownroad.game/files`.
+HTTPS works with blocking and async calls on the system's certificates, and an
+expired certificate is refused. NetworkStatus reaches the server, the guest
+gets a session the server accepts, and the store's profile sync works. Settings
+→ Account → Cloud save uploads, Cloud status shows the backup, and Restore cloud
+save brings it back over later progress. The second launch keeps the data:
+the server answers at boot without help, the session and the backup survive the
+restart, a restore works, and deleting the account ends its session on the
+server.
+
+What the emulator showed about the Android build:
+
+- **Play Billing is unavailable outside Google Play.** The Google APIs image
+  has no Play Store, so the billing plugin reports "Billing service unavailable
+  on device". The shop then says "Native billing is unavailable. This purchase
+  has not been charged." and grants nothing. Purchases need a build installed
+  from a Play testing track (section 9 of the
+  [launch checklist](LAUNCH_CHECKLIST.md)).
+- **The emulator's Vulkan freezes the game.** With `-gpu host`, Godot's Vulkan
+  renderer (gfxstream on MoltenVK) gets a few frames, logs `QueuePresentKHR
+  failed with error: 5`, then waits forever for a swapchain image, so the
+  main loop stops. On an emulator the script therefore builds with
+  `--rendering-method gl_compatibility --rendering-driver opengl3`. Phones use
+  their own Vulkan drivers; check rendering on a real phone.
+- **ASTC map tiles fail to decompress under OpenGL ES** where the GPU has no
+  ASTC: `_decompress_astc` reports `dst_ofs % 8 != 0` for four painted map
+  tiles. Vulkan phones read ASTC directly. This affects only phones that fall
+  back to OpenGL without ASTC. The map tiles on the build-size branch use ETC2,
+  which every OpenGL ES 3 phone reads.
 
 Provider credentials are not included. Live email delivery and the Google and
 Apple consent pages need the configured services and a manual device check.

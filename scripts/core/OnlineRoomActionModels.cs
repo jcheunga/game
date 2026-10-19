@@ -32,3 +32,8 @@ public interface IOnlineRoomActionProvider
 	string BuildLocationSummary();
 	OnlineRoomActionResult SendAction(OnlineRoomJoinTicket ticket, OnlineRoomActionRequest request);
 }
+
+public sealed class OnlineRoomActionApiRequest
+{
+	public OnlineRoomActionRequest Action { get; set; } = new();
+}

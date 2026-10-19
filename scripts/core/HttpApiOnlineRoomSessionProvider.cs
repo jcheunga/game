@@ -42,7 +42,7 @@ public sealed class HttpApiOnlineRoomSessionProvider : IOnlineRoomSessionProvide
 		PlayerSessionHttp.Apply(message, profileId);
 		message.Headers.TryAddWithoutValidation("X-Join-Ticket", ticket.TicketId);
 
-		using var response = Client.Send(message);
+		using var response = Client.SendAndWait(message);
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{

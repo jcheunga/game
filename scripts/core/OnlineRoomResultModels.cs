@@ -38,3 +38,8 @@ public interface IOnlineRoomResultProvider
 	string BuildLocationSummary();
 	OnlineRoomResultSubmission SubmitResult(OnlineRoomJoinTicket ticket, OnlineRoomResultRequest request);
 }
+
+public sealed class OnlineRoomResultApiRequest
+{
+	public OnlineRoomResultRequest Result { get; set; } = new();
+}

@@ -107,7 +107,6 @@ public partial class SettingsMenu : RoyalScreen
                     var index = Math.Max(0, all.ToList().FindIndex(d => d.Id == state.DifficultyId));
                     state.SetDifficulty(all[(index + 1) % all.Count].Id);
                 }, state.GetDifficulty().Description);
-                yield return new SwitchRow("book", "Enemy introductions", () => state.ShowHints, state.SetShowHints);
                 yield return new SwitchRow("eye", "Reduced motion", () => state.ReducedMotion, state.SetReducedMotion);
                 yield return new SwitchRow("flame", "High contrast", () => state.HighContrast, state.SetHighContrast);
                 yield return new SwitchRow("clock", "FPS counter", () => state.ShowFpsCounter, state.SetShowFpsCounter);

@@ -43,7 +43,6 @@ public partial class BattleController
 
     private void TickContentWorld(float delta)
     {
-        TickEnemyLessons(delta);
         if(HasCampaignField)
         {
             var outpost=FieldPoint(_stageData.Battlefield.OutpostXRatio,_stageData.Battlefield.OutpostYRatio);

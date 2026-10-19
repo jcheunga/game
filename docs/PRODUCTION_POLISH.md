@@ -29,7 +29,7 @@ Courage packs retain manual click/tap collection, +20 courage for eligible rando
 
 ## Onboarding and pacing
 
-Bottom tutorial popups are removed at the user's request. Enemy briefings, Codex details and loading-screen tips provide guidance. The remaining enemy first-sighting cards are controlled by the Enemy introductions setting; existing saved hint preferences remain compatible.
+Bottom tutorial popups and the in-battle enemy first-sighting cards are removed at the user's request. Enemy briefings, Codex details and loading-screen tips provide guidance. Saved hint preferences still load but no longer show anything in battle.
 
 Old authoring notes and internal ability names were replaced with player-facing descriptions. Their source is `docs/design/player-facing-content.json`, consumed by the content generator. Unit, equipment and spell stat budgets are unchanged.
 

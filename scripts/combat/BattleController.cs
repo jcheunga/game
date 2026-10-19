@@ -2063,9 +2063,7 @@ public partial class BattleController : Node2D
 		// All reinforcements leave the stronghold, including scripted waves and boss escorts,
 		// and may take any line across the band, right up to either edge.
 		position = new Vector2(EnemySpawnX, Mathf.Clamp(position.Y, BattlefieldTop + SpawnVerticalPadding, BattlefieldBottom - SpawnVerticalPadding));
-		var previouslySeen=GameState.Instance.IsCodexEntryDiscovered(stats.DefinitionId);
 		GameState.Instance.DiscoverCodexEntry(stats.DefinitionId);
-		TeachEnemy(stats.Definition,previouslySeen);
 		var unit = SpawnUnit(Team.Enemy, stats, position);
 		unit.CanDropCourage = true;
 		AudioDirector.Instance?.PlayEnemySpawn(unit);
@@ -6205,7 +6203,6 @@ public partial class BattleController : Node2D
 		SpawnBattleEndParticles(playerWon);
 		_endStarRating.Visible = !IsEndlessMode;
 		_endStarRating.Stars = StageStarScore.Evaluate(playerWon, _playerBaseHealth, _playerBaseMaxHealth, _playerHullTookDamage);
-		_enemyLesson?.QueueFree();_enemyLesson=null;_enemyLessons.Clear();
 
 		if(IsBossRushMode)
 		{

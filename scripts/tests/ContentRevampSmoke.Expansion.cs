@@ -39,13 +39,6 @@ public partial class ContentRevampSmoke
             Write(battle,"_enemyBaseHealth",0f);Call(battle,"CheckBattleEnd");
             Check(!Read<bool>(battle,"_battleEnded"),"Boss rush cannot end by damaging the scenery gate");
             var units=Read<System.Collections.Generic.List<Unit>>(battle,"_units");
-            state.SetShowHints(true);
-            Call(battle,"TeachEnemy",GameData.GetUnit("enemy_rustguard"),false);Call(battle,"TickEnemyLessons",.1f);
-            Check(Read<PanelContainer>(battle,"_enemyLesson")!=null,"First-sighting counter lesson appears as a non-blocking HUD card");
-            var queued=Read<System.Collections.Generic.Queue<UnitDefinition>>(battle,"_enemyLessons").Count;
-            Call(battle,"TeachEnemy",GameData.GetUnit("enemy_rustguard"),true);
-            Check(Read<System.Collections.Generic.Queue<UnitDefinition>>(battle,"_enemyLessons").Count==queued,"Known enemies do not repeat their first-sighting lesson");
-            state.SetShowHints(false);Call(battle,"TickEnemyLessons",9f);
             var probe=(Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_brawler")),new Vector2(550,340));
             probe.GiveShield(5,3);probe.ApplyArmorBreak(3,2);probe.ApplyControl(.4f);probe.Silence(.5f);
             Check(probe.ContentStatusLabels.Contains("SHIELD") && probe.ContentStatusLabels.Contains("ARM−") && probe.ContentStatusLabels.Contains("STUN") && probe.ContentStatusLabels.Contains("SIL"),"Combat feedback exposes active protection and disabling statuses");

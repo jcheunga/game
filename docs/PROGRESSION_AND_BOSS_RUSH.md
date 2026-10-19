@@ -12,7 +12,7 @@ Implemented prototype · 11 October 2026
 
 Between rounds the troops regroup, the wagon repairs fully, courage resets to 40, and mana returns to at least its starting amount. Boss rush costs no food. Cleared rounds award 75, 85, …, 205 Gold, banked when the run ends. Result submission pays once, records the best completed wave and completion time, and does not change campaign stars. Retry remains in boss-rush mode.
 
-Combat now has rectangular special-cast warnings, status badges above health bars, and critical-hit callouts. First sightings show a brief counter card when hints are enabled. **Pause → Battle guide** explains the labels and supplies an encounter tip. The courage pickup system retains manual collection and has no countdown ring.
+Combat now has rectangular special-cast warnings, status badges above health bars, and critical-hit callouts. **Pause → Battle guide** explains the labels and supplies an encounter tip. The courage pickup system retains manual collection and has no countdown ring.
 
 Stage 80's packs were rebuilt around known infantry and ranged threats, with a lighter commander escort instead of stacked healing and corpse-summoning pressure. Unit base stats and level growth were not increased. A normal-speed engine run cleared it using Militia, Spearman, Swordsman, Archer and Field Medic at suggested levels without equipment.
 

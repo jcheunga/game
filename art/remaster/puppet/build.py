@@ -407,6 +407,7 @@ HAND_PROFILES['blade-stab'] = HAND_PROFILES['spear-thrust'] = HAND_PROFILES['thr
 # assumes (a one-handed spear thrusts; it is not swung like a sword). Set by eye on review.
 WEAPON_MOTION = {
     'player_militia': 'thrust',
+    'enemy_boss_tidemaster': 'royal-cleave',    # flings its harpoons with a forward heave of the shovel
 }
 # side-on, by the weapon the unit data says it carries (PlaceholderWeapon) and by profile
 THRUST_WEAPONS = {'spear', 'pike'}
@@ -786,7 +787,12 @@ class Animator:
             name = 'glide'                   # a caster boss (the witch, the pontiff) walks, robed, not stomps
         if name in ('march', 'shamble') and self.speed_lps > self.JOG_ABOVE:
             name = 'jog'
-        return name, self.GAITS[name]
+        g = self.GAITS[name]
+        if self.vclass == 'boss':
+            # a giant moves slowly by taking long, unhurried strides, not short quick ones
+            lo, hi = g['step_range']
+            g = dict(g, cycle=max(g['cycle'], 2.9), step_range=(max(lo, .45), max(hi, .85)))
+        return name, g
 
     @staticmethod
     def toe_turn(vf, deg):
@@ -1428,6 +1434,13 @@ class Animator:
         # a cape falls with gravity: it swings against the topple, and on a body fallen on its face it settles over
         # the back instead of standing up off it
         top_ = p.get('top', 0.0)
+        if self.lm.get('wings') and 'cape' in self.pb:
+            # wings fold as the body falls: they never sail up off a body lying on its face
+            k_w = min(1.0, abs(top_) / 70.0)
+            self.pb['cape'].scale = (1.0 - 0.85 * k_w, 1.0 - 0.85 * k_w, 1.0)
+            top_wings = True
+        else:
+            top_wings = False
         # face down, the feet point back along the legs, soles up (left at the standing angle, the toes dig into
         # the ground and the corpse is propped up on them)
         prone = min(1.0, max(0.0, -top_ / 80.0))
@@ -1436,7 +1449,9 @@ class Animator:
             if prone and fb in self.rest and sb in self.rest:
                 rel = (self.rest[fb] - self.rest[sb] + 180) % 360 - 180
                 self.rot(fb, (12.0 - rel) * prone)
-        if top_ < 0:
+        if top_wings:
+            pass
+        elif top_ < 0:
             self.rot('cape', self.CAPE_FALL * top_)
         elif 'cape' in self.pb:
             # on its back the body lies on its cape: turned onto the line of the back and flattened under it (left
@@ -1698,7 +1713,7 @@ def norm_point(p3, W, H, cx, cz):
     return [round(xn - gxn, 6), round(yn - gyn, 6)]
 
 
-def new_contract(old, big):
+def new_contract(old, big, boss=False):
     """The clip set rendered now: about twice the old frames (smooth at the battle's 60 Hz), the same contact time
     so gameplay timing is unchanged, and the death given room to fall, land and settle. Old starts are reassigned
     in the old order; other per-clip fields (fx, motion) carry over."""
@@ -1711,7 +1726,8 @@ def new_contract(old, big):
             c.update(count=8, duration=0.13, loop=True)
         elif name == 'walk':
             # the big take slow, heavy strides: more frames keep each under the game's 0.16 s playback limit
-            c.update(count=12 if big else 10, duration=0.07, loop=True)
+            # bosses walk slowest of all: 24 frames let a long, unhurried cycle play within the game's limit
+            c.update(count=24 if boss else 12 if big else 10, duration=0.07, loop=True)
         elif name == 'attack':
             t_contact = o.get('contactFrame', 4) * o['duration']
             c.update(count=16, contactFrame=6, duration=round(t_contact / 6, 4), loop=False)
@@ -1822,7 +1838,7 @@ def split_landmarks(lm, legs):
     return lm
 
 
-def cape_region(lm, alpha, torso):
+def cape_region(lm, alpha, torso, wings=False):
     """A cape, cloak tail or long back cloth: the body's paint well behind the spine (the figure faces right, so
     behind is to the left), from the shoulders down. Returns (hinge, tail, weight function over pixels) or None."""
     pel, neck = P(lm, 'pelvis'), P(lm, 'neck')
@@ -1836,7 +1852,8 @@ def cape_region(lm, alpha, torso):
         spine_x = neck[0] + (pel[0] - neck[0]) * t
         return spine_x - x
 
-    d0, d1 = 0.3 * torso, 0.5 * torso
+    # wings (set by eye) fold away whole on a death: a narrow seam, so they shrink without smearing the back
+    d0, d1 = (0.42 * torso, 0.5 * torso) if wings else (0.3 * torso, 0.5 * torso)
     b = behind(xs, ys)
     cape = (b > d1) & (ys > sh_y + 0.1 * torso)
     if cape.sum() < 1500:
@@ -1845,12 +1862,22 @@ def cape_region(lm, alpha, torso):
     hinge = np.array([float(neck[0] - 0.22 * torso), float(sh_y + 0.12 * torso)])
     tail = np.array([float(np.percentile(cx, 30)), float(np.percentile(cy, 97))])
 
+    head_a, head_b = P(lm, 'chin'), P(lm, 'head_top')
+
     def weight(pix):
         bb = behind(pix[:, 0], pix[:, 1])
         w = np.clip((bb - d0) / (d1 - d0), 0.0, 1.0)
         w = w * w * (3 - 2 * w)
-        # nothing above the hinge moves; it builds up over the first stretch below it
-        w *= np.clip((pix[:, 1] - hinge[1]) / (0.25 * torso), 0.0, 1.0)
+        # nothing above the hinge moves; it builds up over the first stretch below it (wings: at every height)
+        if not wings:
+            w *= np.clip((pix[:, 1] - hinge[1]) / (0.25 * torso), 0.0, 1.0)
+        if wings and head_a is not None and head_b is not None:
+            # wings rise above the shoulders on both sides of the head: all of that folds too
+            dh = seg_dist(pix, head_a, head_b)
+            up = np.clip((sh_y - pix[:, 1]) / (0.08 * torso), 0.0, 1.0)
+            far = np.clip((dh - 0.19 * torso) / (0.06 * torso), 0.0, 1.0)
+            back = np.clip((bb - 0.2 * torso) / (0.06 * torso), 0.0, 1.0)      # behind the hood
+            w = np.maximum(w, up * np.maximum(far, back))
         return w
     return hinge, tail, weight
 
@@ -1973,7 +2000,7 @@ def rig_humanoid(ident, d, lm, paint, img, info):
                       'weapon', 0.05, True))
     if P(lm, 'offhand_item') is not None and P(lm, 'wrist_' + off) is not None and not two:
         extra.append(('offhand', P(lm, 'wrist_' + off), P(lm, 'offhand_item'), 'hand.' + off, 0.3, True))
-    cape = cape_region(lm, paint.alpha, torso) if legs else None
+    cape = cape_region(lm, paint.alpha, torso, wings=bool(lm.get('wings'))) if legs else None
     if cape:
         # its own hinge at the upper back: it trails and sways walking, lags a lunge, and falls with the body
         extra.append(('cape', cape[0], cape[1], 'chest', 0, True))
@@ -2052,7 +2079,7 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
     px_w = int(min(sc.render.resolution_x, max(384, math.ceil(want / 4) * 4)))
     sc.render.resolution_x, sc.render.resolution_y = px_w, int(round(px_w * 1.25))
     big = unit.get('VisualClass') in ('boss', 'siegetower') or meta['animations'].get('death', {}).get('count', 0) >= 16
-    clips = new_contract(meta['animations'], big)
+    clips = new_contract(meta['animations'], big, boss=unit.get('VisualClass') == 'boss')
     profile = meta['motion']['profile']
     anim = rig['make_anim'](side_profile(ident, profile, unit) if d.parent == STRIDE else profile)
     anim.vclass = unit.get('VisualClass', '')

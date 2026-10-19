@@ -853,7 +853,8 @@ def build(d, preview=None):
         # thrower) is banded along its shaft whatever the profile
         wlen = float(np.hypot(*np.subtract(lm['weapon_tip'], lm['weapon_grip']))) \
             if lm.get('weapon_tip') and lm.get('weapon_grip') else 0.0
-        method = 'blob' if profile_of(d) in ('bow-draw', 'crossbow') or (profile_of(d) in BLOB_WEAPONS and wlen < 1.2 * torso_len) \
+        # a bomb, flask or rock is cut whole; anything as long as a shovel or a harpoon is banded along its haft
+        method = 'blob' if profile_of(d) in ('bow-draw', 'crossbow') or (profile_of(d) in BLOB_WEAPONS and wlen < 0.75 * torso_len) \
             else 'band'
         HIDDEN[0] = None
         weapon, offhand, wline = weapon_masks(master, body, lm, torso_len, method, shield=profile_of(d) == 'guard-cut',

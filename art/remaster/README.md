@@ -175,6 +175,14 @@ machines roll their wheels in each wheel's own plane (the painted ellipse squash
 back) by whole spoke steps per cycle, matched to the ground (`creatures.spoke_symmetry`, wheel layers cut to the
 near wheel's rim ellipse in `layers.rim_ellipse`).
 
+Bosses walk slowest of all, so they take long, unhurried strides: a cycle of about 3 s over 24 walk frames (a short
+cycle at their speed is a shuffle of tiny steps). Hand flames (a spell burning in the palm) are cut from the arm into
+the off-hand layer, which moves rigidly on its own bone, and go out when the caster dies; lanterns, vials and drums
+fall with the body (`offhand_kind` in layers.json, `offhand_flame` in landmarks to override). Winged units (`wings`
+in landmarks) fold their wings into the back as they fall. The walk is sized to `data/units.json` speeds: after the
+shortened field scaled every speed by 580/1060 (2026-10-18) every unit was rebuilt, since a cycle sized to the old
+speed plays in slow motion.
+
 `pack.py` keeps the walk's `stride` in the packed frame's widths (it is cropped narrower than the render, so left in
 render widths every walk played too fast and the feet slid); `BlenderAssetSmoke` checks every walking puppet's cycle
 time at its battle speed.

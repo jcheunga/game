@@ -58,7 +58,9 @@ public partial class BlenderAssetSmoke : Node
                     var (lo, hi) = walk.Gait switch
                     {
                         "gallop" or "canter" or "trot" => (.27f, 1.1f),   // beasts and mounts at speed
+                        "walk" => (.6f, 2.4f),                              // a beast or a mount at a walk
                         "jog" or "prowl" => (.45f, 1.1f),
+                        _ when def.VisualClass == "boss" => (1.2f, 3.9f),   // giants: long, unhurried strides
                         _ => (.6f, 2.4f),
                     };
                     Check(cycle >= lo && cycle <= hi && cycle / walk.FrameCount is >= .025f and <= .16f,

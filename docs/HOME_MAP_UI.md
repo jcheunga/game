@@ -94,13 +94,15 @@ The shared theme reserves an 18-pixel gutter beside vertical scrollbars and a
 12-pixel gutter above horizontal scrollbars. This spacing is separate from panel
 padding and applies to menus, overlays, inspectors, dialogs and battle UI.
 
-The Royal Storehouse has a dedicated layout with compact pack cards. Each card
-shows its name, total supplies, included bonus and a purchase button fixed at
-the bottom. Descriptions and full bundle terms open through Details. Gold,
-Rations and Bundles keep every purchase action visible without scrolling;
-the gold-funded ration refill and recharge information share one row. A visible
-footer identifies the pack and price before confirmation, offers Cancel and
-shows refill results. Changing categories cancels a pending confirmation.
+The Royal Storehouse has a dedicated layout with compact pack cards, sized for
+the phone canvas. The balances sit at the end of the tab row. Each card shows
+its name, total supplies, included bonus and a purchase button fixed at the
+bottom; bundle cards, two to a row, add their emblem and a Details button for
+their contents and terms. Gold, Rations and Bundles keep every purchase action
+visible without scrolling. On the Rations page the gold-funded refill and its
+recharge information share the footer, and step aside while a pack waits for
+confirmation. The footer identifies the pack and price before confirmation,
+offers Cancel and shows refill results. Changing categories cancels a pending confirmation.
 Purchase info retains the full payment status, and owned one-time bundles stay
 disabled. The modal uses the existing shell's navigation.
 

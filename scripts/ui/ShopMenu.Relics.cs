@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-/// <summary>Relics: the collection, a large preview on the pedestal and the parchment detail card.</summary>
+/// <summary>Relics: the collection beside the parchment detail card.</summary>
 public partial class ShopMenu
 {
     private string _selectedRelic = "";
@@ -62,16 +62,18 @@ public partial class ShopMenu
         var track = spec.Rect("grid.scroll");
         var pitch = new Vector2(right.Position.X - first.Position.X, below.Position.Y - first.Position.Y + 2);
         var cell = new Vector2(119, 132);
+        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X, pitch.X);
+        pitch.X = pitchX;
         var view = new Rect2(first.Position - new Vector2(4, 4), new Vector2(track.Position.X - first.Position.X + 2, spec.Rect("button.back").Position.Y - first.Position.Y - 4));
         var scroll = new ScrollContainer { Position = view.Position, Size = view.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
         _body.AddChild(scroll);
-        var grid = new Control { CustomMinimumSize = new Vector2(view.Size.X - 2, Mathf.Max(view.Size.Y, Mathf.Ceil(visible.Count / 3f) * pitch.Y + 6)), MouseFilter = MouseFilterEnum.Pass };
+        var grid = new Control { CustomMinimumSize = new Vector2(view.Size.X - 2, Mathf.Max(view.Size.Y, Mathf.Ceil(visible.Count / (float)columns) * pitch.Y + 6)), MouseFilter = MouseFilterEnum.Pass };
         scroll.AddChild(grid);
         var labelSpec = spec.Rect("card.0.0");
         for (var i = 0; i < visible.Count; i++)
         {
             var relic = visible[i];
-            var rect = new Rect2(new Vector2(4 + i % 3 * pitch.X, 4 + i / 3 * pitch.Y), cell);
+            var rect = new Rect2(new Vector2(4 + i % columns * pitch.X, 4 + i / columns * pitch.Y), cell);
             var isSelected = relic.Id == _selectedRelic;
             var have = owned.Contains(relic.Id);
             var card = new RoyalButton { Position = rect.Position, Size = rect.Size, AccessibilityName = relic.DisplayName, MouseFilter = MouseFilterEnum.Pass,
@@ -97,7 +99,7 @@ public partial class ShopMenu
         _body.AddChild(new RoyalScrollHint { Name = "CollectionScrollbar", Position = track.Position, Size = track.Size, Scroll = scroll });
         scroll.GetVScrollBar().ValueChanged += value => _relicScroll = (float)value;
         // Keep the selected relic in view when the page opens or the selection moves.
-        var selectedRow = visible.FindIndex(r => r.Id == _selectedRelic) / 3;
+        var selectedRow = visible.FindIndex(r => r.Id == _selectedRelic) / columns;
         var rowTop = 4 + selectedRow * pitch.Y;
         if (rowTop < _relicScroll || rowTop + cell.Y > _relicScroll + view.Size.Y) _relicScroll = Mathf.Max(0, rowTop - 4);
         Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_relicScroll; } }).CallDeferred();
@@ -109,22 +111,11 @@ public partial class ShopMenu
         back.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
         _body.AddChild(back);
 
-        // Preview: the relic itself, large, over the pedestal.
-        var preview = spec.Rect("preview");
-        _body.AddChild(new SpellAura { Position = preview.Position, Size = preview.Size });
-        _body.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Texture = RelicArt(selected), Position = preview.Position + new Vector2(30, 60), Size = new Vector2(preview.Size.X - 60, preview.Size.Y - 190),
-            MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps, SelfModulate = owned.Contains(selected.Id) ? Colors.White : new Color(.55f, .57f, .6f) });
-        var index = visible.FindIndex(r => r.Id == selected.Id);
-        void Step(int delta) { _selectedRelic = visible[(index + delta + visible.Count) % visible.Count].Id; Refresh(); }
-        _body.AddChild(RoyalButton.Over(spec.Rect("preview.prev").Grow(10), "Previous relic", () => Step(-1), 8));
-        _body.AddChild(RoyalButton.Over(spec.Rect("preview.next").Grow(10), "Next relic", () => Step(1), 8));
-        var details=RoyalButton.Over(new Rect2(preview.Position.X+44,preview.End.Y-70,preview.Size.X-88,48),
-            "View all bonuses",()=>RelicEquipmentInspector.Show(this,selected,Refresh),6);
-        details.SetStates(new ModalSurface(ModalMaterial.Steel,8));
-        var detailsCaption=RoyalText.Caps("View all bonuses",18);
-        detailsCaption.Align=HorizontalAlignment.Center;detailsCaption.Baseline=30;
-        details.SetCaption(detailsCaption,new Rect2(8,0,preview.Size.X-104,48));
+        var detailsRect = spec.Rect("button.details");
+        var details = RoyalButton.Over(detailsRect, "View all bonuses", () => RelicEquipmentInspector.Show(this, selected, Refresh), 6);
+        var detailsLabel = spec.Label("button.details.label", "VIEW ALL BONUSES", detailsRect.Size.X - 24);
+        detailsLabel.Position -= detailsRect.Position;
+        details.SetCaption(detailsLabel, new Rect2(detailsLabel.Position, detailsLabel.Size));
         _body.AddChild(details);
 
         // Detail card.

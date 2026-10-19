@@ -9,7 +9,7 @@ public partial class BattleController
     private Control _mobileHud;
     private Button _mobileCancelButton;
     private Label _mobilePlacementHint;
-    private bool _mobilePointerDown, _mobileDragging;
+    private bool _mobilePointerDown, _mobileDragging, _mobileCaughtGlide;
     private int _mobilePointerId;
     private Vector2 _mobilePointerStart, _mobilePointerLast;
     private Action _mobileResize;
@@ -70,6 +70,7 @@ public partial class BattleController
             CancelCardDrag();
             CancelCouragePickupGesture();
             _mobilePointerDown=false;
+            StopBattleCameraGlide();
             var scale=MobilePresentation.BattleHudScale;
             root.Size=GetViewportRect().Size/scale;
             var left=(SafeAreaService.Instance?.MarginLeft ?? 0)/scale+10;
@@ -117,10 +118,19 @@ public partial class BattleController
         { if(DisplayServer.IsTouchscreenAvailable()) return true; point=mouse.Position; id=-2; }
         else return false;
         if(_mobilePointerDown || point.Y<_mobileFieldTop || point.Y>_mobileFieldBottom) return true;
-        _mobilePointerDown=true; _mobileDragging=false; _mobilePointerId=id;
-        _mobilePointerStart=_mobilePointerLast=point;
+        BeginFieldPointer(id,point,false);
         GetViewport().SetInputAsHandled();
         return true;
+    }
+
+    // A pointer down on the field: a pan once it moves (or straight away when dragging), else a tap.
+    private void BeginFieldPointer(int id, Vector2 point, bool dragging)
+    {
+        _mobilePointerDown=true; _mobileDragging=dragging; _mobilePointerId=id;
+        _mobilePointerStart=_mobilePointerLast=point;
+        // A touch on a gliding field stops it, and is not also a tap.
+        _mobileCaughtGlide=BattleCameraMoving;
+        GrabBattleCamera();
     }
 
     public override void _Input(InputEvent input)
@@ -139,20 +149,16 @@ public partial class BattleController
         else if(_mobilePointerId==-2 && input is InputEventMouseButton mouse && !mouse.Pressed && mouse.ButtonIndex==MouseButton.Left) {point=mouse.Position; released=true; canceled=mouse.Canceled;}
         else return;
         GetViewport().SetInputAsHandled();
-        if(canceled || _battlePaused || _battleEnded || _endlessCheckpointActive) { _mobilePointerDown=false; return; }
+        if(canceled || _battlePaused || _battleEnded || _endlessCheckpointActive) { _mobilePointerDown=false; SettleBattleCamera(); return; }
         _mobileDragging |= point.DistanceTo(_mobilePointerStart)>14;
-        if(_mobileDragging)
-        {
-            SetBattleCameraFollow(false);
-            _battleCamera.Position-=(point-_mobilePointerLast)/_battleCamera.Zoom;
-            ClampBattleCamera(_battleCamera); _battleCamera.ForceUpdateScroll();
-        }
+        if(_mobileDragging) DragBattleCamera(point.X-_mobilePointerLast.X);
         _mobilePointerLast=point;
         if(!released) return;
         if (_mobilePointerId >= 0) _cardMouseBlockUntil = Time.GetTicksMsec() + 250;
         _mobilePointerDown=false;
+        ReleaseBattleCamera();
         var world=ScreenToBattle(point);
-        if(!_mobileDragging && point.Y>=_mobileFieldTop && point.Y<=_mobileFieldBottom && IsInBattlefield(world)) TryUseSelectionAt(world);
+        if(!_mobileDragging && !_mobileCaughtGlide && point.Y>=_mobileFieldTop && point.Y<=_mobileFieldBottom && IsInBattlefield(world)) TryUseSelectionAt(world);
     }
 
     public override void _Notification(int what)
@@ -162,6 +168,7 @@ public partial class BattleController
         {
             CancelCardDrag();
             CancelCouragePickupGesture();
+            if(_mobilePointerDown || _battleCameraDragging) SettleBattleCamera();
             _mobilePointerDown=false;
             _battleCameraDragging=false;
         }

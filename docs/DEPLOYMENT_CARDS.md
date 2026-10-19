@@ -60,7 +60,7 @@ from base to base (`data/combat_config.json`: a world 720 units wide with the fi
 from x 42 to 678, `ViewWidth` 600 units across the screen, `StructureScale`
 0.58 for the wagon and stronghold art). The camera keeps that scale (about 2.1×
 in a 1280-pixel-wide window), runs the band low across the screen under the
-scenery and above the card tray, and follows the fighting. Behind the band, each
+scenery and above the card tray, and stays where the player pans it. Behind the band, each
 zone's layered parallax backdrop (far, mid and near Blender layers, the near one
 locked to the field) fills the screen; painted stage plates are only a fallback.
 

@@ -82,8 +82,10 @@ close to charcoal and brown; selected states retain subdued slate, plum, ochre,
 forest and oxblood pigments. Metal highlights are soft and thin, keeping the
 painted illustrations as the richest colours in the panels.
 
-Unit and spell profiles use a compact collection sidebar, a tall painted preview
-and icon stat cards, with the role and status chip beside the name. Equip and
+The armory's warband, spell and relic pages are two columns: a wide collection
+grid beside the profile (no large preview), with icon stat cards and the role and
+status chip beside the name. `art/royal/plates.py` widens the painted collection
+panel across the concept's preview pedestal. Equip and
 training actions stay outside the details scroller. Spell cards show effect-specific values from the
 trained spell rather than the base definition. Battle preparation opens the same
 visual unit and spell inspectors without changing the loadout.

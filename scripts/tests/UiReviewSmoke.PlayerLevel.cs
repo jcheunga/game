@@ -37,6 +37,13 @@ public partial class UiReviewSmoke
         var medallion = Walk(menu).OfType<LevelMedallion>().Single(x => x.IsVisibleInTree());
         Check(medallion.Level == 4 && medallion.Badge == 4 && Walk(menu).OfType<RoyalLabel>().Any(x => x.IsVisibleInTree() && x.Text == "Ser Rowan"),
             "The home card shows the nickname, the level and the rewards waiting");
+        var resources = Walk(menu).OfType<RoyalResourceBar>().Single();
+        var card = Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "PlayerCard");
+        Check(card.GetGlobalRect().Position.X < GetViewport().GetVisibleRect().Size.X * .1f && resources.Position.X + resources.BarRect.Position.X >= 850
+              && !Walk(menu).OfType<RoyalLabel>().Any(x => x.IsVisibleInTree() && x.Text.StartsWith("LEVEL ")),
+            "The player card sits top left with just the nickname, and the resources move to the top right");
+        var amounts = Walk(resources).OfType<RoyalLabel>().Where(x => x.IsVisibleInTree()).Select(x => x.FontSize).ToArray();
+        Check(amounts.Length == 3 && amounts.All(size => size >= 18), $"Resource amounts stay readable beside the zone plaque ({string.Join(", ", amounts)} px)");
         AuditText("Home / player card"); await Capture("03-home-card");
 
         Walk(menu).OfType<RoyalButton>().Single(x => x.Name == "PlayerCard").EmitSignal(BaseButton.SignalName.Pressed); await Wait(.5);

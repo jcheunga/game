@@ -33,11 +33,13 @@ The battle shares the soldier scale and two-screen field everywhere (see
 
 - Combat camera: the soldier scale, framing the whole battle band between the
   meters and the cards, and never showing past the bottom of the painted
-  backdrop. The mouse wheel, trackpad, middle-drag, arrow keys, Home/End and F
-  (follow) work too.
-- Drag the field to pan. The camera holds there for four seconds after the last
-  pan, then follows the fighting again; F resumes at once. Tracking centers the
-  models in the uncovered field instead of behind the HUD.
+  backdrop. The mouse wheel, trackpad, middle-drag, arrow keys and Home/End
+  work too.
+- Drag the field to pan. The camera never moves by itself: it stays where the
+  player leaves it. A flick glides on and slows to a stop; a touch on the
+  gliding field catches it without counting as a tap. Dragged or flung past
+  either end, the field stretches a little (at most a quarter of the view) and
+  springs back when let go.
 - HUD: the battle concept's layout at 1:1, with no camera buttons, and icon-first unit
   and spell cards with the art whole inside the card and the courage (troops) or mana
   (magic) cost in the corner. Cards shrink to share the dock's width, so the row never scrolls.
@@ -75,15 +77,10 @@ cover the models. This applies on desktop too.
 
 Battle preparation shows the victory rewards, a horizontally scrolling
 row of touch-sized squad cards (portrait and name), and the **Warband** and
-**Deploy** actions. Tapping a squad card opens the model inspector, on desktop
-too. The armory
-shows the selected unit's animated model: tapping it opens the inspector, and
-dragging it does not.
-
-The inspector shows the actual character frames, with Idle, Walk, and Attack
-controls and previous/next browsing through the squad. Reduced-motion mode uses
-still poses. Previews spawn no combat units and do not change progression or
-combat.
+**Deploy** actions. Squad cards are display-only; the squad is edited in the
+armory. The armory is two columns, the collection grid beside the selected
+unit's full profile, with no large model. Reduced-motion mode uses still poses.
+Previews spawn no combat units and do not change progression or combat.
 
 All 52 units have preview atlases in `assets/ui/models/`, holding their Idle,
 Walk, and Attack frames. Units with hi-res battle atlases (every unit except the
@@ -128,7 +125,6 @@ checks that a wobbly tap still presses a button in a list. `--late-game` seeds a
 save with everything owned, so lists are at their longest. Captures go to
 `artifacts/scroll-reach`.
 
-
 The presentation review uses 844×390 and 667×375 landscape windows and writes previews
 under `artifacts/mobile-review`. The 844×390 window retains the game's existing
 aspect-preserving letterboxing, so its captured game surface is 693×390. The
@@ -140,6 +136,6 @@ presentation checks, 429 combat-motion checks, and 122 combat-regression checks
 passed. The combat drivers report ObjectDB exit warnings; the visible mobile
 review reports none.
 
-Scope: this covers battle, mobile preparation, and the shared model inspector in
+Scope: this covers battle, mobile preparation, and the armory in
 phone-sized landscape views. Portrait layouts and physical Android/iOS device
 validation are not covered by the desktop phone-sized review.

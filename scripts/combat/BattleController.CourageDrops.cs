@@ -181,8 +181,7 @@ public partial class BattleController
             // A touch drag beginning on a pack becomes an ordinary camera pan, not a pickup.
             if (!released)
             {
-                _mobilePointerDown = true; _mobileDragging = true; _mobilePointerId = id;
-                _mobilePointerStart = _mobilePointerLast = _couragePickupPointerStart;
+                BeginFieldPointer(id, _couragePickupPointerStart, true);
                 _couragePickupPointerDown = false; _pressedCouragePickup = null;
                 return false;
             }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-/// <summary>Readable, icon-led profiles shared by the armory and model inspector.</summary>
+/// <summary>Readable, icon-led profiles shared by the armory and spell inspector.</summary>
 public static class ArmoryDetailUi
 {
     public readonly record struct Stat(string Icon, string Label, string Value);

@@ -1,18 +1,29 @@
+using System.Collections.Generic;
 using Godot;
 
 // The battle camera. Every screen gets the same one: it frames the band at the soldier scale between the HUD
-// rows, follows the fighting, and pans by touch drag (BattleController.Mobile.cs), mouse wheel, trackpad,
-// middle-drag or the keyboard.
+// rows and stays where the player puts it. Touch and mouse drags (BattleController.Mobile.cs) and middle-drag
+// glide on after a flick and stretch past either end of the field, springing back when let go; the mouse
+// wheel, trackpad and keyboard pan directly.
 public partial class BattleController
 {
     private const float BattleScrollStep = 100f;
-    // How long the camera holds where the player panned to before it goes back to following the fighting.
-    private const float BattleCameraPanHold = 4f;
+    // A flick glides on, its speed decaying by this rate each second, and stops below the rest speed (world units).
+    private const float BattleScrollFriction = 2.8f;
+    private const float BattleScrollRestSpeed = 6f;
+    // The fastest flick, in screen pixels a second, and how far back the pointer's speed is measured.
+    private const float BattleFlingMaxSpeed = 7000f;
+    private const ulong BattleFlingWindowUsec = 100_000;
+    // Faster than this (screen pixels a second), a touch on the field only stops it.
+    private const float BattleCatchSpeed = 60f;
+    // Past either end the field stretches, less the further it is dragged, to at most this fraction of the view;
+    // a critically damped spring this stiff pulls it back.
+    private const float BattleStretchFraction = .25f;
+    private const float BattleStretchSpring = 13f;
     // Kept in shot around the walking band: room above the top line for a soldier's sprite and
     // health bar, and below the bottom line for feet and shadows.
     private const float FrameHeadroom = 52f;
     private const float FrameFootroom = 14f;
-    private const float BattleCameraFollowRate = 3f;
     // Where the band sits within the clear rows when it fits with room to spare: low on screen, like a
     // road under the scenery, with the bases and troops standing up into the space above.
     // .81 puts the road where the approved battle concept has it (screen rows ~411-516 at 1280x720).
@@ -28,21 +39,29 @@ public partial class BattleController
     private float BattleFitZoom => Mathf.Min(GetViewportRect().Size.X / Mathf.Min(_combat.ViewWidth, BattleWorldWidth),
         Mathf.Max(1f, FieldScreenBottom - FieldScreenTop) / (FrameBottom - FrameTop));
     private bool BattleFieldFitsView(Camera2D camera) => GetViewportRect().Size.X / camera.Zoom.X >= BattleWorldWidth - .5f;
-    // World offset from the camera centre to the centre of the clear rows.
-    private float FieldScreenOffset(Camera2D camera) =>
-        ((FieldScreenTop + FieldScreenBottom) * .5f - GetViewportRect().Size.Y * .5f) / camera.Zoom.Y;
     private Camera2D _battleCamera;
-    private bool _battleCameraDragging, _battleCameraFollow = true;
-    private float _battleCameraHold;
+    private bool _battleCameraDragging, _battleCameraGliding;
     private Vector2 _battleCameraPointer;
+    // While gliding, the camera's speed in world units a second.
+    private float _battleCameraVelocity;
+    // A drag's unstretched camera X: the field tracks the pointer exactly between the ends and stretches past them.
+    private float _battleCameraDragX;
+    private readonly List<(ulong Time, float X)> _battleCameraSamples = new();
 
     private void ClampBattleCamera(Camera2D camera) => camera.Position = CameraPositionFor(camera.Position, camera.Zoom.X);
 
-    private Vector2 CameraPositionFor(Vector2 desired, float zoom)
+    // The camera X range that keeps the view on the field; a view wider than the field is centred on it.
+    private (float Min, float Max) BattleCameraXRange(float zoom)
     {
         var halfWidth = GetViewportRect().Size.X / zoom * .5f;
-        var x = halfWidth * 2 >= BattleWorldWidth
-            ? BattleWorldWidth * .5f : Mathf.Clamp(desired.X, halfWidth, BattleWorldWidth - halfWidth);
+        return halfWidth * 2 >= BattleWorldWidth ? (BattleWorldWidth * .5f, BattleWorldWidth * .5f)
+            : (halfWidth, BattleWorldWidth - halfWidth);
+    }
+
+    private Vector2 CameraPositionFor(Vector2 desired, float zoom)
+    {
+        var (minX, maxX) = BattleCameraXRange(zoom);
+        var x = Mathf.Clamp(desired.X, minX, maxX);
         // The band sits in the rows the HUD leaves clear: low within them when it fits, otherwise never
         // scrolled past its frame.
         var offset = ((FieldScreenTop + FieldScreenBottom) * .5f - GetViewportRect().Size.Y * .5f) / zoom;
@@ -73,65 +92,153 @@ public partial class BattleController
         }
     }
 
-    /// <summary>Follow the fighting, or hold where the player panned to for a few seconds (F resumes at once).</summary>
-    private void SetBattleCameraFollow(bool follow)
-    {
-        _battleCameraFollow = follow;
-        if (!follow) _battleCameraHold = BattleCameraPanHold;
-    }
-
     private void SetBattleCameraX(float x)
     {
         if (_battleCamera == null || _battlePaused || _battleEnded || _endlessCheckpointActive) return;
-        SetBattleCameraFollow(false);
+        StopBattleCameraGlide();
         _battleCamera.Position = new Vector2(x, _battleCamera.Position.Y);
         ClampBattleCamera(_battleCamera);
         _battleCamera.ForceUpdateScroll();
     }
 
-    // The point to keep centred: an enemy that has got past the front line, else the clash at the
-    // front, else the ground ahead of the leading soldier. With no soldiers out, the wagon.
-    private Vector2 ResolveBattleFollowFocus(float halfView)
+    // Puts the camera at x, which may lie past the ends while the field is stretched.
+    private void PlaceBattleCamera(float x)
     {
-        Unit front = null, rearEnemy = null;
-        foreach (var unit in _units)
+        _battleCamera.Position = new Vector2(x, CameraPositionFor(_battleCamera.Position, _battleCamera.Zoom.X).Y);
+        _battleCamera.ForceUpdateScroll();
+    }
+
+    // The most the field stretches past an end, in world units.
+    private float BattleStretchLimit(float zoom) => GetViewportRect().Size.X / zoom * BattleStretchFraction;
+
+    // How far past an end the field shows for a drag that far past it: less and less, never the whole limit.
+    private float StretchedX(float x, float zoom)
+    {
+        var (min, max) = BattleCameraXRange(zoom);
+        var limit = BattleStretchLimit(zoom);
+        float Stretch(float past) => limit * (1 - 1 / (past * .55f / limit + 1));
+        return x < min ? min - Stretch(min - x) : x > max ? max + Stretch(x - max) : x;
+    }
+
+    private float UnstretchedX(float x, float zoom)
+    {
+        var (min, max) = BattleCameraXRange(zoom);
+        var limit = BattleStretchLimit(zoom);
+        float Unstretch(float shown) => limit / .55f * (1 / (1 - Mathf.Min(shown, limit * .99f) / limit) - 1);
+        return x < min ? min - Unstretch(min - x) : x > max ? max + Unstretch(x - max) : x;
+    }
+
+    private bool BattleCameraStretched
+    {
+        get
         {
-            if (unit.IsDead) continue;
-            if (unit.Team == Team.Player) { if (front == null || unit.Position.X > front.Position.X) front = unit; }
-            else if (rearEnemy == null || unit.Position.X < rearEnemy.Position.X) rearEnemy = unit;
+            var (min, max) = BattleCameraXRange(_battleCamera.Zoom.X);
+            return _battleCamera.Position.X < min - .01f || _battleCamera.Position.X > max + .01f;
         }
-        var bandCenter = (BattlefieldTop + BattlefieldBottom) * .5f;
-        if (front == null) return new Vector2(PlayerBaseX, bandCenter);
-        if (rearEnemy != null && rearEnemy.Position.X <= front.Position.X)
-            return new Vector2(rearEnemy.Position.X + halfView * .3f, rearEnemy.Position.Y);
-        if (rearEnemy != null && rearEnemy.Position.X - front.Position.X < halfView * 1.2f)
-            return (front.Position + rearEnemy.Position) * .5f;
-        return new Vector2(front.Position.X + halfView * .35f, front.Position.Y);
+    }
+
+    /// <summary>True while the field is still gliding or springing back fast enough that a touch should only stop it.</summary>
+    private bool BattleCameraMoving => _battleCamera != null && _battleCameraGliding &&
+        (Mathf.Abs(_battleCameraVelocity) * _battleCamera.Zoom.X > BattleCatchSpeed || BattleCameraStretched);
+
+    private void StopBattleCameraGlide()
+    {
+        _battleCameraGliding = false;
+        _battleCameraVelocity = 0;
+        _battleCameraSamples.Clear();
+    }
+
+    /// <summary>Let the field come to rest where it is, springing back if it is stretched past an end.</summary>
+    private void SettleBattleCamera()
+    {
+        _battleCameraSamples.Clear();
+        _battleCameraVelocity = 0;
+        _battleCameraGliding = _battleCamera != null;
+    }
+
+    /// <summary>A pointer goes down on the field: it catches any glide and the drag starts from here.</summary>
+    private void GrabBattleCamera()
+    {
+        StopBattleCameraGlide();
+        _battleCameraDragX = UnstretchedX(_battleCamera.Position.X, _battleCamera.Zoom.X);
+        SampleBattleCameraDrag();
+    }
+
+    /// <summary>The pointer moves by screen pixels; the ground moves with it.</summary>
+    private void DragBattleCamera(float screenDelta)
+    {
+        _battleCameraDragX -= screenDelta / _battleCamera.Zoom.X;
+        PlaceBattleCamera(StretchedX(_battleCameraDragX, _battleCamera.Zoom.X));
+        SampleBattleCameraDrag();
+    }
+
+    private void SampleBattleCameraDrag()
+    {
+        var now = Time.GetTicksUsec();
+        _battleCameraSamples.Add((now, _battleCameraDragX));
+        // The samples inside the window, and the last one before it to measure a slow drag against.
+        while (_battleCameraSamples.Count > 2 && now - _battleCameraSamples[1].Time > BattleFlingWindowUsec)
+            _battleCameraSamples.RemoveAt(0);
+    }
+
+    /// <summary>The pointer lets go: the field glides on at the pointer's speed, or springs back from past an end.</summary>
+    private void ReleaseBattleCamera()
+    {
+        SampleBattleCameraDrag();
+        var (start, end) = (_battleCameraSamples[0], _battleCameraSamples[^1]);
+        var seconds = (end.Time - start.Time) / 1e6f;
+        var maxSpeed = BattleFlingMaxSpeed / _battleCamera.Zoom.X;
+        var velocity = seconds >= .008f ? Mathf.Clamp((end.X - start.X) / seconds, -maxSpeed, maxSpeed) : 0;
+        // Flung further out from past an end, the field stretches only a little more before springing back.
+        var (min, max) = BattleCameraXRange(_battleCamera.Zoom.X);
+        var x = _battleCamera.Position.X;
+        if ((x < min && velocity < 0) || (x > max && velocity > 0)) velocity *= .3f;
+        SettleBattleCamera();
+        _battleCameraVelocity = velocity;
     }
 
     private void UpdateBattleCamera(float delta)
     {
         var camera = _battleCamera;
-        if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive || _cardPointerDown || _couragePickupPointerDown) return;
-        if (_battleCameraDragging || _mobilePointerDown) return;
-        if (!_battleCameraFollow && (_battleCameraHold -= delta) > 0) return;
-        _battleCameraFollow = true;
-        var focus = ResolveBattleFollowFocus(GetViewportRect().Size.X / camera.Zoom.X * .5f);
-        var destination = new Vector2(focus.X, focus.Y - FieldScreenOffset(camera));
-        camera.Position = camera.Position.Lerp(destination, 1 - Mathf.Exp(-delta * BattleCameraFollowRate));
-        ClampBattleCamera(camera);
+        if (camera == null || !_battleCameraGliding || _battleCameraDragging || _mobilePointerDown) return;
+        var zoom = camera.Zoom.X;
+        var (min, max) = BattleCameraXRange(zoom);
+        var x = camera.Position.X;
+        var velocity = _battleCameraVelocity;
+        var done = false;
+        if (x < min || x > max)
+        {
+            // A critically damped spring back to the end, solved exactly so every frame rate settles alike.
+            var edge = x < min ? min : max;
+            var limit = BattleStretchLimit(zoom);
+            var past = x - edge;
+            var lead = velocity + BattleStretchSpring * past;
+            var decay = Mathf.Exp(-BattleStretchSpring * delta);
+            past = (past + lead * delta) * decay;
+            velocity = (lead - BattleStretchSpring * (past / decay)) * decay;
+            if (Mathf.Abs(past) >= limit) { past = Mathf.Sign(past) * limit; velocity = 0; }
+            if (Mathf.Abs(past) < .25f && Mathf.Abs(velocity) < BattleScrollRestSpeed) { past = 0; done = true; }
+            x = edge + past;
+        }
+        // A pause or the end of the battle stops a glide; a stretched field still springs back.
+        else if (_battlePaused || _battleEnded || _endlessCheckpointActive) done = true;
+        else
+        {
+            var decay = Mathf.Exp(-BattleScrollFriction * delta);
+            x += velocity * (1 - decay) / BattleScrollFriction;
+            velocity *= decay;
+            // Gliding into an end, the field runs on past it and the spring takes over next frame.
+            done = Mathf.Abs(velocity) < BattleScrollRestSpeed && x >= min && x <= max;
+        }
+        PlaceBattleCamera(x);
+        if (done) StopBattleCameraGlide();
+        else _battleCameraVelocity = velocity;
     }
 
     private bool HandleBattleCameraInput(InputEvent input)
     {
         var camera = _battleCamera;
         if (camera == null || _battlePaused || _battleEnded || _endlessCheckpointActive) return false;
-        if (input is InputEventKey { Pressed: true, Keycode: Key.F })
-        {
-            SetBattleCameraFollow(true);
-            GetViewport().SetInputAsHandled();
-            return true;
-        }
         // The whole field is on screen; there is nothing to pan to.
         if (BattleFieldFitsView(camera)) return false;
         // Controls may pass wheel events through even when they stop clicks.
@@ -152,6 +259,7 @@ public partial class BattleController
         {
             _battleCameraDragging = true;
             _battleCameraPointer = mouse.Position;
+            GrabBattleCamera();
             GetViewport().SetInputAsHandled();
             return true;
         }
@@ -182,12 +290,13 @@ public partial class BattleController
         if (input is InputEventMouseButton mouse && mouse.ButtonIndex == MouseButton.Middle && !mouse.Pressed)
         {
             _battleCameraDragging = false;
+            ReleaseBattleCamera();
             GetViewport().SetInputAsHandled();
             return true;
         }
         if (input is not InputEventMouseMotion motion) return false;
-        if (_battlePaused || _battleEnded || _endlessCheckpointActive) _battleCameraDragging = false;
-        else SetBattleCameraX(_battleCamera.Position.X - (motion.Position.X - _battleCameraPointer.X) / _battleCamera.Zoom.X);
+        if (_battlePaused || _battleEnded || _endlessCheckpointActive) { _battleCameraDragging = false; SettleBattleCamera(); }
+        else DragBattleCamera(motion.Position.X - _battleCameraPointer.X);
         _battleCameraPointer = motion.Position;
         GetViewport().SetInputAsHandled();
         return true;

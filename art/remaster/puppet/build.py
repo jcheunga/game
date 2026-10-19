@@ -15,6 +15,7 @@ pulls the part of the painting nearest to it, scaled by how thick that part is. 
 about the view axis (positive = counter-clockwise on screen), chosen by the unit's motion profile.
 """
 import json
+import os
 import math
 import sys
 import time
@@ -32,6 +33,7 @@ sys.path.insert(0, str(HERE))
 import density  # noqa: E402  (art/remaster/density.py: pure Python)
 REVIEW = ROOT / 'artifacts/remaster'
 PUPPET = REVIEW / 'puppet'
+STRIDE = REVIEW / 'puppet_stride'     # walking sources (stride.py): people repainted side-on, legs as layers
 OUT = REVIEW / 'puppet_units'
 PPU = 100.0   # painting pixels per Blender unit
 DEBUG = False
@@ -45,7 +47,16 @@ def args():
     ap.add_argument('--ids', required=True)
     ap.add_argument('--frames', default=None, help='only these 1-based frames (preview)')
     ap.add_argument('--out', default=str(OUT))
+    ap.add_argument('--src', default='auto', help="auto (a unit's stride sources once cut), stride or puppet")
     return ap.parse_args(argv)
+
+
+def source_dir(ident, src='auto'):
+    if src == 'puppet':
+        return PUPPET / ident
+    if src == 'stride' or (STRIDE / ident / 'layers.json').exists():
+        return STRIDE / ident
+    return PUPPET / ident
 
 
 # ------------------------------------------------------------------ scene
@@ -252,9 +263,10 @@ def seg_dist(P_, a, b):
     return np.linalg.norm(P_ - (a + t[:, None] * ab), axis=1)
 
 
-def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0):
+def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None):
     """Weights by distance to each bone, scaled by how thick that part is. `allowed` limits a layer to its own bones
-    (an arm layer never follows the hips; a weapon follows only its bone)."""
+    (an arm layer never follows the hips; a weapon follows only its bone); `scale` damps some bones' pull (a skirt
+    sways with the thighs under it, but only part of the way)."""
     deform = [(n, h, t, r) for n, h, t, _, r, d in bones if d and h is not None and (allowed is None or n in allowed)]
     if len(deform) == 1:
         vg = ob.vertex_groups.new(name=deform[0][0])
@@ -264,6 +276,15 @@ def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0):
         W = np.exp(-(D ** 2)) ** sharp
         W += 1e-12
         W /= W.sum(axis=1, keepdims=True)
+        if scale:
+            # after normalising: a damped bone's lost share goes to the hips (scaled before, a bone that is the only
+            # one near some paint would keep all of it)
+            names = [n for n, *_r in deform]
+            k = np.array([scale.get(n, 1.0) for n in names])[None, :]
+            lost = (W * (1 - k)).sum(axis=1)
+            W = W * k
+            if 'hips' in names:
+                W[:, names.index('hips')] += lost
         for k, (n, *_r) in enumerate(deform):
             vg = ob.vertex_groups.new(name=n)
             idx = np.nonzero(W[:, k] > 0.003)[0]
@@ -276,10 +297,17 @@ def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0):
 
 LAYER_BONES = {
     'base': ('hips', 'spine', 'chest', 'neck', 'head', 'thigh.R', 'shin.R', 'foot.R', 'thigh.L', 'shin.L', 'foot.L'),
+    'leg_R': ('thigh.R', 'shin.R', 'foot.R'),
+    'leg_L': ('thigh.L', 'shin.L', 'foot.L'),
     'arm_R': ('chest', 'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R'),
     'arm_L': ('chest', 'shoulder.L', 'upper_arm.L', 'forearm.L', 'hand.L'),
     'weapon': ('weapon',),
+    'arrow': ('arrow',),
 }
+# with the legs cut out as layers of their own, the body keeps only the thighs' pull on its skirts (both thighs run
+# under them, so a skirt follows the stride part of the way); the skirt overlay moves exactly as the body does
+SPLIT_BASE = ('hips', 'spine', 'chest', 'neck', 'head', 'thigh.R', 'thigh.L')
+SKIRT_PULL = {'thigh.R': 0.4, 'thigh.L': 0.4}
 
 
 # ------------------------------------------------------------------ motion
@@ -362,8 +390,35 @@ HAND_PROFILES = {
 HAND_PROFILES['staff-jab'] = dict(keys=[(0.65, {'a': -150, 'r': .6, 'wa': 70, 'lean': 4, 'lunge': -0.01}),
                                         (1.0, {'a': -15, 'r': 1.0, 'wa': 25, 'lean': -8, 'lunge': .04}),
                                         (0.25, {'a': -20, 'r': .9, 'wa': 35, 'lean': -4, 'lunge': .025})], absolute=True)
+# an archer at point-blank: the bow pulled in low against the body, then punched out at chest height (it keeps its
+# own angle, so it never sweeps across the face)
+HAND_PROFILES['bow-shove'] = dict(keys=[(0.6, {'a': -55, 'r': .5, 'lean': 4, 'lunge': -0.015}),
+                                        (1.0, {'a': 2, 'r': 1.0, 'lean': -9, 'lunge': .05}),
+                                        (0.25, {'a': -10, 'r': .9, 'lean': -5, 'lunge': .03})], absolute=True)
+# side-on casters: the staff stays nearly upright as it is driven forward (tipped further, its foot digs into the
+# ground behind)
+HAND_PROFILES['staff-cast-side'] = _swing({'a': 105, 'r': .9, 'wa': 110}, {'a': 8, 'r': 1.0, 'wa': 58, 'oa': 0, 'or': 1.0},
+                                          {'a': 0, 'r': .92, 'wa': 66, 'oa': 5, 'or': .95}, (6, -8), .03, absolute=True)
 HAND_PROFILES['axe-cleave'] = HAND_PROFILES['heavy-smash'] = HAND_PROFILES['royal-cleave']
 HAND_PROFILES['blade-stab'] = HAND_PROFILES['spear-thrust'] = HAND_PROFILES['thrust']
+
+
+# How each repainted unit's weapon strikes, where its painting carries it differently from what its attack profile
+# assumes (a one-handed spear thrusts; it is not swung like a sword). Set by eye on review.
+WEAPON_MOTION = {
+    'player_militia': 'thrust',
+}
+# side-on, by the weapon the unit data says it carries (PlaceholderWeapon) and by profile
+THRUST_WEAPONS = {'spear', 'pike'}
+SIDE_PROFILE = {'hammer-command': 'sword-cut', 'staff-cast': 'staff-cast-side'}
+
+
+def side_profile(ident, profile, unit):
+    if ident in WEAPON_MOTION:
+        return WEAPON_MOTION[ident]
+    if unit.get('PlaceholderWeapon') in THRUST_WEAPONS and profile in ('sword-cut', 'guard-cut'):
+        return 'spear-thrust'
+    return profile
 
 
 def hand_track(profile, t, c, n, rest, near=False, two=False):
@@ -445,8 +500,12 @@ def attack_pose(profile, t, c, side, n):
 
 
 class Animator:
-    def __init__(self, arm, paint, lm, profile, fig_h_px, side=None, two=False):
+    def __init__(self, arm, paint, lm, profile, fig_h_px, side=None, two=False, legs=None):
         self.arm, self.paint, self.lm, self.profile = arm, paint, lm, profile
+        # legs cut as layers of their own (stride.py sources): they can pass each other, so the walk is a real
+        # side-on stride and every other clip keeps the feet planted while the body moves over them
+        self.split = legs
+        self.grounded = False
         self.side = side or weapon_side(lm) or 'R'
         self.two = two
         self.death_motion, self.death_release, self.air = None, None, 0.0
@@ -515,14 +574,33 @@ class Animator:
         if slide:
             self.pb['weapon'].location = (0.0, slide * self.H, 0.0)
 
-    def hands(self, p):
+    def move_bone(self, name, dx, dz):
+        """Translate a pose bone by (dx, dz) in armature space (pose location is in the bone's own frame)."""
+        if name not in self.pb:
+            return
+        R = self.arm.data.bones[name].matrix_local.to_3x3()
+        self.pb[name].location = R.inverted() @ Vector((dx, 0.0, dz))
+
+    def shoulder_drive(self, k):
+        """The torso twists into a one-handed blow: the weapon shoulder comes forward (k > 0) or is drawn back for the
+        windup (k < 0), as a share of the shoulders' width; the hand targets move with it."""
+        B_ = self.arm.data.bones
+        if 'upper_arm.R' not in B_ or 'upper_arm.L' not in B_:
+            return Vector((0, 0, 0))
+        width = abs(B_['upper_arm.R'].head_local.x - B_['upper_arm.L'].head_local.x)
+        d = Vector((k * width, 0, -abs(k) * width * .08))
+        for b in ('shoulder.' + self.side, 'upper_arm.' + self.side):
+            self.move_bone(b, d.x, d.z)
+        return d
+
+    def hands(self, p, shift=None):
         """Absolute hand targets: the wielding hand (or the point between two) at angle p['a'] around its shoulder,
         p['r'] of the arm's reach out, the weapon pointing p['wa'] degrees; the other hand at p['oa'] / p['or']
         (+ p['odx'], p['odz'] in figure heights). Angles: 0 = forward, 90 = up, on the chest's frame."""
         h = self.hand_rig
         if h and 'a' in p:
             a = math.radians(p['a'])
-            g = h['anchor'] + Vector((math.cos(a), 0.0, math.sin(a))) * (h['L'] * p['r'])
+            g = h['anchor'] + (shift or Vector((0, 0, 0))) + Vector((math.cos(a), 0.0, math.sin(a))) * (h['L'] * p['r'])
             w = self.pb['wield']
             d = g - h['g0']
             w.location = (d.x, d.z, 0.0)            # the wield bone points up: local X, Y = world X, Z
@@ -543,6 +621,9 @@ class Animator:
             r.location = (r.location[0] + dx * self.H, r.location[1] + dz * self.H, 0.0)
 
     def place(self, dx=0.0, dz=0.0, rot=0.0, sy=1.0, sx=1.0):
+        if self.split and self.grounded and not rot and sx == 1.0 and sy == 1.0:
+            # the body moves over its feet, which stay where they stand (a lunge steps the leading foot forward)
+            return self.plant(dx, dz, step=max(0.0, dx) * 1.1)
         r = self.pb['root']
         r.location = (dx * self.H, dz * self.H, 0.0)   # root's local axes: X right, Y up (the bone points up)
         r.rotation_euler = (0, 0, math.radians(rot))
@@ -561,6 +642,7 @@ class Animator:
         self.rot('spine', 0.8 * s)
         self.wield(1.2 * s, dz=0.003 * math.sin(ph + 0.8))
         self.reach(dz=0.003 * math.sin(ph + 1.6))
+        self.rot('cape', 1.2 * math.sin(ph - 0.8))
 
     WALKS = {
         # stride (fraction of leg length), foot lift (fraction of leg), hip bob (fraction of leg), lean (deg, - =
@@ -575,9 +657,12 @@ class Animator:
                 'walker': 'shamble', 'necromancer': 'march', 'runner': 'prowl', 'rogue': 'prowl',
                 'saboteur': 'prowl'}
     STANCE = .6        # share of the cycle a foot is planted
+    GAIT_OF = {'brute': 'heavy', 'crusher': 'heavy', 'boss': 'heavy', 'bloater': 'heavy', 'berserker': 'march',
+               'walker': 'shamble', 'runner': 'prowl', 'rogue': 'prowl', 'saboteur': 'prowl', 'necromancer': 'glide'}
 
     def leg_geometry(self):
-        """Rest positions and lengths for both legs (armature space, X right, Z up), read once."""
+        """Rest positions and lengths for both legs (armature space, X right, Z up), read once. With split legs both
+        feet stand on the near foot's ground (the far leg is the near one moved onto its hip)."""
         if getattr(self, '_legs', None) is not None:
             return self._legs
         B = self.arm.data.bones
@@ -589,10 +674,246 @@ class Animator:
             hip = B[tb].head_local.copy()
             knee = B[sb].head_local.copy()
             ankle = B[sb].tail_local.copy()
+            fb = 'foot.' + s_
+            vf = (B[fb].tail_local - B[fb].head_local) if fb in B else Vector((0.12 * self.H, 0, -0.03 * self.H))
             legs[s_] = dict(hip=hip, ankle=ankle, L1=(knee - hip).length, L2=(ankle - knee).length,
-                            knee_fwd=(knee - (hip + ankle) / 2).x)
+                            knee_fwd=(knee - (hip + ankle) / 2).x, vf=vf.copy())
+        if self.split and self.split['near'] in legs:
+            gz = legs[self.split['near']]['ankle'].z
+            for s_, v in legs.items():
+                v['ground'] = gz
+                st = self.lm.get('_stand_' + s_)
+                v['painted'] = self.paint.to3(st) if st else v['ankle'].copy()
+            # standing, the feet close in from the painted mid-step to a compact guard: the painted leading foot a
+            # little ahead of the hips, the other a little behind
+            mid = sum(v['hip'].x for v in legs.values()) / len(legs)
+            L = min(v['L1'] + v['L2'] for v in legs.values())
+            front = max(legs, key=lambda s_: legs[s_]['painted'].x)
+            for s_, v in legs.items():
+                v['stand'] = Vector((mid + (self.GUARD[0] if s_ == front else -self.GUARD[1]) * L, 0, gz))
+        else:
+            for v in legs.values():
+                v['ground'] = v['ankle'].z
+                v['stand'] = v['ankle'].copy()
         self._legs = legs
         return legs
+
+    def reachable(self, s_, target, hip_shift, slack=0.992):
+        """A foot target the leg can reach from its moved hip: out of reach, the heel rises first (the foot turning
+        on its toe), then the foot comes in toward the hip. Returns (ankle target, toe-down angle in degrees)."""
+        g = self.legs_[s_]
+        hip = g['hip'] + hip_shift
+        Lmax = (g['L1'] + g['L2']) * slack
+        d = target - hip
+        if d.length <= Lmax:
+            return target, 0.0
+        vf = g['vf']
+        toe = target + vf
+        lf = max(1e-6, vf.length)
+        best = (target, 0.0)
+        for deg in range(2, 46, 2):
+            a = math.radians(deg)
+            r = Vector((vf.x * math.cos(a) + vf.z * math.sin(a), 0, -vf.x * math.sin(a) + vf.z * math.cos(a)))
+            ank = toe - r
+            best = (ank, float(deg))
+            if (ank - hip).length <= Lmax:
+                return ank, float(deg)
+        ank = best[0]
+        d = ank - hip
+        return hip + d.normalized() * Lmax, best[1]
+
+    def plant(self, dx=0.0, dz=0.0, step=0.0):
+        """Split legs: the body moves (dx, dz in figure heights) over planted feet. Each leg reaches its own foot by
+        IK, the leading foot `step` further forward; a heel rises rather than let a foot leave the ground."""
+        legs = self.legs_ = self.leg_geometry()
+        if len(legs) < 2:
+            r = self.pb['root']
+            r.location = (dx * self.H, dz * self.H, 0.0)
+            return
+        # standing: the hips rise (or settle) to where the legs are nearly straight over the feet, a relaxed ready
+        # stance. Left at the painted mid-stride height, with the feet closed in, the knees fold: a squat
+        front_ = max(legs, key=lambda s_: legs[s_]['stand'].x)
+        lift = None
+        for s_, v in legs.items():
+            fx = v['stand'].x + (step * self.H if s_ == front_ else 0.0)
+            ddx = fx - (v['hip'].x + dx * self.H)
+            L = (v['L1'] + v['L2']) * self.STAND_EXTEND
+            z = v['ground'] + math.sqrt(max(1e-6, L * L - ddx * ddx)) - v['hip'].z
+            lift = z if lift is None else min(lift, z)
+        hip_shift = Vector((dx * self.H, 0, dz * self.H + lift))
+        for s_ in legs:                       # solved afresh each call (rot() adds)
+            for b_ in ('thigh.', 'shin.', 'foot.'):
+                if b_ + s_ in self.pb:
+                    self.pb[b_ + s_].rotation_euler.z = 0.0
+        front = max(legs, key=lambda s_: legs[s_]['stand'].x)
+        for s_, v in legs.items():
+            tgt = Vector((v['stand'].x + (step * self.H if s_ == front else 0.0), 0, v['ground']))
+            tgt, up = self.reachable(s_, tgt, hip_shift)
+            dt = self.leg_to(s_, tgt, hip_shift)
+            self.rot('foot.' + s_, -dt - up)
+        if 'hips' in self.pb:
+            self.pb['hips'].location = (-hip_shift.x, -hip_shift.z, 0.0)
+        if 'cape' in self.pb:
+            self.pb['cape'].rotation_euler.z = math.radians(-110.0 * dx)     # lags behind a lunge, swings on a recoil
+        self.planted_shift = hip_shift
+
+    GAITS = {
+        # cycle: the walk's natural cycle time (s) at the unit's own speed (the step is sized to give it, within
+        # step_range, a fraction of the leg); stance: share of the cycle a foot is down (below 0.5 there is a moment
+        # with both feet off the ground: a jog); lift: the ankle's clearance in the swing; bob: how far the hips
+        # rise and fall (fraction of the leg); lean (deg, - = forward); nod (deg); arms: swing scale; limp: the far
+        # leg's step and lift scale (a dragged leg)
+        'march': dict(cycle=.95, step_range=(.45, .88), stance=.57, lift=.095, lean=-3.0, nod=1.2, arms=1.0, limp=1.0),
+        'heavy': dict(cycle=1.25, step_range=(.32, .8), stance=.62, lift=.1, lean=-5.0, nod=2.0, arms=.65, limp=1.0),
+        'shamble': dict(cycle=1.0, step_range=(.36, .92), stance=.64, lift=.08, lean=-7.0, nod=3.0, arms=.45,
+                        limp=.6),
+        'glide': dict(cycle=1.1, step_range=(.32, .95), stance=.62, lift=.06, lean=-2.0, nod=.8, arms=.5, limp=1.0),
+        'jog': dict(cycle=.66, step_range=(.7, 1.15), stance=.4, lift=.2, lean=-8.0, nod=1.0, arms=1.3, limp=1.0),
+        'prowl': dict(cycle=.7, step_range=(.6, 1.1), stance=.38, lift=.21, lean=-13.0, nod=1.0, arms=1.0, limp=1.0),
+    }
+    JOG_ABOVE = 2.5        # legs per second: faster than this no natural walk keeps up, the unit jogs
+    STAND_EXTEND = .955  # standing, the legs reach this share of their length (straight but not locked)
+    GUARD = (.24, .2)    # standing feet: the leading foot ahead of the hips, the other behind (fractions of the leg)
+    HEEL_OFF = 18.0      # deg the foot turns on its toe as it leaves the ground
+    HEEL_STRIKE = 12.0   # deg its toe is up as the heel lands
+    speed_lps = 0.0      # the unit's battle speed in leg lengths per second (set by build())
+    CAPE_FALL = -0.6     # a cape's swing against a forward fall, per degree of the fall (down onto the back)
+
+    def gait(self):
+        """The unit's gait: its class's, and a jog when it moves too fast for a natural walk."""
+        name = self.GAIT_OF.get(self.vclass, 'march')
+        if name == 'heavy' and self.profile == 'staff-cast':
+            name = 'glide'                   # a caster boss (the witch, the pontiff) walks, robed, not stomps
+        if name in ('march', 'shamble') and self.speed_lps > self.JOG_ABOVE:
+            name = 'jog'
+        return name, self.GAITS[name]
+
+    @staticmethod
+    def toe_turn(vf, deg):
+        """How far the ankle moves (x, z) when the foot turns `deg` on its toe, heel up (vf: ankle to toe)."""
+        r = math.radians(deg)
+        return (vf.x * (1 - math.cos(r)) - vf.z * math.sin(r), vf.x * math.sin(r) + vf.z * (1 - math.cos(r)))
+
+    def foot_path(self, s_, u, S, lift, beta, run=False):
+        """Where a foot is at cycle phase u (0 = it lands, ahead of the hip): x along the stride (relative to its
+        neutral spot under the hips), lift above its ground, and its pitch (+ toe up). Planted it slides back at the
+        body's speed, rolling onto its toe at the end; then it swings through, the ankle clearing the ground early
+        as the knee folds (a jog kicks the heel up behind) and reaching forward to land (a walk on the heel, a jog
+        nearer the ball of the foot)."""
+        g = self.legs_[s_]
+        vf = g['vf']
+        strike = 4.0 if run else self.HEEL_STRIKE
+        off = 30.0 if run else self.HEEL_OFF
+        if u < beta:
+            q = u / beta
+            fx, fz = S * (.5 - q), 0.0
+            pitch = strike * max(0.0, 1 - q / .14) ** 2
+            roll = .6 if run else .74
+            if q > roll:
+                a = off * ((q - roll) / (1 - roll)) ** 1.3
+                o_x, o_z = self.toe_turn(vf, a)
+                fx += o_x
+                fz += o_z
+                pitch = -a
+            return fx, fz, pitch
+        q = (u - beta) / (1 - beta)
+        qq = q ** 1.25 if run else q             # a jog's foot stays back while the heel kicks up
+        e = qq * qq * (3 - 2 * qq)
+        fx = S * (-.5 + e)
+        o_x, o_z = self.toe_turn(vf, off)
+        k = 1 - sm(q / .45)
+        fz = lift * math.sin(math.pi * q ** (.65 if run else .75)) + o_z * k
+        fx += o_x * k
+        if q < .35:
+            pitch = -off + (off - 8) * sm(q / .35)
+        else:
+            pitch = -8 + (8 + strike) * sm((q - .35) / .6)
+        return fx, fz, pitch
+
+    def walk_split(self, i, n):
+        """Split legs: a side-on walk (or jog). Each foot lands ahead of the hip, rolls flat and slides back under
+        the body at the body's speed, turns up onto its toe and swings through past the other leg; the knee bends
+        forward by IK. The step is sized so the cycle has a natural rhythm at the unit's own speed. Walking, the
+        hips are highest as the body passes over the planted leg and settle at double support; jogging, they are
+        lowest at mid-stance (the knee takes the landing) and highest in the moment both feet are off the ground.
+        The torso leans into it and the arms swing against the legs, as far as what they hold lets them."""
+        gname, g = self.gait()
+        run = g['stance'] < .5
+        self.legs_ = legs = self.leg_geometry()
+        if len(legs) < 2:
+            return
+        near = self.split['near']
+        far = self.split['far']
+        cyc = i / n
+        beta = g['stance']
+        Lleg = min(v['L1'] + v['L2'] for v in legs.values())
+        # the foot travels S under the body while planted, so a cycle covers S / stance: sized for the gait's
+        # natural cycle time at the unit's speed (in legs per second)
+        lo_s, hi_s = g['step_range']
+        step = self.speed_lps * g['cycle'] * beta if self.speed_lps > 0 else (lo_s + hi_s) / 2
+        step = min(hi_s, max(lo_s, step))
+        if self.speed_lps > 0:
+            # the game plays each frame for cycle / n, within 0.025-0.16 s: outside it the planted foot slides
+            step = min(step, .155 * n * self.speed_lps * beta)
+            step = max(step, .027 * n * self.speed_lps * beta)
+        self.gait_info = dict(gait=gname, step=round(float(step), 3),
+                              cycle_s=round(float(step / beta / max(1e-6, self.speed_lps)), 3) if self.speed_lps else None)
+        S = step * Lleg
+        # both feet stride about the spot under the middle of the hips (each about its own hip, the far leg's
+        # offset would part the feet unevenly: one long step, one short)
+        mid = sum(v['hip'].x for v in legs.values()) / len(legs)
+        # hip heights the legs allow: nearly straight over the planted foot, low enough at landing for the
+        # leading foot to reach the ground
+        hz_hi, hz_lo = [], []
+        for v in legs.values():
+            a = v['ground'] - v['hip'].z       # ankle below the hip at rest (negative)
+            full = v['L1'] + v['L2']
+            dx = abs(mid - v['hip'].x)
+            hz_hi.append(math.sqrt(max(1e-6, (full * .975) ** 2 - dx * dx)) + a)
+            hz_lo.append(math.sqrt(max(1e-6, (full * .99) ** 2 - (S * .5 + dx) ** 2)) + a)
+        hi, lo = min(hz_hi), min(hz_lo)
+        if run:
+            ph = (2 * cyc) % 1.0                 # one step: lands at 0, mid-stance at stance, flight from 2 * stance
+            low = beta                            # mid-stance, in step phase (stance spans 0 .. 2 * stance)
+            dip = .5 + .5 * math.cos(math.tau * (ph - low))
+            stand = min(hi, lo + .05 * Lleg) - .085 * Lleg * dip
+        else:
+            k = .5 - .5 * math.cos(math.tau * 2 * (cyc - .05))       # 0 just after a heel lands, 1 passing
+            stand = lo + (hi - lo) * k - .012 * Lleg
+        hip_shift = Vector((0.0, 0, stand))
+        for s_, off in ((near, 0.0), (far, 0.5)):
+            v = legs[s_]
+            u = (cyc + off) % 1.0
+            kk = g['limp'] if s_ == far else 1.0
+            fx, fz, pitch = self.foot_path(s_, u, S * kk, g['lift'] * Lleg * kk, beta, run)
+            tgt = Vector((mid + fx, 0, v['ground'] + fz))
+            tgt, up = self.reachable(s_, tgt, hip_shift)
+            dt = self.leg_to(s_, tgt, hip_shift)
+            self.rot('foot.' + s_, -dt + pitch - up)
+        if 'hips' in self.pb:
+            self.pb['hips'].location = (-hip_shift.x, -hip_shift.z, 0.0)
+        # the body: lean into the walk, a little rise and fall of the chest, the head steady against the bob
+        bob = math.cos(math.tau * 2 * (cyc - .05))
+        self.rot('spine', g['lean'] + .8 * bob)
+        self.rot('chest', -.6 * bob)
+        self.rot('head', g['nod'] * math.sin(math.tau * 2 * cyc + .6) - g['lean'] * .5)
+        # a cape trails behind the walk and sways a beat after each step
+        self.rot('cape', (-9.0 if run else -5.0) + 2.5 * math.sin(math.tau * 2 * cyc - 1.0))
+        # arms against the legs: the near arm is back as the near foot lands
+        ph_ = {near: -math.cos(math.tau * cyc), far: math.cos(math.tau * cyc)}
+        A = g['arms']
+        held = 'weapon' in self.pb
+        if self.two:
+            self.wield(1.5 * A * ph_[self.side], dx=.006 * A * ph_[near], dz=.004 * A * bob)
+        else:
+            sw = ph_.get(self.side, 0.0)
+            amp = (.03 if held else .05) * A
+            self.wield(-4.0 * A * sw, dx=amp * sw, dz=.25 * amp * sw * sw + .003 * bob)
+            shield = 'offhand' in self.pb
+            so = ph_.get(self.off, 0.0)
+            oamp = (.012 if shield else .045) * A
+            self.reach(dx=oamp * so, dz=.25 * oamp * so * so + .003 * bob)
+        self.walk_stride = S / beta      # ground covered per cycle, armature units
 
     def leg_to(self, s_, target, hip_shift):
         """Planar two-bone IK: turn thigh and shin so the ankle reaches `target` (armature space) from the hip
@@ -624,6 +945,8 @@ class Animator:
         knees follow by two-bone IK, bending forward. The hips dip as the leading foot lands and rise as the body
         passes over the planted leg; the feet close in under the hips from the painted fighting stance; the body
         leans into the walk and the arms swing against the legs. The unit's class sets the gait."""
+        if self.split:
+            return self.walk_split(i, n)
         g = self.WALKS[self.STYLE_OF.get(self.vclass, 'march')]
         self.legs_ = self.leg_geometry()
         if len(self.legs_) < 2:
@@ -632,6 +955,12 @@ class Animator:
         lanes = {s_: v['ankle'].x + (v['hip'].x - v['ankle'].x) * g['narrow'] for s_, v in self.legs_.items()}
         sep = abs(lanes['L'] - lanes['R'])
         g = dict(g, stride=min(g['stride'], .8 * sep / leg_len))
+        if self.speed_lps > 0:
+            # the game shows each frame for 0.025-0.16 s at the unit's speed: a stride outside that range makes the
+            # planted foot slide (a slow boss's long cycle is played faster than it walks)
+            v = self.speed_lps * min(x['L1'] + x['L2'] for x in self.legs_.values()) / leg_len   # in this walk's legs
+            g['stride'] = min(g['stride'], .15 * n * v * self.STANCE)
+            g['stride'] = max(g['stride'], .028 * n * v * self.STANCE)
         cyc = i / n
         mid_x = sum(v['hip'].x for v in self.legs_.values()) / 2
         # hip height: the leg nearly straight as the body passes over the planted foot, and lowered just enough at
@@ -704,6 +1033,8 @@ class Animator:
         if 'string' in self.pb and (profile or self.profile) == 'bow-draw':
             return self.attack_bow(i, n, c)
         prof = profile or self.profile
+        if self.split and profile is None:
+            prof = SIDE_PROFILE.get(prof, prof)
         if prof == 'flask-toss' and self.long_weapon():
             prof = 'spear-thrust'            # a harpoon or javelin is hurled from a draw-back, not lobbed
         if prof == 'crossbow' and 'wield' in self.pb:
@@ -727,7 +1058,8 @@ class Animator:
             self.rot('forearm.' + sd, 14 * p['draw'])
             self.rot('upper_arm.' + sd, 6 * p['draw'])
         # the front leg braces
-        self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
+        if not self.split:
+            self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
 
     def long_weapon(self):
         B_ = self.arm.data.bones
@@ -761,20 +1093,86 @@ class Animator:
         return r
 
     def attack_hands(self, i, n, c, profile):
-        p = hand_track(profile, i, c, n, self.rest_hands(), near=(self.side == 'R' and not self.two),
+        # the near-arm lowering is for front-facing paintings (an arm sweeping across the chest); side-on, the blow
+        # carries straight through at the target, in front of any shield
+        p = hand_track(profile, i, c, n, self.rest_hands(), near=(self.side == 'R' and not self.two and not self.split),
                        two=self.two)
         if not self.off_rig:
             for k in ('oa', 'or', 'odx', 'odz'):
                 p.pop(k, None)
+        if self.split and self.long_weapon() and not HAND_PROFILES.get(profile, {}).get('absolute'):
+            # a polearm's chop stops level at the enemy: carried on down like a sword's, it buries its head in the
+            # ground at the wielder's feet
+            w_ = (p['wa'] + 180) % 360 - 180             # the angle unwrapped across keys: compare its direction
+            if -90.0 < w_ < -6.0:                        # pointing forward and down: stop it level
+                p['wa'] += -6.0 - w_
         self.place(dx=p.get('lunge', 0.0))
         self.rot('spine', p.get('lean', 0.0) * 0.6)
         self.rot('chest', p.get('lean', 0.0) * 0.4)
+        shift = None
+        if self.split and not self.two:
+            # the shoulder follows the blow: back with the windup, driven through at contact, then home
+            tc = c / max(1, n - 1)
+            keys = [(0.0, {'k': 0.0}), (tc * .55, {'k': -.12}, 'out'), (tc, {'k': .32}, 'snap'),
+                    (min(1.0, tc + .2), {'k': .26}, 'out'), (1.0, {'k': 0.0}, 'smooth')]
+            shift = self.shoulder_drive(ease_keys(keys, i / max(1, n - 1))['k'])
+        self.hands(p, shift)
+        if not self.split:
+            self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
+
+    def attack_bow_raise(self, i, n, c):
+        """Split-leg archers are painted walking, the bow low and undrawn: the bow arm comes up and forward until the
+        arrow lies level on the target, the string hand meets it at the nock and draws to the cheek, holds, looses
+        (the hand flies back off the string, the bow kicks) and the bow comes down again."""
+        h = self.hand_rig
+        B_ = self.arm.data.bones
+        tc = c / max(1, n - 1)
+        rest = {'a': h['a0'], 'r': h['r0'], 'wa': h['wa0'], 'draw': 0.0, 'nock': 0.0, 'kick': 0.0, 'lean': 0.0}
+        aim = {'a': 4.0, 'r': .97, 'wa': 3.0}
+        keys = [(0.0, dict(rest)),
+                (tc * .38, dict(rest, **aim, nock=1.0, lean=1.5), 'out'),
+                (tc * .92, dict(rest, **aim, nock=1.0, draw=1.0, lean=3.0), 'smooth'),
+                (tc, dict(rest, **aim, nock=1.0, draw=1.12, lean=3.0), 'smooth'),
+                (min(1.0, tc + .08), dict(rest, **dict(aim, wa=aim['wa'] + 7), nock=1.0, draw=1.45, kick=1.0, lean=2.0), 'snap'),
+                (min(1.0, tc + .34), dict(rest, **aim, nock=.6, draw=.9, lean=1.0), 'out'),
+                (1.0, dict(rest), 'smooth')]
+        d = (keys[1][1]['wa'] - rest['wa'] + 180) % 360 - 180
+        for k in keys[1:-1]:
+            k[1]['wa'] = rest['wa'] + d + (k[1]['wa'] - aim['wa'])
+        p = ease_keys(keys, i / max(1, n - 1))
         self.hands(p)
-        self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
+        self.rot('spine', p['lean'] * .5)
+        if 'string' in self.pb:
+            # the bow's grip where this pose puts it; the string hand meets the arrow's nock there and draws it a
+            # whole arrow's length back, to the cheek (the arrowhead comes back to the bow)
+            a = math.radians(p['a'])
+            grip = h['anchor'] + Vector((math.cos(a), 0, math.sin(a))) * (h['L'] * p['r'])
+            arrow = Vector((1.0, 0, 0))
+            if 'arrow' in B_:
+                Ab = B_['arrow']
+                L_a = Ab.length
+                n0 = (Ab.head_local - B_['weapon'].head_local).length     # nock's rest distance behind the grip
+            else:
+                L_a, n0 = h['L'] * .95, .16 * self.H
+            draw_len = max(n0, L_a * .92)
+            k = min(1.0, p['draw'])
+            nock = grip - arrow * (n0 + (draw_len - n0) * k)
+            drawn = nock - arrow * (h['L'] * .18 * max(0.0, p['draw'] - 1.0))     # flies on back off the string
+            s0 = B_['string'].head_local
+            tgt = s0.lerp(drawn, min(1.0, p['nock']))
+            dv = tgt - s0
+            self.pb['string'].location = (dv.x, dv.z, 0.0)
+            if 'arrow' in self.pb:
+                ab = self.pb['arrow']
+                ab.location = (0.0, -(draw_len - n0) * k, 0.0)       # along itself: back with the string
+                gone = i > c and i < n - 3                           # loosed; the next one is nocked as the bow drops
+                ab.scale = (1e-3, 1e-3, 1e-3) if gone else (1.0, 1.0, 1.0)
 
     def attack_bow(self, i, n, c):
         """Painted at full draw: hold, pull the last inch, loose (the string hand flies back, the bow kicks), then
         reach forward to the string for the next arrow and draw again."""
+        if self.split and self.hand_rig:
+            return self.attack_bow_raise(i, n, c)
         tc = c / max(1, n - 1)
         keys = [(0, {}), (tc * 0.8, {'pull': 0.03, 'lean': 2}, 'out'),
                 (tc, {'pull': 0.09, 'kick': 7, 'lean': 4}, 'snap'),
@@ -820,11 +1218,15 @@ class Animator:
         self.rot('spine', p.get('lean', 0.0) * 0.6)
         self.rot('chest', p.get('lean', 0.0) * 0.4)
         self.wield(p.get('r', 0.0), p.get('x', 0.0), p.get('z', 0.0), p.get('sl', 0.0))
-        self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
+        if not self.split:
+            self.rot('thigh.L', -4 * p.get('lean', 0.0) / 10)
 
     def melee(self, i, n, c):
         """Point-blank: casters jab with the staff end, crossbowmen ram the stock, everyone else a short guard cut."""
         prof = {'staff-cast': 'staff-jab', 'crossbow': 'spear-thrust'}.get(self.profile, 'guard-cut')
+        if self.split and self.profile == 'bow-draw' and self.hand_rig:
+            # an archer shoves the bow into the enemy at chest height (an overhead swing crosses her face)
+            return self.attack_hands(i, n, c, 'bow-shove')
         self.attack(i, n, c, profile=prof)
 
     def hit(self, i, n):
@@ -838,6 +1240,16 @@ class Animator:
 
     def deploy(self, i, n):
         t = i / max(1, n - 1)
+        if self.split:
+            # landing from the wagon's door: the knees take it (the hips dip over planted feet, the body pitched a
+            # little forward, the arms out for balance), then the body rises into its guard
+            k = 1.0 - sm(max(0.0, (t - .15) / .85))
+            self.plant(dx=.008 * k, dz=-.036 * k)
+            self.rot('spine', -7 * k)
+            self.rot('head', 4 * k)
+            self.wield(4 * k, dz=.012 * k)
+            self.reach(dx=.02 * k, dz=.02 * k)
+            return
         self.place(sy=0.86 + 0.14 * sm(t), sx=1.06 - 0.06 * sm(t), dz=0.0)
         self.rot('spine', -6 * (1 - t))
 
@@ -854,7 +1266,10 @@ class Animator:
         self.rot('spine', lean * .6)
         self.rot('chest', lean * .4)
         self.rot('head', (10 if caster else 14) * e)
-        if self.two:
+        if self.two and self.profile == 'crossbow':
+            # a volley: the crossbow tipped up to loose high, held at the shoulder
+            self.wield(32 * e + 1.5 * breathe, dx=-.01 * e, dz=.05 * e + .004 * breathe)
+        elif self.two:
             self.wield(70 * e + 3 * breathe, dx=-.02 * e, dz=.16 * e + .006 * breathe)
         elif 'string' in self.pb:
             self.wield(28 * e, dz=.03 * e)
@@ -862,6 +1277,9 @@ class Animator:
             rest = self.rest_hands()
             if caster:
                 pose = {'a': 92, 'r': .95, 'wa': 95, 'oa': 8, 'or': 1.0}
+            elif self.profile == 'crossbow':
+                # a volley: the crossbow at the shoulder, tipped up to loose high
+                pose = {'a': 8, 'r': .85, 'wa': 34, 'oa': 0, 'or': .9}
             else:
                 pose = {'a': 105, 'r': .95, 'wa': 100, 'oa': -40, 'or': .7}
             p = dict(rest)
@@ -896,6 +1314,89 @@ class Animator:
             if fa in self.rest and ua in self.rest:
                 self.rot(fa, -0.5 * (self.rest[fa] - self.rest[ua]) * w)
 
+    def world_angle(self, name):
+        bpy.context.view_layer.update()
+        pb = self.pb[name]
+        M = self.arm.matrix_world
+        h, t = M @ pb.head, M @ pb.tail
+        return math.degrees(math.atan2(t.z - h.z, t.x - h.x))
+
+    def turn_to(self, name, want_deg, k):
+        """Turn a bone so it points want_deg in the world (picture plane), by share k."""
+        d = (want_deg - self.world_angle(name) + 180) % 360 - 180
+        sgn = 1.0 if self.pb['root'].scale[0] >= 0 else -1.0
+        self.rot(name, d * sgn * k)
+
+    def settle_limbs(self, top, w):
+        """Split rigs, once fallen: the free arms come to lie along the body toward its feet (not raised in a fist
+        off the ground, nor hanging through it), and an off-hand item lies flat along the body instead of standing
+        up off it like a tent. Aimed in the world, measured on the posed rig. top: the topple (+ backward)."""
+        lying = min(1.0, abs(top) / 80.0) * w
+        if lying <= 0 or 'spine' not in self.pb:
+            return
+        bpy.context.view_layer.update()
+        M = self.arm.matrix_world
+        hips = M @ self.pb['spine'].head
+        for s_ in ('R', 'L'):
+            ua, fa = 'upper_arm.' + s_, 'forearm.' + s_
+            if ua not in self.pb:
+                continue
+            # from the shoulder toward the hips: the arm lies across the body (seen side-on a shoulder sits on the
+            # back's edge, so an arm laid parallel to the spine would stick up above a body on its face)
+            sh = M @ self.pb[ua].head
+            self.turn_to(ua, math.degrees(math.atan2(hips.z - sh.z, hips.x - sh.x)), lying)
+            if fa in self.pb:
+                self.turn_to(fa, self.world_angle(ua), lying * 0.85)
+        if 'offhand' in self.pb:
+            # the shield keeps the angle to the torso it had at rest (its long side along the body), so it lies
+            # flat as the body does; the arm's fall would otherwise stand it on edge
+            B_ = self.arm.data.bones
+            ang = lambda b: math.degrees(math.atan2((B_[b].tail_local - B_[b].head_local).z,
+                                                    (B_[b].tail_local - B_[b].head_local).x))
+            self.turn_to('offhand', self.world_angle('spine') + ang('offhand') - ang('spine'), lying)
+            if self.offhand_is_flame:
+                # a flame or a spell in the palm goes out as the caster dies
+                k_ = min(1.0, lying * 1.4)
+                self.pb['offhand'].scale = (max(1e-3, 1 - k_),) * 3
+
+    @property
+    def offhand_is_flame(self):
+        """The off-hand item is a flame or a spell, not a thing (casters' hand fire): set from the landmarks'
+        `offhand_flame`, else guessed for casters whose off hand holds a small item away from the body."""
+        if 'offhand_flame' in self.lm:
+            return bool(self.lm['offhand_flame'])
+        return bool(getattr(self, 'offhand_kind', {}).get('flame'))
+
+    def keep_offhand(self):
+        """Living clips on split rigs: an off-hand item (a shield, a lantern, a flame in the palm) keeps the angle to
+        the torso it was painted at, wherever the arm takes it: a shield stays upright, a flame burns upward."""
+        if not self.split or 'offhand' not in self.pb or 'spine' not in self.pb:
+            return
+        B_ = self.arm.data.bones
+        ang = lambda b: math.degrees(math.atan2((B_[b].tail_local - B_[b].head_local).z,
+                                                (B_[b].tail_local - B_[b].head_local).x))
+        self.turn_to('offhand', self.world_angle('spine') + ang('offhand') - ang('spine'), 1.0)
+
+    def settle_legs(self, top):
+        """Split rigs, lying: the legs come out nearly straight along the body (a shin folded up behind a body on its
+        face reads as a scorpion's tail, a knee raised high off a body on its back as a pose, not a corpse). Folds
+        that kneel or sit stay while the body is still upright."""
+        lying = min(1.0, max(0.0, (abs(top) - 45.0) / 40.0))
+        if lying <= 0 or 'spine' not in self.pb:
+            return
+        feet = (self.world_angle('spine') + 180.0) % 360
+        for s_ in ('R', 'L'):
+            tb, sb = 'thigh.' + s_, 'shin.' + s_
+            if tb not in self.pb or sb not in self.pb:
+                continue
+            t = self.world_angle(tb)
+            dt = (t - feet + 180) % 360 - 180
+            self.turn_to(tb, feet + max(-14.0, min(14.0, dt)), lying)
+            t = self.world_angle(tb)
+            sh = self.world_angle(sb)
+            ds = (sh - t + 180) % 360 - 180
+            self.turn_to(sb, t + max(-12.0, min(12.0, ds)), lying)
+
     def death(self, i, n, impact, forward):
         """The unit's own death (its clip's motion, as roster/deaths.py chose it), in the picture plane: a topple
         about the feet, legs that kneel, sit or fold, a lift or a spin, then a bounce and stillness. The hands let
@@ -921,6 +1422,28 @@ class Animator:
         # the blow flings the arms (and whatever they hold) up and back, before the hands let go
         self.wield(26 * fl, dx=-0.02 * fl, dz=0.05 * fl)
         self.arms_limp(p.get('ua', 0.0) - 10.0 + 60 * fl, max(self.release * 0.8, 0.6 * fl))
+        if self.split:
+            self.settle_limbs(p.get('top', 0.0), max(self.release, 0.0))
+            self.settle_legs(p.get('top', 0.0))
+        # a cape falls with gravity: it swings against the topple, and on a body fallen on its face it settles over
+        # the back instead of standing up off it
+        top_ = p.get('top', 0.0)
+        # face down, the feet point back along the legs, soles up (left at the standing angle, the toes dig into
+        # the ground and the corpse is propped up on them)
+        prone = min(1.0, max(0.0, -top_ / 80.0))
+        for s_ in ('R', 'L'):
+            fb, sb = 'foot.' + s_, 'shin.' + s_
+            if prone and fb in self.rest and sb in self.rest:
+                rel = (self.rest[fb] - self.rest[sb] + 180) % 360 - 180
+                self.rot(fb, (12.0 - rel) * prone)
+        if top_ < 0:
+            self.rot('cape', self.CAPE_FALL * top_)
+        elif 'cape' in self.pb:
+            # on its back the body lies on its cape: turned onto the line of the back and flattened under it (left
+            # hanging, it would prop the body up off the ground like a tablecloth)
+            k_ = min(1.0, top_ / 80.0)
+            self.rot('cape', (-self.rest['cape'] + 6.0) * k_)
+            self.pb['cape'].scale = (1.0 - 0.85 * k_, 1.0, 1.0)
         flip = p.get('flip', 0.0)
         sq = p.get('sq', 0.0)
         self.place(rot=p.get('top', 0.0), dx=p.get('dx', 0.0), sx=math.cos(math.pi * flip) * (1 + sq * 0.6),
@@ -1057,6 +1580,30 @@ def lie_matrix(d, head):
     return m
 
 
+def weapon_axis_offset(d, arm):
+    """How far the weapon layer's long axis turns from its bone (degrees, Blender's picture-plane convention): a
+    bow's bone runs along its arrow, across the bow, so laid 'flat' by its bone it would stand on end."""
+    if 'weapon' not in arm.data.bones or not (d / 'weapon.png').exists():
+        return 0.0
+    img, px = load_rgba(d / 'weapon.png')
+    a = px[..., 3] > 0.25
+    bpy.data.images.remove(img)
+    ys, xs = np.nonzero(a)
+    if len(xs) < 50:
+        return 0.0
+    pts = np.stack([xs - xs.mean(), -(ys - ys.mean())], 1)      # y up, as Blender's Z
+    w, v = np.linalg.eigh(np.cov(pts.T))
+    ax = v[:, int(np.argmax(w))]
+    if w.max() < 1.6 * w.min():
+        return 0.0                                              # round (a shield, a pot): any angle lies flat
+    long_a = math.degrees(math.atan2(ax[1], ax[0]))
+    b = arm.data.bones['weapon']
+    dv = b.tail_local - b.head_local
+    bone_a = math.degrees(math.atan2(dv.z, dv.x))
+    off = (long_a - bone_a + 90) % 180 - 90                     # an axis: either way along it
+    return off if abs(off) > 20 else 0.0
+
+
 def drop_weapon(arm, anim, layer_obs, center, forward, state, dt=0.075):
     """Let go in the death, the weapon is thrown: from the pose it was released in, with the table's toss (metres
     per second forward and up, a figure being ~1.8 m) and spin, under gravity, until it strikes the ground; then it
@@ -1083,8 +1630,9 @@ def drop_weapon(arm, anim, layer_obs, center, forward, state, dt=0.075):
         state['g'] = max(g_real, 2 * (h0 + state['v'].z * t_land) / (t_land * t_land))
         state['t_land'] = t_land
         a0 = state['a0']
-        flat0 = min((0.0, 180.0, -180.0), key=lambda f: abs(((a0 - f + 180) % 360) - 180))
-        state['flat'] = a0 + (((flat0 - a0) + 180) % 360 - 180)
+        off = getattr(anim, 'weapon_axis', 0.0)       # the weapon's own long axis, against its bone
+        flat0 = min((0.0, 180.0, -180.0), key=lambda f: abs(((a0 + off - f + 180) % 360) - 180))
+        state['flat'] = a0 + (((flat0 - off - a0) + 180) % 360 - 180)
     T = (anim.t_death - state['t0']) * state.get('clip_s', 1.0)
     g = state['g']
 
@@ -1104,8 +1652,9 @@ def drop_weapon(arm, anim, layer_obs, center, forward, state, dt=0.075):
         state['land'] = (T, c.copy(), a, state['v'].x)
     t_land, c_l, a_l, vx = state['land']
     u = T - t_land
-    flat_a = min((0.0, 180.0, -180.0, 360.0), key=lambda f: abs(((a_l - f + 180) % 360) - 180))
-    flat_a = a_l + (((flat_a - a_l) + 180) % 360 - 180)
+    off = getattr(anim, 'weapon_axis', 0.0)
+    flat_a = min((0.0, 180.0, -180.0, 360.0), key=lambda f: abs(((a_l + off - f + 180) % 360) - 180))
+    flat_a = a_l + (((flat_a - off - a_l) + 180) % 360 - 180)
     k = sm(min(1.0, u / 0.18))
     bounce = math.sin(min(1.0, u / 0.22) * math.pi) * 0.03 * anim.H * (1 - min(1.0, u / 0.22))
     slide = vx * 0.35 * min(u, 0.25)
@@ -1161,7 +1710,8 @@ def new_contract(old, big):
         if name == 'idle':
             c.update(count=8, duration=0.13, loop=True)
         elif name == 'walk':
-            c.update(count=10, duration=0.07, loop=True)
+            # the big take slow, heavy strides: more frames keep each under the game's 0.16 s playback limit
+            c.update(count=12 if big else 10, duration=0.07, loop=True)
         elif name == 'attack':
             t_contact = o.get('contactFrame', 4) * o['duration']
             c.update(count=16, contactFrame=6, duration=round(t_contact / 6, 4), loop=False)
@@ -1259,8 +1809,111 @@ def figure_ratio_bpy(path, area=False):
     return (rows.max() - rows.min()) / w if len(rows) else None
 
 
+def split_landmarks(lm, legs):
+    """With the far leg drawn as a copy of the near one moved onto its hip, its joints are the near leg's, moved the
+    same way."""
+    lm = dict(lm)
+    n, f, off = legs['near'], legs['far'], np.array(legs['far_offset'], float)
+    # where the far foot stands in the painting: planted clips put the copy's foot there
+    lm['_stand_' + f] = lm.get(f'ankle_{f}') or [float(v) for v in np.array(lm[f'ankle_{n}'], float) + off]
+    for k in ('hip', 'knee', 'ankle', 'toe'):
+        if lm.get(f'{k}_{n}'):
+            lm[f'{k}_{f}'] = [float(v) for v in np.array(lm[f'{k}_{n}'], float) + off]
+    return lm
+
+
+def cape_region(lm, alpha, torso):
+    """A cape, cloak tail or long back cloth: the body's paint well behind the spine (the figure faces right, so
+    behind is to the left), from the shoulders down. Returns (hinge, tail, weight function over pixels) or None."""
+    pel, neck = P(lm, 'pelvis'), P(lm, 'neck')
+    if pel is None or neck is None:
+        return None
+    sh_y = min(p_[1] for p_ in (P(lm, 'shoulder_R'), P(lm, 'shoulder_L'), neck) if p_ is not None)
+    ys, xs = np.nonzero(alpha > 0.5)
+
+    def behind(x, y):
+        t = np.clip((y - neck[1]) / max(1.0, pel[1] - neck[1]), 0.0, 1.6)
+        spine_x = neck[0] + (pel[0] - neck[0]) * t
+        return spine_x - x
+
+    d0, d1 = 0.3 * torso, 0.5 * torso
+    b = behind(xs, ys)
+    cape = (b > d1) & (ys > sh_y + 0.1 * torso)
+    if cape.sum() < 1500:
+        return None
+    cx, cy = xs[cape], ys[cape]
+    hinge = np.array([float(neck[0] - 0.22 * torso), float(sh_y + 0.12 * torso)])
+    tail = np.array([float(np.percentile(cx, 30)), float(np.percentile(cy, 97))])
+
+    def weight(pix):
+        bb = behind(pix[:, 0], pix[:, 1])
+        w = np.clip((bb - d0) / (d1 - d0), 0.0, 1.0)
+        w = w * w * (3 - 2 * w)
+        # nothing above the hinge moves; it builds up over the first stretch below it
+        w *= np.clip((pix[:, 1] - hinge[1]) / (0.25 * torso), 0.0, 1.0)
+        return w
+    return hinge, tail, weight
+
+
+def garment_pull(lm, paint):
+    """How much the thighs swing what hangs from the waist: a tunic or tabard that ends near the knee sways with the
+    stride; a long robe or coat, its hem far below the knee, hangs and the legs walk beneath it (pulled as far, its
+    front panel tears away from its back)."""
+    pel = P(lm, 'pelvis')
+    kn = max(P(lm, 'knee_R')[1], P(lm, 'knee_L')[1])
+    an = max(P(lm, 'ankle_R')[1], P(lm, 'ankle_L')[1])
+    a = paint.alpha
+    x0, x1 = int(pel[0] - 60), int(pel[0] + 60)
+    # the hem: the lowest row, in the column band under the pelvis, that still has paint above the legs' gap
+    rows = np.nonzero((a[:, max(0, x0):x1] > 0.5).mean(axis=1) > 0.85)[0]
+    hem = float(rows.max()) if len(rows) else kn
+    long_ = (hem - kn) / max(1.0, an - kn)
+    k = float(np.clip(1.0 - (long_ - 0.1) / 0.4, 0.3, 1.0))
+    return {b: v * k for b, v in SKIRT_PULL.items()}
+
+
+def damp_to_hips(ob, bones, k):
+    """Move a share k (per vertex) of the named bones' weights onto the hips bone."""
+    hips = ob.vertex_groups.get('hips') or ob.vertex_groups.new(name='hips')
+    for b in bones:
+        vg = ob.vertex_groups.get(b)
+        if vg is None:
+            continue
+        for i in np.nonzero(k > 1e-3)[0]:
+            try:
+                w = vg.weight(int(i))
+            except RuntimeError:
+                continue
+            vg.add([int(i)], float(w * (1 - k[i])), 'REPLACE')
+            try:
+                h = hips.weight(int(i))
+            except RuntimeError:
+                h = 0.0
+            hips.add([int(i)], float(h + w * k[i]), 'REPLACE')
+
+
+def blend_bone(ob, pix, bone, w):
+    """Give part of a layer to `bone`: each vertex's weights scaled by (1 - w), and w on the bone."""
+    if not (w > 1e-3).any():
+        return
+    for vg in ob.vertex_groups:
+        idx = np.nonzero(w > 1e-3)[0]
+        for i in idx:
+            try:
+                cur = vg.weight(int(i))
+            except RuntimeError:
+                continue
+            vg.add([int(i)], float(cur * (1 - w[i])), 'REPLACE')
+    g = ob.vertex_groups.new(name=bone)
+    for i in np.nonzero(w > 1e-3)[0]:
+        g.add([int(i)], float(w[i]), 'REPLACE')
+
+
 def rig_humanoid(ident, d, lm, paint, img, info):
     """Bones, layer meshes and IK for a standing figure; returns what the clip loop needs."""
+    legs = (info or {}).get('legs')
+    if legs:
+        lm = split_landmarks(lm, legs)
     bones = humanoid_bones(lm)
     extra = []
     torso = float(np.linalg.norm(P(lm, 'chin') - P(lm, 'pelvis')))
@@ -1314,16 +1967,42 @@ def rig_humanoid(ident, d, lm, paint, img, info):
                 extra.append(('reach.' + off, w2, w2 + up, 'chest', 0, False))
     elif wpn is not None:
         extra.append(('weapon', wpn[0], wpn[1], 'hand.' + side, 0.09, True))
+    if bow and info and info.get('arrow') and 'weapon' in [e[0] for e in extra]:
+        # the nocked arrow rides on the bow; drawing slides it back along itself with the string hand
+        extra.append(('arrow', np.array(info['arrow']['nock'], float), np.array(info['arrow']['tip'], float),
+                      'weapon', 0.05, True))
     if P(lm, 'offhand_item') is not None and P(lm, 'wrist_' + off) is not None and not two:
         extra.append(('offhand', P(lm, 'wrist_' + off), P(lm, 'offhand_item'), 'hand.' + off, 0.3, True))
+    cape = cape_region(lm, paint.alpha, torso) if legs else None
+    if cape:
+        # its own hinge at the upper back: it trails and sways walking, lags a lunge, and falls with the body
+        extra.append(('cape', cape[0], cape[1], 'chest', 0, True))
     arm = build_armature(paint, bones, extra)
     layer_obs = []
     if info:
         for k, name in enumerate(info['order']):
             li, lpx = load_rgba(d / f'{name}.png')
             ob, pix = build_mesh(paint, li, lpx[..., 3], name, depth=0.01 * k)
-            allowed = LAYER_BONES.get(name) or (('offhand', 'hand.' + off) if name == 'offhand' else None)
-            skin(ob, arm, pix, bones + extra, torso, allowed)
+            # an off-hand item is rigid on its own bone (a child of the hand, so it follows the hand all the same):
+            # shared with the hand's bone, it stretched when the bone turned or a flame went out
+            allowed = LAYER_BONES.get(name) or ((('offhand',) if legs else ('offhand', 'hand.' + off))
+                                                if name == 'offhand' else None)
+            pull = None
+            if legs and name in ('base', 'skirt'):
+                allowed, pull = SPLIT_BASE, garment_pull(lm, paint)
+            # a leg bends at a hinge: its thigh, shin and foot keep their painted shapes (soft weights crush a
+            # knee bent past a right angle into rubber)
+            skin(ob, arm, pix, bones + extra, torso, allowed, scale=pull, sharp=8.0 if name.startswith('leg_') else 4.0)
+            if legs and name in ('base', 'skirt'):
+                # a skirt sways with the stride, but a long hem must not swing like a rigid board pinned at the hip:
+                # the thighs' pull fades out below the knee line, so a coat's hem moves about as much as a short
+                # tunic's
+                knee_y = min(P(lm, 'knee_R')[1], P(lm, 'knee_L')[1])
+                hip_y = P(lm, 'hip_R')[1]
+                fade = np.clip((pix[:, 1] - knee_y) / max(1.0, 0.6 * (knee_y - hip_y)), 0.0, 1.0)
+                damp_to_hips(ob, ('thigh.R', 'thigh.L'), 0.65 * fade)
+            if cape and name in ('base', 'skirt'):
+                blend_bone(ob, pix, 'cape', cape[2](pix))
             layer_obs.append((name, ob))
     else:
         ob, pix = build_mesh(paint, img, paint.alpha)
@@ -1339,13 +2018,14 @@ def rig_humanoid(ident, d, lm, paint, img, info):
             pb.lock_ik_x = pb.lock_ik_y = True      # bend only in the picture plane
             pb.ik_stretch = 0.08                     # a painted arm may give a little rather than let go
     return dict(arm=arm, layer_obs=layer_obs, side=side, two=two, wpn=wpn, line=line,
-                make_anim=lambda profile: Animator(arm, paint, lm, profile, paint.gy - paint.y0, side, two))
+                make_anim=lambda profile: Animator(arm, paint, lm, profile, paint.gy - paint.y0, side, two,
+                                                   legs=legs))
 
 
-def build(ident, frames=None, out_root=OUT):
+def build(ident, frames=None, out_root=OUT, src='auto'):
     t0 = time.time()
     sc = reset()
-    d = PUPPET / ident
+    d = source_dir(ident, src)
     lm = json.loads((d / 'landmarks.json').read_text())
     img, px = load_rgba(d / 'master.png')
     paint = Paint(px[..., 3], lm)
@@ -1374,14 +2054,31 @@ def build(ident, frames=None, out_root=OUT):
     big = unit.get('VisualClass') in ('boss', 'siegetower') or meta['animations'].get('death', {}).get('count', 0) >= 16
     clips = new_contract(meta['animations'], big)
     profile = meta['motion']['profile']
-    anim = rig['make_anim'](profile)
+    anim = rig['make_anim'](side_profile(ident, profile, unit) if d.parent == STRIDE else profile)
     anim.vclass = unit.get('VisualClass', '')
+    anim.offhand_kind = (info or {}).get('offhand_kind', {})
+    anim.weapon_axis = weapon_axis_offset(d, arm)
+    if hasattr(anim, 'speed_au') and unit.get('Speed'):
+        anim.speed_au = float(unit['Speed']) * W / density.frame_canvas_width(unit, draw_scale)
+    if hasattr(anim, 'leg_length') and anim.leg_length() and unit.get('Speed'):
+        # beasts and mounts: their gait is sized to their battle speed too
+        anim.speed_lps = float(os.environ.get('PUPPET_SPEED_LPS') or float(unit['Speed']) /
+                               max(1e-6, anim.leg_length() / W * density.frame_canvas_width(unit, draw_scale)))
+    if hasattr(anim, 'leg_geometry') and unit.get('Speed'):
+        # the walk is sized to the unit's battle speed: in leg lengths per second, as it will be drawn
+        legs_ = anim.leg_geometry()
+        if legs_:
+            L_bl = min(v['L1'] + v['L2'] for v in legs_.values())
+            L_px = L_bl / W * density.frame_canvas_width(unit, draw_scale)
+            anim.speed_lps = float(os.environ.get('PUPPET_SPEED_LPS') or float(unit['Speed']) / max(1e-6, L_px))
     body_bone = getattr(anim, 'body_bone', 'chest')
     dclip = clips.get('death', {})
-    anim.death_motion = dclip.get('motion')
+    anim.death_motion = os.environ.get('PUPPET_DEATH_MOTION') or dclip.get('motion')
     try:
         from roster.deaths import DEATHS
-        wd = DEATHS.get(ident, {}).get('drops', {}).get('weapon')
+        dr = DEATHS.get(ident, {}).get('drops', {})
+        # an archer's bow is the 3D model's off-hand item, but the puppet's weapon layer
+        wd = dr.get('weapon') or (dr.get('offhand') if profile == 'bow-draw' else None)
     except Exception:  # noqa: BLE001
         wd = None
     if wd:
@@ -1411,6 +2108,9 @@ def build(ident, frames=None, out_root=OUT):
     def pose(name, c, i):
         n = c['count']
         anim.clear()
+        anim.grounded = name in ('idle', 'attack', 'melee', 'hit', 'cast')
+        if getattr(anim, 'split', None) and anim.grounded:
+            anim.plant()                      # the feet stand where they are painted unless a clip moves the body
         if name == 'idle':
             anim.idle(i, n)
         elif name == 'walk':
@@ -1427,6 +2127,8 @@ def build(ident, frames=None, out_root=OUT):
             anim.cast(i, n, c.get('holdFrom', 6))
         elif name == 'death':
             anim.death(i, n, c.get('impactFrame', max(1, n // 2)), forward)
+        if name != 'death' and hasattr(anim, 'keep_offhand'):
+            anim.keep_offhand()
         bpy.context.view_layer.update()
 
     foot = next((b for b in ('foot.R', 'shin.R', 'fl.lower', 'hl.lower') if b in arm.pose.bones), None)
@@ -1441,11 +2143,26 @@ def build(ident, frames=None, out_root=OUT):
             if name == 'walk' and foot and i in (0, n // 2):
                 stride_x[i] = (arm.matrix_world @ arm.pose.bones[foot].tail).x
             if name == 'death':
-                low = min(float(ground_fix(o, arm)[:, 2].min()) for n_, o in layer_obs if n_ not in ('weapon', 'offhand'))
+                lows = {n_: float(ground_fix(o, arm)[:, 2].min()) for n_, o in layer_obs
+                        if n_ not in ('weapon', 'offhand', 'arrow')}
+                low = min(lows.values())
+                legs_low = min((v for k_, v in lows.items() if k_.startswith('leg_')), default=None)
+                if legs_low is not None:
+                    # cloth and limp arms drape: they may sink a little below where the legs lie (a tabard's front
+                    # panel under a body fallen on its face), but never prop the body up off the ground
+                    low = min(legs_low, max(low, legs_low - 0.06 * anim.H))
                 r = arm.pose.bones['root']
                 # world z offset -> root local (the root bone points up: local Y = world Z)
                 r.location = (r.location[0], r.location[1] - low + getattr(anim, 'air', 0.0) * anim.H, 0)
                 bpy.context.view_layer.update()
+                off_obs = [o for n_, o in layer_obs if n_ == 'offhand']
+                if 'offhand' in arm.pose.bones and getattr(anim, 'split', None) and off_obs:
+                    # a shield on the arm of a body fallen on it rests on the ground, not through it
+                    lo_off = min(float(ground_fix(o, arm)[:, 2].min()) for o in off_obs)
+                    if lo_off < 0:
+                        pb_o = arm.pose.bones['offhand']
+                        pb_o.matrix = Matrix.Translation(Vector((0.0, 0.0, -lo_off))) @ pb_o.matrix
+                        bpy.context.view_layer.update()
                 if 'weapon' in arm.pose.bones:     # after the body is grounded: the weapon is placed in the world
                     drop_state['clip_s'] = c['duration'] * (n - 1)
                     drop_weapon(arm, anim, layer_obs, wpn_center, forward, drop_state)
@@ -1480,6 +2197,8 @@ def build(ident, frames=None, out_root=OUT):
         # ground covered in one walk cycle, as a fraction of the frame width: the game plays the cycle at the speed
         # that keeps the planted foot still on the ground
         new_clips['walk']['stride'] = round(anim.walk_stride / W, 5)
+        if getattr(anim, 'gait_info', None):
+            new_clips['walk']['gait'] = anim.gait_info['gait']
     elif 'walk' in new_clips and len(stride_x) == 2:
         new_clips['walk']['stride'] = round(abs(stride_x[0] - stride_x[new_clips['walk']['count'] // 2]) * 2 / W, 5)
     out_meta = {
@@ -1493,7 +2212,7 @@ def build(ident, frames=None, out_root=OUT):
     if want is None:
         (out / 'complete.json').write_text(json.dumps({'id': ident, 'frames': total, 'revision': 'puppet-v2'}) + '\n')
     print(f'PUPPET_COMPLETE {ident} {time.time() - t0:.1f}s frames={total} drawScale={draw_scale:.3f} '
-          f'two_handed={two}', flush=True)
+          f'two_handed={two} speed={getattr(anim, "speed_lps", 0.0):.2f}legs/s walk={getattr(anim, "gait_info", None)}', flush=True)
 
 
 if __name__ == '__main__':
@@ -1501,7 +2220,7 @@ if __name__ == '__main__':
     frames = [int(x) for x in a.frames.split(',')] if a.frames else None
     for ident in a.ids.split(','):
         try:
-            build(ident, frames, a.out)
+            build(ident, frames, a.out, a.src)
         except Exception:
             traceback.print_exc()
             print('PUPPET_FAILED ' + ident, flush=True)

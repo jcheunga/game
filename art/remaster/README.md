@@ -132,6 +132,53 @@ carry the sheet's lighting; the battle adds each unit's cast and contact shadows
 (`BattleLighting`). Icons (`puppet_units/<id>/portrait.png`) come from the master: a head-and-shoulders crop on the
 head landmarks for people, the whole figure for beasts, mounts and machines.
 
+### Walking puppets (people repainted side-on)
+
+The first puppets were painted in the roster sheet's lineup pose: three-quarter front, feet straddled, knees bent
+out. A body that faces the viewer while it travels sideways crab-walks, and a straddle animated into a stride
+squats, whatever the legs do. So every person (not the beasts, mounts, machines, serpents or blobs) is repainted
+from its master by `puppet/stride.py` into `artifacts/remaster/puppet_stride/<id>/`: the same character turned to
+face its walk in three-quarter profile, standing tall with the legs under the hips mid-step, carrying its weapon the
+way its attack profile needs (`CARRY`). `build.py` uses these sources wherever `layers.json` exists there.
+
+| Step | What it does |
+| --- | --- |
+| `master.png` | Codex: image 2 (the old master) repainted in the walking pose, image 1 (the sheet) for style only |
+| joints | Codex places them, then they are checked by eye on a gridded copy: knees on the knee cap or cop (Codex puts them on the boot cuffs), then `puppet/setlm.py dir knee_R=x,y ... --anatomy` solves the hips (thigh as long as the shin, under the pelvis, 0.33-0.5 of the height above the ground). A hip at the hem makes a leg that pivots at the knee guard: it walks squatting |
+| `body.png` | Codex: what the hands hold painted out |
+| `limbs.png` | Codex: arms and legs painted out in one edit (older units: `torso.png` then `hips.png`) |
+| `held.png` | Codex: the weapon alone, painted whole where the hands covered it (the weapon layer; a bow's arrow is cut from it) |
+| `layers.py --legs` | the near leg as a layer (the far leg is a shaded copy moved onto its hip, so neither is ever half hidden), a skirt overlay (what covered the near thigh: tabards draw over it, while it passes in front of a cape), robes keep both legs behind |
+
+`stride.py ... --follow` keeps Codex busy: a unit's edits as soon as its joints are placed, otherwise the next master.
+Codex's 5-hour window allows about 40 images; landmarks by Codex cost as much as an image, so they are placed by eye.
+
+In `build.py` the split legs change every clip: the walk is a side-on stride (heel strike, roll, toe-off, a swing
+past the other leg, the knee bending forward by IK), sized to the unit's own battle speed so the cycle keeps a natural
+rhythm (`GAITS`: about 0.7-1 s a cycle for troops, slow heavy steps for bosses; faster than `JOG_ABOVE` legs a second
+there is no natural walk and the unit jogs, with a moment in the air). Idle, attacks, hits and casts move the hips
+over planted feet (a lunge steps the leading foot), standing in a compact guard; deploy lands on bent knees; archers
+raise the bow, draw the arrow to the cheek and loose it. `WEAPON_MOTION` overrides a profile where the new painting
+carries its weapon differently (a one-handed spear thrusts; a mace or axe held level is still swung, so this is set by
+eye). Deaths on split legs: face down, the feet point back along the legs; the legs set the ground contact (cloth and
+limp arms may sink a little rather than prop a body up); a cape settles over the back, or flattens under a body on its
+back. The swamp maw and bog spore stand on legs, so they are rigged as squat four-legged beasts (`stubby` in their
+landmarks: they lunge and slump onto their bellies rather than fling their legs).
+
+Off-hand items (shields, lanterns, a flame in the palm) keep the angle to the torso they were painted at in every
+living clip, so a shield stays upright through casts and swings. In deaths the arms come to rest across the body
+(aimed from the shoulder at the hips: a side-on shoulder sits on the back's edge), a shield keeps its angle to the
+torso and so lies flat as the body does, the legs settle nearly straight, and a dropped weapon lies on its own long
+axis (a bow's bone runs along its arrow). One-handed blows drive the shoulder through the target; a polearm's chop
+stops level. Units still on the old paintings get a stride sized to the game's frame-time limit at their speed, and
+machines roll their wheels in each wheel's own plane (the painted ellipse squashed to a circle, turned, stretched
+back) by whole spoke steps per cycle, matched to the ground (`creatures.spoke_symmetry`, wheel layers cut to the
+near wheel's rim ellipse in `layers.rim_ellipse`).
+
+`pack.py` keeps the walk's `stride` in the packed frame's widths (it is cropped narrower than the render, so left in
+render widths every walk played too fast and the feet slid); `BlenderAssetSmoke` checks every walking puppet's cycle
+time at its battle speed.
+
 ### Combat feel
 
 The puppet clips (`build.py new_contract`) are sized for a phone: idle 8 frames, walk 10, attack 16 with contact on

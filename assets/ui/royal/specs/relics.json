@@ -292,7 +292,7 @@
    "rect": [
     40,
     131,
-    417,
+    819,
     551
    ],
    "role": "panel"
@@ -303,7 +303,7 @@
    "rect": [
     46,
     146,
-    410,
+    812,
     53
    ],
    "role": "panel"
@@ -326,7 +326,7 @@
    "id": "collection.filter",
    "kind": "rect",
    "rect": [
-    318,
+    720,
     153,
     124,
     38
@@ -340,18 +340,18 @@
    "font": "crimson",
    "weight": 500,
    "width": 22,
-   "x": 335,
+   "x": 737,
    "baseline": 179,
    "align": "left",
    "color": "#fffcdd",
    "size": 18,
-   "pen_x": 335
+   "pen_x": 737
   },
   {
    "id": "collection.filter.arrow",
    "kind": "rect",
    "rect": [
-    417,
+    819,
     170,
     13,
     8
@@ -875,7 +875,7 @@
    "id": "grid.scroll",
    "kind": "rect",
    "rect": [
-    442,
+    844,
     209,
     6,
     447
@@ -886,7 +886,7 @@
    "id": "grid.scroll.thumb",
    "kind": "rect",
    "rect": [
-    442,
+    844,
     213,
     6,
     114
@@ -930,37 +930,27 @@
    "pen_x": 166
   },
   {
-   "id": "preview",
+   "id": "button.details",
    "kind": "rect",
    "rect": [
-    470,
-    146,
-    389,
-    520
-   ],
-   "role": "preview"
-  },
-  {
-   "id": "preview.prev",
-   "kind": "rect",
-   "rect": [
-    488,
-    396,
-    19,
-    35
+    598,
+    639,
+    234,
+    43
    ],
    "role": "button"
   },
   {
-   "id": "preview.next",
-   "kind": "rect",
-   "rect": [
-    814,
-    396,
-    19,
-    34
-   ],
-   "role": "button"
+   "id": "button.details.label",
+   "kind": "text",
+   "text": "VIEW ALL BONUSES",
+   "font": "cinzel",
+   "weight": 700,
+   "x": 715,
+   "baseline": 669,
+   "align": "center",
+   "color": "#ffefbc",
+   "size": 17
   },
   {
    "id": "detail",

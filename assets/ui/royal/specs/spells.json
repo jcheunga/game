@@ -696,7 +696,7 @@
    "rect": [
     40,
     264,
-    342,
+    682,
     413
    ],
    "role": "panel"
@@ -707,7 +707,7 @@
    "rect": [
     45,
     276,
-    330,
+    670,
     49
    ],
    "role": "panel"
@@ -730,7 +730,7 @@
    "id": "collection.filter",
    "kind": "rect",
    "rect": [
-    267,
+    607,
     287,
     100,
     32
@@ -744,18 +744,18 @@
    "font": "crimson",
    "weight": 500,
    "width": 19,
-   "x": 282,
+   "x": 622,
    "baseline": 309,
    "align": "left",
    "color": "#fdf8db",
    "size": 17,
-   "pen_x": 283
+   "pen_x": 623
   },
   {
    "id": "collection.filter.arrow",
    "kind": "rect",
    "rect": [
-    344,
+    684,
     300,
     11,
     7
@@ -1445,7 +1445,7 @@
    "id": "grid.scroll",
    "kind": "rect",
    "rect": [
-    365,
+    705,
     335,
     6,
     320
@@ -1456,45 +1456,12 @@
    "id": "grid.scroll.thumb",
    "kind": "rect",
    "rect": [
-    365,
+    705,
     340,
     6,
     108
    ],
    "role": "scroll"
-  },
-  {
-   "id": "preview",
-   "kind": "rect",
-   "rect": [
-    393,
-    277,
-    337,
-    398
-   ],
-   "role": "preview"
-  },
-  {
-   "id": "preview.prev",
-   "kind": "rect",
-   "rect": [
-    413,
-    463,
-    19,
-    33
-   ],
-   "role": "button"
-  },
-  {
-   "id": "preview.next",
-   "kind": "rect",
-   "rect": [
-    686,
-    464,
-    18,
-    32
-   ],
-   "role": "button"
   },
   {
    "id": "detail",

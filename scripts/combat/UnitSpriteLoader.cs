@@ -55,6 +55,9 @@ public sealed class SpriteAnimRange
 	public Vector2 ImpactPoint { get; set; }
 	// Walk clips: ground covered in one cycle, in frame widths (the game plays the cycle to match its speed).
 	public float Stride { get; set; }
+	// Walk clips from the walking puppets: the gait the cycle was sized for (march, heavy, shamble, glide, jog,
+	// prowl); empty for older clips.
+	public string Gait { get; set; } = "";
 	// Cast clips: the first frame of the held pose, looped while the cast lasts.
 	public int HoldFrom { get; set; } = -1;
 }
@@ -244,6 +247,8 @@ public static class UnitSpriteLoader
 						range.HoldFrom = Mathf.Clamp(holdVal, 0, frameCount - 1);
 					if (prop.Value.TryGetProperty("stride", out var stride) && stride.TryGetSingle(out var strideVal))
 						range.Stride = Mathf.Max(0f, strideVal);
+					if (prop.Value.TryGetProperty("gait", out var gait) && gait.ValueKind == System.Text.Json.JsonValueKind.String)
+						range.Gait = gait.GetString() ?? "";
 					if (prop.Value.TryGetProperty("impactPoint", out var point) && point.GetArrayLength() == 2)
 						range.ImpactPoint = new Vector2(point[0].GetSingle(), point[1].GetSingle());
 					if (state == UnitAnimState.Death && prop.Value.TryGetProperty("fx", out var fx))

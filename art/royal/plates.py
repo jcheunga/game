@@ -41,6 +41,29 @@ CONCEPTS = {
 # (illustrations, icons, selected states).
 KEEP_CONCEPT = False
 
+# Armory pages are two columns: the collection panel is widened across the concept's preview pedestal
+# up to the detail column. In plate pixels, each band of rows keeps everything left of `lx`, stretches
+# [lx, rx) by `shift` and moves [rx, right_end) (filter, scroll track, right border, gap) right by `shift`.
+# Bands split where a painted piece must not stretch (the relics Back plaque). `copies` paste pieces
+# again (the relics bonuses plaque beside Back). The specs carry the matching shifted rects.
+RELAYOUT = {
+    "warband": {"bands": [(352, 890, 110, 340)], "right_end": 510, "shift": 448},
+    "spells": {"bands": [(343, 890, 110, 340)], "right_end": 512, "shift": 444},
+    "relics": {"bands": [(172, 262, 110, 405), (262, 895, 395, 560)], "right_end": 613, "shift": 525,
+               "copies": [((78, 832, 390, 897), (780, 832))]},
+}
+
+
+def relayout(image, plan):
+    out = image.copy()
+    for y0, y1, lx, rx in plan["bands"]:
+        middle = image.crop((lx, y0, rx, y1))
+        out.paste(middle.resize((rx - lx + plan["shift"], y1 - y0), Image.LANCZOS), (lx, y0))
+        out.paste(image.crop((rx, y0, plan["right_end"], y1)), (rx + plan["shift"], y0))
+    for box, at in plan.get("copies", []):
+        out.paste(image.crop(box), at)
+    return out
+
 
 def install(name):
     clean = GEN / f"{name}.png"
@@ -48,6 +71,8 @@ def install(name):
     image = Image.open(source).convert("RGBA")
     if image.size != SIZE:
         image = image.resize(SIZE, Image.LANCZOS)
+    if name in RELAYOUT:
+        image = relayout(image, RELAYOUT[name])
     OUT.mkdir(parents=True, exist_ok=True)
     image.save(OUT / f"{name}.png", optimize=True)
     if KEEP_CONCEPT:

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-/// <summary>Warband and spell pages: equipped strip, collection grid, preview and profile.</summary>
+/// <summary>Warband and spell pages: equipped strip, then the collection grid and the profile side by side.</summary>
 public partial class ShopMenu
 {
     private string _selectedId = "";
@@ -41,7 +41,6 @@ public partial class ShopMenu
         BuildCollection(spells, spec, entries);
         var selected = entries.FirstOrDefault(e => e.Id == _selectedId);
         if (selected.Id == null) return;
-        BuildPreview(spells, spec, entries, selected);
         if (spells) BuildSpellProfile(spec, GameData.GetSpell(selected.Id), selected);
         else BuildUnitProfile(spec, GameData.GetUnit(selected.Id), selected);
     }
@@ -139,6 +138,17 @@ public partial class ShopMenu
         }
     }
 
+    /// <summary>
+    /// The collection's columns: as many cells at the concept's pitch as fit between the first cell and
+    /// the scroll track, spread so the grid meets the track.
+    /// </summary>
+    private static (int Columns, float PitchX) GridColumns(float left, float trackX, float cellX, float pitchX)
+    {
+        var room = trackX - 10 - left;
+        var columns = Mathf.Max(1, Mathf.FloorToInt((room - cellX) / pitchX) + 1);
+        return (columns, columns > 1 ? (room - cellX) / (columns - 1) : pitchX);
+    }
+
     private void BuildCollection(bool spells, RoyalSpec spec, List<Entry> entries)
     {
         _body.AddChild(spec.Label("collection.label", spells ? "Spell collection" : "Unit Collection", 190));
@@ -156,23 +166,25 @@ public partial class ShopMenu
         var track = spec.Rect("grid.scroll");
         var cell = new Vector2(Mathf.Round((first.Size.X + second.Size.X) / 2), first.Size.Y);
         var pitch = new Vector2(second.Position.X - first.Position.X, below.Position.Y - first.Position.Y);
+        var (columns, pitchX) = GridColumns(first.Position.X, track.Position.X, cell.X, pitch.X);
+        pitch.X = pitchX;
         var view = new Rect2(first.Position - new Vector2(4, 4), new Vector2(track.Position.X - first.Position.X + 2, track.End.Y - first.Position.Y + 6));
         var scroll = new ScrollContainer { Position = view.Position, Size = view.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever, Name = "Collection" };
         _body.AddChild(scroll);
         var visible = Filtered(entries).ToList();
-        var rows = Mathf.CeilToInt(visible.Count / 3f);
+        var rows = Mathf.CeilToInt(visible.Count / (float)columns);
         var grid = new Control { CustomMinimumSize = new Vector2(view.Size.X - 2, Mathf.Max(view.Size.Y, rows * pitch.Y + 8)), MouseFilter = MouseFilterEnum.Pass };
         scroll.AddChild(grid);
         for (var i = 0; i < visible.Count; i++)
         {
-            var at = new Vector2(4 + i % 3 * pitch.X, 4 + i / 3 * pitch.Y);
+            var at = new Vector2(4 + i % columns * pitch.X, 4 + i / columns * pitch.Y);
             grid.AddChild(Cell(spells, spec, visible[i], new Rect2(at, cell)));
         }
         RoyalUiTools.ClearPaintedScrollTrack(_body, spells ? "spells" : "warband", spec);
         _body.AddChild(new RoyalScrollHint { Name = "CollectionScrollbar", Position = track.Position, Size = track.Size, Scroll = scroll });
         scroll.GetVScrollBar().ValueChanged += value => _gridScroll = (float)value;
-        var selectedRow = visible.FindIndex(e => e.Id == _selectedId) / 3;
+        var selectedRow = visible.FindIndex(e => e.Id == _selectedId) / columns;
         var rowTop = 4 + selectedRow * pitch.Y;
         if (selectedRow >= 0 && (rowTop < _gridScroll || rowTop + cell.Y > _gridScroll + view.Size.Y)) _gridScroll = Mathf.Max(0, rowTop - 4);
         Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_gridScroll; } }).CallDeferred();
@@ -207,44 +219,9 @@ public partial class ShopMenu
             button.AddChild(RoyalKit.Image("lock", new Rect2(rect.Size.X - 24, rect.Size.Y - 24, 16, 16), new Color(1, 1, 1, .8f)));
         return button;
     }
-
-    private void BuildPreview(bool spells, RoyalSpec spec, List<Entry> entries, Entry selected)
-    {
-        var rect = spec.Rect("preview");
-        if (spells)
-        {
-            var glow = new SpellAura { Position = rect.Position, Size = rect.Size };
-            _body.AddChild(glow);
-            var art = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                Texture = SpellArt(GameData.GetSpell(selected.Id)), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-                Position = rect.Position + new Vector2(rect.Size.X * .14f, rect.Size.Y * .12f), Size = new Vector2(rect.Size.X * .72f, rect.Size.Y * .62f),
-                SelfModulate = selected.Owned ? Colors.White : new Color(.55f, .57f, .6f) };
-            _body.AddChild(art);
-        }
-        else
-        {
-            // The animated battle model stands on the painted pedestal.
-            var model = new UnitModelPreview { Position = new Vector2(rect.GetCenter().X - 165, rect.Position.Y + 12), Size = new Vector2(330, rect.Size.Y - 66), AlignBottom = true,
-                MouseFilter = MouseFilterEnum.Ignore };
-            model.SizeFlagsHorizontal = model.SizeFlagsVertical = SizeFlags.ShrinkBegin;
-            _body.AddChild(model);
-            model.SetUnit(GameData.GetUnit(selected.Id));
-            model.Modulate = selected.Owned ? Colors.White : new Color(.6f, .62f, .66f);
-        }
-        var visible = Filtered(entries).ToList();
-        var index = Mathf.Max(0, visible.FindIndex(e => e.Id == selected.Id));
-        void Step(int delta)
-        {
-            if (visible.Count == 0) return;
-            _selectedId = visible[(index + delta + visible.Count) % visible.Count].Id;
-            Refresh();
-        }
-        _body.AddChild(RoyalButton.Over(spec.Rect("preview.prev").Grow(10), spells ? "Previous spell" : "Previous unit", () => Step(-1), 8));
-        _body.AddChild(RoyalButton.Over(spec.Rect("preview.next").Grow(10), spells ? "Next spell" : "Next unit", () => Step(1), 8));
-    }
 }
 
-/// <summary>Warm light behind a spell picture on the preview pedestal.</summary>
+/// <summary>Warm light behind a picture on a pedestal (the forge's craft preview).</summary>
 public partial class SpellAura : Control
 {
     public SpellAura() { MouseFilter = MouseFilterEnum.Ignore; }

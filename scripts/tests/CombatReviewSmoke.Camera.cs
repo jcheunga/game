@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
 
@@ -37,7 +38,6 @@ public partial class CombatReviewSmoke
         Check(bandTop.Y >= hud.End.Y - 1 && bandBottom.Y <= viewport.Y - 160 && Screen(new Vector2(0, center)).Y > viewport.Y * .5f,
             "The band runs low across the screen, clear of the meters and the card tray");
         Check(Mathf.IsEqualApprox(camera.Position.X, half), "Battle opens on the wagon side");
-        Check(Read<bool>(battle, "_battleCameraFollow"), "The camera follows the fighting by default");
         var deck = Read<BattleDeckState>(battle, "_deck");
         Write(battle, "_courage", 100f);
         Write(battle, "_mana", Read<float>(battle, "_maxMana"));
@@ -47,7 +47,6 @@ public partial class CombatReviewSmoke
         await CaptureCamera("desktop-wagon");
         Wheel(MouseButton.WheelDown);
         Check(Mathf.IsEqualApprox(camera.Position.X, half + 100 / zoom), "Wheel down pans toward the enemy by one screen step");
-        Check(!Read<bool>(battle, "_battleCameraFollow"), "Panning by hand pauses following");
         Wheel(MouseButton.WheelLeft);
         Check(Mathf.IsEqualApprox(camera.Position.X, half), "Horizontal wheel clamps at the wagon edge");
         Wheel(MouseButton.WheelRight, 1000);
@@ -96,19 +95,41 @@ public partial class CombatReviewSmoke
         deployed.Position = new Vector2(width * .5f, center);
         enemy.TakeDamage(enemy.MaxHealth * 1000); decoy.TakeDamage(decoy.MaxHealth * 1000);
         Invoke(battle, "CleanupDeadUnits");
-        battle._UnhandledInput(new InputEventKey { Keycode = Key.F, Pressed = true });
-        Check(Read<bool>(battle, "_battleCameraFollow"), "F resumes following");
+        var resting = camera.Position;
         for (var frame = 0; frame < 240; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
-        camera.ForceUpdateScroll();
-        var shown = Screen(deployed.Position);
-        Check(shown.X > 0 && shown.X < viewport.X * .5f, "Following keeps the leading soldier in shot with room ahead");
-        var straggler = (Unit)Invoke(battle, "SpawnUnit", Team.Enemy, new UnitStats(GameData.GetUnit("enemy_walker")), new Vector2(tuning.PlayerSpawnX + 40, center));
-        for (var frame = 0; frame < 240; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
-        camera.ForceUpdateScroll();
-        shown = Screen(straggler.Position);
-        Check(shown.X > 0 && shown.X < viewport.X, "An enemy that slips past the front pulls the camera back to it");
-        straggler.TakeDamage(straggler.MaxHealth * 1000);
-        await CaptureCamera("desktop-follow");
+        Check(camera.Position == resting, "The camera stays where the player put it while the fighting moves on");
+
+        // A flick glides on, slowing, and comes to rest about speed / friction further on.
+        var friction = (float)typeof(BattleController).GetField("BattleScrollFriction", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+        const float flick = 200f;
+        Write(battle, "_battleCameraVelocity", flick); Write(battle, "_battleCameraGliding", true);
+        Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        var speed = Read<float>(battle, "_battleCameraVelocity");
+        Check(camera.Position.X > half && speed > flick * .9f && speed < flick, "A flick glides on and slows");
+        for (var frame = 0; frame < 600 && Read<bool>(battle, "_battleCameraGliding"); frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(!Read<bool>(battle, "_battleCameraGliding") && Mathf.Abs(camera.Position.X - (half + flick / friction)) < 3,
+            "The glide comes to rest inside the field");
+        // A hard flick at the far end runs past it, stretching the field a little, and springs back exactly to it.
+        var far = width - half;
+        var stretchLimit = half * 2 * .25f;
+        Invoke(battle, "SetBattleCameraX", far - 50);
+        Write(battle, "_battleCameraVelocity", 3000f); Write(battle, "_battleCameraGliding", true);
+        var furthest = 0f;
+        for (var frame = 0; frame < 120 && Read<bool>(battle, "_battleCameraGliding"); frame++)
+        {
+            Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+            furthest = Mathf.Max(furthest, camera.Position.X);
+        }
+        Check(furthest > far + 10 && furthest <= far + stretchLimit, "A flick into the end overshoots it a little");
+        Check(Mathf.IsEqualApprox(camera.Position.X, far) && !Read<bool>(battle, "_battleCameraGliding"), "The field springs back to the end and rests there");
+        // Pausing stops a glide where it is.
+        Invoke(battle, "SetBattleCameraX", half);
+        Write(battle, "_battleCameraVelocity", 900f); Write(battle, "_battleCameraGliding", true);
+        Write(battle, "_battlePaused", true);
+        Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(camera.Position.X == half && !Read<bool>(battle, "_battleCameraGliding"), "Pause stops a glide");
+        Write(battle, "_battlePaused", false);
+        await CaptureCamera("desktop-rest");
         battle._UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.Middle, Pressed = true });
         battle._Notification((int)Node.NotificationApplicationFocusOut);
         Check(!Read<bool>(battle, "_battleCameraDragging"), "Losing focus cancels dragging");
@@ -125,15 +146,52 @@ public partial class CombatReviewSmoke
         var point = new Vector2(viewport.X * .5f,
             (Read<float>(battle, "_mobileFieldTop") + Read<float>(battle, "_mobileFieldBottom")) * .5f);
         var count = Read<int>(battle, "_playerDeployments");
+        var phoneHalf = viewport.X / camera.Zoom.X * .5f;
+        var phoneFar = width - phoneHalf;
         battle._UnhandledInput(new InputEventScreenTouch { Index = 0, Pressed = true, Position = point });
         battle._Input(new InputEventScreenDrag { Index = 0, Position = point - new Vector2(10000, 0) });
+        Check(camera.Position.X > phoneFar + phoneHalf * .25f && camera.Position.X < phoneFar + phoneHalf * .5f,
+            "Dragged past the far end, the field stretches, but only so far");
+        await CaptureCamera("mobile-stretched-gate");
         battle._Input(new InputEventScreenTouch { Index = 0, Pressed = false, Position = point - new Vector2(10000, 0) });
-        Check(Mathf.IsEqualApprox(camera.Position.X + viewport.X / camera.Zoom.X * .5f, width), "Touch drag pans to the far end and clamps there");
+        for (var frame = 0; frame < 60; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(Mathf.IsEqualApprox(camera.Position.X, phoneFar) && !Read<bool>(battle, "_battleCameraGliding"),
+            "Let go, the field springs back to the far end");
         Check(Read<int>(battle, "_playerDeployments") == count, "A long touch drag cannot deploy");
         await CaptureCamera("mobile-gate");
-        Check(!Read<bool>(battle, "_battleCameraFollow"), "A touch drag holds the camera where it was panned");
+        var panned = camera.Position.X;
         for (var frame = 0; frame < 300; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
-        Check(Read<bool>(battle, "_battleCameraFollow"), "Following resumes a few seconds after a touch pan");
+        Check(camera.Position.X == panned, "A touch pan stays where it was left");
+        Invoke(battle, "SetBattleCameraX", phoneHalf);
+        battle._UnhandledInput(new InputEventScreenTouch { Index = 0, Pressed = true, Position = point });
+        battle._Input(new InputEventScreenDrag { Index = 0, Position = point + new Vector2(10000, 0) });
+        Check(camera.Position.X < phoneHalf * .75f && camera.Position.X > 0, "The wagon end stretches the same way");
+        await CaptureCamera("mobile-stretched-wagon");
+        battle._Input(new InputEventScreenTouch { Index = 0, Pressed = false, Position = point + new Vector2(10000, 0) });
+        for (var frame = 0; frame < 60; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(Mathf.IsEqualApprox(camera.Position.X, phoneHalf), "Let go, the field springs back to the wagon end");
+        // A real flick: the finger's speed over its last moments carries the field on after it lifts.
+        Invoke(battle, "SetBattleCameraX", phoneHalf);
+        battle._UnhandledInput(new InputEventScreenTouch { Index = 0, Pressed = true, Position = point });
+        for (var step = 1; step <= 6; step++)
+        {
+            OS.DelayMsec(16);
+            battle._Input(new InputEventScreenDrag { Index = 0, Position = point - new Vector2(30 * step, 0) });
+        }
+        battle._Input(new InputEventScreenTouch { Index = 0, Pressed = false, Position = point - new Vector2(180, 0) });
+        var lifted = camera.Position.X;
+        Check(Mathf.IsEqualApprox(lifted, phoneHalf + 180 / camera.Zoom.X), "The ground moves exactly with the finger");
+        Check(Read<bool>(battle, "_battleCameraGliding") && Read<float>(battle, "_battleCameraVelocity") * camera.Zoom.X > 800,
+            "A flick keeps the field gliding after the finger lifts");
+        Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(camera.Position.X > lifted, "The flicked field moves on by itself");
+        // Touching the gliding field catches it, and that touch is not a tap.
+        battle._UnhandledInput(new InputEventScreenTouch { Index = 0, Pressed = true, Position = point });
+        Check(!Read<bool>(battle, "_battleCameraGliding") && Read<bool>(battle, "_mobileCaughtGlide"), "A touch stops a gliding field");
+        var caught = camera.Position.X;
+        battle._Input(new InputEventScreenTouch { Index = 0, Pressed = false, Position = point });
+        for (var frame = 0; frame < 30; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
+        Check(camera.Position.X == caught, "A caught field stays where it stopped");
         Check(!battle.FindChildren("*", "Control", true, false).Any(n => n.Name == "CampaignFieldNavigation"),
             "Phone combat has no capture controls or minimap");
         var oldWindowSize = GetWindow().Size;

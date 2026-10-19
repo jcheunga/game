@@ -159,7 +159,6 @@ public partial class CombatReviewSmoke
                 if (Read<bool>(battle, "_battlePaused")) Invoke(battle, "TogglePause");
                 packs = Read<List<CouragePickup>>(battle, "_couragePickups");
                 var camera = Read<Camera2D>(battle, "_battleCamera");
-                Invoke(battle, "SetBattleCameraFollow", false);
                 camera.Position = new Vector2(420, camera.Position.Y);
                 Invoke(battle, "ClampBattleCamera", camera); camera.ForceUpdateScroll();
                 var world = new Vector2(440, 340);

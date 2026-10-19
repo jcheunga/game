@@ -136,7 +136,6 @@ public partial class CombatMotionReview
         GetWindow().ContentScaleSize=new Vector2I(1280,720);
         GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
         var battle=await Battle();
-        Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
         var camera=Read<Camera2D>(battle,"_battleCamera"); camera.Position=new Vector2(500,335); camera.ForceUpdateScroll();
         var target=CrowdUnit(battle,"enemy_brute",Team.Enemy,new Vector2(500,360));
         var sword=CrowdUnit(battle,"player_brawler",Team.Player,new Vector2(470,350));

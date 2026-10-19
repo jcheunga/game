@@ -114,10 +114,9 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
 
 ## Prototype controls
 
-- Battlefield: one shallow band a little more than one screen long (world 720 wide, 600 visible). The camera
-  follows the fighting; scroll the mouse wheel or trackpad, middle-drag, or use Left/Right arrows to pan,
-  then the sword button or **F** to follow again. **Home / End** jump to either base. On mobile, drag to
-  explore and use the map button to see the whole battlefield.
+- Battlefield: one shallow band a little more than one screen long (world 720 wide, 600 visible). The camera stays
+  where you put it: drag or flick the field (it glides on and springs back at either end), scroll the mouse
+  wheel or trackpad, middle-drag, or use Left/Right arrows to pan. **Home / End** jump to either base.
 - Deploying: tap a unit card (or press its number key). The unit walks out of the war wagon's door onto
   the battle line; there is no lane choice. Spell cards drag onto the field to aim.
 - Victory: destroy the enemy stronghold. This wins immediately, whatever waves remain. Only melee troops

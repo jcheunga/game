@@ -38,7 +38,6 @@ public partial class MobilePresentationReview : Node
             var unit=(Unit)Call(battle,"SpawnUnit",team,new UnitStats(GameData.GetUnit(pair.Item1),healthScale:20),new Vector2(pair.Item2,pair.Item3));
             unit._Process(.5); unit._Process(.01); unit.SetProcess(false);
         }
-        Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
         var camera=Read<Camera2D>(battle,"_battleCamera"); camera.Position=new Vector2(395,380); camera.ForceUpdateScroll();
         Call(battle,"UpdateHud"); Call(battle,"RefreshMobileHud");
         await Settle(); return battle;
@@ -121,10 +120,9 @@ public partial class MobilePresentationReview : Node
             battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Position=screen+new Vector2(-100,0)});
             Check(camera.Position.X>previous.X+20,"Dragging pans the close view");
             Check(Read<int>(battle,"_playerDeployments")==count+1,"Dragging never deploys a unit");
-            Check(!Read<bool>(battle,"_battleCameraFollow"),"A hand pan holds the camera where it was dragged");
+            var panned=camera.Position.X;
             for(var frame=0;frame<300;frame++) Call(battle,"UpdateBattleCamera",1f/60);
-            Check(Read<bool>(battle,"_battleCameraFollow"),"The camera follows the fighting again a few seconds after a pan");
-            Write(battle,"_battleCameraFollow",false); Write(battle,"_battleCameraHold",float.PositiveInfinity);
+            Check(Mathf.IsEqualApprox(camera.Position.X,panned),"A hand pan stays where it was dragged");
             camera.Position=new Vector2(440,350); camera.ForceUpdateScroll();
             await Settle(90); Call(battle,"ClearArmedSelection"); await Settle();
             await Capture("phone-after-interaction");
@@ -201,41 +199,22 @@ public partial class MobilePresentationReview : Node
             var home=(MapMenu)GetTree().CurrentScene;
             Check(home.HasHomeModal && loadout.HasMeta("home_modal"),"Preparation uses the production map overlay");
             await Settle(10); await Capture("phone-loadout");
-            var inspectors=loadout.FindChildren("*","Button",true,false).OfType<Button>()
-                .Where(b=>b.Text=="Details" || (b.AccessibilityName??"").StartsWith("View ")).ToArray();
-            Check(inspectors.Length==GameState.Instance.GetActiveDeckUnits().Count && !loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
-                "Preparation shows an icon card that opens the model inspector for each squad member");
+            // Squad cards are display-only; preparation opens no unit inspector.
+            Check(!loadout.FindChildren("*","Button",true,false).OfType<Button>().Any(b=>(b.AccessibilityName??"").StartsWith("View ")) &&
+                !loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
+                "Preparation squad cards are display-only and open no model inspector");
             foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
             {
                 var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
                 Check(rect.Position.X>=-1 && rect.End.X<=1281 && rect.End.Y<=721 && rect.Size.Y>=56,"Phone preparation controls fit and remain touch sized");
             }
-            Check(inspectors.Length>0,"Preparation offers a model inspector");
-            inspectors[0].EmitSignal(BaseButton.SignalName.Pressed); await Settle(6);
-            var gallery=loadout.GetChildren().OfType<ModelShowcase>().Single();
-            var model=gallery.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
-            Check(!loadout.GetChildren().OfType<Unit>().Any(),"Inspecting models spawns no combat units");
-            Call(gallery,"Play",UnitAnimState.Attack); model.SetProcess(false); model._Process(.25);
-            var attack=Read<UnitSpriteSheet>(model,"_sheet").Animations[UnitAnimState.Attack];
-            Check(model.Animation==UnitAnimState.Attack && model.GlobalFrame>attack.StartFrame && model.GlobalFrame<attack.StartFrame+attack.FrameCount,
-                "Inspector plays the authored attack frames");
-            await Capture("phone-model-inspector");
-            if(DisplayServer.GetName()!="headless") Check(model.ModelRect.Size.Y>150 && model.ModelRect.End.Y<=model.Size.Y,"Inspector gives the model substantial space without cropping it");
-            var first=Read<int>(gallery,"_index"); Call(gallery,"Select",1);
-            Check(Read<int>(gallery,"_index")!=first,"Inspector browses the active squad");
-            GameState.Instance.SetReducedMotion(true); Call(gallery,"Play",UnitAnimState.Attack);
-            var frame=model.GlobalFrame; model._Process(3);
-            Check(model.GlobalFrame==frame,"Reduced motion shows a still authored pose");
-            GameState.Instance.SetReducedMotion(false);
-            gallery.QueueFree(); await Settle();
             home.CloseHomeModal(); await Settle();
         }
         await LiveUiReview.Open(this,"MainMenu");
         var shop=(ShopMenu)await LiveUiReview.Open(this,"ShopMenu"); await Settle(20);
-        var shopModel=shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Single();
-        // The armory already shows the full profile beside the model, so the model opens no extra inspector.
-        Check(shopModel.MouseFilter==Control.MouseFilterEnum.Ignore && shopModel.InspectRequested==null && !shop.GetChildren().OfType<ModelShowcase>().Any(),
-            "The armory model is display-only and opens no extra inspector");
+        // The armory is two columns (collection and profile): no large model repeats the selected unit.
+        Check(!shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
+            "The armory shows no large model beside the collection");
         shop.QueueFree(); await Settle();
     }
 

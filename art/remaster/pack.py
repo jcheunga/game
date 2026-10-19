@@ -108,6 +108,11 @@ def hires_frames(unit, meta, frames, envelope, single_page=True, target=None):
     for key in ('body', 'contact'):
         motion[key] = [round(motion[key][0] * sw / bw, 6), round(motion[key][1] * sh / bh, 6)]
     animations = {k: dict(v) for k, v in meta['animations'].items()}
+    walk = animations.get('walk', {})
+    if 'stride' in walk:
+        # ground per cycle, in frame widths: the cropped frame is narrower, so the same ground is more of it (left
+        # in master widths, the game played every walk too fast for its speed and the feet slid)
+        walk['stride'] = round(walk['stride'] * sw / bw, 5)
     death = animations.get('death', {})
     if 'impactPoint' in death:
         death['impactPoint'] = [round(death['impactPoint'][0] * sw / bw, 6), round(death['impactPoint'][1] * sh / bh, 6)]
@@ -189,12 +194,15 @@ def trimmed_preview(cells, pm):
     return page, pm
 
 
-def pack_units(source='units'):
+def pack_units(source='units', ids=None):
     """source: the render folder under artifacts/remaster ('units' for the 3D builds, 'puppet_units' for the 2D
-    puppets of art/remaster/puppet); a unit missing there falls back to artifacts/remaster/units."""
+    puppets of art/remaster/puppet); a unit missing there falls back to artifacts/remaster/units. `ids` packs only
+    those units (and leaves the class fallbacks alone)."""
     packed, clipped, hires = [], [], {}
     for u in UNITS:
         ident = u['Id']
+        if ids and ident not in ids:
+            continue
         src = REVIEW / source / ident
         if not (src / 'complete.json').exists():
             src = REVIEW / 'units' / ident
@@ -268,7 +276,7 @@ def pack_units(source='units'):
         put(src / 'portrait.png', f'assets/ui/portraits/codex/{ident}.png', 512)
         packed.append(ident)
     reps = {}
-    for u in UNITS:
+    for u in UNITS if not ids else ():
         if u['Id'] in packed:
             reps.setdefault(u['VisualClass'], u['Id'])
     for cls, ident in reps.items():
@@ -365,10 +373,14 @@ def pack_codex():
     print(json.dumps({'codex_entries': len(CODEX) - len(missing), 'codex_unresolved_in_stage': len(missing)}))
 
 
-def apply(allow_new=False):
+def apply(allow_new=False, ids=None):
     # Only shipped art/metadata; never Godot .import sidecars (they carry UIDs). By default only
-    # files the game already ships are replaced, so retired assets are never resurrected.
+    # files the game already ships are replaced, so retired assets are never resurrected. `ids`: only those units'
+    # atlases, pages, previews, icons and portraits.
     files = [p for p in STAGE.rglob('*') if p.is_file() and p.suffix in ('.png', '.json')]
+    if ids:
+        files = [p for p in files if p.stem in ids or re.sub(r'_\d+$', '', p.stem) in ids and
+                 p.relative_to(STAGE).parts[:2] == ('assets', 'units')]
     applied, skipped = 0, []
     for p in files:
         target = ROOT / p.relative_to(STAGE)
@@ -387,13 +399,15 @@ if __name__ == '__main__':
     ap.add_argument('--only', default='units,items,structures,particles,codex')
     ap.add_argument('--allow-new', action='store_true', help='also create files the game does not ship yet')
     ap.add_argument('--source', default='units', help="unit render folder under artifacts/remaster (e.g. puppet_units)")
+    ap.add_argument('--ids', default='', help='only these units (comma-separated)')
     a = ap.parse_args()
+    ids = set(filter(None, a.ids.split(',')))
     if a.action == 'apply':
-        apply(a.allow_new)
+        apply(a.allow_new, ids)
     else:
         only = a.only.split(',')
         if 'units' in only:
-            pack_units(a.source)
+            pack_units(a.source, ids)
         if 'items' in only:
             pack_items()
         if 'structures' in only:

@@ -50,6 +50,20 @@ public partial class BlenderAssetSmoke : Node
                 var probe = new Unit();
                 probe.Setup(def.IsPlayerSide ? Team.Player : Team.Enemy, new UnitStats(def), Vector2.Zero);
                 var density = sheet.FrameWidth / (probe.Radius * 2 * probe.VisualScale * sheet.DrawScale);
+                // Walking puppets: the cycle keeps a natural cadence at the unit's own speed (a short cycle at speed
+                // is a scuttle), and its frames stay inside the playback clamp so the planted foot never slides.
+                if (sheet.Animations.TryGetValue(UnitAnimState.Walk, out var walk) && walk.Gait != "" && def.Speed > 1f)
+                {
+                    var cycle = walk.Stride * probe.Radius * 2f * probe.VisualScale * sheet.DrawScale / def.Speed;
+                    var (lo, hi) = walk.Gait switch
+                    {
+                        "gallop" or "canter" or "trot" => (.27f, 1.1f),   // beasts and mounts at speed
+                        "jog" or "prowl" => (.45f, 1.1f),
+                        _ => (.6f, 2.4f),
+                    };
+                    Check(cycle >= lo && cycle <= hi && cycle / walk.FrameCount is >= .025f and <= .16f,
+                        $"{id} {walk.Gait} cycle {cycle:0.00}s at speed {def.Speed:0}");
+                }
                 probe.Free();
                 Check(density >= 1.25f, $"{id} keeps {density:0.00} atlas px per battle px, so enlarged units stay sharp");
                 var total = sheet.Frames?.Length > 0 ? sheet.Frames.Length

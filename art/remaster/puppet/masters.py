@@ -44,9 +44,11 @@ MODEL = 'gpt-5.6-sol'
 KIND = {
     'mount': {'player_raider', 'player_outrider', 'enemy_bone_lancer', 'enemy_boss_steppe'},
     'machine': {'player_ballista', 'enemy_plague_engine', 'enemy_boneballista', 'enemy_siegetower'},
-    'quad': {'player_hound', 'enemy_grave_rat', 'enemy_ash_hound'},
+    # the swamp maw and bog spore were painted as blobs, but they stand on legs: they are rigged as squat four-legged
+    # beasts (landmarks placed by eye, 'stubby') so they step instead of gliding
+    'quad': {'player_hound', 'enemy_grave_rat', 'enemy_ash_hound', 'enemy_bog_spore', 'enemy_swamp_maw'},
     'serpent': {'enemy_bloated_eel', 'enemy_plague_leech'},
-    'blob': {'enemy_splitter', 'enemy_bog_spore', 'enemy_swamp_maw', 'enemy_reliquary_eye', 'enemy_mirror_wisp'},
+    'blob': {'enemy_splitter', 'enemy_reliquary_eye', 'enemy_mirror_wisp'},
 }
 UNARMED = {'claw-rake', 'pounce', 'nest-pulse'}   # motion profiles whose hands hold nothing worth a layer
 

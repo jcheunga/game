@@ -90,11 +90,10 @@ public partial class LoadoutMenu : RoyalScreen
             // Units and spells share the loadout; a card past the units' room is held by a spell.
             if (i >= units.Length) { layer.AddChild(EmptySlot(rect, i >= state.LoadoutSizeLimit - spells.Length)); continue; }
             var unit = units[i];
-            var card = RoyalButton.Over(rect, "View " + unit.DisplayName, null, 6);
-            card.SetStates(RoyalKit.Slice("prep-card-" + tints[i], 10, 10, 10, 54), 6);
-            card.TooltipText = $"{unit.DisplayName} · Level {state.GetUnitLevel(unit.Id)} · {unit.Cost} courage";
-            var unitId = unit.Id;
-            card.Pressed += () => ModelShowcase.Show(this, GameState.Instance.GetActiveDeckUnits().ToArray(), unitId);
+            // Squad cards are display-only: the squad is edited in the armory.
+            var card = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass,
+                TooltipText = $"{unit.DisplayName} · Level {state.GetUnitLevel(unit.Id)} · {unit.Cost} courage" };
+            card.AddThemeStyleboxOverride("panel", RoyalKit.Slice("prep-card-" + tints[i], 10, 10, 10, 54));
             var art = spec.Rect(key + ".art");
             var figure = new UnitFigure { Position = art.Position - rect.Position + new Vector2(2, 4), Size = art.Size - new Vector2(4, 4) };
             figure.SetUnit(unit);

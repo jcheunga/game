@@ -55,7 +55,7 @@ A save from before levels starts at the level its won stages earn, counting each
 
 ## Where it shows
 
-- **Home map:** a player card to the left of the settings ring shows the medallion, nickname and XP. The medallion's ring is the XP bar, and a red badge counts rewards to claim. Tapping the card opens the level track.
+- **Home map:** the player card at the top left shows the medallion and nickname. The medallion's ring is the XP bar, and a red badge counts rewards to claim. Tapping the card opens the level track, which shows the XP in full. The resources sit at the top right beside the settings ring.
 - **Level track:** `PlayerLevelMenu` uses the season board's plate.
   - **Grid:** a scrolling grid holds all hundred levels, ten to a row. Each cell shows the level, its reward and a claim button, or a claimed or locked state. The current level has a gold rim and every tenth level a bronze one.
   - **Cap badges:** small badges in a cell's corner mark the caps that level lifts: a helmet for units, a hammer for the wagon.

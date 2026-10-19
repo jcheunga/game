@@ -97,6 +97,14 @@ public partial class CombatMotionReview
                 ("player_militia","enemy_walker")}, .6f),
         };
         var only=OS.GetCmdlineUserArgs().FirstOrDefault(a=>a.StartsWith("--take="))?.Substring(7);
+        // --pairs=player_a:enemy_b,player_c:enemy_d puts any match-ups on the field (take "pairs", or --take's name)
+        var pairsArg=OS.GetCmdlineUserArgs().FirstOrDefault(a=>a.StartsWith("--pairs="))?.Substring(8);
+        if (pairsArg!=null)
+        {
+            var custom=pairsArg.Split(',',StringSplitOptions.RemoveEmptyEntries).Select(p=>p.Split(':')).Select(p=>(p[0],p[1])).ToArray();
+            takes=new[]{(only??"pairs",custom,2.5f)};
+            only=null;
+        }
         foreach (var take in takes.Where(t=>only==null || t.name==only))
         {
             var battle=await Battle();

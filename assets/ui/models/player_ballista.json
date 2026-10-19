@@ -13,7 +13,8 @@
       "loop": true,
       "count": 10,
       "duration": 0.07,
-      "start": 8
+      "start": 8,
+      "stride": 0.15465
     },
     "attack": {
       "loop": false,

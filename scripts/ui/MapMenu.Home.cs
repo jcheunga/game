@@ -45,9 +45,12 @@ public partial class MapMenu
 
     private void BuildResources(RoyalSpec spec)
     {
-        _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 391, 62), MaxWidth = 412 };
+        // The resources sit at the top right beside the settings ring; the player's card takes the top left.
+        // Compact spacing keeps it clear of the zone plaque's right banner (which ends at x 848).
+        _resources = new RoyalResourceBar { Name = "Resources", BarRect = new Rect2(19, 13, 220, 62), MaxWidth = 340, RightEdge = 1192,
+            IconScale = .76f, BeforeDivider = 5, AfterDivider = 6, EndPadding = 18, StartInset = 24 };
         _hud.AddChild(_resources);
-        _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop(), "00,000");
+        _resources.Add(spec, "res", "gold", HomeMapArt.Icon("gold"), "Royal storehouse", () => SceneRouter.Instance.GoToCashShop(), "0,000");
         _foodHint = _resources.Add(spec, "res", "food", HomeMapArt.Icon("food"), "Refill food", () => SceneRouter.Instance.GoToCashShop(), "00 / 00");
         _resources.Add(spec, "res", "stars", HomeMapArt.Icon("star"), "Player profile", () => SceneRouter.Instance.GoToProfile(), "000");
     }

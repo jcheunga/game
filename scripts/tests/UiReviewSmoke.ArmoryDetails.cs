@@ -74,12 +74,6 @@ public partial class UiReviewSmoke
         Check(state.Food == food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset == camera, "Profile browsing and training preserve the map and travel supplies");
         menu.CloseHomeModal();
         state.ToggleDeckSpell(firstSpell.Id, out _); state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
-        var view = Walk(menu).OfType<Button>().First(button => button.IsVisibleInTree() && (button.AccessibilityName ?? "").StartsWith("View "));
-        view.EmitSignal(BaseButton.SignalName.Pressed); await Wait(.6);
-        Check(Walk(menu).OfType<ModelShowcase>().Any(), "Preparation opens the visual unit inspector");
-        AuditText("Profile / unit inspector"); await Capture("05-unit-inspector");
-        Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The unit inspector opens as a modal above preparation");
-        await PressHint("Close details");
         SpellShowcase.Show(Walk(menu).OfType<LoadoutMenu>().Single(), firstSpell); await Wait(.3);
         Check(Walk(menu).OfType<SpellShowcase>().Any(), "Preparation can inspect a spell with the same visual stat cards");
         AuditText("Profile / spell inspector"); await Capture("06-spell-inspector");

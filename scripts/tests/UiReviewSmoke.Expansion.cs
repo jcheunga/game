@@ -49,7 +49,6 @@ public partial class UiReviewSmoke
             var rogue=(Unit)typeof(BattleController).GetMethod("SpawnUnit",hidden).Invoke(battle,new object[]{Team.Player,new UnitStats(GameData.GetUnit("player_rogue")),new Vector2(620,340)});
             Call("BeginContentCast",rogue,2f,(Action)(()=>{}),true);
             var camera=(Camera2D)typeof(BattleController).GetField("_battleCamera",hidden).GetValue(battle);
-            Call("SetBattleCameraFollow",false);
             camera.Position=new Vector2(650,camera.Position.Y);Call("ClampBattleCamera",camera);camera.ForceUpdateScroll();
             await Capture("05-battle-feedback");
             Check(Walk(battle).OfType<BattleContentWarning>().Any() && caster.ContentStatusLabels.Count>=3,"Live battle renders cast warnings and multiple status badges");

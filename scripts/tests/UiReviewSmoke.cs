@@ -245,11 +245,6 @@ public partial class UiReviewSmoke : Node
             await FinishTravel();
             Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<LoadoutMenu>().Any(x => x.IsVisibleInTree()), "Map opens preparation");
             await Capture("06-loadout");
-            var viewUnit = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(b => b.IsVisibleInTree() && (b.AccessibilityName ?? "").StartsWith("View "));
-            viewUnit.EmitSignal(BaseButton.SignalName.Pressed); await Wait(.6);
-            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ModelShowcase>().Any(), "Unit details open on demand");
-            await Capture("06b-unit-inspector");
-            await PressHint("Close details");
             await Open("ShopMenu"); await Capture("07-armory");
             var oldGold = GameState.Instance.Gold;
             var oldLevel = GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId);
@@ -349,6 +344,7 @@ public partial class UiReviewSmoke : Node
         AuditModalBounds(screen);
         AuditFrameClearance(screen);
         AuditLegibility(screen);
+        AuditStretchedButtons(screen);
         var viewport = GetViewport().GetVisibleRect();
         var panels = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<PanelContainer>().Where(x => x.IsVisibleInTree() && x.GetParent() == GetTree().CurrentScene).ToArray();
         foreach (var panel in panels)
@@ -430,7 +426,8 @@ public partial class UiReviewSmoke : Node
             switch (control)
             {
                 case Label label when !string.IsNullOrWhiteSpace(label.Text): text = label.Text; size = label.GetThemeFontSize("font_size"); break;
-                case Button button when !string.IsNullOrWhiteSpace(button.Text): text = button.Text; size = button.GetThemeFontSize("font_size"); break;
+                // A RoyalButton's own text is hidden; its caption is a RoyalLabel.
+                case Button button when button is not RoyalButton && !string.IsNullOrWhiteSpace(button.Text): text = button.Text; size = button.GetThemeFontSize("font_size"); break;
                 case RichTextLabel rich when !string.IsNullOrWhiteSpace(rich.GetParsedText()): text = rich.GetParsedText(); size = rich.GetThemeFontSize("normal_font_size"); break;
                 case RoyalLabel royal when !string.IsNullOrWhiteSpace(royal.Text): text = royal.Text; size = royal.FittedSize(); break;
                 default: continue;
@@ -440,6 +437,19 @@ public partial class UiReviewSmoke : Node
             if (shown >= (caps ? PhoneMinimumCaps : PhoneMinimumText) - .25f) continue;
             var line = $"SMALL_ON_PHONE {screen}: {shown:0.#}px ({size}) {control.GetType().Name} \"{text.Replace("\n", " ")[..Math.Min(60, text.Length)]}\" {control.GetPath()}";
             _legibility.Add(line); GD.Print(line);
+        }
+    }
+
+    // A painted button is laid out at an exact rect. If its own minimum size (hidden text, style margins) is larger,
+    // Godot stretches it: the surface outgrows the rect and the caption, placed in the rect, sits off centre.
+    private void AuditStretchedButtons(string screen)
+    {
+        foreach (var button in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<RoyalButton>().Where(x => x.IsVisibleInTree()))
+        {
+            var own = button.GetMinimumSize();
+            if ((own.X <= 4 || button.Size.X > own.X + .5f) && (own.Y <= 4 || button.Size.Y > own.Y + .5f)) continue;
+            GD.Print($"ROYAL_BUTTON_STRETCHED {screen}: \"{button.Text}\" {button.Size} held at its minimum {own} {button.GetPath()}");
+            _failures++;
         }
     }
 

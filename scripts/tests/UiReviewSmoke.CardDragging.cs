@@ -31,7 +31,7 @@ public partial class UiReviewSmoke
                 var deck=Read<BattleDeckState>("_deck"); var spells=Read<BattleSpellState>("_spellDeck");
                 var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
                 var camera=Read<Camera2D>("_battleCamera");
-                Write("_battleCameraFollow",false); Write("_battleCameraHold",float.PositiveInfinity); camera.Position=new Vector2(340,380); camera.ForceUpdateScroll();
+                camera.Position=new Vector2(340,380); camera.ForceUpdateScroll();
                 void Ready() { Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud"); }
                 Vector2 CardPoint(int i)=>cards[i].CostPlate.GetGlobalTransformWithCanvas()*(cards[i].CostPlate.Size*.5f);
                 Vector2 FieldPoint()=>battle.GetGlobalTransformWithCanvas()*new Vector2(380,360);

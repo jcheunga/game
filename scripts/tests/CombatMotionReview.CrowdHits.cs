@@ -62,12 +62,12 @@ public partial class CombatMotionReview
         unit.Free();
 
         var number=new BattleFloatText {PresentationScale=()=>1.55f/3.4f};
-        AddChild(number); number.SetProcess(false); number.Setup("-15",Colors.White);
-        Check(Mathf.IsEqualApprox(number.Scale.X*3.4f,1.55f), "Close-up damage labels start at HUD scale rather than model zoom");
-        number._Process(.02);
-        Check(number.Scale.X*3.4f<1.7f, "Animated damage text stays restrained in the closest camera view");
+        AddChild(number); number.SetProcess(false); number.SetupAmount(15,CombatTextKind.Damage);
+        Check(number.Scale.X*3.4f<1.55f, "Close-up damage labels pop in from below HUD scale rather than model zoom");
+        number._Process(.3);
+        Check(Mathf.IsEqualApprox(number.Scale.X*3.4f,1.55f), "Damage text settles at HUD scale in the closest camera view");
         number.PresentationScale=()=>1.55f/2.2f; number._Process(.02);
-        Check(number.Scale.X*2.2f<1.7f, "Existing damage labels adapt when the combat zoom changes");
+        Check(Mathf.IsEqualApprox(number.Scale.X*2.2f,1.55f), "Existing damage labels adapt when the combat zoom changes");
         number.Free();
     }
 

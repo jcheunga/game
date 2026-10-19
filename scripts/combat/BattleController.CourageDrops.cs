@@ -64,7 +64,7 @@ public partial class BattleController
         ember.SetupEmber(from, amount);
         AddChild(ember);
         _courageFlights.Add(ember);
-        SpawnCombatNumber(from + new Vector2(0, -26), $"+{Mathf.RoundToInt(amount)}", new Color("ffd18b"), .55f);
+        SpawnCourageFeedback(from, amount);
         UpdateHud();
         return amount;
     }
@@ -125,7 +125,7 @@ public partial class BattleController
         SpellVfx.Shockwave(this, pickup.Position, new Color(1f, .78f, .4f, .7f), 15f, .4f);
         SpellVfx.Burst(this, gem, "p_ember", 12, .6f, SpellVfx.Fade(new Color("ffe2a1"), new Color("f07a2a")), 3, 6, 45, 110,
             damping: 90, gravity: -25);
-        SpawnCombatNumber(pickup.Position + new Vector2(0, -30), $"+{Mathf.RoundToInt(amount)}", new Color("ffd18b"), .55f);
+        SpawnCourageFeedback(pickup.Position, amount);
         UpdateHud();
         return true;
     }

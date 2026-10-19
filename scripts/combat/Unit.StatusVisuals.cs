@@ -10,6 +10,9 @@ public partial class Unit
     private float StatusHeight => _spriteSheet == null ? Radius + 16
         : Radius * 2 * VisualScale * _spriteSheet.DrawScale * _spriteSheet.FrameHeight / _spriteSheet.FrameWidth * _spriteSheet.HealthBarY;
 
+    /// <summary>Where combat text about this body appears: just over its health bar, so the bar stays readable.</summary>
+    public Vector2 CombatTextPoint => Position + new Vector2(0f, -StatusHeight - 17f);
+
     private void DrawStatusVisuals()
     {
         if (IsDead || TacticalArt != null) return;

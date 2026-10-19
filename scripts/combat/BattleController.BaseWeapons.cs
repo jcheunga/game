@@ -135,7 +135,7 @@ public partial class BattleController
             {
                 if (dealt <= 0) return;
                 TrackDamageDealt(weapon.Title, dealt);
-                SpawnDamageFeedback(ToLocal(position), dealt, color);
+                SpawnDamageFeedback(victim, dealt);
             });
     }
 

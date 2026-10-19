@@ -53,7 +53,7 @@ public partial class BattleController
         SpellVfx.Flash(this, patient.BodyContactPosition, gold, 18f, .4f);
         SpellVfx.Burst(this, patient.Position + new Vector2(0, -6), "p_star", 7, .8f, SpellVfx.Fade(gold.Lightened(.3f), gold), 2.5f, 5f,
             14f, 34f, 30f, Vector2.Up, gravity: -30f);
-        SpawnCombatNumber(patient.Position + new Vector2(0, -24), "+" + Mathf.RoundToInt(amount), new Color("9ff08a"), .8f);
+        SpawnHealFeedback(patient, amount);
     }
 
     /// <summary>A hex or binding on a victim: a shadow sigil at its feet and a pulse of the caster's colour.</summary>
@@ -147,7 +147,7 @@ public partial class BattleController
         var at = defender.WeaponContactPosition.Lerp(attacker.BodyContactPosition, .35f);
         SpellVfx.Flash(this, at, Colors.White, 16f, .2f);
         ContentSparks(at, new Color("ffe2a0"), 12, new Vector2(Mathf.Sign(attacker.Position.X - defender.Position.X), -.5f), 170f);
-        SpawnCombatNumber(defender.Position + new Vector2(0, -26), "PARRY", new Color("f3e2b0"), .55f);
+        SpawnCombatCallout(defender, "Parry");
         AudioDirector.Instance?.PlayShieldBlock(at);
         attacker.HoldPose(.08f);
     }

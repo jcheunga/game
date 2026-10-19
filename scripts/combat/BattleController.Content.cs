@@ -191,7 +191,7 @@ public partial class BattleController
                 var at=charger.BodyContactPosition;
                 SpellVfx.Flash(this,at,Colors.White,18f,.22f);
                 ContentSparks(at,new Color("ffd890"),12,new Vector2(Mathf.Sign(charger.Position.X-unit.Position.X),-.5f),180f);
-                SpawnCombatNumber(unit.Position+new Vector2(0,-26),"BRACED",new Color("f3e2b0"),.55f);
+                SpawnCombatCallout(unit,"Braced");
                 AudioDirector.Instance?.PlayShieldBlock(at);
                 charger.HoldPose(.1f);unit.HoldPose(.1f);
             }
@@ -470,14 +470,14 @@ public partial class BattleController
         if(!IsInstanceValid(target) || target.IsDead || damage<=0) return 0;
         var validSource=IsInstanceValid(source) && !source.IsDead;
         if(ranged && target.ProjectileDodgeCharges>0)
-        { target.ProjectileDodgeCharges--;SpawnCombatNumber(target.Position+new Vector2(0,-24),"DODGE",new Color("cfe3f0"),.5f);return 0; }
+        { target.ProjectileDodgeCharges--;SpawnCombatCallout(target,"Dodge");return 0; }
         if(ranged && target.Definition.ContentBehavior=="projectile_dodge" && target.TryEffect("dodge",12))
         {
             // the eel ducks under the water: a splash where it was, and the shot passes over
             SpellVfx.Burst(this,target.Position,"p_splash",9,.5f,SpellVfx.Fade(new Color(.75f,.9f,.95f,.8f),new Color(.4f,.6f,.7f,.4f)),4f,8f,40f,100f,
                 55f,Vector2.Up,gravity:300f,additive:false,layer:SpellVfx.TroopLayer+1);
             OffsetUnitWithinBattlefield(target,new Vector2(-8,4));
-            SpawnCombatNumber(target.Position+new Vector2(0,-24),"DODGE",new Color("cfe3f0"),.5f);
+            SpawnCombatCallout(target,"Dodge");
             return 0;
         }
         var dtype=type ?? (validSource?source.AttackDamageType:CombatDamageType.Physical);
@@ -528,8 +528,7 @@ public partial class BattleController
             TrackDamageDealt(source,actual);
             if(triggerEffects) AfterContentHit(source,target,actual,ranged);
         }
-        SpawnDamageFeedback(target.Position,actual,validSource?source.Tint:Colors.White);
-        if(criticalHit && actual>0)SpawnCombatNumber(target.Position+new Vector2(0,-28),"CRIT",new Color("f6d47d"),.6f);
+        SpawnDamageFeedback(target,actual,criticalHit);
         return actual;
     }
 

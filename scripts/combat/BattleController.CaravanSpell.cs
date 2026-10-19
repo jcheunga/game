@@ -259,7 +259,7 @@ public partial class BattleController
         _caravanNumberClock = 0f;
         if (_caravanDamageTally.Count == 0) return;
         foreach (var (unit, damage) in _caravanDamageTally)
-            if (IsInstanceValid(unit)) SpawnDamageFeedback(unit.Position, damage, CaravanBarrageFx.Body);
+            SpawnDamageFeedback(unit, damage);
         _caravanDamageTally.Clear();
     }
 

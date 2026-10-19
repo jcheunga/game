@@ -2151,12 +2151,12 @@ public partial class BattleController : Node2D
 			if (IsInstanceValid(attacker) && attacker.CombatLifetime == shotLifetime && !attacker.IsDead)
 			{
 				var hit=ContentDamage(attacker,victim,damage,true,false,shotDamageType);
-				if(criticalShot && hit>0)SpawnCombatNumber(victim.Position+new Vector2(0,-28),"CRIT",new Color("f6d47d"),.6f);
+				if(criticalShot && hit>0)MarkCriticalHit(victim);
 				return hit;
 			}
 			var actual = victim.TakeDamage(damage, shotName, shotDamageType);
 			TrackDamageDealt(shotName, actual);
-			SpawnDamageFeedback(victim.Position, actual, shotTint);
+			SpawnDamageFeedback(victim, actual, criticalShot);
 			return actual;
 		}
 
@@ -2274,7 +2274,7 @@ public partial class BattleController : Node2D
 			_enemyBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(false, baseDamage);
 			BattleParticles.SpawnBaseHitDebris(this, EnemyBaseCorePosition, tint);
-			SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(baseDamage)}", tint.Lightened(0.18f), 0.44f);
+			SpawnBaseFeedback(false, baseDamage);
 		}
 		else
 		{
@@ -2287,13 +2287,13 @@ public partial class BattleController : Node2D
 				var reflected = attacker.TakeDamage(busDamage * _endlessDamageReflectRatio);
 				if (reflected > 0.5f)
 				{
-					SpawnDamageFeedback(attacker.Position, reflected, new Color("b8c0ff"));
+					SpawnDamageFeedback(attacker, reflected);
 				}
 			}
 			_playerBaseFlashTimer = 0.22f;
 			AudioDirector.Instance?.PlayBaseHit(true, busDamage);
 			BattleParticles.SpawnBaseHitDebris(this, PlayerBaseCorePosition, tint);
-			SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -24f), $"-{Mathf.RoundToInt(busDamage)}", tint.Lightened(0.18f), 0.44f);
+			SpawnBaseFeedback(true, busDamage);
 		}
 		CheckBattleEnd();
 	}
@@ -2322,7 +2322,7 @@ public partial class BattleController : Node2D
 						_playerBaseFlashTimer = 0.12f;
 						AudioDirector.Instance?.PlayBusRepair(repaired);
 						SpawnEffect(PlayerBaseCorePosition, unit.Tint.Lightened(0.12f), 7f, 22f, 0.18f);
-						SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(_rng.RandfRange(-10f, 10f), -34f), $"+{Mathf.RoundToInt(repaired)}", unit.Tint.Lightened(0.26f), 0.44f);
+						SpawnBaseFeedback(true, repaired, repair: true);
 					}
 				});
 			}
@@ -2954,7 +2954,7 @@ public partial class BattleController : Node2D
 		var compensated = rawDamage / Mathf.Max(0.05f, target.DamageTakenScale);
 		var applied = target.TakeDamage(compensated, unit.UnitName);
 		ShowWeaponContact(unit,target,applied,false);
-		SpawnDamageFeedback(target.Position, applied, unit.Tint);
+		SpawnDamageFeedback(target, applied);
 	}
 
 	private void ActiveAbilitySnipe(Unit unit)
@@ -2987,7 +2987,7 @@ public partial class BattleController : Node2D
 			var applied = farthest.TakeDamage(damage, unit.UnitName);
 			ShowReleaseTrace(unit,farthest);
 			ShowWeaponContact(unit,farthest,applied,true);
-			SpawnDamageFeedback(farthest.Position, applied, unit.Tint);
+			SpawnDamageFeedback(farthest, applied);
 		}
 	}
 
@@ -3021,7 +3021,7 @@ public partial class BattleController : Node2D
 			}
 
 			var applied = enemy.TakeDamage(damage, unit.UnitName);
-			SpawnDamageFeedback(enemy.Position, applied, unit.Tint);
+			SpawnDamageFeedback(enemy, applied);
 			hitCount++;
 		}
 
@@ -3059,7 +3059,7 @@ public partial class BattleController : Node2D
 			var applied = enemy.TakeDamage(damagePerTarget, unit.UnitName);
 			ShowReleaseTrace(unit,enemy);
 			ShowWeaponContact(unit,enemy,applied,true);
-			SpawnDamageFeedback(enemy.Position, applied, unit.Tint);
+			SpawnDamageFeedback(enemy, applied);
 			hit++;
 		}
 
@@ -3633,7 +3633,7 @@ public partial class BattleController : Node2D
 					SpellVfx.Bolt(this, boss.WeaponContactPosition, target.BodyContactPosition, hex, .5f, 4.5f);
 					SpellVfx.Flash(this, boss.WeaponContactPosition, hex, 24f, .35f);
 					var appliedDamage = target.TakeDamage(30f, boss.UnitName);
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
+					SpawnDamageFeedback(target, appliedDamage);
 					target.ApplyTemporarySpeedModifier(0.58f, 4.5f);
 					DamagePlayersNear(target.Position, 36f, 14f, color);
 					SpellVfx.Sigil(this, target.Position, "shadow", hex, 40, 1f, 1.4f);
@@ -3920,7 +3920,7 @@ public partial class BattleController : Node2D
 		}
 
 		SpawnEffect(unit.Position, color.Lightened(0.08f), 10f, 36f, 0.22f, false);
-		SpawnCombatNumber(unit.Position + new Vector2(_rng.RandfRange(-10f, 10f), -36f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.52f);
+		SpawnHealFeedback(unit, healed);
 
 	}
 
@@ -4301,9 +4301,7 @@ public partial class BattleController : Node2D
 			{
 				TrackDamageDealt(attackerName, appliedDamage);
 			}
-			SpawnDamageFeedback(candidate.Position, appliedDamage, color);
-			if (criticalHit && appliedDamage > 0)
-				SpawnCombatNumber(candidate.Position + new Vector2(0, -28), "CRIT", new Color("f6d47d"), .6f);
+			SpawnDamageFeedback(candidate, appliedDamage, criticalHit);
 		}
 	}
 
@@ -4707,7 +4705,7 @@ public partial class BattleController : Node2D
 				if (target != null)
 				{
 					var appliedDamage = target.TakeDamage(20f, "Witchmark");
-					SpawnDamageFeedback(target.Position, appliedDamage, color);
+					SpawnDamageFeedback(target, appliedDamage);
 					target.ApplyTemporarySpeedModifier(0.7f, 3.2f);
 				}
 				SetStatus("Witchmark fell on the toughest enemy in the lane.");
@@ -4811,7 +4809,7 @@ public partial class BattleController : Node2D
 			}
 
 			var appliedDamage = candidate.TakeDamage(deadUnit.DeathBurstDamage);
-			SpawnDamageFeedback(candidate.Position, appliedDamage, deadUnit.Tint.Lightened(0.15f));
+			SpawnDamageFeedback(candidate, appliedDamage);
 		}
 	}
 
@@ -4934,7 +4932,7 @@ public partial class BattleController : Node2D
 		if (actualReflected > 0.05f)
 		{
 			AudioDirector.Instance?.PlayEnemySpecial("reflect", reflector.Position);
-			SpawnDamageFeedback(attacker.Position, actualReflected, reflector.Tint.Lightened(0.3f));
+			SpawnDamageFeedback(attacker, actualReflected);
 		}
 	}
 
@@ -4955,7 +4953,7 @@ public partial class BattleController : Node2D
 		var actualReflected = attacker.TakeDamage(reflectedDamage);
 		if (actualReflected > 0.05f)
 		{
-			SpawnDamageFeedback(attacker.Position, actualReflected, target.Tint.Lightened(0.3f));
+			SpawnDamageFeedback(attacker, actualReflected);
 		}
 	}
 
@@ -5068,41 +5066,12 @@ public partial class BattleController : Node2D
 		AddChild(effect);
 	}
 
-	private void SpawnDamageFeedback(Vector2 position, float damage, Color color)
-	{
-		if (damage <= 0.05f)
-		{
-			return;
-		}
-
-		SpawnCombatNumber(
-			position + new Vector2(_rng.RandfRange(-6f, 6f), -8f),
-			$"-{Mathf.RoundToInt(damage)}",
-			color.Lightened(0.3f),
-			0.46f);
-	}
-
 	// Now and then a living enemy groans, shrieks or rattles as the host advances.
 	private void TickHordeVoices()
 	{
 		if (_battleEnded || _battlePaused || AudioDirector.Instance == null) return;
 		var enemies = _units.Where(u => u.Team == Team.Enemy && !u.IsDead).ToList();
 		if (enemies.Count > 0) AudioDirector.Instance.TickHordeVoices(enemies[_rng.RandiRange(0, enemies.Count - 1)]);
-	}
-
-	// Battle text is numbers only (damage, healing, repairs); names and callouts stay off the field.
-	private void SpawnCombatNumber(Vector2 position, string text, Color color, float lifetime = 0.5f)
-	{
-		var floatText = new BattleFloatText();
-		// Keep combat text near its old on-screen size while the camera is zoomed in.
-		if (_battleCamera != null) floatText.PresentationScale = () => 1.2f / _battleCamera.Zoom.X;
-		floatText.Position = position;
-		floatText.Setup(
-			text,
-			color,
-			lifetime,
-			new Vector2(_rng.RandfRange(-10f, 10f), _rng.RandfRange(-54f, -42f)));
-		AddChild(floatText);
 	}
 
 	private Vector2 ClampBattlefieldPoint(Vector2 position)
@@ -5188,7 +5157,7 @@ public partial class BattleController : Node2D
 
 			hits++;
 			totalDamage += appliedDamage;
-			SpawnDamageFeedback(target.Position, appliedDamage, color);
+			SpawnDamageFeedback(target, appliedDamage);
 		}
 
 		return hits > 0
@@ -5215,7 +5184,7 @@ public partial class BattleController : Node2D
 			healedUnits++;
 			totalHealing += healed;
 			mended.Add(ally);
-			SpawnCombatNumber(ally.Position + new Vector2(0f, -24f), $"+{Mathf.RoundToInt(healed)}", color.Lightened(0.24f), 0.46f);
+			SpawnHealFeedback(ally, healed);
 		}
 
 		HealVfx(targetPosition, spell.Radius, mended);
@@ -5241,7 +5210,7 @@ public partial class BattleController : Node2D
 			if (appliedDamage > 0.05f)
 			{
 				totalDamage += appliedDamage;
-				SpawnDamageFeedback(target.Position, appliedDamage, color);
+				SpawnDamageFeedback(target, appliedDamage);
 			}
 
 			slowed++;
@@ -5278,7 +5247,7 @@ public partial class BattleController : Node2D
 			}
 
 			totalDamage += appliedDamage;
-			SpawnDamageFeedback(targets[i].Position, appliedDamage, color);
+			SpawnDamageFeedback(targets[i], appliedDamage);
 		}
 
 		return targets.Length > 0
@@ -5378,7 +5347,7 @@ public partial class BattleController : Node2D
 			if (appliedDamage > 0.05f)
 			{
 				totalDamage += appliedDamage;
-				SpawnDamageFeedback(target.Position, appliedDamage, color);
+				SpawnDamageFeedback(target, appliedDamage);
 			}
 			hits++;
 		}
@@ -6086,7 +6055,7 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.18f;
 		AudioDirector.Instance?.PlayBusRepair(healAmount);
 		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
-		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(healAmount)}", new Color("b7efc5"), 0.56f);
+		SpawnBaseFeedback(true, healAmount, repair: true);
 	}
 
 	private void DamageEnemyBaseByRatio(float ratio, Color color)
@@ -6101,7 +6070,7 @@ public partial class BattleController : Node2D
 		_enemyBaseFlashTimer = 0.22f;
 		AudioDirector.Instance?.PlayBaseHit(false, damageAmount);
 		SpawnEffect(EnemyBaseCorePosition, color, 10f, 30f, 0.22f, false);
-		SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+		SpawnBaseFeedback(false, damageAmount);
 
 	}
 
@@ -6116,7 +6085,7 @@ public partial class BattleController : Node2D
 		_enemyBaseHealth = Mathf.Min(_enemyBaseMaxHealth, _enemyBaseHealth + repairAmount);
 		_enemyBaseFlashTimer = 0.18f;
 		SpawnEffect(EnemyBaseCorePosition, color.Lightened(0.08f), 10f, 28f, 0.22f);
-		SpawnCombatNumber(EnemyBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repairAmount)}", color.Lightened(0.18f), 0.56f);
+		SpawnBaseFeedback(false, repairAmount, repair: true);
 
 	}
 
@@ -6132,7 +6101,7 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.18f;
 		AudioDirector.Instance?.PlayBusRepair(repaired);
 		SpawnEffect(PlayerBaseCorePosition, new Color("80ed99"), 10f, 28f, 0.22f);
-		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"+{Mathf.RoundToInt(repaired)}", new Color("b7efc5"), 0.56f);
+		SpawnBaseFeedback(true, repaired, repair: true);
 		return repaired;
 	}
 
@@ -6149,7 +6118,7 @@ public partial class BattleController : Node2D
 		_playerBaseFlashTimer = 0.22f;
 		AudioDirector.Instance?.PlayBaseHit(true, damageAmount);
 		SpawnEffect(PlayerBaseCorePosition, color, 10f, 30f, 0.22f, false);
-		SpawnCombatNumber(PlayerBaseCorePosition + new Vector2(0f, -38f), $"-{Mathf.RoundToInt(damageAmount)}", color.Lightened(0.1f), 0.56f);
+		SpawnBaseFeedback(true, damageAmount);
 
 	}
 

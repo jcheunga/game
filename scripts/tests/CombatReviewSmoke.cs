@@ -70,6 +70,7 @@ public partial class CombatReviewSmoke : Node
             else if (args.Contains("--mana")) await CheckManaFromKills();
             else if (args.Contains("--caravan-spell")) await CheckCaravanSpell();
             else if (args.Contains("--courage-drops")) await CheckCourageDrops();
+            else if (args.Contains("--combat-text")) await CheckCombatText();
             else if (args.Contains("--progression-rewards")) CheckProgressionRewards();
             else if(args.Contains("--bossrush-gameplay"))await ReviewBossRushGameplay();
             else if (args.Contains("--stage-stars")) await CheckStageStars();
@@ -558,6 +559,8 @@ public partial class CombatReviewSmoke : Node
         var timeLimit = limitArg == null ? 210 : Math.Clamp(int.Parse(limitArg.Split('=')[1]), 60, 600);
         while (!Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_elapsed") < timeLimit)
         {
+            // A window losing focus pauses the battle; an unattended review keeps playing.
+            if (Read<bool>(battle, "_battlePaused")) Invoke(battle, "TogglePause");
             if (OS.GetCmdlineUserArgs().Contains("--collect-packs") && tick % 30 == 0)
             {
                 foreach (var pack in Read<List<CouragePickup>>(battle, "_couragePickups").Where(p => p.Available).ToArray())

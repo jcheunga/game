@@ -2779,7 +2779,8 @@
    31
   ],
   "mode": "key-light",
-  "ink": "auto"
+  "ink": "auto",
+  "lo": 80
  },
  {
   "name": "icon-wheat",

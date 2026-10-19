@@ -82,6 +82,7 @@ public static class CloudSaveService
 
 			if (!response.IsSuccessStatusCode)
 			{
+				PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, profileId);
 				message = $"Upload failed: HTTP {(int)response.StatusCode}";
 				_lastStatus = message;
 				return false;
@@ -133,6 +134,7 @@ public static class CloudSaveService
 
 			if (!response.IsSuccessStatusCode)
 			{
+				PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, profileId);
 				message = $"Download failed: HTTP {(int)response.StatusCode}";
 				_lastStatus = message;
 				return false;
@@ -210,6 +212,7 @@ public static class CloudSaveService
 
 			if (!response.IsSuccessStatusCode)
 			{
+				PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, profileId);
 				return new CloudSaveSnapshot { Status = "error", Message = $"HTTP {(int)response.StatusCode}" };
 			}
 

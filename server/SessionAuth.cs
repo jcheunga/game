@@ -130,6 +130,14 @@ public static class SessionAuth
         message = "A valid player session is required for this request."
     }, statusCode: StatusCodes.Status401Unauthorized);
 
+    /// <summary>
+    /// The answer to a request whose session was not accepted. A session of an account deleted since
+    /// (on another device, or by support) gets 410 "account_deleted", so that device can forget the
+    /// account too. Anything else, including no token at all, is the usual 401.
+    /// </summary>
+    public static IResult Refused(HttpRequest request) =>
+        AccountDeletion.WasDeletedSession(request) ? AccountDeletion.Deleted() : Unauthorized();
+
     /// <summary>The stored hash of the request's bearer token, or "" when it carries none.</summary>
     public static string RequestTokenHash(HttpRequest request) =>
         ReadBearerToken(request) is { Length: > 0 } token ? Hash(token) : "";

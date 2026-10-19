@@ -7,6 +7,12 @@ public partial class GameState
     public string AccountProvider { get; private set; } = "";
     public string AccountLabel { get; private set; } = "";
     public bool SkipAutoSignIn { get; private set; }
+    /// <summary>
+    /// Set when the device found its account deleted elsewhere and reset itself; home explains it once.
+    /// It is saved, so the explanation still comes if the game closes before home opens.
+    /// </summary>
+    public bool AccountDeletedNoticePending { get; private set; }
+    public void AcknowledgeAccountDeletedNotice() { if (!AccountDeletedNoticePending) return; AccountDeletedNoticePending = false; Persist(); }
     public void SetSignedInAccount(string provider, string label)
     { AccountProvider = provider; AccountLabel = label; SkipAutoSignIn = false; Persist(); }
     /// <summary>After an explicit sign-out the player stays a guest until they choose an account again.</summary>
@@ -30,8 +36,9 @@ public partial class GameState
     /// After the server deleted this account, the device forgets it too: progress, the account's local
     /// backups and the save's backup copy go, while sound, language and privacy choices stay. The new
     /// guest does not sign in by itself, so the phone's game account is not linked again unasked.
+    /// When the deletion happened elsewhere (another device, support), home tells the player once why.
     /// </summary>
-    public void ForgetDeletedAccount()
+    public void ForgetDeletedAccount(bool deletedElsewhere = false)
     {
         var previous = BuildSaveData();
         using (var folder = DirAccess.Open(AccountBackupFolder))
@@ -44,6 +51,7 @@ public partial class GameState
         }
         StartNewGuest(previous);
         SkipAutoSignIn = true;
+        AccountDeletedNoticePending = deletedElsewhere;
         LastResultMessage = "Account deleted. You're playing as a new guest.";
         // Each save copies the one before it into the backup, so a second save leaves the deleted account in neither file.
         Persist();

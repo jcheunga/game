@@ -8,8 +8,8 @@ public partial class UiReviewSmoke
     /// <summary>
     /// Settings → Account → Delete account, tapped like a player. A signed-in player sees their sign-in named, and
     /// with no server nothing is deleted. A guest that never reached a server confirms (after keeping the account
-    /// once) and only the device resets; server_e2e.sh covers the server side. Run with --mobile-preview for the
-    /// phone-sized canvas.
+    /// once) and only the device resets; server_e2e.sh covers the server side. Last, an account deleted elsewhere
+    /// resets the device and home explains it once. Run with --mobile-preview for the phone-sized canvas.
     /// </summary>
     private async Task ReviewAccountDeletion()
     {
@@ -67,6 +67,26 @@ public partial class UiReviewSmoke
         Check(state.PlayerProfileId != profile && state.HighestUnlockedStage == 1 && state.SkipAutoSignIn && state.AccountProvider.Length == 0,
             "Confirming starts the device again as a new guest that does not sign in by itself");
         Check(GetTree().CurrentScene is MainMenu && !((MapMenu)GetTree().CurrentScene).HasHomeModal, "Deleting returns to the camp");
+        Check(DeletedNotice() == null && !state.AccountDeletedNoticePending, "Deleting in Settings shows no deleted-elsewhere notice");
         await Capture("after-delete");
+
+        // Deleted on another device or by support: a refused request resets the device, and home says why once.
+        var guest = state.PlayerProfileId;
+        PlayerSessionHttp.NoticeAccountDeleted(410, "{\"error\":\"account_deleted\"}", guest);
+        await Wait(1.5);
+        var notice = DeletedNotice();
+        Check(state.PlayerProfileId != guest && GetTree().CurrentScene is MainMenu && notice != null,
+            "An account deleted elsewhere resets the device and home explains why");
+        if (notice == null) return;
+        AuditText("Home / Account deleted"); await Capture("deleted-elsewhere-notice");
+        var ok = Walk(notice).OfType<Button>().ToList();
+        Check(ok.Count == 1 && ok[0].Text == "OK" && GetViewport().GetVisibleRect().Encloses(ok[0].GetGlobalRect()), "The notice has one OK button, on screen");
+        await TapModal(ok[0]);
+        Check(DeletedNotice() == null && !state.AccountDeletedNoticePending, "OK closes the notice");
+        await Open("MainMenu");
+        Check(DeletedNotice() == null, "Home does not show it again");
     }
+
+    private Control DeletedNotice() => GetTree().CurrentScene is MainMenu home
+        ? Walk(home).OfType<Control>().FirstOrDefault(c => c.Name == "AccountDeletedNotice" && !c.IsQueuedForDeletion()) : null;
 }

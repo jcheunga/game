@@ -23,6 +23,11 @@ public static class AccountSignIn
         public int StatusCode { get; }
         public RequestFailure(string message, int statusCode) : base(message) { StatusCode = statusCode; }
     }
+    /// <summary>The server says this device's account was deleted; PlayerSessionHttp resets the device to a new guest.</summary>
+    public sealed class AccountDeletedException : InvalidOperationException
+    {
+        public AccountDeletedException() : base("This account was deleted.") { }
+    }
     public static Task<JsonElement> Request(string path) => Request(path, json: null);
     /// <summary>Posts a body, serialized with its ServerJson type info (for example ServerJson.Default.EmailStartRequest).</summary>
     public static Task<JsonElement> Request<T>(string path, T body, JsonTypeInfo<T> bodyType) => Request(path, JsonSerializer.Serialize(body, bodyType));
@@ -38,12 +43,32 @@ public static class AccountSignIn
         return await SendRequest(path, json);
     }
 
-    /// <summary>Called whenever the server answers: registers the guest, tries the phone's own game account, then brings any store refunds to the save.</summary>
+    /// <summary>Called whenever the server answers: checks the session, registers the guest, tries the phone's own game account, then brings any store refunds to the save.</summary>
     public static async Task OnServerReachable()
     {
+        await CheckSessionOnce();
         await EnsureGuestSession();
         await PlatformSignIn.TryAutoSignIn();
         await WalletAdjustmentSync.SyncAsync();
+    }
+
+    private static bool _sessionChecked;
+    /// <summary>
+    /// Once a launch, a device holding a session asks whether it still stands, so an account deleted on
+    /// another device is noticed on opening the game rather than after the next battle.
+    /// </summary>
+    private static async Task CheckSessionOnce()
+    {
+        var state = GameState.Instance;
+        if (_sessionChecked || state == null || Origin.Length == 0 || state.PlayerAuthToken.Length == 0) return;
+        _sessionChecked = true;
+        try { await SendRequest("/cloud-save/info?profileId=" + Uri.EscapeDataString(state.PlayerProfileId), null); }
+        catch (Exception e)
+        {
+            // Only a server that could not be reached is asked again; a refused session was answered.
+            if (e is not RequestFailure and not AccountDeletedException) _sessionChecked = false;
+            Godot.GD.Print($"Session check: {e.Message}");
+        }
     }
 
     private static bool _registeringGuest;
@@ -78,7 +103,8 @@ public static class AccountSignIn
     {
         if (Origin.Length == 0) throw new InvalidOperationException("Set the game server in Settings to sign in.");
         using var request = new HttpRequestMessage(json == null ? HttpMethod.Get : HttpMethod.Post, Origin + path);
-        if (profile.Length == 0) PlayerSessionHttp.Apply(request, GameState.Instance.PlayerProfileId);
+        var sentProfile = profile.Length > 0 ? profile : GameState.Instance.PlayerProfileId;
+        if (profile.Length == 0) PlayerSessionHttp.Apply(request, sentProfile);
         else
         {
             request.Headers.Add("X-Convoy-Profile", profile);
@@ -89,7 +115,9 @@ public static class AccountSignIn
         {
             using var response = await Client.SendAsync(request);
             if ((int)response.StatusCode == 429) throw new InvalidOperationException("Too many attempts. Wait a minute and try again.");
-            using var result = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var text = await response.Content.ReadAsStringAsync();
+            using var result = JsonDocument.Parse(text);
+            if (PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, text, sentProfile)) throw new AccountDeletedException();
             if (!response.IsSuccessStatusCode) throw new RequestFailure(Text(result.RootElement,"message", "Could not sign in. Try again."), (int)response.StatusCode);
             return result.RootElement.Clone();
         }

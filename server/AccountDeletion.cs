@@ -23,6 +23,13 @@ public static class AccountDeletion
     public static bool IsDeletedProfile(string profileId) =>
         profileId.StartsWith(DeletedProfilePrefix, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>The answer to a session of a deleted account: the game then resets itself to a new guest.</summary>
+    public static IResult Deleted() => Results.Json(new
+    {
+        error = "account_deleted",
+        message = "This account was deleted."
+    }, statusCode: StatusCodes.Status410Gone);
+
     /// <summary>Whether the request carries a session of an account that has since been deleted.</summary>
     public static bool WasDeletedSession(HttpRequest request)
     {

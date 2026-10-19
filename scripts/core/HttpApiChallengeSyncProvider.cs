@@ -49,6 +49,7 @@ public sealed class HttpApiChallengeSyncProvider : IChallengeSyncProvider
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
+			PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, batch.PlayerProfileId);
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
 		}
 

@@ -2,6 +2,7 @@
 # End-to-end test against a real server: starts a throwaway local server, plays a first install
 # (guest, cloud backup, email sign-in, every account feature, sign-out, sign back in), restarts the
 # server, then plays a second install that signs in to the same account, restores it and deletes it.
+# Last the first install opens again, still signed in, and must notice the account is gone.
 # The server prints sign-in codes to its log (CROWNROAD_DEV_SIGN_IN), so no email is sent.
 set -u
 cd "$(dirname "$0")/../.."
@@ -29,8 +30,9 @@ start_server() {
 stop_server() { [ -n "$server" ] && kill "$server" 2> /dev/null && wait "$server" 2> /dev/null; server=""; }
 trap stop_server EXIT
 
+# play <role> [install]: the install's save defaults to the role's own.
 play() {
-    godot --headless --path . res://scenes/tests/ServerEndToEnd.tscn -- --save-suffix="server-e2e-$1" --role="$1" \
+    godot --headless --path . res://scenes/tests/ServerEndToEnd.tscn -- --save-suffix="server-e2e-${2:-$1}" --role="$1" \
         --server="http://127.0.0.1:$port" --server-log="$log" --handoff="$work/handoff.json" --admin-key="$admin_key" 2>&1 | grep -E "^E2E_" | tee -a "$results"
 }
 
@@ -41,6 +43,12 @@ play first
 stop_server
 start_server || exit 1
 play second
+play return first
+# The returning install's refused calls must not have registered the deleted profile again.
+account=$(sed -E 's/.*"account":"([^"]*)".*/\1/' "$work/handoff.json")
+rows=$(sqlite3 "$work/e2e.db" "SELECT COUNT(*) FROM players WHERE profile_id = '$account'" 2>&1)
+[ "$rows" = 0 ] && echo "E2E_CHECK: PASS The deleted account has no player row on the server" ||
+    echo "E2E_CHECK: FAIL The deleted account has no player row on the server ($rows)"
 echo "Server log: $log"
-# Both installs must report a result with no failures.
-[ "$(grep -c '^E2E_RESULT: 0 failures' "$results")" -eq 2 ]
+# Every run must report a result with no failures, and the database must agree.
+[ "$(grep -c '^E2E_RESULT: 0 failures' "$results")" -eq 3 ] && [ "$rows" = 0 ]

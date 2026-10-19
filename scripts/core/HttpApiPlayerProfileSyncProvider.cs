@@ -48,6 +48,7 @@ public sealed class HttpApiPlayerProfileSyncProvider : IPlayerProfileSyncProvide
 		var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 		if (!response.IsSuccessStatusCode)
 		{
+			PlayerSessionHttp.NoticeAccountDeleted((int)response.StatusCode, responseBody, request.PlayerProfileId);
 			throw new InvalidOperationException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
 		}
 

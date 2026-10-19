@@ -99,6 +99,7 @@ public static partial class ServerTests
                 ("CallsignSurvivesPurchaseAndCloudSave", () => TestCallsignSurvivesPurchaseAndCloudSave(client)),
                 ("CredentialProtection", TestCredentialProtection),
                 ("AccountDeletion", () => TestAccountDeletion(client)),
+                ("AccountDeletionTellsOtherDevices", () => TestAccountDeletionTellsOtherDevices(client)),
                 ("AccountDeletionRevokesApple", () => TestAccountDeletionRevokesApple(client)),
                 ("AccountDeletionCoversSchema", TestAccountDeletionCoversSchema),
                 ("AccountDeletionMigration", TestAccountDeletionMigration),

@@ -33,8 +33,12 @@ public static class Endpoints
         SessionAuth.Session? priorSession = null;
         if (knownProfile && !SessionAuth.TryAuthorize(request, profileId, out priorSession))
         {
-            return SessionAuth.Unauthorized();
+            return SessionAuth.Refused(request);
         }
+        // A device still holding a session of a deleted account is told so, instead of quietly
+        // registering the deleted profile ID again as a new guest.
+        if (!knownProfile && AccountDeletion.WasDeletedSession(request))
+            return AccountDeletion.Deleted();
 
         using var tx = conn.BeginTransaction();
         if (priorSession != null)
@@ -1262,7 +1266,7 @@ public static class Endpoints
             return true;
         }
 
-        error = SessionAuth.Unauthorized();
+        error = SessionAuth.Refused(request);
         return false;
     }
 
@@ -1273,7 +1277,7 @@ public static class Endpoints
             return null;
         }
 
-        return SessionAuth.Unauthorized();
+        return SessionAuth.Refused(request);
     }
 
     private static string BuildRelayEndpoint(HttpRequest request, string roomId)

@@ -62,13 +62,18 @@ public partial class CodexMenu : RoyalScreen
         var ink = new Color("22150e");
         var heading = spec.Label("list.heading", $"DISCOVERED {entries.Count(entry => state.IsCodexEntryDiscovered(entry.Id))} / {entries.Length}", 150, ink);
         heading.ShadowOffset = Vector2.Zero; _layer.AddChild(heading);
-        // The ornamental rule fills the gap between the heading and the page count.
-        var rule = spec.Rect("list.heading.rule");
-        var ruleLeft = Mathf.Max(rule.Position.X, heading.Position.X + heading.TextWidth(heading.FontSize) + 12);
-        var ruleRight = spec.Number("list.page", "pen_x", rule.End.X + 20) - 12;
-        if (ruleRight - ruleLeft > 30) _layer.AddChild(RoyalKit.Image("codex-rule", new Rect2(ruleLeft, rule.Position.Y, ruleRight - ruleLeft, rule.Size.Y)));
+        // The page count ends just short of the prev arrow (the phone text floor makes "PAGE 12 OF 29"
+        // wider than the concept's "PAGE 1 OF 7"), and the ornamental rule fills the gap before it.
         var pageLabel = spec.Label("list.page", $"PAGE {_page + 1} OF {pages}", 100, new Color("1b0f07"));
-        pageLabel.ShadowOffset = Vector2.Zero; _layer.AddChild(pageLabel);
+        pageLabel.ShadowOffset = Vector2.Zero; pageLabel.ShrinkToFit = false;
+        var pageWidth = pageLabel.TextWidth(pageLabel.FontSize);
+        var pageLeft = Mathf.Min(pageLabel.Position.X, spec.Rect("page.prev").Position.X - 10 - pageWidth);
+        pageLabel.Position = new Vector2(pageLeft, pageLabel.Position.Y); pageLabel.Size = new Vector2(pageWidth, pageLabel.Size.Y);
+        _layer.AddChild(pageLabel);
+        var rule = spec.Rect("list.heading.rule");
+        var ruleLeft = Mathf.Max(rule.Position.X, heading.Position.X + heading.TextWidth(heading.FittedSize()) + 12);
+        var ruleRight = pageLeft - 12;
+        if (ruleRight - ruleLeft > 30) _layer.AddChild(RoyalKit.Image("codex-rule", new Rect2(ruleLeft, rule.Position.Y, ruleRight - ruleLeft, rule.Size.Y)));
         for (var side = 0; side < 2; side++)
         {
             var key = side == 0 ? "page.prev" : "page.next";

@@ -71,6 +71,14 @@ public partial class UiReviewSmoke
         foreach (var (scene, name) in new[] { ("CodexMenu", "codex"), ("SettingsMenu", "settings"), ("EndlessMenu", "endless"), ("MultiplayerMenu", "multiplayer"),
             ("ForgeMenu", "forge"), ("SeasonPassMenu", "season"), ("LoadoutMenu", "preparation") })
             if (Want(name)) { await Open(scene); await Capture(name); }
+        if (Want("codex-last"))
+        {
+            // Every entry discovered gives the widest heading and page count ("PAGE 29 OF 29").
+            await Open("CodexMenu"); CheckCodexHeader("first");
+            bool CanTurn() => Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.IsVisibleInTree() && !b.Disabled && b.AccessibilityName == "Next codex page");
+            while (CanTurn()) await PressHint("Next codex page");
+            CheckCodexHeader("last"); await Capture("codex-last");
+        }
         if (Want("battle") || Want("victory") || Want("pause") || Want("battle-action"))
         {
             GameState.Instance.SetSelectedStage(1);
@@ -124,5 +132,17 @@ public partial class UiReviewSmoke
             }
         }
         GD.Print($"CONCEPTS_RESULT: {_failures} failures"); QuitAfterAudio(0);
+    }
+
+    /// <summary>The codex heading, page count and prev arrow sit side by side without overlapping.</summary>
+    private void CheckCodexHeader(string page)
+    {
+        var controls = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Control>().Where(c => c.IsVisibleInTree()).ToArray();
+        var heading = controls.OfType<RoyalLabel>().FirstOrDefault(l => l.Text.StartsWith("DISCOVERED "));
+        var count = controls.OfType<RoyalLabel>().FirstOrDefault(l => l.Text.StartsWith("PAGE "));
+        var prev = controls.OfType<Button>().FirstOrDefault(b => b.AccessibilityName == "Previous codex page");
+        float End(RoyalLabel label) => label.Position.X + label.TextWidth(label.FittedSize());
+        Check(heading != null && count != null && prev != null && End(heading) < count.Position.X && End(count) <= prev.Position.X,
+            $"Codex {page} page: heading, page count ({count?.Text}) and arrows don't overlap");
     }
 }

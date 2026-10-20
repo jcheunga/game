@@ -263,7 +263,7 @@ def seg_dist(P_, a, b):
     return np.linalg.norm(P_ - (a + t[:, None] * ab), axis=1)
 
 
-def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None):
+def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None, gate=None):
     """Weights by distance to each bone, scaled by how thick that part is. `allowed` limits a layer to its own bones
     (an arm layer never follows the hips; a weapon follows only its bone); `scale` damps some bones' pull (a skirt
     sways with the thighs under it, but only part of the way)."""
@@ -273,9 +273,22 @@ def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None):
         vg.add(list(range(len(pix))), 1.0, 'REPLACE')
     else:
         D = np.stack([seg_dist(pix, h, t) / max(6.0, r * torso_len) for n, h, t, r in deform], axis=1)
-        W = np.exp(-(D ** 2)) ** sharp
-        W += 1e-12
+        # exp(-D^2)^sharp, normalised, in the log domain: paint a few radii from every bone (a claw tip, a tatter's
+        # end) underflows to nothing for all of them, and a floor then shared it evenly among ALL bones, so it moved
+        # with their average (a paw's claw stretched to the tail as the legs swung apart). It follows its nearest
+        logit = -sharp * D ** 2
+        if gate:
+            # {bone: (point, r0, r1)}: that bone's pull only near a point, fading out from r0 to r1 px (an arm
+            # layer's chest bone holds the shoulder's end; a hand or claws resting against the torso lie well
+            # inside the chest's wide reach, and stayed behind with it as the arm swung, stretched into a ribbon)
+            for k_, (n, *_r) in enumerate(deform):
+                if n in gate:
+                    pt, r0, r1 = gate[n]
+                    dd = np.hypot(pix[:, 0] - pt[0], pix[:, 1] - pt[1])
+                    logit[:, k_] += np.log(np.clip((r1 - dd) / max(1e-6, r1 - r0), 0, 1) + 1e-30)
+        W = np.exp(logit - logit.max(axis=1, keepdims=True))
         W /= W.sum(axis=1, keepdims=True)
+        skin.far = getattr(skin, 'far', 0) + int((np.exp(logit.max(axis=1)) < 1e-10).sum())
         if scale:
             # after normalising: a damped bone's lost share goes to the hips (scaled before, a bone that is the only
             # one near some paint would keep all of it)
@@ -778,7 +791,6 @@ class Animator:
     HEEL_OFF = 18.0      # deg the foot turns on its toe as it leaves the ground
     HEEL_STRIKE = 12.0   # deg its toe is up as the heel lands
     speed_lps = 0.0      # the unit's battle speed in leg lengths per second (set by build())
-    CAPE_FALL = -0.6     # a cape's swing against a forward fall, per degree of the fall (down onto the back)
 
     def gait(self):
         """The unit's gait: its class's, and a jog when it moves too fast for a natural walk."""
@@ -1403,6 +1415,38 @@ class Animator:
             ds = (sh - t + 180) % 360 - 180
             self.turn_to(sb, t + max(-12.0, min(12.0, ds)), lying)
 
+    @staticmethod
+    def no_higher(a, most=6.0):
+        """An angle in the picture plane turned down to at most `most` degrees above level, toward the side it points."""
+        e = math.degrees(math.asin(max(-1.0, min(1.0, math.sin(math.radians(a))))))
+        if e <= most:
+            return a
+        return most if math.cos(math.radians(a)) >= 0 else 180.0 - most
+
+    def lie_on_ground(self, top):
+        """After the topple (bones are aimed before it, in the body's own upright frame, so nothing there knows
+        which way the ground is): a lying leg runs level or down to the ground, never more than a few degrees up (on
+        a body whose head came to rest lower than its hips the spine's line carried on through the legs pointed the
+        feet at the sky), and face down the cape lies level toward the feet, draped a little onto the back and legs
+        (a fixed swing per degree of the fall, or the spine's own line when the head lies low, stood it up off the
+        body like a fin or hung it down through the ground)."""
+        lying = min(1.0, max(0.0, (abs(top) - 45.0) / 40.0))
+        if lying <= 0:
+            return
+        if self.split:
+            for s_ in ('R', 'L'):
+                for b_ in ('thigh.' + s_, 'shin.' + s_):
+                    if b_ in self.pb:
+                        a_ = self.world_angle(b_)
+                        self.turn_to(b_, self.no_higher(a_), lying)
+        if top < 0 and 'cape' in self.pb and not self.lm.get('wings') and 'spine' in self.pb:
+            feet = (self.world_angle('spine') + 180.0) % 360
+            k_ = sm(min(1.0, -top / 80.0))
+            self.turn_to('cape', 184.0 if math.cos(math.radians(feet)) < 0 else -4.0, k_)
+            # and settled onto it: a full cloak hangs a body's depth off the back, which face down is a heap
+            # standing up off the corpse
+            self.pb['cape'].scale = (1.0 - .55 * k_, 1.0, 1.0)
+
     def death(self, i, n, impact, forward):
         """The unit's own death (its clip's motion, as roster/deaths.py chose it), in the picture plane: a topple
         about the feet, legs that kneel, sit or fold, a lift or a spin, then a bounce and stillness. The hands let
@@ -1434,6 +1478,7 @@ class Animator:
         # a cape falls with gravity: it swings against the topple, and on a body fallen on its face it settles over
         # the back instead of standing up off it
         top_ = p.get('top', 0.0)
+        self.top_dbg = top_
         if self.lm.get('wings') and 'cape' in self.pb:
             # wings fold as the body falls: they never sail up off a body lying on its face
             k_w = min(1.0, abs(top_) / 70.0)
@@ -1444,15 +1489,22 @@ class Animator:
         # face down, the feet point back along the legs, soles up (left at the standing angle, the toes dig into
         # the ground and the corpse is propped up on them)
         prone = min(1.0, max(0.0, -top_ / 80.0))
+        # on its back a dead foot falls slack, toes dropping toward the line of the leg (left square to the shin,
+        # a big foot stands up off the corpse like a raised paw)
+        supine = min(1.0, max(0.0, top_ / 80.0)) if self.split else 0.0
         for s_ in ('R', 'L'):
             fb, sb = 'foot.' + s_, 'shin.' + s_
             if prone and fb in self.rest and sb in self.rest:
                 rel = (self.rest[fb] - self.rest[sb] + 180) % 360 - 180
                 self.rot(fb, (12.0 - rel) * prone)
+            elif supine and fb in self.rest and sb in self.rest:
+                rel = (self.rest[fb] - self.rest[sb] + 180) % 360 - 180
+                if abs(rel) > 40.0:
+                    self.rot(fb, (math.copysign(40.0, rel) - rel) * supine)
         if top_wings:
             pass
-        elif top_ < 0:
-            self.rot('cape', self.CAPE_FALL * top_)
+        elif top_ < 0 and 'cape' in self.pb:
+            pass                    # face down: laid over the back after the topple (lie_on_ground)
         elif 'cape' in self.pb:
             # on its back the body lies on its cape: turned onto the line of the back and flattened under it (left
             # hanging, it would prop the body up off the ground like a tablecloth)
@@ -1465,6 +1517,7 @@ class Animator:
                    sy=1.0 + sq)
         if abs(self.pb['root'].scale[0]) < 0.35:      # a spin turns the body, never down to an edge-on sliver
             self.pb['root'].scale[0] = math.copysign(0.35, self.pb['root'].scale[0] or 1.0)
+        self.lie_on_ground(top_)
         self.air = p.get('air', 0.0)
 
 
@@ -2019,7 +2072,12 @@ def rig_humanoid(ident, d, lm, paint, img, info):
                 allowed, pull = SPLIT_BASE, garment_pull(lm, paint)
             # a leg bends at a hinge: its thigh, shin and foot keep their painted shapes (soft weights crush a
             # knee bent past a right angle into rubber)
-            skin(ob, arm, pix, bones + extra, torso, allowed, scale=pull, sharp=8.0 if name.startswith('leg_') else 4.0)
+            gate = None
+            if name.startswith('arm_') and P(lm, 'shoulder_' + name[-1]) is not None:
+                r0, r1 = (float(v) for v in os.environ.get('PUPPET_ARM_GATE', '.22,.45').split(','))
+                gate = {'chest': (P(lm, 'shoulder_' + name[-1]), r0 * torso, r1 * torso)}
+            skin(ob, arm, pix, bones + extra, torso, allowed, scale=pull, sharp=8.0 if name.startswith('leg_') else 4.0,
+                 gate=gate)
             if legs and name in ('base', 'skirt'):
                 # a skirt sways with the stride, but a long hem must not swing like a rigid board pinned at the hip:
                 # the thighs' pull fades out below the knee line, so a coat's hem moves about as much as a short
@@ -2051,6 +2109,7 @@ def rig_humanoid(ident, d, lm, paint, img, info):
 
 def build(ident, frames=None, out_root=OUT, src='auto'):
     t0 = time.time()
+    skin.far = 0
     sc = reset()
     d = source_dir(ident, src)
     lm = json.loads((d / 'landmarks.json').read_text())
@@ -2174,10 +2233,36 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
                         if n_ not in ('weapon', 'offhand', 'arrow')}
                 low = min(lows.values())
                 legs_low = min((v for k_, v in lows.items() if k_.startswith('leg_')), default=None)
+                if legs_low is not None and 'base' in lows and getattr(anim, 'split', None):
+                    # a thick body (a barrel chest, a belly, a pack on the back) lies lower than legs laid out level
+                    # from its hips: grounded by the legs, the body sank through the road. The legs slope down
+                    # from the hips to rest on the ground beside it
+                    for _ in range(2):
+                        gap = legs_low - 0.04 * anim.H - lows['base']
+                        if gap <= 0.01 * anim.H:
+                            break
+                        for s_ in ('R', 'L'):
+                            tb = 'thigh.' + s_
+                            if tb not in arm.pose.bones:
+                                continue
+                            end = arm.pose.bones.get('foot.' + s_) or arm.pose.bones.get('shin.' + s_)
+                            hip_ = arm.matrix_world @ arm.pose.bones[tb].head
+                            L_ = (arm.matrix_world @ end.tail - hip_).length
+                            a_ = anim.world_angle(tb)
+                            drop = min(35.0, math.degrees(math.asin(min(0.9, gap / max(1e-6, L_)))))
+                            anim.turn_to(tb, a_ - drop if math.cos(math.radians(a_)) >= 0 else a_ + drop, 1.0)
+                        bpy.context.view_layer.update()
+                        lows.update({n_: float(ground_fix(o, arm)[:, 2].min()) for n_, o in layer_obs
+                                     if n_.startswith('leg_')})
+                        legs_low = min(v for k_, v in lows.items() if k_.startswith('leg_'))
+                    low = min(lows.values())
                 if legs_low is not None:
                     # cloth and limp arms drape: they may sink a little below where the legs lie (a tabard's front
                     # panel under a body fallen on its face), but never prop the body up off the ground
                     low = min(legs_low, max(low, legs_low - 0.06 * anim.H))
+                if os.environ.get('PUPPET_DEBUG_GROUND'):
+                    print('GROUND', i, {k_: round(v / anim.H, 3) for k_, v in lows.items()}, round(low / anim.H, 3),
+                          {b_: round(anim.world_angle(b_)) for b_ in ('hips', 'spine', 'thigh.R', 'thigh.L', 'shin.R', 'shin.L', 'cape') if b_ in arm.pose.bones}, 'top', round(getattr(anim, 'top_dbg', 0)))
                 r = arm.pose.bones['root']
                 # world z offset -> root local (the root bone points up: local Y = world Z)
                 r.location = (r.location[0], r.location[1] - low + getattr(anim, 'air', 0.0) * anim.H, 0)
@@ -2239,7 +2324,8 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
     if want is None:
         (out / 'complete.json').write_text(json.dumps({'id': ident, 'frames': total, 'revision': 'puppet-v2'}) + '\n')
     print(f'PUPPET_COMPLETE {ident} {time.time() - t0:.1f}s frames={total} drawScale={draw_scale:.3f} '
-          f'two_handed={two} speed={getattr(anim, "speed_lps", 0.0):.2f}legs/s walk={getattr(anim, "gait_info", None)}', flush=True)
+          f'two_handed={two} speed={getattr(anim, "speed_lps", 0.0):.2f}legs/s walk={getattr(anim, "gait_info", None)} '
+          f'far_verts={getattr(skin, "far", 0)}', flush=True)
 
 
 if __name__ == '__main__':

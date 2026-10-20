@@ -523,8 +523,10 @@ class QuadAnim(CreatureAnim):
                 self.rot(f'{leg}.lower', (-10 if not hind else 10) * fall)
             stagger = B.sm(min(1.0, t / (ti * 0.35)))
             self.rot('body', 3 * stagger * (1 - fall) - 4 * fall + 2 * bounce)
-            self.rot('neck', -10 * fall)
-            self.rot('head', -12 * fall)
+            # the jaw sags only a little: on a squat beast it rests right over a forepaw that stays planted, and a
+            # head dropped further tears the paint between the two into a wedge
+            self.rot('neck', -4 * fall)
+            self.rot('head', -5 * fall)
             sag = float(self.lm.get('sag', 0.07))         # a soft body spreads as it settles (landmarks: sag)
             self.place(dz=-0.10 * fall - 0.015 * bounce, dx=-0.02 * stagger * (1 - fall), sy=1.0 - sag * fall,
                        sx=1.0 + sag * 0.55 * fall)

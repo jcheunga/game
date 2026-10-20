@@ -1,6 +1,6 @@
 {
   "frameWidth": 578,
-  "frameHeight": 545,
+  "frameHeight": 530,
   "drawScale": 2.8513640175620347,
   "animations": {
     "idle": {
@@ -28,21 +28,21 @@
   "assetId": "enemy_gate_breaker",
   "title": "Gate Breaker",
   "source": "art/remaster/puppet/build.py (enemy_gate_breaker)",
-  "anchorY": 0.916227,
+  "anchorY": 0.942133,
   "anchorX": 0.580659,
   "motion": {
     "revision": "puppet-v2",
     "profile": "heavy-smash",
     "body": [
       -0.036627,
-      -0.399715
+      -0.411028
     ],
     "contact": [
       0.399884,
-      -0.299838
+      -0.308324
     ]
   },
-  "healthBarY": 0.615411,
+  "healthBarY": 0.632828,
   "pages": 1,
   "frames": [
     [

@@ -1,6 +1,6 @@
 {
   "frameWidth": 222,
-  "frameHeight": 161,
+  "frameHeight": 153,
   "drawScale": 2.6428571428571432,
   "animations": {
     "idle": {
@@ -28,21 +28,21 @@
   "assetId": "enemy_highwayman",
   "title": "Highwayman",
   "source": "art/remaster/puppet/build.py (enemy_highwayman)",
-  "anchorY": 0.907933,
+  "anchorY": 0.955898,
   "anchorX": 0.610138,
   "motion": {
     "revision": "puppet-v2",
     "profile": "crossbow",
     "body": [
       -0.020846,
-      -0.533423
+      -0.561314
     ],
     "contact": [
       0.20078,
-      -0.540195
+      -0.56844
     ]
   },
-  "healthBarY": 0.806586,
+  "healthBarY": 0.84876,
   "pages": 1,
   "frames": [
     [

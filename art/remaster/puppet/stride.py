@@ -98,6 +98,8 @@ where it will be cut into parts and animated walking to the right.
 Pose: {POSE}.
 Hands: {carry}. The arms, hands and anything held read clearly against the body and stay clear of the face and of \
 the legs; both legs, from the hem or hips down to the feet, are unobstructed.
+Anatomy: exactly the limbs image 2 has - TWO arms with one hand each and TWO legs (a far arm or leg partly hidden \
+behind the body is still the same one arm or leg). Never add, double or mirror an arm, hand, leg or head.
 The background must be TRANSPARENT (a PNG with an alpha channel, nothing behind the figure: no floor, no ground \
 shadow, no backdrop, no text, no border). Square 1024x1024, the whole figure inside the frame with a small margin, \
 filling most of its height.
@@ -188,7 +190,7 @@ def stage_master(ident, force=False):
         while (d / f'master_v{n}.png').exists():
             n += 1
         dest.rename(d / f'master_v{n}.png')
-        for f in ('landmarks.json', 'body.png', 'torso.png', 'hips.png', 'layers.json'):
+        for f in ('landmarks.json', 'body.png', 'torso.png', 'hips.png', 'limbs.png', 'held.png', 'layers.json'):
             (d / f).unlink(missing_ok=True)
     t0 = time.time()
     ok = M.codex_image(master_prompt(ident, dest), [M.SHEET, OLD / ident / 'master.png'], dest, d / 'codex_master.log')

@@ -301,6 +301,66 @@ def weapon_masks(master, body, lm, torso_len, method='band', mount=False, shield
     return weapon, offhand, line
 
 
+def mend_shield(master, before, after, weapon, line, torso_len):
+    """A weapon lying across a shield takes a band out of it when the weapon alone replaces it, and cuts it in two
+    (the shield is kept as its one largest piece, so the part beyond the band would be lost). What the weapon covered
+    between the shield's pieces is painted in from either side of the band, across it (a rim or a plank runs on
+    through). Returns (shield mask, pixels to cut it from)."""
+    comps, st = components(after)
+    if not comps or not line:
+        return after, master
+    big = st[:, cv2.CC_STAT_AREA].max()
+    pieces = np.zeros((N, N), np.uint8)
+    for c, s_ in zip(comps, st):
+        if s_[cv2.CC_STAT_AREA] >= 0.08 * big:
+            pieces |= c
+    hull = np.zeros((N, N), np.uint8)
+    cv2.fillConvexPoly(hull, cv2.convexHull(cv2.findNonZero(pieces)), 255)
+    gap = hull & ~pieces & (before | cv2.dilate(weapon, ell(8))) & (master[..., 3] > 30).astype(np.uint8) * 255
+    ys, xs = np.nonzero(gap)
+    if len(xs) < 50:
+        return after, master
+    u = np.subtract(line['tip'], line['butt']).astype(float)
+    u /= max(1e-6, np.linalg.norm(u))
+    nrm = np.array([-u[1], u[0]])
+    # across the band along the shield's own length where it has one (its rim and planks run that way), else straight
+    # across the weapon
+    hy, hx = np.nonzero(hull)
+    ev, evec = np.linalg.eigh(np.cov(np.stack([hx, hy]).astype(float)))
+    if ev[1] > 1.7 * ev[0] and abs(float(evec[:, 1] @ nrm)) > 0.5:
+        nrm = evec[:, 1]
+    # the shield's own paint, off the band's soft edge (the weapon's shadow and outline)
+    src_ok = cv2.erode(pieces, ell(2)) > 0
+    rgb = master[..., :3]
+    found = []
+    for sign in (1, -1):
+        k_at = np.full(len(xs), np.inf)
+        col = np.zeros((len(xs), 3))
+        for k in range(1, int(torso_len * 0.6)):
+            px = np.round(xs + sign * nrm[0] * k).astype(int)
+            py = np.round(ys + sign * nrm[1] * k).astype(int)
+            inb = (px >= 0) & (px < N) & (py >= 0) & (py < N) & np.isinf(k_at)
+            hit = np.zeros(len(xs), bool)
+            hit[inb] = src_ok[py[inb], px[inb]]
+            k_at[hit] = k
+            col[hit] = rgb[py[hit], px[hit]]
+        found.append((k_at, col))
+    (k1, c1), (k2, c2) = found
+    # only between two pieces of the shield (not a sliver of the hull beside its rim)
+    ok = np.isfinite(k1) & np.isfinite(k2)
+    w1 = np.where(ok, k2 / np.maximum(1, np.where(ok, k1 + k2, 1)), 0)[:, None]
+    src = master.copy()
+    src[ys[ok], xs[ok], :3] = c1[ok] * w1[ok] + c2[ok] * (1 - w1[ok])
+    src[ys[ok], xs[ok], 3] = 255
+    filled = np.zeros((N, N), np.uint8)
+    filled[ys[ok], xs[ok]] = 255
+    # soften the streaks the stretch leaves, inside the band only
+    soft = cv2.GaussianBlur(src[..., :3], (0, 0), 1.2)
+    band = filled > 0
+    src[..., :3][band] = soft[band]
+    return pieces | filled, src
+
+
 def axis_align(im, line):
     """A similarity transform taking a weapon painted alone (at any size and place) onto the weapon's line in the
     master: its long axis's ends, the heavier end (the head) onto the line's tip and the other onto its butt."""
@@ -689,9 +749,30 @@ def arm_masks(body, torso, lm, torso_len, allow=None):
                 if st[cv2.CC_STAT_AREA] >= 0.08 * big:
                     keep |= c
             out[s_] = keep
+    # the head is never an arm's (a hunched brute's shoulder sits beside it, and an edit that repainted the face
+    # put it in the arm's reach: the face then bent with the arm). A pauldron's top by the joint stays the arm's
+    if lm.get('chin') and lm.get('head_top'):
+        dhead = cv2.distanceTransform(255 - capsule([lm['chin'], lm['head_top']], 2), cv2.DIST_L2, 5)
+        for s_ in list(out):
+            # in the head's reach and far nearer its axis than the arm's own bones (a face, a jaw, a hood; not the
+            # top of a pauldron by the helmet, which lies as near the shoulder as the head)
+            head = capsule([lm['chin'], lm['head_top']], torso_len * 0.28) & \
+                (dhead < 0.5 * dist[s_]).astype(np.uint8) * 255
+            took = out[s_] & head
+            if (took > 0).sum() > 400:
+                rest = out[s_] & ~head
+                comps, stats = components(rest)
+                if comps:
+                    big = stats[:, cv2.CC_STAT_AREA].max()
+                    out[s_] = np.zeros((N, N), np.uint8)
+                    for c, st in zip(comps, stats):
+                        if st[cv2.CC_STAT_AREA] >= 0.08 * big:
+                            out[s_] |= c
+                    HEAD_TRIM[s_] = int((took > 0).sum())
     return out
 
 
+HEAD_TRIM = {}
 LEG_CHAIN = ('hip', 'knee', 'ankle', 'toe')
 
 
@@ -857,6 +938,7 @@ def build(d, preview=None):
         method = 'blob' if profile_of(d) in ('bow-draw', 'crossbow') or (profile_of(d) in BLOB_WEAPONS and wlen < 0.75 * torso_len) \
             else 'band'
         HIDDEN[0] = None
+        off_src = master
         weapon, offhand, wline = weapon_masks(master, body, lm, torso_len, method, shield=profile_of(d) == 'guard-cut',
                                               flask=profile_of(d) == 'flask-toss')
         if (weapon > 0).any():
@@ -875,7 +957,11 @@ def build(d, preview=None):
                                       avoid=avoid)
             if held is not None:
                 weapon = (held[..., 3] > 8).astype(np.uint8) * 255
+                off0 = offhand
                 offhand = offhand & ~cv2.dilate(weapon, ell(8))
+                if profile_of(d) == 'guard-cut' and (offhand > 0).any():
+                    offhand, off_src = mend_shield(master, off0, offhand, weapon, hline, torso_len)
+                    info['shield_mended'] = off_src is not master
                 wline = hline
                 info["weapon_source"] = "held"
         if (offhand > 0).any():
@@ -889,6 +975,7 @@ def build(d, preview=None):
     else:
         weapon = offhand = np.zeros((N, N), np.uint8)
         wline = None
+        off_src = master
     arms = {}
     base = body
     # torso.png took the arms off (and hips.png then the legs), or limbs.png took both off in one edit
@@ -899,7 +986,24 @@ def build(d, preview=None):
                                             'shift': [round(float(v), 1) for v in M[:, 2]], 'inliers': inl, 'matches': good}
         torso = warp(load(d / tname), M)
         arm_ok, leg_ok = limb_owner(lm, torso_len) if tname == 'limbs.png' else (None, None)
+        HEAD_TRIM.clear()
         arms = arm_masks(body, torso, lm, torso_len, arm_ok)
+        if HEAD_TRIM:
+            info['arm_head_trim'] = dict(HEAD_TRIM)
+        # arm_cloth=R (set by eye, for bare or steel arms only): crimson tatters behind the fist that the edit
+        # repainted came off with the arm; they are the body's and stay with it (else they flap off the swinging fist)
+        for s_ in str(lm.get('arm_cloth') or ''):
+            if s_ in arms:
+                hsv = cv2.cvtColor(flat(body), cv2.COLOR_RGB2HSV)
+                red = (((hsv[..., 0] < 8) | (hsv[..., 0] > 165)) & (hsv[..., 1] > 110) & (hsv[..., 2] > 45))
+                red = cv2.morphologyEx(red.astype(np.uint8) * 255, cv2.MORPH_OPEN, ell(2))
+                cloth = arms[s_] & cv2.dilate(red, ell(2))
+                # sores and patches inside the arm are its own: only cloth at its edge goes
+                rest = fill_holes(arms[s_] & ~cloth) & arms[s_]
+                comps_a, st_a = components(cv2.morphologyEx(rest, cv2.MORPH_OPEN, ell(2)))
+                if comps_a:
+                    arms[s_] = comps_a[int(np.argmax(st_a[:, cv2.CC_STAT_AREA]))] & rest
+                    info[f'arm_{s_}_cloth'] = int(((cloth > 0) & ~(arms[s_] > 0)).sum())
         # the torso edit's paint where the arms were (feathered); the body's own paint everywhere else
         under = np.zeros((N, N), np.uint8)
         for m in arms.values():
@@ -1006,8 +1110,39 @@ def build(d, preview=None):
                 fl |= c
         if (fl > 0).sum() > 300:
             fl = cv2.dilate(fl, ell(3)) & (master[..., 3] > 30).astype(np.uint8) * 255
+            # a green, blue or violet spell's faint halo and curling wisps (half clear, its own hue) stayed with the
+            # arm and hung in the air over the corpse when the flame went out. Not for orange flames: skin is that hue
+            raw = cv2.cvtColor(np.clip(master[..., :3], 0, 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
+            hmed = float(np.median(raw[..., 0][fl > 0]))
+            if 30 < hmed < 170:
+                halo = np.zeros((N, N), bool)
+                # in the master and in the body edit the arms are cut from (it repaints the halo, often less clear)
+                for src_ in (master, body):
+                    hs_ = cv2.cvtColor(np.clip(src_[..., :3], 0, 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
+                    dh = np.abs(((hs_[..., 0].astype(int) - int(hmed) + 90) % 180) - 90)
+                    halo |= (dh < 14) & (hs_[..., 1] > 60) & (hs_[..., 2] > 60) & (src_[..., 3] > 8)
+                # only the half-clear haze: a sleeve or cuff lit by the flame is opaque paint, and the arm's own
+                halo &= master[..., 3] < 225
+                halo = halo.astype(np.uint8) * 255 & capsule([off_pt0], torso_len * 0.6)
+                near_fl = cv2.dilate(fl, ell(int(torso_len * 0.1)))
+                wisps = np.zeros((N, N), np.uint8)
+                for c, st in zip(*components(cv2.morphologyEx(halo, cv2.MORPH_CLOSE, ell(3)))):
+                    if (c & near_fl).any():
+                        wisps |= cv2.dilate(c, ell(1))
+                # the body keeps none of it either (a faint stroke beside the corpse)
+                base[..., 3][(wisps > 0) & ~(fl > 0)] = 0
+                fl |= wisps
+                info['offhand_halo'] = True
             for s_ in arms:
                 arms[s_] = arms[s_] & ~fl
+                # crumbs of the cuff and fingers the flame's cut left beside the wrist
+                solid_ = cv2.bitwise_and(arms[s_], (body[..., 3] > 40).astype(np.uint8) * 255)
+                comps_f, st_f = components(solid_)
+                if len(comps_f) > 1:
+                    big_f = st_f[:, cv2.CC_STAT_AREA].max()
+                    for c, st in zip(comps_f, st_f):
+                        if st[cv2.CC_STAT_AREA] < 0.03 * big_f:
+                            arms[s_] = arms[s_] & ~cv2.dilate(c, ell(2))
             offhand = offhand | fl
             info['offhand_flame'] = int((fl > 0).sum())
     if off_pt0 and (offhand > 0).sum() > 200:
@@ -1152,7 +1287,7 @@ def build(d, preview=None):
                 if st[cv2.CC_STAT_AREA] >= 0.03 * big_o:
                     keep_o |= c
             offhand = keep_o
-        save(layer(master, offhand), d / 'offhand.png')
+        save(layer(off_src, offhand), d / 'offhand.png')
         info['offhand'] = {'pixels': int((offhand > 0).sum())}
     # draw order, back to front: arms hanging off the far side, the body, arms over the torso, the weapon, the hands
     # that hold it (a fist closes over the shaft); an off-hand item (shield, lantern) goes under the weapon, which

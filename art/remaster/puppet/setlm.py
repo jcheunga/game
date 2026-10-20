@@ -16,8 +16,11 @@ for kv in [a for a in sys.argv[2:] if not a.startswith('--')]:
     if k == 'carried':          # carried=x,y;x,y : points on things the body carries (restored to it)
         lm[k] = [[int(float(c)) for c in pt.split(',')] for pt in v.split(';') if pt and pt != 'none']
         continue
-    lm[k] = None if v == 'null' else (v == 'true') if v in ('true', 'false') else \
-        float(v) if ',' not in v and '.' in v else [int(round(float(x))) for x in v.split(',')]
+    try:
+        lm[k] = None if v == 'null' else (v == 'true') if v in ('true', 'false') else \
+            float(v) if ',' not in v and '.' in v else [int(round(float(x))) for x in v.split(',')]
+    except ValueError:          # a word (arm_cloth=R)
+        lm[k] = v
 anat = next((a for a in sys.argv[2:] if a.startswith('--anatomy')), None)
 if anat:
     # hips from the legs: hip joint to knee is as long as knee to ankle (Drillis & Contini: 0.245 H and 0.246 H). Each

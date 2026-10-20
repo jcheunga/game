@@ -187,6 +187,26 @@ speed plays in slow motion.
 render widths every walk played too fast and the feet slid); `BlenderAssetSmoke` checks every walking puppet's cycle
 time at its battle speed.
 
+A frame-by-frame audit of all 111 units (walk, attack and death) found and fixed a last set of faults.
+- **Skin weights.** Paint several radii from every bone (claw tips, tatters, spell wisps) underflowed to zero
+  weight for all of them, and was then shared evenly by every bone. As the limbs swung apart it stretched into
+  lines and ribbons. Weights are now a log-domain softmax, so that paint follows its nearest bone. In arm layers,
+  the chest bone only holds the shoulder's end, so a hand resting on the torso swings with its arm.
+- **Repaint check.** One repaint gave the Drowned Colossus four arms. The master prompt now states the limb count,
+  and every master was checked against its original.
+- **Shields and held weapons.** When a weapon painted alone replaces one held across a shield, the shield's band
+  is mended along its own long axis (`mend_shield`).
+- **Arm layer clean-up.**
+  - Crimson tatters swept into a bare arm go back to the body (`arm_cloth` in landmarks).
+  - An arm never takes the head.
+  - A green or blue spell's faint halo goes with its flame, so it no longer hangs over the corpse.
+- **Deaths.** Death poses aim the limbs in the body's own upright frame, and the topple is applied last. A
+  pass after the topple (`lie_on_ground`) then lays the legs level or sloping down to the ground, never more than
+  a few degrees up. Face down, the cape lies level over the back toward the feet. A fixed swing per degree of fall
+  had stood some capes up like fins or hung them down through the road. On its back a dead foot falls slack. A
+  thick body (a barrel chest, a belly, a pack) lies lower than legs laid out level from its hips, so the legs slope
+  down to the ground beside it and the corpse rests on the road instead of sinking through it.
+
 ### Combat feel
 
 The puppet clips (`build.py new_contract`) are sized for a phone: idle 8 frames, walk 10, attack 16 with contact on

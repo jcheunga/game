@@ -1,6 +1,6 @@
 {
   "frameWidth": 199,
-  "frameHeight": 189,
+  "frameHeight": 172,
   "drawScale": 2.369047619047619,
   "animations": {
     "idle": {
@@ -28,21 +28,21 @@
   "assetId": "enemy_walker",
   "title": "Risen",
   "source": "art/remaster/puppet/build.py (enemy_walker)",
-  "anchorY": 0.872849,
+  "anchorY": 0.959085,
   "anchorX": 0.416338,
   "motion": {
     "revision": "puppet-v2",
     "profile": "sword-cut",
     "body": [
       -0.017466,
-      -0.426628
+      -0.468794
     ],
     "contact": [
       0.324066,
-      -0.325037
+      -0.357163
     ]
   },
-  "healthBarY": 0.597566,
+  "healthBarY": 0.656627,
   "pages": 1,
   "frames": [
     [

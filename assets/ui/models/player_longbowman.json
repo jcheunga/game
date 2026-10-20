@@ -1,6 +1,6 @@
 {
   "frameWidth": 247,
-  "frameHeight": 176,
+  "frameHeight": 161,
   "drawScale": 2.9404761904761902,
   "animations": {
     "idle": {
@@ -28,21 +28,21 @@
   "assetId": "player_longbowman",
   "title": "Longbowman",
   "source": "art/remaster/puppet/build.py (player_longbowman)",
-  "anchorY": 0.873028,
+  "anchorY": 0.954314,
   "anchorX": 0.602019,
   "motion": {
     "revision": "puppet-v2",
     "profile": "bow-draw",
     "body": [
       -0.001765,
-      -0.530606
+      -0.580041
     ],
     "contact": [
       0.254288,
-      -0.522164
+      -0.570813
     ]
   },
-  "healthBarY": 0.744509,
+  "healthBarY": 0.813873,
   "pages": 1,
   "frames": [
     [

@@ -52,11 +52,11 @@ public partial class CombatReviewSmoke
             BattleFloatText On(Unit unit) => battle.GetChildren().OfType<BattleFloatText>()
                 .Where(x => x.Kind != CombatTextKind.Callout).OrderBy(x => x.Position.DistanceTo(unit.CombatTextPoint)).First();
             var tally = On(walker);
-            Check(tally.Text == "12" && battle.GetChildren().OfType<BattleFloatText>().Count(x => x.Kind == CombatTextKind.Damage && !x.Critical) == 1,
+            Check(tally.Text == "12" && battle.GetChildren().OfType<BattleFloatText>().Count(x => x.Position.DistanceTo(walker.CombatTextPoint) < 1) == 1,
                 "Quick hits on one enemy add into one tally, shown without a minus sign");
-            Check(On(brute).Critical && On(brute).Kind == CombatTextKind.Damage, "A critical hit is its own gilt number");
-            Check(On(knight).Kind == CombatTextKind.Hurt && On(archer).Kind == CombatTextKind.Heal && On(archer).Text == "+14",
-                "Damage to the player's troops reads red and healing green, whoever struck");
+            Check(On(brute).Critical && On(brute).Kind == CombatTextKind.Damage, "A critical hit is its own yellow number");
+            Check(On(knight).Kind == CombatTextKind.Damage && !On(knight).Critical && On(archer).Kind == CombatTextKind.Heal && On(archer).Text == "+14",
+                "Damage reads red on either side and healing green, whoever struck");
             Check(Mathf.Abs(tally.Position.X - walker.Position.X) < 1 && tally.Position.Y < walker.Position.Y - 10,
                 "Numbers start centred over the body, above the feet");
             var texts = battle.GetChildren().OfType<BattleFloatText>().ToList();
@@ -98,7 +98,7 @@ public partial class CombatReviewSmoke
         GameState.Instance.SetReducedMotion(true);
         Invoke(battle, "SpawnDamageFeedback", enemy, 40f, true);
         var still = battle.GetChildren().OfType<BattleFloatText>().Last();
-        Check(Mathf.IsEqualApprox(still.Scale.X, ((Func<float>)still.PresentationScale)() * 1.15f * StillEmphasis(enemy, 40f)), "Reduced motion drops the settle");
+        Check(Mathf.IsEqualApprox(still.Scale.X, ((Func<float>)still.PresentationScale)() * 1.2f * StillEmphasis(enemy, 40f)), "Reduced motion drops the settle");
         GameState.Instance.SetReducedMotion(false);
     }
 

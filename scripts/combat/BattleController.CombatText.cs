@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using Godot;
 
 // Combat text is numbers (damage, healing, repairs, courage) and a few words (Dodge, Parry, Braced); names and
-// callouts stay off the field. Colour says who was hurt, never who struck, and quick hits on one target add into
-// one tally so a crowded melee shows a few clear numbers instead of a heap of small ones.
+// callouts stay off the field. Damage is red and critical hits yellow on either side, never the striker's tint, and
+// quick hits on one target add into one tally so a crowded melee shows a few clear numbers instead of a heap.
 public partial class BattleController
 {
     private const int MaxCombatTexts = 36;
@@ -17,9 +17,9 @@ public partial class BattleController
     private void SpawnDamageFeedback(Unit target, float damage, bool critical = false)
     {
         if (damage <= 0.05f || !IsInstanceValid(target)) return;
-        var kind = target.Team == Team.Player ? CombatTextKind.Hurt : CombatTextKind.Damage;
         // A big bite out of a body reads a little larger.
-        SpawnCombatTally(target.GetInstanceId(), target.CombatTextPoint, damage, kind, critical, damage / Mathf.Max(1f, target.MaxHealth) * 3f);
+        SpawnCombatTally(target.GetInstanceId(), target.CombatTextPoint, damage, CombatTextKind.Damage, critical,
+            damage / Mathf.Max(1f, target.MaxHealth) * 3f);
     }
 
     private void SpawnHealFeedback(Unit target, float healed)
@@ -32,7 +32,7 @@ public partial class BattleController
     private void SpawnBaseFeedback(bool playerBase, float amount, bool repair = false)
     {
         if (amount <= 0.05f) return;
-        var kind = repair ? CombatTextKind.Heal : playerBase ? CombatTextKind.Hurt : CombatTextKind.Damage;
+        var kind = repair ? CombatTextKind.Heal : CombatTextKind.Damage;
         var core = playerBase ? PlayerBaseCorePosition : EnemyBaseCorePosition;
         SpawnCombatTally(playerBase ? PlayerBaseTextKey : EnemyBaseTextKey, core + new Vector2(0f, -34f), amount, kind);
     }

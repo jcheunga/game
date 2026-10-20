@@ -5,10 +5,8 @@ using Godot;
 /// <summary>What a piece of combat text reports; each kind keeps one colour everywhere on the field.</summary>
 public enum CombatTextKind
 {
-    /// <summary>Damage dealt to the enemy host or its gate: parchment.</summary>
+    /// <summary>Damage to anyone, troops, enemies or bases: red, or yellow for a critical hit.</summary>
     Damage,
-    /// <summary>Damage taken by the player's troops or wagon: faded vermilion.</summary>
-    Hurt,
     /// <summary>Healing and repairs: sage.</summary>
     Heal,
     /// <summary>Courage gained: amber.</summary>
@@ -18,18 +16,17 @@ public enum CombatTextKind
 }
 
 /// <summary>
-/// One number or word over the battlefield, set in the engraved Roman capitals in muted manuscript colours. It fades
-/// in, drifts up and eases to a stop, then fades; a critical hit is gilt and a little larger, settling like a seal
-/// pressed into wax. Fills are soft vertical gradients (the gold-title shader) inside a thin ink outline. Hits
+/// One number or word over the battlefield, set small in the engraved Roman capitals. It fades in, drifts up and
+/// eases to a stop, then fades; a critical hit is yellow and a little larger, settling like a seal pressed into wax. Fills are soft vertical gradients (the gold-title shader) inside a thin ink outline. Hits
 /// landing on one target within a moment are added into one tally.
 /// </summary>
 public partial class BattleFloatText : Node2D
 {
-    private const int NumberSize = 20;
-    private const int CalloutSize = 15;
+    private const int NumberSize = 17;
+    private const int CalloutSize = 14;
     private const float SettleSeconds = .18f;
     private const float RiseSeconds = .7f;
-    private const float CriticalScale = 1.15f;
+    private const float CriticalScale = 1.2f;
     private static readonly Color Ink = new(.11f, .07f, .045f, .92f);
     private static readonly Dictionary<(CombatTextKind, bool), ShaderMaterial> Materials = new();
     private static Shader _shader;
@@ -91,7 +88,7 @@ public partial class BattleFloatText : Node2D
         Apply();
     }
 
-    /// <summary>Turns a fresh number into a critical hit: gilt and a little larger.</summary>
+    /// <summary>Turns a fresh number into a critical hit: yellow and a little larger.</summary>
     public void MakeCritical()
     {
         if (Critical) return;
@@ -166,10 +163,9 @@ public partial class BattleFloatText : Node2D
         _shader ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_gold_text.gdshader");
         var (top, mid, bottom) = (kind, critical) switch
         {
-            (CombatTextKind.Damage, true) => ("fff0c2", "e9c46a", "b8862f"),
-            (CombatTextKind.Damage, false) => ("fbf3df", "f1e2bd", "dcc496"),
-            (CombatTextKind.Hurt, true) => ("f9c2ae", "e0705a", "a8392c"),
-            (CombatTextKind.Hurt, false) => ("f6bba8", "dc8670", "b9483a"),
+            // Bright and close in tone from top to bottom, so the figures read at a glance at this size.
+            (CombatTextKind.Damage, true) => ("fff8b8", "ffe04a", "f7b81c"),
+            (CombatTextKind.Damage, false) => ("ff8f80", "ff5442", "e8301f"),
             (CombatTextKind.Heal, _) => ("e8f3d2", "bcd79e", "8db368"),
             (CombatTextKind.Courage, _) => ("f8e3b0", "e6bd78", "cf9440"),
             _ => ("f5f0e6", "e2d9c9", "c8bda9"),

@@ -160,7 +160,7 @@ public partial class CombatMotionReview
                     On(3,u=>u.Root(2f));
                     On(4,u=>u.GiveShield(u.MaxHealth*.3f,6f));
                     On(5,u=>u.Silence(4f));
-                    On(6,u=>u.ApplyTemporaryCombatBuff(1.3f,1f,6f));
+                    On(6,u=>{ u.ApplyTemporaryCombatBuff(1.3f,1f,6f);u.Frenzy(6f); });
                 }
                 camera.Zoom=baseZoom*zoom;
                 if (Read<bool>(battle,"_battlePaused")) Call(battle,"TogglePause");

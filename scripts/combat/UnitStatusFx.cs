@@ -24,7 +24,7 @@ public partial class UnitStatusFx : Node2D
         public override void _Draw() => Painter?.Invoke(this);
     }
 
-    public static bool Wants(Unit unit) => unit.IsBurning || unit.IsAsleep || unit.IsEmpowered;
+    public static bool Wants(Unit unit) => unit.IsBurning || unit.IsAsleep || unit.IsFrenzied;
 
     public override void _Ready()
     {
@@ -56,7 +56,7 @@ public partial class UnitStatusFx : Node2D
         var on = !u.IsDead && Wants(u);
         Visible = on;
         _flames.Emitting = on && u.IsBurning && !SpellVfx.Reduced;
-        _embers.Emitting = on && u.IsEmpowered && !u.IsBurning && !SpellVfx.Reduced;
+        _embers.Emitting = on && u.IsFrenzied && !u.IsBurning && !SpellVfx.Reduced;
         if (!on) { _sleepAge = 0f; return; }
         var dt = (float)delta;
         _age += dt;
@@ -112,7 +112,7 @@ public partial class UnitStatusFx : Node2D
             var c = new Vector2(0, -size.Y * .45f);
             layer.DrawTextureRect(glow, new Rect2(c - new Vector2(r, r * 1.2f), new Vector2(r * 2, r * 2.4f)), false, new Color(1f, .45f, .15f, .45f));
         }
-        else if (u.IsEmpowered)
+        else if (u.IsFrenzied)
         {
             var r = size.X * .7f;
             var feet = new Vector2(0, -2);

@@ -3167,6 +3167,7 @@ public partial class BattleController : Node2D
 		// 40% attack speed simulated as 40% increased attack damage (DPS equivalent)
 		// Takes 20% more damage during the frenzy
 		unit.ApplyTemporaryCombatBuff(1.4f, 1f, 6f);
+		unit.Frenzy(6f);
 		unit.ApplyTemporaryDefenseModifier(1.2f, 6f);
 		SpawnEffect(unit.Position, unit.Tint.Lightened(0.08f), 8f, 36f, 0.22f, false);
 	}

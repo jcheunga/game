@@ -345,9 +345,11 @@ public partial class Unit : Node2D
     private float _temporarySpeedScale = 1f;
     private float _temporaryDamageTakenScale = 1f;
     private bool _hasAuraBuff;
+    private float _frenzyTimer;
     private UnitStatusFx _statusFx;
-    /// <summary>Under a temporary attack boost (a frenzy, a rally, a war drum).</summary>
-    public bool IsEmpowered => _temporaryCombatBuffTimer > 0.01f && _temporaryAttackDamageScale > 1.001f;
+    /// <summary>In a frenzy (Blood Frenzy, a wounded berserker's burst): the battle-mad smoulder at the feet. Rallies,
+    /// war cries, combo pairs and auras raise damage too, but are not rage and do not smoulder.</summary>
+    public bool IsFrenzied => _frenzyTimer > 0.01f;
     private Color _bodyColor = Colors.White;
     public Color EnvironmentTint { get; set; } = Colors.White;
     public Color LocalLightTint { get; set; } = Colors.White;
@@ -446,6 +448,7 @@ public partial class Unit : Node2D
         _temporaryAttackDamageScale = 1f;
         _temporarySpeedScale = 1f;
         _temporaryDamageTakenScale = 1f;
+        _frenzyTimer = 0f;
         _spriteLoadAttempted = false;
         _spriteSheet = null;
         _spriteAnimState = UnitAnimState.Idle;
@@ -516,6 +519,9 @@ public partial class Unit : Node2D
         _temporaryCombatBuffTimer = Mathf.Max(_temporaryCombatBuffTimer, duration);
         _auraFlashTimer = Mathf.Max(_auraFlashTimer, 0.24f);
     }
+
+    /// <summary>Marks a rage for the smoulder at the feet; the stats come from the buff that goes with it.</summary>
+    public void Frenzy(float duration) => _frenzyTimer = Mathf.Max(_frenzyTimer, duration);
 
     public void ApplyTemporarySpeedModifier(float speedScale, float duration)
     {
@@ -813,6 +819,7 @@ public partial class Unit : Node2D
         _attackFlashTimer = Mathf.Max(0f, _attackFlashTimer - deltaF);
         _auraFlashTimer = Mathf.Max(0f, _auraFlashTimer - deltaF);
         _temporaryCombatBuffTimer = Mathf.Max(0f, _temporaryCombatBuffTimer - deltaF);
+        _frenzyTimer = Mathf.Max(0f, _frenzyTimer - deltaF);
         EnsureSpriteLoaded();
         if (!held) AdvanceSpriteAnimation(deltaF);
         if (!_contactMotionActive) _spriteAttackRemaining = Mathf.Max(0f, _spriteAttackRemaining - deltaF);

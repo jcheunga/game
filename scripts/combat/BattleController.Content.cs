@@ -251,7 +251,7 @@ public partial class BattleController
                   SpellVfx.Burst(this,unit.Position,"p_smoke",8,.7f,SpellVfx.Fade(new Color(.3f,.3f,.34f,.6f)),6f,12f,8f,26f,additive:false,layer:SpellVfx.TroopLayer); }
                 break;
             case "frenzy":
-                if(unit.HealthRatio<.5f) { unit.ContentCooldown=12;unit.ApplyAttackRecovery(.9f,3f);unit.BeginCast(.4f);
+                if(unit.HealthRatio<.5f) { unit.ContentCooldown=12;unit.ApplyAttackRecovery(.9f,3f);unit.Frenzy(3f);unit.BeginCast(.4f);
                     SpellVfx.Flash(this,unit.BodyContactPosition,new Color("ff6a4a"),20f,.4f);SpellVfx.Sigil(this,unit.Position,"war",new Color("ff6a4a"),26f,.8f,.8f); }
                 break;
             case "rally":

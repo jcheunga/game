@@ -16,18 +16,19 @@ public enum CombatTextKind
 }
 
 /// <summary>
-/// One number or word over the battlefield, set small in the engraved Roman capitals. It fades in, drifts up and
-/// eases to a stop, then fades; a critical hit is yellow and a little larger, settling like a seal pressed into wax. Fills are soft vertical gradients (the gold-title shader) inside a thin ink outline. Hits
+/// One number or word over the battlefield, set small in a gothic blackletter. It fades in, rises at an even pace
+/// (every label alike, so stacked labels never cross) and fades; a critical hit is yellow and a little larger, settling like a seal pressed into wax. Fills are soft vertical gradients (the gold-title shader) inside a thin ink outline. Hits
 /// landing on one target within a moment are added into one tally.
 /// </summary>
 public partial class BattleFloatText : Node2D
 {
-    private const int NumberSize = 17;
-    private const int CalloutSize = 14;
+    private const int NumberSize = 14;
+    private const int CalloutSize = 13;
     private const float SettleSeconds = .18f;
-    private const float RiseSeconds = .7f;
+    // Local units a second; the same for every label.
+    private const float RiseSpeed = 26f;
     private const float CriticalScale = 1.2f;
-    private static readonly Color Ink = new(.11f, .07f, .045f, .92f);
+    private static readonly Color Ink = new(.11f, .07f, .045f, .8f);
     private static readonly Dictionary<(CombatTextKind, bool), ShaderMaterial> Materials = new();
     private static Shader _shader;
 
@@ -38,9 +39,12 @@ public partial class BattleFloatText : Node2D
     public float Amount { get; private set; }
     public float Age { get; private set; }
     public string Text { get; private set; } = "";
+    /// <summary>Still fully shown, so a new label should not print over it.</summary>
+    public bool Fresh => Age < _lifetime * .6f;
+    /// <summary>Half the label's settled size in local units, before the screen-size correction.</summary>
+    public Vector2 HalfExtent { get; private set; }
 
     private Vector2 _origin;
-    private Vector2 _drift;
     private float _lifetime;
     private float _emphasis = 1f;
     private float _bump;
@@ -48,18 +52,25 @@ public partial class BattleFloatText : Node2D
     private string _prefix = "";
 
     /// <summary>A word such as Dodge or Parry.</summary>
-    public void Setup(string text, CombatTextKind kind = CombatTextKind.Callout, Vector2? drift = null, bool reducedMotion = false) =>
-        Begin(text, kind, false, 0f, drift, reducedMotion);
+    public void Setup(string text, CombatTextKind kind = CombatTextKind.Callout, bool reducedMotion = false) =>
+        Begin(text, kind, false, 0f, reducedMotion);
 
     /// <summary>A number: damage shows bare, healing and courage carry a plus sign.</summary>
-    public void SetupAmount(float amount, CombatTextKind kind, bool critical = false, float emphasis = 0f, Vector2? drift = null, bool reducedMotion = false)
+    public void SetupAmount(float amount, CombatTextKind kind, bool critical = false, float emphasis = 0f, bool reducedMotion = false)
     {
         _prefix = kind is CombatTextKind.Heal or CombatTextKind.Courage ? "+" : "";
         Amount = amount;
-        Begin(Format(), kind, critical, emphasis, drift, reducedMotion);
+        Begin(Format(), kind, critical, emphasis, reducedMotion);
     }
 
-    private void Begin(string text, CombatTextKind kind, bool critical, float emphasis, Vector2? drift, bool reducedMotion)
+    /// <summary>Moves where the label starts, keeping its place in the rise.</summary>
+    public void MoveOrigin(Vector2 origin)
+    {
+        _origin = origin;
+        Apply();
+    }
+
+    private void Begin(string text, CombatTextKind kind, bool critical, float emphasis, bool reducedMotion)
     {
         _origin = Position;
         Text = text;
@@ -67,11 +78,11 @@ public partial class BattleFloatText : Node2D
         Critical = critical;
         _still = reducedMotion;
         _emphasis = 1f + .1f * Mathf.Clamp(emphasis, 0f, 1f);
-        _drift = drift ?? Vector2.Zero;
         _lifetime = BaseLifetime;
         ProcessMode = ProcessModeEnum.Pausable;
         ZIndex = 400;
         Material = MaterialFor(kind, critical);
+        Measure();
         Apply();
     }
 
@@ -83,6 +94,7 @@ public partial class BattleFloatText : Node2D
     {
         Amount += amount;
         Text = Format();
+        Measure();
         _bump = 1f;
         _lifetime = Mathf.Max(_lifetime, Age + BaseLifetime * .8f);
         Apply();
@@ -95,13 +107,14 @@ public partial class BattleFloatText : Node2D
         Critical = true;
         _lifetime = Mathf.Max(_lifetime, Age + BaseLifetime);
         Material = MaterialFor(Kind, true);
+        Measure();
         Apply();
     }
 
     /// <summary>Hurries an old label off when the field is crowded with text.</summary>
     public void Retire() => _lifetime = Mathf.Min(_lifetime, Age + .14f);
 
-    public bool CanMerge(CombatTextKind kind) => !Critical && Kind == kind && Kind != CombatTextKind.Callout && Age < .3f && _lifetime - Age > .2f;
+    public bool CanMerge(CombatTextKind kind) => !Critical && Kind == kind && Kind != CombatTextKind.Callout && Age < .45f && _lifetime - Age > .2f;
 
     private float BaseLifetime => Kind switch
     {
@@ -127,9 +140,7 @@ public partial class BattleFloatText : Node2D
         var fadeOut = Mathf.Clamp((Age - _lifetime * .6f) / (_lifetime * .4f), 0f, 1f);
         fadeOut = fadeOut * fadeOut * (3f - 2f * fadeOut);
         var fadeIn = _still ? 1f : Mathf.Clamp(Age / .08f, 0f, 1f);
-        var rise = EaseOutCubic(Mathf.Min(1f, Age / RiseSeconds));
-        var risePixels = (Kind == CombatTextKind.Callout ? 14f : Critical ? 22f : 20f) * (_still ? .6f : 1f);
-        var offset = new Vector2(_drift.X * rise, -risePixels * rise);
+        var offset = new Vector2(0f, -RiseSpeed * Age * (_still ? .6f : 1f));
         var settle = 1f;
         if (!_still)
         {
@@ -144,15 +155,24 @@ public partial class BattleFloatText : Node2D
         QueueRedraw();
     }
 
+    private Font LabelFont => RoyalFonts.Gothic(Kind == CombatTextKind.Callout ? 700 : 900);
+    private int LabelSize => Kind == CombatTextKind.Callout ? CalloutSize : NumberSize;
+
+    private void Measure()
+    {
+        var width = LabelFont.GetStringSize(Text, HorizontalAlignment.Left, -1, LabelSize).X;
+        HalfExtent = new Vector2(width * .5f + 2f, LabelSize * .42f) * (Critical ? CriticalScale : 1f) * _emphasis;
+    }
+
     public override void _Draw()
     {
-        var font = RoyalFonts.Display(Kind == CombatTextKind.Callout ? 700 : 900);
-        var fontSize = Kind == CombatTextKind.Callout ? CalloutSize : NumberSize;
+        var font = LabelFont;
+        var fontSize = LabelSize;
         var width = font.GetStringSize(Text, HorizontalAlignment.Left, -1, fontSize).X;
-        // The baseline sits so the capitals and figures centre on the origin.
-        var at = new Vector2(-width * .5f, fontSize * .35f);
-        DrawStringOutline(font, at + new Vector2(0f, 1.5f), Text, HorizontalAlignment.Left, -1, fontSize, 6, new Color(0f, 0f, 0f, .32f));
-        DrawStringOutline(font, at, Text, HorizontalAlignment.Left, -1, fontSize, 4, Ink);
+        // The baseline sits so the figures (and a word's capitals) centre on the origin.
+        var at = new Vector2(-width * .5f, fontSize * .34f);
+        DrawStringOutline(font, at + new Vector2(0f, 1f), Text, HorizontalAlignment.Left, -1, fontSize, 4, new Color(0f, 0f, 0f, .16f));
+        DrawStringOutline(font, at, Text, HorizontalAlignment.Left, -1, fontSize, 3, Ink);
         // Pure white marks the fill for the gradient shader.
         DrawString(font, at, Text, HorizontalAlignment.Left, -1, fontSize, Colors.White);
     }

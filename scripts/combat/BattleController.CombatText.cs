@@ -11,7 +11,6 @@ public partial class BattleController
     private const ulong PlayerBaseTextKey = 1, EnemyBaseTextKey = 2;
     private readonly Dictionary<(ulong, CombatTextKind), BattleFloatText> _combatTallies = new();
     private readonly List<BattleFloatText> _combatTexts = new();
-    private readonly RandomNumberGenerator _combatTextRng = new();
     private (ulong Key, BattleFloatText Text) _lastCombatTally;
 
     private void SpawnDamageFeedback(Unit target, float damage, bool critical = false)
@@ -40,13 +39,17 @@ public partial class BattleController
     private void SpawnCourageFeedback(Vector2 at, float amount)
     {
         if (amount <= 0.05f) return;
-        NewCombatText(at + new Vector2(0f, -28f)).SetupAmount(amount, CombatTextKind.Courage, drift: CombatTextDrift(), reducedMotion: IsReducedMotionEnabled());
+        var label = NewCombatText(at + new Vector2(0f, -28f));
+        label.SetupAmount(amount, CombatTextKind.Courage, reducedMotion: IsReducedMotionEnabled());
+        PlaceCombatText(label);
     }
 
     private void SpawnCombatCallout(Unit unit, string word)
     {
         if (!IsInstanceValid(unit)) return;
-        NewCombatText(unit.CombatTextPoint + new Vector2(0f, -22f)).Setup(word, drift: CombatTextDrift() * .5f, reducedMotion: IsReducedMotionEnabled());
+        var label = NewCombatText(unit.CombatTextPoint + new Vector2(0f, -22f));
+        label.Setup(word, reducedMotion: IsReducedMotionEnabled());
+        PlaceCombatText(label);
     }
 
     // A critical hit rolled outside ContentDamage upgrades the number that hit just raised.
@@ -65,7 +68,8 @@ public partial class BattleController
         else
         {
             tally = NewCombatText(at);
-            tally.SetupAmount(amount, kind, critical, emphasis, CombatTextDrift(), IsReducedMotionEnabled());
+            tally.SetupAmount(amount, kind, critical, emphasis, IsReducedMotionEnabled());
+            PlaceCombatText(tally);
             _combatTallies[(key, kind)] = tally;
         }
         _lastCombatTally = (key, tally);
@@ -90,6 +94,24 @@ public partial class BattleController
         return label;
     }
 
-    // Cosmetic sideways drift, drawn from its own generator so text never shifts the seeded battle.
-    private Vector2 CombatTextDrift() => new(_combatTextRng.RandfRange(-9f, 9f), 0f);
+    // A new label that would print over a fresh one steps up just above it (a few times at most), so a crowded
+    // melee shows a neat column instead of a heap; fading labels it would cover clear away at once. Labels rise
+    // at one pace, so ones placed apart stay apart.
+    private void PlaceCombatText(BattleFloatText label)
+    {
+        var scale = _battleCamera != null ? 1.2f / _battleCamera.Zoom.X : 1f;
+        bool Overlaps(BattleFloatText other, Vector2 at) => other != label && IsInstanceValid(other) && !other.IsQueuedForDeletion()
+            && Mathf.Abs(other.Position.X - at.X) < (other.HalfExtent.X + label.HalfExtent.X) * scale
+            && Mathf.Abs(other.Position.Y - at.Y) < (other.HalfExtent.Y + label.HalfExtent.Y) * scale;
+        var spot = label.Position;
+        for (var step = 0; step < 4; step++)
+        {
+            var blocker = _combatTexts.Find(other => other.Fresh && Overlaps(other, spot));
+            if (blocker == null) break;
+            spot.Y = blocker.Position.Y - (blocker.HalfExtent.Y + label.HalfExtent.Y + 1f) * scale;
+        }
+        foreach (var other in _combatTexts)
+            if (!other.Fresh && Overlaps(other, spot)) other.Retire();
+        label.MoveOrigin(spot);
+    }
 }

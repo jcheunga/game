@@ -72,6 +72,41 @@ public partial class CombatReviewSmoke
             if (stage == 8) await CheckCombatTextRules(battle, walker, knight);
             await CloseBattle(battle);
         }
+        await CaptureCombatTextCrowd();
+    }
+
+    // A packed melee: eleven bodies trading hits, crits and heals for a second and a half.
+    private async Task CaptureCombatTextCrowd()
+    {
+        var battle = await OpenBattle(8);
+        if (Read<bool>(battle, "_battlePaused")) Invoke(battle, "TogglePause");
+        Invoke(battle, "SetBattleCameraX", 340f);
+        Read<Camera2D>(battle, "_battleCamera").ForceUpdateScroll();
+        var y = (GameData.Combat.BattlefieldTop + GameData.Combat.BattlefieldBottom) * .5f;
+        var dice = new RandomNumberGenerator { Seed = 77 };
+        var bodies = new List<Unit>();
+        foreach (var (id, team, count, from) in new[] { ("player_brawler", Team.Player, 5, 250f), ("enemy_walker", Team.Enemy, 6, 330f) })
+            for (var i = 0; i < count; i++)
+            {
+                var unit = (Unit)Invoke(battle, "SpawnUnit", team, new UnitStats(GameData.GetUnit(id)),
+                    new Vector2(from + i * 13 + dice.RandfRange(-4, 4), y + dice.RandfRange(-18, 18)));
+                unit.SetProcess(false); unit._Process(.5); unit._Process(.01);
+                bodies.Add(unit);
+            }
+        for (var step = 1; step <= 30; step++)
+        {
+            for (var hit = 0; hit < 3; hit++)
+                Invoke(battle, "SpawnDamageFeedback", bodies[dice.RandiRange(0, bodies.Count - 1)], (float)dice.RandiRange(3, 24), dice.Randf() < .1f);
+            if (step % 6 == 0) Invoke(battle, "SpawnHealFeedback", bodies[dice.RandiRange(0, 4)], 9f);
+            foreach (var text in battle.GetChildren().OfType<BattleFloatText>().Where(x => !x.IsQueuedForDeletion()))
+            {
+                text.SetProcess(false);
+                text._Process(.05);
+            }
+            if (step % 10 == 0) await CaptureCombatText($"crowd-{step * 5:000}");
+        }
+        Check(battle.GetChildren().OfType<BattleFloatText>().Count(x => !x.IsQueuedForDeletion()) <= 36, "A packed melee keeps its text under the cap");
+        await CloseBattle(battle);
     }
 
     private async Task CheckCombatTextRules(BattleController battle, Unit enemy, Unit ally)
@@ -85,6 +120,22 @@ public partial class CombatReviewSmoke
         Invoke(battle, "SpawnDamageFeedback", enemy, 6f, false);
         Check(battle.GetChildren().OfType<BattleFloatText>().Count(x => !x.IsQueuedForDeletion()) == 2 && marked.Text == "6",
             "Ordinary hits never fold into a critical number");
+        foreach (var text in battle.GetChildren().OfType<BattleFloatText>()) text.QueueFree();
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        Invoke(battle, "SpawnDamageFeedback", ally, 5f, false);
+        Invoke(battle, "SpawnHealFeedback", ally, 4f);
+        Invoke(battle, "SpawnDamageFeedback", ally, 30f, true);
+        var stack = battle.GetChildren().OfType<BattleFloatText>().Where(x => !x.IsQueuedForDeletion()).ToList();
+        var scale = ((Func<float>)stack[0].PresentationScale)();
+        bool Apart(BattleFloatText a, BattleFloatText b) =>
+            Mathf.Abs(a.Position.X - b.Position.X) >= (a.HalfExtent.X + b.HalfExtent.X) * scale - .01f ||
+            Mathf.Abs(a.Position.Y - b.Position.Y) >= (a.HalfExtent.Y + b.HalfExtent.Y) * scale - .01f;
+        Check(stack.Count == 3 && Apart(stack[0], stack[1]) && Apart(stack[0], stack[2]) && Apart(stack[1], stack[2]),
+            "Numbers landing on one body together stack into a column instead of printing over each other");
+        foreach (var text in stack) { text.SetProcess(false); text._Process(.5); }
+        Check(Apart(stack[0], stack[1]) && Apart(stack[0], stack[2]) && Apart(stack[1], stack[2]), "Stacked numbers stay apart as they rise");
+        marked = stack[0];
+        marked.SetProcess(true);
         GetTree().Paused = true;
         var age = marked.Age;
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

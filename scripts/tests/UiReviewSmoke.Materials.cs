@@ -58,11 +58,11 @@ public partial class UiReviewSmoke
         var focus=RealmUi.Button("eye","Keyboard focus",()=>{}); stack.AddChild(focus); focus.GrabFocus();
         var primary=RealmUi.Button("flag","Deploy / touch",()=>{},true); MobilePresentation.TouchButton(primary);
         stack.AddChild(primary);
-        Check(primary.GetThemeStylebox("normal") is StyleBoxTexture normal && normal.Texture.ResourcePath.EndsWith("button_primary.svg"),
-            "Touch sizing preserves the primary-action brass finish");
-        Check(primary.GetThemeStylebox("hover")==primary.GetThemeStylebox("normal") && primary.GetThemeStylebox("hover_pressed") is StyleBoxTexture held
-              && held.Texture.ResourcePath.EndsWith("button_primary_pressed.svg"),
-            "Hovering changes nothing and a held press shows the pressed brass surface");
+        Check(primary.GetThemeStylebox("normal") is ModalSurface { Material: ModalMaterial.Gold },
+            "Touch sizing keeps the primary action on the kit's gold plate");
+        Check(primary.GetThemeStylebox("hover")==primary.GetThemeStylebox("normal") && primary.GetThemeStylebox("hover_pressed") is ModalSurface { Material: ModalMaterial.Gold } held
+              && held != primary.GetThemeStylebox("normal"),
+            "Hovering changes nothing and a held press shows the pressed gold surface");
         Check(focus.GetThemeStylebox("focus") is StyleBoxTexture focusStyle && focusStyle.Texture.ResourcePath.EndsWith("focus.svg"),
             "Keyboard focus has a distinct bright outline");
         Check(root.Theme.GetStylebox("grabber","HScrollBar") is StyleBoxTexture horizontalThumb

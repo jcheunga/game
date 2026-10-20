@@ -10,6 +10,8 @@ public partial class ModalSurface : StyleBox
     private readonly SliceStyle _chrome;
     public ModalSurface() { }
 
+    public ModalMaterial Material => _material;
+
     /// <summary>Width of the drawn rim and inner bevel line; content belongs inside it.</summary>
     public float FrameInset => _material == ModalMaterial.Portrait ? 4 : 8;
     public const int MinimumSideInset = 12, MinimumEndInset = 10;

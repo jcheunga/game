@@ -193,18 +193,11 @@ public partial class EndlessMenu : RoyalScreen
         var march = RoyalButton.Over(begin, "Begin endless march", StartRun, 8);
         march.Disabled = !canStart;
         march.TooltipText = canStart ? "Begin endless march" : reason;
-        march.SetGlyph(RoyalKit.Texture("icon-swords-dark"), new Rect2(spec.Rect("button.begin.icon").Position - begin.Position, spec.Rect("button.begin.icon").Size));
-        var label = spec.Label("button.begin.label", "Begin Endless March", 330);
-        label.Ink = new Color("080603"); label.ShadowInk = new Color(1, .95f, .8f, .3f);
-        label.Position -= begin.Position;
-        march.SetCaption(label, new Rect2(label.Position, label.Size));
-        // Endless runs cost no food; the concept's cost slot shows the best wave reached instead.
-        var food = spec.Rect("button.begin.food");
-        var record = RoyalText.Caps(state.BestEndlessWave > 0 ? $"BEST {state.BestEndlessWave}" : "FREE", 19, new Color("060402"), 700);
-        record.ShadowInk = new Color(1, .95f, .8f, .3f);
-        record.Align = HorizontalAlignment.Center;
-        record.Position = new Vector2(food.Position.X - begin.Position.X - 4, 0); record.Size = new Vector2(begin.End.X - food.Position.X - 8, begin.Size.Y);
-        march.AddChild(record);
+        // Endless runs cost no food; the price slot after the divider shows the best wave reached instead.
+        var label = spec.Label("button.begin.label", "Begin endless march", 330);
+        label.FontSize = 22; label.Ink = new Color("140a04");
+        var record = RoyalText.Caps(state.BestEndlessWave > 0 ? $"Best {state.BestEndlessWave}" : "Free", 18, new Color("140a04"), 700);
+        march.Arrange(label, RoyalKit.Texture("icon-swords-dark"), spec.Rect("button.begin.icon").Size * .8f, record, gap: 14);
         _layer.AddChild(march);
     }
 
@@ -213,10 +206,7 @@ public partial class EndlessMenu : RoyalScreen
         var spec = Spec;
         var rect = spec.Rect($"button.{key}");
         var button = RoyalButton.Over(rect, text, action, 6);
-        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
-        var label = spec.Label($"button.{key}.label", text, rect.Size.X);
-        label.Position -= rect.Position;
-        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        button.Arrange(spec.Label($"button.{key}.label", text, rect.Size.X), RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size, gap: 10);
         _layer.AddChild(button);
     }
 

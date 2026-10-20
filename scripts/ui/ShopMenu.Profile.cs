@@ -81,33 +81,18 @@ public partial class ShopMenu
         var action = RoyalButton.Over(actionRect, right.Text, right.Run, 6);
         action.Disabled = !right.Enabled;
         _body.AddChild(action);
-        // Verb, cost and coin are centred as one group, the way the concept spaces them.
-        var verb = spec.Label(rightKey + ".label", right.Text.ToUpperInvariant(), actionRect.Size.X);
-        var ink = new Color("2c1a08");
-        verb.Ink = ink; verb.ShadowInk = new Color(1, .95f, .8f, .3f);
-        var verbWidth = verb.TextWidth(verb.FontSize);
-        RoyalLabel cost = null; float costWidth = 0;
-        var coinRect = spec.Rect(spec.First(rightKey + ".coin", rightKey + ".icon"), new Rect2(0, 0, 38, 30));
+        // Verb, divider, coin and cost as one centred row, like every priced action.
+        var verb = spec.Label(rightKey + ".label", right.Text, actionRect.Size.X);
+        verb.Ink = new Color("2c1a08");
+        RoyalLabel cost = null;
         if (right.Cost > 0)
         {
-            cost = spec.Has(rightKey + ".cost") ? spec.Label(rightKey + ".cost", right.Cost.ToString("N0"), 90) : RoyalText.Caps(right.Cost.ToString("N0"), verb.FontSize, ink, 700);
-            cost.Ink = ink; cost.ShadowInk = verb.ShadowInk;
-            costWidth = cost.TextWidth(cost.FontSize);
+            cost = spec.Has(rightKey + ".cost") ? spec.Label(rightKey + ".cost", right.Cost.ToString("N0"), 90) : RoyalText.Caps(right.Cost.ToString("N0"), verb.FontSize, verb.Ink, 700);
+            cost.Ink = verb.Ink; cost.FontSize = verb.FontSize;
         }
-        var group = verbWidth + (cost != null ? 12 + costWidth + 10 + coinRect.Size.X : 0);
-        var left0 = actionRect.Size.X / 2 - group / 2;
-        verb.Align = HorizontalAlignment.Left; verb.ShrinkToFit = false;
-        verb.Position = new Vector2(left0, verb.Position.Y - actionRect.Position.Y);
-        action.SetCaption(verb, new Rect2(verb.Position, new Vector2(verbWidth + 4, verb.Size.Y)));
+        var coin = spec.Rect(spec.First(rightKey + ".coin", rightKey + ".icon"), new Rect2(0, 0, 38, 30)).Size * .85f;
+        action.Arrange(verb, price: cost, priceIcon: cost == null ? null : RoyalKit.Texture("coin-pile"), priceIconSize: coin, rule: 16);
         action.Text = right.Cost > 0 ? $"{right.Text} {right.Cost:N0}" : right.Text;
-        if (cost != null)
-        {
-            cost.Align = HorizontalAlignment.Left; cost.ShrinkToFit = false;
-            cost.Position = new Vector2(left0 + verbWidth + 12, verb.Position.Y + verb.Baseline - cost.Baseline + (cost.FontSize - verb.FontSize) * 0f);
-            cost.Size = new Vector2(costWidth + 4, cost.Size.Y);
-            action.AddChild(cost);
-            action.AddChild(RoyalKit.Image("coin-pile", new Rect2(new Vector2(left0 + verbWidth + 12 + costWidth + 10, coinRect.Position.Y - actionRect.Position.Y), coinRect.Size)));
-        }
     }
 
     private void BuildUnitProfile(RoyalSpec spec, UnitDefinition unit, Entry entry)

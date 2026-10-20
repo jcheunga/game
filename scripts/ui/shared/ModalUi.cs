@@ -5,6 +5,9 @@ using Godot;
 public static class ModalUi
 {
     public static readonly Font HeadingFont = RealmUi.TitleFont;
+    /// <summary>Engraved capitals for action captions (16 px: the phone floor for caps).</summary>
+    public static readonly Font CaptionFont = RoyalFonts.Display(700);
+    public const int CaptionSize = ReadingText.PhoneCaps;
     public static readonly Color Cream = new("fff0cf"), Muted = new("cbbba5");
     public static void StyleButton(Button button, bool selected = false, ModalMaterial? material = null)
     {
@@ -14,11 +17,19 @@ public static class ModalUi
         if (selected && type == ModalMaterial.Gold && !button.HasMeta("realm_primary")) type = ModalMaterial.Portrait;
         // Only a selected button keeps the warm gold edge; hovering changes nothing and a held press sinks.
         ButtonFeel.Apply(button, new ModalSurface(type, 8, selected), new ModalSurface(type, 8, selected, true));
-        button.AddThemeStyleboxOverride("disabled", new ModalSurface(ModalMaterial.Inset, 8));
+        // A disabled action keeps its own material under a veil, so a gold call to action still reads as one.
+        var veil = new StyleBoxFlat { BgColor = new Color(.03f, .04f, .05f, .5f), AntiAliasing = true }; veil.SetCornerRadiusAll(5);
+        button.AddThemeStyleboxOverride("disabled", new StackedStyle(new ModalSurface(type, 8), veil));
         var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = new Color("dcc693") }; focus.SetBorderWidthAll(2); focus.SetCornerRadiusAll(4); button.AddThemeStyleboxOverride("focus", focus);
         var ink = type == ModalMaterial.Gold ? new Color("382316") : Cream;
-        button.AddThemeFontOverride("font", HeadingFont); button.AddThemeFontSizeOverride("font_size", button.HasMeta("map_navigation") ? MapNavigation.FontSize : RealmUi.ButtonFontSize);
-        if (button is RealmButton realm) realm.SetPresentation(HeadingFont, ink, new Color("aaa091"));
+        // Centred actions read in the concept's engraved capitals, like the painted screens' buttons;
+        // dropdowns and left-aligned list rows keep the book serif.
+        var caps = button is RealmButton { VerticalContent: false } && button.Alignment == HorizontalAlignment.Center;
+        if (caps && button is RealmButton { CenterIconAndText: false } plain) plain.UseContentGroup();
+        var font = caps ? CaptionFont : HeadingFont;
+        button.AddThemeFontOverride("font", font);
+        button.AddThemeFontSizeOverride("font_size", caps ? CaptionSize : button.HasMeta("map_navigation") ? MapNavigation.FontSize : RealmUi.ButtonFontSize);
+        if (button is RealmButton realm) realm.SetPresentation(font, ink, new Color(ink, type == ModalMaterial.Gold ? .6f : .5f));
         else foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) button.AddThemeColorOverride(key, ink);
         button.AddThemeColorOverride("icon_normal_color", ink);
         button.AddThemeColorOverride("icon_hover_color", ink);

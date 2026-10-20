@@ -14,6 +14,9 @@ public static class RoyalFonts
     /// <summary>Engraved Roman capitals. Mixed-case text renders as small caps with tall initials.</summary>
     public static Font Display(int weight = 700) => Variation(DisplayPath, weight);
 
+    /// <summary>Whether a font is the engraved display face (button captions in it read as full capitals).</summary>
+    public static bool IsDisplay(Font font) => font is FontVariation { BaseFont: FontFile file } && file.ResourcePath == DisplayPath;
+
     /// <summary>Book serif for names, descriptions and numbers.</summary>
     public static Font Body(int weight = 500) => Variation(BodyPath, weight);
 

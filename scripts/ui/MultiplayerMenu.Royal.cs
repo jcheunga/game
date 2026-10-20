@@ -89,11 +89,11 @@ public partial class MultiplayerMenu
         }
         SelectBoard(0);
 
-        Footer(spec, "back", "icon-back-chevron", "BACK", CloseRoyal);
-        Footer(spec, "refresh", "icon-refresh", "REFRESH", RefreshOnlineData);
-        Footer(spec, "match", "icon-match", "MATCH", QuickMatchOnlineRoom);
-        Footer(spec, "host", "icon-host", "HOST", HostOnlineRoom);
-        _royalStart = Footer(spec, "start", "icon-start", "START CHALLENGE", StartChallenge, true);
+        Footer(spec, "back", "icon-back-chevron", "Back", CloseRoyal);
+        Footer(spec, "refresh", "icon-refresh", "Refresh", RefreshOnlineData);
+        Footer(spec, "match", "icon-match", "Match", QuickMatchOnlineRoom);
+        Footer(spec, "host", "icon-host", "Host", HostOnlineRoom);
+        _royalStart = Footer(spec, "start", "icon-swords-dark", "Start challenge", StartChallenge, true);
         _startButton.SetMeta("realm_primary", true);
     }
 
@@ -157,10 +157,10 @@ public partial class MultiplayerMenu
     {
         var rect = spec.Rect($"button.{key}");
         var button = RoyalButton.Over(rect, text, run, 6);
-        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
-        var label = spec.Label($"button.{key}.label", text, rect.End.X - spec.Number($"button.{key}.label", "pen_x", rect.Position.X) - 6);
-        label.Position -= rect.Position;
-        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        // One footer size: the concept's labels ran from 14 to 18 px across the row.
+        var label = spec.Label($"button.{key}.label", text, rect.Size.X);
+        label.FontSize = 16;
+        button.Arrange(label, RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size, gap: 10);
         _royalLayer.AddChild(button);
         return button;
     }

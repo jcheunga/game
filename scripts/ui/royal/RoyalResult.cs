@@ -150,46 +150,16 @@ public partial class RoyalResult : Control
 
         // The pair sits on the plate's painted buttons, gold to leave and steel to try again, and reads as a pair:
         // one capitals size on one line, each button's icon and words centred together.
-        var leaveName = MapNavigation.Normalize(LeaveText);
-        LeaveButton = RoyalButton.Over(spec.Rect("button.back"), leaveName, () => Leave?.Invoke(), 8);
-        var leave = RoyalText.Caps(leaveName.ToUpperInvariant(), ActionSize, new Color("1e0f04"), 700);
-        Arrange(LeaveButton, leave, RoyalKit.Texture("icon-map-large"), new Vector2(48, 40));
-        // Dark lettering pressed into the gold: a faint light edge below it, never a dark drop shadow.
-        leave.ShadowOffset = new Vector2(0, 1); leave.ShadowInk = new Color(1f, .92f, .7f, .35f);
+        LeaveButton = MapNavigation.Fixed(spec.Rect("button.back"), () => Leave?.Invoke(), LeaveText, gold: true, size: ActionSize);
         canvas.AddChild(LeaveButton);
         RetryButton = RoyalButton.Over(spec.Rect("button.restart"), RetryText, () => Retry?.Invoke(), 8);
-        var retry = RoyalText.Caps(RetryText.ToUpperInvariant(), ActionSize, new Color("fff1d0"), 700);
-        var cost = RetryFoodCost > 0 ? RoyalText.Caps($"{RetryFoodCost} FOOD", 18, new Color("f3d48a"), 700) : null;
-        Arrange(RetryButton, retry, RoyalKit.Texture("icon-restart"), new Vector2(28, 28), cost);
+        var retry = RoyalText.Caps(RetryText, ActionSize, new Color("fff1d0"), 700);
+        var cost = RetryFoodCost > 0 ? RoyalText.Caps($"{RetryFoodCost} food", 18, new Color("f3d48a"), 700) : null;
+        RetryButton.Arrange(retry, RoyalKit.Texture("icon-restart"), new Vector2(28, 28), cost, RoyalKit.Texture("icon-wheat"), new Vector2(38, 32));
         canvas.AddChild(RetryButton);
     }
 
     private const int ActionSize = 22;
-
-    /// <summary>
-    /// Centres a button's icon and caption as one row. A cost follows after an engraved divider, and dims with
-    /// the button when it is disabled (no food to try again).
-    /// </summary>
-    private static void Arrange(RoyalButton button, RoyalLabel caption, Texture2D glyph, Vector2 glyphSize, RoyalLabel cost = null)
-    {
-        const float gap = 12, rule = 20;
-        var wheat = new Vector2(38, 32);
-        var height = button.Size.Y;
-        var words = Mathf.Ceil(caption.TextWidth(caption.FontSize));
-        var priced = cost == null ? 0 : rule * 2 + 2 + wheat.X + 6 + Mathf.Ceil(cost.TextWidth(cost.FontSize));
-        var x = Mathf.Round((button.Size.X - glyphSize.X - gap - words - priced) / 2);
-        button.SetGlyph(glyph, new Rect2(x, Mathf.Round((height - glyphSize.Y) / 2), glyphSize));
-        x += glyphSize.X + gap;
-        button.SetCaption(caption, new Rect2(x, 0, words + 2, height));
-        if (cost == null) return;
-        var row = new Control { Name = "Cost", Position = new Vector2(x + words + rule, 0), Size = new Vector2(priced - rule, height), MouseFilter = MouseFilterEnum.Ignore };
-        row.AddChild(new ColorRect { Color = new Color(0, 0, 0, .45f), Position = new Vector2(0, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
-        row.AddChild(new ColorRect { Color = new Color(.95f, .82f, .55f, .4f), Position = new Vector2(1, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
-        row.AddChild(RoyalKit.Image("icon-wheat", new Rect2(2 + rule, Mathf.Round((height - wheat.Y) / 2), wheat)));
-        RoyalText.Place(row, cost, 2 + rule + wheat.X + 6, 0, cost.TextWidth(cost.FontSize) + 2, height);
-        button.AddChild(row);
-        button.Draw += () => row.Modulate = button.Disabled ? new Color(1, 1, 1, .55f) : Colors.White;
-    }
 
     /// <summary>The player's level: its medallion, the XP this battle paid and the bar toward the next level.</summary>
     private void BuildLevelCard(Control canvas, Rect2 rect, int gained)

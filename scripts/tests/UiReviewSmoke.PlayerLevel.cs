@@ -123,7 +123,7 @@ public partial class UiReviewSmoke
         AuditText("Armory / unit cap"); await Capture("08-armory-unit-cap");
         await Press("War wagon");
         await PressHint(BaseUpgradeCatalog.Get(BaseUpgradeCatalog.BallistaId).Title);
-        Check(Walk(menu).OfType<RoyalButton>().Any(x => x.IsVisibleInTree() && x.Disabled && x.Text.StartsWith("PLAYER LV")),
+        Check(Walk(menu).OfType<RoyalButton>().Any(x => x.IsVisibleInTree() && x.Disabled && x.Text.StartsWith("Player lv", StringComparison.OrdinalIgnoreCase)),
             "A wagon upgrade at the rank cap shows the player level that lifts it");
         AuditText("Armory / wagon cap"); await Capture("09-wagon-cap");
         menu.CloseHomeModal();

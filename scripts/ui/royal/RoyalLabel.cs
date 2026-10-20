@@ -27,6 +27,10 @@ public partial class RoyalLabel : Control
     public Vector2 ShadowOffset;
     public Color ShadowInk = new(0, 0, 0, .55f);
     public bool ShrinkToFit = true;
+    /// <summary>Draws the text in full capitals while <see cref="Text"/> keeps its own case (names stay findable).</summary>
+    public bool AllCaps { get => _allCaps; set { _allCaps = value; QueueRedraw(); UpdateMinimumSize(); } }
+    private bool _allCaps;
+    private string Drawn => _allCaps ? _text.ToUpperInvariant() : _text;
     public int MinimumFontSize = ReadingText.PhoneCaps;
     public float Tracking;
 
@@ -61,7 +65,11 @@ public partial class RoyalLabel : Control
     public float TextWidth(int size) => TextWidth(_text, size);
 
     /// <summary>The width another text would take in this label's font, size and tracking.</summary>
-    public float TextWidth(string text, int size) => Font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X + Tracking * Mathf.Max(0, text.Length - 1);
+    public float TextWidth(string text, int size)
+    {
+        if (_allCaps) text = text.ToUpperInvariant();
+        return Font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X + Tracking * Mathf.Max(0, text.Length - 1);
+    }
 
     public override Vector2 _GetMinimumSize() => new(ShrinkToFit ? 0 : TextWidth(_fontSize), _fontSize * CapRatio);
 
@@ -86,14 +94,15 @@ public partial class RoyalLabel : Control
 
     private void DrawRun(Vector2 origin, int size, Color ink, int outline)
     {
+        var text = Drawn;
         if (Tracking == 0)
         {
-            if (outline > 0) DrawStringOutline(Font, origin, _text, HorizontalAlignment.Left, -1, size, outline, ink);
-            else DrawString(Font, origin, _text, HorizontalAlignment.Left, -1, size, ink);
+            if (outline > 0) DrawStringOutline(Font, origin, text, HorizontalAlignment.Left, -1, size, outline, ink);
+            else DrawString(Font, origin, text, HorizontalAlignment.Left, -1, size, ink);
             return;
         }
         var position = origin;
-        foreach (var letter in _text)
+        foreach (var letter in text)
         {
             var glyph = letter.ToString();
             if (outline > 0) DrawStringOutline(Font, position, glyph, HorizontalAlignment.Left, -1, size, outline, ink);

@@ -75,10 +75,7 @@ public partial class LoadoutMenu : RoyalScreen
         // Warband.
         layer.AddChild(spec.Label("warband.title", "Your Warband", 240));
         var edit = RoyalButton.Over(spec.Rect("button.edit"), "Edit squad", () => SceneRouter.Instance.GoToShop(0), 6);
-        edit.SetGlyph(RoyalKit.Texture("icon-quill"), new Rect2(spec.Rect("button.edit.icon").Position - spec.Rect("button.edit").Position, spec.Rect("button.edit.icon").Size));
-        var editLabel = spec.Label("button.edit.label", "EDIT SQUAD", 120);
-        editLabel.Position -= spec.Rect("button.edit").Position;
-        edit.SetCaption(editLabel, new Rect2(editLabel.Position, editLabel.Size));
+        edit.Arrange(spec.Label("button.edit.label", "Edit squad", 120), RoyalKit.Texture("icon-quill"), spec.Rect("button.edit.icon").Size, gap: 10);
         layer.AddChild(edit);
         var units = state.GetActiveDeckUnits().ToArray();
         var spells = state.GetActiveDeckSpells().ToArray();

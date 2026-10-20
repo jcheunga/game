@@ -16,9 +16,9 @@ public static class MobilePresentation
     public static void TouchButton(Button button)
     {
         button.CustomMinimumSize = new Vector2(Mathf.Max(56,button.CustomMinimumSize.X),Mathf.Max(56,button.CustomMinimumSize.Y));
-        button.AddThemeFontSizeOverride("font_size",RealmUi.ButtonFontSize);
         button.AddThemeConstantOverride("icon_max_width",28);
-        MedievalUi.StyleButton(button,8,8);
+        // The kit's materials and engraved captions, as on every other screen (gold when realm_primary).
+        ModalUi.StyleButton(button);
     }
 
 }

@@ -21,17 +21,19 @@ public static class MapNavigation
         return button;
     }
 
-    public static RoyalButton Fixed(Rect2 rect, Action action, string text = Caption)
+    /// <summary>
+    /// Back to the map on a plate that paints the button: the plate's own surface (gold, steel or dark, as its
+    /// concept has it) with the map icon and capitals centred on it. A gold plate takes dark ink.
+    /// </summary>
+    public static RoyalButton Fixed(Rect2 rect, Action action, string text = Caption, bool gold = false, int size = 18)
     {
         text = Normalize(text);
         var button = RoyalButton.Over(rect, text, action, 8);
-        button.SetStates(new ModalSurface(ModalMaterial.Steel, 8));
-        var label = RoyalText.Serif(text, FontSize, ModalUi.Cream, 500);
-        label.ShadowOffset = Vector2.Zero;
-        var width = label.TextWidth(label.FontSize);
-        var left = (rect.Size.X - width - 38) / 2;
-        button.SetGlyph(RoyalKit.Texture("icon-map-scroll"), new Rect2(left, (rect.Size.Y - 28) / 2, 28, 28));
-        button.SetCaption(label, new Rect2(left + 38, 0, width, rect.Size.Y));
+        var label = RoyalText.Caps(text, size, gold ? new Color("1e0f04") : ModalUi.Cream, 700);
+        var icon = Mathf.Round(Mathf.Clamp(rect.Size.Y * .5f, 26, 40));
+        button.Arrange(label, RoyalKit.Texture("icon-map-large"), new Vector2(Mathf.Round(icon * 1.2f), icon), gap: Mathf.Round(icon * .35f));
+        // Dark lettering pressed into gold keeps a faint light edge below it instead of a dark drop shadow.
+        if (gold) { label.ShadowOffset = new Vector2(0, 1); label.ShadowInk = new Color(1f, .92f, .7f, .35f); }
         return button;
     }
 }

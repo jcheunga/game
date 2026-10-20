@@ -16,7 +16,7 @@ public partial class RealmButton : Button
     {
         var font = GetThemeFont("font"); var fontSize = GetThemeFontSize("font_size");
         var box = GetThemeStylebox("normal"); var icon = Icon == null ? 0 : GetThemeConstant("icon_max_width");
-        var text = font.GetStringSize(Text, fontSize: fontSize).X;
+        var text = font.GetStringSize(RoyalFonts.IsDisplay(font) ? Text.ToUpperInvariant() : Text, fontSize: fontSize).X;
         var horizontal = Mathf.Max(12, box.GetContentMargin(Side.Left)) + Mathf.Max(12, box.GetContentMargin(Side.Right));
         var vertical = VerticalContent ? 28 : Mathf.Max(10, box.GetContentMargin(Side.Top)) + Mathf.Max(10, box.GetContentMargin(Side.Bottom));
         return new Vector2((VerticalContent ? Mathf.Max(icon, text) : text + icon + (icon > 0 && Text.Length > 0 ? 10 : 0)) + horizontal,
@@ -30,6 +30,7 @@ public partial class RealmButton : Button
         {
             _groupLabel.AddThemeFontOverride("font", font);
             _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+            _groupLabel.Uppercase = RoyalFonts.IsDisplay(font);
             return;
         }
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" }) AddThemeColorOverride(key, ink);
@@ -40,7 +41,18 @@ public partial class RealmButton : Button
         _authoredMinimum = CustomMinimumSize;
         RefreshPresentationMinimum();
         ThemeChanged += RefreshPresentationMinimum;
-        if (!CenterIconAndText) return;
+        if (CenterIconAndText) BuildGroup();
+    }
+
+    /// <summary>Draws the icon and caption as a centred group from now on (engraved captions need it to read in capitals).</summary>
+    public void UseContentGroup()
+    {
+        CenterIconAndText = true;
+        if (IsNodeReady() && _groupLabel == null) BuildGroup();
+    }
+
+    private void BuildGroup()
+    {
         _normalInk = GetThemeColor("font_color"); _disabledInk = GetThemeColor("font_disabled_color");
         foreach (var key in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color",
             "icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color" })
@@ -59,8 +71,7 @@ public partial class RealmButton : Button
         _groupLabel.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
         _groupLabel.AddThemeConstantOverride("shadow_offset_x", 0); _groupLabel.AddThemeConstantOverride("shadow_offset_y", 0);
         if (VerticalContent) { _groupIcon.SizeFlagsHorizontal = SizeFlags.ShrinkCenter; _groupLabel.HorizontalAlignment = HorizontalAlignment.Center; }
-        _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
-        _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+        SyncGroupTheme();
         ThemeChanged += SyncGroupTheme;
         if (IconAlignment == HorizontalAlignment.Right) { row.AddChild(_groupLabel); row.AddChild(_groupIcon); }
         else { row.AddChild(_groupIcon); row.AddChild(_groupLabel); }
@@ -71,6 +82,8 @@ public partial class RealmButton : Button
     {
         _groupLabel.AddThemeFontOverride("font", GetThemeFont("font"));
         _groupLabel.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+        // Engraved captions read in full capitals; the button keeps its own text for names and tests.
+        _groupLabel.Uppercase = RoyalFonts.IsDisplay(GetThemeFont("font"));
     }
     private void RefreshPresentationMinimum()
     {

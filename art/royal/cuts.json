@@ -4228,5 +4228,17 @@
    40
   ],
   "mode": "circle"
+ },
+ {
+  "name": "button-slate",
+  "from": "forge",
+  "rect": [
+   116,
+   650,
+   265,
+   54
+  ],
+  "mode": "plate",
+  "plate": true
  }
 ]

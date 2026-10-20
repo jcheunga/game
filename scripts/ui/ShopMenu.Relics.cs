@@ -105,10 +105,7 @@ public partial class ShopMenu
         Callable.From(() => { if (GodotObject.IsInstanceValid(scroll)) { scroll.ScrollVertical = (int)_relicScroll; } }).CallDeferred();
 
         var back = RoyalButton.Over(spec.Rect("button.back"), "Back", Close, 6);
-        back.SetGlyph(RoyalKit.Texture("icon-back-chevron"), new Rect2(spec.Rect("button.back.icon").Position - spec.Rect("button.back").Position, spec.Rect("button.back.icon").Size));
-        var backLabel = spec.Label("button.back.label", "BACK", 90);
-        backLabel.Position -= spec.Rect("button.back").Position;
-        back.SetCaption(backLabel, new Rect2(backLabel.Position, backLabel.Size));
+        back.Arrange(spec.Label("button.back.label", "Back", 90), RoyalKit.Texture("icon-back-chevron"), spec.Rect("button.back.icon").Size, gap: 10);
         _body.AddChild(back);
 
         var detailsRect = spec.Rect("button.details");
@@ -149,18 +146,16 @@ public partial class ShopMenu
         }, 6);
         equip.Disabled = !have2;
         equip.TooltipText = !have2 ? "Not owned yet · craft it in the forge" : holder != null ? $"Equipped on {holder.Unit.DisplayName} · slot {holder.Slot}" : "Choose an ally to compare";
-        equip.SetGlyph(RoyalKit.Texture("icon-helm"), new Rect2(spec.Rect("button.equip.icon").Position - equipRect.Position, spec.Rect("button.equip.icon").Size));
+        // The two big plaques share one capitals size with the other primary actions (result board, forge).
         var equipLabel = spec.Label("button.equip.label", holder != null ? "Unequip" : "Equip", 200);
-        equipLabel.Position -= equipRect.Position;
-        equip.SetCaption(equipLabel, new Rect2(equipLabel.Position, equipLabel.Size));
+        equipLabel.FontSize = 22;
+        equip.Arrange(equipLabel, RoyalKit.Texture("icon-helm"), spec.Rect("button.equip.icon").Size * .85f, gap: 14);
         _body.AddChild(equip);
         var forgeRect = spec.Rect("button.forge");
         var forge = RoyalButton.Over(forgeRect, "Forge", () => SceneRouter.Instance.GoToForge(), 6);
-        forge.SetGlyph(RoyalKit.Texture("icon-hammers"), new Rect2(spec.Rect("button.forge.icon").Position - forgeRect.Position, spec.Rect("button.forge.icon").Size));
         var forgeLabel = spec.Label("button.forge.label", "Forge", 200);
-        forgeLabel.Ink = new Color("1a0a04"); forgeLabel.ShadowInk = new Color(1, .95f, .8f, .3f);
-        forgeLabel.Position -= forgeRect.Position;
-        forge.SetCaption(forgeLabel, new Rect2(forgeLabel.Position, forgeLabel.Size));
+        forgeLabel.FontSize = 22; forgeLabel.Ink = new Color("1a0a04");
+        forge.Arrange(forgeLabel, RoyalKit.Texture("icon-hammers"), spec.Rect("button.forge.icon").Size * .85f, gap: 14);
         _body.AddChild(forge);
     }
 

@@ -51,15 +51,14 @@ public partial class ForgeMenu : RoyalScreen
         BuildInventory(spec);
         BuildFuse(spec);
         BuildCraft(spec);
-        Footer(spec, "armory", "icon-armory", "ARMORY", () => SceneRouter.Instance.GoToShop(3));
+        Footer(spec, "armory", "icon-armory", "Armory", () => SceneRouter.Instance.GoToShop(3));
         _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.map"), Close));
-        var enchant=RoyalButton.Over(new Rect2(470,651,350,52),"Enchantments",
-            ()=>ForgeEnchantmentInspector.Show(this,id=>{_dismantleId=id;RefreshUi();},_dismantleId),6);
-        enchant.SetStates(new ModalSurface(ModalMaterial.Steel,8));
-        enchant.SetGlyph(RealmUi.Icon("crystal"),new Rect2(22,12,28,28));
-        var caption=RoyalText.Caps("Enchantments",20);caption.Align=HorizontalAlignment.Center;caption.Baseline=33;
-        enchant.SetCaption(caption,new Rect2(56,0,272,52));
-        enchant.TooltipText=$"Enchant an owned relic · {state.Essence} Essence available";
+        // Enchantments sits between the two painted footer slabs, on the same slate, centred in the gap.
+        var enchant = RoyalButton.Over(new Rect2(491, 651, 300, 52), "Enchantments",
+            () => ForgeEnchantmentInspector.Show(this, id => { _dismantleId = id; RefreshUi(); }, _dismantleId), 6);
+        enchant.SetStates(RoyalKit.Slice("button-slate", 14), 6);
+        enchant.Arrange(RoyalText.Caps("Enchantments", 18, ModalUi.Cream, 700), RealmUi.Icon("crystal"), new Vector2(28, 28));
+        enchant.TooltipText = $"Enchant an owned relic · {state.Essence} Essence available";
         _layer.AddChild(enchant);
     }
 
@@ -69,11 +68,9 @@ public partial class ForgeMenu : RoyalScreen
         var button = RoyalButton.Over(rect, text, run, 6);
         button.Disabled = !enabled;
         button.TooltipText = hint;
-        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
         var label = spec.Label($"button.{key}.label", text, 200);
-        label.Ink = new Color("140803"); label.ShadowInk = new Color(1, .95f, .8f, .3f);
-        label.Position -= rect.Position;
-        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        label.Ink = new Color("140803");
+        button.Arrange(label, RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size);
         _layer.AddChild(button);
         return button;
     }
@@ -82,10 +79,7 @@ public partial class ForgeMenu : RoyalScreen
     {
         var rect = spec.Rect($"button.{key}");
         var button = RoyalButton.Over(rect, text, run, 6);
-        button.SetGlyph(RoyalKit.Texture(icon), new Rect2(spec.Rect($"button.{key}.icon").Position - rect.Position, spec.Rect($"button.{key}.icon").Size));
-        var label = spec.Label($"button.{key}.label", text, 200);
-        label.Position -= rect.Position;
-        button.SetCaption(label, new Rect2(label.Position, label.Size));
+        button.Arrange(RoyalText.Caps(text, 18, ModalUi.Cream, 700), RoyalKit.Texture(icon), spec.Rect($"button.{key}.icon").Size);
         _layer.AddChild(button);
     }
 

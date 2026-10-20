@@ -187,22 +187,16 @@ public partial class ShopMenu
         }, 6);
         button.Disabled = max || capped || state.Gold < cost;
         _wagonStage.AddChild(button);
-        var verb = spec.Label("button.upgrade.label", max ? "TRAINED" : capped ? $"PLAYER LV {needed}" : "UPGRADE", capped ? 190 : 120);
-        verb.Position -= rect.Position;
-        if (capped)
+        // Verb, divider and price as one centred row; a capped rank shows a padlock instead of the coin.
+        var verb = spec.Label("button.upgrade.label", max ? "Trained" : capped ? $"Player lv {needed}" : "Upgrade", 190);
+        verb.Font = RoyalFonts.Display(700); verb.FontSize = 16; verb.Ink = ModalUi.Cream;
+        if (max) button.Arrange(verb);
+        else if (capped) button.Arrange(verb, RoyalKit.Texture("icon-lock-small"), new Vector2(15, 20), gap: 10);
+        else
         {
-            // Centred across the whole plaque, with a padlock where the coin would be.
-            verb.Align = HorizontalAlignment.Center;
-            verb.Position = new Vector2(30, verb.Position.Y); verb.Size = new Vector2(rect.Size.X - 60, verb.Size.Y);
-            button.AddChild(RoyalKit.Image("icon-lock-small", new Rect2(24, rect.Size.Y / 2 - 10, 15, 20)));
-        }
-        button.SetCaption(verb, new Rect2(verb.Position, verb.Size));
-        if (!max && !capped)
-        {
-            button.AddChild(RoyalKit.Image("coin-pile", new Rect2(spec.Rect("button.upgrade.icon").Position - rect.Position, spec.Rect("button.upgrade.icon").Size)));
             var price = spec.Label("button.upgrade.cost", cost.ToString("N0"), 60);
-            price.Position -= rect.Position;
-            button.AddChild(price);
+            price.Font = RoyalFonts.Display(700); price.FontSize = 16;
+            button.Arrange(verb, price: price, priceIcon: RoyalKit.Texture("coin-pile"), priceIconSize: spec.Rect("button.upgrade.icon").Size * .75f, rule: 14);
         }
         button.TooltipText = $"{upgrade.Title} · {(max ? "fully trained" : capped ? $"reach player level {needed} to raise it to level {level + 1}" : $"next: {BuildBaseUpgradeEffectText(upgrade, level + 1)}")}";
     }

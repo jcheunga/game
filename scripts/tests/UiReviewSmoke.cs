@@ -387,7 +387,12 @@ public partial class UiReviewSmoke : Node
             // Concept screens keep the concepts' type sizes, raised to what reads on a phone (capitals down to 16 px).
             var minimumFont = InRoyalScreen(label) ? ReadingText.PhoneCaps : homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
-                if (parent is Button) { minimumFont = Math.Min(minimumFont, RealmUi.ButtonFontSize); break; }
+                if (parent is Button)
+                {
+                    // Engraved button captions are capitals, so they take the capitals floor.
+                    var caps = label.Uppercase && RoyalFonts.IsDisplay(label.GetThemeFont("font"));
+                    minimumFont = Math.Min(minimumFont, caps ? ReadingText.PhoneCaps : RealmUi.ButtonFontSize); break;
+                }
             if (font < minimumFont) issues.Add("small text");
             if (label.GetVisibleLineCount() < label.GetLineCount()) issues.Add("hidden lines");
             var hiddenLines = label.GetVisibleLineCount() < label.GetLineCount();

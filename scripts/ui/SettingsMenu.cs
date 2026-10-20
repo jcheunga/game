@@ -314,15 +314,12 @@ public partial class SettingsMenu : RoyalScreen
     private void BuildButtons(RoyalSpec spec)
     {
         var restore = RoyalButton.Over(spec.Rect("button.restore"), "Restore defaults", RestoreDefaults, 6);
-        restore.SetGlyph(RoyalKit.Texture("icon-restore"), new Rect2(spec.Rect("button.restore.icon").Position - spec.Rect("button.restore").Position, spec.Rect("button.restore.icon").Size));
-        var restoreLabel = spec.Label("button.restore.label", "Restore Defaults", 240);
-        restoreLabel.Position -= spec.Rect("button.restore").Position;
-        restore.SetCaption(restoreLabel, new Rect2(restoreLabel.Position, restoreLabel.Size));
+        restore.Arrange(spec.Label("button.restore.label", "Restore defaults", 240), RoyalKit.Texture("icon-restore"), spec.Rect("button.restore.icon").Size);
         _layer.AddChild(restore);
         var returnLabel = SceneRouter.Instance.SettingsReturnLabel;
         var backText = RealmModal.Embedded(this) || HasMeta("battle_modal") ? "Back to Map" : $"Back to {returnLabel}";
         if (HasMeta("battle_modal")) backText = "Back to Battle";
-        _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.back"), Leave, backText));
+        _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.back"), Leave, backText, gold: true));
     }
 
     private void Leave()

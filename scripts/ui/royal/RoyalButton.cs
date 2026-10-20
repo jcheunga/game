@@ -89,6 +89,8 @@ public partial class RoyalButton : Button
     {
         Caption?.QueueFree();
         Caption = label;
+        // Engraved captions read in full capitals on every button, whatever case the caller's name is in.
+        if (RoyalFonts.IsDisplay(label.Font)) label.AllCaps = true;
         // Dark lettering on a light plate (gold buttons) reads as doubled with a dark drop shadow.
         if (!label.Gold && label.Ink.Luminance < .45f) label.ShadowOffset = Vector2.Zero;
         AddChild(label);
@@ -100,11 +102,50 @@ public partial class RoyalButton : Button
         return label;
     }
 
+    /// <summary>
+    /// Lays an action out as one centred row: icon, caption and, after an engraved divider, an optional price
+    /// (its icon, then its amount). The price dims with the button when it is disabled.
+    /// </summary>
+    public void Arrange(RoyalLabel caption, Texture2D glyph = null, Vector2 glyphSize = default,
+        RoyalLabel price = null, Texture2D priceIcon = null, Vector2 priceIconSize = default, float gap = 12, float rule = 20)
+    {
+        if (RoyalFonts.IsDisplay(caption.Font)) caption.AllCaps = true;
+        var height = Size.Y;
+        var words = Mathf.Ceil(caption.TextWidth(caption.FontSize));
+        var lead = glyph == null ? 0 : glyphSize.X + gap;
+        var amount = price == null ? 0 : Mathf.Ceil(price.TextWidth(price.FontSize));
+        var priced = price == null ? 0 : rule * 2 + 2 + (priceIcon == null ? 0 : priceIconSize.X + 6) + amount;
+        var x = Mathf.Round((Size.X - lead - words - priced) / 2);
+        if (glyph != null) SetGlyph(glyph, new Rect2(x, Mathf.Round((height - glyphSize.Y) / 2), glyphSize));
+        x += lead;
+        // Spec labels carry the concept's measured baseline; in a row the cap band centres on the button instead.
+        caption.Align = HorizontalAlignment.Left; caption.ShrinkToFit = false; caption.Baseline = float.NaN;
+        SetCaption(caption, new Rect2(x, 0, words + 2, height));
+        if (price == null) return;
+        var row = new Control { Name = "Price", Position = new Vector2(x + words + rule, 0), Size = new Vector2(priced - rule, height), MouseFilter = MouseFilterEnum.Ignore };
+        row.AddChild(new ColorRect { Color = new Color(0, 0, 0, .45f), Position = new Vector2(0, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
+        row.AddChild(new ColorRect { Color = new Color(.95f, .82f, .55f, .4f), Position = new Vector2(1, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
+        var left = 2 + rule;
+        if (priceIcon != null)
+        {
+            row.AddChild(new TextureRect { Texture = priceIcon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                Position = new Vector2(left, Mathf.Round((height - priceIconSize.Y) / 2)), Size = priceIconSize, MouseFilter = MouseFilterEnum.Ignore,
+                TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+            left += priceIconSize.X + 6;
+        }
+        price.Align = HorizontalAlignment.Left; price.ShrinkToFit = false; price.Baseline = float.NaN;
+        if (RoyalFonts.IsDisplay(price.Font)) price.AllCaps = true;
+        row.AddChild(price); price.Position = new Vector2(left, 0); price.Size = new Vector2(amount + 2, height);
+        AddChild(row);
+        Draw += () => row.Modulate = Disabled ? new Color(1, 1, 1, .55f) : Colors.White;
+    }
+
     public TextureRect SetGlyph(Texture2D texture, Rect2 local, Color? tint = null)
     {
         Glyph?.QueueFree();
         Glyph = new TextureRect { Texture = texture, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            MouseFilter = MouseFilterEnum.Ignore, Position = local.Position, Size = local.Size, SelfModulate = tint ?? Colors.White };
+            MouseFilter = MouseFilterEnum.Ignore, Position = local.Position, Size = local.Size, SelfModulate = tint ?? Colors.White,
+            TextureFilter = TextureFilterEnum.LinearWithMipmaps };
         AddChild(Glyph);
         WireStates();
         return Glyph;

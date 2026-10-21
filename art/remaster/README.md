@@ -234,15 +234,17 @@ Wider changes tried and dropped because they measured worse:
 - a hand gate;
 - swinging face-down capes.
 
-Two units have an arm painted folded, with the fist against its own shoulder: the Reliquary's staff arm and the
-Furnace Knight's far arm. The paint between that fist and shoulder does not exist, so straightening the arm smears
-it. A Codex repaint asked for open elbows and came back folded again, so the rig respects the fold instead:
-- **Reach.** A hand reaches at most 0.25 of the arm's length past the reach it is painted at (`open_reach`).
-- **Elbows in deaths.** A dead elbow opens at most 40° from its painted bend (`limit_elbows`).
-- **Two-handed swings.** When either arm is painted folded, the swing raises the haft to 80° rather than 110°
-  (`two_high`).
+Two units were painted with an arm folded, the fist against its own shoulder: the Reliquary's staff arm and the
+Furnace Knight's far arm. The paint between that fist and shoulder does not exist, so straightening the arm smeared
+it. A general repaint prompt asking for open elbows came back folded again. Both are now repainted with the pose
+spelled out (`CARRY_UNIT` in `stride.py`):
+- **Reliquary:** the staff arm hangs at full length.
+- **Furnace Knight:** the hammer is carried low in both hands, with both arms long.
 
-The repaint prompt still asks for open elbows, for future repaints.
+Their worst frames measure 15 and 0 px². The rig also respects any arm that is still painted folded:
+- **Reach.** A hand reaches at most 0.25 of the arm's length past its painted reach (`open_reach`).
+- **Elbows in deaths.** A dead elbow opens at most 40° from its painted bend (`limit_elbows`).
+- **Two-handed swings.** With either arm folded, the swing raises the haft to 80° rather than 110° (`two_high`).
 
 ### Combat feel
 

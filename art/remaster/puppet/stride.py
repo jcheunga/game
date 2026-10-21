@@ -76,6 +76,21 @@ CARRY = {
     'claw-rake': ('the arms hanging forward of the body, the claws or fists ready; a hunched creature may lean its '
                   'chest forward, but it stands on its legs, not in a crouch'),
 }
+# units whose carry came back with an arm folded (the fist against its own shoulder hides the arm, which then smears
+# as the rig opens it): the pose spelled out
+CARRY_UNIT = {
+    'enemy_boss_reliquary': (
+        'the tall staff in the near (right) hand, the near arm hanging LONG and relaxed at the side, the elbow almost '
+        'straight, the fist low at hip height gripping the staff, which stands upright beside the near leg with its '
+        'foot on the ground ahead of the near foot and its head well above the crown; the whole near arm - shoulder, '
+        'upper arm, elbow, forearm, fist - shows its full length against the robe, nothing folded or tucked; the far '
+        '(left) arm reaching forward at chest height with the green flame in its open palm'),
+    'enemy_furnace_knight': (
+        'the great hammer held LOW in both hands across the front of the body, its head down and ahead near the '
+        'ground in front of the leading foot, the haft sloping up and back to the hands at belt height; BOTH arms long '
+        'and only slightly bent, each fist well below and in front of its own shoulder (the far arm reaching across '
+        'the belly to the haft, its full length showing), nothing folded or tucked against the shoulders'),
+}
 CARRY_DEFAULT = ('everything held as image 2 holds it, adjusted to the new view: the main item in the near (right) hand, '
                  'anything else in the far (left) hand in front of the body')
 
@@ -88,7 +103,7 @@ def master_prompt(ident, dest):
     u = M.UNITS.get(ident, {})
     title = u.get('DisplayName', ident)
     side = 'player' if ident.startswith('player_') else 'enemy'
-    carry = CARRY.get(M.profile_of(ident) or old_profile(ident), CARRY_DEFAULT)
+    carry = CARRY_UNIT.get(ident) or CARRY.get(M.profile_of(ident) or old_profile(ident), CARRY_DEFAULT)
     return f"""Image 1 is the official unit sheet for the game "Crownroad: Siege of Ash": take from it only the \
 painting style. Image 2 is this unit, {title} ({M.FACTION[side]}), painted by that artist. Keep image 2's design \
 EXACTLY: the same face, head, build and proportions, the same armour, clothing, colours, emblems, weapon and props, and \

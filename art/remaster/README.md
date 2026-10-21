@@ -200,12 +200,49 @@ A frame-by-frame audit of all 111 units (walk, attack and death) found and fixed
   - Crimson tatters swept into a bare arm go back to the body (`arm_cloth` in landmarks).
   - An arm never takes the head.
   - A green or blue spell's faint halo goes with its flame, so it no longer hangs over the corpse.
-- **Deaths.** Death poses aim the limbs in the body's own upright frame, and the topple is applied last. A
-  pass after the topple (`lie_on_ground`) then lays the legs level or sloping down to the ground, never more than
-  a few degrees up. Face down, the cape lies level over the back toward the feet. A fixed swing per degree of fall
-  had stood some capes up like fins or hung them down through the road. On its back a dead foot falls slack. A
-  thick body (a barrel chest, a belly, a pack) lies lower than legs laid out level from its hips, so the legs slope
-  down to the ground beside it and the corpse rests on the road instead of sinking through it.
+- **Deaths.** Death poses aim the limbs in the body's own upright frame, and the topple is applied last. A pass
+  after the topple (`lie_on_ground`) lays the legs level or sloping down to the ground, never more than a few
+  degrees up, and a limp arm no more than about 12° below level. Grounding uses visible paint only (`VISIBLE`):
+  the legs set contact, cloth may sink at most 2.5% of the figure into the road and a limp arm under the body 10%.
+  On its back the cape is turned under the body and flattened; face down it is pressed flat onto the back (swung
+  to lie along the back, it tore). On its back a dead foot falls slack.
+
+#### Motion check (objective pass criteria)
+
+`puppet/motion_check.py` poses every frame of every clip exactly as a render would, but measures it instead (9,000+
+frames for the roster in about ten minutes). `puppet/check_report.py` applies the pass criteria.
+- **Smear.** The deformed layers are splatted back to front onto a grid, and the check counts the painted cells
+  that show from mesh faces stretched past 3x their painted size: tears, ribbons and fans. A unit fails above 3% of
+  the figure when that covers more than 16 battle px², or above 100 battle px² on any unit.
+- **Ground.** In living clips the body's lowest paint stays within 3% of the figure of the road. Deaths have the
+  cloth and arm limits above.
+- **Slip.** A planted foot keeps pace with the ground, to within 20% of its motion per frame.
+
+`by_pair` in the output names the two bones that tear. It led to these changes:
+- **Arms.** The chest holds only the shoulder's end of an arm layer, and arms take soft weights (`sharp` 1.5).
+- **Capes.** A cape keeps the hips' turn and pivots at its hinge (`cape_hang`), with half the walk's sway and a
+  wide blend into the body.
+- **Beasts and mounts.** Soft weights, wider tail bones, a death splay shared between shoulder and knee, and a
+  ground step for living clips (no planted feet).
+- **Machines.** The arm drops only 10° on the frame.
+- **Wings.** They fold to 40%.
+
+Wider changes tried and dropped because they measured worse:
+- crisper weights;
+- distance measured through the paint;
+- per-bone spans along the arm chain;
+- a hand gate;
+- swinging face-down capes.
+
+Two units have an arm painted folded, with the fist against its own shoulder: the Reliquary's staff arm and the
+Furnace Knight's far arm. The paint between that fist and shoulder does not exist, so straightening the arm smears
+it. A Codex repaint asked for open elbows and came back folded again, so the rig respects the fold instead:
+- **Reach.** A hand reaches at most 0.25 of the arm's length past the reach it is painted at (`open_reach`).
+- **Elbows in deaths.** A dead elbow opens at most 40° from its painted bend (`limit_elbows`).
+- **Two-handed swings.** When either arm is painted folded, the swing raises the haft to 80° rather than 110°
+  (`two_high`).
+
+The repaint prompt still asks for open elbows, for future repaints.
 
 ### Combat feel
 

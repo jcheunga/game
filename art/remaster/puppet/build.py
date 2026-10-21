@@ -154,6 +154,14 @@ def build_mesh(paint, img, alpha, name='Puppet', depth=0.0):
     uv.data.foreach_set('uv', uvs.astype(np.float32).ravel())
     ob = bpy.data.objects.new(name, me)
     ob.location = (0.0, -depth, 0.0)
+    # which vertices carry visible paint: the most opaque texel of the cells around each
+    hh, ww = a.shape
+    vx, vy = pix[:, 0].astype(int), pix[:, 1].astype(int)
+    vis = np.zeros(len(pix), bool)
+    for dx in (-2, 0, 2):
+        for dy in (-2, 0, 2):
+            vis |= a[np.clip(vy + dy, 0, hh - 1), np.clip(vx + dx, 0, ww - 1)] > .3
+    VISIBLE[ob.name] = vis
     bpy.context.scene.collection.objects.link(ob)
     # the painting itself, unlit
     mat = bpy.data.materials.new(name)
@@ -263,6 +271,25 @@ def seg_dist(P_, a, b):
     return np.linalg.norm(P_ - (a + t[:, None] * ab), axis=1)
 
 
+def chain_place(pix, chain):
+    """Each pixel's place along a polyline (0 at its first point, 1 at its last), where it lies nearest to it."""
+    pts = [np.asarray(p, float) for p in chain]
+    lens = [float(np.linalg.norm(b - a)) for a, b in zip(pts, pts[1:])]
+    total = max(1e-6, sum(lens))
+    best_d = np.full(len(pix), np.inf)
+    place = np.zeros(len(pix))
+    acc = 0.0
+    for (a, b), L in zip(zip(pts, pts[1:]), lens):
+        ab = b - a
+        t = np.clip(((pix - a) @ ab) / max(1e-9, ab @ ab), 0.0, 1.0)
+        d = np.linalg.norm(pix - (a + t[:, None] * ab), axis=1)
+        better = d < best_d
+        best_d[better] = d[better]
+        place[better] = (acc + t[better] * L) / total
+        acc += L
+    return place
+
+
 def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None, gate=None):
     """Weights by distance to each bone, scaled by how thick that part is. `allowed` limits a layer to its own bones
     (an arm layer never follows the hips; a weapon follows only its bone); `scale` damps some bones' pull (a skirt
@@ -278,14 +305,23 @@ def skin(ob, arm, pix, bones, torso_len, allowed=None, sharp=4.0, scale=None, ga
         # with their average (a paw's claw stretched to the tail as the legs swung apart). It follows its nearest
         logit = -sharp * D ** 2
         if gate:
-            # {bone: (point, r0, r1)}: that bone's pull only near a point, fading out from r0 to r1 px (an arm
-            # layer's chest bone holds the shoulder's end; a hand or claws resting against the torso lie well
-            # inside the chest's wide reach, and stayed behind with it as the arm swung, stretched into a ribbon)
+            # {bone: (chain, s0, s1)}: that bone pulls only the shoulder's end of an arm layer. A point's place along
+            # the arm is where it lies nearest the shoulder -> elbow -> wrist chain, 0 at the shoulder and 1 at the
+            # wrist; past s0 the bone is penalised smoothly, by `sharp` at s1. The chest's wide reach had taken a
+            # hand (or the glow and claws around it) resting against the torso, which then stayed behind with the
+            # chest as the arm rose and stretched into a ribbon; a cut-off instead tore a seam across the arm
             for k_, (n, *_r) in enumerate(deform):
                 if n in gate:
-                    pt, r0, r1 = gate[n]
-                    dd = np.hypot(pix[:, 0] - pt[0], pix[:, 1] - pt[1])
-                    logit[:, k_] += np.log(np.clip((r1 - dd) / max(1e-6, r1 - r0), 0, 1) + 1e-30)
+                    kind, ref, s0, s1 = gate[n]
+                    if kind == 'below':
+                        # a limb's bone only below its top joint: paint beside and above the joint (the chest or
+                        # belly it hangs from) stays with the body, so the limb turns about its top, not fanning it
+                        where = chain_place(pix, ref)
+                        t_ = np.maximum(0.0, s1 - where) / max(1e-6, s1 - s0)
+                    else:
+                        where = chain_place(pix, ref) if kind == 'chain' else np.hypot(pix[:, 0] - ref[0], pix[:, 1] - ref[1])
+                        t_ = np.maximum(0.0, where - s0) / max(1e-6, s1 - s0)
+                    logit[:, k_] -= sharp * t_ * t_
         W = np.exp(logit - logit.max(axis=1, keepdims=True))
         W /= W.sum(axis=1, keepdims=True)
         skin.far = getattr(skin, 'far', 0) + int((np.exp(logit.max(axis=1)) < 1e-10).sum())
@@ -435,7 +471,7 @@ def side_profile(ident, profile, unit):
     return profile
 
 
-def hand_track(profile, t, c, n, rest, near=False, two=False):
+def hand_track(profile, t, c, n, rest, near=False, two=False, high=110.0):
     """Pose at local frame t of an n-frame attack with contact at c: keys eased in turn from the painted pose
     (`rest`), each angle unwrapped toward the one before so every move takes the short way round."""
     spec = HAND_PROFILES.get(profile, HAND_PROFILES['sword-cut'])
@@ -449,7 +485,7 @@ def hand_track(profile, t, c, n, rest, near=False, two=False):
         full.update(k)
         if two and j == 0 and 'r' in k:
             # two hands on one haft cannot reach as high or as far back as one arm
-            full['a'] = min(k['a'], 110.0)
+            full['a'] = min(k['a'], high)
             full['r'] = min(k['r'], 0.72)
         if near and j > 0 and 'rel' in k and not spec.get('absolute'):
             # the near arm (facing right, the character's right) crosses in front of the body to strike: ending
@@ -550,7 +586,8 @@ class Animator:
             else:
                 wa0 = ang(B['forearm.' + self.side].tail_local - B['forearm.' + self.side].head_local)
             a0 = ang(g0 - sh)
-            self.hand_rig = dict(anchor=sh, L=L, g0=g0, wa0=wa0, a0=a0, r0=(g0 - sh).length / L,
+            r0 = (g0 - sh).length / L
+            self.hand_rig = dict(anchor=sh, L=L, g0=g0, wa0=wa0, a0=a0, r0=r0,
                                  rel0=(wa0 - a0 + 180) % 360 - 180)
         self.off_rig = None
         rb = 'reach.' + self.off
@@ -614,7 +651,8 @@ class Animator:
         h = self.hand_rig
         if h and 'a' in p:
             a = math.radians(p['a'])
-            g = h['anchor'] + (shift or Vector((0, 0, 0))) + Vector((math.cos(a), 0.0, math.sin(a))) * (h['L'] * p['r'])
+            g = h['anchor'] + (shift or Vector((0, 0, 0))) + Vector((math.cos(a), 0.0, math.sin(a))) * (
+                h['L'] * self.open_reach(p['r'], h['r0']))
             w = self.pb['wield']
             d = g - h['g0']
             w.location = (d.x, d.z, 0.0)            # the wield bone points up: local X, Y = world X, Z
@@ -622,11 +660,18 @@ class Animator:
         o = self.off_rig
         if o and 'oa' in p:
             a = math.radians(p['oa'])
-            q = o['anchor'] + Vector((math.cos(a), 0.0, math.sin(a))) * (o['L'] * p['or'])
+            q = o['anchor'] + Vector((math.cos(a), 0.0, math.sin(a))) * (o['L'] * self.open_reach(p['or'], o['r0']))
             d = q - o['p0']
             self.pb['reach.' + self.off].location = (d.x + p.get('odx', 0.0) * self.H, d.z + p.get('odz', 0.0) * self.H, 0.0)
         elif o and ('odx' in p or 'odz' in p):
             self.pb['reach.' + self.off].location = (p.get('odx', 0.0) * self.H, p.get('odz', 0.0) * self.H, 0.0)
+
+    OPEN = .25
+
+    def open_reach(self, r, r0):
+        """An arm opens at most OPEN (of its length) past the reach it is painted at: a fist painted against its own
+        shoulder hides the arm between them, and straightened all the way that hidden stretch is smeared paint."""
+        return min(r, max(r0 + self.OPEN, .55))
 
     def reach(self, dx=0.0, dz=0.0):
         rb = 'reach.' + self.off
@@ -916,7 +961,8 @@ class Animator:
         self.rot('chest', -.6 * bob)
         self.rot('head', g['nod'] * math.sin(math.tau * 2 * cyc + .6) - g['lean'] * .5)
         # a cape trails behind the walk and sways a beat after each step
-        self.rot('cape', (-9.0 if run else -5.0) + 2.5 * math.sin(math.tau * 2 * cyc - 1.0))
+        cw = .5          # half the sway it had: a cape swung further tore from the robe below it
+        self.rot('cape', cw * ((-9.0 if run else -5.0) + 2.5 * math.sin(math.tau * 2 * cyc - 1.0)))
         # arms against the legs: the near arm is back as the near foot lands
         ph_ = {near: -math.cos(math.tau * cyc), far: math.cos(math.tau * cyc)}
         A = g['arms']
@@ -1110,11 +1156,24 @@ class Animator:
             r.update(oa=o['a0'], **{'or': o['r0']})
         return r
 
+    def two_high(self):
+        """How high (degrees above forward) two hands on one haft can raise it: 110, less when the far arm is painted
+        folded (its fist against its own shoulder hides the arm, which stretches into a band reaching overhead)."""
+        B_ = self.arm.data.bones
+        if not self.two:
+            return 110.0
+        r0 = 1.0
+        for s_ in ('R', 'L'):
+            ua, fa, hd = 'upper_arm.' + s_, 'forearm.' + s_, 'hand.' + s_
+            if ua in B_ and fa in B_ and hd in B_:
+                r0 = min(r0, (B_[hd].head_local - B_[ua].head_local).length / max(1e-6, B_[ua].length + B_[fa].length))
+        return 110.0 if r0 >= .62 else 80.0
+
     def attack_hands(self, i, n, c, profile):
         # the near-arm lowering is for front-facing paintings (an arm sweeping across the chest); side-on, the blow
         # carries straight through at the target, in front of any shield
         p = hand_track(profile, i, c, n, self.rest_hands(), near=(self.side == 'R' and not self.two and not self.split),
-                       two=self.two)
+                       two=self.two, high=self.two_high())
         if not self.off_rig:
             for k in ('oa', 'or', 'odx', 'odz'):
                 p.pop(k, None)
@@ -1323,6 +1382,24 @@ class Animator:
                 bend = (shin_abs - thigh_abs) - (self.rest[sh] - self.rest[th])
                 self.rot(sh, bend * w * k_)
 
+    ELBOW_OPEN = 40.0
+
+    def limit_elbows(self):
+        """An elbow opens at most ELBOW_OPEN degrees from the bend it is painted with (a fist painted against its own
+        shoulder hides the arm between them: straightened, that stretch of the painting smears)."""
+        for s_ in ('R', 'L'):
+            ua, fa = 'upper_arm.' + s_, 'forearm.' + s_
+            if ua not in self.pb or fa not in self.pb:
+                continue
+            painted = (self._rest_world(fa) - self._rest_world(ua) + 180) % 360 - 180
+            if self.pb['root'].scale[0] < 0:
+                painted = -painted
+            now = (self.world_angle(fa) - self.world_angle(ua) + 180) % 360 - 180
+            if abs(painted) - abs(now) > self.ELBOW_OPEN and now * painted >= 0 or \
+                    now * painted < 0 and abs(painted) + abs(now) > self.ELBOW_OPEN:
+                want = math.copysign(max(0.0, abs(painted) - self.ELBOW_OPEN), painted)
+                self.turn_to(fa, self.world_angle(ua) + want, 1.0)
+
     def arms_limp(self, target_abs, w):
         for s_ in ('R', 'L'):
             ua, fa = 'upper_arm.' + s_, 'forearm.' + s_
@@ -1365,6 +1442,7 @@ class Animator:
             self.turn_to(ua, math.degrees(math.atan2(hips.z - sh.z, hips.x - sh.x)), lying)
             if fa in self.pb:
                 self.turn_to(fa, self.world_angle(ua), lying * 0.85)
+        self.limit_elbows()
         if 'offhand' in self.pb:
             # the shield keeps the angle to the torso it had at rest (its long side along the body), so it lies
             # flat as the body does; the arm's fall would otherwise stand it on edge
@@ -1415,6 +1493,27 @@ class Animator:
             ds = (sh - t + 180) % 360 - 180
             self.turn_to(sb, t + max(-12.0, min(12.0, ds)), lying)
 
+    def cape_hang(self, k=1.0, dying=False):
+        """A cape hangs from the shoulders but drapes over the hips and legs: when the spine bends (a kneel, a
+        slump, a lunge) it keeps the hips' turn, not the chest's, and pivots only at its hinge. Carried rigidly by
+        the chest, its hem swung away from the robe below it, which follows the hips, and the paint between tore
+        into a sheet. Measured in the body's own frame (before any topple)."""
+        if 'cape' not in self.pb or 'hips' not in self.pb or 'chest' not in self.pb:
+            return
+        if self.lm.get('wings') and dying:
+            return              # falling, the wings fold with the back
+        bpy.context.view_layer.update()
+        hips_turn = self.world_angle('hips') - self._rest_world('hips')
+        chest_turn = self.world_angle('chest') - self._rest_world('chest')
+        d = ((chest_turn - hips_turn) + 180) % 360 - 180
+        self.rot('cape', -d * k * (1.0 if self.pb['root'].scale[0] >= 0 else -1.0))
+
+    def _rest_world(self, name):
+        b = self.arm.data.bones[name]
+        M = self.arm.matrix_world
+        h, t = M @ b.head_local, M @ b.tail_local
+        return math.degrees(math.atan2(t.z - h.z, t.x - h.x))
+
     @staticmethod
     def no_higher(a, most=6.0):
         """An angle in the picture plane turned down to at most `most` degrees above level, toward the side it points."""
@@ -1423,13 +1522,19 @@ class Animator:
             return a
         return most if math.cos(math.radians(a)) >= 0 else 180.0 - most
 
+    @staticmethod
+    def no_lower(a, most=12.0):
+        """An angle turned up to at most `most` degrees below level, toward the side it points."""
+        e = math.degrees(math.asin(max(-1.0, min(1.0, math.sin(math.radians(a))))))
+        if e >= -most:
+            return a
+        return -most if math.cos(math.radians(a)) >= 0 else 180.0 + most
+
     def lie_on_ground(self, top):
         """After the topple (bones are aimed before it, in the body's own upright frame, so nothing there knows
         which way the ground is): a lying leg runs level or down to the ground, never more than a few degrees up (on
         a body whose head came to rest lower than its hips the spine's line carried on through the legs pointed the
-        feet at the sky), and face down the cape lies level toward the feet, draped a little onto the back and legs
-        (a fixed swing per degree of the fall, or the spine's own line when the head lies low, stood it up off the
-        body like a fin or hung it down through the ground)."""
+        feet at the sky)."""
         lying = min(1.0, max(0.0, (abs(top) - 45.0) / 40.0))
         if lying <= 0:
             return
@@ -1439,13 +1544,12 @@ class Animator:
                     if b_ in self.pb:
                         a_ = self.world_angle(b_)
                         self.turn_to(b_, self.no_higher(a_), lying)
-        if top < 0 and 'cape' in self.pb and not self.lm.get('wings') and 'spine' in self.pb:
-            feet = (self.world_angle('spine') + 180.0) % 360
-            k_ = sm(min(1.0, -top / 80.0))
-            self.turn_to('cape', 184.0 if math.cos(math.radians(feet)) < 0 else -4.0, k_)
-            # and settled onto it: a full cloak hangs a body's depth off the back, which face down is a heap
-            # standing up off the corpse
-            self.pb['cape'].scale = (1.0 - .55 * k_, 1.0, 1.0)
+                # a limp arm lies on the ground beside the body: aimed at the hips it can still point down past the
+                # back of a thick body and prop the corpse up off the road on its fist
+                for b_ in ('upper_arm.' + s_, 'forearm.' + s_):
+                    if b_ in self.pb and self.release > .5:
+                        a_ = self.world_angle(b_)
+                        self.turn_to(b_, self.no_lower(a_), lying * self.release)
 
     def death(self, i, n, impact, forward):
         """The unit's own death (its clip's motion, as roster/deaths.py chose it), in the picture plane: a topple
@@ -1482,7 +1586,8 @@ class Animator:
         if self.lm.get('wings') and 'cape' in self.pb:
             # wings fold as the body falls: they never sail up off a body lying on its face
             k_w = min(1.0, abs(top_) / 70.0)
-            self.pb['cape'].scale = (1.0 - 0.85 * k_w, 1.0 - 0.85 * k_w, 1.0)
+            # folded to 40%: shrunk further they tore away from the back they grow from
+            self.pb['cape'].scale = (1.0 - .6 * k_w, 1.0 - .6 * k_w, 1.0)
             top_wings = True
         else:
             top_wings = False
@@ -1502,15 +1607,21 @@ class Animator:
                 if abs(rel) > 40.0:
                     self.rot(fb, (math.copysign(40.0, rel) - rel) * supine)
         if top_wings:
-            pass
-        elif top_ < 0 and 'cape' in self.pb:
-            pass                    # face down: laid over the back after the topple (lie_on_ground)
+            pass                     # wings grow from the shoulder blades: they turn with the chest, and fold
         elif 'cape' in self.pb:
-            # on its back the body lies on its cape: turned onto the line of the back and flattened under it (left
-            # hanging, it would prop the body up off the ground like a tablecloth)
-            k_ = min(1.0, top_ / 80.0)
-            self.rot('cape', (-self.rest['cape'] + 6.0) * k_)
-            self.pb['cape'].scale = (1.0 - 0.85 * k_, 1.0, 1.0)
+            self.cape_hang(dying=True)
+            if top_ > 0:
+                # on its back the body lies on its cape: turned onto the line of the back and flattened under it
+                # (pressed across its own depth only, its length still pointed away from the back like a fin)
+                k_ = min(1.0, top_ / 80.0)
+                self.rot('cape', (-self.rest['cape'] + 6.0) * k_)
+                self.pb['cape'].scale = (1.0 - 0.85 * k_, 1.0, 1.0)
+            else:
+                # face down it is pressed flat onto the back, across its own depth: a cloak hangs a body's depth
+                # off the back, a heap standing up off the corpse. Swung to lie along the back instead, the paint
+                # between it and the body it hangs from tore into a sheet as the body fell
+                k_ = sm(min(1.0, -top_ / 80.0))
+                self.pb['cape'].scale = (1.0 - .55 * k_, 1.0, 1.0)
         flip = p.get('flip', 0.0)
         sq = p.get('sq', 0.0)
         self.place(rot=p.get('top', 0.0), dx=p.get('dx', 0.0), sx=math.cos(math.pi * flip) * (1 + sq * 0.6),
@@ -1627,7 +1738,9 @@ def raw_death_keys(motion, ti, forward):
 
 
 def ground_fix(ob, arm):
-    """Raise or lower the root so the deformed painting rests on the ground (z = 0)."""
+    """The deformed layer's vertices in the world, those carrying visible paint only when the layer knows which
+    (build_mesh pads the paint by a cell of clear mesh, and a clear corner stretched below the paint set the ground:
+    the paint above it then sank through the road)."""
     dg = bpy.context.evaluated_depsgraph_get()
     ev = ob.evaluated_get(dg)
     me = ev.to_mesh()
@@ -1635,7 +1748,13 @@ def ground_fix(ob, arm):
     me.vertices.foreach_get('co', co)
     ev.to_mesh_clear()
     co = co.reshape(-1, 3) @ np.array(ob.matrix_world)[:3, :3].T + np.array(ob.matrix_world)[:3, 3]
+    vis = VISIBLE.get(ob.name)
+    if vis is not None and vis.any() and len(vis) == len(co):
+        co = co[vis]
     return co
+
+
+VISIBLE = {}        # layer object name -> per-vertex: carries visible paint (alpha > .3 near it)
 
 
 def lie_matrix(d, head):
@@ -1906,7 +2025,9 @@ def cape_region(lm, alpha, torso, wings=False):
         return spine_x - x
 
     # wings (set by eye) fold away whole on a death: a narrow seam, so they shrink without smearing the back
-    d0, d1 = (0.42 * torso, 0.5 * torso) if wings else (0.3 * torso, 0.5 * torso)
+    # a wide blend from body to cape (it was .3-.5 torso: the narrow seam tore as the cape swung)
+    cd0, cd1 = .15, .55
+    d0, d1 = (0.42 * torso, 0.5 * torso) if wings else (cd0 * torso, cd1 * torso)
     b = behind(xs, ys)
     cape = (b > d1) & (ys > sh_y + 0.1 * torso)
     if cape.sum() < 1500:
@@ -2073,11 +2194,16 @@ def rig_humanoid(ident, d, lm, paint, img, info):
             # a leg bends at a hinge: its thigh, shin and foot keep their painted shapes (soft weights crush a
             # knee bent past a right angle into rubber)
             gate = None
-            if name.startswith('arm_') and P(lm, 'shoulder_' + name[-1]) is not None:
-                r0, r1 = (float(v) for v in os.environ.get('PUPPET_ARM_GATE', '.22,.45').split(','))
-                gate = {'chest': (P(lm, 'shoulder_' + name[-1]), r0 * torso, r1 * torso)}
-            skin(ob, arm, pix, bones + extra, torso, allowed, scale=pull, sharp=8.0 if name.startswith('leg_') else 4.0,
-                 gate=gate)
+            sd_ = name[-1]
+            if name.startswith('arm_') and all(P(lm, f'{j}_{sd_}') is not None for j in ('shoulder', 'elbow', 'wrist')):
+                # the chest (and the shoulder's armour bone) hold only the immediate shoulder of an arm layer: the
+                # arm turns about its own pivot. Reaching further (a hand resting on the torso, the glow and claws
+                # around it), they kept that paint behind as the arm rose and it stretched into a ribbon
+                sh_, el_, wr_ = (P(lm, f'{j}_{sd_}') for j in ('shoulder', 'elbow', 'wrist'))
+                gate = {'chest': ('radial', sh_, .08 * torso, .2 * torso),
+                        'shoulder.' + sd_: ('radial', sh_, .08 * torso, .2 * torso)}
+            sharp_ = 8.0 if name.startswith('leg_') else 1.5 if name.startswith('arm_') else 4.0
+            skin(ob, arm, pix, bones + extra, torso, allowed, scale=pull, sharp=sharp_, gate=gate)
             if legs and name in ('base', 'skirt'):
                 # a skirt sways with the stride, but a long hem must not swing like a rigid board pinned at the hip:
                 # the thighs' pull fades out below the knee line, so a coat's hem moves about as much as a short
@@ -2107,7 +2233,7 @@ def rig_humanoid(ident, d, lm, paint, img, info):
                                                    legs=legs))
 
 
-def build(ident, frames=None, out_root=OUT, src='auto'):
+def build(ident, frames=None, out_root=OUT, src='auto', render_hook=None):
     t0 = time.time()
     skin.far = 0
     sc = reset()
@@ -2213,6 +2339,8 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
             anim.cast(i, n, c.get('holdFrom', 6))
         elif name == 'death':
             anim.death(i, n, c.get('impactFrame', max(1, n // 2)), forward)
+        if name != 'death' and hasattr(anim, 'cape_hang'):
+            anim.cape_hang()
         if name != 'death' and hasattr(anim, 'keep_offhand'):
             anim.keep_offhand()
         bpy.context.view_layer.update()
@@ -2226,6 +2354,14 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
         for i in range(n):
             f = c['start'] + i
             pose(name, c, i)
+            if name not in ('death',) and lm.get('kind', 'humanoid') != 'humanoid':
+                # a beast, a serpent or a machine has no planted feet: a lunge that pitches it forward, or a body
+                # wave, would carry claws or a hanging tatter into the road. It rises just clear of it
+                lows_ = [float(ground_fix(o, arm)[:, 2].min()) for n_, o in layer_obs if n_ not in ('weapon', 'offhand', 'arrow')]
+                if lows_ and min(lows_) < 0:
+                    r_ = arm.pose.bones['root']
+                    r_.location = (r_.location[0], r_.location[1] - min(lows_), 0)
+                    bpy.context.view_layer.update()
             if name == 'walk' and foot and i in (0, n // 2):
                 stride_x[i] = (arm.matrix_world @ arm.pose.bones[foot].tail).x
             if name == 'death':
@@ -2257,9 +2393,14 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
                         legs_low = min(v for k_, v in lows.items() if k_.startswith('leg_'))
                     low = min(lows.values())
                 if legs_low is not None:
-                    # cloth and limp arms drape: they may sink a little below where the legs lie (a tabard's front
-                    # panel under a body fallen on its face), but never prop the body up off the ground
-                    low = min(legs_low, max(low, legs_low - 0.06 * anim.H))
+                    # the legs set the ground; cloth and limp arms drape and may sink a little below where they lie
+                    # (a tabard's front panel under a body fallen on its face) rather than prop the body up, but no
+                    # further: mid-fall a robe's hem swings below the feet as the knees buckle, and it went a fifth
+                    # of the figure into the road
+                    # (an arm lying under the body sinks further, so a thick arm never props the corpse up)
+                    cloth_low = min((v for k_, v in lows.items() if not k_.startswith(('leg_', 'arm_'))), default=0.0)
+                    arms_low = min((v for k_, v in lows.items() if k_.startswith('arm_')), default=legs_low)
+                    low = min(legs_low, cloth_low + 0.025 * anim.H, arms_low + 0.1 * anim.H)
                 if os.environ.get('PUPPET_DEBUG_GROUND'):
                     print('GROUND', i, {k_: round(v / anim.H, 3) for k_, v in lows.items()}, round(low / anim.H, 3),
                           {b_: round(anim.world_angle(b_)) for b_ in ('hips', 'spine', 'thigh.R', 'thigh.L', 'shin.R', 'shin.L', 'cape') if b_ in arm.pose.bones}, 'top', round(getattr(anim, 'top_dbg', 0)))
@@ -2284,7 +2425,9 @@ def build(ident, frames=None, out_root=OUT, src='auto'):
             if name == 'death' and i == c.get('impactFrame', 0):
                 ch = arm.matrix_world @ arm.pose.bones[body_bone].head
                 impact_pt = norm_point(ch, W, H, cx, cz)
-            if want is None or (f + 1) in want:
+            if render_hook is not None:
+                render_hook()                     # motion_check.py measures the pose instead of rendering it
+            elif want is None or (f + 1) in want:
                 cf = c.get('contactFrame', -99)
                 if name in ('attack', 'melee') and cf - 1 <= i <= cf + 1:
                     render_blurred(sc, out / f'{f:03}.png', lambda x, name=name, c=c: pose(name, c, x), i,

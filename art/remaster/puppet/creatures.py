@@ -40,7 +40,9 @@ def quad_bones(lm, foot='paw'):
     tb, tt = P(lm, 'tail_base'), P(lm, 'tail_tip')
     if tb is not None and tt is not None:
         m = mid(tb, tt)
-        bones += [('tail1', tb, m, 'body', 0.09, True), ('tail2', m, tt, 'tail1', 0.08, True)]
+        # a tail's reach is as wide as the painted tail (narrower, the hind leg beside it took a share of it and a
+        # leg's swing fanned the tail out)
+        bones += [('tail1', tb, m, 'body', 0.23, True), ('tail2', m, tt, 'tail1', 0.21, True)]
     for leg, top, joint in (('fl', 'shoulder', 'knee'), ('fr', 'shoulder', 'knee'), ('hl', 'hip', 'hock'), ('hr', 'hip', 'hock')):
         a, b, c = P(lm, f'{leg}_{top}'), P(lm, f'{leg}_{joint}'), P(lm, f'{leg}_{foot}')
         if a is None or b is None or c is None:
@@ -175,11 +177,16 @@ def rig(ident, d, lm, paint, img, info):
             allowed = LAYER_BONES.get(kind, {}).get(name.split('_')[0])
             if name.startswith('wheel'):
                 allowed = ('chassis',)
-            B.skin(ob, arm, pix, bones, S, allowed)
+            # a beast's own body (one painting, four legs and a tail in it) takes soft weights, so a leg's swing
+            # bends the belly cloth and the tail beside it instead of tearing a fan out of them
+            soft = name == 'base' and kind == 'mount'
+            B.skin(ob, arm, pix, bones, S, allowed, sharp=1.0 if soft else 4.0)
             layer_obs.append((name, ob))
     else:
         ob, pix = B.build_mesh(paint, img, paint.alpha)
-        B.skin(ob, arm, pix, bones, S)
+        # soft weights: one painting holds the body, legs, head and tail, and a leg's swing must bend the belly,
+        # the chest and a tail beside it rather than tear a fan out of them
+        B.skin(ob, arm, pix, bones, S, sharp=1.0)
         layer_obs.append(('master', ob))
     wheels = []
     for name, ob in layer_obs:
@@ -505,6 +512,8 @@ class QuadAnim(CreatureAnim):
     def cast(self, i, n, hold_from=6):
         """Rears back on the haunches and throws the head up: a howl, a battle cry."""
         e, b = self.cast_curve(i, n, hold_from)
+        # a squat beast's head rests on its forelegs: it can only lift its chest a little
+        e *= .5 if self.stubby else 1.0
         self.rot('body', 9 * e + 1.2 * b)
         self.rot('neck', 22 * e + 2 * b)
         self.rot('head', 14 * e)
@@ -533,9 +542,11 @@ class QuadAnim(CreatureAnim):
             return
         # legs give way and splay (forelegs out ahead, hind legs out behind), the belly comes down to the ground
         # and the head lolls onto it: a sprawl that reads as dead from the side
+        # (the knee and hock take part of the splay: turned all at the shoulder and hip, a leg fanned the chest and
+        # haunch beside it)
         for leg, hind in (('fl', False), ('fr', False), ('hl', True), ('hr', True)):
-            self.rot(f'{leg}.upper', (62 if not hind else -58) * fall)
-            self.rot(f'{leg}.lower', (18 if not hind else -14) * fall)
+            self.rot(f'{leg}.upper', (43 if not hind else -41) * fall)
+            self.rot(f'{leg}.lower', (37 if not hind else -31) * fall)
         stagger = B.sm(min(1.0, t / (ti * 0.35)))
         self.rot('body', 4 * stagger * (1 - fall) - 3 * fall + 2 * bounce)
         self.rot('neck', -45 * fall)
@@ -591,13 +602,17 @@ class SerpentAnim(CreatureAnim):
         """Thrashes, then the raised fore-body drops to the ground and the whole length goes slack and flat."""
         t, ti, fall, after, bounce = self.death_timing(i, n, impact)
         self.wave(math.tau * t * 2.0, 18.0 * (1 - fall))
-        # each raised part is turned back toward the line of the ground by however far it rose
-        for b, k in (('fore', 1.0), ('head', 1.0), ('tail', 0.8), ('hind', 0.6)):
+        # each raised part is turned back toward the line of the ground by however far it still rises once its
+        # parent has been laid down (measured on the posed rig, parents first: turned by its own painted angle on
+        # top of its parent's turn, the head bent on past the ground and the neck tore)
+        for b, k in (('fore', 1.0), ('head', 1.0), ('hind', 0.6), ('tail', 0.8)):
             if b in self.pb:
-                bone = self.arm.data.bones[b]
-                d = bone.tail_local - bone.head_local
-                ang = math.degrees(math.atan2(d.z, abs(d.x) + 1e-6))
-                self.rot(b, -ang * k * fall * (1 if d.x >= 0 else -1))
+                bpy.context.view_layer.update()
+                pb = self.pb[b]
+                M = self.arm.matrix_world
+                h, t_ = M @ pb.head, M @ pb.tail
+                ang = math.degrees(math.atan2(t_.z - h.z, abs(t_.x - h.x) + 1e-6))
+                self.rot(b, -ang * k * fall * (1 if (t_.x - h.x) >= 0 else -1))
         self.pb['mid'].scale = (1.0 + 0.04 * fall, 1.0 - 0.18 * fall, 1.0)
         self.place(dz=-0.01 * bounce)
 
@@ -858,6 +873,8 @@ class MachineAnim(CreatureAnim):
         # a wheel gives: the frame lurches, tips hard onto its broken side and settles low, the crew slumps
         jolt = math.sin(min(1.0, t / max(1e-6, ti * 0.4)) * math.pi) * (1 - fall)
         self.rot('chassis', (-1 if forward else 1) * (-26 * fall + 4 * jolt) + 3 * bounce)
-        self.rot('arm', -25 * fall)
+        # the arm drops a little on the frame (it is one painting with it: dropped further, the timber where they
+        # meet tore)
+        self.rot('arm', -10 * fall)
         self.rot('crew', -32 * fall)
         self.place(dz=-0.05 * fall, sy=1.0 - 0.08 * fall, sx=1.0 + 0.04 * fall)

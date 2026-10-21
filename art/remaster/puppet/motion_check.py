@@ -20,6 +20,7 @@ Writes <out>/<id>.json with per-clip summaries and every frame's measurements.
 MC_DUMP=clip:frame:path.npz saves that frame's raster and smear cells (scratch overlay tools read it).
 """
 import json
+import math
 import os
 import sys
 import traceback
@@ -178,6 +179,10 @@ class Probe:
                'by_layer': self.layer_smear, 'by_pair': [[a, b, n] for (a, b), n in top_pairs],
                'where': where, 'smear': len(smear), 'smear_pct': round(100.0 * len(smear) / max(1, figure), 2),
                'smear_bpx': round(len(smear) * cell_bpx2, 1), 'fig_bpx': round(fig_bpx, 1)}
+        if name in ('idle', 'walk'):
+            row.update(self.gait(name, i, arm, H))
+        if name == 'walk' and getattr(anim, 'gait_info', None):
+            self.gait_name = anim.gait_info.get('gait')
         if name == 'walk':
             row.update(self.feet(anim, arm, H, ctx['c']))
         self.rows.append(row)
@@ -196,6 +201,30 @@ class Probe:
         pair = (ob.name + ':' + two[0], two[1] if len(two) > 1 else '')
         self.pairs[key] = pair
         return pair
+
+    def gait(self, name, i, arm, H):
+        """A person's legs (split rigs): the hips' height above the road, each knee's bend (0 = straight) and the
+        feet's order along the road. Against the standing pose (idle frame 0): a walk that sinks the hips squats,
+        knees bent while the foot bears weight read as a crouch, and feet that never pass each other crab-walk."""
+        P_ = arm.pose.bones
+        if not all(b in P_ for b in ('thigh.R', 'shin.R', 'thigh.L', 'shin.L')):
+            return {}
+        M = arm.matrix_world
+        out = {}
+        hips = [(M @ P_['thigh.' + s_].head).z for s_ in 'RL']
+        out['hip_z'] = round(float(sum(hips) / 2) / H, 4)
+        for s_ in 'RL':
+            th = (M @ P_['thigh.' + s_].tail) - (M @ P_['thigh.' + s_].head)
+            sh = (M @ P_['shin.' + s_].tail) - (M @ P_['shin.' + s_].head)
+            cos = max(-1.0, min(1.0, th.normalized().dot(sh.normalized())))
+            out['knee_' + s_] = round(math.degrees(math.acos(cos)), 1)
+            fb = 'foot.' + s_ if 'foot.' + s_ in P_ else 'shin.' + s_
+            tip, head = M @ P_[fb].tail, M @ P_[fb].head
+            out['foot_x_' + s_] = round(float(head.x) / H, 4)
+            out['foot_z_' + s_] = round(float(min(tip.z, head.z)) / H, 4)
+        if name == 'idle' and i == 0:
+            self.stand = out
+        return out
 
     def feet(self, anim, arm, H, c):
         out = {}
@@ -225,6 +254,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     for ident in ids:
         probe = Probe()
+        probe.stand = None
 
         def hook(*a, **k):
             fr = sys._getframe(1)
@@ -252,6 +282,25 @@ def main():
                  'stretch_layer': max(rs, key=lambda r: r['stretch'])['layer'],
                  'low_min': min(r['low'] for r in rs), 'low_max': max(r['low'] for r in rs),
                  'low_last': rs[-1]['low']}
+            if clip == 'walk' and getattr(probe, 'stand', None) and 'hip_z' in rs[0]:
+                st = probe.stand
+                planted = [(r['knee_' + s_]) for r in rs for s_ in 'RL'
+                           if r['foot_z_' + s_] < st['foot_z_' + s_] + .006]
+                d_ = [r['foot_x_R'] - r['foot_x_L'] for r in rs]
+                s['gait'] = {
+                    'name': getattr(probe, 'gait_name', None),
+                    # the lowest the hips sink below their standing height, in figure heights
+                    'hip_drop': round(st['hip_z'] - min(r['hip_z'] for r in rs), 4),
+                    'stand_knee': max(st['knee_R'], st['knee_L']),
+                    'planted_knee_max': round(max(planted), 1) if planted else None,
+                    'planted_knee_mean': round(sum(planted) / len(planted), 1) if planted else None,
+                    # how far the feet pass each other (both orders reached, in figure heights)
+                    'cross': round(min(max(d_), -min(d_)), 4),
+                    # the straightest the supporting leg gets as the body passes over it (each leg's planted frames)
+                    'passing_knee': round(max(min([r['knee_' + s_] for r in rs
+                                                   if r['foot_z_' + s_] < st['foot_z_' + s_] + .006] or [0])
+                                              for s_ in 'RL'), 1),
+                }
             sl = [x for r in rs for x in r.get('slip', [])]
             if sl:
                 s['slip_mean'] = round(float(np.mean(sl)), 3)

@@ -11,6 +11,9 @@ and the worst values of each measure.
             and recoils excepted: walk, hit and deploy may rise); deaths: cloth sinks at most CLOTH_SINK into the
             road and a limp arm under the body at most ARM_SINK
   slip      walk: a planted foot moves with the ground, mean error at most SLIP of the ground's motion per frame
+  gait      people (split legs) in a walk: standing and passing-leg knees bent at most KNEE (a crouch reads as a
+            squat), hips sinking at most HIP_DROP below standing, and the feet passing each other by at least CROSS
+            both ways (feet that never pass crab-walk). Prowl and jog run low by design
 """
 import json
 import sys
@@ -24,6 +27,10 @@ GROUND = .03
 CLOTH_SINK = -.045
 ARM_SINK = -.11
 SLIP = .2
+KNEE = 25.0          # standing and passing-leg knee bend, degrees (measured hip-knee-ankle; ~5° is the knee cap)
+HIP_DROP = .03       # how far the hips may sink below standing over a walk, in figure heights
+CROSS = .05          # each foot reaches this far past the other along the road (both ways), in figure heights
+CROUCHED = ('prowl', 'jog')   # gaits run low on purpose (a stalking ghoul, a jog's flight), and beasts' gaits
 STANDING = ('idle', 'attack', 'cast', 'melee')
 RIGID = ('weapon', 'offhand', 'arrow')
 
@@ -50,6 +57,14 @@ def failures(d):
                 out.append(f"{clip}: sinks {min(body):+.3f} into the road")
             if clip in STANDING and min(body) > GROUND:
                 out.append(f"{clip}: floats {min(body):+.3f} off the road")
+        g = s.get('gait')
+        if clip == 'walk' and g and g.get('name') not in CROUCHED:
+            if g['stand_knee'] > KNEE or (g['passing_knee'] or 0) > KNEE:
+                out.append(f"walk: knees stay bent (standing {g['stand_knee']}°, passing {g['passing_knee']}°)")
+            if g['hip_drop'] > HIP_DROP:
+                out.append(f"walk: hips sink {g['hip_drop']:.3f} of the figure below standing (a squat)")
+            if g['cross'] < CROSS:
+                out.append(f"walk: the feet pass each other by only {g['cross']:.3f} of the figure (a crab walk)")
         if clip == 'walk' and s.get('slip_mean', 0) > SLIP:
             out.append(f"walk: planted feet slip {s['slip_mean']:.2f} of the ground's motion")
     return out

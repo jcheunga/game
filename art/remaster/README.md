@@ -218,6 +218,28 @@ frames for the roster in about ten minutes). `puppet/check_report.py` applies th
   cloth and arm limits above.
 - **Slip.** A planted foot keeps pace with the ground, to within 20% of its motion per frame.
 
+The check also measures the gait itself, aimed at the original complaint that units looked squatting and
+crab-walking. For people walking it records:
+- **Knee bend** of the standing pose and of the supporting leg as the body passes over it.
+- **Hip sink** below the standing height.
+- **Leg crossing:** how far the feet pass each other.
+
+It found every unit standing with its knees bent about 35°, and the supporting leg never straighter than about 30°.
+The rig had held standing legs to 95.5% of their length, the passing leg to 97.5%, and the landing leg to 99%, then
+sank the hips a further 1.2% of the leg: a permanent half crouch. Now:
+- **Legs.** Standing legs reach 99.3% of their length, and the passing and landing legs 99.9%, with no extra sink.
+- **Strides.** Walking strides are at most 0.68 to 0.81 of the leg. Longer, the hips had to dip to land the heel.
+
+One more cap was hiding behind those: `reachable` treated any leg past 99.2% of its length as out of reach. It
+lifted the heel in 2° steps, which bent the knee back to about 97.5%, so the straighter targets never took effect.
+Its slack now matches the passing extension. Knees now measure about 20° standing (roughly 5–8° of that is the knee
+landmark sitting on the kneecap), and the supporting leg passes nearly straight. Every walk must:
+- keep both standing and passing knees under 25°;
+- sink its hips no more than 3% of the figure below standing;
+- pass its feet at least 5% of the figure both ways.
+
+Prowl and jog gaits run low by design.
+
 `by_pair` in the output names the two bones that tear. It led to these changes:
 - **Arms.** The chest holds only the shoulder's end of an arm layer, and arms take soft weights (`sharp` 1.5).
 - **Capes.** A cape keeps the hips' turn and pivots at its hinge (`cape_hang`), with half the walk's sway and a

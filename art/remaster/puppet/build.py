@@ -757,9 +757,12 @@ class Animator:
         self._legs = legs
         return legs
 
-    def reachable(self, s_, target, hip_shift, slack=0.992):
+    def reachable(self, s_, target, hip_shift, slack=None):
         """A foot target the leg can reach from its moved hip: out of reach, the heel rises first (the foot turning
-        on its toe), then the foot comes in toward the hip. Returns (ankle target, toe-down angle in degrees)."""
+        on its toe), then the foot comes in toward the hip. Returns (ankle target, toe-down angle in degrees). Within
+        reach means up to the walk's passing extension (it was .992: a standing or passing leg asked to straighten
+        past that had its heel lifted in 2° steps instead, bending the knee back to ~.975 of the leg)"""
+        slack = slack or self.PASS_EXTEND + .0005
         g = self.legs_[s_]
         hip = g['hip'] + hip_shift
         Lmax = (g['L1'] + g['L2']) * slack
@@ -822,16 +825,22 @@ class Animator:
         # with both feet off the ground: a jog); lift: the ankle's clearance in the swing; bob: how far the hips
         # rise and fall (fraction of the leg); lean (deg, - = forward); nod (deg); arms: swing scale; limp: the far
         # leg's step and lift scale (a dragged leg)
-        'march': dict(cycle=.95, step_range=(.45, .88), stance=.57, lift=.095, lean=-3.0, nod=1.2, arms=1.0, limp=1.0),
-        'heavy': dict(cycle=1.25, step_range=(.32, .8), stance=.62, lift=.1, lean=-5.0, nod=2.0, arms=.65, limp=1.0),
-        'shamble': dict(cycle=1.0, step_range=(.36, .92), stance=.64, lift=.08, lean=-7.0, nod=3.0, arms=.45,
+        'march': dict(cycle=.95, step_range=(.45, .75), stance=.57, lift=.095, lean=-3.0, nod=1.2, arms=1.0, limp=1.0),
+        'heavy': dict(cycle=1.25, step_range=(.32, .68), stance=.62, lift=.1, lean=-5.0, nod=2.0, arms=.65, limp=1.0),
+        'shamble': dict(cycle=1.0, step_range=(.36, .78), stance=.64, lift=.08, lean=-7.0, nod=3.0, arms=.45,
                         limp=.6),
-        'glide': dict(cycle=1.1, step_range=(.32, .95), stance=.62, lift=.06, lean=-2.0, nod=.8, arms=.5, limp=1.0),
+        'glide': dict(cycle=1.1, step_range=(.32, .81), stance=.62, lift=.06, lean=-2.0, nod=.8, arms=.5, limp=1.0),
         'jog': dict(cycle=.66, step_range=(.7, 1.15), stance=.4, lift=.2, lean=-8.0, nod=1.0, arms=1.3, limp=1.0),
         'prowl': dict(cycle=.7, step_range=(.6, 1.1), stance=.38, lift=.21, lean=-13.0, nod=1.0, arms=1.0, limp=1.0),
     }
     JOG_ABOVE = 2.5        # legs per second: faster than this no natural walk keeps up, the unit jogs
-    STAND_EXTEND = .955  # standing, the legs reach this share of their length (straight but not locked)
+    # how far the legs straighten (share of their length, hip to ankle): standing (.955 held every knee bent ~35°,
+    # a half crouch), and the supporting leg in a walk as the body passes over it and as the leading heel lands
+    # (.975 / .99 never let it straighten past ~30°, and a further sink of 1.2% of the leg: the walk read as a
+    # squat). Walking steps are at most .75-.81 of the leg (longer, the hips had to dip to land the heel). Measured
+    # by motion_check's gait figures
+    STAND_EXTEND = .993
+    PASS_EXTEND = .999
     GUARD = (.24, .2)    # standing feet: the leading foot ahead of the hips, the other behind (fractions of the leg)
     HEEL_OFF = 18.0      # deg the foot turns on its toe as it leaves the ground
     HEEL_STRIKE = 12.0   # deg its toe is up as the heel lands
@@ -932,8 +941,8 @@ class Animator:
             a = v['ground'] - v['hip'].z       # ankle below the hip at rest (negative)
             full = v['L1'] + v['L2']
             dx = abs(mid - v['hip'].x)
-            hz_hi.append(math.sqrt(max(1e-6, (full * .975) ** 2 - dx * dx)) + a)
-            hz_lo.append(math.sqrt(max(1e-6, (full * .99) ** 2 - (S * .5 + dx) ** 2)) + a)
+            hz_hi.append(math.sqrt(max(1e-6, (full * self.PASS_EXTEND) ** 2 - dx * dx)) + a)
+            hz_lo.append(math.sqrt(max(1e-6, (full * self.PASS_EXTEND) ** 2 - (S * .5 + dx) ** 2)) + a)
         hi, lo = min(hz_hi), min(hz_lo)
         if run:
             ph = (2 * cyc) % 1.0                 # one step: lands at 0, mid-stance at stance, flight from 2 * stance
@@ -942,7 +951,7 @@ class Animator:
             stand = min(hi, lo + .05 * Lleg) - .085 * Lleg * dip
         else:
             k = .5 - .5 * math.cos(math.tau * 2 * (cyc - .05))       # 0 just after a heel lands, 1 passing
-            stand = lo + (hi - lo) * k - .012 * Lleg
+            stand = lo + (hi - lo) * k
         hip_shift = Vector((0.0, 0, stand))
         for s_, off in ((near, 0.0), (far, 0.5)):
             v = legs[s_]

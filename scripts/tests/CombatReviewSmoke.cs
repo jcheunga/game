@@ -55,13 +55,6 @@ public partial class CombatReviewSmoke : Node
             GameState.Instance.SetAnalyticsConsent(false);
             GameState.Instance.SetShowHints(false);
             GameState.Instance.UnlockNextStage(GameData.MaxStage - 1);
-            if (args.Contains("--reference-map"))
-            {
-                // Test-only comparison with the original one-screen layout; never write game data.
-                GameData.Combat.EnemyBaseX = 1184f;
-                GameData.Combat.EnemySpawnX = 1140f;
-                GameData.Combat.BattlefieldRight = 1196f;
-            }
             ApplyTuningOverrides(args);
             if (args.Contains("--production-polish")) await CheckProductionPolish();
             else if (args.Contains("--performance")) await ReviewCombatPerformance();

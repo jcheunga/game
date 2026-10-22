@@ -172,10 +172,10 @@ public partial class UiReviewSmoke : Node
                     await Open(scene);
                     await Capture("type-" + System.IO.Path.GetFileNameWithoutExtension(scene));
                     AuditText(scene);
-                    var tabs = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<HBoxContainer>().Where(x => x.IsVisibleInTree() && x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>()).Select(x => x.Text).ToArray();
-                    foreach (var tab in tabs.Skip(1))
+                    var tabs = LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).Where(x => !x.ButtonPressed).Select(x => x.Text).ToArray();
+                    foreach (var tab in tabs)
                     {
-                        await Press(tab);
+                        await PressTab(tab);
                         await Capture("type-" + System.IO.Path.GetFileNameWithoutExtension(scene) + "-" + tab.Replace(" ", "-"));
                         AuditText(scene + "/" + tab);
                     }
@@ -192,9 +192,14 @@ public partial class UiReviewSmoke : Node
                 {
                     await Open(scene);
                     var activity = LiveUiReview.AssertDestination(GetTree(), scene);
-                    var refresh = activity.GetType().GetMethod("RefreshUi", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);
-                    refresh?.Invoke(activity, null);
-                    refresh?.Invoke(activity, null);
+                    // Each screen's own refresh, run twice: rebuilt rows must not pile up or lose their styles.
+                    var refresh = new[] { "RefreshUi", "Refresh", "Rebuild", "RefreshBook" }
+                        .SelectMany(name => activity.GetType().GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Where(method => method.Name == name))
+                        .FirstOrDefault(method => method.GetParameters().All(parameter => parameter.IsOptional));
+                    var defaults = refresh?.GetParameters().Select(parameter => parameter.DefaultValue).ToArray();
+                    if (refresh == null) GD.Print($"ALL_MENUS_NO_REFRESH: {scene} rebuilds only when opened");
+                    refresh?.Invoke(activity, defaults);
+                    refresh?.Invoke(activity, defaults);
                     // Rebuilt rows receive the live modal's styles on its next layout pass.
                     await Wait(0.3);
                     AuditText(scene);
@@ -320,21 +325,16 @@ public partial class UiReviewSmoke : Node
 
     private async Task AuditArmoryPages()
     {
+        // The collection is one scrolling grid, so every card is in the tree at once.
         var names = GameData.GetPlayerUnits().Select(x => x.DisplayName).Concat(GameData.GetPlayerSpells().Select(x => x.DisplayName)).ToHashSet();
-        for (var page = 0; page < 20; page++)
+        var cards = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(x => x.IsVisibleInTree() && names.Contains(x.AccessibilityName)).Select(x => x.AccessibilityName).ToArray();
+        foreach (var name in cards)
         {
-            var cards = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(x => x.IsVisibleInTree() && names.Contains(x.AccessibilityName)).Select(x => x.AccessibilityName).ToArray();
-            foreach (var name in cards)
-            {
-                var card = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(x => x.IsVisibleInTree() && x.AccessibilityName == name);
-                card.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
-                AuditText("Armory / " + name);
-            }
-            await Capture("type-armory-" + cards.FirstOrDefault()?.Replace(" ", "-"));
-            var next = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().FirstOrDefault(x => x.IsVisibleInTree() && x.TooltipText == "Next roster page" && !x.Disabled);
-            if (next == null) break;
-            next.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
+            var card = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(x => x.IsVisibleInTree() && x.AccessibilityName == name);
+            card.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
+            AuditText("Armory / " + name);
         }
+        await Capture("type-armory-" + cards.FirstOrDefault()?.Replace(" ", "-"));
     }
 
     private readonly List<object> _textAudit = new();
@@ -379,13 +379,12 @@ public partial class UiReviewSmoke : Node
                 { GD.Print($"SCROLL_TEXT_CLIP {screen}: {control.GetPath()} {rect} outside {clip}"); _failures++; break; }
             }
         }
-        var homeDock = GetTree().CurrentScene.GetNodeOrNull<PanelContainer>("HomeHud/HomeTabs");
         foreach (var label in Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Label>().Where(x => x.IsVisibleInTree() && !x.HasMeta("realm_tooltip") && !string.IsNullOrWhiteSpace(x.Text)))
         {
             var font = label.GetThemeFontSize("font_size");
             var issues = new List<string>();
             // Concept screens keep the concepts' type sizes, raised to what reads on a phone (capitals down to 16 px).
-            var minimumFont = InRoyalScreen(label) ? ReadingText.PhoneCaps : homeDock != null && homeDock.IsAncestorOf(label) ? 14 : 18;
+            var minimumFont = InRoyalScreen(label) ? ReadingText.PhoneCaps : 18;
             for (var parent = label.GetParent(); parent != null; parent = parent.GetParent())
                 if (parent is Button)
                 {
@@ -535,6 +534,15 @@ public partial class UiReviewSmoke : Node
         if (button == null) throw new InvalidOperationException($"Missing active button: {text}");
         if (button.ToggleMode) button.ButtonPressed = true;
         button.EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(0.8);
+    }
+    private async Task PressTab(string text)
+    {
+        // Selecting a page rebuilds the concept screens' tab strips, so each tab is found afresh.
+        var tab = LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).FirstOrDefault(x => x.Text == text);
+        if (tab == null) throw new InvalidOperationException($"Missing page tab: {text}");
+        tab.ButtonPressed = true;
+        tab.EmitSignal(BaseButton.SignalName.Pressed);
         await Wait(0.8);
     }
     private async Task PressHint(string hint)

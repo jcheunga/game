@@ -30,7 +30,7 @@ public partial class UiReviewSmoke
         {
             await TapHint(hint);
             var activity = LiveUiReview.AssertDestination(GetTree(), path);
-            Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.Text == tab && b.ButtonPressed), hint + ": native home click selects its live page");
+            Check(LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).Any(b => b.Text == tab && b.ButtonPressed), hint + ": native home click selects its live page");
             AuditText("Live click / " + hint); await Capture("click-" + hint);
             await TapHint("Close panel");
             Check(!home.HasHomeModal && GetTree().CurrentScene == home, hint + ": close restores the same home");
@@ -46,11 +46,16 @@ public partial class UiReviewSmoke
         await TapModal(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Single(b => b.Text == "Community"));
         await TapHint("Challenges");
         LiveUiReview.AssertDestination(GetTree(), SceneRouter.MultiplayerScene);
-        Check(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.Text == "Rooms" && b.ButtonPressed),
+        Check(LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).Any(b => b.Text == "Rooms" && b.ButtonPressed),
             "Challenges opens the live multiplayer Rooms page through More / Community");
         AuditText("Live click / Multiplayer"); await Capture("click-Multiplayer");
-        // LAN lives in the challenge code menu on the concept layout; its original action is reused.
-        Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Single(b => b.Text == "LAN").EmitSignal(BaseButton.SignalName.Pressed);
+        // LAN lives in the challenge code menu: Code options, then LAN race.
+        await TapHint("Code options");
+        PopupMenu CodeMenu() => Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<PopupMenu>().SingleOrDefault(menu => menu.Visible);
+        for (var frame = 0; frame < 30 && CodeMenu() == null; frame++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var codeMenu = CodeMenu() ?? throw new InvalidOperationException("Code options opens no menu");
+        var lan = Enumerable.Range(0, codeMenu.ItemCount).Single(item => codeMenu.GetItemText(item) == "LAN race");
+        codeMenu.EmitSignal(PopupMenu.SignalName.IdPressed, codeMenu.GetItemId(lan));
         await LiveUiReview.Settle(this);
         LiveUiReview.AssertDestination(GetTree(), SceneRouter.LanRaceScene);
         AuditText("Live click / LAN"); await Capture("click-LAN");

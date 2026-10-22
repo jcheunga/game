@@ -72,14 +72,8 @@ public partial class UiReviewSmoke
         inputs.AddChild(new LineEdit {Text="Caravan callsign",SizeFlagsHorizontal=Control.SizeFlags.ExpandFill});
         inputs.AddChild(new LineEdit {Text="Read only",Editable=false,SizeFlagsHorizontal=Control.SizeFlags.ExpandFill});
         var select=new OptionButton {CustomMinimumSize=new Vector2(280,48)}; select.AddItem("King's Road"); select.AddItem("Saltwake Docks"); inputs.AddChild(select);
-        var checks=new HBoxContainer(); stack.AddChild(checks);
-        checks.AddChild(new CheckBox {Text="Field hints",ButtonPressed=true});
-        checks.AddChild(new CheckBox {Text="Reduced motion"});
-        checks.AddChild(new CheckBox {Text="Unavailable",Disabled=true});
         stack.AddChild(new HSeparator());
         var meters=new HBoxContainer(); stack.AddChild(meters);
-        var courage=new BattleHudBar {CustomMinimumSize=new Vector2(350,30)}; courage.Setup(RealmUi.Gold,Colors.White,"Courage"); courage.SetValue(.68f,"68/100"); meters.AddChild(courage);
-        var waves=new BattleHudBar {CustomMinimumSize=new Vector2(350,30)}; waves.Setup(new Color("86b4a0"),Colors.White,"Waves"); waves.SetValue(.5f,"3/6"); meters.AddChild(waves);
         var progress=new ProgressBar {Value=63,SizeFlagsHorizontal=Control.SizeFlags.ExpandFill,CustomMinimumSize=new Vector2(0,30)}; meters.AddChild(progress);
         var lower=new HBoxContainer {SizeFlagsVertical=Control.SizeFlags.ExpandFill}; stack.AddChild(lower);
         var inset=new PanelContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};

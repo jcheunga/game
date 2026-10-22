@@ -75,6 +75,8 @@ public partial class RoyalButton : Button
     /// <summary>Marks a tab as the selected page; selected tabs keep their resting look when pressed.</summary>
     public void MarkTab(bool selected)
     {
+        // Reviews find a screen's pages by this mark, as they find RealmUi tab rows by "realm_tabs".
+        SetMeta("royal_tab", true);
         ToggleMode = true;
         SetPressedNoSignal(selected);
         if (selected)

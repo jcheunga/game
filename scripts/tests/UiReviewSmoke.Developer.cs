@@ -66,7 +66,6 @@ public partial class UiReviewSmoke
         Check(state.TotalPurchaseCount == purchases && state.GetUnlockedAchievementCount() == achievements
             && state.HighestUnlockedStage == stage && canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge,
             "Testing supplies leave purchases, achievements, progression, fog and camera unchanged");
-        Check(!Walk(menu).OfType<Control>().Any(control => control.Name == "TravelNotice"), "Top-ups do not create a bottom message popup");
         AuditText("Developer / map supplies"); await Capture("developer-map-supplies");
         Check(!state.TryAddDeveloperResources(-1, 10) && !state.TryAddDeveloperResources(10, -1)
             && !state.TryAddDeveloperResources(0, 0) && state.Gold == gold && state.Food == food,

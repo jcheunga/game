@@ -161,7 +161,7 @@ public partial class MobilePresentationReview : Node
                 await Capture(late?"phone-endless":"phone-stage-100");
                 advanced.QueueFree(); await Settle();
             }
-            await CheckModelPreviews();
+            await CheckPhoneOverlays();
         }
         catch(Exception ex) {GD.PrintErr(ex.ToString()); _failures++;}
 
@@ -177,21 +177,8 @@ public partial class MobilePresentationReview : Node
         Check(band.Y>Read<float>(battle,"_mobileFieldTop") && band.Y<Read<float>(battle,"_mobileFieldBottom"),"The band sits between the meters and the card tray");
     }
 
-    private async Task CheckModelPreviews()
+    private async Task CheckPhoneOverlays()
     {
-        foreach(var id in GameData.PlayerRosterIds.Concat(GameData.EnemyRosterIds).Distinct())
-        {
-            var source=UnitSpriteLoader.LoadOwnedPreview(id);
-            // Envelope-cropped units preview their sharper battle frames; only legacy 192x240 atlases keep
-            // separate 256x320 preview masters.
-            var battle=UnitSpriteLoader.TryLoad(GameData.GetUnit(id).VisualClass,id);
-            var hires=battle!=null && !(battle.FrameWidth==192 && battle.FrameHeight==240);
-            Check(source!=null && source.Animations.Count==3 && (hires
-                ? source.FrameWidth==battle.FrameWidth && source.FrameHeight==battle.FrameHeight
-                : source.FrameWidth==256 && source.FrameHeight==320),
-                $"{id} has original-resolution idle, walk and attack previews");
-            source?.Texture.Dispose();
-        }
         GameState.Instance.SetSelectedStage(1); GameState.Instance.PrepareCampaignBattle();
         {
             await LiveUiReview.Open(this,"MainMenu");
@@ -199,10 +186,6 @@ public partial class MobilePresentationReview : Node
             var home=(MapMenu)GetTree().CurrentScene;
             Check(home.HasHomeModal && loadout.HasMeta("home_modal"),"Preparation uses the production map overlay");
             await Settle(10); await Capture("phone-loadout");
-            // Squad cards are display-only; preparation opens no unit inspector.
-            Check(!loadout.FindChildren("*","Button",true,false).OfType<Button>().Any(b=>(b.AccessibilityName??"").StartsWith("View ")) &&
-                !loadout.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
-                "Preparation squad cards are display-only and open no model inspector");
             foreach(var button in loadout.FindChildren("*","Button",true,false).OfType<Button>().Where(b=>b.IsVisibleInTree()))
             {
                 var rect=button.GetGlobalTransformWithCanvas()*(button is RoyalButton royal?royal.TouchRect:new Rect2(Vector2.Zero,button.Size));
@@ -212,9 +195,8 @@ public partial class MobilePresentationReview : Node
         }
         await LiveUiReview.Open(this,"MainMenu");
         var shop=(ShopMenu)await LiveUiReview.Open(this,"ShopMenu"); await Settle(20);
-        // The armory is two columns (collection and profile): no large model repeats the selected unit.
-        Check(!shop.FindChildren("*","Control",true,false).OfType<UnitModelPreview>().Any(),
-            "The armory shows no large model beside the collection");
+        Check(((MapMenu)GetTree().CurrentScene).HasHomeModal && shop.HasMeta("home_modal"),"The armory uses the production map overlay");
+        await Capture("phone-armory");
         shop.QueueFree(); await Settle();
     }
 

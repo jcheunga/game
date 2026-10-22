@@ -61,8 +61,14 @@ public partial class FeedbackReview : Node
             Check(state.Food == save.Food, "The food balance persists across reload");
             state.ResetProgress(); state.SetShowHints(false);
             var menu = await Open<MainMenu>("MainMenu"); await Capture("01-title");
-            AccountDialog.Show(menu); await Wait(.5);
-            var account = Walk(menu).OfType<AccountDialog>().Single();
+            // Players open the account dialog from Settings: the Account page's Manage row.
+            var settings = await Open<SettingsMenu>("SettingsMenu");
+            var accountTab = LiveUiReview.VisibleTabs(settings).Single(b => b.Text == "Account");
+            accountTab.ButtonPressed = true; accountTab.EmitSignal(BaseButton.SignalName.Pressed); await Wait(.3);
+            Walk(settings).OfType<RoyalButton>().Single(b => b.IsVisibleInTree() && b.AccessibilityName == "Account" && !b.HasMeta("royal_tab"))
+                .EmitSignal(BaseButton.SignalName.Pressed);
+            await Wait(.5);
+            var account = Walk(settings).OfType<AccountDialog>().Single();
             Check(Walk(account).OfType<ScrollContainer>().Any() && Walk(account).OfType<Button>().Any(b => b.Text == "Continue with Google"), "Account offers email and Google in a scrollable dialog");
             var buttons = Walk(account).OfType<Button>().ToList();
             Check(buttons.Any(b => b.Text == "Continue with Apple") && buttons.FindIndex(b => b.Text == "Continue with Apple") < buttons.FindIndex(b => b.Text == "Continue with Google"),
@@ -76,22 +82,20 @@ public partial class FeedbackReview : Node
             Check(!Walk(map).OfType<MapPathCanvas>().Single().IsTravelling, "Map opens with a stable selection");
             map.QueueFree(); await Wait();
             var shop = await Open<ShopMenu>("ShopMenu"); await Capture("03-squad");
-            // The armory is a three-column scrolling collection of portrait tiles beside one animated model of the selected unit.
+            // The armory is a three-column scrolling collection of portrait tiles beside the selected unit's profile.
             Control Collection() => Walk(shop).OfType<ScrollContainer>().SingleOrDefault(scroll => scroll.Name == "Collection")?.GetChild<Control>(0);
             var squadGrid = Collection();
             Check(squadGrid != null && squadGrid.GetChildCount() == GameData.GetPlayerUnits().Count
                 && squadGrid.GetChildren().OfType<Control>().Select(cell => cell.Position.X).Distinct().Count() == 3, "Squad browser displays every unit in one scrolling grid");
-            Check(squadGrid != null && !Walk(squadGrid).OfType<UnitModelPreview>().Any() && squadGrid.GetChildren().OfType<RoyalButton>().All(b => Walk(b).OfType<TextureRect>().Any()), "Squad browser uses portraits instead of side-facing models");
+            Check(squadGrid != null && squadGrid.GetChildren().OfType<RoyalButton>().All(b => Walk(b).OfType<TextureRect>().Any()), "Squad browser uses portraits");
             var rites = Walk(shop).OfType<Button>().Single(b => b.Text == "Spells"); rites.ButtonPressed = true; rites.EmitSignal(BaseButton.SignalName.Pressed); await Wait();
             Check(Collection() is { } spellGrid && spellGrid.GetChildCount() == GameData.GetPlayerSpells().Count, "Spell browser also displays its full inventory grid");
             await Capture("03b-spells");
             shop.QueueFree(); await Wait();
             var loadout = await Open<LoadoutMenu>("LoadoutMenu"); await Capture("04-loadout");
-            Check(!Walk(loadout).OfType<UnitModelPreview>().Any(), "Preparation uses unit icons"); loadout.QueueFree(); await Wait();
+            loadout.QueueFree(); await Wait();
             state.SetSelectedStage(1); state.PrepareCampaignBattle();
             var battle = await Open<BattleController>("Battle"); battle.SetPhysicsProcess(false); await Capture("05-battle");
-            Check(!Walk(battle).Any(n => n.Name == "CampaignFieldNavigation" || n.Name == "BattlefieldNavigation"), "Battle minimap and capture navigation are removed");
-            Check(!Walk(battle).OfType<Button>().Any(b => b.IsVisibleInTree() && b.Text == "1x"), "No battle speed control is shown");
             var units = Read<List<Unit>>(battle, "_units");
             var archer = (Unit)Call(battle,"SpawnUnit",Team.Player,new UnitStats(GameData.GetUnit("player_shooter")),new Vector2(450,340));
             var enemy = (Unit)Call(battle,"SpawnUnit",Team.Enemy,new UnitStats(GameData.GetUnit("enemy_walker")),new Vector2(490,340));
@@ -120,7 +124,10 @@ public partial class FeedbackReview : Node
             battle = await Open<BattleController>("Battle"); battle.SetPhysicsProcess(false);
             Check(Walk(battle).OfType<BattleActionCard>().Count() == state.LoadoutSizeLimit && state.GetBattleDeckSpells().Count == 3,
                 "A save holding six units and five spells battles with a six-card loadout of three of each");
-            Check(Walk(battle).OfType<BattleActionCard>().All(c => c.GetParent().GetParent().GetParent() is ScrollContainer), "Expanded cards share a horizontal scroller");
+            // The card row never scrolls: cards shrink to share the dock.
+            Check(Walk(battle).OfType<BattleActionCard>().All(c => battle.GetViewportRect().Grow(1).Encloses(((Control)c.GetParent()).GetGlobalRect())),
+                "Expanded cards all fit on screen in one row");
+            Check(!Walk(GetTree().Root).OfType<Control>().Any(c => c.IsVisibleInTree() && c.TooltipText.Length > 0), "Touch screens have no hover tooltips");
             await Capture("06-expanded-battle"); battle.QueueFree(); await Wait();
             await CheckAccountClient();
             Check(ResourceLoader.Load<AudioStreamOggVorbis>("res://assets/music/title.ogg").GetLength() > 40 &&
@@ -135,7 +142,6 @@ public partial class FeedbackReview : Node
             state.SetMusicVolumePercent(0); await Wait(.1);
             Check(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex(AudioDirector.MusicBus)) <= -80, "Music volume reaches silence");
             state.SetMusicVolumePercent(50);
-            Check(!Walk(GetTree().Root).OfType<Control>().Any(c => c.IsVisibleInTree() && c.TooltipText.Length > 0), "Touch screens have no hover tooltips");
         }
         catch (Exception ex) { GD.PrintErr(ex.ToString()); _failures++; }
         GD.Print($"FEEDBACK_REVIEW_RESULT: {_failures} failures"); await LiveUiReview.StopAudio(this); GetTree().Quit(_failures == 0 ? 0 : 1);

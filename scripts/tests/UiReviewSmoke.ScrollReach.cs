@@ -29,10 +29,10 @@ public partial class UiReviewSmoke
             if (!Want(name)) continue;
             await Open(scene);
             await AuditScrollReach(name);
-            foreach (var tab in VisibleTabs().Skip(1))
+            foreach (var tab in VisibleTabs())
             {
                 await Open(scene);
-                await Press(tab);
+                await PressTab(tab);
                 await AuditScrollReach(name + "-" + tab.Replace(" ", "-"));
             }
         }
@@ -41,11 +41,11 @@ public partial class UiReviewSmoke
             await Open("MainMenu");
             ((MapMenu)GetTree().CurrentScene).OpenHomeDestination(destination); await Wait(.5);
             await AuditScrollReach(destination);
-            foreach (var tab in VisibleTabs().Skip(1))
+            foreach (var tab in VisibleTabs())
             {
                 await Open("MainMenu");
                 ((MapMenu)GetTree().CurrentScene).OpenHomeDestination(destination); await Wait(.5);
-                await Press(tab);
+                await PressTab(tab);
                 await AuditScrollReach(destination + "-" + tab.Replace(" ", "-"));
             }
         }
@@ -82,8 +82,13 @@ public partial class UiReviewSmoke
         ForgeEnchantmentInspector.Show(home, _ => { }, GameData.GetAllEquipment().First().Id); await Wait(.2);
         var forge = Walk(home).OfType<ForgeEnchantmentInspector>().Last();
         await AuditScrollReach("enchantments", forge); forge.QueueFree();
-        AccountDialog.Show(home); await Wait(.3);
-        var account = Walk(home).OfType<AccountDialog>().Single();
+        // Players open the account dialog from Settings: the Account page's Manage row.
+        await Open("SettingsMenu"); await PressTab("Account");
+        Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<RoyalButton>()
+            .Single(b => b.IsVisibleInTree() && b.AccessibilityName == "Account" && !b.HasMeta("royal_tab"))
+            .EmitSignal(BaseButton.SignalName.Pressed);
+        await Wait(.3);
+        var account = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<AccountDialog>().Single();
         await AuditScrollReach("account", account, account); account.QueueFree();
         state.PrepareCampaignBattle();
         await Open("Battle");
@@ -102,9 +107,9 @@ public partial class UiReviewSmoke
         await AuditScrollReach("battle-victory", battle);
     }
 
-    private string[] VisibleTabs() => Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<HBoxContainer>()
-        .Where(x => x.IsVisibleInTree() && x.HasMeta("realm_tabs")).SelectMany(x => x.GetChildren().OfType<Button>())
-        .Where(x => x.Visible && !x.Disabled).Select(x => x.Text).ToArray();
+    /// <summary>The pages a screen opens on besides its current one.</summary>
+    private string[] VisibleTabs() => LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree()))
+        .Where(x => !x.ButtonPressed).Select(x => x.Text).ToArray();
 
     /// <summary>A long-played save so every list is as long as a player will see it.</summary>
     private void SeedLateGameSave()

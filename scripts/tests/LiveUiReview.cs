@@ -15,6 +15,19 @@ public static class LiveUiReview
     public static Node ActiveRoot(SceneTree tree) => tree.CurrentScene is MapMenu { HasHomeModal: true } home
         ? home.GetNode<RealmModal>("HomeModal") : tree.CurrentScene;
 
+    /// <summary>The visible page tabs: RealmUi tab rows and the concept screens' marked tabs.</summary>
+    public static Button[] VisibleTabs(Node root) => Walk(root).OfType<Button>()
+        .Where(button => button.IsVisibleInTree() && !button.Disabled
+            && (button.HasMeta("royal_tab") || (button.GetParent()?.HasMeta("realm_tabs") ?? false)))
+        .ToArray();
+
+    private static System.Collections.Generic.IEnumerable<Node> Walk(Node node)
+    {
+        yield return node;
+        foreach (var child in node.GetChildren())
+            foreach (var nested in Walk(child)) yield return nested;
+    }
+
     public static void PreserveDriver(Node driver)
     {
         if (driver.GetTree().CurrentScene == driver) driver.GetTree().CurrentScene = null;
@@ -30,7 +43,9 @@ public static class LiveUiReview
         var router = SceneRouter.Instance;
         switch (path)
         {
-            case SceneRouter.MainMenuScene: case SceneRouter.MapScene: router.ReloadHome(); break;
+            case SceneRouter.MainMenuScene: router.ReloadHome(); break;
+            // Battles return here: the campaign map scene, not the title's home.
+            case SceneRouter.MapScene: router.GoToMap(); break;
             case SceneRouter.BattleScene: router.GoToBattle(); break;
             case SceneRouter.ShopScene: router.GoToShop(); break;
             case SceneRouter.MultiplayerScene: router.GoToMultiplayer(); break;
@@ -60,8 +75,8 @@ public static class LiveUiReview
         await Settle(driver);
         if (path is SceneRouter.MainMenuScene or SceneRouter.MapScene)
         {
-            if (tree.CurrentScene is not MainMenu || ((MapMenu)tree.CurrentScene).HasHomeModal)
-                throw new InvalidOperationException("Review did not reach the live home map.");
+            if (tree.CurrentScene is not MapMenu { HasHomeModal: false } map || map.SceneFilePath != path)
+                throw new InvalidOperationException($"Review did not reach the live map at {path}.");
             return tree.CurrentScene;
         }
         if (path == SceneRouter.BattleScene)

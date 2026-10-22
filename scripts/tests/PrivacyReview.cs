@@ -169,13 +169,11 @@ public partial class PrivacyReview : Node
         state.ReloadFromDisk();
         var main = (Control)await LiveUiReview.Open(this, "MainMenu");
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
-        Check(!main.FindChildren("*", "Button", true, false).OfType<Button>().Any(button => button.Text == "Allow Analytics" || button.Text == "No Thanks")
-            && !main.GetChildren().OfType<CenterContainer>().Any(), "A fresh startup opens the map without an analytics modal");
+        Check(main is MapMenu { HasHomeModal: false } && !main.GetChildren().OfType<CenterContainer>().Any(), "A fresh startup opens the map without an analytics modal");
         Check(!state.AnalyticsConsent && !state.CrashReportingConsent, "Opening home without a prompt keeps optional uploads disabled");
         await Capture("startup");
         var settings = (Control)await LiveUiReview.Open(this, "SettingsMenu");
-        var accountTab = settings.FindChildren("*", "Button", true, false).OfType<Button>()
-            .Single(button => button.Text == "Account" && button.GetParent().HasMeta("realm_tabs"));
+        var accountTab = LiveUiReview.VisibleTabs(settings).Single(button => button.Text == "Account");
         accountTab.ButtonPressed = true;
         accountTab.EmitSignal(Button.SignalName.Pressed);
         await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);

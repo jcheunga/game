@@ -96,15 +96,16 @@ public partial class UiReviewSmoke
         var start = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Begin endless march");
         await TapModal(start); await Wait(.8);
         Check(GetTree().CurrentScene.SceneFilePath == SceneRouter.BattleScene && state.CurrentBattleMode == BattleRunMode.Endless, "Starting endless from its modal enters the real endless battle");
-        SceneRouter.Instance.GoToMainMenu(); await Wait(.8);
-        Check(GetTree().CurrentScene is MainMenu && !((MapMenu)GetTree().CurrentScene).HasHomeModal, "Returning from battle restores the map home");
+        // Every way out of a battle (result board, quit, retreat) goes to the campaign map.
+        SceneRouter.Instance.GoToMap(); await Wait(.8);
+        Check(GetTree().CurrentScene is MapMenu { HasHomeModal: false } map && map.SceneFilePath == SceneRouter.MapScene, "Returning from battle restores the map home");
         state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
         var food = state.Food; var cost = state.GetStageEntryFoodCost(state.SelectedStage);
         var deploy = Walk(GetTree().CurrentScene).OfType<Button>().Single(button => button.IsVisibleInTree() && button.AccessibilityName == "Deploy");
         Check(deploy.GetGlobalRect().End.Y <= GetTree().CurrentScene.GetViewport().GetVisibleRect().End.Y - 65, "The campaign Deploy button stays in the fixed action bar");
         await TapModal(deploy); await Wait(.8);
         Check(GetTree().CurrentScene.SceneFilePath == SceneRouter.BattleScene && state.CurrentBattleMode == BattleRunMode.Campaign && state.Food == food - cost, "Campaign preparation deploys from the modal with one entry charge");
-        SceneRouter.Instance.GoToMainMenu(); await Wait(.8);
+        SceneRouter.Instance.GoToMap(); await Wait(.8);
         var previous = GetTree().CurrentScene; SceneRouter.Instance.GoToSettings(); await Wait(.2); SceneRouter.Instance.ReloadHome(); await Wait(.8);
         Check(GetTree().CurrentScene is MainMenu && GetTree().CurrentScene != previous && !((MapMenu)GetTree().CurrentScene).HasHomeModal, "An account or restored save can reload the home independently of modal navigation");
     }

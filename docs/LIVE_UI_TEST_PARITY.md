@@ -14,13 +14,13 @@ mobile preparation, feedback, privacy, world/exploration, and Codex art reviews.
 
 | Review | What it covers |
 | --- | --- |
-| `--live-parity` | Native clicks on home tabs and Settings, More → Community → Challenges → LAN, modal back/close, all 22 routed activities, and preservation of map/resources. Runs on desktop, smaller windows, and phones. |
-| `--typography`, `--all-menus` | All public activity routes discovered from `SceneRouter`, their live overlays, and the active activity's controls. Typography visits every visible tab. Add `--only=ShopMenu,ArenaMenu` to re-capture just the screens being changed. |
-| `--scroll-reach` | The same routes and tabs plus the level track, achievements, hub, inspectors, account dialog and battle menus. Every vertical scroll area must reach its last row and move under a wheel turn and a finger drag (see MOBILE_PRESENTATION.md). |
+| `--live-parity` | Native clicks on home tabs and Settings, More → Community → Challenges → Code options → LAN race, modal back/close, all 22 routed activities, and preservation of map/resources. Runs on desktop, smaller windows, and phones. |
+| `--typography`, `--all-menus` | All public activity routes discovered from `SceneRouter`, their live overlays, and the active activity's controls. Typography visits every visible tab: `RealmUi` tab rows (`realm_tabs`) and the concept screens' tabs (`RoyalButton.MarkTab` sets `royal_tab`). `--all-menus` runs each screen's own refresh (`RefreshUi`, `Refresh`, `Rebuild` or `RefreshBook`) twice and names any screen without one. Add `--only=ShopMenu,ArenaMenu` to re-capture just the screens being changed. |
+| `--scroll-reach` | The same routes and tabs plus the level track, achievements, hub, inspectors, account dialog (opened from Settings → Account → Manage) and battle menus. Every vertical scroll area must reach its last row and move under a wheel turn and a finger drag (see MOBILE_PRESENTATION.md). |
 | `--typography-advanced` | Every armory unit/spell detail, plus the map and preparation screens for every stage in `GameData.Stages` (all 100). Fixtures explicitly open the tiles; the review selects the actual tile and verifies preparation's stage number. |
 | Default run, `--playthrough` | The default run (no review flag) covers home tabs, stage details, preparation and unit details, armory, challenges, endless, settings, deployment and the battle menu; `--playthrough` adds a tower result and a real-input campaign victory and return to the map. All go through production navigation. `ui_review_smoke.sh` passes `--core`, which is not a parsed flag and so selects the default run. |
 | Home, rewards, armory, storehouse, developer, progression and star reviews | Shared live screen loader; existing state fixtures and behavior checks remain in the isolated test save. |
-| `MobilePresentationReview` | Production preparation overlays at phone size, production armory overlay and model preview, and controlled battle presentation. |
+| `MobilePresentationReview` | Production preparation and armory overlays at phone size, and controlled battle presentation. |
 | `FeedbackReview`, `PrivacyReview` | Production home, armory, preparation and Settings; screenshots include the real map/overlay hierarchy. |
 | `ExplorationReview`, `WorldArtReview` | Production home maps. World art battle captures also use the router. |
 | `BlenderAssetSmoke` Codex screenshot | Production Codex overlay, with the Bosses tab and a discovered entry selected through the controls. |
@@ -48,10 +48,16 @@ battles. They verify rendering or simulation, rather than claim navigation
 coverage. Data validators and HTTP/LAN service smoke tests do not render menu
 screens and are not evidence of visual parity.
 
-`CombatReviewSmoke --reference-map` is an explicit historical battlefield
-comparison. It changes only the test process's geometry and is not used in
-the parity suite. Art-generation contact sheets and galleries are also asset
-reviews, not evidence of current screen navigation.
+Art-generation contact sheets and galleries are asset reviews, not evidence of
+current screen navigation.
+
+Reviews check only what a player can reach. `LiveUiReview.Open("MapMenu")`
+loads the campaign map scene that battles return to (`GoToMap`), and
+`"MainMenu"` the title's home. Checks that only proved a removed control was
+gone (bottom notices, battle hints, the map guide, the minimap, the model
+preview) were dropped on 22 October 2026 once no game code could create them,
+along with checks of the gatehouse and outworks, which every zone's painted
+stronghold replaces.
 
 The corrected phone checks exposed cramped multiplayer footer actions, narrow
 armory actions, fixed-height activity descriptions, and inaccessible storehouse

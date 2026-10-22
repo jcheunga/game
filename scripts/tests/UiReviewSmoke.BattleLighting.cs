@@ -28,12 +28,12 @@ public partial class UiReviewSmoke
             Call(battle, "ClearArmedSelection");
             var ground = new Vector2(world.PlayerBaseX, (world.BattlefieldTop + world.BattlefieldBottom) * .5f);
             var bases = Walk(battle).OfType<BattleBaseCanvas>().ToArray();
-            // A painted stronghold replaces the gatehouse's five outworks and sorts behind the band.
-            var painted = Call(battle, "get_PaintedBase") != null;
-            Check(battle.YSortEnabled && bases.Count(b => b.Name.ToString().StartsWith("Outwork")) == (painted ? 0 : 5)
+            // Every zone has painted strongholds; they replace the Blender gatehouse and outworks.
+            Check(Call(battle, "get_PaintedBase") != null, stage.MapId + ": the zone's painted stronghold stands at the field's end");
+            Check(battle.YSortEnabled && !bases.Any(b => b.Name.ToString().StartsWith("Outwork"))
                 && bases.Single(b => b.Name == "Caravan").Position == (Vector2)Call(battle, "get_WagonSortPosition")
                 && bases.Single(b => b.Name == "Castle").Position == (Vector2)Call(battle, "get_CastleSortPosition"),
-                stage.MapId + ": bases, outworks and units sort from their ground positions");
+                stage.MapId + ": bases and units sort from their ground positions");
             var unit = (Unit)Call(battle, "SpawnUnit", Team.Player, new UnitStats(GameData.GetUnit(GameData.PlayerRosterIds[0])), new Vector2(330, 340));
             Check(unit.GroundShadowsManaged && unit.EnvironmentTint == BattleLighting.ForZone(stage.MapId).Tint,
                 stage.MapId + ": unit inherits shared environmental light and ground shadow pass");
@@ -79,9 +79,9 @@ public partial class UiReviewSmoke
         await Wait(.15); await Capture("phone-caravan");
         var canvases = Walk(phone).OfType<BattleBaseCanvas>().ToArray();
         Check(Walk(phone).OfType<BattleShadowCanvas>().Single().Visible && canvases.Count(b => b.Name == "Caravan" || b.Name == "Castle") == 2
-            && canvases.Count(b => b.Name.ToString().StartsWith("Outwork")) == (Call(phone, "get_PaintedBase") != null ? 0 : 5),
-            "Phone view retains the same grounded bases, outworks and shadow pass");
-        foreach (var id in new[] { "war_wagon", "gatehouse" }.Concat(WagonSkinCatalog.GetAll().Where(skin => skin.Id != WagonSkinCatalog.DefaultSkinId).Select(skin => "war_wagon_" + skin.Id)))
+            && Call(phone, "get_PaintedBase") != null && !canvases.Any(b => b.Name.ToString().StartsWith("Outwork")),
+            "Phone view retains the same grounded bases and shadow pass");
+        foreach (var id in new[] { "war_wagon" }.Concat(WagonSkinCatalog.GetAll().Where(skin => skin.Id != WagonSkinCatalog.DefaultSkinId).Select(skin => "war_wagon_" + skin.Id)))
         {
             var art = BattleStructureArt.Load(id);
             Check(art != null && art.Texture.GetSize() == new Vector2(1024, 1024), id + ": new native render and projected metadata load");

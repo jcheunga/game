@@ -112,7 +112,7 @@ godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui
 godot --path . --scene res://scenes/tests/UiReviewSmoke.tscn -- --save-suffix=ui-review-UNIQUE --scroll-reach --mobile-preview [--late-game] [--only=ProfileMenu,extras]
 ```
 
-`--scroll-reach` visits every home page and tab, the level track, achievements and
+`--scroll-reach` visits every home page and tab (`realm_tabs` rows and `royal_tab` tabs), the level track, achievements and
 the hub, plus (`extras`) the stage briefing, every spell and relic inspector, the
 enchantments inspector, the account dialog, the battle menu, guide, settings and a
 victory. For each vertical scroll area it scrolls to the end (outer scrolls

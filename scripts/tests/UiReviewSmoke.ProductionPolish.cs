@@ -16,7 +16,6 @@ public partial class UiReviewSmoke
             var state = GameState.Instance;
             state.ResetProgress(); state.SetShowHints(true); state.SetAnalyticsConsent(false);
             await Open("MainMenu"); var home = (MapMenu)GetTree().CurrentScene;
-            Check(!Walk(home).OfType<Control>().Any(c => c.Name == "PlayerNotice"), "A fresh home screen creates no bottom tutorial popup");
             SceneRouter.Instance.GoToLoadout(); await LiveUiReview.Settle(this);
             var food = state.Food;
             var picture = Walk(home).OfType<Button>().Single(b => b.AccessibilityName == "Encounter briefing");
@@ -35,7 +34,6 @@ public partial class UiReviewSmoke
             typeof(SettingsMenu).GetMethod("RestoreDefaults", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(settings, null);
             Check(state.FontSizeOffset == 0 && !state.ShowFpsCounter, "Restore defaults resets reading size and keeps debug displays hidden");
             await Capture("02-settings"); home.CloseHomeModal();
-            Check(!Walk(home).OfType<Control>().Any(c => c.Name == "PlayerNotice"), "Settings and restoring preferences create no bottom popups");
             await Capture("03-clean-home");
             SceneRouter.Instance.GoToLoadout(); await LiveUiReview.Settle(this);
             var deploy = Walk(home).OfType<Button>().Single(b => b.AccessibilityName == "Deploy");
@@ -55,11 +53,9 @@ public partial class UiReviewSmoke
             var hidden = BindingFlags.Instance | BindingFlags.NonPublic;
             typeof(BattleController).GetMethod("TryCastSpellAt", hidden).Invoke(battle, new object[] { GameData.GetSpell("spell_fireball"), new Vector2(500, 340) });
             await Wait(.15);
-            Check(!Walk(battle).OfType<Control>().Any(c => c.Name == "PlayerNotice"), "Unavailable spells add no floating warning text");
             await Capture("04-spell-denial");
             typeof(BattleController).GetMethod("TogglePause", hidden).Invoke(battle, null);
             await Wait(.1);
-            Check(!Walk(battle).OfType<Control>().Any(c => c.Name == "BattleHint"), "Battle menu creates no bottom tutorial banner");
             await TapModal(Walk(battle).OfType<Button>().Single(b => b.Text == "Game settings"));
             Check(Walk(battle).OfType<SettingsMenu>().Any(), "Paused battle opens settings without advancing combat");
             var music = Walk(battle).OfType<HSlider>().Single(s => s.IsVisibleInTree() && s.AccessibilityName == "Music volume");

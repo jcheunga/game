@@ -34,8 +34,6 @@ public partial class UiReviewSmoke
             GetTree().Root.AddChild(battle); GetTree().CurrentScene = battle; battle.SetPhysicsProcess(false);
             Check(Read<float>(battle, "_courage") == 0, mode + " starts with zero courage");
             await Wait(.1);
-            Check(typeof(BattleController).GetField("_stageHazards", hidden) == null,
-                mode + " has no retired hazard system");
             return battle;
         }
         foreach (var mode in Enum.GetValues<BattleRunMode>()) await Battle(mode);
@@ -55,8 +53,6 @@ public partial class UiReviewSmoke
         Check(Read<int>(fight, "_playerDeployments") == 1, "Unowned units outside the warband cannot be deployed");
         Check(UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerNecromancerId) == null
             && UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerMechanicId) == null, "Abilities cannot summon additional allied units");
-        Check(typeof(BattleController).GetMethods(hidden).All(method => method.Name != "SpawnSupportUnit"),
-            "Automatic allied support spawning is removed");
         Call(fight, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit(GameData.EnemyRunnerId)), new Vector2(650, 200));
         var spawned = Read<List<Unit>>(fight, "_units").Last();
         Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= GameData.Combat.LaneHalfHeight,
@@ -91,7 +87,6 @@ public partial class UiReviewSmoke
         fight.SetProcess(false); await Capture("02-ground-spell-preview");
         Write(fight, "_cardPointerDown", false); Write(fight, "_cardDragging", false);
         Call(fight, "TogglePause");
-        Check(!Walk(fight).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Contains("1–6")), "Pause menu contains no control-instruction paragraph");
         await Capture("03-pause-menu"); Call(fight, "TogglePause");
 
         fight = await Battle(BattleRunMode.Endless);

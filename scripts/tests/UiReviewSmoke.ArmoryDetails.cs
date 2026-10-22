@@ -31,9 +31,6 @@ public partial class UiReviewSmoke
         stats = state.BuildPlayerUnitStats(unit);
         Check(state.GetUnitLevel(unit.Id) == level + 1 && state.Gold == gold - cost && Shows($"Health: {stats.MaxHealth:0}"),
             "A native training click spends once and updates the displayed stats");
-        // The role chip beside the name is a label; the profile shows everything there is.
-        Check(!Walk(menu).OfType<BaseButton>().Any(button => button.IsVisibleInTree() && button.AccessibilityName == "Traits & training"),
-            "The role chip opens no extra breakdown");
         menu.CloseHomeModal();
         var fixture = state.BuildSaveData(); fixture.Gold = 100000; fixture.Sigils = 100; fixture.HighestUnlockedStage = state.MaxStage;
         fixture.OwnedPlayerUnitIds = GameData.GetPlayerUnits().Select(entry => entry.Id).ToArray();

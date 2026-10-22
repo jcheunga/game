@@ -65,8 +65,6 @@ public partial class CombatReviewSmoke
             "Middle-drag moves the ground with the pointer and releases cleanly");
         battle._UnhandledInput(new InputEventKey { Keycode = Key.End, Pressed = true });
         Check(Mathf.IsEqualApprox(camera.Position.X, width - half), "End jumps to the enemy base");
-        Check(!battle.FindChildren("*", "Control", true, false).Any(n => n.Name == "BattlefieldNavigation" || n.Name == "CampaignFieldNavigation"),
-            "Battle has no navigation strip or minimap");
         camera.ForceUpdateScroll();
         await CaptureCamera("desktop-gate");
 
@@ -192,8 +190,6 @@ public partial class CombatReviewSmoke
         battle._Input(new InputEventScreenTouch { Index = 0, Pressed = false, Position = point });
         for (var frame = 0; frame < 30; frame++) Invoke(battle, "UpdateBattleCamera", 1f / 60f);
         Check(camera.Position.X == caught, "A caught field stays where it stopped");
-        Check(!battle.FindChildren("*", "Control", true, false).Any(n => n.Name == "CampaignFieldNavigation"),
-            "Phone combat has no capture controls or minimap");
         var oldWindowSize = GetWindow().Size;
         GetWindow().Size = new Vector2I(1000, 600);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

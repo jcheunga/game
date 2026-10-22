@@ -11,9 +11,6 @@ using Godot;
 /// </summary>
 public partial class UiReviewSmoke
 {
-    private static readonly string[] ConceptScreens = { "home", "hub", "warband", "spells", "wagon", "relics", "achievements", "codex", "settings",
-        "endless", "multiplayer", "forge", "season", "preparation", "battle", "victory" };
-
     private void SeedConceptSave()
     {
         var state = GameState.Instance; state.ResetProgress();
@@ -79,7 +76,7 @@ public partial class UiReviewSmoke
             while (CanTurn()) await PressHint("Next codex page");
             CheckCodexHeader("last"); await Capture("codex-last");
         }
-        if (Want("battle") || Want("victory") || Want("pause") || Want("battle-action"))
+        if (Want("battle") || Want("victory") || Want("defeat") || Want("pause") || Want("battle-action"))
         {
             GameState.Instance.SetSelectedStage(1);
             GameState.Instance.PrepareCampaignBattle(); await Open("Battle"); await Wait(1.5);

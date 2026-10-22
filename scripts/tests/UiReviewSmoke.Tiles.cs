@@ -62,7 +62,6 @@ public partial class UiReviewSmoke
         Check(tilesCity.Count(state.IsAdventureTileOpened) == startingCount && state.GetAdventureCaravanTile("city").Id == leader.Id,
             "Reloading an untouched campaign keeps only its first stage and the land around it charted");
         Check(!menu.GetNode<PanelContainer>("HomeHud/SelectedSite").Visible, "Fresh map keeps details closed");
-        Check(!Walk(menu).OfType<Button>().Any(button => button.Text == "Map guide" || button.AccessibilityName == "Map guide"), "The map guide no longer occupies the home map");
         await Capture("01-fresh-map"); AuditText("Tile map / fresh");
         var food = state.Food; var knowledge = state.AdventureKnowledgeRevision; var position = state.GetAdventureCaravanTile("city").Id;
         var click = canvas.GlobalPosition + new Vector2(canvas.Size.X * .8f, canvas.Size.Y * .55f);

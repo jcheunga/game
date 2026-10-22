@@ -192,13 +192,10 @@ public partial class UiReviewSmoke
                 }
 
                 Ready();
-                var bar=cards[0].GetParent().GetParent().GetParent() as ScrollContainer;
-                bar?.EnsureControlVisible((Control)cards[deck.Roster.Count].GetParent()); await Wait(.1);
                 point=FieldPoint(); Down(CardPoint(deck.Roster.Count)); Move(point);
                 Check(Read<bool>("_cardDragging") && !Read<bool>("_cardScrolling"),
                     mode+": lifting a spell out of the card bar is a magic drag");
                 if(Read<bool>("_cardPointerDown")) CancelHeldCard();
-                if(bar!=null) bar.ScrollHorizontal=0;
                 await Wait(.1);
                 Ready(); Down(CardPoint(0)); Up(CardPoint(0)); await Wait(.05);
                 unit=Read<List<Unit>>("_units").Last(u=>u.Team==Team.Player);

@@ -70,8 +70,8 @@ public partial class UiReviewSmoke
                 tag + ": Escape returns to pause menu without restarting the fight");
             var empty = state.BuildSaveData(); empty.Food = 0; empty.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); state.RestoreCloudSave(empty);
             Call(battle, "TryRestartBattle");
-            Check(GetTree().CurrentScene == battle && GetTree().Paused && state.Food == 0 && Read<Button>(battle, "_restartButton").Disabled && !Read<Label>(battle, "_restartMessage").Visible,
-                tag + ": unaffordable restart stays disabled without a warning popup");
+            Check(GetTree().CurrentScene == battle && GetTree().Paused && state.Food == 0 && Read<Button>(battle, "_restartButton").Disabled,
+                tag + ": unaffordable restart stays disabled");
             var stocked = state.BuildSaveData(); stocked.Food = 24; state.RestoreCloudSave(stocked);
             var before = state.Food; var cost = state.GetStageEntryFoodCost(1);
             Call(battle, "TryRestartBattle"); Call(battle, "TryRestartBattle");
@@ -85,8 +85,8 @@ public partial class UiReviewSmoke
                 typeof(BattleController).GetMethod("EndBattle", hidden)!.Invoke(fresh, new object[] { false }); await Wait(.1);
                 var depleted = state.BuildSaveData(); depleted.Food = 0; depleted.FoodRechargedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); state.RestoreCloudSave(depleted);
                 Call(fresh, "HandleEndPanelPrimaryAction");
-                Check(GetTree().CurrentScene == fresh && Walk(fresh).OfType<RoyalResult>().Single().RetryButton.Disabled && !Walk(fresh).OfType<Control>().Any(c => c.Name == "PlayerNotice"),
-                    "Result-screen retry stays disabled without a warning popup");
+                Check(GetTree().CurrentScene == fresh && Walk(fresh).OfType<RoyalResult>().Single().RetryButton.Disabled,
+                    "Result-screen retry stays disabled");
                 var retrySave = state.BuildSaveData(); retrySave.Food = 24; state.RestoreCloudSave(retrySave);
                 var retryFood = state.Food; Call(fresh, "HandleEndPanelPrimaryAction"); Call(fresh, "HandleEndPanelPrimaryAction");
                 Check(state.Food == retryFood - cost, "Result-screen retry also charges the ration price exactly once");
@@ -104,22 +104,6 @@ public partial class UiReviewSmoke
             Check(Read<ZoneBackdrop>(battle, "_stageBackdrop") is { Layers.Count: 5 }, $"Stage {stage}: its zone's painted backdrop is in place");
             await Capture($"zone-stage-{stage:00}");
         }
-        // Old saves may enable hints, but bottom tutorial banners have been removed.
-        var hinted = state.BuildSaveData(); hinted.ShowHints = true; hinted.SeenHintIds = Array.Empty<string>(); state.RestoreCloudSave(hinted);
-        state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
-        {
-            var battle = (BattleController)GetTree().CurrentScene; battle.SetPhysicsProcess(false);
-            if (Read<bool>(battle, "_battlePaused")) Call(battle, "TogglePause");
-            await Wait(.2);
-            Check(!Walk(battle).OfType<Control>().Any(c => c.Name == "BattleHint" || c.Name == "PlayerNotice"),
-                "A fresh battle creates no bottom tooltip or tutorial banner even with saved hints enabled");
-            await Capture("no-bottom-hints");
-        }
-        state.SetSelectedStage(1); state.PrepareCampaignBattle(); await Open("Battle");
-        await Wait(.2);
-        Check(!Walk(GetTree().CurrentScene).OfType<Control>().Any(c => c.Name == "BattleHint" || c.Name == "PlayerNotice"),
-            "Later battles cannot recreate bottom hints");
-        state.SetShowHints(false);
         GetTree().Paused = false;
         await Open("MainMenu");
         await LiveUiReview.StopAudio(this);

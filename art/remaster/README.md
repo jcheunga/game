@@ -207,6 +207,18 @@ A frame-by-frame audit of all 111 units (walk, attack and death) found and fixed
   On its back the cape is turned under the body and flattened; face down it is pressed flat onto the back (swung
   to lie along the back, it tore). On its back a dead foot falls slack.
 
+#### Review tools
+
+The workflow for any animation change is in `.claude/skills/unit-animation/SKILL.md`. Its tools are in
+`puppet/review/`; run the Python ones with `puppet/run.sh`.
+- **Batch:** `render.sh` (parallel Blender renders, `--clip` and `--out`), `check.sh` (motion check plus pass
+  criteria, exit 1 on failure) and `recut.sh` (re-cut layers).
+- **Looking:** `sheet.py` (one clip, many units), `frames.py` (zoomed frames, `--battle` for true phone size),
+  `landmarks_view.py` (joints on a grid in true coordinates) and `masters_sheet.py` (old masters beside repaints).
+- **Diagnosing:** `smear_overlay.py` (where a smear is and which bones tear it), `rig_probe.py` (the posed rig
+  printed, via `build(render_hook=...)`) and `layer_diff.py` (what a `layers.py` change did to the cut).
+- **Proving:** `stills.py` (before/after against a git revision); `compare_reel.py` makes the videos.
+
 #### Motion check (objective pass criteria)
 
 `puppet/motion_check.py` poses every frame of every clip exactly as a render would, but measures it instead (9,000+

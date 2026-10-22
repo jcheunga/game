@@ -11,12 +11,13 @@ public static class BattlefieldTextureLoader
 	public static Texture2D TryLoadStructure(string structureId)
 	{
 		var authored = TryLoad(StructurePath, structureId);
-        if (authored != null || structureId is not ("war_wagon" or "gatehouse")) return authored;
+        if (authored != null || structureId != "war_wagon") return authored;
         var key = "siege:" + structureId;
         if (Cache.TryGetValue(key, out var cached)) return cached;
+        // The wagon is the atlas's left cell (the right one held the retired gatehouse).
         var atlas = ResourceLoader.Load<Texture2D>("res://assets/structures/siege_atlas.png");
         var cell = atlas.GetSize() / new Vector2(2, 1);
-        return Cache[key] = new AtlasTexture { Atlas = atlas, Region = new Rect2(new Vector2(structureId == "war_wagon" ? 0 : cell.X, 0), cell) };
+        return Cache[key] = new AtlasTexture { Atlas = atlas, Region = new Rect2(Vector2.Zero, cell) };
 	}
 
 	private static Texture2D TryLoad(string basePath, string id)

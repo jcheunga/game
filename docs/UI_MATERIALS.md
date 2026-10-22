@@ -30,7 +30,7 @@ ResourceLoader caches the imported textures; no textures are generated per frame
 
 The shared finish covers menu and battle panels, ordinary/primary/icon buttons,
 tabs, focus/hover/pressed/disabled states, selected cards, badges, input fields,
-drop-downs and popups, checks/radios, scrollbars, separators, tooltips, dialogs,
+drop-downs and popups, scrollbars, separators, tooltips, dialogs,
 progress bars, custom battle meters, boss entrance banners, spell-targeting
 labels and the dragged-card hint. Existing illustrated icons, battle backdrops,
 map tokens, and the textured unit health bars remain.

@@ -1178,28 +1178,7 @@ public partial class BattleController : Node2D
 			return;
 		}
 
-		var art = CastleArt;
-		var gatehouseTexture = art?.Texture ?? BattlefieldTextureLoader.TryLoadStructure("gatehouse");
-		if (gatehouseTexture != null)
-		{
-			var drawRect = art?.At(CastleGround) ?? new Rect2(EnemyBaseX - 90f, BaseCenterY - 148f, 180f, 160f);
-			var modulate = FieldLighting.Tint;
-			if (_enemyBaseFlashTimer > 0f)
-			{
-				modulate.R = Mathf.Min(1f, 1f + 0.3f);
-				modulate.G = Mathf.Max(0.7f, 1f - 0.2f);
-				modulate.B = Mathf.Max(0.7f, 1f - 0.2f);
-			}
-			canvas.DrawTextureRect(gatehouseTexture, drawRect, false, modulate);
-			DrawDamageSmoke(canvas, (art?.Point(CastleGround, art.Smoke) ?? new Vector2(EnemyBaseX - 6f, BaseCenterY - 100f)), healthRatio, palette.EnemyBaseColor);
-			DrawBaseHealthMeter(canvas,
-				new Vector2(EnemyBaseX, drawRect.Position.Y + drawRect.Size.Y * .08f - 10f),
-				132f,
-				healthRatio,
-				false);
-			return;
-		}
-
+		// Every stage ships a painted stronghold; this procedural wall only stands in when its file is missing.
 		var wallColor = ResolveBaseBodyColor(palette.EnemyBaseColor, _enemyBaseFlashTimer, healthRatio);
 		var coreColor = ResolveBaseCoreColor(palette.EnemyCoreColor, _enemyBaseFlashTimer, healthRatio);
 		var bannerColor = coreColor.Lerp(route.BannerAccent, 0.28f);
@@ -1895,7 +1874,7 @@ public partial class BattleController : Node2D
 		if (_pauseOverlay != null)
 		{
 			_pauseOverlay.Visible = _battlePaused;
-			if (_battlePaused) { _restartMessage.Hide(); _resumeButton.GrabFocus(); }
+			if (_battlePaused) _resumeButton.GrabFocus();
 			else _hudSettingsButton.GrabFocus();
 		}
 	}

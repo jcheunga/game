@@ -142,15 +142,6 @@ def thumb(hover=False, horizontal=False):
       <path d="M7 29h10m-10 4h10m-10 4h10" stroke="#dfc895" stroke-opacity=".32"/>''')
 
 
-def checkbox(checked=False, radio=False, disabled=False):
-    edge = '#63716b' if disabled else '#bdab7f'
-    body = f'<rect x="1" y="1" width="22" height="22" rx="{11 if radio else 4}" fill="#0e1c21" stroke="{edge}"/>'
-    body += '<path d="M5 4h14" stroke="#000" stroke-opacity=".45"/>'
-    if checked:
-        body += f'<circle cx="12" cy="12" r="5" fill="{edge}"/>' if radio else f'<path d="M6 12l4 4 8-9" fill="none" stroke="{edge}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
-    return svg(24,24,body)
-
-
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
     assets = {
@@ -178,11 +169,6 @@ def main():
         'separator': svg(128,4,'<path d="M0 1.5H128" stroke="#907e58" stroke-opacity=".5"/><path d="M0 2.5H128" stroke="#050f14" stroke-opacity=".85"/>'),
         'dropdown': svg(18,18,'<path d="M4 7l5 5 5-5" fill="none" stroke="#d9bd82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'),
     }
-    for radio in (False,True):
-        for checked in (False,True):
-            for disabled in (False,True):
-                key=('radio_' if radio else '')+('checked' if checked else 'unchecked')+('_disabled' if disabled else '')
-                assets[key]=checkbox(checked,radio,disabled)
     for name, content in assets.items():
         (OUT/f'{name}.svg').write_text(content)
     print(f'Published {len(assets)} native SVG UI surfaces to {OUT}')

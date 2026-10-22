@@ -91,7 +91,7 @@ public static class MedievalUi
         theme.SetFontSize("font_size", "Button", RealmUi.ButtonFontSize);
         theme.SetFont("font", "Button", RealmUi.TitleFont);
         theme.SetFontSize("font_size", "LineEdit", 20);
-        foreach (var type in new[] { "OptionButton", "MenuButton", "PopupMenu", "CheckBox", "CheckButton" })
+        foreach (var type in new[] { "OptionButton", "MenuButton", "PopupMenu" })
             theme.SetFontSize("font_size", type, RealmUi.ButtonFontSize);
         theme.SetFontSize("font_size", "TooltipLabel", 18);
         theme.SetColor("font_color", "Button", ink);
@@ -153,14 +153,6 @@ public static class MedievalUi
         theme.SetColor("font_hover_color", "PopupMenu", goldLight);
         theme.SetColor("font_disabled_color", "PopupMenu", new Color("9aaba5"));
         theme.SetStylebox("panel", "AcceptDialog", Engraved("engraved_panel", 18, 14));
-        foreach(var type in new[]{"CheckBox","CheckButton"})
-        {
-            foreach(var icon in new[]{"checked","unchecked","radio_checked","radio_unchecked",
-                "checked_disabled","unchecked_disabled","radio_checked_disabled","radio_unchecked_disabled"})
-                theme.SetIcon(icon, type, FrameTexture(icon));
-            theme.SetStylebox("focus", type, Engraved("focus", 4, 4));
-            theme.SetColor("font_color", type, ink);
-        }
         theme.SetStylebox("background", "ProgressBar", Engraved("meter_track", 0, 0));
         var progressFill=Engraved("meter_fill", 0, 0); progressFill.ModulateColor=new Color("948759");
         theme.SetStylebox("fill", "ProgressBar", progressFill);

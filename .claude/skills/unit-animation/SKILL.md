@@ -24,7 +24,7 @@ Blender's Python has numpy only: no PIL, no cv2.
 | `artifacts/remaster/puppet_stride/<id>/` | people (93): `master.png`, Codex edits `body.png` `limbs.png` `held.png`, `landmarks.json`, cut layers, `layers_preview.png` |
 | `artifacts/remaster/puppet/<id>/` | beasts, mounts, machines, blobs (18), and the people's old front-facing masters |
 | `artifacts/remaster/puppet_units/<id>/` | build.py renders (`NNN.png`, `metadata.json`) |
-| `assets/units/`, `assets/ui/models/` | what the game ships (pack.py writes them; these are committed, artifacts are not) |
+| `assets/units/`, `assets/ui/models/` | what pack.py writes (committed; artifacts are not). The game ships `assets/units`; `assets/ui/models` only feeds `art/royal/figures.py` (rerun it after repacking) and is left out of exports |
 | `art/remaster/puppet/review/` | the review tools below |
 
 ## The loop

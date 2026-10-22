@@ -6,8 +6,8 @@ The game already supports incremental art/audio replacement. Missing files do no
 
 ## Blender source assets
 
-The shipped unit sprites, model previews, unit icons, reward and meta icons, caravan skins, battle-v2
-bases, weapon mounts, gatehouse, particles and projectiles come from the remaster pipeline in
+The shipped unit sprites, unit icons, reward and meta icons, caravan skins, battle-v2
+bases, weapon mounts, particles and projectiles (and the model previews that unit figures are cut from) come from the remaster pipeline in
 [`art/remaster/README.md`](art/remaster/README.md):
 sculpted, skinned characters, modelled equipment and lighting matched to the battle renderer. It writes
 the same runtime contracts described below; `python3 art/remaster/pack.py stage` then `apply` refreshes
@@ -89,15 +89,16 @@ still, so the 4096 px atlas limit caps them lower, at about 1.8–3.1. Frame siz
 unit's scale. `BlenderAssetSmoke` checks that every unit keeps at least 1.25 atlas pixels per
 battle pixel.
 
-### Model-inspection previews
+### Model previews (figure sources)
 
-Preparation and armory model viewers use sheets packed separately from the battle
-sprites. All 52 characters have Idle, Walk, and Attack clips in
-`assets/ui/models/{unit_id}.png` with matching metadata. Hi-res units (above) reuse
-their cropped battle frames, which are sharper than a 256×320 master; the War Hound
-uses its native 256×320 frames. `python3 art/remaster/pack.py stage --only units`
-then `apply` refreshes them with the battle atlases. Textures are loaded per
-preview and released when their viewer closes or changes character.
+Every unit has an Idle, Walk and Attack sheet in `assets/ui/models/{unit_id}.png`
+with matching metadata, packed separately from the battle sprites. Hi-res units
+(above) reuse their cropped battle frames, which are sharper than a 256×320 master;
+the War Hound uses its native 256×320 frames. `python3 art/remaster/pack.py stage
+--only units` then `apply` refreshes them with the battle atlases. No screen plays
+them any more: `python3 art/royal/figures.py` cuts the still unit figures
+(`assets/ui/royal/figures/`) from their first Idle frame, and the export presets
+leave `assets/ui/models/` out of the build.
 See [`docs/MOBILE_PRESENTATION.md`](docs/MOBILE_PRESENTATION.md) for zoom controls,
 the mobile preparation layout, and review instructions.
 
@@ -119,15 +120,15 @@ Both paths print the current asset coverage and the exact IDs still missing.
 | Asset Type | Drop Location | Notes |
 |-----------|---------------|-------|
 | Unit sprite sheet | `assets/units/{unit_id}.png` | Matching `.json`; falls back to `{visual_class}.png` |
-| Animated model preview | `assets/ui/models/{unit_id}.png` | Idle/Walk/Attack sheet and `.json`; falls back to the battle sheet |
+| Model preview (figure source) | `assets/ui/models/{unit_id}.png` | Idle/Walk/Attack sheet and `.json`; `art/royal/figures.py` cuts unit figures from it. Not loaded by the game and left out of exports |
 | Screen art | `assets/ui/royal/` | Concept plates, measured specs, cut kit pieces, unit figures and mission pictures (`docs/ROYAL_UI.md`) |
 | Zone battle backdrop | `assets/world/royal/{route_id}.json` + `{route_id}_far/_mid/_ground/_near/_front.png` | Five painted parallax layers; the JSON gives each layer's world rect, parallax and tiling (`art/royal/backdrops.py`) |
 | Campaign map | `assets/world/royal/maps/{route_id}.png` + `.json`, `maps/landmarks/{site}.png` | One painting per zone over its world rect, and the site landmarks (`art/royal/maps.py`) |
 | Spell and relic picture | `assets/ui/royal/items/{id}.png` | Painted item images (`art/royal/items.py`) |
 | Painted home icons | `assets/ui/home/painted-icons-v2.png` | Transparent 3 × 3 atlas for tabs and stats |
 | Home artwork prompts | `assets/ui/home/generated-art-v2.json` | Built-in image tool prompts and provenance for the icon atlas |
-| Battle structures | `assets/structures/battle-v2/{structure_id}.png` + `.json` | Caravan, skins (with `_door.png` strips), gatehouse and `fort_*` outworks; see `assets/structures/battle-v2/README.md` |
-| Structures | `assets/structures/{structure_id}.png` | `mount_*` weapon mounts; flat `war_wagon`, `gatehouse` and `war_wagon_skin_*` fallbacks |
+| Battle structures | `assets/structures/battle-v2/{structure_id}.png` + `.json` | Caravan and skins (with `_door.png` strips); see `assets/structures/battle-v2/README.md` |
+| Structures | `assets/structures/{structure_id}.png` | `mount_*` weapon mounts; flat `war_wagon` and `war_wagon_skin_*` fallbacks |
 | Particle texture | `assets/particles/{particle_id}.png` | Battle VFX sprite used by CPU particle bursts/trails |
 | Projectile sprite | `assets/projectiles/{sprite_id}.png` + `projectiles.json` | Side-on lit shot (arrow, bolt, flask, pot…); the JSON gives each sprite's normalised tip and centre and its real length. Styles and flight live in `scripts/combat/ProjectileStyles.cs` |
 | Unit icon | `assets/ui/icons/units/{unit_id}.png` | Optional fallback: `{visual_class}.png` |
@@ -204,7 +205,6 @@ Current campaign coverage is 100 stages (ten per zone) across 31 terrain IDs; ba
 ## Structure IDs
 
 - `war_wagon`
-- `gatehouse`
 
 ## Particle IDs
 

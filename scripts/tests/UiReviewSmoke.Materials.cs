@@ -20,8 +20,7 @@ public partial class UiReviewSmoke
         var surfaces=new[]{"engraved_panel","button","button_hover","button_pressed","button_hover_pressed",
             "button_disabled","button_primary","button_primary_hover","button_primary_pressed","focus","inset","input_focus","input_disabled",
             "surface_body","surface_rim","meter_track","meter_fill","scroll_thumb","scroll_thumb_hover",
-            "scroll_thumb_horizontal","scroll_thumb_horizontal_hover","separator","dropdown",
-            "checked","unchecked","radio_checked","radio_unchecked","checked_disabled","unchecked_disabled","radio_checked_disabled","radio_unchecked_disabled"};
+            "scroll_thumb_horizontal","scroll_thumb_horizontal_hover","separator","dropdown"};
         foreach(var name in surfaces)
         {
             var texture=MedievalUi.FrameTexture(name);

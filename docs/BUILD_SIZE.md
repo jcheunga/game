@@ -101,8 +101,11 @@ How the settings were chosen, on real tiles and layers:
 These ship with no way for the game to load them, so the Android and Web
 presets' `exclude_filter` leaves them out:
 
-- `assets/ui/models/enemy_*`: only player units get an animated preview (the
-  armory and the squad showcase). The codex shows figures.
+- `assets/ui/models/*`: the model preview sheets. No screen plays an animated
+  preview any more; menus and the codex draw the still figures in
+  `assets/ui/royal/figures`. `art/royal/figures.py` cuts those figures from
+  these sheets, so they stay in the project. Until 2026-10-22 only the enemy
+  sheets were left out (see [Later removals](#later-removals)).
 - `assets/ui/portraits/codex/*`: the codex draws units and enemies as figures,
   and spells and relics as their item art. Raid bosses have no codex entry, so
   `RaidMenu` shows its "?" badge and never reaches these. If raid portraits
@@ -111,10 +114,10 @@ presets' `exclude_filter` leaves them out:
   `art/remaster/pack.py` writes. No game code reads it.
 - `assets/ui/icons/units/enemy_*`: unit icons are drawn only for player units
   (deploy cards, rewards, squad badges).
-- `assets/structures/war_wagon*`, `assets/structures/gatehouse.png`: older art,
-  used only when the `battle-v2` art is missing, which never happens (every
-  wagon skin and the gatehouse have one). `siege_atlas.png` stays as the last
-  fallback, because the code would crash without it.
+- `assets/structures/war_wagon*`: older art, used only when the `battle-v2` art
+  is missing, which never happens (every wagon skin has one). `siege_atlas.png`
+  stays as the last fallback, because the code would crash without it. The flat
+  `gatehouse.png` was deleted on 2026-10-22 with the Blender gatehouse.
 - `assets/units/warband_sprites.png` (used only when a class stand-in is
   missing; all six exist), `assets/units/_example.json`.
 - `assets/branding/crownroad-play-*`: Play listing images. The app icon stays.
@@ -127,6 +130,26 @@ concept-screen reviews (below) with no new failures and no load errors.
 The iOS preset needs the same filter. The editor rewrites that section of
 `export_presets.cfg`, so add it in Project → Export → iOS → Resources →
 Filters to exclude.
+
+## Later removals
+
+On 2026-10-22 UI that no screen could reach any more was removed: the animated
+model preview (so all of `assets/ui/models/` is now excluded, not just the enemy
+sheets), the Blender gatehouse and its five outworks (every stage has a painted
+stronghold; the plates and the flat `gatehouse.png` were deleted) and the
+check-box and radio icons (no screen has a check box). Measured with
+`--export-pack "Android"` before and after, the pack lost 147 files and went
+from 418.6 MB to 408.3 MB:
+
+| Content | MB |
+| --- | --- |
+| Player model previews (37 sheets with their JSON) | 10.0 |
+| Gatehouse and outwork plates | 0.3 |
+| Check-box icons, C# assembly and symbols | under 0.1 |
+| Total | 10.4 |
+
+These textures are already lossy WebP, so the release bundle shrinks by about
+the same amount (zipping them saves under 2%).
 
 ## Visual check
 

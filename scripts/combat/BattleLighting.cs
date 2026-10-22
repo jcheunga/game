@@ -31,13 +31,14 @@ public readonly record struct BattleLighting(Color Tint, float ShadowOpacity, Ve
         canvas.DrawSetTransform(Vector2.Zero);
     }
 
-    public void DrawLampGlow(CanvasItem canvas, Vector2 point, bool castle)
+    /// <summary>A warm lantern pool on the ground under one of the caravan's lamps.</summary>
+    public void DrawLampGlow(CanvasItem canvas, Vector2 point)
     {
         _glowTexture ??= new GradientTexture2D { Width = 128, Height = 128,
             Fill = GradientTexture2D.FillEnum.Radial, FillFrom = new(.5f, .5f), FillTo = new(.5f, 0),
             Gradient = new Gradient { Offsets = new[] { 0f, .35f, 1f },
                 Colors = new[] { Colors.White, new Color(1, 1, 1, .32f), new Color(1, 1, 1, 0) } } };
-        var color = castle ? new Color(.42f, 1.22f, 1.06f) : new Color(1.42f, .92f, .38f);
+        var color = new Color(1.42f, .92f, .38f);
         var radius = new Vector2(36, 15);
         canvas.DrawTextureRect(_glowTexture, new Rect2(point - radius, radius * 2), false, new Color(color, .13f * LampStrength));
     }

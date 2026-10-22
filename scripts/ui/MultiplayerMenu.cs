@@ -11,11 +11,9 @@ public partial class MultiplayerMenu : Control
     // player into a database poller.
     private const float OnlineRoomAutoRefreshIntervalSeconds = 10f;
 
-    private HBoxContainer _titleRow = null!;
     private OptionButton _stageSelector = null!;
     private OptionButton _mutatorSelector = null!;
     private OptionButton _roomReportReasonSelector = null!;
-    private HBoxContainer _resourcesRow = null!;
     private LineEdit _codeEdit = null!;
     private Label _summaryLabel = null!;
     private Label _recordLabel = null!;
@@ -25,11 +23,6 @@ public partial class MultiplayerMenu : Control
     private Label _statusLabel = null!;
     private VBoxContainer _squadStack = null!;
     private readonly VBoxContainer[] _boardPages = new VBoxContainer[5];
-    private Button _refreshOnlineButton = null!;
-    private Button _syncButton = null!;
-    private Button _startButton = null!;
-
-    private readonly List<Control> _entrancePanels = new();
 
     private int _selectedStage = 1;
     private string _selectedMutatorId = AsyncChallengeCatalog.PressureSpikeId;
@@ -52,22 +45,6 @@ public partial class MultiplayerMenu : Control
         BuildUi();
         BuildRoyalLayout();
         RefreshUi();
-        AnimateEntrance();
-    }
-
-    private void AnimateEntrance()
-    {
-        for (var i = 0; i < _entrancePanels.Count; i++)
-        {
-            var panel = _entrancePanels[i];
-            panel.Modulate = new Color(1f, 1f, 1f, 0f);
-            var delay = 0.06f + (i * 0.05f);
-            var tween = CreateTween();
-            tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-                .SetDelay(delay)
-                .SetTrans(Tween.TransitionType.Cubic)
-                .SetEase(Tween.EaseType.Out);
-        }
     }
 
     public override void _ExitTree()
@@ -86,63 +63,11 @@ public partial class MultiplayerMenu : Control
 
     private void BuildUi()
     {
-        var route = RouteCatalog.Get(GameData.GetStage(Mathf.Clamp(_selectedStage, 1, GameState.Instance.MaxStage)).MapId);
-
         MedievalUi.Apply(this);
 
-        var titlePanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 20f),
-            Size = new Vector2(1232f, 82f)
-        };
-        AddChild(titlePanel);
-        _entrancePanels.Add(titlePanel);
-
-        _titleRow = new HBoxContainer();
-        _titleRow.AddThemeConstantOverride("separation", 16);
-        titlePanel.AddChild(_titleRow);
-
-        _titleRow.AddChild(new Label
-        {
-            Text = "Multiplayer Challenge",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
-        _resourcesRow = new HBoxContainer();
-        _resourcesRow.AddThemeConstantOverride("separation", 12);
-        _titleRow.AddChild(_resourcesRow);
-
-        var missionPanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 122f),
-            Size = new Vector2(520f, 480f)
-        };
-        AddChild(missionPanel);
-        _entrancePanels.Add(missionPanel);
-
-        var missionPadding = new MarginContainer();
-        missionPadding.AddThemeConstantOverride("margin_left", 18);
-        missionPadding.AddThemeConstantOverride("margin_right", 18);
-        missionPadding.AddThemeConstantOverride("margin_top", 18);
-        missionPadding.AddThemeConstantOverride("margin_bottom", 18);
-        missionPanel.AddChild(missionPadding);
-
-        var missionStack = RealmUi.Scroll(missionPadding);
-        missionStack.AddThemeConstantOverride("separation", 12);
-
-        missionStack.AddChild(new Label
-        {
-            Text = "Challenge stage"
-        });
-
-        _stageSelector = new OptionButton
-        {
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
+        // The royal layout (MultiplayerMenu.Royal.cs) lays these selectors and the code field over the plate.
+        _stageSelector = new OptionButton { FitToLongestItem = false };
         _stageSelector.ItemSelected += OnStageSelected;
-        missionStack.AddChild(_stageSelector);
-
         for (var stageNumber = 1; stageNumber <= GameState.Instance.MaxStage; stageNumber++)
         {
             var stage = GameData.GetStage(stageNumber);
@@ -151,18 +76,8 @@ public partial class MultiplayerMenu : Control
             _stageSelector.SetItemMetadata(index, stage.StageNumber);
         }
 
-        missionStack.AddChild(new Label
-        {
-            Text = "Challenge mutator"
-        });
-
-        _mutatorSelector = new OptionButton
-        {
-            CustomMinimumSize = new Vector2(240f, 0f)
-        };
+        _mutatorSelector = new OptionButton { FitToLongestItem = false };
         _mutatorSelector.ItemSelected += OnMutatorSelected;
-        missionStack.AddChild(_mutatorSelector);
-
         foreach (var mutator in AsyncChallengeCatalog.GetAll())
         {
             var index = _mutatorSelector.ItemCount;
@@ -170,189 +85,34 @@ public partial class MultiplayerMenu : Control
             _mutatorSelector.SetItemMetadata(index, mutator.Id);
         }
 
-        missionStack.AddChild(new Label
-        {
-            Text = "Challenge code"
-        });
+        _codeEdit = new LineEdit { PlaceholderText = "CH-04-PRS-4821" };
 
-        var codeRow = new HBoxContainer();
-        codeRow.AddThemeConstantOverride("separation", 8);
-        missionStack.AddChild(codeRow);
-
-        _codeEdit = new LineEdit
+        // The code menu's briefing and records dialogs read these; the status line is kept but not shown.
+        Label Hidden()
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            PlaceholderText = "CH-04-PRS-4821"
-        };
-        codeRow.AddChild(_codeEdit);
-
-        var loadCodeButton = new RealmButton
-        {
-            Text = "Load",
-            CustomMinimumSize = new Vector2(92f, 0f)
-        };
-        loadCodeButton.Pressed += LoadCode;
-        codeRow.AddChild(loadCodeButton);
-
-        var actionRow = new HBoxContainer();
-        actionRow.AddThemeConstantOverride("separation", 8);
-        missionStack.AddChild(actionRow);
-
-        var rollButton = new RealmButton
-        {
-            Text = "Roll code",
-            CustomMinimumSize = new Vector2(0f, 42f),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        rollButton.Pressed += GenerateChallengeCode;
-        actionRow.AddChild(rollButton);
-
-        var copyButton = new RealmButton
-        {
-            Text = "Copy code",
-            CustomMinimumSize = new Vector2(0f, 42f),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        copyButton.Pressed += () =>
-        {
-            DisplayServer.ClipboardSet(_codeEdit.Text);
-            SetStatusMessage($"Copied {_codeEdit.Text} to the clipboard.");
-        };
-        actionRow.AddChild(copyButton);
-
-        var shareButton = new RealmButton
-        {
-            Text = "Share link",
-            CustomMinimumSize = new Vector2(0f, 42f),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        shareButton.Pressed += () =>
-        {
-            var code = _codeEdit.Text;
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                SetStatusMessage("No challenge code to share.");
-                return;
-            }
-            var url = DeepLinkHandler.BuildShareUrl(code);
-            DisplayServer.ClipboardSet(url);
-            SetStatusMessage($"Link copied: {url}");
-        };
-        actionRow.AddChild(shareButton);
-
-        _summaryLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 132f)
-        };
-        missionStack.AddChild(_summaryLabel);
-
-        _recordLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        missionStack.AddChild(_recordLabel);
-
-        _tapeLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 88f)
-        };
-        missionStack.AddChild(_tapeLabel);
-
-        _historyLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 108f)
-        };
-        missionStack.AddChild(_historyLabel);
-
-        _rulesLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        missionStack.AddChild(_rulesLabel);
-
-        _statusLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(0f, 72f)
-        };
-        missionStack.AddChild(_statusLabel);
-
-        var squadPanel = new PanelContainer
-        {
-            Position = new Vector2(568f, 122f),
-            Size = new Vector2(688f, 480f)
-        };
-        AddChild(squadPanel);
-        _entrancePanels.Add(squadPanel);
-
-        var squadPadding = new MarginContainer();
-        squadPadding.AddThemeConstantOverride("margin_left", 18);
-        squadPadding.AddThemeConstantOverride("margin_right", 18);
-        squadPadding.AddThemeConstantOverride("margin_top", 18);
-        squadPadding.AddThemeConstantOverride("margin_bottom", 18);
-        squadPanel.AddChild(squadPadding);
-
-        var boards = new VBoxContainer(); squadPadding.AddChild(boards);
-        RealmUi.Tabs(boards, index => { for (int i = 0; i < _boardPages.Length; i++) _boardPages[i].GetParent<ScrollContainer>().Visible = i == index; }, "Rooms", "Daily", "Featured", "Saved", "Squad");
-        for (int i = 0; i < _boardPages.Length; i++)
-        {
-            _boardPages[i] = RealmUi.Scroll(boards);
-            _boardPages[i].GetParent<ScrollContainer>().Visible = i == 0;
+            var label = new Label { Visible = false };
+            AddChild(label);
+            return label;
         }
-        _squadStack = _boardPages[0];
-        _summaryLabel.Visible = _recordLabel.Visible = _tapeLabel.Visible = _historyLabel.Visible = _rulesLabel.Visible = false;
-        missionStack.AddChild(RealmUi.Button("book", "Challenge briefing", () => RealmUi.Details(this, "Challenge briefing", _summaryLabel.Text + "\n\n" + _rulesLabel.Text)));
-        missionStack.AddChild(RealmUi.Button("clock", "Records & replay", () => RealmUi.Details(this, "Records & replay", _recordLabel.Text + "\n\n" + _historyLabel.Text + "\n\n" + _tapeLabel.Text)));
-        _stageSelector.FitToLongestItem = false;
-        _mutatorSelector.FitToLongestItem = false;
-        _statusLabel.CustomMinimumSize = new Vector2(0, 46);
-        _statusLabel.MaxLinesVisible = -1;
-
-        var bottomPanel = new PanelContainer
-        {
-            Position = new Vector2(24f, 618f),
-            Size = new Vector2(1232f, 76f)
-        };
-        AddChild(bottomPanel);
-        _entrancePanels.Add(bottomPanel);
-
-        var bottomRow = new HBoxContainer();
-        bottomRow.AddThemeConstantOverride("separation", 12);
-        bottomPanel.AddChild(bottomRow);
-
-        if (!RealmModal.Embedded(this))
-        {
-            bottomRow.AddChild(RealmUi.IconButton("back", "Return to camp", () => SceneRouter.Instance.GoToMainMenu()));
-            bottomRow.AddChild(RealmUi.IconButton("sword", "Armory", () => SceneRouter.Instance.GoToShop()));
-            bottomRow.AddChild(RealmUi.IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
-        }
-        _syncButton = RealmUi.Button("arrow", "Sync", FlushOutbox); bottomRow.AddChild(_syncButton);
-        _refreshOnlineButton = RealmUi.Button("eye", "Refresh", RefreshOnlineData); bottomRow.AddChild(_refreshOnlineButton);
-        bottomRow.AddChild(RealmUi.Button("people", "Match", QuickMatchOnlineRoom));
-        bottomRow.AddChild(RealmUi.Button("flag", "Host", HostOnlineRoom));
-        bottomRow.AddChild(RealmUi.Button("shield", "LAN", () => SceneRouter.Instance.GoToLanRace()));
-        bottomRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        _startButton = RealmUi.Button("sword", "Start challenge", StartChallenge, true); bottomRow.AddChild(_startButton);
+        _summaryLabel = Hidden();
+        _recordLabel = Hidden();
+        _tapeLabel = Hidden();
+        _historyLabel = Hidden();
+        _rulesLabel = Hidden();
+        _statusLabel = Hidden();
     }
 
     private void RefreshUi()
     {
         SyncStageSelector();
         SyncMutatorSelector();
-        RebuildResourcesRow();
 
         var challenge = GameState.Instance.GetSelectedAsyncChallenge();
         var mutator = AsyncChallengeCatalog.GetMutator(challenge.MutatorId);
         var stage = GameData.GetStage(Mathf.Clamp(challenge.Stage, 1, GameState.Instance.MaxStage));
-        var route = RouteCatalog.Get(stage.MapId);
 
         var previewDeck = GameState.Instance.GetSelectedAsyncChallengeDeckUnits();
         var ghostRun = GameState.Instance.GetChallengeGhostRun(challenge.Code, GameState.Instance.HasSelectedAsyncChallengeLockedDeck);
-        RealmUi.TrimChildren(_titleRow, 2);
-        _titleRow.AddChild(UiBadgeFactory.CreateMetaMetric("challenge", challenge.Code, new Vector2(24f, 24f)));
         var deckModeLabel = GameState.Instance.HasSelectedAsyncChallengeLockedDeck
             ? $"Locked featured squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}"
             : $"Active squad: {string.Join(", ", previewDeck.Select(unit => unit.DisplayName))}";
@@ -405,25 +165,8 @@ public partial class MultiplayerMenu : Control
             ? readinessMessage
             : _lastStatusMessage;
         _statusLabel.Text = statusMessage;
-        _syncButton.Disabled = GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null;
-        _syncButton.TooltipText = $"Sync results · {GameState.Instance.PendingChallengeSubmissionCount} pending";
-        _refreshOnlineButton.Disabled = ChallengeLeaderboardService.Instance == null &&
-            ChallengeBoardFeedService.Instance == null &&
-            !OnlineRoomDirectoryService.IsAvailable;
-        _startButton.Disabled = !canStart;
-        _startButton.Text = canStart ? "Start challenge" : "Not ready";
-        _startButton.TooltipText = startButtonText;
-    }
-
-    private void RebuildResourcesRow()
-    {
-        foreach (var child in _resourcesRow.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24f, 24f)));
-        _resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", GameState.Instance.Food.ToString("N0"), new Vector2(24f, 24f)));
+        _royalStart.Disabled = !canStart;
+        _royalStart.TooltipText = startButtonText;
     }
 
     private void RebuildSquadPanels(StageDefinition stage)

@@ -64,19 +64,6 @@ public sealed class SpriteAnimRange
 
 public static class UnitSpriteLoader
 {
-	// Preview textures are owned by one viewer and explicitly released when it
-	// closes or changes character, rather than caching the whole roster in VRAM.
-	internal static UnitSpriteSheet LoadOwnedPreview(string unitId)
-	{
-		var path=$"res://assets/ui/models/{unitId}";
-		if(!ResourceLoader.Exists(path+".png") || !Godot.FileAccess.FileExists(path+".json")) return null;
-		var texture=ResourceLoader.Load<Texture2D>(path+".png",cacheMode:ResourceLoader.CacheMode.Ignore);
-		if(texture==null) return null;
-		var sheet=new UnitSpriteSheet {Texture=texture,FrameWidth=256,FrameHeight=320};
-		TryLoadMeta(path+".json",sheet);
-		return sheet;
-	}
-
 	private static readonly Dictionary<string, UnitSpriteSheet> Cache = new();
 	private static readonly HashSet<string> MissingIds = new();
 

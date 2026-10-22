@@ -6,8 +6,7 @@ public partial class BattleController
     private BattleLighting FieldLighting => BattleLighting.ForZone(_activeRouteId);
     private BattleStructureArt WagonArt => BattleStructureArt.Load(GameState.Instance.SelectedWagonSkinId == WagonSkinCatalog.DefaultSkinId
         ? "war_wagon" : "war_wagon_" + GameState.Instance.SelectedWagonSkinId) ?? BattleStructureArt.Load("war_wagon");
-    private BattleStructureArt CastleArt => BattleStructureArt.Load("gatehouse");
-    // The stage's painted stronghold; stages without one fall back to the Blender gatehouse and its outworks.
+    // The stage's painted stronghold. Every zone has them; only a missing file leaves the procedural wall in its place.
     private EnemyBaseArt _paintedBase;
     private bool _paintedBaseResolved;
     private EnemyBaseArt PaintedBase
@@ -19,13 +18,9 @@ public partial class BattleController
             return _paintedBase = EnemyBaseArt.Resolve(_stageData?.StageNumber ?? 0, _activeRouteId);
         }
     }
-    // The stronghold straddles the band: its visual mass sits on the centre line, where troops
-    // strike it, instead of standing on that line with its whole body above the field.
-    private Vector2 CastleGround => CastleArt is { } art
-        ? EnemyBaseCorePosition + new Vector2(0, (art.Anchor.Y - art.Centre.Y) * art.Size.Y) : EnemyBaseCorePosition;
     // A painted stronghold stands behind the road, like the scenery it was painted into: it sorts above the band's
     // top line, so every troop on the road passes in front of it.
-    private Vector2 CastleSortPosition => PaintedBase != null ? new Vector2(EnemyBaseX, BattlefieldTop - 1) : CastleGround;
+    private Vector2 CastleSortPosition => PaintedBase != null ? new Vector2(EnemyBaseX, BattlefieldTop - 1) : EnemyBaseCorePosition;
 
     private void InitializeBattlePresentation()
     {
@@ -39,16 +34,13 @@ public partial class BattleController
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             Paint = canvas => DrawEnemyBarricade(canvas, ResolveTerrainPalette(), RouteCatalog.Get(_activeRouteId)) });
         if (PaintedBase != null) BuildPaintedBaseGlow();
-        else BuildOutworks();
     }
 
     private void DrawBattleGroundShadows(CanvasItem canvas)
     {
         var light = FieldLighting;
-        DrawStructureGround(canvas, WagonArt, WagonGround, false);
-        // A painted stronghold carries its own contact shadow.
-        if (PaintedBase == null) DrawStructureGround(canvas, CastleArt, CastleGround, true);
-        DrawOutworkGround(canvas);
+        // The painted stronghold carries its own contact shadow; only the caravan casts one here.
+        DrawStructureGround(canvas, WagonArt, WagonGround);
         foreach (var unit in _units)
             if (IsInstanceValid(unit) && unit.IsInsideTree() && unit.Visible && !unit.IsDead)
                 unit.DrawGroundShadow(canvas, light);
@@ -56,17 +48,17 @@ public partial class BattleController
             if (child is UnitDeathVisual death && !death.IsQueuedForDeletion()) death.DrawGroundShadow(canvas, light);
     }
 
-    private void DrawStructureGround(CanvasItem canvas, BattleStructureArt art, Vector2 ground, bool castle)
+    private void DrawStructureGround(CanvasItem canvas, BattleStructureArt art, Vector2 ground)
     {
         var light = FieldLighting;
         var scale = _combat.StructureScale;
-        light.DrawContact(canvas, ground + new Vector2(0, -5) * scale, new Vector2(castle ? 66 : 67, castle ? 12 : 8) * scale, .55f);
+        light.DrawContact(canvas, ground + new Vector2(0, -5) * scale, new Vector2(67, 8) * scale, .55f);
         if (art == null) return;
         var rect = art.At(Vector2.Zero);
         light.DrawShadow(canvas, art.Texture, new Rect2(Vector2.Zero, art.Texture.GetSize()), rect, ground, 1, 2.4f);
         foreach (var contact in art.Contacts)
-            light.DrawContact(canvas, art.Point(ground, contact), new Vector2(castle ? 19 : 7, castle ? 5 : 2.8f) * scale, .8f);
-        foreach (var lamp in art.Lights) light.DrawLampGlow(canvas, art.Point(ground, lamp), castle);
+            light.DrawContact(canvas, art.Point(ground, contact), new Vector2(7, 2.8f) * scale, .8f);
+        foreach (var lamp in art.Lights) light.DrawLampGlow(canvas, art.Point(ground, lamp));
     }
 
     private void UpdateActorLighting()

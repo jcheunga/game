@@ -14,7 +14,7 @@ public partial class CombatReviewSmoke
         GetViewport().GetTexture().GetImage().SavePng($"{folder}/{name}.png");
     }
 
-    // The caravan's troop door, and the Blender stronghold and its outworks where a stage has no painted one.
+    // The caravan's troop door, and the stage's painted stronghold at the field's end.
     private async Task CheckBattleStructures()
     {
         var battle = await OpenBattle(1);
@@ -49,10 +49,9 @@ public partial class CombatReviewSmoke
         await CaptureStructures("wagon-door-march");
 
         // Every zone has painted strongholds that carry their own walls; --bases checks them stage by stage.
-        Check(Invoke(battle, "get_PaintedBase") != null && Read<List<(BattleStructureArt Art, Vector2 Ground)>>(battle, "_outworks").Count == 0,
-            "A painted stronghold stands without the Blender outworks");
+        Check(Invoke(battle, "get_PaintedBase") != null, "The stage's painted stronghold stands at the field's end");
         Frame(combat.BattlefieldRight + combat.BattlefieldLeft);
-        await CaptureStructures("stronghold-outworks");
+        await CaptureStructures("stronghold");
         await CloseBattle(battle);
     }
 }

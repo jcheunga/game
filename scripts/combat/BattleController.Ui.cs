@@ -148,7 +148,6 @@ public partial class BattleController
 		ApplyBattleButtonTheme(_endPrimaryButton, route);
 		_endPrimaryButton.Pressed += HandleEndPanelPrimaryAction;
         if (!IsLanRaceMode && !IsOnlineRoomMode) StyleRestartButton(_endPrimaryButton);
-        _endRetryMessage = RealmUi.Label("", 18, true); _endRetryMessage.Visible = false; endVBox.AddChild(_endRetryMessage);
 		endVBox.AddChild(_endPrimaryButton);
 
 		_endSecondaryButton = new RealmButton

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -22,8 +21,6 @@ public partial class CombatReviewSmoke
             if (art == null) { await CloseBattle(battle); continue; }
             var castle = battle.GetNode<Node2D>("Castle");
             Check(castle.Position.Y < combat.BattlefieldTop, $"Stage {stage}: the stronghold sorts behind every troop on the road");
-            Check(Read<List<(BattleStructureArt Art, Vector2 Ground)>>(battle, "_outworks").Count == 0,
-                $"Stage {stage}: the painting replaces the Blender outworks");
             Check(art.Rect.Position.X < combat.EnemySpawnX && art.Rect.End.X > combat.EnemyBaseX,
                 $"Stage {stage}: the stronghold spans the point where troops strike it");
             Check(art.Foot < (combat.BattlefieldTop + combat.BattlefieldBottom) * .5f,

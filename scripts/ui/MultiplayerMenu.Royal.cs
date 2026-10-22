@@ -1,11 +1,10 @@
 using System;
-using System.Linq;
 using Godot;
 
 /// <summary>
 /// Multiplayer challenges on the approved concept: the board tabs, the challenge briefing (route,
-/// mutator, code and Load), room rows, and Back, Refresh, Match, Host and Start challenge. The live
-/// services, selectors and code field from the full screen are kept and placed on the plate.
+/// mutator, code and Load), room rows, and Back, Refresh, Match, Host and Start challenge. The stage
+/// and mutator selectors and the code field (built in MultiplayerMenu.cs) are placed on the plate.
 /// </summary>
 public partial class MultiplayerMenu
 {
@@ -25,7 +24,6 @@ public partial class MultiplayerMenu
     private void BuildRoyalLayout()
     {
         var spec = MpSpec;
-        foreach (var child in GetChildren().OfType<Control>()) child.Hide();
         var veil = new ColorRect { Color = new Color(.02f, .05f, .08f, .62f), MouseFilter = MouseFilterEnum.Stop };
         AddChild(veil); veil.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var plate = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
@@ -78,14 +76,12 @@ public partial class MultiplayerMenu
 
         // Board pages fill the rooms area.
         var board = new Rect2(48, 287, 1188, 323);
-        foreach (var page in _boardPages)
+        for (var i = 0; i < _boardPages.Length; i++)
         {
-            var scroll = page.GetParent<ScrollContainer>();
-            scroll.GetParent()?.RemoveChild(scroll);
-            AddChild(scroll);
-            scroll.Position = board.Position; scroll.Size = board.Size; scroll.CustomMinimumSize = Vector2.Zero;
-            scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
-            page.AddThemeConstantOverride("separation", 8);
+            _boardPages[i] = RealmUi.Scroll(this);
+            var scroll = _boardPages[i].GetParent<ScrollContainer>();
+            scroll.Position = board.Position; scroll.Size = board.Size;
+            _boardPages[i].AddThemeConstantOverride("separation", 8);
         }
         SelectBoard(0);
 
@@ -94,7 +90,6 @@ public partial class MultiplayerMenu
         Footer(spec, "match", "icon-match", "Match", QuickMatchOnlineRoom);
         Footer(spec, "host", "icon-host", "Host", HostOnlineRoom);
         _royalStart = Footer(spec, "start", "icon-swords-dark", "Start challenge", StartChallenge, true);
-        _startButton.SetMeta("realm_primary", true);
     }
 
     private void CloseRoyal()
@@ -171,7 +166,7 @@ public partial class MultiplayerMenu
         menu.AddItem("Roll a new code", 0); menu.AddItem("Copy code", 1); menu.AddItem("Copy share link", 2);
         menu.AddSeparator(); menu.AddItem("Challenge briefing", 3); menu.AddItem("Records & replay", 4);
         menu.AddSeparator(); menu.AddItem("Sync results", 5); menu.AddItem("LAN race", 6);
-        menu.SetItemDisabled(menu.GetItemIndex(5), _syncButton.Disabled);
+        menu.SetItemDisabled(menu.GetItemIndex(5), GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null);
         menu.IdPressed += id =>
         {
             switch (id)
@@ -212,11 +207,6 @@ public partial class MultiplayerMenu
         var threat = mutator == null ? 1 : Mathf.Clamp(Mathf.RoundToInt((mutator.EnemyHealthScale + mutator.EnemyDamageScale - 2f) * 4f) + 1, 1, 3);
         for (var i = 0; i < 3; i++) _skulls.AddChild(RoyalKit.Image(i < threat ? "icon-skull-lit" : "icon-skull-dim", new Rect2(i * 26, 0, 16, 20)));
         _skulls.TooltipText = $"Threat {threat} of 3";
-        if (_royalStart != null)
-        {
-            _royalStart.Disabled = _startButton.Disabled;
-            _royalStart.TooltipText = _startButton.TooltipText.Length > 0 ? _startButton.TooltipText : "Start challenge";
-        }
     }
 
     /// <summary>A room on the board, laid out like the concept's room rows.</summary>

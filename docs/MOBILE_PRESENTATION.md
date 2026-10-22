@@ -73,30 +73,29 @@ One-shot particles and projectile trails normalize their 128-pixel textures
 against the intended world-pixel diameter, so hit and deployment effects do not
 cover the models. This applies on desktop too.
 
-## Animated model previews
+## Unit figures
 
 Battle preparation shows the victory rewards, a horizontally scrolling
 row of touch-sized squad cards (portrait and name), and the **Warband** and
 **Deploy** actions. Squad cards are display-only; the squad is edited in the
 armory. The armory is two columns, the collection grid beside the selected
-unit's full profile, with no large model. Reduced-motion mode uses still poses.
-Previews spawn no combat units and do not change progression or combat.
+unit's full profile, with no large model.
 
-All 52 units have preview atlases in `assets/ui/models/`, holding their Idle,
-Walk, and Attack frames. Units with hi-res battle atlases (every unit except the
-War Hound) reuse those envelope-cropped battle frames (see `ASSETS.md`); the War
-Hound, whose standard 192×240 battle frames already meet the target density,
-uses its native 256×320 Blender frames. Nothing is upscaled. Each preview owns
-its texture and releases it when closed or changed; only crop bounds are cached.
-Missing previews fall back to the battle atlas. Cropping uses a stable union of
-the three animation clips so weapons remain in frame and the model does not
-change scale between poses.
+Menus draw units as still figures (`UnitFigure`): one small resting-pose
+texture per unit in `assets/ui/royal/figures/`. No screen plays an animated
+model preview any more; the armory's large model went when it was widened.
 
-Previews are packed with the battle atlases (see `art/remaster/README.md`):
+The figures are cut from the preview sheets in `assets/ui/models/` (the first
+Idle frame of each) by `art/royal/figures.py`. Those sheets hold every unit's
+Idle, Walk and Attack frames and are packed with the battle atlases (see
+`art/remaster/README.md`), but the game never loads them, so the export presets
+leave the whole folder out (`docs/BUILD_SIZE.md`). After repacking units,
+rerun the figure cut:
 
 ```sh
 python3 art/remaster/pack.py stage --only units
 python3 art/remaster/pack.py apply
+python3 art/royal/figures.py
 ```
 
 ## Review

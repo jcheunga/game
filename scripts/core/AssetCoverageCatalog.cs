@@ -16,8 +16,7 @@ public static class AssetCoverageCatalog
 
     public static readonly string[] StructureIds =
     {
-        "war_wagon",
-        "gatehouse"
+        "war_wagon"
     };
 
     public static readonly string[] ParticleTextureIds =

@@ -63,7 +63,7 @@ GitHub Actions also runs the game build plus the server/data validation workflow
 | Battle backdrops | `assets/world/royal/{zone}.json` + `{zone}_far/_mid/_ground/_near/_front.png` | Five painted parallax layers per zone (`art/royal/backdrops.py`) |
 | Map art | `assets/world/royal/maps/{zone}.png` + `.json`, `maps/landmarks/` | One painted map per zone and the site landmarks (`art/royal/maps.py`) |
 | Spell and relic pictures | `assets/ui/royal/items/{spell_or_relic_id}.png` | Painted item images (`art/royal/items.py`) |
-| Structures | `assets/structures/battle-v2/{id}.png` + `.json` | Wagon, gatehouse and fort plates with anchor, mounts and door strip; `assets/structures/{id}.png` is the fallback |
+| Structures | `assets/structures/battle-v2/{id}.png` + `.json` | Wagon plates with anchor, mounts and door strip; `assets/structures/{id}.png` is the fallback |
 | Particle textures | `assets/particles/{particle_id}.png` | Battle burst/trail sprites for deploy, impact, spell, and boss VFX |
 | Projectile sprites | `assets/projectiles/{sprite_id}.png` | Blender-rendered arrows, bolts, flasks, pots and other shots, flown on arcs by `ProjectileStyles` |
 | Unit icons | `assets/ui/icons/units/{unit_id}.png` | Optional shared fallback: `{visual_class}.png` |

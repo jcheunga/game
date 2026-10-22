@@ -6,7 +6,7 @@ public partial class BattleController
 {
     private HBoxContainer _goldReadout;
     private PanelContainer _goldFrame;
-    private Label _goldAmount, _restartMessage, _endRetryMessage;
+    private Label _goldAmount;
     private Button _hudSettingsButton, _restartButton, _resumeButton;
     private RealmModal _battleSettingsModal;
     private CanvasLayer _battleSettingsLayer;
@@ -170,7 +170,6 @@ public partial class BattleController
         });
         ActionButton("back", "Quit battle", RetreatToMap);
         BuildDeveloperBattleTools(stack);
-        _restartMessage = RealmUi.Label("", 18, true); _restartMessage.Visible = false; stack.AddChild(_restartMessage);
     }
 
     private void StyleRestartButton(Button button)

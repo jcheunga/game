@@ -35,7 +35,7 @@ public static class BaseUpgradeCatalog
     private static readonly BaseUpgradeDefinition[] Upgrades =
     {
         new(ArcherCrewId, "Wagon Archer Crew", "Your starting ranged weapon. Prioritizes fast raiders and sappers; each level adds damage and range.", 5),
-        new(BallistaId, "Mounted Ballista", "Install a second weapon that prioritizes armored enemies and bosses, dealing 50% bonus damage to them. Fires alongside the archers.", 5),
+        new(BallistaId, "Mounted Ballista", "Install a second weapon that targets armored enemies and bosses for 50% bonus damage. Fires alongside the archers.", 5),
         new(FirepotId, "Firepot Launcher", "Install a third weapon that targets clustered enemies and burns the group on impact. Fires alongside other mounts.", 5),
         new(ArrowVolleyId, "Arrow Volley", "Automatic skill: fires at up to three enemies in archer range when ready. Upgrades shorten recovery.", 5),
         new(EmergencyRepairId, "Emergency Repairs", "Automatic skill: repair the wagon once per battle when hull falls to 40% or less. Upgrades restore more hull.", 5),

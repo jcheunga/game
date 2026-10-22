@@ -27,12 +27,15 @@ public partial class UiReviewSmoke
 
         async Task<BattleController> Battle(BattleRunMode mode = BattleRunMode.Campaign)
         {
-            if (GetTree().CurrentScene != null) { GetTree().CurrentScene.QueueFree(); GetTree().CurrentScene = null; await Wait(.05); }
+            // Leave the tree at once, as a real scene change does: a battle's static caches assume one battle at a time.
+            if (GetTree().CurrentScene is { } previous) { previous.GetParent().RemoveChild(previous); previous.QueueFree(); GetTree().CurrentScene = null; await Wait(.05); }
             state.SetSelectedStage(48);
             typeof(GameState).GetProperty(nameof(GameState.CurrentBattleMode))!.SetValue(state, mode);
             var battle = GD.Load<PackedScene>(SceneRouter.BattleScene).Instantiate<BattleController>();
             GetTree().Root.AddChild(battle); GetTree().CurrentScene = battle; battle.SetPhysicsProcess(false);
-            Check(Read<float>(battle, "_courage") == 0, mode + " starts with zero courage");
+            // Battles open at zero courage; boss rush opens each round at 40 (docs/PROGRESSION_AND_BOSS_RUSH.md).
+            var opening = mode == BattleRunMode.BossRush ? Mathf.Min(40f, Read<float>(battle, "_maxCourage")) : 0f;
+            Check(Read<float>(battle, "_courage") == opening, mode + $" starts with {opening:0} courage");
             await Wait(.1);
             return battle;
         }
@@ -51,8 +54,20 @@ public partial class UiReviewSmoke
         Check(Read<int>(fight, "_playerDeployments") == 1, "A recovering card cannot deploy again");
         Call(fight, "DeployPlayerUnit", GameData.GetUnit(GameData.PlayerMarksmanId));
         Check(Read<int>(fight, "_playerDeployments") == 1, "Unowned units outside the warband cannot be deployed");
-        Check(UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerNecromancerId) == null
-            && UnitActiveAbilityCatalog.GetForUnit(GameData.PlayerMechanicId) == null, "Abilities cannot summon additional allied units");
+        // Summoning is a content ability with a cap of one live minion per caster (the Caravan Engineer's emplacement,
+        // the legacy Necromancer's servant): casting again never adds a second.
+        var engineer = (Unit)Call(fight, "SpawnUnit", Team.Player, state.BuildPlayerUnitStats(GameData.GetUnit(GameData.PlayerMechanicId)), new Vector2(400, 340));
+        var contentAction = typeof(BattleController).GetMethod("TryContentAction", hidden)!;
+        for (var cast = 0; cast < 3; cast++)
+        {
+            engineer.ContentCooldown = 0;
+            contentAction.Invoke(fight, new object[] { engineer, null, .1f });
+            Call(fight, "TickContentWorld", 1f);
+        }
+        var summoned = Read<List<Unit>>(fight, "_units").Where(unit => unit.Team == Team.Player && unit.IsSummoned && !unit.IsDead).ToArray();
+        Check(summoned.Length == 1, "Abilities cannot summon more than one ally per caster");
+        foreach (var unit in summoned.Append(engineer)) unit.Despawn();
+        Call(fight, "CleanupDeadUnits");
         Call(fight, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit(GameData.EnemyRunnerId)), new Vector2(650, 200));
         var spawned = Read<List<Unit>>(fight, "_units").Last();
         Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= GameData.Combat.LaneHalfHeight,

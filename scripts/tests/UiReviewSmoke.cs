@@ -133,6 +133,7 @@ public partial class UiReviewSmoke : Node
                 System.IO.Directory.CreateDirectory(_output);
                 await Open("ShopMenu"); await AuditArmoryPages();
                 await Press("Spells"); await AuditArmoryPages();
+                await Press("War wagon"); await AuditWagonPages();
                 var fixture = GameState.Instance.BuildSaveData();
                 fixture.StageStars = Enumerable.Repeat(1, GameState.Instance.MaxStage).ToArray();
                 fixture.HighestUnlockedStage = GameState.Instance.MaxStage;
@@ -234,7 +235,7 @@ public partial class UiReviewSmoke : Node
                 Check(Board() is { Won: true } && GameState.Instance.GetStageStars(1) > 0, "Real-input campaign battle reaches victory");
                 Check(SaveSystem.Instance.TryLoad(out var result) && result.StageStars.Length > 0 && result.StageStars[0] > 0, "Victory stars persist to disk");
                 await Capture("21-victory");
-                await PressHint("Back to map"); await Wait(.5);
+                await PressHint(MapNavigation.Caption); await Wait(.5);
                 Check(GetTree().CurrentScene is MapMenu, "Victory returns to the campaign map");
                 await Capture("23-map-after-victory");
                 GD.Print($"UI_REVIEW_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1); return;
@@ -252,24 +253,24 @@ public partial class UiReviewSmoke : Node
             await Capture("06-loadout");
             await Open("ShopMenu"); await Capture("07-armory");
             var oldGold = GameState.Instance.Gold;
-            var oldLevel = GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId);
-            var upgradeCost = GameState.Instance.GetUnitUpgradeCost(GameData.PlayerBrawlerId);
+            var oldLevel = GameState.Instance.GetUnitLevel(GameData.PlayerPeasantId);
+            var upgradeCost = GameState.Instance.GetUnitUpgradeCost(GameData.PlayerPeasantId);
             await Press("Upgrade");
-            Check(GameState.Instance.Gold == oldGold - upgradeCost && GameState.Instance.GetUnitLevel(GameData.PlayerBrawlerId) == oldLevel + 1, "Armory upgrade charges once and increases level");
+            Check(GameState.Instance.Gold == oldGold - upgradeCost && GameState.Instance.GetUnitLevel(GameData.PlayerPeasantId) == oldLevel + 1, "Armory upgrade charges once and increases level");
             if (GameState.Instance.ActiveDeckUnitIds.Count == 1)
             {
                 await Press("Unequip");
-                Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "The last starter unit remains equipped");
+                Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerPeasantId), "The last starter unit remains equipped");
                 // The equip round trip needs a second unit now that new games
-                // start with only a swordsman. Keep this fixture in the test save.
+                // start with only a peasant. Keep this fixture in the test save.
                 var squadFixture = GameState.Instance.BuildSaveData();
                 squadFixture.OwnedPlayerUnitIds = squadFixture.OwnedPlayerUnitIds.Append(GameData.PlayerShooterId).Distinct().ToArray();
                 squadFixture.ActiveDeckUnitIds = squadFixture.ActiveDeckUnitIds.Append(GameData.PlayerShooterId).Distinct().ToArray();
                 typeof(GameState).GetMethod("ApplySavedData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(GameState.Instance, new object[] { squadFixture });
                 await Open("ShopMenu");
             }
-            await Press("Unequip"); Check(!GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can leave squad");
-            await Press("Equip"); Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerBrawlerId), "Unit can return to squad");
+            await Press("Unequip"); Check(!GameState.Instance.IsUnitInActiveDeck(GameData.PlayerPeasantId), "Unit can leave squad");
+            await Press("Equip"); Check(GameState.Instance.IsUnitInActiveDeck(GameData.PlayerPeasantId), "Unit can return to squad");
             await Press("Spells"); await Capture("08-rites");
             await Press("War wagon"); await Capture("09-wagon");
             await Press("Relics"); await Capture("10-relics");
@@ -335,6 +336,28 @@ public partial class UiReviewSmoke : Node
             AuditText("Armory / " + name);
         }
         await Capture("type-armory-" + cards.FirstOrDefault()?.Replace(" ", "-"));
+    }
+
+    /// <summary>Selects every war wagon upgrade on every page, so each one's detail text is audited.</summary>
+    private async Task AuditWagonPages()
+    {
+        var titles = BaseUpgradeCatalog.GetAll().Select(x => x.Title).ToHashSet();
+        var seen = new HashSet<string>();
+        for (var page = 0; page < 10; page++)
+        {
+            var cards = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(x => x.IsVisibleInTree() && titles.Contains(x.AccessibilityName)).Select(x => x.AccessibilityName).ToArray();
+            if (cards.All(seen.Contains)) break;
+            foreach (var title in cards)
+            {
+                seen.Add(title);
+                var card = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().First(x => x.IsVisibleInTree() && x.AccessibilityName == title);
+                card.EmitSignal(BaseButton.SignalName.Pressed); await Wait(0.1);
+                AuditText("Armory / War wagon / " + title);
+            }
+            await Capture("type-wagon-page-" + (page + 1));
+            await PressHint("More upgrades");
+        }
+        Check(seen.SetEquals(titles), "Every war wagon upgrade is reachable from the workshop pages");
     }
 
     private readonly List<object> _textAudit = new();

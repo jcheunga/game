@@ -60,10 +60,15 @@ public partial class LoadoutMenu : RoyalScreen
         layer.AddChild(RoyalKit.Image("icon-crossed-swords", spec.Rect("mission.objective.icon")));
         var objectiveTitle = spec.Label("mission.objective.title", boss ? $"DEFEAT {leader.Title.ToUpperInvariant()}" : "DESTROY THE ENEMY GATEHOUSE", 320, new Color("1e1710"));
         objectiveTitle.ShadowOffset = Vector2.Zero; layer.AddChild(objectiveTitle);
-        var line = RoyalText.Paragraph($"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}\nTap the picture for battle tips", 15, new Color("31261b"), 410);
+        var line = RoyalText.Paragraph("", 15, new Color("31261b"), 410);
         line.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
         line.Position = new Vector2(spec.Number("mission.objective.line.1", "pen_x", 133), spec.Number("mission.objective.line.1", "baseline", 498) - 15);
         line.Size = new Vector2(spec.Rect("panel.mission").End.X - line.Position.X - 14, 44);
+        // Where on one line, the briefing hint on the other: long zone and stage names drop the zone (the map shows it).
+        var where = $"{route.Title} · Stage {_stage.StageNumber} · {_stage.StageName}";
+        if (line.GetThemeFont("font").GetStringSize(where, fontSize: ReadingText.PhoneBody).X > line.Size.X)
+            where = $"Stage {_stage.StageNumber} · {_stage.StageName}";
+        line.Text = where + "\nTap the picture for battle tips";
         line.AddThemeConstantOverride("line_spacing", -2);
         RoyalText.FitLines(line, 2);
         layer.AddChild(line);

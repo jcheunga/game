@@ -51,16 +51,29 @@ public partial class UiReviewSmoke
                 using var unshadowed = GetViewport().GetTexture().GetImage();
                 shadows.Visible = true; await Wait(.1); RenderingServer.ForceDraw();
                 using var shadowed = GetViewport().GetTexture().GetImage();
-                int Darkened(Rect2I region)
+                // The share of a screen region the shadow pass darkens.
+                float Darkened(Rect2I region)
                 {
                     var count = 0;
                     for (var y = region.Position.Y; y < region.End.Y; y++)
                         for (var x = region.Position.X; x < region.End.X; x++)
                             if (unshadowed.GetPixel(x, y).R - shadowed.GetPixel(x, y).R > .008f) count++;
-                    return count;
+                    return count / (float)Math.Max(1, region.Area);
                 }
-                Check(Darkened(new Rect2I(335, 342, 35, 17)) > 30, "Animated silhouette casts a visible shadow beyond unit feet");
-                Check(Darkened(new Rect2I(180, 335, 95, 50)) > 150, "Caravan shadow lands visibly on top of the terrain");
+                // Where the middle of a figure standing at a ground point lands on the road: each point h above the
+                // ground falls h * ShadowCast away from it, past the feet. Measured on screen through the battle camera.
+                Rect2I ShadowMiddle(Vector2 ground, float height)
+                {
+                    var cast = BattleLighting.ForZone(stage.MapId).ShadowCast;
+                    var toScreen = battle.GetGlobalTransformWithCanvas();
+                    var band = new Rect2(toScreen * (ground + cast * height * .25f), Vector2.Zero).Expand(toScreen * (ground + cast * height * .75f));
+                    return new Rect2I((Vector2I)band.Position.Floor(), (Vector2I)band.Size.Ceil());
+                }
+                var unitShadow = Darkened(ShadowMiddle(unit.Position, unit.FigureSize.Y));
+                Check(unitShadow > .5f, $"Animated silhouette casts a visible shadow beyond unit feet ({unitShadow:P0} of its band)");
+                var wagon = (BattleStructureArt)Call(battle, "get_WagonArt");
+                var wagonShadow = Darkened(ShadowMiddle((Vector2)Call(battle, "get_WagonGround"), -wagon.At(Vector2.Zero).Position.Y));
+                Check(wagonShadow > .5f, $"Caravan shadow lands visibly on top of the terrain ({wagonShadow:P0} of its band)");
             }
             await Capture(stage.MapId + "-caravan");
             Call(battle, "SetBattleCameraX", world.BattlefieldRight);

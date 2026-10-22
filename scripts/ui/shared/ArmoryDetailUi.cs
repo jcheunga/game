@@ -13,6 +13,7 @@ public static class ArmoryDetailUi
         var grid = new GridContainer { Name = "ProfileStats", Columns = columns, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         grid.AddThemeConstantOverride("h_separation", 8);
         grid.AddThemeConstantOverride("v_separation", 6);
+        var captions = new List<Label>();
         foreach (var stat in values)
         {
             var tile = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AccessibilityName = $"{stat.Label}: {stat.Value}" };
@@ -29,9 +30,18 @@ public static class ArmoryDetailUi
             // Captions wrap only between words ("GATE / DAMAGE"), never inside one ("COOLDOW / N").
             var label = new Label { Text = stat.Label.ToUpperInvariant(), AutowrapMode = TextServer.AutowrapMode.Word };
             label.AddThemeFontSizeOverride("font_size", 18); label.AddThemeColorOverride("font_color", ModalUi.Muted); stack.AddChild(label);
+            captions.Add(label);
             var number = new Label { Text = stat.Value, VerticalAlignment = VerticalAlignment.Center };
             number.AddThemeFontSizeOverride("font_size", 28); number.AddThemeColorOverride("font_color", ModalUi.Cream); stack.AddChild(number);
         }
+        // A wrapping label asks for no width, so every tile is held as wide as the longest caption word (tiles stay even).
+        grid.Ready += () =>
+        {
+            if (captions.Count == 0) return;
+            var widest = captions.Max(caption => caption.Text.Split(' ').Max(word =>
+                caption.GetThemeFont("font").GetStringSize(word, fontSize: caption.GetThemeFontSize("font_size")).X));
+            foreach (var caption in captions) caption.CustomMinimumSize = new Vector2(widest + 2, 0);
+        };
         return grid;
     }
 

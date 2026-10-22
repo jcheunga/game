@@ -29,7 +29,8 @@ public partial class UiReviewSmoke
                     .GetMethod(name,hidden,null,args.Select(a=>a.GetType()).ToArray(),null)!.Invoke(battle,args);
                 if(Read<bool>("_battlePaused")) Call("TogglePause");
                 var deck=Read<BattleDeckState>("_deck"); var spells=Read<BattleSpellState>("_spellDeck");
-                var cards=Walk(battle).OfType<BattleActionCard>().ToArray();
+                // The loadout's cards in dock order (units, then magic); the caravan spell's own slot is not one of them.
+                var cards=Walk(battle).OfType<BattleActionCard>().Where(c=>!Walk(battle).OfType<CaravanSpellButton>().Any(slot=>slot.IsAncestorOf(c))).ToArray();
                 var camera=Read<Camera2D>("_battleCamera");
                 camera.Position=new Vector2(340,380); camera.ForceUpdateScroll();
                 void Ready() { Write("_courage",100f); Write("_mana",Read<float>("_maxMana")); deck.ReduceCooldowns(1000); spells.ReduceCooldowns(1000); Call("UpdateHud"); }

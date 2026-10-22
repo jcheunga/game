@@ -41,7 +41,7 @@ public partial class FeedbackReview : Node
             GetWindow().ContentScaleMode = Window.ContentScaleModeEnum.CanvasItems;
             await Wait();
             var state = GameState.Instance; state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false);
-            Check(state.ActiveDeckUnitIds.SequenceEqual(new[] { GameData.PlayerBrawlerId }) && state.GetOwnedPlayerUnits().Count == 1, "A new game starts with only a swordsman");
+            Check(state.ActiveDeckUnitIds.SequenceEqual(new[] { GameData.PlayerPeasantId }) && state.GetOwnedPlayerUnits().Count == 1, "A new game starts with only a peasant");
             Check(state.GetOwnedPlayerSpells().Count == 0 && state.CanStartBattle(out _), "One unit and no spells is a valid starting squad");
             CheckSharedLoadout(state);
             state.ResetProgress(); state.SetShowHints(false);
@@ -82,11 +82,15 @@ public partial class FeedbackReview : Node
             Check(!Walk(map).OfType<MapPathCanvas>().Single().IsTravelling, "Map opens with a stable selection");
             map.QueueFree(); await Wait();
             var shop = await Open<ShopMenu>("ShopMenu"); await Capture("03-squad");
-            // The armory is a three-column scrolling collection of portrait tiles beside the selected unit's profile.
+            // The armory is a scrolling collection of portrait tiles, as many columns as the concept's grid fits, beside the
+            // selected unit's profile. Retired legacy recruits only appear once owned.
             Control Collection() => Walk(shop).OfType<ScrollContainer>().SingleOrDefault(scroll => scroll.Name == "Collection")?.GetChild<Control>(0);
             var squadGrid = Collection();
-            Check(squadGrid != null && squadGrid.GetChildCount() == GameData.GetPlayerUnits().Count
-                && squadGrid.GetChildren().OfType<Control>().Select(cell => cell.Position.X).Distinct().Count() == 3, "Squad browser displays every unit in one scrolling grid");
+            var recruitable = GameData.GetPlayerUnits().Count(unit => !unit.LegacyRecruit || state.IsUnitOwned(unit.Id));
+            var columns = squadGrid?.GetChildren().OfType<Control>().Select(cell => cell.Position.X).Distinct().Count() ?? 0;
+            Check(squadGrid != null && squadGrid.GetChildCount() == recruitable && columns >= 3
+                && squadGrid.GetChildren().OfType<Control>().Select(cell => cell.Position.Y).Distinct().Count() == Mathf.CeilToInt(recruitable / (float)columns),
+                "Squad browser displays every unit in one scrolling grid");
             Check(squadGrid != null && squadGrid.GetChildren().OfType<RoyalButton>().All(b => Walk(b).OfType<TextureRect>().Any()), "Squad browser uses portraits");
             var rites = Walk(shop).OfType<Button>().Single(b => b.Text == "Spells"); rites.ButtonPressed = true; rites.EmitSignal(BaseButton.SignalName.Pressed); await Wait();
             Check(Collection() is { } spellGrid && spellGrid.GetChildCount() == GameData.GetPlayerSpells().Count, "Spell browser also displays its full inventory grid");
@@ -122,10 +126,12 @@ public partial class FeedbackReview : Node
             expanded.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(6).ToArray(); expanded.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(5).ToArray();
             state.RestoreCloudSave(expanded); state.SetShowHints(false); state.PrepareCampaignBattle();
             battle = await Open<BattleController>("Battle"); battle.SetPhysicsProcess(false);
-            Check(Walk(battle).OfType<BattleActionCard>().Count() == state.LoadoutSizeLimit && state.GetBattleDeckSpells().Count == 3,
+            // The caravan spell waits in its own slot beside the dock and is not part of the loadout.
+            var dockCards = Walk(battle).OfType<BattleActionCard>().Where(c => !Walk(battle).OfType<CaravanSpellButton>().Any(slot => slot.IsAncestorOf(c))).ToArray();
+            Check(dockCards.Length == state.LoadoutSizeLimit && state.GetBattleDeckSpells().Count == 3,
                 "A save holding six units and five spells battles with a six-card loadout of three of each");
             // The card row never scrolls: cards shrink to share the dock.
-            Check(Walk(battle).OfType<BattleActionCard>().All(c => battle.GetViewportRect().Grow(1).Encloses(((Control)c.GetParent()).GetGlobalRect())),
+            Check(dockCards.All(c => battle.GetViewportRect().Grow(1).Encloses(((Control)c.GetParent()).GetGlobalRect())),
                 "Expanded cards all fit on screen in one row");
             Check(!Walk(GetTree().Root).OfType<Control>().Any(c => c.IsVisibleInTree() && c.TooltipText.Length > 0), "Touch screens have no hover tooltips");
             await Capture("06-expanded-battle"); battle.QueueFree(); await Wait();

@@ -70,7 +70,8 @@ public partial class MobilePresentationReview : Node
             var hud=Read<Control>(battle,"_mobileHud");
             Check(camera.Zoom.IsEqualApprox(Vector2.One*(float)Call(battle,"get_BattleFitZoom")),"Mobile combat frames the whole band without changing unit scale");
             Check(hud.Size.DistanceTo(battle.GetViewportRect().Size/MobilePresentation.BattleHudScale)<1,"HUD fits the logical viewport");
-            var actionCards=hud.FindChildren("*","Control",true,false).OfType<BattleActionCard>().ToArray();
+            // The bar's loadout cards (units, then magic); the caravan spell's own slot beside the bar is not one of them.
+            var actionCards=hud.FindChildren("*","Control",true,false).OfType<BattleActionCard>().Where(c=>c.GetParent().GetParent() is not CaravanSpellButton).ToArray();
             Check(actionCards.Length>=5,"The battle bar contains real icon-first unit and spell cards");
             foreach(var art in actionCards)
             {
@@ -114,6 +115,9 @@ public partial class MobilePresentationReview : Node
             battle._Input(new InputEventScreenTouch {Index=0,Pressed=true,Position=cardPoint});
             battle._Input(new InputEventScreenTouch {Index=0,Pressed=false,Canceled=true,Position=cardPoint});
             Check(Read<int>(battle,"_playerDeployments")==count+1 && !Read<bool>(battle,"_cardPointerDown"),"OS-canceled touch never deploys or sticks");
+            // Pan from the field's left end so the drag stays on the field (dragged past an end, the field springs back).
+            var (left,_)=((float,float))Call(battle,"BattleCameraXRange",camera.Zoom.X);
+            Call(battle,"SetBattleCameraX",left);
             var previous=camera.Position;
             battle._UnhandledInput(new InputEventScreenTouch {Index=0,Pressed=true,Position=screen});
             battle._Input(new InputEventScreenDrag {Index=0,Position=screen+new Vector2(-100,0)});

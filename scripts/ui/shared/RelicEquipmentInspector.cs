@@ -64,8 +64,6 @@ public partial class RelicEquipmentInspector : CanvasLayer
         _modal.SetHeading(_relic.DisplayName);
         RelicDetails();
         _body.AddChild(RealmUi.SectionTitle("Choose an ally to compare"));
-        if(!GameState.Instance.GetOwnedEquipment().Contains(_relic.Id))
-            _body.AddChild(RealmUi.Label("Acquire this relic before equipping it. You can still preview its bonuses.",18,true));
         var grid=new GridContainer {Columns=3,SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
         grid.AddThemeConstantOverride("h_separation",10);grid.AddThemeConstantOverride("v_separation",10);_body.AddChild(grid);
         foreach(var unit in GameState.Instance.GetOwnedPlayerUnits())

@@ -30,6 +30,7 @@ public partial class UiReviewSmoke
         await Open("ShopMenu"); await PressHint("Archer"); AuditText("Royal warband"); await Capture("03-warband");
         await Press("Spells"); AuditText("Royal spells"); await Capture("04-spells");
         await Press("Relics"); await PressHint("Spectral Lantern"); AuditText("Royal relics"); await Capture("06-relics");
+        await CheckRelicPage();
         await Press("War wagon"); AuditText("Royal wagon"); await Capture("05-wagon");
         var before = state.Gold;
         await Open("ForgeMenu"); AuditText("Royal forge populated"); await Capture("07-forge");
@@ -52,5 +53,34 @@ public partial class UiReviewSmoke
         typeof(BattleController).GetMethod("EndBattle", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(battle, new object[] { true });
         await Wait(.4); AuditText("Royal victory"); await Capture("15-victory");
         GD.Print($"ROYAL_UI_RESULT: {_failures} failures"); QuitAfterAudio(_failures == 0 ? 0 : 1);
+    }
+
+    /// <summary>Relic names fit their cards at the reading size, and the detail card lists every bonus.</summary>
+    private async Task CheckRelicPage()
+    {
+        var root = LiveUiReview.ActiveRoot(GetTree());
+        var cards = Walk(root).OfType<RoyalButton>().Where(b => GameData.GetAllEquipment().Any(r => r.DisplayName == b.AccessibilityName)).ToList();
+        Check(cards.Count == GameData.GetAllEquipment().Count, $"Relic collection shows every relic ({cards.Count})");
+        foreach (var card in cards)
+        {
+            var lines = card.GetChildren().OfType<RoyalLabel>().ToList();
+            var fits = string.Join(" ", lines.Select(l => l.Text)) == card.AccessibilityName && lines.Count <= 2 && lines.All(l =>
+            {
+                var width = l.TextWidth(l.FittedSize());
+                var left = l.Position.X + l.Align switch { HorizontalAlignment.Center => (l.Size.X - width) / 2, HorizontalAlignment.Right => l.Size.X - width, _ => 0 };
+                return l.FittedSize() >= ReadingText.PhoneBody && left >= 4 && left + width <= card.Size.X - 4;
+            });
+            if (!fits) Check(false, $"Relic card name fits its card: {card.AccessibilityName}");
+        }
+        Check(!Walk(root).OfType<Button>().Any(b => b.IsVisibleInTree() && b.AccessibilityName == "View all bonuses"), "Relic page has no separate bonuses button");
+
+        var richest = GameData.GetAllEquipment().MaxBy(r => RelicStatText.Stats(r).Count);
+        await PressHint(richest.DisplayName);
+        var list = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<ScrollContainer>().Single(s => s.Name == "RelicBonuses");
+        var captions = Walk(list).OfType<RoyalLabel>().Select(l => l.Text).ToHashSet();
+        Check(RelicStatText.Stats(richest).All(s => captions.Contains(s.Label)) && captions.Contains("Rarity"), $"{richest.DisplayName} lists all {RelicStatText.Stats(richest).Count} bonuses beside the collection");
+        var bar = list.GetVScrollBar();
+        Check(bar.MaxValue > bar.Page + 1, "More bonuses than the card holds scroll inside it");
+        AuditText("Royal relic bonuses"); await Capture("06-relic-bonuses");
     }
 }

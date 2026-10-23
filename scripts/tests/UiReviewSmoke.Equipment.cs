@@ -70,18 +70,19 @@ public partial class UiReviewSmoke
             await TapAction("Remove from slot 2");
             Check(state.GetUnitEquipment2("player_brawler")==null && state.GetUnitEquipment("player_brawler")?.Id=="relic_guardian_shield","Native removal preserves the first-slot relic");
             var saveBefore=System.Text.Json.JsonSerializer.Serialize(state.BuildSaveData());
-            await TapHint("War Brand");await TapHint("View all bonuses");await TapHint("Compare War Brand on Swordsman");
-            Check(!Inspector().Preview.CanApply && Walk(Inspector()).OfType<Button>().Single(b=>b.Text=="Equip to slot 1").Disabled,"Unowned relic comparison cannot grant or equip the item");
+            await TapHint("War Brand");
+            Check(Walk(menu).OfType<RoyalButton>().Single(b=>b.IsVisibleInTree() && b.AccessibilityName=="Equip").Disabled,"An unowned relic cannot be equipped");
+            var bonuses=Walk(menu).OfType<ScrollContainer>().Single(s=>s.Name=="RelicBonuses");
+            Check(RelicStatText.Stats(GameData.GetEquipment("relic_war_brand")).All(s=>Walk(bonuses).OfType<RoyalLabel>().Any(l=>l.Text==s.Label)),"An unowned relic still lists all its bonuses");
             var saveAfter=System.Text.Json.JsonSerializer.Serialize(state.BuildSaveData());
             using(var oldSave=System.Text.Json.JsonDocument.Parse(saveBefore))
             using(var newSave=System.Text.Json.JsonDocument.Parse(saveAfter))
             {
                 // The full-food clock refreshes during real UI waits; compare every progression field.
                 var changed=oldSave.RootElement.EnumerateObject().Where(p=>p.Name!="FoodRechargedAtUnixSeconds" && p.Value.GetRawText()!=newSave.RootElement.GetProperty(p.Name).GetRawText()).Select(p=>p.Name).ToArray();
-                Check(changed.Length==0,"Inspecting an unowned relic leaves saved progression unchanged");
+                Check(changed.Length==0,"Selecting an unowned relic leaves saved progression unchanged");
             }
-            AuditText("Equipment / unowned preview");await Capture("06-unowned-preview");
-            await TapHint("Close details");
+            AuditText("Equipment / unowned relic");await Capture("06-unowned-relic");
             Check(state.Food==food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset==map,"Equipment choices preserve map position and travel supplies");
             menu.CloseHomeModal();
         }

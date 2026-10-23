@@ -174,6 +174,10 @@ License 1.1 (`assets/fonts/Cinzel-Variable.ttf`, `assets/fonts/CrimsonPro-Variab
 texts), from [google/fonts](https://github.com/google/fonts). `RoyalFonts` caches weights of each;
 use `RoyalText`, `RealmUi.Heading` or `RealmUi.Display` rather than setting a font directly.
 
+The sign-in buttons alone use Google Sans Medium (`assets/fonts/GoogleSans-Medium.ttf`, OFL 1.1, cut to Latin),
+the font Google's button rules name. Their logos (`assets/ui/signin`) are the companies' own files; sources,
+licences and the rules each button follows are in [`art/signin/README.md`](art/signin/README.md).
+
 ## Route IDs
 
 - `city` = King's Road

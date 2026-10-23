@@ -450,16 +450,15 @@ project ID, and the Game Center button only on iOS builds with the plugin.
 platform. App Store guideline 4.8 requires an equivalent privacy-focused login
 wherever a third-party login such as Google is offered, so configure Apple
 before any iOS release that shows Google. If Apple is not configured, hide the
-Google button on iOS. Two App Review points are still open:
+Google button on iOS.
 
-- Apple's [button guidelines](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)
-  call for the Apple logo and an approved style. The button uses the game's
-  own style and a generic icon, like the Google button.
-- When account deletion is built (see
-  [PRODUCTION_LAUNCH.md](PRODUCTION_LAUNCH.md)), Apple requires the app to
-  [revoke the Apple tokens](https://developer.apple.com/documentation/signinwithapplerestapi/revoke-tokens)
-  of a deleted account. The server keeps no Apple tokens today, so that work
-  also needs to store the refresh token, encrypted, at sign-in.
+The sign-in buttons follow Google's and Apple's published button rules rather
+than the game's own style (`SignInButton`; the rules and how each is met are in
+[art/signin/README.md](../art/signin/README.md)). Google's G and the Play Games
+controller are in the game. Apple's logo and the Game Center icon must be
+added from Apple Design Resources before an App Store submission; the README's
+"Adding Apple's art" section says which files and the one command that wires
+them in. Until then those two buttons show their title with an empty logo box.
 
 ### End-to-end test against a local server
 

@@ -364,8 +364,24 @@ handling of every outcome passes on desktop
 
 ## 13. Before store review
 
-- [ ] Use the official Google and Apple sign-in button designs. The game draws
-  them in its own style today, and both companies have branding rules.
+- [x] Use the official Google and Apple sign-in button designs. Done
+  2026-10-23: Account's sign-in buttons are drawn to
+  [Google's branding guidelines](https://developers.google.com/identity/branding-guidelines),
+  [Apple's Sign in with Apple guidelines](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple),
+  the [Play Games branding guidelines](https://developer.android.com/games/pgs/branding)
+  and the [Game Center guidelines](https://developer.apple.com/design/human-interface-guidelines/game-center),
+  with Google's own G and Play Games controller. Each rule and how the button
+  meets it, with sources and licences, is in
+  [art/signin/README.md](../art/signin/README.md); `UiReviewSmoke --account`
+  measures them.
+- [ ] Add Apple's official Sign in with Apple logo and Game Center icon. They
+  need Apple Developer Program membership and accepting Apple's artwork
+  licences, so the project owner downloads them from
+  [Apple Design Resources](https://developer.apple.com/design/resources/).
+  Which files to pick and the one command that wires them in are under
+  "Adding Apple's art" in [art/signin/README.md](../art/signin/README.md).
+  Until then both buttons show an empty logo box, which App Review would
+  reject.
 - [x] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
   Done: see "Already done" at the top.

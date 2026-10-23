@@ -61,6 +61,12 @@ public partial class UiReviewSmoke : Node
             { await ReviewEnchantments(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--expansion"))
             { await ReviewExpansion(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--account"))
+            {
+                await ReviewAccount();
+                GD.Print($"ACCOUNT_REVIEW_RESULT: {_failures} failures");
+                QuitAfterAudio(_failures == 0 ? 0 : 1); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--account-deletion"))
             {
                 await ReviewAccountDeletion();
@@ -454,7 +460,9 @@ public partial class UiReviewSmoke : Node
             {
                 case Label label when !string.IsNullOrWhiteSpace(label.Text): text = label.Text; size = label.GetThemeFontSize("font_size"); break;
                 // A RoyalButton's own text is hidden; its caption is a RoyalLabel.
-                case Button button when button is not RoyalButton && !string.IsNullOrWhiteSpace(button.Text): text = button.Text; size = button.GetThemeFontSize("font_size"); break;
+                // A SignInButton draws its own title at its company's size.
+                case Button button when button is not RoyalButton && !string.IsNullOrWhiteSpace(button.Text):
+                    text = button.Text; size = button is SignInButton signIn ? (int)signIn.TitleFontSize : button.GetThemeFontSize("font_size"); break;
                 case RichTextLabel rich when !string.IsNullOrWhiteSpace(rich.GetParsedText()): text = rich.GetParsedText(); size = rich.GetThemeFontSize("normal_font_size"); break;
                 case RoyalLabel royal when !string.IsNullOrWhiteSpace(royal.Text): text = royal.Text; size = royal.FittedSize(); break;
                 default: continue;

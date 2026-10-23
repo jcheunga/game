@@ -15,7 +15,9 @@ public partial class AccountDialog : AcceptDialog
     public static void Show(Control host)
     {
         var dialog = new AccountDialog { Title = "Account", Exclusive = true, Theme = host.Theme, MinSize = new Vector2I(380, 300) };
-        host.AddChild(dialog); dialog.PopupCentered(new Vector2I(540, 480));
+        // Tall enough that every sign-in button and the email row show without scrolling.
+        var height = 640 - (PlatformSignIn.Provider.Length > 0 ? 0 : (int)SignInButton.Height + 12);
+        host.AddChild(dialog); dialog.PopupCentered(new Vector2I(560, height));
     }
     public override void _Ready()
     {
@@ -37,12 +39,16 @@ public partial class AccountDialog : AcceptDialog
                 MaxLength = GameState.MaxCallsignLength, CustomMinimumSize = new Vector2(0, 48), TooltipText = "Nickname for a new account" };
             stack.AddChild(_nickname);
         }
+        // Sign-in buttons follow their companies' button rules (SignInButton), one size each so none outranks another.
         // The phone's own game account comes first: it needs no typing and no browser.
-        _platformButton = RealmUi.Button("people", $"Continue with {PlatformSignIn.ProviderName(PlatformSignIn.Provider)}", () => _ = Platform());
+        var platform = PlatformSignIn.Provider == PlatformSignIn.PlayGames ? SignInButton.Brand.PlayGames : SignInButton.Brand.GameCenter;
+        _platformButton = SignInButton.Create(platform, SignInButton.Title(platform), () => _ = Platform());
         _platformButton.Name = "PlatformSignIn"; _platformButton.Visible = PlatformSignIn.Provider.Length > 0; stack.AddChild(_platformButton);
-        // Apple asks that Sign in with Apple sits beside any other third-party sign-in, at least as prominently.
-        _appleButton = RealmUi.Button("people", "Continue with Apple", () => _ = Browser("apple")); _appleButton.Name = "AppleSignIn"; stack.AddChild(_appleButton);
-        _googleButton = RealmUi.Button("people", "Continue with Google", () => _ = Browser("google")); stack.AddChild(_googleButton);
+        // Apple asks that Sign in with Apple sits beside any other third-party sign-in, at least as prominently, without scrolling.
+        _appleButton = SignInButton.Create(SignInButton.Brand.Apple, SignInButton.Title(SignInButton.Brand.Apple), () => _ = Browser("apple"));
+        _appleButton.Name = "AppleSignIn"; stack.AddChild(_appleButton);
+        _googleButton = SignInButton.Create(SignInButton.Brand.Google, SignInButton.Title(SignInButton.Brand.Google), () => _ = Browser("google"));
+        _googleButton.Name = "GoogleSignIn"; stack.AddChild(_googleButton);
         _email = new LineEdit { PlaceholderText = "Email address", CustomMinimumSize = new Vector2(0, 48), MaxLength = 254 };
         stack.AddChild(_email);
         _emailButton = RealmUi.Button("arrow", "Send sign-in code", () => _ = SendCode()); stack.AddChild(_emailButton);

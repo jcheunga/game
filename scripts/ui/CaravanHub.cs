@@ -82,7 +82,7 @@ public partial class CaravanHub : RoyalScreen
                 yield return new("Daily gifts", "activity-gifts", "hubicon-event", router.GoToLoginCalendar);
                 yield return new("Season", "activity-season", "relicicon-crown", router.GoToSeasonPass);
                 yield return new("Codex", "activity-codex", "tab-adviser", router.GoToCodex);
-                yield return new("Progression", "activity-forge", "icon-hammers", router.GoToProgression);
+                yield return new("Progression", "activity-progression", "result-star", router.GoToProgression);
                 yield return new("Store", "activity-store", "relicicon-talisman", router.GoToCashShop);
                 if (state.CanPrestige)
                     yield return new("Prestige", "activity-prestige", "relicicon-crown", () => MedievalUi.ShowConfirmation(this, "Begin a new age?",
@@ -101,7 +101,8 @@ public partial class CaravanHub : RoyalScreen
 
     private static Texture2D ActivityArt(Activity activity)
     {
-        foreach (var path in new[] { $"res://assets/ui/royal/kit/{activity.Art}.png", $"res://assets/ui/royal/items/{activity.Art}.png" })
+        // The painted pictures first; the concept's own card cuts (label included) only as a fallback.
+        foreach (var path in new[] { $"res://assets/ui/royal/items/{activity.Art}.png", $"res://assets/ui/royal/kit/{activity.Art}.png" })
             if (ResourceLoader.Exists(path)) return RoyalArt.Load(path);
         return RoyalKit.Texture("activity-endless");
     }
@@ -133,67 +134,64 @@ public partial class CaravanHub : RoyalScreen
         BuildCards(spec);
     }
 
+    /// <summary>
+    /// Every tab's cards fit the panel without scrolling: three to a row for up to six activities, four to a row
+    /// beyond that, and a short last row centred.
+    /// </summary>
     private void BuildCards(RoyalSpec spec)
     {
-        var keys = new[] { "endless", "tower", "bounties", "bossrush", "weeklyraid", "event" };
         var activities = Activities().ToList();
-        var content = spec.Rect("content");
-        content.Size += new Vector2(0, 112);
-        var scroll = new ScrollContainer { Position = content.Position, Size = content.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever };
-        _layer.AddChild(scroll);
-        var rows = Mathf.CeilToInt(activities.Count / 3f);
-        var pitchY = spec.Rect("card.bossrush").Position.Y - spec.Rect("card.endless").Position.Y + 56;
-        var holder = new Control { CustomMinimumSize = new Vector2(content.Size.X, Mathf.Max(content.Size.Y, (rows - 2) * pitchY + content.Size.Y)), MouseFilter = MouseFilterEnum.Pass };
-        scroll.AddChild(holder);
+        var first = spec.Rect("card.endless");
+        var area = new Rect2(first.Position, new Vector2(spec.Rect("card.bounties").End.X - first.Position.X, spec.Rect("card.bossrush").End.Y + 112 - first.Position.Y));
+        var columns = activities.Count > 6 ? 4 : 3;
+        var rows = Math.Max(1, Mathf.CeilToInt(activities.Count / (float)columns));
+        const float gapX = 14, gapY = 9;
+        var size = new Vector2((area.Size.X - (columns - 1) * gapX) / columns, (area.Size.Y - (rows - 1) * gapY) / Math.Max(2, rows));
         for (var i = 0; i < activities.Count; i++)
         {
-            var key = "card." + keys[i % 6];
-            var rect = spec.Rect(key);
-            rect.Position = new Vector2(rect.Position.X, spec.Rect("card.endless").Position.Y + i / 3 * pitchY) - content.Position;
-            rect.Size += new Vector2(0, 56);
-            holder.AddChild(Card(spec, key, rect, activities[i]));
+            var row = i / columns;
+            var inRow = Math.Min(columns, activities.Count - row * columns);
+            var offset = (columns - inRow) * (size.X + gapX) / 2;
+            var rect = new Rect2(area.Position + new Vector2(offset + i % columns * (size.X + gapX), row * (size.Y + gapY)), size);
+            _layer.AddChild(Card(spec, rect, activities[i]));
         }
     }
 
-    private Control Card(RoyalSpec spec, string key, Rect2 rect, Activity activity)
+    private Control Card(RoyalSpec spec, Rect2 rect, Activity activity)
     {
-        var origin = spec.Rect(key).Position;
-        Rect2 Local(string part)
-        {
-            var local = new Rect2(spec.Rect(key + part).Position - origin, spec.Rect(key + part).Size);
-            if (part == ".art") local.Size += new Vector2(0, 56);
-            else local.Position += new Vector2(0, 56);
-            return local;
-        }
+        // Parts sit where the concept's card has them, measured from its edges.
+        var w = rect.Size.X; var h = rect.Size.Y;
+        var bar = new Rect2(7, h - 52, w - 11, 47);
         var locked = activity.Locked != null;
         var card = new RoyalButton { Position = rect.Position, Size = rect.Size, AccessibilityName = activity.Title, TooltipText = activity.Locked ?? activity.Title,
             MouseFilter = MouseFilterEnum.Pass, MouseDefaultCursorShape = CursorShape.PointingHand, Disabled = locked || activity.Open == null };
         card.SetStates(null, 6);
         card.AddChild(new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, ClipContents = true,
-            Texture = ActivityArt(activity), Position = Local(".art").Position, Size = Local(".art").Size, MouseFilter = MouseFilterEnum.Ignore,
+            Texture = ActivityArt(activity), Position = new Vector2(5, 5), Size = new Vector2(w - 9, h - 9), MouseFilter = MouseFilterEnum.Ignore,
             SelfModulate = locked ? new Color(.5f, .5f, .52f) : Colors.White });
         var ring = new Panel { Position = Vector2.Zero, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore };
         ring.AddThemeStyleboxOverride("panel", RoyalKit.Slice("hub-card", 10, false));
         card.AddChild(ring);
-        var bar = new Panel { Position = Local(".bar").Position, Size = Local(".bar").Size, MouseFilter = MouseFilterEnum.Ignore };
-        bar.AddThemeStyleboxOverride("panel", RoyalKit.Slice("hub-card-bar", 12));
-        card.AddChild(bar);
-        card.AddChild(RoyalKit.Image(activity.Icon, Local(".icon").Grow(1), locked ? new Color(.7f, .7f, .7f) : null));
-        var title = spec.Label(key + ".title", activity.Title, 240, locked ? new Color("bcbab8") : null);
-        title.Position += new Vector2(0, 56) - origin;
+        var strip = new Panel { Position = bar.Position, Size = bar.Size, MouseFilter = MouseFilterEnum.Ignore };
+        strip.AddThemeStyleboxOverride("panel", RoyalKit.Slice("hub-card-bar", 12));
+        card.AddChild(strip);
+        card.AddChild(RoyalKit.Image(activity.Icon, new Rect2(22, bar.Position.Y + 8, 34, 34), locked ? new Color(.7f, .7f, .7f) : null));
+        var title = spec.Label("card.endless.title", activity.Title, w - 118, locked ? new Color("bcbab8") : null);
+        title.Position = new Vector2(78, bar.Position.Y + 37 - title.Baseline);
         card.AddChild(title);
-        card.AddChild(RoyalKit.Image("hub-chevron", Local(".chevron").Grow(2), locked ? new Color(.6f, .6f, .6f) : null));
+        card.AddChild(RoyalKit.Image("hub-chevron", new Rect2(w - 36, bar.Position.Y + 10, 19, 33), locked ? new Color(.6f, .6f, .6f) : null));
         if (activity.Locked == "In development")
         {
             var badge = spec.Rect("card.bossrush.badge");
             var at = new Rect2(badge.Position - spec.Rect("card.bossrush").Position, badge.Size);
+            var origin = spec.Rect("card.bossrush").Position;
             var plate = new Panel { Position = at.Position, Size = at.Size, MouseFilter = MouseFilterEnum.Ignore };
             plate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("hub-badge", 10));
             card.AddChild(plate);
             var icon = spec.Rect("card.bossrush.badge.icon");
-            card.AddChild(RoyalKit.Image("icon-tools", new Rect2(icon.Position - spec.Rect("card.bossrush").Position, icon.Size)));
+            card.AddChild(RoyalKit.Image("icon-tools", new Rect2(icon.Position - origin, icon.Size)));
             var label = spec.Label("card.bossrush.badge.label", "In development", 180);
-            label.Position -= spec.Rect("card.bossrush").Position;
+            label.Position -= origin;
             card.AddChild(label);
         }
         if (activity.Open != null) card.Pressed += () => { if (!locked) activity.Open(); };

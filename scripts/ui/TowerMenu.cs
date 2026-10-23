@@ -1,221 +1,163 @@
 using System;
+using System.Linq;
 using Godot;
 
-public partial class TowerMenu : Control
+/// <summary>
+/// The challenge tower on a painted board: the chosen floor's battlefield, enemy strength and rewards on the
+/// left; the climb on the right, ten floors at a time over the painted tower; Climb prepares the chosen floor.
+/// </summary>
+public partial class TowerMenu : RoyalBoard
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _floorListPanel = null!;
-	private PanelContainer _detailPanel = null!;
-	private Label _highestFloorLabel = null!;
-	private Label _statusLabel = null!;
-	private VBoxContainer _floorStack = null!;
+    private const int FloorsPerPage = 10;
+    private int _selectedFloor = 1;
+    private int _page;
 
-	// Detail panel references
-	private Label _detailFloorLabel = null!;
-	private VBoxContainer _detailFacts = null!;
-	private Button _deployButton = null!;
+    public TowerMenu() : base("Challenge Tower", "tower") { }
 
-	private int _selectedFloor = 1;
+    protected override void Build()
+    {
+        _selectedFloor = Math.Clamp(GameState.Instance.TowerHighestFloor + 1, 1, ChallengeTowerCatalog.MaxFloor);
+        _page = (_selectedFloor - 1) / FloorsPerPage;
+        base.Build();
+    }
 
-	public override void _Ready()
-	{
-		BuildUi();
-		_selectedFloor = Math.Max(1, Math.Min(GameState.Instance.TowerHighestFloor + 1, ChallengeTowerCatalog.MaxFloor));
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _floorListPanel, _detailPanel });
-	}
+    protected override void Compose()
+    {
+        var state = GameState.Instance;
+        var highest = state.TowerHighestFloor;
+        var stars = Enumerable.Range(1, ChallengeTowerCatalog.MaxFloor).Sum(state.GetTowerFloorStars);
+        Chip("result-star", stars.ToString(), $"{stars} of {ChallengeTowerCatalog.MaxFloor * 3} tower stars");
+        Chip("hubicon-tower", highest > 0 ? $"Best floor {highest}" : "No floors yet", "Highest floor cleared");
+        var body = Board.Body; var footer = Board.Footer;
+        // The left column starts below the banner hanging over the board's corner; its heading sits beside it.
+        var left = new Rect2(body.Position.X + 6, Board.Notch.End.Y - 2, 536, footer.Position.Y - 10 - Board.Notch.End.Y);
+        var right = new Rect2(left.End.X + 20, body.Position.Y + 10, body.End.X - left.End.X - 26, footer.Position.Y - 12 - body.Position.Y);
+        FloorDetail(left, new Rect2(Board.Notch.End.X + 6, body.Position.Y + 4, left.End.X - Board.Notch.End.X - 6, left.Position.Y - body.Position.Y - 6));
+        Climb(right);
+        Back(new Rect2(footer.Position, new Vector2(170, footer.Size.Y)));
+        NoticeAt(new Rect2(footer.Position.X + 184, footer.Position.Y, left.End.X - footer.Position.X - 184, footer.Size.Y));
+        var lockedFloor = IsLocked(_selectedFloor);
+        Action(new Rect2(right.Position.X, footer.Position.Y - 2, footer.End.X - right.Position.X, footer.Size.Y + 4), $"Climb floor {_selectedFloor}", "icon-swords-dark", Deploy, Kind.Gold,
+            !lockedFloor, lockedFloor ? "Clear the floor below to unlock" : $"Prepare for floor {_selectedFloor}", size: 21);
+    }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    private bool IsLocked(int floor) => floor > GameState.Instance.TowerHighestFloor + 1;
 
-	private void BuildUi()
-	{
+    private void FloorDetail(Rect2 column, Rect2 heading)
+    {
+        var floor = ChallengeTowerCatalog.GetFloor(_selectedFloor);
+        var stage = GameData.GetStage(floor.BaseStageNumber);
+        var locked = IsLocked(floor.Floor);
+        var x = column.Position.X; var y = column.Position.Y; var width = column.Size.X;
 
-        MedievalUi.Apply(this);
+        // The floor's battlefield.
+        var route = RouteCatalog.Normalize(stage?.MapId ?? "city");
+        var path = $"res://assets/ui/royal/missions/{route}.png";
+        Heading($"Floor {floor.Floor}", heading, 32);
+        var art = new Rect2(x, y, width, 162);
+        Picture(art, ResourceLoader.Exists(path) ? RoyalArt.Load(path) : null, locked);
+        Shade(new Rect2(art.Position.X + 3, art.End.Y - 56, art.Size.X - 6, 53));
+        Serif(stage != null ? $"{stage.MapName} · {stage.StageName}" : $"Stage {floor.BaseStageNumber}",
+            new Rect2(art.Position.X + 18, art.End.Y - 40, art.Size.X - 36, 32), 20);
+        if (locked) Image("icon-lock-small", new Rect2(art.End.X - 50, art.Position.Y + 16, 30, 36));
+        else if (GameState.Instance.GetTowerFloorStars(floor.Floor) is var won and > 0) Stars(new Vector2(art.End.X - 106, art.Position.Y + 18), won, 28);
 
-		// Title panel
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
-		titleRow.AddChild(new Label { Text = "Challenge Tower", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_highestFloorLabel = new Label
-		{
-			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		_highestFloorLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		titleRow.AddChild(_highestFloorLabel);
+        // Enemy strength.
+        y = art.End.Y + 12;
+        var modifiers = floor.ForcedModifierIds ?? Array.Empty<string>();
+        var facts = new[]
+        {
+            ("stat-health", "Enemy health", $"×{floor.EnemyHealthScale:0.0}", "Enemy health compared with the battlefield's campaign stage"),
+            ("stat-damage", "Enemy damage", $"×{floor.EnemyDamageScale:0.0}", "Enemy damage compared with the battlefield's campaign stage"),
+            ("icon-skull-red", "Modifiers", modifiers.Length == 0 ? "None" : modifiers.Length == 1 ? Pretty(modifiers[0]) : $"{modifiers.Length} active",
+                modifiers.Length == 0 ? "No battle modifiers" : string.Join(" · ", modifiers.Select(Pretty)))
+        };
+        var tileWidth = (width - 24) / 3;
+        for (var i = 0; i < facts.Length; i++)
+        {
+            var (icon, caption, value, hint) = facts[i];
+            var tile = new Rect2(x + i * (tileWidth + 12), y, tileWidth, 78);
+            Frame("tile", tile, 12).With(p => { p.TooltipText = hint; p.MouseFilter = MouseFilterEnum.Pass; });
+            Caps(caption, new Rect2(tile.Position.X + 14, tile.Position.Y + 8, tile.Size.X - 28, 26), 16, Soft);
+            Image(icon, new Rect2(tile.Position + new Vector2(12, 38), new Vector2(30, 30)));
+            Serif(value, new Rect2(tile.Position.X + 48, tile.Position.Y + 36, tile.Size.X - 56, 34), 22, new Color("f6e2ad"), weight: 700);
+        }
 
-		// Floor list panel (left)
-		_floorListPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(380f, 480f) };
-		AddChild(_floorListPanel);
-		var listOuter = new MarginContainer();
-		listOuter.AddThemeConstantOverride("margin_left", 8);
-		listOuter.AddThemeConstantOverride("margin_right", 8);
-		listOuter.AddThemeConstantOverride("margin_top", 8);
-		listOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_floorListPanel.AddChild(listOuter);
-		var listInner = new VBoxContainer();
-		listInner.AddThemeConstantOverride("separation", 4);
-		listOuter.AddChild(listInner);
-		listInner.AddChild(RealmUi.SectionTitle("Floors"));
-		var floorScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 420f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		// A hundred floors would push the floor details far down the page, so the list keeps its own scroll.
-		floorScroll.SetMeta(RealmModal.KeepScroll, true);
-		listInner.AddChild(floorScroll);
-		_floorStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_floorStack.AddThemeConstantOverride("separation", 6);
-		floorScroll.AddChild(_floorStack);
+        // Rewards.
+        y += 90;
+        var room = Section(new Rect2(x, y, width, column.End.Y - y), "Floor rewards", "icon-scroll-gold",
+            floor.Floor % 10 == 0 ? "Tenth-floor bonus" : null);
+        var rewards = new System.Collections.Generic.List<(Texture2D, string, string)>();
+        if (floor.RewardGold > 0) rewards.Add((RewardArt("gold"), $"{floor.RewardGold:N0}", $"{floor.RewardGold:N0} gold"));
+        if (floor.RewardFood > 0) rewards.Add((RewardArt("food"), floor.RewardFood.ToString(), $"{floor.RewardFood} rations"));
+        if (floor.RewardEssence > 0) rewards.Add((RewardArt("essence"), floor.RewardEssence.ToString(), $"{floor.RewardEssence} essence"));
+        if (!string.IsNullOrEmpty(floor.MilestoneRelicId))
+        {
+            var relic = GameData.GetEquipment(floor.MilestoneRelicId);
+            rewards.Add((RewardArt("relic", floor.MilestoneRelicId), relic?.DisplayName ?? Pretty(floor.MilestoneRelicId), "Milestone relic: " + (relic?.DisplayName ?? floor.MilestoneRelicId)));
+        }
+        var cell = Mathf.Min(170, room.Size.X / Math.Max(1, rewards.Count));
+        var start = room.Position.X + (room.Size.X - cell * rewards.Count) / 2;
+        for (var i = 0; i < rewards.Count; i++)
+        {
+            var at = new Rect2(start + i * cell, room.Position.Y - 6, cell, room.Size.Y + 10);
+            var holder = new Control { Position = at.Position, Size = at.Size, TooltipText = rewards[i].Item3, MouseFilter = MouseFilterEnum.Pass };
+            Live.AddChild(holder);
+            Image(rewards[i].Item1, new Rect2(at.Position, new Vector2(at.Size.Y, at.Size.Y)), locked ? new Color(1, 1, 1, .45f) : null);
+            Serif(rewards[i].Item2, new Rect2(at.Position.X + at.Size.Y + 6, at.Position.Y, at.Size.X - at.Size.Y - 10, at.Size.Y), 24, locked ? Soft : new Color("f6e2ad"), weight: 700);
+        }
+    }
 
-		// Detail panel (right)
-		_detailPanel = new PanelContainer { Position = new Vector2(420f, 122f), Size = new Vector2(836f, 480f) };
-		AddChild(_detailPanel);
-		var detailOuter = new MarginContainer();
-		detailOuter.AddThemeConstantOverride("margin_left", 16);
-		detailOuter.AddThemeConstantOverride("margin_right", 16);
-		detailOuter.AddThemeConstantOverride("margin_top", 16);
-		detailOuter.AddThemeConstantOverride("margin_bottom", 16);
-		_detailPanel.AddChild(detailOuter);
-		var detailStack = new VBoxContainer();
-		detailStack.AddThemeConstantOverride("separation", 12);
-		detailOuter.AddChild(detailStack);
+    private void Climb(Rect2 column)
+    {
+        var state = GameState.Instance;
+        var pages = Mathf.CeilToInt(ChallengeTowerCatalog.MaxFloor / (float)FloorsPerPage);
+        var picture = new Rect2(column.Position, column.Size);
+        var tower = ResourceLoader.Exists("res://assets/ui/royal/items/scene-tower.png") ? RoyalArt.Item("scene-tower") : RoyalArt.Item("activity-tower");
+        Picture(picture, tower);
 
-		_detailFloorLabel = RealmUi.Heading("", 24);
-		detailStack.AddChild(_detailFloorLabel);
-		_detailFacts = new VBoxContainer();
-		_detailFacts.AddThemeConstantOverride("separation", 10);
-		detailStack.AddChild(_detailFacts);
+        // The block of ten floors, top floor first, over the misty side of the painting.
+        var first = _page * FloorsPerPage + 1;
+        var last = Math.Min(ChallengeTowerCatalog.MaxFloor, first + FloorsPerPage - 1);
+        var band = new Rect2(picture.Position.X + 14, picture.Position.Y + 12, 252, 44);
+        Frame("hub-card-bar", band, 12);
+        Caps($"Floors {first}–{last}", new Rect2(band.Position.X + 30, band.Position.Y, band.Size.X - 60, band.Size.Y), 17, align: HorizontalAlignment.Center);
+        Pager(band.Grow(-4), _page, pages, page => { _page = page; Refresh(); }, "floors", dots: false);
+        var rows = last - first + 1;
+        var top = band.End.Y + 8;
+        var pitch = (picture.End.Y - 16 - top) / FloorsPerPage;
+        for (var i = 0; i < rows; i++)
+        {
+            var number = last - i;
+            var rect = new Rect2(band.Position.X, top + i * pitch, band.Size.X, pitch - 5);
+            var locked = IsLocked(number);
+            var cleared = number <= state.TowerHighestFloor;
+            var selected = number == _selectedFloor;
+            var floor = number;
+            var row = Card(rect, $"Floor {number}", () => { _selectedFloor = floor; Refresh(); }, selected, "season-locked", "mp-tab-selected", !locked);
+            row.TooltipText = locked ? "Clear the floor below to unlock" : cleared ? $"Floor {number} · {state.GetTowerFloorStars(number)} of 3 stars" : $"Floor {number} · next to climb";
+            Caps($"Floor {number}", new Rect2(rect.Position.X + 16, rect.Position.Y, 130, rect.Size.Y), 16, locked ? new Color("a49a8a") : selected ? new Color("fff2cf") : Engraved);
+            var mark = new Rect2(rect.End.X - 74, rect.Position.Y + (rect.Size.Y - 18) / 2, 62, 18);
+            if (locked) Image("icon-lock-small", new Rect2(rect.End.X - 34, rect.Position.Y + (rect.Size.Y - 22) / 2, 20, 22), new Color(1, 1, 1, .7f));
+            else if (cleared) Stars(mark.Position, state.GetTowerFloorStars(number), 18);
+            else Image("icon-crossed-swords", new Rect2(rect.End.X - 38, rect.Position.Y + (rect.Size.Y - 24) / 2, 24, 24));
+            // Milestone relics and tenth-floor gold are marked on the ladder.
+            var prize = ChallengeTowerCatalog.GetFloor(number);
+            if (!string.IsNullOrEmpty(prize.MilestoneRelicId)) Image(RewardArt("relic", prize.MilestoneRelicId), new Rect2(rect.Position.X + 132, rect.Position.Y + 2, rect.Size.Y - 4, rect.Size.Y - 4), locked ? new Color(1, 1, 1, .5f) : null);
+            else if (number % 10 == 0) Image("coin-small", new Rect2(rect.Position.X + 134, rect.Position.Y + 4, rect.Size.Y - 8, rect.Size.Y - 8), locked ? new Color(1, 1, 1, .5f) : null);
+        }
+    }
 
-		// Spacer pushes deploy button toward bottom
-		detailStack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
+    private void Stars(Vector2 at, int earned, float size)
+    {
+        for (var i = 0; i < 3; i++)
+            Image("result-star", new Rect2(at + new Vector2(i * (size + 2), 0), new Vector2(size, size)), i < earned ? null : new Color(.25f, .22f, .2f, .85f));
+    }
 
-		_deployButton = RealmUi.Button("sword", "Deploy", OnDeployPressed, true);
-		_deployButton.CustomMinimumSize = new Vector2(220f, 48f);
-		_deployButton.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
-		detailStack.AddChild(_deployButton);
-
-		// Status + nav
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
-
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
-		bottomRow.AddChild(mapBtn);
-	}
-
-	private void RefreshUi()
-	{
-		var gs = GameState.Instance;
-		var highest = gs.TowerHighestFloor;
-		_highestFloorLabel.Text = highest > 0 ? $"Floor {highest}" : "No floors cleared";
-
-		RebuildFloorList();
-		RefreshDetailPanel();
-	}
-
-	private void RebuildFloorList()
-	{
-		foreach (var child in _floorStack.GetChildren()) child.QueueFree();
-
-		var gs = GameState.Instance;
-		var highest = gs.TowerHighestFloor;
-
-		for (var floor = 1; floor <= ChallengeTowerCatalog.MaxFloor; floor++)
-		{
-			var capturedFloor = floor;
-			var stars = gs.GetTowerFloorStars(floor);
-			var isLocked = floor > highest + 1;
-			var isCleared = floor <= highest;
-
-			// Each floor is one selectable row: cleared floors show their stars, locked floors a lock.
-			var row = new RealmButton
-			{
-				Text = isCleared ? $"Floor {floor} · {stars}/3" : $"Floor {floor}",
-				ToggleMode = true,
-				ButtonPressed = capturedFloor == _selectedFloor,
-				Disabled = isLocked,
-				Alignment = HorizontalAlignment.Left,
-				Icon = isLocked ? RealmUi.Icon("lock") : isCleared ? HomeMapArt.Icon("star") : null,
-				IconAlignment = HorizontalAlignment.Right,
-				ExpandIcon = true,
-				CustomMinimumSize = new Vector2(0f, 44f),
-				TooltipText = isLocked ? "Clear the floor below to unlock" : isCleared ? $"{stars} of 3 stars" : "Next floor",
-				MouseDefaultCursorShape = CursorShape.PointingHand
-			};
-			row.AddThemeConstantOverride("icon_max_width", 22);
-			row.SetMeta("realm_toggle", true);
-			row.Pressed += () =>
-			{
-				_selectedFloor = capturedFloor;
-				RefreshUi();
-			};
-			if (RealmModal.Embedded(this)) ModalUi.StyleButton(row);
-			_floorStack.AddChild(row);
-		}
-	}
-
-	private void RefreshDetailPanel()
-	{
-		var gs = GameState.Instance;
-		var highest = gs.TowerHighestFloor;
-		var isLocked = _selectedFloor > highest + 1;
-		var def = ChallengeTowerCatalog.GetFloor(_selectedFloor);
-
-		RealmUi.SetDisplayText(_detailFloorLabel, $"Floor {def.Floor}");
-		RealmUi.Clear(_detailFacts);
-		var stage = GameData.GetStage(def.BaseStageNumber);
-		_detailFacts.AddChild(RealmUi.KeyValue("Battlefield", stage != null ? $"{stage.MapName} · {stage.StageName}" : $"Stage {def.BaseStageNumber}"));
-		_detailFacts.AddChild(RealmUi.KeyValue("Enemy strength", $"Health ×{def.EnemyHealthScale:0.0} · damage ×{def.EnemyDamageScale:0.0}"));
-		_detailFacts.AddChild(RealmUi.KeyValue("Modifiers", def.ForcedModifierIds is { Length: > 0 } ? string.Join(", ", def.ForcedModifierIds) : "None"));
-		if (!string.IsNullOrEmpty(def.MilestoneRelicId))
-			_detailFacts.AddChild(RealmUi.KeyValue("Milestone relic", GameData.GetEquipment(def.MilestoneRelicId)?.DisplayName ?? def.MilestoneRelicId, RealmUi.Gold));
-
-		var rewards = new HBoxContainer();
-		rewards.AddThemeConstantOverride("separation", 18);
-		var caption = RealmUi.Label("Rewards", 18, true);
-		caption.VerticalAlignment = VerticalAlignment.Center;
-		rewards.AddChild(caption);
-		var amounts = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
-		amounts.AddThemeConstantOverride("separation", 18);
-		rewards.AddChild(amounts);
-		if (def.RewardGold > 0) amounts.AddChild(HomeResourceUi.Amount("gold", $"{def.RewardGold:N0}", $"{def.RewardGold:N0} gold", 28));
-		if (def.RewardFood > 0) amounts.AddChild(HomeResourceUi.Amount("food", $"{def.RewardFood}", $"{def.RewardFood} rations", 28));
-		if (def.RewardEssence > 0) amounts.AddChild(HomeResourceUi.Amount("essence", $"{def.RewardEssence}", $"{def.RewardEssence} essence", 28));
-		_detailFacts.AddChild(rewards);
-
-		_deployButton.Disabled = isLocked;
-		_deployButton.Text = isLocked ? "Locked" : "Deploy";
-	}
-
-	private void OnDeployPressed()
-	{
-		var gs = GameState.Instance;
-		if (_selectedFloor > gs.TowerHighestFloor + 1)
-		{
-			_statusLabel.Text = "Floor is locked.";
-			return;
-		}
-
-		gs.PrepareTowerBattle(_selectedFloor);
-		SceneRouter.Instance.GoToLoadout();
-	}
+    private void Deploy()
+    {
+        if (IsLocked(_selectedFloor)) { Notify("Clear the floor below first."); return; }
+        GameState.Instance.PrepareTowerBattle(_selectedFloor);
+        SceneRouter.Instance.GoToLoadout();
+    }
 }

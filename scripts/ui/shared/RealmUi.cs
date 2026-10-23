@@ -72,19 +72,6 @@ public static class RealmUi
         return label;
     }
 
-    /// <summary>A muted name on the left with its value aligned right.</summary>
-    public static HBoxContainer KeyValue(string name, string value, Color? valueInk = null)
-    {
-        var row = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        row.AddThemeConstantOverride("separation", 12);
-        var key = Label(name, 18, true); key.AutowrapMode = TextServer.AutowrapMode.Off; row.AddChild(key);
-        var amount = Label(value, 18); amount.AutowrapMode = TextServer.AutowrapMode.Off; amount.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
-        amount.HorizontalAlignment = HorizontalAlignment.Right;
-        if (valueInk is { } ink) amount.AddThemeColorOverride("font_color", ink);
-        row.AddChild(amount);
-        return row;
-    }
-
     /// <summary>A calm, centred message for pages with nothing to show yet.</summary>
     public static VBoxContainer EmptyState(string icon, string title, string body = "")
     {
@@ -143,24 +130,6 @@ public static class RealmUi
         var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         panel.AddChild(stack);
         return stack;
-    }
-
-    public static HBoxContainer Header(Control root, string eyebrow, string title, Action back, string emblem = "flag")
-    {
-        var row = new HBoxContainer { Position = new Vector2(28, 20), Size = new Vector2(1224, 62) };
-        row.AddThemeConstantOverride("separation", 18);
-        root.AddChild(row);
-        row.AddChild(IconButton("back", "Return", back));
-        row.AddChild(new HeraldicEmblem { Symbol = emblem });
-        var titles = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        titles.AddThemeConstantOverride("separation", 0);
-        titles.AddChild(Label(eyebrow.ToUpperInvariant(), 12, true));
-        titles.AddChild(Heading(title, 27));
-        row.AddChild(titles);
-        row.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", GameState.Instance.Gold.ToString("N0"), new Vector2(24, 24)));
-        row.AddChild(new FoodBalance());
-        row.AddChild(IconButton("gear", "Settings", () => SceneRouter.Instance.GoToSettings()));
-        return row;
     }
 
     public static HBoxContainer Tabs(Control host, Action<int> select, params string[] labels)

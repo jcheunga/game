@@ -55,8 +55,8 @@ The battle shares the soldier scale and two-screen field everywhere (see
   `gui/common/default_scroll_deadzone` lets a wobbly tap still press it.
 - Activity pages scroll as one page: `RealmModal.RelaxMinimums` turns a list's own
   vertical scroll off inside the page scroll, so a panel grows to show all of its
-  rows. A list too long for that (the tower's hundred floors) sets
-  `RealmModal.KeepScroll`; once it reaches its end, the drag carries on into the page.
+  rows. The More hub's painted boards (`RoyalBoard`) don't scroll at all: long lists
+  page (the tower's hundred floors are ten to a page).
 - Touch coordinates are transformed through the camera. A unit walks out of the
   war wagon's door when its card is tapped and released, never from a field tap;
   lifting off the card, canceled touches, pause, focus loss, and resizing must

@@ -1,0 +1,38 @@
+[
+ {
+  "id": "scene-raid_grave_lord",
+  "out": "art/royal/gen/scenes/raid_grave_lord.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a large illustration of a weekly raid boss for the raid screen of a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Grave Lord Ascendant: a gaunt undead lich king in a rusted crown and tattered royal robes, a scythe of black iron, glowing teal eyes, rising from an open crypt in a moonlit graveyard cathedral, ghostly teal witch-fire.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic lighting with deep shadows, rich colour, menacing and epic.\nComposition: landscape 16:9. The boss fills the RIGHT 60% of the picture, seen from a low angle; the LEFT 40% and the bottom third are dark, quiet atmosphere with no important detail (the boss's name and story are written there).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-raid_iron_warden",
+  "out": "art/royal/gen/scenes/raid_iron_warden.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a large illustration of a weekly raid boss for the raid screen of a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Iron Warden Eternal: a colossal ancient iron golem knight with riveted plate armour and a blazing forge-heart glowing through cracks in its chest, a great hammer, standing in a burning foundry fortress with molten metal channels.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic lighting with deep shadows, rich colour, menacing and epic.\nComposition: landscape 16:9. The boss fills the RIGHT 60% of the picture, seen from a low angle; the LEFT 40% and the bottom third are dark, quiet atmosphere with no important detail (the boss's name and story are written there).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-raid_dread_sovereign",
+  "out": "art/royal/gen/scenes/raid_dread_sovereign.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a large illustration of a weekly raid boss for the raid screen of a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Dread Sovereign Reborn: a towering armoured tyrant king in black and gold plate with a cracked crown and a dark greatsword, a tattered crimson cloak, on the steps of a ruined citadel throne hall under a stormy red sky.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic lighting with deep shadows, rich colour, menacing and epic.\nComposition: landscape 16:9. The boss fills the RIGHT 60% of the picture, seen from a low angle; the LEFT 40% and the bottom third are dark, quiet atmosphere with no important detail (the boss's name and story are written there).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-raid_plague_archon",
+  "out": "art/royal/gen/scenes/raid_plague_archon.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a large illustration of a weekly raid boss for the raid screen of a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Plague Archon Supreme: a hooded plague sorcerer in a beaked bronze mask with a swinging censer pouring sickly green smoke, rotting banners and a quarantined walled town behind, eerie green and teal light.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic lighting with deep shadows, rich colour, menacing and epic.\nComposition: landscape 16:9. The boss fills the RIGHT 60% of the picture, seen from a low angle; the LEFT 40% and the bottom third are dark, quiet atmosphere with no important detail (the boss's name and story are written there).\nConstraints: no text, no UI, no frame, no watermark."
+ }
+]

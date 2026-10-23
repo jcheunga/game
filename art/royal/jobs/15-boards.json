@@ -1,0 +1,99 @@
+[
+ {
+  "id": "board-banners",
+  "out": "art/royal/gen/boards/banners.png",
+  "inputs": [
+   "assets/ui/royal/plates/achievements.png"
+  ],
+  "prompt": "Use case: precise-object-edit\nEdit target: the attached clean, text-free layered-UI plate of a Crownroad game screen (a wooden board in a brass frame, with a navy enamel header carrying a castle skyline, hanging teal banners and lanterns on crates at both sides). Make it a plain, reusable board.\nKeep the exact same image size, composition, framing, perspective, lighting, colours, materials and painting style, aligned with the original so it can be overlaid on it pixel for pixel.\nRemove ONLY these three things, filling each with what is naturally there:\n- the gold star-and-laurel emblem at the left end of the navy header: the plain navy enamel band continues there, with the same texture and gradient;\n- the row of six dark tab plates directly below the header: the header's lower gold rail stays exactly where it is, and the large wooden board below continues straight up to meet that rail, with the same horizontal planks, grain, seams and soft vignette;\n- the empty slate button plate at the bottom centre of the board: the wooden planks continue there.\nKeep unchanged: the outer brass frame, the castle skyline painting at the right of the header, the red close button at the top right, the hanging teal banners with gold crowns at the top left and down both sides, the lanterns, crates, barrels and the rolled map at the bottom corners, and the transparent area outside the frame (PNG with transparent background).\nNo text, letters, numbers or icons anywhere. No new objects, no blur patches, no smudges, no ghost outlines of the removed parts."
+ },
+ {
+  "id": "board-camp",
+  "out": "art/royal/gen/boards/camp.png",
+  "inputs": [
+   "assets/ui/royal/plates/season.png"
+  ],
+  "prompt": "Use case: precise-object-edit\nEdit target: the attached clean, text-free layered-UI plate of a Crownroad game screen (a wooden board in a brass frame under a navy enamel header with a castle skyline, with a lantern, gold coins, a scroll and crates spilling over the bottom-left corner). Make it a plain, reusable board.\nKeep the exact same image size, composition, framing, perspective, lighting, colours, materials and painting style, aligned with the original so it can be overlaid on it pixel for pixel.\nRemove ONLY these things, filling each with what is naturally there:\n- the bronze helmet with the blue plume at the left end of the navy header: the plain navy enamel band continues there, with the same texture and gradient;\n- the whole parchment band below the header, together with the teal banner and crest on its left and the burning-castle picture on its right: the large wooden board continues straight up to the header's lower gold rail, with the same horizontal planks, grain and seams;\n- the gold rail with the five dark hexagon badges and diamonds running across the board: plain planks there;\n- the empty slate-blue button plate at the bottom right: plain planks there.\nKeep unchanged: the outer brass frame and its edges, the castle skyline painting at the right of the header, the red close button at the top right, the lantern, coins, scroll, map, crates and teal cloth at the bottom-left corner, the crates at the right edge, and the transparent area outside the frame (PNG with transparent background).\nNo text, letters, numbers or icons anywhere. No new objects, no blur patches, no smudges, no ghost outlines of the removed parts."
+ },
+ {
+  "id": "emblems-a",
+  "out": "art/royal/gen/emblems/sheet-a.png",
+  "inputs": [
+   "art/royal/gen/refs/emblems.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a sheet of nine header emblems for the menus of a medieval fantasy strategy game (Crownroad: Siege of Ash). Each emblem sits at the left end of a navy enamel title bar, beside a large gold title.\nStyle/medium: match the two attached emblems exactly (a gold anvil with crossed hammers, and a bronze knight's helmet with a blue plume): sculpted polished gold and bronze metal, painterly 3D game art, warm rim light from the upper left, deep brown shadows, a crisp dark outline, a few cobalt-blue or teal enamel accents at most. Each emblem is a single compact object, readable at 80 pixels.\nLayout: a 3 x 3 grid of nine separate emblems on a fully transparent background (alpha), each centred in its own cell with clear empty space around it, all the same visual size. Reading order, left to right, top to bottom:\n1. a stone castle tower (a rook) with a small pennant flying from its battlements;\n2. a compass rose laid over a half-rolled map;\n3. a gift box tied with a ribbon bow;\n4. an open treasure chest heaped with gold coins;\n5. a radiant eight-pointed star rising out of a laurel wreath;\n6. a heraldic shield with two crossed banners behind it;\n7. two armoured gauntlets clasping hands;\n8. two crossed swords behind a round shield;\n9. a trophy cup with two handles inside a laurel wreath.\nConstraints: no text, no letters, no numbers, no frames, no backgrounds, no cast shadows on the ground, no watermark."
+ },
+ {
+  "id": "emblems-b",
+  "out": "art/royal/gen/emblems/sheet-b.png",
+  "inputs": [
+   "art/royal/gen/refs/emblems.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a sheet of nine header emblems for the menus of a medieval fantasy strategy game (Crownroad: Siege of Ash). Each emblem sits at the left end of a navy enamel title bar, beside a large gold title.\nStyle/medium: match the two attached emblems exactly (a gold anvil with crossed hammers, and a bronze knight's helmet with a blue plume): sculpted polished gold and bronze metal, painterly 3D game art, warm rim light from the upper left, deep brown shadows, a crisp dark outline, a few cobalt-blue, teal or ruby accents at most. Each emblem is a single compact object, readable at 80 pixels.\nLayout: a 3 x 3 grid of nine separate emblems on a fully transparent background (alpha), each centred in its own cell with clear empty space around it, all the same visual size. Reading order, left to right, top to bottom:\n1. a rolled parchment scroll sealed with a red wax seal, a dagger crossed behind it;\n2. a horned skull helmet of a dark warlord, in bronze;\n3. a snarling dragon's head in gold with ruby eyes;\n4. a festival star with streaming ribbons;\n5. a brass lantern with a warm glowing flame;\n6. a royal crown with a ruby;\n7. a sand hourglass in a gold frame;\n8. a sack of grain tied with cord beside a loaf of bread;\n9. a war horn bound in gold bands.\nConstraints: no text, no letters, no numbers, no frames, no backgrounds, no cast shadows on the ground, no watermark."
+ },
+ {
+  "id": "scene-tower",
+  "out": "art/royal/gen/scenes/tower.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a large illustration that fills a panel on the Challenge Tower screen of a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: a colossal ancient stone challenge tower rising into a stormy dusk sky, many tiers of battlements, lit arrow-slit windows climbing in a spiral, teal banners with gold crowns on the lower tiers, a glowing beacon fire at the very top, torch-lit gate and a winding stair at its foot, distant castle hills below.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern and torch light with cool teal-blue shadows, rich colour.\nComposition: square (1:1). The tower stands in the RIGHT 55% of the picture and runs from the bottom edge almost to the top; the LEFT 45% is open misty sky and dim hills with no important detail (a column of labels covers it).\nConstraints: no text, no UI, no frame, no watermark, no people in the foreground."
+ },
+ {
+  "id": "scene-progression",
+  "out": "art/royal/gen/activities/progression.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: an awakening shrine in a vaulted stone chapel: a knight's armour stand bathed in a column of golden light, five glowing stars floating above it, teal banners and candles, a wagon's carved shield on a stand to one side.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-expedition-patrol",
+  "out": "art/royal/gen/scenes/expedition-patrol.png",
+  "inputs": [
+   "assets/ui/royal/items/activity-expeditions.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an expedition card in a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Border Patrol: two mounted scouts in teal cloaks with lanterns riding along a palisade on a frontier ridge at golden dusk, a watchtower and a road winding into wild hills.\nStyle/medium: match the attached activity illustration exactly: painterly high-detail 3D game art, warm lantern light with cool teal shadows, rich colour.\nComposition: landscape 16:9, subject in the upper two thirds, the bottom quarter calm ground (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-expedition-scavenge",
+  "out": "art/royal/gen/scenes/expedition-scavenge.png",
+  "inputs": [
+   "assets/ui/royal/items/activity-expeditions.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an expedition card in a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Ruin Scavenge: caravan foragers with lanterns hauling sacks of grain and crates out of a crumbling, overgrown keep at misty dawn, a cart waiting by a broken arch.\nStyle/medium: match the attached activity illustration exactly: painterly high-detail 3D game art, warm lantern light with cool teal shadows, rich colour.\nComposition: landscape 16:9, subject in the upper two thirds, the bottom quarter calm ground (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "scene-expedition-dungeon",
+  "out": "art/royal/gen/scenes/expedition-dungeon.png",
+  "inputs": [
+   "assets/ui/royal/items/activity-expeditions.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an expedition card in a medieval fantasy strategy game (Crownroad: Siege of Ash).\nSubject: Dungeon Delve: three armoured adventurers with torches descending worn stone stairs into a vast vault, a glowing relic chest and gold glinting far below, carved pillars and old chains.\nStyle/medium: match the attached activity illustration exactly: painterly high-detail 3D game art, warm torch light with deep teal-blue shadows, rich colour.\nComposition: landscape 16:9, subject in the upper two thirds, the bottom quarter calm floor (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "sheet-honours",
+  "out": "art/royal/gen/sheets/honours.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a sheet of nine pictures for a medieval fantasy strategy game (Crownroad: Siege of Ash): one resupply pack, five arena rank insignia and three guild perk symbols.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich metals and enamel, warm rim light from the upper left, crisp detail.\nLayout: a 3 x 3 grid of nine separate objects on a fully transparent background (alpha), each centred in its own cell, filling about 80% of the cell, nothing cropped, clear space between cells. Reading order, left to right, top to bottom:\n1. a campaign resupply crate: an open wooden crate with gold coins, grain sacks and a war banner;\n2. BRONZE arena rank: a bronze shield-shaped insignia with a single sword;\n3. SILVER arena rank: a silver shield insignia with crossed swords and small wings;\n4. GOLD arena rank: a gold shield insignia with crossed swords, wings and a laurel;\n5. PLATINUM arena rank: a pale platinum shield insignia with crossed swords, large wings and a crown;\n6. DIAMOND arena rank: an ice-blue crystal shield insignia with crossed swords, great wings, a crown and glowing diamonds;\n7. guild vitality: a ruby heart set on a small round gold shield;\n8. guild haste: a winged gold hourglass;\n9. guild fortune: a glowing teal relic gem in a gold clover setting.\nConstraints: no text, no letters, no numbers, no frames, no backgrounds, no ground shadow plates, no watermark."
+ },
+ {
+  "id": "sheet-bounties",
+  "out": "art/royal/gen/sheets/bounties.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/03-relics-armory.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: a sheet of nine bounty pictures for the bounty board of a medieval fantasy strategy game (Crownroad: Siege of Ash), each showing the bounty's objective, shown on wanted-poster cards.\nStyle/medium: premium painted 3D-rendered game item art matching the item pictures in the attached reference screen: rich materials, warm rim light from the upper left, crisp detail.\nLayout: a 3 x 3 grid of nine separate objects on a fully transparent background (alpha), each centred in its own cell, filling about 80% of the cell, nothing cropped, clear space between cells. Reading order, left to right, top to bottom:\n1. defeat enemies: two crossed swords over a cracked green-glowing enemy skull;\n2. deploy troops: a war banner on a pole with a small round shield and spear;\n3. cast spells: an open spellbook with a swirling blue arcane flame above it;\n4. clear stages: a rolled map with a red flag pinned in it;\n5. earn gold: a tipped-over purse of gold coins;\n6. win arena battles: a knight's tournament helm with a laurel wreath;\n7. survive endless waves: a sand hourglass wrapped in a teal banner;\n8. defeat a boss: a horned boss skull mounted on a small trophy shield;\n9. complete an expedition: a compass on a leather backpack.\nConstraints: no text, no letters, no numbers, no frames, no backgrounds, no ground shadow plates, no watermark."
+ }
+]

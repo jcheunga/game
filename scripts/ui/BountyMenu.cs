@@ -1,228 +1,75 @@
 using System;
 using Godot;
 
-public partial class BountyMenu : Control
+/// <summary>
+/// Today's bounties on a painted board, as three wanted posters: the objective's picture, its progress, the
+/// reward and Claim. The board resets at midnight UTC.
+/// </summary>
+public partial class BountyMenu : RoyalBoard
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _bountyCard0 = null!;
-	private PanelContainer _bountyCard1 = null!;
-	private PanelContainer _bountyCard2 = null!;
-	private Label _statusLabel = null!;
+    private static readonly Color Parchment = new("2a1608");
+    private static readonly Color Faded = new("5a4330");
 
-	// Per-card UI references
-	private readonly Label[] _titleLabels = new Label[3];
-	private readonly Label[] _descLabels = new Label[3];
-	private readonly ProgressBar[] _progressBars = new ProgressBar[3];
-	private readonly Label[] _progressLabels = new Label[3];
-	private readonly HBoxContainer[] _rewardRows = new HBoxContainer[3];
-	private readonly Button[] _claimButtons = new Button[3];
+    public BountyMenu() : base("Bounty Board", "bounties") { }
 
-	public override void _Ready()
-	{
-		BuildUi();
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _bountyCard0, _bountyCard1, _bountyCard2 });
-	}
+    protected override void Compose()
+    {
+        var left = DateTime.UtcNow.Date.AddDays(1) - DateTime.UtcNow;
+        Chip("emblem-hourglass", left.TotalHours >= 1 ? $"Resets in {(int)left.TotalHours} h" : $"Resets in {left.Minutes} min", "New bounties are posted at midnight UTC");
+        var body = Board.Body; var footer = Board.Footer;
+        var bounties = BountyBoardCatalog.GetDailyBounties(DateTime.UtcNow);
+        // The posters start beside the banner hanging over the board's corner.
+        var row = new Rect2(Board.Notch.End.X + 6, body.Position.Y + 10, body.End.X - Board.Notch.End.X - 12, footer.Position.Y - 12 - body.Position.Y);
+        var width = (row.Size.X - 2 * 20) / 3;
+        for (var i = 0; i < BountyBoardCatalog.DailyBountyCount; i++)
+        {
+            var rect = new Rect2(row.Position.X + i * (width + 20), row.Position.Y, width, row.Size.Y);
+            if (i < bounties.Length) Poster(rect, bounties[i]);
+            else Empty(rect);
+        }
+        Back(new Rect2(footer.Position, new Vector2(170, footer.Size.Y)));
+        Action(new Rect2(footer.Position.X + 184, footer.Position.Y, 176, footer.Size.Y), "Armory", "icon-armory", () => SceneRouter.Instance.GoToShop(), size: 17);
+        NoticeAt(new Rect2(footer.Position.X + 376, footer.Position.Y, footer.Size.X - 376, footer.Size.Y));
+    }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    private void Poster(Rect2 rect, BountyDefinition bounty)
+    {
+        var state = GameState.Instance;
+        var progress = Math.Min(state.GetBountyProgress(bounty.Id), bounty.TargetCount);
+        var completed = state.IsBountyCompleted(bounty.Id);
+        var ready = progress >= bounty.TargetCount && !completed;
+        Frame("paper-clean", rect, 28);
+        var x = rect.Position.X + 24; var width = rect.Size.X - 48;
+        Caps(completed ? "Claimed" : ready ? "Reward ready" : "Wanted", new Rect2(x, rect.Position.Y + 18, width, 26), 16, completed ? new Color("3f6a34") : new Color("7a1f14"), HorizontalAlignment.Center);
+        var art = ResourceLoader.Exists($"res://assets/ui/royal/items/bounty-{bounty.TrackingType}.png") ? RoyalArt.Item("bounty-" + bounty.TrackingType) : RoyalArt.Item("activity-bounties");
+        Image(art, new Rect2(rect.GetCenter().X - 78, rect.Position.Y + 48, 156, 150), completed ? new Color(1, 1, 1, .55f) : null);
+        Caps(bounty.Title, new Rect2(x, rect.Position.Y + 204, width, 34), 21, Parchment, HorizontalAlignment.Center).ShadowOffset = Vector2.Zero;
+        Paragraph(bounty.Description, new Rect2(x, rect.Position.Y + 240, width, 52), 2, 19, Faded, HorizontalAlignment.Center)
+            .AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        var track = new Rect2(x + 8, rect.Position.Y + 304, width - 16, 14);
+        Meter(track, progress / (float)Math.Max(1, bounty.TargetCount));
+        Caps($"{progress:N0}/{bounty.TargetCount:N0}", new Rect2(x, track.End.Y + 2, width, 26), 16, Parchment, HorizontalAlignment.Center).ShadowOffset = Vector2.Zero;
+        var reward = $"+{bounty.RewardAmount:N0} {bounty.RewardType.ToLowerInvariant()}";
+        var rewardLabel = RoyalText.Serif(reward, 21, Parchment, 700);
+        rewardLabel.ShadowOffset = Vector2.Zero;
+        var group = 44 + rewardLabel.TextWidth(rewardLabel.FontSize);
+        var left = rect.GetCenter().X - group / 2;
+        Image(RewardArt(bounty.RewardType), new Rect2(left, rect.End.Y - 118, 38, 36));
+        Place(rewardLabel, new Rect2(left + 44, rect.End.Y - 120, group - 40, 40));
+        var id = bounty.Id;
+        Action(new Rect2(x, rect.End.Y - 72, width, 48), completed ? "Claimed" : "Claim", null, () =>
+        {
+            var claimed = GameState.Instance.TryClaimBounty(id, out var message);
+            AudioDirector.Claimed(claimed);
+            Notify(message);
+            if (claimed) Refresh();
+        }, completed ? Kind.Claimed : ready ? Kind.Gold : Kind.Slate, ready,
+            completed ? "Already claimed today" : ready ? $"Claim {reward}" : $"{bounty.TargetCount - progress:N0} to go", size: 18, name: $"Claim {bounty.Title}");
+    }
 
-	private void BuildUi()
-	{
-
-        MedievalUi.Apply(this);
-
-		// Title panel
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
-		titleRow.AddChild(new Label { Text = "Bounty Board", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		var dateLabel = new Label
-		{
-			Text = BountyBoardCatalog.GetDateKey(),
-			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		dateLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		titleRow.AddChild(dateLabel);
-
-		// Bounty cards
-		_bountyCard0 = BuildBountyCard(0, new Vector2(24f, 122f));
-		_bountyCard1 = BuildBountyCard(1, new Vector2(434f, 122f));
-		_bountyCard2 = BuildBountyCard(2, new Vector2(844f, 122f));
-
-		// Status label
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
-
-		// Bottom nav
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
-		bottomRow.AddChild(mapBtn);
-		var armoryBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
-		armoryBtn.Pressed += () => SceneRouter.Instance.GoToShop();
-		bottomRow.AddChild(armoryBtn);
-	}
-
-	private PanelContainer BuildBountyCard(int index, Vector2 position)
-	{
-		var card = new PanelContainer { Position = position, Size = new Vector2(396f, 480f) };
-		AddChild(card);
-
-		var outer = new MarginContainer();
-		outer.AddThemeConstantOverride("margin_left", 12);
-		outer.AddThemeConstantOverride("margin_right", 12);
-		outer.AddThemeConstantOverride("margin_top", 12);
-		outer.AddThemeConstantOverride("margin_bottom", 12);
-		card.AddChild(outer);
-
-		var stack = new VBoxContainer();
-		stack.AddThemeConstantOverride("separation", 10);
-		outer.AddChild(stack);
-        stack.AddChild(new HeraldicEmblem { Symbol = index == 0 ? "crown" : index == 1 ? "mountain" : "sword", CustomMinimumSize = new Vector2(78, 78), SizeFlagsHorizontal = SizeFlags.ShrinkCenter });
-
-		_titleLabels[index] = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		RealmUi.Display(_titleLabels[index], 24);
-        _titleLabels[index].AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        stack.AddChild(_titleLabels[index]);
-
-		_descLabels[index] = new Label
-		{
-			HorizontalAlignment = HorizontalAlignment.Center,
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			// Two lines keep the progress rows aligned across all three cards.
-			CustomMinimumSize = new Vector2(0f, 60f)
-		};
-		_descLabels[index].SetMeta(RealmModal.KeepMinimum, true);
-		_descLabels[index].AddThemeColorOverride("font_color", ModalUi.Muted);
-		stack.AddChild(_descLabels[index]);
-
-		// Spacer
-		stack.AddChild(new Control { CustomMinimumSize = new Vector2(0f, 8f) });
-
-		_progressBars[index] = new ProgressBar
-		{
-			CustomMinimumSize = new Vector2(0f, 10f),
-			MinValue = 0,
-			MaxValue = 1,
-			Value = 0,
-			ShowPercentage = false
-		};
-		stack.AddChild(_progressBars[index]);
-
-		_progressLabels[index] = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-		stack.AddChild(_progressLabels[index]);
-
-		// Spacer
-		stack.AddChild(new Control { CustomMinimumSize = new Vector2(0f, 8f) });
-
-		var rewardCenter = new CenterContainer();
-		stack.AddChild(rewardCenter);
-		_rewardRows[index] = new HBoxContainer();
-		_rewardRows[index].AddThemeConstantOverride("separation", 8);
-		rewardCenter.AddChild(_rewardRows[index]);
-
-		// Spacer pushes button toward bottom
-		stack.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
-
-		_claimButtons[index] = new RealmButton { Text = "Claim", CustomMinimumSize = new Vector2(180f, 48f), SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
-		var capturedIndex = index;
-		_claimButtons[index].Pressed += () => OnClaimPressed(capturedIndex);
-		stack.AddChild(_claimButtons[index]);
-
-		return card;
-	}
-
-	private void RefreshUi()
-	{
-		var bounties = BountyBoardCatalog.GetDailyBounties(DateTime.UtcNow);
-		var gs = GameState.Instance;
-
-		for (var i = 0; i < 3; i++)
-		{
-			if (i >= bounties.Length)
-			{
-				RealmUi.SetDisplayText(_titleLabels[i], "No bounty");
-				_descLabels[i].Text = "";
-				_progressLabels[i].Text = "";
-				_progressBars[i].Value = 0;
-				foreach (var child in _rewardRows[i].GetChildren()) child.QueueFree();
-				_claimButtons[i].Disabled = true;
-				continue;
-			}
-
-			var def = bounties[i];
-			var progress = gs.GetBountyProgress(def.Id);
-			var completed = gs.IsBountyCompleted(def.Id);
-			var reachedTarget = progress >= def.TargetCount;
-
-			RealmUi.SetDisplayText(_titleLabels[i], def.Title);
-			_descLabels[i].Text = def.Description;
-			_progressBars[i].MaxValue = def.TargetCount;
-			_progressBars[i].Value = Math.Min(progress, def.TargetCount);
-			_progressLabels[i].Text = $"{Math.Min(progress, def.TargetCount):N0}/{def.TargetCount:N0}";
-			RebuildRewardRow(i, def.RewardType, "", $"+{def.RewardAmount:N0} {CapitalizeRewardType(def.RewardType).ToLowerInvariant()}");
-			_claimButtons[i].Disabled = !reachedTarget || completed;
-			_claimButtons[i].Text = completed ? "Claimed" : "Claim";
-			// A finished bounty's claim becomes the card's primary action.
-			if (reachedTarget && !completed) _claimButtons[i].SetMeta("realm_primary", true);
-			else _claimButtons[i].RemoveMeta("realm_primary");
-			if (RealmModal.Embedded(this)) ModalUi.StyleButton(_claimButtons[i]);
-		}
-	}
-
-	private void OnClaimPressed(int index)
-	{
-		var bounties = BountyBoardCatalog.GetDailyBounties(DateTime.UtcNow);
-		if (index >= bounties.Length) return;
-
-		var def = bounties[index];
-		if (AudioDirector.Claimed(GameState.Instance.TryClaimBounty(def.Id, out var message)))
-		{
-			_statusLabel.Text = message;
-			RefreshUi();
-		}
-		else
-		{
-			_statusLabel.Text = message;
-		}
-	}
-
-	private void RebuildRewardRow(int index, string rewardType, string rewardItemId, string text)
-	{
-		foreach (var child in _rewardRows[index].GetChildren()) child.QueueFree();
-		_rewardRows[index].AddChild(UiBadgeFactory.CreateRewardBadge(rewardType, rewardItemId, text, new Vector2(36f, 36f)));
-		var rewardLabel = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-		rewardLabel.AddThemeColorOverride("font_color", RealmUi.Gold);
-		_rewardRows[index].AddChild(rewardLabel);
-	}
-
-	private static string CapitalizeRewardType(string rewardType)
-	{
-		if (string.IsNullOrWhiteSpace(rewardType))
-		{
-			return "Reward";
-		}
-
-		return char.ToUpperInvariant(rewardType[0]) + rewardType[1..].ToLowerInvariant();
-	}
+    private void Empty(Rect2 rect)
+    {
+        Frame("paper-clean", rect, 28);
+        Caps("No bounty", new Rect2(rect.Position.X, rect.GetCenter().Y - 20, rect.Size.X, 40), 20, Faded, HorizontalAlignment.Center).ShadowOffset = Vector2.Zero;
+    }
 }

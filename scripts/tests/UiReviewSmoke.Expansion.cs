@@ -37,7 +37,7 @@ public partial class UiReviewSmoke
             Check(state.Food==food && Walk(menu).OfType<MapPathCanvas>().Single().MapOffset==map,"Progression actions preserve the map and travel supplies");
             menu.CloseHomeModal();SceneRouter.Instance.GoToBossRush();await Wait(.3);
             AuditText("Expansion / boss rush");await Capture("04-boss-rush");
-            Check(Walk(menu).OfType<Label>().Count(l=>l.Text.Contains(" gold") && l.Text.Contains(" · Lv "))==14,"Boss rush menu lists every commander with level and reward");
+            Check(Walk(menu).OfType<Control>().Count(c=>(c.TooltipText.Length>0?c.TooltipText:c.AccessibilityName) is var t && t.Contains(" gold") && t.Contains(" · Lv "))==14,"Boss rush menu lists every commander with level and reward");
             await Tap("Start boss rush");await Wait(.5);
             var battle=(BattleController)GetTree().CurrentScene;battle.SetPhysicsProcess(false);
             Check(state.CurrentBattleMode==BattleRunMode.BossRush,"Native boss-rush launch enters its dedicated battle mode");

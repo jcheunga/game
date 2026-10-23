@@ -23,10 +23,39 @@ positions measured on it.
    (`RoyalButton`) over it. Text uses Cinzel for engraved capitals and Crimson Pro for book text
    (`assets/fonts`, OFL); large titles use the gold gradient shader `assets/shaders/royal_gold_text.gdshader`.
 
-Screens that had no concept (tower, arena, guild and the other activities, inspectors, dialogs) keep
-their layouts and take the same chrome: `ModalSurface` draws the kit's modal frame, navy and gold buttons, tabs,
-tiles and parchment, `RealmModal` uses the concept header with its castle skyline and a gold title, and
-`RealmUi` uses the concept fonts.
+The More hub's activities that had no concept (tower, bounties, boss rush, raid, event, expeditions, daily
+gifts, progression, guild, friends, arena, rankings) are painted **boards** (`royal/RoyalBoard.cs`,
+below). Inspectors, dialogs and the few remaining screens without a concept keep their layouts and take the same
+chrome: `ModalSurface` draws the kit's modal frame, navy and gold buttons, tabs, tiles and parchment, `RealmModal`
+uses the concept header with its castle skyline and a gold title, and `RealmUi` uses the concept fonts.
+
+## Boards
+
+A board is a concept plate repainted by Codex into a plain, reusable one (`art/royal/jobs/15-boards.json`): the
+frame, the navy header with its castle skyline and the props over its corners stay, the screen's own panels go.
+`board-banners` comes from the achievements plate (teal banners down both sides, lanterns and crates in the
+bottom corners); `board-camp` from the season plate (lantern, coins, scroll and crates over the bottom-left).
+`RoyalBoard` knows each board's geometry: the body, the footer row clear of the props, the corner the props cover
+and, on the banners board, the top-left corner its hanging banner covers (row captions sit beside it, panels
+start below it). A screen subclasses it with a title and a header emblem and composes its sections in `Compose`
+from kit pieces at canvas positions, as the concept screens do: `Section` (gold-rimmed panel with an engraved
+heading), `Picture` (a painting in a gold rim), `Plaque`, `Meter`, `Tab`, `Card`, `Action` (gold, navy, slate,
+claim and claimed buttons with an optional price), `Pager`, `RewardArt` and header `Chip`s. Everything fits the
+canvas; long lists page instead of scrolling. `Refresh` rebuilds the live layer; `Notify` shows a result on the
+screen's notice line and keeps it through a refresh.
+
+The art behind them, all Codex-painted and installed by `art/royal/boards.py` (`boards`, `emblems`, `sheets`,
+`scenes`, `kit`):
+- header emblems in the forge anvil's gold (`kit/emblem-<name>`, two 3 x 3 sheets);
+- arena rank, guild perk and bounty objective pictures (`items/arena-*`, `perk-*`, `bounty-*`),
+  cut from 3 x 3 sheets by their opaque blobs (a neighbour reaching into a cell stays with its own object);
+- scenes: the tower, the three expedition destinations and the four raid bosses (`items/scene-*`), and the hub's
+  adventure and progression activities (`items/activity-*`, `jobs/16-adventure-activities.json`, installed by
+  `pictures.py`; the hub prefers them to the concept's card cuts, which have their labels painted in);
+- `kit/paper-clean`, the codex parchment without its page buttons, for the bounty posters.
+
+The More hub lays its cards out to fit too: three to a row for up to six activities, four beyond that, a short
+last row centred.
 
 Buttons have no hover highlight: hovering looks exactly like resting. Every button in the tree presses the same
 way (`ButtonFeel.Install`, from `SceneRouter`). While held, it shrinks a few pixels, drops 2 px (`ButtonFeel.Depth`)
@@ -54,7 +83,10 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 | Screen | Concept | Code |
 | --- | --- | --- |
 | Home atlas and HUD | ui 06 | `MapMenu.Home.cs`, `MapPathCanvas.Painted.cs` |
-| Caravan hub (More) | menu 01 | `CaravanHub.cs` |
+| Caravan hub (More) | menu 01 | `CaravanHub.cs` (its activities below are boards unless listed) |
+| Tower, bounties, boss rush, raid, event | board-banners | `TowerMenu.cs`, `BountyMenu.cs`, `BossRushMenu.cs`, `RaidMenu.cs`, `EventMenu.cs` |
+| Expeditions, progression, guild, friends, arena, rankings | board-banners | `ExpeditionMenu.cs`, `ProgressionMenu.cs`, `GuildMenu.cs`, `FriendsMenu.cs`, `ArenaMenu.cs`, `LeaderboardMenu.cs` |
+| Daily gifts | board-camp | `LoginCalendarMenu.cs` |
 | Warband / Spells | ui 07, menu 02 | `ShopMenu.cs`, `ShopMenu.Roster.cs`, `ShopMenu.Profile.cs` |
 | Relics | menu 03 | `ShopMenu.Relics.cs` |
 | War wagon workshop | ui 08 | `ShopMenu.Wagon.cs` (an armory tab: the workshop scene is fitted inside the relics frame; three pages cover all 13 upgrades) |

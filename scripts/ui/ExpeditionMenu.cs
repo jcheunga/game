@@ -1,291 +1,206 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public partial class ExpeditionMenu : Control
+/// <summary>
+/// Expeditions on a painted board: the three slots underway across the top (time left, or Collect), and the
+/// three destinations below as painted cards with their duration, rewards, the allies who would go and Dispatch.
+/// Allies outside the battle squad and not already away are sent, strongest first.
+/// </summary>
+public partial class ExpeditionMenu : RoyalBoard
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _slotsPanel = null!;
-	private PanelContainer _catalogPanel = null!;
-	private HBoxContainer _resourcesRow = null!;
-	private Label _statusLabel = null!;
-	private VBoxContainer _slotsStack = null!;
-	private VBoxContainer _catalogStack = null!;
-	private readonly List<string> _selectedUnitIds = new();
+    private readonly List<(int Slot, RoyalLabel Time, Rect2 Meter, Panel Fill)> _timers = new();
+    private double _tick;
 
-	public override void _Ready()
-	{
-		BuildUi();
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _slotsPanel, _catalogPanel });
-	}
+    public ExpeditionMenu() : base("Expeditions", "expeditions") { }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    private static Texture2D Scene(string id) => ResourceLoader.Exists($"res://assets/ui/royal/items/scene-expedition-{id}.png")
+        ? RoyalArt.Item("scene-expedition-" + id) : RoyalArt.Item("activity-expeditions");
 
-	private void BuildUi()
-	{
+    protected override void Compose()
+    {
+        var state = GameState.Instance;
+        Chip("icon-wheat", state.Food.ToString("N0"), $"{state.Food} rations", RewardArt("food"));
+        Chip("coin-small", state.Gold.ToString("N0"), $"{state.Gold:N0} gold", RewardArt("gold"));
+        _timers.Clear();
+        var body = Board.Body; var footer = Board.Footer;
+        var x = body.Position.X + 6; var width = body.Size.X - 12;
+        var cardWidth = (width - 28) / 3;
+        // The row captions sit beside the banner hanging over the board's corner.
+        Caps($"Underway · {state.ActiveExpeditionCount}/{ExpeditionCatalog.MaxSlots}", new Rect2(Board.Notch.End.X + 6, body.Position.Y + 6, 420, 40), 18);
+        var y = Board.Notch.End.Y - 2;
+        var expeditions = state.GetActiveExpeditions();
+        for (var i = 0; i < ExpeditionCatalog.MaxSlots; i++)
+        {
+            var rect = new Rect2(x + i * (cardWidth + 14), y, cardWidth, 120);
+            if (i < expeditions.Count) Underway(rect, i, expeditions[i]);
+            else FreeSlot(rect);
+        }
+        y += 132;
+        var height = footer.Position.Y - 10 - y;
+        var destinations = ExpeditionCatalog.GetAll();
+        for (var i = 0; i < destinations.Count && i < 3; i++)
+            Destination(new Rect2(x + i * (cardWidth + 14), y, cardWidth, height), destinations[i]);
+        Back(new Rect2(footer.End.X - 170, footer.Position.Y, 170, footer.Size.Y));
+        Action(new Rect2(footer.End.X - 360, footer.Position.Y, 176, footer.Size.Y), "Armory", "icon-armory", () => SceneRouter.Instance.GoToShop(), size: 17);
+        NoticeAt(new Rect2(footer.Position.X, footer.Position.Y, footer.Size.X - 380, footer.Size.Y));
+    }
 
-        MedievalUi.Apply(this);
+    private void Underway(Rect2 rect, int slot, ExpeditionSlotState expedition)
+    {
+        var state = GameState.Instance;
+        var definition = ExpeditionCatalog.Get(expedition.ExpeditionId);
+        var complete = state.IsExpeditionComplete(slot);
+        Frame(complete ? "ach-card-ready" : "ach-card", rect, 14);
+        var picture = new Rect2(rect.Position + new Vector2(10, 10), new Vector2(118, rect.Size.Y - 20));
+        Picture(picture, Scene(expedition.ExpeditionId));
+        var left = picture.End.X + 12; var room = rect.End.X - left - 14;
+        Serif(definition?.Title ?? Pretty(expedition.ExpeditionId), new Rect2(left, rect.Position.Y + 8, room, 32), 21, weight: 700);
+        Allies(new Rect2(left, rect.Position.Y + 40, room, 36), expedition.AssignedUnitIds);
+        var foot = new Rect2(left, rect.End.Y - 46, room, 36);
+        if (complete)
+        {
+            Action(foot, "Collect", null, () =>
+            {
+                var collected = GameState.Instance.TryCollectExpedition(slot, out var message);
+                AudioDirector.Claimed(collected);
+                Notify(message);
+                if (collected) Refresh();
+            }, Kind.Claim, size: 16);
+            return;
+        }
+        var total = TimeSpan.FromMinutes(definition?.DurationMinutes ?? 30);
+        var meter = new Rect2(foot.Position.X, foot.Position.Y + 22, foot.Size.X, 12);
+        Frame("ach-track", meter, 6);
+        var fill = Frame("ach-fill-gold", new Rect2(meter.Position + new Vector2(3, 3), new Vector2(meter.Size.Y - 6, meter.Size.Y - 6)), 3);
+        var time = Caps("", new Rect2(foot.Position.X, foot.Position.Y - 6, foot.Size.X, 26), 16, Soft);
+        _timers.Add((slot, time, meter, fill));
+        UpdateTimer(_timers.Count - 1, total);
+    }
 
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
-		titleRow.AddChild(new Label { Text = "Expeditions", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_resourcesRow = new HBoxContainer();
-		_resourcesRow.AddThemeConstantOverride("separation", 12);
-		titleRow.AddChild(_resourcesRow);
+    private void FreeSlot(Rect2 rect)
+    {
+        Frame("season-locked", rect, 14);
+        Image("empty-plus", new Rect2(rect.Position.X + 26, rect.GetCenter().Y - 24, 48, 48), new Color(1, 1, 1, .55f));
+        Caps("Free slot", new Rect2(rect.Position.X + 92, rect.Position.Y + 30, rect.Size.X - 110, 30), 18, Soft);
+        Serif("Choose a destination below", new Rect2(rect.Position.X + 92, rect.Position.Y + 62, rect.Size.X - 110, 30), 18, new Color("a99f8d"));
+    }
 
-		// Active slots panel
-		_slotsPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(600f, 480f) };
-		AddChild(_slotsPanel);
-		var slotsOuter = new MarginContainer();
-		slotsOuter.AddThemeConstantOverride("margin_left", 8);
-		slotsOuter.AddThemeConstantOverride("margin_right", 8);
-		slotsOuter.AddThemeConstantOverride("margin_top", 8);
-		slotsOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_slotsPanel.AddChild(slotsOuter);
-		var slotsInner = new VBoxContainer();
-		slotsInner.AddThemeConstantOverride("separation", 6);
-		slotsOuter.AddChild(slotsInner);
-		slotsInner.AddChild(RealmUi.SectionTitle("Underway"));
-		_slotsStack = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-		_slotsStack.AddThemeConstantOverride("separation", 8);
-		slotsInner.AddChild(_slotsStack);
+    private void Destination(Rect2 rect, ExpeditionDefinition definition)
+    {
+        var state = GameState.Instance;
+        Frame("ach-card", rect, 14);
+        var picture = new Rect2(rect.Position + new Vector2(8, 8), new Vector2(rect.Size.X - 16, Mathf.Round(rect.Size.Y * .42f)));
+        Picture(picture, Scene(definition.Id));
+        Shade(new Rect2(picture.Position.X + 3, picture.End.Y - 52, picture.Size.X - 6, 49));
+        Serif(definition.Title, new Rect2(picture.Position.X + 16, picture.End.Y - 40, picture.Size.X - 32, 32), 23, weight: 700);
+        if (definition.RelicDropRarity != "common")
+        {
+            var tag = new Rect2(picture.End.X - 92, picture.Position.Y + 10, 80, 30);
+            Frame("hub-badge", tag, 8);
+            Caps(Pretty(definition.RelicDropRarity), tag, 16, new Color("c9b7ff"), HorizontalAlignment.Center);
+        }
 
-		// Catalog panel
-		_catalogPanel = new PanelContainer { Position = new Vector2(640f, 122f), Size = new Vector2(616f, 480f) };
-		AddChild(_catalogPanel);
-		var catOuter = new MarginContainer();
-		catOuter.AddThemeConstantOverride("margin_left", 8);
-		catOuter.AddThemeConstantOverride("margin_right", 8);
-		catOuter.AddThemeConstantOverride("margin_top", 8);
-		catOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_catalogPanel.AddChild(catOuter);
-		var catInner = new VBoxContainer();
-		catInner.AddThemeConstantOverride("separation", 6);
-		catOuter.AddChild(catInner);
-		catInner.AddChild(RealmUi.SectionTitle("Available"));
-		var catScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 380f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-		catInner.AddChild(catScroll);
-		_catalogStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_catalogStack.AddThemeConstantOverride("separation", 6);
-		catScroll.AddChild(_catalogStack);
+        var y = picture.End.Y + 10;
+        var x = rect.Position.X + 18; var room = rect.Size.X - 36;
+        var allies = definition.MinUnits == definition.MaxUnits ? $"{definition.MinUnits}" : $"{definition.MinUnits}–{definition.MaxUnits}";
+        Image("emblem-hourglass", new Rect2(x - 2, y, 28, 28));
+        Serif(definition.DurationMinutes >= 60 ? $"{definition.DurationMinutes / 60} h" : $"{definition.DurationMinutes} min", new Rect2(x + 30, y - 2, 110, 32), 20);
+        Image("icon-people-gold", new Rect2(x + 118, y + 2, 30, 26));
+        Serif($"{allies} allies", new Rect2(x + 154, y - 2, room - 154, 32), 20);
+        y += 38;
+        var rewards = new (Texture2D Art, string Amount, string Hint)[]
+        {
+            (RewardArt("gold"), $"~{definition.BaseGoldReward:N0}", $"About {definition.BaseGoldReward:N0} gold"),
+            (RewardArt("food"), $"~{definition.BaseFoodReward}", $"About {definition.BaseFoodReward} rations"),
+            (RoyalKit.Texture("forge-shard"), $"{(int)(definition.RelicDropChance * 100)}%", $"{(int)(definition.RelicDropChance * 100)}% chance of a {definition.RelicDropRarity} relic")
+        };
+        var step = room / rewards.Length;
+        for (var i = 0; i < rewards.Length; i++)
+        {
+            var at = new Vector2(x + i * step, y);
+            var holder = new Control { Position = at, Size = new Vector2(step, 40), TooltipText = rewards[i].Hint, MouseFilter = MouseFilterEnum.Pass };
+            Live.AddChild(holder);
+            Image(rewards[i].Art, new Rect2(at, new Vector2(40, 38)));
+            Caps(rewards[i].Amount, new Rect2(at.X + 44, at.Y, step - 46, 38), 18, new Color("f6e2ad"));
+        }
 
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
+        var team = Team(definition);
+        var free = ExpeditionCatalog.MaxSlots - state.ActiveExpeditionCount;
+        var ready = free > 0 && team.Length >= definition.MinUnits;
+        var foot = new Rect2(x, rect.End.Y - 58, room, 46);
+        if (ready) Allies(new Rect2(foot.Position.X, foot.Position.Y, room - 150, foot.Size.Y), team);
+        else
+        {
+            var needs = definition.MinUnits == 1 ? "1 ally" : $"{definition.MinUnits} allies";
+            Paragraph(free <= 0 ? "All slots are in use." : $"Needs {needs} outside your squad.", new Rect2(foot.Position.X, foot.Position.Y - 4, room - 156, 52), 2, 18);
+        }
+        var id = definition.Id;
+        Action(new Rect2(foot.End.X - 142, foot.Position.Y, 142, foot.Size.Y), "Dispatch", "icon-map-pin", () =>
+        {
+            var started = GameState.Instance.TryStartExpedition(id, Team(definition), out var message);
+            Notify(message);
+            if (started) Refresh();
+        }, Kind.Gold, ready, ready ? $"Send {string.Join(", ", team.Select(Name))}" : "Not enough free allies", size: 16);
+    }
 
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
-		bottomRow.AddChild(mapBtn);
-		var shopBtn = new RealmButton { Text = "Armory", CustomMinimumSize = new Vector2(140f, 0f) };
-		shopBtn.Pressed += () => SceneRouter.Instance.GoToShop();
-		bottomRow.AddChild(shopBtn);
-	}
+    /// <summary>Owned allies who are neither in the battle squad nor away, strongest first, as many as the trip takes.</summary>
+    private static string[] Team(ExpeditionDefinition definition)
+    {
+        var state = GameState.Instance;
+        return state.GetOwnedPlayerUnitIds()
+            .Where(id => !state.IsUnitInActiveDeck(id) && !state.IsUnitOnExpedition(id))
+            .OrderByDescending(state.GetUnitLevel)
+            .Take(definition.MaxUnits).ToArray();
+    }
 
-	private void RefreshUi()
-	{
-		var gs = GameState.Instance;
-		RebuildResourcesRow(gs);
-		RebuildSlots();
-		RebuildCatalog();
-	}
+    private static string Name(string unitId)
+    {
+        try { return GameData.GetUnit(unitId)?.DisplayName ?? unitId; }
+        catch { return unitId; }
+    }
 
-	private void RebuildResourcesRow(GameState gs)
-	{
-		foreach (var child in _resourcesRow.GetChildren())
-		{
-			child.QueueFree();
-		}
+    private void Allies(Rect2 rect, IEnumerable<string> unitIds)
+    {
+        var ids = unitIds.ToArray();
+        var holder = new Control { Position = rect.Position, Size = rect.Size, TooltipText = string.Join(", ", ids.Select(Name)), MouseFilter = MouseFilterEnum.Pass };
+        Live.AddChild(holder);
+        for (var i = 0; i < ids.Length; i++)
+        {
+            UnitDefinition unit;
+            try { unit = GameData.GetUnit(ids[i]); } catch { unit = null; }
+            var cell = new Rect2(rect.Position.X + i * (rect.Size.Y + 4), rect.Position.Y, rect.Size.Y, rect.Size.Y);
+            Frame("relic-card", cell, 8);
+            var figure = new UnitFigure { Position = cell.Position + new Vector2(2, 2), Size = cell.Size - new Vector2(4, 4) };
+            figure.SetUnit(unit);
+            Live.AddChild(figure);
+        }
+    }
 
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
+    private void UpdateTimer(int index, TimeSpan total)
+    {
+        var (slot, time, meter, fill) = _timers[index];
+        var remaining = GameState.Instance.GetExpeditionTimeRemaining(slot);
+        time.Text = remaining.TotalHours >= 1 ? $"Returns in {(int)remaining.TotalHours} h {remaining.Minutes:00} min" : $"Returns in {remaining.Minutes} min {remaining.Seconds:00} s";
+        var fraction = total.TotalSeconds <= 0 ? 1 : Mathf.Clamp(1 - (float)(remaining.TotalSeconds / total.TotalSeconds), 0, 1);
+        fill.Visible = fraction > 0;
+        fill.Size = new Vector2(Mathf.Max(meter.Size.Y - 6, (meter.Size.X - 6) * fraction), meter.Size.Y - 6);
+    }
 
-		var expeditionsLabel = new Label
-		{
-			Text = $"Expeditions {gs.ActiveExpeditionCount}/{ExpeditionCatalog.MaxSlots}",
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		expeditionsLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		_resourcesRow.AddChild(expeditionsLabel);
-	}
-
-	private void RebuildSlots()
-	{
-		foreach (var child in _slotsStack.GetChildren()) child.QueueFree();
-
-		var expeditions = GameState.Instance.GetActiveExpeditions();
-		for (var i = 0; i < expeditions.Count; i++)
-		{
-			var slot = expeditions[i];
-			var def = ExpeditionCatalog.Get(slot.ExpeditionId);
-			if (def == null) continue;
-
-			var complete = GameState.Instance.IsExpeditionComplete(i);
-			var remaining = GameState.Instance.GetExpeditionTimeRemaining(i);
-			var box = new VBoxContainer();
-			box.AddThemeConstantOverride("separation", 6);
-			box.AddChild(RealmUi.Heading(def.Title, 20));
-			if (slot.AssignedUnitIds.Any())
-				box.AddChild(BuildUnitBadgeRow(slot.AssignedUnitIds, 36f));
-
-			if (complete)
-			{
-				var capturedIndex = i;
-				var collectBtn = RealmUi.Button("gift", "Collect rewards", () =>
-				{
-					if (GameState.Instance.TryCollectExpedition(capturedIndex, out var resultMsg))
-					{
-						_statusLabel.Text = resultMsg;
-						RefreshUi();
-					}
-				}, true);
-				collectBtn.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
-				box.AddChild(collectBtn);
-			}
-			else
-			{
-				box.AddChild(RealmUi.Label($"Returns in {(int)remaining.TotalMinutes}m {remaining.Seconds:00}s", 18, true));
-			}
-
-			_slotsStack.AddChild(box);
-			_slotsStack.AddChild(new HSeparator());
-		}
-
-		var free = ExpeditionCatalog.MaxSlots - expeditions.Count;
-		if (expeditions.Count == 0)
-			_slotsStack.AddChild(RealmUi.EmptyState("map", "No expeditions underway", $"Send allies who are not in your squad to gather supplies. {free} slots free."));
-		else if (free > 0)
-			_slotsStack.AddChild(RealmUi.Label(free == 1 ? "1 slot free" : $"{free} slots free", 18, true));
-	}
-
-	private void RebuildCatalog()
-	{
-		foreach (var child in _catalogStack.GetChildren()) child.QueueFree();
-		_selectedUnitIds.Clear();
-
-		var gs = GameState.Instance;
-		var slotsAvailable = ExpeditionCatalog.MaxSlots - gs.ActiveExpeditionCount;
-
-		foreach (var def in ExpeditionCatalog.GetAll())
-		{
-			var box = new VBoxContainer();
-			box.AddThemeConstantOverride("separation", 6);
-			box.AddChild(RealmUi.KeyValue(def.Title, $"{def.DurationMinutes} min"));
-			var title = box.GetChild<HBoxContainer>(0).GetChild<Label>(0);
-			RealmUi.Display(title, 20); title.AddThemeColorOverride("font_color", ModalUi.Cream);
-			box.AddChild(RealmUi.Label(def.Description, 18, true));
-			box.AddChild(BuildRewardRow(def.BaseGoldReward, def.BaseFoodReward, def.RelicDropChance, def.MinUnits, def.MaxUnits));
-
-			var idleUnits = gs.GetOwnedPlayerUnitIds()
-				.Where(id => !gs.IsUnitInActiveDeck(id) && !gs.IsUnitOnExpedition(id))
-				.ToArray();
-			var actions = new HBoxContainer();
-			actions.AddThemeConstantOverride("separation", 10);
-			box.AddChild(actions);
-			var unitPick = idleUnits.Take(def.MaxUnits).ToArray();
-			var ready = slotsAvailable > 0 && idleUnits.Length >= def.MinUnits;
-			if (ready)
-			{
-				actions.AddChild(BuildUnitBadgeRow(unitPick, 36f));
-				actions.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-			}
-			else
-			{
-				var allies = def.MinUnits == 1 ? "1 ally" : $"{def.MinUnits} allies";
-				var reason = RealmUi.Label(slotsAvailable <= 0 ? "All slots are in use." : $"Needs {allies} outside your squad.", 18, true);
-				reason.VerticalAlignment = VerticalAlignment.Center;
-				actions.AddChild(reason);
-			}
-			var capturedId = def.Id;
-			var sendBtn = RealmUi.Button("flag", "Dispatch", () =>
-			{
-				if (gs.TryStartExpedition(capturedId, unitPick, out var msg))
-				{
-					_statusLabel.Text = msg;
-					RefreshUi();
-				}
-				else
-				{
-					_statusLabel.Text = msg;
-				}
-			});
-			sendBtn.Disabled = !ready;
-			actions.AddChild(sendBtn);
-			_catalogStack.AddChild(box);
-			_catalogStack.AddChild(new HSeparator());
-		}
-	}
-
-	private double _timerRefresh;
-
-	public override void _Process(double delta)
-	{
-		// Countdowns tick once a second rather than rebuilding every frame.
-		_timerRefresh += delta;
-		if (_timerRefresh < 1 || GameState.Instance.GetActiveExpeditions().Count == 0) return;
-		_timerRefresh = 0;
-		RebuildSlots();
-	}
-
-	private static HBoxContainer BuildUnitBadgeRow(IEnumerable<string> unitIds, float badgeSize)
-	{
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 6);
-		foreach (var unitId in unitIds)
-		{
-			row.AddChild(UiBadgeFactory.CreateUnitBadge(TryGetUnit(unitId), new Vector2(badgeSize, badgeSize)));
-		}
-		row.TooltipText = string.Join(", ", unitIds.Select(ResolveUnitName));
-		row.MouseFilter = MouseFilterEnum.Pass;
-		return row;
-	}
-
-	private static UnitDefinition TryGetUnit(string unitId)
-	{
-		try
-		{
-			return GameData.GetUnit(unitId);
-		}
-		catch
-		{
-			return null;
-		}
-	}
-
-	private static string ResolveUnitName(string unitId)
-	{
-		return TryGetUnit(unitId)?.DisplayName ?? unitId;
-	}
-
-	private static HBoxContainer BuildRewardRow(int gold, int food, float relicDropChance, int minUnits, int maxUnits)
-	{
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 18);
-		if (gold > 0) row.AddChild(HomeResourceUi.Amount("gold", $"~{gold:N0}", $"About {gold:N0} gold", 28));
-		if (food > 0) row.AddChild(HomeResourceUi.Amount("food", $"~{food}", $"About {food} rations", 28));
-		var details = $"{(int)(relicDropChance * 100)}% relic chance · {(minUnits == maxUnits ? $"{minUnits}" : $"{minUnits}–{maxUnits}")} allies";
-		var label = RealmUi.Label(details, 18, true);
-		label.VerticalAlignment = VerticalAlignment.Center;
-		row.AddChild(label);
-		return row;
-	}
+    public override void _Process(double delta)
+    {
+        // Countdowns tick once a second; a trip that returns rebuilds the board for its Collect button.
+        _tick += delta;
+        if (_tick < 1 || _timers.Count == 0) return;
+        _tick = 0;
+        var state = GameState.Instance;
+        var expeditions = state.GetActiveExpeditions();
+        for (var i = 0; i < _timers.Count; i++)
+        {
+            if (state.IsExpeditionComplete(_timers[i].Slot)) { Refresh(); return; }
+            var definition = _timers[i].Slot < expeditions.Count ? ExpeditionCatalog.Get(expeditions[_timers[i].Slot].ExpeditionId) : null;
+            UpdateTimer(i, TimeSpan.FromMinutes(definition?.DurationMinutes ?? 30));
+        }
+    }
 }

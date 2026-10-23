@@ -1,303 +1,126 @@
-#nullable enable
-using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public partial class FriendsMenu : Control
+/// <summary>
+/// Friends on a painted board: your caravan's profile ID and today's gifts on the left; on the right, add a
+/// friend by their ID and the list of friends, six to a page, each with Send gift and Remove.
+/// </summary>
+public partial class FriendsMenu : RoyalBoard
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _friendListPanel = null!;
-	private PanelContainer _actionsPanel = null!;
-	private HBoxContainer _resourcesRow = null!;
-	private HBoxContainer _summaryMetricsRow = null!;
-	private Label _statusLabel = null!;
-	private HBoxContainer _giftStatusRow = null!;
-	private HBoxContainer _giftRewardRow = null!;
-	private VBoxContainer _friendStack = null!;
-	private LineEdit _addFriendInput = null!;
-	private Button _removeBtn = null!;
-	private string? _selectedFriendId;
+    private const int PerPage = 6;
+    private const int GiftsPerDay = 3;
+    private int _page;
+    private LineEdit _input;
+    private string _draft = "";
 
-	public override void _Ready()
-	{
-		BuildUi();
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _friendListPanel, _actionsPanel });
-	}
+    public FriendsMenu() : base("Friends", "friends") { }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    protected override void Compose()
+    {
+        var state = GameState.Instance;
+        var friends = state.GetFriendIds().OrderBy(id => id).ToArray();
+        Chip("emblem-friends", friends.Length == 1 ? "1 friend" : $"{friends.Length} friends", "Friends in your list");
+        var body = Board.Body; var footer = Board.Footer;
+        Caps("Your caravan", new Rect2(Board.Notch.End.X + 6, body.Position.Y + 6, 300, 40), 18);
+        var left = new Rect2(body.Position.X + 6, Board.Notch.End.Y - 2, 380, footer.Position.Y - 10 - Board.Notch.End.Y);
+        Caravan(left, state);
+        var right = new Rect2(left.End.X + 16, body.Position.Y + 10, body.End.X - left.End.X - 22, footer.Position.Y - 12 - body.Position.Y);
+        AddRow(new Rect2(right.Position, new Vector2(right.Size.X, 64)));
+        List(new Rect2(right.Position.X, right.Position.Y + 76, right.Size.X, right.Size.Y - 76), friends, state);
+        Back(new Rect2(footer.Position, new Vector2(170, footer.Size.Y)));
+        Action(new Rect2(footer.Position.X + 184, footer.Position.Y, 220, footer.Size.Y), "Player profile", "icon-profile", () => SceneRouter.Instance.GoToProfile(), size: 17);
+        NoticeAt(new Rect2(footer.Position.X + 420, footer.Position.Y, footer.Size.X - 420, footer.Size.Y));
+    }
 
-	private void BuildUi()
-	{
+    private void Caravan(Rect2 column, GameState state)
+    {
+        var picture = new Rect2(column.Position, new Vector2(column.Size.X, 168));
+        Picture(picture, RoyalArt.Item("activity-friends"));
+        Shade(new Rect2(picture.Position.X + 3, picture.End.Y - 56, picture.Size.X - 6, 53));
+        Serif(state.PlayerCallsign, new Rect2(picture.Position.X + 18, picture.End.Y - 42, picture.Size.X - 36, 34), 23, weight: 700);
+        var id = Section(new Rect2(column.Position.X, picture.End.Y + 12, column.Size.X, 104), "Profile ID", "icon-profile");
+        Serif(string.IsNullOrEmpty(state.PlayerProfileId) ? "Not signed in" : state.PlayerProfileId, new Rect2(id.Position.X + 4, id.Position.Y - 2, id.Size.X - 8, 34), 21,
+            new Color("f6e2ad"), weight: 700);
+        var top = picture.End.Y + 128;
+        var gifts = Section(new Rect2(column.Position.X, top, column.Size.X, column.End.Y - top), "Daily gifts", "emblem-gifts", $"{state.GiftsSentToday}/{GiftsPerDay} sent");
+        // Each gift sends 50 gold and 2 rations.
+        var y = gifts.Position.Y + (gifts.Size.Y - 44) / 2;
+        Caps("Each sends", new Rect2(gifts.Position.X + 4, y, 120, 44), 16, Soft);
+        Image(RewardArt("gold"), new Rect2(gifts.Position.X + 128, y, 46, 44));
+        Serif("50", new Rect2(gifts.Position.X + 178, y, 60, 44), 23, new Color("f6e2ad"), weight: 700);
+        Image(RewardArt("food"), new Rect2(gifts.Position.X + 236, y, 46, 44));
+        Serif("2", new Rect2(gifts.Position.X + 286, y, 40, 44), 23, new Color("f6e2ad"), weight: 700);
+    }
 
-        MedievalUi.Apply(this);
+    private void AddRow(Rect2 row)
+    {
+        Frame("ach-card", row, 14);
+        var field = new Rect2(row.Position.X + 14, row.Position.Y + 10, row.Size.X - 200, row.Size.Y - 20);
+        _input = new LineEdit { Position = field.Position, Size = field.Size, PlaceholderText = "Friend's profile ID", Text = _draft, AccessibilityName = "Profile ID" };
+        var box = RoyalKit.Slice("season-locked", 10);
+        box.ContentMarginLeft = 16; box.ContentMarginRight = 12;
+        foreach (var state in new[] { "normal", "focus", "read_only" }) _input.AddThemeStyleboxOverride(state, box);
+        _input.AddThemeFontOverride("font", RoyalFonts.Body(600));
+        _input.AddThemeFontSizeOverride("font_size", 21);
+        _input.AddThemeColorOverride("font_color", RoyalText.Cream);
+        _input.AddThemeColorOverride("font_placeholder_color", new Color("8f8676"));
+        _input.AddThemeColorOverride("caret_color", RealmUi.Gold);
+        _input.TextChanged += text => _draft = text;
+        _input.TextSubmitted += _ => AddFriend();
+        Live.AddChild(_input);
+        Action(new Rect2(row.End.X - 176, row.Position.Y + 8, 164, row.Size.Y - 16), "Add friend", "icon-people-gold", AddFriend, size: 16);
+    }
 
-		// Title panel
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
-		titleRow.AddChild(new Label { Text = "Friends", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center });
-		_resourcesRow = new HBoxContainer();
-		_resourcesRow.AddThemeConstantOverride("separation", 12);
-		titleRow.AddChild(_resourcesRow);
-		_summaryMetricsRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_summaryMetricsRow.AddThemeConstantOverride("separation", 12);
-		titleRow.AddChild(_summaryMetricsRow);
+    private void List(Rect2 rect, string[] friends, GameState state)
+    {
+        var pages = System.Math.Max(1, (friends.Length + PerPage - 1) / PerPage);
+        _page = System.Math.Clamp(_page, 0, pages - 1);
+        var room = Section(rect, "Friends", "emblem-friends", friends.Length == 0 ? null : $"Page {_page + 1} of {pages}");
+        if (friends.Length == 0)
+        {
+            Image("emblem-friends", new Rect2(room.GetCenter().X - 60, room.Position.Y + 10, 120, 108), new Color(1, 1, 1, .75f));
+            Heading("No friends yet", new Rect2(room.Position.X, room.Position.Y + 124, room.Size.X, 40), 26, HorizontalAlignment.Center);
+            Paragraph("Add a friend by their profile ID to trade daily gifts.", new Rect2(room.Position.X + 30, room.Position.Y + 170, room.Size.X - 60, 30), 1, 19, Soft, HorizontalAlignment.Center);
+            return;
+        }
+        var list = new Rect2(room.Position, new Vector2(room.Size.X, room.Size.Y - (pages > 1 ? 40 : 0)));
+        var pitch = list.Size.Y / PerPage;
+        var canGift = state.GiftsSentToday < GiftsPerDay;
+        for (var i = 0; i < PerPage; i++)
+        {
+            var at = _page * PerPage + i;
+            if (at >= friends.Length) break;
+            var friend = friends[at];
+            var row = new Rect2(list.Position.X, list.Position.Y + i * pitch, list.Size.X, pitch - 6);
+            Frame("season-locked", row, 10);
+            Image("emblem-friends", new Rect2(row.Position.X + 10, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8));
+            Serif(friend.Length > 22 ? friend[..22] + "…" : friend, new Rect2(row.Position.X + row.Size.Y + 12, row.Position.Y, row.Size.X - 360, row.Size.Y), 20, weight: 600);
+            var id = friend;
+            Action(new Rect2(row.End.X - 252, row.Position.Y + 5, 176, row.Size.Y - 10), "Send gift", null, () =>
+            {
+                GameState.Instance.TrySendGift(id, out var message);
+                Notify(message);
+                Refresh();
+            }, Kind.Claim, canGift, canGift ? $"Send {id} 50 gold and 2 rations" : "Daily gift limit reached", size: 15, name: $"Send gift to {id}");
+            var remove = Action(new Rect2(row.End.X - 66, row.Position.Y + 5, 56, row.Size.Y - 10), "", "icon-close-x", () =>
+            {
+                GameState.Instance.RemoveFriend(id);
+                Notify($"Removed {id} from friends.");
+                Refresh();
+            }, Kind.Slate, hint: $"Remove {id}", name: $"Remove {id}");
+            remove.Glyph.Size = new Vector2(18, 18);
+            remove.Glyph.Position = (remove.Size - remove.Glyph.Size) / 2;
+        }
+        Pager(new Rect2(room.Position.X, room.End.Y - 36, room.Size.X, 36), _page, pages, page => { _page = page; Refresh(); }, "friends");
+    }
 
-		// Friend List panel (left)
-		_friendListPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(620f, 480f) };
-		AddChild(_friendListPanel);
-		var listOuter = new MarginContainer();
-		listOuter.AddThemeConstantOverride("margin_left", 8);
-		listOuter.AddThemeConstantOverride("margin_right", 8);
-		listOuter.AddThemeConstantOverride("margin_top", 8);
-		listOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_friendListPanel.AddChild(listOuter);
-		var listInner = new VBoxContainer();
-		listInner.AddThemeConstantOverride("separation", 4);
-		listOuter.AddChild(listInner);
-		listInner.AddChild(RealmUi.SectionTitle("Friends"));
-		var friendScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 400f) };
-		listInner.AddChild(friendScroll);
-		_friendStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_friendStack.AddThemeConstantOverride("separation", 4);
-		friendScroll.AddChild(_friendStack);
-
-		// Actions panel (right)
-		_actionsPanel = new PanelContainer { Position = new Vector2(660f, 122f), Size = new Vector2(596f, 480f) };
-		AddChild(_actionsPanel);
-		var actionsOuter = new MarginContainer();
-		actionsOuter.AddThemeConstantOverride("margin_left", 8);
-		actionsOuter.AddThemeConstantOverride("margin_right", 8);
-		actionsOuter.AddThemeConstantOverride("margin_top", 8);
-		actionsOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_actionsPanel.AddChild(actionsOuter);
-		var actionsInner = new VBoxContainer();
-		actionsInner.AddThemeConstantOverride("separation", 10);
-		actionsOuter.AddChild(actionsInner);
-		actionsInner.AddChild(RealmUi.SectionTitle("Add a friend"));
-		var addRow = new HBoxContainer();
-		addRow.AddThemeConstantOverride("separation", 6);
-		actionsInner.AddChild(addRow);
-		_addFriendInput = new LineEdit { PlaceholderText = "Profile ID", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		addRow.AddChild(_addFriendInput);
-		var addBtn = new RealmButton { Text = "Add", CustomMinimumSize = new Vector2(120f, 44f) };
-		addBtn.Pressed += OnAddFriendPressed;
-		addRow.AddChild(addBtn);
-
-		// Gift Info section
-		actionsInner.AddChild(new HSeparator());
-		actionsInner.AddChild(RealmUi.SectionTitle("Daily gifts"));
-		_giftStatusRow = new HBoxContainer();
-		_giftStatusRow.AddThemeConstantOverride("separation", 8);
-		actionsInner.AddChild(_giftStatusRow);
-		_giftRewardRow = new HBoxContainer();
-		_giftRewardRow.AddThemeConstantOverride("separation", 8);
-		actionsInner.AddChild(_giftRewardRow);
-
-		// Remove Friend section
-		actionsInner.AddChild(new HSeparator());
-		_removeBtn = new RealmButton { Text = "Remove selected friend", Disabled = true, CustomMinimumSize = new Vector2(200f, 48f), TooltipText = "Select a friend first" };
-		_removeBtn.Pressed += OnRemoveFriendPressed;
-		actionsInner.AddChild(_removeBtn);
-
-		// Status label
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
-
-		// Bottom nav
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var profileBtn = new RealmButton { Text = "Player Profile", CustomMinimumSize = new Vector2(140f, 0f) };
-		profileBtn.Pressed += () => SceneRouter.Instance.GoToProfile();
-		bottomRow.AddChild(profileBtn);
-		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
-		bottomRow.AddChild(mapBtn);
-	}
-
-	private void RefreshUi()
-	{
-		var gs = GameState.Instance;
-		var friends = gs.GetFriendIds();
-		RebuildResourcesRow(gs);
-		RebuildSummaryMetricsRow(friends.Count);
-		RebuildGiftStatusRow(gs.GiftsSentToday);
-		RebuildGiftRewardRow();
-		_selectedFriendId = null;
-		_removeBtn.Disabled = true;
-		_removeBtn.Visible = friends.Count > 0;
-		RebuildFriendList(friends);
-	}
-
-	private void RebuildResourcesRow(GameState gs)
-	{
-		foreach (var child in _resourcesRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
-	}
-
-	private void RebuildSummaryMetricsRow(int friendCount)
-	{
-		foreach (var child in _summaryMetricsRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		_summaryMetricsRow.AddChild(UiBadgeFactory.CreateMetaMetric("friends", friendCount.ToString(), new Vector2(24f, 24f)));
-	}
-
-	private void RebuildGiftStatusRow(int giftsSentToday)
-	{
-		foreach (var child in _giftStatusRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		_giftStatusRow.AddChild(RealmUi.KeyValue("Sent today", $"{giftsSentToday}/3"));
-	}
-
-	private void RebuildGiftRewardRow()
-	{
-		foreach (var child in _giftRewardRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		var caption = RealmUi.Label("Each gift sends", 18, true);
-		caption.VerticalAlignment = VerticalAlignment.Center;
-		_giftRewardRow.AddChild(caption);
-		_giftRewardRow.AddChild(HomeResourceUi.Amount("gold", "50", "50 gold", 28));
-		_giftRewardRow.AddChild(HomeResourceUi.Amount("food", "2", "2 rations", 28));
-	}
-
-	private void RebuildFriendList(IReadOnlyCollection<string> friends)
-	{
-		foreach (var child in _friendStack.GetChildren()) child.QueueFree();
-
-		if (friends.Count == 0)
-		{
-			_friendStack.AddChild(RealmUi.EmptyState("people", "No friends yet", "Add a friend by their profile ID to trade daily gifts."));
-			return;
-		}
-
-		var gs = GameState.Instance;
-		var giftsSentToday = gs.GiftsSentToday;
-
-		foreach (var friendId in friends.OrderBy(id => id))
-		{
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 6);
-
-			var truncatedId = friendId.Length > 12 ? friendId[..12] + "..." : friendId;
-			row.AddChild(UiBadgeFactory.CreateMetaBadge("friends", truncatedId, new Vector2(28f, 28f)));
-			var selectBtn = new RealmButton
-			{
-				Text = truncatedId,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				ToggleMode = true
-			};
-			var capturedId = friendId;
-			selectBtn.Pressed += () => OnFriendSelected(capturedId, selectBtn);
-			row.AddChild(selectBtn);
-
-			var giftBtn = new RealmButton { Text = "Send gift", CustomMinimumSize = new Vector2(120f, 0f) };
-			// Disable if already sent 3 gifts today
-			if (giftsSentToday >= 3)
-			{
-				giftBtn.Disabled = true;
-				giftBtn.TooltipText = "Daily gift limit reached";
-			}
-			var capturedGiftId = friendId;
-			giftBtn.Pressed += () => OnSendGiftPressed(capturedGiftId);
-			row.AddChild(giftBtn);
-
-			_friendStack.AddChild(row);
-		}
-	}
-
-	private void OnFriendSelected(string friendId, Button selectBtn)
-	{
-		// Deselect all other buttons
-		foreach (var child in _friendStack.GetChildren())
-		{
-			if (child is HBoxContainer hbox)
-			{
-				foreach (var inner in hbox.GetChildren())
-				{
-					if (inner is Button btn && btn.ToggleMode && btn != selectBtn)
-						btn.ButtonPressed = false;
-				}
-			}
-		}
-
-		if (selectBtn.ButtonPressed)
-		{
-			_selectedFriendId = friendId;
-			_removeBtn.Disabled = false;
-		}
-		else
-		{
-			_selectedFriendId = null;
-			_removeBtn.Disabled = true;
-		}
-	}
-
-	private void OnAddFriendPressed()
-	{
-		var profileId = _addFriendInput.Text.Trim();
-		if (string.IsNullOrEmpty(profileId))
-		{
-			_statusLabel.Text = "Enter a profile ID to add.";
-			return;
-		}
-
-		GameState.Instance.AddFriend(profileId);
-		_addFriendInput.Text = "";
-		_statusLabel.Text = $"Added {profileId} as a friend.";
-		RefreshUi();
-	}
-
-	private void OnRemoveFriendPressed()
-	{
-		if (_selectedFriendId == null) return;
-		var removed = _selectedFriendId;
-		GameState.Instance.RemoveFriend(_selectedFriendId);
-		_statusLabel.Text = $"Removed {removed} from friends.";
-		RefreshUi();
-	}
-
-	private void OnSendGiftPressed(string friendId)
-	{
-		if (GameState.Instance.TrySendGift(friendId, out var message))
-		{
-			_statusLabel.Text = message;
-		}
-		else
-		{
-			_statusLabel.Text = message;
-		}
-		RefreshUi();
-	}
+    private void AddFriend()
+    {
+        var profileId = (_input?.Text ?? _draft).Trim();
+        if (profileId.Length == 0) { Notify("Enter a profile ID to add."); return; }
+        GameState.Instance.AddFriend(profileId);
+        _draft = "";
+        Notify($"Added {profileId} as a friend.");
+        Refresh();
+    }
 }

@@ -1,0 +1,56 @@
+[
+ {
+  "id": "activity-endless",
+  "out": "art/royal/gen/activities/endless.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: an endless horde of undead Rotbound soldiers with glowing teal eyes surging out of the dark toward a lantern-lit castle wall at night, skulls and tattered banners.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-tower",
+  "out": "art/royal/gen/activities/tower.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: knights in teal tabards climbing a torch-lit wooden siege tower against a stone challenge tower at night, banners with gold crowns.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-bounties",
+  "out": "art/royal/gen/activities/bounties.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a tavern bounty board covered in pinned wanted posters of monsters, a coin pouch, scattered gold coins and two glowing lanterns on a wooden ledge.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-bossrush",
+  "out": "art/royal/gen/activities/bossrush.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a towering undead warlord king with a crown of iron spikes and glowing teal eyes before a ruined black castle, the banners of defeated commanders hanging in the gloom.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-weeklyraid",
+  "out": "art/royal/gen/activities/weeklyraid.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a great host of armoured knights with teal crown banners rallying before a castle gate at dusk, torches raised for the raid.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ },
+ {
+  "id": "activity-event",
+  "out": "art/royal/gen/activities/event.png",
+  "inputs": [
+   "output/crownroad-menu-concepts-2026-10-06/01-caravan-menu-hub.png"
+  ],
+  "edit": false,
+  "prompt": "Use case: stylized-concept\nAsset type: illustration for an activity card in the menu of a medieval fantasy game (Crownroad: Siege of Ash), shown wide and short.\nSubject: a night festival in a castle square: lantern strings, bunting, market stalls and a great glowing lantern shrine with a teal crown banner at the centre.\nStyle/medium: match the activity card illustrations in the attached reference screen exactly: painterly high-detail 3D game art, dramatic warm lantern light with cool teal shadows, rich colour.\nComposition: very wide landscape (3:1), main subject centred in the middle band, nothing important in the bottom quarter (a label bar covers it).\nConstraints: no text, no UI, no frame, no watermark."
+ }
+]

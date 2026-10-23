@@ -20,11 +20,6 @@ public static class UiBadgeFactory
         return CreateBadge(UiArtLoader.TryLoadRelicIcon(relic), ResolveRelicTint(relic), BuildInitials(relic?.DisplayName), size);
     }
 
-    public static Control CreateCodexPortrait(CodexEntry entry, Vector2 size)
-    {
-        return CreateBadge(UiArtLoader.TryLoadCodexPortrait(entry), ResolveCodexTint(entry), BuildInitials(entry?.Title), size, true);
-    }
-
     public static Control CreateRewardBadge(string rewardType, string rewardItemId, string label, Vector2 size)
     {
         var normalizedType = AssetCoverageCatalog.NormalizeId(rewardType);
@@ -50,11 +45,6 @@ public static class UiBadgeFactory
             ResolveMetaTint(normalizedId),
             ResolveMetaFallbackText(normalizedId, label),
             size);
-    }
-
-    public static Control CreateMysteryBadge(Vector2 size)
-    {
-        return CreateBadge(null, new Color("475569"), "?", size);
     }
 
     public static Control CreateRewardMetric(string rewardType, string rewardItemId, string text, Vector2 badgeSize)
@@ -110,7 +100,7 @@ public static class UiBadgeFactory
         return stack;
     }
 
-    private static Control CreateBadge(Texture2D texture, Color tint, string fallbackText, Vector2 size, bool large = false)
+    private static Control CreateBadge(Texture2D texture, Color tint, string fallbackText, Vector2 size)
     {
         var frame = new PanelContainer
         {
@@ -137,9 +127,7 @@ public static class UiBadgeFactory
                 Texture = texture,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = large
-                    ? TextureRect.StretchModeEnum.KeepAspectCovered
-                    : TextureRect.StretchModeEnum.KeepAspectCentered
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
             };
             textureRect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
             inner.AddChild(textureRect);
@@ -176,24 +164,6 @@ public static class UiBadgeFactory
             "epic" => new Color("c084fc"),
             "rare" => new Color("60a5fa"),
             _ => new Color("94a3b8")
-        };
-    }
-
-    private static Color ResolveCodexTint(CodexEntry entry)
-    {
-        if (entry == null)
-        {
-            return new Color("64748b");
-        }
-
-        return entry.Category.ToLowerInvariant() switch
-        {
-            "boss" => new Color("ef4444"),
-            "enemy" => new Color("a855f7"),
-            "spell" => new Color("38bdf8"),
-            "relic" => new Color("f59e0b"),
-            "unit" => new Color("22c55e"),
-            _ => new Color("64748b")
         };
     }
 

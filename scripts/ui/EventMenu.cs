@@ -1,288 +1,151 @@
 using System;
 using Godot;
 
-public partial class EventMenu : Control
+/// <summary>
+/// The seasonal event on a painted board: the event's stages in order on the left (the next one with Deploy),
+/// its milestones with Claim on the right. Between events the board shows the festival painting and what an
+/// event brings.
+/// </summary>
+public partial class EventMenu : RoyalBoard
 {
-	private PanelContainer _titlePanel = null!;
-	private PanelContainer _stagesPanel = null!;
-	private PanelContainer _milestonesPanel = null!;
-	private HBoxContainer _resourcesRow = null!;
-	private Label _statusLabel = null!;
-	private VBoxContainer _stagesStack = null!;
-	private VBoxContainer _milestonesStack = null!;
+    /// <summary>Reviews show an event's board outside its dates.</summary>
+    public static SeasonalEventDefinition Preview;
 
-	public override void _Ready()
-	{
-		BuildUi();
-		RefreshUi();
-		AnimateEntrance(new Control[] { _titlePanel, _stagesPanel, _milestonesPanel });
-	}
+    public EventMenu() : base("Seasonal Event", "event") { }
 
-	private void AnimateEntrance(Control[] panels)
-	{
-		for (var i = 0; i < panels.Length; i++)
-		{
-			var panel = panels[i];
-			if (panel == null) continue;
-			panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			var delay = 0.06f + (i * 0.05f);
-			var tween = CreateTween();
-			tween.TweenProperty(panel, "modulate:a", 1f, 0.22f)
-				.SetDelay(delay)
-				.SetTrans(Tween.TransitionType.Cubic)
-				.SetEase(Tween.EaseType.Out);
-		}
-	}
+    private static SeasonalEventDefinition Active => Preview ?? GameState.Instance.GetActiveEvent();
 
-	private void BuildUi()
-	{
-		var evt = GameState.Instance.GetActiveEvent();
-		var bannerColor = evt != null ? new Color(evt.BannerColorHex) : new Color("cc6622");
+    protected override void Build()
+    {
+        if (Active is { } evt) Title = evt.Title;
+        base.Build();
+    }
 
-        MedievalUi.Apply(this);
+    protected override void Compose()
+    {
+        var state = GameState.Instance;
+        var evt = Active;
+        Chip("result-star", state.Sigils.ToString("N0"), $"{state.Sigils} sigils", RewardArt("sigils"));
+        var body = Board.Body; var footer = Board.Footer;
+        var left = new Rect2(body.Position.X + 6, Board.Notch.End.Y - 2, 560, footer.Position.Y - 10 - Board.Notch.End.Y);
+        var right = new Rect2(left.End.X + 16, body.Position.Y + 10, body.End.X - left.End.X - 22, footer.Position.Y - 12 - body.Position.Y);
+        Back(new Rect2(footer.Position, new Vector2(170, footer.Size.Y)));
+        NoticeAt(new Rect2(footer.Position.X + 184, footer.Position.Y, footer.Size.X - 184, footer.Size.Y));
+        if (evt == null) { Quiet(left, right); return; }
+        Caps(EndsIn(evt) ?? "Stages", new Rect2(Board.Notch.End.X + 6, body.Position.Y + 6, 420, 40), 18);
+        Stages(left, evt);
+        Milestones(right, evt);
+    }
 
-		_titlePanel = new PanelContainer { Position = new Vector2(24f, 20f), Size = new Vector2(1232f, 82f) };
-		AddChild(_titlePanel);
-		var titleRow = new HBoxContainer();
-		titleRow.AddThemeConstantOverride("separation", 16);
-		_titlePanel.AddChild(titleRow);
+    private void Quiet(Rect2 left, Rect2 right)
+    {
+        Caps("Between festivals", new Rect2(Board.Notch.End.X + 6, Board.Body.Position.Y + 6, 420, 40), 18);
+        Picture(left, RoyalArt.Item("activity-event"));
+        Shade(new Rect2(left.Position.X + 3, left.End.Y - 170, left.Size.X - 6, 167));
+        Heading("No event right now", new Rect2(left.Position.X + 24, left.End.Y - 150, left.Size.X - 48, 46), 32);
+        Paragraph("Seasonal events bring limited stages and rewards. Check back soon.", new Rect2(left.Position.X + 24, left.End.Y - 98, left.Size.X - 48, 70), 2, 20, new Color("e6dcc8"));
+        var room = Section(right, "What an event brings", "emblem-event");
+        var features = new (Texture2D Art, string Name, string Text)[]
+        {
+            (RoyalKit.Texture("emblem-tower"), "Limited stages", "A run of festival battles on familiar roads, with their own modifiers."),
+            (RewardArt("sigils"), "Event rewards", "Each stage cleared pays out, many in sigils."),
+            (RoyalKit.Texture("emblem-crown"), "Milestones", "Clear enough stages to claim the festival's prizes.")
+        };
+        var pitch = room.Size.Y / features.Length;
+        for (var i = 0; i < features.Length; i++)
+        {
+            var row = new Rect2(room.Position.X, room.Position.Y + i * pitch, room.Size.X, pitch - 10);
+            Frame("season-locked", row, 10);
+            Image(features[i].Art, new Rect2(row.Position.X + 12, row.Position.Y + 10, row.Size.Y - 20, row.Size.Y - 20));
+            var x = row.Position.X + row.Size.Y + 6;
+            Serif(features[i].Name, new Rect2(x, row.Position.Y + 10, row.End.X - x - 12, 32), 21, weight: 700);
+            Paragraph(features[i].Text, new Rect2(x, row.Position.Y + 44, row.End.X - x - 14, row.Size.Y - 52), 2, 18);
+        }
+    }
 
-		titleRow.AddChild(new Label
-		{
-			Text = evt?.Title ?? "No Active Event",
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			VerticalAlignment = VerticalAlignment.Center
-		});
-		_resourcesRow = new HBoxContainer();
-		_resourcesRow.AddThemeConstantOverride("separation", 12);
-		titleRow.AddChild(_resourcesRow);
+    private void Stages(Rect2 rect, SeasonalEventDefinition evt)
+    {
+        var state = GameState.Instance;
+        var progress = state.GetEventProgress(evt.Id);
+        var room = Section(rect, "Stages", "emblem-tower", $"{progress}/{evt.Stages.Length} cleared");
+        var pitch = Mathf.Min(84, room.Size.Y / Mathf.Max(1, evt.Stages.Length));
+        for (var i = 0; i < evt.Stages.Length; i++)
+        {
+            var stage = evt.Stages[i];
+            var cleared = i < progress;
+            var current = i == progress;
+            var data = GameData.GetStage(stage.BaseStageNumber);
+            var row = new Rect2(room.Position.X, room.Position.Y + i * pitch, room.Size.X, pitch - 8);
+            Frame(current ? "ach-card-ready" : "season-locked", row, 10);
+            Image(RewardArt(stage.CompletionReward?.Type, stage.CompletionReward?.ItemId), new Rect2(row.Position.X + 8, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8),
+                cleared ? new Color(1, 1, 1, .45f) : null);
+            var x = row.Position.X + row.Size.Y + 6;
+            Serif($"{i + 1}. {(data != null ? $"{data.MapName} · {data.StageName}" : $"Stage {stage.BaseStageNumber}")}", new Rect2(x, row.Position.Y + 3, row.End.X - x - 150, 30), 19,
+                cleared ? Soft : RoyalText.Cream, weight: 700);
+            // The reward is the picture on the left (named in its tooltip); the line below is the foe's strength.
+            Serif($"Enemy health ×{stage.EnemyHealthScale:0.##} · damage ×{stage.EnemyDamageScale:0.##}", new Rect2(x, row.Position.Y + 30, row.End.X - x - 150, 28), 18, Soft, weight: 500);
+            Live.AddChild(new Control { Position = row.Position, Size = new Vector2(row.Size.Y, row.Size.Y), TooltipText = Reward(stage.CompletionReward), MouseFilter = MouseFilterEnum.Pass });
+            var button = new Rect2(row.End.X - 140, row.Position.Y + (row.Size.Y - 40) / 2, 128, 40);
+            if (current)
+            {
+                var id = evt.Id; var index = i;
+                Action(button, "Deploy", "icon-swords-dark", () => { GameState.Instance.PrepareEventBattle(id, index); SceneRouter.Instance.GoToLoadout(); }, Kind.Gold, size: 16);
+            }
+            else Caps(cleared ? "Cleared" : "Locked", button, 16, cleared ? Green : new Color("a49a8a"), HorizontalAlignment.Center);
+        }
+    }
 
-		// Stages panel
-		_stagesPanel = new PanelContainer { Position = new Vector2(24f, 122f), Size = new Vector2(700f, 480f) };
-		AddChild(_stagesPanel);
-		var stagesOuter = new MarginContainer();
-		stagesOuter.AddThemeConstantOverride("margin_left", 8);
-		stagesOuter.AddThemeConstantOverride("margin_right", 8);
-		stagesOuter.AddThemeConstantOverride("margin_top", 8);
-		stagesOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_stagesPanel.AddChild(stagesOuter);
-		var stagesInner = new VBoxContainer();
-		stagesInner.AddThemeConstantOverride("separation", 6);
-		stagesOuter.AddChild(stagesInner);
-		if (evt != null)
-		{
-			stagesInner.AddChild(RealmUi.SectionTitle("Stages"));
-			stagesInner.AddChild(RealmUi.Label(evt.Description, 18, true));
-		}
-		var stagesScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 360f) };
-		stagesInner.AddChild(stagesScroll);
-		_stagesStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		_stagesStack.AddThemeConstantOverride("separation", 6);
-		stagesScroll.AddChild(_stagesStack);
+    private void Milestones(Rect2 rect, SeasonalEventDefinition evt)
+    {
+        var state = GameState.Instance;
+        var progress = state.GetEventProgress(evt.Id);
+        var room = Section(rect, "Milestones", "emblem-crown");
+        Meter(new Rect2(room.Position.X + 4, room.Position.Y + 2, room.Size.X - 8, 14), progress / (float)Math.Max(1, evt.Stages.Length));
+        var top = room.Position.Y + 28;
+        var pitch = Mathf.Min(84, (room.End.Y - top) / Mathf.Max(1, evt.Milestones.Length));
+        for (var i = 0; i < evt.Milestones.Length; i++)
+        {
+            var milestone = evt.Milestones[i];
+            var claimed = state.HasClaimedEventReward(evt.Id, i);
+            var reachable = progress >= milestone.StagesRequired;
+            var row = new Rect2(room.Position.X, top + i * pitch, room.Size.X, pitch - 8);
+            Frame(reachable && !claimed ? "ach-card-ready" : "season-locked", row, 10);
+            Image(RewardArt(milestone.Reward?.Type, milestone.Reward?.ItemId), new Rect2(row.Position.X + 8, row.Position.Y + 4, row.Size.Y - 8, row.Size.Y - 8), claimed ? new Color(1, 1, 1, .45f) : null);
+            var x = row.Position.X + row.Size.Y + 6;
+            Serif(milestone.Label, new Rect2(x, row.Position.Y + 4, row.End.X - x - 140, 30), 19, claimed ? Soft : RoyalText.Cream, weight: 700);
+            Serif(Reward(milestone.Reward), new Rect2(x, row.Position.Y + 34, row.End.X - x - 140, 28), 18, Soft, weight: 500);
+            var button = new Rect2(row.End.X - 124, row.Position.Y + (row.Size.Y - 40) / 2, 112, 40);
+            var id = evt.Id; var index = i;
+            if (claimed) Caps("Claimed", button, 16, Green, HorizontalAlignment.Center);
+            else if (!reachable) Caps($"{progress}/{milestone.StagesRequired}", button, 17, Soft, HorizontalAlignment.Center);
+            else Action(button, "Claim", null, () =>
+            {
+                var got = GameState.Instance.TryClaimEventReward(id, index, out var message);
+                AudioDirector.Claimed(got);
+                Notify(message);
+                if (got) Refresh();
+            }, Kind.Claim, size: 16);
+        }
+    }
 
-		// Milestones panel
-		_milestonesPanel = new PanelContainer { Position = new Vector2(740f, 122f), Size = new Vector2(516f, 480f) };
-		AddChild(_milestonesPanel);
-		var msOuter = new MarginContainer();
-		msOuter.AddThemeConstantOverride("margin_left", 8);
-		msOuter.AddThemeConstantOverride("margin_right", 8);
-		msOuter.AddThemeConstantOverride("margin_top", 8);
-		msOuter.AddThemeConstantOverride("margin_bottom", 8);
-		_milestonesPanel.AddChild(msOuter);
-		var msInner = new VBoxContainer();
-		msInner.AddThemeConstantOverride("separation", 6);
-		msOuter.AddChild(msInner);
-		msInner.AddChild(RealmUi.SectionTitle("Milestones"));
-		// Without an event the stage panel's message is the whole page.
-		if (evt == null) { _milestonesPanel.SetMeta("modal_hidden", true); _milestonesPanel.Visible = false; }
-		_milestonesStack = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-		_milestonesStack.AddThemeConstantOverride("separation", 8);
-		msInner.AddChild(_milestonesStack);
+    private static string EndsIn(SeasonalEventDefinition evt)
+    {
+        if (!DateTime.TryParse(evt.EndDate, out var end)) return null;
+        var days = (int)(end.Date - DateTime.UtcNow.Date).TotalDays;
+        return days > 1 ? $"Ends in {days} days" : days == 1 ? "Ends tomorrow" : "Ends today";
+    }
 
-		_statusLabel = new Label { Position = new Vector2(24f, 618f), Size = new Vector2(1232f, 30f), HorizontalAlignment = HorizontalAlignment.Center };
-		_statusLabel.AddThemeColorOverride("font_color", new Color("90a0b0"));
-		AddChild(_statusLabel);
-
-		var bottomRow = new HBoxContainer { Position = new Vector2(24f, 660f), Size = new Vector2(1232f, 40f) };
-		bottomRow.AddThemeConstantOverride("separation", 12);
-		AddChild(bottomRow);
-		var mapBtn = MapNavigation.Button(() => SceneRouter.Instance.GoToMap());
-		bottomRow.AddChild(mapBtn);
-	}
-
-	private void RefreshUi()
-	{
-		var gs = GameState.Instance;
-		RebuildResourcesRow(gs);
-
-		var evt = gs.GetActiveEvent();
-		RebuildStages(evt);
-		RebuildMilestones(evt);
-	}
-
-	private void RebuildResourcesRow(GameState gs)
-	{
-		foreach (var child in _resourcesRow.GetChildren())
-		{
-			child.QueueFree();
-		}
-
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("gold", "", gs.Gold.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("food", "", gs.Food.ToString("N0"), new Vector2(24f, 24f)));
-		_resourcesRow.AddChild(UiBadgeFactory.CreateRewardMetric("sigils", "", gs.Sigils.ToString("N0"), new Vector2(24f, 24f)));
-	}
-
-	private void RebuildStages(SeasonalEventDefinition evt)
-	{
-		foreach (var child in _stagesStack.GetChildren()) child.QueueFree();
-
-		if (evt == null)
-		{
-			_stagesStack.AddChild(RealmUi.EmptyState("star", "No event right now", "Seasonal events bring limited stages and rewards. Check back soon."));
-			return;
-		}
-
-		var gs = GameState.Instance;
-		var progress = gs.GetEventProgress(evt.Id);
-
-		for (var i = 0; i < evt.Stages.Length; i++)
-		{
-			var stage = evt.Stages[i];
-			var cleared = i < progress;
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 8);
-
-			var stageData = GameData.GetStage(stage.BaseStageNumber);
-			var stageName = stageData != null ? $"{stageData.MapName} · {stageData.StageName}" : $"Stage {stage.BaseStageNumber}";
-			var details = $"Enemy health ×{stage.EnemyHealthScale:0.##} · damage ×{stage.EnemyDamageScale:0.##}";
-			if (stage.ForcedModifierIds.Length > 0) details += " · " + string.Join(", ", stage.ForcedModifierIds);
-			var rewardText = FormatReward(stage.CompletionReward);
-
-			row.AddChild(UiBadgeFactory.CreateRewardBadge(
-				stage.CompletionReward?.Type,
-				stage.CompletionReward?.ItemId,
-				rewardText,
-				new Vector2(36f, 36f)));
-			var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-			text.AddThemeConstantOverride("separation", 2);
-			text.AddChild(RealmUi.Label($"{i + 1}. {stageName}", 18));
-			text.AddChild(RealmUi.Label($"{details} · {rewardText}", 18, true));
-			row.AddChild(text);
-			if (cleared || i > progress)
-			{
-				var state = RealmUi.Label(cleared ? "Cleared" : "Locked", 18, true);
-				state.AutowrapMode = TextServer.AutowrapMode.Off; state.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; state.VerticalAlignment = VerticalAlignment.Center;
-				if (cleared) state.AddThemeColorOverride("font_color", new Color("9fd49a"));
-				row.AddChild(state);
-			}
-
-			if (i == progress && !cleared)
-			{
-				var capturedEventId = evt.Id;
-				var capturedIndex = i;
-				var btn = new RealmButton { Text = "Deploy" };
-				btn.Pressed += () =>
-				{
-					gs.PrepareEventBattle(capturedEventId, capturedIndex);
-					SceneRouter.Instance.GoToLoadout();
-				};
-				row.AddChild(btn);
-			}
-
-			_stagesStack.AddChild(row);
-		}
-
-		if (DateTime.TryParse(evt.EndDate, out var endDate))
-		{
-			var remaining = endDate.Date - DateTime.UtcNow.Date;
-			if (remaining.TotalDays > 0)
-			{
-				_statusLabel.Text = (int)remaining.TotalDays == 1 ? "Event ends tomorrow." : $"Event ends in {(int)remaining.TotalDays} days.";
-			}
-			else
-			{
-				_statusLabel.Text = "Event ends today.";
-			}
-		}
-	}
-
-	private void RebuildMilestones(SeasonalEventDefinition evt)
-	{
-		foreach (var child in _milestonesStack.GetChildren()) child.QueueFree();
-
-		if (evt == null)
-		{
-			_milestonesStack.AddChild(RealmUi.Label("No milestones yet.", 18, true));
-			return;
-		}
-
-		var gs = GameState.Instance;
-		var progress = gs.GetEventProgress(evt.Id);
-
-		for (var i = 0; i < evt.Milestones.Length; i++)
-		{
-			var ms = evt.Milestones[i];
-			var claimed = gs.HasClaimedEventReward(evt.Id, i);
-			var reachable = progress >= ms.StagesRequired;
-
-			var row = new HBoxContainer();
-			row.AddThemeConstantOverride("separation", 8);
-
-			var rewardText = FormatReward(ms.Reward);
-			row.AddChild(UiBadgeFactory.CreateRewardBadge(ms.Reward?.Type, ms.Reward?.ItemId, rewardText, new Vector2(36f, 36f)));
-			var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-			text.AddThemeConstantOverride("separation", 2);
-			text.AddChild(RealmUi.Label(ms.Label, 18));
-			text.AddChild(RealmUi.Label(rewardText, 18, true));
-			row.AddChild(text);
-			if (claimed || !reachable)
-			{
-				var state = RealmUi.Label(claimed ? "Claimed" : $"{progress}/{ms.StagesRequired}", 18, true);
-				state.AutowrapMode = TextServer.AutowrapMode.Off; state.SizeFlagsHorizontal = SizeFlags.ShrinkEnd; state.VerticalAlignment = VerticalAlignment.Center;
-				if (claimed) state.AddThemeColorOverride("font_color", new Color("9fd49a"));
-				row.AddChild(state);
-			}
-
-			if (reachable && !claimed)
-			{
-				var capturedEventId = evt.Id;
-				var capturedIndex = i;
-				var btn = new RealmButton { Text = "Claim" };
-				btn.Pressed += () =>
-				{
-					if (AudioDirector.Claimed(gs.TryClaimEventReward(capturedEventId, capturedIndex, out var msg)))
-					{
-						_statusLabel.Text = msg;
-						RefreshUi();
-					}
-					else
-					{
-						_statusLabel.Text = msg;
-					}
-				};
-				row.AddChild(btn);
-			}
-
-			_milestonesStack.AddChild(row);
-		}
-
-		// Progress bar
-		var totalStages = evt.Stages.Length;
-		_milestonesStack.AddChild(new HSeparator());
-		_milestonesStack.AddChild(RealmUi.KeyValue("Stages cleared", $"{progress}/{totalStages}"));
-	}
-
-	private static string FormatReward(SeasonalEventReward reward)
-	{
-		if (reward == null) return "none";
-		return reward.Type?.ToLowerInvariant() switch
-		{
-			"gold" => $"+{reward.Amount} gold",
-			"food" => $"+{reward.Amount} food",
-			"sigils" => $"+{reward.Amount} sigils",
-			"shards" => $"+{reward.Amount} shards",
-			"relic" => GameData.GetEquipment(reward.ItemId)?.DisplayName ?? reward.ItemId,
-			_ => reward.Type ?? "unknown"
-		};
-	}
+    private static string Reward(SeasonalEventReward reward)
+    {
+        if (reward == null) return "No reward";
+        return reward.Type?.ToLowerInvariant() switch
+        {
+            "gold" => $"+{reward.Amount} gold",
+            "food" => $"+{reward.Amount} food",
+            "sigils" => $"+{reward.Amount} sigils",
+            "shards" => $"+{reward.Amount} shards",
+            "relic" => GameData.GetEquipment(reward.ItemId)?.DisplayName ?? reward.ItemId,
+            _ => reward.Type ?? "Reward"
+        };
+    }
 }

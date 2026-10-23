@@ -30,12 +30,10 @@ public partial class ShopMenu
 
     public static Texture2D RelicArt(EquipmentDefinition relic) => UiArtLoader.TryLoadRelicIcon(relic);
 
-    /// <summary>The relic's modifiers as stat rows (value, caption, icon), most important first.</summary>
+    /// <summary>The relic's modifiers as stat rows (value, caption, stat-sheet icon id), most important first.</summary>
     private static List<(string Value, string Caption, string Icon)> RelicRows(EquipmentDefinition relic)
     {
-        return RelicStatText.Stats(relic).Select(row=>(row.Value,row.Label,row.Icon switch
-        {"heart"=>"stat-health","shield"=>"class-shield","crystal"=>"crystal",
-         "clock"=>"relicstat-cooldown","eye"=>"stat-range","arrow"=>"stat-courage",_=>"relicstat-damage"})).ToList();
+        return RelicStatText.Stats(relic).Select(row => (row.Value, row.Label, row.Icon)).ToList();
     }
 
     private void BuildRelics()
@@ -201,7 +199,10 @@ public partial class ShopMenu
         {
             var top = i * pitch;
             if (i > 0) list.AddChild(Cut(divider, new Vector2(divider.Position.X - inner.Position.X, top - divider.Size.Y / 2)));
-            list.AddChild(RoyalKit.Image(rows[i].Icon, new Rect2(30 - icon / 2, top + (pitch - icon) / 2, icon, icon)));
+            // The same glyphs as every other stat sheet; ids it doesn't know (rarity) are kit pieces.
+            list.AddChild(new TextureRect { Texture = StatSheet.Glyph(rows[i].Icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
+                Position = new Vector2(30 - icon / 2, top + (pitch - icon) / 2), Size = new Vector2(icon, icon), MouseFilter = MouseFilterEnum.Ignore });
             var value = RoyalText.Serif(rows[i].Value, 18, new Color("f6ebbd"), 700);
             value.Align = HorizontalAlignment.Right;
             var valueWidth = value.TextWidth(value.FontSize) + 4;

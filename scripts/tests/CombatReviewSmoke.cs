@@ -100,6 +100,7 @@ public partial class CombatReviewSmoke : Node
         await CheckStageStars();
         await CheckBaseWeapons();
         await CheckFinishPacing();
+        await CheckWeeklyRaid();
         var battle = await OpenBattle(30);
         var director = Read<BattleSpawnDirector>(battle, "_spawnDirector");
         foreach (var id in new[] { "enemy_boss", "enemy_boss_ward", "enemy_lich" })
@@ -666,7 +667,7 @@ public partial class CombatReviewSmoke : Node
             won = Read<bool>(battle, "_battleEnded") && Read<float>(battle, "_enemyBaseHealth") <= 0 && Read<float>(battle, "_playerBaseHealth") > 0,
             hull = Math.Round(Read<float>(battle, "_playerBaseHealth") / Read<float>(battle, "_playerBaseMaxHealth"), 3),
             gate = Math.Round(Read<float>(battle, "_enemyBaseHealth") / Read<float>(battle, "_enemyBaseMaxHealth"), 3),
-            defeats = Read<int>(battle, "_enemyDefeats"), spells = Read<int>(battle, "_spellsCast"), peak, bosses,
+            defeats = Read<int>(battle, "_enemyDefeats"), raidDamage = (int)Invoke(battle, "RaidDamageDealt"), spells = Read<int>(battle, "_spellsCast"), peak, bosses,
             gateSeconds = Math.Round(gateSeconds, 1), gateCrowd
         }));
         if (!Read<bool>(battle, "_battleEnded"))

@@ -157,7 +157,7 @@ public static class TutorialHintCatalog
 		{
 			Id = "raid_hint",
 			Title = "Weekly Raid",
-			Body = "A community-wide boss rotates each week. All players contribute damage. Hit milestones to earn rewards for everyone.",
+			Body = "A new boss rises each week. Every battle you fight wears it down by the damage you deal. Reach its milestones to claim rewards.",
 			TriggerContext = "first_raid"
 		},
 		new()

@@ -220,7 +220,9 @@ public partial class GameState : Node
 
 	// Raid
 	public string LastRaidWeek { get; private set; } = "";
-	public int RaidDamageContributed { get; private set; }
+	/// <summary>Damage dealt to this week's raid boss; a week with no battle yet reads 0.</summary>
+	public int RaidDamageContributed => LastRaidWeek == RaidBossCatalog.GetCurrentWeekId() ? _raidDamageContributed : 0;
+	private int _raidDamageContributed;
 	private readonly HashSet<string> _claimedRaidRewardIds = new(StringComparer.OrdinalIgnoreCase);
 	private int _raidContributionCount;
 
@@ -3320,24 +3322,25 @@ public partial class GameState : Node
 
 	// ── Weekly Raid ──────────────────────────────────────────
 
+	/// <summary>Every finished battle adds the damage it dealt (see BattleController.RaidDamageDealt).</summary>
 	public void ContributeRaidDamage(int damage)
 	{
+		if (damage <= 0) return;
 		var currentWeek = RaidBossCatalog.GetCurrentWeekId();
 		if (LastRaidWeek != currentWeek)
 		{
 			LastRaidWeek = currentWeek;
-			RaidDamageContributed = 0;
+			_raidDamageContributed = 0;
 			_claimedRaidRewardIds.Clear();
-			_raidContributionCount = 0;
+			// Raid Striker counts the raid weeks fought in, not the battles.
+			_raidContributionCount++;
+			if (_raidContributionCount >= 3)
+			{
+				TryUnlockAchievement("raid_contributor");
+			}
 		}
 
-		RaidDamageContributed += damage;
-		_raidContributionCount++;
-		if (_raidContributionCount >= 3)
-		{
-			TryUnlockAchievement("raid_contributor");
-		}
-
+		_raidDamageContributed = (int)Math.Min(int.MaxValue, (long)_raidDamageContributed + damage);
 		Persist();
 	}
 
@@ -3364,9 +3367,10 @@ public partial class GameState : Node
 		}
 
 		var milestone = boss.Milestones[milestoneIndex];
-		if (RaidDamageContributed < milestone.DamageThreshold)
+		var damage = weekId == LastRaidWeek ? RaidDamageContributed : 0;
+		if (damage < milestone.DamageThreshold)
 		{
-			message = $"Community damage not reached ({RaidDamageContributed}/{milestone.DamageThreshold}).";
+			message = $"Deal {milestone.DamageThreshold - damage:N0} more damage to claim this.";
 			return false;
 		}
 
@@ -4384,7 +4388,7 @@ public partial class GameState : Node
 		Essence = 0;
 		_relicEnchantments.Clear();
 		LastRaidWeek = "";
-		RaidDamageContributed = 0;
+		_raidDamageContributed = 0;
 		_claimedRaidRewardIds.Clear();
 		_raidContributionCount = 0;
 
@@ -4966,7 +4970,7 @@ public partial class GameState : Node
 			}
 
 			LastRaidWeek = saved.LastRaidWeek?.Trim() ?? "";
-			RaidDamageContributed = Math.Max(0, saved.RaidDamageContributed);
+			_raidDamageContributed = Math.Max(0, saved.RaidDamageContributed);
 			_raidContributionCount = Math.Max(0, saved.RaidContributionCount);
 			_claimedRaidRewardIds.Clear();
 			if (saved.ClaimedRaidRewardIds != null)
@@ -5287,7 +5291,7 @@ public partial class GameState : Node
 			Essence = Essence,
 			RelicEnchantments = new Dictionary<string, string>(_relicEnchantments),
 			LastRaidWeek = LastRaidWeek ?? "",
-			RaidDamageContributed = RaidDamageContributed,
+			RaidDamageContributed = _raidDamageContributed,
 			RaidContributionCount = _raidContributionCount,
 			ClaimedRaidRewardIds = _claimedRaidRewardIds.ToArray(),
 

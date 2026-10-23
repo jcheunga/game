@@ -179,6 +179,8 @@ public partial class BattleController : Node2D
 	private float _elapsed;
 	private int _playerDeployments;
 	private int _enemyDefeats;
+	// Health of the enemies cut down this battle, banked into the weekly raid when the battle pays out.
+	private float _raidDamage;
 	private readonly Dictionary<string, float> _unitDamageDealt = new();
 	private readonly Dictionary<Unit, Unit> _targetLocks = new();
 	private readonly HashSet<Unit> _campaignBossPhaseTriggeredUnits = new();
@@ -431,6 +433,7 @@ public partial class BattleController : Node2D
 
 		_playerDeployments = 0;
 		_enemyDefeats = 0;
+		_raidDamage = 0f;
 		_unitDamageDealt.Clear();
 		_spellsCast = 0;
 		ResetCaravanSpell();
@@ -4388,6 +4391,7 @@ public partial class BattleController : Node2D
 			{
 				TryDropCourage(deadUnit);
 				_enemyDefeats++;
+				_raidDamage += deadUnit.MaxHealth;
 				GainMana(_combat.ManaPerEnemyKill);
 				RegisterCampaignDoctrineDefeat(deadUnit);
 				GameState.Instance.RecordCodexKill(deadUnit.DefinitionId);
@@ -6145,7 +6149,7 @@ public partial class BattleController : Node2D
 		_battleEnded = true;
 		// A developer speed-up stops at the result, so it reads at normal pace.
 		if (DeveloperBattleToolsAvailable) ResetBattleSpeed();
-		AwardPlayerXP(playerWon);
+		PayBattleProgress(playerWon);
 		AudioDirector.Instance?.SetBattlePressure(0.18f);
 		_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 		_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
@@ -6330,17 +6334,25 @@ public partial class BattleController : Node2D
 		UpdateHud();
 	}
 
-	// Paid before the mode's own results: a campaign stage with no stars yet still counts as a first clear,
-	// and the result board's save comparison shows the gain. Retreats earn nothing, except from endless and
-	// boss rush, where withdrawing banks the run.
-	private void AwardPlayerXP(bool won)
+	// XP and raid damage are paid before the mode's own results: a campaign stage with no stars yet still counts
+	// as a first clear, and the result board's save comparison shows the gain. Retreats earn nothing, except from
+	// endless and boss rush, where withdrawing banks the run.
+	private void PayBattleProgress(bool won)
 	{
 		var progress = IsEndlessMode ? _spawnDirector.EndlessWaveNumber
 			: IsBossRushMode ? _rushCleared
 			: IsTowerMode ? GameState.Instance.SelectedTowerFloor
 			: 0;
 		GameState.Instance.AwardBattleXP(_battleMode, won, _stage, progress);
+		GameState.Instance.ContributeRaidDamage(RaidDamageDealt());
 	}
+
+	/// <summary>
+	/// What this battle adds to the weekly raid: the health of every enemy defeated (summons excluded, like the
+	/// defeat count) plus the damage done to the enemy gate. A lost battle still counts what it cut down.
+	/// </summary>
+	private int RaidDamageDealt() =>
+		Mathf.RoundToInt(_raidDamage + Mathf.Clamp(_enemyBaseMaxHealth - _enemyBaseHealth, 0f, _enemyBaseMaxHealth));
 
 	private void RetreatToMap()
 	{
@@ -6351,7 +6363,7 @@ public partial class BattleController : Node2D
 			if (!_battleEnded)
 			{
 				_battleEnded = true;
-				AwardPlayerXP(false);
+				PayBattleProgress(false);
 				GameState.Instance.ApplyBossRushResult(_rushCleared, _elapsed, 0, false, true);
 			}
 			SceneRouter.Instance.GoToBossRush();
@@ -6364,7 +6376,7 @@ public partial class BattleController : Node2D
 				_battleEnded = true;
 				_playerBaseHealth = Mathf.Max(0f, _playerBaseHealth);
 				_enemyBaseHealth = Mathf.Max(0f, _enemyBaseHealth);
-				AwardPlayerXP(false);
+				PayBattleProgress(false);
 				FinalizeEndlessRun(true);
 			}
 

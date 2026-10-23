@@ -67,7 +67,7 @@ A save from before levels starts at the level its won stages earn, counting each
 
 - `PlayerLevelCatalog` holds the curve, caps, rewards and XP table.
 - `GameState.PlayerLevel.cs` holds state, claims and nickname rules. Save version 48 adds `PlayerXP`, `ClaimedLevelRewards` and `HasChosenCallsign`.
-- `BattleController.AwardPlayerXP` is called from `EndBattle` and from the endless and boss-rush retreats.
+- `BattleController.PayBattleProgress` (XP and weekly raid damage) is called from `EndBattle` and from the endless and boss-rush retreats.
 
 ```sh
 godot --headless --path . --fixed-fps 60 res://scenes/tests/CombatReviewSmoke.tscn -- --save-suffix=combat-review-levels --regressions

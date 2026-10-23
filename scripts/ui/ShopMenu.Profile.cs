@@ -7,26 +7,15 @@ public partial class ShopMenu
 {
     private readonly record struct Action2(string Text, int Cost, bool Enabled, Action Run);
 
-    private string StatIcon(string icon) => icon switch
+    /// <summary>
+    /// The stats as one compact sheet where the concept painted a plaque per stat (painted out of the plate by
+    /// art/royal/statsheets.py): two columns across the tiles' span, as tall as its rows, leaving room below.
+    /// </summary>
+    private void BuildStats(RoyalSpec spec, ArmoryDetailUi.Stat[] stats, float below = 0)
     {
-        "heart" => "stat-health", "sword" => "stat-damage", "bolt" => "stat-courage",
-        "eye" => _tab == 1 ? "spellstat-radius" : "stat-range",
-        "clock" => _tab == 1 ? "spellstat-cooldown" : "stat-recovery", _ => "stat-recovery"
-    };
-
-    private void BuildStats(RoyalSpec spec, ArmoryDetailUi.Stat[] stats)
-    {
-        for (var i = 0; i < stats.Length && spec.Has($"stat.{i}"); i++)
-        {
-            var tile = spec.Rect($"stat.{i}");
-            _body.AddChild(RoyalKit.Image(StatIcon(stats[i].Icon), spec.Rect($"stat.{i}.icon", new Rect2(tile.Position + new Vector2(11, 17), new Vector2(30, 30)))));
-            var caption = spec.Label($"stat.{i}.caption", stats[i].Label.ToUpperInvariant(), tile.End.X - spec.Number($"stat.{i}.caption", "pen_x", tile.Position.X + 60) - 8);
-            var value = spec.Label($"stat.{i}.value", stats[i].Value, tile.End.X - spec.Number($"stat.{i}.value", "pen_x", tile.Position.X + 60) - 8);
-            _body.AddChild(caption); _body.AddChild(value);
-            var name = $"{stats[i].Label}: {stats[i].Value}";
-            var hint = new Control { Position = tile.Position, Size = tile.Size, TooltipText = name, MouseFilter = MouseFilterEnum.Pass };
-            _body.AddChild(hint);
-        }
+        var first = spec.Rect("stat.0");
+        var top = Mathf.Max(first.Position.Y, below);
+        _body.AddChild(new StatSheet(stats).Place(new Vector2(first.Position.X, top), spec.Rect("stat.1").End.X - first.Position.X));
     }
 
     /// <summary>The role and status chip beside the name.</summary>
@@ -113,8 +102,8 @@ public partial class ShopMenu
         var role = SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag);
         BuildChip(spec, role, entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Recruit" : "Locked");
         var stats = ArmoryDetailUi.UnitStats(unit);
-        // The concept profile: health, damage, courage, range and recovery.
-        BuildStats(spec, new[] { stats[0], stats[1], stats[3], stats[4], stats[5] });
+        // Health, damage, courage, range, recovery and armor: three even rows.
+        BuildStats(spec, new[] { stats[0], stats[1], stats[3], stats[4], stats[5], stats[6] });
         if (spec.Has("detail.desc"))
         {
             var resolved=state.BuildPlayerUnitStats(unit);
@@ -166,13 +155,35 @@ public partial class ShopMenu
         _body.AddChild(RoyalKit.Image(SpellIcon(spell), spec.Rect("detail.icon")));
         _body.AddChild(spec.Label("detail.name", spell.DisplayName, 440));
         var level = entry.Owned ? resolved.Level : 0;
-        _body.AddChild(spec.Label("detail.level", entry.Owned ? $"Lv {level}" : entry.Available ? "Scribe" : $"Stage {spell.UnlockStage}", 120));
-        var pips = spec.Rect("detail.pips");
-        _body.AddChild(RoyalKit.Pips(pips.Position, Mathf.Min(level, state.MaxSpellLevel), state.MaxSpellLevel, pips.Size.X / 4 + .5f, pips.Size.Y));
+        var levelLabel = spec.Label("detail.level", entry.Owned ? $"Lv {level}" : entry.Available ? "Scribe" : $"Stage {spell.UnlockStage}", 120);
+        _body.AddChild(levelLabel);
+        // Level pips only for a spell the player has, set after the level so a longer one never runs into them.
+        if (entry.Owned)
+        {
+            var pips = spec.Rect("detail.pips");
+            var x = Mathf.Max(pips.Position.X, levelLabel.Position.X + levelLabel.TextWidth(levelLabel.FittedSize()) + 12);
+            _body.AddChild(RoyalKit.Pips(new Vector2(x, pips.Position.Y), Mathf.Min(level, state.MaxSpellLevel), state.MaxSpellLevel, pips.Size.X / 4 + .5f, pips.Size.Y));
+        }
         BuildChip(spec, ArmoryDetailUi.SpellRole(spell.EffectType), entry.Owned ? entry.Equipped ? "Equipped" : "Reserve" : entry.Available ? "Scribe" : "Locked");
+        // The purpose wraps on the wood above the sheet at the reading size, and the sheet follows it down
+        // (on one line, a long purpose shrank below the phone floor and ran out over the parchment).
+        var below = 0f;
         if (spec.Has("detail.desc"))
-            _body.AddChild(spec.Label("detail.desc", ArmoryDetailUi.SpellPurpose(spell.EffectType), 470));
-        BuildStats(spec, ArmoryDetailUi.SpellStats(resolved).Take(4).ToArray());
+        {
+            var x = spec.Number("detail.desc", "pen_x", 756);
+            var purpose = RoyalText.Paragraph(ArmoryDetailUi.SpellPurpose(spell.EffectType), ReadingText.PhoneBody, new Color("ede2cf"), 600);
+            purpose.AddThemeConstantOverride("line_spacing", -1);
+            var font = purpose.GetThemeFont("font"); var size = purpose.GetThemeFontSize("font_size");
+            var width = spec.Rect("stat.1").End.X - x;
+            purpose.Position = new Vector2(x, spec.Number("detail.desc", "baseline", 382) - font.GetAscent(size));
+            purpose.Size = new Vector2(width, font.GetHeight(size) * 3);
+            RoyalText.FitLines(purpose, 3);
+            _body.AddChild(purpose);
+            size = purpose.GetThemeFontSize("font_size");
+            var lines = Mathf.Clamp(Mathf.RoundToInt(font.GetMultilineStringSize(purpose.Text, HorizontalAlignment.Left, width, size).Y / font.GetHeight(size)), 1, 3);
+            below = purpose.Position.Y + lines * font.GetHeight(size) + (lines - 1) * purpose.GetThemeConstant("line_spacing") + 12;
+        }
+        BuildStats(spec, ArmoryDetailUi.SpellStats(resolved).ToArray(), below);
 
         var left = new Action2(EquipLabel(entry), 0, CanToggleEquip(entry), () => { state.ToggleDeckSpell(spell.Id, out _); Refresh(); });
         Action2 right;

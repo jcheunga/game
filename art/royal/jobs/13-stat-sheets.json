@@ -1,0 +1,14 @@
+[
+ {
+  "id": "statsheet-warband",
+  "out": "art/royal/gen/stat-sheets/warband-clean.png",
+  "inputs": ["art/royal/gen/stat-sheets/warband-detail.png"],
+  "prompt": "Use case: precise-object-edit\nEdit target: the attached crop of a painted fantasy game UI panel (the unit profile column of an armory screen).\nKeep the exact same image size, composition, framing, perspective, lighting, colours and painting style, aligned with the original so it can be overlaid on it pixel for pixel.\nRemove ONLY the five dark slate plaques with thin gold frames and corner studs in the middle of the panel (two rows of two and one more below on the left). They are empty stat tiles.\nFill each removed area with what is naturally behind it: on the left and in the middle, the same dark brown horizontal wooden planks with their grain, seams and soft vignette; on the upper right, the tan parchment sheet with the faint bow drawing continues down to where it already ends; lower right, the wooden desk with the telescope, rolled map and blue cloth continues to the left as it already does.\nKeep unchanged: the dark wooden header area at the top, the thin gold rule under it, the parchment, the quiver of arrows, barrel, helmet, lantern and scrolls, the two large buttons at the bottom (blue on the left, cream on the right) and the gold frame edges.\nNo text, no letters, no icons, no new objects, no blur patches or smudges."
+ },
+ {
+  "id": "statsheet-spells",
+  "out": "art/royal/gen/stat-sheets/spells-clean.png",
+  "inputs": ["art/royal/gen/stat-sheets/spells-detail.png"],
+  "prompt": "Use case: precise-object-edit\nEdit target: the attached crop of a painted fantasy game UI panel (the spell profile column of a spell library screen).\nKeep the exact same image size, composition, framing, perspective, lighting, colours and painting style, aligned with the original so it can be overlaid on it pixel for pixel.\nRemove ONLY the four dark slate plaques with thin gold frames and corner studs in the middle of the panel (two rows of two). They are empty stat tiles.\nFill each removed area with what is naturally behind it: on the left and in the middle, the same dark brown horizontal wooden planks with their grain, seams and soft vignette; on the right, the tan parchment sheet with the faint arcane circle drawing continues down behind where the plaques were, meeting the stacked books and the lantern as it already does.\nKeep unchanged: the dark wooden header area at the top, the thin gold rule under it, the small dark ribbon plaque at the top right, the parchment, books, lantern, scrolls and desk, the two large buttons at the bottom (blue on the left, cream on the right) and the gold frame edges.\nNo text, no letters, no icons, no new objects, no blur patches or smudges."
+ }
+]

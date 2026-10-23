@@ -42,7 +42,7 @@ public partial class UiReviewSmoke
         foreach (var entry in GameData.GetPlayerUnits())
         {
             await PressHint(entry.DisplayName);
-            AuditText("Profile / " + entry.DisplayName);
+            AuditText("Profile / " + entry.DisplayName); CheckStatSheets("Profile / " + entry.DisplayName);
             var trained = state.BuildPlayerUnitStats(entry);
             Check(Shows($"Health: {trained.MaxHealth:0}") && Shows($"Damage: {trained.AttackDamage:0.#}"), entry.DisplayName + ": core stats show at maximum level");
         }
@@ -58,7 +58,7 @@ public partial class UiReviewSmoke
             await PressHint(spell.DisplayName);
             var resolved = state.BuildSpellStats(spell);
             Check(Shows($"Cooldown: {resolved.Cooldown:0.#}s") && Shows($"Mana: {resolved.ManaCost}"), spell.DisplayName + ": profile uses the battle's resolved cost and cooldown");
-            AuditText("Profile / " + spell.DisplayName);
+            AuditText("Profile / " + spell.DisplayName); CheckStatSheets("Profile / " + spell.DisplayName);
             await Capture("spell-" + spell.EffectType);
         }
         var firstSpell = GameData.GetPlayerSpells().First(); await PressHint(firstSpell.DisplayName);
@@ -73,7 +73,7 @@ public partial class UiReviewSmoke
         state.ToggleDeckSpell(firstSpell.Id, out _); state.PrepareCampaignBattle(); SceneRouter.Instance.GoToLoadout(); await Wait(.3);
         SpellShowcase.Show(Walk(menu).OfType<LoadoutMenu>().Single(), firstSpell); await Wait(.3);
         Check(Walk(menu).OfType<SpellShowcase>().Any(), "Preparation can inspect a spell with the same visual stat cards");
-        AuditText("Profile / spell inspector"); await Capture("06-spell-inspector");
+        AuditText("Profile / spell inspector"); CheckStatSheets("Profile / spell inspector"); await Capture("06-spell-inspector");
         Check(Walk(menu).OfType<RealmModal>().Count() == 2, "The spell inspector opens as a modal above preparation");
         await PressHint("Close details");
         Check(!Walk(menu).OfType<SpellShowcase>().Any(), "Closing the spell inspector returns to preparation");

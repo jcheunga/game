@@ -68,6 +68,20 @@ public partial class UiReviewSmoke
         foreach (var (scene, name) in new[] { ("CodexMenu", "codex"), ("SettingsMenu", "settings"), ("EndlessMenu", "endless"), ("MultiplayerMenu", "multiplayer"),
             ("ForgeMenu", "forge"), ("SeasonPassMenu", "season"), ("LoadoutMenu", "preparation") })
             if (Want(name)) { await Open(scene); await Capture(name); }
+        if (Want("codex-stats"))
+        {
+            // Spell sheets and relic bonuses in the codex's narrow stat column ("Faster attacks +0.88%").
+            await Open("CodexMenu");
+            await CheckCodexSection("Spells", CodexCatalog.GetByCategory("spell").Select(e => e.Title).ToArray());
+            AuditText("Codex spell stats"); await Capture("codex-spells");
+            await Open("CodexMenu");
+            await CheckCodexSection("Relics", CodexCatalog.GetByCategory("relic").Select(e => e.Title).ToArray());
+            // Hardened Crown has the longest bonus pair; turn to its page and show it squeezed into one column.
+            await Open("CodexMenu"); await Press("Relics");
+            for (var turn = 0; turn < 20 && !Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Any(b => b.IsVisibleInTree() && (b.TooltipText == "Hardened Crown" || b.AccessibilityName == "Hardened Crown")); turn++)
+                await PressHint("Next codex page");
+            await PressHint("Hardened Crown"); AuditText("Codex relic stats"); await Capture("codex-relics");
+        }
         if (Want("codex-last"))
         {
             // Every entry discovered gives the widest heading and page count ("PAGE 29 OF 29").

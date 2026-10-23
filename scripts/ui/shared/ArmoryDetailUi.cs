@@ -8,42 +8,8 @@ public static class ArmoryDetailUi
 {
     public readonly record struct Stat(string Icon, string Label, string Value);
 
-    public static GridContainer Stats(IEnumerable<Stat> values, int columns = 2)
-    {
-        var grid = new GridContainer { Name = "ProfileStats", Columns = columns, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        grid.AddThemeConstantOverride("h_separation", 8);
-        grid.AddThemeConstantOverride("v_separation", 6);
-        var captions = new List<Label>();
-        foreach (var stat in values)
-        {
-            var tile = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AccessibilityName = $"{stat.Label}: {stat.Value}" };
-            tile.SetMeta("modal_unframed", true);
-            tile.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
-            grid.AddChild(tile);
-            var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 8); tile.AddChild(row);
-            row.AddChild(new TextureRect {
-                Texture = RealmUi.Icon(stat.Icon), CustomMinimumSize = new Vector2(28, 28),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color("d6ba80")
-            });
-            var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; stack.AddThemeConstantOverride("separation", 0); row.AddChild(stack);
-            // Captions wrap only between words ("GATE / DAMAGE"), never inside one ("COOLDOW / N").
-            var label = new Label { Text = stat.Label.ToUpperInvariant(), AutowrapMode = TextServer.AutowrapMode.Word };
-            label.AddThemeFontSizeOverride("font_size", 18); label.AddThemeColorOverride("font_color", ModalUi.Muted); stack.AddChild(label);
-            captions.Add(label);
-            var number = new Label { Text = stat.Value, VerticalAlignment = VerticalAlignment.Center };
-            number.AddThemeFontSizeOverride("font_size", 28); number.AddThemeColorOverride("font_color", ModalUi.Cream); stack.AddChild(number);
-        }
-        // A wrapping label asks for no width, so every tile is held as wide as the longest caption word (tiles stay even).
-        grid.Ready += () =>
-        {
-            if (captions.Count == 0) return;
-            var widest = captions.Max(caption => caption.Text.Split(' ').Max(word =>
-                caption.GetThemeFont("font").GetStringSize(word, fontSize: caption.GetThemeFontSize("font_size")).X));
-            foreach (var caption in captions) caption.CustomMinimumSize = new Vector2(widest + 2, 0);
-        };
-        return grid;
-    }
+    /// <summary>A compact stat ledger (see <see cref="StatSheet"/>).</summary>
+    public static StatSheet Stats(IEnumerable<Stat> values, int columns = 2) => new(values, columns);
 
     public static Stat[] UnitStats(UnitDefinition unit)
     {
@@ -51,12 +17,12 @@ public static class ArmoryDetailUi
         var stats = unit.IsPlayerSide ? state.BuildPlayerUnitStats(unit) : new UnitStats(unit);
         return new[] {
             new Stat("heart", "Health", $"{stats.MaxHealth:0}"), new Stat("sword", "Damage", $"{stats.AttackDamage:0.#}"),
-            new Stat("shield", "Gate damage", $"{stats.BaseDamage:0.##}"), new Stat("bolt", "Courage", $"{unit.Cost}"),
+            new Stat("siege", "Gate damage", $"{stats.BaseDamage:0.##}"), new Stat("bolt", "Courage", $"{unit.Cost}"),
             new Stat("eye", "Range", $"{stats.AttackRange:0.#}"),
             new Stat("clock", "Recovery", $"{(unit.IsPlayerSide ? state.ApplyPlayerDeployCooldownUpgrade(unit.DeployCooldown) : unit.DeployCooldown):0.#}s"),
             new Stat("shield", "Armor", $"{stats.Armor:0.#}"),
             new Stat("shield", "Phys resist", $"{stats.PhysicalResistance:0.#}%"),
-            new Stat("crystal", "Magic resist", $"{stats.MagicalResistance:0.#}%"),
+            new Stat("mana", "Magic resist", $"{stats.MagicalResistance:0.#}%"),
             new Stat("sword", "Crit chance", $"{stats.CriticalChance:0.#}%"),
             new Stat("sword", "Crit bonus", $"+{stats.CriticalDamageBonus:0.#}%")
         };
@@ -92,33 +58,35 @@ public static class ArmoryDetailUi
         return table;
     }
 
+    /// <summary>A spell's stats, named short enough for a two-column sheet (Courage, not "Courage per pack").</summary>
     public static List<Stat> SpellStats(ResolvedSpellStats spell)
     {
         var primary = spell.EffectType switch {
             "aegis_bolt" => new Stat("shield", "Shield", $"{spell.Power:0.#}"),
             "purifying_light" or "verdant_renewal" or "tactic_healing_shrine" or "tactic_repair_cache" => new Stat("heart", "Recovery", $"{spell.Power:0.#}"),
-            "tactic_supply_crate" => new Stat("bolt", "Courage per pack", $"{spell.Power:0.#}"),
+            "tactic_supply_crate" => new Stat("bolt", "Courage", $"{spell.Power:0.#}"),
             "mirror_ward" => new Stat("shield", "Reflection", $"{spell.Power*100:0}%"),
-            "withering_seal" => new Stat("heart", "Healing cut", $"{(1-spell.SecondaryPower)*100:0}%"),
-            "soul_harvest" => new Stat("bolt", "Mana per corpse", $"{spell.Power:0.#}"),
-            "rallying_advance" => new Stat("sword", "Attack boost", "+8%"),
-            "anchor_hex" or "royal_edict" => new Stat("clock", "Control", $"{spell.Duration:0.#}s"),
-            "gravitation_well" or "tactic_smoke_pot" or "tactic_war_horn" => new Stat("clock", "Duration", $"{spell.Duration:0.#}s"),
-            "gale_step" => new Stat("arrow", "Advance", $"{spell.SecondaryPower:0.#}"),
-            "tactic_palisade_kit" or "tactic_decoy_lantern" or "tactic_purifying_censer" or "tactic_grounding_rod" => new Stat("shield", "Object health", $"{spell.Definition.ObjectHealth:0.#}"),
+            "withering_seal" => new Stat("heart", "Healing", $"−{(1-spell.SecondaryPower)*100:0}%"),
+            "soul_harvest" => new Stat("mana", "Mana gain", $"{spell.Power:0.#}"),
+            "rallying_advance" => new Stat("sword", "Attack", "+8%"),
+            "anchor_hex" or "royal_edict" => new Stat("duration", "Control", $"{spell.Duration:0.#}s"),
+            "gravitation_well" or "tactic_smoke_pot" or "tactic_war_horn" => new Stat("duration", "Duration", $"{spell.Duration:0.#}s"),
+            "gale_step" => new Stat("speed", "Advance", $"{spell.SecondaryPower:0.#}"),
+            "tactic_palisade_kit" or "tactic_decoy_lantern" or "tactic_purifying_censer" or "tactic_grounding_rod" => new Stat("shield", "Durability", $"{spell.Definition.ObjectHealth:0.#}"),
             "heal" => new Stat("heart", "Healing", $"{spell.Power:0.#}"),
             "barrier_ward" => new Stat("shield", "Protection", $"{Mathf.RoundToInt((1 - Mathf.Clamp(spell.Power, 0, 1)) * 100)}%"),
-            "stone_barricade" => new Stat("shield", "Wall health", $"{spell.Power:0.#}"),
-            "war_cry" => new Stat("sword", "Attack boost", $"+{Mathf.RoundToInt((spell.Power - 1) * 100)}%"),
-            "resurrect" => new Stat("heart", "Restored health", $"{Mathf.RoundToInt(spell.Power * 100)}%"),
+            "stone_barricade" => new Stat("shield", "Durability", $"{spell.Power:0.#}"),
+            "war_cry" => new Stat("sword", "Attack", $"+{Mathf.RoundToInt((spell.Power - 1) * 100)}%"),
+            "resurrect" => new Stat("heart", "Revives at", $"{Mathf.RoundToInt(spell.Power * 100)}%"),
             "polymorph" => new Stat("people", "Targets", "1 enemy"),
             _ => new Stat("sword", "Damage", $"{spell.Power:0.#}")
         };
-        var values = new List<Stat> { primary, new("crystal", "Mana", spell.ManaCost.ToString()), new("clock", "Cooldown", $"{spell.Cooldown:0.#}s") };
-        if (spell.EffectType is not ("war_cry" or "resurrect" or "stone_barricade")) values.Add(new("eye", "Radius", $"{spell.Radius:0.#}"));
-        if (spell.Duration > 0) values.Add(new("clock", "Duration", $"{spell.Duration:0.#}s"));
-        if (spell.EffectType == "heal") values.Add(new("hammer", "Wagon repair", $"{spell.SecondaryPower:0.#}"));
-        if (spell.EffectType == "war_cry") values.Add(new("arrow", "Speed boost", $"+{Mathf.RoundToInt((spell.SecondaryPower - 1) * 100)}%"));
+        var values = new List<Stat> { primary, new("mana", "Mana", spell.ManaCost.ToString()), new("clock", "Cooldown", $"{spell.Cooldown:0.#}s") };
+        // A wall's radius is its width, and self-cast spells have none.
+        if (spell.Radius > 0 && spell.EffectType != "stone_barricade") values.Add(new("target", "Radius", $"{spell.Radius:0.#}"));
+        if (spell.Duration > 0 && primary.Label is not ("Duration" or "Control")) values.Add(new("duration", "Duration", $"{spell.Duration:0.#}s"));
+        if (spell.EffectType == "heal") values.Add(new("siege", "Repair", $"{spell.SecondaryPower:0.#}"));
+        if (spell.EffectType == "war_cry") values.Add(new("speed", "Speed", $"+{Mathf.RoundToInt((spell.SecondaryPower - 1) * 100)}%"));
         return values;
     }
 

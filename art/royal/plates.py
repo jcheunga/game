@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 UI = ROOT / "output/crownroad-ui-ideas-2026-10-06"
 MENU = ROOT / "output/crownroad-menu-concepts-2026-10-06"
 GEN = ROOT / "art/royal/gen/plates"
+STAT_SHEETS = ROOT / "art/royal/gen/stat-sheets"
 OUT = ROOT / "assets/ui/royal/plates"
 SIZE = (1672, 941)
 
@@ -65,7 +66,7 @@ def relayout(image, plan):
     return out
 
 
-def install(name):
+def compose(name, patch=True):
     clean = GEN / f"{name}.png"
     source = clean if clean.exists() else CONCEPTS[name]
     image = Image.open(source).convert("RGBA")
@@ -73,6 +74,18 @@ def install(name):
         image = image.resize(SIZE, Image.LANCZOS)
     if name in RELAYOUT:
         image = relayout(image, RELAYOUT[name])
+    # The armory profiles' painted stat tiles are painted out (statsheets.py); screens draw a compact sheet.
+    patched = STAT_SHEETS / f"{name}-patch.png"
+    if patch and patched.exists():
+        from statsheets import CROPS
+        image.alpha_composite(Image.open(patched).convert("RGBA"), CROPS[name][:2])
+    return image
+
+
+def install(name):
+    clean = GEN / f"{name}.png"
+    source = clean if clean.exists() else CONCEPTS[name]
+    image = compose(name)
     OUT.mkdir(parents=True, exist_ok=True)
     image.save(OUT / f"{name}.png", optimize=True)
     if KEEP_CONCEPT:

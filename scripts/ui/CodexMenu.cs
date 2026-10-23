@@ -127,22 +127,21 @@ public partial class CodexMenu : RoyalScreen
     private static Texture2D? Portrait(CodexEntry entry) =>
         GameData.TryGetUnit(entry.Id) is { } unit ? UnitFigure.For(unit) : UiArtLoader.TryLoadCodexPortrait(entry);
 
-    private (string Role, string Icon, (string Caption, string Value, string Icon)[] Stats) Facts(CodexEntry entry)
+    /// <summary>The entry's role and up to four stats: a unit's essentials, a spell's sheet, a relic's bonuses.</summary>
+    private (string Role, string Icon, ArmoryDetailUi.Stat[] Stats) Facts(CodexEntry entry)
     {
         if (GameData.TryGetUnit(entry.Id) is { } unit)
         {
-            var stats = unit.IsPlayerSide ? GameState.Instance.BuildPlayerUnitStats(unit) : new UnitStats(unit);
+            var stats = ArmoryDetailUi.UnitStats(unit);
             var role = entry.Category == "boss" ? "Boss" : unit.IsPlayerSide ? SquadSynergyCatalog.GetTagDisplayName(unit.SquadTag) : "Rotbound";
-            return (role, "codex-ribbon-shield", new[] { ("HEALTH", $"{stats.MaxHealth:0}", "codexstat-health"), ("DAMAGE", $"{stats.AttackDamage:0.#}", "codexstat-damage") });
+            // Health, damage, range and armor.
+            return (role, "codex-ribbon-shield", new[] { stats[0], stats[1], stats[4], stats[6] });
         }
         if (GameData.TryGetSpell(entry.Id) is { } spell)
-        {
-            var resolved = GameState.Instance.BuildSpellStats(spell);
-            return (ArmoryDetailUi.SpellRole(spell.EffectType), "codex-ribbon-shield", new[] { ("POWER", $"{resolved.Power:0.#}", "codexstat-damage"), ("COOLDOWN", $"{resolved.Cooldown:0.#}s", "codexstat-health") });
-        }
+            return (ArmoryDetailUi.SpellRole(spell.EffectType), "codex-ribbon-shield", ArmoryDetailUi.SpellStats(GameState.Instance.BuildSpellStats(spell)).Take(4).ToArray());
         if (GameData.GetAllEquipment().FirstOrDefault(r => r.Id == entry.Id) is { } relic)
-            return (char.ToUpperInvariant(relic.Rarity[0]) + relic.Rarity[1..], "codex-ribbon-shield", new[] { ("HEALTH", $"×{relic.HealthScale:0.##}", "codexstat-health"), ("DAMAGE", $"×{relic.DamageScale:0.##}", "codexstat-damage") });
-        return ("Lore", "codex-ribbon-shield", Array.Empty<(string, string, string)>());
+            return (char.ToUpperInvariant(relic.Rarity[0]) + relic.Rarity[1..], "codex-ribbon-shield", RelicStatText.Stats(relic).Take(4).ToArray());
+        return ("Lore", "codex-ribbon-shield", Array.Empty<ArmoryDetailUi.Stat>());
     }
 
     private void BuildDetail(RoyalSpec spec, CodexEntry entry)
@@ -177,17 +176,19 @@ public partial class CodexMenu : RoyalScreen
             Texture = picture, MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             Position = portrait.Position + (figure ? new Vector2(24, 16) : new Vector2(40, 50)), Size = portrait.Size - (figure ? new Vector2(48, 58) : new Vector2(80, 120)) });
 
-        for (var i = 0; i < stats.Length && i < 2; i++)
+        // One column of compact rows where the concept had two tall tiles; the divider and lore follow its height.
+        var top = spec.Rect("stat.1");
+        var shift = 0f;
+        if (stats.Length > 0)
         {
-            var key = $"stat.{i + 1}";
-            var tile = spec.Rect(key);
-            _layer.AddChild(new Panel { Position = tile.Position, Size = tile.Size, MouseFilter = MouseFilterEnum.Ignore }.With(p => p.AddThemeStyleboxOverride("panel", RoyalKit.Slice("codex-stat", 12))));
-            _layer.AddChild(RoyalKit.Image(stats[i].Icon, spec.Rect(key + ".icon")));
-            _layer.AddChild(spec.Label(key + ".caption", stats[i].Caption, 120));
-            _layer.AddChild(spec.Label(key + ".value", stats[i].Value, 120));
+            var sheet = new StatSheet(stats, 1).Place(top.Position, spec.Rect("detail.lore").End.X + 3 - top.Position.X);
+            _layer.AddChild(sheet);
+            shift = sheet.Position.Y + sheet.Size.Y - spec.Rect("stat.2").End.Y;
         }
-        _layer.AddChild(RoyalKit.Image("codex-divider", spec.Rect("detail.divider")));
+        var divider = spec.Rect("detail.divider");
+        _layer.AddChild(RoyalKit.Image("codex-divider", new Rect2(divider.Position + new Vector2(0, shift), divider.Size)));
         var loreRect = spec.Rect("detail.lore");
+        loreRect.Position += new Vector2(0, shift);
         var rest = sentences.Length > 1 ? sentences[1] : entry.LoreText;
         var defeats = GameState.Instance.GetCodexKillCount(entry.Id);
         if (defeats > 0) rest += $" Defeated {defeats:N0} times.";

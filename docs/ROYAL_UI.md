@@ -69,6 +69,20 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 | Battle HUD | ui 02 | `BattleController.Menu.cs`, `hud/RoyalMeter.cs`, `hud/BattleActionCard.cs` (courage on the top plate, mana below; mana's blue pieces and courage's amber fill from `art/royal/mana.py`) |
 | Victory / defeat | ui 10 | `royal/RoyalResult.cs` (LAN and online rooms keep their scoreboard panel) |
 
+### Stat sheets
+
+Every stat list (warband and spell profiles, the codex, the spell and relic inspectors) is one `StatSheet`
+(`scripts/ui/shared/StatSheet.cs`, built from `ArmoryDetailUi.Stats`): one kit `tile` frame holding 34-unit rows of
+icon, name (book serif 18) and right-aligned value (book serif bold 20), with hairlines between rows and columns.
+Columns drop until every name and value fits its cell. A single column too narrow for a long pair closes up instead
+(values at the 18 px floor, then slightly tighter letter spacing in the name), so text never shrinks or overflows.
+Names are kept short enough for two columns ("Durability", "Mana gain", "Repair"). Icons come from
+`StatSheet.Glyph`: the concept's painted stat glyphs, plus `assets/ui/icons/stats/*.svg` drawn to match for mana,
+duration, speed and siege. The concepts painted one plaque per stat on the warband and spells plates; those are
+painted out (`art/royal/statsheets.py`, Codex job `13-stat-sheets.json`, pasted by `plates.py`), so the sheet is only
+as tall as its rows and the space below stays free. `UiReviewSmoke --armory-details` and
+`--concepts --only=codex-stats` check that every stat of every unit, spell and relic fits its cell.
+
 Screens without a concept, and the inspectors opened over screens, share `RealmModal`'s chrome: the
 `modal-header` band (cut by `art/royal/chrome.py`, with the plate's painted close button removed because the live
 close button sits there) and the kit's frame, tabs and buttons. Clicking outside a royal screen's painted frame

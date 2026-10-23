@@ -1825,6 +1825,17 @@
   "ink": "auto"
  },
  {
+  "name": "ach-tab",
+  "from": "achievements",
+  "rect": [
+   170,
+   119,
+   150,
+   60
+  ],
+  "mode": "plate"
+ },
+ {
   "name": "ach-tab-selected",
   "from": "achievements",
   "rect": [

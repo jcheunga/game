@@ -218,5 +218,25 @@
    "relicicon-lantern_of_dawn"
   ],
   "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a folded map with a winding road\n2. a chalice\n3. an executioner's axe\n4. a beaked plague mask\n5. a cylinder wound with a coil and a spark above it\n6. a small shrine on a carrying pole\n7. an hourglass with a pointed spire on top\n8. a shield with a broken tower on it\n9. a lantern with a rising sun inside\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
+ },
+ {
+  "id": "glyphs-12",
+  "out": "art/royal/gen/glyphs/sheet-12.png",
+  "inputs": [
+   "art/royal/gen/glyphs/style-ref.png"
+  ],
+  "edit": false,
+  "glyphs": [
+   "storetab-gold",
+   "storetab-rations",
+   "storetab-bundles",
+   "storetab-ledger",
+   "store-unit",
+   "store-once",
+   "",
+   "store-secure",
+   ""
+  ],
+  "prompt": "Use case: icon sheet\nAsset type: a sheet of nine small UI glyph icons for a medieval fantasy strategy game (Crownroad: Siege of Ash), shown at 20-30 px in the corners of item cards.\nStyle: match the attached reference sheet exactly: flat solid cream-white emblem glyphs, bold simple silhouettes with a few thin interior cut-out lines, consistent weight, readable at 20 px. No gradients, no colour, no shading, no glow, no outlines around the glyphs.\nLayout: exactly 3 columns x 3 rows on a pure black (#000000) background, like the reference. Each glyph is centred in its cell, about the same size as the reference glyphs, with wide black margins; no glyph touches another glyph or the image edge.\nGlyphs, left to right, top to bottom:\n1. a neat stack of five round coins seen from the side, with one coin standing on its edge in front\n2. a bound sheaf of wheat with three ears on top\n3. a small treasure chest tied with a ribbon bow on its lid\n4. an open ledger book with a quill pen lying across its pages\n5. a knight's helmet in side view with a plume\n6. an hourglass\n7. a royal crown with three points\n8. a padlock with a shield shape on its body\n9. a bold plus sign inside a round coin\nConstraints: no text, no letters, no numbers, no labels, no grid lines, no cell borders, no frames."
  }
 ]

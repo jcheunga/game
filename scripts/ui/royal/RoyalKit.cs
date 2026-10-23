@@ -27,13 +27,23 @@ public static class RoyalKit
     /// <summary>A kit piece drawn as a nine-slice; margins are canvas units.</summary>
     public static SliceStyle Slice(string name, float margin, bool center = true) => Slice(name, margin, margin, margin, margin, center);
 
-    public static SliceStyle Slice(string name, float left, float top, float right, float bottom, bool center = true)
+    public static SliceStyle Slice(string name, float left, float top, float right, float bottom, bool center = true) =>
+        Scaled(name, 1, left, top, right, bottom, center);
+
+    /// <summary>
+    /// A kit slice for a control on a scaled canvas (the modal draws at <see cref="MobilePresentation.HudScale"/>):
+    /// margins are in that control's units, and rims and corners keep the size they have on the concept screens.
+    /// </summary>
+    public static SliceStyle Scaled(string name, float scale, float left, float top, float right, float bottom, bool center = true)
     {
         var texture = Texture(name);
-        var size = texture == null ? Vector2.One : texture.GetSize() / Density;
-        var style = new SliceStyle(texture, new Rect2(Vector2.Zero, size), Density, left, top, right, bottom, left, top) { DrawCenter = center };
+        var density = Density * scale;
+        var size = texture == null ? Vector2.One : texture.GetSize() / density;
+        var style = new SliceStyle(texture, new Rect2(Vector2.Zero, size), density, left, top, right, bottom, left, top) { DrawCenter = center };
         return style;
     }
+
+    public static SliceStyle Scaled(string name, float scale, float margin, bool center = true) => Scaled(name, scale, margin, margin, margin, margin, center);
 
     /// <summary>A panel that draws a kit slice behind its children.</summary>
     public static Panel Frame(string name, Rect2 rect, float margin, bool center = true)

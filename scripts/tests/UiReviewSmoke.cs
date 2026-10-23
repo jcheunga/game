@@ -421,7 +421,8 @@ public partial class UiReviewSmoke : Node
                     var caps = label.Uppercase && RoyalFonts.IsDisplay(label.GetThemeFont("font"));
                     minimumFont = Math.Min(minimumFont, caps ? ReadingText.PhoneCaps : RealmUi.ButtonFontSize); break;
                 }
-            if (font < minimumFont) issues.Add("small text");
+            // Floors are canvas pixels (what a phone shows), so text on the 1.55x modal canvas is measured as drawn.
+            if (font * label.GetGlobalTransformWithCanvas().Scale.Y < minimumFont - .25f) issues.Add("small text");
             if (label.GetVisibleLineCount() < label.GetLineCount()) issues.Add("hidden lines");
             var hiddenLines = label.GetVisibleLineCount() < label.GetLineCount();
             var limitedWidth = label.ClipText && label.AutowrapMode == TextServer.AutowrapMode.Off

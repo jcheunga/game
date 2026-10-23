@@ -23,7 +23,7 @@ positions measured on it.
    (`RoyalButton`) over it. Text uses Cinzel for engraved capitals and Crimson Pro for book text
    (`assets/fonts`, OFL); large titles use the gold gradient shader `assets/shaders/royal_gold_text.gdshader`.
 
-Screens that had no concept (tower, storehouse, arena, guild and the other activities, inspectors, dialogs) keep
+Screens that had no concept (tower, arena, guild and the other activities, inspectors, dialogs) keep
 their layouts and take the same chrome: `ModalSurface` draws the kit's modal frame, navy and gold buttons, tabs,
 tiles and parchment, `RealmModal` uses the concept header with its castle skyline and a gold title, and
 `RealmUi` uses the concept fonts.
@@ -164,6 +164,22 @@ The small cream glyphs in card corners and detail headers are kit pieces. The fi
 kinds (`relicicon-boots`, `-crown`, ...) are cut from the concepts; the expansion's are painted as 3x3 sheets
 (`09-glyphs.json`) and cut by `art/royal/glyphs.py` into `kit/spellicon-<id>` and `kit/relicicon-<id>`. A relic
 with a glyph of its own uses it; the rest share one by the kind of object (`ShopMenu.RelicIcon`).
+
+## Royal storehouse
+
+The storehouse (`CashShopMenu.cs`, `StorePackCard.cs`) has no concept of its own, so it is built from the concept
+screens' pieces inside the modal frame: the achievements screen's tabs (`ach-tab`, cut from its plate, and
+`ach-tab-selected`) with cream glyphs, the home strip's parchment balances, and `ach-card` pack cards that light up as
+`ach-card-ready` while a purchase waits for its Confirm tap. Each pack has a painted picture
+(`art/royal/jobs/14-storehouse.json`, installed by `art/royal/storehouse.py` as `items/store_<product id>`), so the four
+gold and four ration packs grow from a purse to the king's treasury and from a ration bundle to the royal granary.
+The pack giving the most for its price is marked with the painted ribbon (`kit/store-ribbon`), which also marks the
+once-per-account starter kit. The tab glyphs and the small `store-*` glyphs are glyph sheet 12.
+
+The modal draws at `MobilePresentation.HudScale`, so its kit pieces use `RoyalKit.Scaled` (rims and corners at their
+concept-screen size, margins in modal units) and its text is sized in modal units against the phone floors as drawn
+(12 units of book serif and 11 of capitals clear 18 and 16 px). Review with `UiReviewSmoke --storehouse`
+(`artifacts/home-map/desktop/storehouse-*`).
 
 ## Spell effects
 

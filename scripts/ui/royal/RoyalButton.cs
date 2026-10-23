@@ -106,12 +106,15 @@ public partial class RoyalButton : Button
 
     /// <summary>
     /// Lays an action out as one centred row: icon, caption and, after an engraved divider, an optional price
-    /// (its icon, then its amount). The price dims with the button when it is disabled.
+    /// (its icon, then its amount). The price dims with the button when it is disabled. Arranging again (a caption
+    /// that changes, such as Buy to Confirm) replaces the previous row.
     /// </summary>
     public void Arrange(RoyalLabel caption, Texture2D glyph = null, Vector2 glyphSize = default,
         RoyalLabel price = null, Texture2D priceIcon = null, Vector2 priceIconSize = default, float gap = 12, float rule = 20)
     {
         if (RoyalFonts.IsDisplay(caption.Font)) caption.AllCaps = true;
+        if (GetNodeOrNull<Control>(PriceRow) is { } previous) { RemoveChild(previous); previous.QueueFree(); }
+        if (glyph == null && Glyph != null) { Glyph.QueueFree(); Glyph = null; }
         var height = Size.Y;
         var words = Mathf.Ceil(caption.TextWidth(caption.FontSize));
         var lead = glyph == null ? 0 : glyphSize.X + gap;
@@ -124,7 +127,7 @@ public partial class RoyalButton : Button
         caption.Align = HorizontalAlignment.Left; caption.ShrinkToFit = false; caption.Baseline = float.NaN;
         SetCaption(caption, new Rect2(x, 0, words + 2, height));
         if (price == null) return;
-        var row = new Control { Name = "Price", Position = new Vector2(x + words + rule, 0), Size = new Vector2(priced - rule, height), MouseFilter = MouseFilterEnum.Ignore };
+        var row = new Control { Name = PriceRow, Position = new Vector2(x + words + rule, 0), Size = new Vector2(priced - rule, height), MouseFilter = MouseFilterEnum.Ignore };
         row.AddChild(new ColorRect { Color = new Color(0, 0, 0, .45f), Position = new Vector2(0, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
         row.AddChild(new ColorRect { Color = new Color(.95f, .82f, .55f, .4f), Position = new Vector2(1, height / 2 - 16), Size = new Vector2(1, 32), MouseFilter = MouseFilterEnum.Ignore });
         var left = 2 + rule;
@@ -139,8 +142,9 @@ public partial class RoyalButton : Button
         if (RoyalFonts.IsDisplay(price.Font)) price.AllCaps = true;
         row.AddChild(price); price.Position = new Vector2(left, 0); price.Size = new Vector2(amount + 2, height);
         AddChild(row);
-        Draw += () => row.Modulate = Disabled ? new Color(1, 1, 1, .55f) : Colors.White;
     }
+
+    private const string PriceRow = "Price";
 
     public TextureRect SetGlyph(Texture2D texture, Rect2 local, Color? tint = null)
     {
@@ -165,6 +169,7 @@ public partial class RoyalButton : Button
         var dim = Disabled ? new Color(1, 1, 1, .55f) : Colors.White;
         if (Caption != null) { Caption.Modulate = dim; }
         if (Glyph != null) Glyph.Modulate = dim;
+        if (GetNodeOrNull<Control>(PriceRow) is { } price) price.Modulate = dim;
     }
 }
 

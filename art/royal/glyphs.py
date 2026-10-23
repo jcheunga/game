@@ -59,7 +59,8 @@ def main():
         sheet = Image.open(path).convert("RGB")
         w, h = sheet.width / 3, sheet.height / 3
         for index, name in enumerate(job["glyphs"]):
-            if wanted and name not in wanted:
+            # A blank name is a painted cell nothing uses.
+            if not name or (wanted and name not in wanted):
                 continue
             col, row = index % 3, index // 3
             glyph = cut(sheet.crop((round(col * w), round(row * h), round((col + 1) * w), round((row + 1) * h))))

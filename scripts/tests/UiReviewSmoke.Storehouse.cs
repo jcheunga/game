@@ -31,16 +31,22 @@ public partial class UiReviewSmoke
             await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == category.Tab));
             var actions = Walk(store).OfType<Button>().Where(button => button.IsVisibleInTree() && button.HasMeta("store_product_id")).ToArray();
             Check(actions.Length == ShopProductCatalog.GetByCategory(category.Id).Count, category.Tab + ": every pack has a purchase action");
+            var cards = Walk(store).OfType<StorePackCard>().Where(card => card.IsVisibleInTree()).ToArray();
+            Check(cards.All(card => Walk(card).OfType<TextureRect>().Any(art => art.Texture != null && art.Texture.ResourcePath.Contains("/items/store_" + card.Product.Id))),
+                category.Tab + ": every pack shows its painted picture");
+            if (category.Id != "mixed")
+                Check(cards.Count(card => Walk(card).OfType<RoyalLabel>().Any(label => label.Text == "Best value")) == 1, category.Tab + ": one pack is marked best value");
             foreach (var action in actions)
             {
                 var product = ShopProductCatalog.GetById((string)action.GetMeta("store_product_id"));
                 Check(pages.GetGlobalRect().Encloses(action.GetGlobalRect()) && modal.Content.GetGlobalRect().Encloses(action.GetGlobalRect()), product.DisplayName + ": purchase button is fully visible without scrolling");
                 // Only the first tap: the review never opens billing or sends a payment.
                 await TapModal(action);
-                Check(action.Text.StartsWith("Confirm — ") && notice.Text.Contains(product.DisplayName)
+                Check(action.Text.StartsWith("Confirm — ") && notice.Text.Contains(product.DisplayName) && action.GetParent<StorePackCard>().Confirming
                     && modal.Content.GetGlobalRect().Encloses(notice.GetGlobalRect()), product.DisplayName + ": native click shows an unobstructed confirmation with the pack and price");
                 Check(actions.Where(other => other != action).All(other => other.Text.StartsWith("Buy — ")), "Selecting another pack cancels its previous confirmation");
                 AuditText("Storehouse / confirm " + product.Id);
+                if (action == actions[^1]) await Capture("storehouse-confirm-" + category.Id);
             }
             await TapModal(Walk(store).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Cancel"));
             Check(actions.All(button => button.Text.StartsWith("Buy — ")), category.Tab + ": Cancel restores all purchase buttons");
@@ -64,12 +70,15 @@ public partial class UiReviewSmoke
         await Capture("storehouse-refill");
 
         await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Bundles"));
-        await TapModal(Walk(store).OfType<Button>().Single(button => button.AccessibilityName == "Adventurer's Kit details"));
-        var details = Walk(store).OfType<AcceptDialog>().Single();
-        Check(details.Visible && Walk(details).OfType<Label>().Any(label => label.Text.Contains("800 Gold") && label.Text.Contains("30 Food")
-            && label.Text.Contains("Unit Unlock") && label.Text.Contains("once per account")), "Details retains the complete bundle contents and one-time restriction");
-        details.Hide(); details.EmitSignal(AcceptDialog.SignalName.Confirmed); await Wait(.2);
-        Check(canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Browsing packs, opening details and refilling rations never moves or reveals the map");
+        // A bundle's wide card lists everything it holds, so it needs no details dialog.
+        var kit = Walk(store).OfType<StorePackCard>().Single(card => card.Product.Id == "starter_kit");
+        var shown = Walk(kit).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)
+            .Concat(Walk(kit).OfType<RoyalLabel>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)).ToArray();
+        Check(shown.Contains("800 gold") && shown.Contains("30 food") && shown.Contains("A new unit") && shown.Contains("Once per account")
+            && pages.GetGlobalRect().Encloses(kit.GetGlobalRect()), "The bundle card shows its complete contents and one-time restriction");
+        Check(Walk(store).OfType<StorePackCard>().Where(card => card.IsVisibleInTree()).Count(card => Walk(card).OfType<RoyalLabel>().Any(label => label.Text == "Best value")) == 0,
+            "Bundles carry no best-value ribbon");
+        Check(canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Browsing packs and refilling rations never moves or reveals the map");
 
         fixture = state.BuildSaveData(); fixture.PurchasedProductIds = new[] { "starter_kit" };
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { fixture });

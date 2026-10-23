@@ -3,26 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
+/// <summary>
+/// The royal storehouse: gold and ration packs, bundles and the merchant's ledger, in the achievements screen's
+/// painted tabs with the home strip's balances beside them. Each pack is a <see cref="StorePackCard"/>; buying takes
+/// two taps (Buy, then Confirm) and goes to the platform store, whose verified result the ledger page reports.
+/// The page sits on the 1.55x modal canvas, so its sizes are modal units.
+/// </summary>
 public partial class CashShopMenu : Control
 {
-    private PanelContainer _goldPanel = null !;
-    private PanelContainer _foodPanel = null !;
-    private PanelContainer _mixedPanel = null !;
-    private PanelContainer _statusPanel = null !;
-    private HBoxContainer _resourcesRow = null !;
-    private Label _statusLabel = null !;
-    private VBoxContainer _goldStack = null !;
-    private VBoxContainer _foodStack = null !;
-    private VBoxContainer _mixedStack = null !;
-    private HBoxContainer _categoryTabs = null !;
-    private Label _noticeLabel = null !;
-    private Button _cancelConfirmButton = null !;
-    private HBoxContainer _refillRow = null !;
+    private static readonly string[] Categories = { "Gold", "Rations", "Bundles", "Purchase info" };
+    private static readonly string[] TabGlyphs = { "storetab-gold", "storetab-rations", "storetab-bundles", "storetab-ledger" };
+    private static readonly string[] PackCategories = { "gold", "food", "mixed" };
+    private static readonly Vector2 TabSize = new(128, 40);
+    private static readonly Color Muted = new("b9ad96"), Body = new("e9dfcb"), Heading = new("f3deaa");
     private const string PurchaseHint = "Tap Buy twice to confirm.";
-    private const int RationsPage = 1;
+    private const int RationsPage = 1, LedgerPage = 3;
+    private readonly List<RoyalButton> _tabs = new();
+    private readonly Control[] _pages = new Control[4];
+    private Control _balances = null !;
+    private Label _statusLabel = null !;
+    private Control _statusPlaceholder = null !;
+    private Control _statusSpacer = null !;
+    private VBoxContainer _ledgerRows = null !;
+    private Label _noticeLabel = null !;
+    private RoyalButton _cancelConfirmButton = null !;
+    private HBoxContainer _refillRow = null !;
     private int _selectedCategory;
     private string _pendingConfirmProductId = "";
-    private Button _pendingConfirmButton;
+    private StorePackCard _pendingCard;
     // A native purchase is open in the store sheet or waiting on server verification.
     private bool _nativePurchaseBusy;
     public override void _Ready()
@@ -65,99 +73,176 @@ public partial class CashShopMenu : Control
         root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         // On the phone-sized canvas every row counts: the balances sit at the end of the tab row
         // instead of taking a strip of their own, leaving the height to the pack cards.
-        var bar = new HBoxContainer { Name = "StorehouseBar" };
-        bar.AddThemeConstantOverride("separation", 10);
+        var bar = new HBoxContainer { Name = "StorehouseBar", CustomMinimumSize = new Vector2(0, TabSize.Y) };
+        bar.AddThemeConstantOverride("separation", 4);
         root.AddChild(bar);
-        _categoryTabs = RealmUi.Tabs(bar, SelectCategory, "Gold", "Rations", "Bundles", "Purchase info");
-        // The four tabs and the balances always fit, so the row needs no room for a scrollbar.
-        ((Control)_categoryTabs.GetParent()).CustomMinimumSize = new Vector2(0, 48);
-        var balances = new PanelContainer { Name = "StorehouseBalances", SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        balances.SetMeta("modal_unframed", true);
-        balances.AddThemeStyleboxOverride("panel", new ModalSurface(ModalMaterial.Inset, 6));
-        bar.AddChild(balances);
-        _resourcesRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        _resourcesRow.AddThemeConstantOverride("separation", 20);
-        balances.AddChild(_resourcesRow);
-        BuildCatalog(root);
-        RealmModal.Polish(root);
-    }
-
-    private void BuildCatalog(VBoxContainer body)
-    {
-        // The pages take the remaining space; purchase actions stay inside each card.
+        for (var i = 0; i < Categories.Length; i++)
+        {
+            var index = i;
+            var tab = RoyalButton.Over(new Rect2(Vector2.Zero, TabSize), Categories[i], () => SelectCategory(index), 4);
+            tab.CustomMinimumSize = TabSize;
+            bar.AddChild(tab);
+            _tabs.Add(tab);
+        }
+        bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore });
+        _balances = new Control { Name = "StorehouseBalances", MouseFilter = MouseFilterEnum.Pass };
+        bar.AddChild(_balances);
         var pages = new Control
         {
             Name = "CatalogPages",
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            MouseFilter = MouseFilterEnum.Ignore
         };
-        body.AddChild(pages);
-        _goldStack = CreateCatalogPage(pages, out _goldPanel);
-        _foodStack = CreateCatalogPage(pages, out _foodPanel);
-        _mixedStack = CreateCatalogPage(pages, out _mixedPanel);
-        var info = CreateCatalogPage(pages, out _statusPanel);
-        var statusStack = RealmUi.Scroll(info);
-        statusStack.AddChild(RealmUi.Heading("The merchant's ledger"));
-        _statusLabel = RealmUi.Label("");
-        statusStack.AddChild(_statusLabel);
+        root.AddChild(pages);
+        for (var i = 0; i < PackCategories.Length; i++)
+        {
+            // Every pack fits on its page, so the cards share the full width and height without scrolling.
+            var row = new HBoxContainer { Name = Categories[i] + "Page", MouseFilter = MouseFilterEnum.Ignore };
+            row.AddThemeConstantOverride("separation", 8);
+            pages.AddChild(row);
+            row.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            _pages[i] = row;
+        }
+        _pages[LedgerPage] = BuildLedger(pages);
+        BuildFooter(root);
+        SelectCategory(0);
+    }
+
+    /// <summary>The ledger page: the account's purchase record beside the latest purchase and how buying works.</summary>
+    private Control BuildLedger(Control pages)
+    {
+        var page = new HBoxContainer { Name = "LedgerPage", MouseFilter = MouseFilterEnum.Ignore };
+        page.AddThemeConstantOverride("separation", 8);
+        pages.AddChild(page);
+        page.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        VBoxContainer Panel(string title, float ratio)
+        {
+            var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = ratio, MouseFilter = MouseFilterEnum.Ignore };
+            var surface = StorePackCard.Kit("ach-card", 9);
+            surface.ContentMarginLeft = surface.ContentMarginRight = 18;
+            surface.ContentMarginTop = 12; surface.ContentMarginBottom = 14;
+            panel.AddThemeStyleboxOverride("panel", surface);
+            page.AddChild(panel);
+            var stack = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+            stack.AddThemeConstantOverride("separation", 6);
+            panel.AddChild(stack);
+            var heading = StorePackCard.Caps(title, 14, Heading, 700);
+            heading.CustomMinimumSize = new Vector2(0, 24);
+            heading.ShrinkToFit = true;
+            stack.AddChild(heading);
+            stack.AddChild(new TextureRect { Texture = RoyalKit.Texture("codex-rule"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspect, CustomMinimumSize = new Vector2(120, 10), SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
+                MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+            return stack;
+        }
+        var ledger = Panel("The merchant's ledger", 1.1f);
+        _ledgerRows = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        _ledgerRows.AddThemeConstantOverride("separation", 0);
+        ledger.AddChild(_ledgerRows);
+        // The storehouse itself fills what the rows leave, framed like a picture on the ledger's page.
+        var picture = new Control { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 40), ClipContents = true, MouseFilter = MouseFilterEnum.Ignore };
+        var painting = new TextureRect { Texture = RoyalArt.Item("activity-store"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, MouseFilter = MouseFilterEnum.Ignore, SelfModulate = new Color(.9f, .9f, .9f) };
+        picture.AddChild(painting);
+        painting.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var rim = new Panel { MouseFilter = MouseFilterEnum.Ignore };
+        rim.AddThemeStyleboxOverride("panel", StorePackCard.Kit("tile", 6, center: false));
+        picture.AddChild(rim);
+        rim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        ledger.AddChild(picture);
+        var latest = Panel("Latest purchase", 1f);
+        _statusLabel = StorePackCard.Serif("", 14, Body, 600);
+        _statusLabel.Name = "PurchaseStatus";
+        latest.AddChild(_statusLabel);
+        // Until something is bought, the panel shows an empty state (icon, title, one line) in the space the result takes.
+        var empty = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+        empty.AddThemeConstantOverride("separation", 6);
+        empty.AddChild(new TextureRect { Texture = RoyalKit.Texture("storetab-ledger"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(34, 26), SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+            SelfModulate = new Color(1, 1, 1, .55f), MouseFilter = MouseFilterEnum.Ignore, TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+        var none = StorePackCard.Serif("Nothing bought yet", 15, Body, 600);
+        none.HorizontalAlignment = HorizontalAlignment.Center;
+        empty.AddChild(none);
+        var hint = StorePackCard.Serif("Each purchase's result is written here.", 12, Muted);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        empty.AddChild(hint);
+        latest.AddChild(_statusPlaceholder = empty);
+        latest.AddChild(_statusSpacer = new Control { SizeFlagsVertical = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore });
+        foreach (var (glyph, text) in new[] {
+            ("store-secure", "Packs are added once the store confirms your payment."),
+            ("store-once", "The Adventurer's Kit can be bought once per account.") })
+            latest.AddChild(Note(glyph, text));
+        return page;
+    }
+
+    private static HBoxContainer Note(string glyph, string text)
+    {
+        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 10);
+        row.AddChild(new TextureRect { Texture = RoyalKit.Texture(glyph), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            CustomMinimumSize = new Vector2(16, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, SelfModulate = new Color(1, 1, 1, .8f), MouseFilter = MouseFilterEnum.Ignore,
+            TextureFilter = TextureFilterEnum.LinearWithMipmaps });
+        var label = StorePackCard.Serif(text, 12, Muted);
+        label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(label);
+        return row;
+    }
+
+    private void BuildFooter(VBoxContainer root)
+    {
         // One fixed height whatever the footer holds, so the cards above never change size.
         var notice = new HBoxContainer
         {
-            CustomMinimumSize = new Vector2(0, 42)
+            Name = "StorehouseFooter",
+            CustomMinimumSize = new Vector2(0, 32)
         };
         notice.AddThemeConstantOverride("separation", 12);
         // Ends where the cards end, clear of the frame's rim.
         var footer = new MarginContainer();
         footer.AddThemeConstantOverride("margin_right", 8);
-        body.AddChild(footer);
+        root.AddChild(footer);
         footer.AddChild(notice);
         // The gold-funded refill and its recharge share the footer on the Rations page, where four
         // packs already fill the page. They make way while a pack waits for its confirmation.
         _refillRow = new HBoxContainer { Name = "RationRefill" };
         _refillRow.AddThemeConstantOverride("separation", 12);
         notice.AddChild(_refillRow);
-        var refill = RealmUi.Button("food", "10 food · 100 gold", () =>
+        var refill = FooterButton(new Vector2(176, 32), "navy", () =>
         {
             AudioDirector.Purchased(GameState.Instance.TryBuyFoodRefill(out var message));
             RefreshUi();
             _noticeLabel.Text = message;
-        }, true);
-        refill.CustomMinimumSize = new Vector2(refill.CustomMinimumSize.X, 40);
+        });
+        refill.Arrange(StorePackCard.Caps("+10 food", 12, RoyalText.Cream, 700), HomeMapArt.Icon("food"), new Vector2(22, 22),
+            StorePackCard.Caps("100", 12, RoyalText.Cream, 700), HomeMapArt.Icon("gold"), new Vector2(18, 18), gap: 6, rule: 10);
+        refill.Text = "10 food · 100 gold";
+        refill.AccessibilityName = refill.TooltipText = "Buy 10 food for 100 gold";
         _refillRow.AddChild(refill);
-        var recharge = RealmUi.Label("+2 food every 5 minutes · Up to 24", 14, true);
+        var recharge = StorePackCard.Serif("+2 food every 5 minutes · Up to 24", 12, Muted);
         recharge.AutowrapMode = TextServer.AutowrapMode.Off;
         recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         recharge.VerticalAlignment = VerticalAlignment.Center;
         _refillRow.AddChild(recharge);
-        _noticeLabel = RealmUi.Label(PurchaseHint, 18, true);
+        _noticeLabel = StorePackCard.Serif(PurchaseHint, 13, Muted);
         _noticeLabel.Name = "PurchaseNotice";
+        _noticeLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _noticeLabel.VerticalAlignment = VerticalAlignment.Center;
+        _noticeLabel.MaxLinesVisible = 2;
         notice.AddChild(_noticeLabel);
-        _cancelConfirmButton = new RealmButton
-        {
-            Text = "Cancel",
-            Visible = false,
-            CustomMinimumSize = new Vector2(88, 40)
-        };
-        _cancelConfirmButton.Pressed += () => CancelPendingPurchase();
+        _cancelConfirmButton = FooterButton(new Vector2(96, 32), "slate", () => CancelPendingPurchase());
+        _cancelConfirmButton.Arrange(StorePackCard.Caps("Cancel", 12, RoyalText.Cream, 700));
+        _cancelConfirmButton.AccessibilityName = _cancelConfirmButton.TooltipText = "Cancel purchase";
+        _cancelConfirmButton.Visible = false;
         notice.AddChild(_cancelConfirmButton);
-        SelectCategory(0);
     }
 
-    private static VBoxContainer CreateCatalogPage(Control host, out PanelContainer panel)
+    private static RoyalButton FooterButton(Vector2 size, string material, Action action)
     {
-        panel = new PanelContainer();
-        panel.SetMeta("modal_unframed", true);
-        panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        host.AddChild(panel);
-        panel.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var stack = new VBoxContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        panel.AddChild(scroll); scroll.AddChild(stack);
-        return stack;
+        var button = RoyalButton.Over(new Rect2(Vector2.Zero, size), "", action, 5);
+        button.CustomMinimumSize = size;
+        button.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        button.SetStates(StorePackCard.Kit("button-" + material, 7), 5);
+        return button;
     }
 
     private void SelectCategory(int index)
@@ -165,17 +250,26 @@ public partial class CashShopMenu : Control
         if (index != _selectedCategory)
             CancelPendingPurchase();
         _selectedCategory = index;
-        var pages = new[]
-        {
-            _goldPanel,
-            _foodPanel,
-            _mixedPanel,
-            _statusPanel
-        };
-        for (var i = 0; i < pages.Length; i++)
-            pages[i].Visible = i == index;
-        _categoryTabs.GetChild<Button>(index).ButtonPressed = true;
+        for (var i = 0; i < _pages.Length; i++)
+            _pages[i].Visible = i == index;
+        StyleTabs();
         ShowRefill();
+    }
+
+    /// <summary>The achievements screen's tabs: slate with a cream glyph, the current page lit gold.</summary>
+    private void StyleTabs()
+    {
+        for (var i = 0; i < _tabs.Count; i++)
+        {
+            var tab = _tabs[i];
+            var selected = i == _selectedCategory;
+            tab.SetStates(StorePackCard.Kit(selected ? "ach-tab-selected" : "ach-tab", 7), 4);
+            tab.MarkTab(selected);
+            var caption = new RoyalLabel { Text = Categories[i], Font = RoyalFonts.Body(600), FontSize = 14, CapRatio = .58f, MinimumFontSize = 12,
+                Ink = selected ? new Color("f4eabf") : new Color("dcdddf"), ShadowOffset = new Vector2(0, 1), ShadowInk = new Color(0, 0, 0, .6f) };
+            tab.Arrange(caption, RoyalKit.Texture(TabGlyphs[i]), new Vector2(18, 18), gap: 7);
+            tab.Glyph.SelfModulate = selected ? Colors.White : new Color(.88f, .88f, .9f);
+        }
     }
 
     private void ShowRefill()
@@ -189,153 +283,73 @@ public partial class CashShopMenu : Control
     {
         CancelPendingPurchase(resetNotice: !preserveStatus);
         RebuildResourcesRow();
-        RebuildGoldPacks();
-        RebuildFoodPacks();
-        RebuildMixedPacks();
-        if (!preserveStatus)
-        {
-            RefreshStatus();
-        }
+        for (var i = 0; i < PackCategories.Length; i++)
+            RebuildCategory(i, PackCategories[i]);
+        RefreshStatus();
     }
 
+    /// <summary>The home strip's parchment balances: gold, then rations against their recharge cap.</summary>
     private void RebuildResourcesRow()
     {
-        RealmUi.Clear(_resourcesRow);
-        foreach (var balance in new[] {
-            HomeResourceUi.Amount("gold", GameState.Instance.Gold.ToString("N0"), $"Gold: {GameState.Instance.Gold:N0}", 28),
-            HomeResourceUi.Amount("food", $"{GameState.Instance.Food}/{GameState.FoodRechargeCap}", GameState.Instance.FoodRechargeText, 28) })
+        RealmUi.Clear(_balances);
+        const float Height = 40, Icon = 24, Gap = 6, End = 20, Spacing = 10, Divider = 6;
+        var state = GameState.Instance;
+        var bar = new Panel { MouseFilter = MouseFilterEnum.Ignore };
+        bar.AddThemeStyleboxOverride("panel", RoyalKit.Scaled("res-bar", MobilePresentation.HudScale, 19, 0, 19, 0));
+        _balances.AddChild(bar);
+        var x = End;
+        var pairs = new[] { ("gold", state.Gold.ToString("N0")), ("food", $"{state.Food}/{GameState.FoodRechargeCap}") };
+        for (var i = 0; i < pairs.Length; i++)
         {
-            balance.GetChild<Label>(1).AddThemeFontSizeOverride("font_size", 20);
-            _resourcesRow.AddChild(balance);
-        }
-        RealmModal.Polish(_resourcesRow);
-    }
-
-    private void RebuildGoldPacks() => RebuildCategory(_goldStack, "gold");
-    private void RebuildFoodPacks() => RebuildCategory(_foodStack, "food");
-
-    private void RebuildMixedPacks() => RebuildCategory(_mixedStack, "mixed");
-    private void RebuildCategory(VBoxContainer stack, string category)
-    {
-        ClearChildren(stack);
-        stack.AddThemeConstantOverride("separation", 8);
-        var row = new HBoxContainer
-        {
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        row.AddThemeConstantOverride("separation", 8);
-        stack.AddChild(row);
-        var products = ShopProductCatalog.GetByCategory(category);
-        foreach (var product in products)
-            AddProductCard(row, product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id), wide: products.Count <= 2);
-        RealmModal.Polish(row);
-    }
-
-    /// <summary>
-    /// A pack card: name, supplies, bonus and the purchase button pinned to the bottom. Four packs share a row on
-    /// the phone-sized canvas, so their names take the card's full width (two lines at most) and the whole card
-    /// fits without scrolling. Bundles, two to a row, also carry their emblem and the Details of their terms.
-    /// </summary>
-    private void AddProductCard(Control host, ShopProduct product, bool forceDisabled, bool wide)
-    {
-        var panel = new PanelContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        host.AddChild(panel);
-        var card = new VBoxContainer();
-        card.AddThemeConstantOverride("separation", 6);
-        panel.AddChild(card);
-        var top = new HBoxContainer();
-        top.AddThemeConstantOverride("separation", 10);
-        card.AddChild(top);
-        var title = RealmUi.Heading(product.DisplayName, 16);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        title.VerticalAlignment = VerticalAlignment.Center;
-        if (wide)
-        {
-            top.AddChild(new HeraldicEmblem { Symbol = product.Category == "gold" ? "crown" : product.Category == "food" ? "food" : "gift", CustomMinimumSize = new Vector2(40, 40) });
-            top.AddChild(title);
-            var details = new RealmButton
+            if (i > 0)
             {
-                Text = "Details",
-                CustomMinimumSize = new Vector2(82, 40),
-                AccessibilityName = product.DisplayName + " details",
-                TooltipText = product.DisplayName + " details"
-            };
-            details.Pressed += () => RealmUi.Details(this, product.DisplayName, $"{product.FormattedReward}\n\n{product.Description}\n\nPrice: {LocalizedPrice(product)}" + (product.OneTimePurchase ? "\nAvailable once per account." : ""));
-            top.AddChild(details);
+                _balances.AddChild(RoyalKit.Image("res-divider", new Rect2(x + Spacing, 7, Divider, Height - 14)));
+                x += 2 * Spacing + Divider;
+            }
+            _balances.AddChild(new TextureRect { Texture = HomeMapArt.Icon(pairs[i].Item1), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, Position = new Vector2(x, (Height - Icon) / 2), Size = new Vector2(Icon, Icon),
+                MouseFilter = MouseFilterEnum.Ignore });
+            x += Icon + Gap;
+            var value = new RoyalLabel { Text = pairs[i].Item2, Font = RoyalFonts.Body(700), FontSize = 16, CapRatio = .62f, Ink = new Color("1b1610"), ShrinkToFit = false };
+            var width = Mathf.Ceil(value.TextWidth(value.FontSize));
+            value.Position = new Vector2(x, 0); value.Size = new Vector2(width + 2, Height);
+            _balances.AddChild(value);
+            x += width;
         }
-        else
-        {
-            // Two lines for every name, so the supplies line up across the row.
-            title.CustomMinimumSize = new Vector2(0, 2 * RealmUi.HeadingFont.GetHeight(title.GetThemeFontSize("font_size")) + 3);
-            top.AddChild(title);
-        }
-        card.AddChild(BuildProductRewardRow(product));
-        var extra = product.GrantsUnitUnlock ? "+ Unit unlock" : product.BonusAmount > 0 ? $"Includes {product.BonusAmount:N0} bonus" : "";
-        var bonus = RealmUi.Label(extra, 14, true);
-        bonus.CustomMinimumSize = new Vector2(0, 24);
-        card.AddChild(bonus);
-        var localizedPrice = LocalizedPrice(product);
-        var purchaseButton = new RealmButton
-        {
-            Text = forceDisabled ? "Purchased" : $"Buy — {localizedPrice}",
-            CustomMinimumSize = new Vector2(0, 48),
-            // Takes the card's spare height but stays at the bottom, so the buttons line up across the row.
-            SizeFlagsVertical = SizeFlags.ShrinkEnd | SizeFlags.Expand,
-            Disabled = forceDisabled
-        };
-        purchaseButton.SetMeta("realm_primary", true);
-        purchaseButton.SetMeta("store_product_id", product.Id);
-        purchaseButton.AccessibilityName = $"Buy {product.DisplayName} for {localizedPrice}";
-        purchaseButton.Pressed += () => OnPurchasePressed(product.Id, purchaseButton);
-        card.AddChild(purchaseButton);
+        x += End;
+        bar.Size = new Vector2(x, Height);
+        _balances.CustomMinimumSize = new Vector2(x, Height);
+        _balances.TooltipText = _balances.AccessibilityName = $"Gold: {state.Gold:N0} · {state.FoodRechargeText}";
     }
 
-    private static HBoxContainer BuildProductRewardRow(ShopProduct product)
+    private void RebuildCategory(int page, string category)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
-        if (product.CurrencyType.Equals("gold", StringComparison.OrdinalIgnoreCase))
-        {
-            row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(28f, 28f)));
-        }
-        else if (product.CurrencyType.Equals("food", StringComparison.OrdinalIgnoreCase))
-        {
-            row.AddChild(UiBadgeFactory.CreateRewardBadge("food", "", product.FormattedReward, new Vector2(28f, 28f)));
-        }
-        else if (product.CurrencyType.Equals("mixed", StringComparison.OrdinalIgnoreCase))
-        {
-            row.AddChild(UiBadgeFactory.CreateRewardBadge("gold", "", product.FormattedReward, new Vector2(28f, 28f)));
-        }
-
-        var reward = RealmUi.Label(product.CurrencyType == "mixed" ? $"{product.GoldAmount:N0} gold · {product.FoodAmount:N0} food" : $"{product.TotalCurrencyAmount:N0} {product.CurrencyType}", 24);
-        reward.VerticalAlignment = VerticalAlignment.Center;
-        row.AddChild(reward);
-        return row;
+        var row = _pages[page];
+        RealmUi.Clear(row);
+        var products = ShopProductCatalog.GetByCategory(category);
+        // Where there is a choice of sizes, the pack that gives the most for the money is marked.
+        var best = products.Count >= 3 ? products.OrderByDescending(p => p.TotalCurrencyAmount / Math.Max(.01, p.PriceUsd)).First() : null;
+        foreach (var product in products)
+            row.AddChild(new StorePackCard(product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id), product == best,
+                LocalizedPrice(product), wide: products.Count <= 2, OnPurchasePressed));
     }
 
     private static string LocalizedPrice(ShopProduct product) => NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
     private void CancelPendingPurchase(bool resetNotice = true)
     {
-        if (GodotObject.IsInstanceValid(_pendingConfirmButton))
-        {
-            var product = ShopProductCatalog.GetById(_pendingConfirmProductId);
-            if (product != null)
-                _pendingConfirmButton.Text = $"Buy — {LocalizedPrice(product)}";
-        }
-
+        if (GodotObject.IsInstanceValid(_pendingCard))
+            _pendingCard.SetConfirming(false);
         _pendingConfirmProductId = "";
-        _pendingConfirmButton = null;
+        _pendingCard = null;
         _cancelConfirmButton.Hide();
         ShowRefill();
         if (resetNotice)
             _noticeLabel.Text = PurchaseHint;
     }
 
-    private void OnPurchasePressed(string productId, Button button)
+    private void OnPurchasePressed(StorePackCard card)
     {
+        var productId = card.Product.Id;
         if (_nativePurchaseBusy)
         {
             _noticeLabel.Text = "Finishing your last purchase. Try again in a moment.";
@@ -344,21 +358,20 @@ public partial class CashShopMenu : Control
 
         if (_pendingConfirmProductId == productId)
         {
-            SelectCategory(3);
+            SelectCategory(LedgerPage);
             _noticeLabel.Text = "Your purchase status is shown above.";
             ExecutePurchase(productId);
             _pendingConfirmProductId = "";
-            _pendingConfirmButton = null;
+            _pendingCard = null;
             return;
         }
 
         CancelPendingPurchase();
-        // Show confirm state
+        // The card lights up and its button becomes the confirmation.
         _pendingConfirmProductId = productId;
-        _pendingConfirmButton = button;
-        var selected = ShopProductCatalog.GetById(productId);
-        button.Text = $"Confirm — {LocalizedPrice(selected)}";
-        _noticeLabel.Text = $"{selected.DisplayName} · {LocalizedPrice(selected)}. Tap Confirm to purchase.";
+        _pendingCard = card;
+        card.SetConfirming(true);
+        _noticeLabel.Text = $"{card.Product.DisplayName} · {LocalizedPrice(card.Product)}. Tap Confirm to purchase.";
         _cancelConfirmButton.Show();
         ShowRefill();
     }
@@ -428,12 +441,14 @@ public partial class CashShopMenu : Control
         {
             _statusLabel.Text = $"Checkout error: {e.Message}";
         }
+        RefreshStatus();
     }
 
     private void ExecuteNativeIAPPurchase(ShopProduct product, string platform)
     {
         _nativePurchaseBusy = true;
         _statusLabel.Text = $"Starting purchase: {product.DisplayName}...";
+        RefreshStatus();
         NativeIAPService.Instance.PurchaseProduct(product.Id, iapResult => OnNativePurchaseReturned(product, platform, iapResult));
     }
 
@@ -454,6 +469,7 @@ public partial class CashShopMenu : Control
         {
             _statusLabel.Text = $"Validating receipt for {product.DisplayName}...";
             _noticeLabel.Text = "Validating your purchase…";
+            RefreshStatus();
         }
 
         // Verification runs off the main thread, so the shop keeps drawing and responding. The
@@ -504,23 +520,34 @@ public partial class CashShopMenu : Control
 
     private bool IsOpen() => IsInstanceValid(this) && IsInsideTree() && !IsQueuedForDeletion();
 
+    /// <summary>Rewrites the ledger's rows. The latest purchase message is left as it is.</summary>
     private void RefreshStatus()
     {
-        if (_nativePurchaseBusy || (!string.IsNullOrWhiteSpace(_statusLabel.Text) && _statusLabel.Text.Contains("Purchased")))
+        RealmUi.Clear(_ledgerRows);
+        void Row(string name, string value)
         {
-            return;
+            // Ruled like a ledger: each entry sits on a faint line.
+            if (_ledgerRows.GetChildCount() > 0)
+                _ledgerRows.AddChild(new ColorRect { Color = new Color(.85f, .72f, .5f, .14f), CustomMinimumSize = new Vector2(0, 1), MouseFilter = MouseFilterEnum.Ignore });
+            var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(0, 25) };
+            var key = StorePackCard.Serif(name, 13, Muted);
+            key.AutowrapMode = TextServer.AutowrapMode.Off;
+            key.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            key.VerticalAlignment = VerticalAlignment.Center;
+            var amount = StorePackCard.Serif(value, 13, Body, 600);
+            amount.AutowrapMode = TextServer.AutowrapMode.Off;
+            amount.HorizontalAlignment = HorizontalAlignment.Right;
+            amount.VerticalAlignment = VerticalAlignment.Center;
+            row.AddChild(key); row.AddChild(amount);
+            _ledgerRows.AddChild(row);
         }
 
-        var lines = new List<string>
-        {
-            $"Purchases: {GameState.Instance.TotalPurchaseCount}",
-            $"Gold: {GameState.Instance.Gold}",
-            $"Food: {GameState.Instance.Food}"};
+        Row("Purchases made", GameState.Instance.TotalPurchaseCount.ToString("N0"));
         var refunds = GameState.Instance.GetAppliedWalletAdjustments().Count(a => a.Kind == "refund" && (a.GoldApplied != 0 || a.FoodApplied != 0 || a.GoldUnrecovered != 0 || a.FoodUnrecovered != 0));
         if (refunds > 0)
-            lines.Add($"Refunded purchases taken back: {refunds}");
+            Row("Refunded purchases taken back", refunds.ToString("N0"));
         var endpoint = GameState.Instance.PurchaseValidationEndpoint;
-        lines.Add(string.IsNullOrWhiteSpace(endpoint) ? "Mode: Store disabled" : "Mode: Online");
+        Row("Store", string.IsNullOrWhiteSpace(endpoint) ? "Disabled in this build" : "Online");
         var nativeIap = NativeIAPService.Instance;
         if (nativeIap != null)
         {
@@ -531,16 +558,15 @@ public partial class CashShopMenu : Control
                 IAPPlatform.Stripe => "Stripe (web)",
                 _ => "None"
             };
-            lines.Add($"Payment: {platformLabel}");
+            Row("Payment", platformLabel);
             if (nativeIap.Platform != IAPPlatform.Stripe)
             {
-                lines.Add($"Store: {(nativeIap.IsAvailable ? "Connected" : "Unavailable")}");
+                Row("Store connection", nativeIap.IsAvailable ? "Connected" : "Unavailable");
             }
         }
 
-        lines.Add("");
-        lines.Add("Packs credit your account after payment is verified. The Adventurer's Kit is available once per account.");
-        _statusLabel.Text = string.Join("\n", lines);
+        _statusPlaceholder.Visible = string.IsNullOrWhiteSpace(_statusLabel.Text);
+        _statusLabel.Visible = _statusSpacer.Visible = !_statusPlaceholder.Visible;
     }
 
     private static string DetectPlatform()
@@ -551,6 +577,4 @@ public partial class CashShopMenu : Control
             return "google";
         return "stripe";
     }
-
-    private static void ClearChildren(Control parent) => RealmUi.Clear(parent);
 }

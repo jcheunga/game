@@ -671,9 +671,29 @@ public partial class LanChallengeService : Node
 			MonitorRank = ResolvePeerMonitorRank(peerId),
 			PresenceText = ResolvePeerPresenceText(peerId),
 			MonitorText = BuildPeerMonitorLine(peerId),
-			DeckText = BuildPeerDeckSummaryLine(peerId)
+			DeckText = BuildPeerDeckSummaryLine(peerId),
+			DeckUnitIds = _peerDecks.TryGetValue(peerId, out var deck) ? deck : Array.Empty<string>(),
+			PostedScore = _submissions.TryGetValue(peerId, out var submission) ? submission.Score : -1,
+			PostedRank = _submissions.ContainsKey(peerId) ? Array.IndexOf(OrderedSubmissions().Select(entry => entry.PeerId).ToArray(), peerId) + 1 : -1
 		};
 	}
+
+	/// <summary>This session's standings, best first, for the LAN race board.</summary>
+	public IReadOnlyList<(string Name, int Races, int Wins, int TotalScore, int BestScore)> SessionStandings => OrderedStandings()
+		.Select(entry => (entry.DisplayName, entry.Races, entry.Wins, entry.TotalScore, entry.BestScore)).ToArray();
+
+	private LanRaceSubmission[] OrderedSubmissions() => _submissions.Values
+		.OrderByDescending(entry => entry.Score)
+		.ThenBy(entry => entry.ElapsedSeconds)
+		.ThenByDescending(entry => entry.HullPercent)
+		.ToArray();
+
+	private LanSessionStanding[] OrderedStandings() => _sessionStandings.Values
+		.OrderByDescending(entry => entry.Wins)
+		.ThenByDescending(entry => entry.TotalScore)
+		.ThenByDescending(entry => entry.BestScore)
+		.ThenBy(entry => entry.BestTimeSeconds)
+		.ToArray();
 
 	private void StoreSubmission(LanRaceSubmission submission)
 	{
@@ -795,12 +815,7 @@ public partial class LanChallengeService : Node
 		{
 			"LAN session standings:"
 		};
-		var ordered = _sessionStandings.Values
-			.OrderByDescending(entry => entry.Wins)
-			.ThenByDescending(entry => entry.TotalScore)
-			.ThenByDescending(entry => entry.BestScore)
-			.ThenBy(entry => entry.BestTimeSeconds)
-			.ToArray();
+		var ordered = OrderedStandings();
 
 		for (var i = 0; i < ordered.Length; i++)
 		{
@@ -826,11 +841,7 @@ public partial class LanChallengeService : Node
 		{
 			$"LAN scoreboard for {SharedChallengeCode}:"
 		};
-		var ordered = _submissions.Values
-			.OrderByDescending(entry => entry.Score)
-			.ThenBy(entry => entry.ElapsedSeconds)
-			.ThenByDescending(entry => entry.HullPercent)
-			.ToArray();
+		var ordered = OrderedSubmissions();
 
 		for (var i = 0; i < ordered.Length; i++)
 		{

@@ -59,7 +59,7 @@ public partial class UiReviewSmoke
         await LiveUiReview.Settle(this);
         LiveUiReview.AssertDestination(GetTree(), SceneRouter.LanRaceScene);
         AuditText("Live click / LAN"); await Capture("click-LAN");
-        await TapHint("Back to previous panel");
+        await TapHint("Back");
         Check(home.HomeModalDestination == SceneRouter.MultiplayerScene, "LAN back returns to the multiplayer overlay");
         home.CloseHomeModal();
 

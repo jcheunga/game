@@ -24,7 +24,7 @@ public partial class UiReviewSmoke
         var menu = (MapMenu)GetTree().CurrentScene;
         var screens = new[] { SceneRouter.TowerScene, SceneRouter.BountyScene, SceneRouter.BossRushScene, SceneRouter.RaidScene, SceneRouter.EventScene,
             SceneRouter.ExpeditionScene, SceneRouter.LoginCalendarScene, SceneRouter.ProgressionScene,
-            SceneRouter.GuildScene, SceneRouter.FriendsScene, SceneRouter.ArenaScene, SceneRouter.LeaderboardScene };
+            SceneRouter.GuildScene, SceneRouter.FriendsScene, SceneRouter.ArenaScene, SceneRouter.LeaderboardScene, SceneRouter.LanRaceScene };
 
         async Task<RoyalBoard> Show(string path)
         {
@@ -130,6 +130,20 @@ public partial class UiReviewSmoke
             await PressTab(page);
             await Look(Walk(menu).OfType<RoyalBoard>().Single(), "ProgressionMenu-" + page.Replace(' ', '-'));
         }
+
+        // A LAN room hosted on this machine: the host readies up and could launch.
+        var lan = await Show(SceneRouter.LanRaceScene);
+        await TapModal(Find(lan, "Host board")); await Wait(.4);
+        lan = Walk(menu).OfType<RoyalBoard>().Single();
+        Check(LanChallengeService.Instance.IsHosting, "Host board opens a LAN room");
+        await TapModal(Find(lan, "Ready up")); await Wait(.4);
+        lan = Walk(menu).OfType<RoyalBoard>().Single();
+        Check(LanChallengeService.Instance.LocalReady && Find(lan, "Launch LAN race") is { Disabled: false }, "A ready host can launch the race");
+        await Look(lan, "LanRaceMenu-hosted");
+        await PressTab("Results");
+        await Look(Walk(menu).OfType<RoyalBoard>().Single(), "LanRaceMenu-results");
+        await TapModal(Find(Walk(menu).OfType<RoyalBoard>().Single(), "Close room")); await Wait(.3);
+        Check(!LanChallengeService.Instance.HasRoom, "Close room ends the LAN room");
 
         // An event outside its dates, to see its stages and milestones.
         EventMenu.Preview = SeasonalEventCatalog.GetAll()[0];

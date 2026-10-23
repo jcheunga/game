@@ -21,6 +21,7 @@ public sealed class MultiplayerRoomPeerSnapshot
 	public string PresenceText { get; init; } = "";
 	public string MonitorText { get; init; } = "";
 	public string DeckText { get; init; } = "";
+	public IReadOnlyList<string> DeckUnitIds { get; init; } = Array.Empty<string>();
 }
 
 public sealed class MultiplayerRoomSnapshot

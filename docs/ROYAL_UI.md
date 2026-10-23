@@ -24,7 +24,7 @@ positions measured on it.
    (`assets/fonts`, OFL); large titles use the gold gradient shader `assets/shaders/royal_gold_text.gdshader`.
 
 The More hub's activities that had no concept (tower, bounties, boss rush, raid, event, expeditions, daily
-gifts, progression, guild, friends, arena, rankings) are painted **boards** (`royal/RoyalBoard.cs`,
+gifts, progression, guild, friends, arena, rankings, and the LAN race reached from Challenges) are painted **boards** (`royal/RoyalBoard.cs`,
 below). Inspectors, dialogs and the few remaining screens without a concept keep their layouts and take the same
 chrome: `ModalSurface` draws the kit's modal frame, navy and gold buttons, tabs, tiles and parchment, `RealmModal`
 uses the concept header with its castle skyline and a gold title, and `RealmUi` uses the concept fonts.
@@ -85,7 +85,7 @@ the caption would sit high. The UI review's `ROYAL_BUTTON_STRETCHED` audit fails
 | Home atlas and HUD | ui 06 | `MapMenu.Home.cs`, `MapPathCanvas.Painted.cs` |
 | Caravan hub (More) | menu 01 | `CaravanHub.cs` (its activities below are boards unless listed) |
 | Tower, bounties, boss rush, raid, event | board-banners | `TowerMenu.cs`, `BountyMenu.cs`, `BossRushMenu.cs`, `RaidMenu.cs`, `EventMenu.cs` |
-| Expeditions, progression, guild, friends, arena, rankings | board-banners | `ExpeditionMenu.cs`, `ProgressionMenu.cs`, `GuildMenu.cs`, `FriendsMenu.cs`, `ArenaMenu.cs`, `LeaderboardMenu.cs` |
+| Expeditions, progression, guild, friends, arena, rankings, LAN race | board-banners | `ExpeditionMenu.cs`, `ProgressionMenu.cs`, `GuildMenu.cs`, `FriendsMenu.cs`, `ArenaMenu.cs`, `LeaderboardMenu.cs`, `LanRaceMenu.cs` (runner cards from `LanChallengeService.BuildRoomSnapshot`, standings from `SessionStandings`) |
 | Daily gifts | board-camp | `LoginCalendarMenu.cs` |
 | Warband / Spells | ui 07, menu 02 | `ShopMenu.cs`, `ShopMenu.Roster.cs`, `ShopMenu.Profile.cs` |
 | Relics | menu 03 | `ShopMenu.Relics.cs` |

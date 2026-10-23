@@ -13,7 +13,14 @@ public partial class CaravanHub : RoyalScreen
     private int _section;
     private Control _layer;
 
-    public CaravanHub() { Veil = new Color(.02f, .05f, .08f, .62f); }
+    public CaravanHub(int section = 0)
+    {
+        Veil = new Color(.02f, .05f, .08f, .62f);
+        _section = Mathf.Clamp(section, 0, Sections.Length - 1);
+    }
+
+    /// <summary>The open tab, so closing an activity opened from it returns here.</summary>
+    public int Section => _section;
 
     private RoyalSpec Spec => RoyalSpec.For("hub");
 

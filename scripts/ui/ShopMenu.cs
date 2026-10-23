@@ -11,6 +11,7 @@ public partial class ShopMenu : RoyalScreen
     private static readonly string[] TabNames = { "Warband", "Spells", "War wagon", "Relics" };
     private static readonly string[] TabIcons = { "tab-warband", "tab-spells", "tab-wagon", "tab-relics" };
     private int _tab;
+    public int Tab => _tab;
     private Control _header, _body;
     private GameState _state;
 

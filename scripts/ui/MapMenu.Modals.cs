@@ -9,7 +9,7 @@ public partial class MapMenu
     public bool HasHomeModal => _modal != null;
     public string HomeModalDestination => _modal?.Destination ?? "";
 
-    public bool OpenHomeDestination(string path, bool remember = true)
+    public bool OpenHomeDestination(string path, bool remember = true, int tab = 0)
     {
         if (path == SceneRouter.MainMenuScene || path == SceneRouter.MapScene)
         {
@@ -28,14 +28,17 @@ public partial class MapMenu
         }
         // Destinations with a score of their own (shop, loadout, endless, tourney) bring it with them.
         MusicPlayer.Instance?.PlayOverlay(path);
-        var tab = path == SceneRouter.ShopScene ? SceneRouter.Instance.InitialShopTab : 0;
+        if (path == SceneRouter.ShopScene) tab = SceneRouter.Instance.InitialShopTab;
+        // The screen being left keeps the tab it is on now, so closing this one goes back to that tab.
+        var leavingTab = _modal.ActivePage switch { CaravanHub hub => hub.Section, ShopMenu shop => shop.Tab, _ => -1 };
+        if (remember && _modalHistory.Count > 0 && leavingTab >= 0) _modalHistory[^1] = (_modalHistory[^1].Path, leavingTab);
         if (remember) _modalHistory.Add((path, tab));
         // Closing a screen opened from another one (Edit squad from preparation) returns to that screen.
         _modal.Closed = _modalHistory.Count > 1 ? BackHomeModal : CloseHomeModal;
         RealmUi.Clear(_modal.Content);
         Control content;
         if (path == "achievements") content = new AchievementsPanel();
-        else if (path == "more") content = new CaravanHub();
+        else if (path == "more") content = new CaravanHub(tab);
         else if (path == "levels") content = new PlayerLevelMenu();
         else content = ResourceLoader.Load<PackedScene>(path).Instantiate<Control>();
         content.SetMeta("home_modal", true);
@@ -75,8 +78,8 @@ public partial class MapMenu
         if (_modalHistory.Count <= 1) { CloseHomeModal(); return; }
         _modalHistory.RemoveAt(_modalHistory.Count - 1);
         var previous = _modalHistory[_modalHistory.Count - 1];
-        SceneRouter.Instance.SetInitialShopTab(previous.Tab);
-        OpenHomeDestination(previous.Path, false);
+        SceneRouter.Instance.SetInitialShopTab(previous.Path == SceneRouter.ShopScene ? previous.Tab : 0);
+        OpenHomeDestination(previous.Path, false, previous.Tab);
     }
 
 }

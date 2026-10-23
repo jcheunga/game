@@ -85,6 +85,13 @@ public partial class UiReviewSmoke
         Check(menu.HasHomeModal && menu.HomeModalDestination == SceneRouter.LoadoutScene, "Closing the armory returns to battle preparation");
         await PressHint("Close panel");
         Check(!menu.HasHomeModal, "Closing preparation returns to the map");
+        // An activity opened from a More tab closes back to that tab, not to Adventure.
+        menu.OpenHomeDestination("more"); await Wait(.35);
+        await PressHint("Caravan"); await PressHint("Forge"); await Wait(.35);
+        Check(menu.HomeModalDestination == SceneRouter.ForgeScene, "The forge opens from the More caravan tab");
+        await PressHint("Close panel"); await Wait(.35);
+        Check(menu.HomeModalDestination == "more" && Walk(menu).OfType<CaravanHub>().SingleOrDefault()?.Section == 1, "Closing the forge returns to the More caravan tab");
+        menu.CloseHomeModal();
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { baseline });
         typeof(MapMenu).GetMethod("RefreshUi", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(menu, null);
     }

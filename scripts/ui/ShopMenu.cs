@@ -87,12 +87,15 @@ public partial class ShopMenu : RoyalScreen
         for (var i = 0; i < TabNames.Length; i++)
         {
             var index = i;
-            var rect = new Rect2(strip.Position.X + i * width, strip.Position.Y, width, strip.Size.Y);
+            // A resting tab is the plate's own tab with its whole rim (art/royal/chrome.py cuts it from y 56, 72.6 tall),
+            // so drawn over that footprint its rails lie on the plate's; the lit tab keeps the concept's rect.
+            var rect = i == _tab ? new Rect2(strip.Position.X + i * width, strip.Position.Y, width, strip.Size.Y)
+                : new Rect2(strip.Position.X + i * width, 56, width, 72.6f);
             var tab = RoyalButton.Over(rect, TabNames[i], () => SelectTab(index), 4);
             tab.SetStates(RoyalKit.Slice(i == _tab ? "tab-selected" : "tab", 10), 4);
             tab.MarkTab(i == _tab);
             _header.AddChild(tab);
-            tab.SetGlyph(RoyalKit.Texture(TabIcons[i]), new Rect2(width / 2 - 16, iconOffset - 2, 32, 27), i == _tab ? new Color("ffe7b0") : Colors.White);
+            tab.SetGlyph(RoyalKit.Texture(TabIcons[i]), new Rect2(width / 2 - 16, iconOffset - 2 + strip.Position.Y - rect.Position.Y, 32, 27), i == _tab ? new Color("ffe7b0") : Colors.White);
             var label = spec.Label("tab.warband.label", TabNames[i], width - 10, i == _tab ? new Color("fff1d2") : new Color("e2ddd6"));
             label.Align = HorizontalAlignment.Center;
             label.Position = new Vector2(5, label.Position.Y - rect.Position.Y);

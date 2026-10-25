@@ -267,7 +267,7 @@ public abstract partial class RoyalBoard : RoyalScreen
     /// <summary>A page tab: navy at rest, lit gold when selected, with an optional emblem before its caption.</summary>
     protected RoyalButton Tab(Rect2 rect, string caption, bool selected, Action select, string glyph = null)
     {
-        var tab = Card(rect, caption, select, selected, "tab", "ach-tab-selected");
+        var tab = Card(rect, caption, select, selected, "ach-tab", "ach-tab-selected");
         // Reviews find and name a screen's pages by their tabs' text.
         tab.Text = caption;
         tab.MarkTab(selected);

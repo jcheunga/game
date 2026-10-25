@@ -2,8 +2,9 @@
 """Generic concept chrome for screens without a concept of their own: the modal frame and header,
 navy and gold buttons, tabs, tiles, parchment and the close button, cut from the clean plates.
 
-  python3 art/royal/chrome.py
+  python3 art/royal/chrome.py [name ...]
 """
+import sys
 from pathlib import Path
 from PIL import Image
 
@@ -30,15 +31,29 @@ def tile_fill(target, texture, box):
             target.paste(piece, (x, y))
 
 
-def main():
-    OUT.mkdir(parents=True, exist_ok=True)
-    warband, hub, multiplayer, codex = plate("warband"), plate("hub"), plate("multiplayer"), plate("codex")
-    for name, rect in {"button-navy": (753, 610, 216, 62), "button-gold": (979, 610, 265, 62), "tab": (743, 57, 96, 67),
-                       "tile": (753, 377, 181, 68), "close-button": (1186, 27, 54, 54)}.items():
-        cut(warband, *rect).save(OUT / f"{name}.png", optimize=True)
-    cut(codex, 126, 145, 535, 512).save(OUT / "paper.png", optimize=True)
+def clear_tab_corners(tab):
+    """Clears the sky above the tab's chamfered top corners, and the next tab's chamfer that meets its right one."""
+    w = tab.width
+    pixels = tab.load()
+    for corner, reach in ((0, 7), (w - 1, 8)):
+        def depth(x, y): return abs(x - corner) + y
+        # Everything above the chamfer's dark outline goes, and so does any sky the corner cut leaves beside it.
+        stack, seen = [(corner, 0)], set()
+        while stack:
+            x, y = stack.pop()
+            if (x, y) in seen or not 0 <= x < w or y < 0 or depth(x, y) > reach + 3:
+                continue
+            seen.add((x, y))
+            r, g, b, _ = pixels[x, y]
+            if depth(x, y) > reach and not (b >= r - 5 and 0.299 * r + 0.587 * g + 0.114 * b > 45):
+                continue
+            pixels[x, y] = (r, g, b, 0)
+            stack += [(x + 1, y), (x - 1, y), (x, y + 1)]
+    return tab
 
-    # Modal frame: the hub's brass border around plain planks.
+
+def modal_frame(hub):
+    """The hub's brass border around plain planks."""
     frame = cut(hub, 33, 92, 1214, 607)
     wood = cut(hub, 60, 260, 300, 120)
     border = round(16 * SCALE)
@@ -54,7 +69,9 @@ def main():
         tile_fill(frame, sample, (left, corner, left + border, h - corner))
     frame.save(OUT / "modal-frame.png", optimize=True)
 
-    # Header band: plain navy enamel on the left, castle art on the right; the emblem is drawn live.
+
+def modal_header(multiplayer):
+    """Header band: plain navy enamel on the left, castle art on the right; the emblem is drawn live."""
     header = cut(multiplayer, 33, 22, 1213, 98)
     plain = header.crop((round(300 * SCALE), 0, round(320 * SCALE), header.height))
     for x in range(round(14 * SCALE), round(300 * SCALE), plain.width):
@@ -66,8 +83,24 @@ def main():
     forest = header.crop((2 * fold - right, top, fold, bottom)).transpose(Image.FLIP_LEFT_RIGHT)
     header.paste(forest, (fold, top))
     header.save(OUT / "modal-header.png", optimize=True)
+
+
+def main(only=()):
+    OUT.mkdir(parents=True, exist_ok=True)
+    def wanted(name): return not only or name in only
+    warband, hub, multiplayer, codex = plate("warband"), plate("hub"), plate("multiplayer"), plate("codex")
+    # The tab is the strip's second tab with its whole rim: both gold dividers it shares with its neighbours and
+    # the rail beneath, so a tab standing on its own is framed on all four sides.
+    for name, rect in {"button-navy": (753, 610, 216, 62), "button-gold": (979, 610, 265, 62), "tab": (730.3, 56, 111.8, 72.6),
+                       "tile": (753, 377, 181, 68), "close-button": (1186, 27, 54, 54)}.items():
+        if wanted(name):
+            piece = cut(warband, *rect)
+            (clear_tab_corners(piece) if name == "tab" else piece).save(OUT / f"{name}.png", optimize=True)
+    if wanted("paper"): cut(codex, 126, 145, 535, 512).save(OUT / "paper.png", optimize=True)
+    if wanted("modal-frame"): modal_frame(hub)
+    if wanted("modal-header"): modal_header(multiplayer)
     print("chrome done")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

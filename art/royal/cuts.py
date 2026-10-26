@@ -12,6 +12,9 @@ Modes:
   key-gold   gold/painted icon on a dark ground -> original colours, alpha from distance to the ground
   plate      copy from the generated clean plate (keeps its alpha)
 
+A framed piece can add "rims": "clear" (what lies beyond its gold rim turns transparent) or "symmetric" (its left
+half mirrored onto the right first), see art/royal/rims.py.
+
   python3 art/royal/cuts.py [name ...]
 """
 import json
@@ -22,6 +25,7 @@ from PIL import Image, ImageFilter
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "art/royal"))
 from plates import CONCEPTS, GEN, SIZE  # noqa: E402
+import rims  # noqa: E402
 
 OUT = ROOT / "assets/ui/royal/kit"
 SPEC = ROOT / "art/royal/cuts.json"
@@ -142,6 +146,10 @@ def run(cut):
         image = key_ground(image.convert("RGB"), cut.get("tolerance", 38), cut.get("softness", 40))
     elif mode == "plain":
         image = image.convert("RGB")
+    if cut.get("rims"):
+        # A frame cut from a row of touching tabs: what lay beyond its rim goes, and "symmetric" first mirrors the
+        # left half over a right edge cut through the divider it shared.
+        image = rims.clear_outside(rims.symmetric(image) if cut["rims"] == "symmetric" else image)
     OUT.mkdir(parents=True, exist_ok=True)
     image.save(OUT / f"{cut['name']}.png", optimize=True)
 

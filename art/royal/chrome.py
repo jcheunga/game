@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rims  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 PLATES = ROOT / "assets/ui/royal/plates"
 OUT = ROOT / "assets/ui/royal/kit"
@@ -90,12 +93,15 @@ def main(only=()):
     def wanted(name): return not only or name in only
     warband, hub, multiplayer, codex = plate("warband"), plate("hub"), plate("multiplayer"), plate("codex")
     # The tab is the strip's second tab with its whole rim: both gold dividers it shares with its neighbours and
-    # the rail beneath, so a tab standing on its own is framed on all four sides.
+    # the rail beneath, so a tab standing on its own is framed on all four sides. The buttons lose the plate's
+    # background beyond their chamfered corners.
     for name, rect in {"button-navy": (753, 610, 216, 62), "button-gold": (979, 610, 265, 62), "tab": (730.3, 56, 111.8, 72.6),
                        "tile": (753, 377, 181, 68), "close-button": (1186, 27, 54, 54)}.items():
         if wanted(name):
             piece = cut(warband, *rect)
-            (clear_tab_corners(piece) if name == "tab" else piece).save(OUT / f"{name}.png", optimize=True)
+            if name == "tab": piece = clear_tab_corners(piece)
+            elif name.startswith("button-"): piece = rims.clear_outside(piece)
+            piece.save(OUT / f"{name}.png", optimize=True)
     if wanted("paper"): cut(codex, 126, 145, 535, 512).save(OUT / "paper.png", optimize=True)
     if wanted("modal-frame"): modal_frame(hub)
     if wanted("modal-header"): modal_header(multiplayer)

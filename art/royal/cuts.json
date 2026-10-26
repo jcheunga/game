@@ -1833,7 +1833,8 @@
    150,
    60
   ],
-  "mode": "plate"
+  "mode": "plate",
+  "rims": "symmetric"
  },
  {
   "name": "ach-tab-selected",
@@ -1855,7 +1856,8 @@
     ],
     "column": 8
    }
-  ]
+  ],
+  "rims": "clear"
  },
  {
   "name": "codex-cell",

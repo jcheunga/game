@@ -2,9 +2,9 @@
 """Bake the tileable cloud noise behind the campaign map's fog of war (assets/shaders/royal_fog.gdshader).
 
 Every channel is smooth fractal value noise that repeats seamlessly across the 512 px tile. Red and green
-steer the domain warp; blue is the soft billows that push the cloud bank's outline in and out and shade its
-top; alpha is the finer wisps for the veil beyond the outline and the frontier mist. Each octave is blurred
-a little after it is enlarged, so the lattice it grew from never shows as a grid.
+bend the painted cloud layers (fog-clouds.png, art/royal/clouds.py) and vary the cloud's thickness; alpha is
+the finer wisps for the frontier mist. Blue, soft billows, is no longer read since the cloud became painted.
+Each octave is blurred a little after it is enlarged, so the lattice it grew from never shows as a grid.
 
   python3 art/royal/fognoise.py
 """

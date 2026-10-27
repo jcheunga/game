@@ -3,13 +3,14 @@ using Godot;
 
 /// <summary>
 /// Draws the painted map's fog of war with assets/shaders/royal_fog.gdshader: the owning canvas supplies
-/// blurred masks of the hidden and frontier tiles in world space and the shader turns them into a thin, drifting
-/// layer of pale cloud and a muted ground mist.
+/// blurred masks of the hidden and frontier tiles in world space and the shader turns them into a drifting layer
+/// of painted cloud (fog-clouds.png) and a muted ground mist.
 /// </summary>
 public partial class MapFogLayer : Control
 {
     private static Shader _shader;
     private static Texture2D _noise;
+    private static Texture2D _clouds;
     private readonly ShaderMaterial _material = new();
     public Texture2D Mask;
     public Rect2 MaskRect;
@@ -25,8 +26,10 @@ public partial class MapFogLayer : Control
         TextureFilter = TextureFilterEnum.Linear;
         _shader ??= ResourceLoader.Load<Shader>("res://assets/shaders/royal_fog.gdshader");
         _noise ??= ResourceLoader.Load<Texture2D>("res://assets/world/royal/maps/fog-noise.png");
+        _clouds ??= ResourceLoader.Load<Texture2D>("res://assets/world/royal/maps/fog-clouds.png");
         _material.Shader = _shader;
         _material.SetShaderParameter("noise_tex", _noise);
+        _material.SetShaderParameter("cloud_tex", _clouds);
         Material = _material;
     }
 

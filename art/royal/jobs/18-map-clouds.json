@@ -1,0 +1,20 @@
+[
+  {
+    "id": "map-clouds-puffs",
+    "out": "art/royal/gen/clouds/puffs.png",
+    "inputs": [
+      "assets/world/royal/maps/city-1.jpg"
+    ],
+    "edit": false,
+    "prompt": "Use case: game texture (seamless tile)\nAsset type: the cloud layer that drifts over unexplored land on the campaign map of a painted medieval fantasy strategy game (Crownroad: Siege of Ash). The map is the attached hand-painted landscape, seen from high above; this texture is drawn over it with additive-style blending, so black means clear sky and brightness means cloud.\nSubject: a thin, airy layer of soft fluffy fair-weather clouds seen from directly above: many small and medium cloudlets of varied size, evenly scattered over the whole square, each with a soft rounded fluffy top, delicate wispy translucent edges and gentle shading (sunlit from the upper left, faint cool blue-grey on the lower right). Between the cloudlets are narrow dark gaps and thin veils of mist. Light and delicate, not a heavy mass.\nStyle: hand-painted to match the attached map's painterly brushwork, soft and luminous, pure white highlights and pale blue-grey shadows.\nComposition: a seamless tileable texture; the cloud cover is even across the whole canvas (about 60% cloud, 40% gap), with no large empty area, no single big cloud and no focal point. Clouds must continue across all four edges so the tile repeats without a seam.\nBackground: pure solid black (#000000) in the gaps, no texture, no vignette.\nConstraints: no land, no ground, no sea, no shadows on any ground, no text, no watermark, no border, no colour other than white, grey and pale blue."
+  },
+  {
+    "id": "map-clouds-veil",
+    "out": "art/royal/gen/clouds/veil.png",
+    "inputs": [
+      "assets/world/royal/maps/city-1.jpg"
+    ],
+    "edit": false,
+    "prompt": "Use case: game texture (seamless tile)\nAsset type: the cloud layer that drifts over unexplored land on the campaign map of a painted medieval fantasy strategy game (Crownroad: Siege of Ash). The map is the attached hand-painted landscape, seen from high above; this texture is drawn over it with additive-style blending, so black means clear sky and brightness means cloud.\nSubject: a thin, see-through veil of high cloud seen from directly above: soft fluffy cloudlets merging into translucent wisps and streaks of mist, like a thin layer of altocumulus, evenly spread over the whole square. Delicate, airy and light, with soft rounded fluffy texture throughout and gentle shading (sunlit from the upper left).\nStyle: hand-painted to match the attached map's painterly brushwork, soft and luminous, in greyscale only: white highlights and soft grey shadows.\nComposition: a seamless tileable texture; the cover is even across the whole canvas, with many small gaps and no large empty area, no single big cloud and no focal point. Cloud must continue across all four edges so the tile repeats without a seam.\nBackground: pure solid black (#000000) where the sky is clear, no texture, no vignette.\nConstraints: no land, no ground, no sea, no text, no watermark, no border, no colour at all (greyscale only), no saturated pixels, no blue."
+  }
+]

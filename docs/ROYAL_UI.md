@@ -177,11 +177,15 @@ so roads, river and clearings line up with the playable tiles. A zone painted be
 `<zone>.jpg`. Sites use painted landmark sprites (`assets/world/royal/maps/landmarks`, installed by
 `art/royal/maps.py`), stars sit above castles, hidden tiles lie under a storm-cloud bank and frontier tiles under
 drifting ground mist: `MapFogLayer` draws blurred world-space masks of both (and a much wider blur of the hidden
-tiles) through `assets/shaders/royal_fog.gdshader`. The cloud is a thin, broken layer: two sizes of smooth baked billows
-(`art/royal/fognoise.py`) fray its outline into tufts and gather inside it into puffs lit from the upper left,
-with a see-through veil between them. Through the veil the land shows only as a heavy blur of its colours (the
-blurred mipmaps of the screen, about a fortieth of its width), so nothing on hidden ground can be made out; the
-puffs cast faint shadows on it, and the layer reaches a little way out over the sea beside hidden coasts. The
+tiles) through `assets/shaders/royal_fog.gdshader`. The cloud is two hand-painted layers, white on black
+(Codex job `18-map-clouds`, made to tile and packed into `fog-clouds.png` by `art/royal/clouds.py`): fluffy
+cloudlets lit from the upper left, and below them a fainter veil that drifts more slowly on its own heading.
+Toward the edge of hidden land the faintest cloud goes first, so the outline frays into cloudlets; a small pocket
+of hidden land gets a denser little cloud. Between the clouds a haze of the same blue-grey hides a heavy blur
+of the land (the blurred mipmaps of the screen, about a thirtieth of its width), so the layer is one even tone,
+the cloud shows only as soft relief with faint shadows, and nothing on hidden ground can be made out. Smooth noise (`art/royal/fognoise.py`) bends the
+layers so their tiles never line up and varies the cloud's thickness a little from place to place. The cloud
+reaches a little way out over the sea beside hidden coasts. The
 frontier's colours are muted under the mist (the shader reads the screen behind it). Landmarks, price tags,
 reward bursts and the vignette are drawn above it by `MapOverlayLayer`. `UiReviewSmoke --fog` captures the fog
 fresh, zoomed out, close up, mid-campaign and in other zones into `artifacts/map-fog/`.

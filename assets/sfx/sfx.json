@@ -1,7 +1,7 @@
 {
  "ability_beam": {
   "files": [
-   "res://assets/sfx/ability_beam.ogg"
+   "res://assets/sfx/ability_beam.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -13,7 +13,7 @@
  },
  "ability_blessing": {
   "files": [
-   "res://assets/sfx/ability_blessing.ogg"
+   "res://assets/sfx/ability_blessing.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -25,7 +25,7 @@
  },
  "ability_charge": {
   "files": [
-   "res://assets/sfx/ability_charge.ogg"
+   "res://assets/sfx/ability_charge.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -37,8 +37,8 @@
  },
  "ability_flourish": {
   "files": [
-   "res://assets/sfx/ability_flourish_1.ogg",
-   "res://assets/sfx/ability_flourish_2.ogg"
+   "res://assets/sfx/ability_flourish_1.wav",
+   "res://assets/sfx/ability_flourish_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -50,7 +50,7 @@
  },
  "ability_inspire": {
   "files": [
-   "res://assets/sfx/ability_inspire.ogg"
+   "res://assets/sfx/ability_inspire.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -62,7 +62,7 @@
  },
  "ability_overcharge": {
   "files": [
-   "res://assets/sfx/ability_overcharge.ogg"
+   "res://assets/sfx/ability_overcharge.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -74,7 +74,7 @@
  },
  "ability_shield": {
   "files": [
-   "res://assets/sfx/ability_shield.ogg"
+   "res://assets/sfx/ability_shield.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -86,7 +86,7 @@
  },
  "ability_vanish": {
   "files": [
-   "res://assets/sfx/ability_vanish.ogg"
+   "res://assets/sfx/ability_vanish.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -98,7 +98,7 @@
  },
  "achievement_unlock": {
   "files": [
-   "res://assets/sfx/achievement_unlock.ogg"
+   "res://assets/sfx/achievement_unlock.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -278,8 +278,8 @@
  },
  "ballista_release": {
   "files": [
-   "res://assets/sfx/ballista_release_1.ogg",
-   "res://assets/sfx/ballista_release_2.ogg"
+   "res://assets/sfx/ballista_release_1.wav",
+   "res://assets/sfx/ballista_release_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -291,10 +291,10 @@
  },
  "barricade_hit": {
   "files": [
-   "res://assets/sfx/barricade_hit_1.ogg",
-   "res://assets/sfx/barricade_hit_2.ogg",
-   "res://assets/sfx/barricade_hit_3.ogg",
-   "res://assets/sfx/barricade_hit_4.ogg"
+   "res://assets/sfx/barricade_hit_1.wav",
+   "res://assets/sfx/barricade_hit_2.wav",
+   "res://assets/sfx/barricade_hit_3.wav",
+   "res://assets/sfx/barricade_hit_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -306,8 +306,8 @@
  },
  "base_arrows": {
   "files": [
-   "res://assets/sfx/base_arrows_1.ogg",
-   "res://assets/sfx/base_arrows_2.ogg"
+   "res://assets/sfx/base_arrows_1.wav",
+   "res://assets/sfx/base_arrows_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -319,8 +319,8 @@
  },
  "base_firepot": {
   "files": [
-   "res://assets/sfx/base_firepot_1.ogg",
-   "res://assets/sfx/base_firepot_2.ogg"
+   "res://assets/sfx/base_firepot_1.wav",
+   "res://assets/sfx/base_firepot_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -344,7 +344,7 @@
  },
  "battle_start": {
   "files": [
-   "res://assets/sfx/battle_start.ogg"
+   "res://assets/sfx/battle_start.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -356,8 +356,8 @@
  },
  "berserker_roar": {
   "files": [
-   "res://assets/sfx/berserker_roar_1.ogg",
-   "res://assets/sfx/berserker_roar_2.ogg"
+   "res://assets/sfx/berserker_roar_1.wav",
+   "res://assets/sfx/berserker_roar_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -369,8 +369,8 @@
  },
  "body_fall_bones": {
   "files": [
-   "res://assets/sfx/body_fall_bones_1.ogg",
-   "res://assets/sfx/body_fall_bones_2.ogg"
+   "res://assets/sfx/body_fall_bones_1.wav",
+   "res://assets/sfx/body_fall_bones_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -382,9 +382,9 @@
  },
  "body_fall_heavy": {
   "files": [
-   "res://assets/sfx/body_fall_heavy_1.ogg",
-   "res://assets/sfx/body_fall_heavy_2.ogg",
-   "res://assets/sfx/body_fall_heavy_3.ogg"
+   "res://assets/sfx/body_fall_heavy_1.wav",
+   "res://assets/sfx/body_fall_heavy_2.wav",
+   "res://assets/sfx/body_fall_heavy_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -396,9 +396,9 @@
  },
  "body_fall_light": {
   "files": [
-   "res://assets/sfx/body_fall_light_1.ogg",
-   "res://assets/sfx/body_fall_light_2.ogg",
-   "res://assets/sfx/body_fall_light_3.ogg"
+   "res://assets/sfx/body_fall_light_1.wav",
+   "res://assets/sfx/body_fall_light_2.wav",
+   "res://assets/sfx/body_fall_light_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -410,8 +410,8 @@
  },
  "bone_bolt_release": {
   "files": [
-   "res://assets/sfx/bone_bolt_release_1.ogg",
-   "res://assets/sfx/bone_bolt_release_2.ogg"
+   "res://assets/sfx/bone_bolt_release_1.wav",
+   "res://assets/sfx/bone_bolt_release_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -423,8 +423,8 @@
  },
  "bone_nest_crack": {
   "files": [
-   "res://assets/sfx/bone_nest_crack_1.ogg",
-   "res://assets/sfx/bone_nest_crack_2.ogg"
+   "res://assets/sfx/bone_nest_crack_1.wav",
+   "res://assets/sfx/bone_nest_crack_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -436,7 +436,7 @@
  },
  "boss_death": {
   "files": [
-   "res://assets/sfx/boss_death.ogg"
+   "res://assets/sfx/boss_death.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -448,7 +448,7 @@
  },
  "boss_phase": {
   "files": [
-   "res://assets/sfx/boss_phase.ogg"
+   "res://assets/sfx/boss_phase.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -460,7 +460,7 @@
  },
  "boss_roar_beast": {
   "files": [
-   "res://assets/sfx/boss_roar_beast.ogg"
+   "res://assets/sfx/boss_roar_beast.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -472,7 +472,7 @@
  },
  "boss_roar_grave": {
   "files": [
-   "res://assets/sfx/boss_roar_grave.ogg"
+   "res://assets/sfx/boss_roar_grave.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -484,7 +484,7 @@
  },
  "boss_roar_iron": {
   "files": [
-   "res://assets/sfx/boss_roar_iron.ogg"
+   "res://assets/sfx/boss_roar_iron.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -496,7 +496,7 @@
  },
  "boss_roar_plague": {
   "files": [
-   "res://assets/sfx/boss_roar_plague.ogg"
+   "res://assets/sfx/boss_roar_plague.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -508,7 +508,7 @@
  },
  "boss_roar_pontiff": {
   "files": [
-   "res://assets/sfx/boss_roar_pontiff.ogg"
+   "res://assets/sfx/boss_roar_pontiff.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -520,7 +520,7 @@
  },
  "boss_roar_sovereign": {
   "files": [
-   "res://assets/sfx/boss_roar_sovereign.ogg"
+   "res://assets/sfx/boss_roar_sovereign.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -532,7 +532,7 @@
  },
  "boss_roar_tide": {
   "files": [
-   "res://assets/sfx/boss_roar_tide.ogg"
+   "res://assets/sfx/boss_roar_tide.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -544,7 +544,7 @@
  },
  "boss_roar_warlord": {
   "files": [
-   "res://assets/sfx/boss_roar_warlord.ogg"
+   "res://assets/sfx/boss_roar_warlord.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -556,7 +556,7 @@
  },
  "boss_roar_witch": {
   "files": [
-   "res://assets/sfx/boss_roar_witch.ogg"
+   "res://assets/sfx/boss_roar_witch.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -568,7 +568,7 @@
  },
  "boss_spawn": {
   "files": [
-   "res://assets/sfx/boss_spawn.ogg"
+   "res://assets/sfx/boss_spawn.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -580,10 +580,10 @@
  },
  "bow_release": {
   "files": [
-   "res://assets/sfx/bow_release_1.ogg",
-   "res://assets/sfx/bow_release_2.ogg",
-   "res://assets/sfx/bow_release_3.ogg",
-   "res://assets/sfx/bow_release_4.ogg"
+   "res://assets/sfx/bow_release_1.wav",
+   "res://assets/sfx/bow_release_2.wav",
+   "res://assets/sfx/bow_release_3.wav",
+   "res://assets/sfx/bow_release_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -595,9 +595,9 @@
  },
  "brute_roar": {
   "files": [
-   "res://assets/sfx/brute_roar_1.ogg",
-   "res://assets/sfx/brute_roar_2.ogg",
-   "res://assets/sfx/brute_roar_3.ogg"
+   "res://assets/sfx/brute_roar_1.wav",
+   "res://assets/sfx/brute_roar_2.wav",
+   "res://assets/sfx/brute_roar_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -609,10 +609,10 @@
  },
  "bus_hit": {
   "files": [
-   "res://assets/sfx/bus_hit_1.ogg",
-   "res://assets/sfx/bus_hit_2.ogg",
-   "res://assets/sfx/bus_hit_3.ogg",
-   "res://assets/sfx/bus_hit_4.ogg"
+   "res://assets/sfx/bus_hit_1.wav",
+   "res://assets/sfx/bus_hit_2.wav",
+   "res://assets/sfx/bus_hit_3.wav",
+   "res://assets/sfx/bus_hit_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -624,8 +624,8 @@
  },
  "captain_shout": {
   "files": [
-   "res://assets/sfx/captain_shout_1.ogg",
-   "res://assets/sfx/captain_shout_2.ogg"
+   "res://assets/sfx/captain_shout_1.wav",
+   "res://assets/sfx/captain_shout_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -637,7 +637,7 @@
  },
  "caravan_spell_ready": {
   "files": [
-   "res://assets/sfx/caravan_spell_ready.ogg"
+   "res://assets/sfx/caravan_spell_ready.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -649,8 +649,8 @@
  },
  "card_cancel": {
   "files": [
-   "res://assets/sfx/card_cancel_1.ogg",
-   "res://assets/sfx/card_cancel_2.ogg"
+   "res://assets/sfx/card_cancel_1.wav",
+   "res://assets/sfx/card_cancel_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -662,9 +662,9 @@
  },
  "card_drop": {
   "files": [
-   "res://assets/sfx/card_drop_1.ogg",
-   "res://assets/sfx/card_drop_2.ogg",
-   "res://assets/sfx/card_drop_3.ogg"
+   "res://assets/sfx/card_drop_1.wav",
+   "res://assets/sfx/card_drop_2.wav",
+   "res://assets/sfx/card_drop_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -676,9 +676,9 @@
  },
  "card_pickup": {
   "files": [
-   "res://assets/sfx/card_pickup_1.ogg",
-   "res://assets/sfx/card_pickup_2.ogg",
-   "res://assets/sfx/card_pickup_3.ogg"
+   "res://assets/sfx/card_pickup_1.wav",
+   "res://assets/sfx/card_pickup_2.wav",
+   "res://assets/sfx/card_pickup_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -690,9 +690,9 @@
  },
  "cast_arcane": {
   "files": [
-   "res://assets/sfx/cast_arcane_1.ogg",
-   "res://assets/sfx/cast_arcane_2.ogg",
-   "res://assets/sfx/cast_arcane_3.ogg"
+   "res://assets/sfx/cast_arcane_1.wav",
+   "res://assets/sfx/cast_arcane_2.wav",
+   "res://assets/sfx/cast_arcane_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -704,9 +704,9 @@
  },
  "cast_blight": {
   "files": [
-   "res://assets/sfx/cast_blight_1.ogg",
-   "res://assets/sfx/cast_blight_2.ogg",
-   "res://assets/sfx/cast_blight_3.ogg"
+   "res://assets/sfx/cast_blight_1.wav",
+   "res://assets/sfx/cast_blight_2.wav",
+   "res://assets/sfx/cast_blight_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -718,8 +718,8 @@
  },
  "cast_frost": {
   "files": [
-   "res://assets/sfx/cast_frost_1.ogg",
-   "res://assets/sfx/cast_frost_2.ogg"
+   "res://assets/sfx/cast_frost_1.wav",
+   "res://assets/sfx/cast_frost_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -731,8 +731,8 @@
  },
  "cast_hex": {
   "files": [
-   "res://assets/sfx/cast_hex_1.ogg",
-   "res://assets/sfx/cast_hex_2.ogg"
+   "res://assets/sfx/cast_hex_1.wav",
+   "res://assets/sfx/cast_hex_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -744,8 +744,8 @@
  },
  "cast_holy": {
   "files": [
-   "res://assets/sfx/cast_holy_1.ogg",
-   "res://assets/sfx/cast_holy_2.ogg"
+   "res://assets/sfx/cast_holy_1.wav",
+   "res://assets/sfx/cast_holy_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -757,8 +757,8 @@
  },
  "cast_relic": {
   "files": [
-   "res://assets/sfx/cast_relic_1.ogg",
-   "res://assets/sfx/cast_relic_2.ogg"
+   "res://assets/sfx/cast_relic_1.wav",
+   "res://assets/sfx/cast_relic_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -770,9 +770,9 @@
  },
  "cast_soul": {
   "files": [
-   "res://assets/sfx/cast_soul_1.ogg",
-   "res://assets/sfx/cast_soul_2.ogg",
-   "res://assets/sfx/cast_soul_3.ogg"
+   "res://assets/sfx/cast_soul_1.wav",
+   "res://assets/sfx/cast_soul_2.wav",
+   "res://assets/sfx/cast_soul_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -784,8 +784,8 @@
  },
  "cast_storm": {
   "files": [
-   "res://assets/sfx/cast_storm_1.ogg",
-   "res://assets/sfx/cast_storm_2.ogg"
+   "res://assets/sfx/cast_storm_1.wav",
+   "res://assets/sfx/cast_storm_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -797,8 +797,8 @@
  },
  "cast_water": {
   "files": [
-   "res://assets/sfx/cast_water_1.ogg",
-   "res://assets/sfx/cast_water_2.ogg"
+   "res://assets/sfx/cast_water_1.wav",
+   "res://assets/sfx/cast_water_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -810,9 +810,9 @@
  },
  "caster_hiss": {
   "files": [
-   "res://assets/sfx/caster_hiss_1.ogg",
-   "res://assets/sfx/caster_hiss_2.ogg",
-   "res://assets/sfx/caster_hiss_3.ogg"
+   "res://assets/sfx/caster_hiss_1.wav",
+   "res://assets/sfx/caster_hiss_2.wav",
+   "res://assets/sfx/caster_hiss_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -824,8 +824,8 @@
  },
  "cog_throw": {
   "files": [
-   "res://assets/sfx/cog_throw_1.ogg",
-   "res://assets/sfx/cog_throw_2.ogg"
+   "res://assets/sfx/cog_throw_1.wav",
+   "res://assets/sfx/cog_throw_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -837,10 +837,10 @@
  },
  "coin": {
   "files": [
-   "res://assets/sfx/coin_1.ogg",
-   "res://assets/sfx/coin_2.ogg",
-   "res://assets/sfx/coin_3.ogg",
-   "res://assets/sfx/coin_4.ogg"
+   "res://assets/sfx/coin_1.wav",
+   "res://assets/sfx/coin_2.wav",
+   "res://assets/sfx/coin_3.wav",
+   "res://assets/sfx/coin_4.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -852,7 +852,7 @@
  },
  "combo": {
   "files": [
-   "res://assets/sfx/combo.ogg"
+   "res://assets/sfx/combo.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -864,8 +864,8 @@
  },
  "courage_drop": {
   "files": [
-   "res://assets/sfx/courage_drop_1.ogg",
-   "res://assets/sfx/courage_drop_2.ogg"
+   "res://assets/sfx/courage_drop_1.wav",
+   "res://assets/sfx/courage_drop_2.wav"
   ],
   "bus": "Interface",
   "positional": true,
@@ -877,9 +877,9 @@
  },
  "courage_pickup": {
   "files": [
-   "res://assets/sfx/courage_pickup_1.ogg",
-   "res://assets/sfx/courage_pickup_2.ogg",
-   "res://assets/sfx/courage_pickup_3.ogg"
+   "res://assets/sfx/courage_pickup_1.wav",
+   "res://assets/sfx/courage_pickup_2.wav",
+   "res://assets/sfx/courage_pickup_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -891,9 +891,9 @@
  },
  "crossbow_release": {
   "files": [
-   "res://assets/sfx/crossbow_release_1.ogg",
-   "res://assets/sfx/crossbow_release_2.ogg",
-   "res://assets/sfx/crossbow_release_3.ogg"
+   "res://assets/sfx/crossbow_release_1.wav",
+   "res://assets/sfx/crossbow_release_2.wav",
+   "res://assets/sfx/crossbow_release_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -905,7 +905,7 @@
  },
  "death_alchemy": {
   "files": [
-   "res://assets/sfx/death_alchemy.ogg"
+   "res://assets/sfx/death_alchemy.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -917,9 +917,9 @@
  },
  "death_bones": {
   "files": [
-   "res://assets/sfx/death_bones_1.ogg",
-   "res://assets/sfx/death_bones_2.ogg",
-   "res://assets/sfx/death_bones_3.ogg"
+   "res://assets/sfx/death_bones_1.wav",
+   "res://assets/sfx/death_bones_2.wav",
+   "res://assets/sfx/death_bones_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -931,8 +931,8 @@
  },
  "death_debris": {
   "files": [
-   "res://assets/sfx/death_debris_1.ogg",
-   "res://assets/sfx/death_debris_2.ogg"
+   "res://assets/sfx/death_debris_1.wav",
+   "res://assets/sfx/death_debris_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -944,8 +944,8 @@
  },
  "death_embers": {
   "files": [
-   "res://assets/sfx/death_embers_1.ogg",
-   "res://assets/sfx/death_embers_2.ogg"
+   "res://assets/sfx/death_embers_1.wav",
+   "res://assets/sfx/death_embers_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -957,8 +957,8 @@
  },
  "death_gas": {
   "files": [
-   "res://assets/sfx/death_gas_1.ogg",
-   "res://assets/sfx/death_gas_2.ogg"
+   "res://assets/sfx/death_gas_1.wav",
+   "res://assets/sfx/death_gas_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -970,8 +970,8 @@
  },
  "death_glass": {
   "files": [
-   "res://assets/sfx/death_glass_1.ogg",
-   "res://assets/sfx/death_glass_2.ogg"
+   "res://assets/sfx/death_glass_1.wav",
+   "res://assets/sfx/death_glass_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -983,8 +983,8 @@
  },
  "death_heavy": {
   "files": [
-   "res://assets/sfx/death_heavy_1.ogg",
-   "res://assets/sfx/death_heavy_2.ogg"
+   "res://assets/sfx/death_heavy_1.wav",
+   "res://assets/sfx/death_heavy_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -996,7 +996,7 @@
  },
  "death_hound": {
   "files": [
-   "res://assets/sfx/death_hound.ogg"
+   "res://assets/sfx/death_hound.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1008,10 +1008,10 @@
  },
  "death_risen": {
   "files": [
-   "res://assets/sfx/death_risen_1.ogg",
-   "res://assets/sfx/death_risen_2.ogg",
-   "res://assets/sfx/death_risen_3.ogg",
-   "res://assets/sfx/death_risen_4.ogg"
+   "res://assets/sfx/death_risen_1.wav",
+   "res://assets/sfx/death_risen_2.wav",
+   "res://assets/sfx/death_risen_3.wav",
+   "res://assets/sfx/death_risen_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1023,10 +1023,10 @@
  },
  "death_soldier": {
   "files": [
-   "res://assets/sfx/death_soldier_1.ogg",
-   "res://assets/sfx/death_soldier_2.ogg",
-   "res://assets/sfx/death_soldier_3.ogg",
-   "res://assets/sfx/death_soldier_4.ogg"
+   "res://assets/sfx/death_soldier_1.wav",
+   "res://assets/sfx/death_soldier_2.wav",
+   "res://assets/sfx/death_soldier_3.wav",
+   "res://assets/sfx/death_soldier_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1038,8 +1038,8 @@
  },
  "death_water": {
   "files": [
-   "res://assets/sfx/death_water_1.ogg",
-   "res://assets/sfx/death_water_2.ogg"
+   "res://assets/sfx/death_water_1.wav",
+   "res://assets/sfx/death_water_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1051,7 +1051,7 @@
  },
  "defeat": {
   "files": [
-   "res://assets/sfx/defeat.ogg"
+   "res://assets/sfx/defeat.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1063,8 +1063,8 @@
  },
  "deploy_archer": {
   "files": [
-   "res://assets/sfx/deploy_archer_1.ogg",
-   "res://assets/sfx/deploy_archer_2.ogg"
+   "res://assets/sfx/deploy_archer_1.wav",
+   "res://assets/sfx/deploy_archer_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1076,8 +1076,8 @@
  },
  "deploy_caster": {
   "files": [
-   "res://assets/sfx/deploy_caster_1.ogg",
-   "res://assets/sfx/deploy_caster_2.ogg"
+   "res://assets/sfx/deploy_caster_1.wav",
+   "res://assets/sfx/deploy_caster_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1089,8 +1089,8 @@
  },
  "deploy_cavalry": {
   "files": [
-   "res://assets/sfx/deploy_cavalry_1.ogg",
-   "res://assets/sfx/deploy_cavalry_2.ogg"
+   "res://assets/sfx/deploy_cavalry_1.wav",
+   "res://assets/sfx/deploy_cavalry_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1102,8 +1102,8 @@
  },
  "deploy_engine": {
   "files": [
-   "res://assets/sfx/deploy_engine_1.ogg",
-   "res://assets/sfx/deploy_engine_2.ogg"
+   "res://assets/sfx/deploy_engine_1.wav",
+   "res://assets/sfx/deploy_engine_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1115,8 +1115,8 @@
  },
  "deploy_heavy": {
   "files": [
-   "res://assets/sfx/deploy_heavy_1.ogg",
-   "res://assets/sfx/deploy_heavy_2.ogg"
+   "res://assets/sfx/deploy_heavy_1.wav",
+   "res://assets/sfx/deploy_heavy_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1128,7 +1128,7 @@
  },
  "deploy_holy": {
   "files": [
-   "res://assets/sfx/deploy_holy.ogg"
+   "res://assets/sfx/deploy_holy.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1140,8 +1140,8 @@
  },
  "deploy_hound": {
   "files": [
-   "res://assets/sfx/deploy_hound_1.ogg",
-   "res://assets/sfx/deploy_hound_2.ogg"
+   "res://assets/sfx/deploy_hound_1.wav",
+   "res://assets/sfx/deploy_hound_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1153,9 +1153,9 @@
  },
  "deploy_infantry": {
   "files": [
-   "res://assets/sfx/deploy_infantry_1.ogg",
-   "res://assets/sfx/deploy_infantry_2.ogg",
-   "res://assets/sfx/deploy_infantry_3.ogg"
+   "res://assets/sfx/deploy_infantry_1.wav",
+   "res://assets/sfx/deploy_infantry_2.wav",
+   "res://assets/sfx/deploy_infantry_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1167,7 +1167,7 @@
  },
  "deploy_rogue": {
   "files": [
-   "res://assets/sfx/deploy_rogue.ogg"
+   "res://assets/sfx/deploy_rogue.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1179,9 +1179,9 @@
  },
  "det_anvil_far": {
   "files": [
-   "res://assets/sfx/det_anvil_far_1.ogg",
-   "res://assets/sfx/det_anvil_far_2.ogg",
-   "res://assets/sfx/det_anvil_far_3.ogg"
+   "res://assets/sfx/det_anvil_far_1.wav",
+   "res://assets/sfx/det_anvil_far_2.wav",
+   "res://assets/sfx/det_anvil_far_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1193,8 +1193,8 @@
  },
  "det_banner": {
   "files": [
-   "res://assets/sfx/det_banner_1.ogg",
-   "res://assets/sfx/det_banner_2.ogg"
+   "res://assets/sfx/det_banner_1.wav",
+   "res://assets/sfx/det_banner_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1206,8 +1206,8 @@
  },
  "det_bell_far": {
   "files": [
-   "res://assets/sfx/det_bell_far_1.ogg",
-   "res://assets/sfx/det_bell_far_2.ogg"
+   "res://assets/sfx/det_bell_far_1.wav",
+   "res://assets/sfx/det_bell_far_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1219,9 +1219,9 @@
  },
  "det_branch": {
   "files": [
-   "res://assets/sfx/det_branch_1.ogg",
-   "res://assets/sfx/det_branch_2.ogg",
-   "res://assets/sfx/det_branch_3.ogg"
+   "res://assets/sfx/det_branch_1.wav",
+   "res://assets/sfx/det_branch_2.wav",
+   "res://assets/sfx/det_branch_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1233,8 +1233,8 @@
  },
  "det_bubbles": {
   "files": [
-   "res://assets/sfx/det_bubbles_1.ogg",
-   "res://assets/sfx/det_bubbles_2.ogg"
+   "res://assets/sfx/det_bubbles_1.wav",
+   "res://assets/sfx/det_bubbles_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1246,8 +1246,8 @@
  },
  "det_cart": {
   "files": [
-   "res://assets/sfx/det_cart_1.ogg",
-   "res://assets/sfx/det_cart_2.ogg"
+   "res://assets/sfx/det_cart_1.wav",
+   "res://assets/sfx/det_cart_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1259,8 +1259,8 @@
  },
  "det_chains": {
   "files": [
-   "res://assets/sfx/det_chains_1.ogg",
-   "res://assets/sfx/det_chains_2.ogg"
+   "res://assets/sfx/det_chains_1.wav",
+   "res://assets/sfx/det_chains_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1272,8 +1272,8 @@
  },
  "det_choir_far": {
   "files": [
-   "res://assets/sfx/det_choir_far_1.ogg",
-   "res://assets/sfx/det_choir_far_2.ogg"
+   "res://assets/sfx/det_choir_far_1.wav",
+   "res://assets/sfx/det_choir_far_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1285,7 +1285,7 @@
  },
  "det_coins": {
   "files": [
-   "res://assets/sfx/det_coins.ogg"
+   "res://assets/sfx/det_coins.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1297,9 +1297,9 @@
  },
  "det_crow": {
   "files": [
-   "res://assets/sfx/det_crow_1.ogg",
-   "res://assets/sfx/det_crow_2.ogg",
-   "res://assets/sfx/det_crow_3.ogg"
+   "res://assets/sfx/det_crow_1.wav",
+   "res://assets/sfx/det_crow_2.wav",
+   "res://assets/sfx/det_crow_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1311,9 +1311,9 @@
  },
  "det_drip": {
   "files": [
-   "res://assets/sfx/det_drip_1.ogg",
-   "res://assets/sfx/det_drip_2.ogg",
-   "res://assets/sfx/det_drip_3.ogg"
+   "res://assets/sfx/det_drip_1.wav",
+   "res://assets/sfx/det_drip_2.wav",
+   "res://assets/sfx/det_drip_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1325,8 +1325,8 @@
  },
  "det_embers": {
   "files": [
-   "res://assets/sfx/det_embers_1.ogg",
-   "res://assets/sfx/det_embers_2.ogg"
+   "res://assets/sfx/det_embers_1.wav",
+   "res://assets/sfx/det_embers_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1338,10 +1338,10 @@
  },
  "det_frog": {
   "files": [
-   "res://assets/sfx/det_frog_1.ogg",
-   "res://assets/sfx/det_frog_2.ogg",
-   "res://assets/sfx/det_frog_3.ogg",
-   "res://assets/sfx/det_frog_4.ogg"
+   "res://assets/sfx/det_frog_1.wav",
+   "res://assets/sfx/det_frog_2.wav",
+   "res://assets/sfx/det_frog_3.wav",
+   "res://assets/sfx/det_frog_4.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1353,9 +1353,9 @@
  },
  "det_gull": {
   "files": [
-   "res://assets/sfx/det_gull_1.ogg",
-   "res://assets/sfx/det_gull_2.ogg",
-   "res://assets/sfx/det_gull_3.ogg"
+   "res://assets/sfx/det_gull_1.wav",
+   "res://assets/sfx/det_gull_2.wav",
+   "res://assets/sfx/det_gull_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1367,8 +1367,8 @@
  },
  "det_gust": {
   "files": [
-   "res://assets/sfx/det_gust_1.ogg",
-   "res://assets/sfx/det_gust_2.ogg"
+   "res://assets/sfx/det_gust_1.wav",
+   "res://assets/sfx/det_gust_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1380,8 +1380,8 @@
  },
  "det_horse_far": {
   "files": [
-   "res://assets/sfx/det_horse_far_1.ogg",
-   "res://assets/sfx/det_horse_far_2.ogg"
+   "res://assets/sfx/det_horse_far_1.wav",
+   "res://assets/sfx/det_horse_far_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1393,9 +1393,9 @@
  },
  "det_moan_far": {
   "files": [
-   "res://assets/sfx/det_moan_far_1.ogg",
-   "res://assets/sfx/det_moan_far_2.ogg",
-   "res://assets/sfx/det_moan_far_3.ogg"
+   "res://assets/sfx/det_moan_far_1.wav",
+   "res://assets/sfx/det_moan_far_2.wav",
+   "res://assets/sfx/det_moan_far_3.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1407,8 +1407,8 @@
  },
  "det_owl": {
   "files": [
-   "res://assets/sfx/det_owl_1.ogg",
-   "res://assets/sfx/det_owl_2.ogg"
+   "res://assets/sfx/det_owl_1.wav",
+   "res://assets/sfx/det_owl_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1420,8 +1420,8 @@
  },
  "det_raptor": {
   "files": [
-   "res://assets/sfx/det_raptor_1.ogg",
-   "res://assets/sfx/det_raptor_2.ogg"
+   "res://assets/sfx/det_raptor_1.wav",
+   "res://assets/sfx/det_raptor_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1433,8 +1433,8 @@
  },
  "det_rockfall": {
   "files": [
-   "res://assets/sfx/det_rockfall_1.ogg",
-   "res://assets/sfx/det_rockfall_2.ogg"
+   "res://assets/sfx/det_rockfall_1.wav",
+   "res://assets/sfx/det_rockfall_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1446,8 +1446,8 @@
  },
  "det_rope_creak": {
   "files": [
-   "res://assets/sfx/det_rope_creak_1.ogg",
-   "res://assets/sfx/det_rope_creak_2.ogg"
+   "res://assets/sfx/det_rope_creak_1.wav",
+   "res://assets/sfx/det_rope_creak_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1459,8 +1459,8 @@
  },
  "det_ship_bell": {
   "files": [
-   "res://assets/sfx/det_ship_bell_1.ogg",
-   "res://assets/sfx/det_ship_bell_2.ogg"
+   "res://assets/sfx/det_ship_bell_1.wav",
+   "res://assets/sfx/det_ship_bell_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1472,10 +1472,10 @@
  },
  "det_songbird": {
   "files": [
-   "res://assets/sfx/det_songbird_1.ogg",
-   "res://assets/sfx/det_songbird_2.ogg",
-   "res://assets/sfx/det_songbird_3.ogg",
-   "res://assets/sfx/det_songbird_4.ogg"
+   "res://assets/sfx/det_songbird_1.wav",
+   "res://assets/sfx/det_songbird_2.wav",
+   "res://assets/sfx/det_songbird_3.wav",
+   "res://assets/sfx/det_songbird_4.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1487,8 +1487,8 @@
  },
  "det_steam": {
   "files": [
-   "res://assets/sfx/det_steam_1.ogg",
-   "res://assets/sfx/det_steam_2.ogg"
+   "res://assets/sfx/det_steam_1.wav",
+   "res://assets/sfx/det_steam_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1500,8 +1500,8 @@
  },
  "det_toll": {
   "files": [
-   "res://assets/sfx/det_toll_1.ogg",
-   "res://assets/sfx/det_toll_2.ogg"
+   "res://assets/sfx/det_toll_1.wav",
+   "res://assets/sfx/det_toll_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1513,8 +1513,8 @@
  },
  "det_wagon_creak": {
   "files": [
-   "res://assets/sfx/det_wagon_creak_1.ogg",
-   "res://assets/sfx/det_wagon_creak_2.ogg"
+   "res://assets/sfx/det_wagon_creak_1.wav",
+   "res://assets/sfx/det_wagon_creak_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1526,8 +1526,8 @@
  },
  "det_war_drums": {
   "files": [
-   "res://assets/sfx/det_war_drums_1.ogg",
-   "res://assets/sfx/det_war_drums_2.ogg"
+   "res://assets/sfx/det_war_drums_1.wav",
+   "res://assets/sfx/det_war_drums_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1539,8 +1539,8 @@
  },
  "det_whisper_far": {
   "files": [
-   "res://assets/sfx/det_whisper_far_1.ogg",
-   "res://assets/sfx/det_whisper_far_2.ogg"
+   "res://assets/sfx/det_whisper_far_1.wav",
+   "res://assets/sfx/det_whisper_far_2.wav"
   ],
   "bus": "Ambience",
   "positional": false,
@@ -1552,8 +1552,8 @@
  },
  "dig_burrow": {
   "files": [
-   "res://assets/sfx/dig_burrow_1.ogg",
-   "res://assets/sfx/dig_burrow_2.ogg"
+   "res://assets/sfx/dig_burrow_1.wav",
+   "res://assets/sfx/dig_burrow_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1565,8 +1565,8 @@
  },
  "dig_emerge": {
   "files": [
-   "res://assets/sfx/dig_emerge_1.ogg",
-   "res://assets/sfx/dig_emerge_2.ogg"
+   "res://assets/sfx/dig_emerge_1.wav",
+   "res://assets/sfx/dig_emerge_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1578,9 +1578,9 @@
  },
  "explosion": {
   "files": [
-   "res://assets/sfx/explosion_1.ogg",
-   "res://assets/sfx/explosion_2.ogg",
-   "res://assets/sfx/explosion_3.ogg"
+   "res://assets/sfx/explosion_1.wav",
+   "res://assets/sfx/explosion_2.wav",
+   "res://assets/sfx/explosion_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1592,9 +1592,9 @@
  },
  "flask_throw": {
   "files": [
-   "res://assets/sfx/flask_throw_1.ogg",
-   "res://assets/sfx/flask_throw_2.ogg",
-   "res://assets/sfx/flask_throw_3.ogg"
+   "res://assets/sfx/flask_throw_1.wav",
+   "res://assets/sfx/flask_throw_2.wav",
+   "res://assets/sfx/flask_throw_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1606,8 +1606,8 @@
  },
  "gem": {
   "files": [
-   "res://assets/sfx/gem_1.ogg",
-   "res://assets/sfx/gem_2.ogg"
+   "res://assets/sfx/gem_1.wav",
+   "res://assets/sfx/gem_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -1619,10 +1619,10 @@
  },
  "ghoul_shriek": {
   "files": [
-   "res://assets/sfx/ghoul_shriek_1.ogg",
-   "res://assets/sfx/ghoul_shriek_2.ogg",
-   "res://assets/sfx/ghoul_shriek_3.ogg",
-   "res://assets/sfx/ghoul_shriek_4.ogg"
+   "res://assets/sfx/ghoul_shriek_1.wav",
+   "res://assets/sfx/ghoul_shriek_2.wav",
+   "res://assets/sfx/ghoul_shriek_3.wav",
+   "res://assets/sfx/ghoul_shriek_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1634,8 +1634,8 @@
  },
  "giant_roar": {
   "files": [
-   "res://assets/sfx/giant_roar_1.ogg",
-   "res://assets/sfx/giant_roar_2.ogg"
+   "res://assets/sfx/giant_roar_1.wav",
+   "res://assets/sfx/giant_roar_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1647,8 +1647,8 @@
  },
  "harpoon_release": {
   "files": [
-   "res://assets/sfx/harpoon_release_1.ogg",
-   "res://assets/sfx/harpoon_release_2.ogg"
+   "res://assets/sfx/harpoon_release_1.wav",
+   "res://assets/sfx/harpoon_release_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1660,7 +1660,7 @@
  },
  "hazard_strike": {
   "files": [
-   "res://assets/sfx/hazard_strike.ogg"
+   "res://assets/sfx/hazard_strike.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1672,7 +1672,7 @@
  },
  "hazard_warning": {
   "files": [
-   "res://assets/sfx/hazard_warning.ogg"
+   "res://assets/sfx/hazard_warning.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1684,8 +1684,8 @@
  },
  "herald_howl": {
   "files": [
-   "res://assets/sfx/herald_howl_1.ogg",
-   "res://assets/sfx/herald_howl_2.ogg"
+   "res://assets/sfx/herald_howl_1.wav",
+   "res://assets/sfx/herald_howl_2.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1697,7 +1697,7 @@
  },
  "hex_jam": {
   "files": [
-   "res://assets/sfx/hex_jam.ogg"
+   "res://assets/sfx/hex_jam.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1709,9 +1709,9 @@
  },
  "hex_whisper": {
   "files": [
-   "res://assets/sfx/hex_whisper_1.ogg",
-   "res://assets/sfx/hex_whisper_2.ogg",
-   "res://assets/sfx/hex_whisper_3.ogg"
+   "res://assets/sfx/hex_whisper_1.wav",
+   "res://assets/sfx/hex_whisper_2.wav",
+   "res://assets/sfx/hex_whisper_3.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1723,9 +1723,9 @@
  },
  "hit_bite": {
   "files": [
-   "res://assets/sfx/hit_bite_1.ogg",
-   "res://assets/sfx/hit_bite_2.ogg",
-   "res://assets/sfx/hit_bite_3.ogg"
+   "res://assets/sfx/hit_bite_1.wav",
+   "res://assets/sfx/hit_bite_2.wav",
+   "res://assets/sfx/hit_bite_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1737,11 +1737,11 @@
  },
  "hit_blade": {
   "files": [
-   "res://assets/sfx/hit_blade_1.ogg",
-   "res://assets/sfx/hit_blade_2.ogg",
-   "res://assets/sfx/hit_blade_3.ogg",
-   "res://assets/sfx/hit_blade_4.ogg",
-   "res://assets/sfx/hit_blade_5.ogg"
+   "res://assets/sfx/hit_blade_1.wav",
+   "res://assets/sfx/hit_blade_2.wav",
+   "res://assets/sfx/hit_blade_3.wav",
+   "res://assets/sfx/hit_blade_4.wav",
+   "res://assets/sfx/hit_blade_5.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1753,10 +1753,10 @@
  },
  "hit_blunt": {
   "files": [
-   "res://assets/sfx/hit_blunt_1.ogg",
-   "res://assets/sfx/hit_blunt_2.ogg",
-   "res://assets/sfx/hit_blunt_3.ogg",
-   "res://assets/sfx/hit_blunt_4.ogg"
+   "res://assets/sfx/hit_blunt_1.wav",
+   "res://assets/sfx/hit_blunt_2.wav",
+   "res://assets/sfx/hit_blunt_3.wav",
+   "res://assets/sfx/hit_blunt_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1768,10 +1768,10 @@
  },
  "hit_bone": {
   "files": [
-   "res://assets/sfx/hit_bone_1.ogg",
-   "res://assets/sfx/hit_bone_2.ogg",
-   "res://assets/sfx/hit_bone_3.ogg",
-   "res://assets/sfx/hit_bone_4.ogg"
+   "res://assets/sfx/hit_bone_1.wav",
+   "res://assets/sfx/hit_bone_2.wav",
+   "res://assets/sfx/hit_bone_3.wav",
+   "res://assets/sfx/hit_bone_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1783,10 +1783,10 @@
  },
  "hit_claw": {
   "files": [
-   "res://assets/sfx/hit_claw_1.ogg",
-   "res://assets/sfx/hit_claw_2.ogg",
-   "res://assets/sfx/hit_claw_3.ogg",
-   "res://assets/sfx/hit_claw_4.ogg"
+   "res://assets/sfx/hit_claw_1.wav",
+   "res://assets/sfx/hit_claw_2.wav",
+   "res://assets/sfx/hit_claw_3.wav",
+   "res://assets/sfx/hit_claw_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1798,9 +1798,9 @@
  },
  "hit_heavy": {
   "files": [
-   "res://assets/sfx/hit_heavy_1.ogg",
-   "res://assets/sfx/hit_heavy_2.ogg",
-   "res://assets/sfx/hit_heavy_3.ogg"
+   "res://assets/sfx/hit_heavy_1.wav",
+   "res://assets/sfx/hit_heavy_2.wav",
+   "res://assets/sfx/hit_heavy_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1812,8 +1812,8 @@
  },
  "hit_lance": {
   "files": [
-   "res://assets/sfx/hit_lance_1.ogg",
-   "res://assets/sfx/hit_lance_2.ogg"
+   "res://assets/sfx/hit_lance_1.wav",
+   "res://assets/sfx/hit_lance_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1825,10 +1825,10 @@
  },
  "hit_pierce": {
   "files": [
-   "res://assets/sfx/hit_pierce_1.ogg",
-   "res://assets/sfx/hit_pierce_2.ogg",
-   "res://assets/sfx/hit_pierce_3.ogg",
-   "res://assets/sfx/hit_pierce_4.ogg"
+   "res://assets/sfx/hit_pierce_1.wav",
+   "res://assets/sfx/hit_pierce_2.wav",
+   "res://assets/sfx/hit_pierce_3.wav",
+   "res://assets/sfx/hit_pierce_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1840,10 +1840,10 @@
  },
  "hit_shield": {
   "files": [
-   "res://assets/sfx/hit_shield_1.ogg",
-   "res://assets/sfx/hit_shield_2.ogg",
-   "res://assets/sfx/hit_shield_3.ogg",
-   "res://assets/sfx/hit_shield_4.ogg"
+   "res://assets/sfx/hit_shield_1.wav",
+   "res://assets/sfx/hit_shield_2.wav",
+   "res://assets/sfx/hit_shield_3.wav",
+   "res://assets/sfx/hit_shield_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1855,9 +1855,9 @@
  },
  "hound_bark": {
   "files": [
-   "res://assets/sfx/hound_bark_1.ogg",
-   "res://assets/sfx/hound_bark_2.ogg",
-   "res://assets/sfx/hound_bark_3.ogg"
+   "res://assets/sfx/hound_bark_1.wav",
+   "res://assets/sfx/hound_bark_2.wav",
+   "res://assets/sfx/hound_bark_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1869,8 +1869,8 @@
  },
  "hound_growl": {
   "files": [
-   "res://assets/sfx/hound_growl_1.ogg",
-   "res://assets/sfx/hound_growl_2.ogg"
+   "res://assets/sfx/hound_growl_1.wav",
+   "res://assets/sfx/hound_growl_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1882,7 +1882,7 @@
  },
  "hound_howl": {
   "files": [
-   "res://assets/sfx/hound_howl.ogg"
+   "res://assets/sfx/hound_howl.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -1894,9 +1894,9 @@
  },
  "hulk_gurgle": {
   "files": [
-   "res://assets/sfx/hulk_gurgle_1.ogg",
-   "res://assets/sfx/hulk_gurgle_2.ogg",
-   "res://assets/sfx/hulk_gurgle_3.ogg"
+   "res://assets/sfx/hulk_gurgle_1.wav",
+   "res://assets/sfx/hulk_gurgle_2.wav",
+   "res://assets/sfx/hulk_gurgle_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1908,9 +1908,9 @@
  },
  "impact_arcane": {
   "files": [
-   "res://assets/sfx/impact_arcane_1.ogg",
-   "res://assets/sfx/impact_arcane_2.ogg",
-   "res://assets/sfx/impact_arcane_3.ogg"
+   "res://assets/sfx/impact_arcane_1.wav",
+   "res://assets/sfx/impact_arcane_2.wav",
+   "res://assets/sfx/impact_arcane_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1922,10 +1922,10 @@
  },
  "impact_arrow": {
   "files": [
-   "res://assets/sfx/impact_arrow_1.ogg",
-   "res://assets/sfx/impact_arrow_2.ogg",
-   "res://assets/sfx/impact_arrow_3.ogg",
-   "res://assets/sfx/impact_arrow_4.ogg"
+   "res://assets/sfx/impact_arrow_1.wav",
+   "res://assets/sfx/impact_arrow_2.wav",
+   "res://assets/sfx/impact_arrow_3.wav",
+   "res://assets/sfx/impact_arrow_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1937,9 +1937,9 @@
  },
  "impact_fire": {
   "files": [
-   "res://assets/sfx/impact_fire_1.ogg",
-   "res://assets/sfx/impact_fire_2.ogg",
-   "res://assets/sfx/impact_fire_3.ogg"
+   "res://assets/sfx/impact_fire_1.wav",
+   "res://assets/sfx/impact_fire_2.wav",
+   "res://assets/sfx/impact_fire_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1951,9 +1951,9 @@
  },
  "impact_frost": {
   "files": [
-   "res://assets/sfx/impact_frost_1.ogg",
-   "res://assets/sfx/impact_frost_2.ogg",
-   "res://assets/sfx/impact_frost_3.ogg"
+   "res://assets/sfx/impact_frost_1.wav",
+   "res://assets/sfx/impact_frost_2.wav",
+   "res://assets/sfx/impact_frost_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1965,9 +1965,9 @@
  },
  "impact_glass": {
   "files": [
-   "res://assets/sfx/impact_glass_1.ogg",
-   "res://assets/sfx/impact_glass_2.ogg",
-   "res://assets/sfx/impact_glass_3.ogg"
+   "res://assets/sfx/impact_glass_1.wav",
+   "res://assets/sfx/impact_glass_2.wav",
+   "res://assets/sfx/impact_glass_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1979,9 +1979,9 @@
  },
  "impact_heavy_bolt": {
   "files": [
-   "res://assets/sfx/impact_heavy_bolt_1.ogg",
-   "res://assets/sfx/impact_heavy_bolt_2.ogg",
-   "res://assets/sfx/impact_heavy_bolt_3.ogg"
+   "res://assets/sfx/impact_heavy_bolt_1.wav",
+   "res://assets/sfx/impact_heavy_bolt_2.wav",
+   "res://assets/sfx/impact_heavy_bolt_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -1993,8 +1993,8 @@
  },
  "impact_hex": {
   "files": [
-   "res://assets/sfx/impact_hex_1.ogg",
-   "res://assets/sfx/impact_hex_2.ogg"
+   "res://assets/sfx/impact_hex_1.wav",
+   "res://assets/sfx/impact_hex_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2006,8 +2006,8 @@
  },
  "impact_holy": {
   "files": [
-   "res://assets/sfx/impact_holy_1.ogg",
-   "res://assets/sfx/impact_holy_2.ogg"
+   "res://assets/sfx/impact_holy_1.wav",
+   "res://assets/sfx/impact_holy_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2019,9 +2019,9 @@
  },
  "impact_lightning": {
   "files": [
-   "res://assets/sfx/impact_lightning_1.ogg",
-   "res://assets/sfx/impact_lightning_2.ogg",
-   "res://assets/sfx/impact_lightning_3.ogg"
+   "res://assets/sfx/impact_lightning_1.wav",
+   "res://assets/sfx/impact_lightning_2.wav",
+   "res://assets/sfx/impact_lightning_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2033,9 +2033,9 @@
  },
  "impact_metal": {
   "files": [
-   "res://assets/sfx/impact_metal_1.ogg",
-   "res://assets/sfx/impact_metal_2.ogg",
-   "res://assets/sfx/impact_metal_3.ogg"
+   "res://assets/sfx/impact_metal_1.wav",
+   "res://assets/sfx/impact_metal_2.wav",
+   "res://assets/sfx/impact_metal_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2047,9 +2047,9 @@
  },
  "impact_soul": {
   "files": [
-   "res://assets/sfx/impact_soul_1.ogg",
-   "res://assets/sfx/impact_soul_2.ogg",
-   "res://assets/sfx/impact_soul_3.ogg"
+   "res://assets/sfx/impact_soul_1.wav",
+   "res://assets/sfx/impact_soul_2.wav",
+   "res://assets/sfx/impact_soul_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2061,9 +2061,9 @@
  },
  "impact_splash": {
   "files": [
-   "res://assets/sfx/impact_splash_1.ogg",
-   "res://assets/sfx/impact_splash_2.ogg",
-   "res://assets/sfx/impact_splash_3.ogg"
+   "res://assets/sfx/impact_splash_1.wav",
+   "res://assets/sfx/impact_splash_2.wav",
+   "res://assets/sfx/impact_splash_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2075,8 +2075,8 @@
  },
  "impact_water": {
   "files": [
-   "res://assets/sfx/impact_water_1.ogg",
-   "res://assets/sfx/impact_water_2.ogg"
+   "res://assets/sfx/impact_water_1.wav",
+   "res://assets/sfx/impact_water_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2088,7 +2088,7 @@
  },
  "level_up": {
   "files": [
-   "res://assets/sfx/level_up.ogg"
+   "res://assets/sfx/level_up.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2100,8 +2100,8 @@
  },
  "lich_wail": {
   "files": [
-   "res://assets/sfx/lich_wail_1.ogg",
-   "res://assets/sfx/lich_wail_2.ogg"
+   "res://assets/sfx/lich_wail_1.wav",
+   "res://assets/sfx/lich_wail_2.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -2113,9 +2113,9 @@
  },
  "map_select": {
   "files": [
-   "res://assets/sfx/map_select_1.ogg",
-   "res://assets/sfx/map_select_2.ogg",
-   "res://assets/sfx/map_select_3.ogg"
+   "res://assets/sfx/map_select_1.wav",
+   "res://assets/sfx/map_select_2.wav",
+   "res://assets/sfx/map_select_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2127,9 +2127,9 @@
  },
  "map_travel": {
   "files": [
-   "res://assets/sfx/map_travel_1.ogg",
-   "res://assets/sfx/map_travel_2.ogg",
-   "res://assets/sfx/map_travel_3.ogg"
+   "res://assets/sfx/map_travel_1.wav",
+   "res://assets/sfx/map_travel_2.wav",
+   "res://assets/sfx/map_travel_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2141,7 +2141,7 @@
  },
  "mirror_hum": {
   "files": [
-   "res://assets/sfx/mirror_hum.ogg"
+   "res://assets/sfx/mirror_hum.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2153,8 +2153,8 @@
  },
  "modal_close": {
   "files": [
-   "res://assets/sfx/modal_close_1.ogg",
-   "res://assets/sfx/modal_close_2.ogg"
+   "res://assets/sfx/modal_close_1.wav",
+   "res://assets/sfx/modal_close_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2166,8 +2166,8 @@
  },
  "modal_open": {
   "files": [
-   "res://assets/sfx/modal_open_1.ogg",
-   "res://assets/sfx/modal_open_2.ogg"
+   "res://assets/sfx/modal_open_1.wav",
+   "res://assets/sfx/modal_open_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2179,8 +2179,8 @@
  },
  "necro_raise": {
   "files": [
-   "res://assets/sfx/necro_raise_1.ogg",
-   "res://assets/sfx/necro_raise_2.ogg"
+   "res://assets/sfx/necro_raise_1.wav",
+   "res://assets/sfx/necro_raise_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2192,7 +2192,7 @@
  },
  "notification": {
   "files": [
-   "res://assets/sfx/notification.ogg"
+   "res://assets/sfx/notification.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2204,8 +2204,8 @@
  },
  "plague_engine": {
   "files": [
-   "res://assets/sfx/plague_engine_1.ogg",
-   "res://assets/sfx/plague_engine_2.ogg"
+   "res://assets/sfx/plague_engine_1.wav",
+   "res://assets/sfx/plague_engine_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2217,8 +2217,8 @@
  },
  "pot_throw": {
   "files": [
-   "res://assets/sfx/pot_throw_1.ogg",
-   "res://assets/sfx/pot_throw_2.ogg"
+   "res://assets/sfx/pot_throw_1.wav",
+   "res://assets/sfx/pot_throw_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2230,9 +2230,9 @@
  },
  "purchase": {
   "files": [
-   "res://assets/sfx/purchase_1.ogg",
-   "res://assets/sfx/purchase_2.ogg",
-   "res://assets/sfx/purchase_3.ogg"
+   "res://assets/sfx/purchase_1.wav",
+   "res://assets/sfx/purchase_2.wav",
+   "res://assets/sfx/purchase_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2244,8 +2244,8 @@
  },
  "reflect": {
   "files": [
-   "res://assets/sfx/reflect_1.ogg",
-   "res://assets/sfx/reflect_2.ogg"
+   "res://assets/sfx/reflect_1.wav",
+   "res://assets/sfx/reflect_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2257,7 +2257,7 @@
  },
  "relic_pickup": {
   "files": [
-   "res://assets/sfx/relic_pickup.ogg"
+   "res://assets/sfx/relic_pickup.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2269,9 +2269,9 @@
  },
  "repair": {
   "files": [
-   "res://assets/sfx/repair_1.ogg",
-   "res://assets/sfx/repair_2.ogg",
-   "res://assets/sfx/repair_3.ogg"
+   "res://assets/sfx/repair_1.wav",
+   "res://assets/sfx/repair_2.wav",
+   "res://assets/sfx/repair_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2283,8 +2283,8 @@
  },
  "reward_claim": {
   "files": [
-   "res://assets/sfx/reward_claim_1.ogg",
-   "res://assets/sfx/reward_claim_2.ogg"
+   "res://assets/sfx/reward_claim_1.wav",
+   "res://assets/sfx/reward_claim_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2296,12 +2296,12 @@
  },
  "risen_groan": {
   "files": [
-   "res://assets/sfx/risen_groan_1.ogg",
-   "res://assets/sfx/risen_groan_2.ogg",
-   "res://assets/sfx/risen_groan_3.ogg",
-   "res://assets/sfx/risen_groan_4.ogg",
-   "res://assets/sfx/risen_groan_5.ogg",
-   "res://assets/sfx/risen_groan_6.ogg"
+   "res://assets/sfx/risen_groan_1.wav",
+   "res://assets/sfx/risen_groan_2.wav",
+   "res://assets/sfx/risen_groan_3.wav",
+   "res://assets/sfx/risen_groan_4.wav",
+   "res://assets/sfx/risen_groan_5.wav",
+   "res://assets/sfx/risen_groan_6.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2313,8 +2313,8 @@
  },
  "sapper_fuse": {
   "files": [
-   "res://assets/sfx/sapper_fuse_1.ogg",
-   "res://assets/sfx/sapper_fuse_2.ogg"
+   "res://assets/sfx/sapper_fuse_1.wav",
+   "res://assets/sfx/sapper_fuse_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2326,8 +2326,8 @@
  },
  "scene_change": {
   "files": [
-   "res://assets/sfx/scene_change_1.ogg",
-   "res://assets/sfx/scene_change_2.ogg"
+   "res://assets/sfx/scene_change_1.wav",
+   "res://assets/sfx/scene_change_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2339,9 +2339,9 @@
  },
  "shield_block": {
   "files": [
-   "res://assets/sfx/shield_block_1.ogg",
-   "res://assets/sfx/shield_block_2.ogg",
-   "res://assets/sfx/shield_block_3.ogg"
+   "res://assets/sfx/shield_block_1.wav",
+   "res://assets/sfx/shield_block_2.wav",
+   "res://assets/sfx/shield_block_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2353,8 +2353,8 @@
  },
  "siege_tower_roll": {
   "files": [
-   "res://assets/sfx/siege_tower_roll_1.ogg",
-   "res://assets/sfx/siege_tower_roll_2.ogg"
+   "res://assets/sfx/siege_tower_roll_1.wav",
+   "res://assets/sfx/siege_tower_roll_2.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2366,8 +2366,8 @@
  },
  "spell_arm": {
   "files": [
-   "res://assets/sfx/spell_arm_1.ogg",
-   "res://assets/sfx/spell_arm_2.ogg"
+   "res://assets/sfx/spell_arm_1.wav",
+   "res://assets/sfx/spell_arm_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2379,7 +2379,7 @@
  },
  "spell_barrier_ward": {
   "files": [
-   "res://assets/sfx/spell_barrier_ward.ogg"
+   "res://assets/sfx/spell_barrier_ward.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2391,7 +2391,7 @@
  },
  "spell_caravan_barrage": {
   "files": [
-   "res://assets/sfx/spell_caravan_barrage.ogg"
+   "res://assets/sfx/spell_caravan_barrage.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -2403,7 +2403,7 @@
  },
  "spell_denied": {
   "files": [
-   "res://assets/sfx/spell_denied.ogg"
+   "res://assets/sfx/spell_denied.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2415,7 +2415,7 @@
  },
  "spell_earthquake": {
   "files": [
-   "res://assets/sfx/spell_earthquake.ogg"
+   "res://assets/sfx/spell_earthquake.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2427,7 +2427,7 @@
  },
  "spell_fireball": {
   "files": [
-   "res://assets/sfx/spell_fireball.ogg"
+   "res://assets/sfx/spell_fireball.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2439,7 +2439,7 @@
  },
  "spell_frost_burst": {
   "files": [
-   "res://assets/sfx/spell_frost_burst.ogg"
+   "res://assets/sfx/spell_frost_burst.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2451,7 +2451,7 @@
  },
  "spell_heal": {
   "files": [
-   "res://assets/sfx/spell_heal.ogg"
+   "res://assets/sfx/spell_heal.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2463,7 +2463,7 @@
  },
  "spell_lightning_strike": {
   "files": [
-   "res://assets/sfx/spell_lightning_strike.ogg"
+   "res://assets/sfx/spell_lightning_strike.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2475,7 +2475,7 @@
  },
  "spell_polymorph": {
   "files": [
-   "res://assets/sfx/spell_polymorph.ogg"
+   "res://assets/sfx/spell_polymorph.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2487,7 +2487,7 @@
  },
  "spell_resurrect": {
   "files": [
-   "res://assets/sfx/spell_resurrect.ogg"
+   "res://assets/sfx/spell_resurrect.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2499,7 +2499,7 @@
  },
  "spell_stone_barricade": {
   "files": [
-   "res://assets/sfx/spell_stone_barricade.ogg"
+   "res://assets/sfx/spell_stone_barricade.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2511,7 +2511,7 @@
  },
  "spell_war_cry": {
   "files": [
-   "res://assets/sfx/spell_war_cry.ogg"
+   "res://assets/sfx/spell_war_cry.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2523,7 +2523,7 @@
  },
  "star_1": {
   "files": [
-   "res://assets/sfx/star_1.ogg"
+   "res://assets/sfx/star_1.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2535,7 +2535,7 @@
  },
  "star_2": {
   "files": [
-   "res://assets/sfx/star_2.ogg"
+   "res://assets/sfx/star_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2547,7 +2547,7 @@
  },
  "star_3": {
   "files": [
-   "res://assets/sfx/star_3.ogg"
+   "res://assets/sfx/star_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2559,9 +2559,9 @@
  },
  "swing_claw": {
   "files": [
-   "res://assets/sfx/swing_claw_1.ogg",
-   "res://assets/sfx/swing_claw_2.ogg",
-   "res://assets/sfx/swing_claw_3.ogg"
+   "res://assets/sfx/swing_claw_1.wav",
+   "res://assets/sfx/swing_claw_2.wav",
+   "res://assets/sfx/swing_claw_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2573,9 +2573,9 @@
  },
  "swing_dagger": {
   "files": [
-   "res://assets/sfx/swing_dagger_1.ogg",
-   "res://assets/sfx/swing_dagger_2.ogg",
-   "res://assets/sfx/swing_dagger_3.ogg"
+   "res://assets/sfx/swing_dagger_1.wav",
+   "res://assets/sfx/swing_dagger_2.wav",
+   "res://assets/sfx/swing_dagger_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2587,10 +2587,10 @@
  },
  "swing_heavy": {
   "files": [
-   "res://assets/sfx/swing_heavy_1.ogg",
-   "res://assets/sfx/swing_heavy_2.ogg",
-   "res://assets/sfx/swing_heavy_3.ogg",
-   "res://assets/sfx/swing_heavy_4.ogg"
+   "res://assets/sfx/swing_heavy_1.wav",
+   "res://assets/sfx/swing_heavy_2.wav",
+   "res://assets/sfx/swing_heavy_3.wav",
+   "res://assets/sfx/swing_heavy_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2602,10 +2602,10 @@
  },
  "swing_light": {
   "files": [
-   "res://assets/sfx/swing_light_1.ogg",
-   "res://assets/sfx/swing_light_2.ogg",
-   "res://assets/sfx/swing_light_3.ogg",
-   "res://assets/sfx/swing_light_4.ogg"
+   "res://assets/sfx/swing_light_1.wav",
+   "res://assets/sfx/swing_light_2.wav",
+   "res://assets/sfx/swing_light_3.wav",
+   "res://assets/sfx/swing_light_4.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2617,9 +2617,9 @@
  },
  "thrust": {
   "files": [
-   "res://assets/sfx/thrust_1.ogg",
-   "res://assets/sfx/thrust_2.ogg",
-   "res://assets/sfx/thrust_3.ogg"
+   "res://assets/sfx/thrust_1.wav",
+   "res://assets/sfx/thrust_2.wav",
+   "res://assets/sfx/thrust_3.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2631,7 +2631,7 @@
  },
  "tower_open": {
   "files": [
-   "res://assets/sfx/tower_open.ogg"
+   "res://assets/sfx/tower_open.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2643,9 +2643,9 @@
  },
  "ui_back": {
   "files": [
-   "res://assets/sfx/ui_back_1.ogg",
-   "res://assets/sfx/ui_back_2.ogg",
-   "res://assets/sfx/ui_back_3.ogg"
+   "res://assets/sfx/ui_back_1.wav",
+   "res://assets/sfx/ui_back_2.wav",
+   "res://assets/sfx/ui_back_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2657,9 +2657,9 @@
  },
  "ui_confirm": {
   "files": [
-   "res://assets/sfx/ui_confirm_1.ogg",
-   "res://assets/sfx/ui_confirm_2.ogg",
-   "res://assets/sfx/ui_confirm_3.ogg"
+   "res://assets/sfx/ui_confirm_1.wav",
+   "res://assets/sfx/ui_confirm_2.wav",
+   "res://assets/sfx/ui_confirm_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2671,8 +2671,8 @@
  },
  "ui_error": {
   "files": [
-   "res://assets/sfx/ui_error_1.ogg",
-   "res://assets/sfx/ui_error_2.ogg"
+   "res://assets/sfx/ui_error_1.wav",
+   "res://assets/sfx/ui_error_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2684,8 +2684,8 @@
  },
  "ui_hover": {
   "files": [
-   "res://assets/sfx/ui_hover_1.ogg",
-   "res://assets/sfx/ui_hover_2.ogg"
+   "res://assets/sfx/ui_hover_1.wav",
+   "res://assets/sfx/ui_hover_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2697,9 +2697,9 @@
  },
  "ui_slider": {
   "files": [
-   "res://assets/sfx/ui_slider_1.ogg",
-   "res://assets/sfx/ui_slider_2.ogg",
-   "res://assets/sfx/ui_slider_3.ogg"
+   "res://assets/sfx/ui_slider_1.wav",
+   "res://assets/sfx/ui_slider_2.wav",
+   "res://assets/sfx/ui_slider_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2711,9 +2711,9 @@
  },
  "ui_tab": {
   "files": [
-   "res://assets/sfx/ui_tab_1.ogg",
-   "res://assets/sfx/ui_tab_2.ogg",
-   "res://assets/sfx/ui_tab_3.ogg"
+   "res://assets/sfx/ui_tab_1.wav",
+   "res://assets/sfx/ui_tab_2.wav",
+   "res://assets/sfx/ui_tab_3.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2725,10 +2725,10 @@
  },
  "ui_tap": {
   "files": [
-   "res://assets/sfx/ui_tap_1.ogg",
-   "res://assets/sfx/ui_tap_2.ogg",
-   "res://assets/sfx/ui_tap_3.ogg",
-   "res://assets/sfx/ui_tap_4.ogg"
+   "res://assets/sfx/ui_tap_1.wav",
+   "res://assets/sfx/ui_tap_2.wav",
+   "res://assets/sfx/ui_tap_3.wav",
+   "res://assets/sfx/ui_tap_4.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2740,7 +2740,7 @@
  },
  "ui_toggle_off": {
   "files": [
-   "res://assets/sfx/ui_toggle_off.ogg"
+   "res://assets/sfx/ui_toggle_off.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2752,7 +2752,7 @@
  },
  "ui_toggle_on": {
   "files": [
-   "res://assets/sfx/ui_toggle_on.ogg"
+   "res://assets/sfx/ui_toggle_on.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2764,8 +2764,8 @@
  },
  "upgrade_confirm": {
   "files": [
-   "res://assets/sfx/upgrade_confirm_1.ogg",
-   "res://assets/sfx/upgrade_confirm_2.ogg"
+   "res://assets/sfx/upgrade_confirm_1.wav",
+   "res://assets/sfx/upgrade_confirm_2.wav"
   ],
   "bus": "Interface",
   "positional": false,
@@ -2777,7 +2777,7 @@
  },
  "victory": {
   "files": [
-   "res://assets/sfx/victory.ogg"
+   "res://assets/sfx/victory.wav"
   ],
   "bus": "Effects",
   "positional": false,
@@ -2789,7 +2789,7 @@
  },
  "wagon_door_close": {
   "files": [
-   "res://assets/sfx/wagon_door_close.ogg"
+   "res://assets/sfx/wagon_door_close.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2801,7 +2801,7 @@
  },
  "wagon_door_open": {
   "files": [
-   "res://assets/sfx/wagon_door_open.ogg"
+   "res://assets/sfx/wagon_door_open.wav"
   ],
   "bus": "Effects",
   "positional": true,
@@ -2813,8 +2813,8 @@
  },
  "wave_horn": {
   "files": [
-   "res://assets/sfx/wave_horn_1.ogg",
-   "res://assets/sfx/wave_horn_2.ogg"
+   "res://assets/sfx/wave_horn_1.wav",
+   "res://assets/sfx/wave_horn_2.wav"
   ],
   "bus": "Effects",
   "positional": false,

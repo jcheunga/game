@@ -1,6 +1,6 @@
 """Sound-effect catalogue: every cue the game plays, with its variants, loudness target and runtime settings.
 
-Modules register cues with @cue; build_sfx.py renders them to assets/sfx/<id>_<n>.ogg and writes sfx.json.
+Modules register cues with @cue; build_sfx.py renders them to assets/sfx/<id>_<n>.wav (loops .ogg) and writes sfx.json.
 """
 from dataclasses import dataclass, field
 

@@ -7,7 +7,7 @@ re-rendered.
 | Output | Count | Where |
 |---|---|---|
 | Music loops | 19 tracks, about 22 minutes | `assets/music/{track}.ogg`, `assets/music/tracks.json` |
-| Sound-effect cues | 212 cues, 442 files with round-robin variations | `assets/sfx/{cue}[_n].ogg`, `assets/sfx/sfx.json` |
+| Sound-effect cues | 216 cues, 449 files with round-robin variations | `assets/sfx/{cue}[_n].wav` (loops `.ogg`), `assets/sfx/sfx.json` |
 | Ambience | 15 looping beds and 29 detail one-shots (included in the cues) | `assets/sfx/amb_*`, `det_*`, `assets/sfx/ambience.json` |
 
 ## Running it
@@ -49,7 +49,10 @@ draws a grid of spectrograms for many effects at once.
 
 Loudness: music is mastered to -15.5 to -19 LUFS integrated. One-shots are normalised by category, from -27 LUFS
 (quiet interface ticks) to -13.5 LUFS (stingers), as maximum momentary/short-term loudness. Beds sit at -30 LUFS.
-Music is encoded as Vorbis at about 114 kbps and effects at about 128 kbps.
+Music and looping beds are encoded as Vorbis (about 114 kbps). One-shots are written as 16-bit WAV, mono unless the
+cue is declared stereo, and Godot imports them as QOA. Android mixes inside the audio driver's callback with only about
+23 ms to spare, so per-voice cost matters: in the audio review's battles, mono QOA cut the audio thread's work by a third and
+the cost of starting a sound by 90% compared with stereo Vorbis, for about 8 MB more in the build.
 
 ## In the game
 

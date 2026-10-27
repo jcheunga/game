@@ -27,7 +27,9 @@ def load_modules():
 
 
 def file_names(c):
-    return [f"{c.id}.ogg"] if c.variants == 1 else [f"{c.id}_{k + 1}.ogg" for k in range(c.variants)]
+    # Loops stay Vorbis; one-shots ship as WAV, which Godot imports as QOA and mixes for far less CPU than Vorbis.
+    ext = ".ogg" if c.loop else ".wav"
+    return [f"{c.id}{ext}"] if c.variants == 1 else [f"{c.id}_{k + 1}{ext}" for k in range(c.variants)]
 
 
 def render(c):
@@ -57,12 +59,14 @@ def main():
         names = file_names(c)
         stats = []
         for name, x in zip(names, buffers):
-            io.write(REVIEW / name, x, quality=0.6)
+            review = REVIEW / Path(name).with_suffix(".ogg")
+            io.write(review, x, quality=0.6)
             if not args.no_assets:
-                io.write(SFX_DIR / name, x, quality=0.4 if not c.loop else 0.35)
+                # A mono cue written as stereo makes the phone decode every sample twice.
+                io.write(SFX_DIR / name, x, quality=0.35, mono=not c.stereo)
             st = io.stats(x, loop=c.loop)
             stats.append(st)
-            labels[str(REVIEW / name)] = c.label
+            labels[str(review)] = c.label
         manifest[c.id] = {
             "files": [f"res://assets/sfx/{n}" for n in names], "bus": c.bus, "positional": c.positional,
             "cooldown": c.cooldown, "voices": c.voices, "pitch": c.pitch, "volume_db": c.volume_db, "loop": c.loop,
@@ -78,10 +82,10 @@ def main():
         manifest_path.write_text(json.dumps(manifest, indent=1) + "\n")
         if args.clean:
             keep = {Path(f).name for v in manifest.values() for f in v["files"]}
-            for path in SFX_DIR.glob("*.ogg"):
+            for path in [*SFX_DIR.glob("*.ogg"), *SFX_DIR.glob("*.wav")]:
                 if path.name not in keep:
                     path.unlink()
-                    imp = path.with_suffix(".ogg.import")
+                    imp = path.with_name(path.name + ".import")
                     if imp.exists():
                         imp.unlink()
                     print("removed", path.name)

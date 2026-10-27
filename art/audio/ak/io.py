@@ -8,14 +8,14 @@ from . import dsp
 from .dsp import SR
 
 
-def write(path, x, quality=0.6):
-    """Write stereo float audio. .ogg uses Vorbis (quality 0..1), .wav writes 16-bit PCM."""
+def write(path, x, quality=0.6, mono=False):
+    """Write float audio, stereo unless mono. .ogg uses Vorbis (quality 0..1), .wav writes 16-bit PCM."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = np.clip(dsp.to_stereo(x), -1, 1).astype(np.float32)
+    data = np.clip(dsp.to_mono(x) if mono else dsp.to_stereo(x), -1, 1).astype(np.float32)
     if path.suffix == ".ogg":
         # libsndfile's Vorbis encoder crashes on very large single writes; feed it in blocks.
-        with sf.SoundFile(str(path), "w", SR, 2, format="OGG", subtype="VORBIS",
+        with sf.SoundFile(str(path), "w", SR, 1 if mono else 2, format="OGG", subtype="VORBIS",
                           compression_level=1 - quality) as handle:
             for start in range(0, len(data), 32768):
                 handle.write(data[start:start + 32768])

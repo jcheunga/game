@@ -77,10 +77,15 @@ public partial class MapPathCanvas
     }
 
     private const float FogCell = 8;
-    private static readonly System.Collections.Generic.Dictionary<string, (int[] Tiles, int Width, int Height, Rect2 Bounds)> FogRasters = new();
+    /// <summary>How far, in fog cells, the cloud and the mist drift out from the land over the sea and rivers.</summary>
+    private const float FogSpill = 12, MistSpill = 6;
+    private static readonly System.Collections.Generic.Dictionary<string, (int[] Tiles, int[] Nearest, float[] Distance, int Width, int Height, Rect2 Bounds)> FogRasters = new();
 
-    /// <summary>Which tile each fog cell of the zone lies in (-1 for open sea), worked out once per zone.</summary>
-    private (int[] Tiles, int Width, int Height, Rect2 Bounds) FogRaster()
+    /// <summary>
+    /// Which tile each fog cell of the zone lies in (-1 for open sea), and for cells off the land the nearest
+    /// tile within <see cref="FogSpill"/> cells and how far it is, worked out once per zone.
+    /// </summary>
+    private (int[] Tiles, int[] Nearest, float[] Distance, int Width, int Height, Rect2 Bounds) FogRaster()
     {
         if (FogRasters.TryGetValue(ActiveMapId, out var raster)) return raster;
         var bounds = AdventureAtlasLandscape.PaintingRect(ActiveMapId).Grow(64);
@@ -99,13 +104,36 @@ public partial class MapPathCanvas
                 for (var x = x0; x < x1; x++)
                     if (Geometry2D.IsPointInPolygon(bounds.Position + new Vector2(x + .5f, y + .5f) * FogCell, outline)) cells[y * width + x] = i;
         }
-        return FogRasters[ActiveMapId] = (cells, width, height, bounds);
+        // A two-pass chamfer sweep carries the nearest tile out over the water.
+        var nearest = (int[])cells.Clone(); var distance = new float[cells.Length];
+        for (var i = 0; i < cells.Length; i++) distance[i] = cells[i] >= 0 ? 0 : float.MaxValue;
+        void Reach(int to, int from, float step)
+        {
+            if (distance[from] + step < distance[to]) { distance[to] = distance[from] + step; nearest[to] = nearest[from]; }
+        }
+        for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+            {
+                var i = y * width + x;
+                if (x > 0) Reach(i, i - 1, 1);
+                if (y > 0) { Reach(i, i - width, 1); if (x > 0) Reach(i, i - width - 1, 1.414f); if (x < width - 1) Reach(i, i - width + 1, 1.414f); }
+            }
+        for (var y = height - 1; y >= 0; y--)
+            for (var x = width - 1; x >= 0; x--)
+            {
+                var i = y * width + x;
+                if (x < width - 1) Reach(i, i + 1, 1);
+                if (y < height - 1) { Reach(i, i + width, 1); if (x < width - 1) Reach(i, i + width + 1, 1.414f); if (x > 0) Reach(i, i + width - 1, 1.414f); }
+            }
+        for (var i = 0; i < cells.Length; i++) if (distance[i] > FogSpill) nearest[i] = -1;
+        return FogRasters[ActiveMapId] = (cells, nearest, distance, width, height, bounds);
     }
 
     /// <summary>
     /// Builds the fog mask once per change in what the player has explored: the red channel covers hidden
-    /// tiles (storm cloud), the green channel frontier tiles (thin mist). Both are softened so the shader can
-    /// fray their outlines into billows.
+    /// tiles (the cloud bank), the green channel frontier tiles (thin mist), both reaching a little way out over
+    /// the water beside them. Both are softened so the shader can fray their outlines into billows; the blue
+    /// channel blurs the hidden tiles much wider, so the shader can light a whole bank as one rounded mass.
     /// </summary>
     private void BuildFogMask()
     {
@@ -118,21 +146,27 @@ public partial class MapPathCanvas
         var storm = new float[raster.Tiles.Length]; var mist = new float[raster.Tiles.Length];
         for (var i = 0; i < raster.Tiles.Length; i++)
         {
-            var tile = raster.Tiles[i];
+            // Off the land, the cloud or mist of the nearest tile thins out with distance.
+            var tile = raster.Nearest[i];
             if (tile < 0) continue;
-            if (kinds[tile] == 2) storm[i] = 1; else if (kinds[tile] == 1) mist[i] = 1;
+            var reach = raster.Tiles[i] >= 0 ? 1 : 1 - raster.Distance[i] / (kinds[tile] == 2 ? FogSpill : MistSpill);
+            if (kinds[tile] == 2) storm[i] = reach; else if (kinds[tile] == 1) mist[i] = Mathf.Max(0, reach);
         }
-        // Three box passes approximate a gaussian about 50 world units wide.
-        foreach (var values in new[] { storm, mist })
-            for (var pass = 0; pass < 3; pass++) { BoxBlur(values, raster.Width, raster.Height, 5, true); BoxBlur(values, raster.Width, raster.Height, 5, false); }
-        var bytes = new byte[storm.Length * 2];
+        var bank = (float[])storm.Clone();
+        // Three box passes approximate a gaussian about 50 world units wide (about 300 for the bank).
+        foreach (var (values, radius) in new[] { (storm, 5), (mist, 5), (bank, 18) })
+            for (var pass = 0; pass < 3; pass++) { BoxBlur(values, raster.Width, raster.Height, radius, true); BoxBlur(values, raster.Width, raster.Height, radius, false); }
+        var bytes = new byte[storm.Length * 3];
         for (var i = 0; i < storm.Length; i++)
         {
-            bytes[i * 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(storm[i] * 255), 0, 255);
-            bytes[i * 2 + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(mist[i] * 255), 0, 255);
+            bytes[i * 3] = (byte)Mathf.Clamp(Mathf.RoundToInt(storm[i] * 255), 0, 255);
+            bytes[i * 3 + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(mist[i] * 255), 0, 255);
+            bytes[i * 3 + 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(bank[i] * 255), 0, 255);
         }
-        _fogLayer.Mask = ImageTexture.CreateFromImage(Image.CreateFromData(raster.Width, raster.Height, false, Image.Format.Rg8, bytes));
+        _fogLayer.Mask = ImageTexture.CreateFromImage(Image.CreateFromData(raster.Width, raster.Height, false, Image.Format.Rgb8, bytes));
         _fogLayer.MaskRect = new Rect2(raster.Bounds.Position, new Vector2(raster.Width, raster.Height) * FogCell);
+        var zone = RouteCatalog.GetAll().Select(route => route.Id).ToList().IndexOf(ActiveMapId) + 1;
+        _fogLayer.NoiseOffset = new Vector2(zone * 2371 % 9973, zone * 4513 % 8429);
     }
 
     private static void BoxBlur(float[] values, int width, int height, int radius, bool horizontal)

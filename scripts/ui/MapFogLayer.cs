@@ -2,8 +2,9 @@ using System;
 using Godot;
 
 /// <summary>
-/// Draws the painted map's fog of war with assets/shaders/royal_fog.gdshader: the owning canvas supplies a
-/// blurred mask of the hidden tiles in world space and the shader turns it into drifting storm cloud.
+/// Draws the painted map's fog of war with assets/shaders/royal_fog.gdshader: the owning canvas supplies
+/// blurred masks of the hidden and frontier tiles in world space and the shader turns them into a thin, drifting
+/// layer of pale cloud and a muted ground mist.
 /// </summary>
 public partial class MapFogLayer : Control
 {
@@ -12,6 +13,8 @@ public partial class MapFogLayer : Control
     private readonly ShaderMaterial _material = new();
     public Texture2D Mask;
     public Rect2 MaskRect;
+    /// <summary>Shifts the cloud pattern, so each zone's bank has its own heads rather than the same layout.</summary>
+    public Vector2 NoiseOffset;
     public Vector2 Offset;
     public float Zoom = 1;
     public float Clock;
@@ -32,6 +35,7 @@ public partial class MapFogLayer : Control
         if (Mask == null) return;
         _material.SetShaderParameter("world_origin", MaskRect.Position);
         _material.SetShaderParameter("world_size", MaskRect.Size);
+        _material.SetShaderParameter("noise_offset", NoiseOffset);
         _material.SetShaderParameter("clock", Clock);
         DrawSetTransform(Offset, 0, Vector2.One * Zoom);
         DrawTextureRect(Mask, MaskRect, false);

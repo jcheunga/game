@@ -27,7 +27,9 @@ public static class NicknameDialog
         var heading = RealmUi.Heading(firstRun ? "Choose a nickname" : "Change nickname", 26);
         heading.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(heading);
-        var body = RealmUi.Label(firstRun ? "Other players see it on rankings and in rooms. You can change it later." : "Other players see it on rankings and in rooms.", 18, true);
+        // Leaderboards show anonymous tags, so only players racing you can see the nickname.
+        var seen = LaunchFeatures.InternetRooms ? "Players racing you in rooms and LAN races see it." : "Players racing you over your local network see it.";
+        var body = RealmUi.Label(firstRun ? seen + " You can change it later." : seen, 18, true);
         body.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         body.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(body);

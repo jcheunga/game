@@ -175,7 +175,8 @@ public partial class MultiplayerMenu
     private void ShowCodeMenu()
     {
         var menu = new PopupMenu();
-        menu.AddItem("Roll a new code", 0); menu.AddItem("Copy code", 1); menu.AddItem("Copy share link", 2);
+        // No share link yet: crownroad.game has no challenge page to open it.
+        menu.AddItem("Roll a new code", 0); menu.AddItem("Copy code", 1);
         menu.AddSeparator(); menu.AddItem("Challenge briefing", 3); menu.AddItem("Records & replay", 4);
         menu.AddSeparator(); menu.AddItem("Sync results", 5); menu.AddItem("LAN race", 6);
         menu.SetItemDisabled(menu.GetItemIndex(5), GameState.Instance.PendingChallengeSubmissionCount <= 0 || ChallengeSyncService.Instance == null);

@@ -67,6 +67,10 @@ def main():
 
     site = json.loads((ROOT / "site/site.json").read_text(encoding="utf-8"))
     missing = [key for key in ("domain", "legal_name", "support_email", "governing_law", "effective_date") if not site.get(key)]
+    links = (ROOT / "scripts/core/SiteLinks.cs").read_text(encoding="utf-8")
+    base = re.search(r'Base = "https://([^"/]+)"', links)
+    check("both", base and base.group(1) == site.get("domain"), f"The game's website links use {site.get('domain')}",
+          "Make SiteLinks.Base in scripts/core/SiteLinks.cs match the domain in site/site.json.")
     check("both", not missing, "Website launch values are filled in" + (f" (missing {', '.join(missing)})" if missing else ""),
           "Fill site/site.json, then run python3 scripts/tools/build_site.py --strict.")
 

@@ -1,14 +1,3 @@
-### Privacy manifest
-
-The iOS preset (`[preset.2.options]` in `export_presets.cfg`) now declares the
-collected types above, so Godot writes them into `PrivacyInfo.xcprivacy`:
-email address, user ID, purchase history, product interaction, gameplay
-content and crash data, all linked to the player and none used for tracking.
-The purposes use Godot's flags (Analytics 1, App Functionality 2): user ID is
-3, product interaction 1, the rest 2. The required-reason APIs keep Godot's
-defaults (file timestamps, system boot time, disk space). Edit these in the
-editor's export dialog from now on, never while the editor has the file open.
-
 # Store privacy answers (draft)
 
 Draft answers for Google Play's **Data safety** form (Play Console → App
@@ -158,13 +147,14 @@ don't meet every condition for Apple's optional-disclosure exemption.
 
 ### Privacy manifest
 
-The iOS export preset (`[preset.2.options]` in `export_presets.cfg`) has no
-privacy-manifest settings yet. Godot writes `PrivacyInfo.xcprivacy` from the
-iOS preset's Privacy options (collected data types and required-reason APIs).
-Set them in the editor's export dialog to match the table above. Don't edit
-`export_presets.cfg` while the editor is open, because it rewrites the file
-from memory. **[Check]** the option names in the editor, and which
-required-reason APIs Godot's iOS template declares.
+The iOS preset (`[preset.2.options]` in `export_presets.cfg`) now declares the
+collected types above, so Godot writes them into `PrivacyInfo.xcprivacy`:
+email address, user ID, purchase history, product interaction, gameplay
+content and crash data, all linked to the player and none used for tracking.
+The purposes use Godot's flags (Analytics 1, App Functionality 2): user ID is
+3, product interaction 1, the rest 2. The required-reason APIs keep Godot's
+defaults (file timestamps, system boot time, disk space). Edit these in the
+editor's export dialog from now on, never while the editor has the file open.
 
 ## What you must review
 

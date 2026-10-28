@@ -65,7 +65,7 @@ public partial class DeepLinkHandler : Node
 	{
 		if (string.IsNullOrWhiteSpace(challengeCode))
 			return "";
-		return $"https://crownroad.game/challenge/{Uri.EscapeDataString(challengeCode)}";
+		return $"{SiteLinks.Base}/challenge/{Uri.EscapeDataString(challengeCode)}";
 	}
 
 	public static void ShareChallenge(string challengeCode)

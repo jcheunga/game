@@ -40,6 +40,10 @@ public partial class UiReviewSmoke
             await Capture("settings-account-player-id");
         }
 
+        // App Review asks for the privacy policy inside the app.
+        Check(Named("Privacy policy") != null && Named("Terms of use") != null && Named("Help and support") != null,
+            "Account links to the privacy policy, terms and support pages");
+
         var row = Named("Delete account") ?? throw new InvalidOperationException("The Account tab has no Delete account row");
         for (var parent = row.GetParent(); parent != null; parent = parent.GetParent())
             if (parent is ScrollContainer scroll) RevealInScroll(scroll, row);

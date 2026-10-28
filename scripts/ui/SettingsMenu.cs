@@ -158,6 +158,9 @@ public partial class SettingsMenu : RoyalScreen
                 yield return new SwitchRow("flag", "Send crash reports", () => state.CrashReportingConsent, state.SetCrashReportingConsent);
                 yield return new InfoRow("gold", "Payments", () => $"{state.TotalPurchaseCount} purchases · {DetectPurchasePlatform()}");
                 yield return new EditRow("gold", "Payment endpoint", () => state.PurchaseValidationEndpoint, state.SetPurchaseValidationEndpoint, "https://api.example.com", !state.IsReleaseBackendConfigured);
+                yield return new ActionRow("book", "Privacy policy", "Open", () => OS.ShellOpen(SiteLinks.Privacy));
+                yield return new ActionRow("book", "Terms of use", "Open", () => OS.ShellOpen(SiteLinks.Terms));
+                yield return new ActionRow("book", "Help and support", "Open", () => OS.ShellOpen(SiteLinks.Support));
                 if (GameState.DeveloperModeAvailable) yield return new ActionRow("gear", "Developer tools", "Open", OpenDeveloperTools);
                 yield return new ActionRow("close", "Reset campaign", "Reset", () => MedievalUi.ShowConfirmation(this, "Abandon this campaign?",
                     "Erase this local campaign and return to the first march. This cannot be undone.", "Reset campaign",
@@ -345,7 +348,7 @@ public partial class SettingsMenu : RoyalScreen
         var provider = GameState.Instance.AccountProvider;
         var signIn = provider.Length == 0 ? " and" : $", unlinks your {(provider == "email" ? "email" : PlatformSignIn.ProviderName(provider))} sign-in and";
         MedievalUi.ShowConfirmation(this, "Delete your account?",
-            $"This erases your progress, cloud save, scores, guilds and friends from our servers{signIn} starts this device again as a new guest. " +
+            $"This erases your progress, cloud save, scores and currency balance from our servers{signIn} starts this device again as a new guest. " +
             "Purchase records the law requires are kept without your name. This cannot be undone.",
             "Delete account", () => _ = DeleteAccount(), "Keep account");
     }

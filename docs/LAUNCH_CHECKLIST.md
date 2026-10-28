@@ -23,6 +23,17 @@ Already done and tested locally (2026-10-17):
 - The server's unused guild, arena, friends and raid endpoints are removed
   (2026-10-28). The game keeps those features on the device, so the privacy
   answers have nothing to declare for them.
+- Launch housekeeping (2026-10-28). The server deletes session records a week
+  after they expire or are signed out. Settings → Account shows the player ID,
+  and a tap copies it. Support can look a player up by player ID or store
+  transaction ID at `GET /admin/support/player` (see
+  [DEPLOYMENT.md](DEPLOYMENT.md#looking-up-a-player-for-support)). The iOS
+  preset is fixed (next item). Both CI workflows pass again.
+- The iOS preset, set in the file with the editor closed (2026-10-28): Game
+  Center entitlement and plugin on, StoreKit plugin on, minimum iOS 15.0, the
+  Android preset's exclude filter, the privacy manifest's collected data types,
+  and `ITSAppUsesNonExemptEncryption` = false in the Info.plist (the game only
+  uses HTTPS, so App Store Connect stops asking about encryption).
 - Account deletion from Settings → Account → Delete account (2026-10-18). The
   server erases everything keyed by the player and ends every session; a
   repeated request answers the same. Purchase records stay, moved to a random
@@ -178,7 +189,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
   Developer account, and in the App Store Connect app record.
 - [ ] Set `GAME_CENTER_BUNDLE_ID=com.crownroad.game` on the server. If it is
   unset, the server uses `APPLE_IAP_BUNDLE_ID`.
-- [ ] In the Godot editor, under Project → Export → iOS, set:
+- [x] In the Godot editor, under Project → Export → iOS, set (done 2026-10-28
+  in the file, with the editor closed; check them once in the editor):
   - Game Center entitlement: on
   - GameCenter plugin: on
   - StoreKit plugin: on (in-app purchases, section 10)
@@ -228,8 +240,8 @@ Play yet.
   375 MB. The cuts were cheaper texture compression on the painted maps and
   pictures, which looks the same on a phone, and leaving out art the game
   never loads. It is still over 200 MB, so Play asks before downloading it
-  over mobile data. The iOS preset needs the same exclude filter, added in
-  the editor.
+  over mobile data. The iOS preset has the same exclude filter since
+  2026-10-28.
 - [ ] After the first upload, check Play Console → App size against those
   figures.
 - [ ] Add testers under License testing, and upload a signed build to the

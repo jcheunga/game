@@ -134,6 +134,11 @@ public partial class SettingsMenu : RoyalScreen
                 break;
             default:
                 yield return new ActionRow("people", "Account", "Manage", () => AccountDialog.Show(this));
+                yield return new ChoiceRow("people", "Player ID", () => state.PlayerProfileId, () =>
+                {
+                    DisplayServer.ClipboardSet(state.PlayerProfileId);
+                    _status = "Player ID copied. Include it when you contact support.";
+                }, "Copy your player ID for support");
                 yield return new InfoRow("book", "Local save", () => SaveSystem.Instance?.PlayerStatus ?? "Local save unavailable.");
                 yield return new ActionRow("book", "Cloud save", "Upload", () => { CloudSaveService.Upload(out var message); _status = message; });
                 yield return new ActionRow("arrow", "Restore cloud save", "Restore", () =>

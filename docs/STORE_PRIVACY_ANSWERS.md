@@ -1,3 +1,14 @@
+### Privacy manifest
+
+The iOS preset (`[preset.2.options]` in `export_presets.cfg`) now declares the
+collected types above, so Godot writes them into `PrivacyInfo.xcprivacy`:
+email address, user ID, purchase history, product interaction, gameplay
+content and crash data, all linked to the player and none used for tracking.
+The purposes use Godot's flags (Analytics 1, App Functionality 2): user ID is
+3, product interaction 1, the rest 2. The required-reason APIs keep Godot's
+defaults (file timestamps, system boot time, disk space). Edit these in the
+editor's export dialog from now on, never while the editor has the file open.
+
 # Store privacy answers (draft)
 
 Draft answers for Google Play's **Data safety** form (Play Console → App
@@ -29,7 +40,7 @@ analytics or ad SDKs.
 | Data | Collected | Linked to player | Tracking | Purposes | Optional or required | Encrypted in transit | Deletable |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Player ID (`CVY-…` or `ACC-…`) | Yes | Yes | No | App functionality, account management, fraud prevention and security, analytics (opt-in events only) | Required. Registered automatically, with the nickname, whenever the server is reachable, even for guests | Yes | In the app (Settings → Account → Delete account) or by email |
-| Session records (token hash, created, last used, expiry) | Yes | Yes | No | Security, account management | Required | Yes. Only a SHA-256 hash of the token is stored | In the app (Settings → Account → Delete account) or by email. Expired and revoked rows are otherwise never purged. After a deletion, hashes of the sessions still active are kept 31 days so a repeated request gets the same answer |
+| Session records (token hash, created, last used, expiry) | Yes | Yes | No | Security, account management | Required | Yes. Only a SHA-256 hash of the token is stored | In the app (Settings → Account → Delete account) or by email. Otherwise deleted a week after the session expires or is signed out. After a deletion, hashes of the sessions still active are kept 31 days so a repeated request gets the same answer |
 | Nickname (callsign) | Yes | Yes | No | App functionality (shown to other players) | Required. Defaults to "Lantern" and is sent on registration | Yes | Change any time in Settings. Old copies stay on room records. In the app (Settings → Account → Delete account) or by email |
 | Email address | Yes, for email sign-in only | Yes | No | Account management | Optional | Yes. The server sends the code to the mail provider over STARTTLS | In the app (Settings → Account → Delete account) or by email |
 | Google account ID | Yes, for Google sign-in only | Yes | No | Account management | Optional | Yes | In the app (Settings → Account → Delete account) or by email |
@@ -183,10 +194,10 @@ required-reason APIs Godot's iOS template declares.
    are now stored, encrypted, so deletion can revoke them. They are declared
    above under the Apple account ID. **[Check]** whether either store wants
    them declared separately.
-7. **Session records are never purged.** Sessions stop working after 30 days,
-   but the rows (with last-used times) stay until a deletion request.
-   Consider deleting expired and revoked sessions after a short period, then
-   update the policy's player ID row.
+7. **Session records (done 2026-10-28).** Sessions stop working after 30 days or at sign-out, and the
+   server deletes each record a week after that (`SessionAuth.PurgeEndedSessions`, run by
+   `StaleDataCleanup`). The policy's player ID row says so.
+
 8. **Name the email provider.** The policy says "our email delivery
    provider". Once you choose one (Postmark, Amazon SES, Resend…), name it in
    the policy's sharing list and sign its data processing agreement.
@@ -205,13 +216,13 @@ required-reason APIs Godot's iOS template declares.
     tell Apple only that a purchase was delivered, with no free sample, and
     that the player agreed through the terms. The reason Apple passes on is
     kept in the refund record. No new data type.
-11. **Finding the player ID.** The game shows the player ID only under
-    "Records & replay" on the multiplayer screen, which the policy and the
-    support page now point to. The old text pointed to Settings, which no
-    longer shows it. Consider showing it in Account too.
+11. **Finding the player ID (done 2026-10-28).** Settings → Account shows it in a Player ID row,
+    and tapping it copies it. The support page points there.
+
 12. **[Check] SDK disclosures** for Play Billing and Play Games Services
     (above).
-13. **[Check] iOS privacy manifest** (above).
+13. **iOS privacy manifest (set 2026-10-28)** (above). **[Check]** the exported
+    `PrivacyInfo.xcprivacy` once against the App Privacy answers before submitting.
 14. **Publishing.** Set `effective_date` in `site/site.json` when the policy
     goes live, and have the policy reviewed together with these answers.
 

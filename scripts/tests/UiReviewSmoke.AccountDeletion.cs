@@ -27,6 +27,19 @@ public partial class UiReviewSmoke
         Button Named(string name) => Walk(settings).OfType<Button>().FirstOrDefault(button => button.IsVisibleInTree() && !button.IsQueuedForDeletion() && button.AccessibilityName == name);
         Button Labelled(string text) => Walk(settings).OfType<Button>().FirstOrDefault(button => button.IsVisibleInTree() && !button.IsQueuedForDeletion() && button.Text == text);
         await TapModal(Named("Account") ?? throw new InvalidOperationException("Settings has no Account tab"));
+
+        // Support asks for the player ID, so Account shows it and a tap copies it.
+        var idRow = Named("Player ID");
+        Check(idRow != null && Walk(idRow).OfType<RoyalLabel>().Any(label => label.Text == profile) &&
+            GetViewport().GetVisibleRect().Encloses(idRow.GetGlobalRect()), "The Account tab shows the player ID on screen");
+        if (idRow != null)
+        {
+            await TapModal(idRow);
+            Check(Walk(settings).OfType<RoyalLabel>().Any(label => label.IsVisibleInTree() && label.Text.StartsWith("Player ID copied")),
+                "Tapping the player ID copies it and says so");
+            await Capture("settings-account-player-id");
+        }
+
         var row = Named("Delete account") ?? throw new InvalidOperationException("The Account tab has no Delete account row");
         for (var parent = row.GetParent(); parent != null; parent = parent.GetParent())
             if (parent is ScrollContainer scroll) RevealInScroll(scroll, row);

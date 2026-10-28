@@ -66,7 +66,7 @@ remaining requirements have evidence.
 | Order | Next deliverable | Completion evidence / dependency |
 | --- | --- | --- |
 | 1 | Activate and verify the implemented email/Google account recovery | Provision SMTP and Google OAuth, deploy to staging, and pass real-device lost-device/account-switch checks for the server wallet and uploaded progress. Decide cloud-upload behavior and cross-provider linking support before launch. |
-| 2 | Implement authenticated deletion and support handling | In-app request, public request page, session revocation, documented financial-record retention and end-to-end deletion evidence. |
+| 2 | Support handling | Account deletion is built (in-app, web request page, session revocation, pseudonymous purchase records; 2026-10-18). Support lookup is built (`GET /admin/support/player`, 2026-10-28). Still needed: the support playbook adopted and a support inbox. |
 | 3 | Deploy the privacy update to staging | Schema 5 migration and backup restore on PostgreSQL, container build/start, and device tests of updated consent/cloud restore. Follow the migration notes in DEPLOYMENT.md. |
 | 4 | Complete commerce for the chosen launch platforms | Confirm Android/iOS scope, provision products, test the iOS StoreKit plugin with sandbox purchases if iOS is included, and configure and test the refund signals with real store refunds. |
 | 5 | Complete release infrastructure and feature acceptance | Measured load/alerts/restore; multiplayer decision; signed store-delivered device matrix and creative/localization sign-off. |
@@ -124,10 +124,10 @@ the existing protected APIs rather than a separate account service.
 - [ ] Test guest-to-account linking, reinstall/lost-device recovery and
   account switching with real server wallet balances and uploaded saves.
   Confirm a failed cloud download keeps the current local account intact,
-  and sign-out/account switches create a local progress backup. Current
-  cloud uploads are **manual in Settings**: decide whether to retain this
-  behavior and explain it to players or add/test automatic uploads. Signing
-  in cannot recover progress that was never uploaded.
+  and sign-out/account switches create a local progress backup. Cloud saves
+  upload automatically after each won stage once the game reaches the server
+  (`GameState.TryAutoCloudBackup`), and on demand in Settings. Signing in
+  cannot recover progress that was never uploaded.
 - [ ] Confirm the cross-provider account policy. An unused email or Google
   identity can link to the currently authenticated profile. Matching email
   addresses do not silently merge identities, and existing accounts/wallets
@@ -219,8 +219,9 @@ requirement until a migration and both signed exports have been verified.
   wallet and uploaded progression** still need evidence. A store's consumable
   purchase history is not a substitute for restoring a player's spent balance.
   Test lost-device and account-switch cases.
-- [ ] Implement an in-app account-deletion request/path and a public web
-  deletion-request page when account creation is offered. Define retention
+- [x] Implement an in-app account-deletion request/path and a public web
+  deletion-request page when account creation is offered. Done 2026-10-18:
+  Settings → Account → Delete account, and `/support#delete-data`. Define retention
   exceptions for financial/fraud records, revoke sessions, and verify the
   deletion workflow end to end. Apple and Google publish account-deletion
   requirements; review the current rules before submission.
@@ -239,9 +240,10 @@ requirement until a migration and both signed exports have been verified.
   public and in-app policy availability, legal/store disclosure review,
   retention/backup handling and authenticated deletion/support.
 - [ ] Define customer-support flows for a missing purchase, duplicate grant,
-  account recovery, refund, abuse report, and outage. Give support a safe way
-  to inspect ledger entries without exposing tokens or an admin key to the
-  client.
+  account recovery, refund, abuse report, and outage. The safe ledger lookup
+  is built (`GET /admin/support/player`, 2026-10-28) and a draft playbook is
+  in [store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md); adopt it and set
+  up the support inbox.
 
 ### 2. Store commerce and ledger safety
 

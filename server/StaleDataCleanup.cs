@@ -123,6 +123,7 @@ public class StaleDataCleanup : BackgroundService
         }
 
         totalRemoved += AccountDeletion.PurgeDeletedSessions(conn);
+        totalRemoved += SessionAuth.PurgeEndedSessions(conn, now);
 
         return totalRemoved;
     }

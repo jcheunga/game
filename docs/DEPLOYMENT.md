@@ -148,6 +148,31 @@ ledger and active authentication sessions unchanged.
   the prior application version only after preserving the current database.
 - Rotate the admin key and store credentials through the secret files, then
   rerun `./deploy.sh`. Treat a leaked key as an incident and rotate it promptly.
+- The server deletes each player session record a week after it expires or
+  is signed out, along with stale rooms, telemetry, analytics and crash
+  reports (`StaleDataCleanup`, every 15 minutes).
+
+### Looking up a player for support
+
+`GET /admin/support/player` shows what a player bought, what their server
+wallet holds and why it changed. Find the player by their player ID (Settings
+→ Account → Player ID in the game), or by a store order or transaction ID when
+that is all they have:
+
+```bash
+curl -fsS -H "X-Admin-Api-Key: $(cat secrets/admin-api-key)" "https://<domain>/admin/support/player?profileId=CVY-0123456789"
+curl -fsS -H "X-Admin-Api-Key: $(cat secrets/admin-api-key)" "https://<domain>/admin/support/player?transactionId=GPA.1234-5678-9012-34567"
+```
+
+The answer lists the player's nickname, the names of their linked sign-ins,
+active sessions and when they were last seen, the wallet balance, every
+purchase with its store, transaction ID, credit and status, the latest 100
+wallet ledger entries, refund adjustments (with whether the device has applied
+them) and the cloud save's version, time and size. It never includes session
+tokens, store receipts or sign-in identifiers such as email addresses, so it
+can be pasted into a support ticket. A deleted account's purchases appear
+under their `DELETED-` pseudonym with no player. To refund or reinstate a
+purchase, use `POST /admin/refunds` (see [Refunds](#refunds)).
 
 ## Refunds
 
@@ -785,6 +810,9 @@ recover paid currency after losing the device. The game also
 does not yet connect its battle simulation to the authenticated WebSocket
 relay; keep internet rooms in closed testing until that client transport and
 real-device latency/reconnect testing are complete.
+
+Scripts for the restore drill, health alerts and a load test of the deployed
+API are in [server/ops](../server/ops/README.md).
 
 Two API replicas improve capacity and remove a single application process as a
 failure point, while the managed database removes the local database volume as

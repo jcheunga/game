@@ -13,6 +13,8 @@ public static class SessionAuth
 {
     private const int SessionLifetimeDays = 30;
     private const int TokenByteCount = 32;
+    // An ended session stays a week, so support can see why a device was signed out, then goes.
+    private const long EndedSessionRetentionSeconds = 7L * 24 * 3600;
 
     public sealed record Session(string ProfileId, string SessionId, long ExpiresAtUnixSeconds);
 
@@ -114,6 +116,21 @@ public static class SessionAuth
         await touch.ExecuteNonQueryAsync(request.HttpContext.RequestAborted);
 
         return new Session(profileId, sessionId, expiresAt);
+    }
+
+    /// <summary>
+    /// Deletes sessions that expired or were signed out more than a week before <paramref name="now"/>.
+    /// They can no longer authorize anything, and the privacy policy promises not to keep them.
+    /// </summary>
+    public static int PurgeEndedSessions(DbConnection conn, long now)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            DELETE FROM auth_sessions
+            WHERE expires_at < @cutoff OR (revoked_at > 0 AND revoked_at < @cutoff)
+        """;
+        cmd.Parameters.AddWithValue("@cutoff", now - EndedSessionRetentionSeconds);
+        return cmd.ExecuteNonQuery();
     }
 
     public static bool PlayerExists(DbConnection conn, string profileId)

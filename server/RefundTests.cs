@@ -621,6 +621,42 @@ public static partial class ServerTests
         return (response.StatusCode, json.RootElement.Clone());
     }
 
+    private static async Task TestSupportLookup(HttpClient client)
+    {
+        const string profile = "TEST-SUPPORT-LOOKUP";
+        var purchaseId = await BuyForRefund(client, profile, "gold_pouch", "stripe", "cs_test_support_lookup", "receipt-secret-support-lookup");
+
+        async Task<(HttpStatusCode Status, string Text)> Lookup(string query, bool authorized = true)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/admin/support/player?" + query);
+            if (authorized) request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        Assert((await Lookup($"profileId={profile}", authorized: false)).Status == HttpStatusCode.Unauthorized, "expected the lookup to need the admin key");
+        Assert((await Lookup("")).Status == HttpStatusCode.BadRequest, "expected a lookup with no player or transaction to be refused");
+        Assert((await Lookup("transactionId=GPA.NOPE")).Status == HttpStatusCode.NotFound, "expected an unknown transaction to be reported");
+
+        var byProfile = await Lookup($"profileId={profile}");
+        var body = JsonDocument.Parse(byProfile.Text).RootElement;
+        var purchase = body.GetProperty("purchases").EnumerateArray().Single();
+        Assert(byProfile.Status == HttpStatusCode.OK && purchase.GetProperty("purchaseId").GetString() == purchaseId &&
+            purchase.GetProperty("transactionId").GetString() == "cs_test_support_lookup" && purchase.GetProperty("status").GetString() == "validated",
+            "expected the lookup to list the player's purchase");
+        Assert(body.GetProperty("wallet").GetProperty("gold").GetInt64() == LedgerSum(profile, "gold") &&
+            body.GetProperty("ledger").EnumerateArray().Any(entry => entry.GetProperty("purchaseId").GetString() == purchaseId),
+            "expected the lookup to show the wallet and the ledger entry behind it");
+        Assert(body.GetProperty("activeSessions").GetInt64() >= 1, "expected the lookup to count the player's live sessions");
+        Assert(!byProfile.Text.Contains("receipt-secret-support-lookup") && !byProfile.Text.Contains("token_hash") && !byProfile.Text.Contains("credential"),
+            "expected the lookup to leave out receipts, session hashes and sign-in credentials");
+
+        var byTransaction = await Lookup("transactionId=cs_test_support_lookup");
+        Assert(byTransaction.Status == HttpStatusCode.OK &&
+            JsonDocument.Parse(byTransaction.Text).RootElement.GetProperty("profileId").GetString() == profile,
+            "expected a store transaction ID to find the player");
+    }
+
     private static async Task TestAdminRefund(HttpClient client)
     {
         const string profile = "TEST-REFUND-ADMIN";

@@ -34,7 +34,7 @@
           <tr>
             <td>Player ID and sessions</td>
             <td>A random ID that the game creates the first time it runs. It looks like <code>CVY-</code> followed by letters and numbers, or <code>ACC-</code> for an account first created at sign-in. When the game can reach our server, it registers this ID with your nickname and our server issues a sign-in session, even if you play as a guest. The game sends your player ID with every request to our server. For each session we store a one-way hash of its token (never the token itself), and when it was created, last used, expires or was ended. We use them to run online features and keep your progress and purchases attached to you.</td>
-            <td>The player ID is kept until you delete your account. A session stops working after 30 days, or earlier when you sign out, the game replaces it or you delete your account. Its record stays with your player ID until you delete your account. After a deletion we keep only a one-way hash of each session that was still active, for 31 days, so a repeated deletion request gets the same answer.</td>
+            <td>The player ID is kept until you delete your account. A session stops working after 30 days, or earlier when you sign out, the game replaces it or you delete your account. Its record is deleted a week after it stops working, or sooner if you delete your account. After a deletion we keep only a one-way hash of each session that was still active, for 31 days, so a repeated deletion request gets the same answer.</td>
           </tr>
           <tr>
             <td>Sign-in accounts <em>(optional)</em></td>

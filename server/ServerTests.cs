@@ -111,12 +111,14 @@ public static partial class ServerTests
                 ("AppleConsumptionRequestSkipsAndFailures", () => TestAppleConsumptionRequestSkipsAndFailures(client)),
                 ("RefundLargerThanBalance", () => TestRefundLargerThanBalance(client)),
                 ("AdminRefund", () => TestAdminRefund(client)),
+                ("SupportLookup", () => TestSupportLookup(client)),
                 ("GoogleVoidedPurchases", () => TestGoogleVoidedPurchases(client)),
                 ("RefundLedgerMigration", TestRefundLedgerMigration),
 
                 // ── Validation & edge case tests ──
                 ("PlayerProfile_EmptyId", () => TestPlayerProfile_EmptyId(client)),
                 ("SessionRejectsProfileHijack", () => TestSessionRejectsProfileHijack(client)),
+                ("EndedSessionsArePurged", TestEndedSessionsArePurged),
                 ("ChallengeSyncRejectsSessionlessProfile", () => TestChallengeSyncRejectsSessionlessProfile(client)),
                 ("AnalyticsRejectsSessionlessProfile", () => TestAnalyticsRejectsSessionlessProfile(client)),
                 ("ChallengeSync_EmptyBatch", () => TestChallengeSync_EmptyBatch(client)),
@@ -237,6 +239,7 @@ public static partial class ServerTests
                     endpoints.MapGet("/wallet/adjustments", PurchaseRefunds.List);
                     endpoints.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
                     endpoints.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
+                    endpoints.MapGet("/admin/support/player", SupportLookup.AdminPlayer);
                     endpoints.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
                     endpoints.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
                     endpoints.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);
@@ -1373,6 +1376,37 @@ public static partial class ServerTests
         message.Content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await client.SendAsync(message);
         Assert(response.StatusCode == HttpStatusCode.Unauthorized, "expected unauthenticated profile claim to be rejected");
+    }
+
+    private static Task TestEndedSessionsArePurged()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        const long day = 24 * 3600;
+        // (session, expires_at, revoked_at): only sessions ended more than a week ago go.
+        (string Id, long Expires, long Revoked)[] sessions =
+        [
+            ("SES-PURGE-ACTIVE", now + 20 * day, 0),
+            ("SES-PURGE-EXPIRED-RECENTLY", now - 2 * day, 0),
+            ("SES-PURGE-EXPIRED-LONG-AGO", now - 8 * day, 0),
+            ("SES-PURGE-SIGNED-OUT-RECENTLY", now + 20 * day, now - 2 * day),
+            ("SES-PURGE-SIGNED-OUT-LONG-AGO", now + 20 * day, now - 8 * day),
+        ];
+        foreach (var (id, expires, revoked) in sessions)
+        {
+            DbScalar("INSERT INTO auth_sessions (session_id, profile_id, token_hash, created_at, expires_at, revoked_at, last_seen_at) " +
+                     "VALUES (@id, 'TEST-PURGE', @hash, @created, @expires, @revoked, @created)",
+                ("@id", id), ("@hash", "hash-" + id), ("@created", now - 40 * day), ("@expires", expires), ("@revoked", revoked));
+        }
+
+        using (var conn = Database.Open()) SessionAuth.PurgeEndedSessions(conn, now);
+
+        bool Kept(string id) => DbCount("SELECT COUNT(*) FROM auth_sessions WHERE session_id = @id", ("@id", id)) == 1;
+        Assert(Kept("SES-PURGE-ACTIVE"), "An active session is kept");
+        Assert(Kept("SES-PURGE-EXPIRED-RECENTLY") && Kept("SES-PURGE-SIGNED-OUT-RECENTLY"), "Sessions that ended within the week are kept for support");
+        Assert(!Kept("SES-PURGE-EXPIRED-LONG-AGO"), "A session that expired over a week ago is deleted");
+        Assert(!Kept("SES-PURGE-SIGNED-OUT-LONG-AGO"), "A session signed out over a week ago is deleted");
+        DbScalar("DELETE FROM auth_sessions WHERE profile_id = 'TEST-PURGE'");
+        return Task.CompletedTask;
     }
 
     private static async Task TestChallengeSyncRejectsSessionlessProfile(HttpClient client)

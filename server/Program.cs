@@ -152,6 +152,7 @@ app.MapGet("/wallet", Endpoints.Wallet);
 app.MapGet("/wallet/adjustments", PurchaseRefunds.List);
 app.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
 app.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
+app.MapGet("/admin/support/player", SupportLookup.AdminPlayer);
 app.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
 app.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
 app.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);

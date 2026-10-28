@@ -103,21 +103,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The Dockerfile copies shared game sources, so it builds from the repo root.
       - name: Build Docker image
-        run: docker build -t crownroad-server:latest .
+        run: docker build --file Dockerfile --tag crownroad-server:latest ..
 
+      # Production refuses to start without a password-protected Redis, and /health checks it.
       - name: Verify health endpoint
         run: |
           docker network create crownroad-ci
-          trap 'docker rm -f crownroad-test crownroad-postgres-test >/dev/null 2>&1 || true; docker network rm crownroad-ci >/dev/null 2>&1 || true' EXIT
+          trap 'docker rm -f crownroad-test crownroad-postgres-test crownroad-redis-test >/dev/null 2>&1 || true; docker network rm crownroad-ci >/dev/null 2>&1 || true' EXIT
+          redis_password="$(openssl rand -hex 24)"
+          printf '%s' "$redis_password" > "$RUNNER_TEMP/redis-password"
+          chmod 644 "$RUNNER_TEMP/redis-password"
           docker run -d --name crownroad-postgres-test --network crownroad-ci \
             -e POSTGRES_DB=crownroad -e POSTGRES_USER=crownroad -e POSTGRES_PASSWORD=crownroad-ci-password \
             postgres:17-alpine
+          docker run -d --name crownroad-redis-test --network crownroad-ci \
+            redis:7.4-alpine redis-server --requirepass "$redis_password"
           until docker exec crownroad-postgres-test pg_isready -U crownroad -d crownroad; do sleep 1; done
           docker run -d --name crownroad-test --network crownroad-ci -p 8080:8080 \
             -e ASPNETCORE_ENVIRONMENT=Production \
             -e AllowedOrigins=https://app.example.invalid \
             -e 'ConnectionStrings__Crownroad=Host=crownroad-postgres-test;Port=5432;Database=crownroad;Username=crownroad;Password=crownroad-ci-password;Pooling=false' \
+            -e Redis__Configuration=crownroad-redis-test:6379,abortConnect=false \
+            -e REDIS_PASSWORD_FILE=/run/secrets/redis_password \
+            -v "$RUNNER_TEMP/redis-password:/run/secrets/redis_password:ro" \
             crownroad-server:latest
-          sleep 3
-          curl -sf http://localhost:8080/health | grep -q healthy
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health | grep -q '"status":"healthy"'; then exit 0; fi
+            sleep 2
+          done
+          curl -s http://localhost:8080/health || true
+          docker logs crownroad-test
+          exit 1

@@ -1,0 +1,20 @@
+# Runs server/ops/watch.sh once. Started every minute by crownroad-watch.timer.
+# Install (as root, after editing User and the paths):
+#   cp crownroad-watch.service crownroad-watch.timer /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now crownroad-watch.timer
+[Unit]
+Description=Crownroad health alerts (server/ops/watch.sh)
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# The deployment account; it must be in the docker group to read container
+# state and Caddy's access log.
+User=deploy
+ExecStart=/home/deploy/crownroad/server/ops/watch.sh --config /etc/crownroad-watch.env
+# 1 = a warning, 2 = a critical problem. Alerts already went to the webhook,
+# so these are not failures of the unit itself.
+SuccessExitStatus=1 2
+TimeoutStartSec=120
+Nice=10

@@ -1,0 +1,6 @@
+# Local settings hold the alert webhook URL (a secret) and database URLs.
+watch.env
+# Restore drill dumps and their counts hold players' personal data.
+*.dump
+*.dump.counts
+drill-dumps/

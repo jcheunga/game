@@ -131,7 +131,7 @@ godot --headless --path . --export-release "iOS" builds/ios/crownroad.ipa
   - Select a site to open its floating panel; close it to see the unobstructed map
   - Defeat the zone's nine leaders to open its boss, and the boss to reveal the next zone. The pager shows one zone at a time
   - Bottom tabs: `Warband`, `Spells`, `Upgrades`, `Achievements`, `Codex` and `More`
-  - `More` holds the Adventure, Caravan and Community destinations, `Account`, `Player profile` and `Quit game`
+  - `More` holds the Adventure, Caravan and Community destinations, `Player profile` and `Quit game`; sign-in is under Settings → `Account`
   - See [home map layout and verification](docs/HOME_MAP_UI.md) and [adventure map](docs/ADVENTURE_MAP.md)
 - Settings: tabs for `Sound` (music, effects, ambience, mute), `Gameplay` (caravan name, tutorial hints,
   reduced motion, high contrast, FPS counter, language, difficulty), `Online` (provider, endpoint, profile

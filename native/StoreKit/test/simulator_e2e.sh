@@ -62,7 +62,11 @@ start = text.index('name="iOS"')
 head, ios = text[:start], text[start:]
 ios = ios.replace('application/app_store_team_id=""', 'application/app_store_team_id="ABCDE12345"', 1)
 ios = ios.replace('scripts/tests/*,scenes/tests/*,', '', 1)
-ios = ios.replace('.options]\n', '.options]\n\napplication/export_project_only=true\n', 1)
+# Godot 4.6.1's editor writes the option itself, and a later line wins over one added at the top.
+if 'application/export_project_only=' in ios:
+    ios = ios.replace('application/export_project_only=false', 'application/export_project_only=true', 1)
+else:
+    ios = ios.replace('.options]\n', '.options]\n\napplication/export_project_only=true\n', 1)
 open(path, "w", encoding="utf-8").write(head + ios)
 EOF
 godot --headless --path "$root" --export-debug "iOS" "$work/export/crownroad.ipa" > "$work/export.log" 2>&1 \

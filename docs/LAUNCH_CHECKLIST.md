@@ -29,6 +29,16 @@ Already done and tested locally (2026-10-17):
   transaction ID at `GET /admin/support/player` (see
   [DEPLOYMENT.md](DEPLOYMENT.md#looking-up-a-player-for-support)). The iOS
   preset is fixed (next item). Both CI workflows pass again.
+- Held back for 1.0 (2026-10-28, `scripts/core/LaunchFeatures.cs`):
+  internet rooms (the Multiplayer screen shows Records, New code and Copy
+  code in their place) and the season pass's premium track (nothing sells
+  it). On iPhone the Account panel offers Game Center, email and guest play;
+  Apple and Google sign-in, which leave the game for Safari, show only on
+  Android and desktop, and only when the server offers them. Leaderboards
+  show an anonymous tag per board instead of player IDs. The rate limiter
+  gives a bearer token its own allowance only after it passes a session
+  check, and the shop marks the Adventurer's Kit bought when the server's
+  history says so.
 - The iOS preset, set in the file with the editor closed (2026-10-28): Game
   Center entitlement and plugin on, StoreKit plugin on, minimum iOS 15.0, the
   Android preset's exclude filter, the privacy manifest's collected data types,
@@ -202,7 +212,12 @@ See [DEPLOYMENT.md](DEPLOYMENT.md#before-the-first-deploy).
 - [ ] Fill in the App Store team ID in the iOS preset (it is blank) and set up
   a provisioning profile. Game Center only works in a signed build.
 
-## 8. Sign in with Apple
+## 8. Sign in with Apple (optional)
+
+The iPhone no longer shows Sign in with Apple (it left the game for Safari),
+so this section is needed only to offer it on Android, and the Android button
+shows only when the server reports it configured. Skip the whole section for
+1.0 unless you want it there.
 
 - [ ] Turn on Sign in with Apple for the App ID.
 - [ ] Create a **Services ID** (for example `com.crownroad.game.signin`). Add
@@ -389,19 +404,20 @@ handling of every outcome passes on desktop
   meets it, with sources and licences, is in
   [art/signin/README.md](../art/signin/README.md); `UiReviewSmoke --account`
   measures them.
-- [ ] Add Apple's official Sign in with Apple logo and Game Center icon. They
-  need Apple Developer Program membership and accepting Apple's artwork
-  licences, so the project owner downloads them from
+- [ ] Add Apple's official Game Center icon. It needs Apple Developer
+  Program membership and accepting Apple's artwork licences, so the project
+  owner downloads it from
   [Apple Design Resources](https://developer.apple.com/design/resources/).
-  Which files to pick and the one command that wires them in are under
-  "Adding Apple's art" in [art/signin/README.md](../art/signin/README.md).
-  Until then both buttons show an empty logo box, which App Review would
-  reject.
+  Which file to pick and the one command that wires it in are under "Adding
+  Apple's art" in [art/signin/README.md](../art/signin/README.md). Until then
+  the Game Center button shows an empty logo box, which App Review would
+  reject. The Sign in with Apple logo is needed only if section 8 is set up
+  for Android.
 - [x] Build account deletion. Apple requires it, and it must revoke the
   deleted player's Apple sign-in tokens, which means storing them first.
   Done: see "Already done" at the top.
-- [ ] Once Sign in with Apple works on the live server, sign in with Apple on
-  a test account, delete it in Settings, and check that Crownroad no longer
+- [ ] If section 8 is set up: once Sign in with Apple works on the live
+  server, sign in with Apple on a test account, delete it in Settings, and check that Crownroad no longer
   appears under Sign in with Apple in the iPhone's Apple ID settings. Only
   Apple's real endpoint proves the revocation.
 - [ ] Set how long the PostgreSQL provider keeps backups, and give that period

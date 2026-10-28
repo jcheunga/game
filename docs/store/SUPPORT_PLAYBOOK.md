@@ -4,8 +4,11 @@ Step-by-step procedures for player support after launch. Written on
 2026-10-28 from the server code (`server/*.cs`), `docs/DEPLOYMENT.md` and
 `docs/LAUNCH_CHECKLIST.md`. The support lookup, `GET /admin/support/player`,
 was added the same day (`server/SupportLookup.cs`, `dacc1ebb`), followed by
-`POST /admin/support/delete-account` (uncommitted at the time). Field names
-below are from that version. Check them against the live response.
+`POST /admin/support/delete-account` (uncommitted at the time). It also
+reflects the 1.0 launch decisions made that day: internet rooms hidden,
+anonymous leaderboard tags, and Game Center and email as the iPhone's
+sign-in options. Field names below are from that version. Check them against
+the live response.
 
 Placeholders: `[support email]`, `[api domain]` (for example
 `api.crownroad.game`), `[status channel]`, `[support database role]`.
@@ -92,9 +95,10 @@ it again.
 
 ### Proving who someone is
 
-A player ID alone isn't proof: challenge and daily boards show player IDs to
-anyone. Before you delete, export or explain account details, confirm it with
-one of these:
+A player ID alone isn't proof. Leaderboards show anonymous tags rather than
+player IDs, but players copy and share their ID, for example to add friends.
+Before you delete, export or explain account details, confirm it with one of
+these:
 
 - **Email sign-in:** the request comes from the address linked to the
   account. Check it with SQL; the lookup doesn't show addresses:
@@ -134,6 +138,7 @@ The player paid but the gold or food didn't arrive.
    | `status` `refunded` | The store refunded it, and the server took it back | Explain. See [Refund](#refund) |
    | The purchase, under a different player ID | The store ties each purchase to the player ID that bought it. A guest who later signed in to another account, or a second account, leaves its purchases behind | It can't be moved. Explain which ID holds it. If it's a `DELETED-…` ID, that account was deleted. Offer a refund (step 4) |
    | A `starter_kit` purchase, `validated`, but the player says no troop came | The Adventurer's Kit recruits the troop its card named at purchase: the first troop the player didn't own, by unlock stage (`GameState.NextKitUnitId`). A player who owned every troop saw "Every troop recruited" and got gold and food only | Ask which troop the card named, and have the player look for it in the Warband tab, where it is already recruited |
+   | The kit shows **Purchased** on a device where the player never bought it | The storehouse found a `starter_kit` purchase in this account's server history: the account bought it on another device, or before an older save was restored. The check only marks the kit bought; its gold, food and troop went to the save that bought it | Explain. If that save is lost, the purchase is part of a lost save: see [Account recovery](#account-recovery) |
    | Nothing | The server never verified the payment | Ask whether the store shows it as completed. A Google payment may be pending (the shop says "Not verified yet"), and an Ask to Buy request waits for approval. Then search the server log (below). If it's completed and step 1 doesn't bring it, go to step 4 |
 
    Search the log around the purchase time:
@@ -173,7 +178,7 @@ enough. Today the only lever is the store refund.
    | Case | What the lookup shows | Do this |
    | --- | --- | --- |
    | Charged twice for two packs | Two purchases with different `transactionId` values, both `validated` | Both were delivered. If one was a mistake, refund it (Google: Play Console; Apple: reportaproblem.apple.com). The server takes that pack's currency back automatically, never below zero |
-   | Adventurer's Kit paid twice | One `starter_kit` purchase. The second payment has no purchase: the server refused it (`already_purchased` in the log) | Google: the game never acknowledges the second payment, and Google refunds it within 3 days. App Store: the game leaves it unfinished, and Apple keeps the money until the player asks at reportaproblem.apple.com. After that refund the game finishes the transaction by itself |
+   | Adventurer's Kit paid twice | One `starter_kit` purchase. The second payment has no purchase: the server refused it (`already_purchased` in the log) | This should be rare: each time the storehouse opens, it checks the server's purchase history and marks the kit bought if this account bought it before, so the kit isn't offered again (`SyncOneTimePurchasesFromServerAsync`). A second payment means that check couldn't reach the server. Google: the game never acknowledges the second payment, and Google refunds it within 3 days. App Store: the game leaves it unfinished, and Apple keeps the money until the player asks at reportaproblem.apple.com. After that refund the game finishes the transaction by itself |
    | One payment, currency arrived twice | One purchase | The server records each store transaction once, and the device applies each purchase ID once, even across restores (`AppliedPurchaseIds` is kept in the save and the cloud save). Check the **Purchase info** tab's "Purchases made" count against the purchases list. Bonus amounts often look like a double grant: a Chest of Gold is 2,000 plus 200 |
    | One transaction on two players | Not possible | The store ties each purchase to a hash of the player ID, and the server answers `transaction_assigned` to anyone else |
 
@@ -189,9 +194,12 @@ enough. Today the only lever is the store refund.
 1. Look up the player ID if they have it. `signInProviders` shows which
    methods the account uses. Tell the player only the method names.
 2. On the new device: Settings → Account → **Account** → **Manage** → the
-   same method (**Continue with Game Center**, **Continue with Play Games**,
-   **Continue with Apple**, **Continue with Google**, or the email code). The
-   game downloads that account's cloud save.
+   same method. The game downloads that account's cloud save. What each
+   device offers:
+   - iPhone and iPad: **Continue with Game Center** and the email code.
+   - Android: **Continue with Play Games**, the email code, and **Continue
+     with Google** or **Continue with Apple** when the server offers them.
+   - Desktop: the email code, and Google or Apple when offered.
 3. Progress since the last backup is lost. The cloud save uploads
    automatically after each won campaign stage, and when the player taps
    Settings → Account → Cloud save → **Upload**. Compare
@@ -200,6 +208,13 @@ enough. Today the only lever is the store refund.
    [missing purchase](#missing-purchase), step 4.
 4. Email codes expire after 10 minutes and allow five tries. Ask the player to
    check spam.
+5. **Moving to a platform without the account's method**, for example from
+   Android to an iPhone with an account that uses only Google, Apple or Play
+   Games: the iPhone can't sign in to it. If the old device still works, the
+   player signs in there and adds the email code from Settings → Account →
+   **Account** → **Manage** (it links to the signed-in account), then uses
+   email on the new device. If the old device is gone, support can't add a
+   method to the account. Explain, and treat recent purchases as in step 3.
 
 ### Lost device, guest only
 
@@ -309,10 +324,18 @@ amounts.
 
 ## Abuse report about a nickname
 
-Reports arrive by email, or from a room: a player picks **Offensive name**
-(or Harassment, Room abuse, Suspicious score) and taps **Submit report**. Room
-reports are kept 90 days in `room_reports`. Nicknames appear to other
-players only in internet rooms.
+In 1.0 no other player sees a nickname. Internet rooms, the only place that
+showed them, are hidden (`LaunchFeatures.InternetRooms`), and leaderboards
+show an anonymous tag per board ("Player" and six hex characters). So a
+nickname report can only arrive by email, about something the player saw
+outside the game, and the in-room **Submit report** control isn't reachable.
+Reply that other players can't see nicknames in this version, and keep the
+case on file.
+
+The steps below are for when rooms are turned on. Reports then arrive by
+email, or from a room: a player picks **Offensive name** (or Harassment, Room
+abuse, Suspicious score) and taps **Submit report**. Room reports are kept 90
+days in `room_reports`.
 
 1. **Collect:** the reported player's ID or nickname, the room and time if
    known, and the reporter's player ID.
@@ -361,6 +384,15 @@ enforcement of `can_join_rooms`, and a block control.
 Players report "Could not reach the server.", "The server took too long to
 answer.", "Unable to establish a secure store session: …" or "Sign-in needs
 to be enabled on the game server.". The campaign keeps working offline.
+
+Rate limits can look like a partial outage: answers of HTTP 429 with a
+`Retry-After` header. A session's requests get their own allowance once its
+token has passed a session check on that API replica; until then, and for
+unknown tokens, requests count against the caller's IP. Each replica keeps
+that list in memory, so right after a restart or deploy, many players behind
+one carrier address can briefly share a per-IP allowance. It clears as each
+session is checked again. `/health` has its own allowance of 600 a minute
+per IP, so monitors polling it don't eat into players' limits.
 
 1. **Confirm.**
 
@@ -510,7 +542,7 @@ The arena, raid, friends and guild tables hold only rows from before
 | --- | --- | --- |
 | No operator grant | A paid pack that can't be delivered can only be refunded | An admin "make good" that creates a wallet adjustment the device applies, like a reversed refund |
 | No Apple order ID lookup | An Apple receipt's order ID can't be matched directly | Call the App Store Server API's Look Up Order ID from the lookup endpoint |
-| No moderation tools | Offensive nicknames can't be renamed or blocked | Server name filter, admin rename, enforce `can_join_rooms`, a block control |
+| No moderation tools | Offensive nicknames can't be renamed or blocked. No one else sees them in 1.0, so this matters once rooms are turned on | Server name filter, admin rename, enforce `can_join_rooms`, a block control |
 | Guest progress can't move | A guest who loses the device loses everything, purchases included | Prompt guests to sign in after their first purchase |
 | No restore for local backups | Progress replaced by signing in to another account stays in a file the player can't reach | A restore choice in the Account panel |
 | No in-game announcements | Players learn of an outage only from errors | Read `/config/live`'s `announcement` in the game |

@@ -4,7 +4,9 @@ Answers for Apple's age rating questionnaire, Google Play's IARC content
 rating questionnaire, Play's target audience and its other App content
 declarations. Written on 2026-10-28 from the game's code and data, and
 updated the same day once the Adventurer's Kit's troop became fixed
-(`GameState.NextKitUnitId`, uncommitted at the time). The
+(`GameState.NextKitUnitId`) and the 1.0 launch decisions were made: internet
+rooms hidden (`LaunchFeatures.InternetRooms`), and anonymous tags on public
+leaderboards (`LeaderboardTag`). Both were uncommitted at the time. The
 questionnaires change, so **[Check]** marks an answer whose exact console
 wording couldn't be confirmed from the repo. This is a draft for your
 judgement, not legal advice.
@@ -21,17 +23,17 @@ Each answer below rests on these facts:
 | Horror themes | Risen dead, ghouls, liches, plague creatures, ossuaries and witch circles, in a painted medieval style. No jump scares, torture or body horror | `THEME_BIBLE.md` |
 | Language | None crude. Battle shouts such as "For the caravan!" and "RAAAGH!" | `DeployQuote` in `data/units.json`, `data/locale/en.json` |
 | Sexual content, drugs, alcohol | None | Text search of `data/` and the catalogs |
-| Player-written text | The nickname only: 3 to 18 letters, numbers, spaces, hyphens or underscores. No word filter on the device or the server. Guild names aren't player-written (a local guild is always "New Warband"). Room titles are made from the host's nickname ("<nickname> Relay"). The friends list stores typed player IDs on the device only | `GameState.PlayerLevel.cs`, `server/Endpoints.cs`, `GuildMenu.cs`, `FriendsMenu.cs` |
-| Where other players see a nickname | Only in internet rooms: the room list, room titles and room scoreboards. Challenge and daily boards show player IDs, not nicknames. The Rankings screen shows only the player's own row ("Rankings are offline"). The first-run prompt says "Other players see it on rankings and in rooms", which overstates it | `server/Endpoints.cs`, `MultiplayerMenu.cs`, `LeaderboardMenu.cs`, `NicknameDialog.cs` |
-| Chat or messaging | None. Rooms have ready, launch, leave and report controls, no messages | `MultiplayerMenu.cs` |
-| Reporting | In a room: a reason (Suspicious score, Offensive name, Harassment, Room abuse) and **Submit report**. Stored 90 days in `room_reports`. No block control | `OnlineRoomReportReasonCatalog.cs`, `server/StaleDataCleanup.cs` |
+| Player-written text | The nickname only: 3 to 18 letters, numbers, spaces, hyphens or underscores. No word filter on the device or the server. Guild names aren't player-written (a local guild is always "New Warband"). The friends list stores typed player IDs on the device only | `GameState.PlayerLevel.cs`, `GuildMenu.cs`, `FriendsMenu.cs` |
+| Where other players see a nickname | **Nowhere in 1.0.** Internet rooms, the only place that showed nicknames, are hidden: the Multiplayer screen shows Records, **New code** and **Copy code** instead of the room list, **Match** and **Host**. Challenge and daily leaderboards show an anonymous tag per board, "Player" and six hex characters from a hash of the player ID and the board, and "You" for the player's own entry, never a player ID or nickname. The Rankings screen shows only the player's own row ("Rankings are offline"). The nickname is still sent to the server and kept there | `LaunchFeatures.cs`, `MultiplayerMenu.Royal.cs`, `LeaderboardTag.cs`, `LeaderboardMenu.cs` |
+| Chat or messaging | None | `MultiplayerMenu.cs` |
+| Reporting | None reachable in 1.0. The room report (**Submit report**, with reasons such as Offensive name) lives in the hidden rooms | `OnlineRoomReportReasonCatalog.cs`, `MultiplayerMenu.cs` |
 | Ads | None. No ad SDK and no advertising ID | `docs/STORE_PRIVACY_ANSWERS.md` |
 | Gambling or simulated gambling | None. No wagers, slot machines, card games or wheels | Search of `scripts/` |
 | Paid random items | **None.** The Adventurer's Kit (US$4.99) recruits a fixed troop: the first one the player doesn't own, by lowest unlock stage, then roster order. The card names it before **Buy** ("Recruits Militia" on a fresh save) | `NextKitUnitId` in `scripts/core/GameState.cs`, `StorePackCard.cs` |
 | Other random rewards | Free only: relic fusion (3 relics in, 1 random relic of the next rarity out, no currency), expedition relic drops (no cost to start), bounty templates. None is sold. The relics that go into a fusion can be crafted with shards and gold, so a player can reach a random relic through gold they bought. That indirect path is read as No below **[Legal]** | `TryFuseRelics`, `RelicForgeCatalog`, `ExpeditionCatalog`, `BountyBoardCatalog` |
 | Purchases | Ten packs of gold, food or both. Gold and food are also earned in play and can't be cashed out | `data/shop_products.json` |
-| Contests | Seeded challenge boards and a daily board with score tables (player IDs). Arena tiers against generated rivals on the device. Tower and Endless bests | `MultiplayerMenu.cs`, `ArenaCatalog.cs` |
-| Web access | None in the app. The system browser opens only Apple's and Google's sign-in pages, and three pages of our website from Settings → Account (**Privacy policy**, **Terms of use**, **Help and support**) | `AccountDialog.cs`, `SettingsMenu.cs`, `SiteLinks.cs` |
+| Contests | Seeded challenge boards and a daily board with score tables (anonymous tags). Arena tiers against generated rivals on the device. Tower and Endless bests | `MultiplayerMenu.cs`, `LeaderboardTag.cs`, `ArenaCatalog.cs` |
+| Web access | None in the app. The system browser opens three pages of our website from Settings → Account (**Privacy policy**, **Terms of use**, **Help and support**), and on Android and desktop only, Apple's and Google's sign-in pages. The iPhone has no browser sign-in | `SettingsMenu.cs`, `SiteLinks.cs`, `AccountDialog.cs` |
 | Location | Not used | `export_presets.cfg` permissions |
 
 ## Apple: age rating
@@ -52,8 +54,8 @@ from Apple's "Age ratings values and definitions" page (iOS 26 age ranges:
 
 | Question | Answer | Why |
 | --- | --- | --- |
-| Unrestricted web access | No | No in-app browser. The system browser opens only the sign-in pages and the website's privacy, terms and support pages |
-| User-generated content | **Depends on rooms.** No if internet rooms are hidden at launch. Yes if they are visible | Apple: "broad distribution of content created by users". The nickname is the only player-written text, and only rooms show it to others. Yes doesn't raise the rating, but brings guideline 1.2: a filter, a report tool, blocking and published contact details. The game has reporting only |
+| Unrestricted web access | No | No in-app browser. The system browser opens only the website's privacy, terms and support pages. On iPhone there is no browser sign-in |
+| User-generated content | **No** | Apple: "broad distribution of content created by users". The nickname is the only player-written text, and no other player sees it in 1.0. Turning rooms on later makes this Yes and brings guideline 1.2 (a filter, a report tool, blocking, published contact details) |
 | Messaging and chat | No | None |
 | Advertising | No | None |
 | Social media | No | None |
@@ -95,7 +97,7 @@ from Apple's "Age ratings values and definitions" page (iOS 26 age ranges:
 | Question | Answer | Why |
 | --- | --- | --- |
 | Simulated gambling | None | |
-| Contests | Infrequent | Challenge and daily boards are side modes. Frequent gives 13+, the same result |
+| Contests | Infrequent | Challenge and daily boards, with anonymous tags, are side modes. Frequent gives 13+, the same result |
 | Gambling | No | |
 | Loot boxes | **No** | Apple: "virtual containers that give players randomized virtual items for purchase". The Adventurer's Kit names its troop before purchase, and nothing random is sold |
 
@@ -167,7 +169,7 @@ exact wording in the console: IARC words them by topic, not as Apple does.
 
 | Question | Answer | Why |
 | --- | --- | --- |
-| Can users interact or exchange content? | **Depends on rooms.** No if internet rooms are hidden. Yes if visible | Rooms show nicknames and scores. No chat |
+| Can users interact or exchange content? | **No** | Internet rooms are hidden in 1.0. Leaderboards show anonymous tags. No chat, no shared content |
 | Does the app share the user's current location? | No | |
 | Does the app share personal information with third parties? | No | `docs/STORE_PRIVACY_ANSWERS.md` |
 | Digital purchases | Yes | Ten packs |
@@ -188,8 +190,8 @@ IARC sets each rating from the answers, so these are estimates:
 | ACB (Australia) | **M** (likely) | Frequent fantasy violence with blood. PG is possible if IARC reads the violence as mild |
 | Others (IARC generic) | **12+** | |
 
-Interactive elements shown on the listing: **In-Game Purchases**. Add
-**Users Interact** if rooms are visible.
+Interactive elements shown on the listing: **In-Game Purchases**. Turning
+rooms on later would add **Users Interact**, so update the questionnaire then.
 
 ## Google Play: target audience and content
 
@@ -211,9 +213,9 @@ policy**. For this game that would mean:
 2. **Children's privacy law** (COPPA in the US, GDPR's child provisions in
    Europe). Today every player, guests included, is registered on the server
    with a player ID and nickname as soon as the server answers
-   (`AccountSignIn.OnServerReachable`). The nickname is shown to others in
-   rooms, email sign-in collects an address, and analytics and crash reports
-   are offered. For a mixed audience the game would need a neutral age screen
+   (`AccountSignIn.OnServerReachable`). Email sign-in collects an address,
+   and analytics and crash reports are offered. Rooms, which would show the
+   nickname to others, are hidden in 1.0. For a mixed audience the game would need a neutral age screen
    and, for children, either verifiable parental consent or those features
    switched off.
 3. **SDKs.** Every SDK must be allowed in child-directed apps. **[Check]**
@@ -247,12 +249,16 @@ Not recommended for this release.
 
 ## Findings
 
-1. **Nicknames have no filter and no moderation tool.** There is no word
-   filter on the device or the server, no block control, and no operator tool
-   to rename or ban: the `players` table's `can_join_rooms` and related flags
-   are never checked, and the device sends its nickname again at each profile
-   sync, overwriting any server-side change. If rooms are visible at launch,
-   Apple's guideline 1.2 and IARC's "Users Interact" both apply. See
+1. **Nicknames have no filter and no moderation tool.** In 1.0 no other
+   player sees a nickname, so this doesn't affect the ratings above. It must
+   be fixed before rooms are turned on: there is no word filter on the device
+   or the server, no block control, and no operator tool to rename or ban.
+   The `players` table's `can_join_rooms` and related flags are never
+   checked, and the device sends its nickname again at each profile sync,
+   overwriting any server-side change. Turning rooms on also makes Apple's
+   user-generated content answer Yes and adds IARC's "Users Interact". See
    [SUPPORT_PLAYBOOK.md](SUPPORT_PLAYBOOK.md#abuse-report-about-a-nickname).
-2. **The first-run prompt overstates where nicknames appear.** "Other players
-   see it on rankings and in rooms": rankings never show other players.
+2. **The first-run prompt is now wrong.** "Other players see it on rankings
+   and in rooms" (`NicknameDialog.cs`): in 1.0 rankings show only the
+   player's own row, leaderboards show anonymous tags and rooms are hidden,
+   so no other player sees the nickname.

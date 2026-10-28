@@ -3,7 +3,9 @@
 Paste-ready listing text for Google Play and the App Store, written on
 2026-10-28 from main at `a7e1362b`, and updated the same day for the fixed
 Adventurer's Kit troop and the website fixes (uncommitted in the checkout at
-the time). Copy each field from its `text` block. The count beside each label
+the time), then for the launch decisions: internet rooms and the season
+pass's premium track hidden for 1.0, and Game Center and email as the iPhone's
+sign-in options. Copy each field from its `text` block. The count beside each label
 was measured by the script at the end of this file, not by eye. Rerun it after
 any edit.
 
@@ -33,17 +35,19 @@ Every number in the copy comes from the data files or the code:
 
 Left out on purpose:
 
-- **Live multiplayer.** Internet rooms stay in closed testing until the relay
-  is connected (`docs/DEPLOYMENT.md`, "Remaining public-launch blockers"). LAN
-  races are also left out.
+- **Live multiplayer.** Internet rooms are hidden in 1.0
+  (`LaunchFeatures.InternetRooms` in `scripts/core/LaunchFeatures.cs`). The
+  Multiplayer screen's first tab is Records instead. LAN races are also left
+  out.
 - **Guilds, friends, the arena and the weekly raid.** They run on the device
   only. The arena's rivals are generated (`ArenaCatalog`), the guild is a
   local "New Warband" and friends are a local list, so none of them involve
   other players.
 - **Rankings.** The Rankings screen always shows "Rankings are offline"
   (`scripts/ui/LeaderboardMenu.cs`).
-- **The season pass.** Its premium track can't be unlocked. See the findings
-  at the end of this file.
+- **The season pass.** Its premium track is hidden in 1.0
+  (`LaunchFeatures.SeasonPremiumTrack`), leaving only the free track, so the
+  copy doesn't mention a pass.
 - **"Free".** The price isn't set in the repo. Add "free to play" only if the
   app is free to download.
 
@@ -62,7 +66,7 @@ Escort a war wagon through 100 lane-battle sieges against an undead host.
 ```
 
 <!-- field: play.full | limit: 4000 -->
-**Full description** · 2171 / 4000 characters
+**Full description** · 2164 / 4000 characters
 ```text
 The kingdom fell to the Rotbound Host. Its roads still stand.
 
@@ -93,7 +97,7 @@ MORE WAYS TO PLAY
 
 PLAY YOUR WAY
 • Play as a guest. No account needed
-• Sign in when you like, with Google Play Games, Google, Apple or an email code, to back up your progress and carry it to another device
+• Sign in when you like, with Google Play Games, Google or an email code, to back up your progress and carry it to another device
 • The campaign plays offline
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
@@ -108,6 +112,12 @@ Available in English.
 ```text
 The Lantern Caravan sets out: 100 stages in ten zones, 32 troops, 30 spells and 12 tactical tools, Endless and the Challenge Tower.
 ```
+
+The sign-in line names only what the Android build shows. **Continue with
+Google** and **Continue with Apple** appear only when the server reports them
+configured (`AccountDialog.cs`). Sign in with Apple is optional on Android, so
+it isn't named. If you set it up, the line can read "Google Play Games,
+Google, Apple or an email code". Drop "Google" if Google sign-in isn't set up.
 
 **Category:** Game → Strategy. Play allows one category.
 
@@ -139,7 +149,7 @@ Escort the Lantern Caravan's war wagon through 100 stages in ten zones. Send out
 ```
 
 <!-- field: apple.description | limit: 4000 -->
-**Description** · 2186 / 4000 characters
+**Description** · 2171 / 4000 characters
 ```text
 The kingdom fell to the Rotbound Host. Its roads still stand.
 
@@ -170,7 +180,7 @@ MORE WAYS TO PLAY
 
 PLAY YOUR WAY
 • Play as a guest. No account needed
-• Sign in when you like, with Game Center, Apple, Google or an email code, to back up your progress and carry it to another device
+• Sign in when you like, with Game Center or an email code, to back up your progress and carry it to another device
 • The campaign plays offline
 • Reduced motion, high contrast and larger text options
 • An original score, with music for each zone
@@ -529,11 +539,15 @@ The kingdom's granary: 460 food, of which 60 is a bonus. Food starts battles and
 - Type: **undecided** (`docs/LAUNCH_CHECKLIST.md`, section 1). The
   recommendation is consumable:
   - **Consumable** (what the game does today): Apple Consumable, Play
-    one-time product that the game consumes. A player can pay twice, for
-    example after restoring an old save. The server refuses the second grant
-    and the game leaves that purchase unfinished. Google refunds an
-    unacknowledged purchase after 3 days. Apple keeps the payment until the
-    player asks Apple for a refund.
+    one-time product that the game consumes. The storehouse checks the
+    server's purchase history each time it opens and marks the kit bought if
+    this account bought it before, on another device or before an older save
+    was restored (`GameState.SyncOneTimePurchasesFromServerAsync`). So a
+    player is offered the kit only once per account. A second payment can
+    still happen if the history check can't reach the server, for example
+    offline. Then the server refuses the second grant and the game leaves that
+    purchase unfinished. Google refunds an unacknowledged purchase after 3
+    days. Apple keeps the payment until the player asks Apple for a refund.
   - **Non-consumable:** Apple Non-Consumable, Play one-time product that the
     game acknowledges instead of consuming. The store then stops a second
     payment. This needs code: acknowledge rather than consume on Google, and
@@ -600,15 +614,7 @@ A mid-campaign bundle of 3,000 gold and 80 food. Gold pays for troops, spells an
 
 ## Findings that affect the listing
 
-1. **The season pass's Unlock premium button leads nowhere.** It opens the
-   Royal storehouse, but no product sells the premium pass and nothing in the
-   game sets it (`SetPremiumPass` has no caller). A reviewer who taps it
-   finds no way to buy it. Hide the button or the premium track for launch.
-2. **Internet rooms aren't hidden.** The multiplayer screen opens on its
-   Rooms board, with Match and Host, and nothing in the code turns it off.
-   The copy above doesn't mention them. If they stay in closed testing,
-   the release build needs a change to hide them.
-3. **Parts of the website are still out of date.** The hero numbers, the
+1. **Parts of the website are still out of date.** The hero numbers, the
    siege section and the support page's device-move answer are fixed. Still
    stale in `site/src/index.html`: the heading "Nineteen squads and ten
    battlefield rites"; the muster roll, which lists 19 squads with the old
@@ -620,6 +626,11 @@ A mid-campaign bundle of 3,000 gold and 80 food. Gold pays for troops, spells an
    out. The challenge share link (`https://crownroad.game/challenge/<code>`,
    `DeepLinkHandler`) still has no page on the site, so it shows the 404
    page.
+
+Resolved on 2026-10-28, in the working tree: the Adventurer's Kit's troop is
+fixed and named on its card; the season pass's premium track and its Unlock
+button are hidden; internet rooms are hidden, with Records, New code and Copy
+code in their place.
 
 ## How the counts were measured
 

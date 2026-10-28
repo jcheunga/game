@@ -4,7 +4,10 @@ The draft answers in [STORE_PRIVACY_ANSWERS.md](../STORE_PRIVACY_ANSWERS.md),
 turned into fill-ins for Google Play's Data safety form and Apple's App
 Privacy questionnaire, in the order each console asks. Then export
 compliance. Written on 2026-10-28 from that file, including its review items
-7, 11 and 13, which were done that day (`dacc1ebb`, `22490ed6`).
+7, 11 and 13, which were done that day (`dacc1ebb`, `22490ed6`), and item 3,
+settled the same day by the 1.0 launch decisions (uncommitted at the time):
+public leaderboards show anonymous tags, internet rooms are hidden, and the
+iPhone offers only Game Center and email sign-in.
 
 Markers:
 
@@ -29,7 +32,7 @@ Play Console → the app → **App content** (under Policy and programs) →
 | --- | --- | --- | --- |
 | 1 | Does your app collect or share any of the required user data types? | **Yes** | |
 | 2 | Is all of the user data collected by your app encrypted in transit? | **Yes** | HTTPS to the API, TLS from the server to Google, Apple and the mail service. **[Check]** the release build's `crownroad/network/api_base_url` starts with `https://` |
-| 3 | Which of the following methods of account creation does your app support? | **OAuth** and **Other** | OAuth: Google, Sign in with Apple. Other, described as: "Email with a one-time code, Google Play Games, and a guest profile the game creates automatically." **[Check]** the console's options |
+| 3 | Which of the following methods of account creation does your app support? | **OAuth** and **Other** | OAuth: Google, and Sign in with Apple if you set it up (it is optional and Android-only for 1.0). Each shows only when the server offers it. Other, described as: "Email with a one-time code, Google Play Games, and a guest profile the game creates automatically." **[Check]** the console's options |
 | 4 | Delete account URL | `https://crownroad.game/support#delete-data` | The page explains in-app deletion (Settings → Account → Delete account) and email for players who can't open the game |
 | 5 | Do you provide a way for users to request that some or all of their data is deleted, without requiring them to delete their account? | **No** | The game deletes at account level. Turning analytics or crash reports off stops new data but doesn't delete what was sent; the server deletes analytics after 30 days and crash reports after 90. If you decide support will take partial deletion requests by email, answer Yes. **[Check]** this question appears; older versions of the form asked only "Do you provide a way for users to request that their data is deleted?", which is **Yes** |
 | 6 | Independent security review (optional badge) | Skip | No review done |
@@ -47,7 +50,7 @@ Tick these, and nothing else:
 | Personal info | **User IDs** | Player ID; linked Google, Apple and Play Games IDs; session records |
 | Financial info | **Purchase history** | Purchases, refund records, paid-currency ledger |
 | App activity | **App interactions** | Opt-in analytics: session starts, stage starts and finishes |
-| App activity | **Other actions** | Challenge and daily results, achievements, online rooms, live race updates, player reports, cloud save, opt-in analytics events |
+| App activity | **Other actions** | Challenge and daily results, achievements, cloud save, opt-in analytics events. Online rooms, live race updates and room reports are also covered by the draft, but 1.0 sends none of them because rooms are hidden |
 | App info and performance | **Crash logs** | Opt-in crash reports |
 | Device or other IDs | **Device or other IDs**, Variant A only **[Item 4]** | The player ID, which is random per install, like an installation ID |
 
@@ -90,34 +93,32 @@ isn't declared because it isn't kept.
 
 | Type | 1. Collected or shared | 3. Required or optional | 4. Collection purposes |
 | --- | --- | --- | --- |
-| Name | Collected **[Item 3]** | Required. The nickname defaults to "Lantern" and is sent when the guest registers | App functionality, Account management |
+| Name | Collected | Required. The nickname defaults to "Lantern" and is sent when the guest registers | App functionality, Account management |
 | Email address | Collected | Optional | Account management |
-| User IDs | Collected **[Item 3]** | Required **[Item 2]** | App functionality, Account management, Fraud prevention, security and compliance, Analytics |
+| User IDs | Collected | Required **[Item 2]** | App functionality, Account management, Fraud prevention, security and compliance, Analytics |
 | Purchase history | Collected | Optional (only players who buy) | App functionality, Fraud prevention, security and compliance |
 | App interactions | Collected | Optional (off until the player opts in) | Analytics |
 | Other actions | Collected | Required | App functionality, Analytics, Fraud prevention, security and compliance |
 | Crash logs | Collected | Optional (off until the player opts in) | App functionality, Analytics |
 | Device or other IDs (Variant A of item 4) | Collected | Required | App functionality, Account management, Fraud prevention, security and compliance |
 
-- **[Item 3] Public player IDs.** `/challenge-boards`, `/daily/leaderboard`
-  and `/challenge-room-scoreboard` return player IDs to anyone, and rooms
-  show nicknames to other players.
-  - Variant A (the draft): not sharing. Answer **Collected** for Name and
-    User IDs.
-  - Variant B: it is sharing. Answer **Collected and shared** for User IDs,
-    and for Name if internet rooms are visible in the build. Sharing
-    purpose: **App functionality**.
-  - Either way, the hashed player ID sent to Google Play with each purchase
-    (`obfuscatedExternalAccountId`) is a transfer the player starts and
-    expects, so it isn't sharing.
+- **Item 3, settled: nothing is shared.** Challenge and daily leaderboards
+  return an anonymous tag per board ("Player" and six hex characters from a
+  hash of the player ID and the board, `LeaderboardTag`), never a player ID
+  or nickname, and internet rooms are hidden in 1.0. No other player sees a
+  player ID or nickname, so Name and User IDs are **Collected**, not shared.
+  The room routes still return IDs on the server; if rooms are turned on
+  later, decide this again. The hashed player ID sent to Google Play with
+  each purchase (`obfuscatedExternalAccountId`) is a transfer the player
+  starts and expects, so it isn't sharing either.
 - **[Item 2] Automatic Play Games sign-in.** The game links the Play Games
   player ID without asking when no progress is at risk.
   - Variant A (the draft, keep it): User IDs stays **Required**, which it is
     anyway because of the player ID.
   - Variant B (ask first): needs a code change. The form answers don't
     change, because User IDs is required for the player ID regardless.
-- **[Item 6] Apple refresh tokens.** The encrypted Sign in with Apple refresh
-  token is declared as part of User IDs. **[Check]** whether Google expects
+- **[Item 6] Apple refresh tokens.** Only if Sign in with Apple is set up for
+  Android. The encrypted refresh token is then declared as part of User IDs. **[Check]** whether Google expects
   more; it has no separate type for credentials.
 
 **Next.**
@@ -157,10 +158,10 @@ Tick these, in the console's order:
 
 | Category | Tick | Covers |
 | --- | --- | --- |
-| Contact Info | **Email Address** | Email sign-in. Sign in with Apple asks for no email |
+| Contact Info | **Email Address** | Email sign-in, the only sign-in on iPhone and iPad that uses an address |
 | Contact Info | Name: **[Check]** see below | The nickname |
-| User Content | **Gameplay Content** | Cloud saves, challenge and daily results, achievements, online rooms, live race updates, player reports |
-| Identifiers | **User ID** | Player ID, nickname, Game Center `teamPlayerID`, Apple, Google and Play Games account IDs |
+| User Content | **Gameplay Content** | Cloud saves, challenge and daily results, achievements. 1.0 sends no online room data: rooms are hidden |
+| Identifiers | **User ID** | Player ID, nickname, Game Center `teamPlayerID`. The iPhone and iPad offer no Apple or Google sign-in, so the iOS app collects no Apple, Google or Play Games account ID |
 | Identifiers | Device ID: **[Item 4]** see below | |
 | Purchases | **Purchase History** | Purchases, refund records, paid-currency ledger |
 | Usage Data | **Product Interaction** | Opt-in analytics: session starts, stage starts and finishes |
@@ -216,8 +217,8 @@ Apple's labels have no "optional" field. The opt-in analytics and crash
 reports are still declared, because they are collected repeatedly and don't
 meet every condition for Apple's optional-disclosure exemption. **[Check]**
 
-Item 3 (public player IDs) doesn't change Apple's answers: Apple asks about
-collection, linking and tracking, not sharing with other users.
+Item 3 never changed Apple's answers: Apple asks about collection, linking
+and tracking, not sharing with other users.
 
 ### Step 5: Publish
 
@@ -288,10 +289,10 @@ changes in the forms above:
 | --- | --- | --- |
 | 1. How long purchase records are kept **[Legal]** | Open | Nothing in either form. Retention goes in the privacy policy only |
 | 2. Automatic Play Games sign-in **[Legal]** | Open | Nothing: User IDs is required either way (Data safety step 3) |
-| 3. Public player IDs **[Legal]** | Open | Data safety: Name and User IDs collected, or collected and shared (step 3). Apple: no change |
+| 3. Public player IDs | Settled in the working tree: anonymous leaderboard tags (`LeaderboardTag`), rooms hidden (`LaunchFeatures.InternetRooms`) | Data safety: Name and User IDs collected, not shared (step 3). Apple: no change |
 | 4. User IDs or device IDs **[Legal]** | Open | Data safety: Device or other IDs ticked or not (step 2). Apple: Device ID ticked or not (step 3), and the privacy manifest |
 | 5. Children and age rating **[Legal]** | Open | Not the forms. Play's target audience (see [RATINGS.md](RATINGS.md)). Choosing an age group under 13 would change the Data safety answers, the policy and the app |
-| 6. Account deletion | Built. **[Check]** whether either store wants Apple refresh tokens declared separately | Data safety: delete account URL (step 1). Both: declared under user IDs |
+| 6. Account deletion | Built. Sign in with Apple is now Android-only and optional, so the iOS app collects no Apple refresh token. **[Check]** whether Google wants the token declared separately if you set it up | Data safety: delete account URL (step 1). Declared under User IDs |
 | 7. Session records | Done (`dacc1ebb`): records go a week after they expire or are signed out (`SessionAuth.PurgeEndedSessions`) | None. Neither form asks about retention |
 | 8. Name the email provider | Open | None. A service provider acting for you isn't sharing. The policy must name it |
 | 9. Unused server endpoints | Done (`a7e1362b`) | Nothing to declare |

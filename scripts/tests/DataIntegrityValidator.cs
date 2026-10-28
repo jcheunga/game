@@ -253,7 +253,7 @@ public static class DataIntegrityValidator
             Check(entryFood > 0, $"Stage {num} has non-positive EntryFoodCost");
             Check(healthScale > 0, $"Stage {num} has non-positive EnemyHealthScale");
             Check(damageScale > 0, $"Stage {num} has non-positive EnemyDamageScale");
-            Check(entryFood == 4, $"Stage {num} must cost 4 food, including bosses");
+            Check(entryFood == 2, $"Stage {num} must cost 2 food, including bosses");
 
             Check(GetFloat(stage, "PlayerBaseHealth") > 0, $"Stage {num} has non-positive PlayerBaseHealth");
             Check(GetFloat(stage, "EnemyBaseHealth") > 0, $"Stage {num} has non-positive EnemyBaseHealth");

@@ -108,7 +108,8 @@ public static class AccountDeletion
         Run("DELETE FROM room_seats WHERE room_id IN (SELECT room_id FROM rooms WHERE host_profile_id = @pid)");
         Run("DELETE FROM rooms WHERE host_profile_id = @pid");
 
-        // A guild outlives its leader: it passes to the top contributor, and an empty guild is removed.
+        // Guilds are only rows stored before the guild routes were removed. A guild outlives its leader: it
+        // passes to the top contributor, and an empty guild is removed.
         var led = Column("SELECT guild_id FROM guilds WHERE leader_profile_id = @pid");
         Run("DELETE FROM guild_members WHERE profile_id = @pid");
         foreach (var guildId in led)

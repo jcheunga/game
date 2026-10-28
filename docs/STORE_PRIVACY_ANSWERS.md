@@ -4,7 +4,8 @@ Draft answers for Google Play's **Data safety** form (Play Console → App
 content → Data safety) and Apple's **App Privacy** labels (App Store Connect →
 App Privacy). They come from a code audit on 2026-10-18 (main at `3bca1ed7`),
 the same audit behind the privacy policy in `site/src/privacy.html`, updated
-the same day for account deletion and refunds once they were merged. Line
+the same day for account deletion and refunds once they were merged, and on
+2026-10-28 when the unused guild, arena, friends and raid endpoints went. Line
 numbers in the last table are from the first audit. This is a draft for you to
 review, not legal advice.
 
@@ -51,9 +52,9 @@ messages, photos or videos (screenshots stay on the device), audio, files,
 calendar, health, browsing or search history, installed apps, payment card
 details, advertising ID or hardware device IDs.
 
-The server also has guild, arena, friends and raid endpoints that store data,
-but the game never calls them. They are left out of these answers. See
-review item 9.
+Guilds, the arena, friends and the weekly raid run on the device and send
+nothing to the server. Their old server endpoints were removed (review
+item 9).
 
 ## Google Play: Data safety
 
@@ -189,11 +190,12 @@ required-reason APIs Godot's iOS template declares.
 8. **Name the email provider.** The policy says "our email delivery
    provider". Once you choose one (Postmark, Amazon SES, Resend…), name it in
    the policy's sharing list and sign its data processing agreement.
-9. **Unused server endpoints.** `/guild/*`, `/arena/*`, `/friends/*` and
-   `/raid/*` still store whatever an authenticated caller sends. The guild
-   member list, arena opponents and arena leaderboard return player IDs,
-   nicknames and decks with no session needed. Remove or disable them before
-   launch, or add them to the policy and forms if the game will use them.
+9. **Unused server endpoints (removed).** `/guild/*`, `/arena/*`,
+   `/friends/*`, `/raid/*` and `/leaderboard/arena` are gone. The game never
+   called them: guilds, the arena, friends and the raid keep their state in
+   the save. Their tables stay but nothing writes them, and account deletion
+   still erases any rows stored before (`server/AccountDeletion.cs`). Nothing
+   to declare.
 10. **Refunds (built).** App Store Server Notifications and Google Play's
     voided-purchases list mark purchases refunded, and the device takes the
     currency back once (`server/PurchaseRefunds.cs`). The new refund records

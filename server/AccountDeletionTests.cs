@@ -185,22 +185,26 @@ public static partial class ServerTests
                 await Post(client, "/challenge-room-telemetry", new { roomId = room, elapsedSeconds = 3.5, hullRatio = .8, enemyDefeats = 2 }, profile);
                 await Post(client, "/challenge-room-report", new { report = new { roomId = room, targetProfileId = profile, reason = "test" } }, friend);
             }
-            await Post(client, "/arena/snapshot", new { profileId = profile, deckUnitIds = "player_brawler", powerRating = 10 }, profile);
-            await Post(client, "/arena/snapshot", new { profileId = friend, deckUnitIds = "player_brawler", powerRating = 10 }, friend);
-            await Post(client, "/arena/result", new { profileId = profile, opponentProfileId = friend, won = true, ratingBefore = 1000 }, profile);
-            await Post(client, "/arena/result", new { profileId = friend, opponentProfileId = profile, won = false, ratingBefore = 1000 }, friend);
-            await Post(client, "/raid/contribute", new { profileId = profile, damage = 50, weekId = "2026-W42" }, profile);
-            string sharedGuild, soloGuild;
-            using (var guild = await Post(client, "/guild/create", new { profileId = profile, name = "Doomed band" }, profile))
-                sharedGuild = guild.RootElement.GetProperty("guildId").GetString()!;
-            using (var guild = await Post(client, "/guild/create", new { profileId = profile, name = "Doomed alone" }, profile))
-                soloGuild = guild.RootElement.GetProperty("guildId").GetString()!;
-            await Post(client, "/guild/join", new { profileId = member, guildId = sharedGuild }, member);
-            await Post(client, "/guild/contribute", new { profileId = profile, guildId = sharedGuild, points = 40 }, profile);
-            await Post(client, "/friends/add", new { profileId = profile, friendId = friend }, profile);
-            await Post(client, "/friends/add", new { profileId = friend, friendId = profile }, friend);
-            await Post(client, "/friends/gift", new { profileId = profile, friendId = friend }, profile);
-            await Post(client, "/friends/gift", new { profileId = friend, friendId = profile }, friend);
+            // No route writes the arena, raid, guild and friends tables any more, but rows stored before those
+            // routes were removed must still go with the account.
+            const string sharedGuild = "GLD-DEL-SHARED", soloGuild = "GLD-DEL-SOLO";
+            foreach (var sql in new[]
+            {
+                "INSERT INTO arena_snapshots (profile_id, deck_unit_ids, power_rating) VALUES (@pid, 'player_brawler', 10)",
+                "INSERT INTO arena_results (profile_id, opponent_profile_id, won, rating_before, rating_after) VALUES (@pid, @friend, 1, 1000, 1016)",
+                "INSERT INTO arena_results (profile_id, opponent_profile_id, won, rating_before, rating_after) VALUES (@friend, @pid, 0, 1000, 984)",
+                "INSERT INTO raid_contributions (week_id, profile_id, damage) VALUES ('2026-W42', @pid, 50)",
+                "INSERT INTO guilds (guild_id, name, leader_profile_id) VALUES (@shared, 'Doomed band', @pid)",
+                "INSERT INTO guilds (guild_id, name, leader_profile_id) VALUES (@solo, 'Doomed alone', @pid)",
+                "INSERT INTO guild_members (guild_id, profile_id, contribution_points) VALUES (@shared, @pid, 40)",
+                "INSERT INTO guild_members (guild_id, profile_id, contribution_points) VALUES (@shared, @member, 0)",
+                "INSERT INTO guild_members (guild_id, profile_id, contribution_points) VALUES (@solo, @pid, 0)",
+                "INSERT INTO friendships (profile_id, friend_id) VALUES (@pid, @friend)",
+                "INSERT INTO friendships (profile_id, friend_id) VALUES (@friend, @pid)",
+                "INSERT INTO friend_gifts (sender_id, receiver_id) VALUES (@pid, @friend)",
+                "INSERT INTO friend_gifts (sender_id, receiver_id) VALUES (@friend, @pid)",
+            })
+                DbScalar(sql, ("@pid", profile), ("@friend", friend), ("@member", member), ("@shared", sharedGuild), ("@solo", soloGuild));
             foreach (var (table, column) in ProfileColumns)
                 Assert(DbCount($"SELECT COUNT(*) FROM {table} WHERE {column} = @pid", ("@pid", profile)) > 0,
                     $"The test fills {table}.{column} before deleting");
@@ -238,8 +242,7 @@ public static partial class ServerTests
             Assert(DbCount("SELECT COUNT(*) FROM rooms WHERE host_profile_id = @f", ("@f", friend)) == 1 &&
                 DbCount("SELECT COUNT(*) FROM room_seats WHERE profile_id = @f", ("@f", friend)) == 1,
                 "Another player's room stays; their seat in the deleted player's room goes with it");
-            using (var friends = await Get(client, $"/friends/list?profileId={friend}"))
-                Assert(friends.RootElement.GetProperty("friends").GetArrayLength() == 0, "The deleted player leaves friends' lists");
+            Assert(DbCount("SELECT COUNT(*) FROM friendships WHERE profile_id = @f", ("@f", friend)) == 0, "The deleted player leaves friends' lists");
 
             foreach (var (name, token) in new[] { ("guest", guestToken), ("this device's", device), ("other device's", otherDevice) })
                 Assert(await SessionStatus(client, profile, token) == HttpStatusCode.Gone, $"Deletion ends the {name} session, which is told the account is gone");

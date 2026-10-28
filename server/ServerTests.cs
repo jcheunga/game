@@ -256,15 +256,6 @@ public static partial class ServerTests
                     endpoints.MapPost("/cloud-save/upload", Endpoints.CloudSaveUpload);
                     endpoints.MapGet("/cloud-save/download", Endpoints.CloudSaveDownload);
                     endpoints.MapGet("/cloud-save/info", Endpoints.CloudSaveInfo);
-                    endpoints.MapPost("/arena/snapshot", Endpoints.ArenaUploadSnapshot);
-                    endpoints.MapPost("/arena/result", Endpoints.ArenaReportResult);
-                    endpoints.MapPost("/guild/create", Endpoints.GuildCreate);
-                    endpoints.MapPost("/guild/join", Endpoints.GuildJoin);
-                    endpoints.MapPost("/guild/contribute", Endpoints.GuildContribute);
-                    endpoints.MapPost("/friends/add", Endpoints.FriendAdd);
-                    endpoints.MapGet("/friends/list", Endpoints.FriendList);
-                    endpoints.MapPost("/friends/gift", Endpoints.FriendGift);
-                    endpoints.MapPost("/raid/contribute", Endpoints.RaidContribute);
                     });
                 });
             });

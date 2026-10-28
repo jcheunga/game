@@ -376,6 +376,8 @@ public static class Database
                 uploaded_at INTEGER NOT NULL DEFAULT 0
             );
 
+            -- No route writes the arena, guild, raid and friends tables any more. They stay so account
+            -- deletion still erases rows stored before those routes were removed.
             CREATE TABLE IF NOT EXISTS arena_snapshots (
                 profile_id TEXT PRIMARY KEY,
                 deck_unit_ids TEXT NOT NULL DEFAULT '',

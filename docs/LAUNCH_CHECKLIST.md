@@ -19,7 +19,10 @@ Already done and tested locally (2026-10-17):
   same moment, for example from two devices, credit it once, on SQLite and on
   a real PostgreSQL (server tests).
 - A purchase, a cloud-save upload or a Stripe payment no longer blanks the
-  player's callsign in guild, arena and friends lists (server tests).
+  player's callsign on the server (server tests).
+- The server's unused guild, arena, friends and raid endpoints are removed
+  (2026-10-28). The game keeps those features on the device, so the privacy
+  answers have nothing to declare for them.
 - Account deletion from Settings → Account → Delete account (2026-10-18). The
   server erases everything keyed by the player and ends every session; a
   repeated request answers the same. Purchase records stay, moved to a random

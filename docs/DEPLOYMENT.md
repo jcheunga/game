@@ -698,12 +698,14 @@ Settings → Account → Delete account asks for confirmation, then calls
 In one transaction the server deletes every row keyed by the profile: the
 player, linked sign-ins (email, Google, Apple, Game Center, Play Games),
 pending sign-in codes, sessions, cloud save, challenge results, achievements,
-daily completions, arena snapshot and results, raid contributions, analytics,
-crash reports, friendships and gifts in both directions, player reports made by
-or about the player, room seats and telemetry, rooms the player hosted (their
-titles carry the callsign), guild membership, wallet and wallet ledger. A guild
-the player led passes to its top contributor; an empty one is deleted. Other
-players' arena results keep their row with the opponent ID blanked. The
+daily completions, analytics, crash reports, player reports made by or about
+the player, room seats and telemetry, rooms the player hosted (their titles
+carry the callsign), wallet and wallet ledger. It also clears the arena, raid,
+friends and guild tables. No route writes those since their endpoints were
+removed, but they may hold rows from before: arena snapshot and results, raid
+contributions, friendships and gifts in both directions, and guild membership.
+A guild the player led passes to its top contributor; an empty one is deleted.
+Other players' arena results keep their row with the opponent ID blanked. The
 server test `AccountDeletionCoversSchema` fails when a new column looks like it
 holds a profile ID and the deletion does not clear it.
 

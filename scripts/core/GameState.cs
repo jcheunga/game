@@ -6507,7 +6507,7 @@ public partial class GameState : Node
 	public string NextKitUnitId()
 	{
 		return GameData.GetPlayerUnits()
-			.Where(unit => !_ownedPlayerUnitIds.Contains(unit.Id))
+			.Where(unit => !unit.LegacyRecruit && !_ownedPlayerUnitIds.Contains(unit.Id))
 			.OrderBy(unit => unit.UnlockStage)
 			.Select(unit => unit.Id)
 			.FirstOrDefault() ?? "";

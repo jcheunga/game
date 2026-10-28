@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text.Json;
 
 namespace CrownroadServer;
 
@@ -195,6 +196,45 @@ public static class SupportLookup
             cloudSave
         });
     }
+
+    /// <summary>
+    /// Deletes a player's account for a deletion request that arrived by email, exactly as Settings → Account →
+    /// Delete account does: the same erase, purchase records kept under a pseudonym, and Apple sign-ins revoked.
+    /// The body names the player ID twice ({"profileId", "confirmProfileId"}), so a slip cannot delete the wrong
+    /// account. Confirm the requester controls the account first (docs/store/SUPPORT_PLAYBOOK.md).
+    /// </summary>
+    public static async Task<IResult> AdminDeleteAccount(HttpRequest request)
+    {
+        if (AdminAuth.Require(request) is { } adminError) return adminError;
+
+        string profileId, confirm;
+        try
+        {
+            using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
+            profileId = Text(body.RootElement, "profileId");
+            confirm = Text(body.RootElement, "confirmProfileId");
+        }
+        catch (JsonException)
+        {
+            return Results.BadRequest(new { error = "invalid_json" });
+        }
+        if (profileId.Length == 0 || profileId != confirm)
+            return Results.BadRequest(new { error = "confirm_profile_id_must_match" });
+
+        using (var conn = Database.Open())
+        {
+            if (!SessionAuth.PlayerExists(conn, profileId)) return Results.NotFound(new { status = "not_found" });
+        }
+
+        var revocations = AccountDeletion.Erase(profileId);
+        var revoked = await AccountDeletion.RevokeQueuedAsync(revocations);
+        return Results.Ok(new { status = "deleted", profileId, signInRevocationPending = !revoked });
+    }
+
+    private static string Text(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()?.Trim() ?? ""
+            : "";
 
     private static DbCommand Command(DbConnection conn, string sql, params (string Name, object Value)[] parameters)
     {

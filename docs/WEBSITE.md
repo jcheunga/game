@@ -120,28 +120,11 @@ same audit as the policy, are in
 
 ## Handling deletion requests
 
-There is no self-service deletion yet. When a request arrives at the support
-inbox:
-
-1. Confirm the requester controls the profile. A player who signs in with
-   email can write from that address (look it up in `account_identities`).
-   Otherwise ask for their nickname and a recent result shown on their device,
-   and compare it with the server data for the player ID they gave.
-2. Delete that `profile_id`'s rows from the player tables in PostgreSQL
-   (`players`, `account_identities`, `auth_sessions`, `cloud_saves`,
-   `challenge_results`, `achievements`, `daily_completions`,
-   `analytics_events`, `crash_reports`,
-   `room_seats`, `room_telemetry`, `room_reports`, `arena_*`,
-   `guild_members`, `friendships`, `friend_gifts`, `raid_contributions`),
-   any `account_challenges` rows whose `guest_profile` is the player, and the
-   host details of `rooms` they hosted.
-   Keep `purchases`, `player_wallets` and `wallet_ledger` rows only as long as
-   tax and accounting law requires.
-3. Reply within 30 days to confirm, as the support page promises.
-
-Building an operator endpoint or script for this before launch is strongly
-recommended. Google Play also expects deletion to be requestable from inside
-the app.
+Players delete their account in the game: Settings → Account → Delete
+account. When a request arrives by email instead, confirm the requester
+controls the account, then delete it with `POST /admin/support/delete-account`,
+which runs the same code as the in-app button. The steps are under "Account
+deletion request by email" in [store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md).
 
 ## Fonts
 

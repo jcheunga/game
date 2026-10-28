@@ -240,6 +240,7 @@ public static partial class ServerTests
                     endpoints.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
                     endpoints.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
                     endpoints.MapGet("/admin/support/player", SupportLookup.AdminPlayer);
+                    endpoints.MapPost("/admin/support/delete-account", SupportLookup.AdminDeleteAccount);
                     endpoints.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
                     endpoints.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
                     endpoints.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);

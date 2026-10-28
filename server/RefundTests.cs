@@ -655,6 +655,27 @@ public static partial class ServerTests
         Assert(byTransaction.Status == HttpStatusCode.OK &&
             JsonDocument.Parse(byTransaction.Text).RootElement.GetProperty("profileId").GetString() == profile,
             "expected a store transaction ID to find the player");
+
+        // An emailed deletion request: the same erase as the in-app button, with the ID typed twice.
+        async Task<(HttpStatusCode Status, string Text)> Delete(object body)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/support/delete-account")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+            request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        Assert((await Delete(new { profileId = profile, confirmProfileId = profile + "X" })).Status == HttpStatusCode.BadRequest,
+            "expected a mismatched confirmation to delete nothing");
+        Assert((await Delete(new { profileId = "CVY-NOBODY", confirmProfileId = "CVY-NOBODY" })).Status == HttpStatusCode.NotFound,
+            "expected an unknown player to be reported");
+        var deleted = await Delete(new { profileId = profile, confirmProfileId = profile });
+        Assert(deleted.Status == HttpStatusCode.OK && deleted.Text.Contains("\"deleted\""), "expected the operator to delete the account");
+        var afterDelete = JsonDocument.Parse((await Lookup("transactionId=cs_test_support_lookup")).Text).RootElement;
+        Assert(afterDelete.GetProperty("profileId").GetString()!.StartsWith("DELETED-") && afterDelete.GetProperty("player").ValueKind == JsonValueKind.Null,
+            "expected the purchase to stay under a pseudonym with no player behind it");
     }
 
     private static async Task TestAdminRefund(HttpClient client)

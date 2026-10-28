@@ -174,6 +174,13 @@ can be pasted into a support ticket. A deleted account's purchases appear
 under their `DELETED-` pseudonym with no player. To refund or reinstate a
 purchase, use `POST /admin/refunds` (see [Refunds](#refunds)).
 
+For a deletion request that arrives by email, `POST
+/admin/support/delete-account` with `{"profileId": "CVY-…",
+"confirmProfileId": "CVY-…"}` deletes the account exactly as the in-app
+button does. The two IDs must match, so a slip deletes nothing. Confirm the
+requester controls the account first (see
+[store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md)).
+
 ## Refunds
 
 When Google or Apple refunds a pack, the server takes back what it granted.
@@ -366,7 +373,7 @@ window closes. A new deployment has no data migration step.
 
 ## Account sign-in
 
-Players sign in from **Account** in the home map's More panel or in Settings.
+Players sign in from **Settings → Account**.
 Every option is optional: **Play as guest** keeps the journey on the device.
 
 - **Guest.** Each install has its own profile. As soon as the server answers,

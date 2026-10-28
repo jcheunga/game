@@ -12,11 +12,17 @@ public partial class AccountDialog : AcceptDialog
     private bool _busy, _closed, _emailAvailable, _appleAvailable, _googleAvailable, _platformAvailable, _devAvailable;
     private JsonElement _providers;
 
+    /// <summary>
+    /// Apple and Google sign-in run in the browser. On iPhone that means leaving the game for Safari, which App Review
+    /// has rejected, so the iPhone offers Game Center and email instead; the browser sign-ins stay on Android and desktop.
+    /// </summary>
+    private static bool BrowserSignIn => OS.GetName() != "iOS";
+
     public static void Show(Control host)
     {
         var dialog = new AccountDialog { Title = "Account", Exclusive = true, Theme = host.Theme, MinSize = new Vector2I(380, 300) };
         // Tall enough that every sign-in button and the email row show without scrolling.
-        var height = 640 - (PlatformSignIn.Provider.Length > 0 ? 0 : (int)SignInButton.Height + 12);
+        var height = 640 - (PlatformSignIn.Provider.Length > 0 ? 0 : (int)SignInButton.Height + 12) - (BrowserSignIn ? 0 : 2 * ((int)SignInButton.Height + 12));
         host.AddChild(dialog); dialog.PopupCentered(new Vector2I(560, height));
     }
     public override void _Ready()
@@ -46,9 +52,9 @@ public partial class AccountDialog : AcceptDialog
         _platformButton.Name = "PlatformSignIn"; _platformButton.Visible = PlatformSignIn.Provider.Length > 0; stack.AddChild(_platformButton);
         // Apple asks that Sign in with Apple sits beside any other third-party sign-in, at least as prominently, without scrolling.
         _appleButton = SignInButton.Create(SignInButton.Brand.Apple, SignInButton.Title(SignInButton.Brand.Apple), () => _ = Browser("apple"));
-        _appleButton.Name = "AppleSignIn"; stack.AddChild(_appleButton);
+        _appleButton.Name = "AppleSignIn"; _appleButton.Visible = BrowserSignIn; stack.AddChild(_appleButton);
         _googleButton = SignInButton.Create(SignInButton.Brand.Google, SignInButton.Title(SignInButton.Brand.Google), () => _ = Browser("google"));
-        _googleButton.Name = "GoogleSignIn"; stack.AddChild(_googleButton);
+        _googleButton.Name = "GoogleSignIn"; _googleButton.Visible = BrowserSignIn; stack.AddChild(_googleButton);
         _email = new LineEdit { PlaceholderText = "Email address", CustomMinimumSize = new Vector2(0, 48), MaxLength = 254 };
         stack.AddChild(_email);
         _emailButton = RealmUi.Button("arrow", "Send sign-in code", () => _ = SendCode()); stack.AddChild(_emailButton);
@@ -86,6 +92,9 @@ public partial class AccountDialog : AcceptDialog
             _appleAvailable = providers.TryGetProperty("apple", out var apple) && apple.ValueKind == JsonValueKind.True;
             _platformAvailable = PlatformSignIn.Offered(providers);
             _devAvailable = providers.TryGetProperty("devSignIn", out var dev) && dev.ValueKind == JsonValueKind.True;
+            // A browser sign-in the server doesn't offer is left out, not shown greyed out.
+            _appleButton.Visible = BrowserSignIn && _appleAvailable;
+            _googleButton.Visible = BrowserSignIn && _googleAvailable;
             Busy(false);
             if (_emailButton.Disabled && _appleButton.Disabled && _googleButton.Disabled && _platformButton.Disabled) _status.Text = "Sign-in needs to be enabled on the game server.";
         }

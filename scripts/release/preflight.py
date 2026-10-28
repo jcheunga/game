@@ -113,9 +113,9 @@ def main():
         check("ios", text(header.get("exclude_filter")) == text(android_header.get("exclude_filter")),
               "iOS leaves out the same unused files as Android", "Copy the Android preset's exclude filter to iOS.")
         art = ROOT / "assets/ui/signin"
-        check("ios", (art / "apple-logo.svg").exists() and (art / "game-center.png").exists(),
-              "Apple's Sign in with Apple logo and Game Center icon are in",
-              "Download them from Apple Design Resources and run art/signin/build.py (see art/signin/README.md).")
+        # The iPhone shows no Sign in with Apple button (AccountDialog.BrowserSignIn), so only the Game Center icon is needed.
+        check("ios", (art / "game-center.png").exists(), "Apple's Game Center icon is in",
+              "Download it from Apple Design Resources and run art/signin/build.py (see art/signin/README.md).")
 
     failed = 0
     for platform, ok, label, fix in results:

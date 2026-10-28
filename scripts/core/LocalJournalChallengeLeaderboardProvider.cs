@@ -71,7 +71,6 @@ public sealed class LocalJournalChallengeLeaderboardProvider : IChallengeLeaderb
 				{
 					Code = normalizedCode,
 					PlayerCallsign = string.IsNullOrWhiteSpace(submission.PlayerCallsign) ? "Lantern" : submission.PlayerCallsign,
-					PlayerProfileId = submission.PlayerProfileId,
 					Score = submission.Score,
 					StarsEarned = submission.StarsEarned,
 					HullPercent = submission.HullPercent,

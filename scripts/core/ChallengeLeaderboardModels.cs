@@ -4,8 +4,8 @@ public sealed class ChallengeLeaderboardEntry
 {
 	public int Rank { get; set; }
 	public string Code { get; set; } = "";
+	/// <summary>The entry's anonymous leaderboard tag, or "You" for the player's own score.</summary>
 	public string PlayerCallsign { get; set; } = "";
-	public string PlayerProfileId { get; set; } = "";
 	public int Score { get; set; }
 	public int StarsEarned { get; set; }
 	public int HullPercent { get; set; }

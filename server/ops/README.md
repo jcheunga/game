@@ -300,10 +300,11 @@ locally, and per replica during a Redis outage):
 | Requests | Counted per | Limit / min |
 | --- | --- | --- |
 | `/auth/*` (sign-in attempts) | client IP | 10 (40 for `/auth/google/poll`, `/auth/apple/poll`) |
+| `/health` | client IP | 600 |
 | `/player-profile` (guest registration **and** profile sync) | client IP | 20 |
 | `/store/apple/notifications` | client IP | 600 |
-| any request with `Authorization: Bearer …` | that token | 180 (30 for `/ws/…`) |
-| everything else without a token: `/health`, `/challenge-feed`, `/challenge-boards`, `/challenge-rooms`, `/daily/leaderboard/…`, `/challenge-room-scoreboard` | client IP | 60 |
+| any request whose bearer token has passed a session check on that replica | that token | 180 (30 for `/ws/…`) |
+| everything else, including requests with an unknown token: `/challenge-feed`, `/challenge-boards`, `/challenge-rooms`, `/daily/leaderboard/…`, `/challenge-room-scoreboard` | client IP | 60 |
 
 The client IP: production Compose sets `TrustForwardedHeaders=true`, so the
 API takes the address from `X-Forwarded-For`, which Caddy sets to the
@@ -316,8 +317,10 @@ client IP** to the server, and:
   profile sync each), however many VUs you start. VUs that are refused wait
   45 s and retry, like the game.
 - The current game sends no session on public reads, so all VUs share 60 per
-  minute for `/health`, feed, boards, rooms and daily leaderboards. `/health`
-  every 45 s alone exhausts that at about 45 players.
+  minute for the feed, boards, rooms and daily leaderboards. `/health` has its
+  own 600 per minute, enough for about 450 players polling every 45 s.
+- A VU's first authenticated requests on each replica count per IP until its
+  token has passed a session check there.
 - Everything authenticated (saves, wallet, sync, analytics, rooms) is per
   session and scales normally.
 

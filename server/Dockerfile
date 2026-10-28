@@ -3,7 +3,7 @@ WORKDIR /src/server
 COPY server/Server.csproj .
 RUN dotnet restore
 COPY server/*.cs ./
-COPY scripts/core/CloudSavePrivacy.cs scripts/core/AssetCoverageCatalog.cs scripts/core/CodexCatalog.cs /src/scripts/core/
+COPY scripts/core/CloudSavePrivacy.cs scripts/core/LeaderboardTag.cs scripts/core/AssetCoverageCatalog.cs scripts/core/CodexCatalog.cs /src/scripts/core/
 COPY scripts/tests/DataIntegrityValidator.cs /src/scripts/tests/
 RUN dotnet publish -c Release -o /app
 

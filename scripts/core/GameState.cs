@@ -6419,6 +6419,30 @@ public partial class GameState : Node
 		return !string.IsNullOrWhiteSpace(productId) && _purchasedProductIds.Contains(productId);
 	}
 
+	/// <summary>
+	/// Marks one-time products the account already bought (on another device, or before an older save was
+	/// restored) from the server's purchase history, so the shop never asks the player to pay for one twice; the
+	/// server would refuse the second grant after the store had charged. Returns true when a product was added.
+	/// The request runs off the main thread; without a server or a session it does nothing.
+	/// </summary>
+	public async Task<bool> SyncOneTimePurchasesFromServerAsync()
+	{
+		if (string.IsNullOrWhiteSpace(_purchaseValidationEndpoint) || string.IsNullOrWhiteSpace(PlayerAuthToken)) return false;
+		var profileId = PlayerProfileId;
+		var endpoint = _purchaseValidationEndpoint;
+		List<PurchaseHistoryEntry> history;
+		try { history = await Task.Run(() => new HttpApiPurchaseValidationProvider(endpoint).GetPurchaseHistory(profileId)); }
+		catch (Exception) { return false; }
+		// The player may have switched accounts while the request was out.
+		if (profileId != PlayerProfileId) return false;
+		var oneTime = ShopProductCatalog.GetAll().Where(product => product.OneTimePurchase).Select(product => product.Id).ToHashSet();
+		var added = false;
+		foreach (var entry in history)
+			if (oneTime.Contains(entry.ProductId) && _purchasedProductIds.Add(entry.ProductId)) added = true;
+		if (added) Persist();
+		return added;
+	}
+
 	public void SetPurchaseValidationEndpoint(string endpoint)
 	{
 		_purchaseValidationEndpoint = IsReleaseBackendConfigured

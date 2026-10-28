@@ -100,7 +100,7 @@ public sealed class HttpApiDailyLeaderboardProvider
 				{
 					entries.Add(new DailyLeaderboardEntry
 					{
-						ProfileId = GetString(item, "profileId", ""),
+						Player = PlayerLabel(GetString(item, "player", ""), responseDate),
 						Score = GetInt(item, "score", 0),
 						CompletedAt = GetString(item, "completedAt", "")
 					});
@@ -129,6 +129,10 @@ public sealed class HttpApiDailyLeaderboardProvider
 		value = default;
 		return false;
 	}
+
+	/// <summary>"You" for the player's own entry, otherwise the board's anonymous tag.</summary>
+	private static string PlayerLabel(string tag, string board) =>
+		tag.Length > 0 && GameState.Instance != null && tag == LeaderboardTag.For(GameState.Instance.PlayerProfileId, board) ? LeaderboardTag.You : tag;
 
 	private static string GetString(JsonElement element, string propertyName, string fallback)
 	{
@@ -173,7 +177,8 @@ public class DailyLeaderboardSnapshot
 
 public class DailyLeaderboardEntry
 {
-	public string ProfileId { get; set; } = "";
+	/// <summary>The entry's anonymous leaderboard tag, or "You" for the player's own score.</summary>
+	public string Player { get; set; } = "";
 	public int Score { get; set; }
 	public string CompletedAt { get; set; } = "";
 }

@@ -167,9 +167,11 @@ editor's export dialog from now on, never while the editor has the file open.
    without asking (`scripts/core/PlatformSignIn.cs:48`). The policy relies on
    legitimate interests for this, and the Play form treats the ID as
    required. If you would rather ask first, the game needs a change.
-3. **[Legal] Public player IDs.** The leaderboard and room endpoints return
-   player IDs to anyone, with no session needed. Decide whether that counts
-   as sharing, or change them to return nicknames only (a code change).
+3. **Public player IDs (done 2026-10-28).** Challenge and daily leaderboards
+   now show an anonymous tag per board (`LeaderboardTag`), never the player ID
+   or nickname. Room routes still return IDs, but internet rooms are hidden
+   in 1.0 (`LaunchFeatures.InternetRooms`).
+
 4. **[Legal] User IDs or device IDs.** The answers above declare the player ID
    as a user ID on both stores and also as a device ID on Play. Decide which
    reading you take.

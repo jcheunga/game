@@ -323,7 +323,7 @@ public partial class ServerEndToEnd : Node
         var daily = new HttpApiDailyLeaderboardProvider(_server);
         var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
         var completion = daily.SubmitCompletion(profile, date, 4321);
-        Check(completion.PersonalBest == 4321 && daily.FetchLeaderboard(date).Entries.Any(e => e.ProfileId == profile && e.Score == 4321),
+        Check(completion.PersonalBest == 4321 && daily.FetchLeaderboard(date).Entries.Any(e => e.Player == LeaderboardTag.You && e.Score == 4321),
             "A daily score submits and appears on the daily leaderboard");
 
         var code = AsyncChallengeCatalog.Create(1, AsyncChallengeCatalog.PressureSpikeId, 5151).Code;
@@ -335,7 +335,7 @@ public partial class ServerEndToEnd : Node
         Check(state.PendingChallengeSubmissionCount == 0 || ChallengeSyncService.Instance.FlushPendingSubmissions(out _), "Challenge results flush to the server");
         Check(state.PendingChallengeSubmissionCount == 0, "No challenge results are left waiting");
         Check(ChallengeLeaderboardService.Instance.RefreshBoard(code, 5, out var board)
-            && ChallengeLeaderboardService.Instance.GetCachedSnapshot(code).Entries.Any(e => e.PlayerProfileId == profile && e.Score == 1320),
+            && ChallengeLeaderboardService.Instance.GetCachedSnapshot(code).Entries.Any(e => e.PlayerCallsign == LeaderboardTag.You && e.Score == 1320),
             $"The challenge leaderboard shows the account's flushed result ({board})");
         Check(ChallengeBoardFeedService.Instance.RefreshFeed(state.HighestUnlockedStage, state.MaxStage, 3, out var feed), $"The challenge board feed loads ({feed})");
 
@@ -352,6 +352,13 @@ public partial class ServerEndToEnd : Node
         var wallet = await Get($"/wallet?profileId={profile}", profile, token);
         Check(purchase.Status == "ok" && purchase.GoldCredited > 0 && wallet.Status == 200 && wallet.Body.GetProperty("goldBalance").GetInt32() >= purchase.GoldCredited,
             $"A test purchase validates and credits the account's wallet ({purchase.Status}: {purchase.Message})");
+
+        // A save that never saw the kit (an older one, or another device's) learns from the server that it was bought,
+        // so the shop never charges for it twice.
+        var kit = await state.ValidatePurchaseWithServerAsync("starter_kit", "stripe", $"receipt-{Guid.NewGuid():N}", $"txn-{Guid.NewGuid():N}");
+        Check(kit.Status == "ok" && !state.HasPurchasedProduct("starter_kit"), $"The kit is bought on the server only ({kit.Status}: {kit.Message})");
+        Check(await state.SyncOneTimePurchasesFromServerAsync() && state.HasPurchasedProduct("starter_kit"),
+            "The server's purchase history marks the kit bought on this device");
     }
 
     /// <summary>Signs in with email through the real Account dialog, reading the code from the server log.</summary>
@@ -364,8 +371,8 @@ public partial class ServerEndToEnd : Node
         var dialog = await OpenedDialog();
         var send = Find(dialog, "Send sign-in code");
         if (!await Until(() => !send.Disabled)) { Check(false, $"The server offers email sign-in: {Status(dialog)}"); return false; }
-        Check(Find(dialog, "Continue with Google").Disabled && Find(dialog, "Continue with Apple").Disabled,
-            "Providers the server has no credentials for stay disabled");
+        Check(!Find(dialog, "Continue with Google").Visible && !Find(dialog, "Continue with Apple").Visible,
+            "Providers the server has no credentials for are left out");
         Check(Find(dialog, "Developer sign-in (no code)").Visible == state.DeveloperToolsActive, "Developer sign-in shows only in developer mode");
         Walk(dialog).OfType<LineEdit>().Single(x => x.PlaceholderText == "Email address").Text = email;
         var codesBefore = Codes(email).Count;

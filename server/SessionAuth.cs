@@ -37,6 +37,7 @@ public static class SessionAuth
         cmd.Parameters.AddWithValue("@expires", expiresAt);
         cmd.ExecuteNonQuery();
 
+        RateLimiter.RememberSession(token, expiresAt);
         return token;
     }
 
@@ -76,6 +77,7 @@ public static class SessionAuth
         touch.Parameters.AddWithValue("@sid", sessionId);
         touch.ExecuteNonQuery();
 
+        RateLimiter.RememberSession(token, expiresAt);
         session = new Session(profileId, sessionId, expiresAt);
         return true;
     }
@@ -115,6 +117,7 @@ public static class SessionAuth
         touch.Parameters.AddWithValue("@sid", sessionId);
         await touch.ExecuteNonQueryAsync(request.HttpContext.RequestAborted);
 
+        RateLimiter.RememberSession(token, expiresAt);
         return new Session(profileId, sessionId, expiresAt);
     }
 

@@ -1,17 +1,23 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace CrownroadServer;
 
 /// <summary>
-/// Applies route-aware limits. Authenticated traffic is partitioned by an
-/// opaque bearer token instead of public IP, so players sharing mobile/Wi-Fi
-/// egress do not throttle one another. Redis makes counters consistent across
-/// API replicas.
+/// Applies route-aware limits. Authenticated traffic is partitioned by its
+/// bearer token instead of public IP, so players sharing mobile/Wi-Fi egress do
+/// not throttle one another, but only once the token has passed a session check
+/// on this replica: an unknown bearer counts against its IP like an anonymous
+/// request, so made-up tokens cannot skip the per-IP limits. Redis makes
+/// counters consistent across API replicas.
 /// </summary>
 public sealed class RateLimiter
 {
     private static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
+    private const int KnownSessionCap = 200_000;
+    // Hashes of tokens this replica has seen pass SessionAuth, with their expiry.
+    private static readonly ConcurrentDictionary<string, long> KnownSessions = new(StringComparer.Ordinal);
     private readonly RequestDelegate _next;
     private readonly IRateLimitStore _store;
 
@@ -39,7 +45,18 @@ public sealed class RateLimiter
         await _next(context);
     }
 
-    private static RateLimitPolicy SelectPolicy(HttpContext context)
+    /// <summary>Records a token that passed a session check, so its later requests are counted per session.</summary>
+    public static void RememberSession(string token, long expiresAtUnixSeconds)
+    {
+        if (token.Length is 0 or > 512) return;
+        if (KnownSessions.Count >= KnownSessionCap) KnownSessions.Clear();
+        KnownSessions[Hash(token)] = expiresAtUnixSeconds;
+    }
+
+    private static bool IsKnownSession(string token) =>
+        KnownSessions.TryGetValue(Hash(token), out var expires) && expires > DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    internal static RateLimitPolicy SelectPolicy(HttpContext context)
     {
         var path = context.Request.Path;
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -60,12 +77,18 @@ public sealed class RateLimiter
             return new RateLimitPolicy($"crownroad:rate:v1:store-notifications:{Hash(ip)}", 600);
         }
 
+        // Every game polls /health, and players behind one carrier address share it, so it has its own allowance.
+        if (path.StartsWithSegments("/health"))
+        {
+            return new RateLimitPolicy($"crownroad:rate:v1:health:{Hash(ip)}", 600);
+        }
+
         if (path.StartsWithSegments("/player-profile"))
         {
             return new RateLimitPolicy($"crownroad:rate:v1:registration:{Hash(ip)}", 20);
         }
 
-        if (!string.IsNullOrWhiteSpace(bearerToken))
+        if (!string.IsNullOrWhiteSpace(bearerToken) && IsKnownSession(bearerToken))
         {
             var isWebSocket = path.StartsWithSegments("/ws");
             return new RateLimitPolicy(
@@ -91,5 +114,5 @@ public sealed class RateLimiter
     private static string Hash(string value) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)))[..24];
 
-    private readonly record struct RateLimitPolicy(string Key, int Limit);
+    internal readonly record struct RateLimitPolicy(string Key, int Limit);
 }

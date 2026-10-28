@@ -157,6 +157,7 @@ public static partial class ServerTests
                 ("DatabaseBackup", () => TestDatabaseBackup(client)),
                 ("SchemaVersion", () => TestSchemaVersion()),
                 ("RateLimitStore", TestRateLimitStore),
+                ("RateLimitPolicies", TestRateLimitPolicies),
                 ("DatabaseUrl", TestDatabaseUrl),
             };
 
@@ -357,6 +358,8 @@ public static partial class ServerTests
         var entries = resp.RootElement.GetProperty("entries");
         Assert(entries.GetArrayLength() >= 1, "expected at least 1 leaderboard entry");
         Assert(entries[0].GetProperty("score").GetInt32() == 1200, "expected best score 1200");
+        Assert(entries[0].GetProperty("player").GetString()!.StartsWith("Player ") && !resp.RootElement.GetRawText().Contains("TEST-0"),
+            "expected the public leaderboard to show anonymous tags, not player IDs");
     }
 
     private static async Task TestChallengeFeed(HttpClient client)
@@ -637,10 +640,12 @@ public static partial class ServerTests
         Assert(entries[1].GetProperty("score").GetInt32() == 950, "expected rank 2 score=950");
         Assert(entries[2].GetProperty("score").GetInt32() == 700, "expected rank 3 score=700");
 
-        // Verify profile IDs match
-        Assert(entries[0].GetProperty("profileId").GetString() == "TEST-LB-02", "expected rank 1 profile TEST-LB-02");
-        Assert(entries[1].GetProperty("profileId").GetString() == "TEST-LB-03", "expected rank 2 profile TEST-LB-03");
-        Assert(entries[2].GetProperty("profileId").GetString() == "TEST-LB-01", "expected rank 3 profile TEST-LB-01");
+        // Each player shows as the day's anonymous tag, never the player ID.
+        Assert(entries[0].GetProperty("player").GetString() == LeaderboardTag.For("TEST-LB-02", date), "expected rank 1 to be TEST-LB-02's tag for the day");
+        Assert(entries[1].GetProperty("player").GetString() == LeaderboardTag.For("TEST-LB-03", date), "expected rank 2 to be TEST-LB-03's tag for the day");
+        Assert(entries[2].GetProperty("player").GetString() == LeaderboardTag.For("TEST-LB-01", date), "expected rank 3 to be TEST-LB-01's tag for the day");
+        Assert(!resp.RootElement.GetRawText().Contains("TEST-LB-"), "expected the public leaderboard to leave out player IDs");
+        Assert(LeaderboardTag.For("TEST-LB-02", date) != LeaderboardTag.For("TEST-LB-02", date + "x"), "expected a player's tag to differ between boards");
     }
 
     private static async Task TestPurchaseValidate(HttpClient client)
@@ -1234,6 +1239,32 @@ public static partial class ServerTests
         Assert((await store.TryConsumeAsync("test:player-a", 2, window)).Allowed, "second request should be allowed");
         Assert(!(await store.TryConsumeAsync("test:player-a", 2, window)).Allowed, "third request should be limited");
         Assert((await store.TryConsumeAsync("test:player-b", 2, window)).Allowed, "independent player key should not be throttled");
+    }
+
+    private static Task TestRateLimitPolicies()
+    {
+        static HttpContext Request(string path, string bearer = "")
+        {
+            var context = new DefaultHttpContext();
+            context.Request.Path = path;
+            context.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.7");
+            if (bearer.Length > 0) context.Request.Headers.Authorization = "Bearer " + bearer;
+            return context;
+        }
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var anonymous = RateLimiter.SelectPolicy(Request("/challenge-boards"));
+        Assert(RateLimiter.SelectPolicy(Request("/challenge-boards", "made-up-" + Guid.NewGuid().ToString("N"))) == anonymous,
+            "a made-up bearer is counted against its IP like an anonymous request");
+        var token = "checked-" + Guid.NewGuid().ToString("N");
+        RateLimiter.RememberSession(token, now + 3600);
+        var session = RateLimiter.SelectPolicy(Request("/wallet", token));
+        Assert(session.Key.Contains(":session:") && session.Limit == 180, "a token that passed a session check gets its own allowance");
+        var expired = "expired-" + Guid.NewGuid().ToString("N");
+        RateLimiter.RememberSession(expired, now - 1);
+        Assert(RateLimiter.SelectPolicy(Request("/wallet", expired)) == anonymous, "an expired session is counted against its IP again");
+        var health = RateLimiter.SelectPolicy(Request("/health"));
+        Assert(health.Key.Contains(":health:") && health.Limit == 600, "/health has its own, larger per-IP allowance");
+        return Task.CompletedTask;
     }
 
     private static async Task TestDatabaseUrl()

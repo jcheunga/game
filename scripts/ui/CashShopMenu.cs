@@ -42,6 +42,13 @@ public partial class CashShopMenu : Control
         // launch, a failed validation) is validated again here.
         NativeIAPService.Instance?.RetryUnfinishedPurchases();
         ShowRefundsAsync();
+        MarkOneTimePurchasesAsync();
+    }
+
+    /// <summary>Marks the Adventurer's Kit bought if the server's history says so, so an older save never offers it again.</summary>
+    private async void MarkOneTimePurchasesAsync()
+    {
+        if (await GameState.Instance.SyncOneTimePurchasesFromServerAsync() && IsOpen()) RefreshUi(preserveStatus: true);
     }
 
     /// <summary>Applies any store refunds before the player shops, and says what they took back.</summary>

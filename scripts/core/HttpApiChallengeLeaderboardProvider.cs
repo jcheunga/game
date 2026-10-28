@@ -60,8 +60,7 @@ public sealed class HttpApiChallengeLeaderboardProvider : IChallengeLeaderboardP
 					{
 						Rank = GetInt(item, "rank", rank),
 						Code = normalizedCode,
-						PlayerCallsign = GetString(item, "playerCallsign", "Lantern"),
-						PlayerProfileId = GetString(item, "playerProfileId", ""),
+						PlayerCallsign = PlayerLabel(GetString(item, "player", ""), normalizedCode),
 						Score = GetInt(item, "score", 0),
 						StarsEarned = GetInt(item, "starsEarned", 0),
 						HullPercent = GetInt(item, "hullPercent", 0),
@@ -102,6 +101,10 @@ public sealed class HttpApiChallengeLeaderboardProvider : IChallengeLeaderboardP
 		value = default;
 		return false;
 	}
+
+	/// <summary>"You" for the player's own entry, otherwise the board's anonymous tag.</summary>
+	private static string PlayerLabel(string tag, string board) =>
+		tag.Length > 0 && GameState.Instance != null && tag == LeaderboardTag.For(GameState.Instance.PlayerProfileId, board) ? LeaderboardTag.You : tag;
 
 	private static string GetString(JsonElement element, string propertyName, string fallback)
 	{

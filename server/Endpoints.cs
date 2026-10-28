@@ -203,7 +203,8 @@ public static class Endpoints
             entries.Add(new
             {
                 rank,
-                playerProfileId = reader.GetString(0),
+                // Public: an anonymous tag for this board, never the player ID.
+                player = LeaderboardTag.For(reader.GetString(0), code),
                 score = reader.GetInt32(1),
                 attempts = reader.GetInt32(2)
             });
@@ -1036,7 +1037,8 @@ public static class Endpoints
         {
             entries.Add(new
             {
-                profileId = reader.GetString(0),
+                // Public: an anonymous tag for this day, never the player ID.
+                player = LeaderboardTag.For(reader.GetString(0), date),
                 score = reader.GetInt32(1),
                 completedAt = reader.GetString(2)
             });

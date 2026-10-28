@@ -181,7 +181,7 @@ tiles) through `assets/shaders/royal_fog.gdshader`. The cloud is two hand-painte
 (Codex job `18-map-clouds`, made to tile and packed into `fog-clouds.png` by `art/royal/clouds.py`): fluffy
 cloudlets lit from the upper left, and below them a fainter veil that drifts more slowly on its own heading.
 Toward the edge of hidden land the faintest cloud goes first, so the outline frays into cloudlets; a small pocket
-of hidden land gets a denser little cloud. Between the clouds a haze of the same blue-grey hides a heavy blur
+of hidden land gets a denser little cloud. Between the clouds a pale haze of the same white hides a heavy blur
 of the land (the blurred mipmaps of the screen, about a thirtieth of its width), so the layer is one even tone,
 the cloud shows only as soft relief with faint shadows, and nothing on hidden ground can be made out. Smooth noise (`art/royal/fognoise.py`) bends the
 layers so their tiles never line up and varies the cloud's thickness a little from place to place. The cloud

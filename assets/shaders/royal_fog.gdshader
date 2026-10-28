@@ -8,8 +8,8 @@ shader_type canvas_item;
 // tiling seamlessly: fluffy cloudlets above, and below them a thin veil that drifts more slowly on its own
 // heading, so the two never line up. Toward the edge of the hidden land the thinnest cloud goes first, so
 // the layer frays into separate cloudlets, and a small pocket gets one dense little cloud. Between the clouds
-// a haze of the same soft blue-grey hides a heavy blur of the land, so the whole layer is one even tone and
-// the cloud shows only as soft fluffy relief, with faint shadows under each cloudlet.
+// a pale haze of the same white hides a heavy blur of the land, so the whole layer is one even tone and the
+// cloud shows only as soft fluffy relief, with faint shadows under each cloudlet.
 // The frontier's colours are muted under drifting mist, so it reads as seen but not yet charted.
 uniform sampler2D noise_tex : repeat_enable, filter_linear_mipmap;
 uniform sampler2D cloud_tex : repeat_enable, filter_linear_mipmap;
@@ -23,6 +23,7 @@ uniform vec2 noise_offset = vec2(0.0);
 uniform float clock = 0.0;
 uniform vec3 shade : source_color = vec3(0.55, 0.59, 0.67);
 uniform vec3 body : source_color = vec3(0.75, 0.78, 0.83);
+uniform vec3 sunlit : source_color = vec3(0.93, 0.925, 0.9);
 uniform vec3 veil : source_color = vec3(0.82, 0.86, 0.91);
 
 // Toward the sun in world space (y points down), the world size of one tile of each painted layer, and the
@@ -86,14 +87,14 @@ void fragment() {
 	below = mix(below, vec3(dot(below, vec3(0.3, 0.59, 0.11))), 0.55);
 	float hidden = smoothstep(0.5, 0.9, masks.r);
 	ground = mix(ground, below, hidden);
-	ground = mix(ground, mix(shade, body, 0.5), hidden * HAZE);
-	// The veil: thin, faint wisps in the same grey.
-	vec3 veils = mix(mix(shade, body, 0.55), mix(shade, body, 0.75), smoothstep(0.3, 1.0, low));
+	ground = mix(ground, mix(veil, sunlit, 0.3), hidden * HAZE);
+	// The veil: thin, faint wisps in the same white.
+	vec3 veils = mix(veil, sunlit, smoothstep(0.3, 1.0, low) * 0.7);
 	ground = mix(ground, veils, smoothstep(0.02, 0.85, low) * VEIL_OPACITY);
 	// The cloudlets' shadows fall on the veil and the land below.
 	ground *= 1.0 - smoothstep(0.15, 0.8, caster) * 0.07 * reach;
-	// The cloudlets: the painting's brightness is both how thick and how brightly lit each part is.
-	vec3 clouds = mix(mix(shade, body, 0.5), mix(shade, body, 0.7), smoothstep(0.05, 0.45, puff));
-	clouds = mix(clouds, body, smoothstep(0.4, 0.95, puff));
+	// The cloudlets: the painting's brightness is both how thick and how sunlit each part is.
+	vec3 clouds = mix(mix(body, veil, 0.5), veil, smoothstep(0.05, 0.45, puff));
+	clouds = mix(clouds, sunlit, smoothstep(0.4, 0.95, puff));
 	COLOR = vec4(mix(ground, clouds, smoothstep(0.02, 0.55, puff) * PUFF_OPACITY), 1.0);
 }

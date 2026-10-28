@@ -57,6 +57,14 @@ public partial class StorePackCard : Control
         Resized += Layout;
     }
 
+    /// <summary>A bundle names the troop it recruits, the same one GameState grants, so nothing about it is left to chance.</summary>
+    private string KitUnitLine()
+    {
+        if (_owned) return "Your next troop";
+        var unitId = GameState.Instance?.NextKitUnitId() ?? "";
+        return unitId.Length > 0 ? $"Recruits {GameData.GetUnit(unitId).DisplayName}" : "Every troop recruited";
+    }
+
     private TextureRect Picture(Texture2D texture)
     {
         var picture = new TextureRect { Texture = texture, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
@@ -122,7 +130,7 @@ public partial class StorePackCard : Control
         }
         if (Product.GoldAmount > 0) Line(HomeMapArt.Icon("gold"), $"{Product.GoldAmount:N0} gold");
         if (Product.FoodAmount > 0) Line(HomeMapArt.Icon("food"), $"{Product.FoodAmount:N0} food");
-        if (Product.GrantsUnitUnlock) Line(RoyalKit.Texture("store-unit"), "A new unit", new Color("f3deaa"));
+        if (Product.GrantsUnitUnlock) Line(RoyalKit.Texture("store-unit"), KitUnitLine(), new Color("f3deaa"));
         // The column's width wraps the description, so it lives in the column below the contents.
         _contents.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore });
         _contents.AddChild(Serif(Product.Description, 12, MutedInk));

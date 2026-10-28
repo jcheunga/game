@@ -493,8 +493,8 @@ public partial class CashShopMenu : Control
                 _statusLabel.Text += $"+{result.GoldCredited} Gold  ";
             if (result.FoodCredited > 0)
                 _statusLabel.Text += $"+{result.FoodCredited} Food  ";
-            if (result.GrantedUnitUnlock)
-                _statusLabel.Text += "\n+ Unit unlock granted!";
+            if (result.GrantedUnitUnlock && GameState.Instance.LastKitUnitId.Length > 0)
+                _statusLabel.Text += $"\n+ {GameData.GetUnit(GameState.Instance.LastKitUnitId).DisplayName} recruited";
             AudioDirector.Instance?.PlayRewardClaim();
         }
         else if (result.Status == "refunded")

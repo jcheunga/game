@@ -6488,7 +6488,7 @@ public partial class GameState : Node
 
 		if (result.GrantedUnitUnlock)
 		{
-			GrantRandomUnitUnlock();
+			GrantKitUnitUnlock();
 		}
 
 		Persist();
@@ -6496,21 +6496,27 @@ public partial class GameState : Node
 		return true;
 	}
 
-	private void GrantRandomUnitUnlock()
+	/// <summary>The troop the last Adventurer's Kit recruited, or "" when there was none left to recruit.</summary>
+	public string LastKitUnitId { get; private set; } = "";
+
+	/// <summary>
+	/// The troop the Adventurer's Kit recruits: the next one on the road the player hasn't recruited
+	/// (lowest unlock stage, then roster order), even before its stage. It is fixed, never random, so
+	/// the kit is not a paid random reward, and a new player gets a troop too. "" once all are recruited.
+	/// </summary>
+	public string NextKitUnitId()
 	{
-		var candidates = new List<string>();
-		foreach (var unit in GameData.GetPlayerUnits())
-		{
-			if (!_ownedPlayerUnitIds.Contains(unit.Id) && unit.UnlockStage <= HighestUnlockedStage)
-			{
-				candidates.Add(unit.Id);
-			}
-		}
+		return GameData.GetPlayerUnits()
+			.Where(unit => !_ownedPlayerUnitIds.Contains(unit.Id))
+			.OrderBy(unit => unit.UnlockStage)
+			.Select(unit => unit.Id)
+			.FirstOrDefault() ?? "";
+	}
 
-		if (candidates.Count == 0) return;
-
-		var index = _rng.RandiRange(0, candidates.Count - 1);
-		_ownedPlayerUnitIds.Add(candidates[index]);
+	private void GrantKitUnitUnlock()
+	{
+		LastKitUnitId = NextKitUnitId();
+		if (LastKitUnitId.Length > 0) _ownedPlayerUnitIds.Add(LastKitUnitId);
 	}
 
 	/// <summary>

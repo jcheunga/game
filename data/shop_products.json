@@ -123,7 +123,7 @@
     "id": "starter_kit",
     "category": "mixed",
     "displayName": "Adventurer's Kit",
-    "description": "A starter bundle with gold, food, and a guaranteed unit unlock. Offered once.",
+    "description": "A starter bundle with gold, food, and your next troop, recruited at once. Offered once.",
     "currencyType": "mixed",
     "currencyAmount": 0,
     "bonusAmount": 0,

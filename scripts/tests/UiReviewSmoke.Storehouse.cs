@@ -74,10 +74,19 @@ public partial class UiReviewSmoke
         var kit = Walk(store).OfType<StorePackCard>().Single(card => card.Product.Id == "starter_kit");
         var shown = Walk(kit).OfType<Label>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)
             .Concat(Walk(kit).OfType<RoyalLabel>().Where(label => label.IsVisibleInTree()).Select(label => label.Text)).ToArray();
-        Check(shown.Contains("800 gold") && shown.Contains("30 food") && shown.Contains("A new unit") && shown.Contains("Once per account")
+        Check(shown.Contains("800 gold") && shown.Contains("30 food") && shown.Contains($"Recruits {GameData.GetUnit(state.NextKitUnitId()).DisplayName}") && shown.Contains("Once per account")
             && pages.GetGlobalRect().Encloses(kit.GetGlobalRect()), "The bundle card shows its complete contents and one-time restriction");
         Check(Walk(store).OfType<StorePackCard>().Where(card => card.IsVisibleInTree()).Count(card => Walk(card).OfType<RoyalLabel>().Any(label => label.Text == "Best value")) == 0,
             "Bundles carry no best-value ribbon");
+
+        // The kit recruits a named troop, never a random one, and a player who has recruited every troop they reached still gets one.
+        var kitUnit = state.NextKitUnitId();
+        Check(kitUnit.Length > 0 && !state.IsUnitOwned(kitUnit) && kitUnit == state.NextKitUnitId(), "The kit names a troop the player doesn't have, the same every time");
+        var kitSave = state.BuildSaveData();
+        state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = "PUR-REVIEW-KIT", ProductId = "starter_kit", GrantedUnitUnlock = true });
+        Check(state.IsUnitOwned(kitUnit) && state.LastKitUnitId == kitUnit && state.NextKitUnitId() != kitUnit, "Buying the kit recruits exactly the troop its card names");
+        typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { kitSave });
+        knowledge = state.AdventureKnowledgeRevision; // Loading a save invalidates the knowledge cache.
         Check(canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Browsing packs and refilling rations never moves or reveals the map");
 
         fixture = state.BuildSaveData(); fixture.PurchasedProductIds = new[] { "starter_kit" };

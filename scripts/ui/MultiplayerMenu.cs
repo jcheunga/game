@@ -173,31 +173,8 @@ public partial class MultiplayerMenu : Control
     {
         foreach (var page in _boardPages) RealmUi.Clear(page);
         _squadStack = _boardPages[0];
-        // Service diagnostics live behind Connection details; the page leads with rooms.
-        var connection = RealmUi.Button("eye", "Connection details", () => RealmUi.Details(this, "Connection details",
-            OnlineRoomDirectoryService.BuildSnapshotSummary() + "\n\n" + OnlineRoomCreateService.BuildStatusSummary() + "\n" + OnlineRoomJoinService.BuildStatusSummary() + "\n" + OnlineRoomSessionService.BuildStatusSummary() + "\n" + OnlineRoomTelemetryService.BuildStatusSummary()));
-        connection.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
-        var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
-        if (joinedRoomTicket != null)
-        {
-            _squadStack.AddChild(BuildOnlineRoomActionPanel());
-        }
-
-        var onlineRooms = OnlineRoomDirectoryService.GetCachedRooms();
-        if (onlineRooms.Count == 0)
-        {
-            _squadStack.AddChild(RealmUi.EmptyState("people", "No open rooms", "Refresh to find rooms, or host one for your friends."));
-        }
-        else
-        {
-            var roomIndex = 0;
-            foreach (var room in onlineRooms)
-            {
-                _squadStack.AddChild(BuildRoyalRoomRow(room, roomIndex++));
-            }
-        }
-
-        _squadStack.AddChild(connection);
+        if (!LaunchFeatures.InternetRooms) BuildRecordsPage();
+        else BuildRoomsPage();
 
         _squadStack = _boardPages[2];
         var onlineBoards = RealmUi.SectionTitle("Online boards");
@@ -291,10 +268,7 @@ public partial class MultiplayerMenu : Control
                 var entriesToShow = _cachedDailyLeaderboard.Entries.Take(10);
                 foreach (var entry in entriesToShow)
                 {
-                    var truncatedId = entry.ProfileId.Length > 12
-                        ? entry.ProfileId[..12] + ".."
-                        : entry.ProfileId;
-                    sb.AppendLine($"#{rank}  {truncatedId}  —  {entry.Score}");
+                    sb.AppendLine($"#{rank}  {entry.Player}  —  {entry.Score}");
                     rank++;
                 }
 
@@ -369,6 +343,49 @@ public partial class MultiplayerMenu : Control
             Text = StageEncounterIntel.BuildEncounterIntel(stage),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+    }
+
+    /// <summary>The first board with internet rooms on: the joined room, the open rooms, and connection details.</summary>
+    private void BuildRoomsPage()
+    {
+        // Service diagnostics live behind Connection details; the page leads with rooms.
+        var connection = RealmUi.Button("eye", "Connection details", () => RealmUi.Details(this, "Connection details",
+            OnlineRoomDirectoryService.BuildSnapshotSummary() + "\n\n" + OnlineRoomCreateService.BuildStatusSummary() + "\n" + OnlineRoomJoinService.BuildStatusSummary() + "\n" + OnlineRoomSessionService.BuildStatusSummary() + "\n" + OnlineRoomTelemetryService.BuildStatusSummary()));
+        connection.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
+        var joinedRoomTicket = OnlineRoomJoinService.GetCachedTicket();
+        if (joinedRoomTicket != null)
+        {
+            _squadStack.AddChild(BuildOnlineRoomActionPanel());
+        }
+
+        var onlineRooms = OnlineRoomDirectoryService.GetCachedRooms();
+        if (onlineRooms.Count == 0)
+        {
+            _squadStack.AddChild(RealmUi.EmptyState("people", "No open rooms", "Refresh to find rooms, or host one for your friends."));
+        }
+        else
+        {
+            var roomIndex = 0;
+            foreach (var room in onlineRooms)
+            {
+                _squadStack.AddChild(BuildRoyalRoomRow(room, roomIndex++));
+            }
+        }
+
+        _squadStack.AddChild(connection);
+    }
+
+    /// <summary>The first board while internet rooms are held back: the player's own record on the loaded code.</summary>
+    private void BuildRecordsPage()
+    {
+        var challenge = GameState.Instance.GetSelectedAsyncChallenge();
+        var best = GameState.Instance.GetAsyncChallengeBestScore(challenge.Code);
+        _squadStack.AddChild(RealmUi.SectionTitle($"Your record on {challenge.Code}"));
+        _squadStack.AddChild(RealmUi.Label(best > 0
+            ? $"Best score {best} · {AsyncChallengeCatalog.ResolveMedalLabel(challenge, best)} · {GameState.Instance.ChallengeRuns} challenge runs in all"
+            : "No runs on this code yet. Start the challenge to set a score.", 18));
+        _squadStack.AddChild(RealmUi.Label(_historyLabel.Text.Trim(), 16, true));
+        _squadStack.AddChild(RealmUi.Label(_tapeLabel.Text.Trim(), 16, true));
     }
 
     private Control BuildLeaderboardPanel(string code)
@@ -1325,14 +1342,17 @@ public partial class MultiplayerMenu : Control
             statusParts.Add(profileMessage);
         }
 
-        OnlineRoomDirectoryService.RefreshRooms(
-            GameState.Instance.HighestUnlockedStage,
-            GameState.Instance.MaxStage,
-            4,
-            out var roomMessage);
-        statusParts.Add(roomMessage);
+        if (LaunchFeatures.InternetRooms)
+        {
+            OnlineRoomDirectoryService.RefreshRooms(
+                GameState.Instance.HighestUnlockedStage,
+                GameState.Instance.MaxStage,
+                4,
+                out var roomMessage);
+            statusParts.Add(roomMessage);
+        }
 
-        if (OnlineRoomJoinService.GetCachedTicket() != null)
+        if (LaunchFeatures.InternetRooms && OnlineRoomJoinService.GetCachedTicket() != null)
         {
             if (!OnlineRoomJoinService.HasActiveTicket())
             {

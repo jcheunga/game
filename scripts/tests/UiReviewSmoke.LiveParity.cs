@@ -46,8 +46,13 @@ public partial class UiReviewSmoke
         await TapModal(Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Single(b => b.Text == "Community"));
         await TapHint("Challenges");
         LiveUiReview.AssertDestination(GetTree(), SceneRouter.MultiplayerScene);
-        Check(LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).Any(b => b.Text == "Rooms" && b.ButtonPressed),
-            "Challenges opens the live multiplayer Rooms page through More / Community");
+        var firstBoard = LaunchFeatures.InternetRooms ? "Rooms" : "Records";
+        Check(LiveUiReview.VisibleTabs(LiveUiReview.ActiveRoot(GetTree())).Any(b => b.Text == firstBoard && b.ButtonPressed),
+            $"Challenges opens the live multiplayer {firstBoard} page through More / Community");
+        // Internet rooms are held back for 1.0, so nothing offers to match or host one.
+        var footer = Walk(LiveUiReview.ActiveRoot(GetTree())).OfType<Button>().Where(b => b.IsVisibleInTree()).Select(b => b.AccessibilityName).ToHashSet();
+        Check(LaunchFeatures.InternetRooms || (!footer.Contains("Match") && !footer.Contains("Host") && footer.Contains("New code") && footer.Contains("Copy code")),
+            "Without internet rooms the footer offers New code and Copy code instead of Match and Host");
         AuditText("Live click / Multiplayer"); await Capture("click-Multiplayer");
         // LAN lives in the challenge code menu: Code options, then LAN race.
         await TapHint("Code options");

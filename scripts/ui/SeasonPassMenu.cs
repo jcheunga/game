@@ -59,6 +59,9 @@ public partial class SeasonPassMenu : RoyalScreen
         var xp = spec.Label("band.xp.label", max ? "MAX TIER" : $"{state.SeasonPassXP - from:N0} / {to - from:N0} XP", 200, new Color("0c0a07"));
         xp.ShadowOffset = Vector2.Zero; _layer.AddChild(xp);
 
+        // Until a product sells the premium track, the free row stands alone, centred where both rows were.
+        var premiumTrack = LaunchFeatures.SeasonPremiumTrack;
+        var shift = premiumTrack ? Vector2.Zero : new Vector2(0, (spec.Rect("row.premium").Position.Y - spec.Rect("row.free").Position.Y) / 2f);
         for (var i = 0; i < 5; i++)
         {
             var tierNumber = _first + i;
@@ -69,14 +72,19 @@ public partial class SeasonPassMenu : RoyalScreen
             _layer.AddChild(number);
             if (tier == null) continue;
             Card(spec, $"reward.free.{7 + i}", tier.Tier, tier.FreeRewardType, tier.FreeRewardAmount, tier.FreeRewardLabel, "",
-                state.HasClaimedSeasonFreeTier(tier.Tier), tier.Tier <= current, false);
-            Card(spec, $"reward.premium.{7 + i}", tier.Tier, tier.PremiumRewardType, tier.PremiumRewardAmount, tier.PremiumRewardLabel, tier.PremiumRewardItemId,
+                state.HasClaimedSeasonFreeTier(tier.Tier), tier.Tier <= current, false, shift);
+            if (premiumTrack) Card(spec, $"reward.premium.{7 + i}", tier.Tier, tier.PremiumRewardType, tier.PremiumRewardAmount, tier.PremiumRewardLabel, tier.PremiumRewardItemId,
                 state.HasClaimedSeasonPremiumTier(tier.Tier), tier.Tier <= current && state.HasPremiumPass, true);
         }
-        _layer.AddChild(RoyalKit.Image("season-row-free", spec.Rect("row.free")));
-        _layer.AddChild(RoyalKit.Image("season-row-premium", spec.Rect("row.premium")));
-        _layer.AddChild(spec.Label("row.free.label", "FREE", 100));
-        _layer.AddChild(spec.Label("row.premium.label", "PREMIUM", 120));
+        _layer.AddChild(RoyalKit.Image("season-row-free", new Rect2(spec.Rect("row.free").Position + shift, spec.Rect("row.free").Size)));
+        var freeLabel = spec.Label("row.free.label", "FREE", 100);
+        freeLabel.Position += shift;
+        _layer.AddChild(freeLabel);
+        if (premiumTrack)
+        {
+            _layer.AddChild(RoyalKit.Image("season-row-premium", spec.Rect("row.premium")));
+            _layer.AddChild(spec.Label("row.premium.label", "PREMIUM", 120));
+        }
         var rail = spec.Rect("rail");
         for (var side = -1; side <= 1; side += 2)
         {
@@ -88,7 +96,7 @@ public partial class SeasonPassMenu : RoyalScreen
             _layer.AddChild(arrow);
         }
         _layer.AddChild(MapNavigation.Fixed(spec.Rect("button.map"), Close));
-        if (!state.HasPremiumPass)
+        if (premiumTrack && !state.HasPremiumPass)
         {
             var premium = spec.Rect("row.premium");
             var unlock = RoyalButton.Over(new Rect2(premium.Position.X + 20, premium.End.Y - 44, premium.Size.X - 40, 34), "Unlock premium", () => SceneRouter.Instance.GoToCashShop(), 6);
@@ -100,11 +108,11 @@ public partial class SeasonPassMenu : RoyalScreen
         }
     }
 
-    private void Card(RoyalSpec spec, string key, int tier, string type, int amount, string label, string itemId, bool claimed, bool unlocked, bool premium)
+    private void Card(RoyalSpec spec, string key, int tier, string type, int amount, string label, string itemId, bool claimed, bool unlocked, bool premium, Vector2 shift = default)
     {
         var rect = spec.Rect(key);
         var ready = unlocked && !claimed;
-        var card = new Panel { Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass,
+        var card = new Panel { Position = rect.Position + shift, Size = rect.Size, MouseFilter = MouseFilterEnum.Pass,
             TooltipText = claimed ? $"{label} · claimed" : ready ? $"Claim {label}" : premium && !GameState.Instance.HasPremiumPass ? $"{label} · premium" : $"{label} · tier {tier}" };
         card.AddThemeStyleboxOverride("panel", RoyalKit.Slice(ready ? "season-card-ready" : "season-card", 12, 12, 12, 54));
         _layer.AddChild(card);

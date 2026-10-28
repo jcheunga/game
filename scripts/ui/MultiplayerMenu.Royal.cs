@@ -8,8 +8,9 @@ using Godot;
 /// </summary>
 public partial class MultiplayerMenu
 {
+    // The plate's five tab slots. The first shows Rooms, or the player's Records while internet rooms are held back.
     private static readonly string[] BoardKeys = { "rooms", "daily", "featured", "saved", "squad" };
-    private static readonly string[] BoardNames = { "Rooms", "Daily", "Featured", "Saved", "Squad" };
+    private static string[] BoardNames => new[] { LaunchFeatures.InternetRooms ? "Rooms" : "Records", "Daily", "Featured", "Saved", "Squad" };
     private Control _royalLayer;
     private RoyalButton _royalStart;
     private RoyalLabel _routeLabel, _routeStage, _mutatorLabel;
@@ -87,8 +88,17 @@ public partial class MultiplayerMenu
 
         Footer(spec, "back", "icon-back-chevron", "Back", CloseRoyal);
         Footer(spec, "refresh", "icon-refresh", "Refresh", RefreshOnlineData);
-        Footer(spec, "match", "icon-match", "Match", QuickMatchOnlineRoom);
-        Footer(spec, "host", "icon-host", "Host", HostOnlineRoom);
+        if (LaunchFeatures.InternetRooms)
+        {
+            Footer(spec, "match", "icon-match", "Match", QuickMatchOnlineRoom);
+            Footer(spec, "host", "icon-host", "Host", HostOnlineRoom);
+        }
+        else
+        {
+            // Without internet rooms these painted slots hold the challenge code's own actions.
+            Footer(spec, "match", "icon-quill", "New code", GenerateChallengeCode);
+            Footer(spec, "host", "icon-scroll-gold", "Copy code", CopyChallengeCode);
+        }
         _royalStart = Footer(spec, "start", "icon-swords-dark", "Start challenge", StartChallenge, true);
     }
 
@@ -117,16 +127,18 @@ public partial class MultiplayerMenu
 
     private void BuildBoardTabs(RoyalSpec spec)
     {
+        var names = BoardNames;
         for (var i = 0; i < BoardKeys.Length; i++)
         {
             var index = i;
             var key = "tab." + BoardKeys[i];
             var rect = spec.Rect(key);
-            var tab = RoyalButton.Over(rect, BoardNames[i], () => SelectBoard(index), 4);
-            tab.Name = "BoardTab" + BoardNames[i];
+            var tab = RoyalButton.Over(rect, names[i], () => SelectBoard(index), 4);
+            tab.Name = "BoardTab" + names[i];
             var icon = spec.Rect(key + ".icon");
-            tab.SetGlyph(RoyalKit.Texture("mptab-" + BoardKeys[i]), new Rect2(icon.Position - rect.Position, icon.Size));
-            var label = spec.Label(key + ".label", BoardNames[i], 150);
+            var glyph = names[i] == "Records" ? "icon-open-book" : "mptab-" + BoardKeys[i];
+            tab.SetGlyph(RoyalKit.Texture(glyph), new Rect2(icon.Position - rect.Position, icon.Size));
+            var label = spec.Label(key + ".label", names[i], 150);
             label.Position -= rect.Position;
             tab.SetCaption(label, new Rect2(label.Position, label.Size));
             _royalLayer.AddChild(tab);
@@ -137,9 +149,9 @@ public partial class MultiplayerMenu
     {
         _board = index;
         for (var i = 0; i < _boardPages.Length; i++) _boardPages[i].GetParent<ScrollContainer>().Visible = i == index;
-        var spec = MpSpec;
+        var names = BoardNames;
         for (var i = 0; i < BoardKeys.Length; i++)
-            if (_royalLayer.GetNodeOrNull<RoyalButton>("BoardTab" + BoardNames[i]) is { } tab)
+            if (_royalLayer.GetNodeOrNull<RoyalButton>("BoardTab" + names[i]) is { } tab)
             {
                 tab.SetStates(i == index ? RoyalKit.Slice("mp-tab-selected", 12) : null, 4);
                 tab.MarkTab(i == index);
@@ -172,7 +184,7 @@ public partial class MultiplayerMenu
             switch (id)
             {
                 case 0: GenerateChallengeCode(); break;
-                case 1: DisplayServer.ClipboardSet(_codeEdit.Text); SetStatusMessage($"Copied {_codeEdit.Text} to the clipboard."); break;
+                case 1: CopyChallengeCode(); break;
                 case 2:
                     if (string.IsNullOrWhiteSpace(_codeEdit.Text)) { SetStatusMessage("No challenge code to share."); break; }
                     var url = DeepLinkHandler.BuildShareUrl(_codeEdit.Text);
@@ -188,6 +200,13 @@ public partial class MultiplayerMenu
         menu.Theme = MedievalUiTheme();
         menu.Popup(new Rect2I((Vector2I)(GetGlobalTransformWithCanvas() * MpSpec.Rect("brief.code").Position + new Vector2(0, 58)), Vector2I.Zero));
         menu.PopupHide += menu.QueueFree;
+    }
+
+    private void CopyChallengeCode()
+    {
+        DisplayServer.ClipboardSet(_codeEdit.Text);
+        SetStatusMessage($"Copied {_codeEdit.Text}. A friend can load it to race the same board.");
+        RefreshUi();
     }
 
     private Theme MedievalUiTheme() => Theme ?? GetTree().Root.Theme;

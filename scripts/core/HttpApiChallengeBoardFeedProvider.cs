@@ -52,16 +52,17 @@ public sealed class HttpApiChallengeBoardFeedProvider : IChallengeBoardFeedProvi
 			var root = document.RootElement;
 			status = GetString(root, "status", "ok");
 			message = GetString(root, "message", "");
-			if (TryGetProperty(root, "items", out var itemsElement) && itemsElement.ValueKind == JsonValueKind.Array)
+			// The server sends "entries"; "items" is the older shape.
+			if ((TryGetProperty(root, "entries", out var itemsElement) || TryGetProperty(root, "items", out itemsElement)) && itemsElement.ValueKind == JsonValueKind.Array)
 			{
 				foreach (var item in itemsElement.EnumerateArray())
 				{
 					items.Add(new ChallengeBoardFeedItem
 					{
-						Id = GetString(item, "id", Guid.NewGuid().ToString("N")),
+						Id = GetString(item, "id", GetString(item, "boardCode", Guid.NewGuid().ToString("N"))),
 						Title = GetString(item, "title", "Remote Board"),
 						Summary = GetString(item, "summary", "Backend-authored async challenge board."),
-						Code = GetString(item, "code", ""),
+						Code = GetString(item, "boardCode", GetString(item, "code", "")),
 						LockedDeckUnitIds = GetStringArray(item, "lockedDeckUnitIds")
 					});
 				}

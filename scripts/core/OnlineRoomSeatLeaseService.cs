@@ -162,10 +162,10 @@ public static class OnlineRoomSeatLeaseService
 
 		if (normalized.EndsWith("/challenge-sync", StringComparison.OrdinalIgnoreCase))
 		{
-			return normalized[..^"/challenge-sync".Length] + "/challenge-room-lease";
+			return normalized[..^"/challenge-sync".Length] + "/challenge-room-seat-lease";
 		}
 
-		return normalized.TrimEnd('/') + "/challenge-room-lease";
+		return normalized.TrimEnd('/') + "/challenge-room-seat-lease";
 	}
 
 	private static string FormatRemainingSeconds(long remainingSeconds)

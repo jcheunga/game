@@ -52,7 +52,8 @@ public sealed class HttpApiOnlineRoomDirectoryProvider : IOnlineRoomDirectoryPro
 			var root = document.RootElement;
 			status = GetString(root, "status", "ok");
 			message = GetString(root, "message", "");
-			if (TryGetProperty(root, "rooms", out var roomsElement) && roomsElement.ValueKind == JsonValueKind.Array)
+			// The server sends "entries"; "rooms" is the older shape.
+			if ((TryGetProperty(root, "entries", out var roomsElement) || TryGetProperty(root, "rooms", out roomsElement)) && roomsElement.ValueKind == JsonValueKind.Array)
 			{
 				foreach (var item in roomsElement.EnumerateArray())
 				{

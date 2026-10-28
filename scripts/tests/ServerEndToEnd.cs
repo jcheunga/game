@@ -341,7 +341,8 @@ public partial class ServerEndToEnd : Node
 
         Check(OnlineRoomCreateService.HostSelectedChallenge(out var hosted) && OnlineRoomCreateService.GetHostedRoom() is { RoomId.Length: > 0 }, $"An online room opens ({hosted})");
         var room = OnlineRoomCreateService.GetHostedRoom()?.RoomId ?? "";
-        Check(OnlineRoomDirectoryService.RefreshRooms(state.HighestUnlockedStage, state.MaxStage, 10, out var rooms), $"The room list loads ({rooms})");
+        Check(OnlineRoomDirectoryService.RefreshRooms(state.HighestUnlockedStage, state.MaxStage, 10, out var rooms)
+            && OnlineRoomDirectoryService.GetCachedRooms().Any(entry => entry.RoomId == room), $"The room list loads and shows the hosted room ({rooms})");
         Check(OnlineRoomSessionService.RefreshJoinedRoom(out var session) && OnlineRoomSessionService.GetCachedSnapshot() != null, $"The joined room's session loads ({session})");
         Check(OnlineRoomActionService.ToggleReady(out var ready), $"The host can ready up ({ready})");
         Check(OnlineRoomScoreboardService.RefreshJoinedRoomScoreboard(5, out var scores), $"The room scoreboard loads ({scores})");

@@ -13,6 +13,13 @@ public partial class GameState
     /// </summary>
     public bool AccountDeletedNoticePending { get; private set; }
     public void AcknowledgeAccountDeletedNotice() { if (!AccountDeletedNoticePending) return; AccountDeletedNoticePending = false; Persist(); }
+    /// <summary>
+    /// A guest's purchases live only on this device until they sign in, so the shop asks once, after the first one.
+    /// True when that should happen now: a guest who has bought something and hasn't been asked.
+    /// </summary>
+    public bool ShouldPromptSignInAfterPurchase => AccountProvider.Length == 0 && _totalPurchaseCount > 0 && !SignInAfterPurchasePrompted;
+    public bool SignInAfterPurchasePrompted { get; private set; }
+    public void MarkSignInAfterPurchasePrompted() { if (SignInAfterPurchasePrompted) return; SignInAfterPurchasePrompted = true; Persist(); }
     public void SetSignedInAccount(string provider, string label)
     { AccountProvider = provider; AccountLabel = label; SkipAutoSignIn = false; Persist(); }
     /// <summary>After an explicit sign-out the player stays a guest until they choose an account again.</summary>

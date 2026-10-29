@@ -136,6 +136,8 @@ public sealed class GameSaveData
     public string LastDailyDate { get; set; } = "";
     public string DifficultyId { get; set; } = "normal";
     public bool ShowHints { get; set; } = true;
+    /// <summary>A guest has been asked, once, to sign in after their first purchase.</summary>
+    public bool SignInAfterPurchasePrompted { get; set; }
     public string[] SeenHintIds { get; set; } = [];
     public int DailyStreak { get; set; }
     public string[] UnlockedAchievementIds { get; set; } = [];

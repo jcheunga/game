@@ -85,6 +85,21 @@ public partial class UiReviewSmoke
         var kitSave = state.BuildSaveData();
         state.TryApplyPurchaseReward(new PurchaseValidationResult { Status = "ok", PurchaseId = "PUR-REVIEW-KIT", ProductId = "starter_kit", GrantedUnitUnlock = true });
         Check(state.IsUnitOwned(kitUnit) && state.LastKitUnitId == kitUnit && state.NextKitUnitId() != kitUnit, "Buying the kit recruits exactly the troop its card names");
+
+        // A guest is asked once, after their first purchase, to sign in so it isn't lost with the phone.
+        Check(state.AccountProvider.Length == 0 && state.ShouldPromptSignInAfterPurchase, "A guest who has bought something is due the sign-in prompt");
+        var prompt = typeof(CashShopMenu).GetMethod("PromptGuestSignIn", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        prompt.Invoke(store, null);
+        await Wait(.2);
+        Button Labelled(string text) => Walk(store).OfType<Button>().FirstOrDefault(button => button.IsVisibleInTree() && !button.IsQueuedForDeletion() && button.Text == text);
+        var notNow = Labelled("Not now");
+        Check(Walk(store).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text == "Keep your purchase safe") && Labelled("Sign in") != null && notNow != null,
+            "After a guest's first purchase the shop offers Sign in or Not now");
+        AuditText("Storehouse / sign-in after purchase"); await Capture("storehouse-sign-in-prompt");
+        if (notNow != null) await TapModal(notNow);
+        prompt.Invoke(store, null);
+        await Wait(.2);
+        Check(Labelled("Not now") == null && !state.ShouldPromptSignInAfterPurchase, "The prompt comes once");
         typeof(GameState).GetMethod("ApplySavedData", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(state, new object[] { kitSave });
         knowledge = state.AdventureKnowledgeRevision; // Loading a save invalidates the knowledge cache.
         Check(canvas.MapOffset == camera && state.AdventureKnowledgeRevision == knowledge, "Browsing packs and refilling rations never moves or reveals the map");

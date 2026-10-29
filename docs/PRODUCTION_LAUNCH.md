@@ -452,7 +452,9 @@ receipt stub, or a backend unit test as store certification.
    complete listing/IAP metadata with reviewer notes; start in internal/closed
    testing or TestFlight, then stage a controlled public rollout.
 4. Assign on-call coverage for API/store errors, crashes, failed payments,
-   refunds, moderation, and support. Keep a tested commerce-disable path. Do
+   refunds, moderation, and support. The commerce-disable path is
+   `POST /admin/purchases` (built and tested 2026-10-29; see
+   [DEPLOYMENT.md](DEPLOYMENT.md#pausing-purchases)). Do
    not disable the API without accounting for already-charged purchases and
    unfinished store transactions.
 5. Define rollback triggers and the previous known-good client/server versions.

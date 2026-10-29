@@ -695,6 +695,13 @@ public static class Database
             cmd.ExecuteNonQuery();
             SetSchemaVersion(conn, 8);
         }
+
+        if (version < 9)
+        {
+            // Operator switches the running server reads, such as pausing new purchases (server/LiveSettings.cs).
+            LiveSettings.Initialize(conn);
+            SetSchemaVersion(conn, 9);
+        }
     }
 
     /// <summary>

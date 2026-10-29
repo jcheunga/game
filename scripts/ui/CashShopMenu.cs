@@ -43,6 +43,30 @@ public partial class CashShopMenu : Control
         NativeIAPService.Instance?.RetryUnfinishedPurchases();
         ShowRefundsAsync();
         MarkOneTimePurchasesAsync();
+        CheckPurchasesPausedAsync();
+    }
+
+    /// <summary>
+    /// After a guest's first purchase, asks once whether to sign in: until then the purchase lives only on this
+    /// device, and a lost phone loses it.
+    /// </summary>
+    private void PromptGuestSignIn()
+    {
+        var state = GameState.Instance;
+        if (!state.ShouldPromptSignInAfterPurchase) return;
+        state.MarkSignInAfterPurchasePrompted();
+        MedievalUi.ShowConfirmation(this, "Keep your purchase safe",
+            "You're playing as a guest, so your progress and purchases live only on this device. Sign in and they come back on a new phone or after reinstalling.",
+            "Sign in", () => AccountDialog.Show(this), "Not now");
+    }
+
+    /// <summary>While the operator has paused purchases, every Buy is greyed out and the shop says why.</summary>
+    private async void CheckPurchasesPausedAsync()
+    {
+        await GameState.Instance.RefreshPurchasesPauseAsync();
+        if (!IsOpen() || !GameState.Instance.PurchasesPaused) return;
+        RefreshUi(preserveStatus: true);
+        _noticeLabel.Text = GameState.Instance.PurchasesPausedMessage;
     }
 
     /// <summary>Marks the Adventurer's Kit bought if the server's history says so, so an older save never offers it again.</summary>
@@ -337,8 +361,12 @@ public partial class CashShopMenu : Control
         // Where there is a choice of sizes, the pack that gives the most for the money is marked.
         var best = products.Count >= 3 ? products.OrderByDescending(p => p.TotalCurrencyAmount / Math.Max(.01, p.PriceUsd)).First() : null;
         foreach (var product in products)
-            row.AddChild(new StorePackCard(product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id), product == best,
-                LocalizedPrice(product), wide: products.Count <= 2, OnPurchasePressed));
+        {
+            var card = new StorePackCard(product, product.OneTimePurchase && GameState.Instance.HasPurchasedProduct(product.Id), product == best,
+                LocalizedPrice(product), wide: products.Count <= 2, OnPurchasePressed);
+            row.AddChild(card);
+            if (GameState.Instance.PurchasesPaused && card.Buy != null) card.Buy.Disabled = true;
+        }
     }
 
     private static string LocalizedPrice(ShopProduct product) => NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
@@ -357,6 +385,11 @@ public partial class CashShopMenu : Control
     private void OnPurchasePressed(StorePackCard card)
     {
         var productId = card.Product.Id;
+        if (GameState.Instance.PurchasesPaused)
+        {
+            _noticeLabel.Text = GameState.Instance.PurchasesPausedMessage;
+            return;
+        }
         if (_nativePurchaseBusy)
         {
             _noticeLabel.Text = "Finishing your last purchase. Try again in a moment.";
@@ -503,6 +536,7 @@ public partial class CashShopMenu : Control
             if (result.GrantedUnitUnlock && GameState.Instance.LastKitUnitId.Length > 0)
                 _statusLabel.Text += $"\n+ {GameData.GetUnit(GameState.Instance.LastKitUnitId).DisplayName} recruited";
             AudioDirector.Instance?.PlayRewardClaim();
+            PromptGuestSignIn();
         }
         else if (result.Status == "refunded")
         {

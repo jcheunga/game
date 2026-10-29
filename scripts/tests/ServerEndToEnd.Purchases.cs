@@ -173,6 +173,55 @@ public partial class ServerEndToEnd
         return true;
     }
 
+    /// <summary>
+    /// The operator pauses new purchases: the shop greys out every Buy, says why, and starts nothing when one is
+    /// tapped. Resuming opens it again.
+    /// </summary>
+    private async Task PurchasePause(GameState state)
+    {
+        var pause = await Admin(HttpMethod.Post, "/admin/purchases", new { paused = true, message = "Purchases return at 10:00 UTC." });
+        Check(pause.Status == 200 && pause.Body.GetProperty("paused").GetBoolean(), $"The operator pauses purchases ({pause.Status})");
+        try
+        {
+            var home = (MapMenu)await LiveUiReview.Open(this, "MainMenu");
+            home.OpenHomeDestination(SceneRouter.CashShopScene);
+            await Wait(.4);
+            var shop = Walk(home).OfType<CashShopMenu>().Single();
+            var notice = (Label)typeof(CashShopMenu).GetField("_noticeLabel", Private)!.GetValue(shop)!;
+            Check(await Until(() => state.PurchasesPaused && notice.Text == "Purchases return at 10:00 UTC."), $"The shop says purchases are paused ({Clip(notice.Text)})");
+            var cards = Walk(shop).OfType<StorePackCard>().ToList();
+            Check(cards.Count > 0 && cards.All(card => card.Buy.Disabled), "Every Buy is greyed out while purchases are paused");
+            var gold = state.Gold;
+            typeof(CashShopMenu).GetMethod("OnPurchasePressed", Private)!.Invoke(shop, [cards[0]]);
+            Check(!cards[0].Confirming && state.Gold == gold, "Tapping Buy while paused starts nothing");
+        }
+        finally
+        {
+            await Admin(HttpMethod.Post, "/admin/purchases", new { paused = false });
+        }
+        await state.RefreshPurchasesPauseAsync();
+        Check(!state.PurchasesPaused, "Resuming purchases opens the shop again");
+    }
+
+    /// <summary>Support makes good a pack that never arrived: opening the shop adds it once, says so, and tells the server.</summary>
+    private async Task SupportGrant(GameState state)
+    {
+        var profile = state.PlayerProfileId; var token = state.PlayerAuthToken;
+        var grant = await Admin(HttpMethod.Post, "/admin/support/grant", new { profileId = profile, gold = 250, note = "e2e: pouch never arrived" });
+        var adjustmentId = grant.Status == 200 ? grant.Body.GetProperty("adjustmentId").GetString() ?? "" : "";
+        Check(grant.Status == 200 && adjustmentId.Length > 0, $"Support grants 250 gold ({grant.Status})");
+        var gold = state.Gold;
+        var home = (MapMenu)await LiveUiReview.Open(this, "MainMenu");
+        home.OpenHomeDestination(SceneRouter.CashShopScene);
+        await Wait(.4);
+        var shop = Walk(home).OfType<CashShopMenu>().Single();
+        var notice = (Label)typeof(CashShopMenu).GetField("_noticeLabel", Private)!.GetValue(shop)!;
+        Check(await Until(() => state.HasAppliedWalletAdjustment(adjustmentId)) && state.Gold == gold + 250, $"Opening the shop adds the grant once ({gold} → {state.Gold})");
+        Check(await Until(() => notice.Text == "Support added 250 gold to your caravan."), $"The shop says support added it ({Clip(notice.Text)})");
+        Check(await UntilAsync(async () => (await Adjustment(profile, token, adjustmentId)) is { } listed && listed.GetProperty("acknowledged").GetBoolean()),
+            "The device tells the server it applied the grant");
+    }
+
     /// <summary>An operator request with the admin key server_e2e.sh gives the server.</summary>
     private async Task<(int Status, JsonElement Body)> Admin(HttpMethod method, string path, object body = null)
     {

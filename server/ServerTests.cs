@@ -112,6 +112,8 @@ public static partial class ServerTests
                 ("RefundLargerThanBalance", () => TestRefundLargerThanBalance(client)),
                 ("AdminRefund", () => TestAdminRefund(client)),
                 ("SupportLookup", () => TestSupportLookup(client)),
+                ("PurchasePause", () => TestPurchasePause(client)),
+                ("SupportGrant", () => TestSupportGrant(client)),
                 ("GoogleVoidedPurchases", () => TestGoogleVoidedPurchases(client)),
                 ("RefundLedgerMigration", TestRefundLedgerMigration),
 
@@ -241,7 +243,10 @@ public static partial class ServerTests
                     endpoints.MapPost("/wallet/adjustments/ack", PurchaseRefunds.Acknowledge);
                     endpoints.MapPost("/store/apple/notifications", AppStoreNotifications.Receive);
                     endpoints.MapGet("/admin/support/player", SupportLookup.AdminPlayer);
+                    endpoints.MapGet("/admin/purchases", LiveSettings.AdminPurchasesGet);
+                    endpoints.MapPost("/admin/purchases", LiveSettings.AdminPurchasesSet);
                     endpoints.MapPost("/admin/support/delete-account", SupportLookup.AdminDeleteAccount);
+                    endpoints.MapPost("/admin/support/grant", SupportLookup.AdminGrant);
                     endpoints.MapGet("/admin/refunds", PurchaseRefunds.AdminList);
                     endpoints.MapPost("/admin/refunds", PurchaseRefunds.AdminRecord);
                     endpoints.MapPost("/admin/refunds/poll-google", GooglePlayVoidedPurchases.AdminPoll);

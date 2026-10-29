@@ -4261,7 +4261,7 @@ public partial class GameState : Node
 		PlayerCallsign = DefaultPlayerCallsign;
 		PlayerProfileId = GeneratePlayerProfileId();
 		PlayerAuthToken = DefaultPlayerAuthToken;
-        AccountProvider = ""; AccountLabel = ""; SkipAutoSignIn = false; AccountDeletedNoticePending = false;
+        AccountProvider = ""; AccountLabel = ""; SkipAutoSignIn = false; AccountDeletedNoticePending = false; SignInAfterPurchasePrompted = false;
 		LastPlayerProfileSyncAtUnixSeconds = 0L;
 		LastChallengeSyncAtUnixSeconds = 0L;
 		LastDailyDate = "";
@@ -4779,6 +4779,7 @@ public partial class GameState : Node
 			: DefaultDifficultyId;
 
 		ShowHints = saved.Version < 28 || saved.ShowHints;
+		SignInAfterPurchasePrompted = saved.SignInAfterPurchasePrompted;
 
 		_seenHintIds.Clear();
 		if (saved.Version >= 28 && saved.SeenHintIds != null)
@@ -5249,6 +5250,7 @@ public partial class GameState : Node
 			LastDailyDate = LastDailyDate ?? "",
 			DifficultyId = DifficultyId ?? DefaultDifficultyId,
 			ShowHints = ShowHints,
+			SignInAfterPurchasePrompted = SignInAfterPurchasePrompted,
 			SeenHintIds = _seenHintIds.ToArray(),
 			DailyStreak = _dailyStreak,
 			UnlockedAchievementIds = _unlockedAchievementIds.ToArray(),
@@ -6417,6 +6419,19 @@ public partial class GameState : Node
 	public bool HasPurchasedProduct(string productId)
 	{
 		return !string.IsNullOrWhiteSpace(productId) && _purchasedProductIds.Contains(productId);
+	}
+
+	/// <summary>True while the operator has paused new purchases; the shop then starts none.</summary>
+	public bool PurchasesPaused { get; private set; }
+	public string PurchasesPausedMessage { get; private set; } = "";
+
+	/// <summary>Asks the server whether new purchases are paused. Runs off the main thread; unreachable means not paused.</summary>
+	public async Task RefreshPurchasesPauseAsync()
+	{
+		if (string.IsNullOrWhiteSpace(_purchaseValidationEndpoint)) { PurchasesPaused = false; PurchasesPausedMessage = ""; return; }
+		var endpoint = _purchaseValidationEndpoint;
+		try { (PurchasesPaused, PurchasesPausedMessage) = await Task.Run(() => new HttpApiPurchaseValidationProvider(endpoint).GetPurchasesPause()); }
+		catch (Exception) { PurchasesPaused = false; PurchasesPausedMessage = ""; }
 	}
 
 	/// <summary>

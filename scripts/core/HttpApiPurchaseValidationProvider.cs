@@ -160,6 +160,19 @@ public sealed class HttpApiPurchaseValidationProvider
 		}
 	}
 
+	/// <summary>Whether the operator has paused new purchases, and the message for players. Not paused when unreachable.</summary>
+	public (bool Paused, string Message) GetPurchasesPause()
+	{
+		if (string.IsNullOrWhiteSpace(_baseUrl)) return (false, "");
+		using var message = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/purchase/products");
+		using var response = Client.SendAndWait(message);
+		if (!response.IsSuccessStatusCode) return (false, "");
+		using var document = JsonDocument.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+		var root = document.RootElement;
+		var paused = root.TryGetProperty("purchasesPaused", out var flag) && flag.ValueKind == JsonValueKind.True;
+		return (paused, paused ? GetString(root, "purchasesMessage", "") : "");
+	}
+
 	public List<PurchaseHistoryEntry> GetPurchaseHistory(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(_baseUrl))

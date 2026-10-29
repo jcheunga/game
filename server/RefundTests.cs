@@ -678,6 +678,69 @@ public static partial class ServerTests
             "expected the purchase to stay under a pseudonym with no player behind it");
     }
 
+    private static async Task TestSupportGrant(HttpClient client)
+    {
+        const string profile = "TEST-SUPPORT-GRANT";
+        await BuyForRefund(client, profile, "gold_pouch", "stripe", "cs_test_support_grant");
+        var gold = await WalletGold(client, profile);
+
+        async Task<(HttpStatusCode Status, string Text)> Grant(object body)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/support/grant")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+            request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        Assert((await Grant(new { profileId = profile, gold = 300 })).Status == HttpStatusCode.BadRequest, "expected a grant without a note to be refused");
+        Assert((await Grant(new { profileId = profile, gold = 0, food = 0, note = "nothing" })).Status == HttpStatusCode.BadRequest, "expected an empty grant to be refused");
+        Assert((await Grant(new { profileId = profile, gold = -5, note = "negative" })).Status == HttpStatusCode.BadRequest, "expected a negative grant to be refused");
+        Assert((await Grant(new { profileId = "CVY-NOBODY", gold = 300, note = "ticket 7" })).Status == HttpStatusCode.NotFound, "expected an unknown player to be reported");
+
+        var granted = await Grant(new { profileId = profile, gold = 300, food = 5, note = "ticket 7: pouch never arrived" });
+        Assert(granted.Status == HttpStatusCode.OK && granted.Text.Contains("\"granted\""), "expected the operator to make good a lost pack");
+        Assert(await WalletGold(client, profile) == gold + 300, "expected the server wallet to hold the grant");
+        var adjustment = (await Adjustments(client, profile)).Single(a => a.GetProperty("kind").GetString() == "grant");
+        Assert(adjustment.GetProperty("goldDelta").GetInt32() == 300 && adjustment.GetProperty("foodDelta").GetInt32() == 5 &&
+            !adjustment.GetProperty("acknowledged").GetBoolean(), "expected the device to be offered the grant, once, to apply");
+        Assert(LedgerSum(profile, "gold") == gold + 300, "expected the ledger to record the grant");
+    }
+
+    private static async Task TestPurchasePause(HttpClient client)
+    {
+        async Task<(HttpStatusCode Status, string Text)> Admin(HttpMethod method, object? body = null, bool authorized = true)
+        {
+            using var request = new HttpRequestMessage(method, "/admin/purchases");
+            if (body != null) request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            if (authorized) request.Headers.TryAddWithoutValidation("X-Admin-Api-Key", TestAdminApiKey);
+            using var response = await client.SendAsync(request);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        try
+        {
+            Assert((await Admin(HttpMethod.Get, authorized: false)).Status == HttpStatusCode.Unauthorized, "expected the pause switch to need the admin key");
+            Assert((await Admin(HttpMethod.Post, new { message = "no flag" })).Status == HttpStatusCode.BadRequest, "expected a body without paused to change nothing");
+            var paused = await Admin(HttpMethod.Post, new { paused = true, message = "Back by 10:00 UTC." });
+            Assert(paused.Status == HttpStatusCode.OK && paused.Text.Contains("\"paused\":true"), "expected the operator to pause purchases");
+
+            var products = (await Get(client, "/purchase/products")).RootElement;
+            Assert(products.GetProperty("purchasesPaused").GetBoolean() && products.GetProperty("purchasesMessage").GetString() == "Back by 10:00 UTC.",
+                "expected the game to be told purchases are paused, and why");
+            // A purchase the store has already charged is still delivered.
+            await BuyForRefund(client, "TEST-PAUSE-PAID", "gold_pouch", "stripe", "cs_test_paid_during_pause");
+        }
+        finally
+        {
+            Assert((await Admin(HttpMethod.Post, new { paused = false })).Status == HttpStatusCode.OK, "expected the operator to resume purchases");
+        }
+        var resumed = (await Get(client, "/purchase/products")).RootElement;
+        Assert(!resumed.GetProperty("purchasesPaused").GetBoolean() && resumed.GetProperty("purchasesMessage").GetString() == "", "expected purchases to resume");
+    }
+
     private static async Task TestAdminRefund(HttpClient client)
     {
         const string profile = "TEST-REFUND-ADMIN";

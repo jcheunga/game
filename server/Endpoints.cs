@@ -1712,7 +1712,9 @@ public static class Endpoints
             });
         }
 
-        return Results.Ok(new { status = "ok", products });
+        // While purchases are paused the game doesn't start one; the store's own sheet never opens.
+        var (purchasesPaused, purchasesMessage) = LiveSettings.Purchases;
+        return Results.Ok(new { status = "ok", products, purchasesPaused, purchasesMessage });
     }
 
     // ── Analytics ──────────────────────────────────────────
@@ -2038,6 +2040,8 @@ public static class Endpoints
         var stripeKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? "";
         if (string.IsNullOrWhiteSpace(stripeKey))
             return Results.Json(new { error = "Stripe is not configured on this server." }, statusCode: 503);
+        if (LiveSettings.Purchases is { Paused: true } pause)
+            return Results.Json(new { error = "purchases_paused", message = pause.Message }, statusCode: 503);
 
         var body = await ReadBody(request);
         var profileId = GetString(body, "profileId", request.Headers["X-Convoy-Profile"].FirstOrDefault() ?? "");

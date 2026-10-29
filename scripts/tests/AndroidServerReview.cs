@@ -130,7 +130,9 @@ public partial class AndroidServerReview : Node
 
         await AccountSignIn.DeleteAccount();
         Check(state.PlayerProfileId != profile && state.PlayerAuthToken.Length == 0, "Deleting the account starts the device again as a new guest");
-        Check(await Status($"/cloud-save/info?profileId={profile}", profile, token) == 401, "The server no longer accepts the deleted account's session");
+        // 410 rather than 401, so a device still holding the session can say the account was deleted.
+        var ended = await Status($"/cloud-save/info?profileId={profile}", profile, token);
+        Check(ended == 410, $"The server no longer accepts the deleted account's session, and says the account is gone ({ended})");
     }
 
     /// <summary>The production server is HTTPS, which on Android goes through .NET's own TLS on the system's certificates.</summary>
@@ -171,8 +173,7 @@ public partial class AndroidServerReview : Node
         var button = Walk(shop).OfType<Button>().FirstOrDefault(b => b.HasMeta("store_product_id") && (string)b.GetMeta("store_product_id") == "gold_pouch");
         if (button == null) { Check(false, "The shop lists the gold pouch"); return; }
         var gold = GameState.Instance.Gold;
-        button.EmitSignal(BaseButton.SignalName.Pressed);
-        await Wait(.2);
+        // One tap starts the purchase; the store's own payment sheet is the confirmation.
         button.EmitSignal(BaseButton.SignalName.Pressed);
         await Wait(2);
         var status = Walk(shop).OfType<Label>().Select(label => label.Text.Trim()).FirstOrDefault(text => new[]

@@ -175,7 +175,8 @@ public partial class ServerEndToEnd
 
     /// <summary>
     /// The operator pauses new purchases: the shop greys out every Buy, says why, and starts nothing when one is
-    /// tapped. Resuming opens it again.
+    /// tapped. Resuming opens it again. The resupply chargeback's message from <see cref="RefundRecovery"/> is still
+    /// waiting, so this also proves the pause takes the notice and the refund's message waits for the next visit.
     /// </summary>
     private async Task PurchasePause(GameState state)
     {
@@ -201,6 +202,11 @@ public partial class ServerEndToEnd
         }
         await state.RefreshPurchasesPauseAsync();
         Check(!state.PurchasesPaused, "Resuming purchases opens the shop again");
+        var reopened = (MapMenu)await LiveUiReview.Open(this, "MainMenu");
+        reopened.OpenHomeDestination(SceneRouter.CashShopScene);
+        await Wait(.4);
+        var resumed = (Label)typeof(CashShopMenu).GetField("_noticeLabel", Private)!.GetValue(Walk(reopened).OfType<CashShopMenu>().Single())!;
+        Check(await Until(() => resumed.Text.Contains("refunded")), $"The refund's message waited for purchases to resume ({Clip(resumed.Text)})");
     }
 
     /// <summary>Support makes good a pack that never arrived: opening the shop adds it once, says so, and tells the server.</summary>

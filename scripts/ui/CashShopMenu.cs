@@ -37,9 +37,8 @@ public partial class CashShopMenu : Control
         // A paid transaction the server has not recorded yet (no session at
         // launch, a failed validation) is validated again here.
         NativeIAPService.Instance?.RetryUnfinishedPurchases();
-        ShowRefundsAsync();
+        ShowRefundsAndPauseAsync();
         MarkOneTimePurchasesAsync();
-        CheckPurchasesPausedAsync();
     }
 
     /// <summary>
@@ -56,26 +55,29 @@ public partial class CashShopMenu : Control
             "Sign in", () => AccountDialog.Show(this), "Not now");
     }
 
-    /// <summary>While the operator has paused purchases, every Buy is greyed out and the shop says why.</summary>
-    private async void CheckPurchasesPausedAsync()
-    {
-        await GameState.Instance.RefreshPurchasesPauseAsync();
-        if (!IsOpen() || !GameState.Instance.PurchasesPaused) return;
-        RefreshUi(preserveStatus: true);
-        _noticeLabel.Text = GameState.Instance.PurchasesPausedMessage;
-    }
-
     /// <summary>Marks the Adventurer's Kit bought if the server's history says so, so an older save never offers it again.</summary>
     private async void MarkOneTimePurchasesAsync()
     {
         if (await GameState.Instance.SyncOneTimePurchasesFromServerAsync() && IsOpen()) RefreshUi(preserveStatus: true);
     }
 
-    /// <summary>Applies any store refunds before the player shops, and says what they took back.</summary>
-    private async void ShowRefundsAsync()
+    /// <summary>
+    /// Applies any store refunds before the player shops and says what they took back. While the operator has paused
+    /// purchases, every Buy is greyed out and the pause takes the notice instead: the refund's balances still change,
+    /// and its message waits for the next visit after purchases resume.
+    /// </summary>
+    private async void ShowRefundsAndPauseAsync()
     {
-        await WalletAdjustmentSync.SyncAsync(force: true);
+        var refunds = WalletAdjustmentSync.SyncAsync(force: true);
+        await GameState.Instance.RefreshPurchasesPauseAsync();
+        await refunds;
         if (!IsOpen()) return;
+        if (GameState.Instance.PurchasesPaused)
+        {
+            RefreshUi(preserveStatus: true);
+            _noticeLabel.Text = GameState.Instance.PurchasesPausedMessage;
+            return;
+        }
         var notice = GameState.Instance.ConsumeWalletAdjustmentNotice();
         if (notice.Length == 0) return;
         // Leave a Buy the player has started alone; only the balances and the ledger change.

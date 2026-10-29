@@ -49,7 +49,7 @@ if [ "$reuse" = 0 ]; then
 	cp "$project" "$work/project.godot.keep"
 	trap 'cp "$work/export_presets.cfg.keep" "$presets"; cp "$work/project.godot.keep" "$project"' EXIT
 	python3 - "$presets" "$project" "$driver" "$args" <<'EOF'
-import sys
+import re, sys
 presets, project, driver, args = sys.argv[1:]
 text = open(presets, encoding="utf-8").read()
 start = text.index('name="Android"')
@@ -57,8 +57,12 @@ end = text.find('\n[preset.', text.index('.options]', start))
 android = text[start:end if end >= 0 else len(text)]
 changed = android.replace('scripts/tests/*,scenes/tests/*,', '', 1)
 changed = changed.replace('gradle_build/export_format=1', 'gradle_build/export_format=0', 1)
-changed = changed.replace('.options]\n', f'.options]\n\ncommand_line/extra_args="{args}"\n', 1)
-assert changed.count('export_format=0') == 1 and 'scenes/tests/*' not in changed, "Unexpected Android preset"
+# The preset may already hold an (empty) extra_args; Godot keeps the last of two, so replace it in place.
+arguments = f'command_line/extra_args="{args}"'
+changed, replaced = re.subn(r'(?m)^command_line/extra_args=.*$', lambda _: arguments, changed, count=1)
+if not replaced:
+	changed = changed.replace('.options]\n', f'.options]\n\n{arguments}\n', 1)
+assert changed.count('export_format=0') == 1 and changed.count('command_line/extra_args=') == 1 and 'scenes/tests/*' not in changed, "Unexpected Android preset"
 open(presets, "w", encoding="utf-8").write(text.replace(android, changed, 1))
 text = open(project, encoding="utf-8").read()
 main = 'run/main_scene="res://scenes/MainMenu.tscn"'

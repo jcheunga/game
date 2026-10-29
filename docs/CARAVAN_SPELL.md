@@ -1,8 +1,8 @@
 # Caravan spell
 
-The war wagon has a spell of its own, separate from the loadout. When the mana bar is full, a large slot slides
-out on the right of the card dock. Tap it (or press Space) to cast **Arcane Barrage**, which spends the whole bar.
-The spell is a first version and may change.
+The war wagon has a spell of its own, separate from the loadout. When the mana bar is full, a slot the size of a
+unit card slides out on the right of the card dock. Tap it (or press Space) to cast **Arcane Barrage**, which spends
+the whole bar. The spell is a first version and may change.
 
 ## What it does
 

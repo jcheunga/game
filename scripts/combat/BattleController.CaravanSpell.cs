@@ -56,8 +56,8 @@ public partial class BattleController
     private void LayoutCaravanSpellButton(Control dock, float cardWidth, float cardHeight, float screenRight)
     {
         if (_caravanSpellButton == null) return;
-        // A card about a fifth larger than the troops' in a slot styled like the dock, standing on the dock's base line.
-        var size = new Vector2(Mathf.Round(cardWidth * 1.2f) + 18, Mathf.Round(cardHeight * 1.2f) + 20);
+        // A card the size of the troops' in a slot styled like the dock, as tall as the dock and on its base line.
+        var size = new Vector2(cardWidth + 18, cardHeight + 20);
         const float gap = 10f;
         var overflow = dock.Position.X + dock.Size.X + gap + size.X - (screenRight - 8f);
         if (overflow > 0f) dock.Position -= new Vector2(Mathf.Min(overflow, dock.Position.X - 8f), 0);

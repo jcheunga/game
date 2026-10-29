@@ -121,8 +121,10 @@ public partial class UiReviewSmoke
             Write("_mana",Read<float>("_maxMana")); Call("UpdateHud"); await Wait(.7);
             var slot=caravan.GetGlobalRect(); var tray=dock.GetGlobalRect(); var view=GetViewport().GetVisibleRect();
             Check(caravan.IsOpen && caravan.Visible && !caravan.Card.Disabled,$"{prefix}: a full mana bar opens the caravan spell, ready to cast");
-            Check(slot.Position.X>=tray.End.X && view.Encloses(slot) && Mathf.Abs(slot.End.Y-tray.End.Y)<2 && slot.Size.Y>tray.Size.Y,
-                $"{prefix}: the caravan slot stands right of the dock on its base line, larger than it and inside the screen");
+            Check(slot.Position.X>=tray.End.X && view.Encloses(slot) && Mathf.Abs(slot.End.Y-tray.End.Y)<2 && Mathf.Abs(slot.Size.Y-tray.Size.Y)<2,
+                $"{prefix}: the caravan slot stands right of the dock on its base line, as tall as it and inside the screen");
+            Check((caravan.Card.Size-((Button)cards[0].GetParent()).Size).Length()<1,
+                $"{prefix}: the caravan card is the same size as a unit card");
             Check(!string.IsNullOrWhiteSpace(caravan.Card.AccessibilityName) && caravan.Art.Portrait.Texture!=null && !caravan.Art.CostPlate.Visible,
                 $"{prefix}: the caravan card shows its painted lantern and can be identified");
             await Capture(prefix+"-caravan-ready");

@@ -43,7 +43,9 @@ public partial class AudioReview : Node
             state.ResetProgress(); state.SetShowHints(false); state.SetAnalyticsConsent(false); state.SetAudioMuted(false);
             var save = state.BuildSaveData();
             save.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); save.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
-            save.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(6).ToArray(); save.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(5).ToArray();
+            // Units and spells share six loadout slots, and the battles cast no spells: all six go to troops, so the archer
+            // and the medic march too and every zone hears ranged launches.
+            save.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(6).ToArray(); save.ActiveDeckSpellIds = Array.Empty<string>();
             state.RestoreCloudSave(save); state.SetShowHints(false); state.SetAudioMuted(false);
             AudioDirector.Instance.CuePlayed += id => _played[id] = _played.GetValueOrDefault(id) + 1;
             Check(AudioDirector.Instance.CueCount >= 200, $"Sound catalogue loaded ({AudioDirector.Instance.CueCount} cues)");
@@ -74,7 +76,7 @@ public partial class AudioReview : Node
                 Check(_played.ContainsKey("battle_start"), $"{route}: the caravan's horn opens the battle");
                 Check(Count("deploy_") > 0, $"{route}: deploys have foley");
                 Check(Count("swing_") + Count("thrust") > 0 && Count("hit_") > 0, $"{route}: melee swings and hits are heard");
-                Check(Count("bow_release") + Count("crossbow_release") + Count("cast_") + Count("flask_") > 0, $"{route}: ranged launches are heard");
+                Check(Count("bow_release") + Count("crossbow_release") + Count("harpoon_release") + Count("cast_") + Count("flask_") > 0, $"{route}: ranged launches are heard");
                 Check(Count("impact_") > 0, $"{route}: projectile impacts are heard");
                 Check(Count("death_") + Count("body_fall") > 0, $"{route}: deaths and falls are heard");
                 Check(battle.GetChildren().OfType<AudioStreamPlayer2D>().Any() || _played.Values.Sum() > 30, $"{route}: battle sounds are positional on the field");

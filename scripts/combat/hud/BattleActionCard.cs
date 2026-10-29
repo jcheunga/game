@@ -75,11 +75,12 @@ public partial class BattleActionCard : Control
         _cost.AddThemeConstantOverride("shadow_offset_x", 0);
         _cost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _costPlate.AddChild(_cost);
-        // Dead Ahead's level tag: a small dark plate in the bottom-left corner with the level in engraved gold.
+        // Dead Ahead's level tag: a small dark plate in the bottom-left corner with the bare level number in gold.
+        // Book-serif numerals, as on the cost badge: a lone Cinzel "1" reads as an I.
         _levelPlate = new Panel { Name = "Level", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
         _levelPlate.AddThemeStyleboxOverride("panel", RoyalKit.Slice("value-box", 5));
         AddChild(_levelPlate);
-        _level = RoyalText.Caps("", ReadingText.PhoneCaps, null, 700);
+        _level = RoyalText.Serif("", ReadingText.PhoneBody, null, 800);
         _level.Gold = true;
         _level.Align = HorizontalAlignment.Center;
         _level.OutlineSize = 3;
@@ -151,17 +152,18 @@ public partial class BattleActionCard : Control
     {
         if (level == _levelShown) return;
         _levelShown = level;
-        _level.Text = $"LV {level}";
+        _level.Text = level.ToString();
         _levelPlate.Visible = level > 0;
         FitLevelTag();
     }
 
     private void FitLevelTag()
     {
-        // 24 px tall at the concept's 119 px card, hugging its text, inside the frame's rim; scaled with the card.
-        var tagFont = Mathf.Max(ReadingText.PhoneCaps, Mathf.RoundToInt(16 * Size.X / 119f));
+        // 24 px tall at the concept's 119 px card, hugging its number (square at one digit), inside the frame's rim.
+        var tagFont = Mathf.Max(ReadingText.PhoneBody, Mathf.RoundToInt(18 * Size.X / 119f));
         _level.FontSize = tagFont;
-        _levelPlate.Size = new Vector2(Mathf.Ceil(_level.TextWidth(tagFont)) + 2 * Mathf.Round(7 * Size.X / 119f), Mathf.Round(24 * Size.X / 119f));
+        var height = Mathf.Round(24 * Size.X / 119f);
+        _levelPlate.Size = new Vector2(Mathf.Max(height, Mathf.Ceil(_level.TextWidth(tagFont)) + 2 * Mathf.Round(7 * Size.X / 119f)), height);
         _levelPlate.Position = new Vector2(5, Size.Y - _levelPlate.Size.Y - 5);
     }
 

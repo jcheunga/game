@@ -16,7 +16,7 @@ public partial class UiReviewSmoke
         var fixture = GameState.Instance.BuildSaveData();
         fixture.OwnedPlayerUnitIds = GameData.PlayerRosterIds.ToArray(); fixture.OwnedPlayerSpellIds = GameData.PlayerSpellIds.ToArray();
         fixture.ActiveDeckUnitIds = GameData.PlayerRosterIds.Take(3).ToArray(); fixture.ActiveDeckSpellIds = GameData.PlayerSpellIds.Take(2).ToArray();
-        // Mixed levels, including the widest tag (LV 20), so the corner tag is checked at every width.
+        // Mixed levels, including the widest tag (20), so the corner tag is checked at one and two digits.
         fixture.UnitLevels = new Dictionary<string,int>{[fixture.ActiveDeckUnitIds[0]]=UnitBalance.MaxPlayerLevel,[fixture.ActiveDeckUnitIds[1]]=7};
         fixture.SpellLevels = new Dictionary<string,int>{[fixture.ActiveDeckSpellIds[0]]=GameState.Instance.MaxSpellLevel};
         GameState.Instance.RestoreCloudSave(fixture);
@@ -53,11 +53,11 @@ public partial class UiReviewSmoke
                     $"{prefix}: textured cost badge fits the top-right corner");
                 var level=i<deck.Roster.Count?GameState.Instance.GetUnitLevel(deck.Roster[i].Id):GameState.Instance.BuildSpellStats(spells.Roster[i-deck.Roster.Count]).Level;
                 var tag=new Rect2(art.LevelPlate.Position,art.LevelPlate.Size);
-                Check(art.LevelPlate.Visible && art.LevelLabel.Text==$"LV {level}",$"{prefix}: level tag shows the unit or spell's actual level");
+                Check(art.LevelPlate.Visible && art.LevelLabel.Text==level.ToString(),$"{prefix}: level tag shows the unit or spell's actual level");
                 Check(tag.Position.X<=8 && tag.End.Y>=art.Size.Y-8 && tag.Size.X<art.Size.X*.5f && new Rect2(Vector2.Zero,art.Size).Encloses(tag)
                     && !tag.Intersects(new Rect2(art.CostPlate.Position,art.CostPlate.Size)),$"{prefix}: level tag fits the bottom-left corner, clear of the cost badge");
-                Check(art.LevelLabel.FittedSize()==art.LevelLabel.FontSize && art.LevelLabel.FontSize>=ReadingText.PhoneCaps,
-                    $"{prefix}: level tag text fits its plate at the phone caps floor");
+                Check(art.LevelLabel.FittedSize()==art.LevelLabel.FontSize && art.LevelLabel.FontSize>=ReadingText.PhoneBody,
+                    $"{prefix}: level tag number fits its plate at the phone text floor");
                 Check(button.Text=="" && art.FindChildren("*","Label",true,false).All(label=>label==art.CostLabel)
                     && Walk(art).OfType<RoyalLabel>().All(label=>label==art.LevelLabel),$"{prefix}: ready cards show no name/action/state clutter");
                 Check(!string.IsNullOrWhiteSpace(button.AccessibilityName) && string.IsNullOrWhiteSpace(button.TooltipText),

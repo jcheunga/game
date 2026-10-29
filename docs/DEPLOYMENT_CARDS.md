@@ -2,7 +2,7 @@
 
 The in-battle unit and spell buttons are portrait-led. Their ordinary ready
 state shows only the artwork, a brass courage-cost badge at the top-right and,
-as in Dead Ahead, a small `LV n` tag at the bottom-left—no `DEPLOY`, `CAST`,
+as in Dead Ahead, a small level number at the bottom-left—no `DEPLOY`, `CAST`,
 name or repeated `Ready` line. Names and detailed stats
 remain in hover tooltips, accessible button labels, and the mobile placement hint
 after selecting a card.

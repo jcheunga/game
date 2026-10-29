@@ -20,8 +20,14 @@ public partial class UiReviewSmoke
             var food = state.Food;
             var picture = Walk(home).OfType<Button>().Single(b => b.AccessibilityName == "Encounter briefing");
             await TapModal(picture);
-            Check(Walk(home).OfType<Label>().Any(l => l.IsVisibleInTree() && l.Text.StartsWith("Counter:")), "Preparation picture opens readable enemy counters");
-            Check(Walk(home).OfType<Label>().Any(l => l.Text.StartsWith("Level 1 · Health")), "Enemy briefing displays stage-resolved stats");
+            // Each enemy's card ends with how to counter it, beside a crossed-swords mark, and heads with its level at this stage.
+            var enemies = GameData.GetStage(state.SelectedStage).Waves.SelectMany(w => w.Entries).Select(e => GameData.GetUnit(e.UnitId)).Distinct().ToArray();
+            var briefing = Walk(home).FirstOrDefault(n => n.Name == "EncounterBriefing") ?? home;
+            var shown = Walk(briefing).OfType<Label>().Where(l => l.IsVisibleInTree()).Select(l => l.Text).ToHashSet();
+            Check(briefing != home && enemies.Length > 0 && enemies.All(e => shown.Contains(string.IsNullOrWhiteSpace(e.Weakness) ? "Hold the melee line and watch for attack warnings." : e.Weakness)),
+                "Preparation picture opens readable enemy counters");
+            Check(shown.Any(t => t.StartsWith("Level 1 · ")) && Walk(briefing).OfType<StatSheet>().Count(s => s.IsVisibleInTree()) == enemies.Length,
+                "Enemy briefing displays stage-resolved stats");
             AuditText("Polish briefing"); await Capture("01-enemy-briefing");
             await TapModal(Walk(home).OfType<Button>().Last(b => b.AccessibilityName == "Close details"));
             Check(home.HasHomeModal && state.Food == food, "Closing enemy briefing preserves preparation and resources");

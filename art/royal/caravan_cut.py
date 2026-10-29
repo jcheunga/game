@@ -169,9 +169,12 @@ def cut_wagon():
     interior = changed[y0:y1, x0:x1] > .5
     lit = door_edit[y0:y1, x0:x1, :3].mean(axis=2) * interior
     iy, ix = np.unravel_index(np.argmax(cv2.GaussianBlur(lit, (0, 0), 12)), lit.shape)
+    # The ramp's foot is the middle of its lowest boards: the edit's box also takes in what the repaint touched
+    # beside the ramp, so the box's middle is not the ramp's.
+    bottom = xs[ys >= ys.max() - 12]
     door = {"rect": [round(x0 / w, 6), round(y0 / h, 6), round(x1 / w, 6), round(y1 / h, 6)], "frames": 2,
             "exit": [round((x0 + ix) / w, 6), round((y0 + iy) / h, 6)],
-            "foot": [round((x0 + x1) * .5 / w, 6), round((ys.max() - 6) / h, 6)]}
+            "foot": [round((bottom.min() + bottom.max()) * .5 / w, 6), round((ys.max() - 6) / h, 6)]}
 
     meta = wagon_meta((h, w), door)
     meta["centre"] = centre

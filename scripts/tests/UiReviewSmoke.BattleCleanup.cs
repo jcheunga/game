@@ -70,7 +70,10 @@ public partial class UiReviewSmoke
         Call(fight, "CleanupDeadUnits");
         Call(fight, "SpawnEnemyUnit", new UnitStats(GameData.GetUnit(GameData.EnemyRunnerId)), new Vector2(650, 200));
         var spawned = Read<List<Unit>>(fight, "_units").Last();
-        Check(spawned.Position.X == GameData.Combat.EnemySpawnX && Math.Abs(spawned.Position.Y - 340) <= GameData.Combat.LaneHalfHeight,
+        // With a painted stronghold the enemy appears in its gateway and walks down onto the line it was placed on.
+        var landing = Read<Dictionary<Unit, (Vector2 From, Vector2 To, float Elapsed, float Duration)>>(fight, "_gateExits").TryGetValue(spawned, out var exit)
+            ? exit.To : spawned.Position;
+        Check(landing.X == GameData.Combat.EnemySpawnX && Math.Abs(landing.Y - 340) <= GameData.Combat.LaneHalfHeight,
             "An enemy requested in the middle of the field enters at the stronghold, inside the band");
         var director = Read<BattleSpawnDirector>(fight, "_spawnDirector");
         Check(director.NextEncounterSpawnX == GameData.Combat.EnemySpawnX, "Advance-triggered waves also enter at the stronghold");

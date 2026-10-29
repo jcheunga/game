@@ -103,9 +103,7 @@ public partial class StoreKitShopReview : Node
         var button = Walk(shop).OfType<Button>().Single(b => b.HasMeta("store_product_id") && (string)b.GetMeta("store_product_id") == ProductId);
         Check(button.Text == "Buy — $0.99", $"The shop shows the App Store price ({button.Text})");
         var gold = state.Gold;
-        button.EmitSignal(BaseButton.SignalName.Pressed);
-        await Wait(.2);
-        Check(button.Text == "Confirm — $0.99", $"Buy asks for confirmation ({button.Text})");
+        // One tap: the App Store's own payment sheet is the confirmation.
         button.EmitSignal(BaseButton.SignalName.Pressed);
 
         Check(await Until(() => Status(shop).StartsWith("Purchased"), 30), $"The purchase is credited ({Status(shop)})");

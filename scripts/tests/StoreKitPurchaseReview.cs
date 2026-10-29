@@ -153,17 +153,15 @@ public partial class StoreKitPurchaseReview : Node
     }
 
     /// <summary>
-    /// Buy, then the confirmed purchase. The second tap would pick Stripe on desktop, so the review
-    /// calls the shop's native purchase step that the tap reaches on an iPhone.
+    /// Buy at the App Store price. A tap on desktop would pick Stripe, so the review calls the shop's native
+    /// purchase step that the tap reaches on an iPhone.
     /// </summary>
     private async Task Buy(CashShopMenu shop)
     {
         var button = Walk(shop).OfType<Button>().Single(b => b.HasMeta("store_product_id") && (string)b.GetMeta("store_product_id") == ProductId);
-        button.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(button.Text == "Buy — $0.99", $"Buy shows the App Store price ({button.Text})");
         await Wait(.2);
-        Check(button.Text == "Confirm — $0.99", $"Buy asks for confirmation at the App Store price ({button.Text})");
         Status(shop, "");
-        typeof(CashShopMenu).GetMethod("CancelPendingPurchase", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(shop, new object[] { true });
         typeof(CashShopMenu).GetMethod("ExecuteNativeIAPPurchase", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(shop, new object[] { ShopProductCatalog.GetById(ProductId), "apple" });
     }

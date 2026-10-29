@@ -39,21 +39,19 @@ public partial class UiReviewSmoke
             foreach (var action in actions)
             {
                 var product = ShopProductCatalog.GetById((string)action.GetMeta("store_product_id"));
-                Check(pages.GetGlobalRect().Encloses(action.GetGlobalRect()) && modal.Content.GetGlobalRect().Encloses(action.GetGlobalRect()), product.DisplayName + ": purchase button is fully visible without scrolling");
-                // Only the first tap: the review never opens billing or sends a payment.
-                await TapModal(action);
-                Check(action.Text.StartsWith("Confirm — ") && notice.Text.Contains(product.DisplayName) && action.GetParent<StorePackCard>().Confirming
-                    && modal.Content.GetGlobalRect().Encloses(notice.GetGlobalRect()), product.DisplayName + ": native click shows an unobstructed confirmation with the pack and price");
-                Check(actions.Where(other => other != action).All(other => other.Text.StartsWith("Buy — ")), "Selecting another pack cancels its previous confirmation");
-                AuditText("Storehouse / confirm " + product.Id);
-                if (action == actions[^1]) await Capture("storehouse-confirm-" + category.Id);
+                Check(pages.GetGlobalRect().Encloses(action.GetGlobalRect()) && modal.Content.GetGlobalRect().Encloses(action.GetGlobalRect())
+                    && action.Text == $"Buy — {product.FormattedPrice}", product.DisplayName + ": Buy and its price are fully visible without scrolling");
             }
-            await TapModal(Walk(store).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "Cancel"));
-            Check(actions.All(button => button.Text.StartsWith("Buy — ")), category.Tab + ": Cancel restores all purchase buttons");
             AuditText("Storehouse / " + category.Id);
             await Capture("storehouse-" + category.Id);
+            // One tap starts the purchase; the store's own payment sheet is the confirmation. The review build has no
+            // commerce server, so the purchase stops before billing and no payment is ever sent.
+            await TapModal(actions[^1]);
+            Check(notice.Text == "Your purchase status is shown above." && (int)typeof(CashShopMenu).GetField("_selectedCategory", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(store)! == 3
+                && Walk(store).OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.StartsWith("The store is unavailable")),
+                category.Tab + ": one tap on Buy starts the purchase and shows its status");
         }
-        Check(state.Gold == 500 && state.Food == 10 && state.TotalPurchaseCount == purchaseCount, "Inspecting packs and cancelling confirmations does not spend or grant resources");
+        Check(state.Gold == 500 && state.Food == 10 && state.TotalPurchaseCount == purchaseCount, "Browsing packs and starting purchases without a server spends and grants nothing");
 
         await TapModal(Walk(store).OfType<Button>().Single(button => button.Text == "Rations"));
         var refill = Walk(store).OfType<Button>().Single(button => button.IsVisibleInTree() && button.Text == "10 food · 100 gold");

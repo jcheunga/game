@@ -4,7 +4,7 @@ using Godot;
 /// <summary>
 /// One pack in the royal storehouse: its painted picture in a pool of light, the pack's name, what it holds and a
 /// gold buy button carrying the store's price. Gold and ration packs stand four to a row; bundles are wide, with the
-/// picture beside their contents. The card lights up gold while its purchase waits for the second tap.
+/// picture beside their contents. Buy starts the purchase; the store's own payment sheet confirms it.
 /// It lays its pieces out by hand (it sits on the 1.55x modal canvas, so sizes are modal units) and is never passed
 /// through <see cref="RealmModal.Polish"/>, which would restyle its painted button.
 /// </summary>
@@ -12,7 +12,6 @@ public partial class StorePackCard : Control
 {
     public ShopProduct Product { get; }
     public RoyalButton Buy { get; private set; }
-    public bool Confirming { get; private set; }
 
     private static readonly Color ButtonInk = new("382316"), TitleInk = new("f3deaa"), BodyInk = new("e9dfcb"), MutedInk = new("b9ad96");
     private readonly bool _wide, _owned, _bestValue;
@@ -53,7 +52,8 @@ public partial class StorePackCard : Control
         Buy.Disabled = owned;
         Buy.Pressed += () => buy?.Invoke(this);
         AddChild(Buy);
-        SetConfirming(false);
+        _frame.AddThemeStyleboxOverride("panel", Kit("ach-card", 9));
+        ArrangeBuy();
         Resized += Layout;
     }
 
@@ -152,17 +152,8 @@ public partial class StorePackCard : Control
         AddChild(_ribbon);
     }
 
-    /// <summary>The first tap lights the card and turns its button into the confirmation.</summary>
-    public void SetConfirming(bool confirming)
-    {
-        Confirming = confirming;
-        _frame.AddThemeStyleboxOverride("panel", confirming ? Kit("ach-card-ready", 11) : Kit("ach-card", 9));
-        ArrangeBuy();
-    }
-
     private void ArrangeBuy()
     {
-        var verb = Confirming ? "Confirm" : "Buy";
         if (Buy.Size.X > 0 && _owned)
         {
             Buy.Arrange(Caps("Purchased", 13, ButtonInk, 700), RoyalKit.Texture("icon-check"), new Vector2(16, 16), gap: 8);
@@ -171,15 +162,15 @@ public partial class StorePackCard : Control
         else if (Buy.Size.X > 0)
         {
             // Caption and price share one row; both step down together if a long price would crowd the rim.
-            var caption = Caps(verb, 14, ButtonInk, 700);
+            var caption = Caps("Buy", 14, ButtonInk, 700);
             var price = Caps(_price, 14, ButtonInk, 700);
             while (caption.FontSize > 11 && caption.TextWidth(caption.FontSize) + price.TextWidth(price.FontSize) + 2 * 12 + 2 > Buy.Size.X - 20)
                 caption.FontSize = price.FontSize = caption.FontSize - 1;
             Buy.Arrange(caption, price: price, rule: 12);
         }
         // The caption is drawn; the button's own text names it for accessibility and the reviews.
-        Buy.Text = _owned ? "Purchased" : $"{verb} — {_price}";
-        Buy.AccessibilityName = Buy.TooltipText = _owned ? $"{Product.DisplayName} purchased" : $"{verb} {Product.DisplayName} for {_price}";
+        Buy.Text = _owned ? "Purchased" : $"Buy — {_price}";
+        Buy.AccessibilityName = Buy.TooltipText = _owned ? $"{Product.DisplayName} purchased" : $"Buy {Product.DisplayName} for {_price}";
     }
 
     private void Layout()

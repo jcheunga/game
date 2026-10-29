@@ -16,7 +16,6 @@ public partial class CashShopMenu : Control
     private static readonly string[] PackCategories = { "gold", "food", "mixed" };
     private static readonly Vector2 TabSize = new(128, 40);
     private static readonly Color Muted = new("b9ad96"), Body = new("e9dfcb"), Heading = new("f3deaa");
-    private const string PurchaseHint = "Tap Buy twice to confirm.";
     private const int RationsPage = 1, LedgerPage = 3;
     private readonly List<RoyalButton> _tabs = new();
     private readonly Control[] _pages = new Control[4];
@@ -26,11 +25,8 @@ public partial class CashShopMenu : Control
     private Control _statusSpacer = null !;
     private VBoxContainer _ledgerRows = null !;
     private Label _noticeLabel = null !;
-    private RoyalButton _cancelConfirmButton = null !;
     private HBoxContainer _refillRow = null !;
     private int _selectedCategory;
-    private string _pendingConfirmProductId = "";
-    private StorePackCard _pendingCard;
     // A native purchase is open in the store sheet or waiting on server verification.
     private bool _nativePurchaseBusy;
     public override void _Ready()
@@ -254,17 +250,12 @@ public partial class CashShopMenu : Control
         recharge.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         recharge.VerticalAlignment = VerticalAlignment.Center;
         _refillRow.AddChild(recharge);
-        _noticeLabel = StorePackCard.Serif(PurchaseHint, 13, Muted);
+        _noticeLabel = StorePackCard.Serif("", 13, Muted);
         _noticeLabel.Name = "PurchaseNotice";
         _noticeLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _noticeLabel.VerticalAlignment = VerticalAlignment.Center;
         _noticeLabel.MaxLinesVisible = 2;
         notice.AddChild(_noticeLabel);
-        _cancelConfirmButton = FooterButton(new Vector2(96, 32), "slate", () => CancelPendingPurchase());
-        _cancelConfirmButton.Arrange(StorePackCard.Caps("Cancel", 12, RoyalText.Cream, 700));
-        _cancelConfirmButton.AccessibilityName = _cancelConfirmButton.TooltipText = "Cancel purchase";
-        _cancelConfirmButton.Visible = false;
-        notice.AddChild(_cancelConfirmButton);
     }
 
     private static RoyalButton FooterButton(Vector2 size, string material, Action action)
@@ -278,8 +269,6 @@ public partial class CashShopMenu : Control
 
     private void SelectCategory(int index)
     {
-        if (index != _selectedCategory)
-            CancelPendingPurchase();
         _selectedCategory = index;
         for (var i = 0; i < _pages.Length; i++)
             _pages[i].Visible = i == index;
@@ -305,14 +294,14 @@ public partial class CashShopMenu : Control
 
     private void ShowRefill()
     {
-        _refillRow.Visible = _selectedCategory == RationsPage && _pendingConfirmProductId.Length == 0;
+        _refillRow.Visible = _selectedCategory == RationsPage;
         // Beside the refill, the notice keeps to the far end so a result doesn't run on from the recharge.
         _noticeLabel.HorizontalAlignment = _refillRow.Visible ? HorizontalAlignment.Right : HorizontalAlignment.Left;
     }
 
     private void RefreshUi(bool preserveStatus = false)
     {
-        CancelPendingPurchase(resetNotice: !preserveStatus);
+        if (!preserveStatus) _noticeLabel.Text = "";
         RebuildResourcesRow();
         for (var i = 0; i < PackCategories.Length; i++)
             RebuildCategory(i, PackCategories[i]);
@@ -370,18 +359,6 @@ public partial class CashShopMenu : Control
     }
 
     private static string LocalizedPrice(ShopProduct product) => NativeIAPService.Instance?.GetLocalizedPrice(product.Id) ?? product.FormattedPrice;
-    private void CancelPendingPurchase(bool resetNotice = true)
-    {
-        if (GodotObject.IsInstanceValid(_pendingCard))
-            _pendingCard.SetConfirming(false);
-        _pendingConfirmProductId = "";
-        _pendingCard = null;
-        _cancelConfirmButton.Hide();
-        ShowRefill();
-        if (resetNotice)
-            _noticeLabel.Text = PurchaseHint;
-    }
-
     private void OnPurchasePressed(StorePackCard card)
     {
         var productId = card.Product.Id;
@@ -396,24 +373,10 @@ public partial class CashShopMenu : Control
             return;
         }
 
-        if (_pendingConfirmProductId == productId)
-        {
-            SelectCategory(LedgerPage);
-            _noticeLabel.Text = "Your purchase status is shown above.";
-            ExecutePurchase(productId);
-            _pendingConfirmProductId = "";
-            _pendingCard = null;
-            return;
-        }
-
-        CancelPendingPurchase();
-        // The card lights up and its button becomes the confirmation.
-        _pendingConfirmProductId = productId;
-        _pendingCard = card;
-        card.SetConfirming(true);
-        _noticeLabel.Text = $"{card.Product.DisplayName} · {LocalizedPrice(card.Product)}. Tap Confirm to purchase.";
-        _cancelConfirmButton.Show();
-        ShowRefill();
+        // One tap starts the purchase: the App Store's or Google Play's own payment sheet is the confirmation.
+        SelectCategory(LedgerPage);
+        _noticeLabel.Text = "Your purchase status is shown above.";
+        ExecutePurchase(productId);
     }
 
     private void ExecutePurchase(string productId)

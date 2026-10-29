@@ -193,7 +193,7 @@ public partial class ServerEndToEnd
             Check(cards.Count > 0 && cards.All(card => card.Buy.Disabled), "Every Buy is greyed out while purchases are paused");
             var gold = state.Gold;
             typeof(CashShopMenu).GetMethod("OnPurchasePressed", Private)!.Invoke(shop, [cards[0]]);
-            Check(!cards[0].Confirming && state.Gold == gold, "Tapping Buy while paused starts nothing");
+            Check(notice.Text == "Purchases return at 10:00 UTC." && state.Gold == gold, "Tapping Buy while paused starts nothing");
         }
         finally
         {

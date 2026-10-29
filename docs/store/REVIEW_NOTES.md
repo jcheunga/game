@@ -34,7 +34,7 @@ Checked against the code:
 | Settings tabs | **Sound**, **Gameplay**, **Online**, **Account** | `SettingsMenu.cs` |
 | Store | Tap the gold amount at the top right of the home map ("Royal storehouse"), or the food amount ("Refill food"), or **More** → **Caravan** → **Store** | `MapMenu.Home.cs`, `CaravanHub.cs` |
 | Store tabs | **Gold**, **Rations**, **Bundles**, **Purchase info** | `CashShopMenu.cs` |
-| Buying | **Buy — $0.99** becomes **Confirm — $0.99**; **Cancel** backs out. The hint reads "Tap Buy twice to confirm." | `StorePackCard.cs`, `CashShopMenu.cs` |
+| Buying | One tap on **Buy — $0.99** opens the App Store's or Google Play's own payment sheet, which is the confirmation | `StorePackCard.cs`, `CashShopMenu.cs` |
 | Account panel | Settings → **Account** tab → **Account** row → **Manage** | `SettingsMenu.cs`, `AccountDialog.cs` |
 | Sign-in buttons | iPhone and iPad: **Continue with Game Center**, then the **Email address** field, **Send sign-in code**, the **6-digit code** field and **Sign in**. Android: **Continue with Play Games**, the email fields, and **Continue with Apple** and **Continue with Google** only when the server reports them configured; otherwise they are left out, not greyed out. Desktop: the same, without Play Games. The panel's own button is **Play as guest** for a guest and **Close** once signed in. Signed-in players also see **Sign out** | `AccountDialog.cs`, `SignInButton.cs` |
 | Account deletion | Settings → **Account** tab → **Delete account** row → **Delete**. The dialog "Delete your account?" says it "erases your progress, cloud save, scores and currency balance from our servers", and offers **Delete account** and **Keep account** | `SettingsMenu.cs` |

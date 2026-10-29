@@ -153,8 +153,18 @@ The player paid but the gold or food didn't arrive.
    `transaction_assigned` (bought by another player ID), `already_purchased`
    (a second Adventurer's Kit; see [Duplicate grant](#duplicate-grant-or-double-charge)).
 
-4. **Resolve.** No operator tool grants gold or food, so a payment that can't
-   be delivered is refunded:
+4. **Resolve.** Make good what the purchase should have given with a grant.
+   The player's device adds it, once, the next time the storehouse opens, and
+   says "Support added … to your caravan." The note is required and stays
+   with the grant:
+
+   ```sh
+   curl -fsS -X POST -H "X-Admin-Api-Key: $KEY" -H "Content-Type: application/json" \
+     -d '{"profileId":"CVY-…","gold":500,"food":0,"note":"ticket 123: pouch never arrived"}' "$API/admin/support/grant"
+   ```
+
+   Grants are capped at 100,000 gold and 1,000 food each. If the player would
+   rather have their money back, or the purchase can't be found, refund it:
    - Google Play: Play Console → Order management → search the `GPA.…`
      order → **Refund**. The server learns of it within the hour (run
      `poll-google` to check at once). A device that never received the pack
@@ -412,11 +422,24 @@ per IP, so monitors polling it don't eat into players' limits.
 
    Then check the PostgreSQL provider's status page, the certificate (Caddy
    renews it), disk space and Redis.
-3. **Fix.** Restart with `./deploy.sh`, which checks the configuration, runs
+3. **Pause purchases** if verification or the database is failing, so nobody
+   is charged while grants can't be delivered. The storehouse greys out every
+   Buy and shows your message; purchases already paid for are still delivered
+   when the server can verify them. Each API replica picks the change up within
+   10 seconds:
+
+   ```sh
+   curl -fsS -X POST -H "X-Admin-Api-Key: $KEY" -H "Content-Type: application/json" \
+     -d '{"paused":true,"message":"Purchases are paused while we fix a problem. Back soon."}' "$API/admin/purchases"
+   # Resume afterwards:
+   curl -fsS -X POST -H "X-Admin-Api-Key: $KEY" -H "Content-Type: application/json" -d '{"paused":false}' "$API/admin/purchases"
+   ```
+
+4. **Fix.** Restart with `./deploy.sh`, which checks the configuration, runs
    the server and data checks, rebuilds and starts. If the database must be
    restored, preserve the current one first (`docs/DEPLOYMENT.md`,
    "Operations after launch").
-4. **Purchases during the outage.**
+5. **Purchases during the outage.**
    - A player with no session can't start a purchase, so isn't charged.
    - A payment that went through but couldn't be verified stays unfinished.
      The game retries at launch and when the storehouse opens.
@@ -427,13 +450,13 @@ per IP, so monitors polling it don't eat into players' limits.
      check the store credentials in `server/secrets/` and the service
      account's Play Console permissions, and look for an Apple or Google
      service problem.
-5. **Email sign-in only:** check the mail service and the `SMTP_*` settings.
+6. **Email sign-in only:** check the mail service and the `SMTP_*` settings.
    Port 587 only. `GET /auth/providers` shows which sign-in methods the
    server has on.
-6. **Tell players** on `[status channel]` and the support page. The game has
+7. **Tell players** on `[status channel]` and the support page. The game has
    no in-game announcements: `/config/live` returns fixed values and the game
    doesn't read it.
-7. **After recovery.**
+8. **After recovery.** Resume purchases if you paused them.
    - Run `POST /admin/refunds/poll-google` once. Each poll looks back two
      days past the last one.
    - Read `GET /admin/refunds` for failed events. Apple retries its
@@ -540,10 +563,8 @@ The arena, raid, friends and guild tables hold only rows from before
 
 | Gap | Effect | Suggested fix |
 | --- | --- | --- |
-| No operator grant | A paid pack that can't be delivered can only be refunded | An admin "make good" that creates a wallet adjustment the device applies, like a reversed refund |
 | No Apple order ID lookup | An Apple receipt's order ID can't be matched directly | Call the App Store Server API's Look Up Order ID from the lookup endpoint |
 | No moderation tools | Offensive nicknames can't be renamed or blocked. No one else sees them in 1.0, so this matters once rooms are turned on | Server name filter, admin rename, enforce `can_join_rooms`, a block control |
 | Guest progress can't move | A guest who loses the device loses everything, purchases included | Prompt guests to sign in after their first purchase |
 | No restore for local backups | Progress replaced by signing in to another account stays in a file the player can't reach | A restore choice in the Account panel |
 | No in-game announcements | Players learn of an outage only from errors | Read `/config/live`'s `announcement` in the game |
-| No pre-payment purchase switch | Purchases can't be paused before payment | A server flag the storehouse checks before opening the store sheet |

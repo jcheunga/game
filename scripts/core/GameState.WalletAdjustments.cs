@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>A store refund, or a refund's reversal, the server recorded for one of the player's purchases.</summary>
+/// <summary>
+/// A change the server recorded to the player's currency: a store refund, a refund's reversal, or a support grant
+/// that makes good a pack that could not be delivered.
+/// </summary>
 public sealed class WalletAdjustment
 {
     public string AdjustmentId { get; set; } = "";
     public string PurchaseId { get; set; } = "";
     public string ProductId { get; set; } = "";
-    /// <summary>"refund" or "refund_reversed".</summary>
+    /// <summary>"refund", "refund_reversed" or "grant".</summary>
     public string Kind { get; set; } = "";
     /// <summary>What the purchase granted, signed: negative for a refund.</summary>
     public int GoldDelta { get; set; }
@@ -76,6 +79,11 @@ public partial class GameState
                     applied.FoodApplied = Math.Min(-refund.FoodApplied, Math.Max(0, adjustment.FoodDelta));
                 }
                 break;
+            case "grant":
+                // Support makes good what a purchase failed to deliver; it belongs to no purchase.
+                applied.GoldApplied = Math.Max(0, adjustment.GoldDelta);
+                applied.FoodApplied = Math.Max(0, adjustment.FoodDelta);
+                break;
             default:
                 // Left for a newer build, which will apply it under the same ID.
                 return null;
@@ -131,6 +139,7 @@ public partial class GameState
         }
 
         var returned = Amounts(applied.GoldApplied, applied.FoodApplied);
+        if (applied.Kind == "grant") return returned.Length > 0 ? $"Support added {returned} to your caravan." : "";
         return returned.Length > 0 ? $"The store reversed the refund of {product}, so {returned} came back." : "";
     }
 

@@ -231,6 +231,76 @@ public static class SupportLookup
         return Results.Ok(new { status = "deleted", profileId, signInRevocationPending = !revoked });
     }
 
+    /// <summary>
+    /// Makes good a paid pack that could not be delivered, instead of refunding it: credits gold and food as a
+    /// "grant" wallet adjustment, which the player's device applies once by ID the next time it opens the shop, and
+    /// records it in the ledger and the server wallet. Body: {"profileId", "gold", "food", "note"}; the note (why,
+    /// and the ticket) is required and kept with the adjustment for the audit trail.
+    /// </summary>
+    public static async Task<IResult> AdminGrant(HttpRequest request)
+    {
+        if (AdminAuth.Require(request) is { } adminError) return adminError;
+
+        string profileId, note;
+        long gold, food;
+        try
+        {
+            using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
+            profileId = Text(body.RootElement, "profileId");
+            note = Text(body.RootElement, "note");
+            gold = Number(body.RootElement, "gold");
+            food = Number(body.RootElement, "food");
+        }
+        catch (JsonException)
+        {
+            return Results.BadRequest(new { error = "invalid_json" });
+        }
+        if (profileId.Length == 0) return Results.BadRequest(new { error = "profile_id_required" });
+        if (note.Length is 0 or > 200) return Results.BadRequest(new { error = "note_required_up_to_200_characters" });
+        if (gold < 0 || food < 0 || gold + food == 0 || gold > MaxGrantGold || food > MaxGrantFood)
+            return Results.BadRequest(new { error = $"grant_between_1_and_{MaxGrantGold}_gold_or_{MaxGrantFood}_food" });
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var adjustmentId = $"ADJ-{Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()}";
+        using var conn = Database.Open();
+        if (!SessionAuth.PlayerExists(conn, profileId)) return Results.NotFound(new { status = "not_found" });
+        using var tx = conn.BeginTransaction();
+        void Run(string sql, params (string Name, object Value)[] values)
+        {
+            using var cmd = Command(conn, sql, values);
+            cmd.Transaction = tx;
+            cmd.ExecuteNonQuery();
+        }
+
+        Run("""
+            INSERT INTO wallet_adjustments (adjustment_id, profile_id, purchase_id, product_id, kind, gold_delta, food_delta,
+                unit_unlock_kept, reverses_adjustment_id, event_id, reason, created_at)
+            VALUES (@id, @profile, '', '', 'grant', @gold, @food, 0, '', '', @reason, @now)
+        """, ("@id", adjustmentId), ("@profile", profileId), ("@gold", gold), ("@food", food), ("@reason", "support: " + note), ("@now", now));
+        foreach (var (currency, amount) in new[] { ("gold", gold), ("food", food) })
+        {
+            if (amount <= 0) continue;
+            Run("""
+                INSERT INTO wallet_ledger (entry_id, profile_id, currency_type, amount, reason, purchase_id, adjustment_id, created_at)
+                VALUES (@entry, @profile, @currency, @amount, 'grant', '', @adjustment, @now)
+            """, ("@entry", $"WLT-{Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()}"), ("@profile", profileId), ("@currency", currency),
+                ("@amount", amount), ("@adjustment", adjustmentId), ("@now", now));
+        }
+        Run("""
+            INSERT INTO player_wallets (profile_id, gold_balance, food_balance, unit_unlock_balance, updated_at)
+            VALUES (@profile, @gold, @food, 0, @now)
+            ON CONFLICT (profile_id) DO UPDATE SET gold_balance = player_wallets.gold_balance + @gold,
+                food_balance = player_wallets.food_balance + @food, updated_at = @now
+        """, ("@profile", profileId), ("@gold", gold), ("@food", food), ("@now", now));
+        tx.Commit();
+        return Results.Ok(new { status = "granted", adjustmentId, profileId, gold, food });
+    }
+
+    private const long MaxGrantGold = 100_000, MaxGrantFood = 1_000;
+
+    private static long Number(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : 0;
+
     private static string Text(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()?.Trim() ?? ""

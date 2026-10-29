@@ -181,6 +181,25 @@ button does. The two IDs must match, so a slip deletes nothing. Confirm the
 requester controls the account first (see
 [store/SUPPORT_PLAYBOOK.md](store/SUPPORT_PLAYBOOK.md)).
 
+To make good a paid pack that never arrived, `POST /admin/support/grant`
+with `{"profileId": "CVY-…", "gold": 500, "food": 0, "note": "ticket 123"}`
+records a `grant` wallet adjustment, ledger entries and the server wallet in
+one transaction. The player's device applies it once, by ID, the next time
+the storehouse opens, says "Support added 500 gold to your caravan." and
+reports back. The note is required; grants are capped at 100,000 gold and
+1,000 food.
+
+### Pausing purchases
+
+`POST /admin/purchases` with `{"paused": true, "message": "…"}` stops the
+game starting new purchases: the storehouse greys out every Buy and shows
+the message, and new Stripe checkouts are refused. Purchases already paid
+for are still validated and delivered, so nobody is charged and left
+without. `{"paused": false}` resumes; `GET /admin/purchases` shows the state.
+The switch lives in the database (`live_settings`, schema 9), so every API
+replica follows it within 10 seconds, with no redeploy. Use it during an
+incident on launch day, before anything else.
+
 ## Refunds
 
 When Google or Apple refunds a pack, the server takes back what it granted.
